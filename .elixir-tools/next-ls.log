@@ -9393,3 +9393,23 @@ This will trigger a full recompilation in order to re-index your codebase.
 21:58:12.847 [debug] handled notification client -> server $/cancelRequest in 716µs
 
 21:58:14.046 id=1895 [debug] handled request client -> server textDocument/hover in 1012ms
+
+21:58:52.625 [debug] handled notification client -> server $/cancelRequest in 2ms
+
+21:58:52.971 [debug] handled notification client -> server $/cancelRequest in 615µs
+
+21:58:53.587 [debug] handled notification client -> server $/cancelRequest in 1ms
+
+21:58:54.820 id=1899 [debug] handled request client -> server textDocument/hover in 1007ms
+
+21:58:58.223 [debug] handled notification client -> server $/cancelRequest in 512µs
+
+21:58:59.912 [debug] handled notification client -> server $/cancelRequest in 717µs
+
+22:01:15.525 id=1902 [debug] handled request client -> server textDocument/codeAction in 1ms
+
+22:01:15.773 id=1903 [debug] handled request client -> server textDocument/codeAction in 1ms
+
+22:01:15.911 id=1904 [debug] handled request client -> server textDocument/codeAction in 1ms
+
+22:01:15.937 id=1905 [debug] handled request client -> server textDocument/documentSymbol in 15ms
