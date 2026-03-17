@@ -70,7 +70,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       assert Accounts.get_account!(account.id).confirmed_at
       # we are logged in now
       assert get_session(conn, :account_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
 
       # log out, new conn
       conn = build_conn()

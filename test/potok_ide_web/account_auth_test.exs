@@ -26,7 +26,7 @@ defmodule PotokIdeWeb.AccountAuthTest do
       conn = AccountAuth.log_in_account(conn, account)
       assert token = get_session(conn, :account_token)
       assert get_session(conn, :live_socket_id) == "accounts_sessions:#{Base.url_encode64(token)}"
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
       assert Accounts.get_account_by_session_token(token)
     end
 

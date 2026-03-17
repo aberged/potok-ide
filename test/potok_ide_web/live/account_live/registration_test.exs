@@ -17,7 +17,7 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
         conn
         |> log_in_account(account_fixture())
         |> live(~p"/accounts/register")
-        |> follow_redirect(conn, ~p"/")
+        |> follow_redirect(conn, ~p"/profiles")
 
       assert {:ok, _conn} = result
     end

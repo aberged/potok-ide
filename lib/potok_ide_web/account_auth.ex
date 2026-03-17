@@ -39,7 +39,7 @@ defmodule PotokIdeWeb.AccountAuth do
 
     conn
     |> create_or_extend_session(account, params)
-    |> redirect(to: account_return_to || signed_in_path(conn))
+    |> redirect(to: account_return_to || signed_in_path(conn, account))
   end
 
   @doc """
@@ -292,7 +292,28 @@ defmodule PotokIdeWeb.AccountAuth do
     ~p"/accounts/settings"
   end
 
-  def signed_in_path(_), do: ~p"/"
+  def signed_in_path(%Phoenix.LiveView.Socket{assigns: %{current_profile: current_profile}})
+      when not is_nil(current_profile) do
+    ~p"/groups"
+  end
+
+  def signed_in_path(%Phoenix.LiveView.Socket{
+        assigns: %{current_scope: %Scope{account: %Accounts.Account{}}}
+      }) do
+    ~p"/profiles"
+  end
+
+  def signed_in_path(_), do: ~p"/profiles"
+
+  defp signed_in_path(
+         %Plug.Conn{assigns: %{current_scope: %Scope{account: %Accounts.Account{}}}},
+         _account
+       ) do
+    ~p"/accounts/settings"
+  end
+
+  defp signed_in_path(_, %Accounts.Account{current_profile_id: nil}), do: ~p"/profiles"
+  defp signed_in_path(_, %Accounts.Account{}), do: ~p"/groups"
 
   @doc """
   Plug for routes that require the account to be authenticated.

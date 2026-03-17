@@ -129,19 +129,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
               <div :if={@values == []} class="text-base-content/70">{gettext("No values yet.")}</div>
 
-              <div :for={v <- @values} class="border-b border-base-300 py-3 last:border-0">
-                <div class="flex items-start gap-3">
-                  <.profile_identity profile={v.creator} avatar_size="size-9" text_class="text-xs" />
+              <div :for={v <- @values} class="chat chat-start border-b border-base-300 py-3 last:border-0">
 
-                  <div class="min-w-0 text-xs text-base-content/60">
+                <div class="flex items-start gap-3">
+                  <.profile_identity profile={v.creator} v={v} avatar_size="size-9" expanded_value_ids={@expanded_value_ids} text_class="text-xs" />
+
+                  <%!-- <div class="min-w-0 text-xs text-base-content/60">
                     <div class="truncate">
                       {Calendar.strftime(v.inserted_at, "%Y-%m-%d %H:%M")}
                       {if v.parent_id, do: gettext("· reply/forward")}
                     </div>
-                  </div>
+                  </div> --%>
                 </div>
 
-                <div class="relative mt-2">
+                <%!-- <div class="relative mt-2">
                   <div
                     class={[
                       "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
@@ -170,7 +171,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                       do: gettext("See less"),
                       else: gettext("See more")}
                   </button>
-                </div>
+                </div> --%>
               </div>
             </div>
           </div>
@@ -305,26 +306,85 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def profile_identity(assigns) do
     ~H"""
     <div class="flex min-w-0 items-center gap-3">
-      <%= if avatar_url = profile_picture_url(@profile) do %>
-        <img
-          src={avatar_url}
-          alt={@profile.username}
-          class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
-        />
+      <%= if v = @v do %>
+        <%= if expanded_value_ids=@expanded_value_ids do %>
+
+          <div class="chat chat-start">
+            <div class="chat-image avatar">
+              <div class="w-10 rounded-full">
+                <img
+                  alt={@profile.username}
+                  src={profile_picture_url(@profile)}
+                />
+              </div>
+            </div>
+            <div class="chat-header">
+              {@profile.username}
+              <time class="text-xs opacity-50">
+                <div class="truncate">
+                  {Calendar.strftime(v.inserted_at, "%Y-%m-%d %H:%M")}
+                  {if v.parent_id, do: gettext("· reply/forward")}
+                </div>
+              </time>
+            </div>
+            <div class="chat-bubble">
+              <div class="relative mt-2">
+                <div
+                  class={[
+                    "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
+                    !value_expanded?(expanded_value_ids, v) && value_expandable?(v) &&
+                      "overflow-hidden"
+                  ]}
+                  style={collapsed_value_style(expanded_value_ids, v)}
+                >
+                  {render_value_content(v)}
+                </div>
+
+                <div
+                  :if={value_expandable?(v) and !value_expanded?(expanded_value_ids, v)}
+                  class="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t from-base-200 to-transparent"
+                >
+                </div>
+
+                <button
+                  :if={value_expandable?(v)}
+                  type="button"
+                  phx-click="toggle_value_expansion"
+                  phx-value-id={v.id}
+                  class="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+                >
+                  {if value_expanded?(expanded_value_ids, v),
+                    do: gettext("See less"),
+                    else: gettext("See more")}
+                </button>
+              </div>
+            </div>
+            <div class="chat-footer opacity-50">TODO:// Delivered</div>
+          </div>
+
+        <% end %>
       <% else %>
-        <div class={[
-          @avatar_size,
-          "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
-        ]}>
-          {profile_initials(@profile.username)}
+        <%= if avatar_url = profile_picture_url(@profile) do %>
+          <img
+            src={avatar_url}
+            alt={@profile.username}
+            class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
+          />
+        <% else %>
+          <div class={[
+            @avatar_size,
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+          ]}>
+            {profile_initials(@profile.username)}
+          </div>
+        <% end %>
+
+        <div class="min-w-0">
+          <div class={[@text_class, "truncate font-semibold text-base-content"]}>
+            {@profile.username}
+          </div>
         </div>
       <% end %>
-
-      <div class="min-w-0">
-        <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-          {@profile.username}
-        </div>
-      </div>
     </div>
     """
   end

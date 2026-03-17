@@ -18,12 +18,12 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
         })
 
       assert get_session(conn, :account_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
+      conn = get(conn, ~p"/profiles")
       response = html_response(conn, 200)
-      assert response =~ account.email
+      assert response =~ "Profiles"
       assert response =~ ~p"/accounts/settings"
       assert response =~ ~p"/accounts/log-out"
     end
@@ -41,7 +41,7 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
         })
 
       assert conn.resp_cookies["_potok_ide_web_account_remember_me"]
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
     end
 
     test "logs the account in with return to", %{conn: conn, account: account} do
@@ -82,12 +82,12 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
         })
 
       assert get_session(conn, :account_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
+      conn = get(conn, ~p"/profiles")
       response = html_response(conn, 200)
-      assert response =~ account.email
+      assert response =~ "Profiles"
       assert response =~ ~p"/accounts/settings"
       assert response =~ ~p"/accounts/log-out"
     end
@@ -103,15 +103,15 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
         })
 
       assert get_session(conn, :account_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/profiles"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Account confirmed successfully."
 
       assert Accounts.get_account!(account.id).confirmed_at
 
       # Now do a logged in request and assert on the menu
-      conn = get(conn, ~p"/")
+      conn = get(conn, ~p"/profiles")
       response = html_response(conn, 200)
-      assert response =~ account.email
+      assert response =~ "Profiles"
       assert response =~ ~p"/accounts/settings"
       assert response =~ ~p"/accounts/log-out"
     end
