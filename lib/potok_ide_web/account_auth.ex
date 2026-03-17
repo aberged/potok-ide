@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.AccountAuth do
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Scope
+  alias PotokIde.Social
 
   # Make the remember me cookie valid for 14 days. This should match
   # the session validity setting in AccountToken.
@@ -70,9 +71,13 @@ defmodule PotokIdeWeb.AccountAuth do
          {account, token_inserted_at} <- Accounts.get_account_by_session_token(token) do
       conn
       |> assign(:current_scope, Scope.for_account(account))
+      |> assign(:current_profile, current_profile_for_account(account))
       |> maybe_reissue_account_session_token(account, token_inserted_at)
     else
-      nil -> assign(conn, :current_scope, Scope.for_account(nil))
+      nil ->
+        conn
+        |> assign(:current_scope, Scope.for_account(nil))
+        |> assign(:current_profile, nil)
     end
   end
 
@@ -256,15 +261,30 @@ defmodule PotokIdeWeb.AccountAuth do
   end
 
   defp mount_current_scope(socket, session) do
-    Phoenix.Component.assign_new(socket, :current_scope, fn ->
-      {account, _} =
-        if account_token = session["account_token"] do
-          Accounts.get_account_by_session_token(account_token)
-        end || {nil, nil}
+    socket =
+      Phoenix.Component.assign_new(socket, :current_scope, fn ->
+        {account, _} =
+          if account_token = session["account_token"] do
+            Accounts.get_account_by_session_token(account_token)
+          end || {nil, nil}
 
-      Scope.for_account(account)
+        Scope.for_account(account)
+      end)
+
+    Phoenix.Component.assign_new(socket, :current_profile, fn ->
+      current_profile_for_scope(socket.assigns[:current_scope])
     end)
   end
+
+  defp current_profile_for_scope(%Scope{account: %Accounts.Account{} = account}),
+    do: current_profile_for_account(account)
+
+  defp current_profile_for_scope(_), do: nil
+
+  defp current_profile_for_account(%Accounts.Account{} = account),
+    do: Social.get_account_current_profile(account)
+
+  defp current_profile_for_account(_), do: nil
 
   @doc "Returns the path to redirect to after log in."
   # the account was already logged in, redirect to settings

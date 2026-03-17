@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.AccountAuthTest do
   alias Phoenix.LiveView
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Scope
+  alias PotokIde.Social
   alias PotokIdeWeb.AccountAuth
 
   import PotokIde.AccountsFixtures
@@ -176,6 +177,26 @@ defmodule PotokIdeWeb.AccountAuthTest do
       assert conn.assigns.current_scope.account.id == account.id
       assert conn.assigns.current_scope.account.authenticated_at == account.authenticated_at
       assert get_session(conn, :account_token) == account_token
+    end
+
+    test "assigns current profile when one is selected", %{conn: conn, account: account} do
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "selected-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      account_token = Accounts.generate_account_session_token(account)
+
+      conn =
+        conn
+        |> put_session(:account_token, account_token)
+        |> AccountAuth.fetch_current_scope_for_account([])
+
+      assert conn.assigns.current_profile.id == profile.id
+      assert conn.assigns.current_profile.username == "selected-profile"
     end
 
     test "authenticates account from cookies", %{conn: conn, account: account} do

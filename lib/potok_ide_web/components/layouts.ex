@@ -35,37 +35,8 @@ defmodule PotokIdeWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">{gettext("Website")}</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">
-              {gettext("GitHub")}
-            </a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              {gettext("Get Started")} <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </header>
-
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
+    <main class="px-4 pb-12 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 lg:pb-20">
+      <div class="mx-auto w-full max-w-5xl space-y-4">
         {render_slot(@inner_block)}
       </div>
     </main>
@@ -124,11 +95,11 @@ defmodule PotokIdeWeb.Layouts do
   """
   def theme_toggle(assigns) do
     ~H"""
-    <div class="card relative flex flex-row items-center border-2 border-base-300 bg-base-300 rounded-full">
+    <div class="card relative inline-flex w-full max-w-[11rem] flex-row items-center rounded-full border-2 border-base-300 bg-base-300 sm:w-auto">
       <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
       >
@@ -136,7 +107,7 @@ defmodule PotokIdeWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
       >
@@ -144,7 +115,7 @@ defmodule PotokIdeWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
       >
@@ -168,13 +139,13 @@ defmodule PotokIdeWeb.Layouts do
     ~H"""
     <nav
       aria-label={gettext("Language selector")}
-      class="flex items-center gap-1 rounded-full border border-base-300 bg-base-200 p-1 shadow-sm"
+      class="inline-flex w-full items-center justify-center gap-1 rounded-full border border-base-300 bg-base-200 p-1 shadow-sm sm:w-auto"
     >
       <%= for locale <- @available_locales do %>
         <.link
           href={~p"/locale/#{locale}"}
           class={[
-            "rounded-full px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
+            "min-w-[4.5rem] rounded-full px-3 py-1 text-center text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
             if(locale == @current_locale,
               do: "bg-base-100 text-base-content shadow-sm",
               else: "text-base-content/60 hover:text-base-content"
@@ -186,6 +157,23 @@ defmodule PotokIdeWeb.Layouts do
         </.link>
       <% end %>
     </nav>
+    """
+  end
+
+  slot :inner_block, required: true
+
+  def header_menu(assigns) do
+    ~H"""
+    <details class="dropdown dropdown-end">
+      <summary class="btn btn-ghost btn-circle list-none border border-base-300 bg-base-100/80 shadow-sm backdrop-blur [&::-webkit-details-marker]:hidden">
+        <span class="sr-only">{gettext("Actions")}</span>
+        <.icon name="hero-bars-3" class="size-5" />
+      </summary>
+
+      <div class="dropdown-content z-30 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">
+        {render_slot(@inner_block)}
+      </div>
+    </details>
     """
   end
 end

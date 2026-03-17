@@ -336,6 +336,9 @@ msgstr "Zapisywanie..."
 msgid "Settings"
 msgstr "Ustawienia"
 
+msgid "Selected profile"
+msgstr "Wybrany profil"
+
 msgid "Shared"
 msgstr "Współdzielony"
 

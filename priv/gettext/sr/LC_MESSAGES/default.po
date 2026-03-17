@@ -1,0 +1,460 @@
+msgid ""
+msgstr ""
+"Language: sr\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "(none)"
+msgstr "(nema)"
+
+msgid "A link to confirm your email change has been sent to the new address."
+msgstr "Link za potvrdu promene imejl adrese je poslat na novu adresu."
+
+msgid "Accept"
+msgstr "Prihvati"
+
+msgid "Account Settings"
+msgstr "Podešavanja naloga"
+
+msgid "Account confirmed successfully."
+msgstr "Nalog je uspešno potvrđen."
+
+msgid "Actions"
+msgstr "Radnje"
+
+msgid "Active"
+msgstr "Aktivan"
+
+msgid "Already registered?"
+msgstr "Već ste registrovani?"
+
+msgid "An email was sent to %{email}, please access it to confirm your account."
+msgstr "Imejl je poslat na %{email}. Otvorite ga da biste potvrdili nalog."
+
+msgid "An invitation is already pending."
+msgstr "Pozivnica je već na čekanju."
+
+msgid "Attempting to reconnect"
+msgstr "Pokušavam ponovno povezivanje"
+
+msgid "Back to Root Group"
+msgstr "Nazad na glavnu grupu"
+
+msgid "Build rich, interactive web applications quickly, with less code and fewer moving parts. Join our growing community of developers using Phoenix to craft APIs, HTML5 apps and more, for fun or at scale."
+msgstr "Pravite bogate, interaktivne veb aplikacije brzo, sa manje koda i manje pokretnih delova. Pridružite se rastućoj zajednici programera koji koriste Phoenix za izradu API-ja, HTML5 aplikacija i još mnogo toga, iz zadovoljstva ili u velikim razmerama."
+
+msgid "Change Email"
+msgstr "Promeni imejl"
+
+msgid "Changelog"
+msgstr "Dnevnik izmena"
+
+msgid "Changing..."
+msgstr "Menjanje..."
+
+msgid "Confirm and log in only this time"
+msgstr "Potvrdi i prijavi me samo ovaj put"
+
+msgid "Confirm and stay logged in"
+msgstr "Potvrdi i ostani prijavljen"
+
+msgid "Confirm new password"
+msgstr "Potvrdite novu lozinku"
+
+msgid "Confirmation instructions"
+msgstr "Uputstva za potvrdu"
+
+msgid "Confirming..."
+msgstr "Potvrđivanje..."
+
+msgid "Content"
+msgstr "Sadržaj"
+
+msgid "Could not accept invitation."
+msgstr "Nije moguće prihvatiti pozivnicu."
+
+msgid "Could not create group."
+msgstr "Nije moguće napraviti grupu."
+
+msgid "Could not create value."
+msgstr "Nije moguće napraviti vrednost."
+
+msgid "Could not send invitation."
+msgstr "Nije moguće poslati pozivnicu."
+
+msgid "Create"
+msgstr "Kreiraj"
+
+msgid "Create an account"
+msgstr "Kreiraj nalog"
+
+msgid "Create profile"
+msgstr "Kreiraj profil"
+
+msgid "Create sub-group"
+msgstr "Kreiraj podgrupu"
+
+msgid "Create value"
+msgstr "Kreiraj vrednost"
+
+msgid "Creating account..."
+msgstr "Kreiranje naloga..."
+
+msgid "Creating..."
+msgstr "Kreiranje..."
+
+msgid "Current profile:"
+msgstr "Trenutni profil:"
+
+msgid "Deploy your application"
+msgstr "Objavi aplikaciju"
+
+msgid "Description"
+msgstr "Opis"
+
+msgid "Description format"
+msgstr "Format opisa"
+
+msgid "Discuss on the Elixir Forum"
+msgstr "Diskutuj na Elixir forumu"
+
+msgid "Email"
+msgstr "Imejl"
+
+msgid "Email change link is invalid or it has expired."
+msgstr "Link za promenu imejl adrese je nevažeći ili je istekao."
+
+msgid "Email changed successfully."
+msgstr "Imejl adresa je uspešno promenjena."
+
+msgid "Enter your email and we'll send you a sign-in link."
+msgstr "Unesite svoj imejl i poslaćemo vam link za prijavu."
+
+msgid "Format"
+msgstr "Format"
+
+msgid "Get Started"
+msgstr "Počni"
+
+msgid "GitHub"
+msgstr "GitHub"
+
+msgid "Go to Root Group"
+msgstr "Idi na glavnu grupu"
+
+msgid "Group"
+msgstr "Grupa"
+
+msgid "Group created."
+msgstr "Grupa je kreirana."
+
+msgid "Groups"
+msgstr "Grupe"
+
+msgid "Guides & Docs"
+msgstr "Vodiči i dokumentacija"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "Hi %{email},"
+msgstr "Zdravo %{email},"
+
+msgid "If you didn't create an account with us, please ignore this."
+msgstr "Ako niste kreirali nalog kod nas, zanemarite ovu poruku."
+
+msgid "If you didn't request this change, please ignore this."
+msgstr "Ako niste tražili ovu promenu, zanemarite ovu poruku."
+
+msgid "If you didn't request this email, please ignore this."
+msgstr "Ako niste tražili ovaj imejl, zanemarite ga."
+
+msgid "If your email is in our system, you will receive instructions for logging in shortly."
+msgstr "Ako je vaš imejl u našem sistemu, uskoro ćete dobiti uputstva za prijavu."
+
+msgid "Invalid email or password"
+msgstr "Neispravan imejl ili lozinka"
+
+msgid "Invitation accepted."
+msgstr "Pozivnica je prihvaćena."
+
+msgid "Invitation not found (or already accepted)."
+msgstr "Pozivnica nije pronađena ili je već prihvaćena."
+
+msgid "Invitation sent."
+msgstr "Pozivnica je poslata."
+
+msgid "Invitations"
+msgstr "Pozivnice"
+
+msgid "Invite"
+msgstr "Pozovi"
+
+msgid "Invite profile"
+msgstr "Pozovi profil"
+
+msgid "Invited by:"
+msgstr "Pozvao:"
+
+msgid "Invitee username"
+msgstr "Korisničko ime pozvanog"
+
+msgid "Invitees accept invitations at"
+msgstr "Pozvani prihvataju pozivnice na"
+
+msgid "Inviting..."
+msgstr "Slanje pozivnice..."
+
+msgid "Join our Discord server"
+msgstr "Pridružite se našem Discord serveru"
+
+msgid "Join us on Slack"
+msgstr "Pridružite nam se na Slacku"
+
+msgid "Keep me logged in on this device"
+msgstr "Ostavi me prijavljenim na ovom uređaju"
+
+msgid "Language selector"
+msgstr "Izbor jezika"
+
+msgid "Log in"
+msgstr "Prijavi se"
+
+msgid "Log in instructions"
+msgstr "Uputstva za prijavu"
+
+msgid "Log in with email"
+msgstr "Prijavi se imejlom"
+
+msgid "Log me in only this time"
+msgstr "Prijavi me samo ovaj put"
+
+msgid "Log out"
+msgstr "Odjavi se"
+
+msgid "Logged out successfully."
+msgstr "Uspešno ste odjavljeni."
+
+msgid "Logging in..."
+msgstr "Prijavljivanje..."
+
+msgid "Magic link is invalid or it has expired."
+msgstr "Magični link je nevažeći ili je istekao."
+
+msgid "Manage your account email address and password settings"
+msgstr "Upravljajte podešavanjima imejl adrese i lozinke naloga"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Members"
+msgstr "Članovi"
+
+msgid "Name"
+msgstr "Naziv"
+
+msgid "New password"
+msgstr "Nova lozinka"
+
+msgid "No members."
+msgstr "Nema članova."
+
+msgid "No pending invitations."
+msgstr "Nema pozivnica na čekanju."
+
+msgid "No profile found with that username."
+msgstr "Nije pronađen profil sa tim korisničkim imenom."
+
+msgid "No profiles yet."
+msgstr "Još nema profila."
+
+msgid "No sub-groups yet."
+msgstr "Još nema podgrupa."
+
+msgid "No values yet."
+msgstr "Još nema vrednosti."
+
+msgid "Parent value (optional)"
+msgstr "Nadređena vrednost (opciono)"
+
+msgid "Password updated successfully!"
+msgstr "Lozinka je uspešno ažurirana!"
+
+msgid "Peace of mind from prototype to production."
+msgstr "Bez brige od prototipa do produkcije."
+
+msgid "Pending group invitations for your current profile."
+msgstr "Pozivnice za grupu na čekanju za vaš trenutni profil."
+
+msgid "Phoenix Framework"
+msgstr "Phoenix Framework"
+
+msgid "Pick the profile you want to use, or create a new one."
+msgstr "Izaberite profil koji želite da koristite ili kreirajte novi."
+
+msgid "Please select or create a profile first."
+msgstr "Prvo izaberite ili kreirajte profil."
+
+msgid "Post"
+msgstr "Objavi"
+
+msgid "Posting..."
+msgstr "Objavljivanje..."
+
+msgid "Profile created."
+msgstr "Profil je kreiran."
+
+msgid "Profile picture URL"
+msgstr "URL slike profila"
+
+msgid "Profile selected."
+msgstr "Profil je izabran."
+
+msgid "Profiles"
+msgstr "Profili"
+
+msgid "Public"
+msgstr "Javna"
+
+msgid "Register"
+msgstr "Registruj se"
+
+msgid "Register for an account"
+msgstr "Registrujte nalog"
+
+msgid "Reply to value (optional)"
+msgstr "Odgovori na vrednost (opciono)"
+
+msgid "Root Group"
+msgstr "Glavna grupa"
+
+msgid "Save Password"
+msgstr "Sačuvaj lozinku"
+
+msgid "Saving..."
+msgstr "Čuvanje..."
+
+msgid "Settings"
+msgstr "Podešavanja"
+
+msgid "Selected profile"
+msgstr "Izabrani profil"
+
+msgid "Shared"
+msgstr "Deljeni"
+
+msgid "Sharing"
+msgstr "Deljenje"
+
+msgid "Something went wrong!"
+msgstr "Nešto je pošlo po zlu!"
+
+msgid "Source Code"
+msgstr "Izvorni kod"
+
+msgid "Sub-groups"
+msgstr "Podgrupe"
+
+msgid "That profile is not available for this account."
+msgstr "Taj profil nije dostupan za ovaj nalog."
+
+msgid "The link is invalid or it has expired."
+msgstr "Link je nevažeći ili je istekao."
+
+msgid "Tip: If you prefer passwords, you can enable them in the account settings."
+msgstr "Savet: ako više volite lozinke, možete ih uključiti u podešavanjima naloga."
+
+msgid "To see sent emails, visit"
+msgstr "Da biste videli poslate imejlove, posetite"
+
+msgid "Unique"
+msgstr "Jedinstveni"
+
+msgid "Update email instructions"
+msgstr "Uputstva za promenu imejl adrese"
+
+msgid "Use"
+msgstr "Koristi"
+
+msgid "Username"
+msgstr "Korisničko ime"
+
+msgid "Username is required."
+msgstr "Korisničko ime je obavezno."
+
+msgid "Value posted."
+msgstr "Vrednost je objavljena."
+
+msgid "Values"
+msgstr "Vrednosti"
+
+msgid "We can't find the internet"
+msgstr "Ne možemo da pronađemo internet"
+
+msgid "Website"
+msgstr "Sajt"
+
+msgid "Welcome %{email}"
+msgstr "Dobrodošli, %{email}"
+
+msgid "Welcome back!"
+msgstr "Dobro nam došli nazad!"
+
+msgid "You are running the local mail adapter."
+msgstr "Koristite lokalni mejl adapter."
+
+msgid "You can change your email by visiting the URL below:"
+msgstr "Možete da promenite imejl adresu tako što ćete posetiti URL ispod:"
+
+msgid "You can confirm your account by visiting the URL below:"
+msgstr "Možete da potvrdite nalog tako što ćete posetiti URL ispod:"
+
+msgid "You can log into your account by visiting the URL below:"
+msgstr "Možete da se prijavite na nalog tako što ćete posetiti URL ispod:"
+
+msgid "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+msgstr "Možete da pregledate ovu grupu, ali morate biti član da biste objavljivali vrednosti, pozivali članove ili kreirali podgrupe."
+
+msgid "You cannot invite yourself."
+msgstr "Ne možete pozvati sami sebe."
+
+msgid "You do not have access to that group."
+msgstr "Nemate pristup toj grupi."
+
+msgid "You must be a group member to create sub-groups."
+msgstr "Morate biti član grupe da biste kreirali podgrupe."
+
+msgid "You must be a group member to post values."
+msgstr "Morate biti član grupe da biste objavljivali vrednosti."
+
+msgid "You must be a member to invite."
+msgstr "Morate biti član da biste pozivali."
+
+msgid "You must log in to access this page."
+msgstr "Morate se prijaviti da biste pristupili ovoj stranici."
+
+msgid "You must re-authenticate to access this page."
+msgstr "Morate ponovo potvrditi identitet da biste pristupili ovoj stranici."
+
+msgid "You need to reauthenticate to perform sensitive actions on your account."
+msgstr "Morate ponovo potvrditi identitet da biste izvršili osetljive radnje na nalogu."
+
+msgid "Your profiles"
+msgstr "Vaši profili"
+
+msgid "close"
+msgstr "zatvori"
+
+msgid "private"
+msgstr "privatna"
+
+msgid "public"
+msgstr "javna"
+
+msgid "the mailbox page"
+msgstr "stranicu poštanskog sandučeta"
+
+msgid "to your account now."
+msgstr "na svoj nalog sada."
+
+msgid "· reply/forward"
+msgstr "· odgovor/prosleđivanje"

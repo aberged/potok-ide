@@ -3,7 +3,6 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
-  import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
 
   alias PotokIde.Social
@@ -11,16 +10,18 @@ defmodule PotokIdeWeb.ProfileAuth do
   def on_mount(:mount_current_profile, _params, _session, socket) do
     current_scope = socket.assigns[:current_scope]
 
-    current_profile =
-      case current_scope do
-        %{account: account} when not is_nil(account) ->
-          Social.get_account_current_profile(account)
+    socket =
+      Phoenix.Component.assign_new(socket, :current_profile, fn ->
+        case current_scope do
+          %{account: account} when not is_nil(account) ->
+            Social.get_account_current_profile(account)
 
-        _ ->
-          nil
-      end
+          _ ->
+            nil
+        end
+      end)
 
-    {:cont, assign(socket, :current_profile, current_profile)}
+    {:cont, socket}
   end
 
   def on_mount(:require_profile, _params, _session, socket) do

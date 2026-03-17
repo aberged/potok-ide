@@ -1,0 +1,112 @@
+msgid ""
+msgstr ""
+"Language: sr\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "can't be blank"
+msgstr "ne može biti prazno"
+
+msgid "has already been taken"
+msgstr "je već zauzeto"
+
+msgid "is invalid"
+msgstr "je neispravno"
+
+msgid "must be accepted"
+msgstr "mora biti prihvaćeno"
+
+msgid "has invalid format"
+msgstr "ima neispravan format"
+
+msgid "has an invalid entry"
+msgstr "sadrži neispravnu vrednost"
+
+msgid "is reserved"
+msgstr "je rezervisano"
+
+msgid "does not match confirmation"
+msgstr "ne poklapa se sa potvrdom"
+
+msgid "is still associated with this entry"
+msgstr "je i dalje povezano sa ovim unosom"
+
+msgid "are still associated with this entry"
+msgstr "su i dalje povezane sa ovim unosom"
+
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "treba da ima %{count} stavku"
+msgstr[1] "treba da ima %{count} stavke"
+msgstr[2] "treba da ima %{count} stavki"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "treba da ima %{count} znak"
+msgstr[1] "treba da ima %{count} znaka"
+msgstr[2] "treba da ima %{count} znakova"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "treba da ima %{count} bajt"
+msgstr[1] "treba da ima %{count} bajta"
+msgstr[2] "treba da ima %{count} bajtova"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "treba da ima najmanje %{count} stavku"
+msgstr[1] "treba da ima najmanje %{count} stavke"
+msgstr[2] "treba da ima najmanje %{count} stavki"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "treba da ima najmanje %{count} znak"
+msgstr[1] "treba da ima najmanje %{count} znaka"
+msgstr[2] "treba da ima najmanje %{count} znakova"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "treba da ima najmanje %{count} bajt"
+msgstr[1] "treba da ima najmanje %{count} bajta"
+msgstr[2] "treba da ima najmanje %{count} bajtova"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "treba da ima najviše %{count} stavku"
+msgstr[1] "treba da ima najviše %{count} stavke"
+msgstr[2] "treba da ima najviše %{count} stavki"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "treba da ima najviše %{count} znak"
+msgstr[1] "treba da ima najviše %{count} znaka"
+msgstr[2] "treba da ima najviše %{count} znakova"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "treba da ima najviše %{count} bajt"
+msgstr[1] "treba da ima najviše %{count} bajta"
+msgstr[2] "treba da ima najviše %{count} bajtova"
+
+msgid "must be less than %{number}"
+msgstr "mora biti manje od %{number}"
+
+msgid "must be greater than %{number}"
+msgstr "mora biti veće od %{number}"
+
+msgid "must be less than or equal to %{number}"
+msgstr "mora biti manje ili jednako %{number}"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "mora biti veće ili jednako %{number}"
+
+msgid "must be equal to %{number}"
+msgstr "mora biti jednako %{number}"
+
+msgid "must have the @ sign and no spaces"
+msgstr "mora imati znak @ i ne sme imati razmake"
+
+msgid "did not change"
+msgstr "nije promenjeno"
+
+msgid "does not match password"
+msgstr "ne poklapa se sa lozinkom"

@@ -5,10 +5,11 @@ defmodule PotokIdeWeb.Locale do
   import Phoenix.Component, only: [assign: 3]
 
   @default_locale "en"
-  @supported_locales ~w(en pl)
+  @supported_locales ~w(en pl sr)
   @locale_names %{
     "en" => "English",
-    "pl" => "Polski"
+    "pl" => "Polski",
+    "sr" => "Srpski"
   }
 
   def default_locale, do: @default_locale
