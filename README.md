@@ -14,6 +14,28 @@ Useful commands:
 * `mix precommit` runs the project verification alias: compile with warnings as errors, unlock unused deps, format, and test.
 * `mix ecto.reset` drops and recreates the local database.
 
+## Production Email
+
+Production email delivery uses Mailgun through `Swoosh.Adapters.Mailgun`.
+
+Required environment variables:
+
+* `MAILGUN_API_KEY` is the Mailgun API key used by Swoosh.
+* `MAILGUN_DOMAIN` is the verified Mailgun sending domain, for example `mg.example.com`.
+* `MAILER_FROM_EMAIL` is the sender address used by the app and should belong to the verified Mailgun domain.
+
+Optional environment variables:
+
+* `MAILER_FROM_NAME` overrides the sender display name. It defaults to `PotokIde`.
+* `MAILGUN_BASE_URL` overrides the Mailgun API base URL. Set it to `https://api.eu.mailgun.net/v3` when your Mailgun account uses the EU region.
+
+On Fly.io, set them before deploying:
+
+```sh
+fly secrets set MAILGUN_API_KEY=your-key MAILGUN_DOMAIN=mg.example.com MAILER_FROM_EMAIL=no-reply@mg.example.com
+fly secrets set MAILER_FROM_NAME="PotokIde"
+```
+
 ## Project Structure
 
 High-level layout:

@@ -391,6 +391,15 @@ defmodule PotokIde.AccountsTest do
       assert account_token.sent_to == account.email
       assert account_token.context == "login"
     end
+
+    test "uses the configured sender", %{account: account} do
+      {:ok, email} =
+        Accounts.deliver_login_instructions(account, fn token ->
+          "https://example.com/accounts/log-in/#{token}"
+        end)
+
+      assert email.from == {"PotokIde", "no-reply@example.com"}
+    end
   end
 
   describe "inspect/2 for the Account module" do

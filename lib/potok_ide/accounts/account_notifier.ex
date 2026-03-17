@@ -11,7 +11,7 @@ defmodule PotokIde.Accounts.AccountNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"PotokIde", "contact@example.com"})
+      |> from(Mailer.from())
       |> subject(subject)
       |> text_body(body)
 

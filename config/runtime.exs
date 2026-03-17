@@ -102,19 +102,33 @@ if config_env() == :prod do
 
   # ## Configuring the mailer
   #
-  # In production you need to configure the mailer to use a different adapter.
-  # Here is an example configuration for Mailgun:
-  #
-  #     config :potok_ide, PotokIde.Mailer,
-  #       adapter: Swoosh.Adapters.Mailgun,
-  #       api_key: System.get_env("MAILGUN_API_KEY"),
-  #       domain: System.get_env("MAILGUN_DOMAIN")
-  #
-  # Most non-SMTP adapters require an API client. Swoosh supports Req, Hackney,
-  # and Finch out-of-the-box. This configuration is typically done at
-  # compile-time in your config/prod.exs:
-  #
-  #     config :swoosh, :api_client, Swoosh.ApiClient.Req
-  #
-  # See https://hexdocs.pm/swoosh/Swoosh.html#module-installation for details.
+  mailgun_api_key =
+    System.get_env("MAILGUN_API_KEY") ||
+      raise "environment variable MAILGUN_API_KEY is missing"
+
+  mailgun_domain =
+    System.get_env("MAILGUN_DOMAIN") ||
+      raise "environment variable MAILGUN_DOMAIN is missing"
+
+  mailer_from_email =
+    System.get_env("MAILER_FROM_EMAIL") ||
+      raise "environment variable MAILER_FROM_EMAIL is missing"
+
+  mailer_config =
+    [
+      adapter: Swoosh.Adapters.Mailgun,
+      api_key: mailgun_api_key,
+      domain: mailgun_domain,
+      from_email: mailer_from_email,
+      from_name: System.get_env("MAILER_FROM_NAME") || "PotokIde"
+    ]
+    |> then(fn config ->
+      case System.get_env("MAILGUN_BASE_URL") do
+        nil -> config
+        "" -> config
+        base_url -> Keyword.put(config, :base_url, base_url)
+      end
+    end)
+
+  config :potok_ide, PotokIde.Mailer, mailer_config
 end

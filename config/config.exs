@@ -42,7 +42,10 @@ config :potok_ide, PotokIdeWeb.Endpoint,
 #
 # For production it's recommended to configure a different adapter
 # at the `config/runtime.exs`.
-config :potok_ide, PotokIde.Mailer, adapter: Swoosh.Adapters.Local
+config :potok_ide, PotokIde.Mailer,
+  adapter: Swoosh.Adapters.Local,
+  from_name: "PotokIde",
+  from_email: "no-reply@example.com"
 
 # Configure esbuild (the version is required)
 config :esbuild,
