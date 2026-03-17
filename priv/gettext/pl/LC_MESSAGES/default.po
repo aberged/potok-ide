@@ -39,6 +39,9 @@ msgstr "Próba ponownego połączenia"
 msgid "Back to Root Group"
 msgstr "Wróć do grupy głównej"
 
+msgid "Back to Parent Group"
+msgstr "Wróć do grupy nadrzędnej"
+
 msgid "Build rich, interactive web applications quickly, with less code and fewer moving parts. Join our growing community of developers using Phoenix to craft APIs, HTML5 apps and more, for fun or at scale."
 msgstr "Twórz bogate, interaktywne aplikacje webowe szybko, z mniejszą ilością kodu i mniejszą liczbą ruchomych elementów. Dołącz do rosnącej społeczności programistów korzystających z Phoenix do tworzenia API, aplikacji HTML5 i nie tylko, hobbystycznie albo na dużą skalę."
 
@@ -107,6 +110,12 @@ msgstr "Bieżący profil:"
 
 msgid "Deploy your application"
 msgstr "Wdróż swoją aplikację"
+
+msgid "Edit"
+msgstr "Edytuj"
+
+msgid "Edit profile"
+msgstr "Edytuj profil"
 
 msgid "Description"
 msgstr "Opis"
@@ -309,6 +318,9 @@ msgstr "URL obrazka profilu"
 msgid "Profile selected."
 msgstr "Profil został wybrany."
 
+msgid "Profile updated."
+msgstr "Profil został zaktualizowany."
+
 msgid "Profiles"
 msgstr "Profile"
 
@@ -317,6 +329,18 @@ msgstr "Publiczna"
 
 msgid "Register"
 msgstr "Zarejestruj się"
+
+msgid "Save changes"
+msgstr "Zapisz zmiany"
+
+msgid "See less"
+msgstr "Pokaż mniej"
+
+msgid "See more"
+msgstr "Pokaż więcej"
+
+msgid "Cancel"
+msgstr "Anuluj"
 
 msgid "Register for an account"
 msgstr "Zarejestruj konto"

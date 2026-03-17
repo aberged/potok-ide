@@ -35,7 +35,7 @@ defmodule PotokIdeWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <main class="px-4 pb-12 pt-6 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 lg:pb-20">
+    <main class="px-4 pb-12 pt-2 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 lg:pb-20">
       <div class="mx-auto w-full max-w-5xl space-y-4">
         {render_slot(@inner_block)}
       </div>
@@ -162,12 +162,14 @@ defmodule PotokIdeWeb.Layouts do
 
   slot :inner_block, required: true
 
+  attr :icon, :string, default: "hero-bars-3"
+
   def header_menu(assigns) do
     ~H"""
     <details class="dropdown dropdown-end">
       <summary class="btn btn-ghost btn-circle list-none border border-base-300 bg-base-100/80 shadow-sm backdrop-blur [&::-webkit-details-marker]:hidden">
         <span class="sr-only">{gettext("Actions")}</span>
-        <.icon name="hero-bars-3" class="size-5" />
+        <.icon name={@icon} class="size-5" />
       </summary>
 
       <div class="dropdown-content z-30 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">

@@ -78,6 +78,19 @@ defmodule PotokIde.Social do
     end
   end
 
+  def update_profile_for_account(%Account{} = account, profile_id, attrs)
+      when is_integer(profile_id) do
+    case get_profile_for_account(account, profile_id) do
+      nil ->
+        {:error, :not_found}
+
+      profile ->
+        profile
+        |> Profile.changeset(attrs)
+        |> Repo.update()
+    end
+  end
+
   def add_profile_to_account(%Profile{} = profile, %Account{} = account) do
     case profile.sharing do
       :shared ->
