@@ -782,3 +782,31 @@ This will trigger a full recompilation in order to re-index your codebase.
 02:28:23.635 [debug] handled notification client -> server textDocument/didClose in 410µs
 
 02:28:43.567 [debug] handled notification client -> server textDocument/didClose in 103µs
+
+10:39:53.966 [debug] handled notification client -> server textDocument/didOpen in 14ms
+
+10:39:53.993 [debug] handled notification client -> server textDocument/didOpen in 2ms
+
+10:39:53.995 [debug] handled notification client -> server textDocument/didOpen in 2ms
+
+10:39:54.070 [debug] handled notification client -> server textDocument/didOpen in 922µs
+
+10:39:54.077 [debug] handled notification client -> server textDocument/didOpen in 1ms
+
+10:39:54.078 [debug] handled notification client -> server textDocument/didOpen in 1ms
+
+10:39:54.079 [debug] handled notification client -> server textDocument/didOpen in 1ms
+
+10:42:53.923 [debug] handled notification client -> server textDocument/didClose in 2ms
+
+10:42:53.980 [debug] handled notification client -> server textDocument/didClose in 103µs
+
+10:42:53.982 [debug] handled notification client -> server textDocument/didClose in 205µs
+
+10:42:54.019 [debug] handled notification client -> server textDocument/didClose in 102µs
+
+10:42:54.030 [debug] handled notification client -> server textDocument/didClose in 307µs
+
+10:42:54.041 [debug] handled notification client -> server textDocument/didClose in 307µs
+
+10:42:54.042 [debug] handled notification client -> server textDocument/didClose in 205µs
