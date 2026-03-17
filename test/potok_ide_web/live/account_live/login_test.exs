@@ -11,6 +11,16 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert html =~ "Log in"
       assert html =~ "Log in with email"
     end
+
+    test "renders login page in polish when locale is stored in session", %{conn: conn} do
+      {:ok, _lv, html} =
+        conn
+        |> init_test_session(%{locale: "pl"})
+        |> live(~p"/accounts/log-in")
+
+      assert html =~ "Zaloguj się"
+      assert html =~ "Zaloguj się przez e-mail"
+    end
   end
 
   describe "account login - magic link" do

@@ -1,5 +1,6 @@
 defmodule PotokIdeWeb.AccountAuth do
   use PotokIdeWeb, :verified_routes
+  use Gettext, backend: PotokIdeWeb.Gettext
 
   import Plug.Conn
   import Phoenix.Controller
@@ -143,10 +144,16 @@ defmodule PotokIdeWeb.AccountAuth do
   defp renew_session(conn, _account) do
     delete_csrf_token()
 
+    locale = get_session(conn, :locale)
+
     conn
     |> configure_session(renew: true)
     |> clear_session()
+    |> maybe_put_locale(locale)
   end
+
+  defp maybe_put_locale(conn, nil), do: conn
+  defp maybe_put_locale(conn, locale), do: put_session(conn, :locale, locale)
 
   defp maybe_write_remember_me_cookie(conn, token, %{"remember_me" => "true"}, _),
     do: write_remember_me_cookie(conn, token)
@@ -223,7 +230,7 @@ defmodule PotokIdeWeb.AccountAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "You must log in to access this page.")
+        |> Phoenix.LiveView.put_flash(:error, gettext("You must log in to access this page."))
         |> Phoenix.LiveView.redirect(to: ~p"/accounts/log-in")
 
       {:halt, socket}
@@ -238,7 +245,10 @@ defmodule PotokIdeWeb.AccountAuth do
     else
       socket =
         socket
-        |> Phoenix.LiveView.put_flash(:error, "You must re-authenticate to access this page.")
+        |> Phoenix.LiveView.put_flash(
+          :error,
+          gettext("You must re-authenticate to access this page.")
+        )
         |> Phoenix.LiveView.redirect(to: ~p"/accounts/log-in")
 
       {:halt, socket}
@@ -272,7 +282,7 @@ defmodule PotokIdeWeb.AccountAuth do
       conn
     else
       conn
-      |> put_flash(:error, "You must log in to access this page.")
+      |> put_flash(:error, gettext("You must log in to access this page."))
       |> maybe_store_return_to()
       |> redirect(to: ~p"/accounts/log-in")
       |> halt()

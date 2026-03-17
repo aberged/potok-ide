@@ -1,6 +1,8 @@
 defmodule PotokIdeWeb.ProfileAuth do
   @moduledoc "LiveView helpers for loading and requiring the current Profile."
 
+  use Gettext, backend: PotokIdeWeb.Gettext
+
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView
 
@@ -27,7 +29,7 @@ defmodule PotokIdeWeb.ProfileAuth do
     else
       {:halt,
        socket
-       |> put_flash(:error, "Please select or create a profile first.")
+       |> put_flash(:error, gettext("Please select or create a profile first."))
        |> redirect(to: "/profiles")}
     end
   end

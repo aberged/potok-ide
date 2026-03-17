@@ -45,17 +45,19 @@ defmodule PotokIdeWeb.Layouts do
       <div class="flex-none">
         <ul class="flex flex-column px-1 space-x-4 items-center">
           <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
+            <a href="https://phoenixframework.org/" class="btn btn-ghost">{gettext("Website")}</a>
           </li>
           <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
+            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">
+              {gettext("GitHub")}
+            </a>
           </li>
           <li>
             <.theme_toggle />
           </li>
           <li>
             <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
+              {gettext("Get Started")} <span aria-hidden="true">&rarr;</span>
             </a>
           </li>
         </ul>
@@ -149,6 +151,41 @@ defmodule PotokIdeWeb.Layouts do
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
     </div>
+    """
+  end
+
+  attr :current_locale, :string, default: nil
+  attr :available_locales, :list, default: PotokIdeWeb.Locale.supported_locales()
+
+  def locale_switcher(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :current_locale,
+        assigns.current_locale || PotokIdeWeb.Locale.default_locale()
+      )
+
+    ~H"""
+    <nav
+      aria-label={gettext("Language selector")}
+      class="flex items-center gap-1 rounded-full border border-base-300 bg-base-200 p-1 shadow-sm"
+    >
+      <%= for locale <- @available_locales do %>
+        <.link
+          href={~p"/locale/#{locale}"}
+          class={[
+            "rounded-full px-3 py-1 text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
+            if(locale == @current_locale,
+              do: "bg-base-100 text-base-content shadow-sm",
+              else: "text-base-content/60 hover:text-base-content"
+            )
+          ]}
+          aria-current={locale == @current_locale && "true"}
+        >
+          {PotokIdeWeb.Locale.locale_name(locale)}
+        </.link>
+      <% end %>
+    </nav>
     """
   end
 end

@@ -78,6 +78,15 @@ defmodule PotokIdeWeb.AccountAuthTest do
       assert max_age == @remember_me_cookie_max_age
     end
 
+    test "preserves locale during session renewal", %{conn: conn, account: account} do
+      conn =
+        conn
+        |> put_session(:locale, "pl")
+        |> AccountAuth.log_in_account(account)
+
+      assert get_session(conn, :locale) == "pl"
+    end
+
     test "redirects to settings when account is already logged in", %{
       conn: conn,
       account: account

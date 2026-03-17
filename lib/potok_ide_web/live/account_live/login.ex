@@ -10,12 +10,12 @@ defmodule PotokIdeWeb.AccountLive.Login do
       <div class="mx-auto max-w-sm space-y-4">
         <div class="text-center">
           <.header>
-            <p>Log in</p>
+            <p>{gettext("Log in")}</p>
             <:subtitle>
               <%= if @current_scope do %>
-                You need to reauthenticate to perform sensitive actions on your account.
+                {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
               <% else %>
-                Enter your email and we'll send you a sign-in link.
+                {gettext("Enter your email and we'll send you a sign-in link.")}
               <% end %>
             </:subtitle>
           </.header>
@@ -24,15 +24,15 @@ defmodule PotokIdeWeb.AccountLive.Login do
         <div :if={local_mail_adapter?()} class="alert alert-info">
           <.icon name="hero-information-circle" class="size-6 shrink-0" />
           <div>
-            <p>You are running the local mail adapter.</p>
+            <p>{gettext("You are running the local mail adapter.")}</p>
             <p>
-              To see sent emails, visit <.link href="/dev/mailbox" class="underline">the mailbox page</.link>.
+              {gettext("To see sent emails, visit")}
+              <.link href="/dev/mailbox" class="underline">{gettext("the mailbox page")}</.link>.
             </p>
           </div>
         </div>
 
         <.form
-          :let={f}
           for={@form}
           id="login_form_magic"
           action={~p"/accounts/log-in"}
@@ -40,16 +40,17 @@ defmodule PotokIdeWeb.AccountLive.Login do
         >
           <.input
             readonly={!!@current_scope}
-            field={f[:email]}
+            field={@form[:email]}
+            id="login_form_magic_email"
             type="email"
-            label="Email"
+            label={gettext("Email")}
             autocomplete="username"
             spellcheck="false"
             required
             phx-mounted={JS.focus()}
           />
           <.button class="btn btn-primary w-full">
-            Log in with email <span aria-hidden="true">→</span>
+            {gettext("Log in with email")} <span aria-hidden="true">→</span>
           </.button>
         </.form>
       </div>
@@ -77,7 +78,9 @@ defmodule PotokIdeWeb.AccountLive.Login do
     end
 
     info =
-      "If your email is in our system, you will receive instructions for logging in shortly."
+      gettext(
+        "If your email is in our system, you will receive instructions for logging in shortly."
+      )
 
     {:noreply,
      socket

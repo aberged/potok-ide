@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.Router do
     plug :put_root_layout, html: {PotokIdeWeb.Layouts, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
+    plug PotokIdeWeb.Locale, :put_locale
     plug :fetch_current_scope_for_account
   end
 
@@ -20,6 +21,7 @@ defmodule PotokIdeWeb.Router do
   scope "/", PotokIdeWeb do
     pipe_through :browser
 
+    get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
   end
 
@@ -52,6 +54,7 @@ defmodule PotokIdeWeb.Router do
 
     live_session :authenticated,
       on_mount: [
+        {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :require_authenticated},
         {PotokIdeWeb.ProfileAuth, :mount_current_profile}
       ] do
@@ -60,6 +63,7 @@ defmodule PotokIdeWeb.Router do
 
     live_session :profile_required,
       on_mount: [
+        {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :require_authenticated},
         {PotokIdeWeb.ProfileAuth, :mount_current_profile},
         {PotokIdeWeb.ProfileAuth, :require_profile}
@@ -70,7 +74,10 @@ defmodule PotokIdeWeb.Router do
     end
 
     live_session :require_authenticated_account,
-      on_mount: [{PotokIdeWeb.AccountAuth, :require_authenticated}] do
+      on_mount: [
+        {PotokIdeWeb.Locale, :mount_locale},
+        {PotokIdeWeb.AccountAuth, :require_authenticated}
+      ] do
       live "/accounts/settings", AccountLive.Settings, :edit
       live "/accounts/settings/confirm-email/:token", AccountLive.Settings, :confirm_email
     end
@@ -82,7 +89,10 @@ defmodule PotokIdeWeb.Router do
     pipe_through [:browser]
 
     live_session :current_account,
-      on_mount: [{PotokIdeWeb.AccountAuth, :mount_current_scope}] do
+      on_mount: [
+        {PotokIdeWeb.Locale, :mount_locale},
+        {PotokIdeWeb.AccountAuth, :mount_current_scope}
+      ] do
       live "/accounts/register", AccountLive.Registration, :new
       live "/accounts/log-in", AccountLive.Login, :new
       live "/accounts/log-in/:token", AccountLive.Confirmation, :new

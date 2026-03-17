@@ -1,0 +1,457 @@
+msgid ""
+msgstr ""
+"Language: pl\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+msgid "(none)"
+msgstr "(brak)"
+
+msgid "A link to confirm your email change has been sent to the new address."
+msgstr "Link potwierdzający zmianę adresu e-mail został wysłany na nowy adres."
+
+msgid "Accept"
+msgstr "Akceptuj"
+
+msgid "Account Settings"
+msgstr "Ustawienia konta"
+
+msgid "Account confirmed successfully."
+msgstr "Konto zostało pomyślnie potwierdzone."
+
+msgid "Actions"
+msgstr "Akcje"
+
+msgid "Active"
+msgstr "Aktywny"
+
+msgid "Already registered?"
+msgstr "Masz już konto?"
+
+msgid "An email was sent to %{email}, please access it to confirm your account."
+msgstr "Wiadomość została wysłana na %{email}. Otwórz ją, aby potwierdzić konto."
+
+msgid "An invitation is already pending."
+msgstr "Zaproszenie już oczekuje."
+
+msgid "Attempting to reconnect"
+msgstr "Próba ponownego połączenia"
+
+msgid "Back to Root Group"
+msgstr "Wróć do grupy głównej"
+
+msgid "Build rich, interactive web applications quickly, with less code and fewer moving parts. Join our growing community of developers using Phoenix to craft APIs, HTML5 apps and more, for fun or at scale."
+msgstr "Twórz bogate, interaktywne aplikacje webowe szybko, z mniejszą ilością kodu i mniejszą liczbą ruchomych elementów. Dołącz do rosnącej społeczności programistów korzystających z Phoenix do tworzenia API, aplikacji HTML5 i nie tylko, hobbystycznie albo na dużą skalę."
+
+msgid "Change Email"
+msgstr "Zmień e-mail"
+
+msgid "Changelog"
+msgstr "Dziennik zmian"
+
+msgid "Changing..."
+msgstr "Zmienianie..."
+
+msgid "Confirm and log in only this time"
+msgstr "Potwierdź i zaloguj się tylko tym razem"
+
+msgid "Confirm and stay logged in"
+msgstr "Potwierdź i pozostań zalogowany"
+
+msgid "Confirm new password"
+msgstr "Potwierdź nowe hasło"
+
+msgid "Confirmation instructions"
+msgstr "Instrukcje potwierdzenia"
+
+msgid "Confirming..."
+msgstr "Potwierdzanie..."
+
+msgid "Content"
+msgstr "Treść"
+
+msgid "Could not accept invitation."
+msgstr "Nie udało się zaakceptować zaproszenia."
+
+msgid "Could not create group."
+msgstr "Nie udało się utworzyć grupy."
+
+msgid "Could not create value."
+msgstr "Nie udało się utworzyć wartości."
+
+msgid "Could not send invitation."
+msgstr "Nie udało się wysłać zaproszenia."
+
+msgid "Create"
+msgstr "Utwórz"
+
+msgid "Create an account"
+msgstr "Utwórz konto"
+
+msgid "Create profile"
+msgstr "Utwórz profil"
+
+msgid "Create sub-group"
+msgstr "Utwórz podgrupę"
+
+msgid "Create value"
+msgstr "Utwórz wartość"
+
+msgid "Creating account..."
+msgstr "Tworzenie konta..."
+
+msgid "Creating..."
+msgstr "Tworzenie..."
+
+msgid "Current profile:"
+msgstr "Bieżący profil:"
+
+msgid "Deploy your application"
+msgstr "Wdróż swoją aplikację"
+
+msgid "Description"
+msgstr "Opis"
+
+msgid "Description format"
+msgstr "Format opisu"
+
+msgid "Discuss on the Elixir Forum"
+msgstr "Dyskutuj na forum Elixira"
+
+msgid "Email"
+msgstr "E-mail"
+
+msgid "Email change link is invalid or it has expired."
+msgstr "Link do zmiany adresu e-mail jest nieprawidłowy lub wygasł."
+
+msgid "Email changed successfully."
+msgstr "Adres e-mail został pomyślnie zmieniony."
+
+msgid "Enter your email and we'll send you a sign-in link."
+msgstr "Podaj swój adres e-mail, a wyślemy Ci link do logowania."
+
+msgid "Format"
+msgstr "Format"
+
+msgid "Get Started"
+msgstr "Zacznij"
+
+msgid "GitHub"
+msgstr "GitHub"
+
+msgid "Go to Root Group"
+msgstr "Przejdź do grupy głównej"
+
+msgid "Group"
+msgstr "Grupa"
+
+msgid "Group created."
+msgstr "Grupa została utworzona."
+
+msgid "Groups"
+msgstr "Grupy"
+
+msgid "Guides & Docs"
+msgstr "Przewodniki i dokumentacja"
+
+msgid "HTML"
+msgstr "HTML"
+
+msgid "Hi %{email},"
+msgstr "Cześć %{email},"
+
+msgid "If you didn't create an account with us, please ignore this."
+msgstr "Jeśli nie zakładałeś u nas konta, zignoruj tę wiadomość."
+
+msgid "If you didn't request this change, please ignore this."
+msgstr "Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość."
+
+msgid "If you didn't request this email, please ignore this."
+msgstr "Jeśli nie prosiłeś o tę wiadomość, zignoruj ją."
+
+msgid "If your email is in our system, you will receive instructions for logging in shortly."
+msgstr "Jeśli Twój adres e-mail znajduje się w naszym systemie, wkrótce otrzymasz instrukcje logowania."
+
+msgid "Invalid email or password"
+msgstr "Nieprawidłowy adres e-mail lub hasło"
+
+msgid "Invitation accepted."
+msgstr "Zaproszenie zostało zaakceptowane."
+
+msgid "Invitation not found (or already accepted)."
+msgstr "Nie znaleziono zaproszenia lub zostało już zaakceptowane."
+
+msgid "Invitation sent."
+msgstr "Zaproszenie zostało wysłane."
+
+msgid "Invitations"
+msgstr "Zaproszenia"
+
+msgid "Invite"
+msgstr "Zaproś"
+
+msgid "Invite profile"
+msgstr "Zaproś profil"
+
+msgid "Invited by:"
+msgstr "Zaprosił:"
+
+msgid "Invitee username"
+msgstr "Nazwa użytkownika zapraszanego"
+
+msgid "Invitees accept invitations at"
+msgstr "Zaproszeni akceptują zaproszenia pod adresem"
+
+msgid "Inviting..."
+msgstr "Zapraszanie..."
+
+msgid "Join our Discord server"
+msgstr "Dołącz do naszego serwera Discord"
+
+msgid "Join us on Slack"
+msgstr "Dołącz do nas na Slacku"
+
+msgid "Keep me logged in on this device"
+msgstr "Pozostaw mnie zalogowanym na tym urządzeniu"
+
+msgid "Language selector"
+msgstr "Wybór języka"
+
+msgid "Log in"
+msgstr "Zaloguj się"
+
+msgid "Log in instructions"
+msgstr "Instrukcje logowania"
+
+msgid "Log in with email"
+msgstr "Zaloguj się przez e-mail"
+
+msgid "Log me in only this time"
+msgstr "Zaloguj mnie tylko tym razem"
+
+msgid "Log out"
+msgstr "Wyloguj się"
+
+msgid "Logged out successfully."
+msgstr "Wylogowano pomyślnie."
+
+msgid "Logging in..."
+msgstr "Logowanie..."
+
+msgid "Magic link is invalid or it has expired."
+msgstr "Link magiczny jest nieprawidłowy lub wygasł."
+
+msgid "Manage your account email address and password settings"
+msgstr "Zarządzaj adresem e-mail i ustawieniami hasła swojego konta"
+
+msgid "Markdown"
+msgstr "Markdown"
+
+msgid "Members"
+msgstr "Członkowie"
+
+msgid "Name"
+msgstr "Nazwa"
+
+msgid "New password"
+msgstr "Nowe hasło"
+
+msgid "No members."
+msgstr "Brak członków."
+
+msgid "No pending invitations."
+msgstr "Brak oczekujących zaproszeń."
+
+msgid "No profile found with that username."
+msgstr "Nie znaleziono profilu o tej nazwie użytkownika."
+
+msgid "No profiles yet."
+msgstr "Brak profili."
+
+msgid "No sub-groups yet."
+msgstr "Brak podgrup."
+
+msgid "No values yet."
+msgstr "Brak wartości."
+
+msgid "Parent value (optional)"
+msgstr "Wartość nadrzędna (opcjonalnie)"
+
+msgid "Password updated successfully!"
+msgstr "Hasło zostało pomyślnie zaktualizowane!"
+
+msgid "Peace of mind from prototype to production."
+msgstr "Spokój od prototypu do produkcji."
+
+msgid "Pending group invitations for your current profile."
+msgstr "Oczekujące zaproszenia do grup dla bieżącego profilu."
+
+msgid "Phoenix Framework"
+msgstr "Phoenix Framework"
+
+msgid "Pick the profile you want to use, or create a new one."
+msgstr "Wybierz profil, którego chcesz używać, albo utwórz nowy."
+
+msgid "Please select or create a profile first."
+msgstr "Najpierw wybierz albo utwórz profil."
+
+msgid "Post"
+msgstr "Opublikuj"
+
+msgid "Posting..."
+msgstr "Publikowanie..."
+
+msgid "Profile created."
+msgstr "Profil został utworzony."
+
+msgid "Profile picture URL"
+msgstr "URL obrazka profilu"
+
+msgid "Profile selected."
+msgstr "Profil został wybrany."
+
+msgid "Profiles"
+msgstr "Profile"
+
+msgid "Public"
+msgstr "Publiczna"
+
+msgid "Register"
+msgstr "Zarejestruj się"
+
+msgid "Register for an account"
+msgstr "Zarejestruj konto"
+
+msgid "Reply to value (optional)"
+msgstr "Odpowiedź na wartość (opcjonalnie)"
+
+msgid "Root Group"
+msgstr "Grupa główna"
+
+msgid "Save Password"
+msgstr "Zapisz hasło"
+
+msgid "Saving..."
+msgstr "Zapisywanie..."
+
+msgid "Settings"
+msgstr "Ustawienia"
+
+msgid "Shared"
+msgstr "Współdzielony"
+
+msgid "Sharing"
+msgstr "Udostępnianie"
+
+msgid "Something went wrong!"
+msgstr "Coś poszło nie tak!"
+
+msgid "Source Code"
+msgstr "Kod źródłowy"
+
+msgid "Sub-groups"
+msgstr "Podgrupy"
+
+msgid "That profile is not available for this account."
+msgstr "Ten profil nie jest dostępny dla tego konta."
+
+msgid "The link is invalid or it has expired."
+msgstr "Link jest nieprawidłowy lub wygasł."
+
+msgid "Tip: If you prefer passwords, you can enable them in the account settings."
+msgstr "Wskazówka: jeśli wolisz hasła, możesz włączyć je w ustawieniach konta."
+
+msgid "To see sent emails, visit"
+msgstr "Aby zobaczyć wysłane e-maile, odwiedź"
+
+msgid "Unique"
+msgstr "Unikalny"
+
+msgid "Update email instructions"
+msgstr "Instrukcje zmiany adresu e-mail"
+
+msgid "Use"
+msgstr "Użyj"
+
+msgid "Username"
+msgstr "Nazwa użytkownika"
+
+msgid "Username is required."
+msgstr "Nazwa użytkownika jest wymagana."
+
+msgid "Value posted."
+msgstr "Wartość została opublikowana."
+
+msgid "Values"
+msgstr "Wartości"
+
+msgid "We can't find the internet"
+msgstr "Nie możemy połączyć się z internetem"
+
+msgid "Website"
+msgstr "Strona"
+
+msgid "Welcome %{email}"
+msgstr "Witaj, %{email}"
+
+msgid "Welcome back!"
+msgstr "Witaj ponownie!"
+
+msgid "You are running the local mail adapter."
+msgstr "Korzystasz z lokalnego adaptera poczty."
+
+msgid "You can change your email by visiting the URL below:"
+msgstr "Możesz zmienić adres e-mail, odwiedzając poniższy adres URL:"
+
+msgid "You can confirm your account by visiting the URL below:"
+msgstr "Możesz potwierdzić konto, odwiedzając poniższy adres URL:"
+
+msgid "You can log into your account by visiting the URL below:"
+msgstr "Możesz zalogować się na swoje konto, odwiedzając poniższy adres URL:"
+
+msgid "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+msgstr "Możesz przeglądać tę grupę, ale aby publikować wartości, zapraszać członków lub tworzyć podgrupy, musisz być jej członkiem."
+
+msgid "You cannot invite yourself."
+msgstr "Nie możesz zaprosić samego siebie."
+
+msgid "You do not have access to that group."
+msgstr "Nie masz dostępu do tej grupy."
+
+msgid "You must be a group member to create sub-groups."
+msgstr "Aby tworzyć podgrupy, musisz być członkiem grupy."
+
+msgid "You must be a group member to post values."
+msgstr "Aby publikować wartości, musisz być członkiem grupy."
+
+msgid "You must be a member to invite."
+msgstr "Musisz być członkiem, aby zapraszać."
+
+msgid "You must log in to access this page."
+msgstr "Musisz się zalogować, aby uzyskać dostęp do tej strony."
+
+msgid "You must re-authenticate to access this page."
+msgstr "Musisz ponownie się uwierzytelnić, aby uzyskać dostęp do tej strony."
+
+msgid "You need to reauthenticate to perform sensitive actions on your account."
+msgstr "Aby wykonać wrażliwe działania na koncie, musisz ponownie się uwierzytelnić."
+
+msgid "Your profiles"
+msgstr "Twoje profile"
+
+msgid "close"
+msgstr "zamknij"
+
+msgid "private"
+msgstr "prywatna"
+
+msgid "public"
+msgstr "publiczna"
+
+msgid "the mailbox page"
+msgstr "stronę skrzynki pocztowej"
+
+msgid "to your account now."
+msgstr "na swoje konto."
+
+msgid "· reply/forward"
+msgstr "· odpowiedź/przekazanie"

@@ -5,11 +5,11 @@ defmodule PotokIdeWeb.AccountSessionController do
   alias PotokIdeWeb.AccountAuth
 
   def create(conn, %{"_action" => "confirmed"} = params) do
-    create(conn, params, "Account confirmed successfully.")
+    create(conn, params, gettext("Account confirmed successfully."))
   end
 
   def create(conn, params) do
-    create(conn, params, "Welcome back!")
+    create(conn, params, gettext("Welcome back!"))
   end
 
   # magic link login
@@ -24,7 +24,7 @@ defmodule PotokIdeWeb.AccountSessionController do
 
       _ ->
         conn
-        |> put_flash(:error, "The link is invalid or it has expired.")
+        |> put_flash(:error, gettext("The link is invalid or it has expired."))
         |> redirect(to: ~p"/accounts/log-in")
     end
   end
@@ -40,7 +40,7 @@ defmodule PotokIdeWeb.AccountSessionController do
     else
       # In order to prevent user enumeration attacks, don't disclose whether the email is registered.
       conn
-      |> put_flash(:error, "Invalid email or password")
+      |> put_flash(:error, gettext("Invalid email or password"))
       |> put_flash(:email, String.slice(email, 0, 160))
       |> redirect(to: ~p"/accounts/log-in")
     end
@@ -56,12 +56,12 @@ defmodule PotokIdeWeb.AccountSessionController do
 
     conn
     |> put_session(:account_return_to, ~p"/accounts/settings")
-    |> create(params, "Password updated successfully!")
+    |> create(params, gettext("Password updated successfully!"))
   end
 
   def delete(conn, _params) do
     conn
-    |> put_flash(:info, "Logged out successfully.")
+    |> put_flash(:info, gettext("Logged out successfully."))
     |> AccountAuth.log_out_account()
   end
 end

@@ -1,0 +1,112 @@
+msgid ""
+msgstr ""
+"Language: pl\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
+
+msgid "can't be blank"
+msgstr "nie może być puste"
+
+msgid "has already been taken"
+msgstr "jest już zajęte"
+
+msgid "is invalid"
+msgstr "jest nieprawidłowe"
+
+msgid "must be accepted"
+msgstr "musi zostać zaakceptowane"
+
+msgid "has invalid format"
+msgstr "ma nieprawidłowy format"
+
+msgid "has an invalid entry"
+msgstr "zawiera nieprawidłową wartość"
+
+msgid "is reserved"
+msgstr "jest zastrzeżone"
+
+msgid "does not match confirmation"
+msgstr "nie zgadza się z potwierdzeniem"
+
+msgid "is still associated with this entry"
+msgstr "jest nadal powiązane z tym wpisem"
+
+msgid "are still associated with this entry"
+msgstr "są nadal powiązane z tym wpisem"
+
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "powinno mieć %{count} element"
+msgstr[1] "powinno mieć %{count} elementy"
+msgstr[2] "powinno mieć %{count} elementów"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "powinno mieć %{count} znak"
+msgstr[1] "powinno mieć %{count} znaki"
+msgstr[2] "powinno mieć %{count} znaków"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "powinno mieć %{count} bajt"
+msgstr[1] "powinno mieć %{count} bajty"
+msgstr[2] "powinno mieć %{count} bajtów"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "powinno mieć co najmniej %{count} element"
+msgstr[1] "powinno mieć co najmniej %{count} elementy"
+msgstr[2] "powinno mieć co najmniej %{count} elementów"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "powinno mieć co najmniej %{count} znak"
+msgstr[1] "powinno mieć co najmniej %{count} znaki"
+msgstr[2] "powinno mieć co najmniej %{count} znaków"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "powinno mieć co najmniej %{count} bajt"
+msgstr[1] "powinno mieć co najmniej %{count} bajty"
+msgstr[2] "powinno mieć co najmniej %{count} bajtów"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "powinno mieć najwyżej %{count} element"
+msgstr[1] "powinno mieć najwyżej %{count} elementy"
+msgstr[2] "powinno mieć najwyżej %{count} elementów"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "powinno mieć najwyżej %{count} znak"
+msgstr[1] "powinno mieć najwyżej %{count} znaki"
+msgstr[2] "powinno mieć najwyżej %{count} znaków"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "powinno mieć najwyżej %{count} bajt"
+msgstr[1] "powinno mieć najwyżej %{count} bajty"
+msgstr[2] "powinno mieć najwyżej %{count} bajtów"
+
+msgid "must be less than %{number}"
+msgstr "musi być mniejsze niż %{number}"
+
+msgid "must be greater than %{number}"
+msgstr "musi być większe niż %{number}"
+
+msgid "must be less than or equal to %{number}"
+msgstr "musi być mniejsze lub równe %{number}"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "musi być większe lub równe %{number}"
+
+msgid "must be equal to %{number}"
+msgstr "musi być równe %{number}"
+
+msgid "must have the @ sign and no spaces"
+msgstr "musi zawierać znak @ i nie może zawierać spacji"
+
+msgid "did not change"
+msgstr "nie uległ zmianie"
+
+msgid "does not match password"
+msgstr "nie jest zgodne z hasłem"

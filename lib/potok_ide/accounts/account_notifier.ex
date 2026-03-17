@@ -1,4 +1,6 @@
 defmodule PotokIde.Accounts.AccountNotifier do
+  use Gettext, backend: PotokIdeWeb.Gettext
+
   import Swoosh.Email
 
   alias PotokIde.Mailer
@@ -22,17 +24,17 @@ defmodule PotokIde.Accounts.AccountNotifier do
   Deliver instructions to update a account email.
   """
   def deliver_update_email_instructions(account, url) do
-    deliver(account.email, "Update email instructions", """
+    deliver(account.email, gettext("Update email instructions"), """
 
     ==============================
 
-    Hi #{account.email},
+    #{gettext("Hi %{email},", email: account.email)}
 
-    You can change your email by visiting the URL below:
+    #{gettext("You can change your email by visiting the URL below:")}
 
     #{url}
 
-    If you didn't request this change, please ignore this.
+    #{gettext("If you didn't request this change, please ignore this.")}
 
     ==============================
     """)
@@ -49,34 +51,34 @@ defmodule PotokIde.Accounts.AccountNotifier do
   end
 
   defp deliver_magic_link_instructions(account, url) do
-    deliver(account.email, "Log in instructions", """
+    deliver(account.email, gettext("Log in instructions"), """
 
     ==============================
 
-    Hi #{account.email},
+    #{gettext("Hi %{email},", email: account.email)}
 
-    You can log into your account by visiting the URL below:
+    #{gettext("You can log into your account by visiting the URL below:")}
 
     #{url}
 
-    If you didn't request this email, please ignore this.
+    #{gettext("If you didn't request this email, please ignore this.")}
 
     ==============================
     """)
   end
 
   defp deliver_confirmation_instructions(account, url) do
-    deliver(account.email, "Confirmation instructions", """
+    deliver(account.email, gettext("Confirmation instructions"), """
 
     ==============================
 
-    Hi #{account.email},
+    #{gettext("Hi %{email},", email: account.email)}
 
-    You can confirm your account by visiting the URL below:
+    #{gettext("You can confirm your account by visiting the URL below:")}
 
     #{url}
 
-    If you didn't create an account with us, please ignore this.
+    #{gettext("If you didn't create an account with us, please ignore this.")}
 
     ==============================
     """)
