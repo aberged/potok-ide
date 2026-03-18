@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Social
   alias PotokIde.Social.{Group, Value}
+  alias PotokIdeWeb.ProfileAuth
 
   @impl true
   def render(assigns) do
@@ -76,101 +77,105 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
           <div class="flex min-h-0 flex-1 flex-col gap-2 pb-1">
-          <div :if={!@is_member} class="alert">
-            <.icon name="hero-lock-closed" class="size-5 shrink-0" />
-            <div>
-              {gettext(
-                "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
-              )}
-            </div>
-          </div>
-
-          <div :if={@active_tab == "sub_groups"} id="group-panel-sub-groups" class="card bg-base-200">
-            <div class="card-body">
-              <h3 class="card-title">{gettext("Sub-groups")}</h3>
-
-              <div :if={@children == []} class="text-base-content/70">
-                {gettext("No sub-groups yet.")}
+            <div :if={!@is_member} class="alert">
+              <.icon name="hero-lock-closed" class="size-5 shrink-0" />
+              <div>
+                {gettext(
+                  "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+                )}
               </div>
-
-              <ul :if={@children != []} class="space-y-2">
-                <li :for={g <- @children}>
-                  <.link navigate={~p"/groups/#{g.id}"} class="link link-hover">{g.name}</.link>
-                  <span class="text-xs text-base-content/60">
-                    ({if g.is_public, do: gettext("public"), else: gettext("private")})
-                  </span>
-                </li>
-              </ul>
             </div>
-          </div>
 
-          <div :if={@active_tab == "members"} id="group-panel-members" class="card bg-base-200">
-            <div class="card-body">
-              <h3 class="card-title">{gettext("Members")}</h3>
+            <div
+              :if={@active_tab == "sub_groups"}
+              id="group-panel-sub-groups"
+              class="card bg-base-200"
+            >
+              <div class="card-body">
+                <h3 class="card-title">{gettext("Sub-groups")}</h3>
 
-              <div :if={@members == []} class="text-base-content/70">{gettext("No members.")}</div>
-
-              <ul :if={@members != []} class="space-y-2">
-                <li :for={m <- @members}>
-                  <.profile_identity profile={m} />
-                </li>
-              </ul>
-            </div>
-          </div>
-
-          <div
-            :if={@active_tab == "values"}
-            id="group-panel-values"
-            class="card flex min-h-0 flex-1 bg-base-200 shadow-sm"
-          >
-            <div class="flex min-h-0 flex-1 flex-col">
-              <div
-                id="group-values-feed"
-                phx-hook=".ValuesFeed"
-                class="flex flex-1 flex-col rev gap-4 overflow-y-auto px-4 py-5 sm:px-6"
-              >
-                <div
-                  :if={@values == []}
-                  class="flex h-full min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
-                >
-                  {gettext("No values yet. Start the conversation below.")}
+                <div :if={@children == []} class="text-base-content/70">
+                  {gettext("No sub-groups yet.")}
                 </div>
 
-                <.value_message
-                  :for={v <- @values}
-                  value={v}
-                  current_profile={@current_profile}
-                  expanded_value_ids={@expanded_value_ids}
-                />
+                <ul :if={@children != []} class="space-y-2">
+                  <li :for={g <- @children}>
+                    <.link navigate={~p"/groups/#{g.id}"} class="link link-hover">{g.name}</.link>
+                    <span class="text-xs text-base-content/60">
+                      ({if g.is_public, do: gettext("public"), else: gettext("private")})
+                    </span>
+                  </li>
+                </ul>
               </div>
+            </div>
 
-              <div
-                :if={@is_member}
-                class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
-              >
-                <.form
-                  for={@new_value_form}
-                  id="group-value-form"
-                  class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
-                  phx-change="validate_value"
-                  phx-submit="create_value"
+            <div :if={@active_tab == "members"} id="group-panel-members" class="card bg-base-200">
+              <div class="card-body">
+                <h3 class="card-title">{gettext("Members")}</h3>
+
+                <div :if={@members == []} class="text-base-content/70">{gettext("No members.")}</div>
+
+                <ul :if={@members != []} class="space-y-2">
+                  <li :for={m <- @members}>
+                    <.profile_identity profile={m} />
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div
+              :if={@active_tab == "values"}
+              id="group-panel-values"
+              class="card flex min-h-0 flex-1 bg-base-200 shadow-sm"
+            >
+              <div class="flex min-h-0 flex-1 flex-col">
+                <div
+                  id="group-values-feed"
+                  phx-hook=".ValuesFeed"
+                  class="flex flex-1 flex-col rev gap-4 overflow-y-auto px-4 py-5 sm:px-6"
                 >
-                  <.input
-                    field={@new_value_form[:content]}
-                    id="group-value-content"
-                    aria-label={gettext("Value")}
-                    class="min-h-24 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-sm leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-                    placeholder={gettext("Write a value...")}
-                    rows="1"
-                    type="textarea"
-                    phx-hook=".SubmitOnEnter"
-                    required
-                  />
+                  <div
+                    :if={@values == []}
+                    class="flex h-full min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+                  >
+                    {gettext("No values yet. Start the conversation below.")}
+                  </div>
 
-                  <%!-- <div class="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-base-300/70 pt-3"> --%>
+                  <.value_message
+                    :for={v <- @values}
+                    value={v}
+                    current_profile={@current_profile}
+                    expanded_value_ids={@expanded_value_ids}
+                  />
+                </div>
+
+                <div
+                  :if={@is_member}
+                  class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
+                >
+                  <.form
+                    for={@new_value_form}
+                    id="group-value-form"
+                    class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
+                    phx-change="validate_value"
+                    phx-submit="create_value"
+                  >
+                    <.input
+                      field={@new_value_form[:content]}
+                      id="group-value-content"
+                      aria-label={gettext("Value")}
+                      class="min-h-24 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-sm leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+                      placeholder={gettext("Write a value...")}
+                      rows="1"
+                      type="textarea"
+                      phx-hook=".SubmitOnEnter"
+                      required
+                    />
+
+                    <%!-- <div class="flex flex-row flex-wrap items-center justify-between gap-3 border-t border-base-300/70 pt-3"> --%>
                     <%!-- <div class="flex min-w-0 flex-1 flex-row flex-wrap items-center gap-3"> --%>
-                      <%!-- TODO:/ markdown/html reply... --%>
-                      <%!-- <div class="w-full sm:w-auto sm:min-w-40">
+                    <%!-- TODO:/ markdown/html reply... --%>
+                    <%!-- <div class="w-full sm:w-auto sm:min-w-40">
                         <div
                           aria-label={gettext("Format")}
                           class="inline-flex rounded-full border border-base-300 bg-base-200 p-1 shadow-sm"
@@ -219,10 +224,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
                           </label>
                         </div>
                       </div> --%>
-                      <%!-- <p class="text-xs text-base-content/55">
+                    <%!-- <p class="text-xs text-base-content/55">
                         {gettext("Press Enter to send. Use Shift+Enter for a new line.")}
                       </p> --%>
-                      <%!-- <.input
+                    <%!-- <.input
                         field={@new_value_form[:parent_id]}
                         id="group-value-parent"
                         label={gettext("Reply to value")}
@@ -238,139 +243,147 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     >
                       <.icon name="hero-paper-airplane" class="size-4" />
                     </.button>
-                  <%!-- </div> --%>
-                </.form>
-              </div>
+                    <%!-- </div> --%>
+                  </.form>
+                </div>
 
-              <div
-                :if={!@is_member}
-                class="border-t border-base-300/70 bg-base-100/70 px-4 py-4 text-sm text-base-content/60 sm:px-6"
-              >
-                {gettext("Join this group to reply and post new values.")}
-              </div>
+                <div
+                  :if={!@is_member}
+                  class="border-t border-base-300/70 bg-base-100/70 px-4 py-4 text-sm text-base-content/60 sm:px-6"
+                >
+                  {gettext("Join this group to reply and post new values.")}
+                </div>
 
-              <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
-                export default {
-                  mounted() {
-                    this.pendingScroll = false
-
-                    this.handleEvent("scroll_values_to_latest", () => {
-                      this.pendingScroll = true
-                    })
-                  },
-
-                  updated() {
-                    requestAnimationFrame(() => {
-                      this.scrollToLatest()
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
+                  export default {
+                    mounted() {
                       this.pendingScroll = false
-                    })
-                  },
 
-                  scrollToLatest() {
-                    if (this.el.classList.contains("flex-col rev")) {
-                      console.log("Scrolling to top (flex-col rev)", this.el.scrollHeight)
-                      this.el.scrollTop = this.el.scrollHeight
-                      return
-                    }
-                    console.log("Scrolling to bottom this.el: ", this.el.scrollHeight)
-                    this.el.scrollTop = this.el.scrollHeight
-                  },
-                }
-              </script>
+                      this.handleEvent("scroll_values_to_latest", () => {
+                        this.pendingScroll = true
+                      })
+                    },
 
-              <script :type={Phoenix.LiveView.ColocatedHook} name=".SubmitOnEnter">
-                export default {
-                  mounted() {
-                    this.handleInput = () => this.autoResize()
-                    this.handleKeydown = (event) => {
-                      if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+                    updated() {
+                      requestAnimationFrame(() => {
+                        this.scrollToLatest()
+                        this.pendingScroll = false
+                      })
+                    },
+
+                    scrollToLatest() {
+                      if (this.el.classList.contains("flex-col rev")) {
+                        console.log("Scrolling to top (flex-col rev)", this.el.scrollHeight)
+                        this.el.scrollTop = this.el.scrollHeight
                         return
                       }
+                      console.log("Scrolling to bottom this.el: ", this.el.scrollHeight)
+                      this.el.scrollTop = this.el.scrollHeight
+                    },
+                  }
+                </script>
 
-                      event.preventDefault()
-                      this.el.form?.requestSubmit()
-                    }
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".SubmitOnEnter">
+                  export default {
+                    mounted() {
+                      this.handleInput = () => this.autoResize()
+                      this.handleKeydown = (event) => {
+                        if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+                          return
+                        }
 
-                    this.el.addEventListener("input", this.handleInput)
-                    this.el.addEventListener("keydown", this.handleKeydown)
-                    this.autoResize()
-                  },
+                        event.preventDefault()
+                        this.el.form?.requestSubmit()
+                      }
 
-                  updated() {
-                    this.autoResize()
-                  },
+                      this.el.addEventListener("input", this.handleInput)
+                      this.el.addEventListener("keydown", this.handleKeydown)
+                      this.autoResize()
+                    },
 
-                  destroyed() {
-                    this.el.removeEventListener("input", this.handleInput)
-                    this.el.removeEventListener("keydown", this.handleKeydown)
-                  },
+                    updated() {
+                      this.autoResize()
+                    },
 
-                  autoResize() {
-                    this.el.style.height = "auto"
-                    this.el.style.height = `${this.el.scrollHeight}px`
-                  },
-                }
-              </script>
-            </div>
-          </div>
+                    destroyed() {
+                      this.el.removeEventListener("input", this.handleInput)
+                      this.el.removeEventListener("keydown", this.handleKeydown)
+                    },
 
-          <div
-            :if={@is_member and @active_tab == "create_group"}
-            id="group-panel-create-group"
-            class="card bg-base-200"
-          >
-            <div class="card-body">
-              <h3 class="card-title">{gettext("Create sub-group")}</h3>
-
-              <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
-                <.input field={@new_group_form[:name]} label={gettext("Name")} required />
-                <.input
-                  field={@new_group_form[:description_format]}
-                  label={gettext("Format")}
-                  type="select"
-                  options={@format_options}
-                />
-                <.input
-                  field={@new_group_form[:description]}
-                  label={gettext("Description")}
-                  type="textarea"
-                />
-                <.input field={@new_group_form[:is_public]} label={gettext("Public")} type="checkbox" />
-                <.input
-                  field={@new_group_form[:parent_value_id]}
-                  label={gettext("Reply to value (optional)")}
-                  type="select"
-                  prompt={gettext("(none)")}
-                  options={@value_parent_options}
-                />
-                <.button phx-disable-with={gettext("Creating...")} variant="primary">
-                  {gettext("Create")}
-                </.button>
-              </.form>
-            </div>
-          </div>
-
-          <div
-            :if={@is_member and @active_tab == "invite_profile"}
-            id="group-panel-invite-profile"
-            class="card bg-base-200"
-          >
-            <div class="card-body">
-              <h3 class="card-title">{gettext("Invite profile")}</h3>
-
-              <.form for={@invite_form} phx-submit="invite">
-                <.input field={@invite_form[:username]} label={gettext("Invitee username")} required />
-                <.button phx-disable-with={gettext("Inviting...")} variant="primary">
-                  {gettext("Invite")}
-                </.button>
-              </.form>
-
-              <div class="mt-2 text-xs text-base-content/60">
-                {gettext("Invitees accept invitations at")}
-                <.link navigate={~p"/invitations"} class="link">/invitations</.link>.
+                    autoResize() {
+                      this.el.style.height = "auto"
+                      this.el.style.height = `${this.el.scrollHeight}px`
+                    },
+                  }
+                </script>
               </div>
             </div>
-          </div>
+
+            <div
+              :if={@is_member and @active_tab == "create_group"}
+              id="group-panel-create-group"
+              class="card bg-base-200"
+            >
+              <div class="card-body">
+                <h3 class="card-title">{gettext("Create sub-group")}</h3>
+
+                <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
+                  <.input field={@new_group_form[:name]} label={gettext("Name")} required />
+                  <.input
+                    field={@new_group_form[:description_format]}
+                    label={gettext("Format")}
+                    type="select"
+                    options={@format_options}
+                  />
+                  <.input
+                    field={@new_group_form[:description]}
+                    label={gettext("Description")}
+                    type="textarea"
+                  />
+                  <.input
+                    field={@new_group_form[:is_public]}
+                    label={gettext("Public")}
+                    type="checkbox"
+                  />
+                  <.input
+                    field={@new_group_form[:parent_value_id]}
+                    label={gettext("Reply to value (optional)")}
+                    type="select"
+                    prompt={gettext("(none)")}
+                    options={@value_parent_options}
+                  />
+                  <.button phx-disable-with={gettext("Creating...")} variant="primary">
+                    {gettext("Create")}
+                  </.button>
+                </.form>
+              </div>
+            </div>
+
+            <div
+              :if={@is_member and @active_tab == "invite_profile"}
+              id="group-panel-invite-profile"
+              class="card bg-base-200"
+            >
+              <div class="card-body">
+                <h3 class="card-title">{gettext("Invite profile")}</h3>
+
+                <.form for={@invite_form} phx-submit="invite">
+                  <.input
+                    field={@invite_form[:username]}
+                    label={gettext("Invitee username")}
+                    required
+                  />
+                  <.button phx-disable-with={gettext("Inviting...")} variant="primary">
+                    {gettext("Invite")}
+                  </.button>
+                </.form>
+
+                <div class="mt-2 text-xs text-base-content/60">
+                  {gettext("Invitees accept invitations at")}
+                  <.link navigate={~p"/invitations"} class="link">/invitations</.link>.
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -447,7 +460,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
 
     ~H"""
-    <div id={"value-#{@value.id}"} class={["chat", @mine? && "chat-end" || "chat-start"]}>
+    <div id={"value-#{@value.id}"} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
       <div class="chat-image avatar">
         <%= if @avatar_url do %>
           <div class="size-10 rounded-full border border-base-300 shadow-sm">
@@ -527,6 +540,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     is_member = Social.member_of_group?(current_profile, group)
 
     if can_view_group?(group, is_member) do
+      if connected?(socket) do
+        Social.subscribe_group(group)
+      end
+
       {:ok,
        socket
        |> assign(:is_member, is_member)
@@ -684,6 +701,59 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, assign(socket, :expanded_value_ids, expanded_value_ids)}
   end
 
+  @impl true
+  def handle_info({:group_updated, _group_id}, %{assigns: %{current_profile: nil}} = socket) do
+    {:noreply, socket}
+  end
+
+  def handle_info({:group_updated, group_id}, socket) when socket.assigns.group.id == group_id do
+    current_profile = socket.assigns.current_profile
+    group = Social.get_group!(group_id)
+    is_member = Social.member_of_group?(current_profile, group)
+
+    if can_view_group?(group, is_member) do
+      {:noreply,
+       socket
+       |> assign(:is_member, is_member)
+       |> load_group_data(group)}
+    else
+      {:noreply,
+       socket
+       |> put_flash(:error, gettext("You do not have access to that group."))
+       |> push_navigate(to: ~p"/groups")}
+    end
+  end
+
+  def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
+
+  def handle_info({:account_profiles_updated, account_id}, socket)
+      when socket.assigns.current_scope.account.id == account_id do
+    ProfileAuth.handle_current_profile_change(
+      socket,
+      fn socket, current_profile ->
+        group = Social.get_group!(socket.assigns.group.id)
+        is_member = Social.member_of_group?(current_profile, group)
+
+        if can_view_group?(group, is_member) do
+          {:noreply,
+           socket
+           |> assign(:is_member, is_member)
+           |> load_group_data(group)}
+        else
+          {:noreply,
+           socket
+           |> put_flash(:error, gettext("You do not have access to that group."))
+           |> push_navigate(to: ~p"/groups")}
+        end
+      end,
+      fn socket ->
+        {:noreply, push_navigate(socket, to: ~p"/profiles")}
+      end
+    )
+  end
+
+  def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
+
   defp load_group_data(socket, group) do
     values = Social.list_group_values(group)
     value_ids = MapSet.new(Enum.map(values, & &1.id))
@@ -769,8 +839,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp normalize_active_tab(tab, _is_member) when tab in ["values", "sub_groups", "members"],
     do: tab
 
-    defp normalize_active_tab(tab, true)
-      when tab in ["create_group", "invite_profile"],
+  defp normalize_active_tab(tab, true)
+       when tab in ["create_group", "invite_profile"],
        do: tab
 
   defp normalize_active_tab(_, _), do: default_active_tab()

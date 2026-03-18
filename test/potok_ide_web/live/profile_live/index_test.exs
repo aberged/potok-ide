@@ -71,7 +71,9 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert result =~ "Profile selected."
       assert result =~ "beta profile"
-      refute result =~ "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha profile"
+
+      refute result =~
+               "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha profile"
     end
 
     test "edits a profile and updates the selected profile banner", %{conn: conn} do
@@ -149,6 +151,29 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       |> render_click()
 
       refute has_element?(lv, "#edit-profile-form")
+    end
+
+    test "updates profiles when another process creates a profile", %{conn: conn} do
+      account = account_fixture()
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/profiles")
+
+      refute render(lv) =~ "gamma profile"
+
+      {:ok, _profile} =
+        Social.create_profile_for_account(account, %{
+          username: "gamma profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert render(lv) =~ "gamma profile"
     end
   end
 end

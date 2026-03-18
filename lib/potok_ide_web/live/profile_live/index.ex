@@ -238,7 +238,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
      socket
      |> assign(:profiles, Social.list_profiles_for_account(account))
      |> assign(:form, new_profile_form())
-    |> assign(:create_profile_expanded, false)
+     |> assign(:create_profile_expanded, false)
      |> assign(:edit_form, nil)
      |> assign(:edit_profile_id, nil)
      |> assign(:description_format_options, [
@@ -372,10 +372,24 @@ defmodule PotokIdeWeb.ProfileLive.Index do
          socket
          |> assign(:current_scope, %{socket.assigns.current_scope | account: account})
          |> assign(:current_profile, profile)
+         |> assign(:profiles, Social.list_profiles_for_account(account))
          |> push_current_profile_updated(profile)
          |> put_flash(:info, gettext("Profile selected."))}
     end
   end
+
+  @impl true
+  def handle_info({:account_profiles_updated, account_id}, socket)
+      when socket.assigns.current_scope.account.id == account_id do
+    {:noreply,
+     assign(
+       socket,
+       :profiles,
+       Social.list_profiles_for_account(socket.assigns.current_scope.account)
+     )}
+  end
+
+  def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
   defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
@@ -429,7 +443,8 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         |> assign(:current_profile, profile)
         |> push_current_profile_updated(profile)
 
-      _ -> socket
+      _ ->
+        socket
     end
   end
 

@@ -122,7 +122,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       html = render(lv)
 
-      assert elem(:binary.match(html, "older value"), 0) < elem(:binary.match(html, "newer value"), 0)
+      assert elem(:binary.match(html, "older value"), 0) <
+               elem(:binary.match(html, "newer value"), 0)
+
       assert has_element?(lv, "#group-value-form")
     end
 
@@ -207,6 +209,80 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> render_click()
 
       assert collapsed_html =~ "See more"
+    end
+
+    test "updates values when a new value is added externally", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "realtime-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = Social.get_root_group!()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      refute render(lv) =~ "realtime value"
+
+      {:ok, _value} =
+        Social.create_value(profile, group, %{
+          "content" => "realtime value",
+          "content_format" => :markdown
+        })
+
+      assert render(lv) =~ "realtime value"
+    end
+
+    test "redirects when current profile changes to one without access", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "member-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "outsider-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, account} = Accounts.set_current_profile(account, first_profile)
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, private_group} =
+        Social.create_group(first_profile, root_group, %{
+          "name" => "private-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{private_group.id}")
+
+      {:ok, _updated_account} = Accounts.set_current_profile(account, second_profile)
+
+      assert_redirect(lv, ~p"/groups")
     end
   end
 end

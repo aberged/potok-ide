@@ -44,6 +44,8 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   const brandLogo = document.getElementById("nav-brand-logo")
   const selectedProfileCard = document.getElementById("nav-selected-profile-card")
   const selectedProfileName = document.getElementById("nav-selected-profile-name")
+  const defaultTitle = brandTitle?.dataset.defaultTitle || ""
+  const hasProfile = Boolean(detail.username)
   const initials = (detail.username || "")
     .split(/[\s_-]+/)
     .filter(Boolean)
@@ -52,7 +54,7 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
     .join("") || "?"
 
   if (brandTitle) {
-    brandTitle.textContent = detail.username || ""
+    brandTitle.textContent = detail.username || defaultTitle
   }
 
   if (selectedProfileName) {
@@ -60,11 +62,27 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   }
 
   if (selectedProfileCard) {
-    selectedProfileCard.hidden = !detail.username
+    selectedProfileCard.hidden = !hasProfile
   }
 
   if (brandAvatar) {
     brandAvatar.alt = detail.username || "PotokIde"
+  }
+
+  if (!hasProfile) {
+    if (brandAvatar) {
+      brandAvatar.classList.add("hidden")
+    }
+
+    if (brandInitials) {
+      brandInitials.classList.add("hidden")
+    }
+
+    if (brandLogo) {
+      brandLogo.classList.remove("hidden")
+    }
+
+    return
   }
 
   if (detail.profile_picture_url) {

@@ -94,7 +94,11 @@
               <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
                 PotokIde
               </span>
-              <span id="nav-brand-title" class="block truncate text-sm font-semibold text-base-content">
+              <span
+                id="nav-brand-title"
+                data-default-title="[page title]"
+                class="block truncate text-sm font-semibold text-base-content"
+              >
                 <%= if profile do %>
                   {profile.username}
                 <% else %>
@@ -118,7 +122,10 @@
                 <div class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/45">
                   {gettext("Selected profile")}
                 </div>
-                <div id="nav-selected-profile-name" class="mt-1 truncate font-medium text-base-content">
+                <div
+                  id="nav-selected-profile-name"
+                  class="mt-1 truncate font-medium text-base-content"
+                >
                   {if(profile, do: profile.username, else: nil)}
                 </div>
               </div>

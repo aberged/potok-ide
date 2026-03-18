@@ -98,6 +98,19 @@ defmodule PotokIde.Accounts do
       account
       |> Ecto.Changeset.change(current_profile_id: profile.id)
       |> Repo.update()
+      |> case do
+        {:ok, updated_account} = ok ->
+          Phoenix.PubSub.broadcast(
+            PotokIde.PubSub,
+            "accounts:#{updated_account.id}",
+            {:account_profiles_updated, updated_account.id}
+          )
+
+          ok
+
+        error ->
+          error
+      end
     else
       {:error, :profile_not_linked_to_account}
     end
@@ -107,6 +120,19 @@ defmodule PotokIde.Accounts do
     account
     |> Ecto.Changeset.change(current_profile_id: nil)
     |> Repo.update()
+    |> case do
+      {:ok, updated_account} = ok ->
+        Phoenix.PubSub.broadcast(
+          PotokIde.PubSub,
+          "accounts:#{updated_account.id}",
+          {:account_profiles_updated, updated_account.id}
+        )
+
+        ok
+
+      error ->
+        error
+    end
   end
 
   ## Settings

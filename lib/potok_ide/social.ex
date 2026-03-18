@@ -13,6 +13,22 @@ defmodule PotokIde.Social do
   alias PotokIde.Accounts.Account
   alias PotokIde.Social.{AccountProfile, Group, GroupInvitation, GroupMembership, Profile, Value}
 
+  def subscribe_account(%Account{id: account_id}) when is_integer(account_id) do
+    Phoenix.PubSub.subscribe(PotokIde.PubSub, account_topic(account_id))
+  end
+
+  def subscribe_profile(%Profile{id: profile_id}) when is_integer(profile_id) do
+    Phoenix.PubSub.subscribe(PotokIde.PubSub, profile_topic(profile_id))
+  end
+
+  def unsubscribe_profile(%Profile{id: profile_id}) when is_integer(profile_id) do
+    Phoenix.PubSub.unsubscribe(PotokIde.PubSub, profile_topic(profile_id))
+  end
+
+  def subscribe_group(%Group{id: group_id}) when is_integer(group_id) do
+    Phoenix.PubSub.subscribe(PotokIde.PubSub, group_topic(group_id))
+  end
+
   # ---------
   # Root group
   # ---------
@@ -73,8 +89,16 @@ defmodule PotokIde.Social do
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{profile: profile}} -> {:ok, profile}
-      {:error, _step, reason, _changes} -> {:error, reason}
+      {:ok, %{profile: profile, set_current_profile: updated_account}} ->
+        broadcast_account_profiles_updated(updated_account)
+        {:ok, profile}
+
+      {:ok, %{profile: profile}} ->
+        broadcast_account_profiles_updated(account)
+        {:ok, profile}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -88,6 +112,15 @@ defmodule PotokIde.Social do
         profile
         |> Profile.changeset(attrs)
         |> Repo.update()
+        |> case do
+          {:ok, updated_profile} = ok ->
+            broadcast_account_profiles_updated(account)
+            broadcast_profile_updated(updated_profile)
+            ok
+
+          error ->
+            error
+        end
     end
   end
 
@@ -151,8 +184,12 @@ defmodule PotokIde.Social do
       end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{group: group}} -> {:ok, group}
-        {:error, _step, reason, _changes} -> {:error, reason}
+        {:ok, %{group: group}} ->
+          broadcast_group_updated(parent)
+          {:ok, group}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
       end
     end
   end
@@ -173,6 +210,14 @@ defmodule PotokIde.Social do
           invitee_id: invitee.id
         })
         |> Repo.insert()
+        |> case do
+          {:ok, _invitation} = ok ->
+            broadcast_profile_invitations_updated(invitee)
+            ok
+
+          error ->
+            error
+        end
     end
   end
 
@@ -190,8 +235,13 @@ defmodule PotokIde.Social do
       end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{invitation: inv}} -> {:ok, inv}
-        {:error, _step, reason, _changes} -> {:error, reason}
+        {:ok, %{invitation: inv}} ->
+          broadcast_profile_invitations_updated(invitee)
+          broadcast_group_updated(inv.group_id)
+          {:ok, inv}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
       end
     end
   end
@@ -215,6 +265,14 @@ defmodule PotokIde.Social do
       %Value{}
       |> Value.changeset(attrs)
       |> Repo.insert()
+      |> case do
+        {:ok, _value} = ok ->
+          broadcast_group_updated(group)
+          ok
+
+        error ->
+          error
+      end
     end
   end
 
@@ -330,5 +388,43 @@ defmodule PotokIde.Social do
       select: 1
     )
     |> Repo.exists?()
+  end
+
+  defp account_topic(account_id), do: "accounts:#{account_id}"
+  defp profile_topic(profile_id), do: "profiles:#{profile_id}"
+  defp group_topic(group_id), do: "groups:#{group_id}"
+
+  defp broadcast_account_profiles_updated(%Account{id: account_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      account_topic(account_id),
+      {:account_profiles_updated, account_id}
+    )
+  end
+
+  defp broadcast_profile_invitations_updated(%Profile{id: profile_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:profile_invitations_updated, profile_id}
+    )
+  end
+
+  defp broadcast_profile_updated(%Profile{id: profile_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:profile_updated, profile_id}
+    )
+  end
+
+  defp broadcast_group_updated(%Group{id: group_id}), do: broadcast_group_updated(group_id)
+
+  defp broadcast_group_updated(group_id) when is_integer(group_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:group_updated, group_id}
+    )
   end
 end

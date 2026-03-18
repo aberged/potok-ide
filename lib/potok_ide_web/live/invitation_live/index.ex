@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   use PotokIdeWeb, :live_view
 
   alias PotokIde.Social
+  alias PotokIdeWeb.ProfileAuth
 
   @impl true
   def render(assigns) do
@@ -45,6 +46,11 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   @impl true
   def mount(_params, _session, socket) do
+    socket =
+      socket
+      |> put_private(:previous_current_profile, socket.assigns.current_profile)
+      |> ProfileAuth.sync_profile_subscription()
+
     {:ok,
      assign(socket, :invitations, Social.list_pending_invitations(socket.assigns.current_profile))}
   end
@@ -69,4 +75,53 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         {:noreply, put_flash(socket, :error, gettext("Could not accept invitation."))}
     end
   end
+
+  @impl true
+  def handle_info(
+        {:profile_invitations_updated, _profile_id},
+        %{assigns: %{current_profile: nil}} = socket
+      ),
+      do: {:noreply, socket}
+
+  def handle_info({:profile_invitations_updated, profile_id}, socket)
+      when socket.assigns.current_profile.id == profile_id do
+    {:noreply,
+     assign(socket, :invitations, Social.list_pending_invitations(socket.assigns.current_profile))}
+  end
+
+  def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
+
+  @impl true
+  def handle_info({:account_profiles_updated, account_id}, socket)
+      when socket.assigns.current_scope.account.id == account_id and
+             is_nil(socket.assigns.current_profile) do
+    {:noreply, push_navigate(socket, to: ~p"/profiles")}
+  end
+
+  def handle_info({:account_profiles_updated, account_id}, socket)
+      when socket.assigns.current_scope.account.id == account_id do
+    previous_profile = socket.private[:previous_current_profile]
+
+    ProfileAuth.handle_current_profile_change(
+      socket,
+      fn socket, current_profile ->
+        socket =
+          socket
+          |> put_private(:previous_current_profile, current_profile)
+          |> ProfileAuth.sync_profile_subscription(previous_profile)
+
+        {:noreply, assign(socket, :invitations, Social.list_pending_invitations(current_profile))}
+      end,
+      fn socket ->
+        socket =
+          socket
+          |> put_private(:previous_current_profile, nil)
+          |> ProfileAuth.sync_profile_subscription(previous_profile)
+
+        {:noreply, push_navigate(socket, to: ~p"/profiles")}
+      end
+    )
+  end
+
+  def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 end
