@@ -145,7 +145,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, _markdown_value} =
         Social.create_value(profile, group, %{
-          "content" => "**bold** and [link](https://example.com)",
+          "content" => "# Heading\n\n**bold** and [link](https://example.com)",
           "content_format" => :markdown
         })
 
@@ -160,10 +160,41 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}")
 
-      assert html =~ "<strong>bold</strong>"
+  assert html =~ ~r/<h1>\s*Heading<\/h1>/
+  assert html =~ "<strong>bold</strong>"
       assert html =~ "href=\"https://example.com\""
       assert html =~ ">link</a>"
       assert html =~ "<strong>html value</strong>"
+    end
+
+    test "preserves new lines in markdown values", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "newline-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = Social.get_root_group!()
+
+      {:ok, _value} =
+        Social.create_value(profile, group, %{
+          "content" => "first line\nsecond line",
+          "content_format" => :markdown
+        })
+
+      {:ok, _lv, html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert html =~ "first line<br"
+      assert html =~ "second line"
     end
 
     test "toggles long value content between collapsed and expanded", %{conn: conn} do

@@ -492,7 +492,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         <div class="relative">
           <div
             class={[
-              "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
+              "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
               !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
                 "overflow-hidden"
             ]}
@@ -806,14 +806,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp render_value_content(%{content: content, content_format: :markdown}) do
     content
-    |> Earmark.as_html!()
+    |> Earmark.as_html!(breaks: true)
     |> sanitize_html()
     |> raw()
   end
 
   defp render_value_content(%{content: content}) when is_binary(content), do: content
 
-  defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.basic_html(content)
+  defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.html5(content)
 
   defp value_expandable?(%{content: content}) when is_binary(content) do
     (String.contains?(content, "\n") and length(String.split(content, ~r/\R/, trim: false)) > 5) or
