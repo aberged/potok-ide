@@ -254,7 +254,7 @@ defmodule PotokIdeWeb.CoreComponents do
 
   def input(%{type: "textarea"} = assigns) do
     ~H"""
-    <div class="fieldset mb-2">
+    <div class="fieldset mb-2 flex-auto">
       <label>
         <span :if={@label} class="label mb-1">{@label}</span>
         <textarea

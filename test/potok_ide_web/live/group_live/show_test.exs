@@ -50,7 +50,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              )
     end
 
-    test "shows values first and switches tabs", %{conn: conn} do
+    test "shows values first with composer at the bottom and switches tabs", %{conn: conn} do
       account = account_fixture()
 
       {:ok, profile} =
@@ -77,14 +77,53 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}")
 
       assert has_element?(lv, "#group-panel-values")
-      refute has_element?(lv, "#group-panel-create-value")
+      assert has_element?(lv, "#group-value-form")
+      refute has_element?(lv, "#group-tab-create-value")
 
       lv
-      |> element("#group-tab-create-value")
+      |> element("#group-tab-members")
       |> render_click()
 
-      assert has_element?(lv, "#group-panel-create-value")
       refute has_element?(lv, "#group-panel-values")
+      assert has_element?(lv, "#group-panel-members")
+    end
+
+    test "renders values in chronological order with newest at the bottom", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "chronology-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = Social.get_root_group!()
+
+      {:ok, _older_value} =
+        Social.create_value(profile, group, %{
+          "content" => "older value",
+          "content_format" => :markdown
+        })
+
+      {:ok, _newer_value} =
+        Social.create_value(profile, group, %{
+          "content" => "newer value",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      html = render(lv)
+
+      assert elem(:binary.match(html, "older value"), 0) < elem(:binary.match(html, "newer value"), 0)
+      assert has_element?(lv, "#group-value-form")
     end
 
     test "renders value content as markdown and html", %{conn: conn} do

@@ -37,6 +37,65 @@ topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
+window.addEventListener("phx:current_profile_updated", ({detail}) => {
+  const brandTitle = document.getElementById("nav-brand-title")
+  const brandAvatar = document.getElementById("nav-brand-profile-avatar")
+  const brandInitials = document.getElementById("nav-brand-profile-initials")
+  const brandLogo = document.getElementById("nav-brand-logo")
+  const selectedProfileCard = document.getElementById("nav-selected-profile-card")
+  const selectedProfileName = document.getElementById("nav-selected-profile-name")
+  const initials = (detail.username || "")
+    .split(/[\s_-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0]?.toUpperCase() || "")
+    .join("") || "?"
+
+  if (brandTitle) {
+    brandTitle.textContent = detail.username || ""
+  }
+
+  if (selectedProfileName) {
+    selectedProfileName.textContent = detail.username || ""
+  }
+
+  if (selectedProfileCard) {
+    selectedProfileCard.hidden = !detail.username
+  }
+
+  if (brandAvatar) {
+    brandAvatar.alt = detail.username || "PotokIde"
+  }
+
+  if (detail.profile_picture_url) {
+    if (brandAvatar) {
+      brandAvatar.src = detail.profile_picture_url
+      brandAvatar.classList.remove("hidden")
+    }
+
+    if (brandLogo) {
+      brandLogo.classList.add("hidden")
+    }
+
+    if (brandInitials) {
+      brandInitials.classList.add("hidden")
+    }
+  } else {
+    if (brandAvatar) {
+      brandAvatar.classList.add("hidden")
+    }
+
+    if (brandInitials) {
+      brandInitials.textContent = initials
+      brandInitials.classList.remove("hidden")
+    }
+
+    if (brandLogo) {
+      brandLogo.classList.add("hidden")
+    }
+  }
+})
+
 // connect if there are any LiveViews on the page
 liveSocket.connect()
 
