@@ -142,6 +142,55 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-panel-sub-groups a", "other-child-group")
     end
 
+    test "renders group pictures in header and sub-group list", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "group-picture-member-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, child_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "pictured-child-group",
+          "group_picture_url" => "https://example.com/group-avatar.png",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, root_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      root_lv
+      |> element("#group-tab-sub-groups")
+      |> render_click()
+
+      assert has_element?(
+               root_lv,
+               "#group-panel-sub-groups img[src='https://example.com/group-avatar.png']"
+             )
+
+      {:ok, child_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{child_group.id}")
+
+      assert has_element?(
+               child_lv,
+               "img[src='https://example.com/group-avatar.png'][alt='pictured-child-group']"
+             )
+    end
+
     test "renders values in chronological order with newest at the bottom", %{conn: conn} do
       account = account_fixture()
 

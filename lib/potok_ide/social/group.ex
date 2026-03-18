@@ -7,6 +7,7 @@ defmodule PotokIde.Social.Group do
 
   schema "groups" do
     field :name, :string
+    field :group_picture_url, :string
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
     field :is_public, :boolean, default: false
@@ -31,6 +32,7 @@ defmodule PotokIde.Social.Group do
     group
     |> cast(attrs, [
       :name,
+      :group_picture_url,
       :description,
       :description_format,
       :is_public,
@@ -41,6 +43,7 @@ defmodule PotokIde.Social.Group do
     ])
     |> validate_required([:name, :description_format, :is_public, :is_root])
     |> validate_length(:name, min: 1, max: 120)
+    |> validate_length(:group_picture_url, max: 2048)
     |> validate_root_constraints()
   end
 

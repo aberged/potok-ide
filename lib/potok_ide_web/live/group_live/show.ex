@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <div class="flex h-[calc(100dvh-9.5rem)] min-h-[36rem] flex-col sm:h-[calc(100dvh-11.75rem)] lg:h-[calc(100dvh-12.75rem)]">
         <div class="sticky top-[5.75rem] z-10 mb-2 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-4 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
-          <div class="flex items-start gap-3">
+          <div class="flex items-center gap-3">
             <div :if={!@group.is_root and @group.parent_id} class="pt-1">
               <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
                 {"❮"}
@@ -21,19 +21,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
 
             <div class="min-w-0 flex-1">
-              <.header>
-                {@group.name} {if @group.is_public,
-                  do: "📢",
-                  else: "🔐"}
-                <:subtitle>
-                  <div
-                    :if={@group.description && @group.description != ""}
-                    class="text-sm text-base-content/70"
-                  >
-                    {@group.description}
-                  </div>
-                </:subtitle>
-              </.header>
+              <div class="flex items-center gap-3">
+                <.group_identity group={@group} avatar_size="size-14" text_class="text-lg" />
+              </div>
             </div>
 
             <Layouts.header_menu icon="hero-ellipsis-horizontal">
@@ -100,10 +90,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
                 <ul :if={@children != []} class="space-y-2">
                   <li :for={g <- @children}>
-                    <.link navigate={~p"/groups/#{g.id}"} class="link link-hover">{g.name}</.link>
-                    <span class="text-xs text-base-content/60">
-                      ({if g.is_public, do: gettext("public"), else: gettext("private")})
-                    </span>
+                    <.link
+                      navigate={~p"/groups/#{g.id}"}
+                      class="block rounded-2xl px-2 py-2 transition-colors hover:bg-base-300/50"
+                    >
+                      <div class="flex items-center justify-between gap-3">
+                        <.group_identity group={g} avatar_size="size-10" text_class="text-sm" />
+                        <span class="text-xs text-base-content/60">
+                          ({if g.is_public, do: gettext("public"), else: gettext("private")})
+                        </span>
+                      </div>
+                    </.link>
                   </li>
                 </ul>
               </div>
@@ -148,6 +145,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     expanded_value_ids={@expanded_value_ids}
                   />
                 </div>
+
+                <div class="flex flex-auto"></div>
 
                 <div
                   :if={@is_member}
@@ -330,6 +329,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
                   <.input field={@new_group_form[:name]} label={gettext("Name")} required />
                   <.input
+                    field={@new_group_form[:group_picture_url]}
+                    label={gettext("Group picture URL")}
+                    type="url"
+                  />
+                  <.input
                     field={@new_group_form[:description_format]}
                     label={gettext("Format")}
                     type="select"
@@ -441,6 +445,49 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>
           {@profile.username}
+        </div>
+      </div>
+    </div>
+    """
+  end
+
+  attr :group, :map, required: true
+  attr :avatar_size, :string, default: "size-11"
+  attr :text_class, :string, default: "text-sm"
+
+  def group_identity(assigns) do
+    ~H"""
+    <div class="flex min-w-0 items-center gap-3">
+      <div class="relative">
+        <%= if avatar_url = group_picture_url(@group) do %>
+          <img
+            src={avatar_url}
+            alt={@group.name}
+            class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
+          />
+        <% else %>
+          <div class={[
+            @avatar_size,
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+          ]}>
+            {group_initials(@group.name)}
+          </div>
+        <% end %>
+        <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+           <%!-- {if @group.is_public,
+            do: raw("<div class='size-4 rounded-full bg-green-500 ring ring-green-500 ring-offset-1'></div>"),
+            else: raw("<div class='size-4 rounded-full bg-gray-500 ring ring-gray-500 ring-offset-1'></div>")
+          } --%>
+          {if @group.is_public,
+            do: "📢",
+            else: "🔐"
+          }
+        </div>
+      </div>
+
+      <div class="min-w-0">
+        <div class={[@text_class, "truncate font-semibold text-base-content"]}>
+          {@group.name}
         </div>
       </div>
     </div>
@@ -768,7 +815,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket
     |> assign(:group, group)
-    |> assign(:children, Social.list_child_groups_for_profile(group, socket.assigns.current_profile))
+    |> assign(
+      :children,
+      Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
+    )
     |> assign(:members, Social.list_group_members(group))
     |> assign(:values, values)
     |> assign(:active_tab, active_tab)
@@ -861,6 +911,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp profile_picture_url(_), do: nil
 
+  defp group_picture_url(%{group_picture_url: url}) when is_binary(url) do
+    case String.trim(url) do
+      "" -> nil
+      trimmed_url -> trimmed_url
+    end
+  end
+
+  defp group_picture_url(_), do: nil
+
   defp profile_initials(username) when is_binary(username) do
     username
     |> String.split(~r/[\s_-]+/, trim: true)
@@ -877,6 +936,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp profile_initials(_), do: "?"
+
+  defp group_initials(name) when is_binary(name) do
+    name
+    |> String.split(~r/[\s_-]+/, trim: true)
+    |> Enum.take(2)
+    |> Enum.map_join(fn part ->
+      part
+      |> String.first()
+      |> to_string()
+    end)
+    |> case do
+      "" -> "?"
+      initials -> String.upcase(initials)
+    end
+  end
+
+  defp group_initials(_), do: "?"
 
   defp can_view_group?(group, is_member) do
     group.is_public or is_member
