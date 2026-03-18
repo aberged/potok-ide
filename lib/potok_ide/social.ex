@@ -321,6 +321,19 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile) do
+    import Ecto.Query, only: [from: 2]
+
+    from(g in Group,
+      join: gm in GroupMembership,
+      on: gm.group_id == g.id,
+      where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true),
+      order_by: [asc: g.name],
+      distinct: g.id
+    )
+    |> Repo.all()
+  end
+
   def list_group_members(%Group{} = group) do
     import Ecto.Query, only: [from: 2]
 

@@ -768,7 +768,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket
     |> assign(:group, group)
-    |> assign(:children, Social.list_child_groups(group))
+    |> assign(:children, Social.list_child_groups_for_profile(group, socket.assigns.current_profile))
     |> assign(:members, Social.list_group_members(group))
     |> assign(:values, values)
     |> assign(:active_tab, active_tab)

@@ -88,6 +88,60 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-panel-members")
     end
 
+    test "shows only sub-groups where current profile is a member", %{conn: conn} do
+      account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "subgroup-member-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "subgroup-other-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, _visible_child_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "member-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, _hidden_child_group} =
+        Social.create_group(other_profile, root_group, %{
+          "name" => "other-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      lv
+      |> element("#group-tab-sub-groups")
+      |> render_click()
+
+      assert has_element?(lv, "#group-panel-sub-groups a", "member-child-group")
+      refute has_element?(lv, "#group-panel-sub-groups a", "other-child-group")
+    end
+
     test "renders values in chronological order with newest at the bottom", %{conn: conn} do
       account = account_fixture()
 
