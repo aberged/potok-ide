@@ -160,8 +160,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}")
 
-  assert html =~ ~r/<h1>\s*Heading<\/h1>/
-  assert html =~ "<strong>bold</strong>"
+      assert html =~ ~r/<h1>\s*Heading<\/h1>/
+      assert html =~ "<strong>bold</strong>"
       assert html =~ "href=\"https://example.com\""
       assert html =~ ">link</a>"
       assert html =~ "<strong>html value</strong>"
@@ -193,7 +193,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}")
 
-      assert html =~ "first line<br"
+      assert html =~ ~r/first line\s*<br\/?/
       assert html =~ "second line"
     end
 

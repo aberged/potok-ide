@@ -101,12 +101,3 @@ msgstr "mora biti veće ili jednako %{number}"
 
 msgid "must be equal to %{number}"
 msgstr "mora biti jednako %{number}"
-
-msgid "must have the @ sign and no spaces"
-msgstr "mora imati znak @ i ne sme imati razmake"
-
-msgid "did not change"
-msgstr "nije promenjeno"
-
-msgid "does not match password"
-msgstr "ne poklapa se sa lozinkom"

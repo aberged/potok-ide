@@ -101,12 +101,3 @@ msgstr "musi być większe lub równe %{number}"
 
 msgid "must be equal to %{number}"
 msgstr "musi być równe %{number}"
-
-msgid "must have the @ sign and no spaces"
-msgstr "musi zawierać znak @ i nie może zawierać spacji"
-
-msgid "did not change"
-msgstr "nie uległ zmianie"
-
-msgid "does not match password"
-msgstr "nie jest zgodne z hasłem"
