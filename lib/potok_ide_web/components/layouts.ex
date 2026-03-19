@@ -35,7 +35,7 @@ defmodule PotokIdeWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <main class="px-4 pb-12 pt-2 sm:px-6 sm:pb-16 sm:pt-8 lg:px-8 lg:pb-20">
+    <main class="">
       <div class="mx-auto w-full max-w-5xl space-y-4">
         {render_slot(@inner_block)}
       </div>
@@ -162,20 +162,61 @@ defmodule PotokIdeWeb.Layouts do
 
   slot :inner_block, required: true
 
+  attr :id, :string, default: nil
   attr :icon, :string, default: "hero-bars-3"
 
   def header_menu(assigns) do
-    ~H"""
-    <details class="dropdown dropdown-end">
-      <summary class="btn btn-ghost btn-circle list-none border border-base-300 bg-base-100/80 shadow-sm backdrop-blur [&::-webkit-details-marker]:hidden">
-        <span class="sr-only">{gettext("Actions")}</span>
-        <.icon name={@icon} class="size-5" />
-      </summary>
+    assigns =
+      assign(
+        assigns,
+        :id,
+        assigns[:id] || "header-drawer-#{System.unique_integer([:positive, :monotonic])}"
+      )
 
-      <div class="dropdown-content z-30 mt-3 w-[min(22rem,calc(100vw-2rem))] rounded-[1.5rem] border border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">
-        {render_slot(@inner_block)}
+    ~H"""
+    <div id={"#{@id}-container"} class="drawer w-auto flex-none" phx-hook="HeaderDrawer">
+      <input id={@id} type="checkbox" class="drawer-toggle" />
+
+      <div class="drawer-content">
+        <label
+          for={@id}
+          class="btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur"
+        >
+          <span class="sr-only">{gettext("Actions")}</span>
+          <.icon name={@icon} class="size-5" />
+        </label>
       </div>
-    </details>
+
+      <div class="drawer-side z-40">
+        <label
+          for={@id}
+          aria-label={gettext("close")}
+          class="drawer-overlay bg-base-content/25 backdrop-blur-[2px]"
+        />
+
+        <div class="min-h-full w-[min(18rem,calc(100vw-1.25rem))] sm:w-80 lg:w-96 border-r border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">
+          <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
+            <div>
+              <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+                PotokIde
+              </div>
+              <div class="mt-1 text-sm font-semibold text-base-content">
+                {gettext("Actions")}
+              </div>
+            </div>
+
+            <label for={@id} class="btn btn-ghost btn-circle border border-base-300 bg-base-100">
+              <span class="sr-only">{gettext("close")}</span>
+              <.icon name="hero-x-mark" class="size-5" />
+            </label>
+          </div>
+
+          <div class="flex max-h-[calc(100vh-6rem)] flex-col overflow-y-auto pr-1">
+            {render_slot(@inner_block)}
+          </div>
+        </div>
+      </div>
+    </div>
     """
   end
 end

@@ -11,7 +11,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="flex h-[calc(100dvh-9.5rem)] min-h-[36rem] flex-col sm:h-[calc(100dvh-11.75rem)] lg:h-[calc(100dvh-12.75rem)]">
+      <div class="flex h-[calc(100dvh-6rem)] flex-col sm:h-[calc(100dvh-6rem)] lg:h-[calc(100dvh-6rem)]">
         <div class="sticky top-[5.75rem] z-10 mb-2 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-4 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
           <div class="flex items-center gap-3">
             <div :if={!@group.is_root and @group.parent_id} class="pt-1">
@@ -463,7 +463,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <img
             src={avatar_url}
             alt={@group.name}
-            class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
+            class={[
+              @avatar_size,
+              "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+            ]}
           />
         <% else %>
           <div class={[
@@ -474,14 +477,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
         <% end %>
         <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
-           <%!-- {if @group.is_public,
+          <%!-- {if @group.is_public,
             do: raw("<div class='size-4 rounded-full bg-green-500 ring ring-green-500 ring-offset-1'></div>"),
             else: raw("<div class='size-4 rounded-full bg-gray-500 ring ring-gray-500 ring-offset-1'></div>")
           } --%>
           {if @group.is_public,
             do: "📢",
-            else: "🔐"
-          }
+            else: "🔐"}
         </div>
       </div>
 
