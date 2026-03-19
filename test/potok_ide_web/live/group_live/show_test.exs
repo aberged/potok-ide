@@ -88,6 +88,60 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-panel-members")
     end
 
+    test "clicking the member avatar summary switches to the members tab", %{conn: conn} do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "member-summary-owner",
+          profile_picture_url: "https://example.com/member-summary-owner.png",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "member-summary-invitee",
+          profile_picture_url: "https://example.com/member-summary-invitee.png",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "member-summary-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#group-panel-values")
+
+      lv
+      |> element("#group-members-summary")
+      |> render_click()
+
+      refute has_element?(lv, "#group-panel-values")
+      assert has_element?(lv, "#group-panel-members")
+    end
+
     test "shows only sub-groups where current profile is a member", %{conn: conn} do
       account = account_fixture()
       other_account = account_fixture()
@@ -374,6 +428,90 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       assert render(lv) =~ "realtime value"
+    end
+
+    test "allows the creator profile to delete a value", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-value-live-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = Social.get_root_group!()
+
+      {:ok, value} =
+        Social.create_value(profile, group, %{
+          "content" => "value to delete from liveview",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#value-#{value.id}")
+
+      assert has_element?(
+               lv,
+               "#value-delete-#{value.id}[data-confirm='Are you sure you want to delete this value?']"
+             )
+
+      lv
+      |> element("#value-delete-#{value.id}")
+      |> render_click()
+
+      refute has_element?(lv, "#value-#{value.id}")
+      assert render(lv) =~ "No values yet. Start the conversation below."
+    end
+
+    test "allows the creator profile to edit a value", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "edit-value-live-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = Social.get_root_group!()
+
+      {:ok, value} =
+        Social.create_value(profile, group, %{
+          "content" => "original liveview value",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#value-edit-#{value.id}")
+
+      lv
+      |> element("#value-edit-#{value.id}")
+      |> render_click()
+
+      assert has_element?(lv, "#edit-value-form-#{value.id}")
+
+      lv
+      |> form("#edit-value-form-#{value.id}", value: %{content: "edited liveview value"})
+      |> render_submit()
+
+      refute has_element?(lv, "#edit-value-form-#{value.id}")
+      assert render(lv) =~ "edited liveview value"
+      refute render(lv) =~ "original liveview value"
     end
 
     test "redirects when current profile changes to one without access", %{conn: conn} do

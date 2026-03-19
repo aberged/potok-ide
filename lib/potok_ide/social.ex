@@ -276,6 +276,40 @@ defmodule PotokIde.Social do
     end
   end
 
+  def update_value(%Profile{} = profile, %Value{} = value, attrs) do
+    if value.creator_id != profile.id do
+      {:error, :not_value_creator}
+    else
+      value
+      |> Value.changeset(attrs)
+      |> Repo.update()
+      |> case do
+        {:ok, updated_value} = ok ->
+          broadcast_group_updated(updated_value.group_id)
+          ok
+
+        error ->
+          error
+      end
+    end
+  end
+
+  def delete_value(%Profile{} = profile, %Value{} = value) do
+    if value.creator_id != profile.id do
+      {:error, :not_value_creator}
+    else
+      Repo.delete(value)
+      |> case do
+        {:ok, deleted_value} = ok ->
+          broadcast_group_updated(deleted_value.group_id)
+          ok
+
+        error ->
+          error
+      end
+    end
+  end
+
   # ---------
   # Queries
   # ---------
@@ -342,6 +376,28 @@ defmodule PotokIde.Social do
       on: gm.profile_id == p.id,
       where: gm.group_id == ^group.id,
       order_by: [asc: p.username]
+    )
+    |> Repo.all()
+  end
+
+  def count_group_members(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(gm in GroupMembership,
+      where: gm.group_id == ^group.id,
+      select: count(gm.profile_id)
+    )
+    |> Repo.one()
+  end
+
+  def list_first3_group_members(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(p in Profile,
+      join: gm in GroupMembership,
+      on: gm.profile_id == p.id,
+      where: gm.group_id == ^group.id,
+      limit: 3
     )
     |> Repo.all()
   end

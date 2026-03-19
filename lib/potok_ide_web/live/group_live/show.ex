@@ -25,6 +25,38 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 <.group_identity group={@group} avatar_size="size-14" text_class="text-lg" />
               </div>
             </div>
+            <button
+              id="group-subgroups-summary"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="sub_groups"
+              aria-label={gettext("Open sub-groups tab")}
+              class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <.icon
+                name="hero-folder-open"
+                class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+              />
+            </button>
+            <button
+              id="group-members-summary"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="members"
+              aria-label={gettext("Open members tab")}
+              class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <div :for={m <- @first3_members} class="avatar">
+                <div class="bg-white w-8">
+                  <img src={m.profile_picture_url} alt={m.username} />
+                </div>
+              </div>
+              <div :if={@members_count > 3} class="avatar avatar-placeholder">
+                <div class="bg-neutral text-neutral-content w-8">
+                  <span>+{@members_count - length(@first3_members)}</span>
+                </div>
+              </div>
+            </button>
 
             <Layouts.header_menu icon="hero-ellipsis-horizontal">
               <div class="flex min-w-[14rem] flex-col gap-2">
@@ -143,6 +175,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     value={v}
                     current_profile={@current_profile}
                     expanded_value_ids={@expanded_value_ids}
+                    editing_value_id={@editing_value_id}
+                    edit_value_form={@edit_value_form}
                   />
                 </div>
 
@@ -499,13 +533,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
   attr :value, :map, required: true
   attr :current_profile, :map, default: nil
   attr :expanded_value_ids, :any, required: true
+  attr :editing_value_id, :integer, default: nil
+  attr :edit_value_form, :any, default: nil
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
+    editing? = assigns.editing_value_id == assigns.value.id
 
     assigns =
       assigns
       |> assign(:mine?, mine?)
+      |> assign(:editing?, editing?)
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
 
     ~H"""
@@ -531,6 +569,30 @@ defmodule PotokIdeWeb.GroupLive.Show do
         >
           {gettext("reply")}
         </span>
+        <div :if={@mine? and !@editing?} class="ml-auto flex items-center gap-1">
+          <button
+            id={"value-edit-#{@value.id}"}
+            type="button"
+            phx-click="start_edit_value"
+            phx-value-id={@value.id}
+            aria-label={gettext("Edit value")}
+            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+          >
+            <.icon name="hero-pencil-square" class="size-4" />
+          </button>
+
+          <button
+            id={"value-delete-#{@value.id}"}
+            type="button"
+            phx-click="delete_value"
+            phx-value-id={@value.id}
+            aria-label={gettext("Delete value")}
+            data-confirm={gettext("Are you sure you want to delete this value?")}
+            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
+          >
+            <.icon name="hero-trash" class="size-4" />
+          </button>
+        </div>
       </div>
 
       <div class={[
@@ -538,44 +600,72 @@ defmodule PotokIdeWeb.GroupLive.Show do
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
-        <div class="relative">
-          <div
-            class={[
-              "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
-              !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
-                "overflow-hidden"
-            ]}
-            style={collapsed_value_style(@expanded_value_ids, @value)}
+        <%= if @editing? do %>
+          <.form
+            for={@edit_value_form}
+            id={"edit-value-form-#{@value.id}"}
+            class="space-y-3"
+            phx-change="validate_edit_value"
+            phx-submit="save_edit_value"
           >
-            {render_value_content(@value)}
-          </div>
+            <.input
+              field={@edit_value_form[:content]}
+              id={"edit-value-content-#{@value.id}"}
+              aria-label={gettext("Value")}
+              type="textarea"
+              rows="4"
+              required
+            />
 
-          <div
-            :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
-            class={[
-              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t",
-              @mine? && "from-primary to-transparent",
-              !@mine? && "from-base-100 to-transparent"
-            ]}
-          >
-          </div>
+            <div class="flex justify-end gap-2">
+              <.button type="submit" variant="primary">
+                {gettext("Save changes")}
+              </.button>
+              <.button type="button" phx-click="cancel_edit_value">
+                {gettext("Cancel")}
+              </.button>
+            </div>
+          </.form>
+        <% else %>
+          <div class="relative">
+            <div
+              class={[
+                "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
+                !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
+                  "overflow-hidden"
+              ]}
+              style={collapsed_value_style(@expanded_value_ids, @value)}
+            >
+              {render_value_content(@value)}
+            </div>
 
-          <button
-            :if={value_expandable?(@value)}
-            type="button"
-            phx-click="toggle_value_expansion"
-            phx-value-id={@value.id}
-            class={[
-              "mt-3 text-sm font-semibold transition-opacity hover:opacity-80",
-              @mine? && "text-primary-content",
-              !@mine? && "text-primary"
-            ]}
-          >
-            {if value_expanded?(@expanded_value_ids, @value),
-              do: gettext("See less"),
-              else: gettext("See more")}
-          </button>
-        </div>
+            <div
+              :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
+              class={[
+                "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t",
+                @mine? && "from-primary to-transparent",
+                !@mine? && "from-base-100 to-transparent"
+              ]}
+            >
+            </div>
+
+            <button
+              :if={value_expandable?(@value)}
+              type="button"
+              phx-click="toggle_value_expansion"
+              phx-value-id={@value.id}
+              class={[
+                "mt-3 text-sm font-semibold transition-opacity hover:opacity-80",
+                @mine? && "text-primary-content",
+                !@mine? && "text-primary"
+              ]}
+            >
+              {if value_expanded?(@expanded_value_ids, @value),
+                do: gettext("See less"),
+                else: gettext("See more")}
+            </button>
+          </div>
+        <% end %>
       </div>
     </div>
     """
@@ -597,6 +687,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        socket
        |> assign(:is_member, is_member)
        |> assign(:active_tab, default_active_tab())
+       |> assign(:editing_value_id, nil)
+       |> assign(:edit_value_form, nil)
        |> load_group_data(group)}
     else
       {:ok,
@@ -648,6 +740,96 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
       end
+    end
+  end
+
+  def handle_event("start_edit_value", %{"id" => id}, socket) do
+    current_profile = socket.assigns.current_profile
+
+    case find_value(socket.assigns.values, id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+
+      value when value.creator_id != current_profile.id ->
+        {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
+
+      value ->
+        {:noreply,
+         socket
+         |> assign(:editing_value_id, value.id)
+         |> assign(:edit_value_form, to_form(Value.changeset(value, %{})))}
+    end
+  end
+
+  def handle_event("validate_edit_value", %{"value" => attrs}, socket) do
+    case current_editing_value(socket) do
+      nil ->
+        {:noreply, socket}
+
+      value ->
+        changeset =
+          value
+          |> Value.changeset(attrs)
+          |> Map.put(:action, :validate)
+
+        {:noreply, assign(socket, :edit_value_form, to_form(changeset))}
+    end
+  end
+
+  def handle_event("save_edit_value", %{"value" => attrs}, socket) do
+    current_profile = socket.assigns.current_profile
+
+    case current_editing_value(socket) do
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+
+      value ->
+        case Social.update_value(current_profile, value, attrs) do
+          {:ok, _updated_value} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, gettext("Value updated."))
+             |> refresh_group_data()
+             |> clear_edit_value()}
+
+          {:error, :not_value_creator} ->
+            {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
+
+          {:error, %Ecto.Changeset{} = changeset} ->
+            {:noreply,
+             assign(socket, :edit_value_form, to_form(Map.put(changeset, :action, :validate)))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not update value."))}
+        end
+    end
+  end
+
+  def handle_event("cancel_edit_value", _params, socket) do
+    {:noreply, clear_edit_value(socket)}
+  end
+
+  def handle_event("delete_value", %{"id" => id}, socket) do
+    current_profile = socket.assigns.current_profile
+
+    case find_value(socket.assigns.values, id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+
+      value ->
+        case Social.delete_value(current_profile, value) do
+          {:ok, _deleted_value} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, gettext("Value deleted."))
+             |> refresh_group_data()}
+
+          {:error, :not_value_creator} ->
+            {:noreply, put_flash(socket, :error, gettext("You can only delete your own values."))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not delete value."))}
+        end
     end
   end
 
@@ -821,6 +1003,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       :children,
       Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
     )
+    |> assign(:members_count, Social.count_group_members(group))
+    |> assign(:first3_members, Social.list_first3_group_members(group))
     |> assign(:members, Social.list_group_members(group))
     |> assign(:values, values)
     |> assign(:active_tab, active_tab)
@@ -837,6 +1021,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp refresh_group_data(socket) do
     load_group_data(socket, socket.assigns.group)
+  end
+
+  defp current_editing_value(socket) do
+    find_value(socket.assigns.values, socket.assigns.editing_value_id)
+  end
+
+  defp find_value(_values, nil), do: nil
+
+  defp find_value(values, id) when is_integer(id) do
+    Enum.find(values, &(&1.id == id))
+  end
+
+  defp find_value(values, id) when is_binary(id) do
+    Enum.find(values, &(Integer.to_string(&1.id) == id))
+  end
+
+  defp clear_edit_value(socket) do
+    socket
+    |> assign(:editing_value_id, nil)
+    |> assign(:edit_value_form, nil)
   end
 
   defp value_parent_options(values) do
