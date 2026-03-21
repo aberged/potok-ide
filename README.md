@@ -1,20 +1,63 @@
 # PotokIde
 
-PotokIde is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two distinct states after login: profile selection and profile-scoped group activity.
+PotokIde is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity.
 
-## Overview
+## Quick Start
 
-The core user flow is:
+### Local development
 
-1. Guests hitting `/` are redirected to `/accounts/log-in`.
+Prerequisites:
+
+* Elixir `~> 1.15` as declared in `mix.exs`
+* Erlang/OTP compatible with your Elixir installation
+* PostgreSQL running locally
+
+Default local database settings:
+
+* username: `postgres`
+* password: `postgres`
+* hostname: `localhost`
+* development database: `potok_ide_dev`
+* test database: `potok_ide_test`
+
+If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test.exs` before running setup.
+
+1. Install dependencies, create the database, run migrations, and build assets:
+
+	```sh
+	mix setup
+	```
+
+2. Start the application:
+
+	```sh
+	mix phx.server
+	```
+
+3. Open `http://localhost:4000`.
+
+The seed script currently does not insert sample data, so a fresh setup gives you schema only.
+
+### Common commands
+
+* `mix test` runs the test suite.
+* `mix ecto.reset` drops and recreates the local database.
+* `mix assets.build` rebuilds Tailwind and esbuild assets.
+* `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
+
+## Product Flow
+
+The entry flow at `/` is auth-aware:
+
+1. Guests are redirected to `/accounts/log-in`.
 2. Authenticated accounts without a selected profile are redirected to `/profiles`.
 3. Authenticated accounts with a current profile are redirected to `/groups`.
 
 The web layer combines three cross-cutting concerns:
 
-* `PotokIdeWeb.AccountAuth` for authenticated account loading across controllers and LiveViews.
-* `PotokIdeWeb.ProfileAuth` for loading and enforcing a current profile when profile-scoped features are used.
-* `PotokIdeWeb.Locale` for locale resolution from params, session, and request headers in both Plug and LiveView lifecycles.
+* `PotokIdeWeb.AccountAuth` for authenticated account loading across controllers and LiveViews
+* `PotokIdeWeb.ProfileAuth` for loading and enforcing a current profile when profile-scoped features are used
+* `PotokIdeWeb.Locale` for locale resolution from params, session, and request headers in both Plug and LiveView lifecycles
 
 ## Tech Stack
 
@@ -50,59 +93,14 @@ Testing and DX:
 * `LazyHTML`
 * Mix aliases for setup, asset builds, and verification
 
-## Local Development
-
-### Prerequisites
-
-You need:
-
-* Elixir `~> 1.15` as declared in `mix.exs`
-* Erlang/OTP compatible with your Elixir installation
-* PostgreSQL running locally
-
-The default local database settings are:
-
-* username: `postgres`
-* password: `postgres`
-* hostname: `localhost`
-* development database: `potok_ide_dev`
-* test database: `potok_ide_test`
-
-If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test.exs` before running setup.
-
-### First Run
-
-1. Install dependencies, create the database, run migrations, and build assets:
-
-	```sh
-	mix setup
-	```
-
-2. Start the application:
-
-	```sh
-	mix phx.server
-	```
-
-3. Open `http://localhost:4000`.
-
-The seed script currently does not insert sample records, so the first run gives you a clean database with schema only.
-
-### Useful Commands
-
-* `mix test` runs the test suite.
-* `mix ecto.reset` drops and recreates the local database.
-* `mix assets.build` rebuilds Tailwind and esbuild assets.
-* `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
-
-## Application Routes
+## Routes
 
 The router is organized by authentication and profile requirements.
 
 Public browser routes:
 
-* `GET /` redirects based on account and profile state.
-* `GET /locale/:locale` updates the active locale.
+* `GET /` redirects based on account and profile state
+* `GET /locale/:locale` updates the active locale
 * `GET /accounts/register`
 * `GET /accounts/log-in`
 * `GET /accounts/log-in/:token`
@@ -111,7 +109,7 @@ Public browser routes:
 
 Authenticated routes:
 
-* `GET /profiles` for profile selection and setup.
+* `GET /profiles` for profile selection and setup
 * `GET /accounts/settings`
 * `GET /accounts/settings/confirm-email/:token`
 * `POST /accounts/update-password`
@@ -122,7 +120,7 @@ Authenticated routes that require a current profile:
 * `GET /groups/:id`
 * `GET /invitations`
 
-In development, `dev_routes` also enables:
+Development-only routes when `dev_routes` is enabled:
 
 * `GET /dev/dashboard`
 * `GET /dev/mailbox`
@@ -206,6 +204,37 @@ High-level layout:
 |- mix.exs                 # Dependencies, aliases, and project config
 ```
 
+## Running A Release With Docker
+
+The repository includes a multi-stage `Dockerfile` that builds a production release and starts it with `/app/bin/server`.
+
+Build the image:
+
+```sh
+docker build -t potok-ide .
+```
+
+Run the release container by providing the required runtime configuration:
+
+```sh
+docker run --rm -p 4000:4000 \
+  -e PHX_SERVER=true \
+  -e PHX_HOST=localhost \
+  -e PORT=4000 \
+  -e SECRET_KEY_BASE=your-secret \
+  -e DATABASE_URL=ecto://USER:PASS@HOST/DATABASE \
+  -e MAILGUN_API_KEY=your-key \
+  -e MAILGUN_DOMAIN=mg.example.com \
+  -e MAILER_FROM_EMAIL=no-reply@mg.example.com \
+  potok-ide
+```
+
+Notes:
+
+* The Docker image is production-oriented. It does not provide code reloading or a local dev shell workflow.
+* Your `DATABASE_URL` must point to a database reachable from inside the container.
+* Asset compilation happens during image build through `mix assets.deploy`.
+
 ## Production Configuration
 
 Production uses `Swoosh.Adapters.Mailgun` and expects runtime configuration from environment variables.
@@ -229,6 +258,16 @@ Optional environment variables:
 * `MAILGUN_BASE_URL` can be set to `https://api.eu.mailgun.net/v3` for EU Mailgun accounts
 * `PHX_SERVER=true` enables the web server for releases if your runtime does not already set it
 
+## Fly.io Deployment
+
+The repository already contains `fly.toml` with these defaults:
+
+* app name: `potok-ide`
+* primary region: `fra`
+* runtime host: `potok-ide.fly.dev`
+* internal service port: `8080`
+* release command: `/app/bin/migrate`
+
 Example Fly.io secrets setup:
 
 ```sh
@@ -238,16 +277,13 @@ fly secrets set MAILGUN_API_KEY=your-key MAILGUN_DOMAIN=mg.example.com MAILER_FR
 fly secrets set MAILER_FROM_NAME="PotokIde"
 ```
 
-## Deployment Notes
+Deploy with:
 
-The repository includes both a multi-stage `Dockerfile` and `fly.toml`.
+```sh
+fly deploy
+```
 
-Key deployment details:
-
-* Fly.io is configured with `release_command = '/app/bin/migrate'`.
-* The generated runtime host is `potok-ide.fly.dev`.
-* Production asset compilation happens during image build via `mix assets.deploy`.
-* `config/prod.exs` enables SSL rewriting and configures Swoosh to use the `Req` API client.
+`fly.toml` already enables HTTPS and runs migrations during deployment.
 
 ## Maintenance Notes
 
