@@ -625,6 +625,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               aria-label={gettext("Value")}
               type="textarea"
               rows="4"
+              class="w-full textarea border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40"
               required
             />
 
