@@ -461,20 +461,31 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def profile_identity(assigns) do
     ~H"""
     <div class="flex min-w-0 items-center gap-3">
-      <%= if avatar_url = profile_picture_url(@profile) do %>
-        <img
-          src={avatar_url}
-          alt={@profile.username}
-          class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
-        />
-      <% else %>
-        <div class={[
-          @avatar_size,
-          "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
-        ]}>
-          {profile_initials(@profile.username)}
+      <div class="relative">
+        <%= if avatar_url = profile_picture_url(@profile) do %>
+          <img
+            src={avatar_url}
+            alt={@profile.username}
+            class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
+          />
+        <% else %>
+          <div class={[
+            @avatar_size,
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+          ]}>
+            {profile_initials(@profile.username)}
+          </div>
+        <% end %>
+        <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+          <%!-- {if @group.is_public,
+            do: raw("<div class='size-4 rounded-full bg-green-500 ring ring-green-500 ring-offset-1'></div>"),
+            else: raw("<div class='size-4 rounded-full bg-gray-500 ring ring-gray-500 ring-offset-1'></div>")
+          } --%>
+          {if @profile.sharing == :shared,
+            do: "👨‍👨‍👦‍👦",
+            else: ""}
         </div>
-      <% end %>
+      </div>
 
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>

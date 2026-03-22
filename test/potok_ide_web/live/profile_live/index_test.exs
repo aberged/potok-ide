@@ -175,5 +175,102 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert render(lv) =~ "gamma profile"
     end
+
+    test "sends a shared profile invitation from the profile editor", %{conn: conn} do
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, shared_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "shared editor profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "invitee-shared-target",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      inviter_account = Accounts.get_account!(inviter_account.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(inviter_account)
+        |> live(~p"/profiles")
+
+      lv
+      |> element("button[phx-click=edit][phx-value-id='#{shared_profile.id}']")
+      |> render_click()
+
+      assert has_element?(lv, "#shared-profile-invitation-form")
+
+      result =
+        lv
+        |> form("#shared-profile-invitation-form",
+          profile_invitation: %{username: invitee_profile.username}
+        )
+        |> render_submit()
+
+      assert result =~ "Shared profile invitation sent."
+
+      [pending_invitation] = Social.list_pending_profile_invitations(invitee_profile)
+      assert pending_invitation.profile_id == shared_profile.id
+    end
+
+    test "accepts a shared profile invitation from the profiles page", %{conn: conn} do
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, shared_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "shared invite profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "invitee-shared-current",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_profile(
+                 inviter_account,
+                 shared_profile,
+                 shared_profile,
+                 invitee_profile
+               )
+
+      invitee_account = Accounts.get_account!(invitee_account.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(invitee_account)
+        |> live(~p"/profiles")
+
+      assert has_element?(lv, "#shared-profile-invitations")
+
+      result =
+        lv
+        |> element("#accept-profile-invitation-#{invitation.id}")
+        |> render_click()
+
+      assert result =~ "Shared profile invitation accepted."
+      assert result =~ "shared invite profile"
+      refute has_element?(lv, "#accept-profile-invitation-#{invitation.id}")
+    end
   end
 end

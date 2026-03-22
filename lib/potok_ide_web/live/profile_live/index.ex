@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   alias PotokIde.Accounts
   alias PotokIde.Social
   alias PotokIde.Social.Profile
+  alias PotokIdeWeb.ProfileAuth
 
   @impl true
   def render(assigns) do
@@ -17,6 +18,39 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
         <div :if={@current_profile} class="alert">
           <.profile_identity profile={@current_profile} title={gettext("Current profile:")} />
+        </div>
+
+        <div :if={@profile_invitations != []} id="shared-profile-invitations" class="space-y-3">
+          <.header>
+            {gettext("Shared profile invitations")}
+            <:subtitle>
+              {gettext("Pending invitations for your current profile.")}
+            </:subtitle>
+          </.header>
+
+          <div :for={invitation <- @profile_invitations} class="card bg-base-200">
+            <div class="card-body gap-3">
+              <div>
+                <h3 class="card-title">{invitation.profile.username}</h3>
+                <p class="text-sm text-base-content/70">
+                  {gettext("Invited by: ")}<span class="font-semibold">
+                    {invitation.inviter.username}
+                  </span>
+                </p>
+              </div>
+
+              <div>
+                <.button
+                  phx-click="accept_profile_invitation"
+                  phx-value-id={invitation.id}
+                  id={"accept-profile-invitation-#{invitation.id}"}
+                  variant="primary"
+                >
+                  {gettext("Accept shared profile")}
+                </.button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="card bg-base-200">
@@ -123,6 +157,36 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                   <.button type="button" phx-click="cancel_edit">{gettext("Cancel")}</.button>
                 </div>
               </.form>
+
+              <div
+                :if={@edit_profile && @edit_profile.sharing == :shared}
+                class="mt-6 border-t border-base-300/70 pt-5"
+              >
+                <h4 class="text-base font-semibold text-base-content">
+                  {gettext("Invite profile to shared profile")}
+                </h4>
+                <p class="mt-1 text-sm text-base-content/60">
+                  {gettext("Send an invitation by profile username.")}
+                </p>
+
+                <.form
+                  for={@profile_invitation_form}
+                  id="shared-profile-invitation-form"
+                  phx-submit="invite_profile_to_profile"
+                >
+                  <.input
+                    field={@profile_invitation_form[:username]}
+                    id="shared-profile-invitation-username"
+                    label={gettext("Profile username")}
+                    required
+                  />
+                  <div class="mt-3">
+                    <.button phx-disable-with={gettext("Sending...")} variant="primary">
+                      {gettext("Send invitation")}
+                    </.button>
+                  </div>
+                </.form>
+              </div>
             </div>
           </div>
         </div>
@@ -234,13 +298,21 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def mount(_params, _session, socket) do
     account = socket.assigns.current_scope.account
 
+    socket =
+      socket
+      |> put_private(:previous_current_profile, socket.assigns.current_profile)
+      |> ProfileAuth.sync_profile_subscription()
+
     {:ok,
      socket
      |> assign(:profiles, Social.list_profiles_for_account(account))
+     |> assign(:profile_invitations, pending_profile_invitations(socket.assigns.current_profile))
      |> assign(:form, new_profile_form())
      |> assign(:create_profile_expanded, false)
      |> assign(:edit_form, nil)
+     |> assign(:edit_profile, nil)
      |> assign(:edit_profile_id, nil)
+     |> assign(:profile_invitation_form, new_profile_invitation_form())
      |> assign(:description_format_options, [
        {gettext("Markdown"), :markdown},
        {gettext("HTML"), :html}
@@ -296,6 +368,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
          |> assign(:profiles, Social.list_profiles_for_account(account))
          |> assign(:form, new_profile_form())
          |> assign(:create_profile_expanded, false)
+         |> assign(:profile_invitations, pending_profile_invitations(profile))
          |> push_current_profile_updated(profile)
          |> put_flash(:info, gettext("Profile created."))}
 
@@ -318,6 +391,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
       profile ->
         {:noreply,
          socket
+         |> assign(:edit_profile, profile)
          |> assign(:edit_profile_id, profile.id)
          |> assign(:edit_form, to_form(Profile.changeset(profile, %{})))}
     end
@@ -340,6 +414,10 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             {:noreply,
              socket
              |> assign(:profiles, Social.list_profiles_for_account(account))
+             |> assign(
+               :profile_invitations,
+               pending_profile_invitations(socket.assigns.current_profile)
+             )
              |> maybe_assign_current_profile(profile)
              |> clear_edit_state()
              |> put_flash(:info, gettext("Profile updated."))}
@@ -367,29 +445,142 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
       profile ->
         {:ok, account} = Accounts.set_current_profile(account, profile)
+        previous_profile = socket.private[:previous_current_profile]
 
         {:noreply,
          socket
          |> assign(:current_scope, %{socket.assigns.current_scope | account: account})
          |> assign(:current_profile, profile)
          |> assign(:profiles, Social.list_profiles_for_account(account))
+         |> assign(:profile_invitations, pending_profile_invitations(profile))
+         |> put_private(:previous_current_profile, profile)
+         |> ProfileAuth.sync_profile_subscription(previous_profile)
          |> push_current_profile_updated(profile)
          |> put_flash(:info, gettext("Profile selected."))}
+    end
+  end
+
+  def handle_event(
+        "invite_profile_to_profile",
+        %{"profile_invitation" => %{"username" => raw_username}},
+        socket
+      ) do
+    inviter_account = socket.assigns.current_scope.account
+    inviter = socket.assigns.current_profile
+    username = String.trim(raw_username)
+
+    case {socket.assigns.edit_profile, inviter} do
+      {_, nil} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Select a current profile before sending invitations."))}
+
+      {%{sharing: :shared} = profile, inviter} ->
+        case Social.get_profile_by_username(username) do
+          nil ->
+            {:noreply,
+             put_flash(socket, :error, gettext("No profile exists for that username."))}
+
+          invitee ->
+            case Social.invite_profile_to_profile(inviter_account, inviter, profile, invitee) do
+              {:ok, _invitation} ->
+                {:noreply,
+                 socket
+                 |> assign(:profile_invitation_form, new_profile_invitation_form())
+                 |> put_flash(:info, gettext("Shared profile invitation sent."))}
+
+              {:error, :profile_not_shared} ->
+                {:noreply,
+                 put_flash(socket, :error, gettext("Only shared profiles can be invited."))}
+
+              {:error, :inviter_not_linked} ->
+                {:noreply,
+                 put_flash(
+                   socket,
+                   :error,
+                   gettext("That profile is not available for this account.")
+                 )}
+
+              {:error, :cannot_invite_self} ->
+                {:noreply,
+                 put_flash(socket, :error, gettext("You cannot invite your own profile."))}
+
+              {:error, %Ecto.Changeset{}} ->
+                {:noreply,
+                 put_flash(socket, :error, gettext("A shared profile invitation is already pending."))}
+
+              {:error, _reason} ->
+                {:noreply,
+                 put_flash(socket, :error, gettext("Could not send shared profile invitation."))}
+            end
+        end
+
+      _ ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Select a shared profile before inviting another profile."))}
+    end
+  end
+
+  def handle_event("accept_profile_invitation", %{"id" => id}, socket) do
+    account = socket.assigns.current_scope.account
+    invitee = socket.assigns.current_profile
+    invitation_id = String.to_integer(id)
+
+    with %{} <- invitee,
+         %{} = invitation <- Social.get_pending_profile_invitation_for_invitee(invitee, invitation_id),
+         {:ok, _accepted_invitation} <- Social.accept_profile_invitation(invitation, invitee, account) do
+      refreshed_account = Accounts.get_account!(account.id)
+
+      {:noreply,
+       socket
+       |> assign(:current_scope, %{socket.assigns.current_scope | account: refreshed_account})
+       |> assign(:current_profile, Social.get_account_current_profile(refreshed_account))
+       |> assign(:profiles, Social.list_profiles_for_account(refreshed_account))
+       |> assign(
+         :profile_invitations,
+         pending_profile_invitations(Social.get_account_current_profile(refreshed_account))
+       )
+       |> put_flash(:info, gettext("Shared profile invitation accepted."))}
+    else
+      nil ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Shared profile invitation not found."))}
+
+      {:error, _reason} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Could not accept shared profile invitation."))}
     end
   end
 
   @impl true
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do
+    previous_profile = socket.private[:previous_current_profile]
+
+    current_profile = Social.get_account_current_profile(socket.assigns.current_scope.account)
+
     {:noreply,
-     assign(
-       socket,
-       :profiles,
-       Social.list_profiles_for_account(socket.assigns.current_scope.account)
-     )}
+     socket
+     |> assign(:profiles, Social.list_profiles_for_account(socket.assigns.current_scope.account))
+     |> assign(:current_profile, current_profile)
+     |> assign(:profile_invitations, pending_profile_invitations(current_profile))
+     |> put_private(:previous_current_profile, current_profile)
+     |> ProfileAuth.sync_profile_subscription(previous_profile)}
   end
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
+
+  def handle_info({:profile_share_invitations_updated, profile_id}, socket)
+      when not is_nil(socket.assigns.current_profile) and socket.assigns.current_profile.id == profile_id do
+    {:noreply,
+     assign(
+       socket,
+       :profile_invitations,
+       pending_profile_invitations(socket.assigns.current_profile)
+     )}
+  end
+
+  def handle_info({:profile_share_invitations_updated, _profile_id}, socket),
+    do: {:noreply, socket}
 
   defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
@@ -423,10 +614,19 @@ defmodule PotokIdeWeb.ProfileLive.Index do
     |> to_form()
   end
 
+  defp new_profile_invitation_form do
+    to_form(%{"username" => ""}, as: :profile_invitation)
+  end
+
+  defp pending_profile_invitations(nil), do: []
+  defp pending_profile_invitations(profile), do: Social.list_pending_profile_invitations(profile)
+
   defp clear_edit_state(socket) do
     socket
+    |> assign(:edit_profile, nil)
     |> assign(:edit_profile_id, nil)
     |> assign(:edit_form, nil)
+    |> assign(:profile_invitation_form, new_profile_invitation_form())
   end
 
   defp current_editable_profile(socket, account) do

@@ -24,17 +24,17 @@ If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test
 
 1. Install dependencies, create the database, run migrations, and build assets:
 
-	```sh
-	mix setup
-	```
+ ```sh
+ mix setup
+ ```
 
-2. Start the application:
+1. Start the application:
 
-	```sh
-	mix phx.server
-	```
+ ```sh
+ mix phx.server
+ ```
 
-3. Open `http://localhost:4000`.
+1. Open `http://localhost:4000`.
 
 The seed script currently does not insert sample data, so a fresh setup gives you schema only.
 
@@ -58,6 +58,13 @@ The web layer combines three cross-cutting concerns:
 * `PotokIdeWeb.AccountAuth` for authenticated account loading across controllers and LiveViews
 * `PotokIdeWeb.ProfileAuth` for loading and enforcing a current profile when profile-scoped features are used
 * `PotokIdeWeb.Locale` for locale resolution from params, session, and request headers in both Plug and LiveView lifecycles
+
+Profiles also have a sharing mode:
+
+* `unique` profiles are meant to stay attached to one account
+* `shared` profiles can be linked to multiple accounts through `AccountProfile`
+
+Group invitations are addressed to profiles, not directly to accounts. That means a shared profile carries its memberships and pending invitations with it, and any linked account can see them when that shared profile is selected as the current profile.
 
 ## Tech Stack
 
@@ -130,12 +137,18 @@ Development-only routes when `dev_routes` is enabled:
 The main concepts in the system are:
 
 * `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, and one selected `current_profile`.
-* `Profile`: the social identity used inside groups. A profile can be linked to one or more accounts depending on sharing rules and can create groups and values.
+* `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
 * `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, and optional parent relations.
 * `Value`: content posted by a profile in a group, optionally as part of a reply chain.
 * `GroupMembership`: the join entity between profiles and groups.
-* `GroupInvitation`: an invitation from one profile to another to join a group.
+* `GroupInvitation`: an invitation from one profile to another profile to join a group.
 * `AccountProfile`: the join entity between accounts and profiles.
+
+Invitation behavior:
+
+* Invitations are stored against the invitee profile, not against a specific account.
+* If the invitee profile is shared, the pending invitation is effectively shared as well, because all linked accounts access the same profile record.
+* Accepting an invitation adds the profile to the target group, so the resulting membership is also shared by every account linked to that profile.
 
 Relationship summary:
 

@@ -11,7 +11,15 @@ defmodule PotokIde.Social do
   alias PotokIde.Repo
 
   alias PotokIde.Accounts.Account
-  alias PotokIde.Social.{AccountProfile, Group, GroupInvitation, GroupMembership, Profile, Value}
+  alias PotokIde.Social.{
+    AccountProfile,
+    Group,
+    GroupInvitation,
+    GroupMembership,
+    Profile,
+    ProfileInvitation,
+    Value
+  }
 
   def subscribe_account(%Account{id: account_id}) when is_integer(account_id) do
     Phoenix.PubSub.subscribe(PotokIde.PubSub, account_topic(account_id))
@@ -125,35 +133,76 @@ defmodule PotokIde.Social do
   end
 
   def add_profile_to_account(%Profile{} = profile, %Account{} = account) do
-    case profile.sharing do
-      :shared ->
-        Repo.insert(
-          AccountProfile.changeset(%AccountProfile{}, %{
-            account_id: account.id,
-            profile_id: profile.id
-          })
-        )
+    case link_profile_to_account(Repo, profile, account) do
+      {:ok, %AccountProfile{}} = ok ->
+        broadcast_account_profiles_updated(account)
+        ok
 
-      :unique ->
-        existing_account_ids =
-          from(ap in AccountProfile, where: ap.profile_id == ^profile.id, select: ap.account_id)
-          |> Repo.all()
+      other ->
+        other
+    end
+  end
 
-        cond do
-          existing_account_ids == [] ->
-            Repo.insert(
-              AccountProfile.changeset(%AccountProfile{}, %{
-                account_id: account.id,
-                profile_id: profile.id
-              })
-            )
+  def invite_profile_to_profile(
+        %Account{} = inviter_account,
+        %Profile{} = inviter,
+        %Profile{} = profile,
+        %Profile{} = invitee
+      ) do
+    cond do
+      profile.sharing != :shared ->
+        {:error, :profile_not_shared}
 
-          account.id in existing_account_ids ->
-            {:ok, :already_linked}
+      is_nil(get_profile_for_account(inviter_account, profile.id)) ->
+        {:error, :inviter_not_linked}
 
-          true ->
-            {:error, :profile_is_unique}
+      inviter.id == invitee.id ->
+        {:error, :cannot_invite_self}
+
+      true ->
+        %ProfileInvitation{}
+        |> ProfileInvitation.changeset(%{
+          profile_id: profile.id,
+          inviter_id: inviter.id,
+          invitee_id: invitee.id
+        })
+        |> Repo.insert()
+        |> case do
+          {:ok, _invitation} = ok ->
+            broadcast_profile_share_invitations_updated(invitee)
+            ok
+
+          error ->
+            error
         end
+    end
+  end
+
+  def accept_profile_invitation(
+        %ProfileInvitation{} = invitation,
+        %Profile{} = invitee,
+        %Account{} = invitee_account
+      ) do
+    invitation = Repo.preload(invitation, :profile)
+
+    if invitation.invitee_id != invitee.id do
+      {:error, :invitee_mismatch}
+    else
+      Multi.new()
+      |> Multi.update(:invitation, ProfileInvitation.accept_changeset(invitation))
+      |> Multi.run(:account_profile, fn repo, _changes ->
+        link_profile_to_account(repo, invitation.profile, invitee_account)
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{invitation: accepted_invitation}} ->
+          broadcast_profile_share_invitations_updated(invitee)
+          broadcast_account_profiles_updated(invitee_account)
+          {:ok, accepted_invitation}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
     end
   end
 
@@ -424,12 +473,34 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def list_pending_profile_invitations(%Profile{} = invitee) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in ProfileInvitation,
+      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      order_by: [desc: i.inserted_at],
+      preload: [:profile, :inviter]
+    )
+    |> Repo.all()
+  end
+
   def get_pending_invitation_for_invitee(%Profile{} = invitee, invitation_id) do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
       where: i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
       preload: [:group, :inviter]
+    )
+    |> Repo.one()
+  end
+
+  def get_pending_profile_invitation_for_invitee(%Profile{} = invitee, invitation_id) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in ProfileInvitation,
+      where:
+        i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      preload: [:profile, :inviter]
     )
     |> Repo.one()
   end
@@ -471,6 +542,14 @@ defmodule PotokIde.Social do
     )
   end
 
+  defp broadcast_profile_share_invitations_updated(%Profile{id: profile_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:profile_share_invitations_updated, profile_id}
+    )
+  end
+
   defp broadcast_profile_invitations_updated(%Profile{id: profile_id}) do
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
@@ -495,5 +574,50 @@ defmodule PotokIde.Social do
       group_topic(group_id),
       {:group_updated, group_id}
     )
+  end
+
+  defp link_profile_to_account(repo, %Profile{} = profile, %Account{} = account) do
+    case profile.sharing do
+      :shared ->
+        if linked_to_account?(repo, profile, account) do
+          {:ok, :already_linked}
+        else
+          repo.insert(
+            AccountProfile.changeset(%AccountProfile{}, %{
+              account_id: account.id,
+              profile_id: profile.id
+            })
+          )
+        end
+
+      :unique ->
+        existing_account_ids =
+          from(ap in AccountProfile, where: ap.profile_id == ^profile.id, select: ap.account_id)
+          |> repo.all()
+
+        cond do
+          existing_account_ids == [] ->
+            repo.insert(
+              AccountProfile.changeset(%AccountProfile{}, %{
+                account_id: account.id,
+                profile_id: profile.id
+              })
+            )
+
+          account.id in existing_account_ids ->
+            {:ok, :already_linked}
+
+          true ->
+            {:error, :profile_is_unique}
+        end
+    end
+  end
+
+  defp linked_to_account?(repo, %Profile{} = profile, %Account{} = account) do
+    from(ap in AccountProfile,
+      where: ap.profile_id == ^profile.id and ap.account_id == ^account.id,
+      select: 1
+    )
+    |> repo.exists?()
   end
 end

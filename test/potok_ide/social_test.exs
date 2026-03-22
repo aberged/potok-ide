@@ -34,6 +34,56 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "shared profile invitations" do
+    test "inviting and accepting links a shared profile to the accepting account" do
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, shared_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "shared-profile-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "shared-profile-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_profile(
+                 inviter_account,
+                 shared_profile,
+                 shared_profile,
+                 invitee_profile
+               )
+
+      assert [pending_invitation] = Social.list_pending_profile_invitations(invitee_profile)
+      assert pending_invitation.id == invitation.id
+      assert pending_invitation.profile.id == shared_profile.id
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_profile_invitation(invitation, invitee_profile, invitee_account)
+
+      invitee_account = Accounts.get_account!(invitee_account.id)
+
+      assert [_invitee_profile, linked_profile] = Social.list_profiles_for_account(invitee_account)
+      assert linked_profile.id == shared_profile.id
+
+      assert current_profile = Social.get_account_current_profile(invitee_account)
+      assert current_profile.id == invitee_profile.id
+
+      assert [] == Social.list_pending_profile_invitations(invitee_profile)
+    end
+  end
+
   describe "count_group_members/1" do
     test "returns the current number of members in a group" do
       owner_account = account_fixture()
