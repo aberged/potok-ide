@@ -69,6 +69,7 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.ProfileAuth, :require_profile}
       ] do
       live "/groups", GroupLive.Root, :show
+      live "/groups/:id/:tab", GroupLive.Show, :show
       live "/groups/:id", GroupLive.Show, :show
       live "/invitations", InvitationLive.Index, :index
     end

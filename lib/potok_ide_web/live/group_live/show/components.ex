@@ -4,10 +4,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   import Phoenix.HTML, only: [raw: 1]
 
   attr :id, :string, required: true
-  attr :tab, :string, required: true
-  attr :active_tab, :string, required: true
-  attr :label, :string, required: true
-
   attr :datetime, :any, required: true
   attr :class, :any, default: nil
 
@@ -54,6 +50,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     </script>
     """
   end
+
+  attr :id, :string, required: true
+  attr :tab, :string, required: true
+  attr :active_tab, :string, required: true
+  attr :label, :string, required: true
 
   def group_tab_button(assigns) do
     ~H"""

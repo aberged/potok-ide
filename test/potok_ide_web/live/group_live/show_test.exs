@@ -63,7 +63,15 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "tabs-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
 
       {:ok, _value} =
         Social.create_value(profile, group, %{
@@ -84,8 +92,89 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> element("#group-tab-members")
       |> render_click()
 
+      assert_patch(lv, ~p"/groups/#{group.id}/members")
+
       refute has_element?(lv, "#group-panel-values")
       assert has_element?(lv, "#group-panel-members")
+    end
+
+    test "loads the tab from the URL path", %{conn: conn} do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "tab-path-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "tab-path-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "tab-path-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(lv, "#group-panel-members")
+      refute has_element?(lv, "#group-panel-values")
+    end
+
+    test "falls back to the default tab for invalid tab paths", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "invalid-tab-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "invalid-tab-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/not-a-tab")
+
+      assert has_element?(lv, "#group-panel-values")
     end
 
     test "clicking the member avatar summary switches to the members tab", %{conn: conn} do

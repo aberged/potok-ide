@@ -134,9 +134,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
               </div>
             </div>
 
-            <SubGroupsTab.panel :if={@active_tab == "sub_groups" or @group.parent_id == nil} children={@children} />
+            <SubGroupsTab.panel
+              :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
+              children={@children}
+            />
 
-            <MembersTab.panel :if={@active_tab == "members"} members={@members} />
+            <MembersTab.panel
+              :if={@active_tab == "members"}
+              members={@members}
+            />
 
             <ValuesTab.panel
               :if={@active_tab == "values" and @group.parent_id != nil}
@@ -168,11 +174,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   @impl true
-  def mount(%{"id" => id}, _session, socket) do
+  def mount(%{"id" => id} = params, _session, socket) do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(id)
 
     is_member = Social.member_of_group?(current_profile, group)
+    active_tab = normalize_active_tab(Map.get(params, "tab"), is_member)
 
     if can_view_group?(group, is_member) do
       if connected?(socket) do
@@ -182,7 +189,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:ok,
        socket
        |> assign(:is_member, is_member)
-       |> assign(:active_tab, default_active_tab())
+        |> assign(:active_tab, active_tab)
        |> assign(:editing_value_id, nil)
        |> assign(:edit_value_form, nil)
        |> load_group_data(group)}
@@ -192,6 +199,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> put_flash(:error, gettext("You do not have access to that group."))
        |> push_navigate(to: ~p"/groups")}
     end
+  end
+
+  @impl true
+  def handle_params(params, _uri, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :active_tab,
+       normalize_active_tab(Map.get(params, "tab"), socket.assigns.is_member)
+     )}
   end
 
   @impl true
@@ -330,7 +347,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
-    {:noreply, assign(socket, :active_tab, normalize_active_tab(tab, socket.assigns.is_member))}
+    {:noreply,
+     push_patch(
+       socket,
+       to: group_tab_path(socket.assigns.group.id, normalize_active_tab(tab, socket.assigns.is_member))
+     )}
   end
 
   def handle_event("validate_group", %{"group" => attrs}, socket) do
@@ -551,6 +572,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp default_active_tab, do: "values"
+
+  defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
   defp normalize_active_tab(tab, _is_member) when tab in ["values", "sub_groups", "members"],
     do: tab

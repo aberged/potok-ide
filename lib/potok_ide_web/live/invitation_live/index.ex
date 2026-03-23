@@ -9,7 +9,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-6">
+      <div class="space-y-6 px-4">
         <.header>
           {gettext("Invitations")}
           <:subtitle>{gettext("Pending group invitations for your current profile.")}</:subtitle>

@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-6">
+      <div class="space-y-6 px-4 flex h-[calc(100dvh-6rem)] overflow-y-auto flex-col">
         <.header>
           {gettext("Profiles")}
           <:subtitle>{gettext("Pick the profile you want to use, or create a new one.")}</:subtitle>
