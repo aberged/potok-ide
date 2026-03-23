@@ -120,7 +120,7 @@ if config_env() == :prod do
       api_key: mailgun_api_key,
       domain: mailgun_domain,
       from_email: mailer_from_email,
-      from_name: System.get_env("MAILER_FROM_NAME") || "PotokIde"
+      from_name: System.get_env("MAILER_FROM_NAME") || "Potok"
     ]
     |> then(fn config ->
       case System.get_env("MAILGUN_BASE_URL") do

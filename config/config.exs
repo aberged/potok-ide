@@ -44,7 +44,7 @@ config :potok_ide, PotokIdeWeb.Endpoint,
 # at the `config/runtime.exs`.
 config :potok_ide, PotokIde.Mailer,
   adapter: Swoosh.Adapters.Local,
-  from_name: "PotokIde",
+  from_name: "Potok",
   from_email: "no-reply@example.com"
 
 # Configure esbuild (the version is required)

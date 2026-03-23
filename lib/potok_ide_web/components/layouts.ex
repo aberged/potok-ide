@@ -197,7 +197,7 @@ defmodule PotokIdeWeb.Layouts do
           <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
             <div>
               <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                PotokIde
+                Potok
               </div>
             </div>
 

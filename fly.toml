@@ -15,7 +15,7 @@ kill_signal = 'SIGTERM'
 [env]
   PHX_HOST = 'potok-ide.fly.dev'
   PORT = '8080'
-  MAILER_FROM_NAME = 'Potokide'
+  MAILER_FROM_NAME = 'Potok'
 
 [http_service]
   internal_port = 8080

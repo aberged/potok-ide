@@ -1,6 +1,6 @@
-# PotokIde
+# Potok
 
-PotokIde is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity.
+Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity.
 
 ## Quick Start
 
@@ -348,7 +348,7 @@ Example Fly.io secrets setup:
 fly secrets set SECRET_KEY_BASE=your-secret
 fly secrets set DATABASE_URL=ecto://USER:PASS@HOST/DATABASE
 fly secrets set MAILGUN_API_KEY=your-key MAILGUN_DOMAIN=mg.example.com MAILER_FROM_EMAIL=no-reply@mg.example.com
-fly secrets set MAILER_FROM_NAME="PotokIde"
+fly secrets set MAILER_FROM_NAME="Potok"
 ```
 
 Deploy with:

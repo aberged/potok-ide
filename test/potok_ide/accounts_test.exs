@@ -398,7 +398,7 @@ defmodule PotokIde.AccountsTest do
           "https://example.com/accounts/log-in/#{token}"
         end)
 
-      assert email.from == {"PotokIde", "no-reply@example.com"}
+      assert email.from == {"Potok", "no-reply@example.com"}
     end
   end
 

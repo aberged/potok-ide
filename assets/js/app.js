@@ -143,7 +143,7 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   }
 
   if (brandAvatar) {
-    brandAvatar.alt = detail.username || "PotokIde"
+    brandAvatar.alt = detail.username || "Potok"
   }
 
   if (!hasProfile) {
