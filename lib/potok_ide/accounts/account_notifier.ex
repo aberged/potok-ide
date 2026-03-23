@@ -15,7 +15,11 @@ defmodule PotokIde.Accounts.AccountNotifier do
       |> subject(subject)
       |> text_body(body)
 
-    with {:ok, _metadata} <- Mailer.deliver(email) do
+    IO.inspect(email, label: "Constructed email")
+    delivery_result = IO.inspect(Mailer.deliver(email), label: "Mailer.deliver(email)")
+
+    with {:ok, _metadata} <- delivery_result do
+
       {:ok, email}
     end
   end
