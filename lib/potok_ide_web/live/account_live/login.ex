@@ -7,7 +7,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4 px-6">
+      <div class="mx-auto max-w-sm space-y-4 px-6 pt-4">
         <div class="text-center">
           <.header>
             <p>{gettext("Log in")}</p>

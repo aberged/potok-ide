@@ -7,7 +7,7 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm px-4">
+      <div class="mx-auto max-w-sm px-4 pt-4">
         <div class="text-center">
           <.header>{gettext("Welcome %{email}", email: @account.email)}</.header>
         </div>

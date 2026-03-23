@@ -36,7 +36,7 @@ defmodule PotokIdeWeb.Layouts do
   def app(assigns) do
     ~H"""
     <main class="">
-      <div class="mx-auto w-full max-w-5xl space-y-4">
+      <div class="mx-auto w-full max-w-5xl h-[calc(100dvh-4rem)] flex flex-col">
         {render_slot(@inner_block)}
       </div>
     </main>

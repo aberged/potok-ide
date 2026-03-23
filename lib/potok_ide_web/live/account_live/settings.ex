@@ -9,7 +9,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-6 px-4">
+      <div class="space-y-6 px-4 pt-4">
         <div class="text-center">
           <.header>
             {gettext("Account Settings")}
