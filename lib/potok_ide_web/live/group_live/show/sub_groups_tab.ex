@@ -7,7 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-sub-groups" class="card bg-base-200">
+    <div id="group-panel-sub-groups" class="card bg-base-200 pt-4">
       <div class="card-body">
 
         <div :if={@children == []} class="text-base-content/70">

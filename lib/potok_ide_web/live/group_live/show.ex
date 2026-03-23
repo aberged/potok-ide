@@ -17,8 +17,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="flex h-[calc(100dvh-6rem)] flex-col sm:h-[calc(100dvh-6rem)] lg:h-[calc(100dvh-6rem)]">
-        <div class="sticky top-[5.75rem] z-10 mb-2 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-4 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
+      <div class="flex h-[calc(100dvh-6rem)] flex-col">
+        <div class="sticky top-[5rem] z-10 -mb-4 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-4 shadow-lg shadow-primary/5 backdrop-blur">
           <div class="flex items-center gap-3">
             <div :if={!@group.is_root and @group.parent_id} class="pt-1">
               <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
@@ -124,7 +124,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         </div>
 
         <div class="min-h-0 flex-1 overflow-y-auto pr-1">
-          <div class="flex min-h-0 flex-1 flex-col gap-2 pb-1">
+          <div class="flex min-h-0 flex-1 flex-col gap-2">
             <div :if={!@is_member} class="alert">
               <.icon name="hero-lock-closed" class="size-5 shrink-0" />
               <div>

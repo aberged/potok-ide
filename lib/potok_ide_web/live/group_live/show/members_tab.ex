@@ -7,7 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-members" class="card bg-base-200">
+    <div id="group-panel-members" class="card bg-base-200 pt-4">
       <div class="card-body">
         <h3 class="card-title">{gettext("Members")}</h3>
 

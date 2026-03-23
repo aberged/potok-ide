@@ -5,7 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-invite-profile" class="card bg-base-200">
+    <div id="group-panel-invite-profile" class="card bg-base-200 pt-4">
       <div class="card-body">
         <h3 class="card-title">{gettext("Invite profile")}</h3>
 
