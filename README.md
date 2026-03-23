@@ -11,6 +11,9 @@ Prerequisites:
 * Elixir `~> 1.15` as declared in `mix.exs`
 * Erlang/OTP compatible with your Elixir installation
 * PostgreSQL running locally
+* No separate Node.js toolchain is required for the default asset workflow because Tailwind and esbuild are managed through Mix tasks
+
+For the smoothest release parity, use an Elixir and OTP pair that is compatible with the included Docker build, which currently uses Elixir `1.18.2` and OTP `27.3.4`.
 
 Default local database settings:
 
@@ -36,14 +39,27 @@ If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test
 
 1. Open `http://localhost:4000`.
 
-The seed script currently does not insert sample data, so a fresh setup gives you schema only.
+`mix phx.server` starts the Phoenix endpoint together with the configured Tailwind and esbuild watchers from `config/dev.exs`.
+
+The seed script currently only contains the default template comments, so a fresh setup gives you schema only.
 
 ### Common commands
 
 * `mix test` runs the test suite.
 * `mix ecto.reset` drops and recreates the local database.
+* `mix run priv/repo/seeds.exs` runs the seed script manually.
+* `mix assets.setup` installs the pinned Tailwind and esbuild binaries used by the project.
 * `mix assets.build` rebuilds Tailwind and esbuild assets.
 * `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
+
+### Development behavior
+
+The default development configuration includes:
+
+* local email delivery through `Swoosh.Adapters.Local`
+* mailbox preview at `http://localhost:4000/dev/mailbox`
+* LiveDashboard at `http://localhost:4000/dev/dashboard`
+* live asset rebuilding through Phoenix endpoint watchers
 
 ## Product Flow
 
@@ -84,8 +100,9 @@ Authentication, email, and HTTP:
 
 Frontend and assets:
 
-* `Tailwind CSS`
-* `esbuild`
+* `Tailwind CSS 4.1.12`
+* `daisyUI` theme plugins loaded through `assets/css/app.css`
+* `esbuild 0.25.4`
 * `Heroicons`
 
 Localization and observability:
@@ -131,6 +148,13 @@ Development-only routes when `dev_routes` is enabled:
 
 * `GET /dev/dashboard`
 * `GET /dev/mailbox`
+
+The router uses separate LiveView sessions for:
+
+* auth-aware public pages (`:current_account`)
+* authenticated account settings (`:require_authenticated_account`)
+* authenticated profile selection (`:authenticated`)
+* profile-required collaboration screens (`:profile_required`)
 
 ## Domain Model
 
@@ -221,6 +245,12 @@ High-level layout:
 
 The repository includes a multi-stage `Dockerfile` that builds a production release and starts it with `/app/bin/server`.
 
+The release image currently builds with:
+
+* Elixir `1.18.2`
+* Erlang/OTP `27.3.4`
+* Debian `trixie-20260223-slim`
+
 Build the image:
 
 ```sh
@@ -248,6 +278,29 @@ Notes:
 * Your `DATABASE_URL` must point to a database reachable from inside the container.
 * Asset compilation happens during image build through `mix assets.deploy`.
 
+## Running A Release Without Docker
+
+Build a release locally:
+
+```sh
+set MIX_ENV=prod
+mix release
+```
+
+Start it with the required runtime variables available:
+
+```sh
+set PHX_SERVER=true
+_build/prod/rel/potok_ide/bin/server
+```
+
+On Unix-like shells, the equivalent is:
+
+```sh
+MIX_ENV=prod mix release
+PHX_SERVER=true _build/prod/rel/potok_ide/bin/server
+```
+
 ## Production Configuration
 
 Production uses `Swoosh.Adapters.Mailgun` and expects runtime configuration from environment variables.
@@ -271,6 +324,13 @@ Optional environment variables:
 * `MAILGUN_BASE_URL` can be set to `https://api.eu.mailgun.net/v3` for EU Mailgun accounts
 * `PHX_SERVER=true` enables the web server for releases if your runtime does not already set it
 
+Operational notes:
+
+* `PHX_HOST` is used to build endpoint URLs in production.
+* `PORT` is read in all environments, not just production.
+* `MAILGUN_BASE_URL` is useful for EU-region Mailgun accounts.
+* `DNS_CLUSTER_QUERY` is only needed when you want DNS-based node discovery across multiple running nodes.
+
 ## Fly.io Deployment
 
 The repository already contains `fly.toml` with these defaults:
@@ -280,6 +340,7 @@ The repository already contains `fly.toml` with these defaults:
 * runtime host: `potok-ide.fly.dev`
 * internal service port: `8080`
 * release command: `/app/bin/migrate`
+* preconfigured runtime env: `PHX_HOST=potok-ide.fly.dev`, `PORT=8080`, `MAILER_FROM_NAME=Potokide`
 
 Example Fly.io secrets setup:
 
@@ -296,7 +357,7 @@ Deploy with:
 fly deploy
 ```
 
-`fly.toml` already enables HTTPS and runs migrations during deployment.
+`fly.toml` already enables HTTPS, exposes the app on port `8080`, and runs migrations during deployment.
 
 ## Maintenance Notes
 

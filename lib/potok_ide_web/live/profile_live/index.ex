@@ -76,7 +76,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                   </.button>
                   <span
                     :if={!is_nil(@current_profile) and @current_profile.id == profile.id}
-                    class="badge"
+                    class="badge badge-outline badge-success"
                   >
                     {gettext("Active")}
                   </span>

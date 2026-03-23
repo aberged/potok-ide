@@ -47,11 +47,35 @@ const HeaderDrawer = {
   },
 }
 
+const DropdownMenu = {
+  mounted() {
+    this.handleClick = event => {
+      const trigger = event.target.closest("[data-dropdown-close], [data-dropdown-content] a")
+
+      if (!trigger || !this.el.contains(trigger)) {
+        return
+      }
+
+      requestAnimationFrame(() => {
+        if (document.activeElement && this.el.contains(document.activeElement)) {
+          document.activeElement.blur()
+        }
+      })
+    }
+
+    this.el.addEventListener("click", this.handleClick)
+  },
+
+  destroyed() {
+    this.el.removeEventListener("click", this.handleClick)
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {HeaderDrawer, ...colocatedHooks},
+  hooks: {HeaderDrawer, DropdownMenu, ...colocatedHooks},
 })
 
 // Show progress bar on live navigation and form submits

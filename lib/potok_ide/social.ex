@@ -466,7 +466,7 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
-      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      where: i.invitee_id == ^invitee.id, # and is_nil(i.accepted_at),
       order_by: [desc: i.inserted_at],
       preload: [:group, :inviter]
     )

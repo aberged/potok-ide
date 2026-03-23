@@ -182,7 +182,6 @@ defmodule PotokIdeWeb.Layouts do
           for={@id}
           class="btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur"
         >
-          <span class="sr-only">{gettext("Actions")}</span>
           <.icon name={@icon} class="size-5" />
         </label>
       </div>
@@ -200,9 +199,6 @@ defmodule PotokIdeWeb.Layouts do
               <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
                 PotokIde
               </div>
-              <div class="mt-1 text-sm font-semibold text-base-content">
-                {gettext("Actions")}
-              </div>
             </div>
 
             <label for={@id} class="btn btn-ghost btn-circle border border-base-300 bg-base-100">
@@ -215,6 +211,48 @@ defmodule PotokIdeWeb.Layouts do
             {render_slot(@inner_block)}
           </div>
         </div>
+      </div>
+    </div>
+    """
+  end
+
+  slot :inner_block, required: true
+
+  attr :id, :string, default: nil
+  attr :icon, :string, default: "hero-ellipsis-horizontal"
+  attr :label, :string, default: nil
+  attr :menu_class, :string, default: nil
+
+  def drop_down_menu(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :id,
+        assigns[:id] || "dropdown-menu-#{System.unique_integer([:positive, :monotonic])}"
+      )
+
+    ~H"""
+    <div id={"#{@id}-container"} class="dropdown dropdown-end w-auto flex-none" phx-hook="DropdownMenu">
+      <button
+        id={@id}
+        type="button"
+        tabindex="0"
+        aria-label={@label || gettext("Actions")}
+        class="btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur"
+      >
+        <span class="sr-only">{@label || gettext("Actions")}</span>
+        <.icon name={@icon} class="size-5" />
+      </button>
+
+      <div
+        tabindex="0"
+        data-dropdown-content
+        class={[
+          "dropdown-content z-40 mt-3 w-[min(18rem,calc(100vw-1.25rem))] rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 backdrop-blur",
+          @menu_class
+        ]}
+      >
+        {render_slot(@inner_block)}
       </div>
     </div>
     """

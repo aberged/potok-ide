@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   alias PotokIde.Social
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.GroupLive.Show.Components
 
   @impl true
   def render(assigns) do
@@ -20,20 +21,30 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
         <div :for={inv <- @invitations} class="card bg-base-200">
           <div class="card-body">
-            <h3 class="card-title">
-              <.link navigate={~p"/groups/#{inv.group.id}"} class="link link-hover">
-                {inv.group.name}
-              </.link>
-            </h3>
+            <Components.group_identity group={inv.group} avatar_size="size-12" text_class="text-sm" />
 
             <div class="text-sm text-base-content/70">
-              {gettext("Invited by:")} <span class="font-semibold">{inv.inviter.username}</span>
+              {gettext("Invited by:")}
+              <span class="font-semibold">{inv.inviter.username}</span>
+              <Components.local_time
+                id={"invitation-inserted-at-#{inv.id}"}
+                datetime={inv.inserted_at}
+                class="text-xs font-thin italic"
+              />
             </div>
 
-            <div class="mt-2">
+            <div :if={is_nil(inv.accepted_at)} class="mt-2">
               <.button phx-click="accept" phx-value-id={inv.id} variant="primary">
                 {gettext("Accept")}
               </.button>
+            </div>
+            <div :if={!is_nil(inv.accepted_at)} class="text-sm text-green-600 mt-1">
+              {gettext("Accepted on")}
+              <Components.local_time
+                id={"invitation-accepted-at-#{inv.id}"}
+                datetime={inv.accepted_at}
+                class="ml-1"
+              />
             </div>
           </div>
         </div>

@@ -67,22 +67,6 @@
               <div class="mb-4 max-w-full z-100 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
                 {@current_scope.account.email}
               </div>
-
-              <div
-                id="nav-selected-profile-card"
-                class="mb-4 rounded-2xl border border-base-300 bg-base-200/70 px-4 py-3 text-sm text-base-content/75"
-                hidden={is_nil(profile)}
-              >
-                <div class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/45">
-                  {gettext("Selected profile")}
-                </div>
-                <div
-                  id="nav-selected-profile-name"
-                  class="mt-1 truncate font-medium text-base-content"
-                >
-                  {if(profile, do: profile.username, else: nil)}
-                </div>
-              </div>
             <% end %>
 
             <div class="mb-4">
@@ -198,20 +182,20 @@
             </div> --%>
           </.header_menu>
 
-          <.link href={~p"/"} class="flex min-w-0 items-center flex-row gap-3 self-start">
+          <.link href={~p"/profiles"} class="flex min-w-0 items-center flex-row gap-3 self-start">
             <span class="min-w-0 text-right">
               <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
                 PotokIde
               </span>
               <span
                 id="nav-brand-title"
-                data-default-title="[page title]"
+                data-default-title="[username]"
                 class="block truncate text-sm font-semibold text-base-content"
               >
                 <%= if profile do %>
                   {profile.username}
                 <% else %>
-                  [page title]
+                  [username]
                 <% end %>
               </span>
             </span>
