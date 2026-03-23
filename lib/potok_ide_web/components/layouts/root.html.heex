@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="csrf-token" content={get_csrf_token()} />
-    <.live_title default="PotokIde" suffix=" · Phoenix Framework">
+    <.live_title default="Potok" suffix=" · ide">
       {assigns[:page_title]}
     </.live_title>
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
@@ -31,11 +31,11 @@
     </script>
   </head>
   <body class="min-h-screen h-screen bg-[radial-gradient(circle_at_top,_rgba(232,104,86,0.14),_transparent_40%),linear-gradient(180deg,_transparent,_rgba(0,0,0,0.03))] text-base-content">
-    <div class="relative min-h-screen overflow-clip">
+    <div class="flex flex-col relative min-h-screen max-h-screen overflow-clip">
       <div class="pointer-events-none absolute inset-x-0 top-0 h-56 bg-gradient-to-b from-primary/10 via-transparent to-transparent">
       </div>
 
-      <nav class="sticky top-0 z-20 px-4 pb-3 pt-4 sm:px-6 lg:px-8">
+      <nav class="sticky top-0 z-20 pb-3 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
           <% profile = assigns[:current_profile] %>
           <% profile_picture_url =
@@ -185,17 +185,17 @@
           <.link href={~p"/profiles"} class="flex min-w-0 items-center flex-row gap-3 self-start">
             <span class="min-w-0 text-right">
               <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
-                PotokIde
+                Potok
               </span>
               <span
                 id="nav-brand-title"
-                data-default-title="[username]"
+                data-default-title=""
                 class="block truncate text-sm font-semibold text-base-content"
               >
                 <%= if profile do %>
                   {profile.username}
                 <% else %>
-                  [username]
+                  {gettext("Welcome!")}
                 <% end %>
               </span>
             </span>
@@ -203,7 +203,7 @@
               <img
                 id="nav-brand-profile-avatar"
                 src={profile_picture_url || ~p"/images/logo.svg"}
-                alt={if(profile, do: profile.username, else: "PotokIde")}
+                alt={if(profile, do: profile.username, else: "Potok")}
                 class={[
                   "size-10 rounded-2xl object-cover",
                   is_nil(profile_picture_url) && "hidden"
@@ -222,7 +222,7 @@
                 id="nav-brand-logo"
                 src={~p"/images/logo.svg"}
                 width="24"
-                alt="PotokIde"
+                alt="Potok"
                 class={[!is_nil(profile) && "hidden"]}
               />
             </span>
@@ -230,7 +230,7 @@
         </div>
       </nav>
 
-      <div class="relative z-0">
+      <div class="flex-1 relative z-0">
         {@inner_content}
       </div>
     </div>

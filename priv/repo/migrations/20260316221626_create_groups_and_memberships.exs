@@ -35,9 +35,9 @@ defmodule PotokIde.Repo.Migrations.CreateGroupsAndMemberships do
     execute(
       """
       INSERT INTO groups (name, description, description_format, is_public, is_root, creator_id, parent_id, inserted_at, updated_at)
-      VALUES ('Root Group', NULL, 'markdown', FALSE, TRUE, NULL, NULL, now(), now())
+      VALUES ('/', NULL, 'markdown', FALSE, TRUE, NULL, NULL, now(), now())
       """,
-      "DELETE FROM groups WHERE is_root = TRUE AND name = 'Root Group'"
+      "DELETE FROM groups WHERE is_root = TRUE AND name = '/'"
     )
 
     create table(:group_memberships, primary_key: false) do

@@ -49,7 +49,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           </div>
         </div>
 
-        <div><.link navigate={~p"/groups"} class="link">{gettext("Back to Root Group")}</.link></div>
+        <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div>
       </div>
     </Layouts.app>
     """

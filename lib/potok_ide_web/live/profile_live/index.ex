@@ -87,7 +87,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
             <div class="mt-4">
               <.button navigate={~p"/groups"} variant="primary">
-                {gettext("Go to Root Group")}
+                {gettext("Go to /")}
               </.button>
             </div>
           </div>

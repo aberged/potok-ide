@@ -71,7 +71,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/invitation_live/index.ex:41
 #, elixir-autogen, elixir-format
-msgid "Back to Root Group"
+msgid "Back to /"
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:64
@@ -230,7 +230,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/profile_live/index.ex:56
 #, elixir-autogen, elixir-format
-msgid "Go to Root Group"
+msgid "Go to /"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:872
@@ -641,6 +641,9 @@ msgstr ""
 #: lib/potok_ide_web/controllers/account_session_controller.ex:12
 #, elixir-autogen, elixir-format
 msgid "Welcome back!"
+msgstr ""
+
+msgid "Welcome!"
 msgstr ""
 
 #: lib/potok_ide_web/live/account_live/login.ex:27

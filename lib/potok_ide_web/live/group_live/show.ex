@@ -49,6 +49,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
             </button>
             <button
+              id="group-invite-summary"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="invite_profile"
+              aria-label={gettext("Open invite profile tab")}
+              class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <.icon
+                name="hero-user-plus"
+                class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+              />
+            </button>
+            <button
+              :if={@group.parent_id != nil}
               id="group-members-summary"
               type="button"
               phx-click="switch_tab"
@@ -71,6 +85,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
               <div class="flex min-w-[14rem] flex-col gap-2">
                 <Components.group_tab_button
+                  :if={@group.parent_id != nil}
                   id="group-tab-values"
                   tab="values"
                   active_tab={@active_tab}
@@ -83,6 +98,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   label={gettext("Sub-groups")}
                 />
                 <Components.group_tab_button
+                  :if={@group.parent_id != nil}
                   id="group-tab-members"
                   tab="members"
                   active_tab={@active_tab}
@@ -118,12 +134,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
               </div>
             </div>
 
-            <SubGroupsTab.panel :if={@active_tab == "sub_groups"} children={@children} />
+            <SubGroupsTab.panel :if={@active_tab == "sub_groups" or @group.parent_id == nil} children={@children} />
 
             <MembersTab.panel :if={@active_tab == "members"} members={@members} />
 
             <ValuesTab.panel
-              :if={@active_tab == "values"}
+              :if={@active_tab == "values" and @group.parent_id != nil}
               values={@values}
               current_profile={@current_profile}
               expanded_value_ids={@expanded_value_ids}
