@@ -13,16 +13,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-values" class="card flex min-h-0 flex-1 bg-base-200 shadow-sm pt-4">
+    <div id="group-panel-values" class="card flex min-h-0 flex-1 bg-base-200 shadow-sm pt-4 ">
       <div class="flex min-h-0 flex-1 flex-col">
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          class="flex flex-1 flex-col rev gap-4 overflow-y-auto px-4 py-5 sm:px-6"
+          class="flex flex-col rev gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-18rem)]"
         >
           <div
             :if={@values == []}
-            class="flex h-full min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+            class="flex min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
           >
             {gettext("No values yet. Start the conversation below.")}
           </div>
