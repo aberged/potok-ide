@@ -1,7 +1,7 @@
 /* See the Tailwind configuration guide for advanced usage
    https://tailwindcss.com/docs/configuration */
 
-@import "tailwindcss" source(none);
+@import "tailwindcss";
 @source "../css";
 @source "../js";
 @source "../../lib/potok_ide_web";
@@ -56,8 +56,8 @@
   --noise: 0;
 }
 
-/* @plugin "../vendor/daisyui-theme" {
-  name: "light";
+@plugin "../vendor/daisyui-theme" {
+  name: "system";
   default: true;
   prefersdark: false;
   color-scheme: "light";
@@ -89,7 +89,7 @@
   --border: 1.5px;
   --depth: 1;
   --noise: 0;
-} */
+}
 
 @plugin "../vendor/daisyui-theme" {
   name: "light";

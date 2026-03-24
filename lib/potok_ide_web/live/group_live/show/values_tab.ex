@@ -18,7 +18,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          class="flex flex-col rev gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-18rem)]"
+          style="flex-direction: column-reverse"
+          class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-18rem)]"
         >
           <div
             :if={@values == []}
@@ -36,8 +37,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             edit_value_form={@edit_value_form}
           />
         </div>
-
-        <div class="flex flex-auto"></div>
 
         <div
           :if={@is_member}
@@ -73,7 +72,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <div
           :if={!@is_member}
-          class="border-t border-base-300/70 bg-base-100/70 px-4 py-4 text-sm text-base-content/60 sm:px-6"
+          class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           {gettext("Join this group to reply and post new values.")}
         </div>

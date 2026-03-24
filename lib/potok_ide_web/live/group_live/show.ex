@@ -123,9 +123,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
         </div>
 
-        <div class="min-h-0 flex-1 overflow-y-auto">
+        <div class="min-h-0 flex-1 overflow-clip">
           <div class="flex min-h-0 flex-1 flex-col gap-2">
-            <div :if={!@is_member} class="alert">
+            <div :if={!@is_member} class="alert mt-8">
               <.icon name="hero-lock-closed" class="size-5 shrink-0" />
               <div>
                 {gettext(
@@ -241,7 +241,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           socket =
             socket
             |> assign(:active_tab, "values")
-            |> put_flash(:info, gettext("Value posted."))
+            #|> put_flash(:info, gettext("Value posted."))
             |> refresh_group_data()
             |> push_event("scroll_values_to_latest", %{})
 
