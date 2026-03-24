@@ -112,7 +112,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             mounted() {
               this.handleInput = () => this.autoResize()
               this.handleKeydown = (event) => {
-                if (event.key !== "Enter" || event.shiftKey || event.isComposing) {
+                if (true || event.key !== "Enter" || event.shiftKey || event.isComposing) {
                   return
                 }
 
