@@ -15,30 +15,29 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           {gettext("Profiles")}
           <:subtitle>{gettext("Pick the profile you want to use, or create a new one.")}</:subtitle>
         </.header>
-
+        
         <div :if={@current_profile} class="alert">
           <.profile_identity profile={@current_profile} title={gettext("Current profile:")} />
         </div>
-
+        
         <div :if={@profile_invitations != []} id="shared-profile-invitations" class="space-y-3">
           <.header>
             {gettext("Shared profile invitations")}
-            <:subtitle>
-              {gettext("Pending invitations for your current profile.")}
-            </:subtitle>
+            <:subtitle>{gettext("Pending invitations for your current profile.")}</:subtitle>
           </.header>
-
+          
           <div :for={invitation <- @profile_invitations} class="card bg-base-200">
             <div class="card-body gap-3">
               <div>
                 <h3 class="card-title">{invitation.profile.username}</h3>
+                
                 <p class="text-sm text-base-content/70">
                   {gettext("Invited by: ")}<span class="font-semibold">
                     {invitation.inviter.username}
                   </span>
                 </p>
               </div>
-
+              
               <div>
                 <.button
                   phx-click="accept_profile_invitation"
@@ -52,19 +51,18 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             </div>
           </div>
         </div>
-
+        
         <div class="card bg-base-200">
           <div class="card-body">
             <h3 class="card-title">{gettext("Your profiles")}</h3>
-
+            
             <div :if={@profiles == []} class="text-base-content/70">
               {gettext("No profiles yet.")}
             </div>
-
+            
             <ul :if={@profiles != []} class="space-y-2">
               <li :for={profile <- @profiles} class="flex items-center justify-between gap-3">
                 <.profile_identity profile={profile} subtitle={Atom.to_string(profile.sharing)} />
-
                 <div class="flex shrink-0 items-center gap-2">
                   <.button
                     :if={is_nil(@current_profile) or @current_profile.id != profile.id}
@@ -84,15 +82,13 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 </div>
               </li>
             </ul>
-
+            
             <div class="mt-4">
-              <.button navigate={~p"/groups"} variant="primary">
-                {gettext("Go to /")}
-              </.button>
+              <.button navigate={~p"/groups"} variant="primary">{gettext("Go to /")}</.button>
             </div>
           </div>
         </div>
-
+        
         <div :if={@edit_form} class="card bg-base-200">
           <div class="card-body gap-0">
             <button
@@ -104,13 +100,14 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             >
               <div>
                 <h3 class="card-title">{gettext("Edit profile")}</h3>
+                
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Update the selected profile details.")}
                 </p>
               </div>
+              
               <.icon name="hero-chevron-down" class="size-5 shrink-0 rotate-180 transition-transform" />
             </button>
-
             <div class="mt-5 border-t border-base-300/70 pt-5">
               <.form
                 for={@edit_form}
@@ -157,7 +154,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                   <.button type="button" phx-click="cancel_edit">{gettext("Cancel")}</.button>
                 </div>
               </.form>
-
+              
               <div
                 :if={@edit_profile && @edit_profile.sharing == :shared}
                 class="mt-6 border-t border-base-300/70 pt-5"
@@ -165,10 +162,11 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 <h4 class="text-base font-semibold text-base-content">
                   {gettext("Invite profile to shared profile")}
                 </h4>
+                
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Send an invitation by profile username.")}
                 </p>
-
+                
                 <.form
                   for={@profile_invitation_form}
                   id="shared-profile-invitation-form"
@@ -190,7 +188,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             </div>
           </div>
         </div>
-
+        
         <div class="card bg-base-200">
           <div class="card-body gap-0">
             <button
@@ -202,10 +200,12 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             >
               <div>
                 <h3 class="card-title">{gettext("Create profile")}</h3>
+                
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Expand to create a new profile.")}
                 </p>
               </div>
+              
               <.icon
                 name="hero-chevron-down"
                 class={[
@@ -214,7 +214,6 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 ]}
               />
             </button>
-
             <div :if={@create_profile_expanded} class="mt-5 border-t border-base-300/70 pt-5">
               <.form for={@form} id="create-profile-form" phx-change="validate" phx-submit="create">
                 <.input
@@ -279,7 +278,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           {profile_initials(@profile.username)}
         </div>
       <% end %>
-
+      
       <div class="min-w-0">
         <div
           :if={@title}
@@ -287,7 +286,9 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         >
           {@title}
         </div>
+        
         <div class="truncate font-semibold text-base-content">{@profile.username}</div>
+        
         <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
       </div>
     </div>
@@ -472,13 +473,16 @@ defmodule PotokIdeWeb.ProfileLive.Index do
     case {socket.assigns.edit_profile, inviter} do
       {_, nil} ->
         {:noreply,
-         put_flash(socket, :error, gettext("Select a current profile before sending invitations."))}
+         put_flash(
+           socket,
+           :error,
+           gettext("Select a current profile before sending invitations.")
+         )}
 
       {%{sharing: :shared} = profile, inviter} ->
         case Social.get_profile_by_username(username) do
           nil ->
-            {:noreply,
-             put_flash(socket, :error, gettext("No profile exists for that username."))}
+            {:noreply, put_flash(socket, :error, gettext("No profile exists for that username."))}
 
           invitee ->
             case Social.invite_profile_to_profile(inviter_account, inviter, profile, invitee) do
@@ -506,7 +510,11 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
               {:error, %Ecto.Changeset{}} ->
                 {:noreply,
-                 put_flash(socket, :error, gettext("A shared profile invitation is already pending."))}
+                 put_flash(
+                   socket,
+                   :error,
+                   gettext("A shared profile invitation is already pending.")
+                 )}
 
               {:error, _reason} ->
                 {:noreply,
@@ -516,7 +524,11 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
       _ ->
         {:noreply,
-         put_flash(socket, :error, gettext("Select a shared profile before inviting another profile."))}
+         put_flash(
+           socket,
+           :error,
+           gettext("Select a shared profile before inviting another profile.")
+         )}
     end
   end
 
@@ -526,8 +538,10 @@ defmodule PotokIdeWeb.ProfileLive.Index do
     invitation_id = String.to_integer(id)
 
     with %{} <- invitee,
-         %{} = invitation <- Social.get_pending_profile_invitation_for_invitee(invitee, invitation_id),
-         {:ok, _accepted_invitation} <- Social.accept_profile_invitation(invitation, invitee, account) do
+         %{} = invitation <-
+           Social.get_pending_profile_invitation_for_invitee(invitee, invitation_id),
+         {:ok, _accepted_invitation} <-
+           Social.accept_profile_invitation(invitation, invitee, account) do
       refreshed_account = Accounts.get_account!(account.id)
 
       {:noreply,
@@ -542,8 +556,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
        |> put_flash(:info, gettext("Shared profile invitation accepted."))}
     else
       nil ->
-        {:noreply,
-         put_flash(socket, :error, gettext("Shared profile invitation not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Shared profile invitation not found."))}
 
       {:error, _reason} ->
         {:noreply,
@@ -570,7 +583,8 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
   def handle_info({:profile_share_invitations_updated, profile_id}, socket)
-      when not is_nil(socket.assigns.current_profile) and socket.assigns.current_profile.id == profile_id do
+      when not is_nil(socket.assigns.current_profile) and
+             socket.assigns.current_profile.id == profile_id do
     {:noreply,
      assign(
        socket,

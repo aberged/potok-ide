@@ -18,7 +18,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          style="flex-direction: column-reverse"
           class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-18rem)]"
         >
           <div
@@ -60,7 +59,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               phx-hook=".SubmitOnEnter"
               required
             />
-
             <.button
               aria-label={gettext("Post value")}
               class="btn btn-primary btn-circle size-12 flex-none"

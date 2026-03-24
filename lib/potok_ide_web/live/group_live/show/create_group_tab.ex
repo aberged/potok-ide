@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
     <div id="group-panel-create-group" class="card bg-base-200 pt-4">
       <div class="card-body">
         <h3 class="card-title">{gettext("Create sub-group")}</h3>
-
+        
         <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
           <.input field={@new_group_form[:name]} label={gettext("Name")} required />
           <.input

@@ -18,6 +18,16 @@ defmodule PotokIdeWeb.Router do
     plug :accepts, ["json"]
   end
 
+  pipeline :browser_json do
+    plug :accepts, ["json"]
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :protect_from_forgery
+    plug :put_secure_browser_headers
+    plug PotokIdeWeb.Locale, :put_locale
+    plug :fetch_current_scope_for_account
+  end
+
   scope "/", PotokIdeWeb do
     pipe_through :browser
 
@@ -48,6 +58,14 @@ defmodule PotokIdeWeb.Router do
   end
 
   ## Authentication routes
+
+  scope "/", PotokIdeWeb do
+    pipe_through [:browser_json, :require_authenticated_account]
+
+    post "/accounts/push-subscriptions", PushSubscriptionController, :create
+    delete "/accounts/push-subscriptions", PushSubscriptionController, :delete
+    post "/accounts/push-subscriptions/test", PushSubscriptionController, :test
+  end
 
   scope "/", PotokIdeWeb do
     pipe_through [:browser, :require_authenticated_account]

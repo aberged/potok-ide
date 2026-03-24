@@ -1,4 +1,4 @@
-const CACHE_VERSION = "potok-static-v1"
+const CACHE_VERSION = "potok-static-v2"
 const STATIC_CACHE = CACHE_VERSION
 const STATIC_ASSETS = [
   "/offline.html",
@@ -81,6 +81,60 @@ self.addEventListener("fetch", event => {
         .catch(() => cachedResponse)
 
       return cachedResponse || networkResponse
+    })
+  )
+})
+
+const defaultNotification = {
+  title: "Potok",
+  body: "You have a new update.",
+  icon: "/images/pwa/icon-192.png",
+  badge: "/images/pwa/icon-192.png",
+  url: "/",
+}
+
+const parseNotificationPayload = event => {
+  if (!event.data) {
+    return defaultNotification
+  }
+
+  try {
+    return {...defaultNotification, ...event.data.json()}
+  } catch (_error) {
+    return {...defaultNotification, body: event.data.text()}
+  }
+}
+
+self.addEventListener("push", event => {
+  const payload = parseNotificationPayload(event)
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: payload.icon,
+      badge: payload.badge,
+      tag: payload.tag,
+      data: {
+        url: payload.url || "/",
+      },
+    })
+  )
+})
+
+self.addEventListener("notificationclick", event => {
+  event.notification.close()
+
+  const targetUrl = new URL(event.notification.data?.url || "/", self.location.origin).href
+
+  event.waitUntil(
+    self.clients.matchAll({type: "window", includeUncontrolled: true}).then(clients => {
+      const existingClient = clients.find(client => client.url === targetUrl)
+
+      if (existingClient) {
+        return existingClient.focus()
+      }
+
+      return self.clients.openWindow(targetUrl)
     })
   )
 })

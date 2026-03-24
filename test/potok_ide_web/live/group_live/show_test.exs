@@ -347,7 +347,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "chronology-group")
 
       {:ok, _older_value} =
         Social.create_value(profile, group, %{
@@ -387,7 +387,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "content-format-group")
 
       {:ok, _markdown_value} =
         Social.create_value(profile, group, %{
@@ -426,7 +426,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "newline-group")
 
       {:ok, _value} =
         Social.create_value(profile, group, %{
@@ -456,7 +456,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "toggle-group")
 
       long_content = Enum.map_join(1..7, "\n", fn line -> "line #{line}" end)
 
@@ -501,7 +501,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "realtime-group")
 
       {:ok, lv, _html} =
         conn
@@ -532,7 +532,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "delete-value-group")
 
       {:ok, value} =
         Social.create_value(profile, group, %{
@@ -573,7 +573,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         })
 
       account = Accounts.get_account!(account.id)
-      group = Social.get_root_group!()
+      group = create_child_group!(profile, "edit-value-group")
 
       {:ok, value} =
         Social.create_value(profile, group, %{
@@ -645,5 +645,19 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert_redirect(lv, ~p"/groups")
     end
+  end
+
+  defp create_child_group!(profile, name) do
+    root_group = Social.get_root_group!()
+
+    {:ok, group} =
+      Social.create_group(profile, root_group, %{
+        "name" => name,
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => false
+      })
+
+    group
   end
 end

@@ -19,7 +19,6 @@ defmodule PotokIde.Accounts.AccountNotifier do
     delivery_result = IO.inspect(Mailer.deliver(email), label: "Mailer.deliver(email)")
 
     with {:ok, _metadata} <- delivery_result do
-
       {:ok, email}
     end
   end

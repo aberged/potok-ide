@@ -11,6 +11,7 @@ defmodule PotokIde.Social do
   alias PotokIde.Repo
 
   alias PotokIde.Accounts.Account
+
   alias PotokIde.Social.{
     AccountProfile,
     Group,
@@ -456,7 +457,7 @@ defmodule PotokIde.Social do
 
     from(v in Value,
       where: v.group_id == ^group.id,
-      order_by: [desc: v.inserted_at],
+      order_by: [asc: v.inserted_at],
       preload: [:creator, :parent]
     )
     |> Repo.all()
@@ -466,7 +467,8 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
-      where: i.invitee_id == ^invitee.id, # and is_nil(i.accepted_at),
+      # and is_nil(i.accepted_at),
+      where: i.invitee_id == ^invitee.id,
       order_by: [desc: i.inserted_at],
       preload: [:group, :inviter]
     )
@@ -498,8 +500,7 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(i in ProfileInvitation,
-      where:
-        i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      where: i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
       preload: [:profile, :inviter]
     )
     |> Repo.one()

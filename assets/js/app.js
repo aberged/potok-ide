@@ -71,6 +71,255 @@ const DropdownMenu = {
   },
 }
 
+const PushNotifications = {
+  mounted() {
+    this.status = this.el.querySelector("[data-push-status]")
+    this.enableButton = this.el.querySelector("[data-push-enable]")
+    this.testButton = this.el.querySelector("[data-push-test]")
+    this.disableButton = this.el.querySelector("[data-push-disable]")
+    this.vapidPublicKey = this.el.dataset.vapidPublicKey || ""
+    this.subscribeUrl = this.el.dataset.subscribeUrl
+    this.testUrl = this.el.dataset.testUrl
+    this.csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content") || ""
+
+    this.handleEnableClick = () => {
+      void this.enableNotifications()
+    }
+
+    this.handleDisableClick = () => {
+      void this.disableNotifications()
+    }
+
+    this.handleTestClick = () => {
+      void this.sendTestNotification()
+    }
+
+    this.enableButton?.addEventListener("click", this.handleEnableClick)
+    this.disableButton?.addEventListener("click", this.handleDisableClick)
+    this.testButton?.addEventListener("click", this.handleTestClick)
+
+    void this.syncState()
+  },
+
+  destroyed() {
+    this.enableButton?.removeEventListener("click", this.handleEnableClick)
+    this.disableButton?.removeEventListener("click", this.handleDisableClick)
+    this.testButton?.removeEventListener("click", this.handleTestClick)
+  },
+
+  async syncState(message) {
+    if (!window.isSecureContext) {
+      this.renderUnsupported("Push notifications require HTTPS or localhost.")
+      return
+    }
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      this.renderUnsupported("This browser does not support Web Push notifications.")
+      return
+    }
+
+    if (!this.vapidPublicKey) {
+      this.renderUnsupported("Push notifications are not configured on this server yet.")
+      return
+    }
+
+    if (Notification.permission === "denied") {
+      this.renderDenied("Browser permission for notifications is blocked.")
+      return
+    }
+
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+
+      if (subscription) {
+        await this.saveSubscription(subscription)
+        this.renderEnabled(message || "Push notifications are enabled.")
+        return
+      }
+
+      this.renderIdle(message || "Push notifications are disabled for this browser.")
+    } catch (error) {
+      console.error("Unable to inspect push notification state", error)
+      this.renderUnsupported("Push notifications are unavailable in this browser session.")
+    }
+  },
+
+  async enableNotifications() {
+    this.setPendingState("Requesting notification permission...")
+
+    try {
+      const permission = await Notification.requestPermission()
+
+      if (permission !== "granted") {
+        if (permission === "denied") {
+          this.renderDenied("Browser permission for notifications is blocked.")
+        } else {
+          this.renderIdle("Notification permission was not granted.")
+        }
+
+        return
+      }
+
+      const registration = await navigator.serviceWorker.ready
+      let subscription = await registration.pushManager.getSubscription()
+
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: this.urlBase64ToUint8Array(this.vapidPublicKey),
+        })
+      }
+
+      await this.saveSubscription(subscription)
+      this.renderEnabled("Push notifications are enabled.")
+    } catch (error) {
+      console.error("Unable to enable push notifications", error)
+      this.renderIdle(error.message || "Unable to enable push notifications.")
+    }
+  },
+
+  async disableNotifications() {
+    this.setPendingState("Removing push subscription...")
+
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+
+      if (subscription) {
+        await this.request(this.subscribeUrl, {
+          method: "DELETE",
+          body: JSON.stringify({endpoint: subscription.endpoint}),
+        })
+
+        await subscription.unsubscribe()
+      }
+
+      this.renderIdle("Push notifications are disabled for this browser.")
+    } catch (error) {
+      console.error("Unable to disable push notifications", error)
+      this.renderEnabled(error.message || "Unable to remove the push subscription.")
+    }
+  },
+
+  async sendTestNotification() {
+    this.setPendingState("Sending test notification...")
+
+    try {
+      const registration = await navigator.serviceWorker.ready
+      const subscription = await registration.pushManager.getSubscription()
+
+      if (!subscription) {
+        this.renderIdle("Enable notifications before sending a test push.")
+        return
+      }
+
+      await this.saveSubscription(subscription)
+      await this.request(this.testUrl, {
+        method: "POST",
+        body: JSON.stringify({endpoint: subscription.endpoint}),
+      })
+
+      this.renderEnabled("Test notification sent. Minimize the app if the browser suppresses foreground notifications.")
+    } catch (error) {
+      console.error("Unable to send test push notification", error)
+      this.renderEnabled(error.message || "Unable to send the test notification.")
+    }
+  },
+
+  async saveSubscription(subscription) {
+    return this.request(this.subscribeUrl, {
+      method: "POST",
+      body: JSON.stringify({subscription: subscription.toJSON()}),
+    })
+  },
+
+  async request(url, options) {
+    const response = await fetch(url, {
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "x-csrf-token": this.csrfToken,
+      },
+      ...options,
+    })
+
+    const payload = await response.json().catch(() => ({}))
+
+    if (!response.ok) {
+      throw new Error(payload.error || "Push notification request failed.")
+    }
+
+    return payload
+  },
+
+  setPendingState(message) {
+    this.setStatus(message, "pending")
+    this.setButtons({enable: true, test: true, disable: true})
+  },
+
+  renderEnabled(message) {
+    this.setStatus(message, "success")
+    this.setButtons({enable: true, test: false, disable: false})
+  },
+
+  renderIdle(message) {
+    this.setStatus(message, "idle")
+    this.setButtons({enable: false, test: true, disable: true})
+  },
+
+  renderDenied(message) {
+    this.setStatus(message, "danger")
+    this.setButtons({enable: true, test: true, disable: true})
+  },
+
+  renderUnsupported(message) {
+    this.setStatus(message, "danger")
+    this.setButtons({enable: true, test: true, disable: true})
+  },
+
+  setButtons(hidden) {
+    if (this.enableButton) {
+      this.enableButton.hidden = hidden.enable
+      this.enableButton.disabled = false
+    }
+
+    if (this.testButton) {
+      this.testButton.hidden = hidden.test
+      this.testButton.disabled = false
+    }
+
+    if (this.disableButton) {
+      this.disableButton.hidden = hidden.disable
+      this.disableButton.disabled = false
+    }
+  },
+
+  setStatus(message, tone) {
+    if (!this.status) {
+      return
+    }
+
+    this.status.textContent = message
+    this.status.className = [
+      "rounded-2xl border px-4 py-3 text-sm",
+      tone === "success" && "border-emerald-300 bg-emerald-50 text-emerald-900",
+      tone === "pending" && "border-amber-300 bg-amber-50 text-amber-900",
+      tone === "danger" && "border-rose-300 bg-rose-50 text-rose-900",
+      tone === "idle" && "border-base-300 bg-base-200/70 text-base-content/70",
+    ].filter(Boolean).join(" ")
+  },
+
+  urlBase64ToUint8Array(base64String) {
+    const padding = "=".repeat((4 - (base64String.length % 4)) % 4)
+    const base64 = `${base64String}${padding}`.replace(/-/g, "+").replace(/_/g, "/")
+    const rawData = atob(base64)
+
+    return Uint8Array.from(rawData, char => char.charCodeAt(0))
+  },
+}
+
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) {
     return
@@ -116,7 +365,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {HeaderDrawer, DropdownMenu, ...colocatedHooks},
+  hooks: {HeaderDrawer, DropdownMenu, PushNotifications, ...colocatedHooks},
 })
 
 // Show progress bar on live navigation and form submits

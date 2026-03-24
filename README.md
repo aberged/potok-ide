@@ -52,6 +52,24 @@ The seed script currently only contains the default template comments, so a fres
 * `mix assets.build` rebuilds Tailwind and esbuild assets.
 * `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
 
+### PWA push notifications
+
+Potok now includes Web Push subscription support for the installable PWA.
+
+Required environment variables:
+
+* `WEB_PUSH_VAPID_SUBJECT`
+* `WEB_PUSH_VAPID_PUBLIC_KEY`
+* `WEB_PUSH_VAPID_PRIVATE_KEY`
+
+You can generate a VAPID keypair with:
+
+```sh
+mix potok.gen.vapid_keypair
+```
+
+The account settings screen at `/accounts/settings` exposes the browser-side enable, disable, and test notification controls once those variables are configured.
+
 ### Development behavior
 
 The default development configuration includes:
@@ -137,6 +155,9 @@ Authenticated routes:
 * `GET /accounts/settings`
 * `GET /accounts/settings/confirm-email/:token`
 * `POST /accounts/update-password`
+* `POST /accounts/push-subscriptions`
+* `DELETE /accounts/push-subscriptions`
+* `POST /accounts/push-subscriptions/test`
 
 Authenticated routes that require a current profile:
 

@@ -23,6 +23,20 @@ end
 config :potok_ide, PotokIdeWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+web_push_vapid_subject = System.get_env("WEB_PUSH_VAPID_SUBJECT")
+web_push_vapid_public_key = System.get_env("WEB_PUSH_VAPID_PUBLIC_KEY")
+web_push_vapid_private_key = System.get_env("WEB_PUSH_VAPID_PRIVATE_KEY")
+
+if Enum.all?(
+     [web_push_vapid_subject, web_push_vapid_public_key, web_push_vapid_private_key],
+     &(is_binary(&1) and String.trim(&1) != "")
+   ) do
+  config :potok_ide, PotokIde.PushNotifications,
+    vapid_subject: web_push_vapid_subject,
+    vapid_public_key: web_push_vapid_public_key,
+    vapid_private_key: web_push_vapid_private_key
+end
+
 if config_env() == :prod do
   database_url =
     System.get_env("DATABASE_URL") ||

@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Social
   alias PotokIde.Social.{Group, Value}
+
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
     CreateGroupTab,
@@ -11,6 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     SubGroupsTab,
     ValuesTab
   }
+
   alias PotokIdeWeb.ProfileAuth
 
   @impl true
@@ -18,157 +20,152 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
       <%!-- <div class="flex h-[calc(100dvh-4rem)] flex-col"> --%>
-        <div class="sticky top-[4rem] z-10 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur -mb-6">
-          <div class="flex items-center gap-3">
-            <div :if={!@group.is_root and @group.parent_id} class="pt-1">
-              <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
-                {"❮"}
-              </.link>
-            </div>
-
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-3">
-                <Components.group_identity
-                  group={@group}
-                  avatar_size="size-10"
-                  text_class="text-md"
-                />
-              </div>
-            </div>
-            <button
-              id="group-subgroups-summary"
-              type="button"
-              phx-click="switch_tab"
-              phx-value-tab="sub_groups"
-              aria-label={gettext("Open sub-groups tab")}
-              class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <.icon
-                name="hero-folder-open"
-                class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-              />
-            </button>
-            <button
-              id="group-invite-summary"
-              type="button"
-              phx-click="switch_tab"
-              phx-value-tab="invite_profile"
-              aria-label={gettext("Open invite profile tab")}
-              class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <.icon
-                name="hero-user-plus"
-                class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-              />
-            </button>
-            <button
-              :if={@group.parent_id != nil}
-              id="group-members-summary"
-              type="button"
-              phx-click="switch_tab"
-              phx-value-tab="members"
-              aria-label={gettext("Open members tab")}
-              class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
-            >
-              <div :for={m <- @first3_members} class="avatar">
-                <div class="bg-white w-8">
-                  <img src={m.profile_picture_url} alt={m.username} />
-                </div>
-              </div>
-              <div :if={@members_count > 3} class="avatar avatar-placeholder">
-                <div class="bg-neutral text-neutral-content w-8">
-                  <span>+{@members_count - length(@first3_members)}</span>
-                </div>
-              </div>
-            </button>
-
-            <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
-              <div class="flex min-w-[14rem] flex-col gap-2">
-                <Components.group_tab_button
-                  :if={@group.parent_id != nil}
-                  id="group-tab-values"
-                  tab="values"
-                  active_tab={@active_tab}
-                  label={gettext("Values")}
-                />
-                <Components.group_tab_button
-                  id="group-tab-sub-groups"
-                  tab="sub_groups"
-                  active_tab={@active_tab}
-                  label={gettext("Sub-groups")}
-                />
-                <Components.group_tab_button
-                  :if={@group.parent_id != nil}
-                  id="group-tab-members"
-                  tab="members"
-                  active_tab={@active_tab}
-                  label={gettext("Members")}
-                />
-                <Components.group_tab_button
-                  :if={@is_member}
-                  id="group-tab-create-sub-group"
-                  tab="create_group"
-                  active_tab={@active_tab}
-                  label={gettext("Create sub-group")}
-                />
-                <Components.group_tab_button
-                  :if={@is_member}
-                  id="group-tab-invite-profile"
-                  tab="invite_profile"
-                  active_tab={@active_tab}
-                  label={gettext("Invite profile")}
-                />
-              </div>
-            </Layouts.drop_down_menu>
+      <div class="sticky top-[4rem] z-10 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur -mb-6">
+        <div class="flex items-center gap-3">
+          <div :if={!@group.is_root and @group.parent_id} class="pt-1">
+            <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
+              {"❮"}
+            </.link>
           </div>
-        </div>
-
-        <div class="min-h-0 flex-1 overflow-clip">
-          <div class="flex min-h-0 flex-1 flex-col gap-2">
-            <div :if={!@is_member} class="alert mt-8">
-              <.icon name="hero-lock-closed" class="size-5 shrink-0" />
-              <div>
-                {gettext(
-                  "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
-                )}
+          
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center gap-3">
+              <Components.group_identity
+                group={@group}
+                avatar_size="size-10"
+                text_class="text-md"
+              />
+            </div>
+          </div>
+          
+          <button
+            id="group-subgroups-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="sub_groups"
+            aria-label={gettext("Open sub-groups tab")}
+            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <.icon
+              name="hero-folder-open"
+              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+            />
+          </button>
+          <button
+            id="group-invite-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="invite_profile"
+            aria-label={gettext("Open invite profile tab")}
+            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <.icon
+              name="hero-user-plus"
+              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+            />
+          </button>
+          <button
+            :if={@group.parent_id != nil}
+            id="group-members-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="members"
+            aria-label={gettext("Open members tab")}
+            class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <div :for={m <- @first3_members} class="avatar">
+              <div class="bg-white w-8"><img src={m.profile_picture_url} alt={m.username} /></div>
+            </div>
+            
+            <div :if={@members_count > 3} class="avatar avatar-placeholder">
+              <div class="bg-neutral text-neutral-content w-8">
+                <span>+{@members_count - length(@first3_members)}</span>
               </div>
             </div>
-
-            <SubGroupsTab.panel
-              :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
-              children={@children}
-            />
-
-            <MembersTab.panel
-              :if={@active_tab == "members"}
-              members={@members}
-            />
-
-            <ValuesTab.panel
-              :if={@active_tab == "values" and @group.parent_id != nil}
-              values={@values}
-              current_profile={@current_profile}
-              expanded_value_ids={@expanded_value_ids}
-              editing_value_id={@editing_value_id}
-              edit_value_form={@edit_value_form}
-              new_value_form={@new_value_form}
-              is_member={@is_member}
-            />
-
-            <CreateGroupTab.panel
-              :if={@is_member and @active_tab == "create_group"}
-              new_group_form={@new_group_form}
-              format_options={@format_options}
-              value_parent_options={@value_parent_options}
-            />
-
-            <InviteProfileTab.panel
-              :if={@is_member and @active_tab == "invite_profile"}
-              invite_form={@invite_form}
-            />
-          </div>
+          </button>
+          <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
+            <div class="flex min-w-[14rem] flex-col gap-2">
+              <Components.group_tab_button
+                :if={@group.parent_id != nil}
+                id="group-tab-values"
+                tab="values"
+                active_tab={@active_tab}
+                label={gettext("Values")}
+              />
+              <Components.group_tab_button
+                id="group-tab-sub-groups"
+                tab="sub_groups"
+                active_tab={@active_tab}
+                label={gettext("Sub-groups")}
+              />
+              <Components.group_tab_button
+                :if={@group.parent_id != nil}
+                id="group-tab-members"
+                tab="members"
+                active_tab={@active_tab}
+                label={gettext("Members")}
+              />
+              <Components.group_tab_button
+                :if={@is_member}
+                id="group-tab-create-sub-group"
+                tab="create_group"
+                active_tab={@active_tab}
+                label={gettext("Create sub-group")}
+              />
+              <Components.group_tab_button
+                :if={@is_member}
+                id="group-tab-invite-profile"
+                tab="invite_profile"
+                active_tab={@active_tab}
+                label={gettext("Invite profile")}
+              />
+            </div>
+          </Layouts.drop_down_menu>
         </div>
-      <%!-- </div> --%>
+      </div>
+      
+      <div class="min-h-0 flex-1 overflow-clip">
+        <div class="flex min-h-0 flex-1 flex-col gap-2">
+          <div :if={!@is_member} class="alert mt-8">
+            <.icon name="hero-lock-closed" class="size-5 shrink-0" />
+            <div>
+              {gettext(
+                "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+              )}
+            </div>
+          </div>
+          
+          <SubGroupsTab.panel
+            :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
+            children={@children}
+          />
+          <MembersTab.panel
+            :if={@active_tab == "members"}
+            members={@members}
+          />
+          <ValuesTab.panel
+            :if={@active_tab == "values" and @group.parent_id != nil}
+            values={@values}
+            current_profile={@current_profile}
+            expanded_value_ids={@expanded_value_ids}
+            editing_value_id={@editing_value_id}
+            edit_value_form={@edit_value_form}
+            new_value_form={@new_value_form}
+            is_member={@is_member}
+          />
+          <CreateGroupTab.panel
+            :if={@is_member and @active_tab == "create_group"}
+            new_group_form={@new_group_form}
+            format_options={@format_options}
+            value_parent_options={@value_parent_options}
+          />
+          <InviteProfileTab.panel
+            :if={@is_member and @active_tab == "invite_profile"}
+            invite_form={@invite_form}
+          />
+        </div>
+      </div>
+       <%!-- </div> --%>
     </Layouts.app>
     """
   end
@@ -189,7 +186,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:ok,
        socket
        |> assign(:is_member, is_member)
-        |> assign(:active_tab, active_tab)
+       |> assign(:active_tab, active_tab)
        |> assign(:editing_value_id, nil)
        |> assign(:edit_value_form, nil)
        |> load_group_data(group)}
@@ -241,7 +238,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           socket =
             socket
             |> assign(:active_tab, "values")
-            #|> put_flash(:info, gettext("Value posted."))
+            # |> put_flash(:info, gettext("Value posted."))
             |> refresh_group_data()
             |> push_event("scroll_values_to_latest", %{})
 
@@ -350,7 +347,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      push_patch(
        socket,
-       to: group_tab_path(socket.assigns.group.id, normalize_active_tab(tab, socket.assigns.is_member))
+       to:
+         group_tab_path(
+           socket.assigns.group.id,
+           normalize_active_tab(tab, socket.assigns.is_member)
+         )
      )}
   end
 

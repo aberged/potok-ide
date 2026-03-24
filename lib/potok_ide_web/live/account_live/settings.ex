@@ -4,16 +4,19 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   on_mount {PotokIdeWeb.AccountAuth, :require_sudo_mode}
 
   alias PotokIde.Accounts
+  alias PotokIde.PushNotifications
 
   @impl true
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-6 px-4 pt-4">
+      <div class="space-y-6 px-4 py-4 overflow-y-auto">
         <div class="text-center">
           <.header>
             {gettext("Account Settings")}
-            <:subtitle>{gettext("Manage your account email address and password settings")}</:subtitle>
+            <:subtitle>
+              {gettext("Manage your account email address and password settings")}
+            </:subtitle>
           </.header>
         </div>
 
@@ -68,6 +71,71 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             {gettext("Save Password")}
           </.button>
         </.form>
+
+        <div class="divider" />
+
+        <section
+          id="push-notifications-panel"
+          phx-hook="PushNotifications"
+          phx-update="ignore"
+          data-vapid-public-key={@push_vapid_public_key || ""}
+          data-subscribe-url={~p"/accounts/push-subscriptions"}
+          data-test-url={~p"/accounts/push-subscriptions/test"}
+          class="rounded-[2rem] border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
+        >
+          <div class="space-y-4">
+            <div class="space-y-1">
+              <h2 class="text-lg font-semibold text-base-content">
+                {gettext("Push Notifications")}
+              </h2>
+              <p class="text-sm text-base-content/70">
+                {gettext("Enable device notifications for your installed Potok web app.")}
+              </p>
+            </div>
+
+            <div
+              data-push-status
+              aria-live="polite"
+              class="rounded-2xl border border-base-300 bg-base-200/70 px-4 py-3 text-sm text-base-content/70"
+            >
+              {gettext("Checking browser support...")}
+            </div>
+
+            <div class="flex flex-wrap gap-3">
+              <button
+                type="button"
+                data-push-enable
+                class="inline-flex items-center justify-center rounded-2xl bg-base-content px-4 py-3 text-sm font-medium text-base-100 transition-opacity hover:opacity-90"
+              >
+                {gettext("Enable notifications")}
+              </button>
+
+              <button
+                type="button"
+                data-push-test
+                hidden
+                class="inline-flex items-center justify-center rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content transition-colors hover:bg-base-200"
+              >
+                {gettext("Send test notification")}
+              </button>
+
+              <button
+                type="button"
+                data-push-disable
+                hidden
+                class="inline-flex items-center justify-center rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content transition-colors hover:bg-base-200"
+              >
+                {gettext("Disable")}
+              </button>
+            </div>
+
+            <p class="text-xs text-base-content/55">
+              {gettext(
+                "Push notifications require an active service worker, browser permission, and HTTPS outside localhost."
+              )}
+            </p>
+          </div>
+        </section>
       </div>
     </Layouts.app>
     """
@@ -97,6 +165,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       |> assign(:current_email, account.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:push_vapid_public_key, PushNotifications.public_key())
       |> assign(:trigger_submit, false)
 
     {:ok, socket}

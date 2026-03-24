@@ -232,7 +232,11 @@ defmodule PotokIdeWeb.Layouts do
       )
 
     ~H"""
-    <div id={"#{@id}-container"} class="dropdown dropdown-end w-auto flex-none" phx-hook="DropdownMenu">
+    <div
+      id={"#{@id}-container"}
+      class="dropdown dropdown-end w-auto flex-none"
+      phx-hook="DropdownMenu"
+    >
       <button
         id={@id}
         type="button"

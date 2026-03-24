@@ -6,7 +6,8 @@ defmodule PotokIde.Accounts do
   import Ecto.Query, warn: false
   alias PotokIde.Repo
 
-  alias PotokIde.Accounts.{Account, AccountToken, AccountNotifier}
+  alias PotokIde.Accounts.{Account, AccountNotifier, AccountToken, PushSubscription}
+  alias PotokIde.PushNotifications
   alias PotokIde.Social.{AccountProfile, Profile}
 
   ## Database getters
@@ -132,6 +133,116 @@ defmodule PotokIde.Accounts do
 
       error ->
         error
+    end
+  end
+
+  @doc """
+  Lists the saved push subscriptions for an account.
+  """
+  def list_push_subscriptions(%Account{} = account) do
+    from(subscription in PushSubscription,
+      where: subscription.account_id == ^account.id,
+      order_by: [desc: subscription.updated_at]
+    )
+    |> Repo.all()
+  end
+
+  def list_push_subscriptions(_), do: []
+
+  @doc """
+  Stores or updates a web push subscription for an account.
+  """
+  def upsert_push_subscription(%Account{} = account, attrs) when is_map(attrs) do
+    endpoint = Map.get(attrs, :endpoint) || Map.get(attrs, "endpoint")
+
+    subscription =
+      if is_binary(endpoint) and endpoint != "" do
+        Repo.get_by(PushSubscription, endpoint: endpoint) || %PushSubscription{}
+      else
+        %PushSubscription{}
+      end
+
+    subscription
+    |> PushSubscription.changeset(attrs)
+    |> Ecto.Changeset.put_change(:account_id, account.id)
+    |> Repo.insert_or_update()
+  end
+
+  @doc """
+  Deletes a saved push subscription for an account.
+  """
+  def delete_push_subscription(%Account{} = account, endpoint)
+      when is_binary(endpoint) and endpoint != "" do
+    from(subscription in PushSubscription,
+      where: subscription.account_id == ^account.id and subscription.endpoint == ^endpoint
+    )
+    |> Repo.one()
+    |> case do
+      nil ->
+        :ok
+
+      subscription ->
+        _ = Repo.delete(subscription)
+        :ok
+    end
+  end
+
+  def delete_push_subscription(_account, _endpoint), do: :ok
+
+  @doc """
+  Delivers a push notification payload to all saved subscriptions for an account.
+  """
+  def deliver_push_notification(%Account{} = account, payload) when is_map(payload) do
+    subscriptions = list_push_subscriptions(account)
+
+    if subscriptions == [] do
+      {:error, :no_push_subscriptions}
+    else
+      results =
+        subscriptions
+        |> Task.async_stream(&deliver_push_notification_to_subscription(&1, payload),
+          ordered: false,
+          timeout: :infinity
+        )
+        |> Enum.map(fn {:ok, result} -> result end)
+
+      {:ok, results}
+    end
+  end
+
+  @doc """
+  Sends a test push notification to one of the account's saved subscriptions.
+  """
+  def send_test_push_notification(%Account{} = account, endpoint \\ nil) do
+    subscription =
+      case endpoint do
+        value when is_binary(value) and value != "" ->
+          Repo.get_by(PushSubscription, account_id: account.id, endpoint: value)
+
+        _ ->
+          from(subscription in PushSubscription,
+            where: subscription.account_id == ^account.id,
+            order_by: [desc: subscription.updated_at],
+            limit: 1
+          )
+          |> Repo.one()
+      end
+
+    case subscription do
+      %PushSubscription{} = push_subscription ->
+        payload = %{
+          title: "Potok notifications are active",
+          body: "Push notifications are enabled for your account.",
+          tag: "potok-push-test",
+          url: "/accounts/settings",
+          icon: "/images/pwa/icon-192.png",
+          badge: "/images/pwa/icon-192.png"
+        }
+
+        deliver_push_notification_to_subscription(push_subscription, payload)
+
+      nil ->
+        {:error, :not_found}
     end
   end
 
@@ -346,6 +457,43 @@ defmodule PotokIde.Accounts do
     Repo.delete_all(from(AccountToken, where: [token: ^token, context: "session"]))
     :ok
   end
+
+  defp deliver_push_notification_to_subscription(%PushSubscription{} = subscription, payload) do
+    case PushNotifications.send_notification(subscription, payload) do
+      {:ok, _response} ->
+        now = DateTime.utc_now(:second)
+
+        subscription
+        |> Ecto.Changeset.change(
+          last_success_at: now,
+          last_failure_at: nil,
+          failure_reason: nil
+        )
+        |> Repo.update()
+
+        {:ok, subscription.endpoint}
+
+      {:error, :expired} ->
+        _ = Repo.delete(subscription)
+        {:error, :expired}
+
+      {:error, reason} ->
+        now = DateTime.utc_now(:second)
+
+        subscription
+        |> Ecto.Changeset.change(
+          last_failure_at: now,
+          failure_reason: format_push_failure_reason(reason)
+        )
+        |> Repo.update()
+
+        {:error, reason}
+    end
+  end
+
+  defp format_push_failure_reason({type, detail}), do: "#{type}: #{detail}"
+  defp format_push_failure_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
+  defp format_push_failure_reason(reason), do: inspect(reason)
 
   ## Token helper
 

@@ -74,7 +74,9 @@ defmodule PotokIde.SocialTest do
 
       invitee_account = Accounts.get_account!(invitee_account.id)
 
-      assert [_invitee_profile, linked_profile] = Social.list_profiles_for_account(invitee_account)
+      assert [_invitee_profile, linked_profile] =
+               Social.list_profiles_for_account(invitee_account)
+
       assert linked_profile.id == shared_profile.id
 
       assert current_profile = Social.get_account_current_profile(invitee_account)

@@ -20,7 +20,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     >
       {Calendar.strftime(datetime_to_utc_datetime(@datetime), "%Y-%m-%d %H:%M UTC")}
     </time>
-
     <script :type={Phoenix.LiveView.ColocatedHook} name=".LocalTime">
       const formatter = new Intl.DateTimeFormat(undefined, {
         dateStyle: "medium",
@@ -89,7 +88,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <img
             src={avatar_url}
             alt={@profile.username}
-            class={[@avatar_size, "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"]}
+            class={[
+              @avatar_size,
+              "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+            ]}
           />
         <% else %>
           <div class={[
@@ -99,13 +101,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {profile_initials(@profile.username)}
           </div>
         <% end %>
+        
         <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
           {if @profile.sharing == :shared,
             do: "👨‍👨‍👦‍👦",
             else: ""}
         </div>
       </div>
-
+      
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>
           {@profile.username}
@@ -140,18 +143,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {group_initials(@group.name)}
           </div>
         <% end %>
+        
         <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
           {if @group.is_public,
             do: "📢",
             else: "🔐"}
         </div>
       </div>
-
+      
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-          <.link navigate={~p"/groups/#{@group.id}"} class="link link-hover">
-            {@group.name}
-          </.link>
+          <.link navigate={~p"/groups/#{@group.id}"} class="link link-hover">{@group.name}</.link>
         </div>
       </div>
     </div>
@@ -187,7 +189,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
         <% end %>
       </div>
-
+      
       <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
         <span class="font-semibold text-base-content">{@value.creator.username}</span>
         <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} />
@@ -208,7 +210,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             <.icon name="hero-pencil-square" class="size-4" />
           </button>
-
           <button
             id={"value-delete-#{@value.id}"}
             type="button"
@@ -222,7 +223,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </button>
         </div>
       </div>
-
+      
       <div class={[
         "chat-bubble max-w-full rounded-3xl px-4 py-3 shadow-sm sm:max-w-[42rem]",
         @mine? && "chat-bubble-primary",
@@ -245,14 +246,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               class="w-full textarea border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40"
               required
             />
-
             <div class="flex justify-end gap-2">
-              <.button type="submit" variant="primary">
-                {gettext("Save changes")}
-              </.button>
-              <.button type="button" phx-click="cancel_edit_value">
-                {gettext("Cancel")}
-              </.button>
+              <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
+              <.button type="button" phx-click="cancel_edit_value">{gettext("Cancel")}</.button>
             </div>
           </.form>
         <% else %>
@@ -267,7 +263,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             >
               {render_value_content(@value)}
             </div>
-
+            
             <div
               :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
               class={[
@@ -277,7 +273,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               ]}
             >
             </div>
-
+            
             <button
               :if={value_expandable?(@value)}
               type="button"
@@ -323,7 +319,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     |> DateTime.to_iso8601()
   end
 
-  defp datetime_to_utc_datetime(%DateTime{} = datetime), do: DateTime.shift_zone!(datetime, "Etc/UTC")
+  defp datetime_to_utc_datetime(%DateTime{} = datetime),
+    do: DateTime.shift_zone!(datetime, "Etc/UTC")
 
   defp datetime_to_utc_datetime(%NaiveDateTime{} = datetime) do
     DateTime.from_naive!(datetime, "Etc/UTC")

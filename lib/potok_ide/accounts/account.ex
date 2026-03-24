@@ -15,6 +15,8 @@ defmodule PotokIde.Accounts.Account do
       join_through: PotokIde.Social.AccountProfile,
       on_replace: :delete
 
+    has_many :push_subscriptions, PotokIde.Accounts.PushSubscription
+
     timestamps(type: :utc_datetime)
   end
 

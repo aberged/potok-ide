@@ -14,6 +14,8 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       assert html =~ "Change Email"
       assert html =~ "Save Password"
+      assert html =~ "Push Notifications"
+      assert html =~ "push-notifications-panel"
     end
 
     test "redirects if account is not logged in", %{conn: conn} do
