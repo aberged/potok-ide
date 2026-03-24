@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#4ba8c0" />
+    <title>Potok Offline</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --potok-cyan: #4ba8c0;
+        --potok-ink: #16313a;
+        --potok-surface: #f5f8fa;
+        --potok-panel: rgba(255, 255, 255, 0.92);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        font-family: "Segoe UI", "Helvetica Neue", sans-serif;
+        background:
+          radial-gradient(circle at top, rgba(75, 168, 192, 0.2), transparent 42%),
+          linear-gradient(180deg, #fbfdff 0%, var(--potok-surface) 100%);
+        color: var(--potok-ink);
+      }
+
+      main {
+        width: min(100%, 32rem);
+        border: 1px solid rgba(22, 49, 58, 0.1);
+        border-radius: 28px;
+        background: var(--potok-panel);
+        padding: 32px;
+        box-shadow: 0 24px 64px rgba(22, 49, 58, 0.12);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 14px;
+        border-radius: 999px;
+        background: rgba(75, 168, 192, 0.12);
+        color: var(--potok-cyan);
+        font-size: 0.8rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 20px 0 12px;
+        font-size: clamp(2rem, 5vw, 2.8rem);
+        line-height: 1.05;
+      }
+
+      p {
+        margin: 0;
+        line-height: 1.7;
+        color: rgba(22, 49, 58, 0.78);
+      }
+
+      .actions {
+        margin-top: 28px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
+
+      a {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        font-weight: 700;
+        text-decoration: none;
+        transition: transform 160ms ease, box-shadow 160ms ease, opacity 160ms ease;
+        background: var(--potok-cyan);
+        color: white;
+        box-shadow: 0 10px 24px rgba(75, 168, 192, 0.24);
+      }
+
+      a:hover {
+        transform: translateY(-1px);
+      }
+
+      small {
+        display: block;
+        margin-top: 18px;
+        color: rgba(22, 49, 58, 0.56);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="badge">Offline</div>
+      <h1>Potok is waiting for the connection to come back.</h1>
+      <p>
+        Cached assets are still available, but this screen appears when Potok cannot reach the
+        network for a fresh page request.
+      </p>
+
+      <div class="actions">
+        <a href="/">Try again</a>
+      </div>
+
+      <small>Once you are back online, navigation will resume automatically.</small>
+    </main>
+  </body>
+</html>

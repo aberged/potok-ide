@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Potok icon">
+  <defs>
+    <linearGradient id="potok-gradient" x1="64" x2="448" y1="64" y2="448" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4ba8c0" />
+      <stop offset="1" stop-color="#1f768a" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="120" fill="url(#potok-gradient)" />
+  <circle cx="256" cy="256" r="174" fill="#ffffff" fill-opacity="0.12" />
+  <path
+    fill="#ffffff"
+    d="M175 128h95c82 0 130 41 130 111 0 75-57 117-142 117h-32v84h-51V128Zm51 185h29c58 0 93-20 93-69 0-45-31-64-91-64h-31v133Z"
+  />
+</svg>

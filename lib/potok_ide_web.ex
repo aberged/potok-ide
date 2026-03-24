@@ -17,7 +17,7 @@ defmodule PotokIdeWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images favicon.ico robots.txt)
+  def static_paths, do: ~w(assets fonts images favicon.ico manifest.webmanifest offline.html robots.txt sw.js)
 
   def router do
     quote do

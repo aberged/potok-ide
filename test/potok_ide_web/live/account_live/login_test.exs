@@ -12,6 +12,15 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert html =~ "Log in with email"
     end
 
+    test "renders PWA metadata in the shared root layout", %{conn: conn} do
+      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in")
+
+      assert html =~ ~s(rel="manifest")
+      assert html =~ "/manifest.webmanifest"
+      assert html =~ "/images/pwa/apple-touch-icon.svg"
+      assert html =~ ~s(name="theme-color")
+    end
+
     test "renders login page in polish when locale is stored in session", %{conn: conn} do
       {:ok, _lv, html} =
         conn

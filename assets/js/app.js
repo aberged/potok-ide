@@ -71,6 +71,47 @@ const DropdownMenu = {
   },
 }
 
+const registerServiceWorker = async () => {
+  if (!("serviceWorker" in navigator)) {
+    return
+  }
+
+  try {
+    const registration = await navigator.serviceWorker.register("/sw.js", {scope: "/"})
+
+    if (registration.waiting) {
+      registration.waiting.postMessage({type: "SKIP_WAITING"})
+    }
+
+    registration.addEventListener("updatefound", () => {
+      const installing = registration.installing
+
+      if (!installing) {
+        return
+      }
+
+      installing.addEventListener("statechange", () => {
+        if (installing.state === "installed" && navigator.serviceWorker.controller) {
+          window.location.reload()
+        }
+      })
+    })
+
+    let refreshing = false
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) {
+        return
+      }
+
+      refreshing = true
+      window.location.reload()
+    })
+  } catch (error) {
+    console.error("Service worker registration failed", error)
+  }
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
@@ -113,6 +154,9 @@ const updateDrawerActiveLinks = () => {
 
 window.addEventListener("DOMContentLoaded", updateDrawerActiveLinks)
 window.addEventListener("phx:page-loading-stop", updateDrawerActiveLinks)
+window.addEventListener("load", () => {
+  void registerServiceWorker()
+})
 
 window.addEventListener("phx:current_profile_updated", ({detail}) => {
   const brandTitle = document.getElementById("nav-brand-title")
