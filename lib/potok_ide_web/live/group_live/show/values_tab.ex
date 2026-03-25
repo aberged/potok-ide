@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-values" class="card flex min-h-0 flex-1 bg-base-200 shadow-sm">
+    <div id="group-panel-values" class="card flex min-h-0 flex-1 shadow-sm">
       <div class="flex min-h-0 flex-1 flex-col">
         <div
           id="group-values-feed"

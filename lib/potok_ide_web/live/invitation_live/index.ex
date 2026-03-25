@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           {gettext("No pending invitations.")}
         </div>
 
-        <div :for={inv <- @invitations} class="card bg-base-200">
+        <div :for={inv <- @invitations} class="card">
           <div class="card-body">
             <Components.group_identity group={inv.group} avatar_size="size-12" text_class="text-sm" />
 

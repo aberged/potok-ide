@@ -15,29 +15,29 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           {gettext("Profiles")}
           <:subtitle>{gettext("Pick the profile you want to use, or create a new one.")}</:subtitle>
         </.header>
-        
+
         <div :if={@current_profile} class="alert">
           <.profile_identity profile={@current_profile} title={gettext("Current profile:")} />
         </div>
-        
+
         <div :if={@profile_invitations != []} id="shared-profile-invitations" class="space-y-3">
           <.header>
             {gettext("Shared profile invitations")}
             <:subtitle>{gettext("Pending invitations for your current profile.")}</:subtitle>
           </.header>
-          
-          <div :for={invitation <- @profile_invitations} class="card bg-base-200">
+
+          <div :for={invitation <- @profile_invitations} class="card">
             <div class="card-body gap-3">
               <div>
                 <h3 class="card-title">{invitation.profile.username}</h3>
-                
+
                 <p class="text-sm text-base-content/70">
                   {gettext("Invited by: ")}<span class="font-semibold">
                     {invitation.inviter.username}
                   </span>
                 </p>
               </div>
-              
+
               <div>
                 <.button
                   phx-click="accept_profile_invitation"
@@ -51,15 +51,15 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             </div>
           </div>
         </div>
-        
-        <div class="card bg-base-200">
+
+        <div class="card">
           <div class="card-body">
             <h3 class="card-title">{gettext("Your profiles")}</h3>
-            
+
             <div :if={@profiles == []} class="text-base-content/70">
               {gettext("No profiles yet.")}
             </div>
-            
+
             <ul :if={@profiles != []} class="space-y-2">
               <li :for={profile <- @profiles} class="flex items-center justify-between gap-3">
                 <.profile_identity profile={profile} subtitle={Atom.to_string(profile.sharing)} />
@@ -82,14 +82,14 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 </div>
               </li>
             </ul>
-            
+
             <div class="mt-4">
               <.button navigate={~p"/groups"} variant="primary">{gettext("Go to /")}</.button>
             </div>
           </div>
         </div>
-        
-        <div :if={@edit_form} class="card bg-base-200">
+
+        <div :if={@edit_form} class="card">
           <div class="card-body gap-0">
             <button
               id="toggle-edit-profile"
@@ -100,12 +100,12 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             >
               <div>
                 <h3 class="card-title">{gettext("Edit profile")}</h3>
-                
+
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Update the selected profile details.")}
                 </p>
               </div>
-              
+
               <.icon name="hero-chevron-down" class="size-5 shrink-0 rotate-180 transition-transform" />
             </button>
             <div class="mt-5 border-t border-base-300/70 pt-5">
@@ -154,7 +154,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                   <.button type="button" phx-click="cancel_edit">{gettext("Cancel")}</.button>
                 </div>
               </.form>
-              
+
               <div
                 :if={@edit_profile && @edit_profile.sharing == :shared}
                 class="mt-6 border-t border-base-300/70 pt-5"
@@ -162,11 +162,11 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 <h4 class="text-base font-semibold text-base-content">
                   {gettext("Invite profile to shared profile")}
                 </h4>
-                
+
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Send an invitation by profile username.")}
                 </p>
-                
+
                 <.form
                   for={@profile_invitation_form}
                   id="shared-profile-invitation-form"
@@ -188,8 +188,8 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             </div>
           </div>
         </div>
-        
-        <div class="card bg-base-200">
+
+        <div class="card">
           <div class="card-body gap-0">
             <button
               id="toggle-create-profile"
@@ -200,12 +200,12 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             >
               <div>
                 <h3 class="card-title">{gettext("Create profile")}</h3>
-                
+
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Expand to create a new profile.")}
                 </p>
               </div>
-              
+
               <.icon
                 name="hero-chevron-down"
                 class={[
@@ -278,7 +278,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           {profile_initials(@profile.username)}
         </div>
       <% end %>
-      
+
       <div class="min-w-0">
         <div
           :if={@title}
@@ -286,9 +286,9 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         >
           {@title}
         </div>
-        
+
         <div class="truncate font-semibold text-base-content">{@profile.username}</div>
-        
+
         <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
       </div>
     </div>
