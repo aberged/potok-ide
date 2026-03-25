@@ -77,6 +77,8 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.ProfileAuth, :mount_current_profile}
       ] do
       live "/profiles", ProfileLive.Index, :index
+      live "/profiles/new", ProfileLive.New, :new
+      live "/profiles/:id/edit", ProfileLive.Edit, :edit
     end
 
     live_session :profile_required,

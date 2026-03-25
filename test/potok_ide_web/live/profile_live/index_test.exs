@@ -8,8 +8,18 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
   alias PotokIde.Social
 
   describe "profiles page" do
-    test "toggles the create profile section", %{conn: conn} do
+    test "shows dedicated create and edit page links instead of inline forms", %{conn: conn} do
       account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "linked profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
       account = Accounts.get_account!(account.id)
 
       {:ok, lv, _html} =
@@ -17,19 +27,10 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> log_in_account(account)
         |> live(~p"/profiles")
 
+      assert has_element?(lv, "a[href='/profiles/new']")
+      assert has_element?(lv, "a[href='/profiles/#{profile.id}/edit']")
       refute has_element?(lv, "#create-profile-form")
-
-      lv
-      |> element("#toggle-create-profile")
-      |> render_click()
-
-      assert has_element?(lv, "#create-profile-form")
-
-      lv
-      |> element("#toggle-create-profile")
-      |> render_click()
-
-      refute has_element?(lv, "#create-profile-form")
+      refute has_element?(lv, "#edit-profile-form")
     end
 
     test "selects a profile and updates the current profile banner", %{conn: conn} do
@@ -76,7 +77,37 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
                "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha profile"
     end
 
-    test "edits a profile and updates the selected profile banner", %{conn: conn} do
+    test "creates a profile on the dedicated page", %{conn: conn} do
+      account = account_fixture()
+      account = Accounts.get_account!(account.id)
+      conn = log_in_account(conn, account)
+
+      {:ok, lv, _html} =
+        conn
+        |> live(~p"/profiles/new")
+
+      assert has_element?(lv, "#create-profile-form")
+
+      {:ok, _index_lv, html} =
+        lv
+        |> form("#create-profile-form",
+          profile: %{
+            username: "beta profile",
+            profile_picture_url: "https://example.com/avatar.png",
+            description: "new description",
+            description_format: "markdown",
+            sharing: "unique"
+          }
+        )
+        |> render_submit()
+        |> follow_redirect(conn, ~p"/profiles")
+
+      assert html =~ "Profile created."
+      assert html =~ "beta profile"
+      assert html =~ "https://example.com/avatar.png"
+    end
+
+    test "edits a profile on the dedicated page and updates the selected profile banner", %{conn: conn} do
       account = account_fixture()
 
       {:ok, profile} =
@@ -89,20 +120,16 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         })
 
       account = Accounts.get_account!(account.id)
+      conn = log_in_account(conn, account)
 
       {:ok, lv, html} =
         conn
-        |> log_in_account(account)
-        |> live(~p"/profiles")
+        |> live(~p"/profiles/#{profile.id}/edit")
 
       assert html =~ "alpha profile"
       assert html =~ "Current profile:"
 
-      lv
-      |> element("button[phx-click=edit][phx-value-id='#{profile.id}']")
-      |> render_click()
-
-      result =
+      {:ok, _index_lv, result} =
         lv
         |> form("#edit-profile-form",
           profile: %{
@@ -114,43 +141,12 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
           }
         )
         |> render_submit()
+        |> follow_redirect(conn, ~p"/profiles")
 
       assert result =~ "Profile updated."
       assert result =~ "beta profile"
       assert result =~ "https://example.com/avatar.png"
       refute result =~ "alpha profile"
-    end
-
-    test "collapses the edit profile section from its header", %{conn: conn} do
-      account = account_fixture()
-
-      {:ok, profile} =
-        Social.create_profile_for_account(account, %{
-          username: "collapse profile",
-          profile_picture_url: nil,
-          description: "",
-          description_format: :markdown,
-          sharing: :unique
-        })
-
-      account = Accounts.get_account!(account.id)
-
-      {:ok, lv, _html} =
-        conn
-        |> log_in_account(account)
-        |> live(~p"/profiles")
-
-      lv
-      |> element("button[phx-click=edit][phx-value-id='#{profile.id}']")
-      |> render_click()
-
-      assert has_element?(lv, "#edit-profile-form")
-
-      lv
-      |> element("#toggle-edit-profile")
-      |> render_click()
-
-      refute has_element?(lv, "#edit-profile-form")
     end
 
     test "updates profiles when another process creates a profile", %{conn: conn} do
@@ -203,11 +199,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(inviter_account)
-        |> live(~p"/profiles")
-
-      lv
-      |> element("button[phx-click=edit][phx-value-id='#{shared_profile.id}']")
-      |> render_click()
+        |> live(~p"/profiles/#{shared_profile.id}/edit")
 
       assert has_element?(lv, "#shared-profile-invitation-form")
 

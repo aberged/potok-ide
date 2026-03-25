@@ -412,7 +412,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       with false <- username == "",
            %{} = invitee <- Social.get_profile_by_username(username),
            {:ok, _inv} <- Social.invite_profile_to_group(current_profile, group, invitee) do
-        {:noreply, put_flash(socket, :info, gettext("Invitation sent."))}
+        {:noreply,
+         socket
+         |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
+         |> put_flash(:info, gettext("Invitation sent."))}
       else
         true ->
           {:noreply, put_flash(socket, :error, gettext("Username is required."))}
