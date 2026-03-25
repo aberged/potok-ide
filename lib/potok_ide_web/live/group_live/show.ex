@@ -19,15 +19,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <%!-- <div class="flex h-[calc(100dvh-4rem)] flex-col"> --%>
-      <div class="sticky top-[4rem] z-10 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur -mb-6">
+      <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
               {"❮"}
             </.link>
           </div>
-          
+
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-3">
               <Components.group_identity
@@ -37,7 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
             </div>
           </div>
-          
+
           <button
             id="group-subgroups-summary"
             type="button"
@@ -76,7 +75,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <div :for={m <- @first3_members} class="avatar">
               <div class="bg-white w-8"><img src={m.profile_picture_url} alt={m.username} /></div>
             </div>
-            
+
             <div :if={@members_count > 3} class="avatar avatar-placeholder">
               <div class="bg-neutral text-neutral-content w-8">
                 <span>+{@members_count - length(@first3_members)}</span>
@@ -123,7 +122,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </Layouts.drop_down_menu>
         </div>
       </div>
-      
+
       <div class="min-h-0 flex-1 overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
           <div :if={!@is_member} class="alert mt-8">
@@ -134,7 +133,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               )}
             </div>
           </div>
-          
+
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             children={@children}
@@ -165,7 +164,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
           />
         </div>
       </div>
-       <%!-- </div> --%>
     </Layouts.app>
     """
   end
@@ -220,7 +218,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     changeset =
       %Value{}
-      |> Value.changeset(attrs)
+      |> Value.changeset_for_update(attrs)
       |> Map.put(:action, :validate)
 
     {:noreply, assign(socket, :new_value_form, to_form(changeset))}

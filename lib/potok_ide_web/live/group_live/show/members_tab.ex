@@ -7,12 +7,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-members" class="card bg-base-200 pt-4">
-      <div class="card-body">
-        <h3 class="card-title">{gettext("Members")}</h3>
-        
+    <div id="group-panel-members" class="card bg-base-200">
+      <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
+        <h3 class="card-title mb-2">{gettext("Members")}</h3>
+
         <div :if={@members == []} class="text-base-content/70">{gettext("No members.")}</div>
-        
+
         <ul :if={@members != []} class="space-y-2">
           <li :for={member <- @members}><Components.profile_identity profile={member} /></li>
         </ul>

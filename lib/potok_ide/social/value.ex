@@ -24,4 +24,11 @@ defmodule PotokIde.Social.Value do
     |> validate_required([:content, :content_format, :creator_id, :group_id])
     |> check_constraint(:content_format, name: :values_content_format_check)
   end
+
+  def changeset_for_update(value, attrs) do
+    value
+    |> cast(attrs, [:content, :content_format, :creator_id, :group_id, :parent_id])
+    |> validate_required([:content_format, :creator_id, :group_id])
+    |> check_constraint(:content_format, name: :values_content_format_check)
+  end
 end

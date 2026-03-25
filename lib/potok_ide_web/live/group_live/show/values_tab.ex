@@ -13,12 +13,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-values" class="card flex min-h-0 flex-1 bg-base-200 shadow-sm pt-4 ">
+    <div id="group-panel-values" class="card flex min-h-0 flex-1 bg-base-200 shadow-sm">
       <div class="flex min-h-0 flex-1 flex-col">
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-18rem)]"
+          class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-15rem)]"
         >
           <div
             :if={@values == []}
@@ -52,16 +52,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               field={@new_value_form[:content]}
               id="group-value-content"
               aria-label={gettext("Value")}
-              class="min-h-24 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-sm leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+              class="w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 m-0 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
               placeholder={gettext("Write a value...")}
               rows="1"
               type="textarea"
               phx-hook=".SubmitOnEnter"
-              required
             />
             <.button
               aria-label={gettext("Post value")}
-              class="btn btn-primary btn-circle size-12 flex-none"
+              disabled={!@new_value_form[:content].value or @new_value_form[:content].value == ""}
+              class="btn btn-primary btn-circle size-10 flex-none"
             >
               <.icon name="hero-paper-airplane" class="size-4" />
             </.button>
@@ -78,27 +78,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
           export default {
             mounted() {
-              this.pendingScroll = false
+              requestAnimationFrame(() => {
+                this.scrollToLatest()
+              })
 
               this.handleEvent("scroll_values_to_latest", () => {
-                this.pendingScroll = true
+                this.scrollToLatest()
               })
             },
 
             updated() {
               requestAnimationFrame(() => {
-                this.scrollToLatest()
-                this.pendingScroll = false
               })
             },
 
             scrollToLatest() {
-              if (this.el.classList.contains("flex-col rev")) {
-                console.log("Scrolling to top (flex-col rev)", this.el.scrollHeight)
-                this.el.scrollTop = this.el.scrollHeight
-                return
-              }
-              console.log("Scrolling to bottom this.el: ", this.el.scrollHeight)
               this.el.scrollTop = this.el.scrollHeight
             },
           }
