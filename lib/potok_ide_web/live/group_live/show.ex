@@ -161,6 +161,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <InviteProfileTab.panel
             :if={@is_member and @active_tab == "invite_profile"}
             invite_form={@invite_form}
+            invite_form_version={@invite_form_version}
           />
         </div>
       </div>
@@ -413,9 +414,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
            %{} = invitee <- Social.get_profile_by_username(username),
            {:ok, _inv} <- Social.invite_profile_to_group(current_profile, group, invitee) do
         {:noreply,
-         socket
-         |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
-         |> put_flash(:info, gettext("Invitation sent."))}
+          socket
+          |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
+          |> update(:invite_form_version, &(&1 + 1))
+          |> put_flash(:info, gettext("Invitation sent."))}
       else
         true ->
           {:noreply, put_flash(socket, :error, gettext("Username is required."))}
@@ -536,6 +538,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       to_form(Group.changeset(%Group{}, %{is_public: false, description_format: :markdown}))
     )
     |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
+    |> assign(:invite_form_version, 0)
   end
 
   defp refresh_group_data(socket) do

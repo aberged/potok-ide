@@ -101,14 +101,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {profile_initials(@profile.username)}
           </div>
         <% end %>
-        
+
         <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
           {if @profile.sharing == :shared,
             do: "👨‍👨‍👦‍👦",
             else: ""}
         </div>
       </div>
-      
+
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>
           {@profile.username}
@@ -143,14 +143,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {group_initials(@group.name)}
           </div>
         <% end %>
-        
+
         <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
           {if @group.is_public,
             do: "📢",
             else: "🔐"}
         </div>
       </div>
-      
+
       <div class="min-w-0">
         <div class={[@text_class, "truncate font-semibold text-base-content"]}>
           <.link navigate={~p"/groups/#{@group.id}"} class="link link-hover">{@group.name}</.link>
@@ -178,18 +178,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div id={"value-#{@value.id}"} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
-      <div class="chat-image avatar">
         <%= if @avatar_url do %>
+        <div class="chat-image avatar">
           <div class="size-10 rounded-full border border-base-300 shadow-sm">
             <img src={@avatar_url} alt={@value.creator.username} class="object-cover" />
           </div>
+        </div>
         <% else %>
+        <div class="chat-image">
           <div class="flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
             {profile_initials(@value.creator.username)}
           </div>
+        </div>
         <% end %>
-      </div>
-      
+
       <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
         <span class="font-semibold text-base-content">{@value.creator.username}</span>
         <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} />
@@ -223,7 +225,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </button>
         </div>
       </div>
-      
+
       <div class={[
         "chat-bubble max-w-full rounded-3xl px-4 py-3 shadow-sm sm:max-w-[42rem]",
         @mine? && "chat-bubble-primary",
@@ -263,7 +265,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             >
               {render_value_content(@value)}
             </div>
-            
+
             <div
               :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
               class={[
@@ -273,7 +275,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               ]}
             >
             </div>
-            
+
             <button
               :if={value_expandable?(@value)}
               type="button"
