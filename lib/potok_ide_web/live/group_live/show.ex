@@ -15,6 +15,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIdeWeb.ProfileAuth
 
+  @children_page_size 12
+  @members_page_size 20
+  @values_page_size 20
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -136,15 +140,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
-            children={@children}
+            children={@streams.children}
+            pagination={@children_pagination}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
-            members={@members}
+            members={@streams.members}
+            pagination={@members_pagination}
           />
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil}
-            values={@values}
+            values={@streams.values}
+            pagination={@values_pagination}
             current_profile={@current_profile}
             expanded_value_ids={@expanded_value_ids}
             editing_value_id={@editing_value_id}
@@ -184,11 +191,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       {:ok,
        socket
+        |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
+        |> stream_configure(:members, dom_id: &"member-#{&1.id}")
+        |> stream_configure(:values, dom_id: &"value-#{&1.id}")
+        |> assign(:children_pagination, default_pagination(@children_page_size))
+        |> assign(:members_pagination, default_pagination(@members_page_size))
+        |> assign(:values_pagination, default_pagination(@values_page_size))
+        |> assign(:loaded_values, [])
+        |> assign(:members_count, 0)
+        |> assign(:first3_members, [])
        |> assign(:is_member, is_member)
+        |> assign(:group, group)
        |> assign(:active_tab, active_tab)
        |> assign(:editing_value_id, nil)
        |> assign(:edit_value_form, nil)
-       |> load_group_data(group)}
+        |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
+        |> assign(:value_parent_options, [])
+        |> assign(:new_value_form, empty_new_value_form())
+        |> assign(:new_group_form, empty_new_group_form())
+        |> assign(:invite_form, empty_invite_form())
+        |> assign(:invite_form_version, 0)
+        |> load_group_data(group, active_tab)}
     else
       {:ok,
        socket
@@ -199,12 +222,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    {:noreply,
-     assign(
-       socket,
-       :active_tab,
-       normalize_active_tab(Map.get(params, "tab"), socket.assigns.is_member)
-     )}
+    active_tab = normalize_active_tab(Map.get(params, "tab"), socket.assigns.is_member)
+
+    if active_tab == socket.assigns.active_tab do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:active_tab, active_tab)
+       |> load_group_data(socket.assigns.group, active_tab)}
+    end
   end
 
   @impl true
@@ -237,6 +264,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           socket =
             socket
             |> assign(:active_tab, "values")
+            |> assign(:new_value_form, empty_new_value_form())
             # |> put_flash(:info, gettext("Value posted."))
             |> refresh_group_data()
             |> push_event("scroll_values_to_latest", %{})
@@ -254,8 +282,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("start_edit_value", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
+    previous_editing_value_id = socket.assigns.editing_value_id
 
-    case find_value(socket.assigns.values, id) do
+    case find_value(socket.assigns.loaded_values, id) do
       nil ->
         {:noreply, put_flash(socket, :error, gettext("Value not found."))}
 
@@ -266,7 +295,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:noreply,
          socket
          |> assign(:editing_value_id, value.id)
-         |> assign(:edit_value_form, to_form(Value.changeset(value, %{})))}
+         |> assign(:edit_value_form, to_form(Value.changeset(value, %{})))
+         |> restream_values([previous_editing_value_id, value.id])}
     end
   end
 
@@ -281,7 +311,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
           |> Value.changeset(attrs)
           |> Map.put(:action, :validate)
 
-        {:noreply, assign(socket, :edit_value_form, to_form(changeset))}
+        {:noreply,
+         socket
+         |> assign(:edit_value_form, to_form(changeset))
+         |> restream_values([value.id])}
     end
   end
 
@@ -306,7 +339,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
-             assign(socket, :edit_value_form, to_form(Map.put(changeset, :action, :validate)))}
+             socket
+             |> assign(:edit_value_form, to_form(Map.put(changeset, :action, :validate)))
+             |> restream_values([value.id])}
 
           {:error, _reason} ->
             {:noreply, put_flash(socket, :error, gettext("Could not update value."))}
@@ -321,7 +356,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("delete_value", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
 
-    case find_value(socket.assigns.values, id) do
+    case find_value(socket.assigns.loaded_values, id) do
       nil ->
         {:noreply, put_flash(socket, :error, gettext("Value not found."))}
 
@@ -331,7 +366,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, gettext("Value deleted."))
-             |> refresh_group_data()}
+             |> remove_value(value)}
 
           {:error, :not_value_creator} ->
             {:noreply, put_flash(socket, :error, gettext("You can only delete your own values."))}
@@ -352,6 +387,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
            normalize_active_tab(tab, socket.assigns.is_member)
          )
      )}
+  end
+
+  def handle_event("load_more_children", _params, socket) do
+    {:noreply,
+     socket
+     |> maybe_increment_pagination(:children_pagination)
+     |> refresh_group_data()}
+  end
+
+  def handle_event("load_more_members", _params, socket) do
+    {:noreply,
+     socket
+     |> maybe_increment_pagination(:members_pagination)
+     |> refresh_group_data()}
+  end
+
+  def handle_event("load_more_values", _params, socket) do
+    {:noreply,
+     socket
+     |> maybe_increment_pagination(:values_pagination)
+     |> refresh_group_data()}
   end
 
   def handle_event("validate_group", %{"group" => attrs}, socket) do
@@ -450,7 +506,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
         MapSet.put(socket.assigns.expanded_value_ids, value_id)
       end
 
-    {:noreply, assign(socket, :expanded_value_ids, expanded_value_ids)}
+    {:noreply,
+     socket
+     |> assign(:expanded_value_ids, expanded_value_ids)
+      |> restream_values([value_id])}
   end
 
   @impl true
@@ -506,47 +565,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
-  defp load_group_data(socket, group) do
-    values = Social.list_group_values(group)
-    value_ids = MapSet.new(Enum.map(values, & &1.id))
-
-    expanded_value_ids =
-      socket.assigns
-      |> Map.get(:expanded_value_ids, MapSet.new())
-      |> MapSet.intersection(value_ids)
-
+  defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
-      normalize_active_tab(Map.get(socket.assigns, :active_tab), socket.assigns.is_member)
+      active_tab || normalize_active_tab(Map.get(socket.assigns, :active_tab), socket.assigns.is_member)
 
     socket
     |> assign(:group, group)
-    |> assign(
-      :children,
-      Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
-    )
-    |> assign(:members_count, Social.count_group_members(group))
-    |> assign(:first3_members, Social.list_first3_group_members(group))
-    |> assign(:members, Social.list_group_members(group))
-    |> assign(:values, values)
     |> assign(:active_tab, active_tab)
-    |> assign(:expanded_value_ids, expanded_value_ids)
-    |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
-    |> assign(:value_parent_options, value_parent_options(values))
-    |> assign(:new_value_form, to_form(Value.changeset(%Value{}, %{})))
-    |> assign(
-      :new_group_form,
-      to_form(Group.changeset(%Group{}, %{is_public: false, description_format: :markdown}))
-    )
-    |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
-    |> assign(:invite_form_version, 0)
+    |> load_member_summary(group)
+    |> maybe_load_children(group, active_tab)
+    |> maybe_load_members(group, active_tab)
+    |> maybe_load_values(group, active_tab)
+    |> maybe_load_value_parent_options(group, active_tab)
   end
 
   defp refresh_group_data(socket) do
-    load_group_data(socket, socket.assigns.group)
+    load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
   end
 
   defp current_editing_value(socket) do
-    find_value(socket.assigns.values, socket.assigns.editing_value_id)
+    find_value(socket.assigns.loaded_values, socket.assigns.editing_value_id)
   end
 
   defp find_value(_values, nil), do: nil
@@ -560,9 +598,195 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp clear_edit_value(socket) do
+    editing_value_id = socket.assigns.editing_value_id
+
     socket
     |> assign(:editing_value_id, nil)
     |> assign(:edit_value_form, nil)
+    |> restream_values([editing_value_id])
+  end
+
+  defp remove_value(socket, value) do
+    loaded_values = Enum.reject(socket.assigns.loaded_values, &(&1.id == value.id))
+
+    expanded_value_ids = MapSet.delete(socket.assigns.expanded_value_ids, value.id)
+
+    values_pagination =
+      socket.assigns.values_pagination
+      |> Map.update!(:loaded_count, &max(&1 - 1, 0))
+      |> Map.update!(:total_count, &max(&1 - 1, 0))
+      |> then(fn pagination ->
+        Map.put(pagination, :has_more?, pagination.loaded_count < pagination.total_count)
+      end)
+
+    socket
+    |> assign(:loaded_values, loaded_values)
+    |> assign(:expanded_value_ids, expanded_value_ids)
+    |> assign(:values_pagination, values_pagination)
+    |> stream_delete(:values, value)
+  end
+
+  defp restream_values(socket, value_ids) do
+    value_ids
+    |> Enum.reject(&is_nil/1)
+    |> Enum.uniq()
+    |> Enum.reduce(socket, fn value_id, acc ->
+      case find_value(acc.assigns.loaded_values, value_id) do
+        nil -> acc
+        value -> stream_insert(acc, :values, value)
+      end
+    end)
+  end
+
+  defp default_pagination(per_page) do
+    %{page: 1, per_page: per_page, loaded_count: 0, total_count: 0, has_more?: false}
+  end
+
+  defp empty_new_value_form do
+    to_form(Value.changeset(%Value{}, %{}))
+  end
+
+  defp empty_new_group_form do
+    to_form(Group.changeset(%Group{}, %{is_public: false, description_format: :markdown}))
+  end
+
+  defp empty_invite_form do
+    to_form(%{"username" => ""}, as: "invite")
+  end
+
+  defp maybe_increment_pagination(socket, key) do
+    if socket.assigns[key].has_more? do
+      update(socket, key, &Map.update!(&1, :page, fn page -> page + 1 end))
+    else
+      socket
+    end
+  end
+
+  defp child_groups_page(group, current_profile, pagination) do
+    total_count = Social.count_child_groups_for_profile(group, current_profile)
+    limit = pagination_limit(pagination)
+    entries = Social.list_child_groups_for_profile(group, current_profile, limit: limit)
+
+    pagination_result(pagination, entries, total_count)
+  end
+
+  defp members_page(group, pagination) do
+    total_count = Social.count_group_members(group)
+    limit = pagination_limit(pagination)
+    entries = Social.list_group_members(group, limit: limit)
+
+    pagination_result(pagination, entries, total_count)
+  end
+
+  defp values_page(group, pagination) do
+    total_count = Social.count_group_values(group)
+    limit = pagination_limit(pagination)
+    offset = max(total_count - limit, 0)
+
+    entries =
+      Social.list_group_values(group,
+        offset: offset,
+        limit: limit
+      )
+
+    pagination_result(pagination, entries, total_count)
+  end
+
+  defp pagination_limit(%{page: page, per_page: per_page}), do: page * per_page
+
+  defp pagination_result(pagination, entries, total_count) do
+    loaded_count = length(entries)
+
+    pagination
+    |> Map.put(:loaded_count, loaded_count)
+    |> Map.put(:total_count, total_count)
+    |> Map.put(:has_more?, loaded_count < total_count)
+    |> Map.put(:entries, entries)
+  end
+
+  defp pagination_metadata(%{entries: _entries} = pagination), do: Map.delete(pagination, :entries)
+
+  defp load_member_summary(socket, group) do
+    if group.parent_id != nil do
+      socket
+      |> assign(:members_count, Social.count_group_members(group))
+      |> assign(:first3_members, Social.list_first3_group_members(group))
+    else
+      socket
+      |> assign(:members_count, 0)
+      |> assign(:first3_members, [])
+    end
+  end
+
+  defp maybe_load_children(socket, group, active_tab) do
+    if needs_children?(group, active_tab) do
+      current_profile = socket.assigns.current_profile
+      children_page = child_groups_page(group, current_profile, socket.assigns.children_pagination)
+
+      socket
+      |> assign(:children_pagination, pagination_metadata(children_page))
+      |> stream(:children, children_page.entries, reset: true)
+    else
+      socket
+    end
+  end
+
+  defp maybe_load_members(socket, group, active_tab) do
+    if needs_members?(group, active_tab) do
+      members_page = members_page(group, socket.assigns.members_pagination)
+
+      socket
+      |> assign(:members_pagination, pagination_metadata(members_page))
+      |> stream(:members, members_page.entries, reset: true)
+    else
+      socket
+    end
+  end
+
+  defp maybe_load_values(socket, group, active_tab) do
+    if needs_values?(group, active_tab) do
+      values_page = values_page(group, socket.assigns.values_pagination)
+      values = values_page.entries
+      value_ids = MapSet.new(Enum.map(values, & &1.id))
+
+      expanded_value_ids =
+        socket.assigns
+        |> Map.get(:expanded_value_ids, MapSet.new())
+        |> MapSet.intersection(value_ids)
+
+      socket
+      |> assign(:loaded_values, values)
+      |> assign(:values_pagination, pagination_metadata(values_page))
+      |> assign(:expanded_value_ids, expanded_value_ids)
+      |> stream(:values, values, reset: true)
+    else
+      socket
+    end
+  end
+
+  defp maybe_load_value_parent_options(socket, group, active_tab) do
+    if needs_value_parent_options?(socket, active_tab) do
+      socket
+      |> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
+    else
+      socket
+    end
+  end
+
+  defp needs_children?(group, active_tab) do
+    active_tab == "sub_groups" or (group.parent_id == nil and active_tab == "values")
+  end
+
+  defp needs_members?(group, active_tab) do
+    group.parent_id != nil and active_tab == "members"
+  end
+
+  defp needs_values?(group, active_tab) do
+    group.parent_id != nil and active_tab == "values"
+  end
+
+  defp needs_value_parent_options?(socket, active_tab) do
+    socket.assigns.is_member and active_tab == "create_group"
   end
 
   defp value_parent_options(values) do

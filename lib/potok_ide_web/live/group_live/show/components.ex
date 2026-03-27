@@ -161,6 +161,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   attr :value, :map, required: true
+  attr :dom_id, :string, required: true
   attr :current_profile, :map, default: nil
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
@@ -177,7 +178,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
 
     ~H"""
-    <div id={"value-#{@value.id}"} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
+    <div id={@dom_id} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
         <%= if @avatar_url do %>
         <div class="chat-image avatar">
           <div class="size-10 rounded-full border border-base-300 shadow-sm">

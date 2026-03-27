@@ -285,6 +285,47 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-panel-sub-groups a", "other-child-group")
     end
 
+    test "paginates sub-groups with streams", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "subgroup-pagination-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      Enum.each(1..13, fn idx ->
+        {:ok, _group} =
+          Social.create_group(profile, root_group, %{
+            "name" => "paged-child-#{pad_2(idx)}",
+            "description" => "",
+            "description_format" => :markdown,
+            "is_public" => false
+          })
+      end)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-children-load-more")
+      refute has_element?(lv, "#group-children-list", "paged-child-13")
+
+      lv
+      |> element("#group-children-load-more")
+      |> render_click()
+
+      assert has_element?(lv, "#group-children-list", "paged-child-13")
+      refute has_element?(lv, "#group-children-load-more")
+    end
+
     test "renders group pictures in header and sub-group list", %{conn: conn} do
       account = account_fixture()
 
@@ -372,6 +413,77 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                elem(:binary.match(html, "newer value"), 0)
 
       assert has_element?(lv, "#group-value-form")
+    end
+
+    test "paginates values with streams from the latest page", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "value-pagination-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "value-pagination-group")
+
+      Enum.each(1..21, fn idx ->
+        {:ok, _value} =
+          Social.create_value(profile, group, %{
+            "content" => "paged value #{pad_2(idx)}",
+            "content_format" => :markdown
+          })
+      end)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#group-values-load-more")
+      refute has_element?(lv, "#group-values-list", "paged value 01")
+      assert has_element?(lv, "#group-values-list", "paged value 02")
+      assert has_element?(lv, "#group-values-list", "paged value 21")
+
+      lv
+      |> element("#group-values-load-more")
+      |> render_click()
+
+      assert has_element?(lv, "#group-values-list", "paged value 01")
+      refute has_element?(lv, "#group-values-load-more")
+    end
+
+    test "loads value parent options when create-group tab is opened", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "create-group-options-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "create-group-options")
+
+      {:ok, _value} =
+        Social.create_value(profile, group, %{
+          "content" => "parent option value",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/create_group")
+
+      assert has_element?(lv, "#group-panel-create-group")
+      assert render(lv) =~ "create-group-options-profile: parent option value"
     end
 
     test "renders value content as markdown and html", %{conn: conn} do
@@ -645,6 +757,42 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert_redirect(lv, ~p"/groups")
     end
+
+    test "paginates members with streams", %{conn: conn} do
+      owner_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "member-00",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      group = create_child_group!(owner_profile, "member-pagination-group")
+
+      Enum.each(1..20, fn idx ->
+        add_group_member!(owner_profile, group, "member-#{pad_2(idx)}")
+      end)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(lv, "#group-members-load-more")
+      assert has_element?(lv, "#group-members-list", "member-19")
+      refute has_element?(lv, "#group-members-list", "member-20")
+
+      lv
+      |> element("#group-members-load-more")
+      |> render_click()
+
+      assert has_element?(lv, "#group-members-list", "member-20")
+      refute has_element?(lv, "#group-members-load-more")
+    end
   end
 
   defp create_child_group!(profile, name) do
@@ -659,5 +807,29 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       })
 
     group
+  end
+
+  defp add_group_member!(owner_profile, group, username) do
+    account = account_fixture()
+
+    {:ok, profile} =
+      Social.create_profile_for_account(account, %{
+        username: username,
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, profile)
+    {:ok, _accepted_invitation} = Social.accept_group_invitation(invitation, profile)
+
+    profile
+  end
+
+  defp pad_2(value) do
+    value
+    |> Integer.to_string()
+    |> String.pad_leading(2, "0")
   end
 end

@@ -3,7 +3,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   alias PotokIdeWeb.GroupLive.Show.Components
 
-  attr :values, :list, required: true
+  attr :values, :any, required: true
+  attr :pagination, :map, required: true
   attr :current_profile, :map, default: nil
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
@@ -20,21 +21,36 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           phx-hook=".ValuesFeed"
           class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-15rem)]"
         >
-          <div
-            :if={@values == []}
-            class="flex min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
-          >
-            {gettext("No values yet. Start the conversation below.")}
+          <div :if={@pagination.has_more?} class="flex justify-center">
+            <button
+              id="group-values-load-more"
+              type="button"
+              phx-click="load_more_values"
+              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+            >
+              {gettext("Load earlier values")}
+            </button>
           </div>
 
-          <Components.value_message
-            :for={value <- @values}
-            value={value}
-            current_profile={@current_profile}
-            expanded_value_ids={@expanded_value_ids}
-            editing_value_id={@editing_value_id}
-            edit_value_form={@edit_value_form}
-          />
+          <div id="group-values-list" class="flex flex-col gap-4" phx-update="stream">
+            <div
+              :if={@pagination.loaded_count == 0}
+              id="group-values-empty"
+              class="flex min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+            >
+              {gettext("No values yet. Start the conversation below.")}
+            </div>
+
+            <Components.value_message
+              :for={{dom_id, value} <- @values}
+              dom_id={dom_id}
+              value={value}
+              current_profile={@current_profile}
+              expanded_value_ids={@expanded_value_ids}
+              editing_value_id={@editing_value_id}
+              edit_value_form={@edit_value_form}
+            />
+          </div>
         </div>
 
         <div
@@ -78,6 +94,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
           export default {
             mounted() {
+              this.pendingPrependAdjustment = null
+              this.handleClick = (event) => {
+                const loadMoreButton = event.target.closest("#group-values-load-more")
+                if (!loadMoreButton) return
+
+                this.pendingPrependAdjustment = {
+                  scrollTop: this.el.scrollTop,
+                  scrollHeight: this.el.scrollHeight,
+                }
+              }
+
+              this.el.addEventListener("click", this.handleClick)
+
               requestAnimationFrame(() => {
                 this.scrollToLatest()
               })
@@ -89,7 +118,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             updated() {
               requestAnimationFrame(() => {
+                if (!this.pendingPrependAdjustment) {
+                  return
+                }
+
+                const { scrollTop, scrollHeight } = this.pendingPrependAdjustment
+                const heightDelta = this.el.scrollHeight - scrollHeight
+
+                this.el.scrollTop = scrollTop + heightDelta
+                this.pendingPrependAdjustment = null
               })
+            },
+
+            destroyed() {
+              this.el.removeEventListener("click", this.handleClick)
             },
 
             scrollToLatest() {

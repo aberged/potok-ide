@@ -3,16 +3,19 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   alias PotokIdeWeb.GroupLive.Show.Components
 
-  attr :children, :list, required: true
+  attr :children, :any, required: true
+  attr :pagination, :map, required: true
 
   def panel(assigns) do
     ~H"""
     <div id="group-panel-sub-groups" class="card">
       <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
-        <div :if={@children == []} class="text-base-content/70">{gettext("No sub-groups yet.")}</div>
+        <ul id="group-children-list" class="space-y-4" phx-update="stream">
+          <li :if={@pagination.loaded_count == 0} id="group-children-empty" class="text-base-content/70">
+            {gettext("No sub-groups yet.")}
+          </li>
 
-        <ul :if={@children != []} class="space-y-4">
-          <li :for={group <- @children}>
+          <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}
               avatar_size="size-10"
@@ -20,6 +23,17 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             />
           </li>
         </ul>
+
+        <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
+          <button
+            id="group-children-load-more"
+            type="button"
+            phx-click="load_more_children"
+            class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+          >
+            {gettext("Load more sub-groups")}
+          </button>
+        </div>
       </div>
     </div>
     """

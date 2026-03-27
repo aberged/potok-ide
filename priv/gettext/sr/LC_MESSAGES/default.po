@@ -765,6 +765,11 @@ msgstr "Proširi da kreiraš novi profil."
 msgid "Join this group to reply and post new values."
 msgstr "Pridruži se ovoj grupi da odgovaraš i objavljuješ nove vrednosti."
 
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:31
+#, elixir-autogen, elixir-format
+msgid "Load earlier values"
+msgstr "Učitaj ranije vrednosti"
+
 #: lib/potok_ide_web/live/group_live/show.ex:167
 #, elixir-autogen, elixir-format
 msgid "No values yet. Start the conversation below."

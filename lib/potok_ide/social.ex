@@ -405,7 +405,7 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile) do
+  def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
     from(g in Group,
@@ -415,10 +415,23 @@ defmodule PotokIde.Social do
       order_by: [asc: g.name],
       distinct: g.id
     )
+    |> maybe_paginate(opts)
     |> Repo.all()
   end
 
-  def list_group_members(%Group{} = group) do
+  def count_child_groups_for_profile(%Group{} = group, %Profile{} = profile) do
+    import Ecto.Query, only: [from: 2]
+
+    from(g in Group,
+      join: gm in GroupMembership,
+      on: gm.group_id == g.id,
+      where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true),
+      select: count(g.id, :distinct)
+    )
+    |> Repo.one()
+  end
+
+  def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
     from(p in Profile,
@@ -427,6 +440,7 @@ defmodule PotokIde.Social do
       where: gm.group_id == ^group.id,
       order_by: [asc: p.username]
     )
+    |> maybe_paginate(opts)
     |> Repo.all()
   end
 
@@ -452,15 +466,26 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  def list_group_values(%Group{} = group) do
+  def list_group_values(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
     from(v in Value,
       where: v.group_id == ^group.id,
-      order_by: [asc: v.inserted_at],
+      order_by: [asc: v.inserted_at, asc: v.id],
       preload: [:creator, :parent]
     )
+    |> maybe_paginate(opts)
     |> Repo.all()
+  end
+
+  def count_group_values(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(v in Value,
+      where: v.group_id == ^group.id,
+      select: count(v.id)
+    )
+    |> Repo.one()
   end
 
   def list_pending_invitations(%Profile{} = invitee) do
@@ -530,6 +555,24 @@ defmodule PotokIde.Social do
     )
     |> Repo.exists?()
   end
+
+  defp maybe_paginate(query, opts) do
+    query
+    |> maybe_limit(opts[:limit])
+    |> maybe_offset(opts[:offset])
+  end
+
+  defp maybe_limit(query, limit) when is_integer(limit) and limit >= 0 do
+    limit(query, ^limit)
+  end
+
+  defp maybe_limit(query, _limit), do: query
+
+  defp maybe_offset(query, offset) when is_integer(offset) and offset >= 0 do
+    offset(query, ^offset)
+  end
+
+  defp maybe_offset(query, _offset), do: query
 
   defp account_topic(account_id), do: "accounts:#{account_id}"
   defp profile_topic(profile_id), do: "profiles:#{profile_id}"

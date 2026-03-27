@@ -765,6 +765,11 @@ msgstr "Rozwiń, aby utworzyć nowy profil."
 msgid "Join this group to reply and post new values."
 msgstr "Dołącz do tej grupy, aby odpowiadać i publikować nowe wartości."
 
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:31
+#, elixir-autogen, elixir-format
+msgid "Load earlier values"
+msgstr "Załaduj wcześniejsze wartości"
+
 #: lib/potok_ide_web/live/group_live/show.ex:167
 #, elixir-autogen, elixir-format
 msgid "No values yet. Start the conversation below."
