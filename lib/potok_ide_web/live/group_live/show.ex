@@ -147,6 +147,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "members"}
             members={@streams.members}
             pagination={@members_pagination}
+            current_profile={@current_profile}
           />
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil}
@@ -200,11 +201,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> assign(:loaded_values, [])
         |> assign(:members_count, 0)
         |> assign(:first3_members, [])
-       |> assign(:is_member, is_member)
+        |> assign(:is_member, is_member)
         |> assign(:group, group)
-       |> assign(:active_tab, active_tab)
-       |> assign(:editing_value_id, nil)
-       |> assign(:edit_value_form, nil)
+        |> assign(:active_tab, active_tab)
+        |> assign(:editing_value_id, nil)
+        |> assign(:edit_value_form, nil)
         |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
         |> assign(:value_parent_options, [])
         |> assign(:new_value_form, empty_new_value_form())

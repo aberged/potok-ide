@@ -79,6 +79,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :profile, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
+  attr :me, :boolean, default: false
 
   def profile_identity(assigns) do
     ~H"""
@@ -110,7 +111,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div class="min-w-0">
-        <div class={[@text_class, "truncate font-semibold text-base-content"]}>
+        <div class={[@text_class,
+          "truncate font-semibold text-base-content",
+          if(@me, do: "italic text-success", else: "")
+        ]}>
           {@profile.username}
         </div>
       </div>

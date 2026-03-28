@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   attr :members, :any, required: true
   attr :pagination, :map, required: true
+  attr :current_profile, :map, required: true
 
   def panel(assigns) do
     ~H"""
@@ -17,7 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
             {gettext("No members.")}
           </li>
           <li :for={{dom_id, member} <- @members} id={dom_id}>
-            <Components.profile_identity profile={member} />
+            <Components.profile_identity profile={member} me={member.id == @current_profile.id} />
           </li>
         </ul>
 
