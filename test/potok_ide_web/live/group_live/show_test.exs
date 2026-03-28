@@ -628,6 +628,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "content_format" => :markdown
         })
 
+      assert_push_event(lv, "scroll_values_to_latest", %{})
       assert render(lv) =~ "realtime value"
     end
 

@@ -6,10 +6,12 @@ defmodule PotokIde.Social do
   """
 
   import Ecto.Query, warn: false
+  require Logger
 
   alias Ecto.Multi
   alias PotokIde.Repo
 
+  alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
 
   alias PotokIde.Social.{
@@ -316,8 +318,9 @@ defmodule PotokIde.Social do
       |> Value.changeset(attrs)
       |> Repo.insert()
       |> case do
-        {:ok, _value} = ok ->
+        {:ok, value} = ok ->
           broadcast_group_updated(group)
+          notify_group_members_of_new_value(creator, group, value)
           ok
 
         error ->
@@ -573,6 +576,75 @@ defmodule PotokIde.Social do
   end
 
   defp maybe_offset(query, _offset), do: query
+
+  defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
+    payload = group_value_notification_payload(creator, group, value)
+
+    group
+    |> recipient_accounts_for_group_value_notification(creator)
+    |> Enum.each(fn account ->
+      case Accounts.deliver_push_notification(account, payload) do
+        {:ok, _results} ->
+          :ok
+
+        {:error, :no_push_subscriptions} ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning(
+            "Failed to deliver group value push notification to account #{account.id}: #{inspect(reason)}"
+          )
+      end
+    end)
+  end
+
+  defp recipient_accounts_for_group_value_notification(%Group{} = group, %Profile{} = creator) do
+    from(account in Account,
+      join: ap in AccountProfile,
+      on: ap.account_id == account.id,
+      join: gm in GroupMembership,
+      on: gm.profile_id == ap.profile_id,
+      where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
+      distinct: account.id,
+      order_by: [asc: account.id]
+    )
+    |> Repo.all()
+  end
+
+  defp group_value_notification_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
+    %{
+      title: "#{creator.username} added a new value",
+      body: group_value_notification_body(group, value),
+      tag: "group-#{group.id}-value-created",
+      url: "/groups/#{group.id}/values",
+      icon: "/images/pwa/icon-192.png",
+      badge: "/images/pwa/icon-192.png"
+    }
+  end
+
+  defp group_value_notification_body(%Group{} = group, %Value{} = value) do
+    excerpt = notification_excerpt(value.content)
+
+    case excerpt do
+      nil ->
+        "New value in #{group.name}"
+
+      snippet ->
+        "New value in #{group.name}: #{snippet}"
+    end
+  end
+
+  defp notification_excerpt(content) when is_binary(content) do
+    trimmed = String.trim(content)
+
+    cond do
+      trimmed == "" -> nil
+      String.length(trimmed) <= 120 -> trimmed
+      true -> String.slice(trimmed, 0, 117) <> "..."
+    end
+  end
+
+  defp notification_excerpt(_content), do: nil
 
   defp account_topic(account_id), do: "accounts:#{account_id}"
   defp profile_topic(profile_id), do: "profiles:#{profile_id}"

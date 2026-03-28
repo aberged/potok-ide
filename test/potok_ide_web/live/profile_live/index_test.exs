@@ -107,7 +107,9 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       assert html =~ "https://example.com/avatar.png"
     end
 
-    test "edits a profile on the dedicated page and updates the selected profile banner", %{conn: conn} do
+    test "edits a profile on the dedicated page and updates the selected profile banner", %{
+      conn: conn
+    } do
       account = account_fixture()
 
       {:ok, profile} =
@@ -127,7 +129,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> live(~p"/profiles/#{profile.id}/edit")
 
       assert html =~ "alpha profile"
-      assert html =~ "Current profile:"
+      assert html =~ "Update the selected profile details."
 
       {:ok, _index_lv, result} =
         lv
@@ -144,6 +146,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> follow_redirect(conn, ~p"/profiles")
 
       assert result =~ "Profile updated."
+      assert result =~ "Current profile:"
       assert result =~ "beta profile"
       assert result =~ "https://example.com/avatar.png"
       refute result =~ "alpha profile"

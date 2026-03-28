@@ -15,7 +15,9 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           <.header>
             {gettext("Profiles")}
             <:subtitle>
-              {gettext("Pick the profile you want to use, or open a dedicated page to create or edit one.")}
+              {gettext(
+                "Pick the profile you want to use, or open a dedicated page to create or edit one."
+              )}
             </:subtitle>
           </.header>
         </div>
@@ -101,7 +103,6 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             </div>
           </div>
         </div>
-
       </div>
     </Layouts.app>
     """

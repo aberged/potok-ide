@@ -11,10 +11,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     <div id="group-panel-sub-groups" class="card">
       <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
-          <li :if={@pagination.loaded_count == 0} id="group-children-empty" class="text-base-content/70">
+          <li
+            :if={@pagination.loaded_count == 0}
+            id="group-children-empty"
+            class="text-base-content/70"
+          >
             {gettext("No sub-groups yet.")}
           </li>
-
+          
           <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}
@@ -23,7 +27,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             />
           </li>
         </ul>
-
+        
         <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
           <button
             id="group-children-load-more"

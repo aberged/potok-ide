@@ -10,7 +10,12 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
       <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
         <h3 class="card-title">{gettext("Invite profile")}</h3>
         <.form for={@invite_form} id={"group-invite-form-#{@invite_form_version}"} phx-submit="invite">
-          <.input field={@invite_form[:username]} id={"group-invite-username-#{@invite_form_version}"} label={gettext("Invitee username")} required />
+          <.input
+            field={@invite_form[:username]}
+            id={"group-invite-username-#{@invite_form_version}"}
+            label={gettext("Invitee username")}
+            required
+          />
           <.button phx-disable-with={gettext("Inviting...")} variant="primary">
             {gettext("Invite")}
           </.button>

@@ -18,12 +18,11 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   profile={@profile}
                   subtitle={Atom.to_string(@profile.sharing)}
                 />
-
                 <p class="mt-3 text-sm text-base-content/60">
                   {gettext("Update the selected profile details.")}
                 </p>
               </div>
-
+              
               <.form
                 for={@form}
                 id="edit-profile-form"
@@ -35,7 +34,6 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   description_format_options={@description_format_options}
                   sharing_options={@sharing_options}
                 />
-
                 <div class="mt-4 flex flex-wrap gap-2">
                   <.button phx-disable-with={gettext("Saving...")} variant="primary">
                     {gettext("Save changes")}
@@ -43,16 +41,16 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   <.button navigate={~p"/profiles"} type="button">{gettext("Cancel")}</.button>
                 </div>
               </.form>
-
+              
               <div :if={@profile.sharing == :shared} class="border-t border-base-300/70 pt-5">
                 <h3 class="text-base font-semibold text-base-content">
                   {gettext("Invite profile to shared profile")}
                 </h3>
-
+                
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Send an invitation by profile username.")}
                 </p>
-
+                
                 <.form
                   for={@profile_invitation_form}
                   id="shared-profile-invitation-form"
@@ -98,7 +96,10 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
              |> assign(:profile, profile)
              |> assign(:form, to_form(Profile.changeset(profile, %{})))
              |> assign(:profile_invitation_form, new_profile_invitation_form())
-             |> assign(:description_format_options, ProfileComponents.description_format_options())
+             |> assign(
+               :description_format_options,
+               ProfileComponents.description_format_options()
+             )
              |> assign(:sharing_options, ProfileComponents.sharing_options())}
         end
 
@@ -189,7 +190,11 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
 
               {:error, :inviter_not_linked} ->
                 {:noreply,
-                 put_flash(socket, :error, gettext("That profile is not available for this account."))}
+                 put_flash(
+                   socket,
+                   :error,
+                   gettext("That profile is not available for this account.")
+                 )}
 
               {:error, :cannot_invite_self} ->
                 {:noreply,

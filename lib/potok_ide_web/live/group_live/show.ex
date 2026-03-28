@@ -192,27 +192,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       {:ok,
        socket
-        |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
-        |> stream_configure(:members, dom_id: &"member-#{&1.id}")
-        |> stream_configure(:values, dom_id: &"value-#{&1.id}")
-        |> assign(:children_pagination, default_pagination(@children_page_size))
-        |> assign(:members_pagination, default_pagination(@members_page_size))
-        |> assign(:values_pagination, default_pagination(@values_page_size))
-        |> assign(:loaded_values, [])
-        |> assign(:members_count, 0)
-        |> assign(:first3_members, [])
-        |> assign(:is_member, is_member)
-        |> assign(:group, group)
-        |> assign(:active_tab, active_tab)
-        |> assign(:editing_value_id, nil)
-        |> assign(:edit_value_form, nil)
-        |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
-        |> assign(:value_parent_options, [])
-        |> assign(:new_value_form, empty_new_value_form())
-        |> assign(:new_group_form, empty_new_group_form())
-        |> assign(:invite_form, empty_invite_form())
-        |> assign(:invite_form_version, 0)
-        |> load_group_data(group, active_tab)}
+       |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
+       |> stream_configure(:members, dom_id: &"member-#{&1.id}")
+       |> stream_configure(:values, dom_id: &"value-#{&1.id}")
+       |> assign(:children_pagination, default_pagination(@children_page_size))
+       |> assign(:members_pagination, default_pagination(@members_page_size))
+       |> assign(:values_pagination, default_pagination(@values_page_size))
+       |> assign(:loaded_values, [])
+       |> assign(:members_count, 0)
+       |> assign(:first3_members, [])
+       |> assign(:is_member, is_member)
+       |> assign(:group, group)
+       |> assign(:active_tab, active_tab)
+       |> assign(:editing_value_id, nil)
+       |> assign(:edit_value_form, nil)
+       |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
+       |> assign(:value_parent_options, [])
+       |> assign(:new_value_form, empty_new_value_form())
+       |> assign(:new_group_form, empty_new_group_form())
+       |> assign(:invite_form, empty_invite_form())
+       |> assign(:invite_form_version, 0)
+       |> load_group_data(group, active_tab)}
     else
       {:ok,
        socket
@@ -471,10 +471,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
            %{} = invitee <- Social.get_profile_by_username(username),
            {:ok, _inv} <- Social.invite_profile_to_group(current_profile, group, invitee) do
         {:noreply,
-          socket
-          |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
-          |> update(:invite_form_version, &(&1 + 1))
-          |> put_flash(:info, gettext("Invitation sent."))}
+         socket
+         |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
+         |> update(:invite_form_version, &(&1 + 1))
+         |> put_flash(:info, gettext("Invitation sent."))}
       else
         true ->
           {:noreply, put_flash(socket, :error, gettext("Username is required."))}
@@ -510,7 +510,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> assign(:expanded_value_ids, expanded_value_ids)
-      |> restream_values([value_id])}
+     |> restream_values([value_id])}
   end
 
   @impl true
@@ -522,12 +522,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(group_id)
     is_member = Social.member_of_group?(current_profile, group)
+    previous_loaded_values = socket.assigns.loaded_values
+    previous_values_pagination = socket.assigns.values_pagination
 
     if can_view_group?(group, is_member) do
-      {:noreply,
-       socket
-       |> assign(:is_member, is_member)
-       |> load_group_data(group)}
+      socket =
+        socket
+        |> assign(:is_member, is_member)
+        |> load_group_data(group)
+        |> maybe_scroll_values_to_latest(previous_loaded_values, previous_values_pagination)
+
+      {:noreply, socket}
     else
       {:noreply,
        socket
@@ -568,7 +573,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
-      active_tab || normalize_active_tab(Map.get(socket.assigns, :active_tab), socket.assigns.is_member)
+      active_tab ||
+        normalize_active_tab(Map.get(socket.assigns, :active_tab), socket.assigns.is_member)
 
     socket
     |> assign(:group, group)
@@ -582,6 +588,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp refresh_group_data(socket) do
     load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
+  end
+
+  defp maybe_scroll_values_to_latest(socket, previous_loaded_values, previous_values_pagination) do
+    if newer_value_arrived?(socket, previous_loaded_values, previous_values_pagination) do
+      push_event(socket, "scroll_values_to_latest", %{})
+    else
+      socket
+    end
   end
 
   defp current_editing_value(socket) do
@@ -705,7 +719,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> Map.put(:entries, entries)
   end
 
-  defp pagination_metadata(%{entries: _entries} = pagination), do: Map.delete(pagination, :entries)
+  defp pagination_metadata(%{entries: _entries} = pagination),
+    do: Map.delete(pagination, :entries)
 
   defp load_member_summary(socket, group) do
     if group.parent_id != nil do
@@ -722,7 +737,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_children(socket, group, active_tab) do
     if needs_children?(group, active_tab) do
       current_profile = socket.assigns.current_profile
-      children_page = child_groups_page(group, current_profile, socket.assigns.children_pagination)
+
+      children_page =
+        child_groups_page(group, current_profile, socket.assigns.children_pagination)
 
       socket
       |> assign(:children_pagination, pagination_metadata(children_page))
@@ -784,6 +801,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp needs_values?(group, active_tab) do
     group.parent_id != nil and active_tab == "values"
+  end
+
+  defp newer_value_arrived?(socket, previous_loaded_values, previous_values_pagination) do
+    needs_values?(socket.assigns.group, socket.assigns.active_tab) and
+      latest_loaded_value_id(socket.assigns.loaded_values) !=
+        latest_loaded_value_id(previous_loaded_values) and
+      socket.assigns.values_pagination.total_count > previous_values_pagination.total_count
+  end
+
+  defp latest_loaded_value_id(values) when is_list(values) do
+    values
+    |> List.last()
+    |> case do
+      %{id: id} -> id
+      _ -> nil
+    end
   end
 
   defp needs_value_parent_options?(socket, active_tab) do

@@ -1,7 +1,6 @@
 defmodule PotokIdeWeb.ProfileLive.New do
   use PotokIdeWeb, :live_view
 
-  alias PotokIde.Accounts
   alias PotokIde.Social
   alias PotokIde.Social.Profile
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
@@ -16,19 +15,18 @@ defmodule PotokIdeWeb.ProfileLive.New do
             <div class="card-body gap-5">
               <div>
                 <h2 class="card-title text-xl">{gettext("New profile details")}</h2>
-
+                
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Choose how this profile appears and whether it can be shared.")}
                 </p>
               </div>
-
+              
               <.form for={@form} id="create-profile-form" phx-change="validate" phx-submit="create">
                 <ProfileComponents.profile_form_fields
                   form={@form}
                   description_format_options={@description_format_options}
                   sharing_options={@sharing_options}
                 />
-
                 <div class="mt-4 flex flex-wrap gap-2">
                   <.button phx-disable-with={gettext("Creating...")} variant="primary">
                     {gettext("Create profile")}
@@ -68,16 +66,9 @@ defmodule PotokIdeWeb.ProfileLive.New do
 
     case Social.create_profile_for_account(account, attrs) do
       {:ok, _profile} ->
-        # If we want to automatically switch to the new profile,
-        # we can do it here by setting the current profile in the account and pushing the update to the client
-        # and uncomment assign current_profile and push_current_profile_updated in the code below
-        #{:ok, account} = Accounts.set_current_profile(account, profile)
-
         {:noreply,
          socket
          |> assign(:current_scope, %{socket.assigns.current_scope | account: account})
-         #|> assign(:current_profile, profile)
-         #|> push_current_profile_updated(profile)
          |> put_flash(:info, gettext("Profile created."))
          |> push_navigate(to: ~p"/profiles")}
 
@@ -90,12 +81,5 @@ defmodule PotokIdeWeb.ProfileLive.New do
     %Profile{}
     |> Profile.changeset(%{})
     |> to_form()
-  end
-
-  defp push_current_profile_updated(socket, profile) do
-    push_event(socket, "current_profile_updated", %{
-      username: profile.username,
-      profile_picture_url: ProfileComponents.profile_picture_url(profile)
-    })
   end
 end

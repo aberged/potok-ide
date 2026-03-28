@@ -111,7 +111,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div class="min-w-0">
-        <div class={[@text_class,
+        <div class={[
+          @text_class,
           "truncate font-semibold text-base-content",
           if(@me, do: "italic text-success", else: "")
         ]}>
@@ -183,19 +184,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div id={@dom_id} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
-        <%= if @avatar_url do %>
+      <%= if @avatar_url do %>
         <div class="chat-image avatar">
           <div class="size-10 rounded-full border border-base-300 shadow-sm">
             <img src={@avatar_url} alt={@value.creator.username} class="object-cover" />
           </div>
         </div>
-        <% else %>
+      <% else %>
         <div class="chat-image">
           <div class="flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
             {profile_initials(@value.creator.username)}
           </div>
         </div>
-        <% end %>
+      <% end %>
 
       <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
         <span class="font-semibold text-base-content">{@value.creator.username}</span>

@@ -4,6 +4,7 @@ defmodule PotokIde.SocialTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.PushNotifications
   alias PotokIde.Social
 
   describe "create_group/3" do
@@ -131,6 +132,98 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "create_value/3 push notifications" do
+    test "sends push notifications to other group members but not the sender" do
+      request_pid = self()
+      original_config = Application.get_env(:potok_ide, PushNotifications, [])
+
+      on_exit(fn ->
+        Application.put_env(:potok_ide, PushNotifications, original_config)
+      end)
+
+      Application.put_env(
+        :potok_ide,
+        PushNotifications,
+        ttl: 60,
+        vapid_subject: "mailto:test@example.com",
+        vapid_public_key:
+          Base.url_encode64(<<4>> <> :crypto.strong_rand_bytes(64), padding: false),
+        vapid_private_key: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+        request_fun: fn options ->
+          send(request_pid, {:push_request, options})
+          {:ok, %Req.Response{status: 201, body: ""}}
+        end
+      )
+
+      sender_account = account_fixture()
+      recipient_account = account_fixture()
+      non_member_account = account_fixture()
+
+      {:ok, sender_profile} =
+        Social.create_profile_for_account(sender_account, %{
+          username: "value-push-sender",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, recipient_profile} =
+        Social.create_profile_for_account(recipient_account, %{
+          username: "value-push-recipient",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, _non_member_profile} =
+        Social.create_profile_for_account(non_member_account, %{
+          username: "value-push-non-member",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(sender_profile, root_group, %{
+          "name" => "value-push-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(sender_profile, group, recipient_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, recipient_profile)
+
+      {:ok, sender_subscription} =
+        Accounts.upsert_push_subscription(sender_account, valid_push_subscription_attrs())
+
+      {:ok, recipient_subscription} =
+        Accounts.upsert_push_subscription(recipient_account, valid_push_subscription_attrs())
+
+      {:ok, _non_member_subscription} =
+        Accounts.upsert_push_subscription(non_member_account, valid_push_subscription_attrs())
+
+      assert {:ok, _value} =
+               Social.create_value(sender_profile, group, %{
+                 "content" => "Fresh group value",
+                 "content_format" => :markdown
+               })
+
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == recipient_subscription.endpoint
+      refute request_options[:url] == sender_subscription.endpoint
+      refute_receive {:push_request, _other_request}
+    end
+  end
+
   describe "delete_value/2" do
     test "deletes a value created by the profile" do
       account = account_fixture()
@@ -190,6 +283,19 @@ defmodule PotokIde.SocialTest do
       assert [remaining_value] = Social.list_group_values(group)
       assert remaining_value.id == value.id
     end
+  end
+
+  defp valid_push_subscription_attrs do
+    {public_key, _private_key} = :crypto.generate_key(:ecdh, :prime256v1)
+
+    %{
+      endpoint:
+        "https://updates.push.services.mozilla.com/wpush/v2/#{System.unique_integer([:positive])}",
+      auth: Base.url_encode64(:crypto.strong_rand_bytes(16), padding: false),
+      p256dh: Base.url_encode64(public_key, padding: false),
+      expires_at: nil,
+      user_agent: "ExUnit"
+    }
   end
 
   describe "update_value/3" do
