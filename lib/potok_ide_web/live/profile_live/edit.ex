@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   {gettext("Update the selected profile details.")}
                 </p>
               </div>
-              
+
               <.form
                 for={@form}
                 id="edit-profile-form"
@@ -41,16 +41,16 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   <.button navigate={~p"/profiles"} type="button">{gettext("Cancel")}</.button>
                 </div>
               </.form>
-              
+
               <div :if={@profile.sharing == :shared} class="border-t border-base-300/70 pt-5">
                 <h3 class="text-base font-semibold text-base-content">
                   {gettext("Invite profile to shared profile")}
                 </h3>
-                
+
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Send an invitation by profile username.")}
                 </p>
-                
+
                 <.form
                   for={@profile_invitation_form}
                   id="shared-profile-invitation-form"

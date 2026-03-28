@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
           {profile_initials(@profile.username)}
         </div>
       <% end %>
-      
+
       <div class="min-w-0">
         <div
           :if={@title}
@@ -27,9 +27,9 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         >
           {@title}
         </div>
-        
+
         <div class="truncate font-semibold text-base-content">{@profile.username}</div>
-        
+
         <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
       </div>
     </div>

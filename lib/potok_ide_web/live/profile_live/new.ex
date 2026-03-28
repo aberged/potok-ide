@@ -15,12 +15,12 @@ defmodule PotokIdeWeb.ProfileLive.New do
             <div class="card-body gap-5">
               <div>
                 <h2 class="card-title text-xl">{gettext("New profile details")}</h2>
-                
+
                 <p class="mt-1 text-sm text-base-content/60">
                   {gettext("Choose how this profile appears and whether it can be shared.")}
                 </p>
               </div>
-              
+
               <.form for={@form} id="create-profile-form" phx-change="validate" phx-submit="create">
                 <ProfileComponents.profile_form_fields
                   form={@form}

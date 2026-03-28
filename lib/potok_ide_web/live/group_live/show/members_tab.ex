@@ -12,7 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
     <div id="group-panel-members" class="card">
       <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
         <h3 class="card-title mb-2">{gettext("Members")}</h3>
-        
+
         <ul id="group-members-list" class="space-y-2" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}
@@ -21,12 +21,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           >
             {gettext("No members.")}
           </li>
-          
+
           <li :for={{dom_id, member} <- @members} id={dom_id}>
             <Components.profile_identity profile={member} me={member.id == @current_profile.id} />
           </li>
         </ul>
-        
+
         <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
           <button
             id="group-members-load-more"

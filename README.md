@@ -79,6 +79,22 @@ The default development configuration includes:
 * LiveDashboard at `http://localhost:4000/dev/dashboard`
 * live asset rebuilding through Phoenix endpoint watchers
 
+### Production email delivery
+
+Production mail delivery is configured at runtime through `MAILER_ADAPTER`.
+
+For Gmail API delivery:
+
+* set `MAILER_ADAPTER=gmail`
+* set `MAILER_FROM_EMAIL`
+* optionally set `MAILER_FROM_NAME`
+* either set `GMAIL_API_ACCESS_TOKEN`
+* or set all of `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN`
+
+If you use the refresh token flow, the application exchanges the refresh token for a short-lived access token on each email send through Google's OAuth token endpoint. You can override that endpoint with `GMAIL_TOKEN_URL` if needed.
+
+Mailgun remains available by setting `MAILER_ADAPTER=mailgun` together with `MAILGUN_API_KEY` and `MAILGUN_DOMAIN`.
+
 ## Product Flow
 
 The entry flow at `/` is auth-aware:

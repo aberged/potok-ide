@@ -38,6 +38,11 @@ if Enum.all?(
 end
 
 if config_env() == :prod do
+  present? = fn
+    value when is_binary(value) -> String.trim(value) != ""
+    _ -> false
+  end
+
   database_url =
     System.get_env("DATABASE_URL") ||
       raise """
@@ -116,33 +121,89 @@ if config_env() == :prod do
 
   # ## Configuring the mailer
   #
-  mailgun_api_key =
-    System.get_env("MAILGUN_API_KEY") ||
-      raise "environment variable MAILGUN_API_KEY is missing"
-
-  mailgun_domain =
-    System.get_env("MAILGUN_DOMAIN") ||
-      raise "environment variable MAILGUN_DOMAIN is missing"
-
   mailer_from_email =
     System.get_env("MAILER_FROM_EMAIL") ||
       raise "environment variable MAILER_FROM_EMAIL is missing"
 
+  mailer_from_name = System.get_env("MAILER_FROM_NAME") || "Potok"
+
+  mailer_adapter =
+    System.get_env("MAILER_ADAPTER")
+    |> case do
+      nil -> "mailgun"
+      value -> String.downcase(String.trim(value))
+    end
+
   mailer_config =
-    [
-      adapter: Swoosh.Adapters.Mailgun,
-      api_key: mailgun_api_key,
-      domain: mailgun_domain,
-      from_email: mailer_from_email,
-      from_name: System.get_env("MAILER_FROM_NAME") || "Potok"
-    ]
-    |> then(fn config ->
-      case System.get_env("MAILGUN_BASE_URL") do
-        nil -> config
-        "" -> config
-        base_url -> Keyword.put(config, :base_url, base_url)
-      end
-    end)
+    case mailer_adapter do
+      "gmail" ->
+        gmail_access_token = System.get_env("GMAIL_API_ACCESS_TOKEN")
+        gmail_client_id = System.get_env("GMAIL_CLIENT_ID")
+        gmail_client_secret = System.get_env("GMAIL_CLIENT_SECRET")
+        gmail_refresh_token = System.get_env("GMAIL_REFRESH_TOKEN")
+
+        [
+          adapter: Swoosh.Adapters.Gmail,
+          from_email: mailer_from_email,
+          from_name: mailer_from_name
+        ]
+        |> then(fn config ->
+          cond do
+            present?.(gmail_access_token) ->
+              Keyword.put(config, :access_token, gmail_access_token)
+
+            Enum.all?(
+              [gmail_client_id, gmail_client_secret, gmail_refresh_token],
+              present?
+            ) ->
+              config
+              |> Keyword.put(:client_id, gmail_client_id)
+              |> Keyword.put(:client_secret, gmail_client_secret)
+              |> Keyword.put(:refresh_token, gmail_refresh_token)
+
+            true ->
+              raise """
+              Gmail mailer configuration is incomplete.
+              Set GMAIL_API_ACCESS_TOKEN, or set all of GMAIL_CLIENT_ID,
+              GMAIL_CLIENT_SECRET, and GMAIL_REFRESH_TOKEN.
+              """
+          end
+        end)
+        |> then(fn config ->
+          case System.get_env("GMAIL_TOKEN_URL") do
+            nil -> config
+            "" -> config
+            token_url -> Keyword.put(config, :token_url, token_url)
+          end
+        end)
+
+      "mailgun" ->
+        mailgun_api_key =
+          System.get_env("MAILGUN_API_KEY") ||
+            raise "environment variable MAILGUN_API_KEY is missing"
+
+        mailgun_domain =
+          System.get_env("MAILGUN_DOMAIN") ||
+            raise "environment variable MAILGUN_DOMAIN is missing"
+
+        [
+          adapter: Swoosh.Adapters.Mailgun,
+          api_key: mailgun_api_key,
+          domain: mailgun_domain,
+          from_email: mailer_from_email,
+          from_name: mailer_from_name
+        ]
+        |> then(fn config ->
+          case System.get_env("MAILGUN_BASE_URL") do
+            nil -> config
+            "" -> config
+            base_url -> Keyword.put(config, :base_url, base_url)
+          end
+        end)
+
+      other ->
+        raise "MAILER_ADAPTER must be one of: gmail, mailgun. Got: #{inspect(other)}"
+    end
 
   config :potok_ide, PotokIde.Mailer, mailer_config
 end
