@@ -155,6 +155,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             values={@streams.values}
             pagination={@values_pagination}
             current_profile={@current_profile}
+            online_profile_ids={@online_profile_ids}
             expanded_value_ids={@expanded_value_ids}
             editing_value_id={@editing_value_id}
             edit_value_form={@edit_value_form}
@@ -617,6 +618,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket
     |> assign(:online_profile_ids, Social.list_online_profile_ids_for_group(socket.assigns.group))
     |> restream_members()
+    |> restream_loaded_values()
   end
 
   defp sync_group_presence(socket) do
@@ -700,6 +702,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp restream_members(socket) do
     Enum.reduce(socket.assigns.loaded_members, socket, fn member, acc ->
       stream_insert(acc, :members, member)
+    end)
+  end
+
+  defp restream_loaded_values(socket) do
+    Enum.reduce(socket.assigns.loaded_values, socket, fn value, acc ->
+      stream_insert(acc, :values, value)
     end)
   end
 

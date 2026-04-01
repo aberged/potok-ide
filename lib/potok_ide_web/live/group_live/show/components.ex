@@ -179,6 +179,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :value, :map, required: true
   attr :dom_id, :string, required: true
   attr :current_profile, :map, default: nil
+  attr :online_profile_ids, :any, required: true
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
   attr :edit_value_form, :any, default: nil
@@ -192,19 +193,35 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:mine?, mine?)
       |> assign(:editing?, editing?)
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
+      |> assign(
+        :creator_online?,
+        MapSet.member?(assigns.online_profile_ids, assigns.value.creator_id)
+      )
 
     ~H"""
     <div id={@dom_id} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
       <%= if @avatar_url do %>
         <div class="chat-image avatar">
-          <div class="size-10 rounded-full border border-base-300 shadow-sm">
+          <div class="relative size-10 rounded-full border border-base-300 shadow-sm">
             <img src={@avatar_url} alt={@value.creator.username} class="object-cover" />
           </div>
+          <span
+            :if={@creator_online?}
+            id={"value-creator-presence-#{@value.id}"}
+            class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
+            title={gettext("Online")}
+          />
         </div>
       <% else %>
         <div class="chat-image">
-          <div class="flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
+          <div class="relative flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
             {profile_initials(@value.creator.username)}
+            <span
+              :if={@creator_online?}
+              id={"value-creator-presence-#{@value.id}"}
+              class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
+              title={gettext("Online")}
+            />
           </div>
         </div>
       <% end %>

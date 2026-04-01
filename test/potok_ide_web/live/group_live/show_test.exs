@@ -290,6 +290,63 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              end)
     end
 
+    test "updates value avatars with creator presence in realtime", %{conn: conn} do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "value-presence-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "value-presence-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      invitee_account = Accounts.get_account!(invitee_account.id)
+      group = create_child_group!(owner_profile, "value-presence-group")
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      {:ok, invitee_value} =
+        Social.create_value(invitee_profile, group, %{
+          "content" => "invitee value",
+          "content_format" => :markdown
+        })
+
+      {:ok, owner_lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}")
+
+      refute has_element?(owner_lv, "#value-creator-presence-#{invitee_value.id}")
+
+      {:ok, invitee_lv, _html} =
+        Phoenix.ConnTest.build_conn()
+        |> log_in_account(invitee_account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(invitee_lv, "#value-creator-presence-#{invitee_value.id}")
+
+      assert eventually(fn ->
+               has_element?(owner_lv, "#value-creator-presence-#{invitee_value.id}")
+             end)
+    end
+
     test "shows only sub-groups where current profile is a member", %{conn: conn} do
       account = account_fixture()
       other_account = account_fixture()
