@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
+      <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
@@ -74,10 +74,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="members"
             aria-label={gettext("Open members tab")}
-            class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            class="avatar-group -space-x-4 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <div :for={m <- @first3_members} class="avatar">
-              <div class="bg-white w-8"><img src={m.profile_picture_url} alt={m.username} /></div>
+              <div class="bg-white w-8">
+                <img src={m.profile_picture_url} alt={m.username} />
+              </div>
             </div>
 
             <div :if={@members_count > 3} class="avatar avatar-placeholder">

@@ -76,6 +76,33 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  attr :id, :string, required: true
+  attr :data, :any, required: true
+  attr :label, :string, default: "assigns"
+  attr :class, :any, default: nil
+  attr :open, :boolean, default: false
+
+  def inspect_tree(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class={[
+        "rounded-2xl border border-base-300/80 bg-base-100/80 p-3 font-mono text-xs text-base-content/80 shadow-sm",
+        @class
+      ]}
+    >
+      <details open={@open}>
+        <summary class="cursor-pointer select-none font-semibold text-base-content">
+          {@label}
+        </summary>
+        <div class="mt-3 overflow-auto">
+          <.inspect_tree_node label={@label} value={@data} />
+        </div>
+      </details>
+    </div>
+    """
+  end
+
   attr :profile, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
@@ -126,8 +153,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           id={@presence_badge_id}
           class="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
         >
-          <span class="size-2 rounded-full bg-emerald-500" />
-          <span>{gettext("Online")}</span>
+          <span class="size-2 rounded-full bg-emerald-500" /> <span>{gettext("Online")}</span>
         </div>
       </div>
     </div>
@@ -200,17 +226,35 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div id={@dom_id} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
+      <.inspect_tree
+        :if={false}
+        id={"value-message-assigns-#{@value.id}"}
+        data={@value}
+        label={"value#{@value.id}"}
+        class="mb-3 w-full"
+      />
+
       <%= if @avatar_url do %>
         <div class="chat-image avatar">
           <div class="relative size-10 rounded-full border border-base-300 shadow-sm">
             <img src={@avatar_url} alt={@value.creator.username} class="object-cover" />
           </div>
+
           <span
             :if={@creator_online?}
             id={"value-creator-presence-#{@value.id}"}
             class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
             title={gettext("Online")}
           />
+          <%!-- <span
+            :if={@value.creator.sharing == :shared}
+            class="absolute left-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
+          >👨‍👨‍👦‍👦</span> --%>
+          <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+            {if @value.creator.sharing == :shared,
+              do: "👨‍👨‍👦‍👦",
+              else: ""}
+          </div>
         </div>
       <% else %>
         <div class="chat-image">
@@ -432,6 +476,82 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp group_initials(_), do: "?"
+
+  attr :label, :any, required: true
+  attr :value, :any, required: true
+
+  defp inspect_tree_node(assigns) do
+    case classify_tree_value(assigns.value) do
+      {:leaf, rendered_value} ->
+        assigns = assign(assigns, :rendered_value, rendered_value)
+
+        ~H"""
+        <div class="flex items-start gap-2 leading-5">
+          <span class="font-semibold text-primary/80">{format_tree_label(@label)}</span>
+          <span class="break-all text-base-content/70">{@rendered_value}</span>
+        </div>
+        """
+
+      {:container, kind, entries} ->
+        assigns = assigns |> assign(:kind, kind) |> assign(:entries, entries)
+
+        ~H"""
+        <details open class="tree-node">
+          <summary class="cursor-pointer select-none leading-5">
+            <span class="font-semibold text-primary/80">{format_tree_label(@label)}</span>
+            <span class="ml-2 text-base-content/55">{@kind}</span>
+          </summary>
+          <ul class="ml-3 mt-2 border-l border-base-300/70 pl-3">
+            <li :for={{entry_label, entry_value} <- @entries} class="mt-2">
+              <.inspect_tree_node label={entry_label} value={entry_value} />
+            </li>
+          </ul>
+        </details>
+        """
+    end
+  end
+
+  defp classify_tree_value(value) when is_struct(value) do
+    struct_name = value.__struct__ |> Module.split() |> List.last()
+
+    {:container, "%#{struct_name}{}", value |> Map.from_struct() |> tree_map_entries()}
+  end
+
+  defp classify_tree_value(value) when is_map(value) do
+    {:container, "%{}", tree_map_entries(value)}
+  end
+
+  defp classify_tree_value(value) when is_list(value) do
+    {:container, "list(#{length(value)})",
+     Enum.with_index(value) |> Enum.map(fn {item, index} -> {"[#{index}]", item} end)}
+  end
+
+  defp classify_tree_value(value) when is_tuple(value) do
+    entries =
+      value
+      |> Tuple.to_list()
+      |> Enum.with_index()
+      |> Enum.map(fn {item, index} -> {"[#{index}]", item} end)
+
+    {:container, "tuple(#{tuple_size(value)})", entries}
+  end
+
+  defp classify_tree_value(value) do
+    {:leaf, inspect(value, pretty: true, limit: :infinity, printable_limit: :infinity)}
+  end
+
+  defp tree_map_entries(map) do
+    map
+    |> Enum.map(fn {key, value} -> {format_tree_key(key), value} end)
+    |> Enum.sort_by(fn {key, _value} -> key end)
+  end
+
+  defp format_tree_key(key) when is_atom(key), do: Atom.to_string(key)
+  defp format_tree_key(key) when is_binary(key), do: inspect(key)
+  defp format_tree_key(key), do: inspect(key)
+
+  defp format_tree_label(label) when is_binary(label), do: label <> ":"
+  defp format_tree_label(label), do: inspect(label) <> ":"
 
   defp value_from_current_profile?(%{id: current_profile_id}, %{creator_id: creator_id}) do
     current_profile_id == creator_id

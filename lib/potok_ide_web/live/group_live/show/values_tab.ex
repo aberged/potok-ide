@@ -33,7 +33,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             </button>
           </div>
 
-          <div id="group-values-list" class="flex flex-col gap-4" phx-update="stream">
+          <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
             <div
               :if={@pagination.loaded_count == 0}
               id="group-values-empty"
@@ -97,17 +97,29 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           export default {
             mounted() {
               this.pendingPrependAdjustment = null
+              this.loadingMoreValues = false
+
               this.handleClick = (event) => {
                 const loadMoreButton = event.target.closest("#group-values-load-more")
                 if (!loadMoreButton) return
 
+                this.loadingMoreValues = true
                 this.pendingPrependAdjustment = {
                   scrollTop: this.el.scrollTop,
                   scrollHeight: this.el.scrollHeight,
                 }
               }
 
+              this.handleScroll = () => {
+                if (this.el.scrollTop > 16) {
+                  return
+                }
+
+                this.loadMoreValues()
+              }
+
               this.el.addEventListener("click", this.handleClick)
+              this.el.addEventListener("scroll", this.handleScroll)
 
               requestAnimationFrame(() => {
                 this.scrollToLatest()
@@ -120,6 +132,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             updated() {
               requestAnimationFrame(() => {
+                this.loadingMoreValues = false
+
                 if (!this.pendingPrependAdjustment) {
                   return
                 }
@@ -134,10 +148,30 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             destroyed() {
               this.el.removeEventListener("click", this.handleClick)
+              this.el.removeEventListener("scroll", this.handleScroll)
             },
 
             scrollToLatest() {
               this.el.scrollTop = this.el.scrollHeight
+            },
+
+            loadMoreValues() {
+              if (this.loadingMoreValues) {
+                return
+              }
+
+              const loadMoreButton = this.el.querySelector("#group-values-load-more")
+              if (!loadMoreButton) {
+                return
+              }
+
+              this.loadingMoreValues = true
+              this.pendingPrependAdjustment = {
+                scrollTop: this.el.scrollTop,
+                scrollHeight: this.el.scrollHeight,
+              }
+
+              this.pushEvent("load_more_values", {})
             },
           }
         </script>
