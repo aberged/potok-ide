@@ -9,6 +9,7 @@ defmodule PotokIde.Social do
   require Logger
 
   alias Ecto.Multi
+  alias PotokIde.Presence
   alias PotokIde.Repo
 
   alias PotokIde.Accounts
@@ -38,6 +39,40 @@ defmodule PotokIde.Social do
 
   def subscribe_group(%Group{id: group_id}) when is_integer(group_id) do
     Phoenix.PubSub.subscribe(PotokIde.PubSub, group_topic(group_id))
+  end
+
+  def subscribe_group_presence(%Group{id: group_id}) when is_integer(group_id) do
+    Phoenix.PubSub.subscribe(PotokIde.PubSub, group_presence_topic(group_id))
+  end
+
+  def track_group_presence(pid, %Group{} = group, %Profile{} = profile) when is_pid(pid) do
+    Presence.track(pid, group_presence_topic(group), Integer.to_string(profile.id), %{
+      profile_id: profile.id,
+      username: profile.username,
+      online_at: System.system_time(:second)
+    })
+  end
+
+  def untrack_group_presence(pid, %Group{} = group, %Profile{id: profile_id}) when is_pid(pid) do
+    untrack_group_presence(pid, group, profile_id)
+  end
+
+  def untrack_group_presence(pid, %Group{} = group, profile_id)
+      when is_pid(pid) and is_integer(profile_id) do
+    Presence.untrack(pid, group_presence_topic(group), Integer.to_string(profile_id))
+  end
+
+  def list_online_profile_ids_for_group(%Group{} = group) do
+    group
+    |> group_presence_topic()
+    |> Presence.list()
+    |> Map.keys()
+    |> Enum.reduce(MapSet.new(), fn key, acc ->
+      case Integer.parse(key) do
+        {profile_id, ""} -> MapSet.put(acc, profile_id)
+        _ -> acc
+      end
+    end)
   end
 
   # ---------
@@ -649,6 +684,9 @@ defmodule PotokIde.Social do
   defp account_topic(account_id), do: "accounts:#{account_id}"
   defp profile_topic(profile_id), do: "profiles:#{profile_id}"
   defp group_topic(group_id), do: "groups:#{group_id}"
+
+  def group_presence_topic(%Group{id: group_id}), do: group_presence_topic(group_id)
+  def group_presence_topic(group_id) when is_integer(group_id), do: "groups:#{group_id}:presence"
 
   defp broadcast_account_profiles_updated(%Account{id: account_id}) do
     Phoenix.PubSub.broadcast(

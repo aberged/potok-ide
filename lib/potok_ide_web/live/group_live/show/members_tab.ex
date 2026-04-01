@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :members, :any, required: true
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
+  attr :online_profile_ids, :any, required: true
 
   def panel(assigns) do
     ~H"""
@@ -23,7 +24,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </li>
 
           <li :for={{dom_id, member} <- @members} id={dom_id}>
-            <Components.profile_identity profile={member} me={member.id == @current_profile.id} />
+            <Components.profile_identity
+              profile={member}
+              me={member.id == @current_profile.id}
+              online?={MapSet.member?(@online_profile_ids, member.id)}
+              presence_badge_id={"group-member-presence-#{member.id}"}
+            />
           </li>
         </ul>
 

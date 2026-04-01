@@ -80,6 +80,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
   attr :me, :boolean, default: false
+  attr :online?, :boolean, default: false
+  attr :presence_badge_id, :string, default: nil
 
   def profile_identity(assigns) do
     ~H"""
@@ -117,6 +119,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           if(@me, do: "italic text-success", else: "")
         ]}>
           {@profile.username}
+        </div>
+
+        <div
+          :if={@online?}
+          id={@presence_badge_id}
+          class="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
+        >
+          <span class="size-2 rounded-full bg-emerald-500" />
+          <span>{gettext("Online")}</span>
         </div>
       </div>
     </div>

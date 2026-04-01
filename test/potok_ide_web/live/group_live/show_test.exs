@@ -231,6 +231,65 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-panel-members")
     end
 
+    test "shows online presence for members viewing the group", %{conn: conn} do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "presence-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "presence-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      invitee_account = Accounts.get_account!(invitee_account.id)
+      group = create_child_group!(owner_profile, "presence-group")
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      {:ok, owner_lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(owner_lv, "#group-member-presence-#{owner_profile.id}", "Online")
+      refute has_element?(owner_lv, "#group-member-presence-#{invitee_profile.id}")
+
+      {:ok, invitee_lv, _html} =
+        Phoenix.ConnTest.build_conn()
+        |> log_in_account(invitee_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(invitee_lv, "#group-member-presence-#{invitee_profile.id}", "Online")
+
+      assert eventually(fn ->
+               has_element?(owner_lv, "#group-member-presence-#{invitee_profile.id}", "Online")
+             end)
+
+      assert eventually(fn ->
+               online_profile_ids = Social.list_online_profile_ids_for_group(group)
+
+               MapSet.member?(online_profile_ids, owner_profile.id) and
+                 MapSet.member?(online_profile_ids, invitee_profile.id)
+             end)
+    end
+
     test "shows only sub-groups where current profile is a member", %{conn: conn} do
       account = account_fixture()
       other_account = account_fixture()
@@ -832,5 +891,20 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     value
     |> Integer.to_string()
     |> String.pad_leading(2, "0")
+  end
+
+  defp eventually(fun, attempts \\ 20)
+
+  defp eventually(fun, attempts) when attempts <= 1, do: fun.()
+
+  defp eventually(fun, attempts) do
+    if fun.() do
+      true
+    else
+      receive do
+      after
+        25 -> eventually(fun, attempts - 1)
+      end
+    end
   end
 end

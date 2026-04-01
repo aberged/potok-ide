@@ -148,6 +148,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             members={@streams.members}
             pagination={@members_pagination}
             current_profile={@current_profile}
+            online_profile_ids={@online_profile_ids}
           />
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil}
@@ -188,6 +189,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if can_view_group?(group, is_member) do
       if connected?(socket) do
         Social.subscribe_group(group)
+        Social.subscribe_group_presence(group)
       end
 
       {:ok,
@@ -198,9 +200,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
        |> assign(:values_pagination, default_pagination(@values_page_size))
+       |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
+       |> assign(:online_profile_ids, MapSet.new())
+       |> assign(:presence_profile_id, nil)
        |> assign(:is_member, is_member)
        |> assign(:group, group)
        |> assign(:active_tab, active_tab)
@@ -212,7 +217,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:new_group_form, empty_new_group_form())
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
-       |> load_group_data(group, active_tab)}
+       |> load_group_data(group, active_tab)
+       |> sync_group_presence()}
     else
       {:ok,
        socket
@@ -543,6 +549,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", topic: topic}, socket) do
+    if topic == Social.group_presence_topic(socket.assigns.group) do
+      {:noreply, refresh_group_presence(socket)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_info({:presence_updated, topic}, socket) do
+    if topic == Social.group_presence_topic(socket.assigns.group) do
+      {:noreply, refresh_group_presence(socket)}
+    else
+      {:noreply, socket}
+    end
+  end
+
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do
     ProfileAuth.handle_current_profile_change(
@@ -555,7 +577,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply,
            socket
            |> assign(:is_member, is_member)
-           |> load_group_data(group)}
+           |> load_group_data(group)
+           |> sync_group_presence()}
         else
           {:noreply,
            socket
@@ -588,6 +611,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp refresh_group_data(socket) do
     load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
+  end
+
+  defp refresh_group_presence(socket) do
+    socket
+    |> assign(:online_profile_ids, Social.list_online_profile_ids_for_group(socket.assigns.group))
+    |> restream_members()
+  end
+
+  defp sync_group_presence(socket) do
+    current_profile = socket.assigns.current_profile
+    previous_profile_id = socket.assigns.presence_profile_id
+    group = socket.assigns.group
+
+    socket =
+      if connected?(socket) do
+        if is_integer(previous_profile_id) and
+             (is_nil(current_profile) or previous_profile_id != current_profile.id) do
+          Social.untrack_group_presence(self(), group, previous_profile_id)
+        end
+
+        if current_profile && current_profile.id != previous_profile_id do
+          case Social.track_group_presence(self(), group, current_profile) do
+            {:ok, _meta} -> :ok
+            {:error, _reason} -> :ok
+          end
+        end
+
+        assign(socket, :online_profile_ids, Social.list_online_profile_ids_for_group(group))
+      else
+        assign(socket, :online_profile_ids, MapSet.new())
+      end
+
+    assign(socket, :presence_profile_id, current_profile && current_profile.id)
   end
 
   defp maybe_scroll_values_to_latest(socket, previous_loaded_values, previous_values_pagination) do
@@ -639,6 +695,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:expanded_value_ids, expanded_value_ids)
     |> assign(:values_pagination, values_pagination)
     |> stream_delete(:values, value)
+  end
+
+  defp restream_members(socket) do
+    Enum.reduce(socket.assigns.loaded_members, socket, fn member, acc ->
+      stream_insert(acc, :members, member)
+    end)
   end
 
   defp restream_values(socket, value_ids) do
@@ -754,6 +816,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       members_page = members_page(group, socket.assigns.members_pagination)
 
       socket
+      |> assign(:loaded_members, members_page.entries)
       |> assign(:members_pagination, pagination_metadata(members_page))
       |> stream(:members, members_page.entries, reset: true)
     else

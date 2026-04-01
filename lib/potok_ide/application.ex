@@ -12,6 +12,7 @@ defmodule PotokIde.Application do
       PotokIde.Repo,
       {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PotokIde.PubSub},
+      PotokIde.Presence,
       # Start a worker by calling: PotokIde.Worker.start_link(arg)
       # {PotokIde.Worker, arg},
       # Start to serve requests, typically the last entry
