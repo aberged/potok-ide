@@ -87,6 +87,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-users" class="size-6" />
                     {gettext("Profiles")}
                   </.link>
                   <.link
@@ -96,6 +97,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-user-group" class="size-6" />
                     {gettext("Groups")}
                   </.link>
                   <.link
@@ -105,6 +107,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-inbox-arrow-down" class="size-6" />
                     {gettext("Invitations")}
                   </.link>
                 <% else %>
@@ -124,6 +127,7 @@
                     data-nav-match="exact"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" />
                     {gettext("Log in")}
                   </.link>
                 <% end %>
@@ -144,13 +148,15 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-cog-6-tooth" class="size-6" />
                     {gettext("Settings")}
                   </.link>
                   <.link
                     href={~p"/accounts/log-out"}
                     method="delete"
-                    class="rounded-2xl bg-base-content px-4 py-3 text-sm font-medium text-base-100 transition-opacity hover:opacity-90"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
+                    <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" />
                     {gettext("Log out")}
                   </.link>
                 </div>
@@ -190,11 +196,12 @@
             <.link
               id="nav-invitations-link"
               href={~p"/invitations"}
+              alt={gettext("Invitations")}
               class="relative"
               aria-label={gettext("Invitations")}
               hidden={is_nil(@current_profile)}
             >
-              <.icon name="hero-user-group" class="size-6" />
+              <.icon name="hero-inbox-arrow-down" class="size-6" />
               <span
                 id="nav-invitations-count-badge"
                 class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
@@ -206,7 +213,7 @@
                 )}
               </span>
             </.link>
-            <.link href={~p"/"}>
+            <.link href={~p"/"} alt={gettext("Groups")} aria-label={gettext("Groups")}>
               <.icon name="hero-home" class="size-6" />
             </.link>
             <.link
