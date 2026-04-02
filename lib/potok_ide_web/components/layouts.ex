@@ -186,7 +186,7 @@ defmodule PotokIdeWeb.Layouts do
         </label>
       </div>
 
-      <div class="drawer-side z-40">
+      <div class="drawer-side z-4000">
         <label
           for={@id}
           aria-label={gettext("close")}

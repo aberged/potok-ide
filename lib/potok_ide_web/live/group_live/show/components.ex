@@ -180,7 +180,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     ~H"""
     <.link
       navigate={~p"/groups/#{@group.id}"}
-      class="flex justify-start rounded-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
+      class="flex justify-start rounded-full w-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
     >
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative">
@@ -206,9 +206,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <% else %>
             <div class={[
               @avatar_size,
-              "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+              "flex shrink-0 items-center justif
+              y-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
             ]}>
-              {group_initials(@group.name)}
+              <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
               <.icon :if={@group.is_root} name="hero-home" class="size-4" />
             </div>
           <% end %>
