@@ -8,6 +8,72 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
   alias PotokIde.Social
 
   describe "invitations page" do
+    test "renders pending invitations before accepted invitations", %{conn: conn} do
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "inviter-profile-order",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "invitee-profile-order",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      invitee_account = Accounts.get_account!(invitee_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, pending_group} =
+        Social.create_group(inviter_profile, root_group, %{
+          "name" => "Pending Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, accepted_group} =
+        Social.create_group(inviter_profile, root_group, %{
+          "name" => "Accepted Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, accepted_invitation} =
+        Social.invite_profile_to_group(inviter_profile, accepted_group, invitee_profile)
+
+      {:ok, _accepted_invitation} =
+        Social.accept_group_invitation(accepted_invitation, invitee_profile)
+
+      {:ok, _pending_invitation} =
+        Social.invite_profile_to_group(inviter_profile, pending_group, invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(invitee_account)
+        |> live(~p"/invitations")
+
+      html = render(lv)
+
+      assert html =~ "Pending Group"
+      assert html =~ "Accepted Group"
+
+      {pending_index, _pending_length} = :binary.match(html, "Pending Group")
+      {accepted_index, _accepted_length} = :binary.match(html, "Accepted Group")
+
+      assert pending_index < accepted_index
+    end
+
     test "updates when a new invitation arrives", %{conn: conn} do
       inviter_account = account_fixture()
       invitee_account = account_fixture()

@@ -33,7 +33,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               {gettext("Load earlier values")}
             </button>
           </div>
-
+          
           <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
             <div
               id="group-values-empty"
@@ -41,15 +41,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             >
               {gettext("No values yet. Start the conversation below.")}
             </div>
-
+            
             <.inspect_tree
               :if={false}
-              id={"value-message-assigns"}
+              id="value-message-assigns"
               data={@values}
-              label={"values"}
+              label="values"
               class="mb-3 w-full"
             />
-
             <Components.value_message
               :for={{dom_id, value} <- @values}
               dom_id={dom_id}
@@ -62,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             />
           </div>
         </div>
-
+        
         <div
           :if={@is_member}
           class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
@@ -93,14 +92,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             </.button>
           </.form>
         </div>
-
+        
         <div
           :if={!@is_member}
           class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           {gettext("Join this group to reply and post new values.")}
         </div>
-
+        
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
           export default {
             mounted() {
@@ -183,7 +182,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
           }
         </script>
-
+        
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SubmitOnEnter">
           export default {
             mounted() {

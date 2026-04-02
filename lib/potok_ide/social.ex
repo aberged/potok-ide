@@ -546,9 +546,11 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
-      # and is_nil(i.accepted_at),
       where: i.invitee_id == ^invitee.id,
-      order_by: [desc: i.inserted_at],
+      order_by: [
+        asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
+        desc: i.inserted_at
+      ],
       preload: [:group, :inviter]
     )
     |> Repo.all()
