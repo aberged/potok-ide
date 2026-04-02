@@ -14,6 +14,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.GroupLive.Show.Components
 
   @children_page_size 12
   @members_page_size 20
@@ -74,16 +75,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="members"
             aria-label={gettext("Open members tab")}
-            class="avatar-group -space-x-4 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
-            <div :for={m <- @first3_members} class="avatar">
-              <div class="bg-white w-8">
-                <img src={m.profile_picture_url} alt={m.username} />
-              </div>
+            <div :for={m <- @first3_members} class="">
+              <Components.profile_identity
+                profile={m}
+                avatar_size="size-6"
+                text_class="hidden"
+                sharing_badge_text_class="hidden "
+              />
             </div>
 
-            <div :if={@members_count > 3} class="avatar avatar-placeholder">
-              <div class="bg-neutral text-neutral-content w-8">
+            <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
+              <div class="bg-neutral text-neutral-content size-5 text-xs">
                 <span>+{@members_count - length(@first3_members)}</span>
               </div>
             </div>
@@ -567,6 +571,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:noreply, socket}
     end
   end
+
+  def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
+
+  def handle_info({:profile_share_invitations_updated, _profile_id}, socket),
+    do: {:noreply, socket}
+
+  def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
+    do: {:noreply, socket}
 
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do

@@ -39,7 +39,7 @@
   </head>
   <body class="min-h-screen max-h-screen h-screen overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
     <div class="flex flex-col relative min-h-screen max-h-screen overflow-clip">
-      <nav class="sticky top-0 z-20 sm:px-6 lg:px-8">
+      <nav class="sticky top-0 sm:px-6 lg:px-8">
         <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
           <% profile = assigns[:current_profile] %>
           <% profile_picture_url =
@@ -186,51 +186,78 @@
             </div> --%>
           </.header_menu>
 
-          <.link href={~p"/profiles"} class="flex min-w-0 items-center flex-row gap-3 self-start">
-            <span class="min-w-0 text-right">
-              <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
-                Potok
-              </span>
+          <div class="flex items-right gap-4 items-center">
+            <.link
+              id="nav-invitations-link"
+              href={~p"/invitations"}
+              class="relative"
+              aria-label={gettext("Invitations")}
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-user-group" class="size-6" />
               <span
-                id="nav-brand-title"
-                data-default-title=""
-                class="block truncate text-sm font-semibold text-base-content"
+                id="nav-invitations-count-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@pending_invitations_count <= 0}
               >
-                <%= if profile do %>
-                  {profile.username}
-                <% else %>
-                  {gettext("Welcome!")}
-                <% end %>
+                {if(@pending_invitations_count > 99,
+                  do: "99+",
+                  else: @pending_invitations_count
+                )}
               </span>
-            </span>
-            <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
-              <img
-                id="nav-brand-profile-avatar"
-                src={profile_picture_url || ~p"/images/logo.svg"}
-                alt={if(profile, do: profile.username, else: "Potok")}
-                class={[
-                  "size-10 rounded-2xl object-cover",
-                  is_nil(profile_picture_url) && "hidden"
-                ]}
-              />
-              <span
-                id="nav-brand-profile-initials"
-                class={[
-                  "flex size-10 items-center justify-center rounded-2xl text-sm font-semibold uppercase text-base-content/75",
-                  (is_nil(profile) or !is_nil(profile_picture_url)) && "hidden"
-                ]}
-              >
-                {profile_initials}
+            </.link>
+            <.link href={~p"/"}>
+              <.icon name="hero-home" class="size-6" />
+            </.link>
+            <.link
+              href={~p"/profiles"}
+              class="flex min-w-0 items-center flex-row gap-3 self-start"
+            >
+              <span class="min-w-0 text-right">
+                <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
+                  Potok
+                </span>
+                <span
+                  id="nav-brand-title"
+                  data-default-title=""
+                  class="block truncate text-sm font-semibold text-base-content"
+                >
+                  <%= if profile do %>
+                    {profile.username}
+                  <% else %>
+                    {gettext("Welcome!")}
+                  <% end %>
+                </span>
               </span>
-              <img
-                id="nav-brand-logo"
-                src={~p"/images/logo.svg"}
-                width="24"
-                alt="Potok"
-                class={[!is_nil(profile) && "hidden"]}
-              />
-            </span>
-          </.link>
+              <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
+                <img
+                  id="nav-brand-profile-avatar"
+                  src={profile_picture_url || ~p"/images/logo.svg"}
+                  alt={if(profile, do: profile.username, else: "Potok")}
+                  class={[
+                    "size-10 rounded-2xl object-cover",
+                    is_nil(profile_picture_url) && "hidden"
+                  ]}
+                />
+                <span
+                  id="nav-brand-profile-initials"
+                  class={[
+                    "flex size-10 items-center justify-center rounded-2xl text-sm font-semibold uppercase text-base-content/75",
+                    (is_nil(profile) or !is_nil(profile_picture_url)) && "hidden"
+                  ]}
+                >
+                  {profile_initials}
+                </span>
+                <img
+                  id="nav-brand-logo"
+                  src={~p"/images/logo.svg"}
+                  width="24"
+                  alt="Potok"
+                  class={[!is_nil(profile) && "hidden"]}
+                />
+              </span>
+            </.link>
+          </div>
         </div>
       </nav>
 

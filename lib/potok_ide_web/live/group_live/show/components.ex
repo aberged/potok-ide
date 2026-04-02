@@ -106,9 +106,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :profile, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
+  attr :title, :string, default: nil
+  attr :subtitle, :string, default: nil
   attr :me, :boolean, default: false
   attr :online?, :boolean, default: false
   attr :presence_badge_id, :string, default: nil
+  attr :sharing_badge_text_class, :string, default: "text-xs"
 
   def profile_identity(assigns) do
     ~H"""
@@ -120,19 +123,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             alt={@profile.username}
             class={[
               @avatar_size,
-              "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+              "shrink-0 rounded-full border border-base-300 bg-base-100 object-cover shadow-sm"
             ]}
           />
         <% else %>
           <div class={[
             @avatar_size,
-            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-400 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
           ]}>
             {profile_initials(@profile.username)}
           </div>
         <% end %>
 
-        <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+        <div class={[@sharing_badge_text_class, "absolute", "bottom-0", "left-0", "-ml-1", "-mb-1"]}>
           {if @profile.sharing == :shared,
             do: "👨‍👨‍👦‍👦",
             else: ""}
@@ -140,6 +143,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div class="min-w-0">
+        <div
+          :if={@title}
+          class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/45"
+        >
+          {@title}
+        </div>
+
         <div class={[
           @text_class,
           "truncate font-semibold text-base-content",
@@ -147,6 +157,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         ]}>
           {@profile.username}
         </div>
+
+        <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
 
         <div
           :if={@online?}
@@ -166,39 +178,58 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   def group_identity(assigns) do
     ~H"""
-    <div class="flex min-w-0 items-center gap-3">
-      <div class="relative">
-        <%= if avatar_url = group_picture_url(@group) do %>
-          <img
-            src={avatar_url}
-            alt={@group.name}
-            class={[
+    <.link
+      navigate={~p"/groups/#{@group.id}"}
+      class="flex justify-start rounded-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
+    >
+      <div class="flex min-w-0 items-center gap-3">
+        <div class="relative">
+          <%= if avatar_url = group_picture_url(@group) do %>
+            <img
+              :if={!@group.is_root}
+              src={avatar_url}
+              alt={@group.name}
+              class={[
+                @avatar_size,
+                "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+              ]}
+            />
+            <div
+              :if={@group.is_root}
+              class={[
+                @avatar_size,
+                "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+              ]}
+            >
+              <.icon name="hero-home" class="size-4" />
+            </div>
+          <% else %>
+            <div class={[
               @avatar_size,
-              "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
-            ]}
-          />
-        <% else %>
-          <div class={[
-            @avatar_size,
-            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
-          ]}>
-            {group_initials(@group.name)}
+              "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+            ]}>
+              {group_initials(@group.name)}
+              <.icon :if={@group.is_root} name="hero-home" class="size-4" />
+            </div>
+          <% end %>
+
+          <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+            {if @group.is_public,
+              do: "📢",
+              else: "🔐"}
           </div>
-        <% end %>
+        </div>
 
-        <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
-          {if @group.is_public,
-            do: "📢",
-            else: "🔐"}
+        <div
+          :if={!@group.is_root}
+          class="min-w-0"
+        >
+          <div class={[@text_class, "truncate font-semibold text-base-content"]}>
+            {@group.name}
+          </div>
         </div>
       </div>
-
-      <div class="min-w-0">
-        <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-          <.link navigate={~p"/groups/#{@group.id}"} class="link link-hover">{@group.name}</.link>
-        </div>
-      </div>
-    </div>
+    </.link>
     """
   end
 

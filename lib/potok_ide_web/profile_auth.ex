@@ -23,12 +23,20 @@ defmodule PotokIdeWeb.ProfileAuth do
       end)
 
     socket =
+      Phoenix.Component.assign_new(socket, :pending_invitations_count, fn ->
+        pending_invitations_count(socket.assigns[:current_profile])
+      end)
+
+    socket = sync_profile_subscription(socket)
+
+    socket =
       if (connected?(socket) and current_scope) && current_scope.account do
         Social.subscribe_account(current_scope.account)
 
         attach_hook(socket, :sync_current_profile, :handle_info, fn
           {:account_profiles_updated, account_id}, socket ->
             if socket.assigns.current_scope.account.id == account_id do
+              previous_profile = socket.assigns.current_profile
               account = Accounts.get_account!(account_id)
               current_profile = Social.get_account_current_profile(account)
 
@@ -39,12 +47,38 @@ defmodule PotokIdeWeb.ProfileAuth do
                   | account: account
                 })
                 |> Phoenix.Component.assign(:current_profile, current_profile)
+                |> Phoenix.Component.assign(
+                  :pending_invitations_count,
+                  pending_invitations_count(current_profile)
+                )
+                |> sync_profile_subscription(previous_profile)
                 |> push_current_profile_updated(current_profile)
+                |> push_pending_invitations_count_updated(
+                  pending_invitations_count(current_profile)
+                )
 
               {:cont, socket}
             else
               {:cont, socket}
             end
+
+          {:profile_invitations_updated, profile_id},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            count = pending_invitations_count(current_profile)
+
+            {:cont,
+             socket
+             |> Phoenix.Component.assign(:pending_invitations_count, count)
+             |> push_pending_invitations_count_updated(count)}
+
+          {:pending_invitations_count_updated, profile_id, count},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            {:cont,
+             socket
+             |> Phoenix.Component.assign(:pending_invitations_count, count)
+             |> push_pending_invitations_count_updated(count)}
 
           _message, socket ->
             {:cont, socket}
@@ -76,21 +110,27 @@ defmodule PotokIdeWeb.ProfileAuth do
   end
 
   def sync_profile_subscription(socket, previous_profile \\ nil) do
-    if connected?(socket) do
-      current_profile = socket.assigns[:current_profile]
+    current_profile = socket.assigns[:current_profile]
+    subscribed_profile_id = socket.private[:subscribed_profile_id]
 
-      if previous_profile &&
-           (is_nil(current_profile) or previous_profile.id != current_profile.id) do
-        Social.unsubscribe_profile(previous_profile)
+    socket =
+      if connected?(socket) do
+        if is_integer(subscribed_profile_id) and
+             (is_nil(current_profile) or subscribed_profile_id != current_profile.id) do
+          profile_to_unsubscribe = previous_profile || %{id: subscribed_profile_id}
+          Social.unsubscribe_profile(profile_to_unsubscribe)
+        end
+
+        if current_profile && current_profile.id != subscribed_profile_id do
+          Social.subscribe_profile(current_profile)
+        end
+
+        socket
+      else
+        socket
       end
 
-      if current_profile &&
-           (is_nil(previous_profile) or previous_profile.id != current_profile.id) do
-        Social.subscribe_profile(current_profile)
-      end
-    end
-
-    socket
+    put_private(socket, :subscribed_profile_id, current_profile && current_profile.id)
   end
 
   defp push_current_profile_updated(socket, nil) do
@@ -104,6 +144,10 @@ defmodule PotokIdeWeb.ProfileAuth do
     })
   end
 
+  defp push_pending_invitations_count_updated(socket, count) do
+    push_event(socket, "pending_invitations_count_updated", %{count: count})
+  end
+
   defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
       "" -> nil
@@ -112,4 +156,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   end
 
   defp profile_picture_url(_), do: nil
+
+  defp pending_invitations_count(nil), do: 0
+  defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
 end

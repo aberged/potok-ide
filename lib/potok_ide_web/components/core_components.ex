@@ -56,7 +56,7 @@ defmodule PotokIdeWeb.CoreComponents do
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
       role="alert"
-      class="toast toast-top toast-end top-22 z-50 sm:top-24"
+      class="toast toast-top toast-center top-1"
       {@rest}
     >
       <div class={[

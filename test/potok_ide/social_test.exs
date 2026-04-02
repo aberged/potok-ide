@@ -85,6 +85,57 @@ defmodule PotokIde.SocialTest do
 
       assert [] == Social.list_pending_profile_invitations(invitee_profile)
     end
+
+    test "sends push notifications to the invitee when sent and the inviter when accepted" do
+      request_pid = self()
+      configure_push_notifications(request_pid)
+
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, shared_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "shared-profile-push-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "shared-profile-push-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, inviter_subscription} =
+        Accounts.upsert_push_subscription(inviter_account, valid_push_subscription_attrs())
+
+      {:ok, invitee_subscription} =
+        Accounts.upsert_push_subscription(invitee_account, valid_push_subscription_attrs())
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_profile(
+                 inviter_account,
+                 shared_profile,
+                 shared_profile,
+                 invitee_profile
+               )
+
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == invitee_subscription.endpoint
+      refute_receive {:push_request, _unexpected_request}
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_profile_invitation(invitation, invitee_profile, invitee_account)
+
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == inviter_subscription.endpoint
+      refute_receive {:push_request, _unexpected_request}
+    end
   end
 
   describe "count_group_members/1" do
@@ -129,6 +180,64 @@ defmodule PotokIde.SocialTest do
                Social.accept_group_invitation(invitation, invitee_profile)
 
       assert Social.count_group_members(group) == 2
+    end
+  end
+
+  describe "group invitations push notifications" do
+    test "sends push notifications to the invitee when sent and the inviter when accepted" do
+      request_pid = self()
+      configure_push_notifications(request_pid)
+
+      inviter_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "group-push-inviter",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "group-push-invitee",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(inviter_profile, root_group, %{
+          "name" => "group-push-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, inviter_subscription} =
+        Accounts.upsert_push_subscription(inviter_account, valid_push_subscription_attrs())
+
+      {:ok, invitee_subscription} =
+        Accounts.upsert_push_subscription(invitee_account, valid_push_subscription_attrs())
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(inviter_profile, group, invitee_profile)
+
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == invitee_subscription.endpoint
+      refute_receive {:push_request, _unexpected_request}
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == inviter_subscription.endpoint
+      refute_receive {:push_request, _unexpected_request}
     end
   end
 
@@ -296,6 +405,27 @@ defmodule PotokIde.SocialTest do
       expires_at: nil,
       user_agent: "ExUnit"
     }
+  end
+
+  defp configure_push_notifications(request_pid) do
+    original_config = Application.get_env(:potok_ide, PushNotifications, [])
+
+    on_exit(fn ->
+      Application.put_env(:potok_ide, PushNotifications, original_config)
+    end)
+
+    Application.put_env(
+      :potok_ide,
+      PushNotifications,
+      ttl: 60,
+      vapid_subject: "mailto:test@example.com",
+      vapid_public_key: Base.url_encode64(<<4>> <> :crypto.strong_rand_bytes(64), padding: false),
+      vapid_private_key: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+      request_fun: fn options ->
+        send(request_pid, {:push_request, options})
+        {:ok, %Req.Response{status: 201, body: ""}}
+      end
+    )
   end
 
   describe "update_value/3" do

@@ -199,6 +199,8 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
+
   def handle_info({:profile_share_invitations_updated, profile_id}, socket)
       when not is_nil(socket.assigns.current_profile) and
              socket.assigns.current_profile.id == profile_id do
@@ -211,6 +213,9 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   end
 
   def handle_info({:profile_share_invitations_updated, _profile_id}, socket),
+    do: {:noreply, socket}
+
+  def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
   defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do

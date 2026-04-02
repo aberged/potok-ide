@@ -412,6 +412,8 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   const brandAvatar = document.getElementById("nav-brand-profile-avatar")
   const brandInitials = document.getElementById("nav-brand-profile-initials")
   const brandLogo = document.getElementById("nav-brand-logo")
+  const invitationsLink = document.getElementById("nav-invitations-link")
+  const invitationsBadge = document.getElementById("nav-invitations-count-badge")
   const selectedProfileCard = document.getElementById("nav-selected-profile-card")
   const selectedProfileName = document.getElementById("nav-selected-profile-name")
   const defaultTitle = brandTitle?.dataset.defaultTitle || ""
@@ -435,11 +437,20 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
     selectedProfileCard.hidden = !hasProfile
   }
 
+  if (invitationsLink) {
+    invitationsLink.hidden = !hasProfile
+  }
+
   if (brandAvatar) {
     brandAvatar.alt = detail.username || "Potok"
   }
 
   if (!hasProfile) {
+    if (invitationsBadge) {
+      invitationsBadge.hidden = true
+      invitationsBadge.textContent = ""
+    }
+
     if (brandAvatar) {
       brandAvatar.classList.add("hidden")
     }
@@ -482,6 +493,19 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
       brandLogo.classList.add("hidden")
     }
   }
+})
+
+window.addEventListener("phx:pending_invitations_count_updated", ({detail}) => {
+  const invitationsBadge = document.getElementById("nav-invitations-count-badge")
+
+  if (!invitationsBadge) {
+    return
+  }
+
+  const count = Number(detail.count || 0)
+
+  invitationsBadge.hidden = count <= 0
+  invitationsBadge.textContent = count > 99 ? "99+" : String(count)
 })
 
 // connect if there are any LiveViews on the page

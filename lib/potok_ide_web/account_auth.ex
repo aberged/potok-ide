@@ -69,15 +69,22 @@ defmodule PotokIdeWeb.AccountAuth do
   def fetch_current_scope_for_account(conn, _opts) do
     with {token, conn} <- ensure_account_token(conn),
          {account, token_inserted_at} <- Accounts.get_account_by_session_token(token) do
+      current_profile = current_profile_for_account(account)
+
       conn
       |> assign(:current_scope, Scope.for_account(account))
-      |> assign(:current_profile, current_profile_for_account(account))
+      |> assign(:current_profile, current_profile)
+      |> assign(
+        :pending_invitations_count,
+        pending_invitations_count_for_profile(current_profile)
+      )
       |> maybe_reissue_account_session_token(account, token_inserted_at)
     else
       nil ->
         conn
         |> assign(:current_scope, Scope.for_account(nil))
         |> assign(:current_profile, nil)
+        |> assign(:pending_invitations_count, 0)
     end
   end
 
@@ -274,6 +281,9 @@ defmodule PotokIdeWeb.AccountAuth do
     Phoenix.Component.assign_new(socket, :current_profile, fn ->
       current_profile_for_scope(socket.assigns[:current_scope])
     end)
+    |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
+      pending_invitations_count_for_profile(socket.assigns[:current_profile])
+    end)
   end
 
   defp current_profile_for_scope(%Scope{account: %Accounts.Account{} = account}),
@@ -285,6 +295,11 @@ defmodule PotokIdeWeb.AccountAuth do
     do: Social.get_account_current_profile(account)
 
   defp current_profile_for_account(_), do: nil
+
+  defp pending_invitations_count_for_profile(nil), do: 0
+
+  defp pending_invitations_count_for_profile(profile),
+    do: Social.count_pending_invitations(profile)
 
   @doc "Returns the path to redirect to after log in."
   # the account was already logged in, redirect to settings

@@ -208,6 +208,8 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, _invitation} = ok ->
             broadcast_profile_share_invitations_updated(invitee)
+            broadcast_pending_invitations_count_updated(invitee)
+            notify_profile_invitee_of_shared_profile_invitation(inviter, profile, invitee)
             ok
 
           error ->
@@ -221,7 +223,7 @@ defmodule PotokIde.Social do
         %Profile{} = invitee,
         %Account{} = invitee_account
       ) do
-    invitation = Repo.preload(invitation, :profile)
+    invitation = Repo.preload(invitation, [:profile, :inviter])
 
     if invitation.invitee_id != invitee.id do
       {:error, :invitee_mismatch}
@@ -235,7 +237,15 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, %{invitation: accepted_invitation}} ->
           broadcast_profile_share_invitations_updated(invitee)
+          broadcast_pending_invitations_count_updated(invitee)
           broadcast_account_profiles_updated(invitee_account)
+
+          notify_profile_inviter_of_shared_profile_acceptance(
+            invitation,
+            invitee,
+            invitee_account
+          )
+
           {:ok, accepted_invitation}
 
         {:error, _step, reason, _changes} ->
@@ -300,6 +310,8 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, _invitation} = ok ->
             broadcast_profile_invitations_updated(invitee)
+            broadcast_pending_invitations_count_updated(invitee)
+            notify_profile_invitee_of_group_invitation(inviter, group, invitee)
             ok
 
           error ->
@@ -309,6 +321,8 @@ defmodule PotokIde.Social do
   end
 
   def accept_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
+    invitation = Repo.preload(invitation, [:group, :inviter])
+
     if invitation.invitee_id != invitee.id do
       {:error, :invitee_mismatch}
     else
@@ -324,7 +338,9 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, %{invitation: inv}} ->
           broadcast_profile_invitations_updated(invitee)
+          broadcast_pending_invitations_count_updated(invitee)
           broadcast_group_updated(inv.group_id)
+          notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
           {:ok, inv}
 
         {:error, _step, reason, _changes} ->
@@ -538,6 +554,30 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def count_pending_invitations(%Profile{} = invitee) do
+    count_pending_group_invitations(invitee) + count_pending_profile_invitations(invitee)
+  end
+
+  defp count_pending_group_invitations(%Profile{} = invitee) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in GroupInvitation,
+      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      select: count(i.id)
+    )
+    |> Repo.one()
+  end
+
+  defp count_pending_profile_invitations(%Profile{} = invitee) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in ProfileInvitation,
+      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
+      select: count(i.id)
+    )
+    |> Repo.one()
+  end
+
   def list_pending_profile_invitations(%Profile{} = invitee) do
     import Ecto.Query, only: [from: 2]
 
@@ -633,6 +673,64 @@ defmodule PotokIde.Social do
     end)
   end
 
+  defp notify_profile_invitee_of_group_invitation(
+         %Profile{} = inviter,
+         %Group{} = group,
+         %Profile{} = invitee
+       ) do
+    payload = group_invitation_notification_payload(inviter, group)
+
+    invitee
+    |> recipient_accounts_for_profile_notification()
+    |> Enum.each(&deliver_profile_notification(&1, payload, "group invitation", inviter.id))
+  end
+
+  defp notify_profile_inviter_of_group_invitation_acceptance(
+         %GroupInvitation{} = invitation,
+         %Profile{} = invitee
+       ) do
+    payload = group_invitation_accepted_notification_payload(invitation.group, invitee)
+
+    invitation.inviter
+    |> recipient_accounts_for_profile_notification()
+    |> Enum.each(
+      &deliver_profile_notification(&1, payload, "group invitation acceptance", invitee.id)
+    )
+  end
+
+  defp notify_profile_invitee_of_shared_profile_invitation(
+         %Profile{} = inviter,
+         %Profile{} = shared_profile,
+         %Profile{} = invitee
+       ) do
+    payload = shared_profile_invitation_notification_payload(inviter, shared_profile)
+
+    invitee
+    |> recipient_accounts_for_profile_notification()
+    |> Enum.each(
+      &deliver_profile_notification(&1, payload, "shared profile invitation", inviter.id)
+    )
+  end
+
+  defp notify_profile_inviter_of_shared_profile_acceptance(
+         %ProfileInvitation{} = invitation,
+         %Profile{} = invitee,
+         %Account{} = invitee_account
+       ) do
+    payload = shared_profile_invitation_accepted_notification_payload(invitation.profile, invitee)
+
+    invitation.inviter
+    |> recipient_accounts_for_profile_notification([invitee_account.id])
+    |> Enum.each(
+      &deliver_profile_notification(
+        &1,
+        payload,
+        "shared profile invitation acceptance",
+        invitee.id
+      )
+    )
+  end
+
   defp recipient_accounts_for_group_value_notification(%Group{} = group, %Profile{} = creator) do
     from(account in Account,
       join: ap in AccountProfile,
@@ -646,12 +744,92 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  defp recipient_accounts_for_profile_notification(
+         %Profile{} = profile,
+         excluded_account_ids \\ []
+       ) do
+    from(account in Account,
+      join: ap in AccountProfile,
+      on: ap.account_id == account.id,
+      where: ap.profile_id == ^profile.id,
+      where: account.id not in ^excluded_account_ids,
+      distinct: account.id,
+      order_by: [asc: account.id]
+    )
+    |> Repo.all()
+  end
+
+  defp deliver_profile_notification(%Account{} = account, payload, context, profile_id) do
+    case Accounts.deliver_push_notification(account, payload) do
+      {:ok, _results} ->
+        :ok
+
+      {:error, :no_push_subscriptions} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "Failed to deliver #{context} push notification for profile #{profile_id} to account #{account.id}: #{inspect(reason)}"
+        )
+    end
+  end
+
   defp group_value_notification_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     %{
       title: "#{creator.username} added a new value",
       body: group_value_notification_body(group, value),
       tag: "group-#{group.id}-value-created",
       url: "/groups/#{group.id}/values",
+      icon: "/images/pwa/icon-192.png",
+      badge: "/images/pwa/icon-192.png"
+    }
+  end
+
+  defp group_invitation_notification_payload(%Profile{} = inviter, %Group{} = group) do
+    %{
+      title: "#{inviter.username} invited you to #{group.name}",
+      body: "Open Potok to review this group invitation.",
+      tag: "group-#{group.id}-invitation",
+      url: "/invitations",
+      icon: "/images/pwa/icon-192.png",
+      badge: "/images/pwa/icon-192.png"
+    }
+  end
+
+  defp group_invitation_accepted_notification_payload(%Group{} = group, %Profile{} = invitee) do
+    %{
+      title: "#{invitee.username} accepted your invitation",
+      body: "#{invitee.username} joined #{group.name}.",
+      tag: "group-#{group.id}-invitation-accepted",
+      url: "/groups/#{group.id}",
+      icon: "/images/pwa/icon-192.png",
+      badge: "/images/pwa/icon-192.png"
+    }
+  end
+
+  defp shared_profile_invitation_notification_payload(
+         %Profile{} = inviter,
+         %Profile{} = shared_profile
+       ) do
+    %{
+      title: "#{inviter.username} shared #{shared_profile.username}",
+      body: "Open Potok to review this shared profile invitation.",
+      tag: "profile-#{shared_profile.id}-invitation",
+      url: "/profiles",
+      icon: "/images/pwa/icon-192.png",
+      badge: "/images/pwa/icon-192.png"
+    }
+  end
+
+  defp shared_profile_invitation_accepted_notification_payload(
+         %Profile{} = shared_profile,
+         %Profile{} = invitee
+       ) do
+    %{
+      title: "#{invitee.username} accepted your shared profile invitation",
+      body: "#{invitee.username} now has access to #{shared_profile.username}.",
+      tag: "profile-#{shared_profile.id}-invitation-accepted",
+      url: "/profiles",
       icon: "/images/pwa/icon-192.png",
       badge: "/images/pwa/icon-192.png"
     }
@@ -709,6 +887,14 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       profile_topic(profile_id),
       {:profile_invitations_updated, profile_id}
+    )
+  end
+
+  defp broadcast_pending_invitations_count_updated(%Profile{id: profile_id} = profile) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:pending_invitations_count_updated, profile_id, count_pending_invitations(profile)}
     )
   end
 

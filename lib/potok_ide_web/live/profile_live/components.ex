@@ -1,38 +1,19 @@
 defmodule PotokIdeWeb.ProfileLive.Components do
   use PotokIdeWeb, :html
 
+  alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
+
   attr :profile, :map, required: true
   attr :title, :string, default: nil
   attr :subtitle, :string, default: nil
 
   def profile_identity(assigns) do
     ~H"""
-    <div class="flex min-w-0 items-center gap-3">
-      <%= if avatar_url = profile_picture_url(@profile) do %>
-        <img
-          src={avatar_url}
-          alt={@profile.username}
-          class="size-11 shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
-        />
-      <% else %>
-        <div class="flex size-11 shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-sm font-semibold uppercase text-base-content/75 shadow-sm">
-          {profile_initials(@profile.username)}
-        </div>
-      <% end %>
-
-      <div class="min-w-0">
-        <div
-          :if={@title}
-          class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/45"
-        >
-          {@title}
-        </div>
-
-        <div class="truncate font-semibold text-base-content">{@profile.username}</div>
-
-        <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
-      </div>
-    </div>
+    <GroupComponents.profile_identity
+      profile={@profile}
+      title={@title}
+      subtitle={@subtitle}
+    />
     """
   end
 
@@ -94,21 +75,4 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   end
 
   def profile_picture_url(_), do: nil
-
-  defp profile_initials(username) when is_binary(username) do
-    username
-    |> String.split(~r/[\s_-]+/, trim: true)
-    |> Enum.take(2)
-    |> Enum.map_join(fn part ->
-      part
-      |> String.first()
-      |> to_string()
-    end)
-    |> case do
-      "" -> "?"
-      initials -> String.upcase(initials)
-    end
-  end
-
-  defp profile_initials(_), do: "?"
 end

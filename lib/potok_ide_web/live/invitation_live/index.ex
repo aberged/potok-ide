@@ -102,6 +102,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:profile_share_invitations_updated, _profile_id}, socket),
+    do: {:noreply, socket}
+
+  def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
+    do: {:noreply, socket}
+
   @impl true
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id and
