@@ -206,8 +206,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <% else %>
             <div class={[
               @avatar_size,
-              "flex shrink-0 items-center justif
-              y-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+              "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
             ]}>
               <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
               <.icon :if={@group.is_root} name="hero-home" class="size-4" />
