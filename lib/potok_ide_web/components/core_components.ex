@@ -43,6 +43,8 @@ defmodule PotokIdeWeb.CoreComponents do
   attr :flash, :map, default: %{}, doc: "the map of flash messages to display"
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
+  attr :auto_dismiss, :boolean, default: true, doc: "whether the flash should close automatically"
+  attr :dismiss_after_ms, :integer, default: 3000, doc: "how long to wait before auto-dismissing"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
@@ -55,6 +57,9 @@ defmodule PotokIdeWeb.CoreComponents do
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
       phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-hook={@auto_dismiss && "AutoDismissFlash"}
+      data-auto-dismiss-flash={if @auto_dismiss, do: "true", else: nil}
+      data-dismiss-after-ms={if @auto_dismiss, do: @dismiss_after_ms, else: nil}
       role="alert"
       class="absolute toast toast-top toast-center top-1 z-1000"
       {@rest}

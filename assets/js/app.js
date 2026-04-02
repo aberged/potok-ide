@@ -71,6 +71,71 @@ const DropdownMenu = {
   },
 }
 
+const flashDismissTimers = new WeakMap()
+
+const clearFlashDismissTimer = element => {
+  const timer = flashDismissTimers.get(element)
+
+  if (timer) {
+    window.clearTimeout(timer)
+    flashDismissTimers.delete(element)
+  }
+}
+
+const dismissFlashElement = element => {
+  clearFlashDismissTimer(element)
+
+  if (!element?.isConnected) {
+    return
+  }
+
+  const liveSocketCommand = element.getAttribute("phx-click")
+  const liveViewRoot = element.closest("[data-phx-session]")
+
+  if (window.liveSocket && liveSocketCommand && liveViewRoot) {
+    window.liveSocket.execJS(element, liveSocketCommand)
+    return
+  }
+
+  element.setAttribute("hidden", "")
+  element.remove()
+}
+
+const scheduleFlashDismiss = element => {
+  if (!element || !element.hasAttribute("data-auto-dismiss-flash")) {
+    return
+  }
+
+  clearFlashDismissTimer(element)
+
+  const dismissAfterMs = Number.parseInt(element.dataset.dismissAfterMs || "3000", 10)
+
+  if (Number.isNaN(dismissAfterMs) || dismissAfterMs <= 0) {
+    return
+  }
+
+  const timer = window.setTimeout(() => {
+    flashDismissTimers.delete(element)
+    dismissFlashElement(element)
+  }, dismissAfterMs)
+
+  flashDismissTimers.set(element, timer)
+}
+
+const AutoDismissFlash = {
+  mounted() {
+    scheduleFlashDismiss(this.el)
+  },
+
+  updated() {
+    scheduleFlashDismiss(this.el)
+  },
+
+  destroyed() {
+    clearFlashDismissTimer(this.el)
+  },
+}
+
 const PushNotifications = {
   mounted() {
     this.status = this.el.querySelector("[data-push-status]")
@@ -365,7 +430,7 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {HeaderDrawer, DropdownMenu, PushNotifications, ...colocatedHooks},
+  hooks: {HeaderDrawer, DropdownMenu, AutoDismissFlash, PushNotifications, ...colocatedHooks},
 })
 
 // Show progress bar on live navigation and form submits
@@ -403,6 +468,12 @@ const updateDrawerActiveLinks = () => {
 
 window.addEventListener("DOMContentLoaded", updateDrawerActiveLinks)
 window.addEventListener("phx:page-loading-stop", updateDrawerActiveLinks)
+window.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll("[data-auto-dismiss-flash]").forEach(scheduleFlashDismiss)
+})
+window.addEventListener("phx:page-loading-stop", () => {
+  document.querySelectorAll("[data-auto-dismiss-flash]").forEach(scheduleFlashDismiss)
+})
 window.addEventListener("load", () => {
   void registerServiceWorker()
 })
