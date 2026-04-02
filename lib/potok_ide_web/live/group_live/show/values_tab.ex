@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.GroupLive.Show.Components
+  import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
   attr :values, :any, required: true
   attr :pagination, :map, required: true
@@ -35,12 +36,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
           <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
             <div
-              :if={@pagination.loaded_count == 0}
               id="group-values-empty"
-              class="flex min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+              class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
             >
               {gettext("No values yet. Start the conversation below.")}
             </div>
+
+            <.inspect_tree
+              :if={false}
+              id={"value-message-assigns"}
+              data={@values}
+              label={"values"}
+              class="mb-3 w-full"
+            />
 
             <Components.value_message
               :for={{dom_id, value} <- @values}
