@@ -556,4 +556,126 @@ defmodule PotokIde.SocialTest do
                )
     end
   end
+
+  describe "group unread counts" do
+    test "aggregates unread values across sub-groups and marks the current group as read" do
+      owner_account = account_fixture()
+      writer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "unread-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, writer_profile} =
+        Social.create_profile_for_account(writer_account, %{
+          username: "unread-writer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, child_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "unread-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, grandchild_group} =
+        Social.create_group(owner_profile, child_group, %{
+          "name" => "unread-grandchild",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, hidden_child_group} =
+        Social.create_group(writer_profile, root_group, %{
+          "name" => "writer-private-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, child_group, writer_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, writer_profile)
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, grandchild_group, writer_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, writer_profile)
+
+      assert {:ok, _child_value} =
+               Social.create_value(writer_profile, child_group, %{
+                 "content" => "child unread value",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _grandchild_value} =
+               Social.create_value(writer_profile, grandchild_group, %{
+                 "content" => "grandchild unread value",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _root_value} =
+               Social.create_value(writer_profile, root_group, %{
+                 "content" => "root unread value",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _hidden_child_value} =
+               Social.create_value(writer_profile, hidden_child_group, %{
+                 "content" => "hidden unread value",
+                 "content_format" => :markdown
+               })
+
+      unread_counts =
+        Social.list_group_unread_counts(owner_profile, [
+          root_group,
+          child_group,
+          grandchild_group
+        ])
+
+      assert unread_counts[root_group.id] == 2
+      assert unread_counts[child_group.id] == 2
+      assert unread_counts[grandchild_group.id] == 1
+
+      writer_unread_counts =
+        Social.list_group_unread_counts(writer_profile, [
+          root_group,
+          child_group,
+          grandchild_group
+        ])
+
+      assert writer_unread_counts[root_group.id] == 0
+      assert writer_unread_counts[child_group.id] == 0
+      assert writer_unread_counts[grandchild_group.id] == 0
+
+      assert :ok = Social.mark_group_values_read(owner_profile, child_group)
+
+      unread_counts_after_read =
+        Social.list_group_unread_counts(owner_profile, [
+          root_group,
+          child_group,
+          grandchild_group
+        ])
+
+      assert unread_counts_after_read[root_group.id] == 1
+      assert unread_counts_after_read[child_group.id] == 1
+      assert unread_counts_after_read[grandchild_group.id] == 1
+    end
+  end
 end

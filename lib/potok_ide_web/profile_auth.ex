@@ -27,6 +27,11 @@ defmodule PotokIdeWeb.ProfileAuth do
         pending_invitations_count(socket.assigns[:current_profile])
       end)
 
+    socket =
+      Phoenix.Component.assign_new(socket, :root_group_unread_count, fn ->
+        root_group_unread_count(socket.assigns[:current_profile])
+      end)
+
     socket = sync_profile_subscription(socket)
 
     socket =
@@ -51,8 +56,13 @@ defmodule PotokIdeWeb.ProfileAuth do
                   :pending_invitations_count,
                   pending_invitations_count(current_profile)
                 )
+                |> Phoenix.Component.assign(
+                  :root_group_unread_count,
+                  root_group_unread_count(current_profile)
+                )
                 |> sync_profile_subscription(previous_profile)
                 |> push_current_profile_updated(current_profile)
+                |> push_root_group_unread_count_updated(root_group_unread_count(current_profile))
                 |> push_pending_invitations_count_updated(
                   pending_invitations_count(current_profile)
                 )
@@ -79,6 +89,16 @@ defmodule PotokIdeWeb.ProfileAuth do
              socket
              |> Phoenix.Component.assign(:pending_invitations_count, count)
              |> push_pending_invitations_count_updated(count)}
+
+          {:group_unread_counts_updated, profile_id, _group_id},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            count = root_group_unread_count(current_profile)
+
+            {:cont,
+             socket
+             |> Phoenix.Component.assign(:root_group_unread_count, count)
+             |> push_root_group_unread_count_updated(count)}
 
           _message, socket ->
             {:cont, socket}
@@ -148,6 +168,10 @@ defmodule PotokIdeWeb.ProfileAuth do
     push_event(socket, "pending_invitations_count_updated", %{count: count})
   end
 
+  defp push_root_group_unread_count_updated(socket, count) do
+    push_event(socket, "root_group_unread_count_updated", %{count: count})
+  end
+
   defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
       "" -> nil
@@ -159,4 +183,10 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp pending_invitations_count(nil), do: 0
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
+
+  defp root_group_unread_count(nil), do: 0
+
+  defp root_group_unread_count(profile) do
+    Social.count_group_unread_values(profile, Social.get_root_group!())
+  end
 end

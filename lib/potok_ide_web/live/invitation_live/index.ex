@@ -21,7 +21,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
         <div :for={inv <- @invitations} class="card">
           <div class="card-body">
-            <Components.group_identity group={inv.group} avatar_size="size-12" text_class="text-sm" />
+            <Components.group_identity
+              group={inv.group}
+              avatar_size="size-12"
+              text_class="text-sm"
+              unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
+            />
 
             <div class="text-sm text-base-content/70">
               {gettext("Invited by:")}
@@ -63,7 +68,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> ProfileAuth.sync_profile_subscription()
 
     {:ok,
-     assign(socket, :invitations, Social.list_pending_invitations(socket.assigns.current_profile))}
+      socket
+      |> assign_invitations(socket.assigns.current_profile)}
   end
 
   @impl true
@@ -76,7 +82,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       {:noreply,
        socket
        |> put_flash(:info, gettext("Invitation accepted."))
-       |> assign(:invitations, Social.list_pending_invitations(invitee))}
+        |> assign_invitations(invitee)}
     else
       nil ->
         {:noreply,
@@ -96,8 +102,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   def handle_info({:profile_invitations_updated, profile_id}, socket)
       when socket.assigns.current_profile.id == profile_id do
-    {:noreply,
-     assign(socket, :invitations, Social.list_pending_invitations(socket.assigns.current_profile))}
+    {:noreply, assign_invitations(socket, socket.assigns.current_profile)}
   end
 
   def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
@@ -106,6 +111,23 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     do: {:noreply, socket}
 
   def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
+    do: {:noreply, socket}
+
+  def handle_info({:group_unread_counts_updated, profile_id, _group_id}, socket)
+      when not is_nil(socket.assigns.current_profile) and
+             socket.assigns.current_profile.id == profile_id do
+    {:noreply,
+     socket
+     |> assign(
+       :root_group_unread_count,
+       Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
+     )
+     |> maybe_push_root_group_unread_count()
+     |> assign_group_unread_counts()}
+  end
+
+
+  def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
 
   @impl true
@@ -127,7 +149,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           |> put_private(:previous_current_profile, current_profile)
           |> ProfileAuth.sync_profile_subscription(previous_profile)
 
-        {:noreply, assign(socket, :invitations, Social.list_pending_invitations(current_profile))}
+        {:noreply, assign_invitations(socket, current_profile)}
       end,
       fn socket ->
         socket =
@@ -141,4 +163,60 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   end
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
+
+  defp assign_invitations(socket, nil) do
+    socket
+    |> assign(:invitations, [])
+    |> assign_root_group_unread_count()
+    |> maybe_push_root_group_unread_count()
+    |> assign(:group_unread_counts, %{})
+  end
+
+  defp assign_invitations(socket, profile) do
+    invitations = Social.list_pending_invitations(profile)
+
+    socket
+    |> assign(:invitations, invitations)
+    |> assign_root_group_unread_count()
+    |> maybe_push_root_group_unread_count()
+    |> assign(
+      :group_unread_counts,
+      Social.list_group_unread_counts(profile, Enum.map(invitations, & &1.group))
+    )
+  end
+
+  defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
+    assign(socket, :root_group_unread_count, 0)
+  end
+
+  defp assign_root_group_unread_count(socket) do
+    assign(
+      socket,
+      :root_group_unread_count,
+      Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
+    )
+  end
+
+  defp maybe_push_root_group_unread_count(socket) do
+    if connected?(socket) do
+      push_event(socket, "root_group_unread_count_updated", %{count: socket.assigns.root_group_unread_count})
+    else
+      socket
+    end
+  end
+
+  defp assign_group_unread_counts(%{assigns: %{current_profile: nil}} = socket) do
+    assign(socket, :group_unread_counts, %{})
+  end
+
+  defp assign_group_unread_counts(socket) do
+    assign(
+      socket,
+      :group_unread_counts,
+      Social.list_group_unread_counts(
+        socket.assigns.current_profile,
+        Enum.map(socket.assigns.invitations, & &1.group)
+      )
+    )
+  end
 end

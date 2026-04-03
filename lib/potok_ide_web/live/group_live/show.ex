@@ -38,6 +38,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 avatar_size="size-10"
                 text_class="text-md"
+                unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               />
             </div>
           </div>
@@ -163,6 +164,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             children={@streams.children}
             pagination={@children_pagination}
+            unread_counts={@group_unread_counts}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -222,8 +224,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
        |> assign(:values_pagination, default_pagination(@values_page_size))
+      |> assign(:loaded_children, [])
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
+      |> assign(:group_unread_counts, %{})
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -599,6 +603,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
+  def handle_info(
+        {:group_unread_counts_updated, profile_id, _group_id},
+        %{assigns: %{current_profile: %{id: current_profile_id}}} = socket
+      )
+      when profile_id == current_profile_id do
+    {:noreply,
+     socket
+     |> assign(:root_group_unread_count, Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!()))
+     |> assign_group_unread_counts()
+     |> maybe_push_root_group_unread_count()
+     |> restream_loaded_children()}
+  end
+
+  def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
+    do: {:noreply, socket}
+
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do
     ProfileAuth.handle_current_profile_change(
@@ -640,6 +660,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_children(group, active_tab)
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> maybe_mark_group_values_read(group, active_tab)
+    |> assign_root_group_unread_count()
+    |> maybe_push_root_group_unread_count()
+    |> assign_group_unread_counts()
     |> maybe_load_value_parent_options(group, active_tab)
   end
 
@@ -735,6 +759,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp restream_members(socket) do
     Enum.reduce(socket.assigns.loaded_members, socket, fn member, acc ->
       stream_insert(acc, :members, member)
+    end)
+  end
+
+  defp restream_loaded_children(socket) do
+    Enum.reduce(socket.assigns.loaded_children, socket, fn child_group, acc ->
+      stream_insert(acc, :children, child_group)
     end)
   end
 
@@ -845,10 +875,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         child_groups_page(group, current_profile, socket.assigns.children_pagination)
 
       socket
+      |> assign(:loaded_children, children_page.entries)
       |> assign(:children_pagination, pagination_metadata(children_page))
       |> stream(:children, children_page.entries, reset: true)
     else
-      socket
+      assign(socket, :loaded_children, [])
     end
   end
 
@@ -890,6 +921,49 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if needs_value_parent_options?(socket, active_tab) do
       socket
       |> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
+    else
+      socket
+    end
+  end
+
+  defp maybe_mark_group_values_read(socket, group, active_tab) do
+    if needs_values?(group, active_tab) and socket.assigns.current_profile do
+      _ = Social.mark_group_values_read(socket.assigns.current_profile, group)
+      socket
+    else
+      socket
+    end
+  end
+
+  defp assign_group_unread_counts(%{assigns: %{current_profile: nil}} = socket) do
+    assign(socket, :group_unread_counts, %{})
+  end
+
+  defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
+    groups = [group | Map.get(socket.assigns, :loaded_children, [])]
+
+    assign(
+      socket,
+      :group_unread_counts,
+      Social.list_group_unread_counts(socket.assigns.current_profile, groups)
+    )
+  end
+
+  defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
+    assign(socket, :root_group_unread_count, 0)
+  end
+
+  defp assign_root_group_unread_count(socket) do
+    assign(
+      socket,
+      :root_group_unread_count,
+      Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
+    )
+  end
+
+  defp maybe_push_root_group_unread_count(socket) do
+    if connected?(socket) do
+      push_event(socket, "root_group_unread_count_updated", %{count: socket.assigns.root_group_unread_count})
     else
       socket
     end

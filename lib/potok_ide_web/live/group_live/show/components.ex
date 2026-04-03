@@ -175,6 +175,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :group, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
+  attr :unread_count, :integer, default: 0
 
   def group_identity(assigns) do
     ~H"""
@@ -218,6 +219,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               do: "📢",
               else: "🔐"}
           </div>
+
+          <span
+            :if={@unread_count > 0}
+            id={"group-unread-badge-#{@group.id}"}
+            class="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+          >
+            {unread_badge_label(@unread_count)}
+          </span>
         </div>
 
         <div
@@ -232,6 +241,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     </.link>
     """
   end
+
+  defp unread_badge_label(count) when count > 999, do: "999+"
+  defp unread_badge_label(count), do: Integer.to_string(count)
 
   attr :value, :map, required: true
   attr :dom_id, :string, required: true

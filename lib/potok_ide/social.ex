@@ -340,6 +340,7 @@ defmodule PotokIde.Social do
           broadcast_profile_invitations_updated(invitee)
           broadcast_pending_invitations_count_updated(invitee)
           broadcast_group_updated(inv.group_id)
+          broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
           notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
           {:ok, inv}
 
@@ -365,14 +366,18 @@ defmodule PotokIde.Social do
         |> Map.put_new("creator_id", creator.id)
         |> Map.put_new("group_id", group.id)
 
-      %Value{}
-      |> Value.changeset(attrs)
-      |> Repo.insert()
+      Multi.new()
+      |> Multi.insert(:value, Value.changeset(%Value{}, attrs))
+      |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
+        upsert_group_value_read(repo, creator.id, group.id, value.id)
+      end)
+      |> Repo.transaction()
       |> case do
-        {:ok, value} = ok ->
+        {:ok, %{value: value}} ->
           broadcast_group_updated(group)
+          broadcast_group_unread_counts_updated(group)
           notify_group_members_of_new_value(creator, group, value)
-          ok
+          {:ok, value}
 
         error ->
           error
@@ -406,6 +411,7 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, deleted_value} = ok ->
           broadcast_group_updated(deleted_value.group_id)
+          broadcast_group_unread_counts_updated(deleted_value.group_id)
           ok
 
         error ->
@@ -542,6 +548,46 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
+  def mark_group_values_read(nil, _group), do: :ok
+
+  def mark_group_values_read(%Profile{} = profile, %Group{} = group) do
+    case latest_group_value_id(group) do
+      nil ->
+        :ok
+
+      latest_value_id ->
+        case upsert_group_value_read(Repo, profile.id, group.id, latest_value_id) do
+          {:ok, _last_read_value_id} ->
+            broadcast_profile_group_unread_counts_updated(profile, group.id)
+            :ok
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  def list_group_unread_counts(nil, _groups), do: %{}
+
+  def list_group_unread_counts(%Profile{} = profile, groups) when is_list(groups) do
+    group_ids =
+      groups
+      |> Enum.map(&extract_group_id/1)
+      |> Enum.reject(&is_nil/1)
+      |> Enum.uniq()
+
+    case group_ids do
+      [] -> %{}
+      _ -> unread_counts_query(profile.id, group_ids)
+    end
+  end
+
+  def count_group_unread_values(%Profile{} = profile, %Group{} = group) do
+    profile
+    |> list_group_unread_counts([group])
+    |> Map.get(group.id, 0)
+  end
+
   def list_pending_invitations(%Profile{} = invitee) do
     import Ecto.Query, only: [from: 2]
 
@@ -666,11 +712,6 @@ defmodule PotokIde.Social do
 
         {:error, :no_push_subscriptions} ->
           :ok
-
-        {:error, reason} ->
-          Logger.warning(
-            "Failed to deliver group value push notification to account #{account.id}: #{inspect(reason)}"
-          )
       end
     end)
   end
@@ -761,18 +802,13 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  defp deliver_profile_notification(%Account{} = account, payload, context, profile_id) do
+  defp deliver_profile_notification(%Account{} = account, payload, _context, _profile_id) do
     case Accounts.deliver_push_notification(account, payload) do
       {:ok, _results} ->
         :ok
 
       {:error, :no_push_subscriptions} ->
         :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Failed to deliver #{context} push notification for profile #{profile_id} to account #{account.id}: #{inspect(reason)}"
-        )
     end
   end
 
@@ -861,6 +897,81 @@ defmodule PotokIde.Social do
 
   defp notification_excerpt(_content), do: nil
 
+  defp extract_group_id(%Group{id: id}), do: id
+  defp extract_group_id(id) when is_integer(id), do: id
+  defp extract_group_id(_group), do: nil
+
+  defp latest_group_value_id(%Group{} = group) do
+    from(v in Value,
+      where: v.group_id == ^group.id,
+      select: max(v.id)
+    )
+    |> Repo.one()
+  end
+
+  defp unread_counts_query(profile_id, group_ids) do
+    sql = """
+    WITH RECURSIVE requested AS (
+      SELECT UNNEST($2::bigint[]) AS root_id
+    ),
+    subtree(root_id, group_id) AS (
+      SELECT r.root_id, g.id
+      FROM requested r
+      JOIN groups g ON g.id = r.root_id
+
+      UNION ALL
+
+      SELECT s.root_id, child.id
+      FROM subtree s
+      JOIN groups child ON child.parent_id = s.group_id
+    ),
+    counts AS (
+      SELECT
+        s.root_id,
+        COUNT(v.id) FILTER (WHERE v.id > COALESCE(gvr.last_read_value_id, 0))::bigint AS unread_count
+      FROM subtree s
+      JOIN groups g ON g.id = s.group_id
+      JOIN group_memberships gm
+        ON gm.group_id = s.group_id AND gm.profile_id = $1
+      LEFT JOIN values v ON v.group_id = s.group_id AND g.is_root = FALSE
+      LEFT JOIN group_value_reads gvr
+        ON gvr.group_id = s.group_id AND gvr.profile_id = $1
+      GROUP BY s.root_id
+    )
+    SELECT r.root_id, COALESCE(c.unread_count, 0)::bigint AS unread_count
+    FROM requested r
+    LEFT JOIN counts c ON c.root_id = r.root_id
+    """
+
+    case Repo.query(sql, [profile_id, group_ids]) do
+      {:ok, %{rows: rows}} ->
+        Map.new(rows, fn [group_id, unread_count] ->
+          {group_id, unread_count}
+        end)
+
+      {:error, _reason} ->
+        Map.new(group_ids, &{&1, 0})
+    end
+  end
+
+  defp upsert_group_value_read(repo, profile_id, group_id, last_read_value_id) do
+    now = DateTime.utc_now() |> DateTime.truncate(:second)
+
+    sql = """
+    INSERT INTO group_value_reads (profile_id, group_id, last_read_value_id, inserted_at, updated_at)
+    VALUES ($1, $2, $3, $4, $5)
+    ON CONFLICT (profile_id, group_id)
+    DO UPDATE SET
+      last_read_value_id = GREATEST(COALESCE(group_value_reads.last_read_value_id, 0), EXCLUDED.last_read_value_id),
+      updated_at = EXCLUDED.updated_at
+    """
+
+    case repo.query(sql, [profile_id, group_id, last_read_value_id, now, now]) do
+      {:ok, _result} -> {:ok, last_read_value_id}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   defp account_topic(account_id), do: "accounts:#{account_id}"
   defp profile_topic(profile_id), do: "profiles:#{profile_id}"
   defp group_topic(group_id), do: "groups:#{group_id}"
@@ -898,6 +1009,34 @@ defmodule PotokIde.Social do
       profile_topic(profile_id),
       {:pending_invitations_count_updated, profile_id, count_pending_invitations(profile)}
     )
+  end
+
+  defp broadcast_profile_group_unread_counts_updated(%Profile{id: profile_id}, group_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:group_unread_counts_updated, profile_id, group_id}
+    )
+  end
+
+  defp broadcast_group_unread_counts_updated(%Group{id: group_id}) do
+    broadcast_group_unread_counts_updated(group_id)
+  end
+
+  defp broadcast_group_unread_counts_updated(group_id) when is_integer(group_id) do
+    from(gm in GroupMembership,
+      where: gm.group_id == ^group_id,
+      select: gm.profile_id,
+      distinct: true
+    )
+    |> Repo.all()
+    |> Enum.each(fn profile_id ->
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        profile_topic(profile_id),
+        {:group_unread_counts_updated, profile_id, group_id}
+      )
+    end)
   end
 
   defp broadcast_profile_updated(%Profile{id: profile_id}) do

@@ -78,6 +78,7 @@ defmodule PotokIdeWeb.AccountAuth do
         :pending_invitations_count,
         pending_invitations_count_for_profile(current_profile)
       )
+      |> assign(:root_group_unread_count, root_group_unread_count_for_profile(current_profile))
       |> maybe_reissue_account_session_token(account, token_inserted_at)
     else
       nil ->
@@ -85,6 +86,7 @@ defmodule PotokIdeWeb.AccountAuth do
         |> assign(:current_scope, Scope.for_account(nil))
         |> assign(:current_profile, nil)
         |> assign(:pending_invitations_count, 0)
+        |> assign(:root_group_unread_count, 0)
     end
   end
 
@@ -284,6 +286,9 @@ defmodule PotokIdeWeb.AccountAuth do
     |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
       pending_invitations_count_for_profile(socket.assigns[:current_profile])
     end)
+    |> Phoenix.Component.assign_new(:root_group_unread_count, fn ->
+      root_group_unread_count_for_profile(socket.assigns[:current_profile])
+    end)
   end
 
   defp current_profile_for_scope(%Scope{account: %Accounts.Account{} = account}),
@@ -300,6 +305,11 @@ defmodule PotokIdeWeb.AccountAuth do
 
   defp pending_invitations_count_for_profile(profile),
     do: Social.count_pending_invitations(profile)
+
+  defp root_group_unread_count_for_profile(nil), do: 0
+
+  defp root_group_unread_count_for_profile(profile),
+    do: Social.count_group_unread_values(profile, Social.get_root_group!())
 
   @doc "Returns the path to redirect to after log in."
   # the account was already logged in, redirect to settings

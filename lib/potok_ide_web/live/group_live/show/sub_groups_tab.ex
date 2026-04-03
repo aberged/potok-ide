@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :children, :any, required: true
   attr :pagination, :map, required: true
+  attr :unread_counts, :map, required: true
 
   def panel(assigns) do
     ~H"""
@@ -24,6 +25,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               group={group}
               avatar_size="size-10"
               text_class="text-sm"
+              unread_count={Map.get(@unread_counts, group.id, 0)}
             />
           </li>
         </ul>

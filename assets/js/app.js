@@ -485,6 +485,7 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   const brandLogo = document.getElementById("nav-brand-logo")
   const invitationsLink = document.getElementById("nav-invitations-link")
   const invitationsBadge = document.getElementById("nav-invitations-count-badge")
+  const rootGroupBadge = document.getElementById("nav-root-group-unread-badge")
   const selectedProfileCard = document.getElementById("nav-selected-profile-card")
   const selectedProfileName = document.getElementById("nav-selected-profile-name")
   const defaultTitle = brandTitle?.dataset.defaultTitle || ""
@@ -520,6 +521,11 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
     if (invitationsBadge) {
       invitationsBadge.hidden = true
       invitationsBadge.textContent = ""
+    }
+
+    if (rootGroupBadge) {
+      rootGroupBadge.hidden = true
+      rootGroupBadge.textContent = ""
     }
 
     if (brandAvatar) {
@@ -577,6 +583,19 @@ window.addEventListener("phx:pending_invitations_count_updated", ({detail}) => {
 
   invitationsBadge.hidden = count <= 0
   invitationsBadge.textContent = count > 99 ? "99+" : String(count)
+})
+
+window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
+  const rootGroupBadge = document.getElementById("nav-root-group-unread-badge")
+
+  if (!rootGroupBadge) {
+    return
+  }
+
+  const count = Number(detail.count || 0)
+
+  rootGroupBadge.hidden = count <= 0
+  rootGroupBadge.textContent = count > 999 ? "999+" : String(count)
 })
 
 // connect if there are any LiveViews on the page

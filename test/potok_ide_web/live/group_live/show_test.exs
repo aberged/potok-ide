@@ -748,6 +748,131 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert render(lv) =~ "realtime value"
     end
 
+    test "aggregates subgroup unread badges and updates them in realtime", %{conn: conn} do
+      owner_account = account_fixture()
+      writer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "badge-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, writer_profile} =
+        Social.create_profile_for_account(writer_account, %{
+          username: "badge-writer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      root_group = Social.get_root_group!()
+      child_group = create_child_group!(owner_profile, "badge-child-group")
+
+      {:ok, hidden_child_group} =
+        Social.create_group(writer_profile, root_group, %{
+          "name" => "writer-private-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, grandchild_group} =
+        Social.create_group(owner_profile, child_group, %{
+          "name" => "badge-grandchild-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, child_group, writer_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, writer_profile)
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, grandchild_group, writer_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, writer_profile)
+
+      {:ok, root_lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
+      refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
+      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+
+      assert {:ok, _value} =
+               Social.create_value(writer_profile, root_group, %{
+                 "content" => "root unread value",
+                 "content_format" => :markdown
+               })
+
+      refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
+      refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
+      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+
+      assert {:ok, _value} =
+               Social.create_value(writer_profile, hidden_child_group, %{
+                 "content" => "hidden unread value",
+                 "content_format" => :markdown
+               })
+
+      refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
+      refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
+      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+
+      assert {:ok, _value} =
+               Social.create_value(writer_profile, child_group, %{
+                 "content" => "first unread value",
+                 "content_format" => :markdown
+               })
+
+            assert eventually(fn ->
+               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
+                has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+              end, 80)
+
+        assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
+
+      assert {:ok, _value} =
+               Social.create_value(writer_profile, grandchild_group, %{
+                 "content" => "second unread value",
+                 "content_format" => :markdown
+               })
+
+            assert eventually(fn ->
+               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "2") and
+                has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "2")
+              end, 80)
+
+        assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 2})
+
+      {:ok, child_lv, _html} =
+        Phoenix.ConnTest.build_conn()
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{child_group.id}")
+
+      assert has_element?(child_lv, "#group-unread-badge-#{child_group.id}", "1")
+      assert_push_event(child_lv, "root_group_unread_count_updated", %{count: 1})
+
+            assert eventually(fn ->
+               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
+                 has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+              end, 80)
+
+      assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
+    end
+
     test "allows the creator profile to delete a value", %{conn: conn} do
       account = account_fixture()
 
