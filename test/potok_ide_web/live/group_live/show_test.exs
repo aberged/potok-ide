@@ -401,6 +401,57 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-panel-sub-groups a", "other-child-group")
     end
 
+    test "shows the current group path in the sub-groups tab", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "group-path-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, parent_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "path-parent-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, current_group} =
+        Social.create_group(profile, parent_group, %{
+          "name" => "path-current-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{current_group.id}/sub_groups")
+
+      assert has_element?(
+               lv,
+               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}']",
+               root_group.name
+             )
+
+      assert has_element?(
+               lv,
+               "#group-path a[href='#{~p"/groups/#{parent_group.id}/sub_groups"}']",
+               "path-parent-group"
+             )
+
+      assert has_element?(lv, "#group-path span", "path-current-group")
+    end
+
     test "paginates sub-groups with streams", %{conn: conn} do
       account = account_fixture()
 

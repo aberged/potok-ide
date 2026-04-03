@@ -27,7 +27,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
-            <.link navigate={~p"/groups/#{@group.parent_id}"} class="link text-xl no-underline">
+            <.link navigate={~p"/groups/#{@group.parent_id}/sub_groups"} class="link text-xl no-underline">
               {"❮"}
             </.link>
           </div>
@@ -162,6 +162,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
+            group={@group}
+            current_profile={@current_profile}
             children={@streams.children}
             pagination={@children_pagination}
             unread_counts={@group_unread_counts}
@@ -172,6 +174,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pagination={@members_pagination}
             current_profile={@current_profile}
             online_profile_ids={@online_profile_ids}
+            group={@group}
           />
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil}
@@ -195,6 +198,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@is_member and @active_tab == "invite_profile"}
             invite_form={@invite_form}
             invite_form_version={@invite_form_version}
+            group={@group}
+            current_profile={@current_profile}
           />
         </div>
       </div>

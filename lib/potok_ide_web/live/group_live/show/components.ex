@@ -1,6 +1,8 @@
 defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social
+
   import Phoenix.HTML, only: [raw: 1]
 
   attr :id, :string, required: true
@@ -73,6 +75,40 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     >
       {@label}
     </button>
+    """
+  end
+
+  attr :group, :map, required: true
+  attr :current_profile, :map, default: nil
+  attr :id, :string, default: "group-path"
+  attr :class, :any, default: nil
+
+  def group_path(assigns) do
+    assigns =
+      assign(assigns, :group_path, Social.list_visible_group_path_for_profile(assigns.group, assigns.current_profile))
+
+    ~H"""
+    <div id={@id} class={["px-4 py-4 text-sm text-base-content/60", @class]}>
+      <nav aria-label={gettext("Current group path")} class="flex flex-wrap items-center align-center gap-x-2 gap-y-1">
+        <%= for {path_group, idx} <- Enum.with_index(@group_path) do %>
+          <%= if idx > 0 do %>
+            <span aria-hidden="true" class="text-base-content/35">/</span>
+          <% end %>
+
+          <%= if path_group.id == @group.id do %>
+            <span class="font-medium text-base-content">{path_group.name}</span>
+          <% else %>
+            <.link
+              navigate={~p"/groups/#{path_group.id}/sub_groups"}
+              class="transition-colors hover:text-base-content"
+            >
+              {if path_group.is_root, do: "", else: path_group.name}
+              <.icon :if={path_group.is_root} name="hero-home" class="size-4" />
+            </.link>
+          <% end %>
+        <% end %>
+      </nav>
+    </div>
     """
   end
 
@@ -221,7 +257,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
 
           <span
-            :if={@unread_count > 0}
+            :if={!@group.is_root and @unread_count > 0}
             id={"group-unread-badge-#{@group.id}"}
             class="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
           >

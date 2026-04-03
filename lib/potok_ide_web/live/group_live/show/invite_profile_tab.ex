@@ -1,14 +1,23 @@
 defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
   use PotokIdeWeb, :html
 
+  alias PotokIdeWeb.GroupLive.Show.Components
+
   attr :invite_form, :any, required: true
   attr :invite_form_version, :integer, required: true
+  attr :group, :map, required: true
+  attr :current_profile, :map, default: nil
 
   def panel(assigns) do
     ~H"""
     <div id="group-panel-invite-profile" class="card">
+      <Components.group_path
+        group={@group}
+        current_profile={@current_profile}
+        class="shadow-md"
+      />
       <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
-        <h3 class="card-title">{gettext("Invite profile")}</h3>
+        <h3 class="card-title">{gettext("Invite profile")} u 👆 grupu</h3>
         <.form for={@invite_form} id={"group-invite-form-#{@invite_form_version}"} phx-submit="invite">
           <.input
             field={@invite_form[:username]}

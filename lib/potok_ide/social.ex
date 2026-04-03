@@ -465,6 +465,19 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def list_group_path(%Group{} = group) do
+    do_list_group_path(group, [])
+  end
+
+  def list_visible_group_path_for_profile(%Group{} = group, nil), do: [group]
+
+  def list_visible_group_path_for_profile(%Group{} = group, %Profile{} = profile) do
+    list_group_path(group)
+    |> Enum.filter(fn path_group ->
+      path_group.id == group.id or path_group.is_public or member_of_group?(profile, path_group)
+    end)
+  end
+
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
@@ -604,6 +617,13 @@ defmodule PotokIde.Social do
 
   def count_pending_invitations(%Profile{} = invitee) do
     count_pending_group_invitations(invitee) + count_pending_profile_invitations(invitee)
+  end
+
+  defp do_list_group_path(%Group{parent_id: nil} = group, acc), do: [group | acc]
+
+  defp do_list_group_path(%Group{parent_id: parent_id} = group, acc) when is_integer(parent_id) do
+    parent = get_group!(parent_id)
+    do_list_group_path(parent, [group | acc])
   end
 
   defp count_pending_group_invitations(%Profile{} = invitee) do

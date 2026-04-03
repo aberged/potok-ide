@@ -3,6 +3,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   alias PotokIdeWeb.GroupLive.Show.Components
 
+  attr :group, :map, required: true
+  attr :current_profile, :map, default: nil
   attr :children, :any, required: true
   attr :pagination, :map, required: true
   attr :unread_counts, :map, required: true
@@ -10,7 +12,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   def panel(assigns) do
     ~H"""
     <div id="group-panel-sub-groups" class="card">
-      <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
+      <Components.group_path
+        :if={!@group.is_root}
+        group={@group}
+        current_profile={@current_profile}
+        class="shadow-md"
+      />
+
+      <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}

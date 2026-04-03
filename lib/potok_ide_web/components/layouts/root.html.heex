@@ -194,26 +194,6 @@
 
           <div class="flex items-right gap-4 items-center">
             <.link
-              id="nav-invitations-link"
-              href={~p"/invitations"}
-              alt={gettext("Invitations")}
-              class="relative"
-              aria-label={gettext("Invitations")}
-              hidden={is_nil(@current_profile)}
-            >
-              <.icon name="hero-inbox-arrow-down" class="size-6" />
-              <span
-                id="nav-invitations-count-badge"
-                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
-                hidden={@pending_invitations_count <= 0}
-              >
-                {if(@pending_invitations_count > 99,
-                  do: "99+",
-                  else: @pending_invitations_count
-                )}
-              </span>
-            </.link>
-            <.link
               id="nav-root-group-link"
               href={~p"/"}
               alt={gettext("Groups")}
@@ -227,6 +207,26 @@
                 hidden={@root_group_unread_count <= 0}
               >
                 {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
+              </span>
+            </.link>
+            <.link
+              id="nav-invitations-link"
+              href={~p"/invitations"}
+              alt={gettext("Invitations")}
+              class="relative"
+              aria-label={gettext("Invitations")}
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-inbox-arrow-down" class="size-6" />
+              <span
+                id="nav-invitations-count-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@pending_invitations_count <= 0}
+              >
+                {if(@pending_invitations_count > 999,
+                  do: "999+",
+                  else: @pending_invitations_count
+                )}
               </span>
             </.link>
             <.link
