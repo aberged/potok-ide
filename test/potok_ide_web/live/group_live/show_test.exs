@@ -651,6 +651,189 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(lv, "#group-panel-create-group")
       assert render(lv) =~ "create-group-options-profile: parent option value"
+      assert has_element?(lv, "input[name='group[has_public_chat]'][type='hidden']")
+      assert has_element?(lv, "input[name='group[has_public_chat]'][type='checkbox']")
+    end
+
+    test "shows edit group only to members and persists edits", %{conn: conn} do
+      owner_account = account_fixture()
+      viewer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "edit-group-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, _viewer_profile} =
+        Social.create_profile_for_account(viewer_account, %{
+          username: "edit-group-viewer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      viewer_account = Accounts.get_account!(viewer_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "editable-group",
+          "description" => "before",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "has_public_chat" => false
+        })
+
+      {:ok, owner_lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      assert has_element?(owner_lv, "#group-tab-edit-group")
+      assert has_element?(owner_lv, "#group-panel-edit-group")
+
+      owner_lv
+      |> form("#group-edit-form", %{
+        "group" => %{
+          "name" => "edited-group",
+          "description" => "after",
+          "group_picture_url" => "https://example.com/edited-group.png",
+          "is_public" => "true",
+          "has_public_chat" => "true"
+        }
+      })
+      |> render_submit()
+
+      updated_group = Social.get_group!(group.id)
+
+      assert updated_group.name == "edited-group"
+      assert updated_group.description == "after"
+      assert updated_group.group_picture_url == "https://example.com/edited-group.png"
+      assert updated_group.has_public_chat
+
+      {:ok, viewer_lv, _html} =
+        conn
+        |> log_in_account(viewer_account)
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      refute has_element?(viewer_lv, "#group-tab-edit-group")
+      refute has_element?(viewer_lv, "#group-panel-edit-group")
+      refute has_element?(viewer_lv, "#group-edit-form")
+      assert render(viewer_lv) =~
+               "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+    end
+
+    test "shows public chat status and allows enabling it in the create-group form", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "public-chat-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, existing_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "public-chat-existing-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "has_public_chat" => true
+        })
+
+      {:ok, existing_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{existing_group.id}")
+
+      assert has_element?(
+               existing_lv,
+               "#group-public-chat-badge-#{existing_group.id}",
+               "Public chat enabled"
+             )
+
+      {:ok, create_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}/create_group")
+
+      create_lv
+      |> form("#group-panel-create-group form", %{
+        "group" => %{
+          "name" => "created-with-public-chat",
+          "description" => "",
+          "group_picture_url" => "",
+          "has_public_chat" => "true",
+          "is_public" => "false"
+        }
+      })
+      |> render_submit()
+
+      created_group =
+        root_group
+        |> Social.list_child_groups_for_profile(profile, limit: 20)
+        |> Enum.find(&(&1.name == "created-with-public-chat"))
+
+      assert created_group
+      assert created_group.has_public_chat
+    end
+
+    test "shows group description to non-members on the values tab", %{conn: conn} do
+      owner_account = account_fixture()
+      viewer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "description-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, _viewer_profile} =
+        Social.create_profile_for_account(viewer_account, %{
+          username: "description-viewer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      viewer_account = Accounts.get_account!(viewer_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "description-group",
+          "description" => "# Welcome\n\nThis is a **public** group.",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "has_public_chat" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(viewer_account)
+        |> live(~p"/groups/#{group.id}")
+
+      refute has_element?(lv, "#group-panel-values")
+      assert has_element?(lv, "#group-panel-description")
+      assert render(lv) =~ "Group description"
+      assert render(lv) =~ "Welcome"
+      assert render(lv) =~ "<strong>public</strong>"
     end
 
     test "renders value content as markdown and html", %{conn: conn} do

@@ -10,6 +10,7 @@ defmodule PotokIde.Social.Group do
     field :group_picture_url, :string
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
+    field :has_public_chat, :boolean, default: false
     field :is_public, :boolean, default: false
     field :is_root, :boolean, default: false
 
@@ -35,13 +36,30 @@ defmodule PotokIde.Social.Group do
       :group_picture_url,
       :description,
       :description_format,
+      :has_public_chat,
       :is_public,
       :is_root,
       :creator_id,
       :parent_id,
       :parent_value_id
     ])
-    |> validate_required([:name, :description_format, :is_public, :is_root])
+    |> validate_required([:name, :description_format, :has_public_chat, :is_public, :is_root])
+    |> validate_length(:name, min: 1, max: 120)
+    |> validate_length(:group_picture_url, max: 2048)
+    |> validate_root_constraints()
+  end
+
+  def update_changeset(group, attrs) do
+    group
+    |> cast(attrs, [
+      :name,
+      :group_picture_url,
+      :description,
+      :description_format,
+      :has_public_chat,
+      :is_public
+    ])
+    |> validate_required([:name, :description_format, :has_public_chat, :is_public])
     |> validate_length(:name, min: 1, max: 120)
     |> validate_length(:group_picture_url, max: 2048)
     |> validate_root_constraints()

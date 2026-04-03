@@ -32,6 +32,7 @@ defmodule PotokIde.SocialTest do
         })
 
       assert group.group_picture_url == "https://example.com/group.png"
+      assert group.has_public_chat == false
     end
   end
 

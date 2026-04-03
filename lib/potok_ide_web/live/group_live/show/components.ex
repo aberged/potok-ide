@@ -56,6 +56,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :tab, :string, required: true
   attr :active_tab, :string, required: true
   attr :label, :string, required: true
+  attr :icon, :string, default: nil
+  attr :icon_class, :string, default: "size-4"
 
   def group_tab_button(assigns) do
     ~H"""
@@ -66,14 +68,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       phx-click="switch_tab"
       phx-value-tab={@tab}
       class={[
-        "w-full rounded-md px-4 py-2 text-left text-sm font-medium transition-colors",
+        if(@icon != nil and (@label == nil or @label == ""), do: "", else: "w-full"),
+        "flex flex-row items-center rounded-md px-4 py-2 text-left text-sm font-medium transition-colors",
         if(@active_tab == @tab,
           do: "bg-base-content text-base-100 shadow-sm",
           else: "bg-base-200 text-base-content/70 hover:bg-base-300 hover:text-base-content"
         )
       ]}
     >
-      {@label}
+      <.icon :if={@icon} name={@icon} class={@icon_class} />
+      <span :if={@label != nil and @label != ""} class="ml-2 truncate">{@label}</span>
     </button>
     """
   end
@@ -103,7 +107,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               class="transition-colors hover:text-base-content"
             >
               {if path_group.is_root, do: "", else: path_group.name}
-              <.icon :if={path_group.is_root} name="hero-home" class="size-4" />
+              <.icon :if={path_group.is_root} name="hero-globe-alt" class="size-4" />
             </.link>
           <% end %>
         <% end %>
@@ -238,7 +242,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
                 "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
               ]}
             >
-              <.icon name="hero-home" class="size-4" />
+              <.icon name="hero-globe-alt" class="size-4" />
             </div>
           <% else %>
             <div class={[
@@ -246,7 +250,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
             ]}>
               <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
-              <.icon :if={@group.is_root} name="hero-home" class="size-4" />
+              <.icon :if={@group.is_root} name="hero-globe-alt" class="size-4" />
             </div>
           <% end %>
 
@@ -272,6 +276,37 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <div class={[@text_class, "truncate font-semibold text-base-content"]}>
             {@group.name}
           </div>
+          <div
+            :if={false}
+            class="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-base-content/70"
+          >
+            <span
+              id={"group-visibility-badge-#{@group.id}"}
+              class={[
+                "inline-flex items-center rounded-full px-2 py-1",
+                if(@group.is_public,
+                  do: "bg-emerald-100 text-emerald-700",
+                  else: "bg-slate-200 text-slate-700"
+                )
+              ]}
+            >
+              {if @group.is_public, do: gettext("Public group"), else: gettext("Private group")}
+            </span>
+            <span
+              id={"group-public-chat-badge-#{@group.id}"}
+              class={[
+                "inline-flex items-center rounded-full px-2 py-1",
+                if(@group.has_public_chat,
+                  do: "bg-sky-100 text-sky-700",
+                  else: "bg-base-200 text-base-content/65"
+                )
+              ]}
+            >
+              {if @group.has_public_chat,
+                do: gettext("Public chat enabled"),
+                else: gettext("Public chat disabled")}
+            </span>
+          </div>
         </div>
       </div>
     </.link>
@@ -280,6 +315,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
+
+  attr :content, :string, default: ""
+  attr :content_format, :any, default: :markdown
+  attr :class, :any, default: nil
+
+  def formatted_content(assigns) do
+    ~H"""
+    <div
+      class={[
+        if(@content_format == :markdown, do: "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6", else: ""),
+        @class
+      ]}
+    >
+      {render_formatted_content(%{content: @content, content_format: @content_format})}
+    </div>
+    """
+  end
 
   attr :value, :map, required: true
   attr :dom_id, :string, required: true
@@ -414,13 +466,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <div class="relative">
             <div
               class={[
-                "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
                 !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
                   "overflow-hidden"
               ]}
               style={collapsed_value_style(@expanded_value_ids, @value)}
             >
-              {render_value_content(@value)}
+              <.formatted_content content={@value.content} content_format={@value.content_format} />
             </div>
 
             <div
@@ -455,20 +506,21 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
-  defp render_value_content(%{content: content, content_format: :html}) do
+  defp render_formatted_content(%{content: content, content_format: :html}) do
     content
-    |> sanitize_html()
+    ## TODO: sanitize properly while allowing basic formatting tags and links, maybe using HtmlSanitizeEx with a custom scrubber
+    #|> sanitize_html()
     |> raw()
   end
 
-  defp render_value_content(%{content: content, content_format: :markdown}) do
+  defp render_formatted_content(%{content: content, content_format: :markdown}) do
     content
     |> Earmark.as_html!(breaks: true)
     |> sanitize_html()
     |> raw()
   end
 
-  defp render_value_content(%{content: content}) when is_binary(content), do: content
+  defp render_formatted_content(%{content: content}) when is_binary(content), do: content
 
   defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.html5(content)
 

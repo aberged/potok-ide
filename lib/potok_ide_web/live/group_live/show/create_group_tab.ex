@@ -36,6 +36,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
             type="checkbox"
           />
           <.input
+            field={@new_group_form[:has_public_chat]}
+            label={gettext("Public chat")}
+            type="checkbox"
+          />
+          <.input
             :if={false}
             field={@new_group_form[:parent_value_id]}
             label={gettext("Reply to value (optional)")}

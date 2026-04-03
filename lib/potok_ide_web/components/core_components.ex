@@ -233,6 +233,39 @@ defmodule PotokIdeWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "radio"} = assigns) do
+    assigns =
+      assign_new(assigns, :checked, fn ->
+        Phoenix.HTML.Form.normalize_value("checkbox", assigns[:value])
+      end)
+
+    ~H"""
+    <div class="fieldset mb-2">
+      <label>
+        <input
+          type="hidden"
+          name={@name}
+          value="false"
+          disabled={@rest[:disabled]}
+          form={@rest[:form]}
+        />
+        <span class="label">
+          <input
+            type="checkbox"
+            id={@id}
+            name={@name}
+            value="true"
+            checked={@checked}
+            class={@class || "checkbox checkbox-sm"}
+            {@rest}
+          />{@label}
+        </span>
+      </label>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
   def input(%{type: "select"} = assigns) do
     ~H"""
     <div class="fieldset mb-2">

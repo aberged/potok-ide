@@ -291,6 +291,29 @@ defmodule PotokIde.Social do
     end
   end
 
+  def update_group(%Profile{} = editor, %Group{} = group, attrs) do
+    if not member_of_group?(editor, group) do
+      {:error, :not_a_group_member}
+    else
+      group
+      |> Group.update_changeset(Map.new(attrs))
+      |> Repo.update()
+      |> case do
+        {:ok, updated_group} ->
+          broadcast_group_updated(updated_group)
+
+          if updated_group.parent_id do
+            broadcast_group_updated(updated_group.parent_id)
+          end
+
+          {:ok, updated_group}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
   def invite_profile_to_group(%Profile{} = inviter, %Group{} = group, %Profile{} = invitee) do
     cond do
       not member_of_group?(inviter, group) ->

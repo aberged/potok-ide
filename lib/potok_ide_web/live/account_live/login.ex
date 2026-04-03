@@ -88,16 +88,16 @@ defmodule PotokIdeWeb.AccountLive.Login do
      |> push_navigate(to: ~p"/accounts/log-in")}
   end
 
-  defp create_account_from_login_request(email) do
-    case Accounts.register_account(%{email: email}) do
-      {:ok, account} ->
-        account
+  # defp create_account_from_login_request(email) do
+  #   case Accounts.register_account(%{email: email}) do
+  #     {:ok, account} ->
+  #       account
 
-      {:error, _changeset} ->
-        # In case of race conditions (or invalid email), just fall back.
-        Accounts.get_account_by_email(email)
-    end
-  end
+  #     {:error, _changeset} ->
+  #       # In case of race conditions (or invalid email), just fall back.
+  #       Accounts.get_account_by_email(email)
+  #   end
+  # end
 
   defp local_mail_adapter? do
     Application.get_env(:potok_ide, PotokIde.Mailer)[:adapter] == Swoosh.Adapters.Local

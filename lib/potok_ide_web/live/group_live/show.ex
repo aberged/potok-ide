@@ -7,6 +7,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
     CreateGroupTab,
+    EditGroupTab,
+    GroupDescriptionTab,
     InviteProfileTab,
     MembersTab,
     SubGroupsTab,
@@ -44,7 +46,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
 
           <button
-            :if={@group.parent_id != nil}
+            :if={@group.is_root or @is_member}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
@@ -58,7 +60,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             />
           </button>
           <button
-            :if={@group.parent_id != nil}
+            :if={@group.parent_id != nil && @is_member}
             id="group-invite-summary"
             type="button"
             phx-click="switch_tab"
@@ -72,7 +74,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             />
           </button>
           <button
-            :if={@group.parent_id == nil}
+            :if={@group.parent_id == nil && @is_member}
             id="group-invite-account"
             type="button"
             phx-click="invite_account"
@@ -85,7 +87,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             />
           </button>
           <button
-            :if={@group.parent_id != nil}
+            :if={@group.parent_id != nil && @is_member}
             id="group-members-summary"
             type="button"
             phx-click="switch_tab"
@@ -111,24 +113,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
             <div class="flex min-w-[14rem] flex-col gap-2">
               <Components.group_tab_button
-                :if={@group.parent_id != nil}
+                :if={@group.parent_id != nil and @is_member}
                 id="group-tab-values"
                 tab="values"
                 active_tab={@active_tab}
                 label={gettext("Values")}
+                icon="hero-document"
               />
               <Components.group_tab_button
+                :if={@group.is_root or @is_member}
                 id="group-tab-sub-groups"
                 tab="sub_groups"
                 active_tab={@active_tab}
                 label={gettext("Sub-groups")}
+                icon="hero-folder-open"
               />
               <Components.group_tab_button
-                :if={@group.parent_id != nil}
+                :if={@group.parent_id != nil && @is_member}
                 id="group-tab-members"
                 tab="members"
                 active_tab={@active_tab}
                 label={gettext("Members")}
+                icon="hero-user-group"
               />
               <Components.group_tab_button
                 :if={@is_member}
@@ -136,6 +142,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 tab="create_group"
                 active_tab={@active_tab}
                 label={gettext("Create sub-group")}
+                icon="hero-folder-plus"
               />
               <Components.group_tab_button
                 :if={@is_member && @group.parent_id != nil}
@@ -143,7 +150,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 tab="invite_profile"
                 active_tab={@active_tab}
                 label={gettext("Invite profile")}
+                icon="hero-user-plus"
               />
+              <div class="flex flex-row gap-2">
+                <Components.group_tab_button
+                  :if={!@group.is_root}
+                  id="group-tab-group-home"
+                  tab="group_home"
+                  active_tab={@active_tab}
+                  label={@group.name}
+                  icon="hero-home"
+                />
+                <Components.group_tab_button
+                  :if={@is_member and !@group.is_root}
+                  id="group-tab-edit-group"
+                  tab="edit_group"
+                  active_tab={@active_tab}
+                  label={""}
+                  icon="hero-cog-6-tooth"
+                />
+              </div>
             </div>
           </Layouts.drop_down_menu>
         </div>
@@ -151,7 +177,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       <div class="min-h-0 flex-1 overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
-          <div :if={!@is_member} class="alert mt-8">
+          <div :if={!@is_member and false} class="alert mt-8">
             <.icon name="hero-lock-closed" class="size-5 shrink-0" />
             <div>
               {gettext(
@@ -177,7 +203,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             group={@group}
           />
           <ValuesTab.panel
-            :if={@active_tab == "values" and @group.parent_id != nil}
+            :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
             values={@streams.values}
             pagination={@values_pagination}
             current_profile={@current_profile}
@@ -188,11 +214,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
             new_value_form={@new_value_form}
             is_member={@is_member}
           />
+          <GroupDescriptionTab.panel
+            :if={@active_tab == "group_home" or (@active_tab == "values" and @group.parent_id != nil and !@is_member)}
+            group={@group}
+            current_profile={@current_profile}
+          />
           <CreateGroupTab.panel
             :if={@is_member and @active_tab == "create_group"}
             new_group_form={@new_group_form}
             format_options={@format_options}
             value_parent_options={@value_parent_options}
+          />
+          <EditGroupTab.panel
+            :if={@is_member and @active_tab == "edit_group"}
+            edit_group_form={@edit_group_form}
+            format_options={@format_options}
+            group={@group}
+            current_profile={@current_profile}
           />
           <InviteProfileTab.panel
             :if={@is_member and @active_tab == "invite_profile"}
@@ -246,6 +284,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:value_parent_options, [])
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
+      |> assign(:edit_group_form, edit_group_form(group))
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
        |> load_group_data(group, active_tab)
@@ -491,6 +530,45 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not create group."))}
+      end
+    end
+  end
+
+  def handle_event("validate_edit_group", %{"group" => attrs}, socket) do
+    changeset =
+      socket.assigns.group
+      |> Group.update_changeset(attrs)
+      |> Map.put(:action, :validate)
+
+    {:noreply, assign(socket, :edit_group_form, to_form(changeset))}
+  end
+
+  def handle_event("save_edit_group", %{"group" => attrs}, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    if not socket.assigns.is_member do
+      {:noreply, put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+    else
+      case Social.update_group(current_profile, group, attrs) do
+        {:ok, updated_group} ->
+          {:noreply,
+           socket
+           |> assign(:group, updated_group)
+           |> assign(:edit_group_form, edit_group_form(updated_group))
+           |> put_flash(:info, gettext("Group updated."))
+           |> refresh_group_data()}
+
+        {:error, :not_a_group_member} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply,
+           assign(socket, :edit_group_form, to_form(Map.put(changeset, :action, :validate)))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not update group."))}
       end
     end
   end
@@ -803,6 +881,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     to_form(Group.changeset(%Group{}, %{is_public: false, description_format: :markdown}))
   end
 
+  defp edit_group_form(group) do
+    to_form(Group.update_changeset(group, %{}))
+  end
+
   defp empty_invite_form do
     to_form(%{"username" => ""}, as: "invite")
   end
@@ -1021,11 +1103,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
-  defp normalize_active_tab(tab, _is_member) when tab in ["values", "sub_groups", "members"],
+  defp normalize_active_tab(tab, _is_member) when tab in ["values", "sub_groups", "members", "group_home"],
     do: tab
 
   defp normalize_active_tab(tab, true)
-       when tab in ["create_group", "invite_profile"],
+      when tab in ["create_group", "edit_group", "invite_profile"],
        do: tab
 
   defp normalize_active_tab(_, _), do: default_active_tab()

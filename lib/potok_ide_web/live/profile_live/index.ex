@@ -97,7 +97,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
             <div class="mt-4 flex flex-row justify-between">
               <.button navigate={~p"/groups"} variant="primary">
-                <.icon name="hero-home" class="size-6" />
+                <.icon name="hero-globe-alt" class="size-6" />
               </.button>
               <.button navigate={~p"/profiles/new"} variant="primary">
                 {gettext("Create profile")}

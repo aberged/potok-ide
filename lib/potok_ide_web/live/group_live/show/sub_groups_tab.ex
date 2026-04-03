@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="shadow-md"
       />
 
-      <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}
