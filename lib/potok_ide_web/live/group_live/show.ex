@@ -137,7 +137,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("Create sub-group")}
               />
               <Components.group_tab_button
-                :if={@is_member}
+                :if={@is_member && @group.parent_id != nil}
                 id="group-tab-invite-profile"
                 tab="invite_profile"
                 active_tab={@active_tab}
