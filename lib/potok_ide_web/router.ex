@@ -92,6 +92,7 @@ defmodule PotokIdeWeb.Router do
       live "/groups/:id/:tab", GroupLive.Show, :show
       live "/groups/:id", GroupLive.Show, :show
       live "/invitations", InvitationLive.Index, :index
+      live "/accounts/register", AccountLive.Registration, :new
     end
 
     live_session :require_authenticated_account,
@@ -114,7 +115,6 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :mount_current_scope}
       ] do
-      live "/accounts/register", AccountLive.Registration, :new
       live "/accounts/log-in", AccountLive.Login, :new
       live "/accounts/log-in/:token", AccountLive.Confirmation, :new
     end

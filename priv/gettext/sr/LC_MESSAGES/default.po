@@ -3,22 +3,22 @@ msgstr ""
 "Language: sr\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide_web/live/group_live/show.ex:387
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:41
 #, elixir-autogen, elixir-format
 msgid "(none)"
 msgstr "(nema)"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:129
+#: lib/potok_ide_web/live/account_live/settings.ex:200
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr "Link za potvrdu promene imejl adrese je poslat na novu adresu."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:35
+#: lib/potok_ide_web/live/invitation_live/index.ex:38
 #, elixir-autogen, elixir-format
 msgid "Accept"
 msgstr "Prihvati"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:14
+#: lib/potok_ide_web/live/account_live/settings.ex:16
 #, elixir-autogen, elixir-format
 msgid "Account Settings"
 msgstr "Podešavanja naloga"
@@ -28,40 +28,30 @@ msgstr "Podešavanja naloga"
 msgid "Account confirmed successfully."
 msgstr "Nalog je uspešno potvrđen."
 
-#: lib/potok_ide_web/components/core_components.ex:368
-#: lib/potok_ide_web/components/layouts.ex:185
-#: lib/potok_ide_web/components/layouts.ex:204
+#: lib/potok_ide_web/components/core_components.ex:366
+#: lib/potok_ide_web/components/layouts.ex:246
+#: lib/potok_ide_web/components/layouts.ex:249
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Radnje"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:47
+#: lib/potok_ide_web/live/profile_live/index.ex:91
 #, elixir-autogen, elixir-format
 msgid "Active"
 msgstr "Aktivan"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:16
-#, elixir-autogen, elixir-format
-msgid "Already registered?"
-msgstr "Već ste registrovani?"
-
-#: lib/potok_ide_web/live/account_live/registration.ex:71
-#, elixir-autogen, elixir-format
-msgid "An email was sent to %{email}, please access it to confirm your account."
-msgstr "Imejl je poslat na %{email}. Otvorite ga da biste potvrdili nalog."
-
-#: lib/potok_ide_web/live/group_live/show.ex:911
+#: lib/potok_ide_web/live/group_live/show.ex:505
 #, elixir-autogen, elixir-format
 msgid "An invitation is already pending."
 msgstr "Pozivnica je već na čekanju."
 
-#: lib/potok_ide_web/components/layouts.ex:72
-#: lib/potok_ide_web/components/layouts.ex:84
+#: lib/potok_ide_web/components/layouts.ex:73
+#: lib/potok_ide_web/components/layouts.ex:86
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Pokušavam ponovno povezivanje"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:41
+#: lib/potok_ide_web/live/invitation_live/index.ex:52
 #, elixir-autogen, elixir-format
 msgid "Back to /"
 msgstr "Nazad na /"
@@ -71,7 +61,7 @@ msgstr "Nazad na /"
 msgid "Build rich, interactive web applications quickly, with less code and fewer moving parts. Join our growing community of developers using Phoenix to craft APIs, HTML5 apps and more, for fun or at scale."
 msgstr "Pravite bogate, interaktivne veb aplikacije brzo, sa manje koda i manje pokretnih delova. Pridružite se rastućoj zajednici programera koji koriste Phoenix za izradu API-ja, HTML5 aplikacija i još mnogo toga, iz zadovoljstva ili u velikim razmerama."
 
-#: lib/potok_ide_web/live/account_live/settings.ex:29
+#: lib/potok_ide_web/live/account_live/settings.ex:33
 #, elixir-autogen, elixir-format
 msgid "Change Email"
 msgstr "Promeni imejl"
@@ -81,7 +71,7 @@ msgstr "Promeni imejl"
 msgid "Changelog"
 msgstr "Dnevnik izmena"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:28
+#: lib/potok_ide_web/live/account_live/settings.ex:32
 #, elixir-autogen, elixir-format
 msgid "Changing..."
 msgstr "Menjanje..."
@@ -96,12 +86,12 @@ msgstr "Potvrdi i prijavi me samo ovaj put"
 msgid "Confirm and stay logged in"
 msgstr "Potvrdi i ostani prijavljen"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:62
+#: lib/potok_ide_web/live/account_live/settings.ex:66
 #, elixir-autogen, elixir-format
 msgid "Confirm new password"
 msgstr "Potvrdite novu lozinku"
 
-#: lib/potok_ide/accounts/account_notifier.ex:71
+#: lib/potok_ide/accounts/account_notifier.ex:72
 #, elixir-autogen, elixir-format
 msgid "Confirmation instructions"
 msgstr "Uputstva za potvrdu"
@@ -112,60 +102,50 @@ msgstr "Uputstva za potvrdu"
 msgid "Confirming..."
 msgstr "Potvrđivanje..."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:75
+#: lib/potok_ide_web/live/invitation_live/index.ex:86
 #, elixir-autogen, elixir-format
 msgid "Could not accept invitation."
 msgstr "Nije moguće prihvatiti pozivnicu."
 
-#: lib/potok_ide_web/live/group_live/show.ex:879
+#: lib/potok_ide_web/live/group_live/show.ex:469
 #, elixir-autogen, elixir-format
 msgid "Could not create group."
 msgstr "Nije moguće napraviti grupu."
 
-#: lib/potok_ide_web/live/group_live/show.ex:738
+#: lib/potok_ide_web/live/group_live/show.ex:292
 #, elixir-autogen, elixir-format
 msgid "Could not create value."
 msgstr "Nije moguće napraviti vrednost."
 
-#: lib/potok_ide_web/live/group_live/show.ex:914
+#: lib/potok_ide_web/live/group_live/show.ex:508
 #, elixir-autogen, elixir-format
 msgid "Could not send invitation."
 msgstr "Nije moguće poslati pozivnicu."
 
-#: lib/potok_ide_web/live/group_live/show.ex:391
-#: lib/potok_ide_web/live/profile_live/index.ex:189
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:45
 #, elixir-autogen, elixir-format
 msgid "Create"
 msgstr "Kreiraj"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:37
-#, elixir-autogen, elixir-format
-msgid "Create an account"
-msgstr "Kreiraj nalog"
-
-#: lib/potok_ide_web/live/profile_live/index.ex:140
+#: lib/potok_ide_web/live/profile_live/index.ex:103
+#: lib/potok_ide_web/live/profile_live/new.ex:32
 #, elixir-autogen, elixir-format
 msgid "Create profile"
 msgstr "Kreiraj profil"
 
-#: lib/potok_ide_web/live/group_live/show.ex:83
-#: lib/potok_ide_web/live/group_live/show.ex:358
+#: lib/potok_ide_web/live/group_live/show.ex:122
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:12
 #, elixir-autogen, elixir-format
 msgid "Create sub-group"
 msgstr "Kreiraj podgrupu"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:36
-#, elixir-autogen, elixir-format
-msgid "Creating account..."
-msgstr "Kreiranje naloga..."
-
-#: lib/potok_ide_web/live/group_live/show.ex:390
-#: lib/potok_ide_web/live/profile_live/index.ex:188
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:44
+#: lib/potok_ide_web/live/profile_live/new.ex:31
 #, elixir-autogen, elixir-format
 msgid "Creating..."
 msgstr "Kreiranje..."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:19
+#: lib/potok_ide_web/live/profile_live/index.ex:28
 #, elixir-autogen, elixir-format
 msgid "Current profile:"
 msgstr "Trenutni profil:"
@@ -175,15 +155,13 @@ msgstr "Trenutni profil:"
 msgid "Deploy your application"
 msgstr "Objavi aplikaciju"
 
-#: lib/potok_ide_web/live/group_live/show.ex:375
-#: lib/potok_ide_web/live/profile_live/index.ex:109
-#: lib/potok_ide_web/live/profile_live/index.ex:178
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:29
+#: lib/potok_ide_web/live/profile_live/components.ex:43
 #, elixir-autogen, elixir-format
 msgid "Description"
 msgstr "Opis"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:102
-#: lib/potok_ide_web/live/profile_live/index.ex:171
+#: lib/potok_ide_web/live/profile_live/components.ex:36
 #, elixir-autogen, elixir-format
 msgid "Description format"
 msgstr "Format opisa"
@@ -195,17 +173,17 @@ msgstr "Diskutuj na Elixir forumu"
 
 #: lib/potok_ide_web/live/account_live/login.ex:46
 #: lib/potok_ide_web/live/account_live/registration.ex:29
-#: lib/potok_ide_web/live/account_live/settings.ex:23
+#: lib/potok_ide_web/live/account_live/settings.ex:27
 #, elixir-autogen, elixir-format
 msgid "Email"
 msgstr "Imejl"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:82
+#: lib/potok_ide_web/live/account_live/settings.ex:152
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr "Link za promenu imejl adrese je nevažeći ili je istekao."
 
-#: lib/potok_ide_web/live/account_live/settings.ex:79
+#: lib/potok_ide_web/live/account_live/settings.ex:149
 #, elixir-autogen, elixir-format
 msgid "Email changed successfully."
 msgstr "Imejl adresa je uspešno promenjena."
@@ -215,22 +193,19 @@ msgstr "Imejl adresa je uspešno promenjena."
 msgid "Enter your email and we'll send you a sign-in link."
 msgstr "Unesite svoj imejl i poslaćemo vam link za prijavu."
 
-#: lib/potok_ide_web/live/group_live/show.ex:369
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:23
 #, elixir-autogen, elixir-format
 msgid "Format"
 msgstr "Format"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:56
-#, elixir-autogen, elixir-format
-msgid "Go to /"
-msgstr "Idi na /"
-
-#: lib/potok_ide_web/live/group_live/show.ex:872
+#: lib/potok_ide_web/live/group_live/show.ex:462
 #, elixir-autogen, elixir-format
 msgid "Group created."
 msgstr "Grupa je kreirana."
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:111
+#: lib/potok_ide_web/components/layouts/root.html.heex:101
+#: lib/potok_ide_web/components/layouts/root.html.heex:216
+#: lib/potok_ide_web/components/layouts/root.html.heex:216
 #, elixir-autogen, elixir-format
 msgid "Groups"
 msgstr "Grupe"
@@ -240,30 +215,30 @@ msgstr "Grupe"
 msgid "Guides & Docs"
 msgstr "Vodiči i dokumentacija"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1009
-#: lib/potok_ide_web/live/profile_live/index.ex:246
+#: lib/potok_ide_web/live/group_live/show.ex:221
+#: lib/potok_ide_web/live/profile_live/components.ex:59
 #, elixir-autogen, elixir-format
 msgid "HTML"
 msgstr "HTML"
 
-#: lib/potok_ide/accounts/account_notifier.ex:31
-#: lib/potok_ide/accounts/account_notifier.ex:58
-#: lib/potok_ide/accounts/account_notifier.ex:75
+#: lib/potok_ide/accounts/account_notifier.ex:32
+#: lib/potok_ide/accounts/account_notifier.ex:59
+#: lib/potok_ide/accounts/account_notifier.ex:76
 #, elixir-autogen, elixir-format
 msgid "Hi %{email},"
 msgstr "Zdravo %{email},"
 
-#: lib/potok_ide/accounts/account_notifier.ex:81
+#: lib/potok_ide/accounts/account_notifier.ex:82
 #, elixir-autogen, elixir-format
 msgid "If you didn't create an account with us, please ignore this."
 msgstr "Ako niste kreirali nalog kod nas, zanemarite ovu poruku."
 
-#: lib/potok_ide/accounts/account_notifier.ex:37
+#: lib/potok_ide/accounts/account_notifier.ex:38
 #, elixir-autogen, elixir-format
 msgid "If you didn't request this change, please ignore this."
 msgstr "Ako niste tražili ovu promenu, zanemarite ovu poruku."
 
-#: lib/potok_ide/accounts/account_notifier.ex:64
+#: lib/potok_ide/accounts/account_notifier.ex:65
 #, elixir-autogen, elixir-format
 msgid "If you didn't request this email, please ignore this."
 msgstr "Ako niste tražili ovaj imejl, zanemarite ga."
@@ -278,54 +253,57 @@ msgstr "Ako je vaš imejl u našem sistemu, uskoro ćete dobiti uputstva za prij
 msgid "Invalid email or password"
 msgstr "Neispravan imejl ili lozinka"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:67
+#: lib/potok_ide_web/live/invitation_live/index.ex:78
 #, elixir-autogen, elixir-format
 msgid "Invitation accepted."
 msgstr "Pozivnica je prihvaćena."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:72
+#: lib/potok_ide_web/live/invitation_live/index.ex:83
 #, elixir-autogen, elixir-format
 msgid "Invitation not found (or already accepted)."
 msgstr "Pozivnica nije pronađena ili je već prihvaćena."
 
-#: lib/potok_ide_web/live/group_live/show.ex:896
+#: lib/potok_ide_web/live/group_live/show.ex:490
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr "Pozivnica je poslata."
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:120
-#: lib/potok_ide_web/live/invitation_live/index.ex:13
+#: lib/potok_ide_web/components/layouts/root.html.heex:111
+#: lib/potok_ide_web/components/layouts/root.html.heex:199
+#: lib/potok_ide_web/components/layouts/root.html.heex:201
+#: lib/potok_ide_web/live/invitation_live/index.ex:14
 #, elixir-autogen, elixir-format
 msgid "Invitations"
 msgstr "Pozivnice"
 
-#: lib/potok_ide_web/live/group_live/show.ex:412
+#: lib/potok_ide_web/live/account_live/registration.ex:37
+#: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:20
 #, elixir-autogen, elixir-format
 msgid "Invite"
 msgstr "Pozovi"
 
-#: lib/potok_ide_web/live/group_live/show.ex:90
-#: lib/potok_ide_web/live/group_live/show.ex:403
+#: lib/potok_ide_web/live/group_live/show.ex:129
+#: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:11
 #, elixir-autogen, elixir-format
 msgid "Invite profile"
 msgstr "Pozovi profil"
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:30
+#: lib/potok_ide_web/live/invitation_live/index.ex:27
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Pozvao:"
 
-#: lib/potok_ide_web/live/group_live/show.ex:408
+#: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:16
 #, elixir-autogen, elixir-format
 msgid "Invitee username"
 msgstr "Korisničko ime pozvanog"
 
-#: lib/potok_ide_web/live/group_live/show.ex:417
+#: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:25
 #, elixir-autogen, elixir-format
 msgid "Invitees accept invitations at"
 msgstr "Pozvani prihvataju pozivnice na"
 
-#: lib/potok_ide_web/live/group_live/show.ex:411
+#: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:19
 #, elixir-autogen, elixir-format
 msgid "Inviting..."
 msgstr "Slanje pozivnice..."
@@ -345,20 +323,19 @@ msgstr "Pridružite nam se na Slacku"
 msgid "Keep me logged in on this device"
 msgstr "Ostavi me prijavljenim na ovom uređaju"
 
-#: lib/potok_ide_web/components/layouts.ex:141
+#: lib/potok_ide_web/components/layouts.ex:143
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr "Izbor jezika"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:139
+#: lib/potok_ide_web/components/layouts/root.html.heex:131
 #: lib/potok_ide_web/live/account_live/confirmation.ex:53
 #: lib/potok_ide_web/live/account_live/login.ex:13
-#: lib/potok_ide_web/live/account_live/registration.ex:18
 #, elixir-autogen, elixir-format
 msgid "Log in"
 msgstr "Prijavi se"
 
-#: lib/potok_ide/accounts/account_notifier.ex:54
+#: lib/potok_ide/accounts/account_notifier.ex:55
 #, elixir-autogen, elixir-format
 msgid "Log in instructions"
 msgstr "Uputstva za prijavu"
@@ -373,7 +350,7 @@ msgstr "Prijavi se imejlom"
 msgid "Log me in only this time"
 msgstr "Prijavi me samo ovaj put"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:166
+#: lib/potok_ide_web/components/layouts/root.html.heex:160
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr "Odjavi se"
@@ -395,54 +372,54 @@ msgstr "Prijavljivanje..."
 msgid "Magic link is invalid or it has expired."
 msgstr "Magični link je nevažeći ili je istekao."
 
-#: lib/potok_ide_web/live/account_live/settings.ex:15
+#: lib/potok_ide_web/live/account_live/settings.ex:18
 #, elixir-autogen, elixir-format
 msgid "Manage your account email address and password settings"
 msgstr "Upravljajte podešavanjima imejl adrese i lozinke naloga"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1009
-#: lib/potok_ide_web/live/profile_live/index.ex:245
+#: lib/potok_ide_web/live/group_live/show.ex:221
+#: lib/potok_ide_web/live/profile_live/components.ex:58
 #, elixir-autogen, elixir-format
 msgid "Markdown"
 msgstr "Markdown"
 
-#: lib/potok_ide_web/live/group_live/show.ex:76
-#: lib/potok_ide_web/live/group_live/show.ex:140
+#: lib/potok_ide_web/live/group_live/show.ex:115
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:15
 #, elixir-autogen, elixir-format
 msgid "Members"
 msgstr "Članovi"
 
-#: lib/potok_ide_web/live/group_live/show.ex:361
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:15
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Naziv"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:54
+#: lib/potok_ide_web/live/account_live/settings.ex:58
 #, elixir-autogen, elixir-format
 msgid "New password"
 msgstr "Nova lozinka"
 
-#: lib/potok_ide_web/live/group_live/show.ex:142
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:23
 #, elixir-autogen, elixir-format
 msgid "No members."
 msgstr "Nema članova."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:18
+#: lib/potok_ide_web/live/invitation_live/index.ex:19
 #, elixir-autogen, elixir-format
 msgid "No pending invitations."
 msgstr "Nema pozivnica na čekanju."
 
-#: lib/potok_ide_web/live/group_live/show.ex:902
+#: lib/potok_ide_web/live/group_live/show.ex:496
 #, elixir-autogen, elixir-format
 msgid "No profile found with that username."
 msgstr "Nije pronađen profil sa tim korisničkim imenom."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:27
+#: lib/potok_ide_web/live/profile_live/index.ex:69
 #, elixir-autogen, elixir-format
 msgid "No profiles yet."
 msgstr "Još nema profila."
 
-#: lib/potok_ide_web/live/group_live/show.ex:117
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:19
 #, elixir-autogen, elixir-format
 msgid "No sub-groups yet."
 msgstr "Još nema podgrupa."
@@ -457,7 +434,7 @@ msgstr "Lozinka je uspešno ažurirana!"
 msgid "Peace of mind from prototype to production."
 msgstr "Bez brige od prototipa do produkcije."
 
-#: lib/potok_ide_web/live/invitation_live/index.ex:14
+#: lib/potok_ide_web/live/invitation_live/index.ex:15
 #, elixir-autogen, elixir-format
 msgid "Pending group invitations for your current profile."
 msgstr "Pozivnice za grupu na čekanju za vaš trenutni profil."
@@ -467,86 +444,74 @@ msgstr "Pozivnice za grupu na čekanju za vaš trenutni profil."
 msgid "Phoenix Framework"
 msgstr "Phoenix Framework"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:15
-#, elixir-autogen, elixir-format
-msgid "Pick the profile you want to use, or create a new one."
-msgstr "Izaberite profil koji želite da koristite ili kreirajte novi."
-
-#: lib/potok_ide_web/profile_auth.ex:65
+#: lib/potok_ide_web/profile_auth.ex:99
 #, elixir-autogen, elixir-format
 msgid "Please select or create a profile first."
 msgstr "Prvo izaberite ili kreirajte profil."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:300
+#: lib/potok_ide_web/live/profile_live/new.ex:72
 #, elixir-autogen, elixir-format
 msgid "Profile created."
 msgstr "Profil je kreiran."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:96
-#: lib/potok_ide_web/live/profile_live/index.ex:165
+#: lib/potok_ide_web/live/profile_live/components.ex:30
 #, elixir-autogen, elixir-format
 msgid "Profile picture URL"
 msgstr "URL slike profila"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:377
+#: lib/potok_ide_web/live/profile_live/index.ex:150
 #, elixir-autogen, elixir-format
 msgid "Profile selected."
 msgstr "Profil je izabran."
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:102
-#: lib/potok_ide_web/live/profile_live/index.ex:14
+#: lib/potok_ide_web/components/layouts/root.html.heex:91
+#: lib/potok_ide_web/live/profile_live/index.ex:16
 #, elixir-autogen, elixir-format
 msgid "Profiles"
 msgstr "Profili"
 
-#: lib/potok_ide_web/live/group_live/show.ex:380
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:34
 #, elixir-autogen, elixir-format
 msgid "Public"
 msgstr "Javna"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:130
+#: lib/potok_ide_web/components/layouts/root.html.heex:121
 #, elixir-autogen, elixir-format
 msgid "Register"
 msgstr "Registruj se"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:14
-#, elixir-autogen, elixir-format
-msgid "Register for an account"
-msgstr "Registrujte nalog"
-
-#: lib/potok_ide_web/live/group_live/show.ex:385
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:39
 #, elixir-autogen, elixir-format
 msgid "Reply to value (optional)"
 msgstr "Odgovori na vrednost (opciono)"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:67
+#: lib/potok_ide_web/live/account_live/settings.ex:71
 #, elixir-autogen, elixir-format
 msgid "Save Password"
 msgstr "Sačuvaj lozinku"
 
-#: lib/potok_ide_web/live/account_live/settings.ex:66
-#: lib/potok_ide_web/live/profile_live/index.ex:120
+#: lib/potok_ide_web/live/account_live/settings.ex:70
+#: lib/potok_ide_web/live/profile_live/edit.ex:38
 #, elixir-autogen, elixir-format
 msgid "Saving..."
 msgstr "Čuvanje..."
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:159
+#: lib/potok_ide_web/components/layouts/root.html.heex:152
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr "Podešavanja"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:248
+#: lib/potok_ide_web/live/profile_live/components.ex:66
 #, elixir-autogen, elixir-format
 msgid "Shared"
 msgstr "Deljeni"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:115
-#: lib/potok_ide_web/live/profile_live/index.ex:184
+#: lib/potok_ide_web/live/profile_live/components.ex:49
 #, elixir-autogen, elixir-format
 msgid "Sharing"
 msgstr "Deljenje"
 
-#: lib/potok_ide_web/components/layouts.ex:79
+#: lib/potok_ide_web/components/layouts.ex:80
 #, elixir-autogen, elixir-format
 msgid "Something went wrong!"
 msgstr "Nešto je pošlo po zlu!"
@@ -556,15 +521,16 @@ msgstr "Nešto je pošlo po zlu!"
 msgid "Source Code"
 msgstr "Izvorni kod"
 
-#: lib/potok_ide_web/live/group_live/show.ex:70
-#: lib/potok_ide_web/live/group_live/show.ex:114
+#: lib/potok_ide_web/live/group_live/show.ex:108
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
 msgstr "Podgrupe"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:316
-#: lib/potok_ide_web/live/profile_live/index.ex:351
-#: lib/potok_ide_web/live/profile_live/index.ex:366
+#: lib/potok_ide_web/live/profile_live/edit.ex:90
+#: lib/potok_ide_web/live/profile_live/edit.ex:109
+#: lib/potok_ide_web/live/profile_live/edit.ex:139
+#: lib/potok_ide_web/live/profile_live/edit.ex:196
+#: lib/potok_ide_web/live/profile_live/index.ex:135
 #, elixir-autogen, elixir-format
 msgid "That profile is not available for this account."
 msgstr "Taj profil nije dostupan za ovaj nalog."
@@ -584,38 +550,32 @@ msgstr "Savet: ako više volite lozinke, možete ih uključiti u podešavanjima 
 msgid "To see sent emails, visit"
 msgstr "Da biste videli poslate imejlove, posetite"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:248
+#: lib/potok_ide_web/live/profile_live/components.ex:65
 #, elixir-autogen, elixir-format
 msgid "Unique"
 msgstr "Jedinstveni"
 
-#: lib/potok_ide/accounts/account_notifier.ex:27
+#: lib/potok_ide/accounts/account_notifier.ex:28
 #, elixir-autogen, elixir-format
 msgid "Update email instructions"
 msgstr "Uputstva za promenu imejl adrese"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:41
+#: lib/potok_ide_web/live/profile_live/index.ex:85
 #, elixir-autogen, elixir-format
 msgid "Use"
 msgstr "Koristi"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:90
-#: lib/potok_ide_web/live/profile_live/index.ex:159
+#: lib/potok_ide_web/live/profile_live/components.ex:26
 #, elixir-autogen, elixir-format
 msgid "Username"
 msgstr "Korisničko ime"
 
-#: lib/potok_ide_web/live/group_live/show.ex:899
+#: lib/potok_ide_web/live/group_live/show.ex:493
 #, elixir-autogen, elixir-format
 msgid "Username is required."
 msgstr "Korisničko ime je obavezno."
 
-#: lib/potok_ide_web/live/group_live/show.ex:728
-#, elixir-autogen, elixir-format
-msgid "Value posted."
-msgstr "Vrednost je objavljena."
-
-#: lib/potok_ide_web/live/group_live/show.ex:64
+#: lib/potok_ide_web/live/group_live/show.ex:102
 #, elixir-autogen, elixir-format
 msgid "Values"
 msgstr "Vrednosti"
@@ -635,6 +595,8 @@ msgstr "Dobrodošli, %{email}"
 msgid "Welcome back!"
 msgstr "Dobro nam došli nazad!"
 
+#: lib/potok_ide_web/components/layouts/root.html.heex:235
+#, elixir-autogen
 msgid "Welcome!"
 msgstr "Dobrodošli!"
 
@@ -643,61 +605,61 @@ msgstr "Dobrodošli!"
 msgid "You are running the local mail adapter."
 msgstr "Koristite lokalni mejl adapter."
 
-#: lib/potok_ide/accounts/account_notifier.ex:33
+#: lib/potok_ide/accounts/account_notifier.ex:34
 #, elixir-autogen, elixir-format
 msgid "You can change your email by visiting the URL below:"
 msgstr "Možete da promenite imejl adresu tako što ćete posetiti URL ispod:"
 
-#: lib/potok_ide/accounts/account_notifier.ex:77
+#: lib/potok_ide/accounts/account_notifier.ex:78
 #, elixir-autogen, elixir-format
 msgid "You can confirm your account by visiting the URL below:"
 msgstr "Možete da potvrdite nalog tako što ćete posetiti URL ispod:"
 
-#: lib/potok_ide/accounts/account_notifier.ex:60
+#: lib/potok_ide/accounts/account_notifier.ex:61
 #, elixir-autogen, elixir-format
 msgid "You can log into your account by visiting the URL below:"
 msgstr "Možete da se prijavite na nalog tako što ćete posetiti URL ispod:"
 
-#: lib/potok_ide_web/live/group_live/show.ex:102
+#: lib/potok_ide_web/live/group_live/show.ex:141
 #, elixir-autogen, elixir-format
 msgid "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
 msgstr "Možete da pregledate ovu grupu, ali morate biti član da biste objavljivali vrednosti, pozivali članove ili kreirali podgrupe."
 
-#: lib/potok_ide_web/live/group_live/show.ex:908
+#: lib/potok_ide_web/live/group_live/show.ex:502
 #, elixir-autogen, elixir-format
 msgid "You cannot invite yourself."
 msgstr "Ne možete pozvati sami sebe."
 
-#: lib/potok_ide_web/live/group_live/show.ex:693
-#: lib/potok_ide_web/live/group_live/show.ex:950
-#: lib/potok_ide_web/live/group_live/show.ex:973
+#: lib/potok_ide_web/live/group_live/show.ex:232
+#: lib/potok_ide_web/live/group_live/show.ex:552
+#: lib/potok_ide_web/live/group_live/show.ex:600
 #, elixir-autogen, elixir-format
 msgid "You do not have access to that group."
 msgstr "Nemate pristup toj grupi."
 
-#: lib/potok_ide_web/live/group_live/show.ex:861
+#: lib/potok_ide_web/live/group_live/show.ex:451
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to create sub-groups."
 msgstr "Morate biti član grupe da biste kreirali podgrupe."
 
-#: lib/potok_ide_web/live/group_live/show.ex:721
+#: lib/potok_ide_web/live/group_live/show.ex:274
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to post values."
 msgstr "Morate biti član grupe da biste objavljivali vrednosti."
 
-#: lib/potok_ide_web/live/group_live/show.ex:889
-#: lib/potok_ide_web/live/group_live/show.ex:905
+#: lib/potok_ide_web/live/group_live/show.ex:479
+#: lib/potok_ide_web/live/group_live/show.ex:499
 #, elixir-autogen, elixir-format
 msgid "You must be a member to invite."
 msgstr "Morate biti član da biste pozivali."
 
-#: lib/potok_ide_web/account_auth.ex:238
-#: lib/potok_ide_web/account_auth.ex:326
+#: lib/potok_ide_web/account_auth.ex:245
+#: lib/potok_ide_web/account_auth.ex:341
 #, elixir-autogen, elixir-format
 msgid "You must log in to access this page."
 msgstr "Morate se prijaviti da biste pristupili ovoj stranici."
 
-#: lib/potok_ide_web/account_auth.ex:255
+#: lib/potok_ide_web/account_auth.ex:262
 #, elixir-autogen, elixir-format
 msgid "You must re-authenticate to access this page."
 msgstr "Morate ponovo potvrditi identitet da biste pristupili ovoj stranici."
@@ -707,205 +669,368 @@ msgstr "Morate ponovo potvrditi identitet da biste pristupili ovoj stranici."
 msgid "You need to reauthenticate to perform sensitive actions on your account."
 msgstr "Morate ponovo potvrditi identitet da biste izvršili osetljive radnje na nalogu."
 
-#: lib/potok_ide_web/live/profile_live/index.ex:24
+#: lib/potok_ide_web/live/profile_live/index.ex:66
 #, elixir-autogen, elixir-format
 msgid "Your profiles"
 msgstr "Vaši profili"
 
-#: lib/potok_ide_web/components/core_components.ex:74
-#: lib/potok_ide_web/components/layouts.ex:193
-#: lib/potok_ide_web/components/layouts.ex:209
+#: lib/potok_ide_web/components/core_components.ex:80
+#: lib/potok_ide_web/components/layouts.ex:194
+#: lib/potok_ide_web/components/layouts.ex:207
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr "zatvori"
-
-#: lib/potok_ide_web/live/group_live/show.ex:129
-#, elixir-autogen, elixir-format
-msgid "private"
-msgstr "privatna"
-
-#: lib/potok_ide_web/live/group_live/show.ex:129
-#, elixir-autogen, elixir-format
-msgid "public"
-msgstr "javna"
 
 #: lib/potok_ide_web/live/account_live/login.ex:30
 #, elixir-autogen, elixir-format
 msgid "the mailbox page"
 msgstr "stranicu poštanskog sandučeta"
 
-#: lib/potok_ide_web/live/account_live/registration.ex:20
-#, elixir-autogen, elixir-format
-msgid "to your account now."
-msgstr "na svoj nalog sada."
-
-#: lib/potok_ide_web/live/group_live/show.ex:622
-#: lib/potok_ide_web/live/profile_live/index.ex:123
+#: lib/potok_ide_web/live/group_live/show/components.ex:362
+#: lib/potok_ide_web/live/profile_live/edit.ex:41
+#: lib/potok_ide_web/live/profile_live/new.ex:34
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Otkaži"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:49
+#: lib/potok_ide_web/live/profile_live/index.ex:93
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Izmeni"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:72
-#, elixir-autogen, elixir-format
-msgid "Edit profile"
-msgstr "Izmeni profil"
-
-#: lib/potok_ide_web/live/profile_live/index.ex:142
-#, elixir-autogen, elixir-format
-msgid "Expand to create a new profile."
-msgstr "Proširi da kreiraš novi profil."
-
-#: lib/potok_ide_web/live/group_live/show.ex:284
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:100
 #, elixir-autogen, elixir-format
 msgid "Join this group to reply and post new values."
 msgstr "Pridruži se ovoj grupi da odgovaraš i objavljuješ nove vrednosti."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:31
-#, elixir-autogen, elixir-format
-msgid "Load earlier values"
-msgstr "Učitaj ranije vrednosti"
-
-#: lib/potok_ide_web/live/group_live/show.ex:167
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:42
 #, elixir-autogen, elixir-format
 msgid "No values yet. Start the conversation below."
 msgstr "Još nema vrednosti. Započni razgovor ispod."
 
-#: lib/potok_ide_web/live/group_live/show.ex:271
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:87
 #, elixir-autogen, elixir-format
 msgid "Post value"
 msgstr "Objavi vrednost"
 
-#: lib/potok_ide_web/live/profile_live/index.ex:345
+#: lib/potok_ide_web/live/profile_live/edit.ex:133
 #, elixir-autogen, elixir-format
 msgid "Profile updated."
 msgstr "Profil je ažuriran."
 
-#: lib/potok_ide_web/live/group_live/show.ex:619
-#: lib/potok_ide_web/live/profile_live/index.ex:121
+#: lib/potok_ide_web/live/group_live/show/components.ex:361
+#: lib/potok_ide_web/live/profile_live/edit.ex:39
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr "Sačuvaj izmene"
 
-#: lib/potok_ide_web/live/group_live/show.ex:661
+#: lib/potok_ide_web/live/group_live/show/components.ex:400
 #, elixir-autogen, elixir-format
 msgid "See less"
 msgstr "Prikaži manje"
 
-#: lib/potok_ide_web/live/group_live/show.ex:662
+#: lib/potok_ide_web/live/group_live/show/components.ex:401
 #, elixir-autogen, elixir-format
 msgid "See more"
 msgstr "Prikaži više"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:77
-#, elixir-autogen, elixir-format
-msgid "Selected profile"
-msgstr "Izabrani profil"
-
-#: lib/potok_ide_web/live/profile_live/index.ex:74
+#: lib/potok_ide_web/live/profile_live/edit.ex:22
 #, elixir-autogen, elixir-format
 msgid "Update the selected profile details."
 msgstr "Ažuriraj detalje izabranog profila."
 
-#: lib/potok_ide_web/live/group_live/show.ex:196
-#: lib/potok_ide_web/live/group_live/show.ex:611
+#: lib/potok_ide_web/live/group_live/show/components.ex:354
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:79
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr "Vrednost"
 
-#: lib/potok_ide_web/live/group_live/show.ex:198
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:81
 #, elixir-autogen, elixir-format
 msgid "Write a value..."
 msgstr "Napiši vrednost..."
 
-#: lib/potok_ide_web/live/group_live/show.ex:567
+#: lib/potok_ide_web/live/group_live/show/components.ex:311
 #, elixir-autogen, elixir-format
 msgid "reply"
 msgstr "odgovor"
 
-#: lib/potok_ide_web/live/group_live/show.ex:364
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:18
 #, elixir-autogen, elixir-format
 msgid "Group picture URL"
 msgstr "URL slike grupe"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:148
+#: lib/potok_ide_web/components/layouts/root.html.heex:140
 #, elixir-autogen, elixir-format
 msgid "Account"
 msgstr "Nalog"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:90
+#: lib/potok_ide_web/components/layouts/root.html.heex:78
 #, elixir-autogen, elixir-format
 msgid "Navigation"
 msgstr "Navigacija"
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:174
+#: lib/potok_ide_web/components/layouts/root.html.heex:168
 #, elixir-autogen, elixir-format
 msgid "Preferences"
 msgstr "Podešavanja"
 
-#: lib/potok_ide_web/live/group_live/show.ex:587
+#: lib/potok_ide_web/live/group_live/show/components.ex:330
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this value?"
 msgstr "Da li ste sigurni da želite da obrišete ovu vrednost?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:828
+#: lib/potok_ide_web/live/group_live/show.ex:389
 #, elixir-autogen, elixir-format
 msgid "Could not delete value."
 msgstr "Nije moguće obrisati vrednost."
 
-#: lib/potok_ide_web/live/group_live/show.ex:586
+#: lib/potok_ide_web/live/group_live/show/components.ex:329
 #, elixir-autogen, elixir-format
 msgid "Delete value"
 msgstr "Obriši vrednost"
 
-#: lib/potok_ide_web/live/group_live/show.ex:43
+#: lib/potok_ide_web/live/group_live/show.ex:77
 #, elixir-autogen, elixir-format
 msgid "Open members tab"
 msgstr "Otvori karticu članova"
 
-#: lib/potok_ide_web/live/group_live/show.ex:821
+#: lib/potok_ide_web/live/group_live/show.ex:382
 #, elixir-autogen, elixir-format
 msgid "Value deleted."
 msgstr "Vrednost je obrisana."
 
-#: lib/potok_ide_web/live/group_live/show.ex:748
-#: lib/potok_ide_web/live/group_live/show.ex:781
-#: lib/potok_ide_web/live/group_live/show.ex:814
+#: lib/potok_ide_web/live/group_live/show.ex:303
+#: lib/potok_ide_web/live/group_live/show.ex:340
+#: lib/potok_ide_web/live/group_live/show.ex:375
 #, elixir-autogen, elixir-format
 msgid "Value not found."
 msgstr "Vrednost nije pronađena."
 
-#: lib/potok_ide_web/live/group_live/show.ex:825
+#: lib/potok_ide_web/live/group_live/show.ex:386
 #, elixir-autogen, elixir-format
 msgid "You can only delete your own values."
 msgstr "Možete brisati samo sopstvene vrednosti."
 
-#: lib/potok_ide_web/live/group_live/show.ex:800
+#: lib/potok_ide_web/live/group_live/show.ex:361
 #, elixir-autogen, elixir-format
 msgid "Could not update value."
 msgstr "Nije moguće ažurirati vrednost."
 
-#: lib/potok_ide_web/live/group_live/show.ex:575
+#: lib/potok_ide_web/live/group_live/show/components.ex:319
 #, elixir-autogen, elixir-format
 msgid "Edit value"
 msgstr "Izmeni vrednost"
 
-#: lib/potok_ide_web/live/group_live/show.ex:33
+#: lib/potok_ide_web/live/group_live/show.ex:50
 #, elixir-autogen, elixir-format
 msgid "Open sub-groups tab"
 msgstr "Otvori karticu podgrupa"
 
-#: lib/potok_ide_web/live/group_live/show.ex:788
+#: lib/potok_ide_web/live/group_live/show.ex:347
 #, elixir-autogen, elixir-format
 msgid "Value updated."
 msgstr "Vrednost je ažurirana."
 
-#: lib/potok_ide_web/live/group_live/show.ex:751
-#: lib/potok_ide_web/live/group_live/show.ex:793
+#: lib/potok_ide_web/live/group_live/show.ex:306
+#: lib/potok_ide_web/live/group_live/show.ex:352
 #, elixir-autogen, elixir-format
 msgid "You can only edit your own values."
 msgstr "Možete menjati samo sopstvene vrednosti."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:208
+#, elixir-autogen, elixir-format
+msgid "A shared profile invitation is already pending."
+msgstr "Pozivnica za deljeni profil je vec na cekanju."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:57
+#, elixir-autogen, elixir-format
+msgid "Accept shared profile"
+msgstr "Prihvati deljeni profil"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:42
+#, elixir-autogen, elixir-format
+msgid "Accepted on"
+msgstr "Prihvaceno"
+
+#: lib/potok_ide_web/live/account_live/registration.ex:71
+#, elixir-autogen, elixir-format
+msgid "An invitation email was sent to %{email}"
+msgstr "Imejl sa pozivnicom je poslat na %{email}."
+
+#: lib/potok_ide_web/live/account_live/settings.ex:101
+#, elixir-autogen, elixir-format
+msgid "Checking browser support..."
+msgstr "Provera podrske pregledaca..."
+
+#: lib/potok_ide_web/live/profile_live/new.ex:20
+#, elixir-autogen, elixir-format
+msgid "Choose how this profile appears and whether it can be shared."
+msgstr "Izaberite kako ovaj profil izgleda i da li moze da se deli."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:182
+#, elixir-autogen, elixir-format
+msgid "Could not accept shared profile invitation."
+msgstr "Nije moguce prihvatiti pozivnicu za deljeni profil."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:213
+#, elixir-autogen, elixir-format
+msgid "Could not send shared profile invitation."
+msgstr "Nije moguce poslati pozivnicu za deljeni profil."
+
+#: lib/potok_ide_web/live/account_live/settings.ex:128
+#, elixir-autogen, elixir-format
+msgid "Disable"
+msgstr "Onemoguci"
+
+#: lib/potok_ide_web/live/account_live/settings.ex:92
+#, elixir-autogen, elixir-format
+msgid "Enable device notifications for your installed Potok web app."
+msgstr "Omogucite obavestenja uredjaja za instaliranu Potok veb aplikaciju."
+
+#: lib/potok_ide_web/live/account_live/settings.ex:110
+#, elixir-autogen, elixir-format
+msgid "Enable notifications"
+msgstr "Omoguci obavestenja"
+
+#: lib/potok_ide_web/live/account_live/registration.ex:14
+#, elixir-autogen, elixir-format
+msgid "Invite people to potok by email"
+msgstr "Pozovite ljude u Potok putem imejla"
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:47
+#, elixir-autogen, elixir-format
+msgid "Invite profile to shared profile"
+msgstr "Pozovi profil u deljeni profil"
+
+#: lib/potok_ide_web/live/profile_live/index.ex:44
+#, elixir-autogen, elixir-format
+msgid "Invited by: "
+msgstr "Pozvao: "
+
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:33
+#, elixir-autogen, elixir-format
+msgid "Load earlier values"
+msgstr "Učitaj ranije vrednosti"
+
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:43
+#, elixir-autogen, elixir-format
+msgid "Load more members"
+msgstr "Ucitaj jos clanova"
+
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:38
+#, elixir-autogen, elixir-format
+msgid "Load more sub-groups"
+msgstr "Ucitaj jos podgrupa"
+
+#: lib/potok_ide_web/live/profile_live/new.ex:17
+#, elixir-autogen, elixir-format
+msgid "New profile details"
+msgstr "Detalji novog profila"
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:177
+#, elixir-autogen, elixir-format
+msgid "No profile exists for that username."
+msgstr "Ne postoji profil sa tim korisnickim imenom."
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:168
+#: lib/potok_ide_web/live/group_live/show/components.ex:278
+#: lib/potok_ide_web/live/group_live/show/components.ex:298
+#, elixir-autogen, elixir-format
+msgid "Online"
+msgstr "Na mrezi"
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:189
+#, elixir-autogen, elixir-format
+msgid "Only shared profiles can be invited."
+msgstr "Mogu se pozivati samo deljeni profili."
+
+#: lib/potok_ide_web/live/group_live/show.ex:63
+#, elixir-autogen, elixir-format
+msgid "Open invite profile tab"
+msgstr "Otvori karticu za pozivanje profila"
+
+#: lib/potok_ide_web/live/profile_live/index.ex:35
+#, elixir-autogen, elixir-format
+msgid "Pending invitations for your current profile."
+msgstr "Pozivnice na cekanju za vas trenutni profil."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:18
+#, elixir-autogen, elixir-format
+msgid "Pick the profile you want to use, or open a dedicated page to create or edit one."
+msgstr "Izaberite profil koji zelite da koristite ili otvorite posebnu stranicu da ga kreirate ili izmenite."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:62
+#, elixir-autogen, elixir-format
+msgid "Profile username"
+msgstr "Korisnicko ime profila"
+
+#: lib/potok_ide_web/live/account_live/settings.ex:89
+#, elixir-autogen, elixir-format
+msgid "Push Notifications"
+msgstr "Push obavestenja"
+
+#: lib/potok_ide_web/live/account_live/settings.ex:133
+#, elixir-autogen, elixir-format
+msgid "Push notifications require an active service worker, browser permission, and HTTPS outside localhost."
+msgstr "Push obavestenja zahtevaju aktivan service worker, dozvolu pregledaca i HTTPS van localhost-a."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:163
+#, elixir-autogen, elixir-format
+msgid "Select a current profile before sending invitations."
+msgstr "Izaberite trenutni profil pre slanja pozivnica."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:171
+#, elixir-autogen, elixir-format
+msgid "Select a shared profile before inviting another profile."
+msgstr "Izaberite deljeni profil pre pozivanja drugog profila."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:51
+#, elixir-autogen, elixir-format
+msgid "Send an invitation by profile username."
+msgstr "Posaljite pozivnicu pomocu korisnickog imena profila."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:67
+#, elixir-autogen, elixir-format
+msgid "Send invitation"
+msgstr "Posalji pozivnicu"
+
+#: lib/potok_ide_web/live/account_live/settings.ex:119
+#, elixir-autogen, elixir-format
+msgid "Send test notification"
+msgstr "Posalji probno obavestenje"
+
+#: lib/potok_ide_web/live/account_live/registration.ex:36
+#, elixir-autogen, elixir-format
+msgid "Sending invitation..."
+msgstr "Slanje pozivnice..."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:66
+#, elixir-autogen, elixir-format
+msgid "Sending..."
+msgstr "Slanje..."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:175
+#, elixir-autogen, elixir-format
+msgid "Shared profile invitation accepted."
+msgstr "Pozivnica za deljeni profil je prihvacena."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:178
+#, elixir-autogen, elixir-format
+msgid "Shared profile invitation not found."
+msgstr "Pozivnica za deljeni profil nije pronadjena."
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:185
+#, elixir-autogen, elixir-format
+msgid "Shared profile invitation sent."
+msgstr "Pozivnica za deljeni profil je poslata."
+
+#: lib/potok_ide_web/live/profile_live/index.ex:34
+#, elixir-autogen, elixir-format
+msgid "Shared profile invitations"
+msgstr "Pozivnice za deljene profile"
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:201
+#, elixir-autogen, elixir-format
+msgid "You cannot invite your own profile."
+msgstr "Ne mozete pozvati sopstveni profil."

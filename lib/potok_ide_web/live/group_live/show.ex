@@ -43,6 +43,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
 
           <button
+            :if={@group.parent_id != nil}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
@@ -56,11 +57,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
             />
           </button>
           <button
+            :if={@group.parent_id != nil}
             id="group-invite-summary"
             type="button"
             phx-click="switch_tab"
             phx-value-tab="invite_profile"
             aria-label={gettext("Open invite profile tab")}
+            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <.icon
+              name="hero-user-plus"
+              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+            />
+          </button>
+          <button
+            :if={@group.parent_id == nil}
+            id="group-invite-account"
+            type="button"
+            phx-click="invite_account"
+            aria-label={gettext("Open invite account tab")}
             class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <.icon
@@ -524,6 +539,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
      socket
      |> assign(:expanded_value_ids, expanded_value_ids)
      |> restream_values([value_id])}
+  end
+
+  def handle_event("invite_account", _params, socket) do
+    {:noreply, push_navigate(socket, to: ~p"/accounts/register") }
   end
 
   @impl true

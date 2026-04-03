@@ -71,7 +71,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
 
   @impl true
   def handle_event("submit_magic", %{"account" => %{"email" => email}}, socket) do
-    account = Accounts.get_account_by_email(email) || create_account_from_login_request(email)
+    account = Accounts.get_account_by_email(email) #|| create_account_from_login_request(email)
 
     if account do
       Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}"))

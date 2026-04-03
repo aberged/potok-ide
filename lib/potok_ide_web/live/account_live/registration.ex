@@ -11,14 +11,14 @@ defmodule PotokIdeWeb.AccountLive.Registration do
       <div class="mx-auto max-w-sm px-6 pt-4">
         <div class="text-center">
           <.header>
-            {gettext("Register for an account")}
-            <:subtitle>
+            {gettext("Invite people to potok by email")}
+            <%!-- <:subtitle>
               {gettext("Already registered?")}
               <.link navigate={~p"/accounts/log-in"} class="font-semibold text-brand hover:underline">
                 {gettext("Log in")}
               </.link>
               {gettext("to your account now.")}
-            </:subtitle>
+            </:subtitle> --%>
           </.header>
         </div>
 
@@ -33,8 +33,8 @@ defmodule PotokIdeWeb.AccountLive.Registration do
             phx-mounted={JS.focus()}
           />
 
-          <.button phx-disable-with={gettext("Creating account...")} class="btn btn-primary w-full">
-            {gettext("Create an account")}
+          <.button phx-disable-with={gettext("Sending invitation...")} class="btn btn-primary w-full">
+            {gettext("Invite")}
           </.button>
         </.form>
       </div>
@@ -43,10 +43,10 @@ defmodule PotokIdeWeb.AccountLive.Registration do
   end
 
   @impl true
-  def mount(_params, _session, %{assigns: %{current_scope: %{account: account}}} = socket)
-      when not is_nil(account) do
-    {:ok, redirect(socket, to: PotokIdeWeb.AccountAuth.signed_in_path(socket))}
-  end
+  # def mount(_params, _session, %{assigns: %{current_scope: %{account: account}}} = socket)
+  #     when not is_nil(account) do
+  #   {:ok, redirect(socket, to: PotokIdeWeb.AccountAuth.signed_in_path(socket))}
+  # end
 
   def mount(_params, _session, socket) do
     changeset = Accounts.change_account_email(%Account{}, %{}, validate_unique: false)
@@ -69,11 +69,12 @@ defmodule PotokIdeWeb.AccountLive.Registration do
          |> put_flash(
            :info,
            gettext(
-             "An email was sent to %{email}, please access it to confirm your account.",
+             "An invitation email was sent to %{email}",
              email: account.email
            )
          )
-         |> push_navigate(to: ~p"/accounts/log-in")}
+         #|> push_navigate(to: ~p"/accounts/log-in")
+        }
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}
