@@ -31,6 +31,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       type="url"
     />
     <.input
+      :if={false}
       field={@form[:description_format]}
       id={@form[:description_format].id}
       label={gettext("Description format")}
