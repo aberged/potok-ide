@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         >
           {gettext("This group has no description yet.")}
         </div>
-
+        
         <div
           :if={!blank_description?(@group.description)}
           id="group-description-content"

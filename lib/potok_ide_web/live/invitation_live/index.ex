@@ -68,8 +68,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> ProfileAuth.sync_profile_subscription()
 
     {:ok,
-      socket
-      |> assign_invitations(socket.assigns.current_profile)}
+     socket
+     |> assign_invitations(socket.assigns.current_profile)}
   end
 
   @impl true
@@ -82,7 +82,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       {:noreply,
        socket
        |> put_flash(:info, gettext("Invitation accepted."))
-        |> assign_invitations(invitee)}
+       |> assign_invitations(invitee)}
     else
       nil ->
         {:noreply,
@@ -125,7 +125,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
      |> maybe_push_root_group_unread_count()
      |> assign_group_unread_counts()}
   end
-
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
@@ -199,7 +198,9 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   defp maybe_push_root_group_unread_count(socket) do
     if connected?(socket) do
-      push_event(socket, "root_group_unread_count_updated", %{count: socket.assigns.root_group_unread_count})
+      push_event(socket, "root_group_unread_count_updated", %{
+        count: socket.assigns.root_group_unread_count
+      })
     else
       socket
     end

@@ -314,6 +314,37 @@ defmodule PotokIde.Social do
     end
   end
 
+  def delete_group(%Profile{} = profile, %Group{} = group) do
+    cond do
+      group.is_root ->
+        {:error, :cannot_delete_root_group}
+
+      not member_of_group?(profile, group) ->
+        {:error, :not_a_group_member}
+
+      Repo.exists?(from child in Group, where: child.parent_id == ^group.id, select: 1) ->
+        {:error, :group_has_children}
+
+      true ->
+        parent_id = group.parent_id
+
+        Repo.delete(group)
+        |> case do
+          {:ok, deleted_group} = ok ->
+            broadcast_group_deleted(deleted_group.id, parent_id)
+
+            if parent_id do
+              broadcast_group_updated(parent_id)
+            end
+
+            ok
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
   def invite_profile_to_group(%Profile{} = inviter, %Group{} = group, %Profile{} = invitee) do
     cond do
       not member_of_group?(inviter, group) ->
@@ -1097,6 +1128,14 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       group_topic(group_id),
       {:group_updated, group_id}
+    )
+  end
+
+  defp broadcast_group_deleted(group_id, parent_id) when is_integer(group_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:group_deleted, group_id, parent_id}
     )
   end
 

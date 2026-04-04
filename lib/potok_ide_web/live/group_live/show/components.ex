@@ -89,11 +89,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   def group_path(assigns) do
     assigns =
-      assign(assigns, :group_path, Social.list_visible_group_path_for_profile(assigns.group, assigns.current_profile))
+      assign(
+        assigns,
+        :group_path,
+        Social.list_visible_group_path_for_profile(assigns.group, assigns.current_profile)
+      )
 
     ~H"""
     <div id={@id} class={["px-4 py-4 text-sm text-base-content/60", @class]}>
-      <nav aria-label={gettext("Current group path")} class="flex flex-wrap items-center align-center gap-x-2 gap-y-1">
+      <nav
+        aria-label={gettext("Current group path")}
+        class="flex flex-wrap items-center align-center gap-x-2 gap-y-1"
+      >
         <%= for {path_group, idx} <- Enum.with_index(@group_path) do %>
           <%= if idx > 0 do %>
             <span aria-hidden="true" class="text-base-content/35">/</span>
@@ -322,12 +329,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   def formatted_content(assigns) do
     ~H"""
-    <div
-      class={[
-        if(@content_format == :markdown, do: "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6", else: ""),
-        @class
-      ]}
-    >
+    <div class={[
+      if(@content_format == :markdown,
+        do:
+          "break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
+        else: ""
+      ),
+      @class
+    ]}>
       {render_formatted_content(%{content: @content, content_format: @content_format})}
     </div>
     """
@@ -509,7 +518,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp render_formatted_content(%{content: content, content_format: :html}) do
     content
     ## TODO: sanitize properly while allowing basic formatting tags and links, maybe using HtmlSanitizeEx with a custom scrubber
-    #|> sanitize_html()
+    # |> sanitize_html()
     |> raw()
   end
 

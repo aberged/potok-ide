@@ -29,7 +29,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
-            <.link navigate={~p"/groups/#{@group.parent_id}/sub_groups"} class="link text-xl no-underline">
+            <.link
+              navigate={~p"/groups/#{@group.parent_id}/sub_groups"}
+              class="link text-xl no-underline"
+            >
               {"❮"}
             </.link>
           </div>
@@ -166,7 +169,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   id="group-tab-edit-group"
                   tab="edit_group"
                   active_tab={@active_tab}
-                  label={""}
+                  label=""
                   icon="hero-cog-6-tooth"
                 />
               </div>
@@ -177,15 +180,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       <div class="min-h-0 flex-1 overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
-          <div :if={!@is_member and false} class="alert mt-8">
-            <.icon name="hero-lock-closed" class="size-5 shrink-0" />
-            <div>
-              {gettext(
-                "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
-              )}
-            </div>
-          </div>
-
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             group={@group}
@@ -215,7 +209,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
             is_member={@is_member}
           />
           <GroupDescriptionTab.panel
-            :if={@active_tab == "group_home" or (@active_tab == "values" and @group.parent_id != nil and !@is_member)}
+            :if={
+              @active_tab == "group_home" or
+                (@active_tab == "values" and @group.parent_id != nil and !@is_member)
+            }
             group={@group}
             current_profile={@current_profile}
           />
@@ -268,10 +265,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
        |> assign(:values_pagination, default_pagination(@values_page_size))
-      |> assign(:loaded_children, [])
+       |> assign(:loaded_children, [])
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
-      |> assign(:group_unread_counts, %{})
+       |> assign(:group_unread_counts, %{})
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -285,8 +282,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:value_parent_options, [])
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
-      |> assign(:edit_group_form, edit_group_form(group))
-      |> assign(:description_details_open, true)
+       |> assign(:edit_group_form, edit_group_form(group))
+       |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
        |> load_group_data(group, active_tab)
@@ -550,7 +547,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = socket.assigns.group
 
     if not socket.assigns.is_member do
-      {:noreply, put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+      {:noreply,
+       put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
     else
       case Social.update_group(current_profile, group, attrs) do
         {:ok, updated_group} ->
@@ -571,6 +569,42 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not update group."))}
+      end
+    end
+  end
+
+  def handle_event("delete_group", _params, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    if not socket.assigns.is_member do
+      {:noreply,
+       put_flash(socket, :error, gettext("You must be a group member to delete this group."))}
+    else
+      case Social.delete_group(current_profile, group) do
+        {:ok, _deleted_group} ->
+          {:noreply,
+           socket
+           |> put_flash(:info, gettext("Group deleted."))
+           |> push_navigate(to: delete_group_redirect_path(group.parent_id))}
+
+        {:error, :cannot_delete_root_group} ->
+          {:noreply, put_flash(socket, :error, gettext("The root group cannot be deleted."))}
+
+        {:error, :not_a_group_member} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("You must be a group member to delete this group."))}
+
+        {:error, :group_has_children} ->
+          {:noreply,
+           put_flash(
+             socket,
+             :error,
+             gettext("Delete this group's sub-groups before deleting the group.")
+           )}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not delete group."))}
       end
     end
   end
@@ -635,7 +669,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("invite_account", _params, socket) do
-    {:noreply, push_navigate(socket, to: ~p"/accounts/register") }
+    {:noreply, push_navigate(socket, to: ~p"/accounts/register")}
   end
 
   @impl true
@@ -668,6 +702,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:group_deleted, group_id, parent_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply,
+     socket
+     |> put_flash(:info, gettext("Group deleted."))
+     |> push_navigate(to: delete_group_redirect_path(parent_id))}
+  end
+
+  def handle_info({:group_deleted, _group_id, _parent_id}, socket), do: {:noreply, socket}
+
   def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", topic: topic}, socket) do
     if topic == Social.group_presence_topic(socket.assigns.group) do
       {:noreply, refresh_group_presence(socket)}
@@ -699,7 +743,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       when profile_id == current_profile_id do
     {:noreply,
      socket
-     |> assign(:root_group_unread_count, Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!()))
+     |> assign(
+       :root_group_unread_count,
+       Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
+     )
      |> assign_group_unread_counts()
      |> maybe_push_root_group_unread_count()
      |> restream_loaded_children()}
@@ -1056,7 +1103,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_push_root_group_unread_count(socket) do
     if connected?(socket) do
-      push_event(socket, "root_group_unread_count_updated", %{count: socket.assigns.root_group_unread_count})
+      push_event(socket, "root_group_unread_count_updated", %{
+        count: socket.assigns.root_group_unread_count
+      })
     else
       socket
     end
@@ -1109,11 +1158,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
-  defp normalize_active_tab(tab, _is_member) when tab in ["values", "sub_groups", "members", "group_home"],
-    do: tab
+  defp delete_group_redirect_path(nil), do: ~p"/groups"
+  defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
+
+  defp normalize_active_tab(tab, _is_member)
+       when tab in ["values", "sub_groups", "members", "group_home"],
+       do: tab
 
   defp normalize_active_tab(tab, true)
-      when tab in ["create_group", "edit_group", "invite_profile"],
+       when tab in ["create_group", "edit_group", "invite_profile"],
        do: tab
 
   defp normalize_active_tab(_, _), do: default_active_tab()

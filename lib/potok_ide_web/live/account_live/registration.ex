@@ -64,16 +64,17 @@ defmodule PotokIdeWeb.AccountLive.Registration do
             &url(~p"/accounts/log-in/#{&1}")
           )
 
-        {:noreply,
-         socket
-         |> put_flash(
-           :info,
-           gettext(
-             "An invitation email was sent to %{email}",
-             email: account.email
-           )
-         )
-         #|> push_navigate(to: ~p"/accounts/log-in")
+        {
+          :noreply,
+          socket
+          |> put_flash(
+            :info,
+            gettext(
+              "An invitation email was sent to %{email}",
+              email: account.email
+            )
+          )
+          # |> push_navigate(to: ~p"/accounts/log-in")
         }
 
       {:error, %Ecto.Changeset{} = changeset} ->

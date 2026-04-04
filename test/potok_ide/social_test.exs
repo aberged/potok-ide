@@ -36,6 +36,84 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "delete_group/2" do
+    test "deletes a non-root leaf group for a member" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-group-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "deleteable-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, _deleted_group} = Social.delete_group(profile, group)
+      assert_raise Ecto.NoResultsError, fn -> Social.get_group!(group.id) end
+    end
+
+    test "rejects deleting the root group" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-root-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:error, :cannot_delete_root_group} =
+               Social.delete_group(profile, Social.get_root_group!())
+    end
+
+    test "rejects deleting a group with child groups" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-parent-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, parent_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "delete-parent-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, _child_group} =
+        Social.create_group(profile, parent_group, %{
+          "name" => "delete-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:error, :group_has_children} = Social.delete_group(profile, parent_group)
+      assert Social.get_group!(parent_group.id).id == parent_group.id
+    end
+  end
+
   describe "shared profile invitations" do
     test "inviting and accepting links a shared profile to the accepting account" do
       inviter_account = account_fixture()

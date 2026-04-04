@@ -24,6 +24,7 @@ defmodule PotokIde.GmailToken do
          {:ok, client_secret} <- fetch_config(config, :client_secret, "GMAIL_CLIENT_SECRET"),
          {:ok, refresh_token} <- fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN"),
          {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token) do
+      # IO.inspect(response)
       parse_access_token(response)
     end
   end

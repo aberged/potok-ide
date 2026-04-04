@@ -725,6 +725,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(viewer_lv, "#group-tab-edit-group")
       refute has_element?(viewer_lv, "#group-panel-edit-group")
       refute has_element?(viewer_lv, "#group-edit-form")
+
       assert render(viewer_lv) =~
                "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
     end
@@ -834,6 +835,91 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert render(lv) =~ "Group description"
       assert render(lv) =~ "Welcome"
       assert render(lv) =~ "<strong>public</strong>"
+    end
+
+    test "allows a member to delete a leaf group from the edit tab", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-group-live-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "delete-group-live",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "has_public_chat" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      assert has_element?(lv, "#group-delete-button")
+
+      lv
+      |> element("#group-delete-button")
+      |> render_click()
+
+      assert_redirect(lv, ~p"/groups/#{root_group.id}")
+      assert_raise Ecto.NoResultsError, fn -> Social.get_group!(group.id) end
+    end
+
+    test "keeps the group when deletion is blocked by child groups", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "delete-blocked-live-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, parent_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "delete-blocked-parent",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "has_public_chat" => false
+        })
+
+      {:ok, _child_group} =
+        Social.create_group(profile, parent_group, %{
+          "name" => "delete-blocked-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "has_public_chat" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{parent_group.id}/edit_group")
+
+      lv
+      |> element("#group-delete-button")
+      |> render_click()
+
+      assert render(lv) =~ "Delete this group&#39;s sub-groups before deleting the group."
+      assert Social.get_group!(parent_group.id).id == parent_group.id
     end
 
     test "renders value content as markdown and html", %{conn: conn} do
@@ -1071,12 +1157,15 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                  "content_format" => :markdown
                })
 
-            assert eventually(fn ->
-               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
-                has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
-              end, 80)
+      assert eventually(
+               fn ->
+                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
+                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+               end,
+               80
+             )
 
-        assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
+      assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
 
       assert {:ok, _value} =
                Social.create_value(writer_profile, grandchild_group, %{
@@ -1084,12 +1173,15 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                  "content_format" => :markdown
                })
 
-            assert eventually(fn ->
-               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "2") and
-                has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "2")
-              end, 80)
+      assert eventually(
+               fn ->
+                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "2") and
+                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "2")
+               end,
+               80
+             )
 
-        assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 2})
+      assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 2})
 
       {:ok, child_lv, _html} =
         Phoenix.ConnTest.build_conn()
@@ -1099,10 +1191,13 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(child_lv, "#group-unread-badge-#{child_group.id}", "1")
       assert_push_event(child_lv, "root_group_unread_count_updated", %{count: 1})
 
-            assert eventually(fn ->
-               has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
-                 has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
-              end, 80)
+      assert eventually(
+               fn ->
+                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
+                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+               end,
+               80
+             )
 
       assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
     end
