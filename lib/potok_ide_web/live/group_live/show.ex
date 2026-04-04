@@ -228,6 +228,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <EditGroupTab.panel
             :if={@is_member and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
+            description_details_open={@description_details_open}
             format_options={@format_options}
             group={@group}
             current_profile={@current_profile}
@@ -285,6 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
       |> assign(:edit_group_form, edit_group_form(group))
+      |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
        |> load_group_data(group, active_tab)
@@ -571,6 +573,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply, put_flash(socket, :error, gettext("Could not update group."))}
       end
     end
+  end
+
+  def handle_event("set_edit_group_description_open", %{"open" => open}, socket) do
+    {:noreply, assign(socket, :description_details_open, open == "true")}
   end
 
   def handle_event("invite", %{"invite" => %{"username" => username}}, socket) do

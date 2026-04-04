@@ -137,4 +137,65 @@
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
 
+/* Group description editor layout modes */
+.group-description-layout-button {
+  border: 1px solid var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  border-radius: 9999px;
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  padding: 0.6rem 0.9rem;
+  text-transform: uppercase;
+  transition:
+    background-color 150ms ease,
+    border-color 150ms ease,
+    color 150ms ease,
+    transform 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.group-description-layout-button:hover {
+  border-color: var(--color-primary);
+  color: var(--color-base-content);
+  transform: translateY(-1px);
+}
+
+.group-description-workspace:has(#group-description-layout-editor:checked) label[for="group-description-layout-editor"],
+.group-description-workspace:has(#group-description-layout-split:checked) label[for="group-description-layout-split"],
+.group-description-workspace:has(#group-description-layout-preview:checked) label[for="group-description-layout-preview"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
+  color: var(--color-primary-content);
+}
+
+.group-description-pane {
+  min-width: 0;
+}
+
+.group-description-workspace:has(#group-description-layout-editor:checked) .group-description-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.group-description-workspace:has(#group-description-layout-editor:checked) .group-description-pane-preview {
+  display: none;
+}
+
+.group-description-workspace:has(#group-description-layout-preview:checked) .group-description-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.group-description-workspace:has(#group-description-layout-preview:checked) .group-description-pane-editor {
+  display: none;
+}
+
+@media (max-width: 63.999rem) {
+  .group-description-workspace:has(#group-description-layout-split:checked) .group-description-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* This file is for your main application CSS */
