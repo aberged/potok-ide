@@ -412,6 +412,48 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "create_value/3" do
+    test "defaults is_data to false and accepts explicit true" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "value-is-data-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = Social.get_root_group!()
+
+      assert {:ok, default_value} =
+               Social.create_value(profile, group, %{
+                 "content" => "regular value",
+                 "content_format" => :markdown
+               })
+
+      assert default_value.is_data == false
+
+      assert {:ok, data_value} =
+               Social.create_value(profile, group, %{
+                 "content" => "structured value",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert data_value.is_data == true
+
+      values_by_id =
+        group
+        |> Social.list_group_values()
+        |> Map.new(fn value -> {value.id, value} end)
+
+      assert values_by_id[default_value.id].is_data == false
+      assert values_by_id[data_value.id].is_data == true
+    end
+  end
+
   describe "delete_value/2" do
     test "deletes a value created by the profile" do
       account = account_fixture()

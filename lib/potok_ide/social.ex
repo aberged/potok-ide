@@ -597,7 +597,7 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(v in Value,
-      where: v.group_id == ^group.id,
+      where: v.group_id == ^group.id and v.is_data == false,
       order_by: [asc: v.inserted_at, asc: v.id],
       preload: [:creator, :parent]
     )
@@ -609,7 +609,29 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(v in Value,
-      where: v.group_id == ^group.id,
+      where: v.group_id == ^group.id and v.is_data == false,
+      select: count(v.id)
+    )
+    |> Repo.one()
+  end
+
+  def list_group_data_values(%Group{} = group, opts \\ []) do
+    import Ecto.Query, only: [from: 2]
+
+    from(v in Value,
+      where: v.group_id == ^group.id and v.is_data == true,
+      order_by: [asc: v.inserted_at, asc: v.id],
+      preload: [:creator, :parent]
+    )
+    |> maybe_paginate(opts)
+    |> Repo.all()
+  end
+
+  def count_group_data_values(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(v in Value,
+      where: v.group_id == ^group.id and v.is_data == true,
       select: count(v.id)
     )
     |> Repo.one()
