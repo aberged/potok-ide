@@ -44,7 +44,7 @@ defmodule PotokIdeWeb.CoreComponents do
   attr :title, :string, default: nil
   attr :kind, :atom, values: [:info, :error], doc: "used for styling and flash lookup"
   attr :auto_dismiss, :boolean, default: true, doc: "whether the flash should close automatically"
-  attr :dismiss_after_ms, :integer, default: 3000, doc: "how long to wait before auto-dismissing"
+  attr :dismiss_after_ms, :integer, default: 2000, doc: "how long to wait before auto-dismissing"
   attr :rest, :global, doc: "the arbitrary HTML attributes to add to the flash container"
 
   slot :inner_block, doc: "the optional inner block that renders the flash message"
