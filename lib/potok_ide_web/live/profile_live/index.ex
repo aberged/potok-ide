@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="space-y-2 px-4 py-4 flex h-[calc(100dvh-4rem)] w-screen overflow-y-auto flex-col">
+      <div class="space-y-2 px-4 py-4 flex h-[calc(100dvh-4rem)] max-w-3xl mx-auto overflow-y-auto flex-col">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <.header>
             {gettext("Profiles")}

@@ -11,7 +11,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-edit-group" class="card">
+    <div id="group-panel-edit-group" class="card px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}

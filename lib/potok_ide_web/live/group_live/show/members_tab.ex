@@ -11,13 +11,13 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-members" class="card">
+    <div id="group-panel-members" class="card max-w-6xl px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-16rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
         <h3 class="card-title mb-2">{gettext("Members")}</h3>
 
         <ul id="group-members-list" class="space-y-2" phx-update="stream">

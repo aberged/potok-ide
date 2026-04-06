@@ -761,6 +761,27 @@ defmodule PotokIde.Social do
     |> Map.get(group.id, 0)
   end
 
+  def count_group_direct_unread_values(%Profile{} = profile, %Group{} = group) do
+    sql = """
+    SELECT COUNT(v.id)::bigint AS unread_count
+    FROM groups g
+    JOIN group_memberships gm
+      ON gm.group_id = g.id AND gm.profile_id = $1
+    LEFT JOIN group_value_reads gvr
+      ON gvr.group_id = g.id AND gvr.profile_id = $1
+    LEFT JOIN values v
+      ON v.group_id = g.id
+     AND v.is_data = FALSE
+     AND v.id > COALESCE(gvr.last_read_value_id, 0)
+    WHERE g.id = $2 AND g.is_root = FALSE
+    """
+
+    case Repo.query(sql, [profile.id, group.id]) do
+      {:ok, %{rows: [[unread_count]]}} -> unread_count
+      {:error, _reason} -> 0
+    end
+  end
+
   def list_pending_invitations(%Profile{} = invitee) do
     import Ecto.Query, only: [from: 2]
 

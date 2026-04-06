@@ -26,7 +26,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="sticky top-[4rem] w-screen z-50 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
+      <div class="sticky top-[4rem] max-w-6xl justify-center z-50 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link
@@ -55,12 +55,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="values"
             aria-label={gettext("Open values tab")}
-            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            class="relative cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <.icon
               name="hero-chat-bubble-oval-left-ellipsis"
               class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
             />
+            <span
+              :if={@current_group_unread_count > 0}
+              id="group-values-unread-badge"
+              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+            >
+              {unread_badge_label(@current_group_unread_count)}
+            </span>
           </button>
           <button
             :if={@group.is_root or @is_member}
@@ -69,12 +76,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="sub_groups"
             aria-label={gettext("Open sub-groups tab")}
-            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            class="relative cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <.icon
               name="hero-folder-open"
               class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
             />
+            <span
+              :if={@sub_groups_unread_count > 0}
+              id="group-sub-groups-unread-badge"
+              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+            >
+              {unread_badge_label(@sub_groups_unread_count)}
+            </span>
           </button>
           <button
             :if={@group.parent_id != nil && @is_member}
@@ -284,6 +298,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
        |> assign(:group_unread_counts, %{})
+      |> assign(:current_group_unread_count, 0)
+      |> assign(:sub_groups_unread_count, 0)
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -1236,17 +1252,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp assign_group_unread_counts(%{assigns: %{current_profile: nil}} = socket) do
-    assign(socket, :group_unread_counts, %{})
+    socket
+    |> assign(:group_unread_counts, %{})
+    |> assign(:current_group_unread_count, 0)
+    |> assign(:sub_groups_unread_count, 0)
   end
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
     groups = [group | Map.get(socket.assigns, :loaded_children, [])]
 
-    assign(
-      socket,
-      :group_unread_counts,
-      Social.list_group_unread_counts(socket.assigns.current_profile, groups)
-    )
+    group_unread_counts = Social.list_group_unread_counts(socket.assigns.current_profile, groups)
+
+    current_group_unread_count =
+      Social.count_group_direct_unread_values(socket.assigns.current_profile, group)
+
+    sub_groups_unread_count =
+      max(Map.get(group_unread_counts, group.id, 0) - current_group_unread_count, 0)
+
+    socket
+    |> assign(:group_unread_counts, group_unread_counts)
+    |> assign(:current_group_unread_count, current_group_unread_count)
+    |> assign(:sub_groups_unread_count, sub_groups_unread_count)
   end
 
   defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
@@ -1331,6 +1357,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
        do: tab
 
     defp normalize_active_tab(_, group, _is_member), do: default_active_tab(group)
+
+    defp unread_badge_label(count) when count > 999, do: "999+"
+    defp unread_badge_label(count), do: Integer.to_string(count)
 
   defp normalize_select_nil(attrs, key) when is_binary(key) do
     case Map.get(attrs, key) do
