@@ -100,8 +100,8 @@ Mailgun remains available by setting `MAILER_ADAPTER=mailgun` together with `MAI
 The entry flow at `/` is auth-aware:
 
 1. Guests are redirected to `/accounts/log-in`.
-2. Authenticated accounts without a selected profile are redirected to `/profiles`.
-3. Authenticated accounts with a current profile are redirected to `/groups`.
+2. Authenticated accounts without a current or default profile are redirected to `/profiles`.
+3. Authenticated accounts with either a current profile or a default profile are redirected to `/groups`.
 
 The web layer combines three cross-cutting concerns:
 
@@ -197,7 +197,7 @@ The router uses separate LiveView sessions for:
 
 The main concepts in the system are:
 
-* `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, and one selected `current_profile`.
+* `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, one selected `current_profile`, and one `default_profile` used as the fallback profile when no explicit current profile is set.
 * `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
 * `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, and optional parent relations.
 * `Value`: content posted by a profile in a group, optionally as part of a reply chain.
@@ -216,6 +216,7 @@ Relationship summary:
 ```text
 Account 1----* AccountProfile *----1 Profile
 Account 1----0..1 current_profile -> Profile
+Account 1----0..1 default_profile -> Profile
 
 Profile 1----* GroupMembership *----1 Group
 Profile 1----* created_groups
@@ -230,6 +231,32 @@ Value 0..1----1 parent_value
 Value 1----* child_values
 
 GroupInvitation belongs_to group, inviter(profile), invitee(profile)
+```
+
+Default profile behavior:
+
+* The first profile created for an account becomes both its `current_profile` and `default_profile`.
+* Later profile creation does not overwrite either selection.
+* If `current_profile` is cleared, the web layer falls back to `default_profile` for profile-scoped behavior.
+
+## Frontend Hook APIs
+
+The group description panel exposes a small browser API through the `GroupDescriptionActions` LiveView hook in `assets/js/app.js`.
+
+Available functions on `window.Potok` while the group description panel is mounted:
+
+* `insertGroupValue(content, options)` pushes a `create_data_value` event.
+* `updateGroupDescription(description, options)` pushes an `update_group_description` event.
+* `getGroupDescription()` returns the current raw group description and description format from the hook dataset.
+* `getGroupDataValues()` pushes a `list_group_data_values` event and returns the server response.
+
+`getGroupDescription()` resolves to an object shaped like:
+
+```js
+{
+  description: "...",
+  descriptionFormat: "html"
+}
 ```
 
 ## Internationalization
