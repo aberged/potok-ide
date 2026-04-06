@@ -586,7 +586,7 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show.ex:102
 #, elixir-autogen, elixir-format
 msgid "Values"
-msgstr ""
+msgstr "Chat"
 
 #: lib/potok_ide_web/components/layouts.ex:67
 #, elixir-autogen, elixir-format

@@ -578,7 +578,7 @@ msgstr "Korisničko ime je obavezno."
 #: lib/potok_ide_web/live/group_live/show.ex:102
 #, elixir-autogen, elixir-format
 msgid "Values"
-msgstr "Vrednosti"
+msgstr "Chat"
 
 #: lib/potok_ide_web/components/layouts.ex:67
 #, elixir-autogen, elixir-format

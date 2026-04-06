@@ -53,6 +53,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
+            phx-value-tab="values"
+            aria-label={gettext("Open values tab")}
+            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+          >
+            <.icon
+              name="hero-chat-bubble-oval-left-ellipsis"
+              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+            />
+          </button>
+          <button
+            :if={@group.is_root or @is_member}
+            id="group-subgroups-summary"
+            type="button"
+            phx-click="switch_tab"
             phx-value-tab="sub_groups"
             aria-label={gettext("Open sub-groups tab")}
             class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
@@ -116,12 +130,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
             <div class="flex min-w-[14rem] flex-col gap-2 z-100">
               <Components.group_tab_button
+                :if={!@group.is_root}
+                id="group-tab-group-home"
+                tab="group_home"
+                active_tab={@active_tab}
+                label={@group.name}
+                icon="hero-home"
+              />
+              <Components.group_tab_button
                 :if={@group.parent_id != nil and @is_member}
                 id="group-tab-values"
                 tab="values"
                 active_tab={@active_tab}
                 label={gettext("Values")}
-                icon="hero-document"
+                icon="hero-chat-bubble-oval-left-ellipsis"
               />
               <Components.group_tab_button
                 :if={@group.is_root or @is_member}
@@ -155,15 +177,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("Invite profile")}
                 icon="hero-user-plus"
               />
-              <div class="flex flex-row gap-2">
-                <Components.group_tab_button
-                  :if={!@group.is_root}
-                  id="group-tab-group-home"
-                  tab="group_home"
-                  active_tab={@active_tab}
-                  label={@group.name}
-                  icon="hero-home"
-                />
+              <div class="flex flex-row justify-end gap-2">
                 <Components.group_tab_button
                   :if={@is_member and !@group.is_root}
                   id="group-tab-edit-group"
@@ -1298,7 +1312,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
-  defp default_active_tab, do: "values"
+  defp default_active_tab, do: "group_home"
 
   defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
