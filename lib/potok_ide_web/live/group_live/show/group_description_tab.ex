@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="h-[calc(100dvh-12rem)] overflow-auto">
+      <div class="h-[calc(100dvh-12rem)] max-w-screen overflow-auto">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"
