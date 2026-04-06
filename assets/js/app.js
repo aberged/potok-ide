@@ -388,10 +388,12 @@ const PushNotifications = {
 const GroupDescriptionActions = {
   mounted() {
     this.registerInsertValue()
+    void this.reloadDescriptionScriptsIfNeeded()
   },
 
   updated() {
     this.registerInsertValue()
+    void this.reloadDescriptionScriptsIfNeeded()
   },
 
   destroyed() {
@@ -461,6 +463,55 @@ const GroupDescriptionActions = {
     window.Potok.updateGroupDescription = this.updateGroupDescription
     window.Potok.getGroupDescription = this.getGroupDescription
     window.Potok.getGroupDataValues = this.getGroupDataValues
+  },
+
+  async reloadDescriptionScriptsIfNeeded() {
+    const contentElement = this.el.querySelector("#group-description-content")
+    const descriptionSignature = `${this.el.dataset.descriptionFormat || ""}:${this.el.dataset.description || ""}`
+
+    if (!contentElement) {
+      this.lastDescriptionSignature = descriptionSignature
+      return
+    }
+
+    if (this.lastDescriptionSignature === descriptionSignature) {
+      return
+    }
+
+    this.lastDescriptionSignature = descriptionSignature
+
+    const scripts = Array.from(contentElement.querySelectorAll("script"))
+
+    for (const existingScript of scripts) {
+      const replacementScript = document.createElement("script")
+
+      for (const {name, value} of Array.from(existingScript.attributes)) {
+        replacementScript.setAttribute(name, value)
+      }
+
+      if (
+        existingScript.src &&
+        !existingScript.hasAttribute("async") &&
+        !existingScript.hasAttribute("defer") &&
+        existingScript.type !== "module"
+      ) {
+        replacementScript.async = false
+      }
+
+      if (existingScript.src) {
+        const loadPromise = new Promise(resolve => {
+          replacementScript.addEventListener("load", resolve, {once: true})
+          replacementScript.addEventListener("error", resolve, {once: true})
+        })
+
+        existingScript.replaceWith(replacementScript)
+        await loadPromise
+        continue
+      }
+
+      replacementScript.textContent = existingScript.textContent
+      existingScript.replaceWith(replacementScript)
+    }
   },
 }
 
