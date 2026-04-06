@@ -26,7 +26,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="sticky top-[4rem] max-w-dvw z-10 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
+      <div class="sticky top-[4rem] w-screen z-50 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link
@@ -114,7 +114,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </button>
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
-            <div class="flex min-w-[14rem] flex-col gap-2">
+            <div class="flex min-w-[14rem] flex-col gap-2 z-100">
               <Components.group_tab_button
                 :if={@group.parent_id != nil and @is_member}
                 id="group-tab-values"
@@ -582,6 +582,45 @@ defmodule PotokIdeWeb.GroupLive.Show do
      socket
      |> maybe_increment_pagination(:members_pagination)
      |> refresh_group_data()}
+  end
+
+  def handle_event("remove_member", %{"id" => id}, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    case Integer.parse(id) do
+      {member_id, ""} ->
+        case Social.remove_group_member(current_profile, group, member_id) do
+          {:ok, _member} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, gettext("Member removed."))
+             |> refresh_group_data()}
+
+          {:error, :not_group_creator} ->
+            {:noreply,
+             put_flash(socket, :error, gettext("Only the group creator can remove members."))}
+
+          {:error, :cannot_remove_group_creator} ->
+            {:noreply, put_flash(socket, :error, gettext("The group creator cannot be removed."))}
+
+          {:error, :not_a_group_member} ->
+            {:noreply, put_flash(socket, :error, gettext("That profile is not a group member."))}
+
+          {:error, :member_not_found} ->
+            {:noreply, put_flash(socket, :error, gettext("Profile not found."))}
+
+          {:error, :cannot_remove_root_group_members} ->
+            {:noreply,
+             put_flash(socket, :error, gettext("Root group members cannot be removed."))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not remove member."))}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Profile not found."))}
+    end
   end
 
   def handle_event("load_more_values", _params, socket) do

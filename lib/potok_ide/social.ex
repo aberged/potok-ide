@@ -20,6 +20,7 @@ defmodule PotokIde.Social do
     Group,
     GroupInvitation,
     GroupMembership,
+    GroupValueRead,
     Profile,
     ProfileInvitation,
     Value
@@ -414,6 +415,62 @@ defmodule PotokIde.Social do
         {:error, _step, reason, _changes} ->
           {:error, reason}
       end
+    end
+  end
+
+  def remove_group_member(%Profile{} = actor, %Group{} = group, member_profile_id)
+      when is_integer(member_profile_id) do
+    case Repo.get(Profile, member_profile_id) do
+      nil ->
+        {:error, :member_not_found}
+
+      member ->
+        remove_group_member(actor, group, member)
+    end
+  end
+
+  def remove_group_member(%Profile{} = actor, %Group{} = group, %Profile{} = member) do
+    cond do
+      group.is_root ->
+        {:error, :cannot_remove_root_group_members}
+
+      actor.id != group.creator_id ->
+        {:error, :not_group_creator}
+
+      member.id == group.creator_id ->
+        {:error, :cannot_remove_group_creator}
+
+      true ->
+        case Repo.get_by(GroupMembership, group_id: group.id, profile_id: member.id) do
+          nil ->
+            {:error, :not_a_group_member}
+
+          %GroupMembership{} ->
+            Multi.new()
+            |> Multi.delete_all(
+              :membership,
+              from(gm in GroupMembership,
+                where: gm.group_id == ^group.id and gm.profile_id == ^member.id
+              )
+            )
+            |> Multi.delete_all(
+              :group_value_reads,
+              from(gvr in GroupValueRead,
+                where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
+              )
+            )
+            |> Repo.transaction()
+            |> case do
+              {:ok, _changes} ->
+                broadcast_group_updated(group)
+                broadcast_group_unread_counts_updated(group)
+                broadcast_profile_group_unread_counts_updated(member, group.id)
+                {:ok, member}
+
+              {:error, _step, reason, _changes} ->
+                {:error, reason}
+            end
+        end
     end
   end
 

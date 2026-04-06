@@ -39,8 +39,8 @@
   </head>
   <body class="min-h-screen max-h-screen h-screen overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
     <div class="flex flex-col relative min-h-screen max-h-screen overflow-clip">
-      <nav class="sticky top-0 sm:px-6 lg:px-8 z-100">
-        <div class="mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
+      <nav class="sticky top-0 z-100">
+        <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
           <% profile = assigns[:current_profile] %>
           <% profile_picture_url =
             if profile && is_binary(profile.profile_picture_url) do

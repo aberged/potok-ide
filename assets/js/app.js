@@ -388,12 +388,12 @@ const PushNotifications = {
 const GroupDescriptionActions = {
   mounted() {
     this.registerInsertValue()
-    void this.reloadDescriptionScriptsIfNeeded()
+    this.reloadDescriptionScriptsIfNeeded()
   },
 
   updated() {
     this.registerInsertValue()
-    void this.reloadDescriptionScriptsIfNeeded()
+    this.reloadDescriptionScriptsIfNeeded()
   },
 
   destroyed() {
@@ -503,14 +503,17 @@ const GroupDescriptionActions = {
           replacementScript.addEventListener("load", resolve, {once: true})
           replacementScript.addEventListener("error", resolve, {once: true})
         })
-
-        existingScript.replaceWith(replacementScript)
+        try {
+          existingScript.replaceWith(replacementScript)
+        } catch (error) {}
         await loadPromise
         continue
       }
 
       replacementScript.textContent = existingScript.textContent
-      existingScript.replaceWith(replacementScript)
+      try {
+        existingScript.replaceWith(replacementScript)
+      } catch (error) {}
     }
   },
 }

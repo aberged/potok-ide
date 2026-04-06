@@ -77,6 +77,53 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
                "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha profile"
     end
 
+    test "sets a default profile from the profiles page", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default alpha",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default beta",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/profiles")
+
+      assert html =~ "Default profile:"
+      assert has_element?(lv, "#set-default-profile-#{second_profile.id}")
+
+      result =
+        lv
+        |> element("#set-default-profile-#{second_profile.id}")
+        |> render_click()
+
+      assert result =~ "Default profile updated."
+      assert result =~ "default beta"
+      assert has_element?(lv, "#default-profile-badge-#{second_profile.id}", "Default")
+      refute has_element?(lv, "#default-profile-badge-#{first_profile.id}")
+
+      updated_account = Accounts.get_account!(account.id)
+      assert updated_account.default_profile_id == second_profile.id
+    end
+
     test "creates a profile on the dedicated page", %{conn: conn} do
       account = account_fixture()
       account = Accounts.get_account!(account.id)

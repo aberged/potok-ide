@@ -30,12 +30,29 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </li>
 
           <li :for={{dom_id, member} <- @members} id={dom_id}>
-            <Components.profile_identity
-              profile={member}
-              me={member.id == @current_profile.id}
-              online?={MapSet.member?(@online_profile_ids, member.id)}
-              presence_badge_id={"group-member-presence-#{member.id}"}
-            />
+            <div class="flex items-start justify-between gap-3 rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 shadow-sm">
+              <Components.profile_identity
+                profile={member}
+                me={member.id == @current_profile.id}
+                online?={MapSet.member?(@online_profile_ids, member.id)}
+                presence_badge_id={"group-member-presence-#{member.id}"}
+              />
+
+              <button
+                :if={@group.creator_id == @current_profile.id and member.id != @group.creator_id}
+                id={"group-remove-member-#{member.id}"}
+                type="button"
+                phx-click="remove_member"
+                phx-value-id={member.id}
+                data-confirm={
+                  gettext("Remove %{username} from this group?", username: member.username)
+                }
+                aria-label={gettext("Remove %{username}", username: member.username)}
+                class="btn btn-ghost btn-xs rounded-full border border-error/30 bg-error/5 text-error transition-colors hover:border-error/50 hover:bg-error/10"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+            </div>
           </li>
         </ul>
 

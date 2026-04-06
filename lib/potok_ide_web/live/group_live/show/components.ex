@@ -96,7 +96,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       )
 
     ~H"""
-    <div id={@id} class={["px-4 py-4 text-sm text-base-content/60 relative z-100", @class]}>
+    <div id={@id} class={["px-4 py-4 text-sm text-base-content/60 relative z-40", @class]}>
       <nav
         aria-label={gettext("Current group path")}
         class="flex flex-wrap items-center align-center gap-x-2 gap-y-1"

@@ -290,6 +290,109 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              end)
     end
 
+    test "allows the group creator to remove a member from the members tab", %{conn: conn} do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "remove-ui-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "remove-ui-member",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      group = create_child_group!(owner_profile, "remove-ui-group")
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(lv, "#group-remove-member-#{invitee_profile.id}")
+
+      lv
+      |> element("#group-remove-member-#{invitee_profile.id}")
+      |> render_click()
+
+      assert has_element?(lv, "#group-members-list", owner_profile.username)
+      refute has_element?(lv, "#group-members-list", invitee_profile.username)
+      refute Social.member_of_group?(invitee_profile, group)
+    end
+
+    test "does not show member removal controls to non-creators", %{conn: conn} do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "remove-ui-owner-2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "remove-ui-member-actor",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "remove-ui-member-target",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      member_account = Accounts.get_account!(member_account.id)
+      group = create_child_group!(owner_profile, "remove-ui-group-2")
+
+      assert {:ok, member_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_member_invitation} =
+               Social.accept_group_invitation(member_invitation, member_profile)
+
+      assert {:ok, target_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, invitee_profile)
+
+      assert {:ok, _accepted_target_invitation} =
+               Social.accept_group_invitation(target_invitation, invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(member_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      refute has_element?(lv, "#group-remove-member-#{invitee_profile.id}")
+      refute has_element?(lv, "#group-remove-member-#{owner_profile.id}")
+    end
+
     test "updates value avatars with creator presence in realtime", %{conn: conn} do
       owner_account = account_fixture()
       invitee_account = account_fixture()

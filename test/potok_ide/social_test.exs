@@ -293,6 +293,116 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "remove_group_member/3" do
+    test "allows the group creator to remove another member" do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "remove-member-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "remove-member-target",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "remove-member-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, member_profile)
+
+      assert Social.member_of_group?(member_profile, group)
+
+      assert {:ok, removed_profile} =
+               Social.remove_group_member(owner_profile, group, member_profile.id)
+
+      assert removed_profile.id == member_profile.id
+      refute Social.member_of_group?(member_profile, group)
+      assert Social.count_group_members(group) == 1
+    end
+
+    test "rejects removal by a non-creator member" do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+      target_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "remove-member-owner-2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "remove-member-non-creator",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, target_profile} =
+        Social.create_profile_for_account(target_account, %{
+          username: "remove-member-target-2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "remove-member-group-2",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, member_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_member_invitation} =
+               Social.accept_group_invitation(member_invitation, member_profile)
+
+      assert {:ok, target_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, target_profile)
+
+      assert {:ok, _accepted_target_invitation} =
+               Social.accept_group_invitation(target_invitation, target_profile)
+
+      assert {:error, :not_group_creator} =
+               Social.remove_group_member(member_profile, group, target_profile.id)
+
+      assert Social.member_of_group?(target_profile, group)
+    end
+  end
+
   describe "group invitations push notifications" do
     test "sends push notifications to the invitee when sent and the inviter when accepted" do
       request_pid = self()

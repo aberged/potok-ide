@@ -15,13 +15,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       data-current-profile-id={@current_profile && @current_profile.id}
       data-description={@group.description || ""}
       data-description-format={@group.description_format}
+      class="w-screen"
     >
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="h-[calc(100dvh-12rem)] w-full overflow-y-auto">
+      <div class="h-[calc(100dvh-12rem)] w-screen overflow-y-auto">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"
