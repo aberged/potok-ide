@@ -10,6 +10,7 @@ defmodule PotokIde.Accounts.Account do
     field :authenticated_at, :utc_datetime, virtual: true
 
     belongs_to :current_profile, PotokIde.Social.Profile
+    belongs_to :default_profile, PotokIde.Social.Profile
 
     many_to_many :profiles, PotokIde.Social.Profile,
       join_through: PotokIde.Social.AccountProfile,

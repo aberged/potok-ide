@@ -88,52 +88,24 @@ defmodule PotokIde.Accounts do
   The profile must be linked to the account through `accounts_profiles`.
   """
   def set_current_profile(%Account{} = account, %Profile{} = profile) do
-    linked? =
-      from(ap in AccountProfile,
-        where: ap.account_id == ^account.id and ap.profile_id == ^profile.id,
-        select: 1
-      )
-      |> Repo.exists?()
-
-    if linked? do
-      account
-      |> Ecto.Changeset.change(current_profile_id: profile.id)
-      |> Repo.update()
-      |> case do
-        {:ok, updated_account} = ok ->
-          Phoenix.PubSub.broadcast(
-            PotokIde.PubSub,
-            "accounts:#{updated_account.id}",
-            {:account_profiles_updated, updated_account.id}
-          )
-
-          ok
-
-        error ->
-          error
-      end
-    else
-      {:error, :profile_not_linked_to_account}
-    end
+    update_account_profile_reference(account, :current_profile_id, profile)
   end
 
   def clear_current_profile(%Account{} = account) do
-    account
-    |> Ecto.Changeset.change(current_profile_id: nil)
-    |> Repo.update()
-    |> case do
-      {:ok, updated_account} = ok ->
-        Phoenix.PubSub.broadcast(
-          PotokIde.PubSub,
-          "accounts:#{updated_account.id}",
-          {:account_profiles_updated, updated_account.id}
-        )
+    clear_account_profile_reference(account, :current_profile_id)
+  end
 
-        ok
+  @doc """
+  Sets the account's default profile.
 
-      error ->
-        error
-    end
+  The profile must be linked to the account through `accounts_profiles`.
+  """
+  def set_default_profile(%Account{} = account, %Profile{} = profile) do
+    update_account_profile_reference(account, :default_profile_id, profile)
+  end
+
+  def clear_default_profile(%Account{} = account) do
+    clear_account_profile_reference(account, :default_profile_id)
   end
 
   @doc """
@@ -355,6 +327,44 @@ defmodule PotokIde.Accounts do
     {:ok, query} = AccountToken.verify_session_token_query(token)
     Repo.one(query)
   end
+
+  defp update_account_profile_reference(%Account{} = account, field, %Profile{} = profile) do
+    if account_has_profile?(account, profile) do
+      account
+      |> Ecto.Changeset.change([{field, profile.id}])
+      |> Repo.update()
+      |> broadcast_account_profile_update()
+    else
+      {:error, :profile_not_linked_to_account}
+    end
+  end
+
+  defp clear_account_profile_reference(%Account{} = account, field) do
+    account
+    |> Ecto.Changeset.change([{field, nil}])
+    |> Repo.update()
+    |> broadcast_account_profile_update()
+  end
+
+  defp account_has_profile?(%Account{} = account, %Profile{} = profile) do
+    from(ap in AccountProfile,
+      where: ap.account_id == ^account.id and ap.profile_id == ^profile.id,
+      select: 1
+    )
+    |> Repo.exists?()
+  end
+
+  defp broadcast_account_profile_update({:ok, updated_account} = ok) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      "accounts:#{updated_account.id}",
+      {:account_profiles_updated, updated_account.id}
+    )
+
+    ok
+  end
+
+  defp broadcast_account_profile_update(error), do: error
 
   @doc """
   Gets the account with the given magic link token.

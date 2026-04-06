@@ -337,7 +337,9 @@ defmodule PotokIdeWeb.AccountAuth do
     ~p"/accounts/settings"
   end
 
-  defp signed_in_path(_, %Accounts.Account{current_profile_id: nil}), do: ~p"/profiles"
+  defp signed_in_path(_, %Accounts.Account{current_profile_id: nil, default_profile_id: nil}),
+    do: ~p"/profiles"
+
   defp signed_in_path(_, %Accounts.Account{}), do: ~p"/groups"
 
   @doc """

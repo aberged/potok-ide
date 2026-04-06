@@ -356,6 +356,111 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  def handle_event("create_data_value", %{"value" => attrs}, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    if not socket.assigns.is_member do
+      {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
+    else
+      case Social.create_value(current_profile, group, normalize_select_nil(attrs, "parent_id")) do
+        {:ok, _value} ->
+          socket =
+            socket
+            |> assign(:active_tab, socket.assigns.active_tab || "values")
+            |> assign(:new_value_form, empty_new_value_form())
+            # |> put_flash(:info, gettext("Value posted."))
+            |> refresh_group_data()
+
+          # |> push_event("scroll_values_to_latest", %{})
+
+          {:noreply, socket}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:noreply, assign(socket, :new_value_form, to_form(changeset))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
+      end
+    end
+  end
+
+  def handle_event("update_group_description", params, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    if not socket.assigns.is_member do
+      {:reply, %{ok: false, error: gettext("You must be a group member to edit this group.")},
+       put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+    else
+      attrs = %{
+        "description" => Map.get(params, "description", group.description || ""),
+        "description_format" => Map.get(params, "description_format", group.description_format)
+      }
+
+      case Social.update_group(current_profile, group, attrs) do
+        {:ok, updated_group} ->
+          socket =
+            socket
+            |> assign(:group, updated_group)
+            |> assign(:edit_group_form, edit_group_form(updated_group))
+            |> refresh_group_data()
+
+          {:reply,
+           %{
+             ok: true,
+             group: %{
+               id: updated_group.id,
+               description: updated_group.description,
+               description_format: updated_group.description_format
+             }
+           }, socket}
+
+        {:error, :not_a_group_member} ->
+          {:reply, %{ok: false, error: gettext("You must be a group member to edit this group.")},
+           put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+
+        {:error, %Ecto.Changeset{} = changeset} ->
+          {:reply, %{ok: false, error: gettext("Could not update group description.")},
+           assign(socket, :edit_group_form, to_form(Map.put(changeset, :action, :validate)))}
+
+        {:error, _reason} ->
+          {:reply, %{ok: false, error: gettext("Could not update group description.")},
+           put_flash(socket, :error, gettext("Could not update group description."))}
+      end
+    end
+  end
+
+  def handle_event("list_group_data_values", _params, socket) do
+    if not socket.assigns.is_member do
+      {:reply,
+       %{ok: false, error: gettext("You must be a group member to access group data values.")},
+       put_flash(
+         socket,
+         :error,
+         gettext("You must be a group member to access group data values.")
+       )}
+    else
+      values =
+        socket.assigns.group
+        |> Social.list_group_data_values()
+        |> Enum.map(fn value ->
+          %{
+            id: value.id,
+            content: value.content,
+            content_format: value.content_format,
+            is_data: value.is_data,
+            group_id: value.group_id,
+            parent_id: value.parent_id,
+            creator_id: value.creator_id,
+            creator_username: value.creator && value.creator.username
+          }
+        end)
+
+      {:reply, %{ok: true, values: values}, socket}
+    end
+  end
+
   def handle_event("start_edit_value", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
     previous_editing_value_id = socket.assigns.editing_value_id

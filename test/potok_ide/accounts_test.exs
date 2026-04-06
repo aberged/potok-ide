@@ -2,6 +2,7 @@ defmodule PotokIde.AccountsTest do
   use PotokIde.DataCase
 
   alias PotokIde.Accounts
+  alias PotokIde.Social
 
   import PotokIde.AccountsFixtures
   alias PotokIde.Accounts.{Account, AccountToken}
@@ -103,6 +104,60 @@ defmodule PotokIde.AccountsTest do
 
       # not authenticated
       refute Accounts.sudo_mode?(%Account{})
+    end
+  end
+
+  describe "default profile helpers" do
+    test "sets the default profile when linked to the account" do
+      account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default-profile-first",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default-profile-second",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:ok, updated_account} = Accounts.set_default_profile(account, second_profile)
+      assert updated_account.default_profile_id == second_profile.id
+      refute updated_account.default_profile_id == first_profile.id
+    end
+
+    test "rejects setting a default profile that is not linked to the account" do
+      account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "unlinked-default-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:error, :profile_not_linked_to_account} =
+               Accounts.set_default_profile(account, other_profile)
+    end
+
+    test "clears the default profile" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "clear-default-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:ok, account} = Accounts.set_default_profile(account, profile)
+      assert {:ok, updated_account} = Accounts.clear_default_profile(account)
+      assert is_nil(updated_account.default_profile_id)
     end
   end
 

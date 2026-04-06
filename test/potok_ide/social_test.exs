@@ -36,6 +36,37 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "create_profile_for_account/2" do
+    test "sets both current and default profiles for the first account profile only" do
+      account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default-first-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+
+      assert Social.get_account_current_profile(account).id == first_profile.id
+      assert Social.get_account_default_profile(account).id == first_profile.id
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default-second-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+
+      assert Social.get_account_current_profile(account).id == first_profile.id
+      assert Social.get_account_default_profile(account).id == first_profile.id
+      refute Social.get_account_default_profile(account).id == second_profile.id
+    end
+  end
+
   describe "delete_group/2" do
     test "deletes a non-root leaf group for a member" do
       account = account_fixture()

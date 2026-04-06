@@ -124,18 +124,31 @@ defmodule PotokIde.Social do
         profile_id: profile.id
       })
     end)
-    |> Multi.run(:set_current_profile, fn repo, %{profile: profile} ->
-      if account.current_profile_id do
+    |> Multi.run(:update_account_profiles, fn repo, %{profile: profile} ->
+      changes =
+        %{}
+        |> maybe_put_profile_reference(
+          :current_profile_id,
+          account.current_profile_id,
+          profile.id
+        )
+        |> maybe_put_profile_reference(
+          :default_profile_id,
+          account.default_profile_id,
+          profile.id
+        )
+
+      if changes == %{} do
         {:ok, account}
       else
         account
-        |> Ecto.Changeset.change(current_profile_id: profile.id)
+        |> Ecto.Changeset.change(changes)
         |> repo.update()
       end
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{profile: profile, set_current_profile: updated_account}} ->
+      {:ok, %{profile: profile, update_account_profiles: updated_account}} ->
         broadcast_account_profiles_updated(updated_account)
         {:ok, profile}
 
@@ -495,21 +508,12 @@ defmodule PotokIde.Social do
   end
 
   def get_account_current_profile(%Account{} = account) do
-    import Ecto.Query, only: [from: 2]
+    get_account_profile(account, account.current_profile_id) ||
+      get_account_profile(account, account.default_profile_id)
+  end
 
-    case account.current_profile_id do
-      nil ->
-        nil
-
-      profile_id ->
-        from(p in Profile,
-          join: ap in AccountProfile,
-          on: ap.profile_id == p.id,
-          where: p.id == ^profile_id and ap.account_id == ^account.id,
-          select: p
-        )
-        |> Repo.one()
-    end
+  def get_account_default_profile(%Account{} = account) do
+    get_account_profile(account, account.default_profile_id)
   end
 
   def list_child_groups(%Group{} = group) do
@@ -522,6 +526,29 @@ defmodule PotokIde.Social do
   def list_group_path(%Group{} = group) do
     do_list_group_path(group, [])
   end
+
+  defp maybe_put_profile_reference(changes, _field, current_value, _profile_id)
+       when not is_nil(current_value) do
+    changes
+  end
+
+  defp maybe_put_profile_reference(changes, field, nil, profile_id) do
+    Map.put(changes, field, profile_id)
+  end
+
+  defp get_account_profile(%Account{} = account, profile_id) when is_integer(profile_id) do
+    import Ecto.Query, only: [from: 2]
+
+    from(p in Profile,
+      join: ap in AccountProfile,
+      on: ap.profile_id == p.id,
+      where: p.id == ^profile_id and ap.account_id == ^account.id,
+      select: p
+    )
+    |> Repo.one()
+  end
+
+  defp get_account_profile(%Account{}, _profile_id), do: nil
 
   def list_visible_group_path_for_profile(%Group{} = group, nil), do: [group]
 

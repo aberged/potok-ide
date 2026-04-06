@@ -8,7 +8,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-description">
+    <div
+      id="group-panel-description"
+      phx-hook="GroupDescriptionActions"
+      data-group-id={@group.id}
+      data-current-profile-id={@current_profile && @current_profile.id}
+      data-description={@group.description || ""}
+      data-description-format={@group.description_format}
+    >
       <Components.group_path
         group={@group}
         current_profile={@current_profile}

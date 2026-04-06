@@ -385,6 +385,85 @@ const PushNotifications = {
   },
 }
 
+const GroupDescriptionActions = {
+  mounted() {
+    this.registerInsertValue()
+  },
+
+  updated() {
+    this.registerInsertValue()
+  },
+
+  destroyed() {
+    if (window.Potok?.insertGroupValue === this.insertGroupValue) {
+      delete window.Potok.insertGroupValue
+    }
+
+    if (window.Potok?.updateGroupDescription === this.updateGroupDescription) {
+      delete window.Potok.updateGroupDescription
+    }
+
+    if (window.Potok?.getGroupDescription === this.getGroupDescription) {
+      delete window.Potok.getGroupDescription
+    }
+
+    if (window.Potok?.getGroupDataValues === this.getGroupDataValues) {
+      delete window.Potok.getGroupDataValues
+    }
+  },
+
+  registerInsertValue() {
+    window.Potok = window.Potok || {}
+
+    this.insertGroupValue = async (content, options = {}) => {
+      const normalizedContent = typeof content === "string" ? content : ""
+      //console.debug("Inserting group value with content:", normalizedContent, "and options:", options)
+      const res = await this.pushEvent("create_data_value", {
+        value: {
+          content: normalizedContent,
+          content_format: options.contentFormat || options.content_format || "markdown",
+          is_data: true, //options.isData === true || options.is_data === true,
+          parent_id: "" //options.parentId || options.parent_id || "",
+        },
+      })
+      return res;
+    }
+
+    this.updateGroupDescription = async (description, options = {}) => {
+      const normalizedDescription = typeof description === "string" ? description : ""
+      const descriptionFormat =
+        options.descriptionFormat ||
+        options.description_format ||
+        this.el.dataset.descriptionFormat ||
+        "html"
+
+      const res = await this.pushEvent("update_group_description", {
+        description: normalizedDescription,
+        description_format: descriptionFormat,
+      })
+
+      //console.debug("Server response for update_group_description:", res)
+      return res
+    }
+
+    this.getGroupDescription = async () => ({
+      description: this.el.dataset.description || "",
+      descriptionFormat: this.el.dataset.descriptionFormat || "html",
+    })
+
+    this.getGroupDataValues = async () => {
+      const res = await this.pushEvent("list_group_data_values", {})
+      //console.log("Server response for list_group_data_values:", res)
+      return res
+    }
+
+    window.Potok.insertGroupValue = this.insertGroupValue
+    window.Potok.updateGroupDescription = this.updateGroupDescription
+    window.Potok.getGroupDescription = this.getGroupDescription
+    window.Potok.getGroupDataValues = this.getGroupDataValues
+  },
+}
+
 const registerServiceWorker = async () => {
   if (!("serviceWorker" in navigator)) {
     return
@@ -430,7 +509,14 @@ const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   params: {_csrf_token: csrfToken},
-  hooks: {HeaderDrawer, DropdownMenu, AutoDismissFlash, PushNotifications, ...colocatedHooks},
+  hooks: {
+    HeaderDrawer,
+    DropdownMenu,
+    AutoDismissFlash,
+    PushNotifications,
+    GroupDescriptionActions,
+    ...colocatedHooks,
+  },
 })
 
 // Show progress bar on live navigation and form submits

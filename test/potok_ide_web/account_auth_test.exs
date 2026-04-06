@@ -199,6 +199,32 @@ defmodule PotokIdeWeb.AccountAuthTest do
       assert conn.assigns.current_profile.username == "selected-profile"
     end
 
+    test "assigns the default profile when no current profile is selected", %{
+      conn: conn,
+      account: account
+    } do
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "default-profile",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      assert {:ok, _updated_account} = Accounts.clear_current_profile(account)
+
+      account = Accounts.get_account!(account.id)
+      account_token = Accounts.generate_account_session_token(account)
+
+      conn =
+        conn
+        |> put_session(:account_token, account_token)
+        |> AccountAuth.fetch_current_scope_for_account([])
+
+      assert conn.assigns.current_profile.id == profile.id
+      assert conn.assigns.current_profile.username == "default-profile"
+    end
+
     test "authenticates account from cookies", %{conn: conn, account: account} do
       logged_in_conn =
         conn |> fetch_cookies() |> AccountAuth.log_in_account(account, %{"remember_me" => "true"})
