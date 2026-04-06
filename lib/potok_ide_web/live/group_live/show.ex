@@ -49,7 +49,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
 
           <button
-            :if={@group.is_root or @is_member}
+            :if={!@group.is_root and @is_member}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
@@ -201,6 +201,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             children={@streams.children}
             pagination={@children_pagination}
             unread_counts={@group_unread_counts}
+            is_member={@is_member}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -263,7 +264,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = Social.get_group!(id)
 
     is_member = Social.member_of_group?(current_profile, group)
-    active_tab = normalize_active_tab(Map.get(params, "tab"), is_member)
+    active_tab = normalize_active_tab(Map.get(params, "tab"), group, is_member)
 
     if can_view_group?(group, is_member) do
       if connected?(socket) do
@@ -312,7 +313,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   @impl true
   def handle_params(params, _uri, socket) do
-    active_tab = normalize_active_tab(Map.get(params, "tab"), socket.assigns.is_member)
+    active_tab =
+      normalize_active_tab(Map.get(params, "tab"), socket.assigns.group, socket.assigns.is_member)
 
     if active_tab == socket.assigns.active_tab do
       {:noreply, socket}
@@ -579,7 +581,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        to:
          group_tab_path(
            socket.assigns.group.id,
-           normalize_active_tab(tab, socket.assigns.is_member)
+           normalize_active_tab(tab, socket.assigns.group, socket.assigns.is_member)
          )
      )}
   end
@@ -945,7 +947,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
       active_tab ||
-        normalize_active_tab(Map.get(socket.assigns, :active_tab), socket.assigns.is_member)
+        normalize_active_tab(Map.get(socket.assigns, :active_tab), group, socket.assigns.is_member)
 
     socket
     |> assign(:group, group)
@@ -1312,22 +1314,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
-  defp default_active_tab, do: "group_home"
+  defp default_active_tab(%Group{is_root: true}), do: "sub_groups"
+  defp default_active_tab(%Group{}), do: "group_home"
 
   defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
 
-  defp normalize_active_tab(tab, _is_member)
+    defp normalize_active_tab(tab, _group, _is_member)
        when tab in ["values", "sub_groups", "members", "group_home"],
        do: tab
 
-  defp normalize_active_tab(tab, true)
+    defp normalize_active_tab(tab, _group, true)
        when tab in ["create_group", "edit_group", "invite_profile"],
        do: tab
 
-  defp normalize_active_tab(_, _), do: default_active_tab()
+    defp normalize_active_tab(_, group, _is_member), do: default_active_tab(group)
 
   defp normalize_select_nil(attrs, key) when is_binary(key) do
     case Map.get(attrs, key) do

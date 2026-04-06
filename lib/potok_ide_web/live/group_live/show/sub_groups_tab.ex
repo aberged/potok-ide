@@ -8,10 +8,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :children, :any, required: true
   attr :pagination, :map, required: true
   attr :unread_counts, :map, required: true
+  attr :is_member, :boolean, required: true
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-sub-groups" class="card">
+    <div id="group-panel-sub-groups" class="card relative">
       <Components.group_path
         :if={!@group.is_root}
         group={@group}
@@ -50,6 +51,18 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </button>
         </div>
       </div>
+
+      <button
+        :if={@is_member}
+        id="group-sub-groups-create-fab"
+        type="button"
+        phx-click="switch_tab"
+        phx-value-tab="create_group"
+        aria-label={gettext("Create sub-group")}
+        class="absolute bottom-6 right-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+      >
+        <.icon name="hero-plus" class="size-6" />
+      </button>
     </div>
     """
   end

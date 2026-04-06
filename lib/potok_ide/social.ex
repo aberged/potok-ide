@@ -1083,7 +1083,7 @@ defmodule PotokIde.Social do
 
   defp latest_group_value_id(%Group{} = group) do
     from(v in Value,
-      where: v.group_id == ^group.id,
+        where: v.group_id == ^group.id and v.is_data == false,
       select: max(v.id)
     )
     |> Repo.one()
@@ -1113,7 +1113,8 @@ defmodule PotokIde.Social do
       JOIN groups g ON g.id = s.group_id
       JOIN group_memberships gm
         ON gm.group_id = s.group_id AND gm.profile_id = $1
-      LEFT JOIN values v ON v.group_id = s.group_id AND g.is_root = FALSE
+      LEFT JOIN values v
+        ON v.group_id = s.group_id AND g.is_root = FALSE AND v.is_data = FALSE
       LEFT JOIN group_value_reads gvr
         ON gvr.group_id = s.group_id AND gvr.profile_id = $1
       GROUP BY s.root_id
