@@ -335,8 +335,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
        |> assign(:group_unread_counts, %{})
-      |> assign(:current_group_unread_count, 0)
-      |> assign(:sub_groups_unread_count, 0)
+       |> assign(:current_group_unread_count, 0)
+       |> assign(:sub_groups_unread_count, 0)
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -354,9 +354,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
-      |> assign(:pending_join_request, nil)
-      |> assign(:pending_join_requests, [])
-      |> assign(:pending_join_requests_count, 0)
+       |> assign(:pending_join_request, nil)
+       |> assign(:pending_join_requests, [])
+       |> assign(:pending_join_requests_count, 0)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
     else
@@ -632,13 +632,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("switch_tab", %{"tab" => "group_home"}, socket) do
     {:noreply,
-    redirect(
-      socket,
-      to: group_tab_path(
-        socket.assigns.group.id,
-        normalize_active_tab("group_home", socket.assigns.group, socket.assigns.is_member)
-      )
-    )}
+     redirect(
+       socket,
+       to:
+         group_tab_path(
+           socket.assigns.group.id,
+           normalize_active_tab("group_home", socket.assigns.group, socket.assigns.is_member)
+         )
+     )}
   end
 
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
@@ -687,7 +688,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       {:error, :already_invited} ->
         {:noreply,
-         put_flash(socket, :error, gettext("You already have a pending invitation to this group."))}
+         put_flash(
+           socket,
+           :error,
+           gettext("You already have a pending invitation to this group.")
+         )}
 
       {:error, %Ecto.Changeset{}} ->
         {:noreply, put_flash(socket, :error, gettext("Access request already pending."))}
@@ -1062,7 +1067,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
       active_tab ||
-        normalize_active_tab(Map.get(socket.assigns, :active_tab), group, socket.assigns.is_member)
+        normalize_active_tab(
+          Map.get(socket.assigns, :active_tab),
+          group,
+          socket.assigns.is_member
+        )
 
     socket
     |> assign(:group, group)
@@ -1477,7 +1486,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp can_manage_join_requests?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
   defp can_manage_join_requests?(_, _group), do: false
 
-  defp members_tab_label(count, %Group{creator_id: creator_id}, %{id: creator_id}) when count > 0 do
+  defp members_tab_label(count, %Group{creator_id: creator_id}, %{id: creator_id})
+       when count > 0 do
     gettext("Members (%{count} requests)", count: count)
   end
 
@@ -1488,18 +1498,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
 
-    defp normalize_active_tab(tab, _group, _is_member)
+  defp normalize_active_tab(tab, _group, _is_member)
        when tab in ["values", "sub_groups", "members", "group_home"],
        do: tab
 
-    defp normalize_active_tab(tab, _group, true)
+  defp normalize_active_tab(tab, _group, true)
        when tab in ["create_group", "edit_group", "invite_profile"],
        do: tab
 
-    defp normalize_active_tab(_, group, _is_member), do: default_active_tab(group)
+  defp normalize_active_tab(_, group, _is_member), do: default_active_tab(group)
 
-    defp unread_badge_label(count) when count > 999, do: "999+"
-    defp unread_badge_label(count), do: Integer.to_string(count)
+  defp unread_badge_label(count) when count > 999, do: "999+"
+  defp unread_badge_label(count), do: Integer.to_string(count)
 
   defp normalize_select_nil(attrs, key) when is_binary(key) do
     case Map.get(attrs, key) do
@@ -1523,7 +1533,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           {:error, :not_group_creator} ->
             {:noreply,
-             put_flash(socket, :error, gettext("Only the group creator can manage access requests."))}
+             put_flash(
+               socket,
+               :error,
+               gettext("Only the group creator can manage access requests.")
+             )}
 
           {:error, :request_not_found} ->
             {:noreply, put_flash(socket, :error, gettext("Access request not found."))}

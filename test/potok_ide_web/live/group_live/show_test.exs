@@ -940,7 +940,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert render(lv) =~ "<strong>public</strong>"
     end
 
-    test "allows a non-member to request access and the creator to approve it from the members tab", %{conn: conn} do
+    test "allows a non-member to request access and the creator to approve it from the members tab",
+         %{conn: conn} do
       owner_account = account_fixture()
       requester_account = account_fixture()
 

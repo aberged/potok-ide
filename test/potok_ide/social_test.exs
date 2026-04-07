@@ -329,6 +329,7 @@ defmodule PotokIde.SocialTest do
       assert {:ok, request} = Social.request_group_access(requester_profile, group)
       assert Social.count_pending_group_join_requests(group) == 1
       assert Social.get_pending_group_join_request(requester_profile, group).id == request.id
+
       assert [%{id: request_id, requester: %{id: requester_id}}] =
                Social.list_pending_group_join_requests(group)
 

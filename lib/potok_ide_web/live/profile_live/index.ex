@@ -88,7 +88,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 phx-click="use"
                 phx-value-id={profile.id}
               >
-                <.icon name="hero-check-badge" class="size-4"></.icon>
+                <.icon name="hero-check-badge" class="size-4" />
               </.button>
               <.button
                 disabled={!(is_nil(@default_profile) or @default_profile.id != profile.id)}
@@ -96,18 +96,20 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 phx-value-id={profile.id}
                 id={"set-default-profile-#{profile.id}"}
               >
-                <.icon name="hero-globe-alt" class="size-4"></.icon>
+                <.icon name="hero-globe-alt" class="size-4" />
               </.button>
-              <.button navigate={~p"/profiles/#{profile.id}/edit"}><.icon name="hero-pencil" class="size-4"></.icon></.button>
+              <.button navigate={~p"/profiles/#{profile.id}/edit"}>
+                <.icon name="hero-pencil" class="size-4" />
+              </.button>
             </div>
           </li>
         </ul>
 
         <div class="mt-4 flex flex-row justify-between">
-          <.button navigate={~p"/groups"} >
+          <.button navigate={~p"/groups"}>
             <.icon name="hero-globe-alt" class="size-4" />
           </.button>
-          <.button navigate={~p"/profiles/new"} >
+          <.button navigate={~p"/profiles/new"}>
             <.icon name="hero-plus" class="size-4" />
             {gettext("Create profile")}
           </.button>

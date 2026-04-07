@@ -559,7 +559,9 @@ defmodule PotokIde.Social do
       |> Multi.delete_all(
         :invitations,
         from(i in GroupInvitation,
-          where: i.group_id == ^group.id and i.invitee_id == ^request.requester_id and is_nil(i.accepted_at)
+          where:
+            i.group_id == ^group.id and i.invitee_id == ^request.requester_id and
+              is_nil(i.accepted_at)
         )
       )
       |> Repo.transaction()
@@ -1251,7 +1253,7 @@ defmodule PotokIde.Social do
 
   defp latest_group_value_id(%Group{} = group) do
     from(v in Value,
-        where: v.group_id == ^group.id and v.is_data == false,
+      where: v.group_id == ^group.id and v.is_data == false,
       select: max(v.id)
     )
     |> Repo.one()
