@@ -940,6 +940,130 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert render(lv) =~ "<strong>public</strong>"
     end
 
+    test "allows a non-member to request access and the creator to approve it from the members tab", %{conn: conn} do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "join-request-live-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "join-request-live-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      requester_account = Accounts.get_account!(requester_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "join-request-live-group",
+          "description" => "Public group for join requests",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "has_public_chat" => false
+        })
+
+      {:ok, requester_lv, _html} =
+        conn
+        |> log_in_account(requester_account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(requester_lv, "#group-request-access")
+
+      requester_lv
+      |> element("#group-request-access")
+      |> render_click()
+
+      assert has_element?(requester_lv, "#group-request-access-pending", "Access request pending")
+      assert Social.count_pending_group_join_requests(group) == 1
+
+      {:ok, owner_lv, _html} =
+        Phoenix.ConnTest.build_conn()
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      assert has_element?(owner_lv, "#group-join-requests-count", "1")
+      assert has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
+
+      [request] = Social.list_pending_group_join_requests(group)
+
+      owner_lv
+      |> element("#group-accept-join-request-#{request.id}")
+      |> render_click()
+
+      assert Social.member_of_group?(requester_profile, group)
+      refute has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
+      assert has_element?(owner_lv, "#group-join-requests-empty", "No pending access requests.")
+
+      assert eventually(fn ->
+               not has_element?(requester_lv, "#group-request-access-pending") and
+                 not has_element?(requester_lv, "#group-request-access")
+             end)
+    end
+
+    test "lets the creator reject a pending access request from the members tab", %{conn: conn} do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "join-request-reject-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "join-request-reject-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      requester_account = Accounts.get_account!(requester_account.id)
+      group = create_child_group!(owner_profile, "join-request-reject-group", %{is_public: true})
+
+      assert {:ok, _request} = Social.request_group_access(requester_profile, group)
+
+      {:ok, owner_lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      [request] = Social.list_pending_group_join_requests(group)
+
+      owner_lv
+      |> element("#group-reject-join-request-#{request.id}")
+      |> render_click()
+
+      refute Social.member_of_group?(requester_profile, group)
+      assert Social.count_pending_group_join_requests(group) == 0
+
+      {:ok, requester_lv, _html} =
+        Phoenix.ConnTest.build_conn()
+        |> log_in_account(requester_account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(requester_lv, "#group-request-access")
+      refute has_element?(requester_lv, "#group-request-access-pending")
+    end
+
     test "allows a member to delete a leaf group from the edit tab", %{conn: conn} do
       account = account_fixture()
 
@@ -1469,16 +1593,22 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     end
   end
 
-  defp create_child_group!(profile, name) do
+  defp create_child_group!(profile, name, attrs \\ %{}) do
     root_group = Social.get_root_group!()
 
+    group_attrs =
+      Map.merge(
+        %{
+          "name" => name,
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        },
+        Map.new(attrs, fn {key, value} -> {to_string(key), value} end)
+      )
+
     {:ok, group} =
-      Social.create_group(profile, root_group, %{
-        "name" => name,
-        "description" => "",
-        "description_format" => :markdown,
-        "is_public" => false
-      })
+      Social.create_group(profile, root_group, group_attrs)
 
     group
   end

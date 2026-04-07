@@ -8,6 +8,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :current_profile, :map, required: true
   attr :online_profile_ids, :any, required: true
   attr :group, :map, required: true
+  attr :join_requests, :list, default: []
+  attr :pending_join_requests_count, :integer, default: 0
 
   def panel(assigns) do
     ~H"""
@@ -19,6 +21,74 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       />
       <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
         <h3 class="card-title mb-2">{gettext("Members")}</h3>
+
+        <div
+          :if={@group.creator_id == @current_profile.id}
+          id="group-join-requests-panel"
+          class="mb-5 rounded-3xl border border-amber-300/70 bg-amber-50/70 p-4 shadow-sm"
+        >
+          <div class="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h4 class="text-sm font-semibold text-amber-950">{gettext("Access requests")}</h4>
+              <p class="text-xs text-amber-900/70">
+                {gettext("Profiles waiting for approval to join this public group.")}
+              </p>
+            </div>
+
+            <span
+              id="group-join-requests-count"
+              class="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 py-1 text-xs font-semibold text-amber-950"
+            >
+              {@pending_join_requests_count}
+            </span>
+          </div>
+
+          <div
+            :if={@join_requests == []}
+            id="group-join-requests-empty"
+            class="rounded-2xl border border-dashed border-amber-300/70 bg-white/50 px-4 py-3 text-sm text-amber-950/70"
+          >
+            {gettext("No pending access requests.")}
+          </div>
+
+          <ul :if={@join_requests != []} id="group-join-requests-list" class="space-y-3">
+            <li :for={request <- @join_requests} id={"group-join-request-#{request.id}"}>
+              <div class="flex items-start justify-between gap-3 rounded-2xl border border-amber-300/70 bg-white/70 px-4 py-3">
+                <div class="min-w-0 flex-1">
+                  <Components.profile_identity profile={request.requester} />
+                  <div class="mt-2 text-xs text-amber-950/65">
+                    <Components.local_time
+                      id={"group-join-request-inserted-at-#{request.id}"}
+                      datetime={request.inserted_at}
+                    />
+                  </div>
+                </div>
+
+                <div class="flex shrink-0 items-center gap-2">
+                  <button
+                    id={"group-accept-join-request-#{request.id}"}
+                    type="button"
+                    phx-click="accept_join_request"
+                    phx-value-id={request.id}
+                    class="btn btn-sm rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:border-emerald-500/60 hover:bg-emerald-500/15"
+                  >
+                    {gettext("Accept")}
+                  </button>
+
+                  <button
+                    id={"group-reject-join-request-#{request.id}"}
+                    type="button"
+                    phx-click="reject_join_request"
+                    phx-value-id={request.id}
+                    class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+                  >
+                    {gettext("Reject")}
+                  </button>
+                </div>
+              </div>
+            </li>
+          </ul>
+        </div>
 
         <ul id="group-members-list" class="space-y-2" phx-update="stream">
           <li

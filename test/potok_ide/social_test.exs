@@ -293,6 +293,153 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "group join requests" do
+    test "allows a non-member to request access to a public group and the creator to accept it" do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "join-request-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "join-request-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "join-request-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, request} = Social.request_group_access(requester_profile, group)
+      assert Social.count_pending_group_join_requests(group) == 1
+      assert Social.get_pending_group_join_request(requester_profile, group).id == request.id
+      assert [%{id: request_id, requester: %{id: requester_id}}] =
+               Social.list_pending_group_join_requests(group)
+
+      assert request_id == request.id
+      assert requester_id == requester_profile.id
+
+      assert {:ok, accepted_profile} =
+               Social.accept_group_join_request(owner_profile, group, request.id)
+
+      assert accepted_profile.id == requester_profile.id
+      assert Social.member_of_group?(requester_profile, group)
+      assert Social.count_pending_group_join_requests(group) == 0
+      assert is_nil(Social.get_pending_group_join_request(requester_profile, group))
+    end
+
+    test "rejects access requests for private groups and lets the creator reject a pending request" do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "join-request-private-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "join-request-private-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, private_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "join-request-private-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:error, :group_not_public} =
+               Social.request_group_access(requester_profile, private_group)
+
+      {:ok, public_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "join-request-public-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, request} = Social.request_group_access(requester_profile, public_group)
+
+      assert {:ok, _request} =
+               Social.reject_group_join_request(owner_profile, public_group, request.id)
+
+      refute Social.member_of_group?(requester_profile, public_group)
+      assert Social.count_pending_group_join_requests(public_group) == 0
+      assert is_nil(Social.get_pending_group_join_request(requester_profile, public_group))
+    end
+
+    test "sending an invitation clears the matching pending join request" do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "join-request-invite-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "join-request-invite-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "join-request-invite-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, _request} = Social.request_group_access(requester_profile, group)
+      assert Social.count_pending_group_join_requests(group) == 1
+
+      assert {:ok, _invitation} =
+               Social.invite_profile_to_group(owner_profile, group, requester_profile)
+
+      assert Social.count_pending_group_join_requests(group) == 0
+      assert is_nil(Social.get_pending_group_join_request(requester_profile, group))
+    end
+  end
+
   describe "remove_group_member/3" do
     test "allows the group creator to remove another member" do
       owner_account = account_fixture()

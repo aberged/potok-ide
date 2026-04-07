@@ -19,6 +19,7 @@ defmodule PotokIde.Social do
     AccountProfile,
     Group,
     GroupInvitation,
+    GroupJoinRequest,
     GroupMembership,
     GroupValueRead,
     Profile,
@@ -368,22 +369,35 @@ defmodule PotokIde.Social do
         {:error, :cannot_invite_self}
 
       true ->
-        %GroupInvitation{}
-        |> GroupInvitation.changeset(%{
-          group_id: group.id,
-          inviter_id: inviter.id,
-          invitee_id: invitee.id
-        })
-        |> Repo.insert()
+        Multi.new()
+        |> Multi.insert(
+          :invitation,
+          GroupInvitation.changeset(%GroupInvitation{}, %{
+            group_id: group.id,
+            inviter_id: inviter.id,
+            invitee_id: invitee.id
+          })
+        )
+        |> Multi.delete_all(
+          :join_requests,
+          from(r in GroupJoinRequest,
+            where: r.group_id == ^group.id and r.requester_id == ^invitee.id
+          )
+        )
+        |> Repo.transaction()
         |> case do
-          {:ok, _invitation} = ok ->
+          {:ok, %{invitation: invitation}} ->
             broadcast_profile_invitations_updated(invitee)
             broadcast_pending_invitations_count_updated(invitee)
+            broadcast_group_updated(group)
             notify_profile_invitee_of_group_invitation(inviter, group, invitee)
-            ok
+            {:ok, invitation}
 
-          error ->
-            error
+          {:error, :invitation, reason, _changes} ->
+            {:error, reason}
+
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
         end
     end
   end
@@ -402,6 +416,12 @@ defmodule PotokIde.Social do
           profile_id: inv.invitee_id
         })
       end)
+      |> Multi.delete_all(
+        :join_requests,
+        from(r in GroupJoinRequest,
+          where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
+        )
+      )
       |> Repo.transaction()
       |> case do
         {:ok, %{invitation: inv}} ->
@@ -471,6 +491,115 @@ defmodule PotokIde.Social do
                 {:error, reason}
             end
         end
+    end
+  end
+
+  def request_group_access(%Profile{} = requester, %Group{} = group) do
+    cond do
+      not group.is_public ->
+        {:error, :group_not_public}
+
+      member_of_group?(requester, group) ->
+        {:error, :already_a_member}
+
+      pending_group_invitation_for_profile?(group, requester) ->
+        {:error, :already_invited}
+
+      true ->
+        %GroupJoinRequest{}
+        |> GroupJoinRequest.changeset(%{group_id: group.id, requester_id: requester.id})
+        |> Repo.insert()
+        |> case do
+          {:ok, request} ->
+            broadcast_group_updated(group)
+            {:ok, request}
+
+          {:error, reason} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  def list_pending_group_join_requests(%Group{} = group) do
+    from(r in GroupJoinRequest,
+      where: r.group_id == ^group.id,
+      order_by: [desc: r.inserted_at, desc: r.id],
+      preload: [:requester]
+    )
+    |> Repo.all()
+  end
+
+  def count_pending_group_join_requests(%Group{} = group) do
+    from(r in GroupJoinRequest,
+      where: r.group_id == ^group.id,
+      select: count(r.id)
+    )
+    |> Repo.one()
+  end
+
+  def get_pending_group_join_request(%Profile{} = requester, %Group{} = group) do
+    from(r in GroupJoinRequest,
+      where: r.group_id == ^group.id and r.requester_id == ^requester.id
+    )
+    |> Repo.one()
+  end
+
+  def accept_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
+      when is_integer(request_id) do
+    with :ok <- ensure_group_creator(actor, group),
+         %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
+      Multi.new()
+      |> Multi.insert(:membership, fn _changes ->
+        GroupMembership.changeset(%GroupMembership{}, %{
+          group_id: group.id,
+          profile_id: request.requester_id
+        })
+      end)
+      |> Multi.delete(:request, request)
+      |> Multi.delete_all(
+        :invitations,
+        from(i in GroupInvitation,
+          where: i.group_id == ^group.id and i.invitee_id == ^request.requester_id and is_nil(i.accepted_at)
+        )
+      )
+      |> Repo.transaction()
+      |> case do
+        {:ok, _changes} ->
+          requester = Repo.get!(Profile, request.requester_id)
+          broadcast_group_updated(group)
+          broadcast_profile_invitations_updated(requester)
+          broadcast_pending_invitations_count_updated(requester)
+          broadcast_profile_group_unread_counts_updated(requester, group.id)
+          {:ok, requester}
+
+        {:error, :membership, reason, _changes} ->
+          {:error, reason}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+      nil -> {:error, :request_not_found}
+    end
+  end
+
+  def reject_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
+      when is_integer(request_id) do
+    with :ok <- ensure_group_creator(actor, group),
+         %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
+      Repo.delete(request)
+      |> case do
+        {:ok, _request} ->
+          broadcast_group_updated(group)
+          {:ok, request}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    else
+      {:error, reason} -> {:error, reason}
+      nil -> {:error, :request_not_found}
     end
   end
 
@@ -872,6 +1001,24 @@ defmodule PotokIde.Social do
 
   def member_of_group?(%Profile{} = profile, %Group{} = group),
     do: member_of_group_private?(profile, group)
+
+  defp ensure_group_creator(%Profile{id: actor_id}, %Group{creator_id: actor_id}), do: :ok
+  defp ensure_group_creator(%Profile{}, %Group{}), do: {:error, :not_group_creator}
+
+  defp get_group_join_request(%Group{} = group, request_id) when is_integer(request_id) do
+    from(r in GroupJoinRequest,
+      where: r.group_id == ^group.id and r.id == ^request_id
+    )
+    |> Repo.one()
+  end
+
+  defp pending_group_invitation_for_profile?(%Group{} = group, %Profile{} = profile) do
+    from(i in GroupInvitation,
+      where: i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at),
+      select: 1
+    )
+    |> Repo.exists?()
+  end
 
   defp member_of_group_private?(%Profile{} = profile, %Group{} = group) do
     import Ecto.Query, only: [from: 2]

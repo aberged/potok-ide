@@ -48,9 +48,33 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </div>
 
+          <div
+            :if={!@group.is_root and !@is_member}
+            id="group-join-request-callout"
+            class="flex shrink-0 items-center"
+          >
+            <button
+              :if={is_nil(@pending_join_request)}
+              id="group-request-access"
+              type="button"
+              phx-click="request_join"
+              class="btn rounded-full border border-sky-500/40 bg-sky-500/10 text-sky-700 hover:border-sky-500/60 hover:bg-sky-500/15"
+            >
+              {gettext("Request access")}
+            </button>
+
+            <div
+              :if={!is_nil(@pending_join_request)}
+              id="group-request-access-pending"
+              class="inline-flex items-center rounded-full bg-sky-900 px-3 py-2 text-sm font-medium text-sky-50"
+            >
+              {gettext("Access request pending")}
+            </div>
+          </div>
+
           <button
             :if={!@group.is_root and @is_member}
-            id="group-subgroups-summary"
+            id="group-values-summary"
             type="button"
             phx-click="switch_tab"
             phx-value-tab="values"
@@ -117,30 +141,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
               class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
             />
           </button>
-          <button
-            :if={@group.parent_id != nil && @is_member}
-            id="group-members-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="members"
-            aria-label={gettext("Open members tab")}
-            class="avatar-group -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
-          >
-            <div :for={m <- @first3_members} class="">
-              <Components.profile_identity
-                profile={m}
-                avatar_size="size-6"
-                text_class="hidden"
-                sharing_badge_text_class="hidden "
-              />
-            </div>
-
-            <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
-              <div class="bg-neutral text-neutral-content size-5 text-xs">
-                <span>+{@members_count - length(@first3_members)}</span>
+          <div class="relative">
+            <button
+              :if={@group.parent_id != nil && @is_member}
+              id="group-members-summary"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="members"
+              aria-label={gettext("Open members tab")}
+              class="avatar-group relative -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            >
+              <div :for={m <- @first3_members} class="">
+                <Components.profile_identity
+                  profile={m}
+                  avatar_size="size-6"
+                  text_class="hidden"
+                  sharing_badge_text_class="hidden"
+                />
               </div>
-            </div>
-          </button>
+
+              <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
+                <div class="bg-neutral text-neutral-content size-5 text-xs">
+                  <span>+{@members_count - length(@first3_members)}</span>
+                </div>
+              </div>
+            </button>
+            <span
+              :if={@pending_join_requests_count > 0 and @group.creator_id == @current_profile.id}
+              id="group-join-requests-badge"
+              class="absolute -right-1 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
+            >
+              {unread_badge_label(@pending_join_requests_count)}
+            </span>
+          </div>
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
             <div class="flex min-w-[14rem] flex-col gap-2 z-100">
               <Components.group_tab_button
@@ -172,7 +205,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 id="group-tab-members"
                 tab="members"
                 active_tab={@active_tab}
-                label={gettext("Members")}
+                label={members_tab_label(@pending_join_requests_count, @group, @current_profile)}
                 icon="hero-user-group"
               />
               <Components.group_tab_button
@@ -224,6 +257,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
             online_profile_ids={@online_profile_ids}
             group={@group}
+            join_requests={@pending_join_requests}
+            pending_join_requests_count={@pending_join_requests_count}
           />
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
@@ -244,6 +279,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             }
             group={@group}
             current_profile={@current_profile}
+            is_member={@is_member}
+            pending_join_request={@pending_join_request}
           />
           <CreateGroupTab.panel
             :if={@is_member and @active_tab == "create_group"}
@@ -317,6 +354,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
+      |> assign(:pending_join_request, nil)
+      |> assign(:pending_join_requests, [])
+      |> assign(:pending_join_requests_count, 0)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
     else
@@ -627,6 +667,36 @@ defmodule PotokIdeWeb.GroupLive.Show do
      |> refresh_group_data()}
   end
 
+  def handle_event("request_join", _params, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    case Social.request_group_access(current_profile, group) do
+      {:ok, _request} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Access request sent."))
+         |> refresh_group_data()}
+
+      {:error, :group_not_public} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("Only public groups accept access requests."))}
+
+      {:error, :already_a_member} ->
+        {:noreply, put_flash(socket, :error, gettext("You are already a group member."))}
+
+      {:error, :already_invited} ->
+        {:noreply,
+         put_flash(socket, :error, gettext("You already have a pending invitation to this group."))}
+
+      {:error, %Ecto.Changeset{}} ->
+        {:noreply, put_flash(socket, :error, gettext("Access request already pending."))}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not send access request."))}
+    end
+  end
+
   def handle_event("remove_member", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -664,6 +734,24 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _ ->
         {:noreply, put_flash(socket, :error, gettext("Profile not found."))}
     end
+  end
+
+  def handle_event("accept_join_request", %{"id" => id}, socket) do
+    handle_join_request_action(
+      socket,
+      id,
+      &Social.accept_group_join_request/3,
+      gettext("Access request accepted.")
+    )
+  end
+
+  def handle_event("reject_join_request", %{"id" => id}, socket) do
+    handle_join_request_action(
+      socket,
+      id,
+      &Social.reject_group_join_request/3,
+      gettext("Access request rejected.")
+    )
   end
 
   def handle_event("load_more_values", _params, socket) do
@@ -980,6 +1068,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:group, group)
     |> assign(:active_tab, active_tab)
     |> load_member_summary(group)
+    |> load_join_request_data(group, active_tab)
     |> maybe_load_children(group, active_tab)
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
@@ -1194,6 +1283,37 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  defp load_join_request_data(socket, group, active_tab) do
+    current_profile = socket.assigns.current_profile
+    can_manage_join_requests = can_manage_join_requests?(current_profile, group)
+
+    pending_join_request =
+      if group.is_public and not socket.assigns.is_member do
+        Social.get_pending_group_join_request(current_profile, group)
+      else
+        nil
+      end
+
+    pending_join_requests =
+      if needs_members?(group, active_tab) and can_manage_join_requests do
+        Social.list_pending_group_join_requests(group)
+      else
+        []
+      end
+
+    pending_join_requests_count =
+      if can_manage_join_requests do
+        Social.count_pending_group_join_requests(group)
+      else
+        0
+      end
+
+    socket
+    |> assign(:pending_join_request, pending_join_request)
+    |> assign(:pending_join_requests, pending_join_requests)
+    |> assign(:pending_join_requests_count, pending_join_requests_count)
+  end
+
   defp maybe_load_children(socket, group, active_tab) do
     if needs_children?(group, active_tab) do
       current_profile = socket.assigns.current_profile
@@ -1354,6 +1474,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp default_active_tab(%Group{is_root: true}), do: "sub_groups"
   defp default_active_tab(%Group{}), do: "group_home"
 
+  defp can_manage_join_requests?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
+  defp can_manage_join_requests?(_, _group), do: false
+
+  defp members_tab_label(count, %Group{creator_id: creator_id}, %{id: creator_id}) when count > 0 do
+    gettext("Members (%{count} requests)", count: count)
+  end
+
+  defp members_tab_label(_count, _group, _profile), do: gettext("Members")
+
   defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
 
   defp delete_group_redirect_path(nil), do: ~p"/groups"
@@ -1376,6 +1505,38 @@ defmodule PotokIdeWeb.GroupLive.Show do
     case Map.get(attrs, key) do
       "" -> Map.put(attrs, key, nil)
       _ -> attrs
+    end
+  end
+
+  defp handle_join_request_action(socket, id, action, success_message) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    case Integer.parse(id) do
+      {request_id, ""} ->
+        case action.(current_profile, group, request_id) do
+          {:ok, _result} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, success_message)
+             |> refresh_group_data()}
+
+          {:error, :not_group_creator} ->
+            {:noreply,
+             put_flash(socket, :error, gettext("Only the group creator can manage access requests."))}
+
+          {:error, :request_not_found} ->
+            {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
+
+          {:error, %Ecto.Changeset{}} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not update access request."))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not update access request."))}
+        end
+
+      _ ->
+        {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
     end
   end
 
