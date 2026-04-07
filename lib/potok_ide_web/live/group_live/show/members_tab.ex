@@ -11,7 +11,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-members" class="card max-w-6xl px-2">
+    <div id="group-panel-members" class="card max-w-dvw md:max-w-6xl px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}

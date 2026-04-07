@@ -12,7 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-sub-groups" class="card relative max-w-6xl px-2">
+    <div id="group-panel-sub-groups" class="card relative max-w-dvw md:max-w-6xl px-2">
       <Components.group_path
         :if={!@group.is_root}
         group={@group}
