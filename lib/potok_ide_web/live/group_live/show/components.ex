@@ -231,7 +231,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       class="flex justify-start rounded-full w-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
     >
       <div class="flex min-w-0 items-center gap-3">
-        <div class="relative">
+        <div class="relative shrink-0">
           <%= if avatar_url = group_picture_url(@group) do %>
             <img
               :if={!@group.is_root}
@@ -239,7 +239,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               alt={@group.name}
               class={[
                 @avatar_size,
-                "shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+                "flex shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
               ]}
             />
             <div
@@ -278,7 +278,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <div
           :if={!@group.is_root}
-          class="min-w-0"
+          class="min-w-0 shrink"
         >
           <div class={[@text_class, "truncate font-semibold text-base-content"]}>
             {@group.name}
