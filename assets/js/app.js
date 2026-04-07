@@ -466,6 +466,7 @@ const GroupDescriptionActions = {
   },
 
   async reloadDescriptionScriptsIfNeeded() {
+    return;
     const contentElement = this.el.querySelector("#group-description-content")
     const descriptionSignature = `${this.el.dataset.descriptionFormat || ""}:${this.el.dataset.description || ""}`
 
