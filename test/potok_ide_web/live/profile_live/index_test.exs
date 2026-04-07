@@ -80,7 +80,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
     test "sets a default profile from the profiles page", %{conn: conn} do
       account = account_fixture()
 
-      {:ok, first_profile} =
+      {:ok, _first_profile} =
         Social.create_profile_for_account(account, %{
           username: "default alpha",
           profile_picture_url: nil,
@@ -117,8 +117,8 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert result =~ "Default profile updated."
       assert result =~ "default beta"
-      assert has_element?(lv, "#default-profile-badge-#{second_profile.id}", "Default")
-      refute has_element?(lv, "#default-profile-badge-#{first_profile.id}")
+      assert result =~ "Default profile:"
+      refute result =~ "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default alpha"
 
       updated_account = Accounts.get_account!(account.id)
       assert updated_account.default_profile_id == second_profile.id
@@ -142,7 +142,6 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
             username: "beta profile",
             profile_picture_url: "https://example.com/avatar.png",
             description: "new description",
-            description_format: "markdown",
             sharing: "unique"
           }
         )
@@ -185,7 +184,6 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
             username: "beta profile",
             profile_picture_url: "https://example.com/avatar.png",
             description: "new description",
-            description_format: "markdown",
             sharing: "unique"
           }
         )

@@ -25,19 +25,19 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         <div
           :if={@group.creator_id == @current_profile.id}
           id="group-join-requests-panel"
-          class="mb-5 rounded-3xl border border-amber-300/70 bg-amber-50/70 p-4 shadow-sm"
+          class="mb-5 rounded-3xl border border-base-300/70 bg-base-50/70 p-4 shadow-sm"
         >
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h4 class="text-sm font-semibold text-amber-950">{gettext("Access requests")}</h4>
-              <p class="text-xs text-amber-900/70">
+              <h4 class="text-sm font-semibold text-base-950">{gettext("Access requests")}</h4>
+              <p class="text-xs text-base-900/70">
                 {gettext("Profiles waiting for approval to join this public group.")}
               </p>
             </div>
 
             <span
               id="group-join-requests-count"
-              class="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 py-1 text-xs font-semibold text-amber-950"
+              class="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 py-1 text-xs font-semibold text-base-950"
             >
               {@pending_join_requests_count}
             </span>
@@ -46,17 +46,17 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           <div
             :if={@join_requests == []}
             id="group-join-requests-empty"
-            class="rounded-2xl border border-dashed border-amber-300/70 bg-white/50 px-4 py-3 text-sm text-amber-950/70"
+            class="rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3 text-sm text-base-950/70"
           >
             {gettext("No pending access requests.")}
           </div>
 
           <ul :if={@join_requests != []} id="group-join-requests-list" class="space-y-3">
             <li :for={request <- @join_requests} id={"group-join-request-#{request.id}"}>
-              <div class="flex items-start justify-between gap-3 rounded-2xl border border-amber-300/70 bg-white/70 px-4 py-3">
+              <div class="flex items-start justify-between gap-3 rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3">
                 <div class="min-w-0 flex-1">
                   <Components.profile_identity profile={request.requester} />
-                  <div class="mt-2 text-xs text-amber-950/65">
+                  <div class="mt-2 text-xs text-base-950/65">
                     <Components.local_time
                       id={"group-join-request-inserted-at-#{request.id}"}
                       datetime={request.inserted_at}

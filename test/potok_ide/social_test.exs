@@ -738,8 +738,13 @@ defmodule PotokIde.SocialTest do
         |> Social.list_group_values()
         |> Map.new(fn value -> {value.id, value} end)
 
+      data_values_by_id =
+        group
+        |> Social.list_group_data_values()
+        |> Map.new(fn value -> {value.id, value} end)
+
       assert values_by_id[default_value.id].is_data == false
-      assert values_by_id[data_value.id].is_data == true
+      assert data_values_by_id[data_value.id].is_data == true
     end
   end
 

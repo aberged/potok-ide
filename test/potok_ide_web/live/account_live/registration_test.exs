@@ -4,54 +4,77 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
 
-  describe "Registration page" do
-    test "renders registration page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/accounts/register")
+  alias PotokIde.Accounts
+  alias PotokIde.Social
 
-      assert html =~ "Register"
-      assert html =~ "Log in"
+  defp conn_with_current_profile(conn) do
+    account = account_fixture()
+
+    {:ok, _profile} =
+      Social.create_profile_for_account(account, %{
+        username: "invite-owner",
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    account = Accounts.get_account!(account.id)
+    log_in_account(conn, account)
+  end
+
+  describe "Registration page" do
+    test "redirects unauthenticated accounts to log in", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/accounts/log-in"}}} = live(conn, ~p"/accounts/register")
     end
 
-    test "redirects if already logged in", %{conn: conn} do
-      result =
+    test "renders invite page for a signed-in account with a current profile", %{conn: conn} do
+      {:ok, _lv, html} =
         conn
-        |> log_in_account(account_fixture())
+        |> conn_with_current_profile()
         |> live(~p"/accounts/register")
-        |> follow_redirect(conn, ~p"/profiles")
 
-      assert {:ok, _conn} = result
+      assert html =~ "Invite people to potok by email"
+      assert html =~ "Invite"
     end
 
     test "renders errors for invalid data", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+      {:ok, lv, _html} =
+        conn
+        |> conn_with_current_profile()
+        |> live(~p"/accounts/register")
 
       result =
         lv
         |> element("#registration_form")
         |> render_change(account: %{"email" => "with spaces"})
 
-      assert result =~ "Register"
+      assert result =~ "Invite people to potok by email"
       assert result =~ "must have the @ sign and no spaces"
     end
   end
 
   describe "register account" do
-    test "creates account but does not log in", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+    test "creates an invited account and shows confirmation", %{conn: conn} do
+      {:ok, lv, _html} =
+        conn
+        |> conn_with_current_profile()
+        |> live(~p"/accounts/register")
 
       email = unique_account_email()
       form = form(lv, "#registration_form", account: valid_account_attributes(email: email))
 
-      {:ok, _lv, html} =
-        render_submit(form)
-        |> follow_redirect(conn, ~p"/accounts/log-in")
+      html = render_submit(form)
 
-      assert html =~
-               ~r/An email was sent to .*, please access it to confirm your account/
+      assert html =~ "An invitation email was sent to #{email}"
+      assert Accounts.get_account_by_email(email)
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+      {:ok, lv, _html} =
+        conn
+        |> conn_with_current_profile()
+        |> live(~p"/accounts/register")
 
       account = account_fixture(%{email: "test@email.com"})
 
@@ -63,20 +86,6 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
         |> render_submit()
 
       assert result =~ "has already been taken"
-    end
-  end
-
-  describe "registration navigation" do
-    test "redirects to login page when the Log in button is clicked", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
-
-      {:ok, _login_live, login_html} =
-        lv
-        |> element("main a", "Log in")
-        |> render_click()
-        |> follow_redirect(conn, ~p"/accounts/log-in")
-
-      assert login_html =~ "Log in"
     end
   end
 end

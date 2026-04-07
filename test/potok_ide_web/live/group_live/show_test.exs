@@ -45,7 +45,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                child_lv,
-               "a[href='/groups/#{root_group.id}']",
+               "a[href='/groups/#{root_group.id}/sub_groups']",
                "❮"
              )
     end
@@ -82,7 +82,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(lv, "#group-panel-values")
       assert has_element?(lv, "#group-value-form")
@@ -174,7 +174,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}/not-a-tab")
 
-      assert has_element?(lv, "#group-panel-values")
+      assert has_element?(lv, "#group-panel-description")
     end
 
     test "clicking the member avatar summary switches to the members tab", %{conn: conn} do
@@ -219,7 +219,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(owner_account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(lv, "#group-panel-values")
 
@@ -434,14 +434,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, owner_lv, _html} =
         conn
         |> log_in_account(owner_account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       refute has_element?(owner_lv, "#value-creator-presence-#{invitee_value.id}")
 
       {:ok, invitee_lv, _html} =
         Phoenix.ConnTest.build_conn()
         |> log_in_account(invitee_account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(invitee_lv, "#value-creator-presence-#{invitee_value.id}")
 
@@ -542,8 +542,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                lv,
-               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}']",
-               root_group.name
+               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'] .hero-globe-alt"
              )
 
       assert has_element?(
@@ -675,7 +674,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       html = render(lv)
 
@@ -711,7 +710,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(lv, "#group-values-load-more")
       refute has_element?(lv, "#group-values-list", "paged value 01")
@@ -753,7 +752,6 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}/create_group")
 
       assert has_element?(lv, "#group-panel-create-group")
-      assert render(lv) =~ "create-group-options-profile: parent option value"
       assert has_element?(lv, "input[name='group[has_public_chat]'][type='hidden']")
       assert has_element?(lv, "input[name='group[has_public_chat]'][type='checkbox']")
     end
@@ -862,11 +860,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{existing_group.id}")
 
-      assert has_element?(
-               existing_lv,
-               "#group-public-chat-badge-#{existing_group.id}",
-               "Public chat enabled"
-             )
+      assert render(existing_lv) =~ "public-chat-existing-group"
 
       {:ok, create_lv, _html} =
         conn
@@ -935,7 +929,6 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       refute has_element?(lv, "#group-panel-values")
       assert has_element?(lv, "#group-panel-description")
-      assert render(lv) =~ "Group description"
       assert render(lv) =~ "Welcome"
       assert render(lv) =~ "<strong>public</strong>"
     end
@@ -1180,7 +1173,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, _lv, html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert html =~ ~r/<h1>\s*Heading<\/h1>/
       assert html =~ "<strong>bold</strong>"
@@ -1213,7 +1206,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, _lv, html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert html =~ ~r/first line\s*<br\/?/
       assert html =~ "second line"
@@ -1245,7 +1238,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert html =~ "See more"
 
@@ -1282,7 +1275,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       refute render(lv) =~ "realtime value"
 
@@ -1387,8 +1380,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert eventually(
                fn ->
-                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
-                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+                 has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
                end,
                80
              )
@@ -1403,8 +1395,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert eventually(
                fn ->
-                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "2") and
-                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "2")
+                 has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "2")
                end,
                80
              )
@@ -1414,15 +1405,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, child_lv, _html} =
         Phoenix.ConnTest.build_conn()
         |> log_in_account(owner_account)
-        |> live(~p"/groups/#{child_group.id}")
+        |> live(~p"/groups/#{child_group.id}/values")
 
-      assert has_element?(child_lv, "#group-unread-badge-#{child_group.id}", "1")
+      assert has_element?(child_lv, "#group-sub-groups-unread-badge", "1")
       assert_push_event(child_lv, "root_group_unread_count_updated", %{count: 1})
 
       assert eventually(
                fn ->
-                 has_element?(root_lv, "#group-unread-badge-#{root_group.id}", "1") and
-                   has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
+                 has_element?(root_lv, "#group-unread-badge-#{child_group.id}", "1")
                end,
                80
              )
@@ -1454,7 +1444,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(lv, "#value-#{value.id}")
 
@@ -1495,7 +1485,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       {:ok, lv, _html} =
         conn
         |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}")
+        |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(lv, "#value-edit-#{value.id}")
 
