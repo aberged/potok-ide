@@ -590,6 +590,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  def handle_event("switch_tab", %{"tab" => "group_home"}, socket) do
+    {:noreply,
+    redirect(
+      socket,
+      to: group_tab_path(
+        socket.assigns.group.id,
+        normalize_active_tab("group_home", socket.assigns.group, socket.assigns.is_member)
+      )
+    )}
+  end
+
   def handle_event("switch_tab", %{"tab" => tab}, socket) do
     {:noreply,
      push_patch(

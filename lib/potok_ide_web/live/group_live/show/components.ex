@@ -227,7 +227,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   def group_identity(assigns) do
     ~H"""
     <.link
-      navigate={~p"/groups/#{@group.id}"}
+      href={~p"/groups/#{@group.id}"}
       class="flex justify-start rounded-full w-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
     >
       <div class="flex min-w-0 items-center gap-3">
