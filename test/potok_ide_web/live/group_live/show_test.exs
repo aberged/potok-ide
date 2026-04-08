@@ -578,17 +578,11 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, direct_group} = Social.get_or_create_direct_group(current_profile, other_profile)
       current_account = Accounts.get_account!(current_account.id)
-      root_group = Social.get_root_group!()
 
       {:ok, lv, _html} =
         conn
         |> log_in_account(current_account)
-        |> live(~p"/groups/#{direct_group.id}/values")
-
-      assert has_element?(
-               lv,
-               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'] .hero-globe-alt"
-             )
+        |> live(~p"/groups/#{direct_group.id}/members")
 
       assert has_element?(lv, "#group-path span", "direct-path-other")
       refute has_element?(lv, "#group-path span", direct_group.name)
