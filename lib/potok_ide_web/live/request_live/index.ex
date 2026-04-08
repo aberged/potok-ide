@@ -12,13 +12,15 @@ defmodule PotokIdeWeb.RequestLive.Index do
       <div class="h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
         <.header>
           {gettext("Requests")}
-          <:subtitle>{gettext("Pending group access requests that your current profile can approve.")}</:subtitle>
+          <:subtitle>
+            {gettext("Pending group access requests that your current profile can approve.")}
+          </:subtitle>
         </.header>
-
+        
         <div :if={@requests == []} class="text-base-content/70">
           {gettext("No pending approval requests.")}
         </div>
-
+        
         <div
           :for={request <- @requests}
           id={"approval-request-#{request.id}"}
@@ -30,21 +32,20 @@ defmodule PotokIdeWeb.RequestLive.Index do
               avatar_size="size-12"
               text_class="text-sm"
             />
-
             <Components.profile_identity
               profile={request.requester}
               avatar_size="size-10"
               text_class="text-sm"
               title={gettext("Requester")}
+              current_profile={@current_profile}
+              direct_group_link={true}
             />
-
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
               <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
                 {gettext("Pending")}
-              </span>
-              <span>{gettext("Review this access request for the selected group.")}</span>
+              </span> <span>{gettext("Review this access request for the selected group.")}</span>
             </div>
-
+            
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="text-sm text-base-content/70">
                 {gettext("Requested on")}
@@ -54,7 +55,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                   class="ml-1 text-xs font-thin italic"
                 />
               </div>
-
+              
               <div class="flex items-center gap-2">
                 <button
                   id={"request-accept-#{request.id}"}
@@ -65,7 +66,6 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 >
                   {gettext("Accept")}
                 </button>
-
                 <button
                   id={"request-reject-#{request.id}"}
                   type="button"
@@ -208,8 +208,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                  put_flash(socket, :error, gettext("Only the group creator can manage requests."))}
 
               {:error, _reason} ->
-                {:noreply,
-                 put_flash(socket, :error, gettext("Could not update access request."))}
+                {:noreply, put_flash(socket, :error, gettext("Could not update access request."))}
             end
         end
 

@@ -89,6 +89,8 @@ defmodule PotokIde.Social do
   # Profiles
   # ---------
 
+  def get_profile(id), do: Repo.get(Profile, id)
+
   def get_profile!(id), do: Repo.get!(Profile, id)
 
   def create_profile(attrs) do
@@ -284,6 +286,7 @@ defmodule PotokIde.Social do
         |> Map.new()
         |> Map.put_new("creator_id", creator.id)
         |> Map.put_new("parent_id", parent.id)
+        |> Map.put_new("is_direct", false)
         |> Map.put_new("is_root", false)
 
       Multi.new()
@@ -303,6 +306,56 @@ defmodule PotokIde.Social do
         {:error, _step, reason, _changes} ->
           {:error, reason}
       end
+    end
+  end
+
+  def get_or_create_direct_group(%Profile{id: profile_id}, %Profile{id: profile_id}) do
+    {:error, :same_profile}
+  end
+
+  def get_or_create_direct_group(%Profile{} = current_profile, %Profile{} = other_profile) do
+    root_group = get_root_group!()
+
+    case find_direct_group(root_group, current_profile, other_profile) do
+      %Group{} = group ->
+        {:ok, group}
+
+      nil ->
+        attrs = %{
+          "name" => direct_group_name(current_profile, other_profile),
+          "description" => "",
+          "description_format" => :markdown,
+          "has_public_chat" => true,
+          "is_direct" => true,
+          "is_public" => false,
+          "creator_id" => current_profile.id,
+          "parent_id" => root_group.id,
+          "is_root" => false
+        }
+
+        Multi.new()
+        |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
+        |> Multi.insert(:current_membership, fn %{group: group} ->
+          GroupMembership.changeset(%GroupMembership{}, %{
+            group_id: group.id,
+            profile_id: current_profile.id
+          })
+        end)
+        |> Multi.insert(:other_membership, fn %{group: group} ->
+          GroupMembership.changeset(%GroupMembership{}, %{
+            group_id: group.id,
+            profile_id: other_profile.id
+          })
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{group: group}} ->
+            broadcast_group_updated(root_group)
+            {:ok, group}
+
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
+        end
     end
   end
 
@@ -1083,6 +1136,41 @@ defmodule PotokIde.Social do
     query
     |> maybe_limit(opts[:limit])
     |> maybe_offset(opts[:offset])
+  end
+
+  defp find_direct_group(
+         %Group{} = root_group,
+         %Profile{} = first_profile,
+         %Profile{} = second_profile
+       ) do
+    requested_member_group_ids =
+      from(membership in GroupMembership,
+        where: membership.profile_id in ^[first_profile.id, second_profile.id],
+        group_by: membership.group_id,
+        having: count(membership.profile_id) == 2,
+        select: membership.group_id
+      )
+
+    from(group in Group,
+      join: membership in GroupMembership,
+      on: membership.group_id == group.id,
+      where: group.parent_id == ^root_group.id,
+      where: group.is_direct,
+      where: not group.is_public,
+      where: not group.is_root,
+      where: group.id in subquery(requested_member_group_ids),
+      group_by: group.id,
+      having: count(membership.profile_id) == 2,
+      order_by: [asc: group.inserted_at],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
+  defp direct_group_name(%Profile{} = first_profile, %Profile{} = second_profile) do
+    [first_profile.username, second_profile.username]
+    |> Enum.sort()
+    |> Enum.join(" & ")
   end
 
   defp maybe_limit(query, limit) when is_integer(limit) and limit >= 0 do

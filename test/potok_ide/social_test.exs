@@ -33,6 +33,122 @@ defmodule PotokIde.SocialTest do
 
       assert group.group_picture_url == "https://example.com/group.png"
       assert group.has_public_chat == false
+      assert group.is_direct == false
+    end
+  end
+
+  describe "get_or_create_direct_group/2" do
+    test "creates a private two-member child of the root group and reuses it" do
+      first_account = account_fixture()
+      second_account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(first_account, %{
+          username: "direct-first-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(second_account, %{
+          username: "direct-second-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      assert {:ok, direct_group} =
+               Social.get_or_create_direct_group(first_profile, second_profile)
+
+      assert direct_group.parent_id == root_group.id
+      refute direct_group.is_public
+      assert direct_group.has_public_chat
+      assert direct_group.is_direct
+      assert Social.count_group_members(direct_group) == 2
+
+      member_ids =
+        direct_group
+        |> Social.list_group_members()
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      assert member_ids == Enum.sort([first_profile.id, second_profile.id])
+
+      assert {:ok, reused_group} =
+               Social.get_or_create_direct_group(second_profile, first_profile)
+
+      assert reused_group.id == direct_group.id
+      assert length(Social.list_child_groups(root_group)) == 1
+    end
+
+    test "rejects opening a direct group with the same profile" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "direct-self-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert {:error, :same_profile} = Social.get_or_create_direct_group(profile, profile)
+    end
+
+    test "does not reuse a regular private two-member group" do
+      first_account = account_fixture()
+      second_account = account_fixture()
+
+      {:ok, first_profile} =
+        Social.create_profile_for_account(first_account, %{
+          username: "regular-group-first-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, second_profile} =
+        Social.create_profile_for_account(second_account, %{
+          username: "regular-group-second-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, regular_group} =
+        Social.create_group(first_profile, root_group, %{
+          "name" => "ordinary private group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert regular_group.is_direct == false
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(first_profile, regular_group, second_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, second_profile)
+
+      assert Social.count_group_members(regular_group) == 2
+
+      assert {:ok, direct_group} =
+               Social.get_or_create_direct_group(first_profile, second_profile)
+
+      assert direct_group.id != regular_group.id
+      assert direct_group.is_direct
+      assert length(Social.list_child_groups(root_group)) == 2
     end
   end
 

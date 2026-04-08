@@ -159,8 +159,55 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :online?, :boolean, default: false
   attr :presence_badge_id, :string, default: nil
   attr :sharing_badge_text_class, :string, default: "text-xs"
+  attr :current_profile, :map, default: nil
+  attr :direct_group_link, :boolean, default: false
 
   def profile_identity(assigns) do
+    ~H"""
+    <.link
+      :if={profile_identity_clickable?(@profile, @current_profile, @direct_group_link)}
+      navigate={~p"/profiles/#{@profile.id}/direct"}
+      class="block rounded-2xl px-1 py-1 transition-colors hover:bg-base-100/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <.profile_identity_content
+        profile={@profile}
+        avatar_size={@avatar_size}
+        text_class={@text_class}
+        title={@title}
+        subtitle={@subtitle}
+        me={@me}
+        online?={@online?}
+        presence_badge_id={@presence_badge_id}
+        sharing_badge_text_class={@sharing_badge_text_class}
+      />
+    </.link>
+
+    <.profile_identity_content
+      :if={!profile_identity_clickable?(@profile, @current_profile, @direct_group_link)}
+      profile={@profile}
+      avatar_size={@avatar_size}
+      text_class={@text_class}
+      title={@title}
+      subtitle={@subtitle}
+      me={@me}
+      online?={@online?}
+      presence_badge_id={@presence_badge_id}
+      sharing_badge_text_class={@sharing_badge_text_class}
+    />
+    """
+  end
+
+  attr :profile, :map, required: true
+  attr :avatar_size, :string, default: "size-11"
+  attr :text_class, :string, default: "text-sm"
+  attr :title, :string, default: nil
+  attr :subtitle, :string, default: nil
+  attr :me, :boolean, default: false
+  attr :online?, :boolean, default: false
+  attr :presence_badge_id, :string, default: nil
+  attr :sharing_badge_text_class, :string, default: "text-xs"
+
+  defp profile_identity_content(assigns) do
     ~H"""
     <div class="flex min-w-0 items-center gap-3">
       <div class="relative">
@@ -217,6 +264,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
     </div>
     """
+  end
+
+  defp profile_identity_clickable?(profile, current_profile, direct_group_link?) do
+    direct_group_link? and
+      match?(%{id: current_profile_id} when current_profile_id != profile.id, current_profile)
   end
 
   attr :group, :map, required: true

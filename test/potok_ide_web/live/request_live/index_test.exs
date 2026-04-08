@@ -58,6 +58,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert render(lv) =~ "Requested Group"
       assert render(lv) =~ requester_profile.username
       assert render(lv) =~ "Review this access request for the selected group."
+      assert has_element?(lv, "a[href='/profiles/#{requester_profile.id}/direct']")
     end
 
     test "updates when a new access request arrives for the approver", %{conn: conn} do

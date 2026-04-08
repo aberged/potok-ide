@@ -341,7 +341,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:loaded_children, [])
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
-      |> assign(:child_pending_join_request_counts, %{})
+       |> assign(:child_pending_join_request_counts, %{})
        |> assign(:group_unread_counts, %{})
        |> assign(:current_group_unread_count, 0)
        |> assign(:sub_groups_unread_count, 0)

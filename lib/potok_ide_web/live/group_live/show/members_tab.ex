@@ -55,7 +55,11 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
             <li :for={request <- @join_requests} id={"group-join-request-#{request.id}"}>
               <div class="flex items-start justify-between gap-3 rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3">
                 <div class="min-w-0 flex-1">
-                  <Components.profile_identity profile={request.requester} />
+                  <Components.profile_identity
+                    profile={request.requester}
+                    current_profile={@current_profile}
+                    direct_group_link={true}
+                  />
                   <div class="mt-2 text-xs text-base-950/65">
                     <Components.local_time
                       id={"group-join-request-inserted-at-#{request.id}"}
@@ -106,6 +110,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 me={member.id == @current_profile.id}
                 online?={MapSet.member?(@online_profile_ids, member.id)}
                 presence_badge_id={"group-member-presence-#{member.id}"}
+                current_profile={@current_profile}
+                direct_group_link={true}
               />
 
               <button

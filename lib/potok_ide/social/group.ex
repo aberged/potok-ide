@@ -11,6 +11,7 @@ defmodule PotokIde.Social.Group do
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
     field :has_public_chat, :boolean, default: false
+    field :is_direct, :boolean, default: false
     field :is_public, :boolean, default: false
     field :is_root, :boolean, default: false
 
@@ -37,6 +38,7 @@ defmodule PotokIde.Social.Group do
       :description,
       :description_format,
       :has_public_chat,
+      :is_direct,
       :is_public,
       :is_root,
       :creator_id,
