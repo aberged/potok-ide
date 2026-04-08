@@ -3,6 +3,8 @@ defmodule PotokIde.Social.Profile do
 
   import Ecto.Changeset
 
+  alias PotokIde.Repo
+
   @description_formats [:markdown, :html]
   @sharing_modes [:unique, :shared]
 
@@ -32,6 +34,8 @@ defmodule PotokIde.Social.Profile do
     |> cast(attrs, [:username, :profile_picture_url, :description, :description_format, :sharing])
     |> validate_required([:username, :description_format, :sharing])
     |> validate_length(:username, min: 2, max: 50)
+    |> unsafe_validate_unique(:username, Repo)
+    |> unique_constraint(:username)
     |> validate_length(:profile_picture_url, max: 2048)
   end
 end
