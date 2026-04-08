@@ -222,6 +222,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :group, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
+  attr :pending_join_requests_count, :integer, default: 0
   attr :unread_count, :integer, default: 0
 
   def group_identity(assigns) do
@@ -266,6 +267,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               do: "📢",
               else: "🔐"}
           </div>
+
+          <span
+            :if={!@group.is_root and @pending_join_requests_count > 0}
+            id={"group-pending-join-requests-badge-#{@group.id}"}
+            class="absolute -left-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
+          >
+            {unread_badge_label(@pending_join_requests_count)}
+          </span>
 
           <span
             :if={!@group.is_root and @unread_count > 0}

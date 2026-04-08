@@ -537,6 +537,27 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
+  def list_pending_group_join_request_counts(groups) when is_list(groups) do
+    group_ids =
+      groups
+      |> Enum.map(& &1.id)
+      |> Enum.uniq()
+
+    case group_ids do
+      [] ->
+        %{}
+
+      _ ->
+        from(r in GroupJoinRequest,
+          where: r.group_id in ^group_ids,
+          group_by: r.group_id,
+          select: {r.group_id, count(r.id)}
+        )
+        |> Repo.all()
+        |> Map.new()
+    end
+  end
+
   def get_pending_group_join_request(%Profile{} = requester, %Group{} = group) do
     from(r in GroupJoinRequest,
       where: r.group_id == ^group.id and r.requester_id == ^requester.id

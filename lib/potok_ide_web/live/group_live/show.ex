@@ -43,6 +43,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 avatar_size="size-10"
                 text_class="text-md"
+                pending_join_requests_count={
+                  if(@group.creator_id == @current_profile.id,
+                    do: @pending_join_requests_count,
+                    else: 0
+                  )
+                }
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               />
             </div>
@@ -247,6 +253,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
             children={@streams.children}
             pagination={@children_pagination}
+            pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
             is_member={@is_member}
           />
@@ -334,6 +341,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:loaded_children, [])
        |> assign(:loaded_members, [])
        |> assign(:loaded_values, [])
+      |> assign(:child_pending_join_request_counts, %{})
        |> assign(:group_unread_counts, %{})
        |> assign(:current_group_unread_count, 0)
        |> assign(:sub_groups_unread_count, 0)
@@ -1079,6 +1087,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> load_member_summary(group)
     |> load_join_request_data(group, active_tab)
     |> maybe_load_children(group, active_tab)
+    |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
@@ -1413,6 +1422,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:group_unread_counts, group_unread_counts)
     |> assign(:current_group_unread_count, current_group_unread_count)
     |> assign(:sub_groups_unread_count, sub_groups_unread_count)
+  end
+
+  defp assign_child_pending_join_request_counts(%{assigns: %{current_profile: nil}} = socket) do
+    assign(socket, :child_pending_join_request_counts, %{})
+  end
+
+  defp assign_child_pending_join_request_counts(socket) do
+    current_profile = socket.assigns.current_profile
+
+    manageable_children =
+      socket.assigns
+      |> Map.get(:loaded_children, [])
+      |> Enum.filter(&can_manage_join_requests?(current_profile, &1))
+
+    assign(
+      socket,
+      :child_pending_join_request_counts,
+      Social.list_pending_group_join_request_counts(manageable_children)
+    )
   end
 
   defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do

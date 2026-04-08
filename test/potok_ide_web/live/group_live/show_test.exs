@@ -595,6 +595,50 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-children-load-more")
     end
 
+    test "renders pending join request badges for manageable sub-groups", %{conn: conn} do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "subgroup-join-badge-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "subgroup-join-badge-requester",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, public_child_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "subgroup-join-badge-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "has_public_chat" => false
+        })
+
+      assert {:ok, _request} = Social.request_group_access(requester_profile, public_child_group)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-pending-join-requests-badge-#{public_child_group.id}", "1")
+    end
+
     test "renders group pictures in header and sub-group list", %{conn: conn} do
       account = account_fixture()
 
@@ -988,6 +1032,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/members")
 
+      assert has_element?(owner_lv, "#group-pending-join-requests-badge-#{group.id}", "1")
       assert has_element?(owner_lv, "#group-join-requests-count", "1")
       assert has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
 
@@ -998,6 +1043,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> render_click()
 
       assert Social.member_of_group?(requester_profile, group)
+      refute has_element?(owner_lv, "#group-pending-join-requests-badge-#{group.id}")
       refute has_element?(owner_lv, "#group-join-requests-list", requester_profile.username)
       assert has_element?(owner_lv, "#group-join-requests-empty", "No pending access requests.")
 

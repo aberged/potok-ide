@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :current_profile, :map, default: nil
   attr :children, :any, required: true
   attr :pagination, :map, required: true
+  attr :pending_join_request_counts, :map, required: true
   attr :unread_counts, :map, required: true
   attr :is_member, :boolean, required: true
 
@@ -35,6 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               group={group}
               avatar_size="size-10"
               text_class="text-sm"
+              pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
               unread_count={Map.get(@unread_counts, group.id, 0)}
             />
           </li>

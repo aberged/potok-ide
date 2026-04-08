@@ -118,7 +118,9 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       assert result =~ "Default profile updated."
       assert result =~ "default beta"
       assert result =~ "Default profile:"
-      refute result =~ "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default alpha"
+
+      refute result =~
+               "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default alpha"
 
       updated_account = Accounts.get_account!(account.id)
       assert updated_account.default_profile_id == second_profile.id
