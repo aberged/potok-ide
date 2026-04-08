@@ -554,6 +554,46 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-path span", "path-current-group")
     end
 
+    test "shows the other member username for direct groups in the current group path", %{conn: conn} do
+      current_account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "direct-path-current",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "direct-path-other",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, direct_group} = Social.get_or_create_direct_group(current_profile, other_profile)
+      current_account = Accounts.get_account!(current_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(current_account)
+        |> live(~p"/groups/#{direct_group.id}/values")
+
+      assert has_element?(
+               lv,
+               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'] .hero-globe-alt"
+             )
+
+      assert has_element?(lv, "#group-path span", "direct-path-other")
+      refute has_element?(lv, "#group-path span", direct_group.name)
+    end
+
     test "paginates sub-groups with streams", %{conn: conn} do
       account = account_fixture()
 

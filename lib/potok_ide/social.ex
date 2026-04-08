@@ -846,6 +846,7 @@ defmodule PotokIde.Social do
 
   def list_visible_group_path_for_profile(%Group{} = group, %Profile{} = profile) do
     list_group_path(group)
+    |> maybe_preload_group_members()
     |> Enum.filter(fn path_group ->
       path_group.id == group.id or path_group.is_public or member_of_group?(profile, path_group)
     end)

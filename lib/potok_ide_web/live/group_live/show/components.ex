@@ -107,13 +107,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <% end %>
 
           <%= if path_group.id == @group.id do %>
-            <span class="font-medium text-base-content">{path_group.name}</span>
+            <span class="font-medium text-base-content">
+              {group_identity_name(path_group, @current_profile)}
+            </span>
           <% else %>
             <.link
               navigate={~p"/groups/#{path_group.id}/sub_groups"}
               class="transition-colors hover:text-base-content"
             >
-              {if path_group.is_root, do: "", else: path_group.name}
+              {if path_group.is_root,
+                do: "",
+                else: group_identity_name(path_group, @current_profile)}
               <.icon :if={path_group.is_root} name="hero-globe-alt" class="size-4" />
             </.link>
           <% end %>
