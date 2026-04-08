@@ -17,14 +17,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       data-current-profile-id={@current_profile && @current_profile.id}
       data-description={@group.description || ""}
       data-description-format={@group.description_format}
-      class="sticky h-[calc(100dvh-12rem)] max-w-dvw lg:max-w-6xl px-2"
+      class="sticky h-[calc(100dvh-8rem)] max-w-dvw lg:max-w-6xl px-2"
     >
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md sticky"
       />
-      <div class="sticky h-[calc(100dvh-16rem)] max-w-dvw lg:max-w-6xl overflow-auto">
+      <div class="sticky h-[calc(100dvh-12rem)] max-w-dvw lg:max-w-6xl overflow-auto">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"
