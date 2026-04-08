@@ -389,6 +389,7 @@ defmodule PotokIde.Social do
           {:ok, %{invitation: invitation}} ->
             broadcast_profile_invitations_updated(invitee)
             broadcast_pending_invitations_count_updated(invitee)
+            broadcast_group_join_request_updates_for_group(group)
             broadcast_group_updated(group)
             notify_profile_invitee_of_group_invitation(inviter, group, invitee)
             {:ok, invitation}
@@ -427,6 +428,7 @@ defmodule PotokIde.Social do
         {:ok, %{invitation: inv}} ->
           broadcast_profile_invitations_updated(invitee)
           broadcast_pending_invitations_count_updated(invitee)
+          broadcast_group_join_request_updates_for_group(invitation.group)
           broadcast_group_updated(inv.group_id)
           broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
           notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
@@ -512,6 +514,7 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, request} ->
             broadcast_group_updated(group)
+            broadcast_group_join_request_updates_for_group(group)
             {:ok, request}
 
           {:error, reason} ->
@@ -532,6 +535,27 @@ defmodule PotokIde.Social do
   def count_pending_group_join_requests(%Group{} = group) do
     from(r in GroupJoinRequest,
       where: r.group_id == ^group.id,
+      select: count(r.id)
+    )
+    |> Repo.one()
+  end
+
+  def list_pending_group_join_requests_for_approver(%Profile{} = approver) do
+    from(r in GroupJoinRequest,
+      join: g in assoc(r, :group),
+      on: g.id == r.group_id,
+      where: g.creator_id == ^approver.id,
+      order_by: [desc: r.inserted_at, desc: r.id],
+      preload: [:requester, :group]
+    )
+    |> Repo.all()
+  end
+
+  def count_pending_group_join_requests_for_approver(%Profile{} = approver) do
+    from(r in GroupJoinRequest,
+      join: g in assoc(r, :group),
+      on: g.id == r.group_id,
+      where: g.creator_id == ^approver.id,
       select: count(r.id)
     )
     |> Repo.one()
@@ -592,6 +616,7 @@ defmodule PotokIde.Social do
           broadcast_group_updated(group)
           broadcast_profile_invitations_updated(requester)
           broadcast_pending_invitations_count_updated(requester)
+          broadcast_group_join_request_updates_for_group(group)
           broadcast_profile_group_unread_counts_updated(requester, group.id)
           {:ok, requester}
 
@@ -615,6 +640,7 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, _request} ->
           broadcast_group_updated(group)
+          broadcast_group_join_request_updates_for_group(group)
           {:ok, request}
 
         {:error, reason} ->
@@ -1382,6 +1408,37 @@ defmodule PotokIde.Social do
       {:pending_invitations_count_updated, profile_id, count_pending_invitations(profile)}
     )
   end
+
+  defp broadcast_profile_group_join_requests_updated(%Profile{id: profile_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:profile_group_join_requests_updated, profile_id}
+    )
+  end
+
+  defp broadcast_pending_group_join_requests_count_updated(%Profile{id: profile_id} = profile) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:pending_group_join_requests_count_updated, profile_id,
+       count_pending_group_join_requests_for_approver(profile)}
+    )
+  end
+
+  defp broadcast_group_join_request_updates_for_group(%Group{creator_id: creator_id})
+       when is_integer(creator_id) do
+    case Repo.get(Profile, creator_id) do
+      %Profile{} = creator ->
+        broadcast_profile_group_join_requests_updated(creator)
+        broadcast_pending_group_join_requests_count_updated(creator)
+
+      nil ->
+        :ok
+    end
+  end
+
+  defp broadcast_group_join_request_updates_for_group(_group), do: :ok
 
   defp broadcast_profile_group_unread_counts_updated(%Profile{id: profile_id}, group_id) do
     Phoenix.PubSub.broadcast(

@@ -28,6 +28,11 @@ defmodule PotokIdeWeb.ProfileAuth do
       end)
 
     socket =
+      Phoenix.Component.assign_new(socket, :pending_group_join_requests_count, fn ->
+        pending_group_join_requests_count(socket.assigns[:current_profile])
+      end)
+
+    socket =
       Phoenix.Component.assign_new(socket, :root_group_unread_count, fn ->
         root_group_unread_count(socket.assigns[:current_profile])
       end)
@@ -57,6 +62,10 @@ defmodule PotokIdeWeb.ProfileAuth do
                   pending_invitations_count(current_profile)
                 )
                 |> Phoenix.Component.assign(
+                  :pending_group_join_requests_count,
+                  pending_group_join_requests_count(current_profile)
+                )
+                |> Phoenix.Component.assign(
                   :root_group_unread_count,
                   root_group_unread_count(current_profile)
                 )
@@ -65,6 +74,9 @@ defmodule PotokIdeWeb.ProfileAuth do
                 |> push_root_group_unread_count_updated(root_group_unread_count(current_profile))
                 |> push_pending_invitations_count_updated(
                   pending_invitations_count(current_profile)
+                )
+                |> push_pending_group_join_requests_count_updated(
+                  pending_group_join_requests_count(current_profile)
                 )
 
               {:cont, socket}
@@ -89,6 +101,24 @@ defmodule PotokIdeWeb.ProfileAuth do
              socket
              |> Phoenix.Component.assign(:pending_invitations_count, count)
              |> push_pending_invitations_count_updated(count)}
+
+          {:profile_group_join_requests_updated, profile_id},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            count = pending_group_join_requests_count(current_profile)
+
+            {:cont,
+             socket
+             |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
+             |> push_pending_group_join_requests_count_updated(count)}
+
+          {:pending_group_join_requests_count_updated, profile_id, count},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            {:cont,
+             socket
+             |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
+             |> push_pending_group_join_requests_count_updated(count)}
 
           {:group_unread_counts_updated, profile_id, _group_id},
           %{assigns: %{current_profile: current_profile}} = socket
@@ -168,6 +198,10 @@ defmodule PotokIdeWeb.ProfileAuth do
     push_event(socket, "pending_invitations_count_updated", %{count: count})
   end
 
+  defp push_pending_group_join_requests_count_updated(socket, count) do
+    push_event(socket, "pending_group_join_requests_count_updated", %{count: count})
+  end
+
   defp push_root_group_unread_count_updated(socket, count) do
     push_event(socket, "root_group_unread_count_updated", %{count: count})
   end
@@ -183,6 +217,12 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp pending_invitations_count(nil), do: 0
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
+
+  defp pending_group_join_requests_count(nil), do: 0
+
+  defp pending_group_join_requests_count(profile) do
+    Social.count_pending_group_join_requests_for_approver(profile)
+  end
 
   defp root_group_unread_count(nil), do: 0
 

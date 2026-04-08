@@ -726,6 +726,19 @@ window.addEventListener("phx:pending_invitations_count_updated", ({detail}) => {
   invitationsBadge.textContent = count > 99 ? "99+" : String(count)
 })
 
+window.addEventListener("phx:pending_group_join_requests_count_updated", ({detail}) => {
+  const requestsBadge = document.getElementById("nav-requests-count-badge")
+
+  if (!requestsBadge) {
+    return
+  }
+
+  const count = Number(detail.count || 0)
+
+  requestsBadge.hidden = count <= 0
+  requestsBadge.textContent = count > 999 ? "999+" : String(count)
+})
+
 window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
   const rootGroupBadge = document.getElementById("nav-root-group-unread-badge")
 

@@ -110,6 +110,16 @@
                     <.icon name="hero-inbox-arrow-down" class="size-6" />
                     {gettext("Invitations")}
                   </.link>
+                  <.link
+                    href={~p"/requests"}
+                    data-nav-link
+                    data-nav-target="/requests"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-paper-airplane" class="size-6" />
+                    {gettext("Requests")}
+                  </.link>
                 <% else %>
                   <.link
                     href={~p"/accounts/log-in"}
@@ -217,6 +227,26 @@
                 {if(@pending_invitations_count > 999,
                   do: "999+",
                   else: @pending_invitations_count
+                )}
+              </span>
+            </.link>
+            <.link
+              id="nav-requests-link"
+              href={~p"/requests"}
+              alt={gettext("Requests")}
+              class="relative"
+              aria-label={gettext("Requests")}
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-paper-airplane" class="size-6" />
+              <span
+                id="nav-requests-count-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@pending_group_join_requests_count <= 0}
+              >
+                {if(@pending_group_join_requests_count > 999,
+                  do: "999+",
+                  else: @pending_group_join_requests_count
                 )}
               </span>
             </.link>

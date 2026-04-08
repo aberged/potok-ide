@@ -78,6 +78,10 @@ defmodule PotokIdeWeb.AccountAuth do
         :pending_invitations_count,
         pending_invitations_count_for_profile(current_profile)
       )
+      |> assign(
+        :pending_group_join_requests_count,
+        pending_group_join_requests_count_for_profile(current_profile)
+      )
       |> assign(:root_group_unread_count, root_group_unread_count_for_profile(current_profile))
       |> maybe_reissue_account_session_token(account, token_inserted_at)
     else
@@ -86,6 +90,7 @@ defmodule PotokIdeWeb.AccountAuth do
         |> assign(:current_scope, Scope.for_account(nil))
         |> assign(:current_profile, nil)
         |> assign(:pending_invitations_count, 0)
+        |> assign(:pending_group_join_requests_count, 0)
         |> assign(:root_group_unread_count, 0)
     end
   end
@@ -286,6 +291,9 @@ defmodule PotokIdeWeb.AccountAuth do
     |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
       pending_invitations_count_for_profile(socket.assigns[:current_profile])
     end)
+    |> Phoenix.Component.assign_new(:pending_group_join_requests_count, fn ->
+      pending_group_join_requests_count_for_profile(socket.assigns[:current_profile])
+    end)
     |> Phoenix.Component.assign_new(:root_group_unread_count, fn ->
       root_group_unread_count_for_profile(socket.assigns[:current_profile])
     end)
@@ -305,6 +313,11 @@ defmodule PotokIdeWeb.AccountAuth do
 
   defp pending_invitations_count_for_profile(profile),
     do: Social.count_pending_invitations(profile)
+
+  defp pending_group_join_requests_count_for_profile(nil), do: 0
+
+  defp pending_group_join_requests_count_for_profile(profile),
+    do: Social.count_pending_group_join_requests_for_approver(profile)
 
   defp root_group_unread_count_for_profile(nil), do: 0
 

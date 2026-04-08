@@ -113,6 +113,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
+  def handle_info({:profile_group_join_requests_updated, _profile_id}, socket),
+    do: {:noreply, socket}
+
+  def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
+    do: {:noreply, socket}
+
   def handle_info({:group_unread_counts_updated, profile_id, _group_id}, socket)
       when not is_nil(socket.assigns.current_profile) and
              socket.assigns.current_profile.id == profile_id do

@@ -92,6 +92,7 @@ defmodule PotokIdeWeb.Router do
       live "/groups/:id/:tab", GroupLive.Show, :show
       live "/groups/:id", GroupLive.Show, :show
       live "/invitations", InvitationLive.Index, :index
+      live "/requests", RequestLive.Index, :index
       live "/accounts/register", AccountLive.Registration, :new
     end
 
