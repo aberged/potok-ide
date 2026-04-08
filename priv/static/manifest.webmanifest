@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Potok",
   "short_name": "Potok",
-  "description": "Potok keeps your profiles, groups, and invitations available in an installable web app.",
+  "description": "Potok keeps your profiles, groups, and values available in an installable web app.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
