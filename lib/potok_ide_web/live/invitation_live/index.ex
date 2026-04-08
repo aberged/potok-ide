@@ -23,6 +23,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           <div class="card-body">
             <Components.group_identity
               group={inv.group}
+              current_profile={@current_profile}
               avatar_size="size-12"
               text_class="text-sm"
               unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}

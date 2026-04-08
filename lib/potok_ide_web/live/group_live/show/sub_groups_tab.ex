@@ -34,6 +34,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}
+              current_profile={@current_profile}
               avatar_size="size-10"
               text_class="text-sm"
               pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}

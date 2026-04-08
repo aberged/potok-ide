@@ -276,6 +276,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :text_class, :string, default: "text-sm"
   attr :pending_join_requests_count, :integer, default: 0
   attr :unread_count, :integer, default: 0
+  attr :current_profile, :map, default: nil
 
   def group_identity(assigns) do
     ~H"""
@@ -285,7 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     >
       <div class="flex min-w-0 items-center gap-3">
         <div class="relative shrink-0">
-          <%= if avatar_url = group_picture_url(@group) do %>
+          <%= if avatar_url = group_identity_picture_url(@group, @current_profile) do %>
             <img
               :if={!@group.is_root}
               src={avatar_url}
@@ -314,7 +315,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             </div>
           <% end %>
 
-          <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
+          <div :if={!@group.is_direct} class="absolute bottom-0 left-0 -ml-1 -mb-1">
             {if @group.is_public,
               do: "📢",
               else: "🔐"}
@@ -342,7 +343,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           class="min-w-0 shrink"
         >
           <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-            {@group.name}
+            {group_identity_name(@group, @current_profile)}
           </div>
           <div
             :if={false}
@@ -635,6 +636,24 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp profile_picture_url(_), do: nil
 
+  defp group_identity_picture_url(%{is_direct: true} = group, current_profile) do
+    case direct_group_other_member(group, current_profile) do
+      nil -> group_picture_url(group)
+      profile -> profile_picture_url(profile) || group_picture_url(group)
+    end
+  end
+
+  defp group_identity_picture_url(group, _current_profile), do: group_picture_url(group)
+
+  defp group_identity_name(%{is_direct: true} = group, current_profile) do
+    case direct_group_other_member(group, current_profile) do
+      %{username: username} when is_binary(username) and username != "" -> username
+      _ -> group.name
+    end
+  end
+
+  defp group_identity_name(group, _current_profile), do: group.name
+
   defp group_picture_url(%{group_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
       "" -> nil
@@ -643,6 +662,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp group_picture_url(_), do: nil
+
+  defp direct_group_other_member(%{members: members}, %{id: current_profile_id}) do
+    if Ecto.assoc_loaded?(members) do
+      Enum.find(members, &(&1.id != current_profile_id))
+    else
+      nil
+    end
+  end
+
+  defp direct_group_other_member(_group, _current_profile), do: nil
 
   defp profile_initials(username) when is_binary(username) do
     username

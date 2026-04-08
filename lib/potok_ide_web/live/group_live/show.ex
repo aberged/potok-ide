@@ -41,6 +41,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <div class="flex items-center gap-3">
               <Components.group_identity
                 group={@group}
+                current_profile={@current_profile}
                 avatar_size="size-10"
                 text_class="text-md"
                 pending_join_requests_count={

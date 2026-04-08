@@ -275,7 +275,11 @@ defmodule PotokIde.Social do
   # Groups
   # ---------
 
-  def get_group!(id), do: Repo.get!(Group, id)
+  def get_group!(id) do
+    Group
+    |> Repo.get!(id)
+    |> maybe_preload_group_members()
+  end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
     if not member_of_group?(creator, parent) do
@@ -599,7 +603,7 @@ defmodule PotokIde.Social do
       on: g.id == r.group_id,
       where: g.creator_id == ^approver.id,
       order_by: [desc: r.inserted_at, desc: r.id],
-      preload: [:requester, :group]
+      preload: [:requester, group: :members]
     )
     |> Repo.all()
   end
@@ -864,6 +868,7 @@ defmodule PotokIde.Social do
         groups_by_id =
           from(g in Group, where: g.id in ^ordered_ids)
           |> Repo.all()
+          |> maybe_preload_group_members()
           |> Map.new(&{&1.id, &1})
 
         Enum.map(ordered_ids, &Map.fetch!(groups_by_id, &1))
@@ -1130,7 +1135,7 @@ defmodule PotokIde.Social do
         asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
         desc: i.inserted_at
       ],
-      preload: [:group, :inviter]
+      preload: [:inviter, group: :members]
     )
     |> Repo.all()
   end
@@ -1182,9 +1187,38 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
-      preload: [:group, :inviter]
+      preload: [:inviter, group: :members]
     )
     |> Repo.one()
+  end
+
+  defp maybe_preload_group_members(%Group{is_direct: true} = group) do
+    Repo.preload(group, :members)
+  end
+
+  defp maybe_preload_group_members(%Group{} = group), do: group
+
+  defp maybe_preload_group_members(groups) when is_list(groups) do
+    direct_group_ids =
+      groups
+      |> Enum.filter(& &1.is_direct)
+      |> Enum.map(& &1.id)
+
+    case direct_group_ids do
+      [] ->
+        groups
+
+      _ ->
+        preloaded_groups =
+          from(g in Group,
+            where: g.id in ^direct_group_ids,
+            preload: [:members]
+          )
+          |> Repo.all()
+          |> Map.new(&{&1.id, &1})
+
+        Enum.map(groups, fn group -> Map.get(preloaded_groups, group.id, group) end)
+    end
   end
 
   def get_pending_profile_invitation_for_invitee(%Profile{} = invitee, invitation_id) do
