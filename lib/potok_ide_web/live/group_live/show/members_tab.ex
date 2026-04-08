@@ -22,8 +22,9 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
         <h3 class="card-title mb-2">{gettext("Members")}</h3>
 
+        <.icon :if={@group.is_direct} name="hero-users" />
         <div
-          :if={@group.creator_id == @current_profile.id}
+          :if={@group.creator_id == @current_profile.id && !@group.is_direct}
           id="group-join-requests-panel"
           class="mb-5 rounded-3xl border border-base-300/70 bg-base-50/70 p-4 shadow-sm"
         >
@@ -115,7 +116,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               />
 
               <button
-                :if={@group.creator_id == @current_profile.id and member.id != @group.creator_id}
+                :if={@group.creator_id == @current_profile.id && member.id != @group.creator_id && !@group.is_direct}
                 id={"group-remove-member-#{member.id}"}
                 type="button"
                 phx-click="remove_member"

@@ -1,6 +1,60 @@
 # Potok
 
-Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity.
+Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
+
+## Domain Model
+
+The main concepts in the system are:
+
+* `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, one selected `current_profile`, and one `default_profile` used as the fallback profile when no explicit current profile is set.
+* `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
+* `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, and optional parent relations.
+* `Value`: content posted by a profile in a group, optionally as part of a reply chain.
+* `GroupMembership`: the join entity between profiles and groups.
+* `GroupInvitation`: an invitation from one profile to another profile to join a group.
+* `GroupJoinRequest`: a pending request from a non-member profile to join a public group, reviewed by the group creator.
+* `AccountProfile`: the join entity between accounts and profiles.
+
+Invitation behavior:
+
+* Invitations are stored against the invitee profile, not against a specific account.
+* If the invitee profile is shared, the pending invitation is effectively shared as well, because all linked accounts access the same profile record.
+* Accepting an invitation adds the profile to the target group, so the resulting membership is also shared by every account linked to that profile.
+
+Group access and direct-group behavior:
+
+* Public groups support access requests from non-member profiles. Group creators review those pending requests from the members tab and can accept or reject them there.
+* Direct groups are derived conversation groups, not a separate invitation flow. Opening `/profiles/:id/direct` finds or creates a private non-root group under the root group for exactly two profiles and then navigates to that group's values tab.
+* Because direct groups are fixed to two members, the group UI hides profile-invite actions, join-request management, and member removal controls for them.
+
+Relationship summary:
+
+```text
+Account 1----* AccountProfile *----1 Profile
+Account 1----0..1 current_profile -> Profile
+Account 1----0..1 default_profile -> Profile
+
+Profile 1----* GroupMembership *----1 Group
+Profile 1----* created_groups
+Profile 1----* values
+
+Group 1----* child_groups
+Group 1----* values
+Group 0..1----1 parent_group
+Group 0..1----1 parent_value
+
+Value 0..1----1 parent_value
+Value 1----* child_values
+
+GroupInvitation belongs_to group, inviter(profile), invitee(profile)
+GroupJoinRequest belongs_to group, requester(profile)
+```
+
+Default profile behavior:
+
+* The first profile created for an account becomes both its `current_profile` and `default_profile`.
+* Later profile creation does not overwrite either selection.
+* If `current_profile` is cleared, the web layer falls back to `default_profile` for profile-scoped behavior.
 
 ## Quick Start
 
@@ -159,7 +213,6 @@ Public browser routes:
 
 * `GET /` redirects based on account and profile state
 * `GET /locale/:locale` updates the active locale
-* `GET /accounts/register`
 * `GET /accounts/log-in`
 * `GET /accounts/log-in/:token`
 * `POST /accounts/log-in`
@@ -168,6 +221,8 @@ Public browser routes:
 Authenticated routes:
 
 * `GET /profiles` for profile selection and setup
+* `GET /profiles/new`
+* `GET /profiles/:id/edit`
 * `GET /accounts/settings`
 * `GET /accounts/settings/confirm-email/:token`
 * `POST /accounts/update-password`
@@ -177,9 +232,13 @@ Authenticated routes:
 
 Authenticated routes that require a current profile:
 
+* `GET /profiles/:id/direct`
 * `GET /groups`
 * `GET /groups/:id`
+* `GET /groups/:id/:tab`
 * `GET /invitations`
+* `GET /requests`
+* `GET /accounts/register`
 
 Development-only routes when `dev_routes` is enabled:
 
@@ -192,52 +251,6 @@ The router uses separate LiveView sessions for:
 * authenticated account settings (`:require_authenticated_account`)
 * authenticated profile selection (`:authenticated`)
 * profile-required collaboration screens (`:profile_required`)
-
-## Domain Model
-
-The main concepts in the system are:
-
-* `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, one selected `current_profile`, and one `default_profile` used as the fallback profile when no explicit current profile is set.
-* `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
-* `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, and optional parent relations.
-* `Value`: content posted by a profile in a group, optionally as part of a reply chain.
-* `GroupMembership`: the join entity between profiles and groups.
-* `GroupInvitation`: an invitation from one profile to another profile to join a group.
-* `AccountProfile`: the join entity between accounts and profiles.
-
-Invitation behavior:
-
-* Invitations are stored against the invitee profile, not against a specific account.
-* If the invitee profile is shared, the pending invitation is effectively shared as well, because all linked accounts access the same profile record.
-* Accepting an invitation adds the profile to the target group, so the resulting membership is also shared by every account linked to that profile.
-
-Relationship summary:
-
-```text
-Account 1----* AccountProfile *----1 Profile
-Account 1----0..1 current_profile -> Profile
-Account 1----0..1 default_profile -> Profile
-
-Profile 1----* GroupMembership *----1 Group
-Profile 1----* created_groups
-Profile 1----* values
-
-Group 1----* child_groups
-Group 1----* values
-Group 0..1----1 parent_group
-Group 0..1----1 parent_value
-
-Value 0..1----1 parent_value
-Value 1----* child_values
-
-GroupInvitation belongs_to group, inviter(profile), invitee(profile)
-```
-
-Default profile behavior:
-
-* The first profile created for an account becomes both its `current_profile` and `default_profile`.
-* Later profile creation does not overwrite either selection.
-* If `current_profile` is cleared, the web layer falls back to `default_profile` for profile-scoped behavior.
 
 ## Frontend Hook APIs
 

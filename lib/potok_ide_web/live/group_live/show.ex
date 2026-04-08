@@ -36,7 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {"❮"}
             </.link>
           </div>
-          
+
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-3">
               <Components.group_identity
@@ -53,7 +53,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
             </div>
           </div>
-          
+
           <div
             :if={!@group.is_root and !@is_member}
             id="group-join-request-callout"
@@ -76,7 +76,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {gettext("Access request pending")}
             </div>
           </div>
-          
+
           <button
             :if={!@group.is_root and @is_member}
             id="group-values-summary"
@@ -120,7 +120,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </button>
           <button
-            :if={@group.parent_id != nil && @is_member}
+            :if={@group.parent_id != nil && @is_member && !@group.is_direct}
             id="group-invite-summary"
             type="button"
             phx-click="switch_tab"
@@ -164,7 +164,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   sharing_badge_text_class="hidden"
                 />
               </div>
-              
+
               <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
                 <div class="bg-neutral text-neutral-content size-5 text-xs">
                   <span>+{@members_count - length(@first3_members)}</span>
@@ -179,7 +179,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {unread_badge_label(@pending_join_requests_count)}
             </span>
           </div>
-          
+
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
             <div class="flex min-w-[14rem] flex-col gap-2 z-100">
               <Components.group_tab_button
@@ -223,7 +223,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-folder-plus"
               />
               <Components.group_tab_button
-                :if={@is_member && @group.parent_id != nil}
+                :if={@is_member && @group.parent_id != nil && !@group.is_direct}
                 id="group-tab-invite-profile"
                 tab="invite_profile"
                 active_tab={@active_tab}
@@ -244,7 +244,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </Layouts.drop_down_menu>
         </div>
       </div>
-      
+
       <div class="min-h-0 flex-1 overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
           <SubGroupsTab.panel
