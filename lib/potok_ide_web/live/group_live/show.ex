@@ -36,7 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {"❮"}
             </.link>
           </div>
-
+          
           <div class="min-w-0 flex-1">
             <div class="flex items-center gap-3">
               <Components.group_identity
@@ -53,7 +53,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
             </div>
           </div>
-
+          
           <div
             :if={!@group.is_root and !@is_member}
             id="group-join-request-callout"
@@ -68,7 +68,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             >
               {gettext("Request access")}
             </button>
-
             <div
               :if={!is_nil(@pending_join_request)}
               id="group-request-access-pending"
@@ -77,7 +76,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {gettext("Access request pending")}
             </div>
           </div>
-
+          
           <button
             :if={!@group.is_root and @is_member}
             id="group-values-summary"
@@ -165,7 +164,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   sharing_badge_text_class="hidden"
                 />
               </div>
-
+              
               <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
                 <div class="bg-neutral text-neutral-content size-5 text-xs">
                   <span>+{@members_count - length(@first3_members)}</span>
@@ -180,6 +179,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {unread_badge_label(@pending_join_requests_count)}
             </span>
           </div>
+          
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
             <div class="flex min-w-[14rem] flex-col gap-2 z-100">
               <Components.group_tab_button
@@ -244,7 +244,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </Layouts.drop_down_menu>
         </div>
       </div>
-
+      
       <div class="min-h-0 flex-1 overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
           <SubGroupsTab.panel
@@ -1037,13 +1037,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
       when profile_id == current_profile_id do
     {:noreply,
      socket
+     |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
      |> assign(
        :root_group_unread_count,
        Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
      )
      |> assign_group_unread_counts()
-     |> maybe_push_root_group_unread_count()
-     |> restream_loaded_children()}
+     |> maybe_push_root_group_unread_count()}
   end
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
@@ -1195,12 +1195,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp restream_members(socket) do
     Enum.reduce(socket.assigns.loaded_members, socket, fn member, acc ->
       stream_insert(acc, :members, member)
-    end)
-  end
-
-  defp restream_loaded_children(socket) do
-    Enum.reduce(socket.assigns.loaded_children, socket, fn child_group, acc ->
-      stream_insert(acc, :children, child_group)
     end)
   end
 

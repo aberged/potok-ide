@@ -1,6 +1,7 @@
 defmodule PotokIde.SocialTest do
   use PotokIde.DataCase
 
+  import Ecto.Query, only: [from: 2]
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
@@ -1085,6 +1086,121 @@ defmodule PotokIde.SocialTest do
                  root_group,
                  Accounts.get_account!(account.id) |> Social.get_account_current_profile()
                )
+    end
+
+    test "paginates child groups by unread count and latest value date" do
+      owner_account = account_fixture()
+      writer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "ordered-child-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, writer_profile} =
+        Social.create_profile_for_account(writer_account, %{
+          username: "ordered-child-writer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, newest_unread_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "alpha-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, older_unread_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "beta-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, read_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "gamma-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      for group <- [newest_unread_group, older_unread_group, read_group] do
+        assert {:ok, invitation} =
+                 Social.invite_profile_to_group(owner_profile, group, writer_profile)
+
+        assert {:ok, _accepted_invitation} =
+                 Social.accept_group_invitation(invitation, writer_profile)
+      end
+
+      assert {:ok, older_unread_value} =
+               Social.create_value(writer_profile, older_unread_group, %{
+                 "content" => "older unread value",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, read_value} =
+               Social.create_value(writer_profile, read_group, %{
+                 "content" => "read value",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, newest_unread_value} =
+               Social.create_value(writer_profile, newest_unread_group, %{
+                 "content" => "newest unread value",
+                 "content_format" => :markdown
+               })
+
+      base_inserted_at = DateTime.utc_now() |> DateTime.truncate(:second)
+
+      from(v in PotokIde.Social.Value, where: v.id == ^older_unread_value.id)
+      |> PotokIde.Repo.update_all(
+        set: [
+          inserted_at: DateTime.add(base_inserted_at, -120, :second),
+          updated_at: DateTime.add(base_inserted_at, -120, :second)
+        ]
+      )
+
+      from(v in PotokIde.Social.Value, where: v.id == ^read_value.id)
+      |> PotokIde.Repo.update_all(
+        set: [
+          inserted_at: DateTime.add(base_inserted_at, -60, :second),
+          updated_at: DateTime.add(base_inserted_at, -60, :second)
+        ]
+      )
+
+      from(v in PotokIde.Social.Value, where: v.id == ^newest_unread_value.id)
+      |> PotokIde.Repo.update_all(
+        set: [inserted_at: base_inserted_at, updated_at: base_inserted_at]
+      )
+
+      assert :ok = Social.mark_group_values_read(owner_profile, read_group)
+
+      assert Enum.map(
+               Social.list_child_groups_for_profile(root_group, owner_profile, limit: 2),
+               & &1.id
+             ) == [
+               newest_unread_group.id,
+               older_unread_group.id
+             ]
+
+      assert Enum.map(Social.list_child_groups_for_profile(root_group, owner_profile), & &1.id) ==
+               [
+                 newest_unread_group.id,
+                 older_unread_group.id,
+                 read_group.id
+               ]
     end
   end
 

@@ -585,13 +585,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{root_group.id}")
 
       assert has_element?(lv, "#group-children-load-more")
-      refute has_element?(lv, "#group-children-list", "paged-child-13")
+      assert has_element?(lv, "#group-children-list", "paged-child-13")
+      refute has_element?(lv, "#group-children-list", "paged-child-01")
 
       lv
       |> element("#group-children-load-more")
       |> render_click()
 
-      assert has_element?(lv, "#group-children-list", "paged-child-13")
+      assert has_element?(lv, "#group-children-list", "paged-child-01")
       refute has_element?(lv, "#group-children-load-more")
     end
 

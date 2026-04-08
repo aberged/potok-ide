@@ -848,17 +848,26 @@ defmodule PotokIde.Social do
   end
 
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
-    import Ecto.Query, only: [from: 2]
+    ordered_ids =
+      ordered_child_group_ids_for_profile(
+        group.id,
+        profile.id,
+        normalize_query_limit(opts[:limit]),
+        normalize_query_offset(opts[:offset])
+      )
 
-    from(g in Group,
-      join: gm in GroupMembership,
-      on: gm.group_id == g.id,
-      where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true),
-      order_by: [asc: g.name],
-      distinct: g.id
-    )
-    |> maybe_paginate(opts)
-    |> Repo.all()
+    case ordered_ids do
+      [] ->
+        []
+
+      _ ->
+        groups_by_id =
+          from(g in Group, where: g.id in ^ordered_ids)
+          |> Repo.all()
+          |> Map.new(&{&1.id, &1})
+
+        Enum.map(ordered_ids, &Map.fetch!(groups_by_id, &1))
+    end
   end
 
   def count_child_groups_for_profile(%Group{} = group, %Profile{} = profile) do
@@ -872,6 +881,105 @@ defmodule PotokIde.Social do
     )
     |> Repo.one()
   end
+
+  defp ordered_child_group_ids_for_profile(parent_group_id, profile_id, limit, offset)
+       when is_integer(parent_group_id) and is_integer(profile_id) do
+    sql = ordered_child_group_ids_query(limit, offset)
+
+    params =
+      [parent_group_id, profile_id]
+      |> maybe_append_query_param(limit)
+      |> maybe_append_query_param(offset)
+
+    case Repo.query(sql, params) do
+      {:ok, %{rows: rows}} ->
+        Enum.map(rows, fn [group_id] -> group_id end)
+
+      {:error, _reason} ->
+        []
+    end
+  end
+
+  defp ordered_child_group_ids_query(limit, offset) do
+    """
+    WITH RECURSIVE visible_children AS (
+      SELECT DISTINCT g.id
+      FROM groups g
+      LEFT JOIN group_memberships gm
+        ON gm.group_id = g.id AND gm.profile_id = $2
+      WHERE g.parent_id = $1
+        AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
+    ),
+    subtree(root_id, group_id) AS (
+      SELECT vc.id, vc.id
+      FROM visible_children vc
+
+      UNION ALL
+
+      SELECT s.root_id, child.id
+      FROM subtree s
+      JOIN groups child ON child.parent_id = s.group_id
+    ),
+    unread_counts AS (
+      SELECT
+        s.root_id,
+        COUNT(v.id) FILTER (WHERE v.id > COALESCE(gvr.last_read_value_id, 0))::bigint AS unread_count
+      FROM subtree s
+      JOIN groups g ON g.id = s.group_id
+      JOIN group_memberships gm
+        ON gm.group_id = s.group_id AND gm.profile_id = $2
+      LEFT JOIN values v
+        ON v.group_id = s.group_id AND g.is_root = FALSE AND v.is_data = FALSE
+      LEFT JOIN group_value_reads gvr
+        ON gvr.group_id = s.group_id AND gvr.profile_id = $2
+      GROUP BY s.root_id
+    ),
+    latest_values AS (
+      SELECT v.group_id, MAX(v.inserted_at) AS latest_value_inserted_at
+      FROM values v
+      WHERE v.is_data = FALSE
+      GROUP BY v.group_id
+    )
+    SELECT g.id
+    FROM visible_children vc
+    JOIN groups g ON g.id = vc.id
+    LEFT JOIN unread_counts uc ON uc.root_id = g.id
+    LEFT JOIN latest_values lv ON lv.group_id = g.id
+    ORDER BY
+      COALESCE(uc.unread_count, 0) DESC,
+      lv.latest_value_inserted_at DESC NULLS LAST,
+      g.inserted_at DESC,
+      g.id DESC#{ordered_child_group_pagination_sql(limit, offset)}
+    """
+  end
+
+  defp ordered_child_group_pagination_sql(limit, offset) do
+    []
+    |> maybe_add_limit_sql(limit)
+    |> maybe_add_offset_sql(limit, offset)
+    |> Enum.join()
+  end
+
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $3"]
+  defp maybe_add_limit_sql(parts, _limit), do: parts
+
+  defp maybe_add_offset_sql(parts, limit, offset)
+       when is_integer(limit) and is_integer(offset),
+       do: parts ++ [" OFFSET $4"]
+
+  defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
+    do: parts ++ [" OFFSET $3"]
+
+  defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
+
+  defp maybe_append_query_param(params, value) when is_integer(value), do: params ++ [value]
+  defp maybe_append_query_param(params, _value), do: params
+
+  defp normalize_query_limit(limit) when is_integer(limit) and limit >= 0, do: limit
+  defp normalize_query_limit(_limit), do: nil
+
+  defp normalize_query_offset(offset) when is_integer(offset) and offset >= 0, do: offset
+  defp normalize_query_offset(_offset), do: nil
 
   def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
