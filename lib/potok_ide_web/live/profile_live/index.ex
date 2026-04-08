@@ -87,6 +87,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 disabled={!(is_nil(@current_profile) or @current_profile.id != profile.id)}
                 phx-click="use"
                 phx-value-id={profile.id}
+                class="btn btn-square"
               >
                 <.icon name="hero-check-badge" class="size-4" />
               </.button>
@@ -95,10 +96,11 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                 phx-click="set_default"
                 phx-value-id={profile.id}
                 id={"set-default-profile-#{profile.id}"}
+                class="btn btn-square"
               >
                 <.icon name="hero-globe-alt" class="size-4" />
               </.button>
-              <.button navigate={~p"/profiles/#{profile.id}/edit"}>
+              <.button navigate={~p"/profiles/#{profile.id}/edit"} class="btn btn-square ml-3">
                 <.icon name="hero-pencil" class="size-4" />
               </.button>
             </div>
