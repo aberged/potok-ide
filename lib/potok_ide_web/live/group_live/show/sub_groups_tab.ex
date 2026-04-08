@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-sub-groups" class="card relative max-w-dvw md:max-w-6xl px-2">
+    <div id="group-panel-sub-groups" class="card relative h-[calc(100dvh-8rem)] max-w-dvw md:max-w-6xl px-2 ">
       <Components.group_path
         :if={!@group.is_root}
         group={@group}
@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="shadow-md"
       />
 
-      <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-12rem)] pb-4 overflow-y-auto">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}
