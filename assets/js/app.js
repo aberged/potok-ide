@@ -386,17 +386,23 @@ const PushNotifications = {
 }
 
 const GroupDescriptionActions = {
+  
+  groupPanelDescription: new WeakSet(),
+
   mounted() {
+    console.debug("<#HOOK-LC#> Mounting GroupDescriptionActions hook for element", this.el.id)
     this.registerInsertValue()
     this.reloadDescriptionScriptsIfNeeded()
   },
 
   updated() {
+    console.debug("<#HOOK-LC#> Updating GroupDescriptionActions hook for element", this.el.id)
     this.registerInsertValue()
     this.reloadDescriptionScriptsIfNeeded()
   },
 
   destroyed() {
+    console.debug("<#HOOK-LC#> Destroying GroupDescriptionActions hook for element", this.el.id)
     if (window.Potok?.insertGroupValue === this.insertGroupValue) {
       delete window.Potok.insertGroupValue
     }
@@ -444,7 +450,6 @@ const GroupDescriptionActions = {
         description_format: descriptionFormat,
       })
 
-      //console.debug("Server response for update_group_description:", res)
       return res
     }
 
@@ -455,7 +460,6 @@ const GroupDescriptionActions = {
 
     this.getGroupDataValues = async () => {
       const res = await this.pushEvent("list_group_data_values", {})
-      //console.log("Server response for list_group_data_values:", res)
       return res
     }
 
@@ -463,10 +467,19 @@ const GroupDescriptionActions = {
     window.Potok.updateGroupDescription = this.updateGroupDescription
     window.Potok.getGroupDescription = this.getGroupDescription
     window.Potok.getGroupDataValues = this.getGroupDataValues
+    window.Potok.log = (...args) => console.debug("<#HOOK#> Potok hook log:", ...args);
+    window.Potok.mountApp = (app) => {
+      console.debug("<#HOOK#> app.js Mounting app via window.Potok.mountApp", app, this.groupPanelDescription)
+      if (this.groupPanelDescription.has(app)) {
+        return false
+      }
+      this.groupPanelDescription.add(app);
+      return true
+    };
   },
 
   async reloadDescriptionScriptsIfNeeded() {
-    return;
+    console.debug("<#HOOK#> reloadDescriptionScriptsIfNeeded for element", this.el.id)
     const contentElement = this.el.querySelector("#group-description-content")
     const descriptionSignature = `${this.el.dataset.descriptionFormat || ""}:${this.el.dataset.description || ""}`
 
