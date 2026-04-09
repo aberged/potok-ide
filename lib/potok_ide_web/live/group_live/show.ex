@@ -18,7 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.GroupLive.Show.Components
 
-  @children_page_size 12
+  @children_page_size 20
   @members_page_size 20
   @values_page_size 20
 
