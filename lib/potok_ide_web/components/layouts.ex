@@ -35,10 +35,10 @@ defmodule PotokIdeWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <main class="flex flex-col flex-1 max-w-dvw md:max-w-6xl justify-center">
+    <main class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center">
       <div
         id="main-content"
-        class="flex flex-col flex-1 max-w-dvw md:max-w-6xl justify-center overflow-clip"
+        class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center overflow-clip"
       >
         {render_slot(@inner_block)}
       </div>

@@ -17,7 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       data-current-profile-id={@current_profile && @current_profile.id}
       data-description={@group.description || ""}
       data-description-format={@group.description_format}
-      class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw min-w-dvw lg:max-w-6xl px-2"
+      class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw lg:max-w-6xl px-2"
     >
       <Components.group_path
         group={@group}
