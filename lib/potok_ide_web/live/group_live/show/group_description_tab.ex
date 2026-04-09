@@ -17,14 +17,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       data-current-profile-id={@current_profile && @current_profile.id}
       data-description={@group.description || ""}
       data-description-format={@group.description_format}
-      class="sticky h-[calc(100dvh-8rem)] max-w-dvw lg:max-w-6xl px-2"
+      class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px))] max-w-dvw min-w-dvw lg:max-w-6xl px-2"
     >
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md sticky"
       />
-      <div class="sticky h-[calc(100dvh-12rem)] max-w-dvw lg:max-w-6xl overflow-auto">
+      <div class="h-[calc(100dvh-12rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px))]] max-w-dvw lg:max-w-6xl overflow-y-auto">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"
@@ -36,7 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         <div
           :if={!blank_description?(@group.description)}
           id="group-description-content"
-          class="p-4"
+          class=""
         >
           <Components.formatted_content
             content={@group.description}

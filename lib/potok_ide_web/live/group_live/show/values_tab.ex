@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          class="flex flex-col gap-4 overflow-y-auto px-4 py-5 h-[calc(100dvh-15rem)]"
+          class="flex h-[calc(100dvh-15rem)] pb-[env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)]+env(safe-area-inset-top,0px)] flex-col gap-4 overflow-y-auto px-4 py-5"
         >
           <div :if={@pagination.has_more?} class="flex justify-center">
             <button
