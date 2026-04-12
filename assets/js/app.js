@@ -414,10 +414,10 @@ const GroupDescriptionActions = {
 
   exposePOTOK() {
     this.el.potok = this;
-    console.debug("<#HOOK#> Exposing Potok API on window.Potok for element", this)
+    console.debug("<#HOOK#> Exposing Potok API for element", this.el.id)
+
     this.insertGroupValue = async (content, options = {}) => {
       const normalizedContent = typeof content === "string" ? content : ""
-      //console.debug("Inserting group value with content:", normalizedContent, "and options:", options)
       const res = await this.pushEvent("create_data_value", {
         value: {
           content: normalizedContent,
