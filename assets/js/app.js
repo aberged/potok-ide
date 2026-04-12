@@ -391,38 +391,30 @@ const GroupDescriptionActions = {
 
   mounted() {
     console.debug("<#HOOK-LC#> Mounting GroupDescriptionActions hook for element", this.el.id)
-    this.registerInsertValue()
+    this.abortController = new AbortController()
+    this.exposePOTOK()
     this.reloadDescriptionScriptsIfNeeded()
   },
 
   updated() {
     console.debug("<#HOOK-LC#> Updating GroupDescriptionActions hook for element", this.el.id)
-    this.registerInsertValue()
+    this.abortController.abort()
+    this.abortController = new AbortController()
+    this.exposePOTOK()
     this.reloadDescriptionScriptsIfNeeded()
   },
 
   destroyed() {
     console.debug("<#HOOK-LC#> Destroying GroupDescriptionActions hook for element", this.el.id)
-    if (window.Potok?.insertGroupValue === this.insertGroupValue) {
-      delete window.Potok.insertGroupValue
-    }
-
-    if (window.Potok?.updateGroupDescription === this.updateGroupDescription) {
-      delete window.Potok.updateGroupDescription
-    }
-
-    if (window.Potok?.getGroupDescription === this.getGroupDescription) {
-      delete window.Potok.getGroupDescription
-    }
-
-    if (window.Potok?.getGroupDataValues === this.getGroupDataValues) {
-      delete window.Potok.getGroupDataValues
+    this.abortController.abort()
+    if (this.el.potok === this) {
+      delete this.el.potok
     }
   },
 
-  registerInsertValue() {
-    window.Potok = window.Potok || {}
-
+  exposePOTOK() {
+    this.el.potok = this;
+    console.debug("<#HOOK#> Exposing Potok API on window.Potok for element", this)
     this.insertGroupValue = async (content, options = {}) => {
       const normalizedContent = typeof content === "string" ? content : ""
       //console.debug("Inserting group value with content:", normalizedContent, "and options:", options)
@@ -463,38 +455,36 @@ const GroupDescriptionActions = {
       return res
     }
 
-    window.Potok.insertGroupValue = this.insertGroupValue
-    window.Potok.updateGroupDescription = this.updateGroupDescription
-    window.Potok.getGroupDescription = this.getGroupDescription
-    window.Potok.getGroupDataValues = this.getGroupDataValues
-    window.Potok.log = (...args) => console.debug("<#HOOK#> Potok hook log:", ...args);
-    window.Potok.mountApp = (app) => {
-      console.debug("<#HOOK#> app.js Mounting app via window.Potok.mountApp", app, this.groupPanelDescription)
-      if (this.groupPanelDescription.has(app)) {
-        return false
+    this.getCurrentProfile = async () => {
+      const serializedCurrentProfile = this.el.dataset.currentProfile || ""
+
+      if (!serializedCurrentProfile) {
+        return null
       }
-      this.groupPanelDescription.add(app);
-      return true
-    };
+
+      try {
+        return JSON.parse(serializedCurrentProfile)
+      } catch (_error) {
+        return null
+      }
+    }
   },
 
   async reloadDescriptionScriptsIfNeeded() {
-    console.debug("<#HOOK#> reloadDescriptionScriptsIfNeeded for element", this.el.id)
-    const contentElement = this.el.querySelector("#group-description-content")
+    console.debug("<#HOOK#> reloadDescriptionScriptsIfNeeded for element", this.el)
+    const contentElement = this.el;
     const descriptionSignature = `${this.el.dataset.descriptionFormat || ""}:${this.el.dataset.description || ""}`
 
     if (!contentElement) {
       this.lastDescriptionSignature = descriptionSignature
-      return
-    }
-
-    if (this.lastDescriptionSignature === descriptionSignature) {
+      console.debug("<#HOOK#> No content element found for description, skipping script reload")
       return
     }
 
     this.lastDescriptionSignature = descriptionSignature
 
     const scripts = Array.from(contentElement.querySelectorAll("script"))
+    console.debug("<#HOOK#> Found description content scripts to reload:", scripts)
 
     for (const existingScript of scripts) {
       const replacementScript = document.createElement("script")
