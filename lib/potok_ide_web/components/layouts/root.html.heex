@@ -2,17 +2,17 @@
 <html lang={assigns[:current_locale] || PotokIdeWeb.Locale.default_locale()}>
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content" />
-    <meta name="csrf-token" content={get_csrf_token()} />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
+    /> <meta name="csrf-token" content={get_csrf_token()} />
     <meta name="theme-color" content="#4ba8c0" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Potok" />
-    <.live_title default="Potok" suffix=" · ide">
-      {assigns[:page_title]}
-    </.live_title>
-    <link rel="manifest" href="/manifest.webmanifest" />
+    <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
+     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/images/pwa/apple-touch-icon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/images/pwa/icon-152.png" />
@@ -20,6 +20,7 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
+    
     <script>
       (() => {
         const setTheme = (theme) => {
@@ -40,19 +41,18 @@
       })();
     </script>
   </head>
+  
   <body class="min-h-[100dvh] overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
     <div class="flex flex-col relative min-h-[100dvh] max-h-[100dvh] overflow-clip">
       <nav class="sticky top-0 z-100">
         <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
-          <% profile = assigns[:current_profile] %>
-          <% profile_picture_url =
+          <% profile = assigns[:current_profile] %> <% profile_picture_url =
             if profile && is_binary(profile.profile_picture_url) do
               case String.trim(profile.profile_picture_url) do
                 "" -> nil
                 trimmed_url -> trimmed_url
               end
-            end %>
-          <% profile_initials =
+            end %> <% profile_initials =
             if profile do
               profile.username
               |> to_string()
@@ -68,19 +68,18 @@
                 initials -> String.upcase(initials)
               end
             end %>
-
           <.header_menu>
             <%= if @current_scope do %>
               <div class="mb-4 max-w-full z-50 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
                 {@current_scope.account.email}
               </div>
             <% end %>
-
+            
             <div class="mb-4">
               <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                 {gettext("Navigation")}
               </div>
-
+              
               <div class="flex flex-col gap-2" data-drawer-nav>
                 <%= if @current_scope do %>
                   <.link
@@ -90,8 +89,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-users" class="size-6" />
-                    {gettext("Profiles")}
+                    <.icon name="hero-users" class="size-6" /> {gettext("Profiles")}
                   </.link>
                   <.link
                     href={~p"/groups"}
@@ -100,8 +98,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-user-group" class="size-6" />
-                    {gettext("Groups")}
+                    <.icon name="hero-user-group" class="size-6" /> {gettext("Groups")}
                   </.link>
                   <.link
                     href={~p"/invitations"}
@@ -110,8 +107,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-inbox-arrow-down" class="size-6" />
-                    {gettext("Invitations")}
+                    <.icon name="hero-inbox-arrow-down" class="size-6" /> {gettext("Invitations")}
                   </.link>
                   <.link
                     href={~p"/requests"}
@@ -120,8 +116,7 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-hand-raised" class="size-6" />
-                    {gettext("Requests")}
+                    <.icon name="hero-hand-raised" class="size-6" /> {gettext("Requests")}
                   </.link>
                 <% else %>
                   <.link
@@ -131,19 +126,20 @@
                     data-nav-match="exact"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" />
-                    {gettext("Log in")}
+                    <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" /> {gettext(
+                      "Log in"
+                    )}
                   </.link>
                 <% end %>
               </div>
             </div>
-
+            
             <%= if @current_scope do %>
               <div class="mb-4 border-t border-base-300/70 pt-4">
                 <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                   {gettext("Account")}
                 </div>
-
+                
                 <div class="flex flex-col gap-2" data-drawer-nav>
                   <.link
                     href={~p"/accounts/settings"}
@@ -152,36 +148,34 @@
                     data-nav-match="prefix"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-cog-6-tooth" class="size-6" />
-                    {gettext("Settings")}
+                    <.icon name="hero-cog-6-tooth" class="size-6" /> {gettext("Settings")}
                   </.link>
                   <.link
                     href={~p"/accounts/log-out"}
                     method="delete"
                     class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
                   >
-                    <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" />
-                    {gettext("Log out")}
+                    <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" /> {gettext(
+                      "Log out"
+                    )}
                   </.link>
                 </div>
               </div>
             <% end %>
-
+            
             <div class="border-t border-base-300/70 pt-4">
               <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                 {gettext("Preferences")}
               </div>
-
+              
               <div class="space-y-4">
                 <.locale_switcher
                   current_locale={assigns[:current_locale]}
                   available_locales={assigns[:available_locales]}
-                />
-
-                <.theme_toggle />
+                /> <.theme_toggle />
               </div>
             </div>
-
+            
             <%!-- <div class="mt-4 border-t border-base-300/70 pt-4">
                 >
                   {gettext("GitHub")}
@@ -195,7 +189,7 @@
               </div>
             </div> --%>
           </.header_menu>
-
+          
           <.link
             id="nav-root-group-link"
             href={~p"/"}
@@ -304,10 +298,8 @@
           </div>
         </div>
       </nav>
-
-      <div class="flex flex-1 relative z-0 justify-center max-w-screen">
-        {@inner_content}
-      </div>
+      
+      <div class="flex flex-1 relative z-0 justify-center max-w-screen">{@inner_content}</div>
     </div>
   </body>
 </html>

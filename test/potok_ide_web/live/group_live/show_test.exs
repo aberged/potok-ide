@@ -554,7 +554,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-path span", "path-current-group")
     end
 
-    test "shows the other member username for direct groups in the current group path", %{conn: conn} do
+    test "shows the other member username for direct groups in the current group path", %{
+      conn: conn
+    } do
       current_account = account_fixture()
       other_account = account_fixture()
 

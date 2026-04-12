@@ -1,6 +1,10 @@
 defmodule PotokIde.GmailToken do
   @moduledoc false
 
+  require Logger
+
+  alias PotokIde.GmailRefreshToken
+
   @token_url "https://oauth2.googleapis.com/token"
 
   def delivery_config(config) when is_list(config) do
@@ -22,9 +26,8 @@ defmodule PotokIde.GmailToken do
   defp refresh_access_token(config) do
     with {:ok, client_id} <- fetch_config(config, :client_id, "GMAIL_CLIENT_ID"),
          {:ok, client_secret} <- fetch_config(config, :client_secret, "GMAIL_CLIENT_SECRET"),
-         {:ok, refresh_token} <- fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN"),
+         {:ok, refresh_token} <- fetch_refresh_token(config),
          {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token) do
-      # IO.inspect(response)
       parse_access_token(response)
     end
   end
@@ -46,8 +49,9 @@ defmodule PotokIde.GmailToken do
     )
   end
 
-  defp parse_access_token(%{status: 200, body: %{"access_token" => access_token}})
+  defp parse_access_token(%{status: 200, body: %{"access_token" => access_token} = body})
        when is_binary(access_token) and access_token != "" do
+    maybe_store_refresh_token(body)
     {:ok, access_token}
   end
 
@@ -61,4 +65,28 @@ defmodule PotokIde.GmailToken do
       _ -> {:error, {:missing_config, env_var}}
     end
   end
+
+  defp fetch_refresh_token(config) do
+    case GmailRefreshToken.get() do
+      %GmailRefreshToken{refresh_token: refresh_token}
+      when is_binary(refresh_token) and refresh_token != "" ->
+        {:ok, refresh_token}
+
+      _ ->
+        fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN")
+    end
+  end
+
+  defp maybe_store_refresh_token(%{"refresh_token" => refresh_token})
+       when is_binary(refresh_token) and refresh_token != "" do
+    case GmailRefreshToken.upsert(refresh_token) do
+      {:ok, _gmail_refresh_token} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning("failed to persist Gmail refresh token: #{inspect(reason)}")
+    end
+  end
+
+  defp maybe_store_refresh_token(_body), do: :ok
 end

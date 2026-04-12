@@ -10,10 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   def panel(assigns) do
     ~H"""
-    <div
-
-      class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw lg:max-w-6xl px-2"
-    >
+    <div class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw lg:max-w-6xl px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
