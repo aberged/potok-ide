@@ -76,7 +76,17 @@ defmodule PotokIde.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def register_account(attrs) do
+  def register_account(attrs, invited_by_profile \\ nil)
+
+  def register_account(attrs, %Profile{} = invited_by_profile) do
+    %Account{}
+    |> Account.email_changeset(attrs)
+    |> Ecto.Changeset.put_change(:invited_by_id, invited_by_profile.id)
+    |> Ecto.Changeset.foreign_key_constraint(:invited_by_id)
+    |> Repo.insert()
+  end
+
+  def register_account(attrs, nil) do
     %Account{}
     |> Account.email_changeset(attrs)
     |> Repo.insert()

@@ -56,7 +56,7 @@ defmodule PotokIdeWeb.AccountLive.Registration do
 
   @impl true
   def handle_event("save", %{"account" => account_params}, socket) do
-    case Accounts.register_account(account_params) do
+    case Accounts.register_account(account_params, socket.assigns.current_profile) do
       {:ok, account} ->
         {:ok, _} =
           Accounts.deliver_login_instructions(

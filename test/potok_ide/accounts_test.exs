@@ -85,6 +85,46 @@ defmodule PotokIde.AccountsTest do
       assert is_nil(account.hashed_password)
       assert is_nil(account.confirmed_at)
       assert is_nil(account.password)
+      assert is_nil(account.invited_by_id)
+    end
+
+    test "stores inviter profile when provided" do
+      inviter_account = account_fixture()
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "account-registration-inviter",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      email = unique_account_email()
+
+      {:ok, account} =
+        Accounts.register_account(valid_account_attributes(email: email), inviter_profile)
+
+      assert account.email == email
+      assert account.invited_by_id == inviter_profile.id
+    end
+
+    test "does not accept invited_by_id from attrs" do
+      inviter_account = account_fixture()
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "account-registration-spoof-attempt",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, account} =
+        Accounts.register_account(
+          valid_account_attributes(%{
+            invited_by_id: inviter_profile.id
+          })
+        )
+
+      assert is_nil(account.invited_by_id)
     end
   end
 

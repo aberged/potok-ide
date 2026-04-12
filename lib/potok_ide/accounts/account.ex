@@ -9,6 +9,7 @@ defmodule PotokIde.Accounts.Account do
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
 
+    belongs_to :invited_by, PotokIde.Social.Profile
     belongs_to :current_profile, PotokIde.Social.Profile
     belongs_to :default_profile, PotokIde.Social.Profile
 

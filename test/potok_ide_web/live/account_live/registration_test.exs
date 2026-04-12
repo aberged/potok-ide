@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
   defp conn_with_current_profile(conn) do
     account = account_fixture()
 
-    {:ok, _profile} =
+    {:ok, profile} =
       Social.create_profile_for_account(account, %{
         username: "invite-owner",
         profile_picture_url: nil,
@@ -20,7 +20,7 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
       })
 
     account = Accounts.get_account!(account.id)
-    log_in_account(conn, account)
+    {log_in_account(conn, account), profile}
   end
 
   describe "Registration page" do
@@ -29,9 +29,10 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
     end
 
     test "renders invite page for a signed-in account with a current profile", %{conn: conn} do
+      {conn, _profile} = conn_with_current_profile(conn)
+
       {:ok, _lv, html} =
         conn
-        |> conn_with_current_profile()
         |> live(~p"/accounts/register")
 
       assert html =~ "Invite people to potok by email"
@@ -39,9 +40,10 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
     end
 
     test "renders errors for invalid data", %{conn: conn} do
+      {conn, _profile} = conn_with_current_profile(conn)
+
       {:ok, lv, _html} =
         conn
-        |> conn_with_current_profile()
         |> live(~p"/accounts/register")
 
       result =
@@ -56,9 +58,10 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
 
   describe "register account" do
     test "creates an invited account and shows confirmation", %{conn: conn} do
+      {conn, current_profile} = conn_with_current_profile(conn)
+
       {:ok, lv, _html} =
         conn
-        |> conn_with_current_profile()
         |> live(~p"/accounts/register")
 
       email = unique_account_email()
@@ -67,13 +70,16 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
       html = render_submit(form)
 
       assert html =~ "An invitation email was sent to #{email}"
-      assert Accounts.get_account_by_email(email)
+
+      assert invited_account = Accounts.get_account_by_email(email)
+      assert invited_account.invited_by_id == current_profile.id
     end
 
     test "renders errors for duplicated email", %{conn: conn} do
+      {conn, _profile} = conn_with_current_profile(conn)
+
       {:ok, lv, _html} =
         conn
-        |> conn_with_current_profile()
         |> live(~p"/accounts/register")
 
       account = account_fixture(%{email: "test@email.com"})
