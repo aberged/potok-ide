@@ -115,6 +115,15 @@ defmodule PotokIde.Social do
     root_group = get_root_group!()
 
     Multi.new()
+    |> Multi.run(:account_already_has_profiles, fn repo, _changes ->
+      {:ok,
+       repo.exists?(
+         from(account_profile in AccountProfile,
+           where: account_profile.account_id == ^account.id,
+           select: 1
+         )
+       )}
+    end)
     |> Multi.insert(:profile, Profile.changeset(%Profile{}, attrs))
     |> Multi.insert(:account_profile, fn %{profile: profile} ->
       AccountProfile.changeset(%AccountProfile{}, %{
@@ -150,13 +159,33 @@ defmodule PotokIde.Social do
         |> repo.update()
       end
     end)
+    |> Multi.run(:initial_direct_group, fn repo,
+                                           %{
+                                             profile: profile,
+                                             account_already_has_profiles: already_has_profiles
+                                           } ->
+      maybe_create_initial_direct_group(repo, root_group, account, profile, already_has_profiles)
+    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{profile: profile, update_account_profiles: updated_account}} ->
+      {:ok,
+       %{
+         profile: profile,
+         update_account_profiles: updated_account,
+         initial_direct_group: initial_direct_group
+       }} ->
+        if match?(%Group{}, initial_direct_group) do
+          broadcast_group_updated(root_group)
+        end
+
         broadcast_account_profiles_updated(updated_account)
         {:ok, profile}
 
-      {:ok, %{profile: profile}} ->
+      {:ok, %{profile: profile, initial_direct_group: initial_direct_group}} ->
+        if match?(%Group{}, initial_direct_group) do
+          broadcast_group_updated(root_group)
+        end
+
         broadcast_account_profiles_updated(account)
         {:ok, profile}
 
@@ -320,7 +349,7 @@ defmodule PotokIde.Social do
   def get_or_create_direct_group(%Profile{} = current_profile, %Profile{} = other_profile) do
     root_group = get_root_group!()
 
-    case find_direct_group(root_group, current_profile, other_profile) do
+    case find_direct_group(Repo, root_group, current_profile, other_profile) do
       %Group{} = group ->
         {:ok, group}
 
@@ -1282,6 +1311,7 @@ defmodule PotokIde.Social do
   end
 
   defp find_direct_group(
+         repo,
          %Group{} = root_group,
          %Profile{} = first_profile,
          %Profile{} = second_profile
@@ -1307,7 +1337,88 @@ defmodule PotokIde.Social do
       order_by: [asc: group.inserted_at],
       limit: 1
     )
-    |> Repo.one()
+    |> repo.one()
+  end
+
+  defp maybe_create_initial_direct_group(
+         _repo,
+         _root_group,
+         %Account{invited_by_id: nil},
+         _profile,
+         _already_has_profiles
+       ) do
+    {:ok, nil}
+  end
+
+  defp maybe_create_initial_direct_group(
+         _repo,
+         _root_group,
+         _account,
+         _profile,
+         true
+       ) do
+    {:ok, nil}
+  end
+
+  defp maybe_create_initial_direct_group(
+         repo,
+         %Group{} = root_group,
+         %Account{} = account,
+         %Profile{} = profile,
+         false
+       ) do
+    case repo.get(Profile, account.invited_by_id) do
+      %Profile{} = invited_by_profile ->
+        create_direct_group(repo, root_group, profile, invited_by_profile)
+
+      nil ->
+        {:ok, nil}
+    end
+  end
+
+  defp create_direct_group(
+         repo,
+         %Group{} = root_group,
+         %Profile{} = current_profile,
+         %Profile{} = other_profile
+       ) do
+    case find_direct_group(repo, root_group, current_profile, other_profile) do
+      %Group{} = group ->
+        {:ok, group}
+
+      nil ->
+        attrs = %{
+          "name" => direct_group_name(current_profile, other_profile),
+          "description" => "",
+          "description_format" => :markdown,
+          "has_public_chat" => true,
+          "is_direct" => true,
+          "is_public" => false,
+          "creator_id" => current_profile.id,
+          "parent_id" => root_group.id,
+          "is_root" => false
+        }
+
+        Multi.new()
+        |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
+        |> Multi.insert(:current_membership, fn %{group: group} ->
+          GroupMembership.changeset(%GroupMembership{}, %{
+            group_id: group.id,
+            profile_id: current_profile.id
+          })
+        end)
+        |> Multi.insert(:other_membership, fn %{group: group} ->
+          GroupMembership.changeset(%GroupMembership{}, %{
+            group_id: group.id,
+            profile_id: other_profile.id
+          })
+        end)
+        |> repo.transaction()
+        |> case do
+          {:ok, %{group: group}} -> {:ok, group}
+          {:error, _step, reason, _changes} -> {:error, reason}
+        end
+    end
   end
 
   defp direct_group_name(%Profile{} = first_profile, %Profile{} = second_profile) do

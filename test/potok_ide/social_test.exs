@@ -182,6 +182,46 @@ defmodule PotokIde.SocialTest do
       assert Social.get_account_default_profile(account).id == first_profile.id
       refute Social.get_account_default_profile(account).id == second_profile.id
     end
+
+    test "creates a direct group with the inviter profile when the invited account creates its first profile" do
+      inviter_account = account_fixture()
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "first-profile-inviter",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      email = unique_account_email()
+      {:ok, invited_account} = Accounts.register_account(%{email: email}, inviter_profile)
+
+      {:ok, invited_profile} =
+        Social.create_profile_for_account(invited_account, %{
+          username: "first-profile-invitee",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      assert {:ok, direct_group} =
+               Social.get_or_create_direct_group(invited_profile, inviter_profile)
+
+      assert direct_group.parent_id == root_group.id
+      assert direct_group.is_direct
+      refute direct_group.is_public
+      assert Social.count_group_members(direct_group) == 2
+
+      member_ids =
+        direct_group
+        |> Social.list_group_members()
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      assert member_ids == Enum.sort([invited_profile.id, inviter_profile.id])
+      assert Enum.count(Social.list_child_groups(root_group), &(&1.id == direct_group.id)) == 1
+    end
   end
 
   describe "delete_group/2" do
