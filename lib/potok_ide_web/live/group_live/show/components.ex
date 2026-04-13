@@ -143,12 +143,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       ]}
     >
       <details open={@open}>
-        <summary class="cursor-pointer select-none font-semibold text-base-content">
-          {@label}
-        </summary>
-        <div class="mt-3 overflow-auto">
-          <.inspect_tree_node label={@label} value={@data} />
-        </div>
+        <summary class="cursor-pointer select-none font-semibold text-base-content">{@label}</summary>
+
+        <div class="mt-3 overflow-auto"><.inspect_tree_node label={@label} value={@data} /></div>
       </details>
     </div>
     """
@@ -185,7 +182,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         sharing_badge_text_class={@sharing_badge_text_class}
       />
     </.link>
-
     <.profile_identity_content
       :if={!profile_identity_clickable?(@profile, @current_profile, @direct_group_link)}
       profile={@profile}
@@ -332,7 +328,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             {unread_badge_label(@pending_join_requests_count)}
           </span>
-
           <span
             :if={!@group.is_root and @unread_count > 0}
             id={"group-unread-badge-#{@group.id}"}
@@ -349,6 +344,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <div class={[@text_class, "truncate font-semibold text-base-content"]}>
             {group_identity_name(@group, @current_profile)}
           </div>
+
           <div
             :if={false}
             class="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-base-content/70"
@@ -439,7 +435,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         label={"value#{@value.id}"}
         class="mb-3 w-full"
       />
-
       <%= if @avatar_url do %>
         <div class="chat-image avatar">
           <div class="relative size-10 rounded-full border border-base-300 shadow-sm">
@@ -524,15 +519,39 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             phx-change="validate_edit_value"
             phx-submit="save_edit_value"
           >
-            <.input
-              field={@edit_value_form[:content]}
-              id={"edit-value-content-#{@value.id}"}
-              aria-label={gettext("Value")}
-              type="textarea"
-              rows="4"
-              class="min-h-[16rem] w-full textarea border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40"
-              required
-            />
+            <div
+              id={"edit-value-editor-#{@value.id}"}
+              phx-hook="MarkdownEditor"
+              class="space-y-2"
+              data-placeholder={gettext("Write your value in Markdown")}
+            >
+              <div
+                id={"edit-value-editor-shell-#{@value.id}"}
+                class="markdown-editor"
+                phx-update="ignore"
+              >
+                <div
+                  id={"edit-value-editor-surface-#{@value.id}"}
+                  data-markdown-target="editor"
+                  phx-update="ignore"
+                >
+                </div>
+              </div>
+               <textarea
+                id={"edit-value-content-#{@value.id}"}
+                name={@edit_value_form[:content].name}
+                data-markdown-target="input"
+                class="sr-only"
+                aria-label={gettext("Value")}
+              >{Phoenix.HTML.Form.normalize_value("textarea", @edit_value_form[:content].value)}</textarea>
+              <p
+                :for={error <- @edit_value_form[:content].errors}
+                class="mt-1.5 flex items-center gap-2 text-sm text-error"
+              >
+                <.icon name="hero-exclamation-circle" class="size-5" /> {translate_error(error)}
+              </p>
+            </div>
+
             <div class="flex justify-end gap-2">
               <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
               <.button type="button" phx-click="cancel_edit_value">{gettext("Cancel")}</.button>
@@ -736,6 +755,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <span class="font-semibold text-primary/80">{format_tree_label(@label)}</span>
             <span class="ml-2 text-base-content/55">{@kind}</span>
           </summary>
+
           <ul class="ml-3 mt-2 border-l border-base-300/70 pl-3">
             <li :for={{entry_label, entry_value} <- @entries} class="mt-2">
               <.inspect_tree_node label={entry_label} value={entry_value} />

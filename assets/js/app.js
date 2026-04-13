@@ -23,7 +23,10 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
+import {marked} from "marked"
+import Quill from "quill"
 import topbar from "../vendor/topbar"
+import TurndownService from "turndown"
 
 const HeaderDrawer = {
   mounted() {
@@ -563,6 +566,122 @@ const registerServiceWorker = async () => {
   }
 }
 
+marked.setOptions({
+  breaks: true,
+  gfm: true,
+})
+
+const markdownTurndown = new TurndownService({
+  bulletListMarker: "-",
+  codeBlockStyle: "fenced",
+  headingStyle: "atx",
+})
+
+const normalizeMarkdown = markdown => markdown.replace(/\r\n/g, "\n").trimEnd()
+
+const quillEditorIsBlank = quill => quill.getText().trim().length === 0
+
+const renderMarkdownInQuill = (quill, markdown) => {
+  const normalizedMarkdown = normalizeMarkdown(markdown || "")
+
+  quill.setContents([])
+
+  if (normalizedMarkdown === "") {
+    quill.setText("")
+    return
+  }
+
+  quill.clipboard.dangerouslyPasteHTML(marked.parse(normalizedMarkdown))
+}
+
+const serializeQuillToMarkdown = quill => {
+  if (quillEditorIsBlank(quill)) {
+    return ""
+  }
+
+  return normalizeMarkdown(
+    markdownTurndown
+      .turndown(quill.root.innerHTML)
+      .replace(/\n{3,}/g, "\n\n")
+  )
+}
+
+const MarkdownEditor = {
+  mounted() {
+    this.hiddenInput = this.el.querySelector("[data-markdown-target='input']")
+    this.editorSurface = this.el.querySelector("[data-markdown-target='editor']")
+    this.form = this.el.closest("form")
+
+    if (!this.hiddenInput || !this.editorSurface) {
+      return
+    }
+
+    this.quill = new Quill(this.editorSurface, {
+      modules: {
+        toolbar: [
+          [{header: [1, 2, 3, false]}],
+          ["bold", "italic", "blockquote", "code-block", "link"],
+          [{list: "ordered"}, {list: "bullet"}],
+          ["clean"],
+        ],
+      },
+      placeholder: this.el.dataset.placeholder || "Write something...",
+      theme: "snow",
+    })
+
+    renderMarkdownInQuill(this.quill, this.hiddenInput.value)
+    this.lastSyncedValue = normalizeMarkdown(this.hiddenInput.value || "")
+
+    this.handleTextChange = () => {
+      const markdown = serializeQuillToMarkdown(this.quill)
+
+      if (markdown === this.lastSyncedValue) {
+        return
+      }
+
+      this.hiddenInput.value = markdown
+      this.lastSyncedValue = markdown
+      this.hiddenInput.dispatchEvent(new Event("input", {bubbles: true}))
+      this.hiddenInput.dispatchEvent(new Event("change", {bubbles: true}))
+    }
+
+    this.handleSubmit = () => {
+      const markdown = serializeQuillToMarkdown(this.quill)
+
+      this.hiddenInput.value = markdown
+      this.lastSyncedValue = markdown
+    }
+
+    this.quill.on("text-change", this.handleTextChange)
+    this.form?.addEventListener("submit", this.handleSubmit)
+  },
+
+  updated() {
+    if (!this.quill || !this.hiddenInput) {
+      return
+    }
+
+    const serverValue = normalizeMarkdown(this.hiddenInput.value || "")
+
+    if (serverValue === this.lastSyncedValue) {
+      return
+    }
+
+    const selection = this.quill.getSelection()
+
+    renderMarkdownInQuill(this.quill, serverValue)
+    this.lastSyncedValue = serverValue
+
+    if (selection) {
+      this.quill.setSelection(selection.index, selection.length, "silent")
+    }
+  },
+
+  destroyed() {
+    this.form?.removeEventListener("submit", this.handleSubmit)
+  },
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
@@ -573,6 +692,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     AutoDismissFlash,
     PushNotifications,
     GroupDescriptionActions,
+    MarkdownEditor,
     ...colocatedHooks,
   },
 })
