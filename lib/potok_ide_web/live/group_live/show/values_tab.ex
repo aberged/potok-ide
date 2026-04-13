@@ -24,7 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           phx-hook=".ValuesFeed"
           class={[
             "flex h-[calc(100dvh-15rem)] pb-[env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)]+env(safe-area-inset-top,0px)] flex-col gap-4 overflow-y-auto px-4 py-5",
-            if(@editing_value, do: "pb-[26rem]", else: "")
+            if(@editing_value, do: "pb-[16rem]", else: "")
           ]}
         >
           <div :if={@pagination.has_more?} class="flex justify-center">
@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             <.form
               for={@edit_value_form}
               id={"edit-value-form-#{@editing_value.id}"}
-              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[30rem] shadow-sm"
+              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[20rem] shadow-sm"
               phx-change="validate_edit_value"
               phx-submit="save_edit_value"
             >
@@ -92,7 +92,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     id={"edit-value-editor-surface-#{@editing_value.id}"}
                     data-markdown-target="editor"
                     phx-update="ignore"
-                    class="!h-[20rem] overflow-y-auto"
+                    class="!h-[10rem]"
                   >
                   </div>
                 </div>

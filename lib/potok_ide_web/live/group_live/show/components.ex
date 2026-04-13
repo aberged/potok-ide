@@ -391,14 +391,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   def formatted_content(assigns) do
     ~H"""
-    <div class={[
-      if(@content_format == :markdown,
-        do:
-          "px-4 break-words [&_a]:link [&_blockquote]:border-l-4 [&_blockquote]:border-base-300 [&_blockquote]:pl-4 [&_code]:rounded-md [&_code]:bg-base-300/70 [&_code]:px-1.5 [&_code]:py-0.5 [&_h1]:my-3 [&_h1]:text-2xl [&_h1]:font-semibold [&_h2]:my-3 [&_h2]:text-xl [&_h2]:font-semibold [&_h3]:my-2 [&_h3]:text-lg [&_h3]:font-semibold [&_ol]:list-decimal [&_ol]:pl-6 [&_p]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-base-300/70 [&_pre]:p-3 [&_ul]:list-disc [&_ul]:pl-6",
-        else: ""
-      ),
-      @class
-    ]}>
+    <div class={[@class, "ql-snow chat-show"]}>
       {render_formatted_content(%{content: @content, content_format: @content_format})}
     </div>
     """
@@ -505,7 +498,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div class={[
-        "chat-bubble max-w-full rounded-3xl px-4 py-3 shadow-sm sm:max-w-[42rem]",
+        "chat-bubble max-w-full rounded-3xl shadow-sm sm:max-w-[42rem]",
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
@@ -560,7 +553,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp render_formatted_content(%{content: content, content_format: :markdown}) do
     content
-    |> Earmark.as_html!(breaks: true)
+    |> markdown_to_quill_html()
     |> sanitize_html()
     |> raw()
   end
@@ -568,6 +561,41 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp render_formatted_content(%{content: content}) when is_binary(content), do: content
 
   defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.html5(content)
+
+  defp markdown_to_quill_html(content) when is_binary(content) do
+    content
+    |> String.trim()
+    |> case do
+      "" ->
+        ~s(<div class="ql-editor"><p><br></p></div>)
+
+      markdown ->
+        markdown
+        |> Earmark.as_html!(breaks: true)
+        |> normalize_quill_paragraphs()
+        |> normalize_quill_code_blocks()
+        |> then(&~s(<div class="ql-editor">#{&1}</div>))
+    end
+  end
+
+  defp normalize_quill_paragraphs(html) when is_binary(html) do
+    Regex.replace(~r/<p>(.*?)<\/p>/s, html, fn _, paragraph ->
+      normalized_paragraph = String.replace(paragraph, ~r/\R/, "")
+      ~s(<p>#{normalized_paragraph}</p>)
+    end)
+  end
+
+  defp normalize_quill_code_blocks(html) when is_binary(html) do
+    Regex.replace(~r/<pre><code(?: class="[^"]*")?>(.*?)<\/code><\/pre>/s, html, fn _, code ->
+      code
+      |> String.split("\n", trim: false)
+      |> Enum.map_join(fn line ->
+        content = if line == "", do: "<br>", else: line
+        ~s(<div class="ql-code-block">#{content}</div>)
+      end)
+      |> then(&~s(<div class="ql-code-block-container" spellcheck="false">#{&1}</div>))
+    end)
+  end
 
   defp datetime_to_iso8601(datetime) do
     datetime

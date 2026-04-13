@@ -619,9 +619,9 @@ const MarkdownEditor = {
     this.quill = new Quill(this.editorSurface, {
       modules: {
         toolbar: [
-          [{header: [1, 2, 3, false]}],
-          ["bold", "italic", "blockquote", "code-block", "link"],
-          [{list: "ordered"}, {list: "bullet"}],
+          [{header: [2, 3, false]}],
+          ["bold", "italic", "blockquote"/*, "code-block", "link"*/],
+          // [{list: "ordered"}, {list: "bullet"}],
           ["clean"],
         ],
       },

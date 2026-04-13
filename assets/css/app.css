@@ -282,3 +282,18 @@
 }
 
 /* This file is for your main application CSS */
+
+.ql-editor blockquote {
+  display: flex;
+}
+
+.ql-snow.chat-show .ql-editor {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0px;
+}
+
+.markdown-editor .ql-editor {
+  min-height: unset;
+}
