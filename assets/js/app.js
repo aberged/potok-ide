@@ -576,8 +576,23 @@ const markdownTurndown = new TurndownService({
   codeBlockStyle: "fenced",
   headingStyle: "atx",
 })
+markdownTurndown.addRule('strikethroughS', {
+  filter: ['s', 'del'],
+  replacement: function (content) {
+    return '~~' + content + '~~';
+  }
+});
+markdownTurndown.addRule('underline', {
+  filter: ['u'],
+  replacement: function (content) {
+    return '<u>' + content + '</u>'
+  }
+})
 
 const normalizeMarkdown = markdown => markdown.replace(/\r\n/g, "\n").trimEnd()
+const normalizeQuillHtml = html => html
+  .replace(/<del>/g, "<s>")
+  .replace(/<\/del>/g, "</s>")
 
 const quillEditorIsBlank = quill => quill.getText().trim().length === 0
 
@@ -591,7 +606,7 @@ const renderMarkdownInQuill = (quill, markdown) => {
     return
   }
 
-  quill.clipboard.dangerouslyPasteHTML(marked.parse(normalizedMarkdown))
+  quill.clipboard.dangerouslyPasteHTML(normalizeQuillHtml(marked.parse(normalizedMarkdown)))
 }
 
 const serializeQuillToMarkdown = quill => {
@@ -619,8 +634,8 @@ const MarkdownEditor = {
     this.quill = new Quill(this.editorSurface, {
       modules: {
         toolbar: [
-          [{header: [2, 3, false]}],
-          ["bold", "italic", "blockquote"/*, "code-block", "link"*/],
+          // [{header: [2, 3, false]}],
+          ["bold", "italic", "blockquote", "underline", "strike"/*, "code-block", "link"*/],
           // [{list: "ordered"}, {list: "bullet"}],
           ["clean"],
         ],

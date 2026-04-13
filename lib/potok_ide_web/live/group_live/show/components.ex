@@ -571,11 +571,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
       markdown ->
         markdown
-        |> Earmark.as_html!(breaks: true)
+        |> Earmark.as_html!(breaks: false)
         |> normalize_quill_paragraphs()
         |> normalize_quill_code_blocks()
+        |> normalize_quill_strikethrough()
         |> then(&~s(<div class="ql-editor">#{&1}</div>))
     end
+  end
+
+  defp normalize_quill_strikethrough(html) when is_binary(html) do
+    html
+    |> String.replace("<del>", "<s>")
+    |> String.replace("</del>", "</s>")
   end
 
   defp normalize_quill_paragraphs(html) when is_binary(html) do
