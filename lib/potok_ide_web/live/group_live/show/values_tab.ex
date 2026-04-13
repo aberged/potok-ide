@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             <.form
               for={@edit_value_form}
               id={"edit-value-form-#{@editing_value.id}"}
-              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[20rem] shadow-sm"
+              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[18rem] shadow-sm"
               phx-change="validate_edit_value"
               phx-submit="save_edit_value"
             >
@@ -85,7 +85,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               >
                 <div
                   id={"edit-value-editor-shell-#{@editing_value.id}"}
-                  class="markdown-editor"
+                  class="markdown-editor flex flex-col-reverse"
                   phx-update="ignore"
                 >
                   <div
