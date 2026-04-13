@@ -513,7 +513,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class={[
         "chat-bubble max-w-full rounded-3xl px-4 py-3 shadow-sm sm:max-w-[42rem]",
         @mine? && "chat-bubble-primary",
-        !@mine? && "border border-base-300 bg-base-100 text-base-content"
+        !@mine? && "border border-base-300 bg-base-100 text-base-content",
+        @editing? && "w-[80dvw]"
       ]}>
         <%= if @editing? do %>
           <.form
@@ -529,7 +530,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               aria-label={gettext("Value")}
               type="textarea"
               rows="4"
-              class="w-full textarea border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40"
+              class="min-h-[16rem] w-full textarea border-base-300 bg-base-100 text-base-content placeholder:text-base-content/40"
               required
             />
             <div class="flex justify-end gap-2">
