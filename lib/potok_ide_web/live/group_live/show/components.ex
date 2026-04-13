@@ -410,7 +410,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :online_profile_ids, :any, required: true
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
-  attr :edit_value_form, :any, default: nil
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -508,94 +507,45 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class={[
         "chat-bubble max-w-full rounded-3xl px-4 py-3 shadow-sm sm:max-w-[42rem]",
         @mine? && "chat-bubble-primary",
-        !@mine? && "border border-base-300 bg-base-100 text-base-content",
-        @editing? && "w-[80dvw]"
+        !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
-        <%= if @editing? do %>
-          <.form
-            for={@edit_value_form}
-            id={"edit-value-form-#{@value.id}"}
-            class="space-y-3"
-            phx-change="validate_edit_value"
-            phx-submit="save_edit_value"
+        <div class="relative">
+          <div
+            class={[
+              !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
+                "overflow-hidden"
+            ]}
+            style={collapsed_value_style(@expanded_value_ids, @value)}
           >
-            <div
-              id={"edit-value-editor-#{@value.id}"}
-              phx-hook="MarkdownEditor"
-              class="space-y-2"
-              data-placeholder={gettext("Write your value in Markdown")}
-            >
-              <div
-                id={"edit-value-editor-shell-#{@value.id}"}
-                class="markdown-editor"
-                phx-update="ignore"
-              >
-                <div
-                  id={"edit-value-editor-surface-#{@value.id}"}
-                  data-markdown-target="editor"
-                  phx-update="ignore"
-                >
-                </div>
-              </div>
-               <textarea
-                id={"edit-value-content-#{@value.id}"}
-                name={@edit_value_form[:content].name}
-                data-markdown-target="input"
-                class="sr-only"
-                aria-label={gettext("Value")}
-              >{Phoenix.HTML.Form.normalize_value("textarea", @edit_value_form[:content].value)}</textarea>
-              <p
-                :for={error <- @edit_value_form[:content].errors}
-                class="mt-1.5 flex items-center gap-2 text-sm text-error"
-              >
-                <.icon name="hero-exclamation-circle" class="size-5" /> {translate_error(error)}
-              </p>
-            </div>
-
-            <div class="flex justify-end gap-2">
-              <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
-              <.button type="button" phx-click="cancel_edit_value">{gettext("Cancel")}</.button>
-            </div>
-          </.form>
-        <% else %>
-          <div class="relative">
-            <div
-              class={[
-                !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
-                  "overflow-hidden"
-              ]}
-              style={collapsed_value_style(@expanded_value_ids, @value)}
-            >
-              <.formatted_content content={@value.content} content_format={@value.content_format} />
-            </div>
-
-            <div
-              :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
-              class={[
-                "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t",
-                @mine? && "from-primary to-transparent",
-                !@mine? && "from-base-100 to-transparent"
-              ]}
-            >
-            </div>
-
-            <button
-              :if={value_expandable?(@value)}
-              type="button"
-              phx-click="toggle_value_expansion"
-              phx-value-id={@value.id}
-              class={[
-                "mt-3 text-sm font-semibold transition-opacity hover:opacity-80",
-                @mine? && "text-primary-content",
-                !@mine? && "text-primary"
-              ]}
-            >
-              {if value_expanded?(@expanded_value_ids, @value),
-                do: gettext("See less"),
-                else: gettext("See more")}
-            </button>
+            <.formatted_content content={@value.content} content_format={@value.content_format} />
           </div>
-        <% end %>
+
+          <div
+            :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
+            class={[
+              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t",
+              @mine? && "from-primary to-transparent",
+              !@mine? && "from-base-100 to-transparent"
+            ]}
+          >
+          </div>
+
+          <button
+            :if={value_expandable?(@value)}
+            type="button"
+            phx-click="toggle_value_expansion"
+            phx-value-id={@value.id}
+            class={[
+              "mt-3 text-sm font-semibold transition-opacity hover:opacity-80",
+              @mine? && "text-primary-content",
+              !@mine? && "text-primary"
+            ]}
+          >
+            {if value_expanded?(@expanded_value_ids, @value),
+              do: gettext("See less"),
+              else: gettext("See more")}
+          </button>
+        </div>
       </div>
     </div>
     """

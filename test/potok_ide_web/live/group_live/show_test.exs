@@ -1577,14 +1577,60 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> render_click()
 
       assert has_element?(lv, "#edit-value-form-#{value.id}")
+      refute has_element?(lv, "#group-value-form")
 
       lv
       |> form("#edit-value-form-#{value.id}", value: %{content: "edited liveview value"})
       |> render_submit()
 
       refute has_element?(lv, "#edit-value-form-#{value.id}")
+      assert has_element?(lv, "#group-value-form")
       assert render(lv) =~ "edited liveview value"
       refute render(lv) =~ "original liveview value"
+    end
+
+    test "shows the new value composer again after cancelling an edit", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "cancel-edit-value-live-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "cancel-edit-value-group")
+
+      {:ok, value} =
+        Social.create_value(profile, group, %{
+          "content" => "value to keep",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, "#group-value-form")
+
+      lv
+      |> element("#value-edit-#{value.id}")
+      |> render_click()
+
+      assert has_element?(lv, "#edit-value-form-#{value.id}")
+      refute has_element?(lv, "#group-value-form")
+
+      lv
+      |> element("#edit-value-form-#{value.id} button[phx-click='cancel_edit_value']")
+      |> render_click()
+
+      refute has_element?(lv, "#edit-value-form-#{value.id}")
+      assert has_element?(lv, "#group-value-form")
+      assert render(lv) =~ "value to keep"
     end
 
     test "redirects when current profile changes to one without access", %{conn: conn} do

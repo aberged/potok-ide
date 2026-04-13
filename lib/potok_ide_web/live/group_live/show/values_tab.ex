@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :online_profile_ids, :any, required: true
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
+  attr :editing_value, :map, default: nil
   attr :edit_value_form, :any, default: nil
   attr :new_value_form, :any, required: true
   attr :is_member, :boolean, required: true
@@ -21,7 +22,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
-          class="flex h-[calc(100dvh-15rem)] pb-[env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)]+env(safe-area-inset-top,0px)] flex-col gap-4 overflow-y-auto px-4 py-5"
+          class={[
+            "flex h-[calc(100dvh-15rem)] pb-[env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)]+env(safe-area-inset-top,0px)] flex-col gap-4 overflow-y-auto px-4 py-5",
+            if(@editing_value, do: "pb-[26rem]", else: "")
+          ]}
         >
           <div :if={@pagination.has_more?} class="flex justify-center">
             <button
@@ -33,7 +37,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               {gettext("Load earlier values")}
             </button>
           </div>
-          
+
           <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
             <div
               id="group-values-empty"
@@ -41,7 +45,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             >
               {gettext("No values yet. Start the conversation below.")}
             </div>
-            
+
             <.inspect_tree
               :if={false}
               id="value-message-assigns"
@@ -57,49 +61,97 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               online_profile_ids={@online_profile_ids}
               expanded_value_ids={@expanded_value_ids}
               editing_value_id={@editing_value_id}
-              edit_value_form={@edit_value_form}
             />
           </div>
         </div>
-        
+
         <div
           :if={@is_member}
           class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
-          <.form
-            for={@new_value_form}
-            id="group-value-form"
-            class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
-            phx-change="validate_value"
-            phx-submit="create_value"
-          >
-            <.input
-              field={@new_value_form[:content]}
-              id="group-value-content"
-              aria-label={gettext("Value")}
-              class="w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 m-0 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-              placeholder={gettext("Write a value...")}
-              rows="1"
-              type="textarea"
-              phx-hook=".SubmitOnEnter"
-            />
-            <.button
-              aria-label={gettext("Post value")}
-              disabled={!@new_value_form[:content].value or @new_value_form[:content].value == ""}
-              class="btn btn-primary btn-circle size-10 flex-none"
+          <%= if @editing_value do %>
+            <.form
+              for={@edit_value_form}
+              id={"edit-value-form-#{@editing_value.id}"}
+              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[30rem] shadow-sm"
+              phx-change="validate_edit_value"
+              phx-submit="save_edit_value"
             >
-              <.icon name="hero-paper-airplane" class="size-4" />
-            </.button>
-          </.form>
+              <div
+                id={"edit-value-editor-#{@editing_value.id}"}
+                phx-hook="MarkdownEditor"
+                class="space-y-2"
+                data-placeholder={gettext("Write your value in Markdown")}
+              >
+                <div
+                  id={"edit-value-editor-shell-#{@editing_value.id}"}
+                  class="markdown-editor"
+                  phx-update="ignore"
+                >
+                  <div
+                    id={"edit-value-editor-surface-#{@editing_value.id}"}
+                    data-markdown-target="editor"
+                    phx-update="ignore"
+                    class="!h-[20rem] overflow-y-auto"
+                  >
+                  </div>
+                </div>
+                <textarea
+                  id={"edit-value-content-#{@editing_value.id}"}
+                  name={@edit_value_form[:content].name}
+                  data-markdown-target="input"
+                  class="sr-only"
+                  aria-label={gettext("Value")}
+                >{Phoenix.HTML.Form.normalize_value("textarea", @edit_value_form[:content].value)}</textarea>
+                <p
+                  :for={error <- @edit_value_form[:content].errors}
+                  class="mt-1.5 flex items-center gap-2 text-sm text-error"
+                >
+                  <.icon name="hero-exclamation-circle" class="size-5" /> {translate_error(error)}
+                </p>
+              </div>
+
+              <div class="flex justify-end gap-2">
+                <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
+                <.button type="button" phx-click="cancel_edit_value">{gettext("Cancel")}</.button>
+              </div>
+            </.form>
+          <% else %>
+            <.form
+              for={@new_value_form}
+              id="group-value-form"
+              class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
+              phx-change="validate_value"
+              phx-submit="create_value"
+            >
+              <.input
+                field={@new_value_form[:content]}
+                id="group-value-content"
+                aria-label={gettext("Value")}
+                class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+                placeholder={gettext("Write a value...")}
+                rows="1"
+                type="textarea"
+                phx-hook=".SubmitOnEnter"
+              />
+              <.button
+                aria-label={gettext("Post value")}
+                disabled={!@new_value_form[:content].value or @new_value_form[:content].value == ""}
+                class="btn btn-primary btn-circle size-10 flex-none"
+              >
+                <.icon name="hero-paper-airplane" class="size-4" />
+              </.button>
+            </.form>
+          <% end %>
         </div>
-        
+
         <div
           :if={!@is_member}
           class="sticky bottom-0 z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           {gettext("Join this group to reply and post new values.")}
         </div>
-        
+
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
           export default {
             mounted() {
@@ -182,7 +234,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
           }
         </script>
-        
+
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SubmitOnEnter">
           export default {
             mounted() {
