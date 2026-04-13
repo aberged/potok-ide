@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :current_profile, :map, required: true
   attr :edit_group_form, :any, required: true
   attr :format_options, :list, required: true
+  attr :home_page_options, :list, required: true
   attr :description_details_open, :boolean, required: true
 
   def panel(assigns) do
@@ -44,6 +45,12 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               type="checkbox"
             />
           </div>
+          <.input
+            field={@edit_group_form[:home_page]}
+            label={gettext("Home page")}
+            type="select"
+            options={@home_page_options}
+          />
 
           <details
             open={@description_details_open}

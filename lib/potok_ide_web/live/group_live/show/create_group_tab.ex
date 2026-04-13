@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
 
   attr :new_group_form, :any, required: true
   attr :format_options, :list, required: true
+  attr :home_page_options, :list, required: true
   attr :value_parent_options, :list, required: true
 
   def panel(assigns) do
@@ -29,6 +30,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
             field={@new_group_form[:description]}
             label={gettext("Description")}
             type="textarea"
+          />
+          <.input
+            field={@new_group_form[:home_page]}
+            label={gettext("Home page")}
+            type="select"
+            options={@home_page_options}
           />
           <.input
             field={@new_group_form[:is_public]}

@@ -4,12 +4,14 @@ defmodule PotokIde.Social.Group do
   import Ecto.Changeset
 
   @description_formats [:markdown, :html]
+  @home_pages [:chat, :description, :subgroups]
 
   schema "groups" do
     field :name, :string
     field :group_picture_url, :string
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
+    field :home_page, Ecto.Enum, values: @home_pages, default: :description
     field :has_public_chat, :boolean, default: false
     field :is_direct, :boolean, default: false
     field :is_public, :boolean, default: false
@@ -37,6 +39,7 @@ defmodule PotokIde.Social.Group do
       :group_picture_url,
       :description,
       :description_format,
+      :home_page,
       :has_public_chat,
       :is_direct,
       :is_public,
@@ -45,7 +48,14 @@ defmodule PotokIde.Social.Group do
       :parent_id,
       :parent_value_id
     ])
-    |> validate_required([:name, :description_format, :has_public_chat, :is_public, :is_root])
+    |> validate_required([
+      :name,
+      :description_format,
+      :home_page,
+      :has_public_chat,
+      :is_public,
+      :is_root
+    ])
     |> validate_length(:name, min: 1, max: 120)
     |> validate_length(:group_picture_url, max: 2048)
     |> validate_root_constraints()
@@ -58,10 +68,11 @@ defmodule PotokIde.Social.Group do
       :group_picture_url,
       :description,
       :description_format,
+      :home_page,
       :has_public_chat,
       :is_public
     ])
-    |> validate_required([:name, :description_format, :has_public_chat, :is_public])
+    |> validate_required([:name, :description_format, :home_page, :has_public_chat, :is_public])
     |> validate_length(:name, min: 1, max: 120)
     |> validate_length(:group_picture_url, max: 2048)
     |> validate_root_constraints()
@@ -73,6 +84,7 @@ defmodule PotokIde.Social.Group do
     changeset =
       changeset
       |> check_constraint(:description_format, name: :groups_description_format_check)
+      |> check_constraint(:home_page, name: :groups_home_page_check)
       |> check_constraint(:is_public, name: :groups_root_private_check)
       |> check_constraint(:parent_id, name: :groups_root_parent_check)
       |> check_constraint(:creator_id, name: :groups_root_creator_check)

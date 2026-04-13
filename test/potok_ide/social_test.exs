@@ -9,7 +9,7 @@ defmodule PotokIde.SocialTest do
   alias PotokIde.Social
 
   describe "create_group/3" do
-    test "persists group_picture_url" do
+    test "persists group_picture_url and home_page" do
       account = account_fixture()
 
       {:ok, profile} =
@@ -29,10 +29,12 @@ defmodule PotokIde.SocialTest do
           "group_picture_url" => "https://example.com/group.png",
           "description" => "",
           "description_format" => :markdown,
+          "home_page" => :subgroups,
           "is_public" => false
         })
 
       assert group.group_picture_url == "https://example.com/group.png"
+      assert group.home_page == :subgroups
       assert group.has_public_chat == false
       assert group.is_direct == false
     end
@@ -70,6 +72,7 @@ defmodule PotokIde.SocialTest do
       refute direct_group.is_public
       assert direct_group.has_public_chat
       assert direct_group.is_direct
+      assert direct_group.home_page == :chat
       assert Social.count_group_members(direct_group) == 2
 
       member_ids =

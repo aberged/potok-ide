@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-panel-values")
     end
 
-    test "falls back to the default tab for invalid tab paths", %{conn: conn} do
+    test "falls back to the configured home page for invalid tab paths", %{conn: conn} do
       account = account_fixture()
 
       {:ok, profile} =
@@ -166,6 +166,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "name" => "invalid-tab-group",
           "description" => "",
           "description_format" => :markdown,
+          "home_page" => :description,
           "is_public" => false
         })
 
@@ -174,7 +175,117 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}/not-a-tab")
 
-      assert has_element?(lv, "#group-panel-description")
+      assert has_element?(lv, "#group-description-empty")
+    end
+
+    test "opens the values tab by default when home_page is chat", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "home-page-chat-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "home-page-chat-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "home_page" => :chat,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#group-panel-values")
+      refute has_element?(lv, "#group-panel-description")
+    end
+
+    test "opens the sub-groups tab by default when home_page is subgroups", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "home-page-subgroups-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "home-page-subgroups-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "home_page" => :subgroups,
+          "is_public" => false
+        })
+
+      {:ok, _child_group} =
+        Social.create_group(profile, group, %{
+          "name" => "nested-child-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}")
+
+      assert has_element?(lv, "#group-panel-sub-groups")
+      refute has_element?(lv, "#group-panel-description")
+    end
+
+    test "opens direct groups on the values tab regardless of home_page", %{conn: conn} do
+      current_account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "direct-home-current",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "direct-home-other",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      current_account = Accounts.get_account!(current_account.id)
+
+      {:ok, direct_group} =
+        Social.get_or_create_direct_group(current_profile, other_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(current_account)
+        |> live(~p"/groups/#{direct_group.id}")
+
+      assert has_element?(lv, "#group-panel-values")
+      refute has_element?(lv, "#group-panel-description")
     end
 
     test "clicking the member avatar summary switches to the members tab", %{conn: conn} do
@@ -886,6 +997,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "name" => "edited-group",
           "description" => "after",
           "group_picture_url" => "https://example.com/edited-group.png",
+          "home_page" => "chat",
           "is_public" => "true",
           "has_public_chat" => "true"
         }
@@ -897,6 +1009,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert updated_group.name == "edited-group"
       assert updated_group.description == "after"
       assert updated_group.group_picture_url == "https://example.com/edited-group.png"
+      assert updated_group.home_page == :chat
       assert updated_group.has_public_chat
 
       {:ok, viewer_lv, _html} =
@@ -908,8 +1021,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(viewer_lv, "#group-panel-edit-group")
       refute has_element?(viewer_lv, "#group-edit-form")
 
-      assert render(viewer_lv) =~
-               "You can view this group, but you must be a member to post values, invite members, or create sub-groups."
+      assert has_element?(viewer_lv, "#group-request-access")
     end
 
     test "shows public chat status and allows enabling it in the create-group form", %{conn: conn} do
@@ -954,6 +1066,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "name" => "created-with-public-chat",
           "description" => "",
           "group_picture_url" => "",
+          "home_page" => "subgroups",
           "has_public_chat" => "true",
           "is_public" => "false"
         }
@@ -967,6 +1080,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert created_group
       assert created_group.has_public_chat
+      assert created_group.home_page == :subgroups
     end
 
     test "shows group description to non-members on the values tab", %{conn: conn} do

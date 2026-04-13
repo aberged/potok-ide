@@ -295,6 +295,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@is_member and @active_tab == "create_group"}
             new_group_form={@new_group_form}
             format_options={@format_options}
+            home_page_options={@home_page_options}
             value_parent_options={@value_parent_options}
           />
           <EditGroupTab.panel
@@ -302,6 +303,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             edit_group_form={@edit_group_form}
             description_details_open={@description_details_open}
             format_options={@format_options}
+            home_page_options={@home_page_options}
             group={@group}
             current_profile={@current_profile}
           />
@@ -357,6 +359,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:editing_value_id, nil)
        |> assign(:edit_value_form, nil)
        |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
+       |> assign(:home_page_options, home_page_options())
        |> assign(:value_parent_options, [])
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
@@ -1227,7 +1230,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp empty_new_group_form do
-    to_form(Group.changeset(%Group{}, %{is_public: false, description_format: :markdown}))
+    to_form(
+      Group.changeset(%Group{}, %{
+        is_public: false,
+        description_format: :markdown,
+        home_page: :description
+      })
+    )
   end
 
   defp edit_group_form(group) do
@@ -1510,7 +1519,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
+  defp home_page_options do
+    [
+      {gettext("Description"), :description},
+      {gettext("Chat"), :chat},
+      {gettext("Sub-groups"), :subgroups}
+    ]
+  end
+
   defp default_active_tab(%Group{is_root: true}), do: "sub_groups"
+  defp default_active_tab(%Group{is_direct: true}), do: "values"
+  defp default_active_tab(%Group{home_page: :chat}), do: "values"
+  defp default_active_tab(%Group{home_page: :subgroups}), do: "sub_groups"
   defp default_active_tab(%Group{}), do: "group_home"
 
   defp can_manage_join_requests?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
