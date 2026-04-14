@@ -390,8 +390,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :class, :any, default: nil
 
   def formatted_content(assigns) do
+    assigns =
+      assign(assigns, :content_format_class, formatted_content_class(assigns.content_format))
+
     ~H"""
-    <div class={[@class, "ql-snow chat-show"]}>
+    <div class={[@class, "ql-snow chat-show", @content_format_class]}>
       {render_formatted_content(%{content: @content, content_format: @content_format})}
     </div>
     """
@@ -516,7 +519,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <div
             :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
             class={[
-              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-gradient-to-t",
+              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t",
               @mine? && "from-primary to-transparent",
               !@mine? && "from-base-100 to-transparent"
             ]}
@@ -560,6 +563,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp render_formatted_content(%{content: content}) when is_binary(content), do: content
 
+  defp formatted_content_class(:markdown), do: "chat-show-markdown"
+  defp formatted_content_class(_content_format), do: nil
+
   defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.html5(content)
 
   defp markdown_to_quill_html(content) when is_binary(content) do
@@ -571,7 +577,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
       markdown ->
         markdown
-        |> Earmark.as_html!(breaks: false)
+        |> Earmark.as_html!(breaks: true)
         |> normalize_quill_paragraphs()
         |> normalize_quill_code_blocks()
         |> normalize_quill_strikethrough()

@@ -291,9 +291,212 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 0px;
+  gap: 0;
 }
 
 .markdown-editor .ql-editor {
   min-height: unset;
+}
+
+.chat-show.chat-show-markdown .ql-editor {
+  color: var(--color-base-content);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.chat-show.chat-show-markdown .ql-editor > *:first-child {
+  margin-top: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor > *:last-child {
+  margin-bottom: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor h1,
+.chat-show.chat-show-markdown .ql-editor h2,
+.chat-show.chat-show-markdown .ql-editor h3,
+.chat-show.chat-show-markdown .ql-editor h4,
+.chat-show.chat-show-markdown .ql-editor h5,
+.chat-show.chat-show-markdown .ql-editor h6 {
+  border-bottom: 1px solid var(--color-base-300);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  margin: 1em 0 0.5em;
+  padding-bottom: 0.3em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h1 {
+  font-size: 2em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h2 {
+  font-size: 1.5em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h3 {
+  font-size: 1.25em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h4 {
+  font-size: 1em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h5 {
+  font-size: 0.875em;
+}
+
+.chat-show.chat-show-markdown .ql-editor h6 {
+  color: var(--color-neutral);
+  font-size: 0.85em;
+}
+
+.chat-show.chat-show-markdown .ql-editor p,
+.chat-show.chat-show-markdown .ql-editor ul,
+.chat-show.chat-show-markdown .ql-editor ol,
+.chat-show.chat-show-markdown .ql-editor blockquote,
+.chat-show.chat-show-markdown .ql-editor pre,
+.chat-show.chat-show-markdown .ql-editor table,
+.chat-show.chat-show-markdown .ql-editor hr {
+  margin: 0 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor a {
+  color: #0969da;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
+}
+
+.chat-show.chat-show-markdown .ql-editor a:hover {
+  text-decoration-thickness: 2px;
+}
+
+.chat-show.chat-show-markdown .ql-editor strong {
+  font-weight: 600;
+}
+
+.chat-show.chat-show-markdown .ql-editor em {
+  font-style: italic;
+}
+
+.chat-show.chat-show-markdown .ql-editor ul,
+.chat-show.chat-show-markdown .ql-editor ol {
+  padding-left: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor ul {
+  list-style: disc;
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+}
+
+.chat-show.chat-show-markdown .ql-editor ol {
+  list-style: decimal;
+  display: flex;
+  flex-direction: column;
+  gap: 0rem;
+}
+
+.chat-show.chat-show-markdown .ql-editor li + li {
+  margin-top: 0px;
+}
+
+.chat-show.chat-show-markdown .ql-editor li > ul,
+.chat-show.chat-show-markdown .ql-editor li > ol {
+  margin: 0px;
+}
+
+.chat-show.chat-show-markdown .ql-editor blockquote {
+  background: var(--color-base-400);
+  border-left: 0.25rem solid var(--color-warning);
+  border-radius: 0 0.75rem 0.75rem 0;
+  color: var(--color-base-content);
+  display: block;
+  padding: 0rem 0.5rem;
+  display: flex;
+  margin: .5rem;
+}
+
+.chat-show.chat-show-markdown .ql-editor hr {
+  background: var(--color-base-300);
+  border: 0;
+  height: 1px;
+  padding: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor :not(pre) > code,
+.chat-show.chat-show-markdown .ql-editor li > code,
+.chat-show.chat-show-markdown .ql-editor td > code,
+.chat-show.chat-show-markdown .ql-editor th > code {
+  background: var(--color-base-200);
+  border: 1px solid var(--color-base-300);
+  border-radius: 0.4rem;
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  padding: 0.15em 0.4em;
+}
+
+.chat-show.chat-show-markdown .ql-editor pre,
+.chat-show.chat-show-markdown .ql-editor .ql-code-block-container {
+  background: #0d1117;
+  border: 1px solid #30363d;
+  border-radius: 0.75rem;
+  color: #e6edf3;
+  font-family: ui-monospace, SFMono-Regular, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.875em;
+  line-height: 1.65;
+  overflow-x: auto;
+  padding: 1rem 1.1rem;
+}
+
+.chat-show.chat-show-markdown .ql-editor pre code {
+  background: transparent;
+  border: 0;
+  color: inherit;
+  padding: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor .ql-code-block-container .ql-code-block {
+  white-space: pre;
+}
+
+.chat-show.chat-show-markdown .ql-editor .ql-code-block-container .ql-code-block + .ql-code-block {
+  margin-top: 0;
+}
+
+.chat-show.chat-show-markdown .ql-editor table {
+  border-collapse: collapse;
+  display: block;
+  max-width: 100%;
+  overflow-x: auto;
+  width: max-content;
+}
+
+.chat-show.chat-show-markdown .ql-editor th,
+.chat-show.chat-show-markdown .ql-editor td {
+  border: 1px solid var(--color-base-300);
+  padding: 0.55rem 0.8rem;
+}
+
+.chat-show.chat-show-markdown .ql-editor th {
+  background: var(--color-base-200);
+  font-weight: 600;
+}
+
+.chat-show.chat-show-markdown .ql-editor tr:nth-child(2n) td {
+  background: var(--color-base-200);
+}
+
+.chat-show.chat-show-markdown .ql-editor img {
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 24px rgb(15 23 42 / 0.12);
+  height: auto;
+  max-width: 100%;
 }

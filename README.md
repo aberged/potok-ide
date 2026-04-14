@@ -69,9 +69,14 @@ Prerequisites:
 * Elixir `~> 1.15` as declared in `mix.exs`
 * Erlang/OTP compatible with your Elixir installation
 * PostgreSQL running locally
-* No separate Node.js toolchain is required for the default asset workflow because Tailwind and esbuild are managed through Mix tasks
+* Node.js and npm (required because `mix assets.setup` runs `npm install` in `assets/`)
 
 For the smoothest release parity, use an Elixir and OTP pair that is compatible with the included Docker build, which currently uses Elixir `1.18.2` and OTP `27.3.4`.
+
+Recommended local versions:
+
+* Node.js `20+`
+* npm `10+`
 
 Default local database settings:
 
@@ -88,6 +93,8 @@ If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test
  ```sh
  mix setup
  ```
+
+   The first run may take longer because `mix assets.setup` installs npm dependencies in `assets/`.
 
 1. Start the application:
 
