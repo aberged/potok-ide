@@ -136,6 +136,12 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> live(~p"/profiles/new")
 
       assert has_element?(lv, "#create-profile-form")
+      assert has_element?(lv, "#profile_profile_picture_url-picker")
+
+      assert has_element?(
+               lv,
+               "#profile_profile_picture_url-picker input[type='file'][accept='image/*']"
+             )
 
       {:ok, _index_lv, html} =
         lv

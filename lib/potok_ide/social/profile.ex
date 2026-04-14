@@ -5,6 +5,8 @@ defmodule PotokIde.Social.Profile do
 
   alias PotokIde.Repo
 
+  @max_profile_picture_url_length 1_000_000
+
   @description_formats [:markdown, :html]
   @sharing_modes [:unique, :shared]
 
@@ -36,6 +38,6 @@ defmodule PotokIde.Social.Profile do
     |> validate_length(:username, min: 2, max: 50)
     |> unsafe_validate_unique(:username, Repo)
     |> unique_constraint(:username)
-    |> validate_length(:profile_picture_url, max: 2048)
+    |> validate_length(:profile_picture_url, max: @max_profile_picture_url_length)
   end
 end

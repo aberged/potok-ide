@@ -225,6 +225,21 @@ defmodule PotokIde.SocialTest do
       assert member_ids == Enum.sort([invited_profile.id, inviter_profile.id])
       assert Enum.count(Social.list_child_groups(root_group), &(&1.id == direct_group.id)) == 1
     end
+
+    test "accepts larger data URLs for profile pictures" do
+      account = account_fixture()
+      profile_picture_url = "data:image/png;base64," <> String.duplicate("a", 25_000)
+
+      assert {:ok, profile} =
+               Social.create_profile_for_account(account, %{
+                 username: "data-url-profile",
+                 profile_picture_url: profile_picture_url,
+                 description_format: :markdown,
+                 sharing: :unique
+               })
+
+      assert profile.profile_picture_url == profile_picture_url
+    end
   end
 
   describe "delete_group/2" do

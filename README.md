@@ -1,5 +1,12 @@
 # Potok
 
+<div class="flex flex-row gap-2">
+<img src="https://icon.icepanel.io/Technology/svg/Elixir.svg" width="50"/>
+<img src="https://upload.wikimedia.org/wikipedia/en/thumb/1/1e/Phoenix_Framework_Logo.svg/1920px-Phoenix_Framework_Logo.svg.png" width="55"/>
+<img src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.96ee6a5a.svg" width="56"/>
+<img src="https://img.daisyui.com/images/daisyui/mark-rotating.svg" alt="daisyUI logo" width="44"/>
+</div>
+
 Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
 
 ## Domain Model
