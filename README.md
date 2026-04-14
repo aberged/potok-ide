@@ -8,7 +8,7 @@ The main concepts in the system are:
 
 * `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, one selected `current_profile`, and one `default_profile` used as the fallback profile when no explicit current profile is set.
 * `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
-* `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, and optional parent relations.
+* `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, optional parent relations, and a persisted `home_page` preference that controls which panel opens by default.
 * `Value`: content posted by a profile in a group, optionally as part of a reply chain.
 * `GroupMembership`: the join entity between profiles and groups.
 * `GroupInvitation`: an invitation from one profile to another profile to join a group.
@@ -24,7 +24,11 @@ Invitation behavior:
 Group access and direct-group behavior:
 
 * Public groups support access requests from non-member profiles. Group creators review those pending requests from the members tab and can accept or reject them there.
+* Groups persist a `home_page` enum with the values `description`, `chat`, and `subgroups`. The create-group and edit-group panels expose that setting so members can control the default landing panel for a group.
+* Opening a group without an explicit tab uses its `home_page`: `description` opens the description panel, `chat` opens the values panel, and `subgroups` opens the sub-groups panel.
+* Root groups ignore `home_page` and always open on the sub-groups panel.
 * Direct groups are derived conversation groups, not a separate invitation flow. Opening `/profiles/:id/direct` finds or creates a private non-root group under the root group for exactly two profiles and then navigates to that group's values tab.
+* Direct private groups ignore `home_page` and always open on the values panel.
 * Because direct groups are fixed to two members, the group UI hides profile-invite actions, join-request management, and member removal controls for them.
 
 Relationship summary:
