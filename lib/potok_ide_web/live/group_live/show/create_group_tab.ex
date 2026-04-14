@@ -1,6 +1,8 @@
 defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
   use PotokIdeWeb, :html
 
+  alias PotokIdeWeb.GroupLive.Show.Components
+
   attr :new_group_form, :any, required: true
   attr :format_options, :list, required: true
   attr :home_page_options, :list, required: true
@@ -14,11 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
 
         <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
           <.input field={@new_group_form[:name]} label={gettext("Name")} required />
-          <.input
-            field={@new_group_form[:group_picture_url]}
-            label={gettext("Group picture URL")}
-            type="url"
-          />
+          <Components.group_picture_form_field field={@new_group_form[:group_picture_url]} />
           <.input
             :if={false}
             field={@new_group_form[:description_format]}

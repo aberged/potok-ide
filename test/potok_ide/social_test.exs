@@ -38,6 +38,34 @@ defmodule PotokIde.SocialTest do
       assert group.has_public_chat == false
       assert group.is_direct == false
     end
+
+    test "accepts larger data URLs for group pictures" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "group-picture-data-url-profile",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+      group_picture_url = "data:image/png;base64," <> String.duplicate("a", 25_000)
+
+      assert {:ok, group} =
+               Social.create_group(profile, root_group, %{
+                 "name" => "data-url-child-group",
+                 "group_picture_url" => group_picture_url,
+                 "description" => "",
+                 "description_format" => :markdown,
+                 "home_page" => :subgroups,
+                 "is_public" => false
+               })
+
+      assert group.group_picture_url == group_picture_url
+    end
   end
 
   describe "get_or_create_direct_group/2" do

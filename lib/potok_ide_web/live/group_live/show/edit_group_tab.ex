@@ -28,11 +28,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           phx-submit="save_edit_group"
         >
           <.input field={@edit_group_form[:name]} label={gettext("Name")} required />
-          <.input
-            field={@edit_group_form[:group_picture_url]}
-            label={gettext("Group picture URL")}
-            type="url"
-          />
+          <Components.group_picture_form_field field={@edit_group_form[:group_picture_url]} />
           <div class="flex flex-row items-start gap-4">
             <.input
               field={@edit_group_form[:is_public]}

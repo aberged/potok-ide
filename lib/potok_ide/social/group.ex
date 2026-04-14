@@ -3,6 +3,8 @@ defmodule PotokIde.Social.Group do
 
   import Ecto.Changeset
 
+  @max_group_picture_url_length 1_000_000
+
   @description_formats [:markdown, :html]
   @home_pages [:chat, :description, :subgroups]
 
@@ -57,7 +59,7 @@ defmodule PotokIde.Social.Group do
       :is_root
     ])
     |> validate_length(:name, min: 1, max: 120)
-    |> validate_length(:group_picture_url, max: 2048)
+    |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> validate_root_constraints()
   end
 
@@ -74,7 +76,7 @@ defmodule PotokIde.Social.Group do
     ])
     |> validate_required([:name, :description_format, :home_page, :has_public_chat, :is_public])
     |> validate_length(:name, min: 1, max: 120)
-    |> validate_length(:group_picture_url, max: 2048)
+    |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> validate_root_constraints()
   end
 

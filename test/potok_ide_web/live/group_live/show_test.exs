@@ -716,7 +716,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       account = Accounts.get_account!(account.id)
       root_group = Social.get_root_group!()
 
-      Enum.each(1..13, fn idx ->
+      Enum.each(1..21, fn idx ->
         {:ok, _group} =
           Social.create_group(profile, root_group, %{
             "name" => "paged-child-#{pad_2(idx)}",
@@ -732,8 +732,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{root_group.id}")
 
       assert has_element?(lv, "#group-children-load-more")
-      assert has_element?(lv, "#group-children-list", "paged-child-13")
       refute has_element?(lv, "#group-children-list", "paged-child-01")
+      assert has_element?(lv, "#group-children-list", "paged-child-02")
+      assert has_element?(lv, "#group-children-list", "paged-child-21")
 
       lv
       |> element("#group-children-load-more")
@@ -944,6 +945,13 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{group.id}/create_group")
 
       assert has_element?(lv, "#group-panel-create-group")
+      assert has_element?(lv, "#group_group_picture_url-picker")
+
+      assert has_element?(
+               lv,
+               "#group_group_picture_url-picker input[type='file'][accept='image/*']"
+             )
+
       assert has_element?(lv, "input[name='group[has_public_chat]'][type='hidden']")
       assert has_element?(lv, "input[name='group[has_public_chat]'][type='checkbox']")
     end
@@ -988,15 +996,23 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/edit_group")
 
+      group_picture_url = "data:image/png;base64," <> String.duplicate("a", 25_000)
+
       assert has_element?(owner_lv, "#group-tab-edit-group")
       assert has_element?(owner_lv, "#group-panel-edit-group")
+      assert has_element?(owner_lv, "#group_group_picture_url-picker")
+
+      assert has_element?(
+               owner_lv,
+               "#group_group_picture_url-picker input[type='file'][accept='image/*']"
+             )
 
       owner_lv
       |> form("#group-edit-form", %{
         "group" => %{
           "name" => "edited-group",
           "description" => "after",
-          "group_picture_url" => "https://example.com/edited-group.png",
+          "group_picture_url" => group_picture_url,
           "home_page" => "chat",
           "is_public" => "true",
           "has_public_chat" => "true"
@@ -1008,7 +1024,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert updated_group.name == "edited-group"
       assert updated_group.description == "after"
-      assert updated_group.group_picture_url == "https://example.com/edited-group.png"
+      assert updated_group.group_picture_url == group_picture_url
       assert updated_group.home_page == :chat
       assert updated_group.has_public_chat
 
