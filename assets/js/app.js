@@ -391,10 +391,17 @@ const PushNotifications = {
 const GroupDescriptionActions = {
   
   groupPanelDescription: new WeakSet(),
-
+  newValueCallback: null,
+  
   mounted() {
-    console.debug("<#HOOK-LC#> Mounting GroupDescriptionActions hook for element", this.el.id)
     this.abortController = new AbortController()
+    console.debug("<#HOOK-LC#> Mounting GroupDescriptionActions hook for element", this.el.id)
+    window.addEventListener( "phx:new_data_value", e => {
+      if (this.newValueCallback) {
+        this.newValueCallback(e)
+      }
+      console.debug("Received new_data_value event in GroupDescriptionActions hook", e)
+    }, {signal: this.abortController.signal});
     this.exposePOTOK()
     this.reloadDescriptionScriptsIfNeeded()
   },
@@ -471,6 +478,13 @@ const GroupDescriptionActions = {
         return null
       }
     }
+
+    this.setNewValueCallback = (fn) => {
+      if (typeof fn === "function") {
+        this.newValueCallback = fn
+      }
+    }
+
   },
 
   async reloadDescriptionScriptsIfNeeded() {

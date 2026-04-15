@@ -1086,6 +1086,29 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def get_latest_data_value_id_for_group(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(v in Value,
+      where: v.group_id == ^group.id and v.is_data == true,
+      order_by: [desc: v.inserted_at, desc: v.id],
+      limit: 1,
+      select: v.id
+    )
+    |> Repo.one()
+  end
+
+  def get_latest_data_value_for_group(%Group{} = group) do
+    import Ecto.Query, only: [from: 2]
+
+    from(v in Value,
+      where: v.group_id == ^group.id and v.is_data == true,
+      order_by: [desc: v.inserted_at, desc: v.id],
+      limit: 1
+    )
+    |> Repo.one()
+  end
+
   def count_group_data_values(%Group{} = group) do
     import Ecto.Query, only: [from: 2]
 

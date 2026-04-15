@@ -184,7 +184,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 this.scrollToLatest()
               })
 
-              this.handleEvent("scroll_values_to_latest", () => {
+              this.handleEvent("scroll_values_to_latest", (data) => {
                 this.scrollToLatest()
               })
             },

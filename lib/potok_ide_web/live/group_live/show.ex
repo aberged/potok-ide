@@ -370,6 +370,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:pending_join_request, nil)
        |> assign(:pending_join_requests, [])
        |> assign(:pending_join_requests_count, 0)
+       |> assign(:latest_data_value_id, nil)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
     else
@@ -449,15 +450,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
     else
       case Social.create_value(current_profile, group, normalize_select_nil(attrs, "parent_id")) do
-        {:ok, _value} ->
+        {:ok, value} ->
           socket =
             socket
             |> assign(:active_tab, socket.assigns.active_tab || "values")
             |> assign(:new_value_form, empty_new_value_form())
             # |> put_flash(:info, gettext("Value posted."))
             |> refresh_group_data()
-
-          # |> push_event("scroll_values_to_latest", %{})
+            |> push_event("new_data_value", %{content: value.content})
 
           {:noreply, socket}
 
@@ -529,18 +529,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       values =
         socket.assigns.group
         |> Social.list_group_data_values()
-        |> Enum.map(fn value ->
-          %{
-            id: value.id,
-            content: value.content,
-            content_format: value.content_format,
-            is_data: value.is_data,
-            group_id: value.group_id,
-            parent_id: value.parent_id,
-            creator_id: value.creator_id,
-            creator_username: value.creator && value.creator.username
-          }
-        end)
+        |> Enum.map(&value_payload/1)
 
       {:reply, %{ok: true, values: values}, socket}
     end
@@ -976,6 +965,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     is_member = Social.member_of_group?(current_profile, group)
     previous_loaded_values = socket.assigns.loaded_values
     previous_values_pagination = socket.assigns.values_pagination
+    previous_latest_data_value_id = socket.assigns.latest_data_value_id
 
     if can_view_group?(group, is_member) do
       socket =
@@ -983,6 +973,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> assign(:is_member, is_member)
         |> load_group_data(group)
         |> maybe_scroll_values_to_latest(previous_loaded_values, previous_values_pagination)
+        |> maybe_new_data_value(previous_latest_data_value_id, group)
 
       {:noreply, socket}
     else
@@ -1101,6 +1092,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> maybe_load_latest_data_value_id(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
     |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
@@ -1153,6 +1145,31 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket
     end
   end
+
+  defp maybe_new_data_value(socket, previous_latest_data_value_id, group) do
+    if previous_latest_data_value_id != socket.assigns.latest_data_value_id do
+      latest_data_value = Social.get_latest_data_value_for_group(group)
+      push_event(socket, "new_data_value", %{content: latest_data_value.content})
+    else
+      socket
+    end
+  end
+
+  defp value_payload(%Value{} = value, creator_username \\ nil) do
+    %{
+      id: value.id,
+      content: value.content,
+      content_format: to_string(value.content_format),
+      is_data: value.is_data,
+      group_id: value.group_id,
+      parent_id: value.parent_id,
+      creator_id: value.creator_id,
+      creator_username: creator_username || value_creator_username(value)
+    }
+  end
+
+  defp value_creator_username(%Value{creator: %{username: username}}), do: username
+  defp value_creator_username(_), do: nil
 
   defp current_editing_value(socket) do
     find_value(socket.assigns.loaded_values, socket.assigns.editing_value_id)
@@ -1393,6 +1410,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  defp maybe_load_latest_data_value_id(socket, group, active_tab) do
+    if needs_latest_data_value_id?(group, active_tab) do
+      assign(socket, :latest_data_value_id, Social.get_latest_data_value_id_for_group(group))
+    else
+      socket
+    end
+  end
+
   defp maybe_load_value_parent_options(socket, group, active_tab) do
     if needs_value_parent_options?(socket, active_tab) do
       socket
@@ -1486,6 +1511,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp needs_values?(group, active_tab) do
     group.parent_id != nil and active_tab == "values"
+  end
+
+  defp needs_latest_data_value_id?(group, active_tab) do
+    group.parent_id != nil and active_tab == "group_home"
   end
 
   defp newer_value_arrived?(socket, previous_loaded_values, previous_values_pagination) do
