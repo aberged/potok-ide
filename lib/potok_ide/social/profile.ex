@@ -6,6 +6,8 @@ defmodule PotokIde.Social.Profile do
   alias PotokIde.Repo
 
   @max_profile_picture_url_length 1_000_000
+  @max_username_length 16
+  @username_format ~r/^[\p{L}\p{Nd}_.-]+$/u
 
   @description_formats [:markdown, :html]
   @sharing_modes [:unique, :shared]
@@ -35,7 +37,10 @@ defmodule PotokIde.Social.Profile do
     profile
     |> cast(attrs, [:username, :profile_picture_url, :description, :description_format, :sharing])
     |> validate_required([:username, :description_format, :sharing])
-    |> validate_length(:username, min: 2, max: 50)
+    |> validate_length(:username, min: 2, max: @max_username_length)
+    |> validate_format(:username, @username_format,
+      message: "must contain only letters, numbers, _, ., and -"
+    )
     |> unsafe_validate_unique(:username, Repo)
     |> unique_constraint(:username)
     |> validate_length(:profile_picture_url, max: @max_profile_picture_url_length)

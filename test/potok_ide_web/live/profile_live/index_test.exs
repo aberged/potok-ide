@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "linked profile",
+          username: "linked-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -38,7 +38,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(account, %{
-          username: "alpha profile",
+          username: "alpha-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -47,7 +47,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(account, %{
-          username: "beta profile",
+          username: "beta-prof",
           profile_picture_url: "https://example.com/beta.png",
           description: "",
           description_format: :markdown,
@@ -62,7 +62,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> log_in_account(account)
         |> live(~p"/profiles")
 
-      assert html =~ "alpha profile"
+      assert html =~ "alpha-prof"
       refute html =~ "Profile selected."
 
       result =
@@ -71,10 +71,10 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Profile selected."
-      assert result =~ "beta profile"
+      assert result =~ "beta-prof"
 
       refute result =~
-               "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha profile"
+               "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha-prof"
     end
 
     test "sets a default profile from the profiles page", %{conn: conn} do
@@ -82,7 +82,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, _first_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default alpha",
+          username: "default-a",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -93,7 +93,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default beta",
+          username: "default-b",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -116,11 +116,11 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Default profile updated."
-      assert result =~ "default beta"
+      assert result =~ "default-b"
       assert result =~ "Default profile:"
 
       refute result =~
-               "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default alpha"
+               "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default-a"
 
       updated_account = Accounts.get_account!(account.id)
       assert updated_account.default_profile_id == second_profile.id
@@ -147,7 +147,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         lv
         |> form("#create-profile-form",
           profile: %{
-            username: "beta profile",
+            username: "beta-prof",
             profile_picture_url: "https://example.com/avatar.png",
             description: "new description",
             sharing: "unique"
@@ -157,7 +157,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> follow_redirect(conn, ~p"/profiles")
 
       assert html =~ "Profile created."
-      assert html =~ "beta profile"
+      assert html =~ "beta-prof"
       assert html =~ "https://example.com/avatar.png"
     end
 
@@ -168,7 +168,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "alpha profile",
+          username: "alpha-prof",
           profile_picture_url: nil,
           description: "old description",
           description_format: :markdown,
@@ -182,14 +182,14 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         conn
         |> live(~p"/profiles/#{profile.id}/edit")
 
-      assert html =~ "alpha profile"
+      assert html =~ "alpha-prof"
       assert html =~ "Update the selected profile details."
 
       {:ok, _index_lv, result} =
         lv
         |> form("#edit-profile-form",
           profile: %{
-            username: "beta profile",
+            username: "beta-prof",
             profile_picture_url: "https://example.com/avatar.png",
             description: "new description",
             sharing: "unique"
@@ -200,9 +200,9 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert result =~ "Profile updated."
       assert result =~ "Current profile:"
-      assert result =~ "beta profile"
+      assert result =~ "beta-prof"
       assert result =~ "https://example.com/avatar.png"
-      refute result =~ "alpha profile"
+      refute result =~ "alpha-prof"
     end
 
     test "updates profiles when another process creates a profile", %{conn: conn} do
@@ -214,18 +214,18 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> log_in_account(account)
         |> live(~p"/profiles")
 
-      refute render(lv) =~ "gamma profile"
+      refute render(lv) =~ "gamma-prof"
 
       {:ok, _profile} =
         Social.create_profile_for_account(account, %{
-          username: "gamma profile",
+          username: "gamma-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
           sharing: :unique
         })
 
-      assert render(lv) =~ "gamma profile"
+      assert render(lv) =~ "gamma-prof"
     end
 
     test "sends a shared profile invitation from the profile editor", %{conn: conn} do
@@ -234,7 +234,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, shared_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "shared editor profile",
+          username: "shared-editor",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -243,7 +243,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "invitee-shared-target",
+          username: "invitee-share",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -278,7 +278,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, shared_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "shared invite profile",
+          username: "shared-invite",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -287,7 +287,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "invitee-shared-current",
+          username: "invitee-cur",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -317,7 +317,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Shared profile invitation accepted."
-      assert result =~ "shared invite profile"
+      assert result =~ "shared-invite"
       refute has_element?(lv, "#accept-profile-invitation-#{invitation.id}")
     end
   end

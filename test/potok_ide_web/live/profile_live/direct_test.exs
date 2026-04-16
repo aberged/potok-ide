@@ -14,7 +14,7 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
 
       {:ok, current_profile} =
         Social.create_profile_for_account(current_account, %{
-          username: "direct-route-current",
+          username: "dirroute-cur",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "direct-route-other",
+          username: "dirroute-oth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -57,7 +57,7 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
 
       {:ok, current_profile} =
         Social.create_profile_for_account(current_account, %{
-          username: "direct-reuse-current",
+          username: "dirreuse-cur",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -66,7 +66,7 @@ defmodule PotokIdeWeb.ProfileLive.DirectTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "direct-reuse-other",
+          username: "dirreuse-oth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,

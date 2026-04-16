@@ -35,7 +35,16 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       |> assign(:max_profile_picture_dimension, @max_profile_picture_dimension)
 
     ~H"""
-    <.input field={@form[:username]} id={@form[:username].id} label={gettext("Username")} required />
+    <.input
+      field={@form[:username]}
+      id={@form[:username].id}
+      label={gettext("Username")}
+      maxlength="16"
+      required
+    />
+    <p class="mb-4 text-sm text-base-content/60">
+      {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
+    </p>
     <.input
       field={@form[:profile_picture_url]}
       id={@form[:profile_picture_url].id}

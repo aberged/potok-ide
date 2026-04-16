@@ -14,7 +14,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "inviter-profile-order",
+          username: "inv-order",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "invitee-profile-order",
+          username: "inee-order",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -80,7 +80,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "inviter-profile",
+          username: "inviter-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -89,7 +89,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "invitee-profile",
+          username: "invitee-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -119,7 +119,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       html = render(lv)
       assert html =~ "Realtime Group"
-      assert html =~ "inviter-profile"
+      assert html =~ "inviter-prof"
     end
 
     test "switches invitation list when current profile changes", %{conn: conn} do
@@ -128,7 +128,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "inviter-profile-2",
+          username: "inviter-pr2",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -137,7 +137,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "first-invitee-profile",
+          username: "invitee-one",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "second-invitee-profile",
+          username: "invitee-two",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -179,7 +179,7 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
 
       html = render(lv)
       assert html =~ "Switch Group"
-      assert html =~ "inviter-profile-2"
+      assert html =~ "inviter-pr2"
     end
   end
 end

@@ -14,7 +14,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "group-picture-profile",
+          username: "grp-pic-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -44,7 +44,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "group-picture-data-url-profile",
+          username: "grp-pic-data",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -75,7 +75,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(first_account, %{
-          username: "direct-first-profile",
+          username: "direct-first",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -84,7 +84,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(second_account, %{
-          username: "direct-second-profile",
+          username: "direct-second",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -123,7 +123,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "direct-self-profile",
+          username: "direct-self",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -139,7 +139,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(first_account, %{
-          username: "regular-group-first-profile",
+          username: "reggrp-first",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -148,7 +148,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(second_account, %{
-          username: "regular-group-second-profile",
+          username: "reggrp-second",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -190,7 +190,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default-first-profile",
+          username: "default-first",
           description_format: :markdown,
           sharing: :unique
         })
@@ -202,7 +202,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default-second-profile",
+          username: "default-sec",
           description_format: :markdown,
           sharing: :unique
         })
@@ -219,7 +219,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "first-profile-inviter",
+          username: "first-inviter",
           description_format: :markdown,
           sharing: :unique
         })
@@ -229,7 +229,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, invited_profile} =
         Social.create_profile_for_account(invited_account, %{
-          username: "first-profile-invitee",
+          username: "first-invitee",
           description_format: :markdown,
           sharing: :unique
         })
@@ -260,13 +260,52 @@ defmodule PotokIde.SocialTest do
 
       assert {:ok, profile} =
                Social.create_profile_for_account(account, %{
-                 username: "data-url-profile",
+                 username: "dataurl-prof",
                  profile_picture_url: profile_picture_url,
                  description_format: :markdown,
                  sharing: :unique
                })
 
       assert profile.profile_picture_url == profile_picture_url
+    end
+
+    test "accepts unicode usernames with uppercase letters up to 16 characters" do
+      account = account_fixture()
+
+      assert {:ok, profile} =
+               Social.create_profile_for_account(account, %{
+                 username: "Żółć.123",
+                 description_format: :markdown,
+                 sharing: :unique
+               })
+
+      assert profile.username == "Żółć.123"
+    end
+
+    test "rejects usernames longer than 16 characters" do
+      account = account_fixture()
+
+      assert {:error, changeset} =
+               Social.create_profile_for_account(account, %{
+                 username: "abcdefghijklmnopq",
+                 description_format: :markdown,
+                 sharing: :unique
+               })
+
+      assert "should be at most 16 character(s)" in errors_on(changeset).username
+    end
+
+    test "rejects usernames with unsupported characters" do
+      account = account_fixture()
+
+      assert {:error, changeset} =
+               Social.create_profile_for_account(account, %{
+                 username: "alpha profile",
+                 description_format: :markdown,
+                 sharing: :unique
+               })
+
+      assert "must contain only letters, numbers, _, ., and -" in errors_on(changeset).username
     end
   end
 
@@ -276,7 +315,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-group-owner",
+          username: "delgrp-owner",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -302,7 +341,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-root-profile",
+          username: "delroot-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -318,7 +357,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-parent-profile",
+          username: "delparent-pr",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -355,7 +394,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, shared_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "shared-profile-owner",
+          username: "shared-owner",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -364,7 +403,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "shared-profile-invitee",
+          username: "shared-invitee",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -408,7 +447,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, shared_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "shared-profile-push-owner",
+          username: "sharepush-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -417,7 +456,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "shared-profile-push-invitee",
+          username: "sharepush-inv",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -458,7 +497,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "member-count-owner",
+          username: "mcount-owner",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -467,7 +506,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "member-count-invitee",
+          username: "mcount-invitee",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -503,7 +542,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "join-request-owner",
+          username: "jreq-owner",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -512,7 +551,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "join-request-requester",
+          username: "jreq-requester",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -554,7 +593,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "join-request-private-owner",
+          username: "jreqpriv-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -563,7 +602,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "join-request-private-requester",
+          username: "jreqpriv-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -607,7 +646,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "join-request-invite-owner",
+          username: "jreqinv-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -616,7 +655,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "join-request-invite-requester",
+          username: "jreqinv-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -651,7 +690,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "remove-member-owner",
+          username: "rm-member-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -660,7 +699,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, member_profile} =
         Social.create_profile_for_account(member_account, %{
-          username: "remove-member-target",
+          username: "rm-member-tgt",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -700,7 +739,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "remove-member-owner-2",
+          username: "rmem-own-2",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -709,7 +748,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, member_profile} =
         Social.create_profile_for_account(member_account, %{
-          username: "remove-member-non-creator",
+          username: "rmem-noncrt",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -718,7 +757,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, target_profile} =
         Social.create_profile_for_account(target_account, %{
-          username: "remove-member-target-2",
+          username: "rmem-tgt-2",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -764,7 +803,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "group-push-inviter",
+          username: "grppush-inv",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -773,7 +812,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "group-push-invitee",
+          username: "grppush-tgt",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -841,7 +880,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, sender_profile} =
         Social.create_profile_for_account(sender_account, %{
-          username: "value-push-sender",
+          username: "valpush-send",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -850,7 +889,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, recipient_profile} =
         Social.create_profile_for_account(recipient_account, %{
-          username: "value-push-recipient",
+          username: "valpush-rec",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -859,7 +898,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, _non_member_profile} =
         Social.create_profile_for_account(non_member_account, %{
-          username: "value-push-non-member",
+          username: "valpush-non",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -910,7 +949,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "value-is-data-owner",
+          username: "valdata-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -957,7 +996,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-value-owner",
+          username: "delval-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -982,7 +1021,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "delete-value-authorized",
+          username: "delval-auth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -991,7 +1030,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "delete-value-unauthorized",
+          username: "delval-unauth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1082,7 +1121,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "edit-value-authorized",
+          username: "editval-auth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1091,7 +1130,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "edit-value-unauthorized",
+          username: "editval-una",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1121,7 +1160,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "social-member-profile",
+          username: "social-mem",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1130,7 +1169,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "social-other-profile",
+          username: "social-other",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1180,7 +1219,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "ordered-child-owner",
+          username: "ordchild-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1189,7 +1228,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, writer_profile} =
         Social.create_profile_for_account(writer_account, %{
-          username: "ordered-child-writer",
+          username: "ordchild-wrt",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,

@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "parent-link-profile",
+          username: "parent-link",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -151,7 +151,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "invalid-tab-profile",
+          username: "invalid-tab",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -183,7 +183,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "home-page-chat-profile",
+          username: "homechat-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -216,7 +216,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "home-page-subgroups-profile",
+          username: "homesub-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -258,7 +258,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, current_profile} =
         Social.create_profile_for_account(current_account, %{
-          username: "direct-home-current",
+          username: "dirhome-cur",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -267,7 +267,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "direct-home-other",
+          username: "dirhome-oth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -294,7 +294,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "member-summary-owner",
+          username: "memsum-owner",
           profile_picture_url: "https://example.com/member-summary-owner.png",
           description: "",
           description_format: :markdown,
@@ -303,7 +303,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "member-summary-invitee",
+          username: "memsum-invitee",
           profile_picture_url: "https://example.com/member-summary-invitee.png",
           description: "",
           description_format: :markdown,
@@ -455,7 +455,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "remove-ui-owner-2",
+          username: "rmui-own-2",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -464,7 +464,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, member_profile} =
         Social.create_profile_for_account(member_account, %{
-          username: "remove-ui-member-actor",
+          username: "rmui-actor",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -473,7 +473,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "remove-ui-member-target",
+          username: "rmui-target",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -510,7 +510,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "value-presence-owner",
+          username: "valpres-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -519,7 +519,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, invitee_profile} =
         Social.create_profile_for_account(invitee_account, %{
-          username: "value-presence-invitee",
+          username: "valpres-inv",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -567,7 +567,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "subgroup-member-profile",
+          username: "subgrp-mem",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -576,7 +576,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "subgroup-other-profile",
+          username: "subgrp-oth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -620,7 +620,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "group-path-profile",
+          username: "group-path",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -673,7 +673,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, current_profile} =
         Social.create_profile_for_account(current_account, %{
-          username: "direct-path-current",
+          username: "dirpath-cur",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -682,7 +682,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "direct-path-other",
+          username: "dirpath-oth",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -697,7 +697,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(current_account)
         |> live(~p"/groups/#{direct_group.id}/members")
 
-      assert has_element?(lv, "#group-path span", "direct-path-other")
+      assert has_element?(lv, "#group-path span", "dirpath-oth")
       refute has_element?(lv, "#group-path span", direct_group.name)
     end
 
@@ -706,7 +706,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "subgroup-pagination-profile",
+          username: "subgrp-page",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -750,7 +750,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "subgroup-join-badge-owner",
+          username: "subbadge-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -759,7 +759,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "subgroup-join-badge-requester",
+          username: "subbadge-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -793,7 +793,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "group-picture-member-profile",
+          username: "grppic-mem",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -842,7 +842,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "chronology-profile",
+          username: "chronology",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -882,7 +882,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "value-pagination-profile",
+          username: "valpage-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -923,7 +923,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "create-group-options-profile",
+          username: "creopt-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -971,7 +971,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, viewer_profile} =
         Social.create_profile_for_account(viewer_account, %{
-          username: "edit-group-viewer",
+          username: "editgrp-view",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1050,7 +1050,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "public-chat-profile",
+          username: "pubchat-prof",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1110,7 +1110,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "description-owner",
+          username: "descr-owner",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1119,7 +1119,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, _viewer_profile} =
         Social.create_profile_for_account(viewer_account, %{
-          username: "description-viewer",
+          username: "descr-view",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1156,7 +1156,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "join-request-live-owner",
+          username: "jrlive-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1165,7 +1165,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "join-request-live-requester",
+          username: "jrlive-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1231,7 +1231,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "join-request-reject-owner",
+          username: "jrrej-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1240,7 +1240,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "join-request-reject-requester",
+          username: "jrrej-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1281,7 +1281,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-group-live-owner",
+          username: "delglive-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1320,7 +1320,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-blocked-live-owner",
+          username: "delblock-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1643,7 +1643,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "delete-value-live-profile",
+          username: "delv-live",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1684,7 +1684,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "edit-value-live-profile",
+          username: "editv-live",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -1729,7 +1729,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "cancel-edit-value-live-profile",
+          username: "ceditv-live",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,

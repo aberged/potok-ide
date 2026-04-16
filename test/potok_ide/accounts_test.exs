@@ -93,7 +93,7 @@ defmodule PotokIde.AccountsTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "account-registration-inviter",
+          username: "acct-reg-inv",
           description_format: :markdown,
           sharing: :unique
         })
@@ -112,7 +112,7 @@ defmodule PotokIde.AccountsTest do
 
       {:ok, inviter_profile} =
         Social.create_profile_for_account(inviter_account, %{
-          username: "account-registration-spoof-attempt",
+          username: "acct-reg-spf",
           description_format: :markdown,
           sharing: :unique
         })
@@ -153,14 +153,14 @@ defmodule PotokIde.AccountsTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default-profile-first",
+          username: "default-first",
           description_format: :markdown,
           sharing: :unique
         })
 
       {:ok, second_profile} =
         Social.create_profile_for_account(account, %{
-          username: "default-profile-second",
+          username: "default-sec",
           description_format: :markdown,
           sharing: :unique
         })
@@ -176,7 +176,7 @@ defmodule PotokIde.AccountsTest do
 
       {:ok, other_profile} =
         Social.create_profile_for_account(other_account, %{
-          username: "unlinked-default-profile",
+          username: "unlinked-def",
           description_format: :markdown,
           sharing: :unique
         })
@@ -190,7 +190,7 @@ defmodule PotokIde.AccountsTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "clear-default-profile",
+          username: "clear-def",
           description_format: :markdown,
           sharing: :unique
         })

@@ -14,7 +14,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "requests-page-owner",
+          username: "reqpage-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "requests-page-requester",
+          username: "reqpage-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -67,7 +67,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "requests-update-owner",
+          username: "requpd-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -76,7 +76,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "requests-update-requester",
+          username: "requpd-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -112,7 +112,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "requests-switch-requester",
+          username: "reqsw-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -121,7 +121,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, first_profile} =
         Social.create_profile_for_account(approver_account, %{
-          username: "requests-switch-first",
+          username: "reqsw-first",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -130,7 +130,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, second_profile} =
         Social.create_profile_for_account(approver_account, %{
-          username: "requests-switch-second",
+          username: "reqsw-sec",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -170,7 +170,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, owner_profile} =
         Social.create_profile_for_account(owner_account, %{
-          username: "requests-actions-owner",
+          username: "reqact-own",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -179,7 +179,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, requester_profile} =
         Social.create_profile_for_account(requester_account, %{
-          username: "requests-actions-requester",
+          username: "reqact-req",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,
@@ -188,7 +188,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       {:ok, second_requester_profile} =
         Social.create_profile_for_account(second_requester_account, %{
-          username: "requests-actions-requester-2",
+          username: "reqact-req2",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,

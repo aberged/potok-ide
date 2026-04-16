@@ -28,7 +28,7 @@ defmodule PotokIdeWeb.PageControllerTest do
 
     {:ok, _profile} =
       Social.create_profile_for_account(account, %{
-        username: "root-groups-profile",
+        username: "root-groups",
         description_format: :markdown,
         sharing: :unique
       })
