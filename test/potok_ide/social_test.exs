@@ -214,6 +214,113 @@ defmodule PotokIde.SocialTest do
       refute Social.get_account_default_profile(account).id == second_profile.id
     end
 
+    test "materializes pending group account invitations when the first profile is created" do
+      owner_account = account_fixture()
+      invited_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "pending-own",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "pending-account-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, %PotokIde.Social.GroupAccountInvitation{} = pending_invitation} =
+               Social.invite_account_to_group(owner_profile, group, invited_account)
+
+      assert Repo.get(PotokIde.Social.GroupAccountInvitation, pending_invitation.id)
+
+      {:ok, invited_profile} =
+        Social.create_profile_for_account(invited_account, %{
+          username: "pending-inv",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      refute Repo.get(PotokIde.Social.GroupAccountInvitation, pending_invitation.id)
+
+      assert [%{group: %{id: group_id}, inviter: %{id: inviter_id}}] =
+               Social.list_pending_invitations(invited_profile)
+
+      assert group_id == group.id
+      assert inviter_id == owner_profile.id
+
+      assert {:ok, direct_group} =
+               Social.get_or_create_direct_group(invited_profile, owner_profile)
+
+      assert direct_group.is_direct
+      refute direct_group.is_public
+
+      member_ids =
+        direct_group
+        |> Social.list_group_members()
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      assert member_ids == Enum.sort([invited_profile.id, owner_profile.id])
+    end
+
+    test "invites the default profile for an existing account" do
+      owner_account = account_fixture()
+      invitee_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "email-ownr",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitee_profile} =
+        Social.create_profile_for_account(invitee_account, %{
+          username: "email-invt",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "existing-email-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, %PotokIde.Social.GroupInvitation{} = invitation} =
+               Social.invite_account_to_group(owner_profile, group, invitee_account)
+
+      assert invitation.invitee_id == invitee_profile.id
+
+      assert [%{id: invitation_id}] = Social.list_pending_invitations(invitee_profile)
+      assert invitation_id == invitation.id
+
+      assert {:ok, direct_group} =
+               Social.get_or_create_direct_group(invitee_profile, owner_profile)
+
+      assert direct_group.is_direct
+      refute direct_group.is_public
+
+      member_ids =
+        direct_group
+        |> Social.list_group_members()
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+
+      assert member_ids == Enum.sort([invitee_profile.id, owner_profile.id])
+    end
+
     test "creates a direct group with the inviter profile when the invited account creates its first profile" do
       inviter_account = account_fixture()
 

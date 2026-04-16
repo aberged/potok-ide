@@ -28,15 +28,16 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             autocomplete="username"
             spellcheck="false"
             required
+            class="disabled"
           />
-          <.button variant="primary" phx-disable-with={gettext("Changing...")}>
+          <%!-- <.button variant="primary" phx-disable-with={gettext("Changing...")}>
             {gettext("Change Email")}
-          </.button>
+          </.button> --%>
         </.form>
 
         <div class="divider" />
 
-        <.form
+        <%!-- <.form
           for={@password_form}
           id="password_form"
           action={~p"/accounts/update-password"}
@@ -72,7 +73,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           </.button>
         </.form>
 
-        <div class="divider" />
+        <div class="divider" /> --%>
 
         <section
           id="push-notifications-panel"

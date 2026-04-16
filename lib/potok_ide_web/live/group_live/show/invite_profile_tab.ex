@@ -16,19 +16,25 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem)] max-w-[32rem] overflow-y-auto">
-        <h3 class="card-title">{gettext("Invite profile")} u 👆 grupu</h3>
+      <div class="card-body h-[calc(100dvh-12rem)] max-w-lg overflow-y-auto">
+        <h3 class="card-title">{gettext("Invite to group")}</h3>
         <.form for={@invite_form} id={"group-invite-form-#{@invite_form_version}"} phx-submit="invite">
           <.input
-            field={@invite_form[:username]}
-            id={"group-invite-username-#{@invite_form_version}"}
-            label={gettext("Invitee username")}
+            field={@invite_form[:identifier]}
+            id={"group-invite-identifier-#{@invite_form_version}"}
+            label={gettext("Invitee username or email")}
             required
           />
           <.button phx-disable-with={gettext("Inviting...")} variant="primary">
             {gettext("Invite")}
           </.button>
         </.form>
+
+        <div class="mt-2 text-xs text-base-content/60">
+          {gettext(
+            "Enter a username to invite an existing profile, or an email to invite an account."
+          )}
+        </div>
 
         <div class="mt-2 text-xs text-base-content/60">
           {gettext("Invitees accept invitations at")} <.link navigate={~p"/invitations"} class="link">/invitations</.link>.

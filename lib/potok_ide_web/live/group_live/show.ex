@@ -1,8 +1,10 @@
 defmodule PotokIdeWeb.GroupLive.Show do
   use PotokIdeWeb, :live_view
 
+  alias PotokIde.Accounts
+  alias PotokIde.Accounts.Account
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, Value}
+  alias PotokIde.Social.{Group, GroupAccountInvitation, GroupInvitation, Value}
 
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
@@ -26,7 +28,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="sticky top-[4rem] max-w-dvw lg:max-w-6xl justify-center z-50 rounded-[2rem] border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
+      <div class="sticky top-16 max-w-dvw lg:max-w-6xl justify-center z-50 rounded-4xl border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link
@@ -182,7 +184,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
 
           <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
-            <div class="flex min-w-[14rem] flex-col gap-2 z-100">
+            <div class="flex min-w-56 flex-col gap-2 z-100">
               <Components.group_tab_button
                 :if={!@group.is_root}
                 id="group-tab-group-home"
@@ -915,28 +917,30 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, assign(socket, :description_details_open, open == "true")}
   end
 
-  def handle_event("invite", %{"invite" => %{"username" => username}}, socket) do
+  def handle_event("invite", %{"invite" => %{"identifier" => identifier}}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
     if not socket.assigns.is_member do
       {:noreply, put_flash(socket, :error, gettext("You must be a member to invite."))}
     else
-      username = String.trim(username || "")
+      identifier = String.trim(identifier || "")
 
-      with false <- username == "",
-           %{} = invitee <- Social.get_profile_by_username(username),
-           {:ok, _inv} <- Social.invite_profile_to_group(current_profile, group, invitee) do
-        {:noreply,
-         socket
-         |> assign(:invite_form, to_form(%{"username" => ""}, as: "invite"))
-         |> update(:invite_form_version, &(&1 + 1))
-         |> put_flash(:info, gettext("Invitation sent."))}
-      else
-        true ->
-          {:noreply, put_flash(socket, :error, gettext("Username is required."))}
+      case invite_group_identifier(current_profile, group, identifier) do
+        {:ok, message} ->
+          {:noreply,
+           socket
+           |> assign(:invite_form, empty_invite_form())
+           |> update(:invite_form_version, &(&1 + 1))
+           |> put_flash(:info, message)}
 
-        nil ->
+        {:error, :blank_identifier} ->
+          {:noreply, put_flash(socket, :error, gettext("Username or email is required."))}
+
+        {:error, :invalid_email} ->
+          {:noreply, put_flash(socket, :error, gettext("Enter a valid email address."))}
+
+        {:error, :profile_not_found} ->
           {:noreply, put_flash(socket, :error, gettext("No profile found with that username."))}
 
         {:error, :inviter_not_a_member} ->
@@ -948,7 +952,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, %Ecto.Changeset{}} ->
           {:noreply, put_flash(socket, :error, gettext("An invitation is already pending."))}
 
-        {:error, _} ->
+        {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not send invitation."))}
       end
     end
@@ -1045,6 +1049,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
+
+  def handle_info({:email, _email}, socket), do: {:noreply, socket}
 
   def handle_info(
         {:group_unread_counts_updated, profile_id, _group_id},
@@ -1282,7 +1288,76 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp empty_invite_form do
-    to_form(%{"username" => ""}, as: "invite")
+    to_form(%{"identifier" => ""}, as: "invite")
+  end
+
+  defp invite_group_identifier(_current_profile, _group, "") do
+    {:error, :blank_identifier}
+  end
+
+  defp invite_group_identifier(current_profile, group, identifier) do
+    cond do
+      valid_email_identifier?(identifier) ->
+        invite_group_by_email(current_profile, group, identifier)
+
+      String.contains?(identifier, "@") ->
+        {:error, :invalid_email}
+
+      true ->
+        invite_group_by_username(current_profile, group, identifier)
+    end
+  end
+
+  defp invite_group_by_username(current_profile, group, username) do
+    case Social.get_profile_by_username(username) do
+      %{} = invitee_profile ->
+        case Social.invite_profile_to_group(current_profile, group, invitee_profile) do
+          {:ok, _invitation} -> {:ok, gettext("Invitation sent.")}
+          error -> error
+        end
+
+      nil ->
+        {:error, :profile_not_found}
+    end
+  end
+
+  defp invite_group_by_email(current_profile, group, email) do
+    case Accounts.get_account_by_email(email) do
+      %Account{} = account ->
+        invite_group_for_account(current_profile, group, account)
+
+      nil ->
+        with {:ok, account} <- Accounts.register_account(%{email: email}),
+             {:ok, _email} <-
+               Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}")),
+             {:ok, %GroupAccountInvitation{}} <-
+               Social.invite_account_to_group(current_profile, group, account) do
+          {:ok, gettext("Account invitation email sent.")}
+        else
+          {:ok, %GroupInvitation{}} ->
+            {:ok, gettext("Invitation sent.")}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  defp invite_group_for_account(current_profile, group, account) do
+    case Social.invite_account_to_group(current_profile, group, account) do
+      {:ok, %GroupInvitation{}} ->
+        {:ok, gettext("Invitation sent.")}
+
+      {:ok, %GroupAccountInvitation{}} ->
+        {:ok, gettext("Invitation will be sent when they create their first profile.")}
+
+      error ->
+        error
+    end
+  end
+
+  defp valid_email_identifier?(identifier) do
+    Accounts.change_account_email(%Account{}, %{"email" => identifier}, validate_unique: false).valid?
   end
 
   defp maybe_increment_pagination(socket, key) do

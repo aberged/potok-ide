@@ -18,6 +18,7 @@ defmodule PotokIde.Social do
   alias PotokIde.Social.{
     AccountProfile,
     Group,
+    GroupAccountInvitation,
     GroupInvitation,
     GroupJoinRequest,
     GroupMembership,
@@ -170,6 +171,7 @@ defmodule PotokIde.Social do
     |> case do
       {:ok,
        %{
+         account_already_has_profiles: already_has_profiles,
          profile: profile,
          update_account_profiles: updated_account,
          initial_direct_group: initial_direct_group
@@ -179,14 +181,21 @@ defmodule PotokIde.Social do
         end
 
         broadcast_account_profiles_updated(updated_account)
+        materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
 
-      {:ok, %{profile: profile, initial_direct_group: initial_direct_group}} ->
+      {:ok,
+       %{
+         account_already_has_profiles: already_has_profiles,
+         profile: profile,
+         initial_direct_group: initial_direct_group
+       }} ->
         if match?(%Group{}, initial_direct_group) do
           broadcast_group_updated(root_group)
         end
 
         broadcast_account_profiles_updated(account)
+        materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
 
       {:error, _step, reason, _changes} ->
@@ -487,6 +496,34 @@ defmodule PotokIde.Social do
           {:error, _step, reason, _changes} ->
             {:error, reason}
         end
+    end
+  end
+
+  def invite_account_to_group(%Profile{} = inviter, %Group{} = group, %Account{} = account) do
+    account = Accounts.get_account!(account.id)
+
+    cond do
+      not member_of_group?(inviter, group) ->
+        {:error, :inviter_not_a_member}
+
+      profile = get_account_default_profile(account) ->
+        case invite_profile_to_group(inviter, group, profile) do
+          {:ok, invitation} ->
+            ensure_direct_group_between_profiles(profile, inviter)
+            {:ok, invitation}
+
+          error ->
+            error
+        end
+
+      true ->
+        %GroupAccountInvitation{}
+        |> GroupAccountInvitation.changeset(%{
+          group_id: group.id,
+          inviter_id: inviter.id,
+          account_id: account.id
+        })
+        |> Repo.insert()
     end
   end
 
@@ -1444,6 +1481,69 @@ defmodule PotokIde.Social do
           {:error, _step, reason, _changes} -> {:error, reason}
         end
     end
+  end
+
+  defp materialize_pending_group_account_invitations(
+         _account,
+         _profile,
+         true
+       ) do
+    :ok
+  end
+
+  defp materialize_pending_group_account_invitations(
+         %Account{} = account,
+         %Profile{} = profile,
+         false
+       ) do
+    account
+    |> list_pending_group_account_invitations()
+    |> Enum.each(fn pending_invitation ->
+      case invite_profile_to_group(pending_invitation.inviter, pending_invitation.group, profile) do
+        {:ok, _invitation} ->
+          ensure_direct_group_between_profiles(profile, pending_invitation.inviter)
+          _ = Repo.delete(pending_invitation)
+          :ok
+
+        {:error, %Ecto.Changeset{}} ->
+          ensure_direct_group_between_profiles(profile, pending_invitation.inviter)
+          _ = Repo.delete(pending_invitation)
+          :ok
+
+        {:error, :inviter_not_a_member} ->
+          _ = Repo.delete(pending_invitation)
+          :ok
+
+        {:error, reason} ->
+          Logger.warning(
+            "Could not materialize pending group account invitation #{pending_invitation.id}: #{inspect(reason)}"
+          )
+      end
+    end)
+  end
+
+  defp ensure_direct_group_between_profiles(%Profile{} = profile, %Profile{} = other_profile) do
+    case get_or_create_direct_group(profile, other_profile) do
+      {:ok, _group} ->
+        :ok
+
+      {:error, :same_profile} ->
+        :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "Could not create direct group for profiles #{profile.id} and #{other_profile.id}: #{inspect(reason)}"
+        )
+    end
+  end
+
+  defp list_pending_group_account_invitations(%Account{} = account) do
+    from(invitation in GroupAccountInvitation,
+      where: invitation.account_id == ^account.id,
+      preload: [:group, :inviter],
+      order_by: [asc: invitation.inserted_at]
+    )
+    |> Repo.all()
   end
 
   defp direct_group_name(%Profile{} = first_profile, %Profile{} = second_profile) do
