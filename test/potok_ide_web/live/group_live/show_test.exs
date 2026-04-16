@@ -969,7 +969,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           sharing: :unique
         })
 
-      {:ok, _viewer_profile} =
+      {:ok, viewer_profile} =
         Social.create_profile_for_account(viewer_account, %{
           username: "edit-group-viewer",
           profile_picture_url: nil,
@@ -990,6 +990,12 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "is_public" => true,
           "has_public_chat" => false
         })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, viewer_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, viewer_profile)
 
       {:ok, owner_lv, _html} =
         conn
@@ -1036,8 +1042,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(viewer_lv, "#group-tab-edit-group")
       refute has_element?(viewer_lv, "#group-panel-edit-group")
       refute has_element?(viewer_lv, "#group-edit-form")
-
-      assert has_element?(viewer_lv, "#group-request-access")
+      assert has_element?(viewer_lv, "#group-panel-values")
     end
 
     test "shows public chat status and allows enabling it in the create-group form", %{conn: conn} do

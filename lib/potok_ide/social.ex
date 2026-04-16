@@ -394,8 +394,8 @@ defmodule PotokIde.Social do
   end
 
   def update_group(%Profile{} = editor, %Group{} = group, attrs) do
-    if not member_of_group?(editor, group) do
-      {:error, :not_a_group_member}
+    if editor.id != group.creator_id do
+      {:error, :not_group_creator}
     else
       group
       |> Group.update_changeset(Map.new(attrs))

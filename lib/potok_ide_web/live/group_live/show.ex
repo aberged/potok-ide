@@ -233,7 +233,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
               <div class="flex flex-row justify-end gap-2">
                 <Components.group_tab_button
-                  :if={@is_member and !@group.is_root}
+                  :if={can_edit_group?(@current_profile, @group) and !@group.is_root}
                   id="group-tab-edit-group"
                   tab="edit_group"
                   active_tab={@active_tab}
@@ -299,7 +299,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             value_parent_options={@value_parent_options}
           />
           <EditGroupTab.panel
-            :if={@is_member and @active_tab == "edit_group"}
+            :if={can_edit_group?(@current_profile, @group) and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
             description_details_open={@description_details_open}
             format_options={@format_options}
@@ -326,7 +326,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = Social.get_group!(id)
 
     is_member = Social.member_of_group?(current_profile, group)
-    active_tab = normalize_active_tab(Map.get(params, "tab"), group, is_member)
+    active_tab = normalize_active_tab(Map.get(params, "tab"), group, is_member, current_profile)
 
     if can_view_group?(group, is_member) do
       if connected?(socket) do
@@ -384,7 +384,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @impl true
   def handle_params(params, _uri, socket) do
     active_tab =
-      normalize_active_tab(Map.get(params, "tab"), socket.assigns.group, socket.assigns.is_member)
+      normalize_active_tab(
+        Map.get(params, "tab"),
+        socket.assigns.group,
+        socket.assigns.is_member,
+        socket.assigns.current_profile
+      )
 
     if active_tab == socket.assigns.active_tab do
       {:noreply, socket}
@@ -474,9 +479,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not socket.assigns.is_member do
-      {:reply, %{ok: false, error: gettext("You must be a group member to edit this group.")},
-       put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+    if not can_edit_group?(current_profile, group) do
+      {:reply, %{ok: false, error: gettext("Only the group creator can edit this group.")},
+       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
     else
       attrs = %{
         "description" => Map.get(params, "description", group.description || ""),
@@ -501,9 +506,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
              }
            }, socket}
 
-        {:error, :not_a_group_member} ->
-          {:reply, %{ok: false, error: gettext("You must be a group member to edit this group.")},
-           put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+        {:error, :not_group_creator} ->
+          {:reply, %{ok: false, error: gettext("Only the group creator can edit this group.")},
+           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:reply, %{ok: false, error: gettext("Could not update group description.")},
@@ -639,7 +644,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        to:
          group_tab_path(
            socket.assigns.group.id,
-           normalize_active_tab("group_home", socket.assigns.group, socket.assigns.is_member)
+           normalize_active_tab(
+             "group_home",
+             socket.assigns.group,
+             socket.assigns.is_member,
+             socket.assigns.current_profile
+           )
          )
      )}
   end
@@ -651,7 +661,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        to:
          group_tab_path(
            socket.assigns.group.id,
-           normalize_active_tab(tab, socket.assigns.group, socket.assigns.is_member)
+           normalize_active_tab(
+             tab,
+             socket.assigns.group,
+             socket.assigns.is_member,
+             socket.assigns.current_profile
+           )
          )
      )}
   end
@@ -816,21 +831,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("validate_edit_group", %{"group" => attrs}, socket) do
-    changeset =
-      socket.assigns.group
-      |> Group.update_changeset(attrs)
-      |> Map.put(:action, :validate)
+    if can_edit_group?(socket.assigns.current_profile, socket.assigns.group) do
+      changeset =
+        socket.assigns.group
+        |> Group.update_changeset(attrs)
+        |> Map.put(:action, :validate)
 
-    {:noreply, assign(socket, :edit_group_form, to_form(changeset))}
+      {:noreply, assign(socket, :edit_group_form, to_form(changeset))}
+    else
+      {:noreply,
+       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+    end
   end
 
   def handle_event("save_edit_group", %{"group" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not socket.assigns.is_member do
+    if not can_edit_group?(current_profile, group) do
       {:noreply,
-       put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
     else
       case Social.update_group(current_profile, group, attrs) do
         {:ok, updated_group} ->
@@ -841,9 +861,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
            |> put_flash(:info, gettext("Group updated."))
            |> refresh_group_data()}
 
-        {:error, :not_a_group_member} ->
+        {:error, :not_group_creator} ->
           {:noreply,
-           put_flash(socket, :error, gettext("You must be a group member to edit this group."))}
+           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply,
@@ -1080,7 +1100,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         normalize_active_tab(
           Map.get(socket.assigns, :active_tab),
           group,
-          socket.assigns.is_member
+          socket.assigns.is_member,
+          socket.assigns.current_profile
         )
 
     socket
@@ -1577,15 +1598,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
 
-  defp normalize_active_tab(tab, _group, _is_member)
+  defp normalize_active_tab(tab, _group, _is_member, _current_profile)
        when tab in ["values", "sub_groups", "members", "group_home"],
        do: tab
 
-  defp normalize_active_tab(tab, _group, true)
-       when tab in ["create_group", "edit_group", "invite_profile"],
+  defp normalize_active_tab(tab, _group, true, _current_profile)
+       when tab in ["create_group", "invite_profile"],
        do: tab
 
-  defp normalize_active_tab(_, group, _is_member), do: default_active_tab(group)
+  defp normalize_active_tab("edit_group", group, _is_member, current_profile)
+       when not is_nil(current_profile) do
+    if can_edit_group?(current_profile, group), do: "edit_group", else: default_active_tab(group)
+  end
+
+  defp normalize_active_tab(_, group, _is_member, _current_profile), do: default_active_tab(group)
+
+  defp can_edit_group?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
+  defp can_edit_group?(_, _group), do: false
 
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
