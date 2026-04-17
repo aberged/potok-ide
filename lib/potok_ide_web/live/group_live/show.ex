@@ -877,6 +877,42 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  def handle_event("delete_group_data_values", _params, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    if not can_edit_group?(current_profile, group) do
+      {:noreply,
+       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+    else
+      case Social.delete_group_data_values(current_profile, group) do
+        {:ok, 0} ->
+          {:noreply, put_flash(socket, :info, gettext("No data values to delete."))}
+
+        {:ok, deleted_count} ->
+          {:noreply,
+           socket
+           |> refresh_group_data()
+           |> put_flash(
+             :info,
+             ngettext(
+               "Deleted 1 data value.",
+               "Deleted %{count} data values.",
+               deleted_count,
+               count: deleted_count
+             )
+           )}
+
+        {:error, :not_group_creator} ->
+          {:noreply,
+           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+
+        {:error, _reason} ->
+          {:noreply, put_flash(socket, :error, gettext("Could not delete data values."))}
+      end
+    end
+  end
+
   def handle_event("delete_group", _params, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -1175,8 +1211,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_new_data_value(socket, previous_latest_data_value_id, group) do
     if previous_latest_data_value_id != socket.assigns.latest_data_value_id do
-      latest_data_value = Social.get_latest_data_value_for_group(group)
-      push_event(socket, "new_data_value", %{content: latest_data_value.content})
+      case Social.get_latest_data_value_for_group(group) do
+        %Value{} = latest_data_value ->
+          push_event(socket, "new_data_value", %{content: latest_data_value.content})
+
+        nil ->
+          socket
+      end
     else
       socket
     end

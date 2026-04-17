@@ -1120,6 +1120,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(owner_lv, "#group-tab-edit-group")
       assert has_element?(owner_lv, "#group-panel-edit-group")
       assert has_element?(owner_lv, "#group_group_picture_url-picker")
+      assert has_element?(owner_lv, "#group-delete-data-values-button")
 
       assert has_element?(
                owner_lv,
@@ -1155,6 +1156,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(viewer_lv, "#group-tab-edit-group")
       refute has_element?(viewer_lv, "#group-panel-edit-group")
       refute has_element?(viewer_lv, "#group-edit-form")
+      refute has_element?(viewer_lv, "#group-delete-data-values-button")
       assert has_element?(viewer_lv, "#group-panel-values")
     end
 
@@ -1426,6 +1428,68 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert_redirect(lv, ~p"/groups/#{root_group.id}")
       assert_raise Ecto.NoResultsError, fn -> Social.get_group!(group.id) end
+    end
+
+    test "allows the creator to delete only data values from the edit tab", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "deldata-live",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "delete-data-live-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "has_public_chat" => false
+        })
+
+      assert {:ok, _regular_value} =
+               Social.create_value(profile, group, %{
+                 "content" => "keep me",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _data_value_1} =
+               Social.create_value(profile, group, %{
+                 "content" => "data one",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert {:ok, _data_value_2} =
+               Social.create_value(profile, group, %{
+                 "content" => "data two",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      assert has_element?(lv, "#group-delete-data-values-button")
+      refute has_element?(lv, "#group-panel-values #group-delete-data-values-button")
+
+      lv
+      |> element("#group-delete-data-values-button")
+      |> render_click()
+
+      assert render(lv) =~ "Deleted 2 data values."
+      assert Social.count_group_data_values(group) == 0
+      assert Social.count_group_values(group) == 1
+      assert has_element?(lv, "#group-panel-edit-group")
     end
 
     test "keeps the group when deletion is blocked by child groups", %{conn: conn} do

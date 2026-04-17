@@ -1158,6 +1158,122 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "delete_group_data_values/2" do
+    test "allows the group creator to delete all data values without deleting regular values" do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "deldata-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "deldata-mem",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "delete-data-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, member_profile)
+
+      assert {:ok, regular_value} =
+               Social.create_value(owner_profile, group, %{
+                 "content" => "keep me",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _owner_data_value} =
+               Social.create_value(owner_profile, group, %{
+                 "content" => "owner data",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert {:ok, _member_data_value} =
+               Social.create_value(member_profile, group, %{
+                 "content" => "member data",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert {:ok, 2} = Social.delete_group_data_values(owner_profile, group)
+
+      assert [] == Social.list_group_data_values(group)
+      assert [%{id: retained_id}] = Social.list_group_values(group)
+      assert retained_id == regular_value.id
+    end
+
+    test "rejects deleting group data values for a non-creator member" do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "deldata-own2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "deldata-mem2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "delete-data-group-2",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, member_profile)
+
+      assert {:ok, _data_value} =
+               Social.create_value(owner_profile, group, %{
+                 "content" => "owner data",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert {:error, :not_group_creator} = Social.delete_group_data_values(member_profile, group)
+      assert Social.count_group_data_values(group) == 1
+    end
+  end
+
   defp valid_push_subscription_attrs do
     {public_key, _private_key} = :crypto.generate_key(:ecdh, :prime256v1)
 

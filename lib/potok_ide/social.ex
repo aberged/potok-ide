@@ -846,6 +846,22 @@ defmodule PotokIde.Social do
     end
   end
 
+  def delete_group_data_values(%Profile{} = actor, %Group{} = group) do
+    with :ok <- ensure_group_creator(actor, group) do
+      {deleted_count, _} =
+        from(v in Value,
+          where: v.group_id == ^group.id and v.is_data == true
+        )
+        |> Repo.delete_all()
+
+      if deleted_count > 0 do
+        broadcast_group_updated(group)
+      end
+
+      {:ok, deleted_count}
+    end
+  end
+
   # ---------
   # Queries
   # ---------

@@ -218,16 +218,31 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           </details>
 
           <div class="flex flex-wrap items-center justify-between gap-3">
-            <button
-              :if={!@group.is_root}
-              id="group-delete-button"
-              type="button"
-              phx-click="delete_group"
-              data-confirm={gettext("Are you sure you want to delete this group?")}
-              class="inline-flex items-center gap-2 rounded-2xl border border-error/30 bg-error/10 px-4 py-2 text-sm font-medium text-error transition hover:bg-error/15 focus:outline-none focus:ring-2 focus:ring-error/30"
-            >
-              <.icon name="hero-trash" class="size-4" /> <span>{gettext("Delete group")}</span>
-            </button>
+            <div class="flex flex-wrap items-center gap-3">
+              <button
+                id="group-delete-data-values-button"
+                type="button"
+                phx-click="delete_group_data_values"
+                data-confirm={
+                  gettext("Are you sure you want to delete all data values in this group?")
+                }
+                class="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              >
+                <.icon name="hero-trash" class="size-4" />
+                <span>{gettext("Delete Data Values")}</span>
+              </button>
+
+              <button
+                :if={!@group.is_root}
+                id="group-delete-button"
+                type="button"
+                phx-click="delete_group"
+                data-confirm={gettext("Are you sure you want to delete this group?")}
+                class="inline-flex items-center gap-2 rounded-2xl border border-error/30 bg-error/10 px-4 py-2 text-sm font-medium text-error transition hover:bg-error/15 focus:outline-none focus:ring-2 focus:ring-error/30"
+              >
+                <.icon name="hero-trash" class="size-4" /> <span>{gettext("Delete group")}</span>
+              </button>
+            </div>
             <.button phx-disable-with={gettext("Saving...")} variant="primary">
               {gettext("Save changes")}
             </.button>
