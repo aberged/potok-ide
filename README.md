@@ -275,16 +275,25 @@ The router uses separate LiveView sessions for:
 
 ## Frontend Hook APIs
 
-The group description panel exposes a small browser API through the `GroupDescriptionActions` LiveView hook in `assets/js/app.js`.
+The group description panel exposes a browser API through the `GroupDescriptionActions` LiveView hook in `assets/js/app.js`.
 
-Available functions on `window.Potok` while the group description panel is mounted:
+The API is attached to the hooked DOM element as `element.potok` while the panel is mounted.
 
-* `insertGroupValue(content, options)` pushes a `create_data_value` event.
-* `updateGroupDescription(description, options)` pushes an `update_group_description` event.
-* `getGroupDescription()` returns the current raw group description and description format from the hook dataset.
-* `getGroupDataValues()` pushes a `list_group_data_values` event and returns the server response.
+Available functions:
 
-`getGroupDescription()` resolves to an object shaped like:
+* `insertGroupValue(content, options)` pushes a `create_data_value` event and returns the server reply.
+  * `content` is normalized to a string.
+  * `options.contentFormat` / `options.content_format` controls `value.content_format` (default: `"markdown"`).
+* `updateGroupDescription(description, options)` pushes an `update_group_description` event and returns the server reply.
+  * `description` is normalized to a string.
+  * `options.descriptionFormat` / `options.description_format` controls `description_format`.
+  * If no format is provided, the hook uses `data-description-format` from the element and falls back to `"html"`.
+* `getGroupDescription()` returns the current raw group description and format from hook dataset attributes.
+* `getGroupDataValues()` pushes a `list_group_data_values` event and returns the server reply.
+* `getCurrentProfile()` returns the parsed JSON object from `data-current-profile`, or `null` if missing/invalid.
+* `setNewValueCallback(fn)` registers a callback invoked when the browser receives a `phx:new_data_value` event.
+
+`getGroupDescription()` resolves to:
 
 ```js
 {
