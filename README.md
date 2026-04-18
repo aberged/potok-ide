@@ -155,13 +155,16 @@ The default development configuration includes:
 
 Production mail delivery is configured at runtime through `MAILER_ADAPTER`.
 
+If `MAILER_ADAPTER` is omitted, the app defaults to `mailgun`.
+
 For Gmail API delivery:
 
 * set `MAILER_ADAPTER=gmail`
 * set `MAILER_FROM_EMAIL`
-* optionally set `MAILER_FROM_NAME`
+* optionally set `MAILER_FROM_NAME` (defaults to `Potok`)
 * either set `GMAIL_API_ACCESS_TOKEN`
-* or set all of `GMAIL_CLIENT_ID`, `GMAIL_CLIENT_SECRET`, and `GMAIL_REFRESH_TOKEN`
+* or set both `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET`
+* optionally set `GMAIL_REFRESH_TOKEN` when needed for initial token bootstrap
 
 If you use the refresh token flow, the application exchanges the refresh token for a short-lived access token on each email send through Google's OAuth token endpoint. You can override that endpoint with `GMAIL_TOKEN_URL` if needed.
 
@@ -398,25 +401,36 @@ PHX_SERVER=true _build/prod/rel/potok_ide/bin/server
 
 ## Production Configuration
 
-Production uses `Swoosh.Adapters.Mailgun` and expects runtime configuration from environment variables.
+Production configuration is loaded from runtime environment variables.
 
-Required environment variables:
+Required in all production setups:
 
 * `DATABASE_URL`
 * `SECRET_KEY_BASE`
-* `PHX_HOST`
+* `MAILER_FROM_EMAIL`
+
+Required when using Mailgun (`MAILER_ADAPTER=mailgun`, default):
+
 * `MAILGUN_API_KEY`
 * `MAILGUN_DOMAIN`
-* `MAILER_FROM_EMAIL`
+
+Required when using Gmail (`MAILER_ADAPTER=gmail`):
+
+* either `GMAIL_API_ACCESS_TOKEN`
+* or both `GMAIL_CLIENT_ID` and `GMAIL_CLIENT_SECRET`
 
 Optional environment variables:
 
+* `MAILER_ADAPTER` defaults to `mailgun`
+* `PHX_HOST` defaults to `example.com`
 * `PORT` defaults to `4000`
 * `POOL_SIZE` defaults to `10`
 * `ECTO_IPV6` enables IPv6 socket options when set to `true` or `1`
 * `DNS_CLUSTER_QUERY` configures distributed node discovery
-* `MAILER_FROM_NAME` defaults to `PotokIde`
+* `MAILER_FROM_NAME` defaults to `Potok`
 * `MAILGUN_BASE_URL` can be set to `https://api.eu.mailgun.net/v3` for EU Mailgun accounts
+* `GMAIL_TOKEN_URL` overrides the Gmail OAuth token endpoint
+* `GMAIL_REFRESH_TOKEN` can be provided for initial Gmail token bootstrap
 * `PHX_SERVER=true` enables the web server for releases if your runtime does not already set it
 
 Operational notes:
@@ -435,7 +449,7 @@ The repository already contains `fly.toml` with these defaults:
 * runtime host: `potok-ide.fly.dev`
 * internal service port: `8080`
 * release command: `/app/bin/migrate`
-* preconfigured runtime env: `PHX_HOST=potok-ide.fly.dev`, `PORT=8080`, `MAILER_FROM_NAME=Potokide`
+* preconfigured runtime env: `PHX_HOST=potok-ide.fly.dev`, `PORT=8080`, `MAILER_FROM_NAME=Potok`
 
 Example Fly.io secrets setup:
 
