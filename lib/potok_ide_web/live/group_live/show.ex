@@ -1558,7 +1558,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_value_parent_options(socket, group, active_tab) do
     if needs_value_parent_options?(socket, active_tab) do
       socket
-      |> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
+      # skip loading parent options
+      #|> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
     else
       socket
     end
