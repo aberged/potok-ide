@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           id="group-values-feed"
           phx-hook=".ValuesFeed"
           class={[
-            "flex h-[calc(100dvh-15rem)] flex-col gap-4 overflow-y-auto px-4 py-5 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top))]",
+            "flex h-[calc(100dvh-15rem)] flex-col gap-4 overflow-y-auto px-4 py-5 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+1rem)] sm:px-6",
             if(@editing_value, do: "pb-[16rem]", else: "")
           ]}
         >

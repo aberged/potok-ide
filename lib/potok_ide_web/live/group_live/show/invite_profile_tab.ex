@@ -16,7 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem)] max-w-lg overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-lg overflow-y-auto">
         <h3 class="card-title">{gettext("Invite to group")}</h3>
         <.form for={@invite_form} id={"group-invite-form-#{@invite_form_version}"} phx-submit="invite">
           <.input

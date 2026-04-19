@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
         <h3 :if={!@group.is_direct} class="card-title mb-2">{gettext("Members")}</h3>
 
         <div class=" flex flex-row">

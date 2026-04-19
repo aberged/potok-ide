@@ -15,7 +15,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     ~H"""
     <div
       id="group-panel-sub-groups"
-      class="card relative h-[calc(100dvh-8rem)] max-w-dvw px-2 lg:max-w-6xl"
+      class="card relative h-[calc(100dvh-8rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-dvw px-2 lg:max-w-6xl"
     >
       <Components.group_path
         :if={!@group.is_root}
@@ -24,7 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="shadow-md"
       />
 
-      <div class="p-2 pb-4 h-[100dvh] overflow-y-auto">
+      <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
             :if={@pagination.loaded_count == 0}
@@ -65,7 +65,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         phx-click="switch_tab"
         phx-value-tab="create_group"
         aria-label={gettext("Create sub-group")}
-        class="absolute ml-auto mr-6 right-0 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg shadow-primary/30 transition-transform duration-200 bottom-6 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
+        class="absolute bottom-[1.5rem] right-0 ml-auto mr-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
       >
         <.icon name="hero-plus" class="size-6" />
       </button>

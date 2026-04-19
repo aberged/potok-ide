@@ -18,7 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
         <h3 class="card-title">{gettext("Edit group")}</h3>
 
         <.form

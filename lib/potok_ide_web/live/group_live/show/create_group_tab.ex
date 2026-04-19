@@ -11,7 +11,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
   def panel(assigns) do
     ~H"""
     <div id="group-panel-create-group" class="card">
-      <div class="card-body h-[calc(100dvh-8rem)] overflow-y-auto">
+      <div class="card-body h-[calc(100dvh-8rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
         <h3 class="card-title">{gettext("Create sub-group")}</h3>
 
         <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
