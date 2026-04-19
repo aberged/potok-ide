@@ -47,14 +47,14 @@ defmodule PotokIde.Accounts.AccountNotifier do
   @doc """
   Deliver instructions to log in with a magic link.
   """
-  def deliver_login_instructions(account, url) do
+  def deliver_login_instructions(account, web_url, app_url \\ nil) do
     case account do
-      %Account{confirmed_at: nil} -> deliver_confirmation_instructions(account, url)
-      _ -> deliver_magic_link_instructions(account, url)
+      %Account{confirmed_at: nil} -> deliver_confirmation_instructions(account, web_url, app_url)
+      _ -> deliver_magic_link_instructions(account, web_url, app_url)
     end
   end
 
-  defp deliver_magic_link_instructions(account, url) do
+  defp deliver_magic_link_instructions(account, web_url, app_url) do
     deliver(account.email, gettext("Log in instructions"), """
 
     ==============================
@@ -63,7 +63,9 @@ defmodule PotokIde.Accounts.AccountNotifier do
 
     #{gettext("You can log into your account by visiting the URL below:")}
 
-    #{url}
+    #{web_url}
+
+    #{app_login_section(app_url)}
 
     #{gettext("If you didn't request this email, please ignore this.")}
 
@@ -71,7 +73,7 @@ defmodule PotokIde.Accounts.AccountNotifier do
     """)
   end
 
-  defp deliver_confirmation_instructions(account, url) do
+  defp deliver_confirmation_instructions(account, web_url, app_url) do
     deliver(account.email, gettext("Confirmation instructions"), """
 
     ==============================
@@ -80,11 +82,24 @@ defmodule PotokIde.Accounts.AccountNotifier do
 
     #{gettext("You can confirm your account by visiting the URL below:")}
 
-    #{url}
+    #{web_url}
+
+    #{app_login_section(app_url)}
 
     #{gettext("If you didn't create an account with us, please ignore this.")}
 
     ==============================
     """)
+  end
+
+  defp app_login_section(nil), do: ""
+
+  defp app_login_section(app_url) do
+    """
+
+    #{gettext("If you use the Potok Android app, you can open this link there:")}
+
+    #{app_url}
+    """
   end
 end

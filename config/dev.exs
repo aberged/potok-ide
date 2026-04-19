@@ -1,5 +1,11 @@
 import Config
 
+dev_http_ip =
+  case System.get_env("PHX_DEV_BIND_ALL") do
+    value when value in ["1", "true", "TRUE", "yes", "YES"] -> {0, 0, 0, 0}
+    _ -> {127, 0, 0, 1}
+  end
+
 # Configure your database
 config :potok_ide, PotokIde.Repo,
   username: "postgres",
@@ -18,8 +24,8 @@ config :potok_ide, PotokIde.Repo,
 # to bundle .js and .css sources.
 config :potok_ide, PotokIdeWeb.Endpoint,
   # Binding to loopback ipv4 address prevents access from other machines.
-  # Change to `ip: {0, 0, 0, 0}` to allow access from other machines.
-  http: [ip: {127, 0, 0, 1}],
+  # Set PHX_DEV_BIND_ALL=true to allow access from other machines.
+  http: [ip: dev_http_ip],
   # Browsers routinely abort in-flight requests during back/forward navigation.
   # Treat those connection drops as silent terminations in development.
   thousand_island_options: [silent_terminate_on_error: true],

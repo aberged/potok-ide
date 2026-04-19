@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Potok</string>
+    <string name="title_activity_main">Potok</string>
+    <string name="package_name">com.potok.ide</string>
+    <string name="custom_url_scheme">com.potok.ide</string>
+</resources>

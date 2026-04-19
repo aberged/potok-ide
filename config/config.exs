@@ -24,6 +24,8 @@ config :potok_ide,
   ecto_repos: [PotokIde.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+config :potok_ide, :android_app_links, package_name: "com.potok.ide"
+
 # Configure the endpoint
 config :potok_ide, PotokIdeWeb.Endpoint,
   url: [host: "localhost"],

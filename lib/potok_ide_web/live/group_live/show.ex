@@ -1555,11 +1555,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp maybe_load_value_parent_options(socket, group, active_tab) do
+  defp maybe_load_value_parent_options(socket, _group, active_tab) do
     if needs_value_parent_options?(socket, active_tab) do
       socket
       # skip loading parent options
-      #|> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
+      # |> assign(:value_parent_options, value_parent_options(Social.list_group_values(group)))
     else
       socket
     end
@@ -1673,17 +1673,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp needs_value_parent_options?(socket, active_tab) do
     socket.assigns.is_member and active_tab == "create_group"
-  end
-
-  defp value_parent_options(values) do
-    Enum.map(values, fn v ->
-      label =
-        v.content
-        |> String.replace(~r/\s+/, " ")
-        |> String.slice(0, 80)
-
-      {"#{v.creator.username}: #{label}", v.id}
-    end)
   end
 
   defp home_page_options do

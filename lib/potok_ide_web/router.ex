@@ -28,6 +28,12 @@ defmodule PotokIdeWeb.Router do
     plug :fetch_current_scope_for_account
   end
 
+  scope "/.well-known", PotokIdeWeb do
+    pipe_through :api
+
+    get "/assetlinks.json", AssetLinksController, :show
+  end
+
   scope "/", PotokIdeWeb do
     pipe_through :browser
 

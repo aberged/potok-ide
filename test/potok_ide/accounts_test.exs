@@ -494,6 +494,9 @@ defmodule PotokIde.AccountsTest do
         end)
 
       assert email.from == {"Potok", "no-reply@example.com"}
+      assert email.text_body =~ "https://example.com/accounts/log-in/"
+      assert email.text_body =~ "?app=1"
+      refute email.text_body =~ "potok://login/"
     end
   end
 

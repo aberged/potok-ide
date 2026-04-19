@@ -467,7 +467,14 @@ defmodule PotokIde.Accounts do
       when is_function(magic_link_url_fun, 1) do
     {encoded_token, account_token} = AccountToken.build_email_token(account, "login")
     Repo.insert!(account_token)
-    AccountNotifier.deliver_login_instructions(account, magic_link_url_fun.(encoded_token))
+
+    web_url = magic_link_url_fun.(encoded_token)
+
+    AccountNotifier.deliver_login_instructions(
+      account,
+      web_url,
+      build_magic_link_app_url(web_url)
+    )
   end
 
   @doc """
@@ -476,6 +483,22 @@ defmodule PotokIde.Accounts do
   def delete_account_session_token(token) do
     Repo.delete_all(from(AccountToken, where: [token: ^token, context: "session"]))
     :ok
+  end
+
+  defp build_magic_link_app_url(web_url) do
+    uri = URI.parse(web_url)
+
+    query =
+      uri.query
+      |> case do
+        nil -> %{}
+        value -> URI.decode_query(value)
+      end
+      |> Map.put("app", "1")
+      |> URI.encode_query()
+
+    %URI{uri | query: query}
+    |> URI.to_string()
   end
 
   defp deliver_push_notification_to_subscription(%PushSubscription{} = subscription, payload) do

@@ -23,6 +23,35 @@ end
 config :potok_ide, PotokIdeWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+parse_env_list = fn
+  nil ->
+    nil
+
+  value ->
+    value
+    |> String.split(~r/[\r\n,]+/, trim: true)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+end
+
+android_app_links = Application.get_env(:potok_ide, :android_app_links, [])
+
+android_app_links =
+  android_app_links
+  |> Keyword.put(
+    :package_name,
+    System.get_env("ANDROID_APP_LINK_PACKAGE") ||
+      Keyword.get(android_app_links, :package_name, "com.potok.ide")
+  )
+  |> then(fn config ->
+    case parse_env_list.(System.get_env("ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS")) do
+      nil -> config
+      fingerprints -> Keyword.put(config, :sha256_cert_fingerprints, fingerprints)
+    end
+  end)
+
+config :potok_ide, :android_app_links, android_app_links
+
 web_push_vapid_subject = System.get_env("WEB_PUSH_VAPID_SUBJECT")
 web_push_vapid_public_key = System.get_env("WEB_PUSH_VAPID_PUBLIC_KEY")
 web_push_vapid_private_key = System.get_env("WEB_PUSH_VAPID_PRIVATE_KEY")

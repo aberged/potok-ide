@@ -124,6 +124,67 @@ The seed script currently only contains the default template comments, so a fres
 * `mix assets.build` rebuilds Tailwind and esbuild assets.
 * `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
 
+### Capacitor wrapper
+
+Potok now includes a Capacitor wrapper in `assets/` for Android.
+
+Important architecture note:
+
+* Potok is a Phoenix LiveView application, so the Capacitor shell does **not** run a standalone static build of the app.
+* The native WebView loads a running Phoenix server through Capacitor's `server.url` setting.
+* By default the Capacitor config uses `http://10.0.2.2:4000`, which is the Android emulator alias for the host machine's localhost.
+* Magic-link emails now include both the normal web URL and an Android App Link using `https://potok-ide.fly.dev/accounts/log-in/<token>?app=1`.
+
+Files and commands:
+
+* Capacitor config: `assets/capacitor.config.ts`
+* Android project: `assets/android`
+* Sync native project after config changes: `cd assets && npm run cap:sync:android`
+* Open Android Studio: `cd assets && npm run cap:open:android`
+* Run on a connected emulator or device: `cd assets && npm run cap:run:android`
+
+Development workflow:
+
+1. Start Phoenix locally with `mix phx.server`.
+1. In another shell, set `CAPACITOR_SERVER_URL` if you are not using the Android emulator default.
+1. From `assets/`, run `npm run cap:sync:android`.
+1. Open or run the Android app with one of the Capacitor scripts above.
+
+Examples:
+
+```powershell
+# Android emulator against local Phoenix server
+Set-Location assets
+$env:CAPACITOR_SERVER_URL = "http://10.0.2.2:4000"
+npm run cap:sync:android
+npm run cap:open:android
+```
+
+```powershell
+# Physical device on the same LAN
+$env:PHX_DEV_BIND_ALL = "true"
+mix phx.server
+
+Set-Location assets
+$env:CAPACITOR_SERVER_URL = "http://192.168.1.50:4000"
+npm run cap:sync:android
+npm run cap:run:android
+```
+
+For production, point `CAPACITOR_SERVER_URL` at your deployed HTTPS endpoint before syncing.
+
+Magic-link login in the Android app:
+
+1. Start the Capacitor app against the same backend you want to use for login.
+1. Request a magic link from the login screen in the app.
+1. In the email, tap the `https://potok-ide.fly.dev/accounts/log-in/...?...` app link to reopen the Potok app.
+1. The app will navigate its WebView to the existing `/accounts/log-in/:token` screen on your configured backend.
+1. Confirm the login on that screen so the Phoenix session cookie is created inside the app WebView.
+
+Older `potok://login/...` links are still handled by the app for backward compatibility, but new emails use standard HTTPS Android App Links so they are clickable in mail clients.
+
+If you want to add iOS later, run `npm install @capacitor/ios` and `npx cap add ios` from `assets/` on macOS.
+
 ### PWA push notifications
 
 Potok now includes Web Push subscription support for the installable PWA.
@@ -467,7 +528,10 @@ fly secrets set SECRET_KEY_BASE=your-secret
 fly secrets set DATABASE_URL=ecto://USER:PASS@HOST/DATABASE
 fly secrets set MAILGUN_API_KEY=your-key MAILGUN_DOMAIN=mg.example.com MAILER_FROM_EMAIL=no-reply@mg.example.com
 fly secrets set MAILER_FROM_NAME="Potok"
+fly secrets set ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS="your-signing-cert-sha256"
 ```
+
+For Android App Links, `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` should contain one or more comma-separated SHA-256 certificate fingerprints for the APK signing keys that should be allowed to open `https://potok-ide.fly.dev/accounts/log-in/...` inside the app. Use your debug key for `npm run cap:run:android` testing and add your release key fingerprint before shipping a signed release.
 
 Deploy with:
 

@@ -10,13 +10,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   def panel(assigns) do
     ~H"""
-    <div class="h-[calc(100dvh-8rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw lg:max-w-6xl px-2">
+    <div class="h-[calc(100dvh-8rem)] max-w-dvw px-2 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+4rem)] lg:max-w-6xl">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md sticky"
       />
-      <div class="h-[calc(100dvh-12rem)] pb-[calc(env(safe-area-inset-bottom,0px)+env(safe-area-inset-top,0px)+4rem)] max-w-dvw lg:max-w-6xl overflow-y-auto">
+      <div class="h-[calc(100dvh-12rem)] max-w-dvw overflow-y-auto pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+4rem)] lg:max-w-6xl">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"

@@ -18,6 +18,8 @@
 // To load it, simply add a second `<link>` to your `root.html.heex` file.
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
+import {App} from "@capacitor/app"
+import {Capacitor} from "@capacitor/core"
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
@@ -711,6 +713,95 @@ const MarkdownEditor = {
   },
 }
 
+const APP_LINK_HOST = "potok-ide.fly.dev"
+const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
+
+const parseTokenFromLoginPath = pathname => {
+  const match = pathname.match(APP_LINK_PATH_PATTERN)
+
+  if (!match) {
+    return null
+  }
+
+  const token = decodeURIComponent(match[1] || "").trim()
+
+  return token || null
+}
+
+const parseCapacitorMagicLinkToken = urlString => {
+  if (!urlString) {
+    return null
+  }
+
+  try {
+    const url = new URL(urlString)
+
+    if (url.protocol === "potok:" && url.hostname === "login") {
+      const token = url.pathname.replace(/^\/+/, "").trim()
+
+      return token || null
+    }
+
+    if (url.protocol !== "https:") {
+      return null
+    }
+
+    const allowedHosts = new Set([APP_LINK_HOST, window.location.hostname].filter(Boolean))
+
+    if (!allowedHosts.has(url.hostname)) {
+      return null
+    }
+
+    return parseTokenFromLoginPath(url.pathname)
+  } catch (_error) {
+    return null
+  }
+}
+
+const openMagicLinkInAppSession = token => {
+  const normalizedToken = typeof token === "string" ? token.trim() : ""
+
+  if (!normalizedToken) {
+    return
+  }
+
+  const targetUrl = new URL(`/accounts/log-in/${encodeURIComponent(normalizedToken)}`, window.location.origin)
+
+  if (window.location.href === targetUrl.toString()) {
+    window.location.reload()
+    return
+  }
+
+  window.location.assign(targetUrl.toString())
+}
+
+const handleCapacitorMagicLink = urlString => {
+  const token = parseCapacitorMagicLinkToken(urlString)
+
+  if (!token) {
+    return false
+  }
+
+  openMagicLinkInAppSession(token)
+  return true
+}
+
+const registerCapacitorMagicLinks = () => {
+  if (!Capacitor.isNativePlatform()) {
+    return
+  }
+
+  void App.addListener("appUrlOpen", ({url}) => {
+    handleCapacitorMagicLink(url)
+  })
+
+  void App.getLaunchUrl()
+    .then(result => {
+      handleCapacitorMagicLink(result?.url || "")
+    })
+    .catch(() => {})
+}
+
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
@@ -903,6 +994,8 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
   rootGroupBadge.hidden = count <= 0
   rootGroupBadge.textContent = count > 999 ? "999+" : String(count)
 })
+
+registerCapacitorMagicLinks()
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

@@ -12,7 +12,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Potok" />
     <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
-     <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" href="/images/pwa/apple-touch-icon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/images/pwa/icon-152.png" />
@@ -20,7 +20,7 @@
     <link phx-track-static rel="stylesheet" href={~p"/assets/css/app.css"} />
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
-    
+
     <script>
       (() => {
         const setTheme = (theme) => {
@@ -41,10 +41,10 @@
       })();
     </script>
   </head>
-  
+
   <body class="min-h-[100dvh] overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
-    <div class="flex flex-col relative min-h-[100dvh] max-h-[100dvh] overflow-clip">
-      <nav class="sticky top-0 z-100">
+    <div class="relative flex min-h-dvh max-h-dvh flex-col overflow-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
+      <nav class="sticky top-(--app-safe-area-top) z-100">
         <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
           <% profile = assigns[:current_profile] %> <% profile_picture_url =
             if profile && is_binary(profile.profile_picture_url) do
@@ -74,12 +74,12 @@
                 {@current_scope.account.email}
               </div>
             <% end %>
-            
+
             <div class="mb-4">
               <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                 {gettext("Navigation")}
               </div>
-              
+
               <div class="flex flex-col gap-2" data-drawer-nav>
                 <%= if @current_scope do %>
                   <.link
@@ -133,13 +133,13 @@
                 <% end %>
               </div>
             </div>
-            
+
             <%= if @current_scope do %>
               <div class="mb-4 border-t border-base-300/70 pt-4">
                 <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                   {gettext("Account")}
                 </div>
-                
+
                 <div class="flex flex-col gap-2" data-drawer-nav>
                   <.link
                     href={~p"/accounts/settings"}
@@ -162,12 +162,12 @@
                 </div>
               </div>
             <% end %>
-            
+
             <div class="border-t border-base-300/70 pt-4">
               <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
                 {gettext("Preferences")}
               </div>
-              
+
               <div class="space-y-4">
                 <.locale_switcher
                   current_locale={assigns[:current_locale]}
@@ -175,7 +175,7 @@
                 /> <.theme_toggle />
               </div>
             </div>
-            
+
             <%!-- <div class="mt-4 border-t border-base-300/70 pt-4">
                 >
                   {gettext("GitHub")}
@@ -189,7 +189,7 @@
               </div>
             </div> --%>
           </.header_menu>
-          
+
           <.link
             id="nav-root-group-link"
             href={~p"/"}
@@ -298,8 +298,8 @@
           </div>
         </div>
       </nav>
-      
-      <div class="flex flex-1 relative z-0 justify-center max-w-screen">{@inner_content}</div>
+
+      <div class="relative z-0 flex max-w-screen flex-1 justify-center">{@inner_content}</div>
     </div>
   </body>
 </html>

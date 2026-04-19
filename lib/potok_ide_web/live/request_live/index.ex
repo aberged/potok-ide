@@ -16,11 +16,11 @@ defmodule PotokIdeWeb.RequestLive.Index do
             {gettext("Pending group access requests that your current profile can approve.")}
           </:subtitle>
         </.header>
-        
+
         <div :if={@requests == []} class="text-base-content/70">
           {gettext("No pending approval requests.")}
         </div>
-        
+
         <div
           :for={request <- @requests}
           id={"approval-request-#{request.id}"}
@@ -44,9 +44,10 @@ defmodule PotokIdeWeb.RequestLive.Index do
             <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
               <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
                 {gettext("Pending")}
-              </span> <span>{gettext("Review this access request for the selected group.")}</span>
+              </span>
+              <span>{gettext("Review this access request for the selected group.")}</span>
             </div>
-            
+
             <div class="flex flex-wrap items-center justify-between gap-3">
               <div class="text-sm text-base-content/70">
                 {gettext("Requested on")}
@@ -56,7 +57,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                   class="ml-1 text-xs font-thin italic"
                 />
               </div>
-              
+
               <div class="flex items-center gap-2">
                 <button
                   id={"request-accept-#{request.id}"}
