@@ -144,17 +144,34 @@ defmodule PotokIde.PushNotifications.FCM do
   defp build_message_body(%PushSubscription{} = subscription, payload, credentials) do
     title = payload_value(payload, :title)
     body = payload_value(payload, :body)
+    image = payload_value(payload, [:android_image, :image])
     tag = payload_value(payload, :tag)
+    icon = "ic_launcher_round"#android_icon_value(payload)
+    color = payload_value(payload, [:android_color, :color])
+    sound = payload_value(payload, [:android_sound, :sound])
+    click_action = payload_value(payload, [:android_click_action, :click_action, :clickAction])
+    ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
+    collapse_key = payload_value(payload, [:android_collapse_key, :collapse_key, :collapseKey])
 
-    notification = notification_payload(title, body)
+    notification = notification_payload(title, body, image)
 
-    android_payload = %{
-      priority: "high",
-      notification:
-        %{}
-        |> maybe_put(:channel_id, credentials.channel_id)
-        |> maybe_put(:tag, tag)
-    }
+    android_notification =
+      %{}
+      |> maybe_put(:channel_id, credentials.channel_id)
+      |> maybe_put(:tag, tag)
+      |> maybe_put(:icon, icon)
+      |> maybe_put(:color, color)
+      |> maybe_put(:sound, sound)
+      |> maybe_put(:click_action, click_action)
+      |> maybe_put(:image, image)
+
+    android_payload =
+      %{
+        priority: "high"
+      }
+      |> maybe_put(:ttl, ttl)
+      |> maybe_put(:collapse_key, collapse_key)
+      |> maybe_put(:notification, android_notification, map_size(android_notification) > 0)
 
     {:ok,
      %{
@@ -164,7 +181,7 @@ defmodule PotokIde.PushNotifications.FCM do
            data: stringify_payload(payload)
          }
          |> maybe_put(:notification, notification)
-         |> Map.put(:android, android_payload)
+         |> maybe_put(:android, android_payload, map_size(android_payload) > 0)
      }}
   end
 
@@ -211,8 +228,15 @@ defmodule PotokIde.PushNotifications.FCM do
   defp stringify_value(value) when is_boolean(value) or is_number(value), do: to_string(value)
   defp stringify_value(value), do: Jason.encode!(value)
 
-  defp notification_payload(nil, nil), do: nil
-  defp notification_payload(title, body), do: %{title: title || "Potok", body: body || ""}
+  defp notification_payload(nil, nil, nil), do: nil
+
+  defp notification_payload(title, body, image) do
+    %{
+      title: title || "Potok",
+      body: body || ""
+    }
+    |> maybe_put(:image, image)
+  end
 
   defp message_url(project_id),
     do: "https://fcm.googleapis.com/v1/projects/#{project_id}/messages:send"
@@ -269,12 +293,57 @@ defmodule PotokIde.PushNotifications.FCM do
     |> Base.url_encode64(padding: false)
   end
 
+  defp payload_value(payload, keys) when is_list(keys) do
+    Enum.find_value(keys, &payload_value(payload, &1))
+  end
+
   defp payload_value(payload, key) do
     Map.get(payload, key) || Map.get(payload, Atom.to_string(key))
   end
 
+  defp android_icon_value(payload) do
+    case payload_value(payload, [:android_icon, :icon]) do
+      value when is_binary(value) ->
+        case String.trim(value) do
+          "" ->
+            nil
+
+          trimmed ->
+            if Regex.match?(~r/^[a-zA-Z0-9_]+$/, trimmed), do: trimmed, else: nil
+        end
+
+      _value ->
+        nil
+    end
+  end
+
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
+
+  defp maybe_put(map, _key, _value, false), do: map
+  defp maybe_put(map, key, value, true), do: Map.put(map, key, value)
+
+  defp duration_value(value) when is_integer(value) and value >= 0,
+    do: Integer.to_string(value) <> "s"
+
+  defp duration_value(value) when is_float(value) and value >= 0,
+    do: :erlang.float_to_binary(value, [:compact]) <> "s"
+
+  defp duration_value(value) when is_binary(value) do
+    case String.trim(value) do
+      "" ->
+        nil
+
+      trimmed ->
+        cond do
+          Regex.match?(~r/^\d+(\.\d+)?s$/, trimmed) -> trimmed
+          Regex.match?(~r/^\d+(\.\d+)?$/, trimmed) -> trimmed <> "s"
+          true -> trimmed
+        end
+    end
+  end
+
+  defp duration_value(_value), do: nil
 
   defp validate_url(url, message) when is_binary(url) do
     case URI.parse(url) do
