@@ -7,7 +7,14 @@ defmodule PotokIdeWeb.AccountLive.Login do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4 px-6 pt-4">
+      <div class="mx-auto max-w-sm space-y-4 px-6 pt-4 pb-8">
+        <div class="flex justify-center">
+          <img
+            src={~p"/images/icon-transparent.svg"}
+            alt="Potok"
+            class="h-35 w-35"
+          />
+        </div>
         <div class="text-center">
           <.header>
             <p>{gettext("Log in")}</p>
@@ -20,7 +27,6 @@ defmodule PotokIdeWeb.AccountLive.Login do
             </:subtitle>
           </.header>
         </div>
-
         <div :if={local_mail_adapter?()} class="alert alert-info">
           <.icon name="hero-information-circle" class="size-6 shrink-0" />
           <div>

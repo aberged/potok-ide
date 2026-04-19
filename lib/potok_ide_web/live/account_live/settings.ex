@@ -82,7 +82,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           data-vapid-public-key={@push_vapid_public_key || ""}
           data-subscribe-url={~p"/accounts/push-subscriptions"}
           data-test-url={~p"/accounts/push-subscriptions/test"}
-          class="rounded-[2rem] border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
+          class="rounded-4xl border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
         >
           <div class="space-y-4">
             <div class="space-y-1">
@@ -90,7 +90,9 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                 {gettext("Push Notifications")}
               </h2>
               <p class="text-sm text-base-content/70">
-                {gettext("Enable device notifications for your installed Potok web app.")}
+                {gettext(
+                  "Enable notifications for this browser or for the installed Potok app on your device."
+                )}
               </p>
             </div>
 
@@ -132,9 +134,151 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
             <p class="text-xs text-base-content/55">
               {gettext(
-                "Push notifications require an active service worker, browser permission, and HTTPS outside localhost."
+                "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
               )}
             </p>
+          </div>
+        </section>
+
+        <section
+          id="push-subscriptions-panel"
+          class="rounded-4xl border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
+        >
+          <div class="space-y-4">
+            <div class="space-y-1">
+              <h2 class="text-lg font-semibold text-base-content">
+                {gettext("Stored Push Subscriptions")}
+              </h2>
+              <p class="text-sm text-base-content/70">
+                {gettext("All saved push subscription entities for this account.")}
+              </p>
+            </div>
+
+            <div
+              :if={@push_subscriptions == []}
+              class="rounded-2xl border border-dashed border-base-300 bg-base-200/40 px-4 py-5 text-sm text-base-content/65"
+            >
+              {gettext("No push subscriptions have been stored for this account yet.")}
+            </div>
+
+            <div :if={@push_subscriptions != []} id="push-subscriptions-list" class="space-y-3">
+              <article
+                :for={subscription <- @push_subscriptions}
+                id={"push-subscription-#{subscription.id}"}
+                class="rounded-2xl border border-base-300/80 bg-base-100 px-4 py-4"
+              >
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2 text-sm">
+                      <span class="rounded-full bg-base-200 px-2.5 py-1 font-medium text-base-content">
+                        {push_subscription_type(subscription)}
+                      </span>
+                      <span class="rounded-full border border-base-300 px-2.5 py-1 text-base-content/70">
+                        {push_subscription_platform(subscription)}
+                      </span>
+                    </div>
+                    <p class="font-mono text-xs break-all text-base-content/75">
+                      {push_subscription_identifier(subscription)}
+                    </p>
+                  </div>
+
+                  <div class="text-right text-xs text-base-content/55">
+                    <p>{gettext("Updated")}: {format_push_datetime(subscription.updated_at)}</p>
+                    <p>{gettext("Inserted")}: {format_push_datetime(subscription.inserted_at)}</p>
+                  </div>
+                </div>
+
+                <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("ID")}
+                    </dt>
+                    <dd class="mt-1 font-mono text-xs text-base-content/80">{subscription.id}</dd>
+                  </div>
+
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Last Success")}
+                    </dt>
+                    <dd class="mt-1 text-base-content/80">
+                      {format_push_datetime(subscription.last_success_at)}
+                    </dd>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Endpoint")}
+                    </dt>
+                    <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
+                      {present_push_field(subscription.endpoint)}
+                    </dd>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Device Token")}
+                    </dt>
+                    <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
+                      {present_push_field(subscription.device_token)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Auth")}
+                    </dt>
+                    <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
+                      {present_push_field(subscription.auth)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("P256DH")}
+                    </dt>
+                    <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
+                      {present_push_field(subscription.p256dh)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Expires At")}
+                    </dt>
+                    <dd class="mt-1 text-base-content/80">
+                      {format_push_datetime(subscription.expires_at)}
+                    </dd>
+                  </div>
+
+                  <div>
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Last Failure")}
+                    </dt>
+                    <dd class="mt-1 text-base-content/80">
+                      {format_push_datetime(subscription.last_failure_at)}
+                    </dd>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("Failure Reason")}
+                    </dt>
+                    <dd class="mt-1 wrap-break-word text-base-content/80">
+                      {present_push_field(subscription.failure_reason)}
+                    </dd>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                      {gettext("User Agent")}
+                    </dt>
+                    <dd class="mt-1 wrap-break-word text-base-content/80">
+                      {present_push_field(subscription.user_agent)}
+                    </dd>
+                  </div>
+                </dl>
+              </article>
+            </div>
           </div>
         </section>
       </div>
@@ -166,6 +310,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       |> assign(:current_email, account.email)
       |> assign(:email_form, to_form(email_changeset))
       |> assign(:password_form, to_form(password_changeset))
+      |> assign(:push_subscriptions, list_push_subscriptions(account))
       |> assign(:push_vapid_public_key, PushNotifications.public_key())
       |> assign(:trigger_submit, false)
 
@@ -231,4 +376,49 @@ defmodule PotokIdeWeb.AccountLive.Settings do
         {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
     end
   end
+
+  def handle_event("refresh_push_subscriptions", _params, socket) do
+    {:noreply,
+     assign(
+       socket,
+       :push_subscriptions,
+       list_push_subscriptions(socket.assigns.current_scope.account)
+     )}
+  end
+
+  defp push_subscription_type(subscription) do
+    subscription.subscription_type
+    |> to_string()
+    |> String.replace("_", " ")
+    |> String.upcase()
+  end
+
+  defp push_subscription_platform(subscription) do
+    subscription.device_platform
+    |> case do
+      nil -> gettext("Unknown")
+      value -> value |> to_string() |> String.upcase()
+    end
+  end
+
+  defp push_subscription_identifier(subscription) do
+    subscription.device_token || subscription.endpoint || gettext("No identifier")
+  end
+
+  defp present_push_field(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> gettext("Not set")
+      trimmed -> trimmed
+    end
+  end
+
+  defp present_push_field(_value), do: gettext("Not set")
+
+  defp format_push_datetime(nil), do: gettext("Never")
+
+  defp format_push_datetime(%DateTime{} = value) do
+    Calendar.strftime(value, "%Y-%m-%d %H:%M:%S UTC")
+  end
+
+  defp list_push_subscriptions(account), do: Accounts.list_push_subscriptions(account)
 end

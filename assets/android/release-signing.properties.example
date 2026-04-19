@@ -1,0 +1,4 @@
+POTOK_UPLOAD_STORE_FILE=C:/Users/your-user/.keystores/potok-upload.jks
+POTOK_UPLOAD_STORE_PASSWORD=change-me
+POTOK_UPLOAD_KEY_ALIAS=potok-upload
+POTOK_UPLOAD_KEY_PASSWORD=change-me

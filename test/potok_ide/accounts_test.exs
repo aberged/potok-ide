@@ -498,6 +498,16 @@ defmodule PotokIde.AccountsTest do
       assert email.text_body =~ "?app=1"
       refute email.text_body =~ "potok://login/"
     end
+
+    test "accepts URI structs returned by the magic link builder", %{account: account} do
+      {:ok, email} =
+        Accounts.deliver_login_instructions(account, fn token ->
+          URI.parse("https://example.com/accounts/log-in/#{token}")
+        end)
+
+      assert email.text_body =~ "https://example.com/accounts/log-in/"
+      assert email.text_body =~ "?app=1"
+    end
   end
 
   describe "inspect/2 for the Account module" do

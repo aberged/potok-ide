@@ -1,8 +1,84 @@
 apply plugin: 'com.android.application'
 
+def debugSigningProperties = new Properties()
+def debugSigningPropertiesFile = rootProject.file('debug-signing.properties')
+def releaseSigningProperties = new Properties()
+def releaseSigningPropertiesFile = rootProject.file('release-signing.properties')
+
+if (debugSigningPropertiesFile.exists()) {
+    debugSigningPropertiesFile.withInputStream { stream ->
+        debugSigningProperties.load(stream)
+    }
+}
+
+if (releaseSigningPropertiesFile.exists()) {
+    releaseSigningPropertiesFile.withInputStream { stream ->
+        releaseSigningProperties.load(stream)
+    }
+}
+
+def resolveSigningValue = { properties, key ->
+    def value = properties.getProperty(key) ?: project.findProperty(key) ?: System.getenv(key)
+    value = value != null ? value.toString().trim() : null
+    value ? value : null
+}
+
+def debugSigning = [
+    storeFile: resolveSigningValue(debugSigningProperties, 'POTOK_DEBUG_STORE_FILE'),
+    storePassword: resolveSigningValue(debugSigningProperties, 'POTOK_DEBUG_STORE_PASSWORD'),
+    keyAlias: resolveSigningValue(debugSigningProperties, 'POTOK_DEBUG_KEY_ALIAS'),
+    keyPassword: resolveSigningValue(debugSigningProperties, 'POTOK_DEBUG_KEY_PASSWORD')
+]
+
+def releaseSigning = [
+    storeFile: resolveSigningValue(releaseSigningProperties, 'POTOK_UPLOAD_STORE_FILE'),
+    storePassword: resolveSigningValue(releaseSigningProperties, 'POTOK_UPLOAD_STORE_PASSWORD'),
+    keyAlias: resolveSigningValue(releaseSigningProperties, 'POTOK_UPLOAD_KEY_ALIAS'),
+    keyPassword: resolveSigningValue(releaseSigningProperties, 'POTOK_UPLOAD_KEY_PASSWORD')
+]
+
+def providedDebugSigningKeys = debugSigning.findAll { key, value -> value }.keySet()
+def missingDebugSigningKeys = debugSigning.findAll { key, value -> !value }.keySet()
+def debugSigningConfigured = missingDebugSigningKeys.isEmpty()
+def missingReleaseSigningKeys = releaseSigning.findAll { key, value -> !value }.keySet()
+def releaseTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('release') }
+def debugTaskRequested = gradle.startParameter.taskNames.any { it.toLowerCase().contains('debug') }
+
+if (debugTaskRequested && !providedDebugSigningKeys.isEmpty() && !debugSigningConfigured) {
+    throw new RuntimeException(
+        "Incomplete Android debug signing configuration: missing ${missingDebugSigningKeys.join(', ')}. " +
+        "Complete debug-signing.properties or remove the partial values."
+    )
+}
+
+if (releaseTaskRequested && !missingReleaseSigningKeys.isEmpty()) {
+    throw new RuntimeException(
+        "Missing Android release signing configuration: ${missingReleaseSigningKeys.join(', ')}. " +
+        "Set them as Gradle properties or environment variables before running assembleRelease."
+    )
+}
+
 android {
     namespace = "com.potok.ide"
     compileSdk = rootProject.ext.compileSdkVersion
+    signingConfigs {
+        debug {
+            if (!providedDebugSigningKeys.isEmpty() && debugSigningConfigured) {
+                storeFile file(debugSigning.storeFile)
+                storePassword debugSigning.storePassword
+                keyAlias debugSigning.keyAlias
+                keyPassword debugSigning.keyPassword
+            }
+        }
+        release {
+            if (missingReleaseSigningKeys.isEmpty()) {
+                storeFile file(releaseSigning.storeFile)
+                storePassword releaseSigning.storePassword
+                keyAlias releaseSigning.keyAlias
+                keyPassword releaseSigning.keyPassword
+            }
+        }
+    }
     defaultConfig {
         applicationId "com.potok.ide"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -17,7 +93,15 @@ android {
         }
     }
     buildTypes {
+        debug {
+            if (!providedDebugSigningKeys.isEmpty() && debugSigningConfigured) {
+                signingConfig signingConfigs.debug
+            }
+        }
         release {
+            if (missingReleaseSigningKeys.isEmpty()) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }

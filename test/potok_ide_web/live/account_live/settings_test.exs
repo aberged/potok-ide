@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
   use PotokIdeWeb.ConnCase, async: true
 
   alias PotokIde.Accounts
+  alias PotokIde.Accounts.PushSubscription
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
 
@@ -15,9 +16,44 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert html =~ "Account Settings"
       assert html =~ "Manage your account email address and password settings"
       assert html =~ "Push Notifications"
+      assert html =~ "Stored Push Subscriptions"
       assert has_element?(lv, "#email_form")
       refute has_element?(lv, "#password_form")
       assert has_element?(lv, "#push-notifications-panel")
+      assert has_element?(lv, "#push-subscriptions-panel")
+    end
+
+    test "renders stored push subscriptions for the logged in account", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, native_subscription} =
+        Accounts.upsert_push_subscription(account, %{
+          subscription_type: :fcm,
+          device_platform: :android,
+          device_token: "native-token-#{System.unique_integer([:positive])}",
+          user_agent: "Android"
+        })
+
+      {:ok, web_subscription} =
+        Accounts.upsert_push_subscription(account, %{
+          subscription_type: :web_push,
+          device_platform: :web,
+          endpoint: "https://example.test/push/#{System.unique_integer([:positive])}",
+          auth: "auth-key",
+          p256dh: "p256dh-key",
+          user_agent: "Firefox"
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/accounts/settings")
+
+      assert has_element?(lv, "#push-subscriptions-list")
+      assert has_element?(lv, "#push-subscription-#{native_subscription.id}")
+      assert has_element?(lv, "#push-subscription-#{web_subscription.id}")
+      assert render(lv) =~ PushSubscription.identifier(native_subscription)
+      assert render(lv) =~ PushSubscription.identifier(web_subscription)
     end
 
     test "redirects if account is not logged in", %{conn: conn} do

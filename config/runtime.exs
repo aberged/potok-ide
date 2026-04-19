@@ -55,6 +55,10 @@ config :potok_ide, :android_app_links, android_app_links
 web_push_vapid_subject = System.get_env("WEB_PUSH_VAPID_SUBJECT")
 web_push_vapid_public_key = System.get_env("WEB_PUSH_VAPID_PUBLIC_KEY")
 web_push_vapid_private_key = System.get_env("WEB_PUSH_VAPID_PRIVATE_KEY")
+firebase_service_account_json = System.get_env("FIREBASE_SERVICE_ACCOUNT_JSON")
+firebase_project_id = System.get_env("FIREBASE_PROJECT_ID")
+firebase_client_email = System.get_env("FIREBASE_CLIENT_EMAIL")
+firebase_private_key = System.get_env("FIREBASE_PRIVATE_KEY")
 
 if Enum.all?(
      [web_push_vapid_subject, web_push_vapid_public_key, web_push_vapid_private_key],
@@ -64,6 +68,36 @@ if Enum.all?(
     vapid_subject: web_push_vapid_subject,
     vapid_public_key: web_push_vapid_public_key,
     vapid_private_key: web_push_vapid_private_key
+end
+
+if (is_binary(firebase_service_account_json) and String.trim(firebase_service_account_json) != "") or
+     Enum.all?([firebase_project_id, firebase_client_email, firebase_private_key], fn
+       value when is_binary(value) -> String.trim(value) != ""
+       _value -> false
+     end) do
+  firebase_push_config =
+    [
+      firebase_service_account_json: firebase_service_account_json,
+      firebase_project_id: firebase_project_id,
+      firebase_client_email: firebase_client_email,
+      firebase_private_key: firebase_private_key,
+      firebase_channel_id: System.get_env("FIREBASE_CHANNEL_ID") || "potok-default"
+    ]
+    |> then(fn config ->
+      case System.get_env("FIREBASE_TOKEN_URL") do
+        value when is_binary(value) ->
+          if String.trim(value) != "" do
+            Keyword.put(config, :firebase_token_url, value)
+          else
+            config
+          end
+
+        _value ->
+          config
+      end
+    end)
+
+  config :potok_ide, PotokIde.PushNotifications, firebase_push_config
 end
 
 if config_env() == :prod do

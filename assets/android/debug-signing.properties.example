@@ -1,0 +1,4 @@
+POTOK_DEBUG_STORE_FILE=C:/Users/your-user/.android/debug.keystore
+POTOK_DEBUG_STORE_PASSWORD=android
+POTOK_DEBUG_KEY_ALIAS=androiddebugkey
+POTOK_DEBUG_KEY_PASSWORD=android

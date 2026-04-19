@@ -201,7 +201,75 @@ You can generate a VAPID keypair with:
 mix potok.gen.vapid_keypair
 ```
 
-The account settings screen at `/accounts/settings` exposes the browser-side enable, disable, and test notification controls once those variables are configured.
+### Capacitor push notifications
+
+The same account settings screen at `/accounts/settings` now also manages native push notifications for the installed Android app.
+
+Android setup requirements:
+
+* install the Capacitor push plugin in `assets/` with `npm install @capacitor/push-notifications`
+* place your Firebase `google-services.json` file in `assets/android/app/google-services.json`
+* run `cd assets && npm run cap:sync:android` after changing Capacitor or Android notification config
+
+Server-side Firebase configuration:
+
+* either set `FIREBASE_SERVICE_ACCOUNT_JSON` to the full service-account JSON document
+* or set all of `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
+* optionally set `FIREBASE_TOKEN_URL` if you need a non-default Google OAuth token endpoint
+* optionally set `FIREBASE_CHANNEL_ID` to override the default Android notification channel id (`potok-default`)
+
+Once the relevant browser or Firebase credentials are configured, `/accounts/settings` exposes the shared enable, disable, and test notification controls for both the PWA and the installed Android app.
+
+### Signed release APKs via Gradle
+
+The Android project is now set up so `assembleRelease` produces a signed APK when the signing values are provided in `assets/android/release-signing.properties`, as Gradle properties, or as environment variables.
+
+Required signing keys:
+
+* `POTOK_UPLOAD_STORE_FILE`
+* `POTOK_UPLOAD_STORE_PASSWORD`
+* `POTOK_UPLOAD_KEY_ALIAS`
+* `POTOK_UPLOAD_KEY_PASSWORD`
+
+Recommended setup:
+
+1. Copy `assets/android/release-signing.properties.example` to `assets/android/release-signing.properties`.
+1. Fill in your keystore path, alias, and passwords there.
+
+The real `release-signing.properties` file is gitignored, so you do not need to put signing secrets in shell history.
+
+Example PowerShell flow:
+
+```powershell
+Set-Location assets
+$env:CAPACITOR_SERVER_URL = "https://potok-ide.fly.dev"
+npm run cap:sync:android
+
+Set-Location android
+.\gradlew.bat assembleRelease
+```
+
+The signed APK will be written to `assets/android/app/build/outputs/apk/release/`.
+
+If any of the signing values are missing, Gradle now fails release builds with a clear error instead of silently producing an unsigned release artifact.
+
+### Optional debug signing properties
+
+The Android project can also load debug signing values from `assets/android/debug-signing.properties`.
+
+Required debug signing keys:
+
+* `POTOK_DEBUG_STORE_FILE`
+* `POTOK_DEBUG_STORE_PASSWORD`
+* `POTOK_DEBUG_KEY_ALIAS`
+* `POTOK_DEBUG_KEY_PASSWORD`
+
+Recommended setup:
+
+1. Copy `assets/android/debug-signing.properties.example` to `assets/android/debug-signing.properties`.
+1. Fill in the debug keystore path, alias, and passwords there.
+
+If `debug-signing.properties` is absent, Android Gradle Plugin falls back to its normal default debug keystore behavior. If the file is present but incomplete, debug builds fail with a clear error.
 
 ### Development behavior
 

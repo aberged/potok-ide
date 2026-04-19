@@ -2,12 +2,13 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   use PotokIdeWeb, :controller
 
   alias PotokIde.Accounts
+  alias PotokIde.Accounts.PushSubscription
 
   def create(conn, %{"subscription" => subscription_params}) do
     with {:ok, attrs} <- normalize_subscription_params(subscription_params, user_agent(conn)),
          {:ok, subscription} <-
            Accounts.upsert_push_subscription(conn.assigns.current_scope.account, attrs) do
-      json(conn, %{enabled: true, endpoint: subscription.endpoint})
+      json(conn, create_response(subscription))
     else
       {:error, :invalid_subscription} ->
         conn
@@ -32,17 +33,24 @@ defmodule PotokIdeWeb.PushSubscriptionController do
     json(conn, %{enabled: false})
   end
 
-  def delete(conn, _params) do
-    conn
-    |> put_status(:bad_request)
-    |> json(%{error: "Missing push subscription endpoint."})
+  def delete(conn, params) do
+    case subscription_identifier(params) do
+      nil ->
+        conn
+        |> put_status(:bad_request)
+        |> json(%{error: "Missing push subscription identifier."})
+
+      identifier ->
+        :ok = Accounts.delete_push_subscription(conn.assigns.current_scope.account, identifier)
+        json(conn, %{enabled: false})
+    end
   end
 
   def test(conn, params) do
     account = conn.assigns.current_scope.account
-    endpoint = Map.get(params, "endpoint")
+    identifier = subscription_identifier(params)
 
-    case Accounts.send_test_push_notification(account, endpoint) do
+    case Accounts.send_test_push_notification(account, identifier) do
       {:ok, _endpoint} ->
         json(conn, %{sent: true})
 
@@ -69,6 +77,22 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   end
 
   defp normalize_subscription_params(
+         %{"type" => "fcm", "token" => token, "platform" => platform},
+         user_agent
+       )
+       when is_binary(token) and token != "" do
+    with {:ok, device_platform} <- normalize_device_platform(platform) do
+      {:ok,
+       %{
+         subscription_type: :fcm,
+         device_token: token,
+         device_platform: device_platform,
+         user_agent: user_agent
+       }}
+    end
+  end
+
+  defp normalize_subscription_params(
          %{
            "endpoint" => endpoint,
            "keys" => %{"auth" => auth, "p256dh" => p256dh}
@@ -78,6 +102,8 @@ defmodule PotokIdeWeb.PushSubscriptionController do
        when is_binary(endpoint) and is_binary(auth) and is_binary(p256dh) do
     {:ok,
      %{
+       subscription_type: :web_push,
+       device_platform: :web,
        endpoint: endpoint,
        auth: auth,
        p256dh: p256dh,
@@ -87,6 +113,13 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   end
 
   defp normalize_subscription_params(_params, _user_agent), do: {:error, :invalid_subscription}
+
+  defp normalize_device_platform(platform) when platform in ["android", :android],
+    do: {:ok, :android}
+
+  defp normalize_device_platform(platform) when platform in ["ios", :ios], do: {:ok, :ios}
+  defp normalize_device_platform(platform) when platform in ["web", :web], do: {:ok, :web}
+  defp normalize_device_platform(_platform), do: {:error, :invalid_subscription}
 
   defp parse_expiration_time(nil), do: nil
 
@@ -114,6 +147,12 @@ defmodule PotokIdeWeb.PushSubscriptionController do
     |> List.first()
   end
 
+  defp subscription_identifier(params) when is_map(params) do
+    Map.get(params, "identifier") || Map.get(params, "endpoint") || Map.get(params, "token")
+  end
+
+  defp subscription_identifier(_params), do: nil
+
   defp translate_errors(changeset) do
     Ecto.Changeset.traverse_errors(changeset, fn {message, opts} ->
       Regex.replace(~r"%\{(\w+)\}", message, fn _, key ->
@@ -125,4 +164,13 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   defp format_error({type, detail}), do: "#{type}: #{detail}"
   defp format_error(reason) when is_atom(reason), do: Atom.to_string(reason)
   defp format_error(reason), do: inspect(reason)
+
+  defp create_response(subscription) do
+    %{enabled: true, identifier: PushSubscription.identifier(subscription)}
+    |> maybe_put(:endpoint, subscription.endpoint)
+    |> Map.put(:subscription_type, to_string(subscription.subscription_type || :web_push))
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 end

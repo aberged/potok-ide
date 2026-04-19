@@ -132,17 +132,13 @@ defmodule PotokIde.Accounts do
   def list_push_subscriptions(_), do: []
 
   @doc """
-  Stores or updates a web push subscription for an account.
+  Stores or updates a push subscription for an account.
   """
   def upsert_push_subscription(%Account{} = account, attrs) when is_map(attrs) do
-    endpoint = Map.get(attrs, :endpoint) || Map.get(attrs, "endpoint")
-
     subscription =
-      if is_binary(endpoint) and endpoint != "" do
-        Repo.get_by(PushSubscription, endpoint: endpoint) || %PushSubscription{}
-      else
-        %PushSubscription{}
-      end
+      attrs
+      |> PushSubscription.normalize_type()
+      |> find_push_subscription(attrs)
 
     subscription
     |> PushSubscription.changeset(attrs)
@@ -153,10 +149,12 @@ defmodule PotokIde.Accounts do
   @doc """
   Deletes a saved push subscription for an account.
   """
-  def delete_push_subscription(%Account{} = account, endpoint)
-      when is_binary(endpoint) and endpoint != "" do
+  def delete_push_subscription(%Account{} = account, identifier)
+      when is_binary(identifier) and identifier != "" do
     from(subscription in PushSubscription,
-      where: subscription.account_id == ^account.id and subscription.endpoint == ^endpoint
+      where:
+        subscription.account_id == ^account.id and
+          (subscription.endpoint == ^identifier or subscription.device_token == ^identifier)
     )
     |> Repo.one()
     |> case do
@@ -195,11 +193,17 @@ defmodule PotokIde.Accounts do
   @doc """
   Sends a test push notification to one of the account's saved subscriptions.
   """
-  def send_test_push_notification(%Account{} = account, endpoint \\ nil) do
+  def send_test_push_notification(%Account{} = account, identifier \\ nil) do
     subscription =
-      case endpoint do
+      case identifier do
         value when is_binary(value) and value != "" ->
-          Repo.get_by(PushSubscription, account_id: account.id, endpoint: value)
+          from(subscription in PushSubscription,
+            where:
+              subscription.account_id == ^account.id and
+                (subscription.endpoint == ^value or subscription.device_token == ^value),
+            limit: 1
+          )
+          |> Repo.one()
 
         _ ->
           from(subscription in PushSubscription,
@@ -485,7 +489,11 @@ defmodule PotokIde.Accounts do
     :ok
   end
 
-  defp build_magic_link_app_url(web_url) do
+  defp build_magic_link_app_url(%URI{} = uri) do
+    build_magic_link_app_url(URI.to_string(uri))
+  end
+
+  defp build_magic_link_app_url(web_url) when is_binary(web_url) do
     uri = URI.parse(web_url)
 
     query =
@@ -514,7 +522,7 @@ defmodule PotokIde.Accounts do
         )
         |> Repo.update()
 
-        {:ok, subscription.endpoint}
+        {:ok, PushSubscription.identifier(subscription)}
 
       {:error, :expired} ->
         _ = Repo.delete(subscription)
@@ -537,6 +545,26 @@ defmodule PotokIde.Accounts do
   defp format_push_failure_reason({type, detail}), do: "#{type}: #{detail}"
   defp format_push_failure_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
   defp format_push_failure_reason(reason), do: inspect(reason)
+
+  defp find_push_subscription(:fcm, attrs) do
+    device_token = Map.get(attrs, :device_token) || Map.get(attrs, "device_token")
+
+    if is_binary(device_token) and device_token != "" do
+      Repo.get_by(PushSubscription, device_token: device_token) || %PushSubscription{}
+    else
+      %PushSubscription{}
+    end
+  end
+
+  defp find_push_subscription(:web_push, attrs) do
+    endpoint = Map.get(attrs, :endpoint) || Map.get(attrs, "endpoint")
+
+    if is_binary(endpoint) and endpoint != "" do
+      Repo.get_by(PushSubscription, endpoint: endpoint) || %PushSubscription{}
+    else
+      %PushSubscription{}
+    end
+  end
 
   ## Token helper
 

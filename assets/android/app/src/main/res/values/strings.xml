@@ -4,4 +4,5 @@
     <string name="title_activity_main">Potok</string>
     <string name="package_name">com.potok.ide</string>
     <string name="custom_url_scheme">com.potok.ide</string>
+    <string name="default_notification_channel_id">potok-default</string>
 </resources>

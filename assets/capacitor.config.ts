@@ -1,3 +1,5 @@
+/// <reference types="@capacitor/push-notifications" />
+
 import type { CapacitorConfig } from "@capacitor/cli"
 
 const env = (globalThis as typeof globalThis & {
@@ -23,6 +25,9 @@ const config: CapacitorConfig = {
     allowMixedContent: cleartext
   },
   plugins: {
+    PushNotifications: {
+      presentationOptions: ["alert", "sound"]
+    },
     SystemBars: {
       insetsHandling: "css"
     }

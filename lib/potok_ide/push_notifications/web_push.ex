@@ -79,9 +79,19 @@ defmodule PotokIde.PushNotifications.WebPush do
     signing_input <> "." <> Base.url_encode64(signature, padding: false)
   end
 
-  defp audience(endpoint) do
-    uri = URI.parse(endpoint)
-    uri.scheme <> "://" <> uri.host
+  defp audience(endpoint) when is_binary(endpoint) do
+    case URI.parse(endpoint) do
+      %URI{scheme: scheme, host: host}
+      when is_binary(scheme) and scheme != "" and is_binary(host) and host != "" ->
+        scheme <> "://" <> host
+
+      _uri ->
+        raise ArgumentError, "Subscription endpoint is invalid."
+    end
+  end
+
+  defp audience(_endpoint) do
+    raise ArgumentError, "Subscription endpoint is invalid."
   end
 
   defp base64url!(value) do
@@ -133,12 +143,30 @@ defmodule PotokIde.PushNotifications.WebPush do
   end
 
   defp validate_subscription(%{keys: %{p256dh: p256dh, auth: auth}, endpoint: endpoint})
-       when is_binary(p256dh) and is_binary(auth) and is_binary(endpoint),
-       do: :ok
+       when is_binary(p256dh) and is_binary(auth) and is_binary(endpoint) do
+    if valid_endpoint?(endpoint) do
+      :ok
+    else
+      raise ArgumentError, "Subscription endpoint is invalid."
+    end
+  end
 
   defp validate_subscription(_subscription) do
     raise ArgumentError, "Subscription is missing required endpoint or key data."
   end
+
+  defp valid_endpoint?(endpoint) when is_binary(endpoint) do
+    case URI.parse(endpoint) do
+      %URI{scheme: scheme, host: host}
+      when is_binary(scheme) and scheme != "" and is_binary(host) and host != "" ->
+        true
+
+      _uri ->
+        false
+    end
+  end
+
+  defp valid_endpoint?(_endpoint), do: false
 
   defp validate_length(bytes, expected_size, _message) when byte_size(bytes) == expected_size,
     do: :ok

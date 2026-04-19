@@ -42,3 +42,6 @@ npm-debug.log
 /.idea/
 potok-ide.iml
 
+firebase-service-account.json
+
+

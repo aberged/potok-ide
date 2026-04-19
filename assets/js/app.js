@@ -20,6 +20,7 @@
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import {App} from "@capacitor/app"
 import {Capacitor} from "@capacitor/core"
+import {PushNotifications as NativePushNotifications} from "@capacitor/push-notifications"
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
 import {Socket} from "phoenix"
@@ -141,16 +142,114 @@ const AutoDismissFlash = {
   },
 }
 
+const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
+const POTOK_PUSH_CHANNEL_ID = "potok-default"
+const nativePushListeners = new Set()
+
+const NativePushManager = {
+  initialized: false,
+
+  isSupported() {
+    return Capacitor.isNativePlatform() && ["android", "ios"].includes(Capacitor.getPlatform())
+  },
+
+  async initialize() {
+    if (!this.isSupported() || this.initialized) {
+      return this.isSupported()
+    }
+
+    this.initialized = true
+
+    if (Capacitor.getPlatform() === "android") {
+      try {
+        await NativePushNotifications.createChannel({
+          id: POTOK_PUSH_CHANNEL_ID,
+          name: "Potok",
+          description: "Activity and invitation updates",
+          importance: 5,
+          visibility: 1,
+          vibration: true,
+        })
+      } catch (error) {
+        console.warn("Unable to create Potok notification channel", error)
+      }
+    }
+
+    await NativePushNotifications.addListener("registration", token => {
+      nativePushListeners.forEach(listener => listener({type: "registration", token: token.value}))
+    })
+
+    await NativePushNotifications.addListener("registrationError", error => {
+      nativePushListeners.forEach(listener => listener({type: "registrationError", error}))
+    })
+
+    await NativePushNotifications.addListener("pushNotificationReceived", notification => {
+      nativePushListeners.forEach(listener => listener({type: "received", notification}))
+    })
+
+    await NativePushNotifications.addListener("pushNotificationActionPerformed", event => {
+      nativePushListeners.forEach(listener => listener({type: "action", notification: event.notification}))
+      openNotificationUrl(event.notification?.data?.url || event.notification?.link || "")
+    })
+
+    return true
+  },
+
+  subscribe(listener) {
+    nativePushListeners.add(listener)
+    return () => nativePushListeners.delete(listener)
+  },
+
+  async checkPermissions() {
+    await this.initialize()
+    return NativePushNotifications.checkPermissions()
+  },
+
+  async requestPermissions() {
+    await this.initialize()
+    return NativePushNotifications.requestPermissions()
+  },
+
+  async register() {
+    await this.initialize()
+    await NativePushNotifications.register()
+  },
+
+  async unregister() {
+    await this.initialize()
+    await NativePushNotifications.unregister()
+  },
+}
+
 const PushNotifications = {
   mounted() {
     this.status = this.el.querySelector("[data-push-status]")
     this.enableButton = this.el.querySelector("[data-push-enable]")
     this.testButton = this.el.querySelector("[data-push-test]")
     this.disableButton = this.el.querySelector("[data-push-disable]")
+    this.nativePlatform = Capacitor.getPlatform()
     this.vapidPublicKey = this.el.dataset.vapidPublicKey || ""
     this.subscribeUrl = this.el.dataset.subscribeUrl
     this.testUrl = this.el.dataset.testUrl
     this.csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content") || ""
+    this.nativePendingMessage = null
+
+    this.handleNativePushEvent = event => {
+      switch (event.type) {
+      case "registration":
+        void this.handleNativeRegistration(event.token)
+        break
+      case "registrationError":
+        this.handleNativeRegistrationError(event.error)
+        break
+      default:
+        break
+      }
+    }
+
+    this.unsubscribeNativePush = this.isNativePushEnvironment()
+      ? NativePushManager.subscribe(this.handleNativePushEvent)
+      : null
 
     this.handleEnableClick = () => {
       void this.enableNotifications()
@@ -175,9 +274,52 @@ const PushNotifications = {
     this.enableButton?.removeEventListener("click", this.handleEnableClick)
     this.disableButton?.removeEventListener("click", this.handleDisableClick)
     this.testButton?.removeEventListener("click", this.handleTestClick)
+    this.unsubscribeNativePush?.()
   },
 
   async syncState(message) {
+    if (this.isNativePushEnvironment()) {
+      await this.syncNativeState(message)
+      return
+    }
+
+    await this.syncWebState(message)
+  },
+
+  isNativePushEnvironment() {
+    return NativePushManager.isSupported()
+  },
+
+  async syncNativeState(message) {
+    try {
+      const permissions = await NativePushManager.checkPermissions()
+
+      if (permissions.receive === "denied") {
+        this.renderDenied("Device notification permission is blocked.")
+        return
+      }
+
+      const storedToken = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
+
+      if (permissions.receive !== "granted") {
+        this.renderIdle(message || "Push notifications are disabled for this device.")
+        return
+      }
+
+      if (storedToken) {
+        await this.saveNativeToken(storedToken)
+      }
+
+      this.nativePendingMessage = message || "Push notifications are enabled."
+      this.setPendingState("Refreshing device notification token...")
+      await NativePushManager.register()
+    } catch (error) {
+      console.error("Unable to inspect native push state", error)
+      this.renderUnsupported(error.message || "Native push notifications are unavailable in this app session.")
+    }
+  },
+
+  async syncWebState(message) {
     if (!window.isSecureContext) {
       this.renderUnsupported("Push notifications require HTTPS or localhost.")
       return
@@ -216,6 +358,43 @@ const PushNotifications = {
   },
 
   async enableNotifications() {
+    if (this.isNativePushEnvironment()) {
+      await this.enableNativeNotifications()
+      return
+    }
+
+    await this.enableWebNotifications()
+  },
+
+  async enableNativeNotifications() {
+    this.setPendingState("Requesting device notification permission...")
+
+    try {
+      let permissions = await NativePushManager.checkPermissions()
+
+      if (permissions.receive === "prompt" || permissions.receive === "prompt-with-rationale") {
+        permissions = await NativePushManager.requestPermissions()
+      }
+
+      if (permissions.receive !== "granted") {
+        if (permissions.receive === "denied") {
+          this.renderDenied("Device notification permission is blocked.")
+        } else {
+          this.renderIdle("Notification permission was not granted.")
+        }
+
+        return
+      }
+
+      this.nativePendingMessage = "Push notifications are enabled."
+      await NativePushManager.register()
+    } catch (error) {
+      console.error("Unable to enable native push notifications", error)
+      this.renderIdle(error.message || "Unable to enable push notifications.")
+    }
+  },
+
+  async enableWebNotifications() {
     this.setPendingState("Requesting notification permission...")
 
     try {
@@ -250,6 +429,38 @@ const PushNotifications = {
   },
 
   async disableNotifications() {
+    if (this.isNativePushEnvironment()) {
+      await this.disableNativeNotifications()
+      return
+    }
+
+    await this.disableWebNotifications()
+  },
+
+  async disableNativeNotifications() {
+    this.setPendingState("Removing device notification token...")
+
+    try {
+      const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
+
+      if (token) {
+        await this.request(this.subscribeUrl, {
+          method: "DELETE",
+          body: JSON.stringify({identifier: token}),
+        })
+      }
+
+      await NativePushManager.unregister()
+      window.localStorage.removeItem(POTOK_PUSH_TOKEN_KEY)
+      await this.refreshPushSubscriptions()
+      this.renderIdle("Push notifications are disabled for this device.")
+    } catch (error) {
+      console.error("Unable to disable native push notifications", error)
+      this.renderEnabled(error.message || "Unable to remove the push subscription.")
+    }
+  },
+
+  async disableWebNotifications() {
     this.setPendingState("Removing push subscription...")
 
     try {
@@ -265,6 +476,7 @@ const PushNotifications = {
         await subscription.unsubscribe()
       }
 
+      await this.refreshPushSubscriptions()
       this.renderIdle("Push notifications are disabled for this browser.")
     } catch (error) {
       console.error("Unable to disable push notifications", error)
@@ -273,6 +485,41 @@ const PushNotifications = {
   },
 
   async sendTestNotification() {
+    if (this.isNativePushEnvironment()) {
+      await this.sendNativeTestNotification()
+      return
+    }
+
+    await this.sendWebTestNotification()
+  },
+
+  async sendNativeTestNotification() {
+    this.setPendingState("Sending test notification...")
+
+    try {
+      const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
+
+      if (!token) {
+        this.renderIdle("Enable notifications before sending a test push.")
+        return
+      }
+
+      await this.saveNativeToken(token)
+      await this.request(this.testUrl, {
+        method: "POST",
+        body: JSON.stringify({identifier: token}),
+      })
+
+      await this.refreshPushSubscriptions()
+      this.renderEnabled("Test notification sent. Background the app if Android suppresses foreground banners.")
+    } catch (error) {
+      console.error("Unable to send native test push notification", error)
+      await this.refreshPushSubscriptions()
+      this.renderEnabled(error.message || "Unable to send the test notification.")
+    }
+  },
+
+  async sendWebTestNotification() {
     this.setPendingState("Sending test notification...")
 
     try {
@@ -290,18 +537,73 @@ const PushNotifications = {
         body: JSON.stringify({endpoint: subscription.endpoint}),
       })
 
+      await this.refreshPushSubscriptions()
       this.renderEnabled("Test notification sent. Minimize the app if the browser suppresses foreground notifications.")
     } catch (error) {
       console.error("Unable to send test push notification", error)
+      await this.refreshPushSubscriptions()
       this.renderEnabled(error.message || "Unable to send the test notification.")
     }
   },
 
+  async handleNativeRegistration(token) {
+    try {
+      await this.saveNativeToken(token)
+      this.renderEnabled(this.nativePendingMessage || "Push notifications are enabled.")
+    } catch (error) {
+      console.error("Unable to store native push token", error)
+      this.renderEnabled(error.message || "Push notifications are active on this device but Potok could not save the token.")
+    } finally {
+      this.nativePendingMessage = null
+    }
+  },
+
+  handleNativeRegistrationError(error) {
+    console.error("Native push registration failed", error)
+    this.nativePendingMessage = null
+    this.renderIdle(error?.error || "Unable to register this device for push notifications.")
+  },
+
   async saveSubscription(subscription) {
-    return this.request(this.subscribeUrl, {
+    const response = await this.request(this.subscribeUrl, {
       method: "POST",
       body: JSON.stringify({subscription: subscription.toJSON()}),
     })
+
+    await this.refreshPushSubscriptions()
+
+    return response
+  },
+
+  async saveNativeToken(token) {
+    window.localStorage.setItem(POTOK_PUSH_TOKEN_KEY, token)
+
+    const response = await this.request(this.subscribeUrl, {
+      method: "POST",
+      body: JSON.stringify({
+        subscription: {
+          type: "fcm",
+          token,
+          platform: this.nativePlatform,
+        },
+      }),
+    })
+
+    await this.refreshPushSubscriptions()
+
+    return response
+  },
+
+  async refreshPushSubscriptions() {
+    if (typeof this.pushEvent !== "function") {
+      return
+    }
+
+    try {
+      await this.pushEvent("refresh_push_subscriptions", {})
+    } catch (error) {
+      console.error("Unable to refresh push subscriptions", error)
+    }
   },
 
   async request(url, options) {
@@ -786,6 +1088,36 @@ const handleCapacitorMagicLink = urlString => {
   return true
 }
 
+const openNotificationUrl = urlString => {
+  const normalizedUrl = typeof urlString === "string" ? urlString.trim() : ""
+
+  if (!normalizedUrl) {
+    return false
+  }
+
+  if (handleCapacitorMagicLink(normalizedUrl)) {
+    return true
+  }
+
+  try {
+    const targetUrl = new URL(normalizedUrl, window.location.origin)
+
+    if (targetUrl.origin !== window.location.origin) {
+      return false
+    }
+
+    if (window.location.href === targetUrl.toString()) {
+      window.location.reload()
+      return true
+    }
+
+    window.location.assign(targetUrl.toString())
+    return true
+  } catch (_error) {
+    return false
+  }
+}
+
 const registerCapacitorMagicLinks = () => {
   if (!Capacitor.isNativePlatform()) {
     return
@@ -800,6 +1132,16 @@ const registerCapacitorMagicLinks = () => {
       handleCapacitorMagicLink(result?.url || "")
     })
     .catch(() => {})
+}
+
+const registerCapacitorPushNotifications = () => {
+  if (!NativePushManager.isSupported()) {
+    return
+  }
+
+  void NativePushManager.initialize().catch(error => {
+    console.error("Unable to initialize native push notifications", error)
+  })
 }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
@@ -996,6 +1338,7 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 })
 
 registerCapacitorMagicLinks()
+registerCapacitorPushNotifications()
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()

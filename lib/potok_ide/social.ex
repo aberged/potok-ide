@@ -1585,15 +1585,7 @@ defmodule PotokIde.Social do
 
     group
     |> recipient_accounts_for_group_value_notification(creator)
-    |> Enum.each(fn account ->
-      case Accounts.deliver_push_notification(account, payload) do
-        {:ok, _results} ->
-          :ok
-
-        {:error, :no_push_subscriptions} ->
-          :ok
-      end
-    end)
+    |> Enum.each(&deliver_account_push_notification(&1, payload, "group value", group.id))
   end
 
   defp notify_profile_invitee_of_group_invitation(
@@ -1683,14 +1675,28 @@ defmodule PotokIde.Social do
   end
 
   defp deliver_profile_notification(%Account{} = account, payload, _context, _profile_id) do
+    deliver_account_push_notification(account, payload, "profile notification", nil)
+  end
+
+  defp deliver_account_push_notification(%Account{} = account, payload, context, context_id) do
     case Accounts.deliver_push_notification(account, payload) do
       {:ok, _results} ->
         :ok
 
       {:error, :no_push_subscriptions} ->
         :ok
+
+      {:error, reason} ->
+        Logger.warning(
+          "Push delivery failed for account #{account.id} (#{context}#{format_push_context_id(context_id)}): #{inspect(reason)}"
+        )
+
+        :ok
     end
   end
+
+  defp format_push_context_id(nil), do: ""
+  defp format_push_context_id(context_id), do: " #{context_id}"
 
   defp group_value_notification_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     %{

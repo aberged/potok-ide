@@ -270,7 +270,7 @@
               <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
                 <img
                   id="nav-brand-profile-avatar"
-                  src={profile_picture_url || ~p"/images/logo.svg"}
+                  src={profile_picture_url || ~p"/images/pwa/icon-512.png"}
                   alt={if(profile, do: profile.username, else: "Potok")}
                   class={[
                     "size-10 rounded-2xl object-cover",
@@ -288,7 +288,7 @@
                 </span>
                 <img
                   id="nav-brand-logo"
-                  src={~p"/images/logo.svg"}
+                  src={~p"/images/pwa/icon-512.png"}
                   width="24"
                   alt="Potok"
                   class={[!is_nil(profile) && "hidden"]}

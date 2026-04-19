@@ -1,5 +1,6 @@
 defmodule PotokIde.PushNotifications do
   alias PotokIde.Accounts.PushSubscription
+  alias PotokIde.PushNotifications.FCM
   alias PotokIde.PushNotifications.WebPush
 
   @default_ttl 60
@@ -11,10 +12,46 @@ defmodule PotokIde.PushNotifications do
   end
 
   def configured? do
-    match?({:ok, _details}, vapid_details())
+    web_push_configured?() or fcm_configured?()
   end
 
   def send_notification(%PushSubscription{} = subscription, payload) when is_map(payload) do
+    case PushSubscription.delivery_type(subscription) do
+      :fcm ->
+        FCM.send_notification(subscription, payload)
+
+      :web_push ->
+        send_web_push_notification(subscription, payload)
+
+      :unknown ->
+        {:error,
+         {:invalid_subscription,
+          "Subscription is missing required endpoint or device token data."}}
+    end
+  end
+
+  def web_push_configured? do
+    match?({:ok, _details}, vapid_details())
+  end
+
+  def fcm_configured? do
+    FCM.configured?()
+  end
+
+  def config do
+    Application.get_env(:potok_ide, __MODULE__, [])
+  end
+
+  def request_fun do
+    Keyword.get(config(), :request_fun, &Req.post/1)
+  end
+
+  def ttl do
+    Keyword.get(config(), :ttl, @default_ttl)
+  end
+
+  defp send_web_push_notification(%PushSubscription{} = subscription, payload)
+       when is_map(payload) do
     try do
       with {:ok, vapid} <- vapid_details(),
            {:ok, body} <- Jason.encode(payload),
@@ -116,18 +153,6 @@ defmodule PotokIde.PushNotifications do
   end
 
   defp normalize_config_value(_value), do: nil
-
-  defp config do
-    Application.get_env(:potok_ide, __MODULE__, [])
-  end
-
-  defp request_fun do
-    Keyword.get(config(), :request_fun, &Req.post/1)
-  end
-
-  defp ttl do
-    Keyword.get(config(), :ttl, @default_ttl)
-  end
 
   defp ub64(value) do
     Base.url_encode64(value, padding: false)
