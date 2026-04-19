@@ -71,10 +71,10 @@
       var style = spinner.style;
       style.position = "fixed";
       style.top = "calc(var(--app-safe-area-top, 0px) + 0.75rem)";
-      style.right = "calc(var(--app-safe-area-right, 0px) + 12rem)";
+      style.left = "calc(var(--app-safe-area-left, 0px) + 6rem)";
       style.zIndex = 100002;
       style.height = style.width = "3rem";
-      style.margin = "0 auto 0 auto";
+      style.opacity = 0.3;
       style.display = "none";
       style.pointerEvents = "none";
       style.color = "var(--color-primary)";
