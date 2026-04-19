@@ -5,6 +5,10 @@ defmodule PotokIde.Application do
 
   use Application
 
+  require Logger
+
+  alias PotokIde.GmailRefreshToken
+
   @impl true
   def start(_type, _args) do
     children = [

@@ -8,6 +8,7 @@
   "use strict";
 
   var canvas,
+    spinner,
     currentProgress,
     showing,
     progressTimerId = null,
@@ -20,7 +21,7 @@
     },
     options = {
       autoRun: true,
-      barThickness: 3,
+      barThickness: 5,
       barColors: {
         0: "rgba(26,  188, 156, .9)",
         ".25": "rgba(52,  152, 219, .9)",
@@ -63,6 +64,21 @@
       if (options.className) canvas.classList.add(options.className);
       addEvent(window, "resize", repaint);
     },
+    createSpinner = function () {
+      spinner = document.createElement("span");
+      spinner.className = "loading loading-ring loading-sm";
+
+      var style = spinner.style;
+      style.position = "fixed";
+      style.top = "calc(var(--app-safe-area-top, 0px) + 0.75rem)";
+      style.right = "calc(var(--app-safe-area-right, 0px) + 12rem)";
+      style.zIndex = 100002;
+      style.height = style.width = "3rem";
+      style.margin = "0 auto 0 auto";
+      style.display = "none";
+      style.pointerEvents = "none";
+      style.color = "var(--color-primary)";
+    },
     topbar = {
       config: function (opts) {
         for (var key in opts)
@@ -77,9 +93,13 @@
           showing = true;
           if (fadeTimerId !== null) window.cancelAnimationFrame(fadeTimerId);
           if (!canvas) createCanvas();
+          if (!spinner) createSpinner();
           if (!canvas.parentElement) document.body.appendChild(canvas);
+          if (!spinner.parentElement) document.body.appendChild(spinner);
+
           canvas.style.opacity = 1;
           canvas.style.display = "block";
+          spinner.style.display = "inline-block";
           topbar.progress(0);
           if (options.autoRun) {
             (function loop() {
@@ -108,6 +128,7 @@
         delayTimerId = null;
         if (!showing) return;
         showing = false;
+        if (spinner) spinner.style.display = "none";
         if (progressTimerId != null) {
           window.cancelAnimationFrame(progressTimerId);
           progressTimerId = null;

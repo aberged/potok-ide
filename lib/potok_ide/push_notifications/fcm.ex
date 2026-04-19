@@ -146,8 +146,10 @@ defmodule PotokIde.PushNotifications.FCM do
     body = payload_value(payload, :body)
     image = payload_value(payload, [:android_image, :image])
     tag = payload_value(payload, :tag)
-    icon = "ic_launcher_round"#android_icon_value(payload)
-    color = payload_value(payload, [:android_color, :color])
+    # android_icon_value(payload)
+    icon = "ic_launcher_round"
+    # payload_value(payload, [:android_color, :color])
+    color = "#ffffff"
     sound = payload_value(payload, [:android_sound, :sound])
     click_action = payload_value(payload, [:android_click_action, :click_action, :clickAction])
     ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
@@ -299,22 +301,6 @@ defmodule PotokIde.PushNotifications.FCM do
 
   defp payload_value(payload, key) do
     Map.get(payload, key) || Map.get(payload, Atom.to_string(key))
-  end
-
-  defp android_icon_value(payload) do
-    case payload_value(payload, [:android_icon, :icon]) do
-      value when is_binary(value) ->
-        case String.trim(value) do
-          "" ->
-            nil
-
-          trimmed ->
-            if Regex.match?(~r/^[a-zA-Z0-9_]+$/, trimmed), do: trimmed, else: nil
-        end
-
-      _value ->
-        nil
-    end
   end
 
   defp maybe_put(map, _key, nil), do: map

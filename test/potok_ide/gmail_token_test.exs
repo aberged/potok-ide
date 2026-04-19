@@ -4,9 +4,30 @@ defmodule PotokIde.GmailTokenTest do
   alias PotokIde.GmailRefreshToken
   alias PotokIde.GmailToken
 
-  test "returns the configured access token when present" do
+  test "returns the configured access token when refresh configuration is unavailable" do
     assert {:ok, [access_token: "static-token"]} =
              GmailToken.delivery_config(access_token: "static-token")
+  end
+
+  test "prefers refreshing the access token when refresh configuration is available" do
+    assert {:ok, %GmailRefreshToken{}} = GmailRefreshToken.upsert("stored-refresh")
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+      assert body =~ "grant_type=refresh_token"
+      assert body =~ "refresh_token=stored-refresh"
+
+      Req.Test.json(conn, %{"access_token" => "fresh-token", "expires_in" => 3600})
+    end)
+
+    assert {:ok, [access_token: "fresh-token"]} =
+             GmailToken.delivery_config(
+               access_token: "stale-token",
+               client_id: "test-client",
+               client_secret: "test-secret",
+               req_options: [plug: {Req.Test, __MODULE__}]
+             )
   end
 
   test "exchanges a refresh token for an access token" do
@@ -29,7 +50,7 @@ defmodule PotokIde.GmailTokenTest do
                req_options: [plug: {Req.Test, __MODULE__}]
              )
 
-    assert GmailRefreshToken.get() == nil
+    assert %GmailRefreshToken{refresh_token: "test-refresh"} = GmailRefreshToken.get()
   end
 
   test "persists a rotated refresh token from the response" do
@@ -52,13 +73,13 @@ defmodule PotokIde.GmailTokenTest do
     assert %GmailRefreshToken{refresh_token: "rotated-refresh"} = GmailRefreshToken.get()
   end
 
-  test "uses the persisted refresh token before config" do
+  test "uses the configured refresh token before the persisted refresh token" do
     assert {:ok, %GmailRefreshToken{}} = GmailRefreshToken.upsert("stored-refresh")
 
     Req.Test.stub(__MODULE__, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
 
-      assert body =~ "refresh_token=stored-refresh"
+      assert body =~ "refresh_token=config-refresh"
 
       Req.Test.json(conn, %{"access_token" => "fresh-token", "expires_in" => 3600})
     end)
@@ -67,8 +88,11 @@ defmodule PotokIde.GmailTokenTest do
              GmailToken.delivery_config(
                client_id: "test-client",
                client_secret: "test-secret",
+               refresh_token: "config-refresh",
                req_options: [plug: {Req.Test, __MODULE__}]
              )
+
+    assert %GmailRefreshToken{refresh_token: "config-refresh"} = GmailRefreshToken.get()
   end
 
   test "returns a clear error when refresh token configuration is incomplete" do

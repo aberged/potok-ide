@@ -55,7 +55,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
             required
             phx-mounted={JS.focus()}
           />
-          <.button class="btn btn-primary w-full">
+          <.button class="btn btn-primary rounded-full w-full mt-4 p-6">
             {gettext("Log in with email")} <span aria-hidden="true">→</span>
           </.button>
         </.form>

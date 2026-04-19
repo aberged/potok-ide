@@ -33,9 +33,9 @@
           }
         };
         if (!document.documentElement.hasAttribute("data-theme")) {
-          setTheme(localStorage.getItem("phx:theme") || "system");
+          setTheme(localStorage.getItem("phx:theme") || "light");
         }
-        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "system"));
+        window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "light"));
         
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
       })();
@@ -289,9 +289,9 @@
                 <img
                   id="nav-brand-logo"
                   src={~p"/images/pwa/icon-512.png"}
-                  width="24"
+                  width="34"
                   alt="Potok"
-                  class={[!is_nil(profile) && "hidden"]}
+                  class={[!is_nil(profile) && "hidden", "rounded-2xl object-cover"]}
                 />
               </span>
             </.link>

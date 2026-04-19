@@ -211,29 +211,39 @@ if config_env() == :prod do
           from_name: mailer_from_name
         ]
         |> then(fn config ->
-          cond do
-            present?.(gmail_access_token) ->
-              Keyword.put(config, :access_token, gmail_access_token)
+          config =
+            config
+            |> then(fn config ->
+              if present?.(gmail_access_token),
+                do: Keyword.put(config, :access_token, gmail_access_token),
+                else: config
+            end)
+            |> then(fn config ->
+              if present?.(gmail_client_id),
+                do: Keyword.put(config, :client_id, gmail_client_id),
+                else: config
+            end)
+            |> then(fn config ->
+              if present?.(gmail_client_secret),
+                do: Keyword.put(config, :client_secret, gmail_client_secret),
+                else: config
+            end)
+            |> then(fn config ->
+              if present?.(gmail_refresh_token),
+                do: Keyword.put(config, :refresh_token, gmail_refresh_token),
+                else: config
+            end)
 
-            Enum.all?([gmail_client_id, gmail_client_secret], present?) ->
-              config
-              |> Keyword.put(:client_id, gmail_client_id)
-              |> Keyword.put(:client_secret, gmail_client_secret)
-              |> then(fn config ->
-                if present?.(gmail_refresh_token) do
-                  Keyword.put(config, :refresh_token, gmail_refresh_token)
-                else
-                  config
-                end
-              end)
-
-            true ->
-              raise """
-              Gmail mailer configuration is incomplete.
-              Set GMAIL_API_ACCESS_TOKEN, or set all of GMAIL_CLIENT_ID,
-              and GMAIL_CLIENT_SECRET. GMAIL_REFRESH_TOKEN is only required
-              until one has been persisted in the database.
-              """
+          if present?.(gmail_access_token) or
+               Enum.all?([gmail_client_id, gmail_client_secret], present?) do
+            config
+          else
+            raise """
+            Gmail mailer configuration is incomplete.
+            Set GMAIL_API_ACCESS_TOKEN, or set all of GMAIL_CLIENT_ID,
+            and GMAIL_CLIENT_SECRET. GMAIL_REFRESH_TOKEN is only required
+            until one has been persisted in the database.
+            """
           end
         end)
         |> then(fn config ->

@@ -14,11 +14,14 @@ defmodule PotokIde.GmailToken do
   end
 
   defp access_token(config) do
-    case config[:access_token] do
-      access_token when is_binary(access_token) and access_token != "" ->
-        {:ok, access_token}
+    cond do
+      refresh_access_token_available?(config) ->
+        refresh_access_token(config)
 
-      _ ->
+      present_binary?(config[:access_token]) ->
+        {:ok, config[:access_token]}
+
+      true ->
         refresh_access_token(config)
     end
   end
@@ -27,8 +30,10 @@ defmodule PotokIde.GmailToken do
     with {:ok, client_id} <- fetch_config(config, :client_id, "GMAIL_CLIENT_ID"),
          {:ok, client_secret} <- fetch_config(config, :client_secret, "GMAIL_CLIENT_SECRET"),
          {:ok, refresh_token} <- fetch_refresh_token(config),
-         {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token) do
-      parse_access_token(response)
+         {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token),
+         {:ok, access_token} <- parse_access_token(response) do
+      maybe_store_effective_refresh_token(response, refresh_token)
+      {:ok, access_token}
     end
   end
 
@@ -59,6 +64,15 @@ defmodule PotokIde.GmailToken do
     {:error, {:gmail_token_request_failed, status, body}}
   end
 
+  defp refresh_access_token_available?(config) do
+    Enum.all?([config[:client_id], config[:client_secret]], &present_binary?/1) and
+      refresh_token_available?(config)
+  end
+
+  defp refresh_token_available?(config) do
+    present_binary?(config[:refresh_token]) or persisted_refresh_token_available?()
+  end
+
   defp fetch_config(config, key, env_var) do
     case config[key] do
       value when is_binary(value) and value != "" -> {:ok, value}
@@ -67,13 +81,41 @@ defmodule PotokIde.GmailToken do
   end
 
   defp fetch_refresh_token(config) do
-    case GmailRefreshToken.get() do
-      %GmailRefreshToken{refresh_token: refresh_token}
-      when is_binary(refresh_token) and refresh_token != "" ->
-        {:ok, refresh_token}
+    cond do
+      present_binary?(config[:refresh_token]) ->
+        {:ok, config[:refresh_token]}
 
-      _ ->
-        fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN")
+      true ->
+        case GmailRefreshToken.get() do
+          %GmailRefreshToken{refresh_token: refresh_token}
+          when is_binary(refresh_token) and refresh_token != "" ->
+            {:ok, refresh_token}
+
+          _ ->
+            fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN")
+        end
+    end
+  end
+
+  defp maybe_store_effective_refresh_token(
+         %{status: status, body: %{"refresh_token" => refresh_token}},
+         _used_refresh_token
+       )
+       when status in 200..299 and is_binary(refresh_token) and refresh_token != "" do
+    :ok
+  end
+
+  defp maybe_store_effective_refresh_token(%{status: status}, used_refresh_token)
+       when status in 200..299 and is_binary(used_refresh_token) and used_refresh_token != "" do
+    maybe_store_refresh_token(%{"refresh_token" => used_refresh_token})
+  end
+
+  defp maybe_store_effective_refresh_token(_response, _used_refresh_token), do: :ok
+
+  defp persisted_refresh_token_available? do
+    case GmailRefreshToken.get() do
+      %GmailRefreshToken{refresh_token: refresh_token} -> present_binary?(refresh_token)
+      _ -> false
     end
   end
 
@@ -89,4 +131,7 @@ defmodule PotokIde.GmailToken do
   end
 
   defp maybe_store_refresh_token(_body), do: :ok
+
+  defp present_binary?(value) when is_binary(value), do: String.trim(value) != ""
+  defp present_binary?(_value), do: false
 end
