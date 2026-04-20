@@ -1702,7 +1702,7 @@ defmodule PotokIde.Social do
     %{
       title: "#{creator.username} added a new value",
       body: group_value_notification_body(group, value),
-      tag: "group-#{group.id}-value-created",
+      tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",
       icon: "/images/pwa/icon-192.png",
       badge: "/images/pwa/icon-192.png"
@@ -1713,7 +1713,7 @@ defmodule PotokIde.Social do
     %{
       title: "#{inviter.username} invited you to #{group.name}",
       body: "Open Potok to review this group invitation.",
-      tag: "group-#{group.id}-invitation",
+      tag: "group-#{group.id}-invitation-#{inviter.id}",
       url: "/invitations",
       icon: "/images/pwa/icon-192.png",
       badge: "/images/pwa/icon-192.png"
