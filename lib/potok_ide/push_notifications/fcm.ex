@@ -147,9 +147,9 @@ defmodule PotokIde.PushNotifications.FCM do
     image = payload_value(payload, [:android_image, :image])
     tag = payload_value(payload, :tag)
     # android_icon_value(payload)
-    icon = "ic_launcher_round"
+    icon = "ic_launcher_foreground"
     # payload_value(payload, [:android_color, :color])
-    color = "#ffffff"
+    color = "#ffffffff"
     sound = payload_value(payload, [:android_sound, :sound])
     click_action = payload_value(payload, [:android_click_action, :click_action, :clickAction])
     ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))

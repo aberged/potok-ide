@@ -70,11 +70,11 @@
 
       var style = spinner.style;
       style.position = "fixed";
-      style.top = "calc(var(--app-safe-area-top, 0px) + 0.75rem)";
-      style.left = "calc(var(--app-safe-area-left, 0px) + 6rem)";
+      style.top = "calc(var(--app-safe-area-top, 0px) + 0.56rem)";
+      style.left = "calc(var(--app-safe-area-left, 0px) + 6.3rem)";
       style.zIndex = 100002;
       style.height = style.width = "3rem";
-      style.opacity = 0.3;
+      style.opacity = 0.5;
       style.display = "none";
       style.pointerEvents = "none";
       style.color = "var(--color-primary)";
@@ -97,7 +97,7 @@
           if (!canvas.parentElement) document.body.appendChild(canvas);
           if (!spinner.parentElement) document.body.appendChild(spinner);
 
-          canvas.style.opacity = 1;
+          canvas.style.opacity = .5;
           canvas.style.display = "block";
           spinner.style.display = "inline-block";
           topbar.progress(0);
