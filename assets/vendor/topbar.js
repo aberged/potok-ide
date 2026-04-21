@@ -128,7 +128,6 @@
         delayTimerId = null;
         if (!showing) return;
         showing = false;
-        if (spinner) spinner.style.display = "none";
         if (progressTimerId != null) {
           window.cancelAnimationFrame(progressTimerId);
           progressTimerId = null;
@@ -138,6 +137,7 @@
             canvas.style.opacity -= 0.05;
             if (canvas.style.opacity <= 0.05) {
               canvas.style.display = "none";
+              if (spinner) spinner.style.display = "none";
               fadeTimerId = null;
               return;
             }
