@@ -11,6 +11,8 @@ defmodule PotokIde.Application do
 
   @impl true
   def start(_type, _args) do
+    maybe_warn_missing_imagemagick()
+
     children = [
       PotokIdeWeb.Telemetry,
       PotokIde.Repo,
@@ -27,6 +29,22 @@ defmodule PotokIde.Application do
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: PotokIde.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  defp maybe_warn_missing_imagemagick do
+    has_magick = System.find_executable("magick")
+
+    has_convert =
+      case :os.type() do
+        {:win32, _} -> false
+        _ -> System.find_executable("convert")
+      end
+
+    if is_nil(has_magick) and is_nil(has_convert) do
+      Logger.warning(
+        "ImageMagick executable not found. Avatar initials cannot be rasterized to PNG; Potok will fall back to the default avatar image. Install ImageMagick so `magick` is available in PATH."
+      )
+    end
   end
 
   # Tell Phoenix to update the endpoint configuration

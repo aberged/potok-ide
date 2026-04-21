@@ -22,9 +22,11 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert response(conn, 404)
     end
 
-    test "returns 404 when profile has no avatar", %{conn: conn, profile: profile} do
+    test "returns initials avatar when profile has no avatar", %{conn: conn, profile: profile} do
       conn = get(conn, ~p"/avatar/profile/#{profile.id}")
-      assert response(conn, 404)
+      assert response(conn, 200)
+      [content_type] = get_resp_header(conn, "content-type")
+      assert content_type in ["image/png", "image/svg+xml"]
     end
 
     test "decodes base64 image data and returns it", %{conn: conn, profile: profile} do
@@ -84,7 +86,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert get_resp_header(conn, "content-type") == ["image/gif"]
     end
 
-    test "returns 404 for invalid base64 data", %{conn: conn, profile: profile} do
+    test "returns initials avatar for invalid base64 data", %{conn: conn, profile: profile} do
       invalid_data_url = "data:image/jpeg;base64,invalid!!!base64data"
 
       changeset = Social.Profile.changeset(profile, %{profile_picture_url: invalid_data_url})
@@ -92,7 +94,9 @@ defmodule PotokIdeWeb.AvatarControllerTest do
 
       conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
 
-      assert response(conn, 404)
+      assert response(conn, 200)
+      [content_type] = get_resp_header(conn, "content-type")
+      assert content_type in ["image/png", "image/svg+xml"]
     end
   end
 end

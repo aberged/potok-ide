@@ -1783,7 +1783,7 @@ defmodule PotokIde.Social do
   defp profile_avatar_url(%Profile{id: profile_id, profile_picture_url: url}) when is_binary(url) do
     case String.trim(url) do
       "" ->
-        "/images/pwa/icon-192.png"
+        "/avatar/profile/#{profile_id}"
 
       trimmed ->
         # Convert large base64 data URLs to avatar route URLs to save FCM payload space
@@ -1795,6 +1795,7 @@ defmodule PotokIde.Social do
     end
   end
 
+  defp profile_avatar_url(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}"
   defp profile_avatar_url(%Profile{}), do: "/images/pwa/icon-192.png"
 
   defp extract_group_id(%Group{id: id}), do: id

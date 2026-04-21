@@ -561,7 +561,21 @@ const PushNotifications = {
   handleNativeRegistrationError(error) {
     console.error("Native push registration failed", error)
     this.nativePendingMessage = null
-    this.renderIdle(error?.error || "Unable to register this device for push notifications.")
+    this.renderIdle(this.nativeRegistrationErrorMessage(error))
+  },
+
+  nativeRegistrationErrorMessage(error) {
+    const rawError = error?.error || error?.message || ""
+
+    if (rawError.includes("SERVICE_NOT_AVAILABLE")) {
+      return "FCM is unavailable on this device right now. Ensure Google Play services are installed and updated, verify network access to Google services, then try again."
+    }
+
+    if (rawError.includes("MISSING_INSTANCEID_SERVICE")) {
+      return "Google Play services are missing or outdated on this device, so push registration cannot complete."
+    }
+
+    return rawError || "Unable to register this device for push notifications."
   },
 
   async saveSubscription(subscription) {
@@ -1283,8 +1297,9 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
       brandInitials.classList.add("hidden")
     }
   } else {
-    if (brandAvatar) {
-      brandAvatar.classList.add("hidden")
+    if (brandAvatar && detail.id) {
+      brandAvatar.src = `/avatar/profile/${detail.id}`
+      brandAvatar.classList.remove("hidden")
     }
 
     if (brandInitials) {

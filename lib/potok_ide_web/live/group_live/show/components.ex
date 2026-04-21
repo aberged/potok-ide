@@ -460,6 +460,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     ~H"""
     <div class="flex min-w-0 items-center gap-3">
       <div class="relative">
+        <%!-- @profile: {inspect(@profile)} --%>
         <%= if avatar_url = profile_picture_url(@profile) do %>
           <img
             src={avatar_url}
@@ -891,12 +892,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end
   end
 
-  defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
+  defp profile_picture_url(%{profile_picture_url: url, id: id}) when is_binary(url) do
     case String.trim(url) do
-      "" -> nil
+      "" -> "/avatar/profile/#{id}"
       trimmed_url -> trimmed_url
     end
   end
+
+  defp profile_picture_url(%{id: id}), do: "/avatar/profile/#{id}"
 
   defp profile_picture_url(_), do: nil
 

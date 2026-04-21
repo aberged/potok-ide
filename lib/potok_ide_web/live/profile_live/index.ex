@@ -283,6 +283,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
   defp push_current_profile_updated(socket, profile) do
     push_event(socket, "current_profile_updated", %{
+      id: profile.id,
       username: profile.username,
       profile_picture_url: profile_picture_url(profile)
     })

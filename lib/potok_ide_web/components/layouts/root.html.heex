@@ -46,28 +46,7 @@
     <div class="relative flex min-h-dvh max-h-dvh flex-col overflow-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
       <nav class="sticky top-(--app-safe-area-top) z-100">
         <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
-          <% profile = assigns[:current_profile] %> <% profile_picture_url =
-            if profile && is_binary(profile.profile_picture_url) do
-              case String.trim(profile.profile_picture_url) do
-                "" -> nil
-                trimmed_url -> trimmed_url
-              end
-            end %> <% profile_initials =
-            if profile do
-              profile.username
-              |> to_string()
-              |> String.split(~r/[\s_-]+/, trim: true)
-              |> Enum.take(2)
-              |> Enum.map_join(fn part ->
-                part
-                |> String.first()
-                |> to_string()
-              end)
-              |> case do
-                "" -> "?"
-                initials -> String.upcase(initials)
-              end
-            end %>
+          <% profile = assigns[:current_profile] %> 
           <.header_menu>
             <%= if @current_scope do %>
               <div class="mb-4 max-w-full z-50 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
@@ -175,19 +154,6 @@
                 /> <.theme_toggle />
               </div>
             </div>
-
-            <%!-- <div class="mt-4 border-t border-base-300/70 pt-4">
-                >
-                  {gettext("GitHub")}
-                </a>
-                <a
-                  href="https://hexdocs.pm/phoenix/overview.html"
-                  class="rounded-2xl bg-base-content px-4 py-3 text-sm font-medium text-base-100 transition-opacity hover:opacity-90"
-                >
-                  {gettext("Get Started")} <span aria-hidden="true">&rarr;</span>
-                </a>
-              </div>
-            </div> --%>
           </.header_menu>
 
           <.link
@@ -268,31 +234,24 @@
                 </span>
               </span>
               <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
-                <img
-                  id="nav-brand-profile-avatar"
-                  src={profile_picture_url || ~p"/images/pwa/icon-512.png"}
-                  alt={if(profile, do: profile.username, else: "Potok")}
-                  class={[
-                    "size-10 rounded-2xl object-cover",
-                    is_nil(profile_picture_url) && "hidden"
-                  ]}
-                />
-                <span
-                  id="nav-brand-profile-initials"
-                  class={[
-                    "flex size-10 items-center justify-center rounded-2xl text-sm font-semibold uppercase text-base-content/75",
-                    (is_nil(profile) or !is_nil(profile_picture_url)) && "hidden"
-                  ]}
-                >
-                  {profile_initials}
-                </span>
-                <img
-                  id="nav-brand-logo"
-                  src={~p"/images/pwa/icon-512.png"}
-                  width="34"
-                  alt="Potok"
-                  class={[!is_nil(profile) && "hidden", "rounded-2xl object-cover"]}
-                />
+                <%= if profile do %>
+                  <img
+                    id="nav-brand-profile-avatar"
+                    src={if(@current_profile.profile_picture_url not in [nil, ""], do: @current_profile.profile_picture_url, else: "/avatar/profile/#{@current_profile.id}")}
+                    alt={if(@current_profile, do: @current_profile.username, else: "Potok")}
+                    class={[
+                      "size-10 rounded-2xl object-cover"
+                    ]}
+                  />
+                <% else %>
+                  <img
+                    id="nav-brand-logo"
+                    src={~p"/images/pwa/icon-512.png"}
+                    width="34"
+                    alt="Potok"
+                    class={["rounded-2xl object-cover"]}
+                  />
+                <% end %>
               </span>
             </.link>
           </div>
