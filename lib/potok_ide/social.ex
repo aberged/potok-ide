@@ -1704,8 +1704,7 @@ defmodule PotokIde.Social do
       body: group_value_notification_body(group, value),
       tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",
-      icon: "/images/pwa/icon-192.png",
-      badge: "/images/pwa/icon-192.png"
+      badge: profile_avatar_url(creator),
     }
   end
 
@@ -1715,8 +1714,7 @@ defmodule PotokIde.Social do
       body: "Open Potok to review this group invitation.",
       tag: "group-#{group.id}-invitation-#{inviter.id}",
       url: "/invitations",
-      icon: "/images/pwa/icon-192.png",
-      badge: "/images/pwa/icon-192.png"
+      badge: profile_avatar_url(inviter),
     }
   end
 
@@ -1726,8 +1724,7 @@ defmodule PotokIde.Social do
       body: "#{invitee.username} joined #{group.name}.",
       tag: "group-#{group.id}-invitation-accepted",
       url: "/groups/#{group.id}",
-      icon: "/images/pwa/icon-192.png",
-      badge: "/images/pwa/icon-192.png"
+      badge: profile_avatar_url(invitee),
     }
   end
 
@@ -1740,8 +1737,7 @@ defmodule PotokIde.Social do
       body: "Open Potok to review this shared profile invitation.",
       tag: "profile-#{shared_profile.id}-invitation",
       url: "/profiles",
-      icon: "/images/pwa/icon-192.png",
-      badge: "/images/pwa/icon-192.png"
+      badge: profile_avatar_url(shared_profile),
     }
   end
 
@@ -1754,10 +1750,11 @@ defmodule PotokIde.Social do
       body: "#{invitee.username} now has access to #{shared_profile.username}.",
       tag: "profile-#{shared_profile.id}-invitation-accepted",
       url: "/profiles",
-      icon: "/images/pwa/icon-192.png",
-      badge: "/images/pwa/icon-192.png"
+      badge: profile_avatar_url(shared_profile),
     }
   end
+
+
 
   defp group_value_notification_body(%Group{} = group, %Value{} = value) do
     excerpt = notification_excerpt(value.content)
@@ -1782,6 +1779,23 @@ defmodule PotokIde.Social do
   end
 
   defp notification_excerpt(_content), do: nil
+
+  defp profile_avatar_url(%Profile{id: profile_id, profile_picture_url: url}) when is_binary(url) do
+    case String.trim(url) do
+      "" ->
+        "/images/pwa/icon-192.png"
+
+      trimmed ->
+        # Convert large base64 data URLs to avatar route URLs to save FCM payload space
+        if String.starts_with?(trimmed, "data:") and byte_size(trimmed) > 500 do
+          "/avatar/profile/#{profile_id}"
+        else
+          trimmed
+        end
+    end
+  end
+
+  defp profile_avatar_url(%Profile{}), do: "/images/pwa/icon-192.png"
 
   defp extract_group_id(%Group{id: id}), do: id
   defp extract_group_id(id) when is_integer(id), do: id

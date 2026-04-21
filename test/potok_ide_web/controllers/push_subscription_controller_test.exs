@@ -159,8 +159,16 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       assert %{
                message: %{
                  token: token,
-                 data: %{"url" => "/accounts/settings"},
-                 android: %{notification: %{channel_id: "potok-default"}}
+                 data: %{
+                   "android_channel_id" => "potok-default",
+                   "badge" => "http://localhost:4000/images/pwa/icon-192.png",
+                   "body" => "Push notifications are enabled for your account.",
+                   "icon" => "/images/pwa/icon-192.png",
+                   "tag" => "potok-push-test",
+                   "title" => "Potok notifications are active",
+                   "url" => "/accounts/settings"
+                 },
+                 android: %{priority: "high"}
                }
              } = send_request[:json]
 

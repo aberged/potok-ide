@@ -1,6 +1,7 @@
 defmodule PotokIde.PushNotifications.FCM do
   alias PotokIde.Accounts.PushSubscription
   alias PotokIde.PushNotifications
+  alias PotokIdeWeb.Endpoint
 
   @default_scope "https://www.googleapis.com/auth/firebase.messaging"
   @default_token_url "https://oauth2.googleapis.com/token"
@@ -142,30 +143,26 @@ defmodule PotokIde.PushNotifications.FCM do
   end
 
   defp build_message_body(%PushSubscription{} = subscription, payload, credentials) do
-    title = payload_value(payload, :title)
-    body = payload_value(payload, :body)
-    image = payload_value(payload, [:android_image, :image])
-    tag = payload_value(payload, :tag)
-    # android_icon_value(payload)
-    icon = "ic_notification"
-    # payload_value(payload, [:android_color, :color])
-    color = "#ffffff"
     sound = payload_value(payload, [:android_sound, :sound])
-    click_action = payload_value(payload, [:android_click_action, :click_action, :clickAction])
     ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
     collapse_key = payload_value(payload, [:android_collapse_key, :collapse_key, :collapseKey])
+    android_image =
+      payload
+      |> payload_value([:android_image, :image])
+      |> absolute_url()
 
-    notification = notification_payload(title, body, image)
+    # Convert badge URL to absolute (large base64 images already converted to /avatar/profile/:id in social context)
+    badge =
+      payload
+      |> payload_value([:badge])
+      |> absolute_url()
 
-    android_notification =
-      %{}
-      |> maybe_put(:channel_id, credentials.channel_id)
-      |> maybe_put(:tag, tag)
-      |> maybe_put(:icon, icon)
-      |> maybe_put(:color, color)
-      |> maybe_put(:sound, sound)
-      |> maybe_put(:click_action, click_action)
-      |> maybe_put(:image, image)
+    data_payload =
+      payload
+      |> Map.put_new(:android_channel_id, credentials.channel_id)
+      |> maybe_put_map_value(:android_image, android_image)
+      |> maybe_put_map_value(:android_sound, sound)
+      |> maybe_put_map_value(:badge, badge)
 
     android_payload =
       %{
@@ -173,16 +170,14 @@ defmodule PotokIde.PushNotifications.FCM do
       }
       |> maybe_put(:ttl, ttl)
       |> maybe_put(:collapse_key, collapse_key)
-      |> maybe_put(:notification, android_notification, map_size(android_notification) > 0)
 
     {:ok,
      %{
        message:
          %{
            token: subscription.device_token,
-           data: stringify_payload(payload)
+           data: stringify_payload(data_payload)
          }
-         |> maybe_put(:notification, notification)
          |> maybe_put(:android, android_payload, map_size(android_payload) > 0)
      }}
   end
@@ -229,16 +224,6 @@ defmodule PotokIde.PushNotifications.FCM do
   defp stringify_value(value) when is_binary(value), do: value
   defp stringify_value(value) when is_boolean(value) or is_number(value), do: to_string(value)
   defp stringify_value(value), do: Jason.encode!(value)
-
-  defp notification_payload(nil, nil, nil), do: nil
-
-  defp notification_payload(title, body, image) do
-    %{
-      title: title || "Potok",
-      body: body || ""
-    }
-    |> maybe_put(:image, image)
-  end
 
   defp message_url(project_id),
     do: "https://fcm.googleapis.com/v1/projects/#{project_id}/messages:send"
@@ -306,6 +291,9 @@ defmodule PotokIde.PushNotifications.FCM do
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
+  defp maybe_put_map_value(map, _key, nil), do: map
+  defp maybe_put_map_value(map, key, value), do: Map.put(map, key, value)
+
   defp maybe_put(map, _key, _value, false), do: map
   defp maybe_put(map, key, value, true), do: Map.put(map, key, value)
 
@@ -343,6 +331,29 @@ defmodule PotokIde.PushNotifications.FCM do
   end
 
   defp validate_url(_url, message), do: {:error, {:invalid_firebase_credentials, message}}
+
+  defp absolute_url(nil), do: nil
+
+  defp absolute_url(url) when is_binary(url) do
+    trimmed = String.trim(url)
+
+    cond do
+      trimmed == "" ->
+        nil
+
+      String.starts_with?(trimmed, ["https://", "http://"]) ->
+        trimmed
+
+      true ->
+        Endpoint.url()
+        |> URI.merge(trimmed)
+        |> URI.to_string()
+    end
+  rescue
+    _error -> nil
+  end
+
+  defp absolute_url(_value), do: nil
 
   defp normalize(value) when is_binary(value) do
     case String.trim(value) do

@@ -39,6 +39,7 @@ defmodule PotokIdeWeb.Router do
 
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
+    get "/avatar/profile/:id", AvatarController, :profile
   end
 
   # Other scopes may use custom stacks.
