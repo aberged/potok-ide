@@ -30,6 +30,7 @@ import {marked} from "marked"
 import Quill from "quill"
 import topbar from "../vendor/topbar"
 import TurndownService from "turndown"
+import { installLongPressLinkMenu } from "./longpress"
 
 const HeaderDrawer = {
   mounted() {
@@ -1354,6 +1355,10 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 
 registerCapacitorMagicLinks()
 registerCapacitorPushNotifications()
+
+window.addEventListener("DOMContentLoaded", () => {
+  installLongPressLinkMenu()
+})
 
 // connect if there are any LiveViews on the page
 liveSocket.connect()
