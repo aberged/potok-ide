@@ -27,58 +27,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="shadow-md"
       />
 
-      <div
-        :if={@group.is_root}
-        id="group-sub-groups-kind-tabs"
-        class="absolute right-0 top-0 flex items-center gap-2 p-1 border rounded-full bg-base-100 border-base-300"
-      >
-        <button
-          id="group-sub-groups-kind-direct"
-          type="button"
-          phx-click="switch_sub_groups_kind"
-          phx-value-kind="direct"
-          class={[
-            "btn btn-sm rounded-full",
-            if(@sub_groups_kind == "direct",
-              do: "btn-primary text-white",
-              else: "btn-ghost border border-base-300"
-            )
-          ]}
-        >
-          <.icon name="hero-users" class="size-4 mr-1" />
-          <span
-            :if={@direct_sub_groups_unread_count > 0}
-            id="group-sub-groups-kind-direct-unread-badge"
-            class="absolute top-[0.1rem] left-8 ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-          >
-            {unread_badge_label(@direct_sub_groups_unread_count)}
-          </span>
-        </button>
-
-        <button
-          id="group-sub-groups-kind-other"
-          type="button"
-          phx-click="switch_sub_groups_kind"
-          phx-value-kind="other"
-          class={[
-            "btn btn-sm rounded-full",
-            if(@sub_groups_kind == "other",
-              do: "btn-primary text-white",
-              else: "btn-ghost border border-base-300"
-            )
-          ]}
-        >
-          <.icon name="hero-user-group" class="size-4 mr-1" />
-          <span
-            :if={@other_sub_groups_unread_count > 0}
-            id="group-sub-groups-kind-other-unread-badge"
-            class="absolute top-[0.1rem] right-2 ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-          >
-            {unread_badge_label(@other_sub_groups_unread_count)}
-          </span>
-        </button>
-      </div>
-
       <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
