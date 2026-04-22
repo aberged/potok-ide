@@ -102,6 +102,7 @@ defmodule PotokIdeWeb.Router do
       live "/invitations", InvitationLive.Index, :index
       live "/requests", RequestLive.Index, :index
       live "/accounts/register", AccountLive.Registration, :new
+      live "/accounts/settings", AccountLive.Settings, :edit
     end
 
     live_session :require_authenticated_account,
@@ -109,7 +110,7 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :require_authenticated}
       ] do
-      live "/accounts/settings", AccountLive.Settings, :edit
+      #live "/accounts/settings", AccountLive.Settings, :edit
       live "/accounts/settings/confirm-email/:token", AccountLive.Settings, :confirm_email
     end
 

@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.AccountLive.Settings do
   use PotokIdeWeb, :live_view
 
-  on_mount {PotokIdeWeb.AccountAuth, :require_sudo_mode}
+  #on_mount {PotokIdeWeb.AccountAuth, :require_sudo_mode}
 
   alias PotokIde.Accounts
   alias PotokIde.PushNotifications
