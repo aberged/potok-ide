@@ -102,7 +102,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </button>
           <button
-            :if={@group.is_root or @is_member}
+            :if={!@group.is_root and @is_member}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"

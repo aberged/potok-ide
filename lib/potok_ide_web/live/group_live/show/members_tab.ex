@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
+      <div class="pt-4 h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
         <h3 :if={!@group.is_direct} class="card-title mb-2">{gettext("Members")}</h3>
 
         <div class=" flex flex-row">
@@ -108,7 +108,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </li>
 
           <li :for={{dom_id, member} <- @members} id={dom_id}>
-            <div class="flex items-start justify-between gap-3 rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 shadow-sm">
+            <div class="flex items-start justify-between gap-3 rounded-2xl border border-base-300/60 bg-base-100/70 px-2 py-1 shadow-sm">
               <Components.profile_identity
                 profile={member}
                 me={member.id == @current_profile.id}
