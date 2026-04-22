@@ -67,6 +67,13 @@ Default profile behavior:
 * Later profile creation does not overwrite either selection.
 * If `current_profile` is cleared, the web layer falls back to `default_profile` for profile-scoped behavior.
 
+Avatar behavior:
+
+* Profile avatars are resolved from `profile_picture_url` only when it is a non-empty string.
+* When a profile has no avatar URL (or an empty URL), the app uses `GET /avatar/profile/:id` to render initials.
+* The nav bar updates this avatar source during profile switches through the `phx:current_profile_updated` event so changing from a profile with a URL to one without a URL immediately falls back to `/avatar/profile/:id`.
+* Push-notification avatar fields follow the same fallback route strategy and are converted to absolute URLs before sending FCM payloads.
+
 ## Quick Start
 
 ### Local development
@@ -513,6 +520,7 @@ Notes:
 * The Docker image is production-oriented. It does not provide code reloading or a local dev shell workflow.
 * Your `DATABASE_URL` must point to a database reachable from inside the container.
 * Asset compilation happens during image build through `mix assets.deploy`.
+* Runtime avatar generation relies on ImageMagick SVG rendering support (for example `imagemagick` + `librsvg2-bin` on Debian-based images).
 
 ## Running A Release Without Docker
 
