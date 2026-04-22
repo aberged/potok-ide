@@ -57,13 +57,13 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
               name={@form[:remember_me].name}
               value="true"
               phx-disable-with={gettext("Logging in...")}
-              class="btn btn-primary w-full"
+              class="btn btn-primary w-full h-auto p-2"
             >
               {gettext("Keep me logged in on this device")}
             </.button>
             <.button
               phx-disable-with={gettext("Logging in...")}
-              class="btn btn-primary btn-soft w-full mt-2"
+              class="btn btn-primary btn-soft w-full h-auto p-2 mt-2"
             >
               {gettext("Log me in only this time")}
             </.button>

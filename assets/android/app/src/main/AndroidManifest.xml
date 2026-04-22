@@ -66,8 +66,7 @@
 
                 <data
                     android:scheme="https"
-                    android:host="potok-ide.fly.dev"
-                    android:pathPrefix="/accounts/log-in" />
+                    android:host="potok-ide.fly.dev" />
             </intent-filter>
 
         </activity>

@@ -1032,6 +1032,7 @@ const MarkdownEditor = {
 
 const APP_LINK_HOST = "potok-ide.fly.dev"
 const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
+const CAPACITOR_LAST_ROUTE_KEY = "potok:last-route"
 
 const parseTokenFromLoginPath = pathname => {
   const match = pathname.match(APP_LINK_PATH_PATTERN)
@@ -1115,11 +1116,21 @@ const openNotificationUrl = urlString => {
   }
 
   try {
-    const targetUrl = new URL(normalizedUrl, window.location.origin)
-
-    if (targetUrl.origin !== window.location.origin) {
+    const incomingUrl = new URL(normalizedUrl, window.location.origin)
+    if (!["http:", "https:"].includes(incomingUrl.protocol)) {
       return false
     }
+
+    const allowedHosts = new Set([APP_LINK_HOST, window.location.hostname].filter(Boolean))
+
+    if (!allowedHosts.has(incomingUrl.hostname)) {
+      return false
+    }
+
+    const targetUrl = new URL(
+      `${incomingUrl.pathname}${incomingUrl.search}${incomingUrl.hash}`,
+      window.location.origin
+    )
 
     if (window.location.href === targetUrl.toString()) {
       window.location.reload()
@@ -1139,14 +1150,76 @@ const registerCapacitorMagicLinks = () => {
   }
 
   void App.addListener("appUrlOpen", ({url}) => {
-    handleCapacitorMagicLink(url)
+    openNotificationUrl(url)
   })
 
   void App.getLaunchUrl()
     .then(result => {
-      handleCapacitorMagicLink(result?.url || "")
+      const openedLaunchUrl = openNotificationUrl(result?.url || "")
+
+      if (!openedLaunchUrl) {
+        restoreLastCapacitorRoute()
+      }
     })
     .catch(() => {})
+}
+
+const persistCurrentCapacitorRoute = () => {
+  if (!Capacitor.isNativePlatform()) {
+    return
+  }
+
+  const route = `${window.location.pathname}${window.location.search}${window.location.hash}`
+
+  try {
+    window.localStorage.setItem(CAPACITOR_LAST_ROUTE_KEY, route)
+  } catch (_error) {
+    // Ignore storage failures (private mode/quota/etc.).
+  }
+}
+
+const restoreLastCapacitorRoute = () => {
+  if (!Capacitor.isNativePlatform()) {
+    return false
+  }
+
+  try {
+    const storedRoute = window.localStorage.getItem(CAPACITOR_LAST_ROUTE_KEY)
+
+    if (!storedRoute) {
+      return false
+    }
+
+    const targetUrl = new URL(storedRoute, window.location.origin)
+    const currentRoute = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    const targetRoute = `${targetUrl.pathname}${targetUrl.search}${targetUrl.hash}`
+
+    if (currentRoute === targetRoute) {
+      return false
+    }
+
+    window.location.assign(targetUrl.toString())
+    return true
+  } catch (_error) {
+    return false
+  }
+}
+
+const registerCapacitorRoutePersistence = () => {
+  if (!Capacitor.isNativePlatform()) {
+    return
+  }
+
+  persistCurrentCapacitorRoute()
+
+  window.addEventListener("phx:page-loading-stop", persistCurrentCapacitorRoute)
+  window.addEventListener("popstate", persistCurrentCapacitorRoute)
+
+  void App.addListener("appStateChange", ({isActive}) => {
+    if (!isActive) {
+      persistCurrentCapacitorRoute()
+    }
+  })
 }
 
 const registerCapacitorPushNotifications = () => {
@@ -1355,6 +1428,7 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 
 registerCapacitorMagicLinks()
 registerCapacitorPushNotifications()
+registerCapacitorRoutePersistence()
 
 window.addEventListener("DOMContentLoaded", () => {
   installLongPressLinkMenu()

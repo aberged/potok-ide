@@ -7,12 +7,12 @@ defmodule PotokIdeWeb.AccountLive.Login do
   def render(assigns) do
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="mx-auto max-w-sm space-y-4 px-6 pt-4 pb-8">
-        <div class="flex justify-center">
+      <div class="mx-auto max-w-sm space-y-2 px-6 pt-4 pb-4 flex-1">
+        <div class="flex justify-center mb-0">
           <img
             src={~p"/images/icon-transparent.svg"}
             alt="Potok"
-            class="h-35 w-35"
+            class="h-30 w-30"
           />
         </div>
         <div class="text-center">
@@ -27,7 +27,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
             </:subtitle>
           </.header>
         </div>
-        <div :if={local_mail_adapter?()} class="alert alert-info">
+        <div :if={local_mail_adapter?() and false} class="alert alert-info">
           <.icon name="hero-information-circle" class="size-6 shrink-0" />
           <div>
             <p>{gettext("You are running the local mail adapter.")}</p>
