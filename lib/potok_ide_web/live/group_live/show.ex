@@ -259,6 +259,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
             is_member={@is_member}
+            sub_groups_kind={@sub_groups_kind}
+            direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
+            other_sub_groups_unread_count={@other_sub_groups_unread_count}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -351,6 +354,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:group_unread_counts, %{})
        |> assign(:current_group_unread_count, 0)
        |> assign(:sub_groups_unread_count, 0)
+      |> assign(:direct_sub_groups_unread_count, 0)
+      |> assign(:other_sub_groups_unread_count, 0)
+      |> assign(:sub_groups_kind, normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group))
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -393,12 +399,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
         socket.assigns.current_profile
       )
 
-    if active_tab == socket.assigns.active_tab do
+    sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
+
+    if active_tab == socket.assigns.active_tab and sub_groups_kind == socket.assigns.sub_groups_kind do
       {:noreply, socket}
     else
       {:noreply,
        socket
        |> assign(:active_tab, active_tab)
+       |> assign(:sub_groups_kind, sub_groups_kind)
+       |> assign(:children_pagination, default_pagination(@children_page_size))
        |> load_group_data(socket.assigns.group, active_tab)}
     end
   end
@@ -645,13 +655,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
        socket,
        to:
          group_tab_path(
-           socket.assigns.group.id,
+           socket.assigns.group,
            normalize_active_tab(
              "group_home",
              socket.assigns.group,
              socket.assigns.is_member,
              socket.assigns.current_profile
-           )
+           ),
+           sub_groups_kind: socket.assigns.sub_groups_kind
          )
      )}
   end
@@ -662,13 +673,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
        socket,
        to:
          group_tab_path(
-           socket.assigns.group.id,
+           socket.assigns.group,
            normalize_active_tab(
              tab,
              socket.assigns.group,
              socket.assigns.is_member,
              socket.assigns.current_profile
-           )
+           ),
+           sub_groups_kind: socket.assigns.sub_groups_kind
          )
      )}
   end
@@ -678,6 +690,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
      socket
      |> maybe_increment_pagination(:children_pagination)
      |> refresh_group_data()}
+  end
+
+  def handle_event("switch_sub_groups_kind", %{"kind" => kind}, socket) do
+    next_kind = normalize_sub_groups_kind(kind, socket.assigns.group)
+
+    if next_kind == socket.assigns.sub_groups_kind do
+      {:noreply, socket}
+    else
+      {:noreply,
+       push_patch(socket,
+         to:
+           group_tab_path(socket.assigns.group, socket.assigns.active_tab,
+             sub_groups_kind: next_kind
+           )
+       )}
+    end
   end
 
   def handle_event("load_more_members", _params, socket) do
@@ -1146,9 +1174,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
           socket.assigns.current_profile
         )
 
+    sub_groups_kind =
+      socket.assigns
+      |> Map.get(:sub_groups_kind, normalize_sub_groups_kind(nil, group))
+      |> normalize_sub_groups_kind(group)
+
     socket
     |> assign(:group, group)
     |> assign(:active_tab, active_tab)
+    |> assign(:sub_groups_kind, sub_groups_kind)
     |> load_member_summary(group)
     |> load_join_request_data(group, active_tab)
     |> maybe_load_children(group, active_tab)
@@ -1409,10 +1443,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp child_groups_page(group, current_profile, pagination) do
-    total_count = Social.count_child_groups_for_profile(group, current_profile)
+  defp child_groups_page(group, current_profile, pagination, sub_groups_kind) do
+    direct_filter = child_group_direct_filter(sub_groups_kind)
+
+    total_count =
+      Social.count_child_groups_for_profile(group, current_profile, is_direct: direct_filter)
+
     limit = pagination_limit(pagination)
-    entries = Social.list_child_groups_for_profile(group, current_profile, limit: limit)
+
+    entries =
+      Social.list_child_groups_for_profile(group, current_profile,
+        limit: limit,
+        is_direct: direct_filter
+      )
 
     pagination_result(pagination, entries, total_count)
   end
@@ -1500,9 +1543,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_children(socket, group, active_tab) do
     if needs_children?(group, active_tab) do
       current_profile = socket.assigns.current_profile
+      sub_groups_kind = socket.assigns.sub_groups_kind
 
       children_page =
-        child_groups_page(group, current_profile, socket.assigns.children_pagination)
+        child_groups_page(group, current_profile, socket.assigns.children_pagination, sub_groups_kind)
 
       socket
       |> assign(:loaded_children, children_page.entries)
@@ -1579,6 +1623,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:group_unread_counts, %{})
     |> assign(:current_group_unread_count, 0)
     |> assign(:sub_groups_unread_count, 0)
+    |> assign(:direct_sub_groups_unread_count, 0)
+    |> assign(:other_sub_groups_unread_count, 0)
   end
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
@@ -1586,16 +1632,37 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     group_unread_counts = Social.list_group_unread_counts(socket.assigns.current_profile, groups)
 
+    visible_child_groups = Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
+
+    visible_child_group_unread_counts =
+      Social.list_group_unread_counts(socket.assigns.current_profile, visible_child_groups)
+
     current_group_unread_count =
       Social.count_group_direct_unread_values(socket.assigns.current_profile, group)
 
     sub_groups_unread_count =
       max(Map.get(group_unread_counts, group.id, 0) - current_group_unread_count, 0)
 
+    direct_sub_groups_unread_count =
+      visible_child_groups
+      |> Enum.filter(& &1.is_direct)
+      |> Enum.reduce(0, fn child_group, total ->
+        total + Map.get(visible_child_group_unread_counts, child_group.id, 0)
+      end)
+
+    other_sub_groups_unread_count =
+      visible_child_groups
+      |> Enum.reject(& &1.is_direct)
+      |> Enum.reduce(0, fn child_group, total ->
+        total + Map.get(visible_child_group_unread_counts, child_group.id, 0)
+      end)
+
     socket
     |> assign(:group_unread_counts, group_unread_counts)
     |> assign(:current_group_unread_count, current_group_unread_count)
     |> assign(:sub_groups_unread_count, sub_groups_unread_count)
+    |> assign(:direct_sub_groups_unread_count, direct_sub_groups_unread_count)
+    |> assign(:other_sub_groups_unread_count, other_sub_groups_unread_count)
   end
 
   defp assign_child_pending_join_request_counts(%{assigns: %{current_profile: nil}} = socket) do
@@ -1683,6 +1750,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ]
   end
 
+  defp normalize_sub_groups_kind(_kind, %Group{is_root: false}), do: "other"
+  defp normalize_sub_groups_kind("direct", %Group{is_root: true}), do: "direct"
+  defp normalize_sub_groups_kind("other", %Group{is_root: true}), do: "other"
+  defp normalize_sub_groups_kind(_, %Group{is_root: true}), do: "other"
+
+  defp child_group_direct_filter("direct"), do: true
+  defp child_group_direct_filter("other"), do: false
+  defp child_group_direct_filter(_), do: false
+
   defp default_active_tab(%Group{is_root: true}), do: "sub_groups"
   defp default_active_tab(%Group{is_direct: true}), do: "values"
   defp default_active_tab(%Group{home_page: :chat}), do: "values"
@@ -1699,7 +1775,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp members_tab_label(_count, _group, _profile), do: gettext("Members")
 
-  defp group_tab_path(group_id, tab), do: ~p"/groups/#{group_id}/#{tab}"
+  defp group_tab_path(%Group{} = group, tab, opts) do
+    base_path = ~p"/groups/#{group.id}/#{tab}"
+
+    query_params =
+      %{}
+      |> maybe_put_sub_groups_kind_query(group, tab, opts[:sub_groups_kind])
+
+    append_query_params(base_path, query_params)
+  end
+
+  defp maybe_put_sub_groups_kind_query(query_params, group, tab, sub_groups_kind) do
+    if group.is_root and needs_children?(group, tab) do
+      Map.put(query_params, "sub_groups_kind", normalize_sub_groups_kind(sub_groups_kind, group))
+    else
+      query_params
+    end
+  end
+
+  defp append_query_params(path, query_params) when map_size(query_params) == 0, do: path
+
+  defp append_query_params(path, query_params) do
+    path <> "?" <> URI.encode_query(query_params)
+  end
 
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"

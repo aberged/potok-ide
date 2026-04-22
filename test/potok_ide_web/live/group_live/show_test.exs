@@ -728,6 +728,123 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-panel-sub-groups a", "other-child-group")
     end
 
+    test "shows direct and other sub-group tabs on root and filters each list", %{conn: conn} do
+      account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "root-tabs-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "root-tabs-other",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, other_child_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "root-other-sub-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(profile, other_child_group, other_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, other_profile)
+
+      {:ok, direct_group} = Social.get_or_create_direct_group(profile, other_profile)
+
+      assert {:ok, _other_unread_value} =
+               Social.create_value(other_profile, other_child_group, %{
+                 "content" => "other subgroup unread",
+                 "content_format" => :markdown
+               })
+
+      assert {:ok, _direct_unread_value} =
+               Social.create_value(other_profile, direct_group, %{
+                 "content" => "direct subgroup unread",
+                 "content_format" => :markdown
+               })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-sub-groups-kind-direct")
+      assert has_element?(lv, "#group-sub-groups-kind-other")
+      assert has_element?(lv, "#group-sub-groups-kind-direct-unread-badge", "1")
+      assert has_element?(lv, "#group-sub-groups-kind-other-unread-badge", "1")
+
+      assert has_element?(lv, "#group-children-list", "root-other-sub-group")
+      refute has_element?(lv, "#group-children-list", direct_group.name)
+
+      lv
+      |> element("#group-sub-groups-kind-direct")
+      |> render_click()
+
+      assert_patch(lv, ~p"/groups/#{root_group.id}/sub_groups?sub_groups_kind=direct")
+
+      assert has_element?(lv, "#group-children-list", other_profile.username)
+      refute has_element?(lv, "#group-children-list", "root-other-sub-group")
+    end
+
+    test "shows only the other sub-groups tab on non-root groups", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "nonroot-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, parent_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "nonroot-tabs-parent",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, _child_group} =
+        Social.create_group(profile, parent_group, %{
+          "name" => "nonroot-tabs-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{parent_group.id}/sub_groups")
+
+      refute has_element?(lv, "#group-sub-groups-kind-direct")
+      assert has_element?(lv, "#group-sub-groups-kind-other")
+      assert has_element?(lv, "#group-children-list", "nonroot-tabs-child")
+    end
+
     test "shows the current group path in the sub-groups tab", %{conn: conn} do
       account = account_fixture()
 
