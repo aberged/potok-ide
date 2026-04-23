@@ -1598,6 +1598,13 @@ defmodule PotokIde.Social do
 
   defp maybe_offset(query, _offset), do: query
 
+  defp notify_group_members_of_new_value(
+         %Profile{} = _creator,
+         %Group{} = _group,
+         %Value{is_data: true}
+       ),
+       do: :ok
+
   defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     payload = group_value_notification_payload(creator, group, value)
 

@@ -1048,6 +1048,82 @@ defmodule PotokIde.SocialTest do
       refute request_options[:url] == sender_subscription.endpoint
       refute_receive {:push_request, _other_request}
     end
+
+    test "does not send push notifications for data values" do
+      request_pid = self()
+      original_config = Application.get_env(:potok_ide, PushNotifications, [])
+
+      on_exit(fn ->
+        Application.put_env(:potok_ide, PushNotifications, original_config)
+      end)
+
+      Application.put_env(
+        :potok_ide,
+        PushNotifications,
+        ttl: 60,
+        vapid_subject: "mailto:test@example.com",
+        vapid_public_key:
+          Base.url_encode64(<<4>> <> :crypto.strong_rand_bytes(64), padding: false),
+        vapid_private_key: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+        request_fun: fn options ->
+          send(request_pid, {:push_request, options})
+          {:ok, %Req.Response{status: 201, body: ""}}
+        end
+      )
+
+      sender_account = account_fixture()
+      recipient_account = account_fixture()
+
+      {:ok, sender_profile} =
+        Social.create_profile_for_account(sender_account, %{
+          username: "vp-data-send",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, recipient_profile} =
+        Social.create_profile_for_account(recipient_account, %{
+          username: "vp-data-rec",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(sender_profile, root_group, %{
+          "name" => "value-push-data-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, invitation} =
+               Social.invite_profile_to_group(sender_profile, group, recipient_profile)
+
+      assert {:ok, _accepted_invitation} =
+               Social.accept_group_invitation(invitation, recipient_profile)
+
+      {:ok, _sender_subscription} =
+        Accounts.upsert_push_subscription(sender_account, valid_push_subscription_attrs())
+
+      {:ok, _recipient_subscription} =
+        Accounts.upsert_push_subscription(recipient_account, valid_push_subscription_attrs())
+
+      assert {:ok, value} =
+               Social.create_value(sender_profile, group, %{
+                 "content" => "Structured data payload",
+                 "content_format" => :markdown,
+                 "is_data" => true
+               })
+
+      assert value.is_data == true
+      refute_receive {:push_request, _request}
+    end
   end
 
   describe "create_value/3" do
