@@ -41,7 +41,7 @@ android_app_links =
   |> Keyword.put(
     :package_name,
     System.get_env("ANDROID_APP_LINK_PACKAGE") ||
-      Keyword.get(android_app_links, :package_name, "com.potok.ide")
+      Keyword.get(android_app_links, :package_name, "rs.potok.ide")
   )
   |> then(fn config ->
     case parse_env_list.(System.get_env("ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS")) do

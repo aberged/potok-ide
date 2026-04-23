@@ -1,4 +1,4 @@
-package com.potok.ide;
+package rs.potok.ide;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
@@ -162,161 +162,98 @@ public class PotokMessagingService extends FirebaseMessagingService {
         return 0;
     }
 
-    private Bitmap fetchRemoteBitmap(String urlString) {
-        return fetchRemoteBitmap(urlString, true);
+    private Bitmap fetchRemoteBitmap(String rawUrl) {
+        return fetchRemoteBitmap(rawUrl, true);
     }
 
-    private Bitmap fetchRemoteBitmap(String urlString, boolean allowFallback) {
-        if (isBlank(urlString)) {
-            return fallbackBitmap(allowFallback);
+    private Bitmap fetchRemoteBitmap(String rawUrl, boolean allowFallback) {
+        String sanitizedUrl = sanitizeUrl(rawUrl, allowFallback);
+        if (sanitizedUrl == null) {
+            return null;
         }
 
-        String normalizedSource = normalizeBitmapSource(urlString);
-        if (isBlank(normalizedSource)) {
-            return fallbackBitmap(allowFallback);
-        }
-
-        // Check if it's a base64 data URL
-        if (normalizedSource.startsWith("data:")) {
-            Bitmap decoded = decodeBase64DataUrl(normalizedSource);
-            if (decoded != null) {
-                return decoded;
-            }
-
-            return fallbackBitmap(allowFallback);
-        }
-
-        // Otherwise handle as HTTP(S) URL
         HttpURLConnection connection = null;
-        InputStream inputStream = null;
 
         try {
-            URL url = URI.create(normalizedSource).toURL();
-            String protocol = url.getProtocol();
-            if (!"https".equalsIgnoreCase(protocol) && !"http".equalsIgnoreCase(protocol)) {
-                return fallbackBitmap(allowFallback);
-            }
-
+            URL url = URI.create(sanitizedUrl).toURL();
             connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(5_000);
             connection.setReadTimeout(5_000);
             connection.setInstanceFollowRedirects(true);
             connection.connect();
 
-            int responseCode = connection.getResponseCode();
-            if (responseCode < 200 || responseCode >= 300) {
-                return fallbackBitmap(allowFallback);
+            if (connection.getResponseCode() >= 400) {
+                return null;
             }
 
-            inputStream = connection.getInputStream();
-            return BitmapFactory.decodeStream(inputStream);
-        } catch (IOException | RuntimeException ignored) {
-            return fallbackBitmap(allowFallback);
+            try (InputStream stream = connection.getInputStream()) {
+                return BitmapFactory.decodeStream(stream);
+            }
+        } catch (IOException | IllegalArgumentException e) {
+            return null;
         } finally {
-            if (inputStream != null) {
-                try {
-                    inputStream.close();
-                } catch (IOException ignored) {
-                }
-            }
-
             if (connection != null) {
                 connection.disconnect();
             }
         }
     }
 
-    private Bitmap decodeBase64DataUrl(String dataUrl) {
+    private String sanitizeUrl(String rawUrl, boolean allowFallback) {
+        if (isBlank(rawUrl)) {
+            return allowFallback ? FALLBACK_BADGE_URL : null;
+        }
+
+        String trimmedUrl = rawUrl.trim();
+
+        if (trimmedUrl.startsWith("data:")) {
+            return decodeDataUrl(trimmedUrl) != null ? trimmedUrl : null;
+        }
+
         try {
-            // Supports data:image/*;base64,[data] and data:image/*;base64/[data]
-            String trimmed = dataUrl == null ? null : dataUrl.trim();
-            if (isBlank(trimmed) || !trimmed.startsWith("data:")) {
-                return fallbackBitmap(true);
+            URI uri = URI.create(trimmedUrl);
+            if (!uri.isAbsolute()) {
+                return null;
             }
 
-            int base64MarkerIndex = trimmed.indexOf(";base64");
-            if (base64MarkerIndex == -1) {
-                return fallbackBitmap(true);
+            String scheme = uri.getScheme();
+            if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                return null;
             }
 
-            int payloadStartIndex = base64MarkerIndex + ";base64".length();
-            while (payloadStartIndex < trimmed.length()) {
-                char separator = trimmed.charAt(payloadStartIndex);
-                if (separator == ',' || separator == '/' || separator == ';') {
-                    payloadStartIndex++;
-                    continue;
-                }
-
-                break;
-            }
-
-            if (payloadStartIndex >= trimmed.length()) {
-                return fallbackBitmap(true);
-            }
-
-            String base64String = trimmed.substring(payloadStartIndex).trim();
-            if (base64String.startsWith("\"") && base64String.endsWith("\"") && base64String.length() >= 2) {
-                base64String = base64String.substring(1, base64String.length() - 1);
-            }
-
-            base64String = base64String.replaceAll("\\s", "");
-            if (base64String.contains("%")) {
-                base64String = URLDecoder.decode(base64String, StandardCharsets.UTF_8);
-                base64String = base64String.replace(" ", "+").replaceAll("\\s", "");
-            }
-
-            byte[] decodedBytes;
-            try {
-                decodedBytes = Base64.decode(base64String, Base64.DEFAULT);
-            } catch (IllegalArgumentException ignored) {
-                decodedBytes = Base64.decode(base64String, Base64.URL_SAFE | Base64.NO_WRAP);
-            }
-
-            return BitmapFactory.decodeByteArray(decodedBytes, 0, decodedBytes.length);
-        } catch (Exception ignored) {
-            return fallbackBitmap(true);
+            return uri.toString();
+        } catch (IllegalArgumentException e) {
+            return null;
         }
     }
 
-    private Bitmap fallbackBitmap(boolean allowFallback) {
-        if (!allowFallback) {
+    private Bitmap decodeDataUrl(String rawUrl) {
+        int commaIndex = rawUrl.indexOf(',');
+        if (commaIndex < 0 || commaIndex == rawUrl.length() - 1) {
             return null;
         }
 
-        return fetchRemoteBitmap(FALLBACK_BADGE_URL, false);
-    }
+        String metadata = rawUrl.substring(5, commaIndex);
+        String payload = rawUrl.substring(commaIndex + 1);
 
-    private String normalizeBitmapSource(String source) {
-        if (isBlank(source)) {
+        try {
+            if (metadata.endsWith(";base64")) {
+                byte[] bytes = Base64.decode(payload, Base64.DEFAULT);
+                return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+            }
+
+            String decoded = URLDecoder.decode(payload, StandardCharsets.UTF_8.name());
+            byte[] bytes = decoded.getBytes(StandardCharsets.UTF_8);
+            return BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
+        } catch (IllegalArgumentException | IOException e) {
             return null;
         }
-
-        String trimmed = source.trim();
-
-        if (trimmed.startsWith("data:")) {
-            return trimmed;
-        }
-
-        if (trimmed.startsWith("//")) {
-            return "https:" + trimmed;
-        }
-
-        if (trimmed.startsWith("/")) {
-            return FALLBACK_BASE_URL + trimmed;
-        }
-
-        return trimmed;
-    }
-
-    private String firstNonBlank(String value, String fallback) {
-        if (isBlank(value)) {
-            return fallback;
-        }
-
-        return value;
     }
 
     private boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String firstNonBlank(String primary, String fallback) {
+        return isBlank(primary) ? fallback : primary.trim();
     }
 }

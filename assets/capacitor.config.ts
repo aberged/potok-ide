@@ -31,7 +31,7 @@ const serverUrl =
 const cleartext = serverUrl.startsWith("http://")
 
 const config: CapacitorConfig = {
-  appId: env.CAPACITOR_APP_ID?.trim() || "com.potok.ide",
+  appId: env.CAPACITOR_APP_ID?.trim() || "rs.potok.ide",
   appName: env.CAPACITOR_APP_NAME?.trim() || "Potok",
   webDir: "../priv/capacitor",
   server: {

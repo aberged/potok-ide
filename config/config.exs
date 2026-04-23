@@ -24,7 +24,7 @@ config :potok_ide,
   ecto_repos: [PotokIde.Repo],
   generators: [timestamp_type: :utc_datetime]
 
-config :potok_ide, :android_app_links, package_name: "com.potok.ide"
+config :potok_ide, :android_app_links, package_name: "rs.potok.ide"
 
 config :potok_ide, :ios_app_links,
   bundle_id: "com.potok.ide",

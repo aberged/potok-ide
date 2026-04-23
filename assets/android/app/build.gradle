@@ -59,7 +59,7 @@ if (releaseTaskRequested && !missingReleaseSigningKeys.isEmpty()) {
 }
 
 android {
-    namespace = "com.potok.ide"
+    namespace = "rs.potok.ide"
     compileSdk = rootProject.ext.compileSdkVersion
     signingConfigs {
         debug {
@@ -80,7 +80,7 @@ android {
         }
     }
     defaultConfig {
-        applicationId "com.potok.ide"
+        applicationId "rs.potok.ide"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

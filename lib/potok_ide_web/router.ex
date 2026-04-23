@@ -46,6 +46,7 @@ defmodule PotokIdeWeb.Router do
 
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
+    get "/privacy-policy", PageController, :privacy
     get "/avatar/profile/:id", AvatarController, :profile
   end
 

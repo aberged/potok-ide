@@ -1,0 +1,38 @@
+<Layouts.app flash={@flash} current_scope={@current_scope}>
+  <section class="relative overflow-auto px-4 py-8 sm:px-6 sm:py-10 lg:px-8 h-[calc(100dvh-4rem)] overflow-auto">
+    <div class="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_top,_rgba(241,120,72,0.14),_transparent_42%),linear-gradient(180deg,rgba(255,248,244,0.92),rgba(255,255,255,0.98))]"></div>
+
+    <div class="mx-auto flex w-full max-w-5xl flex-col gap-6">
+      <div class="flex flex-col gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/90 px-6 py-6 shadow-xl shadow-primary/5 backdrop-blur sm:px-8">
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-[0.24em] text-base-content/50">
+              Potok
+            </p>
+            <h1 class="mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              Privacy Policy
+            </h1>
+          </div>
+
+          <.link
+            navigate={~p"/accounts/log-in"}
+            class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm font-medium text-base-content/80 transition hover:border-base-content/30 hover:text-base-content"
+          >
+            <.icon name="hero-arrow-left" class="size-4" />
+            Back to Potok
+          </.link>
+        </div>
+
+        <p class="max-w-3xl text-sm leading-6 text-base-content/65 sm:text-base">
+          This page is the public privacy policy for the Potok Android app and related web service.
+        </p>
+      </div>
+
+      <article class="rounded-[2rem] border border-base-300/70 bg-base-100/95 px-6 py-8 shadow-2xl shadow-base-content/5 sm:px-8 sm:py-10 lg:px-12">
+        <div class="privacy-policy prose prose-neutral max-w-none prose-headings:scroll-mt-24 prose-headings:font-semibold prose-h1:text-4xl prose-h1:tracking-tight prose-h2:mt-10 prose-h2:text-2xl prose-h2:tracking-tight prose-h3:mt-7 prose-h3:text-lg prose-p:leading-7 prose-li:leading-7 prose-a:text-primary hover:prose-a:text-primary/80">
+          {@privacy_policy_html |> raw()}
+        </div>
+      </article>
+    </div>
+  </section>
+</Layouts.app>

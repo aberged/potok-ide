@@ -1,4 +1,4 @@
-package com.potok.ide;
+package rs.potok.ide;
 
 import android.os.Bundle;
 
