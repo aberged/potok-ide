@@ -153,7 +153,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </button>
           <button
-            :if={!@group.is_root and @is_member}
+            :if={(!@group.is_root and @is_member) or @group.is_public}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
@@ -253,7 +253,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-chat-bubble-oval-left-ellipsis"
               />
               <Components.group_tab_button
-                :if={@group.is_root or @is_member}
+                :if={@group.is_root or @is_member or @group.is_public}
                 id="group-tab-sub-groups"
                 tab="sub_groups"
                 active_tab={@active_tab}
@@ -353,6 +353,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             format_options={@format_options}
             home_page_options={@home_page_options}
             value_parent_options={@value_parent_options}
+            group={@group}
+            current_profile={@current_profile}
           />
           <EditGroupTab.panel
             :if={can_edit_group?(@current_profile, @group) and @active_tab == "edit_group"}
