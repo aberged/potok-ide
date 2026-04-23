@@ -133,27 +133,32 @@ The seed script currently only contains the default template comments, so a fres
 
 ### Capacitor wrapper
 
-Potok now includes a Capacitor wrapper in `assets/` for Android.
+Potok now includes Capacitor wrappers in `assets/` for both Android and iOS.
 
 Important architecture note:
 
 * Potok is a Phoenix LiveView application, so the Capacitor shell does **not** run a standalone static build of the app.
 * The native WebView loads a running Phoenix server through Capacitor's `server.url` setting.
-* By default the Capacitor config uses `http://10.0.2.2:4000`, which is the Android emulator alias for the host machine's localhost.
-* Magic-link emails now include both the normal web URL and an Android App Link using `https://potok-ide.fly.dev/accounts/log-in/<token>?app=1`.
+* By default the Capacitor config uses `http://10.0.2.2:4000` when syncing Android and `http://localhost:4000` when syncing iOS.
+* Use `CAPACITOR_SERVER_URL` for a shared override, or `CAPACITOR_ANDROID_SERVER_URL` and `CAPACITOR_IOS_SERVER_URL` for platform-specific overrides.
+* Magic-link emails now include a standard HTTPS deep link at `https://potok-ide.fly.dev/accounts/log-in/<token>?app=1`, which is used for both Android App Links and iOS Universal Links.
 
 Files and commands:
 
 * Capacitor config: `assets/capacitor.config.ts`
 * Android project: `assets/android`
+* iOS project: `assets/ios`
 * Sync native project after config changes: `cd assets && npm run cap:sync:android`
+* Sync iOS project after config changes: `cd assets && npm run cap:sync:ios`
 * Open Android Studio: `cd assets && npm run cap:open:android`
+* Open the iOS project in Xcode: `cd assets && npm run cap:open:ios`
 * Run on a connected emulator or device: `cd assets && npm run cap:run:android`
+* Run on an iOS simulator or device from macOS: `cd assets && npm run cap:run:ios`
 
 Development workflow:
 
 1. Start Phoenix locally with `mix phx.server`.
-1. In another shell, set `CAPACITOR_SERVER_URL` if you are not using the Android emulator default.
+1. In another shell, set `CAPACITOR_SERVER_URL` if you are not using the platform default.
 1. From `assets/`, run `npm run cap:sync:android`.
 1. Open or run the Android app with one of the Capacitor scripts above.
 
@@ -180,7 +185,15 @@ npm run cap:run:android
 
 For production, point `CAPACITOR_SERVER_URL` at your deployed HTTPS endpoint before syncing.
 
-Magic-link login in the Android app:
+Example iOS simulator flow on macOS:
+
+```sh
+cd assets
+CAPACITOR_SERVER_URL=http://localhost:4000 npm run cap:sync:ios
+CAPACITOR_SERVER_URL=http://localhost:4000 npm run cap:open:ios
+```
+
+Magic-link login in the native apps:
 
 1. Start the Capacitor app against the same backend you want to use for login.
 1. Request a magic link from the login screen in the app.
@@ -188,9 +201,14 @@ Magic-link login in the Android app:
 1. The app will navigate its WebView to the existing `/accounts/log-in/:token` screen on your configured backend.
 1. Confirm the login on that screen so the Phoenix session cookie is created inside the app WebView.
 
-Older `potok://login/...` links are still handled by the app for backward compatibility, but new emails use standard HTTPS Android App Links so they are clickable in mail clients.
+Older `potok://login/...` links are still handled by the app for backward compatibility, but new emails use standard HTTPS deep links so they are clickable in mail clients and can be claimed by both Android and iOS.
 
-If you want to add iOS later, run `npm install @capacitor/ios` and `npx cap add ios` from `assets/` on macOS.
+iOS Universal Links notes:
+
+* the app serves `/.well-known/apple-app-site-association` and `/apple-app-site-association`
+* the generated iOS app enables the `applinks:potok-ide.fly.dev` associated domain in `assets/ios/App/App/App.entitlements`
+* set `IOS_APP_LINK_TEAM_ID` in production so the association file can publish the real Apple app identifier
+* if you need to override the generated identifier directly, set `IOS_APP_LINK_APP_ID`; otherwise the server composes it from `IOS_APP_LINK_TEAM_ID` and `IOS_APP_LINK_BUNDLE_ID`
 
 ### PWA push notifications
 
@@ -605,9 +623,12 @@ fly secrets set DATABASE_URL=ecto://USER:PASS@HOST/DATABASE
 fly secrets set MAILGUN_API_KEY=your-key MAILGUN_DOMAIN=mg.example.com MAILER_FROM_EMAIL=no-reply@mg.example.com
 fly secrets set MAILER_FROM_NAME="Potok"
 fly secrets set ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS="your-signing-cert-sha256"
+fly secrets set IOS_APP_LINK_TEAM_ID="ABCDE12345" IOS_APP_LINK_BUNDLE_ID="com.potok.ide"
 ```
 
 For Android App Links, `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` should contain one or more comma-separated SHA-256 certificate fingerprints for the APK signing keys that should be allowed to open `https://potok-ide.fly.dev/accounts/log-in/...` inside the app. Use your debug key for `npm run cap:run:android` testing and add your release key fingerprint before shipping a signed release.
+
+For iOS Universal Links, `IOS_APP_LINK_TEAM_ID` should be your Apple Developer Team ID and `IOS_APP_LINK_BUNDLE_ID` should match the bundle identifier used by the signed iOS app. If you prefer to set the full value yourself, use `IOS_APP_LINK_APP_ID` with the `TEAMID.bundle.id` format.
 
 Deploy with:
 
@@ -616,6 +637,33 @@ fly deploy
 ```
 
 `fly.toml` already enables HTTPS, exposes the app on port `8080`, and runs migrations during deployment.
+
+### iOS build and TestFlight workflow
+
+The repository now includes `.github/workflows/ios-build-publish.yml`, which runs on GitHub-hosted macOS runners and performs these steps:
+
+* installs npm dependencies in `assets/`
+* syncs the Capacitor iOS project with `npm run cap:sync:ios`
+* imports an Apple distribution certificate and provisioning profile
+* archives the Xcode project and exports an IPA
+* uploads the IPA as a GitHub artifact
+* optionally uploads the IPA to App Store Connect / TestFlight
+
+Required GitHub Actions secrets:
+
+* `CAPACITOR_SERVER_URL`
+* `IOS_BUILD_CERTIFICATE_BASE64`
+* `IOS_BUILD_CERTIFICATE_PASSWORD`
+* `IOS_BUILD_KEYCHAIN_PASSWORD`
+* `IOS_BUILD_PROVISION_PROFILE_BASE64`
+* `IOS_BUILD_PROVISION_PROFILE_NAME`
+* `IOS_DEVELOPMENT_TEAM`
+* `IOS_BUNDLE_IDENTIFIER`
+* `APP_STORE_CONNECT_KEY_ID`
+* `APP_STORE_CONNECT_ISSUER_ID`
+* `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`
+
+Trigger the workflow manually from the Actions tab. Set `upload_to_testflight` to `false` if you only want a signed artifact without publishing it.
 
 ## Maintenance Notes
 

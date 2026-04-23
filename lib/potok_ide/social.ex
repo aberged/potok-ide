@@ -1722,7 +1722,7 @@ defmodule PotokIde.Social do
       body: group_value_notification_body(group, value),
       tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",
-      badge: profile_avatar_url(creator),
+      badge: profile_avatar_url(creator)
     }
   end
 
@@ -1732,7 +1732,7 @@ defmodule PotokIde.Social do
       body: "Open Potok to review this group invitation.",
       tag: "group-#{group.id}-invitation-#{inviter.id}",
       url: "/invitations",
-      badge: profile_avatar_url(inviter),
+      badge: profile_avatar_url(inviter)
     }
   end
 
@@ -1742,7 +1742,7 @@ defmodule PotokIde.Social do
       body: "#{invitee.username} joined #{group.name}.",
       tag: "group-#{group.id}-invitation-accepted",
       url: "/groups/#{group.id}",
-      badge: profile_avatar_url(invitee),
+      badge: profile_avatar_url(invitee)
     }
   end
 
@@ -1755,7 +1755,7 @@ defmodule PotokIde.Social do
       body: "Open Potok to review this shared profile invitation.",
       tag: "profile-#{shared_profile.id}-invitation",
       url: "/profiles",
-      badge: profile_avatar_url(shared_profile),
+      badge: profile_avatar_url(shared_profile)
     }
   end
 
@@ -1768,11 +1768,9 @@ defmodule PotokIde.Social do
       body: "#{invitee.username} now has access to #{shared_profile.username}.",
       tag: "profile-#{shared_profile.id}-invitation-accepted",
       url: "/profiles",
-      badge: profile_avatar_url(shared_profile),
+      badge: profile_avatar_url(shared_profile)
     }
   end
-
-
 
   defp group_value_notification_body(%Group{} = group, %Value{} = value) do
     excerpt = notification_excerpt(value.content)
@@ -1798,7 +1796,8 @@ defmodule PotokIde.Social do
 
   defp notification_excerpt(_content), do: nil
 
-  defp profile_avatar_url(%Profile{id: profile_id, profile_picture_url: url}) when is_binary(url) do
+  defp profile_avatar_url(%Profile{id: profile_id, profile_picture_url: url})
+       when is_binary(url) do
     case String.trim(url) do
       "" ->
         "/avatar/profile/#{profile_id}"

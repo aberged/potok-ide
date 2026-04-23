@@ -32,6 +32,13 @@ defmodule PotokIdeWeb.Router do
     pipe_through :api
 
     get "/assetlinks.json", AssetLinksController, :show
+    get "/apple-app-site-association", AppleAppSiteAssociationController, :show
+  end
+
+  scope "/", PotokIdeWeb do
+    pipe_through :api
+
+    get "/apple-app-site-association", AppleAppSiteAssociationController, :show
   end
 
   scope "/", PotokIdeWeb do
@@ -110,7 +117,7 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :require_authenticated}
       ] do
-      #live "/accounts/settings", AccountLive.Settings, :edit
+      # live "/accounts/settings", AccountLive.Settings, :edit
       live "/accounts/settings/confirm-email/:token", AccountLive.Settings, :confirm_email
     end
 

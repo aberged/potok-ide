@@ -55,6 +55,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               />
             </div>
+
             <div
               :if={@group.is_root}
               id="group-sub-groups-kind-tabs"
@@ -66,7 +67,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 phx-click="switch_sub_groups_kind"
                 phx-value-kind="direct"
                 class={[
-                  "btn btn-sm rounded-full",
+                  "relative btn btn-sm rounded-full",
                   if(@sub_groups_kind == "direct",
                     do: "btn-primary text-white",
                     else: "btn-ghost border border-base-300"
@@ -77,19 +78,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 <span
                   :if={@direct_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-direct-unread-badge"
-                  class="absolute top-[0.1rem] left-[1.6rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+                  class="absolute -top-[.2rem] left-[1.2rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
                 >
                   {unread_badge_label(@direct_sub_groups_unread_count)}
                 </span>
               </button>
-
               <button
                 id="group-sub-groups-kind-other"
                 type="button"
                 phx-click="switch_sub_groups_kind"
                 phx-value-kind="other"
                 class={[
-                  "btn btn-sm rounded-full",
+                  "relative btn btn-sm rounded-full",
                   if(@sub_groups_kind == "other",
                     do: "btn-primary text-white",
                     else: "btn-ghost border border-base-300"
@@ -100,7 +100,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 <span
                   :if={@other_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-other-unread-badge"
-                  class="absolute top-[0.1rem] right-[0.3rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+                  class="absolute -top-[.2rem] -right-[.1rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
                 >
                   {unread_badge_label(@other_sub_groups_unread_count)}
                 </span>
@@ -405,9 +405,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:group_unread_counts, %{})
        |> assign(:current_group_unread_count, 0)
        |> assign(:sub_groups_unread_count, 0)
-      |> assign(:direct_sub_groups_unread_count, 0)
-      |> assign(:other_sub_groups_unread_count, 0)
-      |> assign(:sub_groups_kind, normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group))
+       |> assign(:direct_sub_groups_unread_count, 0)
+       |> assign(:other_sub_groups_unread_count, 0)
+       |> assign(
+         :sub_groups_kind,
+         normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
+       )
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -450,9 +453,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         socket.assigns.current_profile
       )
 
-    sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
+    sub_groups_kind =
+      normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
 
-    if active_tab == socket.assigns.active_tab and sub_groups_kind == socket.assigns.sub_groups_kind do
+    if active_tab == socket.assigns.active_tab and
+         sub_groups_kind == socket.assigns.sub_groups_kind do
       {:noreply, socket}
     else
       {:noreply,
@@ -1597,7 +1602,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       sub_groups_kind = socket.assigns.sub_groups_kind
 
       children_page =
-        child_groups_page(group, current_profile, socket.assigns.children_pagination, sub_groups_kind)
+        child_groups_page(
+          group,
+          current_profile,
+          socket.assigns.children_pagination,
+          sub_groups_kind
+        )
 
       socket
       |> assign(:loaded_children, children_page.entries)
@@ -1683,7 +1693,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     group_unread_counts = Social.list_group_unread_counts(socket.assigns.current_profile, groups)
 
-    visible_child_groups = Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
+    visible_child_groups =
+      Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
 
     visible_child_group_unread_counts =
       Social.list_group_unread_counts(socket.assigns.current_profile, visible_child_groups)

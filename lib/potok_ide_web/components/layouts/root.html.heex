@@ -46,7 +46,7 @@
     <div class="relative flex min-h-dvh max-h-dvh flex-col overflow-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
       <nav class="sticky top-(--app-safe-area-top) z-100">
         <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
-          <% profile = assigns[:current_profile] %> 
+          <% profile = assigns[:current_profile] %>
           <.header_menu>
             <%= if @current_scope do %>
               <div class="mb-4 max-w-full z-50 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
@@ -237,7 +237,12 @@
                 <%= if profile do %>
                   <img
                     id="nav-brand-profile-avatar"
-                    src={if(@current_profile.profile_picture_url not in [nil, ""], do: @current_profile.profile_picture_url, else: "/avatar/profile/#{@current_profile.id}")}
+                    src={
+                      if(@current_profile.profile_picture_url not in [nil, ""],
+                        do: @current_profile.profile_picture_url,
+                        else: "/avatar/profile/#{@current_profile.id}"
+                      )
+                    }
                     alt={if(@current_profile, do: @current_profile.username, else: "Potok")}
                     class={[
                       "size-10 rounded-2xl object-cover"

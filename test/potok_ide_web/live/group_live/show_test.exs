@@ -804,7 +804,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-children-list", "root-other-sub-group")
     end
 
-    test "shows only the other sub-groups tab on non-root groups", %{conn: conn} do
+    test "does not show sub-groups kind tabs on non-root groups", %{conn: conn} do
       account = account_fixture()
 
       {:ok, profile} =
@@ -840,8 +840,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{parent_group.id}/sub_groups")
 
+      refute has_element?(lv, "#group-sub-groups-kind-tabs")
       refute has_element?(lv, "#group-sub-groups-kind-direct")
-      assert has_element?(lv, "#group-sub-groups-kind-other")
+      refute has_element?(lv, "#group-sub-groups-kind-other")
       assert has_element?(lv, "#group-children-list", "nonroot-tabs-child")
     end
 

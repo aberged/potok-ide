@@ -26,6 +26,10 @@ config :potok_ide,
 
 config :potok_ide, :android_app_links, package_name: "com.potok.ide"
 
+config :potok_ide, :ios_app_links,
+  bundle_id: "com.potok.ide",
+  paths: ["/accounts/log-in/*"]
+
 # Configure the endpoint
 config :potok_ide, PotokIdeWeb.Endpoint,
   url: [host: "localhost"],

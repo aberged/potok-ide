@@ -35,4 +35,9 @@ defmodule PotokIde.GmailRefreshToken do
       returning: true
     )
   end
+
+  def delete_all do
+    from(token in __MODULE__, where: token.provider == ^@provider)
+    |> Repo.delete_all()
+  end
 end

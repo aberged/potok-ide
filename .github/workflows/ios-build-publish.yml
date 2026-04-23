@@ -1,0 +1,209 @@
+name: iOS Build And Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      upload_to_testflight:
+        description: Upload the built IPA to App Store Connect
+        required: true
+        default: true
+        type: boolean
+
+jobs:
+  build-and-publish:
+    name: Build iOS app
+    runs-on: macos-latest
+    concurrency: ios-build-publish
+    env:
+      IOS_PROJECT_PATH: assets/ios/App/App.xcodeproj
+      IOS_SCHEME: App
+      IOS_ARCHIVE_PATH: build/ios/Potok.xcarchive
+      IOS_EXPORT_PATH: build/ios/export
+      IOS_EXPORT_OPTIONS_PATH: build/ios/ExportOptions.plist
+      KEYCHAIN_NAME: potok-signing.keychain-db
+      KEYCHAIN_PASSWORD: ${{ secrets.IOS_BUILD_KEYCHAIN_PASSWORD }}
+      PROVISIONING_PROFILE_FILENAME: potok.mobileprovision
+      CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL }}
+      IOS_APP_LINK_TEAM_ID: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      IOS_APP_LINK_BUNDLE_ID: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: assets/package-lock.json
+
+      - name: Validate required secrets
+        run: |
+          required=(
+            IOS_BUILD_CERTIFICATE_BASE64
+            IOS_BUILD_CERTIFICATE_PASSWORD
+            IOS_BUILD_KEYCHAIN_PASSWORD
+            IOS_BUILD_PROVISION_PROFILE_BASE64
+            IOS_BUILD_PROVISION_PROFILE_NAME
+            IOS_DEVELOPMENT_TEAM
+            IOS_BUNDLE_IDENTIFIER
+            APP_STORE_CONNECT_KEY_ID
+            APP_STORE_CONNECT_ISSUER_ID
+            APP_STORE_CONNECT_PRIVATE_KEY_BASE64
+            CAPACITOR_SERVER_URL
+          )
+
+          for name in "${required[@]}"; do
+            if [ -z "${!name}" ]; then
+              echo "Missing required secret: ${name}" >&2
+              exit 1
+            fi
+          done
+        env:
+          IOS_BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+          IOS_BUILD_CERTIFICATE_PASSWORD: ${{ secrets.IOS_BUILD_CERTIFICATE_PASSWORD }}
+          IOS_BUILD_KEYCHAIN_PASSWORD: ${{ secrets.IOS_BUILD_KEYCHAIN_PASSWORD }}
+          IOS_BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_BASE64 }}
+          IOS_BUILD_PROVISION_PROFILE_NAME: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}
+          IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+          IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
+          CAPACITOR_SERVER_URL: ${{ secrets.CAPACITOR_SERVER_URL }}
+
+      - name: Install npm dependencies
+        working-directory: assets
+        run: npm ci
+
+      - name: Sync Capacitor iOS project
+        working-directory: assets
+        run: npm run cap:sync:ios
+
+      - name: Install signing certificate and provisioning profile
+        env:
+          IOS_BUILD_CERTIFICATE_BASE64: ${{ secrets.IOS_BUILD_CERTIFICATE_BASE64 }}
+          IOS_BUILD_CERTIFICATE_PASSWORD: ${{ secrets.IOS_BUILD_CERTIFICATE_PASSWORD }}
+          IOS_BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_BASE64 }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME"
+          CERTIFICATE_PATH="$RUNNER_TEMP/potok-signing.p12"
+          PROVISIONING_PROFILE_PATH="$RUNNER_TEMP/$PROVISIONING_PROFILE_FILENAME"
+
+          echo "$IOS_BUILD_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          echo "$IOS_BUILD_PROVISION_PROFILE_BASE64" | base64 --decode > "$PROVISIONING_PROFILE_PATH"
+
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" -P "$IOS_BUILD_CERTIFICATE_PASSWORD" -A -t cert -f pkcs12 -k "$KEYCHAIN_PATH"
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security default-keychain -s "$KEYCHAIN_PATH"
+
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$PROVISIONING_PROFILE_PATH" "$HOME/Library/MobileDevice/Provisioning Profiles/potok.mobileprovision"
+
+      - name: Create App Store Connect API key
+        run: |
+          APP_STORE_CONNECT_API_KEY_PATH="$RUNNER_TEMP/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
+
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          echo "${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}" | base64 --decode > "$APP_STORE_CONNECT_API_KEY_PATH"
+          cp "$APP_STORE_CONNECT_API_KEY_PATH" "$HOME/.appstoreconnect/private_keys/$(basename "$APP_STORE_CONNECT_API_KEY_PATH")"
+
+      - name: Create export options plist
+        run: |
+          mkdir -p build/ios "$IOS_EXPORT_PATH"
+
+          cat > "$IOS_EXPORT_OPTIONS_PATH" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>destination</key>
+            <string>export</string>
+            <key>method</key>
+            <string>app-store</string>
+            <key>provisioningProfiles</key>
+            <dict>
+              <key>${{ secrets.IOS_BUNDLE_IDENTIFIER }}</key>
+              <string>${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}</string>
+            </dict>
+            <key>signingCertificate</key>
+            <string>Apple Distribution</string>
+            <key>signingStyle</key>
+            <string>manual</string>
+            <key>stripSwiftSymbols</key>
+            <true/>
+            <key>teamID</key>
+            <string>${{ secrets.IOS_DEVELOPMENT_TEAM }}</string>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Archive iOS app
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME"
+
+          xcodebuild \
+            -project "$IOS_PROJECT_PATH" \
+            -scheme "$IOS_SCHEME" \
+            -configuration Release \
+            -destination generic/platform=iOS \
+            -archivePath "$IOS_ARCHIVE_PATH" \
+            clean archive \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            DEVELOPMENT_TEAM="${{ secrets.IOS_DEVELOPMENT_TEAM }}" \
+            PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.IOS_BUNDLE_IDENTIFIER }}" \
+            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+      - name: Export IPA
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME"
+
+          xcodebuild \
+            -exportArchive \
+            -archivePath "$IOS_ARCHIVE_PATH" \
+            -exportOptionsPlist "$IOS_EXPORT_OPTIONS_PATH" \
+            -exportPath "$IOS_EXPORT_PATH" \
+            OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-build
+          path: |
+            build/ios/Potok.xcarchive
+            build/ios/export/*.ipa
+
+      - name: Upload IPA to TestFlight
+        if: ${{ inputs.upload_to_testflight }}
+        run: |
+          IPA_PATH=$(find "$IOS_EXPORT_PATH" -maxdepth 1 -name '*.ipa' -print -quit)
+
+          if [ -z "$IPA_PATH" ]; then
+            echo "No IPA produced during export" >&2
+            exit 1
+          fi
+
+          xcrun altool \
+            --upload-app \
+            --type ios \
+            --file "$IPA_PATH" \
+            --apiKey "${{ secrets.APP_STORE_CONNECT_KEY_ID }}" \
+            --apiIssuer "${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}"
+
+      - name: Cleanup signing material
+        if: ${{ always() }}
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/$KEYCHAIN_NAME"
+          APP_STORE_CONNECT_API_KEY_PATH="$RUNNER_TEMP/AuthKey_${{ secrets.APP_STORE_CONNECT_KEY_ID }}.p8"
+
+          security delete-keychain "$KEYCHAIN_PATH" || true
+          rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/potok.mobileprovision"
+          rm -f "$APP_STORE_CONNECT_API_KEY_PATH"
+          rm -f "$HOME/.appstoreconnect/private_keys/$(basename "$APP_STORE_CONNECT_API_KEY_PATH")"

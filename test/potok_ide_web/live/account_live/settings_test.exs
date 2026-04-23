@@ -3,14 +3,42 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.PushSubscription
+  alias PotokIde.Social
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
 
+  defp conn_with_current_profile(conn, attrs \\ %{}) do
+    account = account_fixture()
+
+    {:ok, _profile} =
+      Social.create_profile_for_account(account, %{
+        username: "sett#{System.unique_integer([:positive])}",
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    account = Accounts.get_account!(account.id)
+
+    updated_conn =
+      case attrs do
+        %{token_authenticated_at: token_authenticated_at} ->
+          log_in_account(conn, account, token_authenticated_at: token_authenticated_at)
+
+        _attrs ->
+          log_in_account(conn, account)
+      end
+
+    {updated_conn, account}
+  end
+
   describe "Settings page" do
     test "renders settings page", %{conn: conn} do
+      {conn, _account} = conn_with_current_profile(conn)
+
       {:ok, lv, html} =
         conn
-        |> log_in_account(account_fixture())
         |> live(~p"/accounts/settings")
 
       assert html =~ "Account Settings"
@@ -24,7 +52,7 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
     end
 
     test "renders stored push subscriptions for the logged in account", %{conn: conn} do
-      account = account_fixture()
+      {conn, account} = conn_with_current_profile(conn)
 
       {:ok, native_subscription} =
         Accounts.upsert_push_subscription(account, %{
@@ -46,7 +74,6 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       {:ok, lv, _html} =
         conn
-        |> log_in_account(account)
         |> live(~p"/accounts/settings")
 
       assert has_element?(lv, "#push-subscriptions-list")
@@ -64,23 +91,22 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert %{"error" => "You must log in to access this page."} = flash
     end
 
-    test "redirects if account is not in sudo mode", %{conn: conn} do
-      {:ok, conn} =
+    test "redirects if account has no current profile", %{conn: conn} do
+      {:error, redirect} =
         conn
-        |> log_in_account(account_fixture(),
-          token_authenticated_at: DateTime.add(DateTime.utc_now(:second), -11, :minute)
-        )
+        |> log_in_account(account_fixture())
         |> live(~p"/accounts/settings")
-        |> follow_redirect(conn, ~p"/accounts/log-in")
 
-      assert conn.resp_body =~ "You must re-authenticate to access this page."
+      assert {:redirect, %{to: path, flash: flash}} = redirect
+      assert path == ~p"/profiles"
+      assert %{"error" => "Please select or create a profile first."} = flash
     end
   end
 
   describe "update email form" do
     setup %{conn: conn} do
-      account = account_fixture()
-      %{conn: log_in_account(conn, account), account: account}
+      {conn, account} = conn_with_current_profile(conn)
+      %{conn: conn, account: account}
     end
 
     test "updates the account email", %{conn: conn, account: account} do
@@ -131,7 +157,9 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
   describe "password form" do
     test "is not rendered on the settings page", %{conn: conn} do
-      {:ok, lv, _html} = live(log_in_account(conn, account_fixture()), ~p"/accounts/settings")
+      {conn, _account} = conn_with_current_profile(conn)
+
+      {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
 
       refute has_element?(lv, "#password_form")
     end

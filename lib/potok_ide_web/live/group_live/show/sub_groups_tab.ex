@@ -26,7 +26,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-
       <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
         <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li
@@ -36,7 +35,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           >
             {gettext("No sub-groups yet.")}
           </li>
-
+          
           <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}
@@ -48,7 +47,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             />
           </li>
         </ul>
-
+        
         <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
           <button
             id="group-children-load-more"
@@ -60,7 +59,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </button>
         </div>
       </div>
-
+      
       <button
         :if={@is_member}
         id="group-sub-groups-create-fab"
@@ -75,7 +74,4 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     </div>
     """
   end
-
-  defp unread_badge_label(count) when count > 999, do: "999+"
-  defp unread_badge_label(count), do: Integer.to_string(count)
 end

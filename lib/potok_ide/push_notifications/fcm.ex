@@ -146,6 +146,7 @@ defmodule PotokIde.PushNotifications.FCM do
     sound = payload_value(payload, [:android_sound, :sound])
     ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
     collapse_key = payload_value(payload, [:android_collapse_key, :collapse_key, :collapseKey])
+
     android_image =
       payload
       |> payload_value([:android_image, :image])

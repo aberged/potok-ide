@@ -7,8 +7,6 @@ defmodule PotokIde.Application do
 
   require Logger
 
-  alias PotokIde.GmailRefreshToken
-
   @impl true
   def start(_type, _args) do
     maybe_warn_missing_imagemagick()
