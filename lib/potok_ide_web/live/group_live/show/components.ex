@@ -565,7 +565,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             </div>
           <% end %>
 
-          <div :if={!@group.is_direct && !@group.is_root} class="absolute bottom-0 left-0 -ml-1 -mb-1 text-[0.8rem]">
+          <div
+            :if={!@group.is_direct && !@group.is_root}
+            class="absolute bottom-0 left-0 -ml-1 -mb-1 text-[0.8rem]"
+          >
             {if @group.is_public,
               do: "📢",
               else: "🔐"}

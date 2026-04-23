@@ -68,7 +68,7 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
         })
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
-      assert redirected_to(conn) == ~p"/accounts/log-in"
+      assert redirected_to(conn) == ~p"/accounts/log-in/password"
     end
   end
 

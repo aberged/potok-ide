@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
 
       assert html =~ "Log in"
       assert html =~ "Log in with email"
+      assert html =~ ~p"/accounts/log-in/password"
     end
 
     test "renders PWA metadata in the shared root layout", %{conn: conn} do

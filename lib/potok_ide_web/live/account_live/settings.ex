@@ -37,7 +37,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
         <div class="divider" />
 
-        <%!-- <.form
+        <.form
           for={@password_form}
           id="password_form"
           action={~p"/accounts/update-password"}
@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           </.button>
         </.form>
 
-        <div class="divider" /> --%>
+        <div class="divider" />
 
         <section
           id="push-notifications-panel"

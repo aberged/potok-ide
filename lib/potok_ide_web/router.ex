@@ -134,6 +134,7 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.AccountAuth, :mount_current_scope}
       ] do
       live "/accounts/log-in", AccountLive.Login, :new
+      live "/accounts/log-in/password", AccountLive.PasswordLogin, :new
       live "/accounts/log-in/:token", AccountLive.Confirmation, :new
     end
 

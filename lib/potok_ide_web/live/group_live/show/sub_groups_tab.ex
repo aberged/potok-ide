@@ -35,7 +35,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           >
             {gettext("No sub-groups yet.")}
           </li>
-          
+
           <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}
@@ -47,7 +47,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             />
           </li>
         </ul>
-        
+
         <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
           <button
             id="group-children-load-more"
@@ -59,7 +59,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </button>
         </div>
       </div>
-      
+
       <button
         :if={@is_member}
         id="group-sub-groups-create-fab"

@@ -3,7 +3,11 @@ defmodule PotokIdeWeb.PageController do
 
   @privacy_policy_path Path.expand("../../../priv/static/PRIVACY_POLICY.md", __DIR__)
   @external_resource @privacy_policy_path
-  @privacy_policy_html @privacy_policy_path |> File.read!() |> String.trim() |> Earmark.as_html!(breaks: true) |> HtmlSanitizeEx.html5()
+  @privacy_policy_html @privacy_policy_path
+                       |> File.read!()
+                       |> String.trim()
+                       |> Earmark.as_html!(breaks: true)
+                       |> HtmlSanitizeEx.html5()
 
   def home(conn, _params) do
     current_account =

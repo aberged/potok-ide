@@ -42,9 +42,14 @@ defmodule PotokIdeWeb.AccountSessionController do
       conn
       |> put_flash(:error, gettext("Invalid email or password"))
       |> put_flash(:email, String.slice(email, 0, 160))
-      |> redirect(to: ~p"/accounts/log-in")
+      |> redirect(to: password_login_path(account_params, conn.params))
     end
   end
+
+  defp password_login_path(_account_params, %{"mode" => "password"}),
+    do: ~p"/accounts/log-in/password"
+
+  defp password_login_path(_account_params, _params), do: ~p"/accounts/log-in"
 
   def update_password(conn, %{"account" => account_params} = params) do
     account = conn.assigns.current_scope.account
