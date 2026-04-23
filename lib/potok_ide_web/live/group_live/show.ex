@@ -58,7 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <div
               :if={@group.is_root}
               id="group-sub-groups-kind-tabs"
-              class="flex w-fit items-center gap-2 p-1 border rounded-full bg-base-100 border-base-300"
+              class="relative flex w-fit items-center gap-2 p-1 border rounded-full bg-base-100 border-base-300"
             >
               <button
                 id="group-sub-groups-kind-direct"
@@ -73,11 +73,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   )
                 ]}
               >
-                <.icon name="hero-users" class="size-4 mr-1" />
+                <.icon name="hero-users" class="size-4" />
                 <span
                   :if={@direct_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-direct-unread-badge"
-                  class="absolute top-[0.1rem] left-8 ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+                  class="absolute top-[0.1rem] left-[1.6rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
                 >
                   {unread_badge_label(@direct_sub_groups_unread_count)}
                 </span>
@@ -96,11 +96,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   )
                 ]}
               >
-                <.icon name="hero-user-group" class="size-4 mr-1" />
+                <.icon name="hero-user-group" class="size-4" />
                 <span
                   :if={@other_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-other-unread-badge"
-                  class="absolute top-[0.1rem] right-2 ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+                  class="absolute top-[0.1rem] right-[0.3rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
                 >
                   {unread_badge_label(@other_sub_groups_unread_count)}
                 </span>
