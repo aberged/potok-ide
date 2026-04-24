@@ -614,20 +614,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             >
               {if @group.is_public, do: gettext("Public group"), else: gettext("Private group")}
             </span>
-            <span
-              id={"group-public-chat-badge-#{@group.id}"}
-              class={[
-                "inline-flex items-center rounded-full px-2 py-1",
-                if(@group.has_public_chat,
-                  do: "bg-sky-100 text-sky-700",
-                  else: "bg-base-200 text-base-content/65"
-                )
-              ]}
-            >
-              {if @group.has_public_chat,
-                do: gettext("Public chat enabled"),
-                else: gettext("Public chat disabled")}
-            </span>
           </div>
         </div>
       </div>

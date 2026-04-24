@@ -36,8 +36,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               type="checkbox"
             />
             <.input
-              field={@edit_group_form[:has_public_chat]}
-              label={gettext("Public chat")}
+              field={@edit_group_form[:is_root_public]}
+              label={gettext("Root public")}
               type="checkbox"
             />
           </div>

@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
       />
       <div class="h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto px-2 py-4">
         <h3 class="card-title">{gettext("Create sub-group")}</h3>
-        
+
         <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
           <.input field={@new_group_form[:name]} label={gettext("Name")} required />
           <Components.group_picture_form_field field={@new_group_form[:group_picture_url]} />
@@ -49,8 +49,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
             type="checkbox"
           />
           <.input
-            field={@new_group_form[:has_public_chat]}
-            label={gettext("Public chat")}
+            field={@new_group_form[:is_root_public]}
+            label={gettext("Root public")}
             type="checkbox"
           />
           <.input
