@@ -15,11 +15,11 @@ defmodule PotokIdeWeb.AccountLive.Login do
             class="h-30 w-30"
           />
         </div>
-        
+
         <div class="text-center">
           <.header>
             <p>{gettext("Log in")}</p>
-            
+
             <:subtitle>
               <%= if @current_scope do %>
                 {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
@@ -29,18 +29,18 @@ defmodule PotokIdeWeb.AccountLive.Login do
             </:subtitle>
           </.header>
         </div>
-        
+
         <div :if={local_mail_adapter?() and false} class="alert alert-info">
           <.icon name="hero-information-circle" class="size-6 shrink-0" />
           <div>
             <p>{gettext("You are running the local mail adapter.")}</p>
-            
+
             <p>
               {gettext("To see sent emails, visit")} <.link href="/dev/mailbox" class="underline">{gettext("the mailbox page")}</.link>.
             </p>
           </div>
         </div>
-        
+
         <.form
           for={@form}
           id="login_form_magic"
@@ -62,7 +62,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
             {gettext("Log in with email")} <span aria-hidden="true">→</span>
           </.button>
         </.form>
-        
+
         <p class="text-center text-sm text-base-content/70">
           <.link navigate={~p"/accounts/log-in/password"} class="font-medium underline">
             {gettext("Use email and password instead")}

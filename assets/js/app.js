@@ -1030,7 +1030,7 @@ const MarkdownEditor = {
   },
 }
 
-const APP_LINK_HOST = "potok-ide.fly.dev"
+const APP_LINK_HOST = "potok.rs"
 const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
 const CAPACITOR_LAST_ROUTE_KEY = "potok:last-route"
 

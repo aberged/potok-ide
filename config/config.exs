@@ -26,6 +26,9 @@ config :potok_ide,
 
 config :potok_ide, :android_app_links, package_name: "rs.potok.ide"
 
+# In dev/test, Plug.SSL canonical redirect is disabled (no canonical host).
+config :potok_ide, :canonical_host, nil
+
 config :potok_ide, :ios_app_links,
   bundle_id: "com.potok.ide",
   paths: ["/accounts/log-in/*"]

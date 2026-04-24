@@ -40,6 +40,8 @@ defmodule PotokIdeWeb.Endpoint do
     param_key: "request_logger",
     cookie_key: "request_logger"
 
+  plug :enforce_canonical_host
+
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
@@ -52,4 +54,11 @@ defmodule PotokIdeWeb.Endpoint do
   plug Plug.Head
   plug Plug.Session, @session_options
   plug PotokIdeWeb.Router
+
+  defp enforce_canonical_host(conn, _opts) do
+    case Application.get_env(:potok_ide, :canonical_host) do
+      nil -> conn
+      host -> Plug.SSL.call(conn, Plug.SSL.init(rewrite_on: [:x_forwarded_proto], host: host))
+    end
+  end
 end
