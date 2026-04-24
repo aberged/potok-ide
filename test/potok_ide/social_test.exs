@@ -66,6 +66,35 @@ defmodule PotokIde.SocialTest do
 
       assert group.group_picture_url == group_picture_url
     end
+
+    test "forces public visibility when root_public is enabled" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "root-pub-prof",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      assert {:ok, group} =
+               Social.create_group(profile, root_group, %{
+                 "name" => "root-public-child-group",
+                 "group_picture_url" => nil,
+                 "description" => "",
+                 "description_format" => :markdown,
+                 "home_page" => :subgroups,
+                 "is_public" => false,
+                 "is_root_public" => true
+               })
+
+      assert group.is_root_public
+      assert group.is_public
+    end
   end
 
   describe "get_or_create_direct_group/2" do

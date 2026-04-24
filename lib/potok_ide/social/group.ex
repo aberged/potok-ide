@@ -18,6 +18,7 @@ defmodule PotokIde.Social.Group do
     field :is_direct, :boolean, default: false
     field :is_public, :boolean, default: false
     field :is_root, :boolean, default: false
+    field :is_root_public, :boolean, default: false
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__
@@ -46,6 +47,7 @@ defmodule PotokIde.Social.Group do
       :is_direct,
       :is_public,
       :is_root,
+      :is_root_public,
       :creator_id,
       :parent_id,
       :parent_value_id
@@ -56,10 +58,12 @@ defmodule PotokIde.Social.Group do
       :home_page,
       :has_public_chat,
       :is_public,
-      :is_root
+      :is_root,
+      :is_root_public
     ])
     |> validate_length(:name, min: 1, max: 120)
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
+    |> maybe_force_public_from_root_public()
     |> validate_root_constraints()
   end
 
@@ -72,12 +76,29 @@ defmodule PotokIde.Social.Group do
       :description_format,
       :home_page,
       :has_public_chat,
-      :is_public
+      :is_public,
+      :is_root_public
     ])
-    |> validate_required([:name, :description_format, :home_page, :has_public_chat, :is_public])
+    |> validate_required([
+      :name,
+      :description_format,
+      :home_page,
+      :has_public_chat,
+      :is_public,
+      :is_root_public
+    ])
     |> validate_length(:name, min: 1, max: 120)
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
+    |> maybe_force_public_from_root_public()
     |> validate_root_constraints()
+  end
+
+  defp maybe_force_public_from_root_public(changeset) do
+    if get_field(changeset, :is_root_public) do
+      put_change(changeset, :is_public, true)
+    else
+      changeset
+    end
   end
 
   defp validate_root_constraints(changeset) do

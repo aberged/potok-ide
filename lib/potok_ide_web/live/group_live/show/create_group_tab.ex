@@ -20,7 +20,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
         class="shadow-md"
       />
       <div class="h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto px-2 py-4">
-
         <h3 class="card-title">{gettext("Create sub-group")}</h3>
 
         <.form for={@new_group_form} phx-change="validate_group" phx-submit="create_group">
@@ -66,7 +65,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
             <.button phx-disable-with={gettext("Creating...")} variant="primary">
               {gettext("Create")}
             </.button>
-            <.button navigate={~p"/groups/#{@group.id}/sub_groups"} type="button">{gettext("Cancel")}</.button>
+            <.button navigate={~p"/groups/#{@group.id}/sub_groups"} type="button">
+              {gettext("Cancel")}
+            </.button>
           </div>
         </.form>
       </div>
