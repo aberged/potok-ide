@@ -46,7 +46,7 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert html =~ "Push Notifications"
       assert html =~ "Stored Push Subscriptions"
       assert has_element?(lv, "#email_form")
-      refute has_element?(lv, "#password_form")
+      assert has_element?(lv, "#password_form")
       assert has_element?(lv, "#push-notifications-panel")
       assert has_element?(lv, "#push-subscriptions-panel")
     end
@@ -156,12 +156,12 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
   end
 
   describe "password form" do
-    test "is not rendered on the settings page", %{conn: conn} do
+    test "is rendered on the settings page", %{conn: conn} do
       {conn, _account} = conn_with_current_profile(conn)
 
       {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
 
-      refute has_element?(lv, "#password_form")
+      assert has_element?(lv, "#password_form")
     end
   end
 
