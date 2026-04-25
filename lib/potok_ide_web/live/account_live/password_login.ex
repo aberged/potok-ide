@@ -13,11 +13,11 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             class="h-30 w-30"
           />
         </div>
-        
+
         <div class="text-center">
           <.header>
             <p>{gettext("Log in with password")}</p>
-            
+
             <:subtitle>
               <%= if @current_scope do %>
                 {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
@@ -27,7 +27,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             </:subtitle>
           </.header>
         </div>
-        
+
         <.form
           for={@form}
           id="login_form_password"
@@ -62,7 +62,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             {gettext("Log in")} <span aria-hidden="true">→</span>
           </.button>
         </.form>
-        
+
         <p class="text-center text-sm text-base-content/70">
           <.link navigate={~p"/accounts/log-in"} class="font-medium underline">
             {gettext("Use a magic link instead")}

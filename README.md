@@ -141,7 +141,7 @@ Important architecture note:
 * The native WebView loads a running Phoenix server through Capacitor's `server.url` setting.
 * By default the Capacitor config uses `http://10.0.2.2:4000` when syncing Android and `http://localhost:4000` when syncing iOS.
 * Use `CAPACITOR_SERVER_URL` for a shared override, or `CAPACITOR_ANDROID_SERVER_URL` and `CAPACITOR_IOS_SERVER_URL` for platform-specific overrides.
-* Magic-link emails now include a standard HTTPS deep link at `https://potok-ide.fly.dev/accounts/log-in/<token>?app=1`, which is used for both Android App Links and iOS Universal Links.
+* Magic-link emails now include a standard HTTPS deep link at `https://potok.rs/accounts/log-in/<token>?app=1`, which is used for both Android App Links and iOS Universal Links.
 
 Files and commands:
 
@@ -197,7 +197,7 @@ Magic-link login in the native apps:
 
 1. Start the Capacitor app against the same backend you want to use for login.
 1. Request a magic link from the login screen in the app.
-1. In the email, tap the `https://potok-ide.fly.dev/accounts/log-in/...?...` app link to reopen the Potok app.
+1. In the email, tap the `https://potok.rs/accounts/log-in/...?...` app link to reopen the Potok app.
 1. The app will navigate its WebView to the existing `/accounts/log-in/:token` screen on your configured backend.
 1. Confirm the login on that screen so the Phoenix session cookie is created inside the app WebView.
 
@@ -206,7 +206,7 @@ Older `potok://login/...` links are still handled by the app for backward compat
 iOS Universal Links notes:
 
 * the app serves `/.well-known/apple-app-site-association` and `/apple-app-site-association`
-* the generated iOS app enables the `applinks:potok-ide.fly.dev` associated domain in `assets/ios/App/App/App.entitlements`
+* the generated iOS app enables the `applinks:potok.rs` associated domain in `assets/ios/App/App/App.entitlements`
 * set `IOS_APP_LINK_TEAM_ID` in production so the association file can publish the real Apple app identifier
 * if you need to override the generated identifier directly, set `IOS_APP_LINK_APP_ID`; otherwise the server composes it from `IOS_APP_LINK_TEAM_ID` and `IOS_APP_LINK_BUNDLE_ID`
 
@@ -267,7 +267,7 @@ Example PowerShell flow:
 
 ```powershell
 Set-Location assets
-$env:CAPACITOR_SERVER_URL = "https://potok-ide.fly.dev"
+$env:CAPACITOR_SERVER_URL = "https://potok.rs"
 npm run cap:sync:android
 
 Set-Location android
@@ -610,10 +610,10 @@ The repository already contains `fly.toml` with these defaults:
 
 * app name: `potok-ide`
 * primary region: `fra`
-* runtime host: `potok-ide.fly.dev`
+* runtime host: `potok.rs`
 * internal service port: `8080`
 * release command: `/app/bin/migrate`
-* preconfigured runtime env: `PHX_HOST=potok-ide.fly.dev`, `PORT=8080`, `MAILER_FROM_NAME=Potok`
+* preconfigured runtime env: `PHX_HOST=potok.rs`, `PORT=8080`, `MAILER_FROM_NAME=Potok`
 
 Example Fly.io secrets setup:
 
@@ -626,7 +626,7 @@ fly secrets set ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS="your-signing-cert-sha
 fly secrets set IOS_APP_LINK_TEAM_ID="ABCDE12345" IOS_APP_LINK_BUNDLE_ID="com.potok.ide"
 ```
 
-For Android App Links, `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` should contain one or more comma-separated SHA-256 certificate fingerprints for the APK signing keys that should be allowed to open `https://potok-ide.fly.dev/accounts/log-in/...` inside the app. Use your debug key for `npm run cap:run:android` testing and add your release key fingerprint before shipping a signed release.
+For Android App Links, `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` should contain one or more comma-separated SHA-256 certificate fingerprints for the APK signing keys that should be allowed to open `https://potok.rs/accounts/log-in/...` inside the app. Use your debug key for `npm run cap:run:android` testing and add your release key fingerprint before shipping a signed release.
 
 For iOS Universal Links, `IOS_APP_LINK_TEAM_ID` should be your Apple Developer Team ID and `IOS_APP_LINK_BUNDLE_ID` should match the bundle identifier used by the signed iOS app. If you prefer to set the full value yourself, use `IOS_APP_LINK_APP_ID` with the `TEAMID.bundle.id` format.
 

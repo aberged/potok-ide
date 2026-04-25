@@ -173,6 +173,8 @@ if config_env() == :prod do
 
   host = System.get_env("PHX_HOST") || "example.com"
 
+  config :potok_ide, :canonical_host, host
+
   config :potok_ide, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
   config :potok_ide, PotokIdeWeb.Endpoint,
