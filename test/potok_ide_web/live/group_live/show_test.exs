@@ -975,6 +975,59 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-children-load-more")
     end
 
+    test "filters sub-groups by search query", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "subgrp-search",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, _group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "alpha-children-team",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, _group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "beta-children-team",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-children-list", "alpha-children-team")
+      assert has_element?(lv, "#group-children-list", "beta-children-team")
+
+      lv
+      |> form("#group-children-search-form", %{"children_search" => %{"q" => "beta"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-children-list", "beta-children-team")
+      refute has_element?(lv, "#group-children-list", "alpha-children-team")
+
+      lv
+      |> form("#group-children-search-form", %{"children_search" => %{"q" => "no-match"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-children-empty", "No sub-groups match your search.")
+    end
+
     test "renders pending join request badges for manageable sub-groups", %{conn: conn} do
       owner_account = account_fixture()
       requester_account = account_fixture()
@@ -1183,8 +1236,10 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                "#group_group_picture_url-picker input[type='file'][accept='image/*']"
              )
 
-      assert has_element?(lv, "input[name='group[has_public_chat]'][type='hidden']")
-      assert has_element?(lv, "input[name='group[has_public_chat]'][type='checkbox']")
+      assert has_element?(lv, "input[name='group[is_public]'][type='hidden']")
+      assert has_element?(lv, "input[name='group[is_public]'][type='checkbox']")
+      assert has_element?(lv, "input[name='group[is_root_public]'][type='hidden']")
+      assert has_element?(lv, "input[name='group[is_root_public]'][type='checkbox']")
     end
 
     test "shows edit group only to members and persists edits", %{conn: conn} do
@@ -1252,8 +1307,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "description" => "after",
           "group_picture_url" => group_picture_url,
           "home_page" => "chat",
-          "is_public" => "true",
-          "has_public_chat" => "true"
+          "is_public" => "true"
         }
       })
       |> render_submit()
@@ -1264,7 +1318,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert updated_group.description == "after"
       assert updated_group.group_picture_url == group_picture_url
       assert updated_group.home_page == :chat
-      assert updated_group.has_public_chat
+      refute updated_group.has_public_chat
 
       {:ok, viewer_lv, _html} =
         conn
@@ -1278,7 +1332,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(viewer_lv, "#group-panel-values")
     end
 
-    test "shows public chat status and allows enabling it in the create-group form", %{conn: conn} do
+    test "shows root public status and allows enabling it in the create-group form", %{conn: conn} do
       account = account_fixture()
 
       {:ok, profile} =
@@ -1295,11 +1349,11 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, existing_group} =
         Social.create_group(profile, root_group, %{
-          "name" => "public-chat-existing-group",
+          "name" => "root-public-existing-group",
           "description" => "",
           "description_format" => :markdown,
           "is_public" => false,
-          "has_public_chat" => true
+          "is_root_public" => true
         })
 
       {:ok, existing_lv, _html} =
@@ -1307,7 +1361,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{existing_group.id}")
 
-      assert render(existing_lv) =~ "public-chat-existing-group"
+      assert render(existing_lv) =~ "root-public-existing-group"
 
       {:ok, create_lv, _html} =
         conn
@@ -1321,7 +1375,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "description" => "",
           "group_picture_url" => "",
           "home_page" => "subgroups",
-          "has_public_chat" => "true",
+          "is_root_public" => "true",
           "is_public" => "false"
         }
       })
@@ -1333,7 +1387,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> Enum.find(&(&1.name == "created-with-public-chat"))
 
       assert created_group
-      assert created_group.has_public_chat
+      assert created_group.is_root_public
+      assert created_group.is_public
       assert created_group.home_page == :subgroups
     end
 

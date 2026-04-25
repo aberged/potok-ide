@@ -13,29 +13,77 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :sub_groups_kind, :string, required: true
   attr :direct_sub_groups_unread_count, :integer, required: true
   attr :other_sub_groups_unread_count, :integer, required: true
+  attr :children_search_query, :string, default: ""
 
   def panel(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :children_search_form,
+        to_form(%{"q" => assigns.children_search_query}, as: :children_search)
+      )
+
     ~H"""
     <div
       id="group-panel-sub-groups"
       class="card relative h-[calc(100dvh-8rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-dvw px-2 lg:max-w-6xl"
     >
+      <.form
+        for={@children_search_form}
+        id="group-children-search-form"
+        phx-change="search_children"
+        class="mb-3 absolute right-4 -top-[.06rem] z-45"
+      >
+        <div class="relative w-fit">
+          <button
+            :if={@children_search_query != ""}
+            id="group-children-search-reset"
+            type="button"
+            phx-click="clear_children_search"
+            aria-label={gettext("Clear search")}
+            class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+          >
+            <.icon name="hero-x-mark" class="size-4" />
+          </button>
+          <.input
+            field={@children_search_form[:q]}
+            id="group-children-search-input"
+            type="text"
+            placeholder={gettext("Search by name")}
+            phx-debounce="300"
+            autocomplete="off"
+            class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
+            placeholder="Search..."
+          />
+          <div class="absolute right-0 top-0 mt-4 mr-4">
+            <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
+                </path>
+            </svg>
+          </div>
+        </div>
+      </.form>
+
       <Components.group_path
         :if={!@group.is_root}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
-        <ul id="group-children-list" class="space-y-4" phx-update="stream">
-          <li
-            :if={@pagination.loaded_count == 0}
-            id="group-children-empty"
-            class="text-base-content/70"
-          >
-            {gettext("No sub-groups yet.")}
-          </li>
 
+      <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
+
+        <p
+          :if={@pagination.loaded_count == 0}
+          id="group-children-empty"
+          class="text-base-content/70"
+        >
+          {if String.trim(@children_search_query) == "",
+            do: gettext("No sub-groups yet."),
+            else: gettext("No sub-groups match your search.")}
+        </p>
+
+        <ul id="group-children-list" class="space-y-4" phx-update="stream">
           <li :for={{dom_id, group} <- @children} id={dom_id}>
             <Components.group_identity
               group={group}

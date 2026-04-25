@@ -937,12 +937,14 @@ defmodule PotokIde.Social do
 
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     is_direct = normalize_group_direct_filter(opts[:is_direct])
+    search_term = normalize_group_search_term(opts[:search])
 
     ordered_ids =
       ordered_child_group_ids_for_profile(
         group.id,
         profile.id,
         is_direct,
+        search_term,
         normalize_query_limit(opts[:limit]),
         normalize_query_offset(opts[:offset])
       )
@@ -966,30 +968,37 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     is_direct = normalize_group_direct_filter(opts[:is_direct])
+    search_term = normalize_group_search_term(opts[:search])
 
     base_query =
       from(g in Group,
         join: gm in GroupMembership,
         on: gm.group_id == g.id,
-        where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true),
-        select: count(g.id, :distinct)
+        where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true)
       )
 
     query =
-      case is_direct do
-        nil -> base_query
-        direct_flag -> from(g in base_query, where: g.is_direct == ^direct_flag)
-      end
+      base_query
+      |> maybe_filter_group_direct(is_direct)
+      |> maybe_filter_group_name_search(search_term)
 
-    Repo.one(query)
+    from(g in query, select: count(g.id, :distinct))
+    |> Repo.one()
   end
 
-  defp ordered_child_group_ids_for_profile(parent_group_id, profile_id, is_direct, limit, offset)
+  defp ordered_child_group_ids_for_profile(
+         parent_group_id,
+         profile_id,
+         is_direct,
+         search_term,
+         limit,
+         offset
+       )
        when is_integer(parent_group_id) and is_integer(profile_id) do
     sql = ordered_child_group_ids_query(limit, offset)
 
     params =
-      [parent_group_id, profile_id, is_direct]
+      [parent_group_id, profile_id, is_direct, search_term]
       |> maybe_append_query_param(limit)
       |> maybe_append_query_param(offset)
 
@@ -1011,6 +1020,7 @@ defmodule PotokIde.Social do
         ON gm.group_id = g.id AND gm.profile_id = $2
       WHERE g.parent_id = $1
         AND ($3::boolean IS NULL OR g.is_direct = $3)
+        AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')
         AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
     ),
     subtree(root_id, group_id) AS (
@@ -1063,15 +1073,15 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $4"]
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $5"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
   defp maybe_add_offset_sql(parts, limit, offset)
        when is_integer(limit) and is_integer(offset),
-       do: parts ++ [" OFFSET $5"]
+       do: parts ++ [" OFFSET $6"]
 
   defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
-    do: parts ++ [" OFFSET $4"]
+    do: parts ++ [" OFFSET $5"]
 
   defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
 
@@ -1087,6 +1097,29 @@ defmodule PotokIde.Social do
   defp normalize_group_direct_filter(true), do: true
   defp normalize_group_direct_filter(false), do: false
   defp normalize_group_direct_filter(_), do: nil
+
+  defp normalize_group_search_term(search_term) when is_binary(search_term) do
+    search_term
+    |> String.trim()
+    |> case do
+      "" -> nil
+      value -> String.slice(value, 0, 120)
+    end
+  end
+
+  defp normalize_group_search_term(_), do: nil
+
+  defp maybe_filter_group_direct(query, nil), do: query
+
+  defp maybe_filter_group_direct(query, direct_flag) when is_boolean(direct_flag) do
+    from(g in query, where: g.is_direct == ^direct_flag)
+  end
+
+  defp maybe_filter_group_name_search(query, nil), do: query
+
+  defp maybe_filter_group_name_search(query, search_term) when is_binary(search_term) do
+    from(g in query, where: ilike(g.name, ^"%#{search_term}%"))
+  end
 
   def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]

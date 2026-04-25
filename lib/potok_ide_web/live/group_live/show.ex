@@ -313,6 +313,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             sub_groups_kind={@sub_groups_kind}
             direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
             other_sub_groups_unread_count={@other_sub_groups_unread_count}
+            children_search_query={@children_search_query}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -409,6 +410,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:sub_groups_unread_count, 0)
        |> assign(:direct_sub_groups_unread_count, 0)
        |> assign(:other_sub_groups_unread_count, 0)
+       |> assign(:children_search_query, "")
        |> assign(
          :sub_groups_kind,
          normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
@@ -747,6 +749,30 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> maybe_increment_pagination(:children_pagination)
+     |> refresh_group_data()}
+  end
+
+  def handle_event("search_children", %{"children_search" => %{"q" => query}}, socket) do
+    next_query = normalize_children_search_query(query)
+
+    if next_query == socket.assigns.children_search_query do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:children_search_query, next_query)
+       |> assign(:children_pagination, default_pagination(@children_page_size))
+       |> refresh_group_data()}
+    end
+  end
+
+  def handle_event("search_children", _params, socket), do: {:noreply, socket}
+
+  def handle_event("clear_children_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:children_search_query, "")
+     |> assign(:children_pagination, default_pagination(@children_page_size))
      |> refresh_group_data()}
   end
 
@@ -1501,18 +1527,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp child_groups_page(group, current_profile, pagination, sub_groups_kind) do
+  defp child_groups_page(group, current_profile, pagination, sub_groups_kind, search_query) do
     direct_filter = child_group_direct_filter(sub_groups_kind)
+    normalized_search_query = normalize_children_search_query(search_query)
 
     total_count =
-      Social.count_child_groups_for_profile(group, current_profile, is_direct: direct_filter)
+      Social.count_child_groups_for_profile(group, current_profile,
+        is_direct: direct_filter,
+        search: normalized_search_query
+      )
 
     limit = pagination_limit(pagination)
 
     entries =
       Social.list_child_groups_for_profile(group, current_profile,
         limit: limit,
-        is_direct: direct_filter
+        is_direct: direct_filter,
+        search: normalized_search_query
       )
 
     pagination_result(pagination, entries, total_count)
@@ -1608,7 +1639,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           group,
           current_profile,
           socket.assigns.children_pagination,
-          sub_groups_kind
+          sub_groups_kind,
+          socket.assigns.children_search_query
         )
 
       socket
@@ -1818,6 +1850,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp normalize_sub_groups_kind("direct", %Group{is_root: true}), do: "direct"
   defp normalize_sub_groups_kind("other", %Group{is_root: true}), do: "other"
   defp normalize_sub_groups_kind(_, %Group{is_root: true}), do: "other"
+
+  defp normalize_children_search_query(query) when is_binary(query) do
+    query
+    |> String.trim()
+    |> String.slice(0, 120)
+  end
+
+  defp normalize_children_search_query(_), do: ""
 
   defp child_group_direct_filter("direct"), do: true
   defp child_group_direct_filter("other"), do: false

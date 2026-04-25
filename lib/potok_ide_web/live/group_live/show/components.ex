@@ -348,7 +348,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     <div id={@id} class={["px-4 py-4 text-sm text-base-content/60 relative z-40", @class]}>
       <nav
         aria-label={gettext("Current group path")}
-        class="flex flex-wrap items-center align-center gap-x-2 gap-y-1"
+        class="flex flex-wrap items-center align-center gap-x-1 gap-y-1"
       >
         <%= for {path_group, idx} <- Enum.with_index(@group_path) do %>
           <%= if idx > 0 do %>
