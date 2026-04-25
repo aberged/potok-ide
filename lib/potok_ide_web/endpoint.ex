@@ -11,9 +11,17 @@ defmodule PotokIdeWeb.Endpoint do
     same_site: "Lax"
   ]
 
+  @allowed_socket_origins [
+    "https://potok.rs",
+    "https://www.potok.rs",
+    "https://potok-ide.fly.dev"
+  ]
+
+  @check_origin if Mix.env() == :prod, do: @allowed_socket_origins, else: false
+
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options]],
-    longpoll: [connect_info: [session: @session_options]]
+    websocket: [connect_info: [session: @session_options], check_origin: @check_origin],
+    longpoll: [connect_info: [session: @session_options], check_origin: @check_origin]
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -56,9 +64,42 @@ defmodule PotokIdeWeb.Endpoint do
   plug PotokIdeWeb.Router
 
   defp enforce_canonical_host(conn, _opts) do
+    # LiveView socket transports cannot follow host redirects reliably.
+    # Skip canonical enforcement for both websocket and longpoll endpoints.
+    live_socket_path? =
+      String.starts_with?(conn.request_path, "/live/websocket") or
+        String.starts_with?(conn.request_path, "/live/longpoll")
+
+    websocket_upgrade? =
+      conn
+      |> Plug.Conn.get_req_header("upgrade")
+      |> Enum.any?(&String.downcase(&1) == "websocket")
+
+    skip_canonical? = live_socket_path? or websocket_upgrade?
+
+    # NOTE: Plug.SSL's `host:` option only fires for http scheme requests, so
+    # we cannot rely on it here – Fly terminates TLS and forwards as HTTP with
+    # X-Forwarded-Proto: https, meaning conn.scheme is already :https after
+    # rewrite_on. We do the canonical-host 301 manually instead.
     case Application.get_env(:potok_ide, :canonical_host) do
-      nil -> conn
-      host -> Plug.SSL.call(conn, Plug.SSL.init(rewrite_on: [:x_forwarded_proto], host: host))
+      nil ->
+        conn
+
+      _canonical when skip_canonical? ->
+        conn
+
+      canonical when conn.host != canonical ->
+        path = conn.request_path
+        qs = conn.query_string
+        location = if qs == "", do: "https://#{canonical}#{path}", else: "https://#{canonical}#{path}?#{qs}"
+
+        conn
+        |> Plug.Conn.put_resp_header("location", location)
+        |> Plug.Conn.resp(301, "")
+        |> Plug.Conn.halt()
+
+      _canonical ->
+        conn
     end
   end
 end
