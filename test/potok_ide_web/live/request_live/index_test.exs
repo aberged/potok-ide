@@ -233,5 +233,85 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       refute has_element?(lv, "#approval-request-#{request.id}")
       refute Social.member_of_group?(second_requester_profile, group)
     end
+
+    test "shows pending and approved requests created by the current profile", %{conn: conn} do
+      requester_account = account_fixture()
+      pending_owner_account = account_fixture()
+      approved_owner_account = account_fixture()
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "reqhist-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, pending_owner_profile} =
+        Social.create_profile_for_account(pending_owner_account, %{
+          username: "reqhist-pending",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, approved_owner_profile} =
+        Social.create_profile_for_account(approved_owner_account, %{
+          username: "reqhist-approved",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      requester_account = Accounts.get_account!(requester_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, pending_group} =
+        Social.create_group(pending_owner_profile, root_group, %{
+          "name" => "Pending History Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, approved_group} =
+        Social.create_group(approved_owner_profile, root_group, %{
+          "name" => "Approved History Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, _pending_request} = Social.request_group_access(requester_profile, pending_group)
+      assert {:ok, approved_request} = Social.request_group_access(requester_profile, approved_group)
+
+      assert {:ok, _requester_member} =
+               Social.accept_group_join_request(
+                 approved_owner_profile,
+                 approved_group,
+                 approved_request.id
+               )
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(requester_account)
+        |> live(~p"/requests")
+
+      lv
+      |> element("#created-requests-toggle")
+      |> render_click()
+
+      rendered = render(lv)
+
+      assert rendered =~ "Pending History Group"
+      assert rendered =~ "Approved History Group"
+      assert rendered =~ approved_owner_profile.username
+      assert rendered =~ "Pending"
+      assert rendered =~ "Approved"
+      assert rendered =~ "Requested on"
+    end
   end
 end

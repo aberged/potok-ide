@@ -507,4 +507,12 @@ And **never** do this:
 - **Never** use `<.form let={f} ...>` in the template, instead **always use `<.form for={@form} ...>`**, then drive all form references from the form assign as in `@form[:field]`. The UI should **always** be driven by a `to_form/2` assigned in the LiveView module that is derived from a changeset
 <!-- phoenix:liveview-end -->
 
+<!-- gettext-start -->
+## Gettext guidelines
+
+- **Always** use `gettext/1` for static strings in templates and LiveViews, and `dgettext/2` for static strings in context modules. This ensures all user-facing strings are extracted for translation and that the app is fully translatable
+- **Always** check if all present languages have the latest translations for any new strings you add, and update translations as necessary
+
+<!-- gettext-end -->
+
 <!-- usage-rules-end -->

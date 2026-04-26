@@ -367,7 +367,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               {if path_group.is_root,
                 do: "",
                 else: group_identity_name(path_group, @current_profile)}
-              <.icon :if={path_group.is_root} name="hero-globe-alt" class="size-4" />
+              <.icon :if={path_group.is_root} name="hero-home" class="size-4" />
             </.link>
           <% end %>
         <% end %>
@@ -553,7 +553,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
                 "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
               ]}
             >
-              <.icon name="hero-globe-alt" class="size-4" />
+              <.icon name="hero-home" class="size-4" />
             </div>
           <% else %>
             <div class={[
@@ -561,7 +561,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
             ]}>
               <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
-              <.icon :if={@group.is_root} name="hero-globe-alt" class="size-4" />
+              <.icon :if={@group.is_root} name="hero-home" class="size-4" />
             </div>
           <% end %>
 

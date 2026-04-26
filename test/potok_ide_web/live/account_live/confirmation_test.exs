@@ -35,7 +35,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       assert html =~ "Keep me logged in on this device"
     end
 
-    test "renders login page for already logged in account", %{
+    test "redirects to home for already logged in account", %{
       conn: conn,
       confirmed_account: account
     } do
@@ -46,9 +46,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
           Accounts.deliver_login_instructions(account, url)
         end)
 
-      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
-      refute html =~ "Confirm my account"
-      assert html =~ "Log in"
+      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/accounts/log-in/#{token}")
     end
 
     test "confirms the given token once", %{conn: conn, unconfirmed_account: account} do

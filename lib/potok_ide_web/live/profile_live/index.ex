@@ -109,7 +109,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
         <div class="mt-4 flex flex-row justify-between">
           <.button navigate={~p"/groups"}>
-            <.icon name="hero-globe-alt" class="size-4" />
+            <.icon name="hero-home" class="size-4" />
           </.button>
           <.button navigate={~p"/profiles/new"}>
             <.icon name="hero-plus" class="size-4" />

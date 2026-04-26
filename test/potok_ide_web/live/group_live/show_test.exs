@@ -884,7 +884,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                lv,
-               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'] .hero-globe-alt"
+               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'] .hero-home"
              )
 
       assert has_element?(

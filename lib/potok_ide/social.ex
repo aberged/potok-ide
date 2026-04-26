@@ -20,6 +20,7 @@ defmodule PotokIde.Social do
     Group,
     GroupAccountInvitation,
     GroupInvitation,
+    GroupJoinRequestApproval,
     GroupJoinRequest,
     GroupMembership,
     GroupValueRead,
@@ -706,6 +707,43 @@ defmodule PotokIde.Social do
     end
   end
 
+  def list_approved_group_join_requests_for_approver(%Profile{} = approver, opts \\ []) do
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+
+    from(a in GroupJoinRequestApproval,
+      where: a.approver_id == ^approver.id,
+      order_by: [desc: a.approved_at, desc: a.id],
+      offset: ^offset,
+      preload: [:requester, group: :members]
+    )
+    |> maybe_limit(limit)
+    |> Repo.all()
+  end
+
+  def count_approved_group_join_requests_for_approver(%Profile{} = approver) do
+    from(a in GroupJoinRequestApproval,
+      where: a.approver_id == ^approver.id,
+      select: count(a.id)
+    )
+    |> Repo.one()
+  end
+
+  def list_approved_group_join_requests_for_requester(%Profile{} = requester, opts \\ []) do
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+
+    requester
+    |> list_request_history_entries_for_requester()
+    |> maybe_drop_entries(offset)
+    |> maybe_take_entries(limit)
+  end
+
+  def count_approved_group_join_requests_for_requester(%Profile{} = requester) do
+    count_pending_group_join_requests_for_requester(requester) +
+      count_historical_group_join_requests_for_requester(requester)
+  end
+
   def get_pending_group_join_request(%Profile{} = requester, %Group{} = group) do
     from(r in GroupJoinRequest,
       where: r.group_id == ^group.id and r.requester_id == ^requester.id
@@ -733,6 +771,14 @@ defmodule PotokIde.Social do
               is_nil(i.accepted_at)
         )
       )
+      |> Multi.insert(:approval, fn _changes ->
+        GroupJoinRequestApproval.changeset(%GroupJoinRequestApproval{}, %{
+          group_id: group.id,
+          requester_id: request.requester_id,
+          approver_id: actor.id,
+          approved_at: DateTime.utc_now(:second)
+        })
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, _changes} ->
@@ -1624,6 +1670,92 @@ defmodule PotokIde.Social do
   end
 
   defp maybe_limit(query, _limit), do: query
+
+  defp list_request_history_entries_for_requester(%Profile{} = requester) do
+    requester
+    |> requester_pending_join_request_entries()
+    |> Kernel.++(requester_approved_join_request_entries(requester))
+    |> Enum.sort_by(
+      fn entry ->
+        {DateTime.to_unix(entry.sort_at, :microsecond), request_history_status_rank(entry.status),
+         entry.source_id}
+      end,
+      :desc
+    )
+  end
+
+  defp requester_pending_join_request_entries(%Profile{} = requester) do
+    from(r in GroupJoinRequest,
+      where: r.requester_id == ^requester.id,
+      order_by: [desc: r.inserted_at, desc: r.id],
+      preload: [:group]
+    )
+    |> Repo.all()
+    |> Enum.map(fn request ->
+      %{
+        id: "request-#{request.id}",
+        source_id: request.id,
+        status: :pending,
+        group: request.group,
+        approver: nil,
+        requested_at: request.inserted_at,
+        approved_at: nil,
+        sort_at: request.inserted_at
+      }
+    end)
+  end
+
+  defp requester_approved_join_request_entries(%Profile{} = requester) do
+    from(a in GroupJoinRequestApproval,
+      where: a.requester_id == ^requester.id,
+      order_by: [desc: a.approved_at, desc: a.id],
+      preload: [:group, :approver]
+    )
+    |> Repo.all()
+    |> Enum.map(fn approval ->
+      %{
+        id: "approval-#{approval.id}",
+        source_id: approval.id,
+        status: :approved,
+        group: approval.group,
+        approver: approval.approver,
+        requested_at: nil,
+        approved_at: approval.approved_at,
+        sort_at: approval.approved_at
+      }
+    end)
+  end
+
+  defp count_pending_group_join_requests_for_requester(%Profile{} = requester) do
+    from(r in GroupJoinRequest,
+      where: r.requester_id == ^requester.id,
+      select: count(r.id)
+    )
+    |> Repo.one()
+  end
+
+  defp count_historical_group_join_requests_for_requester(%Profile{} = requester) do
+    from(a in GroupJoinRequestApproval,
+      where: a.requester_id == ^requester.id,
+      select: count(a.id)
+    )
+    |> Repo.one()
+  end
+
+  defp request_history_status_rank(:approved), do: 1
+  defp request_history_status_rank(:pending), do: 0
+
+  defp maybe_drop_entries(entries, offset) when is_integer(offset) and offset >= 0 do
+    Enum.drop(entries, offset)
+  end
+
+  defp maybe_drop_entries(entries, _offset), do: entries
+
+  defp maybe_take_entries(entries, limit) when is_integer(limit) and limit >= 0 do
+    Enum.take(entries, limit)
+  end
+
+  defp maybe_take_entries(entries, _limit), do: entries
 
   defp maybe_offset(query, offset) when is_integer(offset) and offset >= 0 do
     offset(query, ^offset)
