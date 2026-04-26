@@ -393,6 +393,35 @@ defmodule PotokIdeWeb.AccountAuthTest do
     end
   end
 
+  describe "on_mount :redirect_if_authenticated" do
+    test "redirects to home if account is authenticated", %{conn: conn, account: account} do
+      account_token = Accounts.generate_account_session_token(account)
+      session = conn |> put_session(:account_token, account_token) |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: PotokIdeWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+
+      assert {:halt, _updated_socket} =
+               AccountAuth.on_mount(:redirect_if_authenticated, %{}, session, socket)
+    end
+
+    test "continues when account is not authenticated", %{conn: conn} do
+      session = get_session(conn)
+
+      socket = %LiveView.Socket{
+        endpoint: PotokIdeWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+
+      assert {:cont, updated_socket} =
+               AccountAuth.on_mount(:redirect_if_authenticated, %{}, session, socket)
+
+      assert updated_socket.assigns.current_scope == nil
+    end
+  end
+
   describe "require_authenticated_account/2" do
     setup %{conn: conn} do
       %{conn: AccountAuth.fetch_current_scope_for_account(conn, [])}
@@ -439,6 +468,36 @@ defmodule PotokIdeWeb.AccountAuthTest do
         conn
         |> assign(:current_scope, Scope.for_account(account))
         |> AccountAuth.require_authenticated_account([])
+
+      refute conn.halted
+      refute conn.status
+    end
+  end
+
+  describe "redirect_if_account_is_authenticated/2" do
+    setup %{conn: conn} do
+      %{conn: AccountAuth.fetch_current_scope_for_account(conn, [])}
+    end
+
+    test "redirects to home if account is authenticated", %{conn: conn, account: account} do
+      conn =
+        conn
+        |> fetch_flash()
+        |> assign(:current_scope, Scope.for_account(account))
+        |> AccountAuth.redirect_if_account_is_authenticated([])
+
+      assert conn.halted
+      assert redirected_to(conn) == ~p"/"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are already logged in. Please log out first if you want to log in to another account."
+    end
+
+    test "does not redirect if account is not authenticated", %{conn: conn} do
+      conn =
+        conn
+        |> fetch_flash()
+        |> AccountAuth.redirect_if_account_is_authenticated([])
 
       refute conn.halted
       refute conn.status

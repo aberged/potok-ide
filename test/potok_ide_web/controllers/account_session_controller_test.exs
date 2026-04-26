@@ -70,6 +70,22 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
       assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
       assert redirected_to(conn) == ~p"/accounts/log-in/password"
     end
+
+    test "redirects to home when account is already authenticated", %{conn: conn, account: account} do
+      account = set_password(account)
+
+      conn =
+        conn
+        |> log_in_account(account)
+        |> post(~p"/accounts/log-in", %{
+          "account" => %{"email" => account.email, "password" => valid_account_password()}
+        })
+
+      assert redirected_to(conn) == ~p"/"
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
+               "You are already logged in. Please log out first if you want to log in to another account."
+    end
   end
 
   describe "POST /accounts/log-in - magic link" do

@@ -62,20 +62,14 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
     end
   end
 
-  describe "re-authentication (sudo mode)" do
+  describe "authenticated account" do
     setup %{conn: conn} do
       account = account_fixture()
       %{account: account, conn: log_in_account(conn, account)}
     end
 
-    test "shows login page with email filled in", %{conn: conn, account: account} do
-      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in")
-
-      assert html =~ "You need to reauthenticate"
-      assert html =~ "Log in with email"
-
-      assert html =~
-               ~s(<input type="email" name="account[email]" id="login_form_magic_email" value="#{account.email}")
+    test "redirects to home with flash message", %{conn: conn} do
+      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/accounts/log-in")
     end
   end
 end

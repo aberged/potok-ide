@@ -241,6 +241,26 @@ defmodule PotokIdeWeb.AccountAuth do
     {:cont, mount_current_scope(socket, session)}
   end
 
+  def on_mount(:redirect_if_authenticated, _params, session, socket) do
+    socket = mount_current_scope(socket, session)
+
+    if socket.assigns.current_scope && socket.assigns.current_scope.account do
+      socket =
+        socket
+        |> Phoenix.LiveView.put_flash(
+          :error,
+          gettext(
+            "You are already logged in. Please log out first if you want to log in to another account."
+          )
+        )
+        |> Phoenix.LiveView.redirect(to: ~p"/")
+
+      {:halt, socket}
+    else
+      {:cont, socket}
+    end
+  end
+
   def on_mount(:require_authenticated, _params, session, socket) do
     socket = mount_current_scope(socket, session)
 
@@ -367,6 +387,25 @@ defmodule PotokIdeWeb.AccountAuth do
       |> maybe_store_return_to()
       |> redirect(to: ~p"/accounts/log-in")
       |> halt()
+    end
+  end
+
+  @doc """
+  Plug for routes that should only be available to unauthenticated accounts.
+  """
+  def redirect_if_account_is_authenticated(conn, _opts) do
+    if conn.assigns.current_scope && conn.assigns.current_scope.account do
+      conn
+      |> put_flash(
+        :error,
+        gettext(
+          "You are already logged in. Please log out first if you want to log in to another account."
+        )
+      )
+      |> redirect(to: ~p"/")
+      |> halt()
+    else
+      conn
     end
   end
 

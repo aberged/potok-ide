@@ -28,6 +28,10 @@ defmodule PotokIdeWeb.Router do
     plug :fetch_current_scope_for_account
   end
 
+  pipeline :require_unauthenticated_account do
+    plug :redirect_if_account_is_authenticated
+  end
+
   scope "/.well-known", PotokIdeWeb do
     pipe_through :api
 
@@ -126,12 +130,12 @@ defmodule PotokIdeWeb.Router do
   end
 
   scope "/", PotokIdeWeb do
-    pipe_through [:browser]
+    pipe_through [:browser, :require_unauthenticated_account]
 
     live_session :current_account,
       on_mount: [
         {PotokIdeWeb.Locale, :mount_locale},
-        {PotokIdeWeb.AccountAuth, :mount_current_scope}
+        {PotokIdeWeb.AccountAuth, :redirect_if_authenticated}
       ] do
       live "/accounts/log-in", AccountLive.Login, :new
       live "/accounts/log-in/password", AccountLive.PasswordLogin, :new
@@ -139,6 +143,11 @@ defmodule PotokIdeWeb.Router do
     end
 
     post "/accounts/log-in", AccountSessionController, :create
+  end
+
+  scope "/", PotokIdeWeb do
+    pipe_through [:browser]
+
     delete "/accounts/log-out", AccountSessionController, :delete
   end
 end
