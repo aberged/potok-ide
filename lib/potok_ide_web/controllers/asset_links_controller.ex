@@ -4,7 +4,7 @@ defmodule PotokIdeWeb.AssetLinksController do
   def show(conn, _params) do
     config = Application.get_env(:potok_ide, :android_app_links, [])
 
-    package_name = Keyword.get(config, :package_name, "com.potok.ide")
+    package_name = Keyword.get(config, :package_name, "rs.potok.ide")
     fingerprints = Keyword.get(config, :sha256_cert_fingerprints, [])
 
     payload =

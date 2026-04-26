@@ -7,7 +7,7 @@ defmodule PotokIdeWeb.AssetLinksControllerTest do
     Application.put_env(
       :potok_ide,
       :android_app_links,
-      package_name: "com.potok.ide",
+      package_name: "rs.potok.ide",
       sha256_cert_fingerprints: [
         "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
       ]
@@ -32,7 +32,7 @@ defmodule PotokIdeWeb.AssetLinksControllerTest do
 
     assert payload["target"] == %{
              "namespace" => "android_app",
-             "package_name" => "com.potok.ide",
+             "package_name" => "rs.potok.ide",
              "sha256_cert_fingerprints" => [
                "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
              ]

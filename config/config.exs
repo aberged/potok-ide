@@ -30,7 +30,7 @@ config :potok_ide, :android_app_links, package_name: "rs.potok.ide"
 config :potok_ide, :canonical_host, nil
 
 config :potok_ide, :ios_app_links,
-  bundle_id: "com.potok.ide",
+  bundle_id: "rs.potok.ide",
   paths: ["/accounts/log-in/*"]
 
 # Configure the endpoint

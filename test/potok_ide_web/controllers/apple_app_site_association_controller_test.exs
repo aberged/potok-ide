@@ -8,7 +8,7 @@ defmodule PotokIdeWeb.AppleAppSiteAssociationControllerTest do
       :potok_ide,
       :ios_app_links,
       team_id: "ABCDE12345",
-      bundle_id: "com.potok.ide",
+      bundle_id: "rs.potok.ide",
       paths: ["/accounts/log-in/*", "/accounts/log-in"]
     )
 
@@ -27,7 +27,7 @@ defmodule PotokIdeWeb.AppleAppSiteAssociationControllerTest do
                "apps" => [],
                "details" => [
                  %{
-                   "appID" => "ABCDE12345.com.potok.ide",
+                   "appID" => "ABCDE12345.rs.potok.ide",
                    "paths" => ["/accounts/log-in/*", "/accounts/log-in"]
                  }
                ]
@@ -42,7 +42,7 @@ defmodule PotokIdeWeb.AppleAppSiteAssociationControllerTest do
              "applinks" => %{
                "details" => [
                  %{
-                   "appID" => "ABCDE12345.com.potok.ide"
+                   "appID" => "ABCDE12345.rs.potok.ide"
                  }
                ]
              }

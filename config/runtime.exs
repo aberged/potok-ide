@@ -59,7 +59,7 @@ ios_app_links =
   |> Keyword.put(
     :bundle_id,
     System.get_env("IOS_APP_LINK_BUNDLE_ID") ||
-      Keyword.get(ios_app_links, :bundle_id, "com.potok.ide")
+      Keyword.get(ios_app_links, :bundle_id, "rs.potok.ide")
   )
   |> then(fn config ->
     case System.get_env("IOS_APP_LINK_APP_ID") do

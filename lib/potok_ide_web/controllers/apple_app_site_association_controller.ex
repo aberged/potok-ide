@@ -34,7 +34,7 @@ defmodule PotokIdeWeb.AppleAppSiteAssociationController do
   defp app_id(config) do
     direct_app_id = normalize_string(Keyword.get(config, :app_id))
     team_id = normalize_string(Keyword.get(config, :team_id))
-    bundle_id = normalize_string(Keyword.get(config, :bundle_id)) || "com.potok.ide"
+    bundle_id = normalize_string(Keyword.get(config, :bundle_id)) || "rs.potok.ide"
 
     cond do
       direct_app_id -> direct_app_id
