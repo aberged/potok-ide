@@ -28,7 +28,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           for={@invitation_search_form}
           id="invitation-search-form"
           phx-change="search_invitations"
-          class="mb-3 absolute right-4 top-4 z-45"
+          class="mb-3 flex flex-row justify-end sticky right-4 top-1 z-45"
         >
           <div class="relative w-fit">
             <button
