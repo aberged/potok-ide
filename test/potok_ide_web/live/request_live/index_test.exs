@@ -313,5 +313,69 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert rendered =~ "Approved"
       assert rendered =~ "Requested on"
     end
+
+    test "realtime updates created request status when the requester history changes", %{conn: conn} do
+      requester_account = account_fixture()
+      owner_account = account_fixture()
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "reqhist-live-req",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "reqhist-live-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      requester_account = Accounts.get_account!(requester_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "Realtime Created Request Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, request} = Social.request_group_access(requester_profile, group)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(requester_account)
+        |> live(~p"/requests")
+
+      lv
+      |> element("#created-requests-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#created_requests-request-#{request.id}")
+
+      rendered = render(lv)
+      assert rendered =~ "Realtime Created Request Group"
+      assert rendered =~ "Pending"
+
+      assert {:ok, _requester_member} =
+               Social.accept_group_join_request(owner_profile, group, request.id)
+
+      [%{id: approval_history_id, status: :approved}] =
+        Social.list_approved_group_join_requests_for_requester(requester_profile)
+
+      refute has_element?(lv, "#created_requests-request-#{request.id}")
+      assert has_element?(lv, "#created_requests-#{approval_history_id}")
+
+      rendered = render(lv)
+      assert rendered =~ "Approved"
+      assert rendered =~ owner_profile.username
+    end
   end
 end

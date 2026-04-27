@@ -486,6 +486,7 @@ defmodule PotokIde.Social do
           {:ok, %{invitation: invitation}} ->
             broadcast_profile_invitations_updated(invitee)
             broadcast_pending_invitations_count_updated(invitee)
+              broadcast_profile_group_join_requests_updated(invitee)
             broadcast_group_join_request_updates_for_group(group)
             broadcast_group_updated(group)
             notify_profile_invitee_of_group_invitation(inviter, group, invitee)
@@ -553,6 +554,7 @@ defmodule PotokIde.Social do
         {:ok, %{invitation: inv}} ->
           broadcast_profile_invitations_updated(invitee)
           broadcast_pending_invitations_count_updated(invitee)
+          broadcast_profile_group_join_requests_updated(invitee)
           broadcast_group_join_request_updates_for_group(invitation.group)
           broadcast_group_updated(inv.group_id)
           broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
@@ -661,6 +663,7 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, request} ->
             broadcast_group_updated(group)
+            broadcast_profile_group_join_requests_updated(requester)
             broadcast_group_join_request_updates_for_group(group)
             {:ok, request}
 
@@ -808,6 +811,7 @@ defmodule PotokIde.Social do
           broadcast_group_updated(group)
           broadcast_profile_invitations_updated(requester)
           broadcast_pending_invitations_count_updated(requester)
+          broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
           broadcast_profile_group_unread_counts_updated(requester, group.id)
           {:ok, requester}
@@ -831,7 +835,10 @@ defmodule PotokIde.Social do
       Repo.delete(request)
       |> case do
         {:ok, _request} ->
+          requester = Repo.get!(Profile, request.requester_id)
+
           broadcast_group_updated(group)
+          broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
           {:ok, request}
 
