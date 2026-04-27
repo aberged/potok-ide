@@ -373,5 +373,170 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
       assert has_element?(lv, "#invitations a", "Alpha Search Group")
       assert has_element?(lv, "#invitations a", "Beta Search Group")
     end
+
+    test "shows sent invitations in a separate section and searches both sections", %{conn: conn} do
+      current_account = account_fixture()
+      received_inviter_account = account_fixture()
+      sent_invitee_account = account_fixture()
+
+      {:ok, current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "invsh-cur",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, received_inviter_profile} =
+        Social.create_profile_for_account(received_inviter_account, %{
+          username: "invsh-src",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, sent_invitee_profile} =
+        Social.create_profile_for_account(sent_invitee_account, %{
+          username: "invsh-tgt",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      current_account = Accounts.get_account!(current_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, received_group} =
+        Social.create_group(received_inviter_profile, root_group, %{
+          "name" => "Received Search Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, sent_group} =
+        Social.create_group(current_profile, root_group, %{
+          "name" => "Sent Search Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, _received_invitation} =
+               Social.invite_profile_to_group(received_inviter_profile, received_group, current_profile)
+
+      assert {:ok, _sent_invitation} =
+               Social.invite_profile_to_group(current_profile, sent_group, sent_invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(current_account)
+        |> live(~p"/invitations")
+
+      assert has_element?(lv, "#invitations-toggle")
+      assert has_element?(lv, "#sent-invitations-toggle")
+      assert has_element?(lv, "#invitations a", "Received Search Group")
+      assert has_element?(lv, "#sent-invitations a", "Sent Search Group")
+
+      lv
+      |> form("#invitation-search-form", invitation_search: %{q: "invsh-tgt"})
+      |> render_change()
+
+      refute has_element?(lv, "#invitations a", "Received Search Group")
+      assert has_element?(lv, "#sent-invitations a", "Sent Search Group")
+      assert has_element?(lv, ".bg-yellow-300", "invsh-tgt")
+    end
+
+    test "repopulates collapsed sections after search when re-expanded", %{conn: conn} do
+      current_account = account_fixture()
+      inviter_account = account_fixture()
+      sent_invitee_account = account_fixture()
+
+      {:ok, current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "invcol-cur",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, inviter_profile} =
+        Social.create_profile_for_account(inviter_account, %{
+          username: "invcol-src",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, sent_invitee_profile} =
+        Social.create_profile_for_account(sent_invitee_account, %{
+          username: "invcol-tgt",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      current_account = Accounts.get_account!(current_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, received_group} =
+        Social.create_group(inviter_profile, root_group, %{
+          "name" => "Collapsed Received Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, sent_group} =
+        Social.create_group(current_profile, root_group, %{
+          "name" => "Collapsed Sent Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:ok, _received_invitation} =
+               Social.invite_profile_to_group(inviter_profile, received_group, current_profile)
+
+      assert {:ok, _sent_invitation} =
+               Social.invite_profile_to_group(current_profile, sent_group, sent_invitee_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(current_account)
+        |> live(~p"/invitations")
+
+      lv
+      |> element("#invitations-toggle")
+      |> render_click()
+
+      lv
+      |> element("#sent-invitations-toggle")
+      |> render_click()
+
+      lv
+      |> form("#invitation-search-form", invitation_search: %{q: "Collapsed"})
+      |> render_change()
+
+      refute has_element?(lv, "#invitations a", "Collapsed Received Group")
+      refute has_element?(lv, "#sent-invitations a", "Collapsed Sent Group")
+
+      lv
+      |> element("#invitations-toggle")
+      |> render_click()
+
+      lv
+      |> element("#sent-invitations-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#invitations a", "Collapsed Received Group")
+      assert has_element?(lv, "#sent-invitations a", "Collapsed Sent Group")
+    end
   end
 end

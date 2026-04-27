@@ -486,7 +486,8 @@ defmodule PotokIde.Social do
           {:ok, %{invitation: invitation}} ->
             broadcast_profile_invitations_updated(invitee)
             broadcast_pending_invitations_count_updated(invitee)
-              broadcast_profile_group_join_requests_updated(invitee)
+            broadcast_profile_group_join_requests_updated(invitee)
+            broadcast_profile_invitations_updated(inviter)
             broadcast_group_join_request_updates_for_group(group)
             broadcast_group_updated(group)
             notify_profile_invitee_of_group_invitation(inviter, group, invitee)
@@ -555,6 +556,7 @@ defmodule PotokIde.Social do
           broadcast_profile_invitations_updated(invitee)
           broadcast_pending_invitations_count_updated(invitee)
           broadcast_profile_group_join_requests_updated(invitee)
+          broadcast_profile_invitations_updated(invitation.inviter)
           broadcast_group_join_request_updates_for_group(invitation.group)
           broadcast_group_updated(inv.group_id)
           broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
@@ -576,6 +578,11 @@ defmodule PotokIde.Social do
       case Repo.delete(invitation) do
         {:ok, deleted_invitation} ->
           broadcast_profile_invitations_updated(invitee)
+
+          case Repo.get(Profile, invitation.inviter_id) do
+            %Profile{} = inviter -> broadcast_profile_invitations_updated(inviter)
+            nil -> :ok
+          end
 
           if pending_invitation? do
             broadcast_pending_invitations_count_updated(invitee)
@@ -1383,11 +1390,45 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def list_group_invitations_for_inviter(%Profile{} = inviter, opts \\ []) do
+    import Ecto.Query, only: [from: 2]
+
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+    search = normalize_invitation_search_query(opts[:search])
+
+    from(i in GroupInvitation,
+      join: g in assoc(i, :group),
+      join: invitee in assoc(i, :invitee),
+      where: i.inviter_id == ^inviter.id,
+      where: ^sent_invitation_name_search_dynamic(search),
+      order_by: [
+        asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
+        desc: i.inserted_at,
+        desc: i.id
+      ],
+      offset: ^offset,
+      preload: [:invitee, group: :members]
+    )
+    |> maybe_limit(limit)
+    |> Repo.all()
+  end
+
   def count_group_invitations_for_invitee(%Profile{} = invitee) do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
       where: i.invitee_id == ^invitee.id,
+      select: count(i.id)
+    )
+    |> Repo.one()
+  end
+
+  def count_group_invitations_for_inviter(%Profile{} = inviter) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in GroupInvitation,
+      where: i.inviter_id == ^inviter.id,
       select: count(i.id)
     )
     |> Repo.one()
@@ -1403,6 +1444,21 @@ defmodule PotokIde.Social do
       join: inviter in assoc(i, :inviter),
       where: i.invitee_id == ^invitee.id,
       where: ^invitation_name_search_dynamic(search),
+      select: count(i.id)
+    )
+    |> Repo.one()
+  end
+
+  def count_group_invitations_for_inviter(%Profile{} = inviter, opts) when is_list(opts) do
+    import Ecto.Query, only: [from: 2]
+
+    search = normalize_invitation_search_query(opts[:search])
+
+    from(i in GroupInvitation,
+      join: g in assoc(i, :group),
+      join: invitee in assoc(i, :invitee),
+      where: i.inviter_id == ^inviter.id,
+      where: ^sent_invitation_name_search_dynamic(search),
       select: count(i.id)
     )
     |> Repo.one()
@@ -1475,6 +1531,14 @@ defmodule PotokIde.Social do
   defp invitation_name_search_dynamic(search_term) do
     dynamic([_i, g, inviter],
       ilike(g.name, ^"%#{search_term}%") or ilike(inviter.username, ^"%#{search_term}%")
+    )
+  end
+
+  defp sent_invitation_name_search_dynamic(""), do: true
+
+  defp sent_invitation_name_search_dynamic(search_term) do
+    dynamic([_i, g, invitee],
+      ilike(g.name, ^"%#{search_term}%") or ilike(invitee.username, ^"%#{search_term}%")
     )
   end
 

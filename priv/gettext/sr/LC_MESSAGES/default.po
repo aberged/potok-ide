@@ -280,6 +280,31 @@ msgstr "Pozivnica je poslata."
 msgid "Invitations"
 msgstr "Pozivnice"
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:25
+#, elixir-autogen, elixir-format
+msgid "Received and sent group invitations for your current profile."
+msgstr "Primljene i poslate grupne pozivnice za vaš trenutni profil."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:80
+#, elixir-autogen, elixir-format
+msgid "Invitations for me"
+msgstr "Pozivnice za mene"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:83
+#, elixir-autogen, elixir-format
+msgid "Invitations addressed to your current profile."
+msgstr "Pozivnice upućene vašem trenutnom profilu."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:197
+#, elixir-autogen, elixir-format
+msgid "Invitations sent by me"
+msgstr "Pozivnice koje sam poslao"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "Invitations your current profile has sent to other profiles."
+msgstr "Pozivnice koje je vaš trenutni profil poslao drugim profilima."
+
 #: lib/potok_ide_web/live/account_live/registration.ex:37
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:29
 #, elixir-autogen, elixir-format
@@ -295,6 +320,11 @@ msgstr "Pozovi profil"
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Pozvao:"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:245
+#, elixir-autogen, elixir-format
+msgid "Invited:"
+msgstr "Pozvan:"
 
 #: lib/potok_ide_web/live/invitation_live/index.ex:51
 #, elixir-autogen, elixir-format
@@ -427,6 +457,16 @@ msgstr "Nema pozivnica na čekanju."
 
 msgid "No invitations match your search."
 msgstr "Nijedna pozivnica ne odgovara tvojoj pretrazi."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "No invitations sent by this profile."
+msgstr "Ovaj profil još nije poslao nijednu pozivnicu."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "No sent invitations match your search."
+msgstr "Nijedna poslata pozivnica ne odgovara tvojoj pretrazi."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
 #, elixir-autogen, elixir-format
@@ -1684,6 +1724,21 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Search by name"
 msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Search by group or profile"
+msgstr "Pretraži po grupi ili profilu"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:267
+#, elixir-autogen, elixir-format
+msgid "Sent on"
+msgstr "Poslato"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:289
+#, elixir-autogen, elixir-format
+msgid "Load more sent invitations"
+msgstr "Učitaj još poslatih pozivnica"
 
 #: lib/potok_ide_web/live/account_live/settings.ex:150
 #, elixir-autogen, elixir-format

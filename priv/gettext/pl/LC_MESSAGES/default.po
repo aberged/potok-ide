@@ -280,6 +280,31 @@ msgstr "Zaproszenie zostało wysłane."
 msgid "Invitations"
 msgstr "Zaproszenia"
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:25
+#, elixir-autogen, elixir-format
+msgid "Received and sent group invitations for your current profile."
+msgstr "Otrzymane i wysłane zaproszenia do grup dla bieżącego profilu."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:80
+#, elixir-autogen, elixir-format
+msgid "Invitations for me"
+msgstr "Zaproszenia dla mnie"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:83
+#, elixir-autogen, elixir-format
+msgid "Invitations addressed to your current profile."
+msgstr "Zaproszenia skierowane do bieżącego profilu."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:197
+#, elixir-autogen, elixir-format
+msgid "Invitations sent by me"
+msgstr "Zaproszenia wysłane przeze mnie"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "Invitations your current profile has sent to other profiles."
+msgstr "Zaproszenia, które bieżący profil wysłał do innych profili."
+
 #: lib/potok_ide_web/live/account_live/registration.ex:37
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:29
 #, elixir-autogen, elixir-format
@@ -295,6 +320,11 @@ msgstr "Zaproś profil"
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Zaprosił:"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:245
+#, elixir-autogen, elixir-format
+msgid "Invited:"
+msgstr "Zaproszono:"
 
 #: lib/potok_ide_web/live/invitation_live/index.ex:51
 #, elixir-autogen, elixir-format
@@ -427,6 +457,16 @@ msgstr "Brak oczekujących zaproszeń."
 
 msgid "No invitations match your search."
 msgstr "Żadne zaproszenia nie pasują do wyszukiwania."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "No invitations sent by this profile."
+msgstr "Ten profil nie wysłał jeszcze żadnych zaproszeń."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "No sent invitations match your search."
+msgstr "Żadne wysłane zaproszenia nie pasują do wyszukiwania."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
 #, elixir-autogen, elixir-format
@@ -1684,6 +1724,21 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Search by name"
 msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Search by group or profile"
+msgstr "Szukaj według grupy lub profilu"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:267
+#, elixir-autogen, elixir-format
+msgid "Sent on"
+msgstr "Wysłano"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:289
+#, elixir-autogen, elixir-format
+msgid "Load more sent invitations"
+msgstr "Załaduj więcej wysłanych zaproszeń"
 
 #: lib/potok_ide_web/live/account_live/settings.ex:150
 #, elixir-autogen, elixir-format

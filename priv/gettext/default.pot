@@ -288,6 +288,31 @@ msgstr ""
 msgid "Invitations"
 msgstr ""
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:25
+#, elixir-autogen, elixir-format
+msgid "Received and sent group invitations for your current profile."
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:80
+#, elixir-autogen, elixir-format
+msgid "Invitations for me"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:83
+#, elixir-autogen, elixir-format
+msgid "Invitations addressed to your current profile."
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:197
+#, elixir-autogen, elixir-format
+msgid "Invitations sent by me"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:200
+#, elixir-autogen, elixir-format
+msgid "Invitations your current profile has sent to other profiles."
+msgstr ""
+
 #: lib/potok_ide_web/live/account_live/registration.ex:37
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:29
 #, elixir-autogen, elixir-format
@@ -302,6 +327,11 @@ msgstr ""
 #: lib/potok_ide_web/live/invitation_live/index.ex:33
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:245
+#, elixir-autogen, elixir-format
+msgid "Invited:"
 msgstr ""
 
 #: lib/potok_ide_web/live/invitation_live/index.ex:51
@@ -434,6 +464,16 @@ msgid "No pending invitations."
 msgstr ""
 
 msgid "No invitations match your search."
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:223
+#, elixir-autogen, elixir-format
+msgid "No invitations sent by this profile."
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:224
+#, elixir-autogen, elixir-format
+msgid "No sent invitations match your search."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
@@ -1690,6 +1730,21 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:52
 #, elixir-autogen, elixir-format
 msgid "Search by name"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Search by group or profile"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:267
+#, elixir-autogen, elixir-format
+msgid "Sent on"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:289
+#, elixir-autogen, elixir-format
+msgid "Load more sent invitations"
 msgstr ""
 
 #: lib/potok_ide_web/live/account_live/settings.ex:150
