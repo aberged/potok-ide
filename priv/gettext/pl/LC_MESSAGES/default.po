@@ -250,10 +250,20 @@ msgstr "Nieprawidłowy adres e-mail lub hasło"
 msgid "Invitation accepted."
 msgstr "Zaproszenie zostało zaakceptowane."
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:106
+#, elixir-autogen, elixir-format
+msgid "Invitation deleted."
+msgstr "Zaproszenie zostało usunięte."
+
 #: lib/potok_ide_web/live/invitation_live/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Invitation not found (or already accepted)."
 msgstr "Nie znaleziono zaproszenia lub zostało już zaakceptowane."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:109
+#, elixir-autogen, elixir-format
+msgid "Invitation not found."
+msgstr "Nie znaleziono zaproszenia."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1474
 #: lib/potok_ide_web/live/group_live/show.ex:1497
@@ -285,6 +295,21 @@ msgstr "Zaproś profil"
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Zaprosił:"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "Are you sure you want to delete this invitation?"
+msgstr "Czy na pewno chcesz usunąć to zaproszenie?"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Delete invitation"
+msgstr "Usuń zaproszenie"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:112
+#, elixir-autogen, elixir-format
+msgid "Could not delete invitation."
+msgstr "Nie udało się usunąć zaproszenia."
 
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:40
 #, elixir-autogen, elixir-format
@@ -399,6 +424,9 @@ msgstr "Brak członków."
 #, elixir-autogen, elixir-format
 msgid "No pending invitations."
 msgstr "Brak oczekujących zaproszeń."
+
+msgid "No invitations match your search."
+msgstr "Żadne zaproszenia nie pasują do wyszukiwania."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
 #, elixir-autogen, elixir-format
@@ -1546,6 +1574,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Load more approved requests"
 msgstr "Wczytaj więcej zaakceptowanych próśb"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:64
+#, elixir-autogen, elixir-format
+msgid "Load more invitations"
+msgstr "Załaduj więcej zaproszeń"
 
 #: lib/potok_ide_web/live/request_live/index.ex:273
 #, elixir-autogen, elixir-format

@@ -258,9 +258,19 @@ msgstr ""
 msgid "Invitation accepted."
 msgstr ""
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:106
+#, elixir-autogen, elixir-format
+msgid "Invitation deleted."
+msgstr ""
+
 #: lib/potok_ide_web/live/invitation_live/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Invitation not found (or already accepted)."
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:109
+#, elixir-autogen, elixir-format
+msgid "Invitation not found."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:1474
@@ -292,6 +302,21 @@ msgstr ""
 #: lib/potok_ide_web/live/invitation_live/index.ex:33
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "Are you sure you want to delete this invitation?"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Delete invitation"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:112
+#, elixir-autogen, elixir-format
+msgid "Could not delete invitation."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:40
@@ -406,6 +431,9 @@ msgstr ""
 #: lib/potok_ide_web/live/invitation_live/index.ex:19
 #, elixir-autogen, elixir-format
 msgid "No pending invitations."
+msgstr ""
+
+msgid "No invitations match your search."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
@@ -1552,6 +1580,11 @@ msgstr ""
 #: lib/potok_ide_web/live/request_live/index.ex:176
 #, elixir-autogen, elixir-format
 msgid "Load more approved requests"
+msgstr ""
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:64
+#, elixir-autogen, elixir-format
+msgid "Load more invitations"
 msgstr ""
 
 #: lib/potok_ide_web/live/request_live/index.ex:273

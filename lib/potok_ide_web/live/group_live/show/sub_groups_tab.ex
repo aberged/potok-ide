@@ -90,6 +90,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               current_profile={@current_profile}
               avatar_size="size-10"
               text_class="text-sm"
+              highlight_query={@children_search_query}
               pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
               unread_count={Map.get(@unread_counts, group.id, 0)}
             />

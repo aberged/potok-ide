@@ -331,6 +331,26 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  attr :text, :string, required: true
+  attr :query, :string, default: ""
+  attr :class, :any, default: nil
+  attr :match_class, :string, default: "rounded bg-yellow-300 px-0 text-yellow-950"
+
+  def highlighted_text(assigns) do
+    assigns = assign(assigns, :segments, highlighted_text_segments(assigns.text, assigns.query))
+
+    ~H"""
+    <span class={@class}>
+      <span
+        :for={segment <- @segments}
+        class={if segment.match?, do: @match_class, else: nil}
+      >
+        {segment.text}
+      </span>
+    </span>
+    """
+  end
+
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
   attr :id, :string, default: "group-path"
@@ -527,6 +547,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :pending_join_requests_count, :integer, default: 0
   attr :unread_count, :integer, default: 0
   attr :current_profile, :map, default: nil
+  attr :highlight_query, :string, default: ""
 
   def group_identity(assigns) do
     ~H"""
@@ -595,7 +616,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           class="min-w-0 shrink"
         >
           <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-            {group_identity_name(@group, @current_profile)}
+            <.highlighted_text
+              text={group_identity_name(@group, @current_profile)}
+              query={@highlight_query}
+            />
           </div>
 
           <div
@@ -909,6 +933,31 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp group_identity_name(group, _current_profile), do: group.name
+
+  defp highlighted_text_segments(text, query)
+
+  defp highlighted_text_segments(text, _query) when not is_binary(text),
+    do: [%{text: to_string(text), match?: false}]
+
+  defp highlighted_text_segments(text, query) when is_binary(text) and not is_binary(query),
+    do: [%{text: text, match?: false}]
+
+  defp highlighted_text_segments(text, query) do
+    normalized_query = String.trim(query)
+
+    if normalized_query == "" do
+      [%{text: text, match?: false}]
+    else
+      regex = Regex.compile!(Regex.escape(normalized_query), "iu")
+
+      regex
+      |> Regex.split(text, include_captures: true, trim: false)
+      |> Enum.reject(&(&1 == ""))
+      |> Enum.map(fn segment ->
+        %{text: segment, match?: Regex.match?(regex, segment)}
+      end)
+    end
+  end
 
   defp group_picture_url(url) when is_binary(url) do
     case String.trim(url) do

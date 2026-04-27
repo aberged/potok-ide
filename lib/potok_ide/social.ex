@@ -565,6 +565,28 @@ defmodule PotokIde.Social do
     end
   end
 
+  def delete_group_invitation(%GroupInvitation{} = invitation, %Profile{} = invitee) do
+    if invitation.invitee_id != invitee.id do
+      {:error, :invitee_mismatch}
+    else
+      pending_invitation? = is_nil(invitation.accepted_at)
+
+      case Repo.delete(invitation) do
+        {:ok, deleted_invitation} ->
+          broadcast_profile_invitations_updated(invitee)
+
+          if pending_invitation? do
+            broadcast_pending_invitations_count_updated(invitee)
+          end
+
+          {:ok, deleted_invitation}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
   def remove_group_member(%Profile{} = actor, %Group{} = group, member_profile_id)
       when is_integer(member_profile_id) do
     case Repo.get(Profile, member_profile_id) do
@@ -1330,18 +1352,53 @@ defmodule PotokIde.Social do
     end
   end
 
-  def list_pending_invitations(%Profile{} = invitee) do
+  def list_pending_invitations(%Profile{} = invitee, opts \\ []) do
+    import Ecto.Query, only: [from: 2]
+
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+    search = normalize_invitation_search_query(opts[:search])
+
+    from(i in GroupInvitation,
+      join: g in assoc(i, :group),
+      join: inviter in assoc(i, :inviter),
+      where: i.invitee_id == ^invitee.id,
+      where: ^invitation_name_search_dynamic(search),
+      order_by: [
+        asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
+        desc: i.inserted_at,
+        desc: i.id
+      ],
+      offset: ^offset,
+      preload: [:inviter, group: :members]
+    )
+    |> maybe_limit(limit)
+    |> Repo.all()
+  end
+
+  def count_group_invitations_for_invitee(%Profile{} = invitee) do
     import Ecto.Query, only: [from: 2]
 
     from(i in GroupInvitation,
       where: i.invitee_id == ^invitee.id,
-      order_by: [
-        asc: fragment("CASE WHEN ? IS NULL THEN 0 ELSE 1 END", i.accepted_at),
-        desc: i.inserted_at
-      ],
-      preload: [:inviter, group: :members]
+      select: count(i.id)
     )
-    |> Repo.all()
+    |> Repo.one()
+  end
+
+  def count_group_invitations_for_invitee(%Profile{} = invitee, opts) when is_list(opts) do
+    import Ecto.Query, only: [from: 2]
+
+    search = normalize_invitation_search_query(opts[:search])
+
+    from(i in GroupInvitation,
+      join: g in assoc(i, :group),
+      join: inviter in assoc(i, :inviter),
+      where: i.invitee_id == ^invitee.id,
+      where: ^invitation_name_search_dynamic(search),
+      select: count(i.id)
+    )
+    |> Repo.one()
   end
 
   def count_pending_invitations(%Profile{} = invitee) do
@@ -1395,6 +1452,32 @@ defmodule PotokIde.Social do
     )
     |> Repo.one()
   end
+
+  def get_group_invitation_for_invitee(%Profile{} = invitee, invitation_id) do
+    import Ecto.Query, only: [from: 2]
+
+    from(i in GroupInvitation,
+      where: i.id == ^invitation_id and i.invitee_id == ^invitee.id,
+      preload: [:inviter, group: :members]
+    )
+    |> Repo.one()
+  end
+
+  defp invitation_name_search_dynamic(""), do: true
+
+  defp invitation_name_search_dynamic(search_term) do
+    dynamic([_i, g, inviter],
+      ilike(g.name, ^"%#{search_term}%") or ilike(inviter.username, ^"%#{search_term}%")
+    )
+  end
+
+  defp normalize_invitation_search_query(query) when is_binary(query) do
+    query
+    |> String.trim()
+    |> String.slice(0, 120)
+  end
+
+  defp normalize_invitation_search_query(_), do: ""
 
   defp maybe_preload_group_members(%Group{is_direct: true} = group) do
     Repo.preload(group, :members)

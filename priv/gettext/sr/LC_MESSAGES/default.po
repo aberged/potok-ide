@@ -250,10 +250,20 @@ msgstr "Neispravan imejl ili lozinka"
 msgid "Invitation accepted."
 msgstr "Pozivnica je prihvaćena."
 
+#: lib/potok_ide_web/live/invitation_live/index.ex:106
+#, elixir-autogen, elixir-format
+msgid "Invitation deleted."
+msgstr "Pozivnica je obrisana."
+
 #: lib/potok_ide_web/live/invitation_live/index.ex:90
 #, elixir-autogen, elixir-format
 msgid "Invitation not found (or already accepted)."
 msgstr "Pozivnica nije pronađena ili je već prihvaćena."
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:109
+#, elixir-autogen, elixir-format
+msgid "Invitation not found."
+msgstr "Pozivnica nije pronađena."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1474
 #: lib/potok_ide_web/live/group_live/show.ex:1497
@@ -285,6 +295,21 @@ msgstr "Pozovi profil"
 #, elixir-autogen, elixir-format
 msgid "Invited by:"
 msgstr "Pozvao:"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:51
+#, elixir-autogen, elixir-format
+msgid "Are you sure you want to delete this invitation?"
+msgstr "Da li sigurno želiš da obrišeš ovu pozivnicu?"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:54
+#, elixir-autogen, elixir-format
+msgid "Delete invitation"
+msgstr "Obriši pozivnicu"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:112
+#, elixir-autogen, elixir-format
+msgid "Could not delete invitation."
+msgstr "Nije moguće obrisati pozivnicu."
 
 #: lib/potok_ide_web/live/group_live/show/invite_profile_tab.ex:40
 #, elixir-autogen, elixir-format
@@ -399,6 +424,9 @@ msgstr "Nema članova."
 #, elixir-autogen, elixir-format
 msgid "No pending invitations."
 msgstr "Nema pozivnica na čekanju."
+
+msgid "No invitations match your search."
+msgstr "Nijedna pozivnica ne odgovara tvojoj pretrazi."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1092
 #, elixir-autogen, elixir-format
@@ -1546,6 +1574,11 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "Load more approved requests"
 msgstr "Učitaj još odobrenih zahteva"
+
+#: lib/potok_ide_web/live/invitation_live/index.ex:64
+#, elixir-autogen, elixir-format
+msgid "Load more invitations"
+msgstr "Učitaj još pozivnica"
 
 #: lib/potok_ide_web/live/request_live/index.ex:273
 #, elixir-autogen, elixir-format

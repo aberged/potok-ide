@@ -4,58 +4,140 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   alias PotokIde.Social
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.GroupLive.Show.Components
+  @invitations_per_page 20
 
   @impl true
   def render(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :invitation_search_form,
+        to_form(%{"q" => assigns.invitations_search_query}, as: :invitation_search)
+      )
+
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
+      <div class="relative h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
         <.header>
           {gettext("Invitations")}
           <:subtitle>{gettext("Pending group invitations for your current profile.")}</:subtitle>
         </.header>
 
-        <div :if={@invitations == []} class="text-base-content/70">
-          {gettext("No pending invitations.")}
-        </div>
-
-        <div :for={inv <- @invitations} class="card">
-          <div class="card-body">
-            <Components.group_identity
-              group={inv.group}
-              current_profile={@current_profile}
-              avatar_size="size-12"
-              text_class="text-sm"
-              unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
+        <.form
+          :if={@invitations_pagination.total_count > 0 or @invitations_search_query != ""}
+          for={@invitation_search_form}
+          id="invitation-search-form"
+          phx-change="search_invitations"
+          class="mb-3 absolute right-4 top-4 z-45"
+        >
+          <div class="relative w-fit">
+            <button
+              :if={@invitations_search_query != ""}
+              id="invitation-search-reset"
+              type="button"
+              phx-click="clear_invitations_search"
+              aria-label={gettext("Clear search")}
+              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+            >
+              <.icon name="hero-x-mark" class="size-4" />
+            </button>
+            <.input
+              field={@invitation_search_form[:q]}
+              id="invitation-search-input"
+              type="text"
+              placeholder={gettext("Search by name")}
+              phx-debounce="300"
+              autocomplete="off"
+              class="bg-base-100/85 h-10 w-12 rounded-full border border-gray-500/50 px-6 pr-10 text-sm transition-all duration-300 ease-in-out focus:w-64 focus:outline-none"
             />
-
-            <div class="text-sm text-base-content/70">
-              {gettext("Invited by:")}
-              <span class="font-semibold">{inv.inviter.username}</span>
-              <Components.local_time
-                id={"invitation-inserted-at-#{inv.id}"}
-                datetime={inv.inserted_at}
-                class="text-xs font-thin italic"
-              />
-            </div>
-
-            <div :if={is_nil(inv.accepted_at)} class="mt-2">
-              <.button phx-click="accept" phx-value-id={inv.id} variant="primary">
-                {gettext("Accept")}
-              </.button>
-            </div>
-            <div :if={!is_nil(inv.accepted_at)} class="text-sm text-green-600 mt-1">
-              {gettext("Accepted on")}
-              <Components.local_time
-                id={"invitation-accepted-at-#{inv.id}"}
-                datetime={inv.accepted_at}
-                class="ml-1"
-              />
+            <div class="absolute right-0 top-0 mr-4 mt-4">
+              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
+                </path>
+              </svg>
             </div>
           </div>
+        </.form>
+
+        <div :if={@invitations_pagination.total_count == 0} class="text-base-content/70">
+          {if String.trim(@invitations_search_query) == "",
+            do: gettext("No pending invitations."),
+            else: gettext("No invitations match your search.")}
         </div>
 
-        <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div>
+        <div :if={@invitations_pagination.total_count > 0} class="space-y-4">
+          <div id="invitations" phx-update="stream" class="space-y-4">
+            <div :for={{dom_id, inv} <- @streams.invitations} id={dom_id} class="card">
+              <div class="card-body p-2 mb-0">
+                <Components.group_identity
+                  group={inv.group}
+                  current_profile={@current_profile}
+                  avatar_size="size-12"
+                  text_class="text-sm"
+                  unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
+                  highlight_query={@invitations_search_query}
+                />
+
+                <div class="text-sm text-base-content/70">
+                  {gettext("Invited by:")}
+                  <Components.highlighted_text
+                    text={inv.inviter.username}
+                    query={@invitations_search_query}
+                    class="font-semibold"
+                  />
+                  <Components.local_time
+                    id={"invitation-inserted-at-#{inv.id}"}
+                    datetime={inv.inserted_at}
+                    class="text-xs font-thin italic"
+                  />
+                </div>
+
+                <div :if={is_nil(inv.accepted_at)} class="mt-2 flex flex-wrap gap-2">
+                  <.button
+                    :if={is_nil(inv.accepted_at)}
+                    id={"invitation-accept-#{inv.id}"}
+                    phx-click="accept"
+                    phx-value-id={inv.id}
+                    variant="primary"
+                  >
+                    {gettext("Accept")}
+                  </.button>
+
+                </div>
+                <div :if={!is_nil(inv.accepted_at)} class="text-sm text-green-600 mt-1">
+                  {gettext("Accepted on")}
+                  <Components.local_time
+                    id={"invitation-accepted-at-#{inv.id}"}
+                    datetime={inv.accepted_at}
+                    class="ml-1"
+                  />
+                </div>
+                <.button
+                  id={"invitation-delete-#{inv.id}"}
+                  phx-click="delete_invitation"
+                  phx-value-id={inv.id}
+                  data-confirm={gettext("Are you sure you want to delete this invitation?")}
+                  class="absolute right-0 inline-flex items-center rounded-full p-1 px-2 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
+                >
+                  <%!-- {gettext("Delete invitation")} --%>
+                  <.icon name="hero-trash" class="size-4" />
+                </.button>
+              </div>
+            </div>
+          </div>
+
+          <button
+            :if={@invitations_pagination.has_more?}
+            id="invitations-load-more"
+            type="button"
+            phx-click="load_more_invitations"
+            class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+          >
+            {gettext("Load more invitations")}
+          </button>
+        </div>
+
+        <%!-- <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div> --%>
       </div>
     </Layouts.app>
     """
@@ -66,10 +148,71 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     socket =
       socket
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
+      |> assign(:invitations_pagination, default_invitations_pagination())
+      |> assign(:invitations_search_query, "")
+      |> assign(:visible_invitations, [])
+      |> stream(:invitations, [], reset: true)
       |> ProfileAuth.sync_profile_subscription()
 
     {:ok,
      socket
+     |> assign_invitations(socket.assigns.current_profile)}
+  end
+
+  @impl true
+  def handle_event(
+        "load_more_invitations",
+        _params,
+        %{assigns: %{current_profile: nil}} = socket
+      ),
+      do: {:noreply, socket}
+
+  def handle_event("load_more_invitations", _params, socket) do
+    if socket.assigns.invitations_pagination.has_more? do
+      pagination =
+        socket.assigns.invitations_pagination
+        |> Map.update!(:page, fn page -> page + 1 end)
+
+      invitations_page =
+        invitations_page(
+          socket.assigns.current_profile,
+          pagination,
+          socket.assigns.invitations_search_query
+        )
+
+      {:noreply,
+       socket
+       |> assign(:invitations_pagination, pagination_metadata(invitations_page))
+       |> assign_visible_invitations(invitations_page.entries)
+       |> stream(:invitations, invitations_page.entries, reset: true)}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  @impl true
+  def handle_event("search_invitations", %{"invitation_search" => %{"q" => query}}, socket) do
+    next_query = normalize_invitations_search_query(query)
+
+    if next_query == socket.assigns.invitations_search_query do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:invitations_search_query, next_query)
+       |> assign(:invitations_pagination, default_invitations_pagination())
+       |> assign_invitations(socket.assigns.current_profile)}
+    end
+  end
+
+  def handle_event("search_invitations", _params, socket), do: {:noreply, socket}
+
+  @impl true
+  def handle_event("clear_invitations_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:invitations_search_query, "")
+     |> assign(:invitations_pagination, default_invitations_pagination())
      |> assign_invitations(socket.assigns.current_profile)}
   end
 
@@ -91,6 +234,26 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, gettext("Could not accept invitation."))}
+    end
+  end
+
+  @impl true
+  def handle_event("delete_invitation", %{"id" => id}, socket) do
+    invitee = socket.assigns.current_profile
+    invitation_id = String.to_integer(id)
+
+    with %{} = invitation <- Social.get_group_invitation_for_invitee(invitee, invitation_id),
+         {:ok, _invitation} <- Social.delete_group_invitation(invitation, invitee) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Invitation deleted."))
+       |> assign_invitations(invitee)}
+    else
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Invitation not found."))}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not delete invitation."))}
     end
   end
 
@@ -172,23 +335,37 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   defp assign_invitations(socket, nil) do
     socket
-    |> assign(:invitations, [])
+    |> assign(:invitations_pagination, default_invitations_pagination())
+    |> assign_visible_invitations([])
+    |> stream(:invitations, [], reset: true)
     |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
-    |> assign(:group_unread_counts, %{})
   end
 
   defp assign_invitations(socket, profile) do
-    invitations = Social.list_pending_invitations(profile)
-
-    socket
-    |> assign(:invitations, invitations)
+    refresh_invitations(socket, profile)
     |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
-    |> assign(
-      :group_unread_counts,
-      Social.list_group_unread_counts(profile, Enum.map(invitations, & &1.group))
-    )
+  end
+
+  defp refresh_invitations(socket, profile) do
+    pagination = socket.assigns.invitations_pagination
+    search = socket.assigns.invitations_search_query
+    total_count = Social.count_group_invitations_for_invitee(profile, search: search)
+    loaded_count = min(pagination.loaded_count, total_count)
+
+    pagination =
+      pagination
+      |> Map.put(:loaded_count, loaded_count)
+      |> Map.put(:total_count, total_count)
+      |> Map.put(:has_more?, loaded_count < total_count)
+
+    invitations_page = invitations_page(profile, pagination, search, total_count)
+
+    socket
+    |> assign(:invitations_pagination, pagination_metadata(invitations_page))
+    |> assign_visible_invitations(invitations_page.entries)
+    |> stream(:invitations, invitations_page.entries, reset: true)
   end
 
   defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
@@ -223,8 +400,62 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       :group_unread_counts,
       Social.list_group_unread_counts(
         socket.assigns.current_profile,
-        Enum.map(socket.assigns.invitations, & &1.group)
+        Enum.map(socket.assigns.visible_invitations, & &1.group)
       )
     )
   end
+
+  defp assign_visible_invitations(socket, invitations) do
+    socket
+    |> assign(:visible_invitations, invitations)
+    |> assign_group_unread_counts()
+  end
+
+  defp invitations_page(%{} = profile, pagination, search_query, total_count \\ nil) do
+    search = normalize_invitations_search_query(search_query)
+    total_count = total_count || Social.count_group_invitations_for_invitee(profile, search: search)
+    limit = pagination_limit(pagination)
+
+    entries =
+      Social.list_pending_invitations(profile,
+        search: search,
+        limit: limit,
+        offset: 0
+      )
+
+    pagination_result(pagination, entries, total_count)
+  end
+
+  defp default_invitations_pagination do
+    %{
+      page: 1,
+      per_page: @invitations_per_page,
+      loaded_count: 0,
+      total_count: 0,
+      has_more?: false
+    }
+  end
+
+  defp pagination_limit(%{page: page, per_page: per_page}), do: page * per_page
+
+  defp pagination_result(pagination, entries, total_count) do
+    loaded_count = length(entries)
+
+    pagination
+    |> Map.put(:loaded_count, loaded_count)
+    |> Map.put(:total_count, total_count)
+    |> Map.put(:has_more?, loaded_count < total_count)
+    |> Map.put(:entries, entries)
+  end
+
+  defp pagination_metadata(%{entries: _entries} = pagination),
+    do: Map.delete(pagination, :entries)
+
+  defp normalize_invitations_search_query(query) when is_binary(query) do
+    query
+    |> String.trim()
+    |> String.slice(0, 120)
+  end
+
+  defp normalize_invitations_search_query(_), do: ""
 end

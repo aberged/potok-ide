@@ -1018,8 +1018,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> form("#group-children-search-form", %{"children_search" => %{"q" => "beta"}})
       |> render_change()
 
-      assert has_element?(lv, "#group-children-list", "beta-children-team")
+      assert has_element?(lv, "#group-children-list li")
       refute has_element?(lv, "#group-children-list", "alpha-children-team")
+      assert has_element?(lv, ".bg-yellow-300", "beta")
 
       lv
       |> form("#group-children-search-form", %{"children_search" => %{"q" => "no-match"}})
