@@ -426,7 +426,11 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
         })
 
       assert {:ok, _received_invitation} =
-               Social.invite_profile_to_group(received_inviter_profile, received_group, current_profile)
+               Social.invite_profile_to_group(
+                 received_inviter_profile,
+                 received_group,
+                 current_profile
+               )
 
       assert {:ok, _sent_invitation} =
                Social.invite_profile_to_group(current_profile, sent_group, sent_invitee_profile)

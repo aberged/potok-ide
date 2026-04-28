@@ -1529,7 +1529,8 @@ defmodule PotokIde.Social do
   defp invitation_name_search_dynamic(""), do: true
 
   defp invitation_name_search_dynamic(search_term) do
-    dynamic([_i, g, inviter],
+    dynamic(
+      [_i, g, inviter],
       ilike(g.name, ^"%#{search_term}%") or ilike(inviter.username, ^"%#{search_term}%")
     )
   end
@@ -1537,7 +1538,8 @@ defmodule PotokIde.Social do
   defp sent_invitation_name_search_dynamic(""), do: true
 
   defp sent_invitation_name_search_dynamic(search_term) do
-    dynamic([_i, g, invitee],
+    dynamic(
+      [_i, g, invitee],
       ilike(g.name, ^"%#{search_term}%") or ilike(invitee.username, ^"%#{search_term}%")
     )
   end

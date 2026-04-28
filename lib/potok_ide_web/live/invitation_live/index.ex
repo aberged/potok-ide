@@ -269,9 +269,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                           </span>
                           <Components.local_time
                             id={"sent-invitation-timestamp-#{inv.id}"}
-                            datetime={if(is_nil(inv.accepted_at),
-                              do: inv.inserted_at,
-                              else: inv.accepted_at)}
+                            datetime={
+                              if(is_nil(inv.accepted_at),
+                                do: inv.inserted_at,
+                                else: inv.accepted_at
+                              )
+                            }
                             class="text-xs font-thin italic"
                           />
                         </div>
@@ -670,7 +673,10 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   defp invitations_page(%{} = profile, pagination, search_query, total_count \\ nil) do
     search = normalize_invitations_search_query(search_query)
-    total_count = total_count || Social.count_group_invitations_for_invitee(profile, search: search)
+
+    total_count =
+      total_count || Social.count_group_invitations_for_invitee(profile, search: search)
+
     limit = pagination_limit(pagination)
 
     entries =
@@ -685,7 +691,10 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   defp sent_invitations_page(%{} = profile, pagination, search_query, total_count \\ nil) do
     search = normalize_invitations_search_query(search_query)
-    total_count = total_count || Social.count_group_invitations_for_inviter(profile, search: search)
+
+    total_count =
+      total_count || Social.count_group_invitations_for_inviter(profile, search: search)
+
     limit = pagination_limit(pagination)
 
     entries =

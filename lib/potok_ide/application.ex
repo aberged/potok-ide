@@ -20,7 +20,8 @@ defmodule PotokIde.Application do
       # Start a worker by calling: PotokIde.Worker.start_link(arg)
       # {PotokIde.Worker, arg},
       # Start to serve requests, typically the last entry
-      PotokIdeWeb.Endpoint
+      PotokIdeWeb.Endpoint,
+      PotokIde.AccountBootstrap
     ]
 
     # See https://hexdocs.pm/elixir/Supervisor.html

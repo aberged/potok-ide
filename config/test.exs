@@ -37,7 +37,8 @@ config :phoenix, :plug_init_mode, :runtime
 
 # Enable helpful, but potentially expensive runtime checks
 config :phoenix_live_view,
-  enable_expensive_runtime_checks: true
+  enable_expensive_runtime_checks: true,
+  colocated_js: [disable_symlink_warning: true]
 
 # Sort query params output of verified routes for robust url comparisons
 config :phoenix,

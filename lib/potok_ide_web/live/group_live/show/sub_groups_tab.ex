@@ -49,16 +49,15 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             field={@children_search_form[:q]}
             id="group-children-search-input"
             type="text"
-            placeholder={gettext("Search by name")}
             phx-debounce="300"
             autocomplete="off"
             class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
-            placeholder="Search..."
+            placeholder={gettext("Search by name")}
           />
           <div class="absolute right-0 top-0 mt-4 mr-4">
             <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
-                </path>
+              <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
+              </path>
             </svg>
           </div>
         </div>
@@ -72,7 +71,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       />
 
       <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
-
         <p
           :if={@pagination.loaded_count == 0}
           id="group-children-empty"

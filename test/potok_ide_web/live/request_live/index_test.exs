@@ -285,8 +285,11 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
           "is_public" => true
         })
 
-      assert {:ok, _pending_request} = Social.request_group_access(requester_profile, pending_group)
-      assert {:ok, approved_request} = Social.request_group_access(requester_profile, approved_group)
+      assert {:ok, _pending_request} =
+               Social.request_group_access(requester_profile, pending_group)
+
+      assert {:ok, approved_request} =
+               Social.request_group_access(requester_profile, approved_group)
 
       assert {:ok, _requester_member} =
                Social.accept_group_join_request(
@@ -314,7 +317,9 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert rendered =~ "Requested on"
     end
 
-    test "realtime updates created request status when the requester history changes", %{conn: conn} do
+    test "realtime updates created request status when the requester history changes", %{
+      conn: conn
+    } do
       requester_account = account_fixture()
       owner_account = account_fixture()
 

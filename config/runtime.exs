@@ -23,6 +23,34 @@ end
 config :potok_ide, PotokIdeWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
+bootstrap_account_email =
+  case System.get_env("BOOTSTRAP_ACCOUNT_EMAIL") do
+    value when is_binary(value) ->
+      trimmed_value = String.trim(value)
+
+      if trimmed_value != "" do
+        trimmed_value
+      end
+
+    _value ->
+      nil
+  end
+
+bootstrap_account_password =
+  case System.get_env("BOOTSTRAP_ACCOUNT_PASSWORD") do
+    value when is_binary(value) ->
+      if String.trim(value) != "" do
+        value
+      end
+
+    _value ->
+      nil
+  end
+
+config :potok_ide, :bootstrap_account,
+  email: bootstrap_account_email,
+  password: bootstrap_account_password
+
 parse_env_list = fn
   nil ->
     nil

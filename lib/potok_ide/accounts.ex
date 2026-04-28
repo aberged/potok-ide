@@ -93,6 +93,39 @@ defmodule PotokIde.Accounts do
   end
 
   @doc """
+  Ensures an account exists for the given email and password.
+
+  If the account already exists with the configured email, its password is
+  updated to match. Accounts ensured through this flow are also confirmed so
+  they do not end up in the unsupported unconfirmed-with-password state.
+  """
+  def ensure_account_with_password(email, password)
+      when is_binary(email) and is_binary(password) do
+    email = String.trim(email)
+
+    case get_account_by_email_and_password(email, password) do
+      %Account{} = account ->
+        maybe_confirm_account(account)
+
+      nil ->
+        case get_account_by_email(email) do
+          %Account{} = account ->
+            with {:ok, {updated_account, _expired_tokens}} <-
+                   update_account_password(account, %{password: password}) do
+              maybe_confirm_account(updated_account)
+            end
+
+          nil ->
+            with {:ok, account} <- register_account(%{email: email}),
+                 {:ok, {updated_account, _expired_tokens}} <-
+                   update_account_password(account, %{password: password}) do
+              maybe_confirm_account(updated_account)
+            end
+        end
+    end
+  end
+
+  @doc """
   Sets the account's current profile.
 
   The profile must be linked to the account through `accounts_profiles`.
@@ -545,6 +578,14 @@ defmodule PotokIde.Accounts do
   defp format_push_failure_reason({type, detail}), do: "#{type}: #{detail}"
   defp format_push_failure_reason(reason) when is_atom(reason), do: Atom.to_string(reason)
   defp format_push_failure_reason(reason), do: inspect(reason)
+
+  defp maybe_confirm_account(%Account{confirmed_at: nil} = account) do
+    account
+    |> Account.confirm_changeset()
+    |> Repo.update()
+  end
+
+  defp maybe_confirm_account(%Account{} = account), do: {:ok, account}
 
   defp find_push_subscription(:fcm, attrs) do
     device_token = Map.get(attrs, :device_token) || Map.get(attrs, "device_token")

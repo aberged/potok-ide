@@ -259,18 +259,23 @@ defmodule PotokIdeWeb.RequestLive.Index do
                       ]}>
                         {if(request.status == :approved,
                           do: gettext("Approved"),
-                          else: gettext("Pending"))}
+                          else: gettext("Pending")
+                        )}
                       </span>
                       <span>
                         {if(request.status == :approved,
                           do: gettext("Approved on"),
-                          else: gettext("Requested on"))}
+                          else: gettext("Requested on")
+                        )}
                       </span>
                       <Components.local_time
                         id={"created-request-timestamp-#{request.id}"}
-                        datetime={if(request.status == :approved,
-                          do: request.approved_at,
-                          else: request.requested_at)}
+                        datetime={
+                          if(request.status == :approved,
+                            do: request.approved_at,
+                            else: request.requested_at
+                          )
+                        }
                         class="text-xs font-thin italic"
                       />
                     </div>

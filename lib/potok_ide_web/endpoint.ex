@@ -11,13 +11,15 @@ defmodule PotokIdeWeb.Endpoint do
     same_site: "Lax"
   ]
 
-  @allowed_socket_origins [
-    "https://potok.rs",
-    "https://www.potok.rs",
-    "https://potok-ide.fly.dev"
-  ]
-
-  @check_origin if Mix.env() == :prod, do: @allowed_socket_origins, else: false
+  @check_origin (if Mix.env() == :prod do
+                   [
+                     "https://potok.rs",
+                     "https://www.potok.rs",
+                     "https://potok-ide.fly.dev"
+                   ]
+                 else
+                   false
+                 end)
 
   socket "/live", Phoenix.LiveView.Socket,
     websocket: [connect_info: [session: @session_options], check_origin: @check_origin],
@@ -73,7 +75,7 @@ defmodule PotokIdeWeb.Endpoint do
     websocket_upgrade? =
       conn
       |> Plug.Conn.get_req_header("upgrade")
-      |> Enum.any?(&String.downcase(&1) == "websocket")
+      |> Enum.any?(&(String.downcase(&1) == "websocket"))
 
     skip_canonical? = live_socket_path? or websocket_upgrade?
 
@@ -91,7 +93,11 @@ defmodule PotokIdeWeb.Endpoint do
       canonical when conn.host != canonical ->
         path = conn.request_path
         qs = conn.query_string
-        location = if qs == "", do: "https://#{canonical}#{path}", else: "https://#{canonical}#{path}?#{qs}"
+
+        location =
+          if qs == "",
+            do: "https://#{canonical}#{path}",
+            else: "https://#{canonical}#{path}?#{qs}"
 
         conn
         |> Plug.Conn.put_resp_header("location", location)

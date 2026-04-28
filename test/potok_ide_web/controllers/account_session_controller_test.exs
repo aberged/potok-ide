@@ -71,7 +71,10 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
       assert redirected_to(conn) == ~p"/accounts/log-in/password"
     end
 
-    test "redirects to home when account is already authenticated", %{conn: conn, account: account} do
+    test "redirects to home when account is already authenticated", %{
+      conn: conn,
+      account: account
+    } do
       account = set_password(account)
 
       conn =

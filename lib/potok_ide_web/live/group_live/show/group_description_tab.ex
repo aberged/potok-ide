@@ -64,11 +64,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     random_number = :rand.uniform()
 
     cond do
-      random_number < 1 / 3 ->
+      random_number < 1 / 4 ->
         ~p"/images/social-media.gif"
 
-      random_number < 2 / 3 ->
+      random_number < 2 / 4 ->
         "https://img.daisyui.com/images/daisyui/mark-rotating.svg"
+
+      random_number < 3 / 4 ->
+        ~p"/images/pencil.gif"
 
       true ->
         ~p"/images/idea.gif"
