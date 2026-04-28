@@ -9,15 +9,58 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   @impl true
   def render(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :request_search_form,
+        to_form(%{"q" => assigns.requests_search_query}, as: :request_search)
+      )
+
     ~H"""
     <Layouts.app flash={@flash} current_scope={@current_scope}>
-      <div class="h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
+      <div class="relative h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
         <.header>
           {gettext("Requests")}
           <:subtitle>
             {gettext("Pending group access requests that your current profile can approve.")}
           </:subtitle>
         </.header>
+
+        <.form
+          :if={
+            @approved_requests_pagination.total_count > 0 or
+              @created_requests_pagination.total_count > 0 or @requests_search_query != ""
+          }
+          for={@request_search_form}
+          id="request-search-form"
+          phx-change="search_requests"
+          class="mb-3 flex flex-row justify-end sticky right-4 top-1 z-45"
+        >
+          <div class="relative w-fit">
+            <button
+              :if={@requests_search_query != ""}
+              id="request-search-reset"
+              type="button"
+              phx-click="clear_requests_search"
+              aria-label={gettext("Clear search")}
+              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+            >
+              <.icon name="hero-x-mark" class="size-4" />
+            </button>
+            <.input
+              field={@request_search_form[:q]}
+              id="request-search-input"
+              type="text"
+              placeholder={gettext("Search by group or profile")}
+              phx-debounce="300"
+              autocomplete="off"
+              class="bg-base-100/85 h-10 w-12 rounded-full border border-gray-500/50 px-6 pr-10 text-sm transition-all duration-300 ease-in-out focus:w-64 focus:outline-none"
+            />
+            <div class="absolute right-0 top-0 mr-4 mt-3 text-base-content/70">
+              <.icon name="hero-magnifying-glass" class="size-4" />
+            </div>
+          </div>
+        </.form>
 
         <div :if={@requests == []} class="text-base-content/70">
           {gettext("No pending approval requests.")}
@@ -120,7 +163,9 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 :if={@approved_requests_pagination.total_count == 0}
                 class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
               >
-                {gettext("No approved requests yet.")}
+                {if String.trim(@requests_search_query) == "",
+                  do: gettext("No approved requests yet."),
+                  else: gettext("No approved requests match your search.")}
               </div>
 
               <div
@@ -217,7 +262,9 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 :if={@created_requests_pagination.total_count == 0}
                 class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
               >
-                {gettext("No approved requests created by this profile yet.")}
+                {if String.trim(@requests_search_query) == "",
+                  do: gettext("No approved requests created by this profile yet."),
+                  else: gettext("No created requests match your search.")}
               </div>
 
               <div
@@ -305,6 +352,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
     socket =
       socket
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
+      |> assign(:requests_search_query, "")
       |> assign(:approved_requests_expanded?, false)
       |> assign(:approved_requests_pagination, default_approved_requests_pagination())
       |> stream(:approved_requests, [], reset: true)
@@ -339,7 +387,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
         socket.assigns.approved_requests_pagination
         |> Map.update!(:page, fn page -> page + 1 end)
 
-      approved_page = approved_requests_page(socket.assigns.current_profile, pagination)
+      approved_page =
+        approved_requests_page(
+          socket.assigns.current_profile,
+          pagination,
+          socket.assigns.requests_search_query
+        )
 
       {:noreply,
        socket
@@ -359,6 +412,34 @@ defmodule PotokIdeWeb.RequestLive.Index do
      |> refresh_created_requests(socket.assigns.current_profile)}
   end
 
+  @impl true
+  def handle_event("search_requests", %{"request_search" => %{"q" => query}}, socket) do
+    next_query = normalize_requests_search_query(query)
+
+    if next_query == socket.assigns.requests_search_query do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:requests_search_query, next_query)
+       |> assign(:approved_requests_pagination, default_approved_requests_pagination())
+       |> assign(:created_requests_pagination, default_created_requests_pagination())
+       |> assign_requests(socket.assigns.current_profile)}
+    end
+  end
+
+  def handle_event("search_requests", _params, socket), do: {:noreply, socket}
+
+  @impl true
+  def handle_event("clear_requests_search", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:requests_search_query, "")
+     |> assign(:approved_requests_pagination, default_approved_requests_pagination())
+     |> assign(:created_requests_pagination, default_created_requests_pagination())
+     |> assign_requests(socket.assigns.current_profile)}
+  end
+
   def handle_event(
         "load_more_created_requests",
         _params,
@@ -372,7 +453,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
         socket.assigns.created_requests_pagination
         |> Map.update!(:page, fn page -> page + 1 end)
 
-      created_page = created_requests_page(socket.assigns.current_profile, pagination)
+      created_page =
+        created_requests_page(
+          socket.assigns.current_profile,
+          pagination,
+          socket.assigns.requests_search_query
+        )
 
       {:noreply,
        socket
@@ -489,7 +575,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   defp refresh_approved_requests(socket, profile) do
     pagination = socket.assigns.approved_requests_pagination
-    total_count = Social.count_approved_group_join_requests_for_approver(profile)
+
+    total_count =
+      Social.count_approved_group_join_requests_for_approver(profile,
+        search: socket.assigns.requests_search_query
+      )
+
     loaded_count = min(pagination.loaded_count, total_count)
 
     pagination =
@@ -499,7 +590,13 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> Map.put(:has_more?, loaded_count < total_count)
 
     if socket.assigns.approved_requests_expanded? do
-      approved_page = approved_requests_page(profile, pagination, total_count)
+      approved_page =
+        approved_requests_page(
+          profile,
+          pagination,
+          socket.assigns.requests_search_query,
+          total_count
+        )
 
       socket
       |> assign(:approved_requests_pagination, pagination_metadata(approved_page))
@@ -517,7 +614,12 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   defp refresh_created_requests(socket, profile) do
     pagination = socket.assigns.created_requests_pagination
-    total_count = Social.count_approved_group_join_requests_for_requester(profile)
+
+    total_count =
+      Social.count_approved_group_join_requests_for_requester(profile,
+        search: socket.assigns.requests_search_query
+      )
+
     loaded_count = min(pagination.loaded_count, total_count)
 
     pagination =
@@ -527,7 +629,13 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> Map.put(:has_more?, loaded_count < total_count)
 
     if socket.assigns.created_requests_expanded? do
-      created_page = created_requests_page(profile, pagination, total_count)
+      created_page =
+        created_requests_page(
+          profile,
+          pagination,
+          socket.assigns.requests_search_query,
+          total_count
+        )
 
       socket
       |> assign(:created_requests_pagination, pagination_metadata(created_page))
@@ -537,14 +645,18 @@ defmodule PotokIdeWeb.RequestLive.Index do
     end
   end
 
-  defp approved_requests_page(%{} = profile, pagination, total_count \\ nil) do
-    total_count = total_count || Social.count_approved_group_join_requests_for_approver(profile)
+  defp approved_requests_page(%{} = profile, pagination, search, total_count \\ nil) do
+    total_count =
+      total_count ||
+        Social.count_approved_group_join_requests_for_approver(profile, search: search)
+
     limit = pagination_limit(pagination)
 
     entries =
       Social.list_approved_group_join_requests_for_approver(profile,
         limit: limit,
-        offset: 0
+        offset: 0,
+        search: search
       )
 
     pagination_result(pagination, entries, total_count)
@@ -560,14 +672,18 @@ defmodule PotokIdeWeb.RequestLive.Index do
     }
   end
 
-  defp created_requests_page(%{} = profile, pagination, total_count \\ nil) do
-    total_count = total_count || Social.count_approved_group_join_requests_for_requester(profile)
+  defp created_requests_page(%{} = profile, pagination, search, total_count \\ nil) do
+    total_count =
+      total_count ||
+        Social.count_approved_group_join_requests_for_requester(profile, search: search)
+
     limit = pagination_limit(pagination)
 
     entries =
       Social.list_approved_group_join_requests_for_requester(profile,
         limit: limit,
-        offset: 0
+        offset: 0,
+        search: search
       )
 
     pagination_result(pagination, entries, total_count)
@@ -597,6 +713,14 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   defp pagination_metadata(%{entries: _entries} = pagination),
     do: Map.delete(pagination, :entries)
+
+  defp normalize_requests_search_query(query) when is_binary(query) do
+    query
+    |> String.trim()
+    |> String.slice(0, 120)
+  end
+
+  defp normalize_requests_search_query(_), do: ""
 
   defp handle_request_action(socket, id, action, success_message)
        when is_function(action, 3) do

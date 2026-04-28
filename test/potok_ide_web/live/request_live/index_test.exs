@@ -317,6 +317,121 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert rendered =~ "Requested on"
     end
 
+    test "searches approved and created request history with one form", %{conn: conn} do
+      current_account = account_fixture()
+      requester_account = account_fixture()
+      approver_account = account_fixture()
+
+      {:ok, current_profile} =
+        Social.create_profile_for_account(current_account, %{
+          username: "reqsearch-cur",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "reqsearch-req",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, approver_profile} =
+        Social.create_profile_for_account(approver_account, %{
+          username: "reqsearch-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      current_account = Accounts.get_account!(current_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, alpha_group} =
+        Social.create_group(current_profile, root_group, %{
+          "name" => "Alpha Approval Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, beta_group} =
+        Social.create_group(current_profile, root_group, %{
+          "name" => "Beta Approval Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, gamma_group} =
+        Social.create_group(approver_profile, root_group, %{
+          "name" => "Gamma Created Group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      assert {:ok, alpha_request} = Social.request_group_access(requester_profile, alpha_group)
+      assert {:ok, _beta_request} = Social.request_group_access(requester_profile, beta_group)
+      assert {:ok, gamma_request} = Social.request_group_access(current_profile, gamma_group)
+
+      assert {:ok, _member} =
+               Social.accept_group_join_request(current_profile, alpha_group, alpha_request.id)
+
+      beta_request =
+        Social.get_pending_group_join_request(requester_profile, beta_group)
+
+      assert {:ok, _member} =
+               Social.accept_group_join_request(current_profile, beta_group, beta_request.id)
+
+      assert {:ok, _member} =
+               Social.accept_group_join_request(approver_profile, gamma_group, gamma_request.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(current_account)
+        |> live(~p"/requests")
+
+      lv
+      |> element("#approved-requests-toggle")
+      |> render_click()
+
+      lv
+      |> element("#created-requests-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#request-search-form")
+
+      lv
+      |> form("#request-search-form", request_search: %{q: "Alpha"})
+      |> render_change()
+
+      assert has_element?(lv, "#approved-requests", "Alpha Approval Group")
+      refute has_element?(lv, "#approved-requests", "Beta Approval Group")
+      refute has_element?(lv, "#created-requests", "Gamma Created Group")
+      assert has_element?(lv, "#request-search-reset")
+
+      lv
+      |> form("#request-search-form", request_search: %{q: "reqsearch-own"})
+      |> render_change()
+
+      refute has_element?(lv, "#approved-requests", "Alpha Approval Group")
+      assert has_element?(lv, "#created-requests", "Gamma Created Group")
+
+      lv
+      |> element("#request-search-reset")
+      |> render_click()
+
+      assert has_element?(lv, "#approved-requests", "Alpha Approval Group")
+      assert has_element?(lv, "#approved-requests", "Beta Approval Group")
+      assert has_element?(lv, "#created-requests", "Gamma Created Group")
+    end
+
     test "realtime updates created request status when the requester history changes", %{
       conn: conn
     } do

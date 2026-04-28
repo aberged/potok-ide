@@ -740,11 +740,17 @@ defmodule PotokIde.Social do
   end
 
   def list_approved_group_join_requests_for_approver(%Profile{} = approver, opts \\ []) do
+    import Ecto.Query, only: [from: 2]
+
     limit = normalize_query_limit(opts[:limit])
     offset = normalize_query_offset(opts[:offset])
+    search = normalize_request_search_query(opts[:search])
 
     from(a in GroupJoinRequestApproval,
+      join: g in assoc(a, :group),
+      join: requester in assoc(a, :requester),
       where: a.approver_id == ^approver.id,
+      where: ^approved_request_name_search_dynamic(search),
       order_by: [desc: a.approved_at, desc: a.id],
       offset: ^offset,
       preload: [:requester, group: :members]
@@ -753,9 +759,16 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  def count_approved_group_join_requests_for_approver(%Profile{} = approver) do
+  def count_approved_group_join_requests_for_approver(%Profile{} = approver, opts \\ []) do
+    import Ecto.Query, only: [from: 2]
+
+    search = normalize_request_search_query(opts[:search])
+
     from(a in GroupJoinRequestApproval,
+      join: g in assoc(a, :group),
+      join: requester in assoc(a, :requester),
       where: a.approver_id == ^approver.id,
+      where: ^approved_request_name_search_dynamic(search),
       select: count(a.id)
     )
     |> Repo.one()
@@ -764,16 +777,20 @@ defmodule PotokIde.Social do
   def list_approved_group_join_requests_for_requester(%Profile{} = requester, opts \\ []) do
     limit = normalize_query_limit(opts[:limit])
     offset = normalize_query_offset(opts[:offset])
+    search = normalize_request_search_query(opts[:search])
 
     requester
-    |> list_request_history_entries_for_requester()
+    |> list_request_history_entries_for_requester(search)
     |> maybe_drop_entries(offset)
     |> maybe_take_entries(limit)
   end
 
-  def count_approved_group_join_requests_for_requester(%Profile{} = requester) do
-    count_pending_group_join_requests_for_requester(requester) +
-      count_historical_group_join_requests_for_requester(requester)
+  def count_approved_group_join_requests_for_requester(%Profile{} = requester, opts \\ []) do
+    search = normalize_request_search_query(opts[:search])
+
+    requester
+    |> list_request_history_entries_for_requester(search)
+    |> length()
   end
 
   def get_pending_group_join_request(%Profile{} = requester, %Group{} = group) do
@@ -1827,10 +1844,11 @@ defmodule PotokIde.Social do
 
   defp maybe_limit(query, _limit), do: query
 
-  defp list_request_history_entries_for_requester(%Profile{} = requester) do
+  defp list_request_history_entries_for_requester(%Profile{} = requester, search) do
     requester
     |> requester_pending_join_request_entries()
     |> Kernel.++(requester_approved_join_request_entries(requester))
+    |> filter_request_history_entries(search)
     |> Enum.sort_by(
       fn entry ->
         {DateTime.to_unix(entry.sort_at, :microsecond), request_history_status_rank(entry.status),
@@ -1882,21 +1900,42 @@ defmodule PotokIde.Social do
     end)
   end
 
-  defp count_pending_group_join_requests_for_requester(%Profile{} = requester) do
-    from(r in GroupJoinRequest,
-      where: r.requester_id == ^requester.id,
-      select: count(r.id)
-    )
-    |> Repo.one()
+  defp filter_request_history_entries(entries, ""), do: entries
+
+  defp filter_request_history_entries(entries, search_term) do
+    normalized_search_term = String.downcase(search_term)
+
+    Enum.filter(entries, fn entry ->
+      request_entry_matches_search?(entry, normalized_search_term)
+    end)
   end
 
-  defp count_historical_group_join_requests_for_requester(%Profile{} = requester) do
-    from(a in GroupJoinRequestApproval,
-      where: a.requester_id == ^requester.id,
-      select: count(a.id)
-    )
-    |> Repo.one()
+  defp request_entry_matches_search?(entry, normalized_search_term) do
+    [entry.group.name, entry.approver && entry.approver.username]
+    |> Enum.reject(&is_nil/1)
+    |> Enum.any?(fn value ->
+      value
+      |> String.downcase()
+      |> String.contains?(normalized_search_term)
+    end)
   end
+
+  defp approved_request_name_search_dynamic(""), do: true
+
+  defp approved_request_name_search_dynamic(search_term) do
+    dynamic(
+      [_a, g, requester],
+      ilike(g.name, ^"%#{search_term}%") or ilike(requester.username, ^"%#{search_term}%")
+    )
+  end
+
+  defp normalize_request_search_query(query) when is_binary(query) do
+    query
+    |> String.trim()
+    |> String.slice(0, 120)
+  end
+
+  defp normalize_request_search_query(_), do: ""
 
   defp request_history_status_rank(:approved), do: 1
   defp request_history_status_rank(:pending), do: 0
