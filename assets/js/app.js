@@ -749,7 +749,8 @@ const GroupDescriptionActions = {
       const normalizedContent = typeof content === "string" ? content : ""
       const res = await this.pushEvent("create_data_value", {
         value: {
-          content: normalizedContent,
+          content: "data:",
+          data: normalizedContent,
           content_format: options.contentFormat || options.content_format || "markdown",
           is_data: true, //options.isData === true || options.is_data === true,
           parent_id: "" //options.parentId || options.parent_id || "",

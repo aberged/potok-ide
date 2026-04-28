@@ -534,7 +534,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             |> assign(:new_value_form, empty_new_value_form())
             # |> put_flash(:info, gettext("Value posted."))
             |> refresh_group_data()
-            |> push_event("new_data_value", %{content: value.content})
+            |> push_event("new_data_value", value_payload(value))
 
           {:noreply, socket}
 
@@ -1331,7 +1331,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if previous_latest_data_value_id != socket.assigns.latest_data_value_id do
       case Social.get_latest_data_value_for_group(group) do
         %Value{} = latest_data_value ->
-          push_event(socket, "new_data_value", %{content: latest_data_value.content})
+          push_event(socket, "new_data_value", value_payload(latest_data_value))
 
         nil ->
           socket
@@ -1345,6 +1345,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     %{
       id: value.id,
       content: value.content,
+      data: value.data,
       content_format: to_string(value.content_format),
       is_data: value.is_data,
       group_id: value.group_id,
