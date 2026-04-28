@@ -9,6 +9,7 @@ defmodule PotokIde.Social.Value do
     field :content, :string
     field :content_format, Ecto.Enum, values: @content_formats, default: :markdown
     field :is_data, :boolean, default: false
+    field :data, :map
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group
@@ -21,14 +22,30 @@ defmodule PotokIde.Social.Value do
 
   def changeset(value, attrs) do
     value
-    |> cast(attrs, [:content, :content_format, :is_data, :creator_id, :group_id, :parent_id])
+    |> cast(attrs, [
+      :content,
+      :content_format,
+      :is_data,
+      :data,
+      :creator_id,
+      :group_id,
+      :parent_id
+    ])
     |> validate_required([:content, :content_format, :creator_id, :group_id])
     |> check_constraint(:content_format, name: :values_content_format_check)
   end
 
   def changeset_for_update(value, attrs) do
     value
-    |> cast(attrs, [:content, :content_format, :is_data, :creator_id, :group_id, :parent_id])
+    |> cast(attrs, [
+      :content,
+      :content_format,
+      :is_data,
+      :data,
+      :creator_id,
+      :group_id,
+      :parent_id
+    ])
     |> validate_required([:content_format, :creator_id, :group_id])
     |> check_constraint(:content_format, name: :values_content_format_check)
   end
