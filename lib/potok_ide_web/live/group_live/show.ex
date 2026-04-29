@@ -593,7 +593,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  def handle_event("list_group_data_values", _params, socket) do
+  def handle_event("list_group_data_values", params, socket) do
     if not socket.assigns.is_member do
       {:reply,
        %{ok: false, error: gettext("You must be a group member to access group data values.")},
@@ -603,9 +603,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
          gettext("You must be a group member to access group data values.")
        )}
     else
+      opts = [limit: normalize_non_negative_integer_param(params["limit"]), offset: normalize_non_negative_integer_param(params["offset"])]
+
       values =
         socket.assigns.group
-        |> Social.list_group_data_values()
+        |> Social.list_group_data_values(opts)
         |> Enum.map(&value_payload/1)
 
       {:reply, %{ok: true, values: values}, socket}
@@ -1934,6 +1936,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _ -> attrs
     end
   end
+
+  defp normalize_non_negative_integer_param(value) when is_integer(value) and value >= 0, do: value
+
+  defp normalize_non_negative_integer_param(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {integer, ""} when integer >= 0 -> integer
+      _ -> nil
+    end
+  end
+
+  defp normalize_non_negative_integer_param(_value), do: nil
 
   defp handle_join_request_action(socket, id, action, success_message) do
     current_profile = socket.assigns.current_profile

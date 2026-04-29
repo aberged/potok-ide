@@ -780,8 +780,11 @@ const GroupDescriptionActions = {
       descriptionFormat: this.el.dataset.descriptionFormat || "html",
     })
 
-    this.getGroupDataValues = async () => {
-      const res = await this.pushEvent("list_group_data_values", {})
+    this.getGroupDataValues = async (options = {}) => {
+      const res = await this.pushEvent("list_group_data_values", {
+        limit: options.limit ?? null,
+        offset: options.offset ?? null,
+      })
       return res
     }
 
