@@ -1655,6 +1655,16 @@ msgstr ""
 msgid "No identifier"
 msgstr ""
 
+#: lib/potok_ide_web/live/account_live/settings.ex:357
+#, elixir-autogen, elixir-format
+msgid "We couldn't send the confirmation email right now. Please try again later."
+msgstr "Nie mogliśmy teraz wysłać e-maila potwierdzającego. Spróbuj ponownie później."
+
+#: lib/potok_ide_web/live/account_live/registration.ex:73
+#, elixir-autogen, elixir-format
+msgid "We couldn't send the invitation email right now. Please try again later."
+msgstr "Nie mogliśmy teraz wysłać e-maila z zaproszeniem. Spróbuj ponownie później."
+
 #: lib/potok_ide_web/live/account_live/settings.ex:161
 #, elixir-autogen, elixir-format
 msgid "No push subscriptions have been stored for this account yet."

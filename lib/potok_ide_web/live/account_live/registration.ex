@@ -1,6 +1,8 @@
 defmodule PotokIdeWeb.AccountLive.Registration do
   use PotokIdeWeb, :live_view
 
+  require Logger
+
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
 
@@ -58,24 +60,34 @@ defmodule PotokIdeWeb.AccountLive.Registration do
   def handle_event("save", %{"account" => account_params}, socket) do
     case Accounts.register_account(account_params, socket.assigns.current_profile) do
       {:ok, account} ->
-        {:ok, _} =
-          Accounts.deliver_login_instructions(
-            account,
-            &url(~p"/accounts/log-in/#{&1}")
-          )
+        case Accounts.deliver_login_instructions(
+               account,
+               &url(~p"/accounts/log-in/#{&1}")
+             ) do
+          {:ok, _email} ->
+            {
+              :noreply,
+              socket
+              |> put_flash(
+                :info,
+                gettext(
+                  "An invitation email was sent to %{email}",
+                  email: account.email
+                )
+              )
+              # |> push_navigate(to: ~p"/accounts/log-in")
+            }
 
-        {
-          :noreply,
-          socket
-          |> put_flash(
-            :info,
-            gettext(
-              "An invitation email was sent to %{email}",
-              email: account.email
-            )
-          )
-          # |> push_navigate(to: ~p"/accounts/log-in")
-        }
+          error ->
+            Logger.error("Invitation email delivery failed: #{inspect(error)}")
+
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               gettext("We couldn't send the invitation email right now. Please try again later.")
+             )}
+        end
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign_form(socket, changeset)}

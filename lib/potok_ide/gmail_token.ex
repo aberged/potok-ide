@@ -29,11 +29,26 @@ defmodule PotokIde.GmailToken do
   defp refresh_access_token(config) do
     with {:ok, client_id} <- fetch_config(config, :client_id, "GMAIL_CLIENT_ID"),
          {:ok, client_secret} <- fetch_config(config, :client_secret, "GMAIL_CLIENT_SECRET"),
-         {:ok, refresh_token} <- fetch_refresh_token(config),
-         {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token),
+         {:ok, refresh_tokens} <- fetch_refresh_tokens(config) do
+      refresh_access_token(config, client_id, client_secret, refresh_tokens)
+    end
+  end
+
+  defp refresh_access_token(config, client_id, client_secret, [{source, refresh_token} | remaining]) do
+    with {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token),
          {:ok, access_token} <- parse_access_token(response) do
       maybe_store_effective_refresh_token(response, refresh_token)
       {:ok, access_token}
+    else
+      error ->
+        maybe_retry_refresh_access_token(
+          config,
+          client_id,
+          client_secret,
+          source,
+          error,
+          remaining
+        )
     end
   end
 
@@ -80,22 +95,60 @@ defmodule PotokIde.GmailToken do
     end
   end
 
-  defp fetch_refresh_token(config) do
-    cond do
-      present_binary?(config[:refresh_token]) ->
-        {:ok, config[:refresh_token]}
+  defp fetch_refresh_tokens(config) do
+    config_refresh_token = configured_refresh_token(config)
 
-      true ->
-        case GmailRefreshToken.get() do
-          %GmailRefreshToken{refresh_token: refresh_token}
-          when is_binary(refresh_token) and refresh_token != "" ->
-            {:ok, refresh_token}
-
-          _ ->
-            fetch_config(config, :refresh_token, "GMAIL_REFRESH_TOKEN")
-        end
+    [persisted_refresh_token(), config_refresh_token]
+    |> List.flatten()
+    |> Enum.uniq_by(fn {_source, refresh_token} -> refresh_token end)
+    |> case do
+      [] -> {:error, {:missing_config, "GMAIL_REFRESH_TOKEN"}}
+      refresh_tokens -> {:ok, refresh_tokens}
     end
   end
+
+  defp configured_refresh_token(config) do
+    case config[:refresh_token] do
+      refresh_token when is_binary(refresh_token) and refresh_token != "" ->
+        [{:configured, refresh_token}]
+
+      _ ->
+        []
+    end
+  end
+
+  defp persisted_refresh_token do
+    case GmailRefreshToken.get() do
+      %GmailRefreshToken{refresh_token: refresh_token}
+      when is_binary(refresh_token) and refresh_token != "" ->
+        [{:persisted, refresh_token}]
+
+      _ ->
+        []
+    end
+  end
+
+  defp maybe_retry_refresh_access_token(
+         config,
+         client_id,
+         client_secret,
+         :persisted,
+         {:error, {:gmail_token_request_failed, _status, %{"error" => "invalid_grant"}}},
+         [{:configured, _configured_refresh_token} | _] = remaining
+       ) do
+    Logger.warning("persisted Gmail refresh token was rejected; retrying configured refresh token")
+    refresh_access_token(config, client_id, client_secret, remaining)
+  end
+
+  defp maybe_retry_refresh_access_token(
+         _config,
+         _client_id,
+         _client_secret,
+         _source,
+         error,
+         _remaining
+       ),
+       do: error
 
   defp maybe_store_effective_refresh_token(
          %{status: status, body: %{"refresh_token" => refresh_token}},

@@ -2,6 +2,7 @@ defmodule PotokIde.Accounts.AccountNotifier do
   use Gettext, backend: PotokIdeWeb.Gettext
 
   import Swoosh.Email
+  require Logger
 
   alias PotokIde.Mailer
   alias PotokIde.Accounts.Account
@@ -18,6 +19,10 @@ defmodule PotokIde.Accounts.AccountNotifier do
     with {:ok, delivery_config} <- Mailer.delivery_config(),
          {:ok, _metadata} <- Mailer.deliver(email, delivery_config) do
       {:ok, email}
+    else
+      error ->
+        Logger.error("Email delivery failed for #{inspect(subject)}: #{inspect(error)}")
+        error
     end
   end
 

@@ -1,5 +1,5 @@
 defmodule PotokIdeWeb.AccountLive.RegistrationTest do
-  use PotokIdeWeb.ConnCase, async: true
+  use PotokIdeWeb.ConnCase, async: false
 
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
@@ -73,6 +73,41 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
 
       assert invited_account = Accounts.get_account_by_email(email)
       assert invited_account.invited_by_id == current_profile.id
+    end
+
+    test "shows an error when invitation email delivery fails", %{conn: conn} do
+      {conn, _profile} = conn_with_current_profile(conn)
+
+      original_mailer_config = Application.fetch_env!(:potok_ide, PotokIde.Mailer)
+
+      on_exit(fn ->
+        Application.put_env(:potok_ide, PotokIde.Mailer, original_mailer_config)
+      end)
+
+      Application.put_env(:potok_ide, PotokIde.Mailer,
+        adapter: Swoosh.Adapters.Gmail,
+        from_email: "potok@example.com",
+        from_name: "Potok"
+      )
+
+      {:ok, lv, _html} =
+        conn
+        |> live(~p"/accounts/register")
+
+      _html =
+        lv
+        |> form("#registration_form",
+          account: valid_account_attributes(email: unique_account_email())
+        )
+        |> render_submit()
+
+      assert has_element?(lv, "#flash-error")
+
+      assert has_element?(
+               lv,
+               "#flash-error p",
+               "We couldn't send the invitation email right now. Please try again later."
+             )
     end
 
     test "renders errors for duplicated email", %{conn: conn} do

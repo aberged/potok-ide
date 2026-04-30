@@ -3,6 +3,8 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
   # on_mount {PotokIdeWeb.AccountAuth, :require_sudo_mode}
 
+  require Logger
+
   alias PotokIde.Accounts
   alias PotokIde.PushNotifications
 
@@ -337,14 +339,29 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
     case Accounts.change_account_email(account, account_params) do
       %{valid?: true} = changeset ->
-        Accounts.deliver_account_update_email_instructions(
-          Ecto.Changeset.apply_action!(changeset, :insert),
-          account.email,
-          &url(~p"/accounts/settings/confirm-email/#{&1}")
-        )
+        case Accounts.deliver_account_update_email_instructions(
+               Ecto.Changeset.apply_action!(changeset, :insert),
+               account.email,
+               &url(~p"/accounts/settings/confirm-email/#{&1}")
+             ) do
+          {:ok, _email} ->
+            info =
+              gettext("A link to confirm your email change has been sent to the new address.")
 
-        info = gettext("A link to confirm your email change has been sent to the new address.")
-        {:noreply, socket |> put_flash(:info, info)}
+            {:noreply, socket |> put_flash(:info, info)}
+
+          error ->
+            Logger.error("Update email confirmation delivery failed: #{inspect(error)}")
+
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               gettext(
+                 "We couldn't send the confirmation email right now. Please try again later."
+               )
+             )}
+        end
 
       changeset ->
         {:noreply, assign(socket, :email_form, to_form(changeset, action: :insert))}

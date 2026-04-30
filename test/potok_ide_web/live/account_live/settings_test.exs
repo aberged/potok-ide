@@ -1,5 +1,5 @@
 defmodule PotokIdeWeb.AccountLive.SettingsTest do
-  use PotokIdeWeb.ConnCase, async: true
+  use PotokIdeWeb.ConnCase, async: false
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.PushSubscription
@@ -123,6 +123,39 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       assert result =~ "A link to confirm your email"
       assert Accounts.get_account_by_email(account.email)
+    end
+
+    test "shows an error when the confirmation email cannot be sent", %{conn: conn} do
+      original_mailer_config = Application.fetch_env!(:potok_ide, PotokIde.Mailer)
+
+      on_exit(fn ->
+        Application.put_env(:potok_ide, PotokIde.Mailer, original_mailer_config)
+      end)
+
+      Application.put_env(:potok_ide, PotokIde.Mailer,
+        adapter: Swoosh.Adapters.Gmail,
+        from_email: "potok@example.com",
+        from_name: "Potok"
+      )
+
+      new_email = unique_account_email()
+
+      {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
+
+      _result =
+        lv
+        |> form("#email_form", %{
+          "account" => %{"email" => new_email}
+        })
+        |> render_submit()
+
+      assert has_element?(lv, "#flash-error")
+
+      assert has_element?(
+               lv,
+               "#flash-error p",
+               "We couldn't send the confirmation email right now. Please try again later."
+             )
     end
 
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
