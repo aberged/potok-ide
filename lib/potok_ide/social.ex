@@ -1282,9 +1282,10 @@ defmodule PotokIde.Social do
 
     from(v in Value,
       where: v.group_id == ^group.id and v.is_data == true,
-      order_by: [asc: v.inserted_at, asc: v.id],
       preload: [:creator, :parent]
     )
+    |> maybe_filter_data_value_field(opts[:search_field], opts[:search_value])
+    |> maybe_order_data_value_field(opts[:order_by], opts[:order_dir])
     |> maybe_paginate(opts)
     |> Repo.all()
   end
@@ -1843,6 +1844,112 @@ defmodule PotokIde.Social do
   end
 
   defp maybe_limit(query, _limit), do: query
+
+  defp maybe_filter_data_value_field(query, search_field, search_value) do
+    field = normalize_data_value_jsonb_field(search_field)
+    value = normalize_data_value_search_value(search_value)
+
+    case {field, value} do
+      {nil, _} -> query
+      {_, nil} -> query
+      {jsonb_field, jsonb_value} ->
+        from(v in query,
+          where: ilike(fragment("COALESCE(? ->> ?, '')", v.data, ^jsonb_field), ^"%#{jsonb_value}%")
+        )
+    end
+  end
+
+  defp maybe_order_data_value_field(query, order_field, order_dir) do
+    case normalize_data_value_jsonb_field(order_field) do
+      nil ->
+        from(v in query, order_by: [asc: v.inserted_at, asc: v.id])
+
+      "number" = jsonb_field ->
+        case normalize_data_value_order_dir(order_dir) do
+          :desc ->
+            from(v in query,
+              order_by: [
+                desc:
+                  fragment(
+                    "CASE WHEN COALESCE(? ->> ?, '') ~ '^-{0,1}[0-9]+(\\.[0-9]+){0,1}$' THEN (? ->> ?)::numeric END",
+                    v.data,
+                    ^jsonb_field,
+                    v.data,
+                    ^jsonb_field
+                  ),
+                desc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
+                desc: v.inserted_at,
+                desc: v.id
+              ]
+            )
+
+          :asc ->
+            from(v in query,
+              order_by: [
+                asc:
+                  fragment(
+                    "CASE WHEN COALESCE(? ->> ?, '') ~ '^-{0,1}[0-9]+(\\.[0-9]+){0,1}$' THEN (? ->> ?)::numeric END",
+                    v.data,
+                    ^jsonb_field,
+                    v.data,
+                    ^jsonb_field
+                  ),
+                asc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
+                asc: v.inserted_at,
+                asc: v.id
+              ]
+            )
+        end
+
+      jsonb_field ->
+        case normalize_data_value_order_dir(order_dir) do
+          :desc ->
+            from(v in query,
+              order_by: [
+                desc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
+                desc: v.inserted_at,
+                desc: v.id
+              ]
+            )
+
+          :asc ->
+            from(v in query,
+              order_by: [
+                asc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
+                asc: v.inserted_at,
+                asc: v.id
+              ]
+            )
+        end
+    end
+  end
+
+  defp normalize_data_value_jsonb_field(field) when is_binary(field) do
+    field
+    |> String.trim()
+    |> String.slice(0, 120)
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_data_value_jsonb_field(_field), do: nil
+
+  defp normalize_data_value_search_value(value) when is_binary(value) do
+    value
+    |> String.trim()
+    |> String.slice(0, 120)
+    |> case do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_data_value_search_value(_value), do: nil
+
+  defp normalize_data_value_order_dir("desc"), do: :desc
+  defp normalize_data_value_order_dir(_value), do: :asc
 
   defp list_request_history_entries_for_requester(%Profile{} = requester, search) do
     requester

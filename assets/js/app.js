@@ -784,6 +784,10 @@ const GroupDescriptionActions = {
       const res = await this.pushEvent("list_group_data_values", {
         limit: options.limit ?? null,
         offset: options.offset ?? null,
+        search_field: options.searchField ?? options.search_field ?? null,
+        search_value: options.searchValue ?? options.search_value ?? null,
+        order_by: options.orderBy ?? options.order_by ?? null,
+        order_dir: options.orderDir ?? options.order_dir ?? null,
       })
       return res
     }

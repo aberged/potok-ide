@@ -603,7 +603,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
          gettext("You must be a group member to access group data values.")
        )}
     else
-      opts = [limit: normalize_non_negative_integer_param(params["limit"]), offset: normalize_non_negative_integer_param(params["offset"])]
+      opts = [
+        limit: normalize_non_negative_integer_param(params["limit"]),
+        offset: normalize_non_negative_integer_param(params["offset"]),
+        search_field: normalize_optional_string_param(params["search_field"]),
+        search_value: normalize_optional_string_param(params["search_value"]),
+        order_by: normalize_optional_string_param(params["order_by"]),
+        order_dir: normalize_optional_string_param(params["order_dir"])
+      ]
 
       values =
         socket.assigns.group
@@ -1947,6 +1954,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp normalize_non_negative_integer_param(_value), do: nil
+
+  defp normalize_optional_string_param(value) when is_binary(value) do
+    case String.trim(value) do
+      "" -> nil
+      trimmed -> trimmed
+    end
+  end
+
+  defp normalize_optional_string_param(_value), do: nil
 
   defp handle_join_request_action(socket, id, action, success_message) do
     current_profile = socket.assigns.current_profile
