@@ -228,7 +228,7 @@ mix potok.gen.vapid_keypair
 
 ### Capacitor push notifications
 
-The same account settings screen at `/accounts/settings` now also manages native push notifications for the installed Android app.
+The same account settings screen at `/accounts/settings` now also manages native push notifications for the installed Android and iOS apps.
 
 Android setup requirements:
 
@@ -236,14 +236,23 @@ Android setup requirements:
 * place your Firebase `google-services.json` file in `assets/android/app/google-services.json`
 * run `cd assets && npm run cap:sync:android` after changing Capacitor or Android notification config
 
+iOS setup requirements:
+
+* in Apple Developer, enable `Push Notifications` for the bundle identifier used by the signed app
+* in Firebase Console, add the iOS app for that bundle identifier and upload an APNs auth key under Cloud Messaging
+* replace `assets/ios/App/App/GoogleService-Info.plist` with the real Firebase-generated file before building a signed app
+* the iOS app now forwards APNs registration to Capacitor and publishes the Firebase Messaging token from `assets/ios/App/App/AppDelegate.swift`
+* the iOS target now includes `aps-environment` in `assets/ios/App/App/App.entitlements`; Debug uses `development` and Release uses `production`
+* run `cd assets && npm run cap:sync:ios` after changing Capacitor or iOS notification config
+
 Server-side Firebase configuration:
 
 * either set `FIREBASE_SERVICE_ACCOUNT_JSON` to the full service-account JSON document
 * or set all of `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, and `FIREBASE_PRIVATE_KEY`
 * optionally set `FIREBASE_TOKEN_URL` if you need a non-default Google OAuth token endpoint
-* optionally set `FIREBASE_CHANNEL_ID` to override the default Android notification channel id (`potok-default`)
+* optionally set `FIREBASE_CHANNEL_ID` to override the default notification channel id (`potok-default`)
 
-Once the relevant browser or Firebase credentials are configured, `/accounts/settings` exposes the shared enable, disable, and test notification controls for both the PWA and the installed Android app.
+Once the relevant browser or Firebase credentials are configured, `/accounts/settings` exposes the shared enable, disable, and test notification controls for the PWA and the installed native apps.
 
 ### Signed release APKs via Gradle
 
@@ -659,11 +668,16 @@ Required GitHub Actions secrets:
 * `IOS_BUILD_PROVISION_PROFILE_NAME`
 * `IOS_DEVELOPMENT_TEAM`
 * `IOS_BUNDLE_IDENTIFIER`
+* `IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64`
 * `APP_STORE_CONNECT_KEY_ID`
 * `APP_STORE_CONNECT_ISSUER_ID`
 * `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`
 
 Trigger the workflow manually from the Actions tab. Set `upload_to_testflight` to `false` if you only want a signed artifact without publishing it.
+
+For iOS push-enabled builds, make sure the provisioning profile includes the Push Notifications capability and that `IOS_BUNDLE_IDENTIFIER` matches the identifier registered in both Apple Developer and Firebase.
+
+For exact PowerShell and macOS secret commands plus a checked Apple Developer and Firebase review against the current Potok bundle id, see `docs/ios-secrets-and-checklist.md`.
 
 ## Maintenance Notes
 

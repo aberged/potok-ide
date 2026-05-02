@@ -16,6 +16,7 @@ jobs:
     concurrency: ios-build-publish
     env:
       IOS_PROJECT_PATH: assets/ios/App/App.xcodeproj
+      IOS_GOOGLE_SERVICE_INFO_PATH: assets/ios/App/App/GoogleService-Info.plist
       IOS_SCHEME: App
       IOS_ARCHIVE_PATH: build/ios/Potok.xcarchive
       IOS_EXPORT_PATH: build/ios/export
@@ -45,6 +46,7 @@ jobs:
             IOS_BUILD_PROVISION_PROFILE_NAME
             IOS_DEVELOPMENT_TEAM
             IOS_BUNDLE_IDENTIFIER
+            IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64
             APP_STORE_CONNECT_KEY_ID
             APP_STORE_CONNECT_ISSUER_ID
             APP_STORE_CONNECT_PRIVATE_KEY_BASE64
@@ -65,6 +67,7 @@ jobs:
           IOS_BUILD_PROVISION_PROFILE_NAME: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}
           IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
           IOS_BUNDLE_IDENTIFIER: ${{ secrets.IOS_BUNDLE_IDENTIFIER }}
+          IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64 }}
           APP_STORE_CONNECT_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
           APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           APP_STORE_CONNECT_PRIVATE_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY_BASE64 }}
@@ -73,6 +76,13 @@ jobs:
       - name: Install npm dependencies
         working-directory: assets
         run: npm ci
+
+      - name: Write GoogleService-Info.plist
+        env:
+          IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64: ${{ secrets.IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64 }}
+        run: |
+          mkdir -p "$(dirname "$IOS_GOOGLE_SERVICE_INFO_PATH")"
+          echo "$IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64" | base64 --decode > "$IOS_GOOGLE_SERVICE_INFO_PATH"
 
       - name: Sync Capacitor iOS project
         working-directory: assets

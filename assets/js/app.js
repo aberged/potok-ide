@@ -145,6 +145,8 @@ const AutoDismissFlash = {
 
 const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
 const POTOK_PUSH_CHANNEL_ID = "potok-default"
+const POTOK_IOS_PUSH_REGISTRATION_EVENT = "potokNativePushRegistration"
+const POTOK_IOS_PUSH_REGISTRATION_ERROR_EVENT = "potokNativePushRegistrationError"
 const nativePushListeners = new Set()
 
 const NativePushManager = {
@@ -176,8 +178,38 @@ const NativePushManager = {
       }
     }
 
+    if (Capacitor.getPlatform() === "ios") {
+      this.handleIosPushRegistration = event => {
+        if (!event?.token) {
+          return
+        }
+
+        nativePushListeners.forEach(listener =>
+          listener({type: "registration", token: event.token, provider: event.provider || "fcm"}))
+      }
+
+      this.handleIosPushRegistrationError = event => {
+        nativePushListeners.forEach(listener =>
+          listener({
+            type: "registrationError",
+            error: {
+              error: event?.message || "Unable to register this iOS device for Firebase push notifications.",
+            },
+            provider: event?.provider || "fcm",
+          }))
+      }
+
+      window.addEventListener(POTOK_IOS_PUSH_REGISTRATION_EVENT, this.handleIosPushRegistration)
+      window.addEventListener(POTOK_IOS_PUSH_REGISTRATION_ERROR_EVENT, this.handleIosPushRegistrationError)
+    }
+
     await NativePushNotifications.addListener("registration", token => {
-      nativePushListeners.forEach(listener => listener({type: "registration", token: token.value}))
+      if (Capacitor.getPlatform() === "ios") {
+        return
+      }
+
+      nativePushListeners.forEach(listener =>
+        listener({type: "registration", token: token.value, provider: "fcm"}))
     })
 
     await NativePushNotifications.addListener("registrationError", error => {
@@ -238,6 +270,11 @@ const PushNotifications = {
     this.handleNativePushEvent = event => {
       switch (event.type) {
       case "registration":
+        if (this.nativePlatform === "ios" && event.provider !== "fcm") {
+          this.setPendingState("Finishing iPhone notification registration...")
+          break
+        }
+
         void this.handleNativeRegistration(event.token)
         break
       case "registrationError":
