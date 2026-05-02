@@ -77,7 +77,9 @@ defmodule PotokIde.Social.Value do
     trimmed = String.trim(value)
 
     cond do
-      trimmed == "" -> nil
+      trimmed == "" ->
+        nil
+
       true ->
         case Jason.decode(trimmed) do
           {:ok, decoded} when is_map(decoded) -> decoded

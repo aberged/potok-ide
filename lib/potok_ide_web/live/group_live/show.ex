@@ -329,6 +329,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
             values={@streams.values}
             pagination={@values_pagination}
+            group={@group}
             current_profile={@current_profile}
             online_profile_ids={@online_profile_ids}
             expanded_value_ids={@expanded_value_ids}
@@ -1944,7 +1945,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp normalize_non_negative_integer_param(value) when is_integer(value) and value >= 0, do: value
+  defp normalize_non_negative_integer_param(value) when is_integer(value) and value >= 0,
+    do: value
 
   defp normalize_non_negative_integer_param(value) when is_binary(value) do
     case Integer.parse(value) do

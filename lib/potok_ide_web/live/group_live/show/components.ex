@@ -650,6 +650,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   attr :content, :string, default: ""
   attr :content_format, :any, default: :markdown
+  attr :uses_api, :boolean, default: false
   attr :class, :any, default: nil
 
   def formatted_content(assigns) do
@@ -658,7 +659,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div class={[@class, "ql-snow chat-show", @content_format_class]}>
-      {render_formatted_content(%{content: @content, content_format: @content_format})}
+      {render_formatted_content(%{
+        content: @content,
+        content_format: @content_format,
+        uses_api: @uses_api
+      })}
     </div>
     """
   end
@@ -669,6 +674,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :online_profile_ids, :any, required: true
   attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
+  attr :uses_api, :boolean, default: false
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -776,7 +782,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             ]}
             style={collapsed_value_style(@expanded_value_ids, @value)}
           >
-            <.formatted_content content={@value.content} content_format={@value.content_format} />
+            <.formatted_content
+              content={@value.content}
+              content_format={@value.content_format}
+              uses_api={@uses_api}
+            />
           </div>
 
           <div
@@ -810,10 +820,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  defp render_formatted_content(%{content: content, content_format: :html, uses_api: true}) do
+    content
+    |> raw()
+  end
+
   defp render_formatted_content(%{content: content, content_format: :html}) do
     content
-    ## TODO: sanitize properly while allowing basic formatting tags and links, maybe using HtmlSanitizeEx with a custom scrubber
-    # |> sanitize_html()
+    |> sanitize_html()
     |> raw()
   end
 
@@ -829,7 +843,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp formatted_content_class(:markdown), do: "chat-show-markdown"
   defp formatted_content_class(_content_format), do: nil
 
-  defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.html5(content)
+  defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.basic_html(content)
 
   defp markdown_to_quill_html(content) when is_binary(content) do
     content

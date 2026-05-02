@@ -1730,6 +1730,12 @@ msgstr "Prośby utworzone przeze mnie"
 msgid "Root public"
 msgstr ""
 
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:58
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:45
+#, elixir-autogen, elixir-format
+msgid "Uses API"
+msgstr ""
+
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:52
 #, elixir-autogen, elixir-format
 msgid "Search by name"

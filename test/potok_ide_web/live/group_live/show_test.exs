@@ -1308,7 +1308,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "description" => "after",
           "group_picture_url" => group_picture_url,
           "home_page" => "chat",
-          "is_public" => "true"
+          "is_public" => "true",
+          "uses_api" => "true"
         }
       })
       |> render_submit()
@@ -1319,6 +1320,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert updated_group.description == "after"
       assert updated_group.group_picture_url == group_picture_url
       assert updated_group.home_page == :chat
+      assert updated_group.uses_api
       refute updated_group.has_public_chat
 
       {:ok, viewer_lv, _html} =
@@ -1370,14 +1372,15 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{root_group.id}/create_group")
 
       create_lv
-      |> form("#group-panel-create-group form", %{
+      |> form("#group-create-form", %{
         "group" => %{
           "name" => "created-with-public-chat",
           "description" => "",
           "group_picture_url" => "",
           "home_page" => "subgroups",
           "is_root_public" => "true",
-          "is_public" => "false"
+          "is_public" => "false",
+          "uses_api" => "true"
         }
       })
       |> render_submit()
@@ -1391,6 +1394,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert created_group.is_root_public
       assert created_group.is_public
       assert created_group.home_page == :subgroups
+      assert created_group.uses_api
     end
 
     test "shows group description to non-members on the values tab", %{conn: conn} do
@@ -1436,6 +1440,102 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-panel-description")
       assert render(lv) =~ "Welcome"
       assert render(lv) =~ "<strong>public</strong>"
+    end
+
+    test "sanitizes html descriptions when uses_api is false", %{conn: conn} do
+      owner_account = account_fixture()
+      viewer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "html-desc-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, _viewer_profile} =
+        Social.create_profile_for_account(viewer_account, %{
+          username: "html-desc-viewer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      viewer_account = Accounts.get_account!(viewer_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "sanitized-html-description-group",
+          "description" =>
+            ~s|<p><a href="javascript:alert('boom')" onclick="alert('boom')">unsafe link</a></p><script>alert('boom')</script>|,
+          "description_format" => :html,
+          "is_public" => true,
+          "uses_api" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(viewer_account)
+        |> live(~p"/groups/#{group.id}")
+
+      rendered = render(element(lv, "#group-panel-description .ql-snow.chat-show"))
+
+      assert has_element?(lv, "#group-panel-description")
+      assert rendered =~ "unsafe link"
+      refute rendered =~ "javascript:alert"
+      refute rendered =~ "onclick="
+      refute rendered =~ "<script>alert('boom')</script>"
+    end
+
+    test "renders raw html descriptions when uses_api is true", %{conn: conn} do
+      owner_account = account_fixture()
+      viewer_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "api-html-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, _viewer_profile} =
+        Social.create_profile_for_account(viewer_account, %{
+          username: "api-html-viewer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      viewer_account = Accounts.get_account!(viewer_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "raw-html-description-group",
+          "description" =>
+            ~s|<p><a href="javascript:alert('boom')" onclick="alert('boom')">unsafe link</a></p>|,
+          "description_format" => :html,
+          "is_public" => true,
+          "uses_api" => true
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(viewer_account)
+        |> live(~p"/groups/#{group.id}")
+
+      rendered = render(element(lv, "#group-panel-description .ql-snow.chat-show"))
+
+      assert has_element?(lv, "#group-panel-description")
+      assert rendered =~ "href=\"javascript:alert(&#39;boom&#39;)\""
+      assert rendered =~ "onclick=\"alert(&#39;boom&#39;)\""
     end
 
     test "allows a non-member to request access and the creator to approve it from the members tab",

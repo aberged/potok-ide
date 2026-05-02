@@ -7,6 +7,7 @@ defmodule PotokIde.SocialTest do
   alias PotokIde.Accounts
   alias PotokIde.PushNotifications
   alias PotokIde.Social
+  alias PotokIde.Social.Group
 
   describe "create_group/3" do
     test "persists group_picture_url and home_page" do
@@ -37,6 +38,7 @@ defmodule PotokIde.SocialTest do
       assert group.home_page == :subgroups
       assert group.has_public_chat == false
       assert group.is_direct == false
+      assert group.uses_api == false
     end
 
     test "accepts larger data URLs for group pictures" do
@@ -94,6 +96,53 @@ defmodule PotokIde.SocialTest do
 
       assert group.is_root_public
       assert group.is_public
+    end
+
+    test "forces html description_format when uses_api is enabled" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "uses-api-create-prof",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      assert {:ok, group} =
+               Social.create_group(profile, root_group, %{
+                 "name" => "uses-api-create-group",
+                 "description" => "",
+                 "description_format" => :markdown,
+                 "home_page" => :description,
+                 "is_public" => false,
+                 "uses_api" => true
+               })
+
+      assert group.uses_api
+      assert group.description_format == :html
+    end
+  end
+
+  describe "Group.update_changeset/2" do
+    test "forces html description_format when uses_api is enabled" do
+      changeset =
+        Group.update_changeset(%Group{name: "group", description_format: :markdown}, %{
+          "name" => "group",
+          "description_format" => :markdown,
+          "home_page" => :description,
+          "has_public_chat" => false,
+          "is_public" => false,
+          "is_root_public" => false,
+          "uses_api" => true
+        })
+
+      assert changeset.valid?
+      assert Ecto.Changeset.get_field(changeset, :uses_api)
+      assert Ecto.Changeset.get_field(changeset, :description_format) == :html
     end
   end
 

@@ -34,7 +34,9 @@ defmodule PotokIde.GmailToken do
     end
   end
 
-  defp refresh_access_token(config, client_id, client_secret, [{source, refresh_token} | remaining]) do
+  defp refresh_access_token(config, client_id, client_secret, [
+         {source, refresh_token} | remaining
+       ]) do
     with {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token),
          {:ok, access_token} <- parse_access_token(response) do
       maybe_store_effective_refresh_token(response, refresh_token)
@@ -136,7 +138,10 @@ defmodule PotokIde.GmailToken do
          {:error, {:gmail_token_request_failed, _status, %{"error" => "invalid_grant"}}},
          [{:configured, _configured_refresh_token} | _] = remaining
        ) do
-    Logger.warning("persisted Gmail refresh token was rejected; retrying configured refresh token")
+    Logger.warning(
+      "persisted Gmail refresh token was rejected; retrying configured refresh token"
+    )
+
     refresh_access_token(config, client_id, client_secret, remaining)
   end
 

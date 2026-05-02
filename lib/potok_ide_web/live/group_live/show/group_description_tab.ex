@@ -51,6 +51,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           <Components.formatted_content
             content={@group.description}
             content_format={@group.description_format}
+            uses_api={@group.uses_api}
           />
         </div>
       </div>

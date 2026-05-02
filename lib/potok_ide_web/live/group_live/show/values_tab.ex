@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   attr :values, :any, required: true
   attr :pagination, :map, required: true
+  attr :group, :map, required: true
   attr :current_profile, :map, default: nil
   attr :online_profile_ids, :any, required: true
   attr :expanded_value_ids, :any, required: true
@@ -57,6 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               :for={{dom_id, value} <- @values}
               dom_id={dom_id}
               value={value}
+              uses_api={@group.uses_api}
               current_profile={@current_profile}
               online_profile_ids={@online_profile_ids}
               expanded_value_ids={@expanded_value_ids}

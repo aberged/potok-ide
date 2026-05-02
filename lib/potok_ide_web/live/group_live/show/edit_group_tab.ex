@@ -40,6 +40,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               label={gettext("Root public")}
               type="checkbox"
             />
+            <.input
+              field={@edit_group_form[:uses_api]}
+              label={gettext("Uses API")}
+              type="checkbox"
+            />
           </div>
           <.input
             field={@edit_group_form[:home_page]}
@@ -186,6 +191,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                     content_format={
                       normalize_description_format(@edit_group_form[:description_format].value)
                     }
+                    uses_api={@edit_group_form[:uses_api].value || false}
                     class="min-h-48"
                   />
                 </div>

@@ -1850,11 +1850,16 @@ defmodule PotokIde.Social do
     value = normalize_data_value_search_value(search_value)
 
     case {field, value} do
-      {nil, _} -> query
-      {_, nil} -> query
+      {nil, _} ->
+        query
+
+      {_, nil} ->
+        query
+
       {jsonb_field, jsonb_value} ->
         from(v in query,
-          where: ilike(fragment("COALESCE(? ->> ?, '')", v.data, ^jsonb_field), ^"%#{jsonb_value}%")
+          where:
+            ilike(fragment("COALESCE(? ->> ?, '')", v.data, ^jsonb_field), ^"%#{jsonb_value}%")
         )
     end
   end
