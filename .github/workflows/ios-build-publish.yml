@@ -163,11 +163,8 @@ jobs:
             -destination generic/platform=iOS \
             -archivePath "$IOS_ARCHIVE_PATH" \
             clean archive \
-            CODE_SIGN_STYLE=Manual \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
             DEVELOPMENT_TEAM="${{ secrets.IOS_DEVELOPMENT_TEAM }}" \
             PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.IOS_BUNDLE_IDENTIFIER }}" \
-            PROVISIONING_PROFILE_SPECIFIER="${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
