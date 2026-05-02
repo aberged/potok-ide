@@ -21,6 +21,8 @@ jobs:
       IOS_ARCHIVE_PATH: build/ios/Potok.xcarchive
       IOS_EXPORT_PATH: build/ios/export
       IOS_EXPORT_OPTIONS_PATH: build/ios/ExportOptions.plist
+      IOS_DEVELOPMENT_TEAM: ${{ secrets.IOS_DEVELOPMENT_TEAM }}
+      IOS_BUILD_PROVISION_PROFILE_NAME: ${{ secrets.IOS_BUILD_PROVISION_PROFILE_NAME }}
       KEYCHAIN_NAME: potok-signing.keychain-db
       KEYCHAIN_PASSWORD: ${{ secrets.IOS_BUILD_KEYCHAIN_PASSWORD }}
       PROVISIONING_PROFILE_FILENAME: potok.mobileprovision
@@ -163,8 +165,6 @@ jobs:
             -destination generic/platform=iOS \
             -archivePath "$IOS_ARCHIVE_PATH" \
             clean archive \
-            DEVELOPMENT_TEAM="${{ secrets.IOS_DEVELOPMENT_TEAM }}" \
-            PRODUCT_BUNDLE_IDENTIFIER="${{ secrets.IOS_BUNDLE_IDENTIFIER }}" \
             CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
             OTHER_CODE_SIGN_FLAGS="--keychain $KEYCHAIN_PATH"
 
