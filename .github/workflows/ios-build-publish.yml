@@ -12,9 +12,10 @@ on:
 jobs:
   build-and-publish:
     name: Build iOS app
-    runs-on: macos-latest
+    runs-on: macos-15
     concurrency: ios-build-publish
     env:
+      DEVELOPER_DIR: /Applications/Xcode_26.3.app/Contents/Developer
       IOS_PROJECT_PATH: assets/ios/App/App.xcodeproj
       IOS_GOOGLE_SERVICE_INFO_PATH: assets/ios/App/App/GoogleService-Info.plist
       IOS_SCHEME: App
