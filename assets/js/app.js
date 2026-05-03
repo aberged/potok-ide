@@ -1078,6 +1078,12 @@ const MarkdownEditor = {
 const APP_LINK_HOST = "potok.rs"
 const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
 const CAPACITOR_LAST_ROUTE_KEY = "potok:last-route"
+const CAPACITOR_ROUTE_RESTORE_DELAY_MS = 500
+const CAPACITOR_URL_DEDUPE_WINDOW_MS = 1500
+
+let pendingCapacitorRouteRestore = null
+let lastHandledCapacitorUrl = null
+let lastHandledCapacitorUrlAt = 0
 
 const parseTokenFromLoginPath = pathname => {
   const match = pathname.match(APP_LINK_PATH_PATTERN)
@@ -1189,21 +1195,67 @@ const openNotificationUrl = urlString => {
   }
 }
 
+const cancelPendingCapacitorRouteRestore = () => {
+  if (pendingCapacitorRouteRestore === null) {
+    return
+  }
+
+  window.clearTimeout(pendingCapacitorRouteRestore)
+  pendingCapacitorRouteRestore = null
+}
+
+const scheduleCapacitorRouteRestore = () => {
+  cancelPendingCapacitorRouteRestore()
+
+  pendingCapacitorRouteRestore = window.setTimeout(() => {
+    pendingCapacitorRouteRestore = null
+    restoreLastCapacitorRoute()
+  }, CAPACITOR_ROUTE_RESTORE_DELAY_MS)
+}
+
+const handleCapacitorAppUrl = urlString => {
+  const normalizedUrl = typeof urlString === "string" ? urlString.trim() : ""
+
+  if (!normalizedUrl) {
+    return false
+  }
+
+  cancelPendingCapacitorRouteRestore()
+
+  const now = Date.now()
+
+  if (
+    normalizedUrl === lastHandledCapacitorUrl &&
+    now - lastHandledCapacitorUrlAt < CAPACITOR_URL_DEDUPE_WINDOW_MS
+  ) {
+    return true
+  }
+
+  const handled = openNotificationUrl(normalizedUrl)
+
+  if (handled) {
+    lastHandledCapacitorUrl = normalizedUrl
+    lastHandledCapacitorUrlAt = now
+  }
+
+  return handled
+}
+
 const registerCapacitorMagicLinks = () => {
   if (!Capacitor.isNativePlatform()) {
     return
   }
 
   void App.addListener("appUrlOpen", ({url}) => {
-    openNotificationUrl(url)
+    handleCapacitorAppUrl(url)
   })
 
   void App.getLaunchUrl()
     .then(result => {
-      const openedLaunchUrl = openNotificationUrl(result?.url || "")
+      const openedLaunchUrl = handleCapacitorAppUrl(result?.url || "")
 
       if (!openedLaunchUrl) {
-        restoreLastCapacitorRoute()
+        scheduleCapacitorRouteRestore()
       }
     })
     .catch(() => {})
