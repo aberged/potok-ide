@@ -1078,12 +1078,146 @@ const MarkdownEditor = {
 const APP_LINK_HOST = "potok.rs"
 const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
 const CAPACITOR_LAST_ROUTE_KEY = "potok:last-route"
+const CAPACITOR_LAST_MAGIC_LINK_TOKEN_KEY = "potok:last-magic-link-token"
 const CAPACITOR_ROUTE_RESTORE_DELAY_MS = 500
 const CAPACITOR_URL_DEDUPE_WINDOW_MS = 1500
+const CAPACITOR_MAGIC_LINK_TOKEN_TTL_MS = 10 * 60 * 1000
+const IOS_NATIVE_KEYBOARD_OPEN_DELTA_PX = 120
+const IOS_NATIVE_KEYBOARD_CLOSE_DELTA_PX = 80
 
 let pendingCapacitorRouteRestore = null
 let lastHandledCapacitorUrl = null
 let lastHandledCapacitorUrlAt = 0
+
+const readRootCssPixelValue = name => {
+  const rawValue = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim()
+  const value = Number.parseFloat(rawValue)
+
+  return Number.isFinite(value) ? value : 0
+}
+
+const nativeIosEditableElementFocused = () => {
+  const activeElement = document.activeElement
+
+  if (!(activeElement instanceof HTMLElement)) {
+    return false
+  }
+
+  return activeElement.matches(
+    "input:not([type='button']):not([type='checkbox']):not([type='color']):not([type='file']):not([type='hidden']):not([type='image']):not([type='radio']):not([type='range']):not([type='reset']):not([type='submit']), textarea, select, [contenteditable=''], [contenteditable='true']"
+  )
+}
+
+const registerNativeIosKeyboardSafeAreaFix = () => {
+  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "ios") {
+    return
+  }
+
+  const root = document.documentElement
+  const viewport = window.visualViewport
+
+  let keyboardOpen = false
+  let stableViewportHeight = viewport?.height || window.innerHeight
+  let stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
+
+  const applyTopInset = value => {
+    root.style.setProperty("--app-effective-safe-area-top", `${Math.max(0, value)}px`)
+    root.dataset.iosKeyboardOpen = keyboardOpen ? "true" : "false"
+  }
+
+  const refreshStableTopInset = () => {
+    stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
+  }
+
+  const syncKeyboardState = () => {
+    const viewportHeight = viewport?.height || window.innerHeight
+    const editableElementFocused = nativeIosEditableElementFocused()
+
+    if (!keyboardOpen && !editableElementFocused) {
+      stableViewportHeight = viewportHeight
+      refreshStableTopInset()
+    }
+
+    const viewportDelta = Math.max(0, stableViewportHeight - viewportHeight)
+    const openThreshold = keyboardOpen
+      ? IOS_NATIVE_KEYBOARD_CLOSE_DELTA_PX
+      : IOS_NATIVE_KEYBOARD_OPEN_DELTA_PX
+    const nextKeyboardOpen = editableElementFocused && viewportDelta >= openThreshold
+
+    keyboardOpen = nextKeyboardOpen
+
+    if (keyboardOpen) {
+      applyTopInset(0)
+      return
+    }
+
+    stableViewportHeight = viewportHeight
+    refreshStableTopInset()
+    applyTopInset(stableTopInset)
+  }
+
+  const scheduleSyncKeyboardState = () => {
+    window.requestAnimationFrame(syncKeyboardState)
+  }
+
+  applyTopInset(stableTopInset)
+
+  viewport?.addEventListener("resize", scheduleSyncKeyboardState)
+  window.addEventListener("resize", scheduleSyncKeyboardState)
+  window.addEventListener("orientationchange", scheduleSyncKeyboardState)
+  window.addEventListener("focusin", scheduleSyncKeyboardState)
+  window.addEventListener("focusout", scheduleSyncKeyboardState)
+
+  scheduleSyncKeyboardState()
+}
+
+const recentlyHandledCapacitorMagicLinkToken = token => {
+  const normalizedToken = typeof token === "string" ? token.trim() : ""
+
+  if (!normalizedToken) {
+    return false
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(CAPACITOR_LAST_MAGIC_LINK_TOKEN_KEY)
+
+    if (!rawValue) {
+      return false
+    }
+
+    const storedValue = JSON.parse(rawValue)
+
+    if (storedValue?.token !== normalizedToken || !Number.isFinite(storedValue?.handledAt)) {
+      return false
+    }
+
+    if (Date.now() - storedValue.handledAt > CAPACITOR_MAGIC_LINK_TOKEN_TTL_MS) {
+      window.localStorage.removeItem(CAPACITOR_LAST_MAGIC_LINK_TOKEN_KEY)
+      return false
+    }
+
+    return true
+  } catch (_error) {
+    return false
+  }
+}
+
+const rememberCapacitorMagicLinkToken = token => {
+  const normalizedToken = typeof token === "string" ? token.trim() : ""
+
+  if (!normalizedToken) {
+    return
+  }
+
+  try {
+    window.localStorage.setItem(
+      CAPACITOR_LAST_MAGIC_LINK_TOKEN_KEY,
+      JSON.stringify({token: normalizedToken, handledAt: Date.now()})
+    )
+  } catch (_error) {
+    // Ignore storage failures (private mode/quota/etc.).
+  }
+}
 
 const parseTokenFromLoginPath = pathname => {
   const match = pathname.match(APP_LINK_PATH_PATTERN)
@@ -1137,7 +1271,6 @@ const openMagicLinkInAppSession = token => {
   const targetUrl = new URL(`/accounts/log-in/${encodeURIComponent(normalizedToken)}`, window.location.origin)
 
   if (window.location.href === targetUrl.toString()) {
-    window.location.reload()
     return
   }
 
@@ -1150,6 +1283,12 @@ const handleCapacitorMagicLink = urlString => {
   if (!token) {
     return false
   }
+
+  if (recentlyHandledCapacitorMagicLinkToken(token)) {
+    return true
+  }
+
+  rememberCapacitorMagicLinkToken(token)
 
   openMagicLinkInAppSession(token)
   return true
@@ -1184,7 +1323,6 @@ const openNotificationUrl = urlString => {
     )
 
     if (window.location.href === targetUrl.toString()) {
-      window.location.reload()
       return true
     }
 
@@ -1526,6 +1664,7 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 registerCapacitorMagicLinks()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
+registerNativeIosKeyboardSafeAreaFix()
 
 window.addEventListener("DOMContentLoaded", () => {
   installLongPressLinkMenu()

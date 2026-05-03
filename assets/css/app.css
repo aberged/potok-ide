@@ -137,10 +137,27 @@
 @custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
 
 :root {
-  --app-safe-area-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
-  --app-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
-  --app-safe-area-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
-  --app-safe-area-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --app-system-safe-area-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --app-system-safe-area-right: var(--safe-area-inset-right, env(safe-area-inset-right, 0px));
+  --app-system-safe-area-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
+  --app-system-safe-area-left: var(--safe-area-inset-left, env(safe-area-inset-left, 0px));
+  --app-effective-safe-area-top: var(--app-system-safe-area-top);
+  --app-effective-safe-area-right: var(--app-system-safe-area-right);
+  --app-effective-safe-area-bottom: var(--app-system-safe-area-bottom);
+  --app-effective-safe-area-left: var(--app-system-safe-area-left);
+  --app-safe-area-top: var(--app-effective-safe-area-top);
+  --app-safe-area-right: var(--app-effective-safe-area-right);
+  --app-safe-area-bottom: var(--app-effective-safe-area-bottom);
+  --app-safe-area-left: var(--app-effective-safe-area-left);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  /* iOS zooms focused text controls below 16px; keep native form text at 16px on touch devices. */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="color"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* Make LiveView wrapper divs transparent for layout */

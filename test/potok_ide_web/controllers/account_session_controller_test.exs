@@ -146,6 +146,25 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
 
       assert redirected_to(conn) == ~p"/accounts/log-in"
     end
+
+    test "allows magic link login when another account is already authenticated", %{
+      conn: conn,
+      account: account
+    } do
+      other_account = account_fixture()
+      {token, _hashed_token} = generate_account_magic_link_token(other_account)
+
+      conn =
+        conn
+        |> log_in_account(account)
+        |> post(~p"/accounts/log-in", %{
+          "account" => %{"token" => token}
+        })
+
+      assert get_session(conn, :account_token)
+      assert redirected_to(conn) == ~p"/accounts/settings"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
+    end
   end
 
   describe "DELETE /accounts/log-out" do

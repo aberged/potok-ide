@@ -35,7 +35,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       assert html =~ "Keep me logged in on this device"
     end
 
-    test "redirects to home for already logged in account", %{
+    test "auto-submits for already logged in confirmed account", %{
       conn: conn,
       confirmed_account: account
     } do
@@ -46,7 +46,38 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
           Accounts.deliver_login_instructions(account, url)
         end)
 
-      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/accounts/log-in/#{token}")
+      {:ok, lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
+      assert html =~ "Completing sign in..."
+      refute html =~ "Log in"
+
+      form = form(lv, "#login_form")
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/accounts/settings"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Welcome back!"
+    end
+
+    test "auto-submits for already logged in unconfirmed account", %{
+      conn: conn,
+      unconfirmed_account: account
+    } do
+      conn = log_in_account(conn, account)
+
+      token =
+        extract_account_token(fn url ->
+          Accounts.deliver_login_instructions(account, url)
+        end)
+
+      {:ok, lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
+      assert html =~ "Confirming your account and signing you in..."
+      refute html =~ "Confirm and stay logged in"
+
+      form = form(lv, "#confirmation_form")
+      conn = follow_trigger_action(form, conn)
+
+      assert redirected_to(conn) == ~p"/accounts/settings"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Account confirmed successfully"
+      assert Accounts.get_account!(account.id).confirmed_at
     end
 
     test "confirms the given token once", %{conn: conn, unconfirmed_account: account} do

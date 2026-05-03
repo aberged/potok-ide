@@ -12,6 +12,16 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
           <.header>{gettext("Welcome %{email}", email: @account.email)}</.header>
         </div>
 
+        <div :if={@auto_submit} class="alert alert-info mt-6">
+          <span>
+            <%= if @account.confirmed_at do %>
+              {gettext("Completing sign in...")}
+            <% else %>
+              {gettext("Confirming your account and signing you in...")}
+            <% end %>
+          </span>
+        </div>
+
         <.form
           :if={!@account.confirmed_at}
           for={@form}
@@ -22,20 +32,22 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
           phx-trigger-action={@trigger_submit}
         >
           <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
-          <.button
-            name={@form[:remember_me].name}
-            value="true"
-            phx-disable-with={gettext("Confirming...")}
-            class="btn btn-primary w-full"
-          >
-            {gettext("Confirm and stay logged in")}
-          </.button>
-          <.button
-            phx-disable-with={gettext("Confirming...")}
-            class="btn btn-primary btn-soft w-full mt-2"
-          >
-            {gettext("Confirm and log in only this time")}
-          </.button>
+          <div :if={!@auto_submit}>
+            <.button
+              name={@form[:remember_me].name}
+              value="true"
+              phx-disable-with={gettext("Confirming...")}
+              class="btn btn-primary w-full"
+            >
+              {gettext("Confirm and stay logged in")}
+            </.button>
+            <.button
+              phx-disable-with={gettext("Confirming...")}
+              class="btn btn-primary btn-soft w-full mt-2"
+            >
+              {gettext("Confirm and log in only this time")}
+            </.button>
+          </div>
         </.form>
 
         <.form
@@ -48,25 +60,28 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
           phx-trigger-action={@trigger_submit}
         >
           <input type="hidden" name={@form[:token].name} value={@form[:token].value} />
-          <%= if @current_scope do %>
-            <.button phx-disable-with={gettext("Logging in...")} class="btn btn-primary w-full">
-              {gettext("Log in")}
-            </.button>
+          <%= if @auto_submit do %>
           <% else %>
-            <.button
-              name={@form[:remember_me].name}
-              value="true"
-              phx-disable-with={gettext("Logging in...")}
-              class="btn btn-primary w-full h-auto p-2"
-            >
-              {gettext("Keep me logged in on this device")}
-            </.button>
-            <.button
-              phx-disable-with={gettext("Logging in...")}
-              class="btn btn-primary btn-soft w-full h-auto p-2 mt-2"
-            >
-              {gettext("Log me in only this time")}
-            </.button>
+            <%= if @current_scope do %>
+              <.button phx-disable-with={gettext("Logging in...")} class="btn btn-primary w-full">
+                {gettext("Log in")}
+              </.button>
+            <% else %>
+              <.button
+                name={@form[:remember_me].name}
+                value="true"
+                phx-disable-with={gettext("Logging in...")}
+                class="btn btn-primary w-full h-auto p-2"
+              >
+                {gettext("Keep me logged in on this device")}
+              </.button>
+              <.button
+                phx-disable-with={gettext("Logging in...")}
+                class="btn btn-primary btn-soft w-full h-auto p-2 mt-2"
+              >
+                {gettext("Log me in only this time")}
+              </.button>
+            <% end %>
           <% end %>
         </.form>
 
@@ -82,9 +97,15 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
   def mount(%{"token" => token}, _session, socket) do
     if account = Accounts.get_account_by_magic_link_token(token) do
       form = to_form(%{"token" => token}, as: "account")
+      auto_submit = authenticated_account?(socket)
 
-      {:ok, assign(socket, account: account, form: form, trigger_submit: false),
-       temporary_assigns: [form: nil]}
+      {:ok,
+       assign(socket,
+         account: account,
+         form: form,
+         trigger_submit: auto_submit,
+         auto_submit: auto_submit
+       ), temporary_assigns: [form: nil]}
     else
       {:ok,
        socket
@@ -96,5 +117,9 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
   @impl true
   def handle_event("submit", %{"account" => params}, socket) do
     {:noreply, assign(socket, form: to_form(params, as: "account"), trigger_submit: true)}
+  end
+
+  defp authenticated_account?(socket) do
+    match?(%_{account: %{}}, socket.assigns.current_scope)
   end
 end

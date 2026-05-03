@@ -407,6 +407,29 @@ defmodule PotokIdeWeb.AccountAuthTest do
                AccountAuth.on_mount(:redirect_if_authenticated, %{}, session, socket)
     end
 
+    test "continues for magic link routes even if account is authenticated", %{
+      conn: conn,
+      account: account
+    } do
+      account_token = Accounts.generate_account_session_token(account)
+      session = conn |> put_session(:account_token, account_token) |> get_session()
+
+      socket = %LiveView.Socket{
+        endpoint: PotokIdeWeb.Endpoint,
+        assigns: %{__changed__: %{}, flash: %{}}
+      }
+
+      assert {:cont, updated_socket} =
+               AccountAuth.on_mount(
+                 :redirect_if_authenticated,
+                 %{"token" => "magic-token"},
+                 session,
+                 socket
+               )
+
+      assert updated_socket.assigns.current_scope.account.id == account.id
+    end
+
     test "continues when account is not authenticated", %{conn: conn} do
       session = get_session(conn)
 
@@ -491,6 +514,39 @@ defmodule PotokIdeWeb.AccountAuthTest do
 
       assert Phoenix.Flash.get(conn.assigns.flash, :error) ==
                "You are already logged in. Please log out first if you want to log in to another account."
+    end
+
+    test "does not redirect for magic link route if account is authenticated", %{
+      conn: conn,
+      account: account
+    } do
+      conn =
+        %{conn | path_info: ["accounts", "log-in", "magic-token"]}
+        |> fetch_flash()
+        |> assign(:current_scope, Scope.for_account(account))
+        |> AccountAuth.redirect_if_account_is_authenticated([])
+
+      refute conn.halted
+      refute conn.status
+    end
+
+    test "does not redirect for magic link submission if account is authenticated", %{
+      conn: conn,
+      account: account
+    } do
+      conn =
+        %{
+          conn
+          | method: "POST",
+            path_info: ["accounts", "log-in"],
+            params: %{"account" => %{"token" => "magic-token"}}
+        }
+        |> fetch_flash()
+        |> assign(:current_scope, Scope.for_account(account))
+        |> AccountAuth.redirect_if_account_is_authenticated([])
+
+      refute conn.halted
+      refute conn.status
     end
 
     test "does not redirect if account is not authenticated", %{conn: conn} do

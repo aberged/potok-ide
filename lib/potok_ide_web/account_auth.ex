@@ -241,10 +241,11 @@ defmodule PotokIdeWeb.AccountAuth do
     {:cont, mount_current_scope(socket, session)}
   end
 
-  def on_mount(:redirect_if_authenticated, _params, session, socket) do
+  def on_mount(:redirect_if_authenticated, params, session, socket) do
     socket = mount_current_scope(socket, session)
 
-    if socket.assigns.current_scope && socket.assigns.current_scope.account do
+    if socket.assigns.current_scope && socket.assigns.current_scope.account &&
+         !magic_link_login_params?(params) do
       socket =
         socket
         |> Phoenix.LiveView.put_flash(
@@ -394,7 +395,8 @@ defmodule PotokIdeWeb.AccountAuth do
   Plug for routes that should only be available to unauthenticated accounts.
   """
   def redirect_if_account_is_authenticated(conn, _opts) do
-    if conn.assigns.current_scope && conn.assigns.current_scope.account do
+    if conn.assigns.current_scope && conn.assigns.current_scope.account &&
+         !magic_link_login_request?(conn) do
       conn
       |> put_flash(
         :error,
@@ -414,4 +416,22 @@ defmodule PotokIdeWeb.AccountAuth do
   end
 
   defp maybe_store_return_to(conn), do: conn
+
+  defp magic_link_login_params?(%{"token" => token}) when is_binary(token), do: token != ""
+  defp magic_link_login_params?(_params), do: false
+
+  defp magic_link_login_request?(%Plug.Conn{path_info: ["accounts", "log-in", token]})
+       when is_binary(token),
+       do: token != ""
+
+  defp magic_link_login_request?(
+         %Plug.Conn{method: "POST", path_info: ["accounts", "log-in"]} = conn
+       ) do
+    case conn.params do
+      %{"account" => %{"token" => token}} when is_binary(token) -> token != ""
+      _ -> false
+    end
+  end
+
+  defp magic_link_login_request?(_conn), do: false
 end

@@ -256,7 +256,7 @@ Once the relevant browser or Firebase credentials are configured, `/accounts/set
 
 ### Signed release APKs via Gradle
 
-The Android project is now set up so `assembleRelease` produces a signed APK when the signing values are provided in `assets/android/release-signing.properties`, as Gradle properties, or as environment variables.
+The Android project is now set up so `assembleRelease` produces a signed APK and `bundleRelease` produces a signed Android App Bundle when the signing values are provided in `assets/android/release-signing.properties`, as Gradle properties, or as environment variables.
 
 Required signing keys:
 
@@ -284,6 +284,19 @@ Set-Location android
 ```
 
 The signed APK will be written to `assets/android/app/build/outputs/apk/release/`.
+
+If you need an Android App Bundle (`.aab`) for Play Console upload, run:
+
+```powershell
+Set-Location assets
+$env:CAPACITOR_SERVER_URL = "https://potok.rs"
+npm run cap:sync:android
+
+Set-Location android
+.\gradlew.bat bundleRelease
+```
+
+The signed AAB will be written to `assets/android/app/build/outputs/bundle/release/app-release.aab`.
 
 If any of the signing values are missing, Gradle now fails release builds with a clear error instead of silently producing an unsigned release artifact.
 
@@ -658,6 +671,12 @@ The repository now includes `.github/workflows/ios-build-publish.yml`, which run
 * uploads the IPA as a GitHub artifact
 * optionally uploads the IPA to App Store Connect / TestFlight
 
+Current iOS versioning in the project:
+
+* `MARKETING_VERSION` is currently `1.0` in `assets/ios/App/App.xcodeproj/project.pbxproj`
+* `CFBundleVersion` is wired to `CURRENT_PROJECT_VERSION` in `assets/ios/App/App/Info.plist`
+* the workflow overrides `CURRENT_PROJECT_VERSION` with the GitHub Actions run number, so each workflow run gets a unique build number automatically
+
 Required GitHub Actions secrets:
 
 * `CAPACITOR_SERVER_URL`
@@ -673,7 +692,22 @@ Required GitHub Actions secrets:
 * `APP_STORE_CONNECT_ISSUER_ID`
 * `APP_STORE_CONNECT_PRIVATE_KEY_BASE64`
 
-Trigger the workflow manually from the Actions tab. Set `upload_to_testflight` to `false` if you only want a signed artifact without publishing it.
+Publish a new iOS build:
+
+1. Commit and push the code you want to ship.
+1. If this should appear as a new app version in App Store Connect, bump `MARKETING_VERSION` in `assets/ios/App/App.xcodeproj/project.pbxproj` before pushing. You usually only do this for a new public version such as `1.0` to `1.1`. The build number does not need a manual bump.
+1. Make sure the required GitHub Actions secrets listed above are up to date.
+1. Open GitHub Actions and run `iOS Build And Publish` with `upload_to_testflight=true`.
+1. Wait for the workflow to finish. It will upload the `.ipa` artifact to GitHub either way, and when `upload_to_testflight=true` it also sends the build to App Store Connect.
+1. In App Store Connect, wait for processing to finish, then add the build to TestFlight testing or to the App Store release you are preparing.
+
+You can also trigger the workflow from the command line:
+
+```powershell
+gh workflow run "iOS Build And Publish" --repo aberged/potok-ide -f upload_to_testflight=true
+```
+
+Set `upload_to_testflight` to `false` if you only want a signed artifact without publishing it to TestFlight.
 
 For iOS push-enabled builds, make sure the provisioning profile includes the Push Notifications capability and that `IOS_BUNDLE_IDENTIFIER` matches the identifier registered in both Apple Developer and Firebase.
 
