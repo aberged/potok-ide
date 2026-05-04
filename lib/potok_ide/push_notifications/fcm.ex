@@ -143,6 +143,10 @@ defmodule PotokIde.PushNotifications.FCM do
   end
 
   defp build_message_body(%PushSubscription{} = subscription, payload, credentials) do
+    notification =
+      payload
+      |> notification_payload()
+
     sound = payload_value(payload, [:android_sound, :sound])
     ttl = duration_value(payload_value(payload, [:android_ttl, :ttl]))
     collapse_key = payload_value(payload, [:android_collapse_key, :collapse_key, :collapseKey])
@@ -160,17 +164,27 @@ defmodule PotokIde.PushNotifications.FCM do
 
     data_payload =
       payload
-      |> Map.put_new(:android_channel_id, credentials.channel_id)
       |> maybe_put_map_value(:android_image, android_image)
       |> maybe_put_map_value(:android_sound, sound)
       |> maybe_put_map_value(:badge, badge)
 
+    data_payload =
+      if subscription.device_platform == :android do
+        Map.put_new(data_payload, :android_channel_id, credentials.channel_id)
+      else
+        data_payload
+      end
+
     android_payload =
-      %{
-        priority: "high"
-      }
-      |> maybe_put(:ttl, ttl)
-      |> maybe_put(:collapse_key, collapse_key)
+      if subscription.device_platform == :android do
+        %{
+          priority: "high"
+        }
+        |> maybe_put(:ttl, ttl)
+        |> maybe_put(:collapse_key, collapse_key)
+      end
+
+    apns_payload = ios_apns_payload(subscription, notification, sound)
 
     {:ok,
      %{
@@ -179,9 +193,45 @@ defmodule PotokIde.PushNotifications.FCM do
            token: subscription.device_token,
            data: stringify_payload(data_payload)
          }
-         |> maybe_put(:android, android_payload, map_size(android_payload) > 0)
+         |> maybe_put(:notification, notification, is_map(notification))
+         |> maybe_put(
+           :android,
+           android_payload,
+           is_map(android_payload) and map_size(android_payload) > 0
+         )
+         |> maybe_put(:apns, apns_payload, is_map(apns_payload))
      }}
   end
+
+  defp notification_payload(payload) when is_map(payload) do
+    %{}
+    |> maybe_put(:title, payload_value(payload, [:title]))
+    |> maybe_put(:body, payload_value(payload, [:body]))
+    |> case do
+      notification when map_size(notification) > 0 -> notification
+      _notification -> nil
+    end
+  end
+
+  defp ios_apns_payload(%PushSubscription{device_platform: :ios}, notification, sound)
+       when is_map(notification) do
+    aps =
+      %{}
+      |> maybe_put(:alert, notification)
+      |> maybe_put(:sound, sound || "default")
+
+    %{
+      headers: %{
+        "apns-priority" => "10",
+        "apns-push-type" => "alert"
+      },
+      payload: %{
+        aps: aps
+      }
+    }
+  end
+
+  defp ios_apns_payload(_subscription, _notification, _sound), do: nil
 
   defp normalize_access_token_response(%Req.Response{status: status, body: body})
        when status in 200..299 do

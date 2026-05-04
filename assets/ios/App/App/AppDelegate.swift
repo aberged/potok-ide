@@ -2,9 +2,10 @@ import UIKit
 import Capacitor
 import FirebaseCore
 import FirebaseMessaging
+import UserNotifications
 
 @UIApplicationMain
-class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
+class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate, UNUserNotificationCenterDelegate {
 
     private let nativePushRegistrationEvent = "potokNativePushRegistration"
     private let nativePushRegistrationErrorEvent = "potokNativePushRegistrationError"
@@ -14,6 +15,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        UNUserNotificationCenter.current().delegate = self
+
         if FirebaseApp.app() == nil, let options = firebaseOptions() {
             FirebaseApp.configure(options: options)
             Messaging.messaging().delegate = self
@@ -85,6 +88,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate, MessagingDelegate {
         pendingFCMToken = token
         pendingFCMErrorMessage = nil
         flushPendingNativePushEvents()
+    }
+
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        if #available(iOS 14.0, *) {
+            completionHandler([.banner, .list, .sound, .badge])
+        } else {
+            completionHandler([.alert, .sound, .badge])
+        }
     }
 
     private func fetchFCMRegistrationToken() {

@@ -175,6 +175,63 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       assert token == params["token"]
     end
 
+    test "sends an iOS-visible test native notification through Firebase", %{
+      conn: conn,
+      account: account
+    } do
+      request_pid = self()
+      configure_firebase_push_notifications(request_pid)
+      params = valid_native_subscription_params(%{"platform" => "ios"})
+
+      {:ok, _subscription} =
+        Accounts.upsert_push_subscription(account, native_subscription_attrs(params))
+
+      conn =
+        conn
+        |> json_conn()
+        |> post(~p"/accounts/push-subscriptions/test", %{"identifier" => params["token"]})
+
+      assert %{"sent" => true} = json_response(conn, 200)
+
+      assert_receive {:firebase_send_request, send_request}
+
+      assert %{
+               message: %{
+                 token: token,
+                 data: %{
+                   "badge" => "http://localhost:4000/images/pwa/icon-192.png",
+                   "body" => "Push notifications are enabled for your account.",
+                   "icon" => "/images/pwa/icon-192.png",
+                   "tag" => "potok-push-test",
+                   "title" => "Potok notifications are active",
+                   "url" => "/accounts/settings"
+                 },
+                 notification: %{
+                   title: "Potok notifications are active",
+                   body: "Push notifications are enabled for your account."
+                 },
+                 apns: %{
+                   headers: %{
+                     "apns-priority" => "10",
+                     "apns-push-type" => "alert"
+                   },
+                   payload: %{
+                     aps: %{
+                       alert: %{
+                         title: "Potok notifications are active",
+                         body: "Push notifications are enabled for your account."
+                       },
+                       sound: "default"
+                     }
+                   }
+                 }
+               }
+             } = send_request[:json]
+
+      refute Map.has_key?(send_request[:json][:message], :android)
+      assert token == params["token"]
+    end
+
     test "returns an invalid firebase credentials error for blank firebase token url", %{
       conn: conn,
       account: account
@@ -352,22 +409,29 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
     }
   end
 
-  defp valid_native_subscription_params do
-    %{
-      "type" => "fcm",
-      "platform" => "android",
-      "token" => "fcm-test-token-#{System.unique_integer([:positive])}"
-    }
+  defp valid_native_subscription_params(overrides \\ %{}) do
+    Map.merge(
+      %{
+        "type" => "fcm",
+        "platform" => "android",
+        "token" => "fcm-test-token-#{System.unique_integer([:positive])}"
+      },
+      overrides
+    )
   end
 
   defp native_subscription_attrs(params) do
     %{
       subscription_type: :fcm,
-      device_platform: :android,
+      device_platform: native_device_platform(params["platform"]),
       device_token: params["token"],
       user_agent: "ExUnit"
     }
   end
+
+  defp native_device_platform("ios"), do: :ios
+  defp native_device_platform("web"), do: :web
+  defp native_device_platform(_platform), do: :android
 
   defp configure_firebase_push_notifications(request_pid) do
     Application.put_env(
