@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social
+  alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
 
@@ -822,12 +823,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp render_formatted_content(%{content: content, content_format: :html, uses_api: true}) do
     content
+    |> UTF8.replace_invalid()
     |> raw()
   end
 
   defp render_formatted_content(%{content: content, content_format: :html}) do
     content
     |> sanitize_html()
+    |> UTF8.replace_invalid()
     |> raw()
   end
 
@@ -835,18 +838,26 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     content
     |> markdown_to_quill_html()
     |> sanitize_html()
+    |> UTF8.replace_invalid()
     |> raw()
   end
 
-  defp render_formatted_content(%{content: content}) when is_binary(content), do: content
+  defp render_formatted_content(%{content: content}) when is_binary(content),
+    do: UTF8.replace_invalid(content)
 
   defp formatted_content_class(:markdown), do: "chat-show-markdown"
   defp formatted_content_class(_content_format), do: nil
 
-  defp sanitize_html(content) when is_binary(content), do: HtmlSanitizeEx.basic_html(content)
+  defp sanitize_html(content) when is_binary(content) do
+    content
+    |> UTF8.replace_invalid()
+    |> HtmlSanitizeEx.basic_html()
+    |> UTF8.replace_invalid()
+  end
 
   defp markdown_to_quill_html(content) when is_binary(content) do
     content
+    |> UTF8.replace_invalid()
     |> String.trim()
     |> case do
       "" ->
@@ -870,7 +881,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp normalize_quill_paragraphs(html) when is_binary(html) do
     Regex.replace(~r/<p>(.*?)<\/p>/s, html, fn _, paragraph ->
-      normalized_paragraph = String.replace(paragraph, ~r/\R/, "")
+      normalized_paragraph =
+        paragraph
+        |> String.replace("\r\n", "")
+        |> String.replace("\n", "")
+        |> String.replace("\r", "")
+
       ~s(<p>#{normalized_paragraph}</p>)
     end)
   end

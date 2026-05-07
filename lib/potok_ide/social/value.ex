@@ -3,6 +3,8 @@ defmodule PotokIde.Social.Value do
 
   import Ecto.Changeset
 
+  alias PotokIde.UTF8
+
   @content_formats [:markdown, :html]
 
   schema "values" do
@@ -21,7 +23,10 @@ defmodule PotokIde.Social.Value do
   end
 
   def changeset(value, attrs) do
-    attrs = normalize_data_attr(attrs)
+    attrs =
+      attrs
+      |> normalize_data_attr()
+      |> normalize_content_attr()
 
     value
     |> cast(attrs, [
@@ -39,7 +44,10 @@ defmodule PotokIde.Social.Value do
   end
 
   def changeset_for_update(value, attrs) do
-    attrs = normalize_data_attr(attrs)
+    attrs =
+      attrs
+      |> normalize_data_attr()
+      |> normalize_content_attr()
 
     value
     |> cast(attrs, [
@@ -72,6 +80,16 @@ defmodule PotokIde.Social.Value do
   end
 
   defp normalize_data_attr(attrs), do: attrs
+
+  defp normalize_content_attr(attrs) when is_map(attrs) do
+    cond do
+      Map.has_key?(attrs, "content") -> Map.update!(attrs, "content", &UTF8.replace_invalid/1)
+      Map.has_key?(attrs, :content) -> Map.update!(attrs, :content, &UTF8.replace_invalid/1)
+      true -> attrs
+    end
+  end
+
+  defp normalize_content_attr(attrs), do: attrs
 
   defp decode_data_value(value) when is_binary(value) do
     trimmed = String.trim(value)
