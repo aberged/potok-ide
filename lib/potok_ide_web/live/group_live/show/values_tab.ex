@@ -24,7 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           id="group-values-feed"
           phx-hook=".ValuesFeed"
           class={[
-            "flex h-[calc(100dvh-15rem)] flex-col gap-4 overflow-y-auto px-4 py-5 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+1rem)] sm:px-6",
+            "flex h-[calc(100dvh-15rem)] flex-col gap-4 overflow-y-auto px-4 py-5 pb-[calc(var(--app-system-safe-area-bottom)+var(--app-system-safe-area-top)+1rem)] sm:px-6",
             if(@editing_value, do: "pb-[16rem]", else: "")
           ]}
         >
@@ -69,7 +69,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <div
           :if={@is_member}
-          class="sticky z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur bottom-(--app-safe-area-bottom) sm:px-6"
+          class="sticky z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur bottom-(--app-system-safe-area-bottom) sm:px-6"
         >
           <%= if @editing_value do %>
             <.form
