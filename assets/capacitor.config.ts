@@ -1,6 +1,8 @@
+/// <reference types="@capacitor/keyboard" />
 /// <reference types="@capacitor/push-notifications" />
 
 import type { CapacitorConfig } from "@capacitor/cli"
+import { KeyboardResize } from "@capacitor/keyboard"
 
 const env = (globalThis as typeof globalThis & {
   process?: {env?: Record<string, string | undefined>}
@@ -45,6 +47,9 @@ const config: CapacitorConfig = {
     contentInset: "always"
   },
   plugins: {
+    Keyboard: {
+      resize: KeyboardResize.Native
+    },
     PushNotifications: {
       presentationOptions: ["alert", "sound"]
     },

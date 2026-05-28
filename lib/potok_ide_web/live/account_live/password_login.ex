@@ -4,7 +4,16 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_profile={@current_profile}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      pending_invitations_count={@pending_invitations_count}
+      pending_group_join_requests_count={@pending_group_join_requests_count}
+      root_group_unread_count={@root_group_unread_count}
+    >
       <div class="mx-auto flex-1 max-w-sm space-y-4 px-6 pt-4 pb-4">
         <div class="mb-0 flex justify-center">
           <img
@@ -13,11 +22,11 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             class="h-30 w-30"
           />
         </div>
-        
+
         <div class="text-center">
           <.header>
             <p>{gettext("Log in with password")}</p>
-            
+
             <:subtitle>
               <%= if @current_scope do %>
                 {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
@@ -27,7 +36,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             </:subtitle>
           </.header>
         </div>
-        
+
         <.form
           for={@form}
           id="login_form_password"
@@ -62,7 +71,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             {gettext("Log in")} <span aria-hidden="true">→</span>
           </.button>
         </.form>
-        
+
         <p class="text-center text-sm text-base-content/70">
           <.link navigate={~p"/accounts/log-in"} class="font-medium underline">
             {gettext("Use a magic link instead")}

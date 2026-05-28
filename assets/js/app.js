@@ -1109,7 +1109,6 @@ const nativeIosEditableElementFocused = () => {
 }
 
 const registerNativeIosKeyboardSafeAreaFix = () => {
-  return
   if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "ios") {
     return
   }

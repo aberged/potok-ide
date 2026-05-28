@@ -8,7 +8,16 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_profile={@current_profile}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      pending_invitations_count={@pending_invitations_count}
+      pending_group_join_requests_count={@pending_group_join_requests_count}
+      root_group_unread_count={@root_group_unread_count}
+    >
       <div class="flex h-[calc(100dvh-4rem)] flex-col overflow-y-auto px-4 pt-4">
         <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8">
           <div class="card">

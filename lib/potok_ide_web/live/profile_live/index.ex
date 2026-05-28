@@ -9,7 +9,16 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_profile={@current_profile}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      pending_invitations_count={@pending_invitations_count}
+      pending_group_join_requests_count={@pending_group_join_requests_count}
+      root_group_unread_count={@root_group_unread_count}
+    >
       <div class="space-y-2 px-4 py-4 flex h-[calc(100dvh-4rem)] max-w-3xl mx-auto overflow-y-auto flex-col">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <.header>

@@ -11,7 +11,16 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_profile={@current_profile}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      pending_invitations_count={@pending_invitations_count}
+      pending_group_join_requests_count={@pending_group_join_requests_count}
+      root_group_unread_count={@root_group_unread_count}
+    >
       <div class="space-y-6 px-4 py-4 h-[calc(100dvh-8rem)] overflow-y-auto">
         <div class="text-center">
           <.header>

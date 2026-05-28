@@ -17,7 +17,16 @@ defmodule PotokIdeWeb.RequestLive.Index do
       )
 
     ~H"""
-    <Layouts.app flash={@flash} current_scope={@current_scope}>
+    <Layouts.app
+      flash={@flash}
+      current_scope={@current_scope}
+      current_profile={@current_profile}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      pending_invitations_count={@pending_invitations_count}
+      pending_group_join_requests_count={@pending_group_join_requests_count}
+      root_group_unread_count={@root_group_unread_count}
+    >
       <div class="relative h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
         <.header>
           {gettext("Requests")}

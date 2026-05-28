@@ -31,20 +31,250 @@ defmodule PotokIdeWeb.Layouts do
     default: nil,
     doc: "the current [scope](https://hexdocs.pm/phoenix/scopes.html)"
 
+  attr :current_profile, :map, default: nil, doc: "the current profile when available"
+  attr :current_locale, :string, default: nil, doc: "the active locale"
+  attr :available_locales, :list, default: PotokIdeWeb.Locale.supported_locales()
+  attr :pending_invitations_count, :integer, default: 0
+  attr :pending_group_join_requests_count, :integer, default: 0
+  attr :root_group_unread_count, :integer, default: 0
+
   slot :inner_block, required: true
 
   def app(assigns) do
     ~H"""
-    <main class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center">
-      <div
-        id="main-content"
-        class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center overflow-clip"
-      >
-        {render_slot(@inner_block)}
-      </div>
-    </main>
+    <div class="relative flex min-h-dvh max-h-dvh flex-col overflow-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
+      <nav class="sticky z-100">
+        <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
+          <% profile = @current_profile %>
+          <.header_menu>
+            <%= if @current_scope do %>
+              <div class="mb-4 max-w-full z-50 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
+                {@current_scope.account.email}
+              </div>
+            <% end %>
 
-    <.flash_group flash={@flash} />
+            <div class="mb-4">
+              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+                {gettext("Navigation")}
+              </div>
+
+              <div class="flex flex-col gap-2" data-drawer-nav>
+                <%= if @current_scope do %>
+                  <.link
+                    href={~p"/profiles"}
+                    data-nav-link
+                    data-nav-target="/profiles"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-users" class="size-6" /> {gettext("Profiles")}
+                  </.link>
+                  <.link
+                    href={~p"/groups"}
+                    data-nav-link
+                    data-nav-target="/groups"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-user-group" class="size-6" /> {gettext("Groups")}
+                  </.link>
+                  <.link
+                    href={~p"/invitations"}
+                    data-nav-link
+                    data-nav-target="/invitations"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-inbox-arrow-down" class="size-6" /> {gettext("Invitations")}
+                  </.link>
+                  <.link
+                    href={~p"/requests"}
+                    data-nav-link
+                    data-nav-target="/requests"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-hand-raised" class="size-6" /> {gettext("Requests")}
+                  </.link>
+                <% else %>
+                  <.link
+                    href={~p"/accounts/log-in"}
+                    data-nav-link
+                    data-nav-target="/accounts/log-in"
+                    data-nav-match="exact"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" /> {gettext(
+                      "Log in"
+                    )}
+                  </.link>
+                <% end %>
+              </div>
+            </div>
+
+            <%= if @current_scope do %>
+              <div class="mb-4 border-t border-base-300/70 pt-4">
+                <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+                  {gettext("Account")}
+                </div>
+
+                <div class="flex flex-col gap-2" data-drawer-nav>
+                  <.link
+                    href={~p"/accounts/settings"}
+                    data-nav-link
+                    data-nav-target="/accounts/settings"
+                    data-nav-match="prefix"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-cog-6-tooth" class="size-6" /> {gettext("Settings")}
+                  </.link>
+                  <.link
+                    href={~p"/accounts/log-out"}
+                    method="delete"
+                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" /> {gettext(
+                      "Log out"
+                    )}
+                  </.link>
+                </div>
+              </div>
+            <% end %>
+
+            <div class="border-t border-base-300/70 pt-4">
+              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+                {gettext("Preferences")}
+              </div>
+
+              <div class="space-y-4">
+                <.locale_switcher
+                  current_locale={@current_locale}
+                  available_locales={@available_locales}
+                /> <.theme_toggle />
+              </div>
+            </div>
+          </.header_menu>
+
+          <.link
+            id="nav-root-group-link"
+            href={~p"/"}
+            alt={gettext("Groups")}
+            aria-label={gettext("Groups")}
+            class="relative"
+          >
+            <.icon name="hero-home" class="size-6" />
+            <span
+              id="nav-root-group-unread-badge"
+              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+              hidden={@root_group_unread_count <= 0}
+            >
+              {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
+            </span>
+          </.link>
+          <div class="flex items-right gap-4 items-center ml-auto">
+            <.link
+              id="nav-invitations-link"
+              href={~p"/invitations"}
+              alt={gettext("Invitations")}
+              class="relative"
+              aria-label={gettext("Invitations")}
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-inbox-arrow-down" class="size-6" />
+              <span
+                id="nav-invitations-count-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@pending_invitations_count <= 0}
+              >
+                {if(@pending_invitations_count > 999,
+                  do: "999+",
+                  else: @pending_invitations_count
+                )}
+              </span>
+            </.link>
+            <.link
+              id="nav-requests-link"
+              href={~p"/requests"}
+              alt={gettext("Requests")}
+              class="relative"
+              aria-label={gettext("Requests")}
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-hand-raised" class="size-6" />
+              <span
+                id="nav-requests-count-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@pending_group_join_requests_count <= 0}
+              >
+                {if(@pending_group_join_requests_count > 999,
+                  do: "999+",
+                  else: @pending_group_join_requests_count
+                )}
+              </span>
+            </.link>
+            <.link
+              href={~p"/profiles"}
+              class="flex min-w-0 items-center flex-row gap-3 self-start"
+            >
+              <span class="min-w-0 text-right">
+                <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
+                  Potok
+                </span>
+                <span
+                  id="nav-brand-title"
+                  data-default-title=""
+                  class="block truncate text-sm font-semibold text-base-content"
+                >
+                  <%= if profile do %>
+                    {profile.username}
+                  <% else %>
+                    {gettext("Welcome!")}
+                  <% end %>
+                </span>
+              </span>
+              <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
+                <%= if profile do %>
+                  <img
+                    id="nav-brand-profile-avatar"
+                    src={
+                      if(@current_profile.profile_picture_url not in [nil, ""],
+                        do: @current_profile.profile_picture_url,
+                        else: "/avatar/profile/#{@current_profile.id}"
+                      )
+                    }
+                    alt={if(@current_profile, do: @current_profile.username, else: "Potok")}
+                    class={[
+                      "size-10 rounded-2xl object-cover"
+                    ]}
+                  />
+                <% else %>
+                  <img
+                    id="nav-brand-logo"
+                    src={~p"/images/pwa/icon-512.png"}
+                    width="34"
+                    alt="Potok"
+                    class={["rounded-2xl object-cover"]}
+                  />
+                <% end %>
+              </span>
+            </.link>
+          </div>
+        </div>
+      </nav>
+
+      <div class="relative z-0 flex max-w-screen flex-1 justify-center">
+        <main class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center">
+          <div
+            id="main-content"
+            class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center overflow-clip"
+          >
+            {render_slot(@inner_block)}
+          </div>
+        </main>
+      </div>
+
+      <.flash_group flash={@flash} />
+    </div>
     """
   end
 
