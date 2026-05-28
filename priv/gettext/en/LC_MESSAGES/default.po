@@ -1499,16 +1499,16 @@ msgid "Could not process that image."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Delete Data Values"
-msgstr "Delete value"
+msgstr "Delete Data Values"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1010
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
-msgstr[0] "Delete value"
-msgstr[1] "Delete value"
+msgstr[0] "Deleted 1 data value."
+msgstr[1] "Deleted %{count} data values."
 
 #: lib/potok_ide_web/live/account_live/settings.ex:219
 #, elixir-autogen, elixir-format

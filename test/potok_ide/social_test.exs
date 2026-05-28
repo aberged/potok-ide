@@ -103,7 +103,7 @@ defmodule PotokIde.SocialTest do
 
       {:ok, profile} =
         Social.create_profile_for_account(account, %{
-          username: "uses-api-create-prof",
+          username: "api-create",
           profile_picture_url: nil,
           description: "",
           description_format: :markdown,

@@ -451,7 +451,11 @@ defmodule PotokIde.AccountsTest do
 
     test "raises when unconfirmed account has password set" do
       account = unconfirmed_account_fixture()
-      {1, nil} = Repo.update_all(Account, set: [hashed_password: "hashed"])
+
+      account
+      |> Ecto.Changeset.change(hashed_password: "hashed")
+      |> Repo.update!()
+
       {encoded_token, _hashed_token} = generate_account_magic_link_token(account)
 
       assert_raise RuntimeError, ~r/magic link log in is not allowed/, fn ->

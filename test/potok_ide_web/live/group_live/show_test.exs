@@ -563,6 +563,138 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute direct_group.is_public
     end
 
+    test "shows invite suggestions with avatars and excludes existing members and pending invitees",
+         %{conn: conn} do
+      owner_account = account_fixture()
+      member_account = account_fixture()
+      pending_account = account_fixture()
+      suggested_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "sug-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member_profile} =
+        Social.create_profile_for_account(member_account, %{
+          username: "sug-member",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, pending_profile} =
+        Social.create_profile_for_account(pending_account, %{
+          username: "sug-pending",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, suggested_profile} =
+        Social.create_profile_for_account(suggested_account, %{
+          username: "sug-pick",
+          profile_picture_url: "https://example.com/suggested-profile.png",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      group = create_child_group!(owner_profile, "invite-suggest-group")
+
+      assert {:ok, member_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, member_profile)
+
+      assert {:ok, _accepted_member_invitation} =
+               Social.accept_group_invitation(member_invitation, member_profile)
+
+      assert {:ok, _pending_invitation} =
+               Social.invite_profile_to_group(owner_profile, group, pending_profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      lv
+      |> element("#group-tab-invite-profile")
+      |> render_click()
+
+      lv
+      |> form("#group-invite-form-0", %{"invite" => %{"identifier" => "sug"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-invite-suggestions")
+
+      assert has_element?(
+               lv,
+               "#group-invite-suggestion-#{suggested_profile.id}",
+               suggested_profile.username
+             )
+
+      assert has_element?(
+               lv,
+               "#group-invite-suggestion-#{suggested_profile.id} img[src='https://example.com/suggested-profile.png']"
+             )
+
+      refute has_element?(lv, "#group-invite-suggestion-#{owner_profile.id}")
+      refute has_element?(lv, "#group-invite-suggestion-#{member_profile.id}")
+      refute has_element?(lv, "#group-invite-suggestion-#{pending_profile.id}")
+    end
+
+    test "selecting an invite suggestion fills the invite input", %{conn: conn} do
+      owner_account = account_fixture()
+      suggested_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "sel-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, suggested_profile} =
+        Social.create_profile_for_account(suggested_account, %{
+          username: "sel-pick",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      group = create_child_group!(owner_profile, "invite-select-group")
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      lv
+      |> element("#group-tab-invite-profile")
+      |> render_click()
+
+      lv
+      |> form("#group-invite-form-0", %{"invite" => %{"identifier" => "sel"}})
+      |> render_change()
+
+      lv
+      |> element("#group-invite-suggestion-#{suggested_profile.id}")
+      |> render_click()
+
+      assert has_element?(lv, "#group-invite-identifier-0[value='#{suggested_profile.username}']")
+      refute has_element?(lv, "#group-invite-suggestions")
+    end
+
     test "invites an existing account by email and creates a direct group immediately", %{
       conn: conn
     } do
@@ -1756,11 +1888,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-delete-data-values-button")
       refute has_element?(lv, "#group-panel-values #group-delete-data-values-button")
 
-      lv
-      |> element("#group-delete-data-values-button")
-      |> render_click()
+      result = render_click(lv, "delete_group_data_values")
 
-      assert render(lv) =~ "Deleted 2 data values."
+      assert result =~ "Deleted 2 data values."
       assert Social.count_group_data_values(group) == 0
       assert Social.count_group_values(group) == 1
       assert has_element?(lv, "#group-panel-edit-group")
@@ -2019,7 +2149,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
       refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
-      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+      assert has_element?(root_lv, "#nav-root-group-unread-badge[hidden]")
 
       assert {:ok, _value} =
                Social.create_value(writer_profile, root_group, %{
@@ -2029,7 +2159,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
       refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
-      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+      assert has_element?(root_lv, "#nav-root-group-unread-badge[hidden]")
 
       assert {:ok, _value} =
                Social.create_value(writer_profile, hidden_child_group, %{
@@ -2039,7 +2169,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       refute has_element?(root_lv, "#group-unread-badge-#{root_group.id}")
       refute has_element?(root_lv, "#group-unread-badge-#{child_group.id}")
-      refute has_element?(root_lv, "#nav-root-group-unread-badge")
+      assert has_element?(root_lv, "#nav-root-group-unread-badge[hidden]")
 
       assert {:ok, _value} =
                Social.create_value(writer_profile, child_group, %{

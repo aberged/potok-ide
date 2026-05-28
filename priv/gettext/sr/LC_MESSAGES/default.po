@@ -1491,17 +1491,17 @@ msgid "Could not process that image."
 msgstr "Nije moguće napraviti grupu."
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Delete Data Values"
-msgstr "Obriši vrednost"
+msgstr "Obriši vrednosti podataka"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1010
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
-msgstr[0] "Obriši vrednost"
-msgstr[1] "Obriši vrednost"
-msgstr[2] "Obriši vrednost"
+msgstr[0] "Obrisana je 1 vrednost podataka."
+msgstr[1] "Obrisane su %{count} vrednosti podataka."
+msgstr[2] "Obrisano je %{count} vrednosti podataka."
 
 #: lib/potok_ide_web/live/account_live/settings.ex:219
 #, elixir-autogen, elixir-format

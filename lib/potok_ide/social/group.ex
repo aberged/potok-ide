@@ -67,7 +67,8 @@ defmodule PotokIde.Social.Group do
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
-    |> validate_root_constraints()
+    |> add_check_constraints()
+    |> validate_creation_constraints()
   end
 
   def update_changeset(group, attrs) do
@@ -95,7 +96,7 @@ defmodule PotokIde.Social.Group do
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
-    |> validate_root_constraints()
+    |> add_check_constraints()
   end
 
   defp maybe_force_public_from_root_public(changeset) do
@@ -114,16 +115,17 @@ defmodule PotokIde.Social.Group do
     end
   end
 
-  defp validate_root_constraints(changeset) do
-    is_root = get_field(changeset, :is_root)
+  defp add_check_constraints(changeset) do
+    changeset
+    |> check_constraint(:description_format, name: :groups_description_format_check)
+    |> check_constraint(:home_page, name: :groups_home_page_check)
+    |> check_constraint(:is_public, name: :groups_root_private_check)
+    |> check_constraint(:parent_id, name: :groups_root_parent_check)
+    |> check_constraint(:creator_id, name: :groups_root_creator_check)
+  end
 
-    changeset =
-      changeset
-      |> check_constraint(:description_format, name: :groups_description_format_check)
-      |> check_constraint(:home_page, name: :groups_home_page_check)
-      |> check_constraint(:is_public, name: :groups_root_private_check)
-      |> check_constraint(:parent_id, name: :groups_root_parent_check)
-      |> check_constraint(:creator_id, name: :groups_root_creator_check)
+  defp validate_creation_constraints(changeset) do
+    is_root = get_field(changeset, :is_root)
 
     if is_root do
       changeset

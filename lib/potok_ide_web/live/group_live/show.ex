@@ -380,6 +380,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@is_member and @active_tab == "invite_profile"}
             invite_form={@invite_form}
             invite_form_version={@invite_form_version}
+            invite_profile_suggestions={@invite_profile_suggestions}
             group={@group}
             current_profile={@current_profile}
           />
@@ -443,6 +444,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
+       |> assign(:invite_profile_suggestions, [])
        |> assign(:pending_join_request, nil)
        |> assign(:pending_join_requests, [])
        |> assign(:pending_join_requests_count, 0)
@@ -1084,6 +1086,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, assign(socket, :description_details_open, open == "true")}
   end
 
+  def handle_event(
+        "suggest_invite_profiles",
+        %{"invite" => %{"identifier" => identifier}},
+        socket
+      ) do
+    identifier = String.trim(identifier || "")
+
+    {:noreply,
+     socket
+     |> assign(:invite_form, invite_form(identifier))
+     |> assign(
+       :invite_profile_suggestions,
+       invite_profile_suggestions(
+         socket.assigns.current_profile,
+         socket.assigns.group,
+         identifier
+       )
+     )}
+  end
+
+  def handle_event("select_invite_profile", %{"username" => username}, socket) do
+    username = String.trim(username || "")
+
+    {:noreply,
+     socket
+     |> assign(:invite_form, invite_form(username))
+     |> assign(:invite_profile_suggestions, [])}
+  end
+
+  def handle_event("clear_invite_profile_suggestions", _params, socket) do
+    {:noreply, assign(socket, :invite_profile_suggestions, [])}
+  end
+
   def handle_event("invite", %{"invite" => %{"identifier" => identifier}}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -1093,11 +1128,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       identifier = String.trim(identifier || "")
 
+      socket =
+        socket
+        |> assign(:invite_form, invite_form(identifier))
+        |> assign(
+          :invite_profile_suggestions,
+          invite_profile_suggestions(current_profile, group, identifier)
+        )
+
       case invite_group_identifier(current_profile, group, identifier) do
         {:ok, message} ->
           {:noreply,
            socket
            |> assign(:invite_form, empty_invite_form())
+           |> assign(:invite_profile_suggestions, [])
            |> update(:invite_form_version, &(&1 + 1))
            |> put_flash(:info, message)}
 
@@ -1467,7 +1511,35 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp empty_invite_form do
-    to_form(%{"identifier" => ""}, as: "invite")
+    invite_form()
+  end
+
+  defp invite_form(identifier \\ "") do
+    to_form(%{"identifier" => identifier}, as: "invite")
+  end
+
+  defp invite_profile_suggestions(nil, _group, _identifier), do: []
+
+  defp invite_profile_suggestions(_current_profile, _group, identifier)
+       when identifier in [nil, ""] do
+    []
+  end
+
+  defp invite_profile_suggestions(current_profile, group, identifier) do
+    normalized_identifier = String.trim(identifier)
+
+    cond do
+      normalized_identifier == "" ->
+        []
+
+      String.contains?(normalized_identifier, "@") ->
+        []
+
+      true ->
+        Social.list_invitable_profiles_for_group(current_profile, group, normalized_identifier,
+          limit: 6
+        )
+    end
   end
 
   defp invite_group_identifier(_current_profile, _group, "") do

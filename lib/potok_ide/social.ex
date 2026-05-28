@@ -977,6 +977,47 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  def list_invitable_profiles_for_group(
+        %Profile{} = inviter,
+        %Group{} = group,
+        search_term,
+        opts \\ []
+      )
+      when is_binary(search_term) do
+    normalized_search_term = String.trim(search_term)
+
+    if normalized_search_term == "" do
+      []
+    else
+      limit = Keyword.get(opts, :limit, 6)
+      like_search_term = "%#{normalized_search_term}%"
+      prefix_search_term = "#{normalized_search_term}%"
+
+      from(p in Profile,
+        left_join: gm in GroupMembership,
+        on: gm.profile_id == p.id and gm.group_id == ^group.id,
+        left_join: gi in GroupInvitation,
+        on:
+          gi.invitee_id == p.id and gi.group_id == ^group.id and
+            is_nil(gi.accepted_at),
+        where:
+          p.id != ^inviter.id and is_nil(gm.profile_id) and is_nil(gi.id) and
+            ilike(p.username, ^like_search_term),
+        order_by: [
+          asc:
+            fragment(
+              "CASE WHEN lower(?) LIKE lower(?) THEN 0 ELSE 1 END",
+              p.username,
+              ^prefix_search_term
+            ),
+          asc: p.username
+        ],
+        limit: ^limit
+      )
+      |> Repo.all()
+    end
+  end
+
   def get_profile_by_username(username) when is_binary(username) do
     Repo.get_by(Profile, username: username)
   end

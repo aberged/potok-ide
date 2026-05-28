@@ -1491,17 +1491,17 @@ msgid "Could not process that image."
 msgstr "Nie udało się utworzyć grupy."
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Delete Data Values"
-msgstr "Usuń wartość"
+msgstr "Usuń wartości danych"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1010
-#, elixir-autogen, elixir-format, fuzzy
+#, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
-msgstr[0] "Usuń wartość"
-msgstr[1] "Usuń wartość"
-msgstr[2] "Usuń wartość"
+msgstr[0] "Usunięto 1 wartość danych."
+msgstr[1] "Usunięto %{count} wartości danych."
+msgstr[2] "Usunięto %{count} wartości danych."
 
 #: lib/potok_ide_web/live/account_live/settings.ex:219
 #, elixir-autogen, elixir-format
