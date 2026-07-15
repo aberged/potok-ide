@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
         </.form>
 
         <p class="text-center text-sm text-base-content/70">
-          <.link navigate={~p"/accounts/log-in/password"} class="font-medium underline">
+          <.link navigate={~p"/accounts/log-in"} class="font-medium underline">
             {gettext("Use email and password instead")}
           </.link>
         </p>
@@ -110,7 +110,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
     {:noreply,
      socket
      |> put_flash(:info, info)
-     |> push_navigate(to: ~p"/accounts/log-in")}
+     |> push_navigate(to: ~p"/accounts/log-in/magic-link")}
   end
 
   # defp create_account_from_login_request(email) do

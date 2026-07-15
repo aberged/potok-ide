@@ -25,7 +25,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
 
         <div class="text-center">
           <.header>
-            <p>{gettext("Log in with password")}</p>
+            <p>{gettext("Log in")}</p>
 
             <:subtitle>
               <%= if @current_scope do %>
@@ -40,7 +40,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
         <.form
           for={@form}
           id="login_form_password"
-          action={~p"/accounts/log-in?mode=password"}
+          action={~p"/accounts/log-in"}
           phx-mounted={JS.focus_first()}
         >
           <.input
@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
         </.form>
 
         <p class="text-center text-sm text-base-content/70">
-          <.link navigate={~p"/accounts/log-in"} class="font-medium underline">
+          <.link navigate={~p"/accounts/log-in/magic-link"} class="font-medium underline">
             {gettext("Use a magic link instead")}
           </.link>
         </p>

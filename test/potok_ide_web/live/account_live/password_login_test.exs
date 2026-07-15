@@ -6,10 +6,10 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
 
   describe "password login page" do
     test "renders password login page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in/password")
+      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in")
 
-      assert html =~ "Log in with password"
-      assert html =~ ~p"/accounts/log-in?mode=password"
+      assert html =~ "Log in"
+      assert html =~ ~p"/accounts/log-in"
       assert html =~ "Use a magic link instead"
     end
 
@@ -17,7 +17,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
       {:ok, _lv, html} =
         conn
         |> init_test_session(%{locale: "pl"})
-        |> live(~p"/accounts/log-in/password")
+        |> live(~p"/accounts/log-in")
 
       assert html =~ ~s(<html lang="pl")
       assert html =~ "Zaloguj się"
@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
     end
 
     test "redirects to home with flash message", %{conn: conn} do
-      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/accounts/log-in/password")
+      assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/accounts/log-in")
     end
   end
 end

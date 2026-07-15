@@ -137,8 +137,9 @@ defmodule PotokIdeWeb.Router do
         {PotokIdeWeb.Locale, :mount_locale},
         {PotokIdeWeb.AccountAuth, :redirect_if_authenticated}
       ] do
-      live "/accounts/log-in", AccountLive.Login, :new
+      live "/accounts/log-in", AccountLive.PasswordLogin, :new
       live "/accounts/log-in/password", AccountLive.PasswordLogin, :new
+      live "/accounts/log-in/magic-link", AccountLive.Login, :new
       live "/accounts/log-in/:token", AccountLive.Confirmation, :new
     end
 
