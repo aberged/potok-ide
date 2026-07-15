@@ -143,6 +143,53 @@ const AutoDismissFlash = {
   },
 }
 
+const syncPasswordToggleButton = button => {
+  const field = button.closest("[data-password-field]")
+  const input = field?.querySelector("input")
+
+  if (!input) {
+    return
+  }
+
+  const isVisible = input.type === "text"
+  const showIcon = button.querySelector("[data-password-show-icon]")
+  const hideIcon = button.querySelector("[data-password-hide-icon]")
+
+  button.setAttribute("aria-pressed", isVisible ? "true" : "false")
+  button.setAttribute("aria-label", isVisible ? button.dataset.hideLabel : button.dataset.showLabel)
+
+  showIcon?.classList.toggle("hidden", isVisible)
+  hideIcon?.classList.toggle("hidden", !isVisible)
+}
+
+const syncPasswordToggleButtons = root => {
+  root.querySelectorAll("[data-password-toggle]").forEach(syncPasswordToggleButton)
+}
+
+const installPasswordToggleButtons = () => {
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-password-toggle]")
+
+    if (!button) {
+      return
+    }
+
+    const field = button.closest("[data-password-field]")
+    const input = field?.querySelector("input")
+
+    if (!input || !["password", "text"].includes(input.type)) {
+      return
+    }
+
+    event.preventDefault()
+    input.type = input.type === "password" ? "text" : "password"
+    syncPasswordToggleButton(button)
+  })
+
+  syncPasswordToggleButtons(document)
+  window.addEventListener("phx:page-loading-stop", () => syncPasswordToggleButtons(document))
+}
+
 const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
 const POTOK_PUSH_CHANNEL_ID = "potok-default"
 const POTOK_IOS_PUSH_REGISTRATION_EVENT = "potokNativePushRegistration"
@@ -1486,6 +1533,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+
+installPasswordToggleButtons()
 
 const updateDrawerActiveLinks = () => {
   const pathname = window.location.pathname

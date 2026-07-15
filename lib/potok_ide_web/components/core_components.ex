@@ -306,6 +306,42 @@ defmodule PotokIdeWeb.CoreComponents do
     """
   end
 
+  def input(%{type: "password"} = assigns) do
+    ~H"""
+    <div class="fieldset mb-2">
+      <label>
+        <span :if={@label} class="label mb-1">{@label}</span>
+        <div class="relative" data-password-field>
+          <input
+            type={@type}
+            name={@name}
+            id={@id}
+            value={Phoenix.HTML.Form.normalize_value(@type, @value)}
+            class={[
+              @class || "w-full input pr-11",
+              @errors != [] && (@error_class || "input-error")
+            ]}
+            {@rest}
+          />
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs absolute inset-y-0 right-1 my-auto h-8 min-h-0 rounded-full px-2 text-base-content/60 hover:text-base-content"
+            data-password-toggle
+            data-show-label={gettext("Show password")}
+            data-hide-label={gettext("Hide password")}
+            aria-label={gettext("Show password")}
+            aria-pressed="false"
+          >
+            <.icon name="hero-eye" class="size-5" data-password-show-icon />
+            <.icon name="hero-eye-slash" class="hidden size-5" data-password-hide-icon />
+          </button>
+        </div>
+      </label>
+      <.error :for={msg <- @errors}>{msg}</.error>
+    </div>
+    """
+  end
+
   # All other inputs text, datetime-local, url, password, etc. are handled here...
   def input(assigns) do
     ~H"""
@@ -471,10 +507,11 @@ defmodule PotokIdeWeb.CoreComponents do
   """
   attr :name, :string, required: true
   attr :class, :any, default: "size-4"
+  attr :rest, :global
 
   def icon(%{name: "hero-" <> _} = assigns) do
     ~H"""
-    <span class={[@name, @class]} />
+    <span class={[@name, @class]} {@rest} />
     """
   end
 

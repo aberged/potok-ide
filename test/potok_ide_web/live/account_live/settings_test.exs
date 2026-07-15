@@ -195,6 +195,8 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
 
       assert has_element?(lv, "#password_form")
+      assert has_element?(lv, "#password_form [data-password-toggle]", "")
+      assert has_element?(lv, "#password_form [data-password-toggle] [data-password-show-icon]", "")
     end
   end
 

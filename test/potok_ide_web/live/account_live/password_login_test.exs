@@ -6,11 +6,12 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
 
   describe "password login page" do
     test "renders password login page", %{conn: conn} do
-      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in")
+      {:ok, lv, html} = live(conn, ~p"/accounts/log-in")
 
       assert html =~ "Log in"
       assert html =~ ~p"/accounts/log-in"
       assert html =~ "Use a magic link instead"
+      assert has_element?(lv, "#login_form_password [data-password-toggle]")
     end
 
     test "renders password login page in polish when locale is stored in session", %{conn: conn} do
