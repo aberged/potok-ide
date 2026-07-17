@@ -138,11 +138,28 @@ defmodule PotokIde.GmailToken do
          {:error, {:gmail_token_request_failed, _status, %{"error" => "invalid_grant"}}},
          [{:configured, _configured_refresh_token} | _] = remaining
        ) do
+    maybe_clear_persisted_refresh_token()
+
     Logger.warning(
       "persisted Gmail refresh token was rejected; retrying configured refresh token"
     )
 
     refresh_access_token(config, client_id, client_secret, remaining)
+  end
+
+  defp maybe_retry_refresh_access_token(
+         _config,
+         _client_id,
+         _client_secret,
+         :persisted,
+         {:error, {:gmail_token_request_failed, _status, %{"error" => "invalid_grant"}}},
+         _remaining
+       ) do
+    maybe_clear_persisted_refresh_token()
+
+    {:error,
+     {:gmail_token_request_failed, 400,
+      %{"error" => "invalid_grant", "error_description" => "Persisted refresh token expired or revoked."}}}
   end
 
   defp maybe_retry_refresh_access_token(
@@ -189,6 +206,16 @@ defmodule PotokIde.GmailToken do
   end
 
   defp maybe_store_refresh_token(_body), do: :ok
+
+  defp maybe_clear_persisted_refresh_token do
+    case GmailRefreshToken.delete_all() do
+      {_deleted_count, nil} ->
+        :ok
+
+      other ->
+        Logger.warning("failed to clear persisted Gmail refresh token: #{inspect(other)}")
+    end
+  end
 
   defp present_binary?(value) when is_binary(value), do: String.trim(value) != ""
   defp present_binary?(_value), do: false

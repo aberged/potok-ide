@@ -67,6 +67,37 @@ defmodule PotokIde.GmailTokenTest do
     assert %GmailRefreshToken{refresh_token: "config-refresh"} = GmailRefreshToken.get()
   end
 
+  test "clears the persisted refresh token when it is rejected without fallback" do
+    assert {:ok, %GmailRefreshToken{}} = GmailRefreshToken.upsert("stored-refresh")
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      {:ok, body, conn} = Plug.Conn.read_body(conn)
+
+      assert body =~ "refresh_token=stored-refresh"
+
+      conn
+      |> Plug.Conn.put_status(400)
+      |> Req.Test.json(%{
+        "error" => "invalid_grant",
+        "error_description" => "Token has been expired or revoked."
+      })
+    end)
+
+    assert {:error,
+            {:gmail_token_request_failed, 400,
+             %{
+               "error" => "invalid_grant",
+               "error_description" => "Persisted refresh token expired or revoked."
+             }}} =
+             GmailToken.delivery_config(
+               client_id: "test-client",
+               client_secret: "test-secret",
+               req_options: [plug: {Req.Test, __MODULE__}]
+             )
+
+    assert GmailRefreshToken.get() == nil
+  end
+
   test "exchanges a refresh token for an access token" do
     Req.Test.stub(__MODULE__, fn conn ->
       {:ok, body, conn} = Plug.Conn.read_body(conn)
