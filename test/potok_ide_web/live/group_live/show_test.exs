@@ -641,7 +641,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                lv,
-               "#group-invite-suggestion-#{suggested_profile.id} img[src='https://example.com/suggested-profile.png']"
+               "#group-invite-suggestion-#{suggested_profile.id} img[src^='/avatar/profile/#{suggested_profile.id}']"
              )
 
       refute has_element?(lv, "#group-invite-suggestion-#{owner_profile.id}")
@@ -1240,7 +1240,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                root_lv,
-               "#group-panel-sub-groups img[src='https://example.com/group-avatar.png']"
+               "#group-panel-sub-groups img[src^='/avatar/group/#{child_group.id}']"
              )
 
       {:ok, child_lv, _html} =
@@ -1250,8 +1250,12 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                child_lv,
-               "img[src='https://example.com/group-avatar.png'][alt='pictured-child-group']"
+               "img[src^='/avatar/group/#{child_group.id}'][alt='pictured-child-group']"
              )
+
+      # The avatar route redirects to the external picture.
+      conn = get(conn, "/avatar/group/#{child_group.id}")
+      assert redirected_to(conn) == "https://example.com/group-avatar.png"
     end
 
     test "renders values in chronological order with newest at the bottom", %{conn: conn} do
@@ -1446,7 +1450,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       })
       |> render_submit()
 
-      updated_group = Social.get_group!(group.id)
+      updated_group = Social.load_picture(Social.get_group!(group.id))
 
       assert updated_group.name == "edited-group"
       assert updated_group.description == "after"

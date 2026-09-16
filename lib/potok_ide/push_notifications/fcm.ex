@@ -103,7 +103,26 @@ defmodule PotokIde.PushNotifications.FCM do
     end
   end
 
+  # Google access tokens are valid for ~1h; fetching one per message doubles the
+  # HTTP round trips, so tokens are cached until shortly before they expire.
+  @access_token_expiry_margin_seconds 60
+
   defp fetch_access_token(credentials) do
+    cache_key = {:fcm_access_token, credentials.client_email, credentials.token_url}
+
+    case PotokIde.Cache.get(cache_key) do
+      {:ok, access_token} ->
+        {:ok, access_token}
+
+      :error ->
+        with {:ok, access_token, expires_in} <- request_access_token(credentials) do
+          maybe_cache_access_token(cache_key, access_token, expires_in)
+          {:ok, access_token}
+        end
+    end
+  end
+
+  defp request_access_token(credentials) do
     issued_at = System.system_time(:second)
     assertion = jwt_assertion(credentials, issued_at)
 
@@ -124,6 +143,15 @@ defmodule PotokIde.PushNotifications.FCM do
         {:error, reason}
     end
   end
+
+  # Only responses that state a lifetime are cached.
+  defp maybe_cache_access_token(cache_key, access_token, expires_in)
+       when is_integer(expires_in) and expires_in > @access_token_expiry_margin_seconds do
+    ttl_ms = (expires_in - @access_token_expiry_margin_seconds) * 1000
+    PotokIde.Cache.put(cache_key, access_token, ttl_ms)
+  end
+
+  defp maybe_cache_access_token(_cache_key, _access_token, _expires_in), do: :ok
 
   defp jwt_assertion(credentials, issued_at) do
     header = %{"alg" => "RS256", "typ" => "JWT"}
@@ -235,9 +263,11 @@ defmodule PotokIde.PushNotifications.FCM do
 
   defp normalize_access_token_response(%Req.Response{status: status, body: body})
        when status in 200..299 do
-    case Map.get(normalize_body(body), "access_token") do
+    body = normalize_body(body)
+
+    case Map.get(body, "access_token") do
       access_token when is_binary(access_token) and access_token != "" ->
-        {:ok, access_token}
+        {:ok, access_token, normalize_expires_in(Map.get(body, "expires_in"))}
 
       _value ->
         {:error,
@@ -248,6 +278,17 @@ defmodule PotokIde.PushNotifications.FCM do
   defp normalize_access_token_response(%Req.Response{status: status, body: body}) do
     {:error, {:firebase_auth_error, "#{status}: #{response_error_message(body)}"}}
   end
+
+  defp normalize_expires_in(value) when is_integer(value), do: value
+
+  defp normalize_expires_in(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {int, ""} -> int
+      _ -> nil
+    end
+  end
+
+  defp normalize_expires_in(_value), do: nil
 
   defp normalize_send_response(%Req.Response{status: status}) when status in 200..299, do: :ok
 

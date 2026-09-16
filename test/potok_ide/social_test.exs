@@ -1802,6 +1802,35 @@ defmodule PotokIde.SocialTest do
       assert unread_counts[child_group.id] == 2
       assert unread_counts[grandchild_group.id] == 1
 
+      # The flat root query must agree with the recursive one.
+      assert Social.count_root_group_unread_values(owner_profile) == 2
+      assert Social.count_root_group_unread_values(writer_profile) == 0
+
+      # Root children summary: child_group (non-direct, 2 unread); the writer's
+      # private child is not visible to the owner.
+      assert Social.child_group_unread_summary(owner_profile, root_group) == %{
+               direct: 0,
+               other: 2
+             }
+
+      assert {:ok, _direct_group} =
+               Social.get_or_create_direct_group(writer_profile, owner_profile)
+
+      direct_group = Social.get_or_create_direct_group(writer_profile, owner_profile) |> elem(1)
+
+      assert {:ok, _direct_value} =
+               Social.create_value(writer_profile, direct_group, %{
+                 "content" => "direct unread value",
+                 "content_format" => :markdown
+               })
+
+      assert Social.child_group_unread_summary(owner_profile, root_group) == %{
+               direct: 1,
+               other: 2
+             }
+
+      assert Social.count_root_group_unread_values(owner_profile) == 3
+
       writer_unread_counts =
         Social.list_group_unread_counts(writer_profile, [
           root_group,
@@ -1822,9 +1851,89 @@ defmodule PotokIde.SocialTest do
           grandchild_group
         ])
 
-      assert unread_counts_after_read[root_group.id] == 1
+      assert unread_counts_after_read[root_group.id] == 2
       assert unread_counts_after_read[child_group.id] == 1
       assert unread_counts_after_read[grandchild_group.id] == 1
+      assert Social.count_root_group_unread_values(owner_profile) == 2
+
+      # Marking an already-read group again must not broadcast.
+      Social.subscribe_profile(owner_profile)
+      assert :ok = Social.mark_group_values_read(owner_profile, child_group)
+      refute_receive {:group_unread_counts_updated, _profile_id, _group_id}
+    end
+  end
+
+  describe "list_group_path/1" do
+    test "returns the path from the root down to the group" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "path-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, child_group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "path-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, grandchild_group} =
+        Social.create_group(profile, child_group, %{
+          "name" => "path-grandchild",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert Enum.map(Social.list_group_path(grandchild_group), & &1.id) ==
+               [root_group.id, child_group.id, grandchild_group.id]
+
+      assert Enum.map(Social.list_group_path(root_group), & &1.id) == [root_group.id]
+    end
+  end
+
+  describe "load_picture/1" do
+    test "pictures are excluded from regular queries and loaded on demand" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "pic-owner",
+          profile_picture_url: "https://example.com/pic.png",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert is_nil(Social.get_profile!(profile.id).profile_picture_url)
+
+      assert Social.load_picture(Social.get_profile!(profile.id)).profile_picture_url ==
+               "https://example.com/pic.png"
+
+      root_group = Social.get_root_group!()
+
+      {:ok, group} =
+        Social.create_group(profile, root_group, %{
+          "name" => "pic-group",
+          "group_picture_url" => "data:image/png;base64,QUJD",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert is_nil(Social.get_group!(group.id).group_picture_url)
+
+      assert Social.load_picture(Social.get_group!(group.id)).group_picture_url ==
+               "data:image/png;base64,QUJD"
     end
   end
 end

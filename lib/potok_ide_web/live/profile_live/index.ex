@@ -35,16 +35,14 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           <ProfileComponents.profile_identity
             profile={@current_profile}
             title={gettext("Current profile:")}
-          />
-          <.icon name="hero-check-badge" class="size-4 ml-auto" />
+          /> <.icon name="hero-check-badge" class="size-4 ml-auto" />
         </div>
 
         <div :if={@default_profile} class="alert">
           <ProfileComponents.profile_identity
             profile={@default_profile}
             title={gettext("Default profile:")}
-          />
-          <.icon name="hero-globe-alt" class="size-4 ml-auto" />
+          /> <.icon name="hero-globe-alt" class="size-4 ml-auto" />
         </div>
 
         <div :if={@profile_invitations != []} id="shared-profile-invitations" class="space-y-3">
@@ -81,9 +79,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
         <h3 class="card-title mb-4">{gettext("Your profiles")}</h3>
 
-        <div :if={@profiles == []} class="text-base-content/70">
-          {gettext("No profiles yet.")}
-        </div>
+        <div :if={@profiles == []} class="text-base-content/70">{gettext("No profiles yet.")}</div>
 
         <ul :if={@profiles != []} class="space-y-2">
           <li :for={profile <- @profiles} class="flex items-center justify-between gap-3">
@@ -117,12 +113,9 @@ defmodule PotokIdeWeb.ProfileLive.Index do
         </ul>
 
         <div class="mt-4 flex flex-row justify-between">
-          <.button navigate={~p"/groups"}>
-            <.icon name="hero-home" class="size-4" />
-          </.button>
+          <.button navigate={~p"/groups"}><.icon name="hero-home" class="size-4" /></.button>
           <.button navigate={~p"/profiles/new"}>
-            <.icon name="hero-plus" class="size-4" />
-            {gettext("Create profile")}
+            <.icon name="hero-plus" class="size-4" /> {gettext("Create profile")}
           </.button>
         </div>
       </div>
@@ -278,14 +271,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
-  defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
-    case String.trim(url) do
-      "" -> nil
-      trimmed_url -> trimmed_url
-    end
-  end
-
-  defp profile_picture_url(_), do: nil
+  defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 
   defp pending_profile_invitations(nil), do: []
   defp pending_profile_invitations(profile), do: Social.list_pending_profile_invitations(profile)

@@ -14,7 +14,9 @@ defmodule PotokIde.Social.Profile do
 
   schema "profiles" do
     field :username, :string
-    field :profile_picture_url, :string
+    # Pictures can be ~1 MB data URLs; never load them with regular queries.
+    # Use `PotokIde.Social.load_picture/1` when the raw value is needed (edit forms, avatar route).
+    field :profile_picture_url, :string, load_in_query: false
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
     field :sharing, Ecto.Enum, values: @sharing_modes, default: :unique

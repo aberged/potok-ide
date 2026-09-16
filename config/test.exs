@@ -3,6 +3,9 @@ import Config
 # Only in tests, remove the complexity from the password hashing algorithm
 config :pbkdf2_elixir, :rounds, 1
 
+# Deliver push notifications inline so tests can assert on the requests.
+config :potok_ide, async_notifications: false
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used
@@ -12,6 +15,7 @@ config :potok_ide, PotokIde.Repo,
   username: "postgres",
   password: "postgres",
   hostname: "localhost",
+  port: String.to_integer(System.get_env("PGPORT") || "5432"),
   database: "potok_ide_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
   pool_size: System.schedulers_online() * 2

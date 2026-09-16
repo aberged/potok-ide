@@ -45,6 +45,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     <p class="mb-4 text-sm text-base-content/60">
       {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
     </p>
+
     <.input
       field={@form[:profile_picture_url]}
       id={@form[:profile_picture_url].id}
@@ -66,31 +67,30 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="space-y-1">
-          <p class="text-sm font-semibold text-base-content">
-            {gettext("Upload from your device")}
-          </p>
+          <p class="text-sm font-semibold text-base-content">{gettext("Upload from your device")}</p>
+
           <p class="text-xs leading-5 text-base-content/70">
             {gettext("Images are resized to fit within 200 x 200 and files over 5 MB are rejected.")}
           </p>
         </div>
+
         <div class="flex flex-wrap gap-2">
           <label
             for={"#{@form[:profile_picture_url].id}-file"}
             class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-base-content px-4 py-2 text-sm font-medium text-base-100 transition hover:opacity-90"
           >
-            <.icon name="hero-photo" class="size-5" />
-            {gettext("Choose image")}
+            <.icon name="hero-photo" class="size-5" /> {gettext("Choose image")}
           </label>
           <button
             type="button"
             data-profile-picture-clear
             class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm font-medium text-base-content transition hover:border-base-content/30 hover:bg-base-100/80"
           >
-            <.icon name="hero-x-mark" class="size-5" />
-            {gettext("Clear image")}
+            <.icon name="hero-x-mark" class="size-5" /> {gettext("Clear image")}
           </button>
         </div>
       </div>
+
       <input
         id={"#{@form[:profile_picture_url].id}-file"}
         type="file"
@@ -104,10 +104,10 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         role="status"
         aria-live="polite"
       >
-        <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <span></span>
+        <.icon name="hero-exclamation-circle" class="size-5 shrink-0" /> <span></span>
       </p>
     </div>
+
     <%= if preview_url = profile_picture_url(@form[:profile_picture_url].value) do %>
       <div class="mb-4 flex items-center gap-4 rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm">
         <div class="flex size-[72px] items-center justify-center overflow-hidden rounded-2xl border border-base-300/70 bg-base-200">
@@ -117,11 +117,13 @@ defmodule PotokIdeWeb.ProfileLive.Components do
             class="h-full w-full object-cover"
           />
         </div>
+
         <p class="text-sm text-base-content/70">
           {gettext("Preview of the current profile picture value.")}
         </p>
       </div>
     <% end %>
+
     <.input
       :if={false}
       field={@form[:description_format]}
@@ -324,8 +326,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
     end
   end
 
-  def profile_picture_url(%{profile_picture_url: url}) when is_binary(url),
-    do: profile_picture_url(url)
+  def profile_picture_url(%{id: _} = profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 
   def profile_picture_url(_), do: nil
 end

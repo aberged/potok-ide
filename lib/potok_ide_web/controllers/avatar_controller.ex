@@ -4,46 +4,79 @@ defmodule PotokIdeWeb.AvatarController do
   require Logger
 
   alias PotokIde.Social
-  alias PotokIde.Repo
+
+  @cache_control "public, max-age=86400"
+  # Generated initials PNGs are cached in memory so ImageMagick runs once per name.
+  @initials_cache_ttl :timer.hours(24)
 
   def profile(conn, %{"id" => id}) do
-    case Repo.get(Social.Profile, id) do
-      nil ->
-        send_resp(conn, 404, "")
+    id
+    |> parse_id()
+    |> case do
+      {:ok, id} -> Social.get_profile_avatar_source(id)
+      :error -> nil
+    end
+    |> serve_avatar(conn)
+  end
 
-      profile ->
-        case decode_base64_avatar(profile.profile_picture_url) do
-          {:ok, image_data, mime_type} ->
-            conn
-            |> put_resp_header("content-type", mime_type)
-            |> put_resp_header("cache-control", "public, max-age=86400")
-            |> send_resp(200, image_data)
+  def group(conn, %{"id" => id}) do
+    id
+    |> parse_id()
+    |> case do
+      {:ok, id} -> Social.get_group_avatar_source(id)
+      :error -> nil
+    end
+    |> serve_avatar(conn)
+  end
 
-          :error ->
-            {image_data, content_type} = generate_initials_avatar(profile.username)
+  defp serve_avatar(nil, conn), do: send_resp(conn, 404, "")
 
-            conn
-            |> put_resp_header("content-type", content_type)
-            |> put_resp_header("cache-control", "public, max-age=86400")
-            |> send_resp(200, image_data)
+  defp serve_avatar(%{name: name, picture_url: picture_url}, conn) do
+    trimmed = picture_url && String.trim(picture_url)
+
+    cond do
+      is_binary(trimmed) and String.starts_with?(trimmed, "data:") ->
+        case parse_data_url(trimmed) do
+          {:ok, image_data, mime_type} -> send_image(conn, image_data, mime_type)
+          :error -> send_initials(conn, name)
         end
+
+      is_binary(trimmed) and String.starts_with?(trimmed, ["http://", "https://"]) ->
+        conn
+        |> put_resp_header("cache-control", @cache_control)
+        |> redirect(external: trimmed)
+
+      true ->
+        send_initials(conn, name)
     end
   end
 
-  defp decode_base64_avatar(nil), do: :error
-  defp decode_base64_avatar(""), do: :error
+  defp send_initials(conn, name) do
+    {image_data, content_type} =
+      PotokIde.Cache.fetch({:initials_avatar, name}, @initials_cache_ttl, fn ->
+        generate_initials_avatar(name)
+      end)
 
-  defp decode_base64_avatar(url) when is_binary(url) do
-    trimmed = String.trim(url)
+    send_image(conn, image_data, content_type)
+  end
 
-    if String.starts_with?(trimmed, "data:") do
-      parse_data_url(trimmed)
-    else
-      :error
+  defp send_image(conn, image_data, mime_type) do
+    conn
+    |> put_resp_header("content-type", mime_type)
+    |> put_resp_header("cache-control", @cache_control)
+    |> send_resp(200, image_data)
+  end
+
+  defp parse_id(id) when is_integer(id), do: {:ok, id}
+
+  defp parse_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {int, ""} -> {:ok, int}
+      _ -> :error
     end
   end
 
-  defp decode_base64_avatar(_), do: :error
+  defp parse_id(_), do: :error
 
   defp parse_data_url(data_url) do
     case String.split(data_url, ",", parts: 2) do

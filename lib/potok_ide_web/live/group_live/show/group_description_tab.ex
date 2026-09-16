@@ -25,6 +25,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
         >
           <p class="p-2">{gettext("This group has no description yet.")}</p>
+
           <div class="text-center opacity-85 overflow-hidden rounded-4xl">
             <img
               class="pointer-events-none inline-block align-bottom"
@@ -85,7 +86,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     Jason.encode!(%{
       id: current_profile.id,
       username: current_profile.username,
-      profile_picture_url: current_profile.profile_picture_url,
+      profile_picture_url: PotokIdeWeb.Avatars.profile_avatar_url(current_profile),
       description: current_profile.description,
       description_format: current_profile.description_format,
       sharing: current_profile.sharing,

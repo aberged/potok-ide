@@ -236,12 +236,7 @@ defmodule PotokIdeWeb.Layouts do
                 <%= if profile do %>
                   <img
                     id="nav-brand-profile-avatar"
-                    src={
-                      if(@current_profile.profile_picture_url not in [nil, ""],
-                        do: @current_profile.profile_picture_url,
-                        else: "/avatar/profile/#{@current_profile.id}"
-                      )
-                    }
+                    src={PotokIdeWeb.Avatars.profile_avatar_url(@current_profile)}
                     alt={if(@current_profile, do: @current_profile.username, else: "Potok")}
                     class={[
                       "size-10 rounded-2xl object-cover"
@@ -272,7 +267,6 @@ defmodule PotokIdeWeb.Layouts do
           </div>
         </main>
       </div>
-
       <.flash_group flash={@flash} />
     </div>
     """
@@ -291,9 +285,7 @@ defmodule PotokIdeWeb.Layouts do
   def flash_group(assigns) do
     ~H"""
     <div id={@id} aria-live="polite">
-      <.flash kind={:info} flash={@flash} />
-      <.flash kind={:error} flash={@flash} />
-
+      <.flash kind={:info} flash={@flash} /> <.flash kind={:error} flash={@flash} />
       <.flash
         id="client-error"
         kind={:info}
@@ -332,7 +324,6 @@ defmodule PotokIdeWeb.Layouts do
     ~H"""
     <div class="card relative inline-flex w-full max-w-[11rem] flex-row items-center rounded-full border-2 border-base-300 bg-base-300 sm:w-auto">
       <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
-
       <button
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
@@ -340,7 +331,6 @@ defmodule PotokIdeWeb.Layouts do
       >
         <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
-
       <button
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
@@ -348,7 +338,6 @@ defmodule PotokIdeWeb.Layouts do
       >
         <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
-
       <button
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
@@ -411,7 +400,6 @@ defmodule PotokIdeWeb.Layouts do
     ~H"""
     <div id={"#{@id}-container"} class="drawer w-auto flex-none" phx-hook="HeaderDrawer">
       <input id={@id} type="checkbox" class="drawer-toggle" />
-
       <div class="drawer-content">
         <label
           for={@id}
@@ -427,7 +415,6 @@ defmodule PotokIdeWeb.Layouts do
           aria-label={gettext("close")}
           class="drawer-overlay bg-base-content/25 backdrop-blur-[2px]"
         />
-
         <div class="min-h-full w-[min(18rem,calc(100vw-1.25rem))] sm:w-80 lg:w-96 border-r border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">
           <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
             <div>
@@ -482,7 +469,6 @@ defmodule PotokIdeWeb.Layouts do
         <span class="sr-only">{@label || gettext("Actions")}</span>
         <.icon name={@icon} class="size-5" />
       </button>
-
       <div
         tabindex="0"
         data-dropdown-content

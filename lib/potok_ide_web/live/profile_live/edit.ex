@@ -92,7 +92,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
 
     case parse_profile_id(raw_id) do
       {:ok, profile_id} ->
-        case Social.get_profile_for_account(account, profile_id) do
+        case Social.load_picture(Social.get_profile_for_account(account, profile_id)) do
           nil ->
             {:ok,
              socket

@@ -1,6 +1,8 @@
 defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
+  alias PotokIdeWeb.Avatars
+
   alias PotokIde.Social
   alias PotokIde.UTF8
 
@@ -116,31 +118,30 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     >
       <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div class="space-y-1">
-          <p class="text-sm font-semibold text-base-content">
-            {gettext("Upload from your device")}
-          </p>
+          <p class="text-sm font-semibold text-base-content">{gettext("Upload from your device")}</p>
+
           <p class="text-xs leading-5 text-base-content/70">
             {gettext("Images are resized to fit within 200 x 200 and files over 5 MB are rejected.")}
           </p>
         </div>
+
         <div class="flex flex-wrap gap-2">
           <label
             for={"#{@field.id}-file"}
             class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-base-content px-4 py-2 text-sm font-medium text-base-100 transition hover:opacity-90"
           >
-            <.icon name="hero-photo" class="size-5" />
-            {gettext("Choose image")}
+            <.icon name="hero-photo" class="size-5" /> {gettext("Choose image")}
           </label>
           <button
             type="button"
             data-group-picture-clear
             class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm font-medium text-base-content transition hover:border-base-content/30 hover:bg-base-100/80"
           >
-            <.icon name="hero-x-mark" class="size-5" />
-            {gettext("Clear image")}
+            <.icon name="hero-x-mark" class="size-5" /> {gettext("Clear image")}
           </button>
         </div>
       </div>
+
       <input
         id={"#{@field.id}-file"}
         type="file"
@@ -154,10 +155,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         role="status"
         aria-live="polite"
       >
-        <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <span></span>
+        <.icon name="hero-exclamation-circle" class="size-5 shrink-0" /> <span></span>
       </p>
     </div>
+
     <%= if preview_url = group_picture_url(@field.value) do %>
       <div class="mb-4 flex items-center gap-4 rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm">
         <div class="flex size-[72px] items-center justify-center overflow-hidden rounded-2xl border border-base-300/70 bg-base-200">
@@ -167,11 +168,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             class="h-full w-full object-cover"
           />
         </div>
+
         <p class="text-sm text-base-content/70">
           {gettext("Preview of the current group picture value.")}
         </p>
       </div>
     <% end %>
+
     <script :type={Phoenix.LiveView.ColocatedHook} name=".GroupPicturePicker">
       const supportedOutputTypes = new Set(["image/jpeg", "image/png", "image/webp"])
 
@@ -660,13 +663,27 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div class={[@class, "ql-snow chat-show", @content_format_class]}>
-      {render_formatted_content(%{
-        content: @content,
-        content_format: @content_format,
-        uses_api: @uses_api
-      })}
+      {cached_formatted_content(@content, @content_format, @uses_api)}
     </div>
     """
+  end
+
+  # Markdown parsing + sanitizing is pure in (content, format, uses_api) and
+  # runs on every render of every streamed value, so the result is memoized.
+  @formatted_content_cache_ttl :timer.hours(1)
+
+  defp cached_formatted_content(content, content_format, uses_api) do
+    key =
+      {:formatted_content,
+       :crypto.hash(:sha256, :erlang.term_to_binary({content, content_format, uses_api}))}
+
+    PotokIde.Cache.fetch(key, @formatted_content_cache_ttl, fn ->
+      render_formatted_content(%{
+        content: content,
+        content_format: content_format,
+        uses_api: uses_api
+      })
+    end)
   end
 
   attr :value, :map, required: true
@@ -935,16 +952,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end
   end
 
-  defp profile_picture_url(%{profile_picture_url: url, id: id}) when is_binary(url) do
-    case String.trim(url) do
-      "" -> "/avatar/profile/#{id}"
-      trimmed_url -> trimmed_url
-    end
-  end
-
-  defp profile_picture_url(%{id: id}), do: "/avatar/profile/#{id}"
-
-  defp profile_picture_url(_), do: nil
+  defp profile_picture_url(profile), do: Avatars.profile_avatar_url(profile)
 
   defp group_identity_picture_url(%{is_direct: true} = group, current_profile) do
     case direct_group_other_member(group, current_profile) do
@@ -989,6 +997,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end
   end
 
+  # Form preview: the field value is the raw URL/data URL the user entered.
   defp group_picture_url(url) when is_binary(url) do
     case String.trim(url) do
       "" -> nil
@@ -996,9 +1005,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end
   end
 
-  defp group_picture_url(%{group_picture_url: url}) when is_binary(url),
-    do: group_picture_url(url)
-
+  defp group_picture_url(%{id: _} = group), do: Avatars.group_avatar_url(group)
   defp group_picture_url(_), do: nil
 
   defp direct_group_other_member(%{members: members}, %{id: current_profile_id}) do

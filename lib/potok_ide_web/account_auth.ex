@@ -69,30 +69,33 @@ defmodule PotokIdeWeb.AccountAuth do
   def fetch_current_scope_for_account(conn, _opts) do
     with {token, conn} <- ensure_account_token(conn),
          {account, token_inserted_at} <- Accounts.get_account_by_session_token(token) do
-      current_profile = current_profile_for_account(account)
-
       conn
       |> assign(:current_scope, Scope.for_account(account))
-      |> assign(:current_profile, current_profile)
-      |> assign(
-        :pending_invitations_count,
-        pending_invitations_count_for_profile(current_profile)
-      )
-      |> assign(
-        :pending_group_join_requests_count,
-        pending_group_join_requests_count_for_profile(current_profile)
-      )
-      |> assign(:root_group_unread_count, root_group_unread_count_for_profile(current_profile))
+      |> assign(:current_profile, current_profile_for_account(account))
       |> maybe_reissue_account_session_token(account, token_inserted_at)
     else
       nil ->
         conn
         |> assign(:current_scope, Scope.for_account(nil))
         |> assign(:current_profile, nil)
-        |> assign(:pending_invitations_count, 0)
-        |> assign(:pending_group_join_requests_count, 0)
-        |> assign(:root_group_unread_count, 0)
     end
+  end
+
+  @doc """
+  Assigns the navigation badge counters (pending invitations, join requests,
+  root unread). These cost several queries, so they are only computed for
+  pages that render the app layout, not on every request.
+  """
+  def assign_nav_counts(conn, _opts) do
+    current_profile = conn.assigns[:current_profile]
+
+    conn
+    |> assign(:pending_invitations_count, pending_invitations_count_for_profile(current_profile))
+    |> assign(
+      :pending_group_join_requests_count,
+      pending_group_join_requests_count_for_profile(current_profile)
+    )
+    |> assign(:root_group_unread_count, root_group_unread_count_for_profile(current_profile))
   end
 
   defp ensure_account_token(conn) do
@@ -343,7 +346,7 @@ defmodule PotokIdeWeb.AccountAuth do
   defp root_group_unread_count_for_profile(nil), do: 0
 
   defp root_group_unread_count_for_profile(profile),
-    do: Social.count_group_unread_values(profile, Social.get_root_group!())
+    do: Social.count_root_group_unread_values(profile)
 
   @doc "Returns the path to redirect to after log in."
   # the account was already logged in, redirect to settings

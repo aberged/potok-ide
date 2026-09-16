@@ -100,5 +100,70 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       [content_type] = get_resp_header(conn, "content-type")
       assert content_type in ["image/png", "image/svg+xml"]
     end
+
+    test "redirects to external picture urls", %{conn: conn, profile: profile} do
+      changeset =
+        Social.Profile.changeset(profile, %{profile_picture_url: "https://example.com/a.png"})
+
+      {:ok, updated_profile} = Repo.update(changeset)
+
+      conn = get(conn, ~p"/avatar/profile/#{updated_profile.id}")
+      assert redirected_to(conn) == "https://example.com/a.png"
+      assert get_resp_header(conn, "cache-control") == ["public, max-age=86400"]
+    end
+
+    test "returns 404 for a malformed id", %{conn: conn} do
+      conn = get(conn, ~p"/avatar/profile/not-a-number")
+      assert response(conn, 404)
+    end
+  end
+
+  describe "GET /avatar/group/:id" do
+    setup do
+      account = PotokIde.AccountsFixtures.account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "avatar-grp-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(profile, Social.get_root_group!(), %{
+          "name" => "avatar-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      %{group: group}
+    end
+
+    test "returns 404 for non-existent group", %{conn: conn} do
+      conn = get(conn, ~p"/avatar/group/99999")
+      assert response(conn, 404)
+    end
+
+    test "returns initials avatar when the group has no picture", %{conn: conn, group: group} do
+      conn = get(conn, ~p"/avatar/group/#{group.id}")
+      assert response(conn, 200)
+      [content_type] = get_resp_header(conn, "content-type")
+      assert content_type in ["image/png", "image/svg+xml"]
+    end
+
+    test "decodes base64 picture data", %{conn: conn, group: group} do
+      data_url = "data:image/png;base64," <> Base.encode64("fake-png")
+
+      {:ok, updated_group} =
+        group |> Ecto.Changeset.change(group_picture_url: data_url) |> Repo.update()
+
+      conn = get(conn, ~p"/avatar/group/#{updated_group.id}")
+      assert response(conn, 200)
+      assert get_resp_header(conn, "content-type") == ["image/png"]
+      assert conn.resp_body == "fake-png"
+    end
   end
 end

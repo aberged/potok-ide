@@ -440,7 +440,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:value_parent_options, [])
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
-       |> assign(:edit_group_form, edit_group_form(group))
+       |> assign(:edit_group_form, edit_group_form(group, active_tab))
        |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
@@ -481,6 +481,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:active_tab, active_tab)
        |> assign(:sub_groups_kind, sub_groups_kind)
        |> assign(:children_pagination, default_pagination(@children_page_size))
+       |> maybe_reload_edit_group_form(active_tab)
        |> load_group_data(socket.assigns.group, active_tab)}
     end
   end
@@ -511,14 +512,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
     else
       case Social.create_value(current_profile, group, normalize_select_nil(attrs, "parent_id")) do
-        {:ok, _value} ->
+        {:ok, value} ->
           socket =
             socket
             |> assign(:active_tab, "values")
             |> assign(:new_value_form, empty_new_value_form())
-            # |> put_flash(:info, gettext("Value posted."))
-            |> refresh_group_data()
-            |> push_event("scroll_values_to_latest", %{})
+            |> apply_value_created(value.id)
 
           {:noreply, socket}
 
@@ -544,9 +543,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             socket
             |> assign(:active_tab, socket.assigns.active_tab || "values")
             |> assign(:new_value_form, empty_new_value_form())
-            # |> put_flash(:info, gettext("Value posted."))
-            |> refresh_group_data()
-            |> push_event("new_data_value", value_payload(value))
+            |> announce_new_data_value(value)
+            |> apply_value_created(value.id)
 
           {:noreply, socket}
 
@@ -577,7 +575,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           socket =
             socket
             |> assign(:group, updated_group)
-            |> assign(:edit_group_form, edit_group_form(updated_group))
+            |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
             |> refresh_group_data()
 
           {:reply,
@@ -680,12 +678,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       value ->
         case Social.update_value(current_profile, value, attrs) do
-          {:ok, _updated_value} ->
+          {:ok, updated_value} ->
             {:noreply,
              socket
              |> put_flash(:info, gettext("Value updated."))
-             |> refresh_group_data()
-             |> clear_edit_value()}
+             |> assign(:editing_value_id, nil)
+             |> assign(:edit_value_form, nil)
+             |> apply_value_updated(updated_value.id)}
 
           {:error, :not_value_creator} ->
             {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
@@ -992,7 +991,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply,
            socket
            |> assign(:group, updated_group)
-           |> assign(:edit_group_form, edit_group_form(updated_group))
+           |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
            |> put_flash(:info, gettext("Group updated."))
            |> refresh_group_data()}
 
@@ -1221,6 +1220,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:value_created, group_id, value_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_created(socket, value_id)}
+  end
+
+  def handle_info({:value_created, _group_id, _value_id}, socket), do: {:noreply, socket}
+
+  def handle_info({:value_updated, group_id, value_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_updated(socket, value_id)}
+  end
+
+  def handle_info({:value_updated, _group_id, _value_id}, socket), do: {:noreply, socket}
+
+  def handle_info({:value_deleted, group_id, value_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_deleted(socket, value_id)}
+  end
+
+  def handle_info({:value_deleted, _group_id, _value_id}, socket), do: {:noreply, socket}
+
   def handle_info({:group_deleted, group_id, parent_id}, socket)
       when socket.assigns.group.id == group_id do
     {:noreply,
@@ -1271,10 +1291,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
-     |> assign(
-       :root_group_unread_count,
-       Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
-     )
+     |> assign_root_group_unread_count()
      |> assign_group_unread_counts()
      |> maybe_push_root_group_unread_count()}
   end
@@ -1348,11 +1365,34 @@ defmodule PotokIdeWeb.GroupLive.Show do
     load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
   end
 
+  # Only re-render the members and values whose online indicator actually
+  # changed; a presence diff would otherwise re-render every streamed item.
   defp refresh_group_presence(socket) do
+    previous_online_ids = socket.assigns.online_profile_ids
+    online_ids = Social.list_online_profile_ids_for_group(socket.assigns.group)
+
+    changed_profile_ids =
+      MapSet.union(
+        MapSet.difference(previous_online_ids, online_ids),
+        MapSet.difference(online_ids, previous_online_ids)
+      )
+
     socket
-    |> assign(:online_profile_ids, Social.list_online_profile_ids_for_group(socket.assigns.group))
-    |> restream_members()
-    |> restream_loaded_values()
+    |> assign(:online_profile_ids, online_ids)
+    |> restream_members_for_profiles(changed_profile_ids)
+    |> restream_values_for_creators(changed_profile_ids)
+  end
+
+  defp restream_members_for_profiles(socket, profile_ids) do
+    socket.assigns.loaded_members
+    |> Enum.filter(&MapSet.member?(profile_ids, &1.id))
+    |> Enum.reduce(socket, fn member, acc -> stream_insert(acc, :members, member) end)
+  end
+
+  defp restream_values_for_creators(socket, profile_ids) do
+    socket.assigns.loaded_values
+    |> Enum.filter(&MapSet.member?(profile_ids, &1.creator_id))
+    |> Enum.reduce(socket, fn value, acc -> stream_insert(acc, :values, value) end)
   end
 
   defp sync_group_presence(socket) do
@@ -1402,6 +1442,90 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       socket
     end
+  end
+
+  # Incremental value updates. These are idempotent so the acting LiveView and
+  # the PubSub broadcast it also receives can both apply them safely.
+  defp apply_value_created(socket, value_id) do
+    group = socket.assigns.group
+    active_tab = socket.assigns.active_tab
+
+    # Unread badges are refreshed by the `group_unread_counts_updated` broadcast
+    # that Social sends to every member right after the value broadcast.
+    case Social.get_value_for_display(value_id) do
+      nil ->
+        socket
+
+      %Value{is_data: true} = value ->
+        if needs_latest_data_value_id?(group, active_tab) or active_tab == "values" do
+          announce_new_data_value(socket, value)
+        else
+          socket
+        end
+
+      %Value{} = value ->
+        if needs_values?(group, active_tab) and
+             is_nil(find_value(socket.assigns.loaded_values, value.id)) do
+          socket
+          |> assign(:loaded_values, socket.assigns.loaded_values ++ [value])
+          |> update(:values_pagination, &bump_pagination(&1, 1))
+          |> stream_insert(:values, value)
+          |> maybe_mark_group_values_read(group, active_tab)
+          |> push_event("scroll_values_to_latest", %{})
+        else
+          socket
+        end
+    end
+  end
+
+  defp apply_value_updated(socket, value_id) do
+    with %Value{} <- find_value(socket.assigns.loaded_values, value_id),
+         %Value{} = value <- Social.get_value_for_display(value_id) do
+      loaded_values =
+        Enum.map(socket.assigns.loaded_values, fn
+          %{id: ^value_id} -> value
+          other -> other
+        end)
+
+      socket
+      |> assign(:loaded_values, loaded_values)
+      |> stream_insert(:values, value)
+    else
+      _ -> socket
+    end
+  end
+
+  defp apply_value_deleted(socket, value_id) do
+    socket =
+      if socket.assigns.editing_value_id == value_id do
+        socket
+        |> assign(:editing_value_id, nil)
+        |> assign(:edit_value_form, nil)
+      else
+        socket
+      end
+
+    case find_value(socket.assigns.loaded_values, value_id) do
+      nil -> socket
+      value -> remove_value(socket, value)
+    end
+  end
+
+  defp announce_new_data_value(socket, %Value{} = value) do
+    if socket.assigns.latest_data_value_id == value.id do
+      socket
+    else
+      socket
+      |> assign(:latest_data_value_id, value.id)
+      |> push_event("new_data_value", value_payload(value))
+    end
+  end
+
+  defp bump_pagination(pagination, delta) do
+    pagination
+    |> Map.update!(:loaded_count, &max(&1 + delta, 0))
+    |> Map.update!(:total_count, &max(&1 + delta, 0))
+    |> then(fn p -> Map.put(p, :has_more?, p.loaded_count < p.total_count) end)
   end
 
   defp value_payload(%Value{} = value, creator_username \\ nil) do
@@ -1464,18 +1588,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> stream_delete(:values, value)
   end
 
-  defp restream_members(socket) do
-    Enum.reduce(socket.assigns.loaded_members, socket, fn member, acc ->
-      stream_insert(acc, :members, member)
-    end)
-  end
-
-  defp restream_loaded_values(socket) do
-    Enum.reduce(socket.assigns.loaded_values, socket, fn value, acc ->
-      stream_insert(acc, :values, value)
-    end)
-  end
-
   defp restream_values(socket, value_ids) do
     value_ids
     |> Enum.reject(&is_nil/1)
@@ -1506,9 +1618,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
     )
   end
 
-  defp edit_group_form(group) do
-    to_form(Group.update_changeset(group, %{}))
+  # The picture column is not loaded by regular queries; the edit form is the
+  # only place that needs the raw value, so it is fetched just for that tab.
+  defp edit_group_form(group, "edit_group"),
+    do: to_form(Group.update_changeset(Social.load_picture(group), %{}))
+
+  defp edit_group_form(group, _active_tab), do: to_form(Group.update_changeset(group, %{}))
+
+  defp maybe_reload_edit_group_form(socket, "edit_group") do
+    if socket.assigns.active_tab == "edit_group" do
+      socket
+    else
+      assign(socket, :edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
+    end
   end
+
+  defp maybe_reload_edit_group_form(socket, _active_tab), do: socket
 
   defp empty_invite_form do
     invite_form()
@@ -1815,35 +1940,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
+    current_profile = socket.assigns.current_profile
     groups = [group | Map.get(socket.assigns, :loaded_children, [])]
 
-    group_unread_counts = Social.list_group_unread_counts(socket.assigns.current_profile, groups)
-
-    visible_child_groups =
-      Social.list_child_groups_for_profile(group, socket.assigns.current_profile)
-
-    visible_child_group_unread_counts =
-      Social.list_group_unread_counts(socket.assigns.current_profile, visible_child_groups)
-
-    current_group_unread_count =
-      Social.count_group_direct_unread_values(socket.assigns.current_profile, group)
+    group_unread_counts = Social.list_group_unread_counts(current_profile, groups)
+    current_group_unread_count = Social.count_group_direct_unread_values(current_profile, group)
 
     sub_groups_unread_count =
       max(Map.get(group_unread_counts, group.id, 0) - current_group_unread_count, 0)
 
-    direct_sub_groups_unread_count =
-      visible_child_groups
-      |> Enum.filter(& &1.is_direct)
-      |> Enum.reduce(0, fn child_group, total ->
-        total + Map.get(visible_child_group_unread_counts, child_group.id, 0)
-      end)
-
-    other_sub_groups_unread_count =
-      visible_child_groups
-      |> Enum.reject(& &1.is_direct)
-      |> Enum.reduce(0, fn child_group, total ->
-        total + Map.get(visible_child_group_unread_counts, child_group.id, 0)
-      end)
+    %{direct: direct_sub_groups_unread_count, other: other_sub_groups_unread_count} =
+      Social.child_group_unread_summary(current_profile, group)
 
     socket
     |> assign(:group_unread_counts, group_unread_counts)
@@ -1880,7 +1987,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     assign(
       socket,
       :root_group_unread_count,
-      Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
+      Social.count_root_group_unread_values(socket.assigns.current_profile)
     )
   end
 

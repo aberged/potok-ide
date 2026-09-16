@@ -26,10 +26,7 @@ import "phoenix_html"
 import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
-import {marked} from "marked"
-import Quill from "quill"
 import topbar from "../vendor/topbar"
-import TurndownService from "turndown"
 import { installLongPressLinkMenu } from "./longpress"
 
 const HeaderDrawer = {
@@ -991,113 +988,68 @@ const registerServiceWorker = async () => {
   }
 }
 
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-})
-
-const markdownTurndown = new TurndownService({
-  bulletListMarker: "-",
-  codeBlockStyle: "fenced",
-  headingStyle: "atx",
-})
-markdownTurndown.addRule('strikethroughS', {
-  filter: ['s', 'del'],
-  replacement: function (content) {
-    return '~~' + content + '~~';
-  }
-});
-markdownTurndown.addRule('underline', {
-  filter: ['u'],
-  replacement: function (content) {
-    return '<u>' + content + '</u>'
-  }
-})
-
 const normalizeMarkdown = markdown => markdown.replace(/\r\n/g, "\n").trimEnd()
-const normalizeQuillHtml = html => html
-  .replace(/<del>/g, "<s>")
-  .replace(/<\/del>/g, "</s>")
 
-const quillEditorIsBlank = quill => quill.getText().trim().length === 0
-
-const renderMarkdownInQuill = (quill, markdown) => {
-  const normalizedMarkdown = normalizeMarkdown(markdown || "")
-
-  quill.setContents([])
-
-  if (normalizedMarkdown === "") {
-    quill.setText("")
-    return
-  }
-
-  quill.clipboard.dangerouslyPasteHTML(normalizeQuillHtml(marked.parse(normalizedMarkdown)))
-}
-
-const serializeQuillToMarkdown = quill => {
-  if (quillEditorIsBlank(quill)) {
-    return ""
-  }
-
-  return normalizeMarkdown(
-    markdownTurndown
-      .turndown(quill.root.innerHTML)
-      .replace(/\n{3,}/g, "\n\n")
-  )
-}
+// The editor libraries (Quill, marked, turndown) are loaded on first use so
+// pages without an editor do not pay for them.
+let markdownEditorModule = null
+const loadMarkdownEditor = () =>
+  markdownEditorModule || (markdownEditorModule = import("./markdown_editor"))
 
 const MarkdownEditor = {
   mounted() {
     this.hiddenInput = this.el.querySelector("[data-markdown-target='input']")
     this.editorSurface = this.el.querySelector("[data-markdown-target='editor']")
     this.form = this.el.closest("form")
+    this.destroyedBeforeLoad = false
 
     if (!this.hiddenInput || !this.editorSurface) {
       return
     }
 
-    this.quill = new Quill(this.editorSurface, {
-      modules: {
-        toolbar: [
-          // [{header: [2, 3, false]}],
-          ["bold", "italic", "blockquote", "underline", "strike"/*, "code-block", "link"*/],
-          // [{list: "ordered"}, {list: "bullet"}],
-          ["clean"],
-        ],
-      },
-      placeholder: this.el.dataset.placeholder || "Write something...",
-      theme: "snow",
-    })
-
-    renderMarkdownInQuill(this.quill, this.hiddenInput.value)
-    this.lastSyncedValue = normalizeMarkdown(this.hiddenInput.value || "")
-
-    this.handleTextChange = () => {
-      const markdown = serializeQuillToMarkdown(this.quill)
-
-      if (markdown === this.lastSyncedValue) {
+    loadMarkdownEditor().then(editor => {
+      if (this.destroyedBeforeLoad) {
         return
       }
 
-      this.hiddenInput.value = markdown
-      this.lastSyncedValue = markdown
-      this.hiddenInput.dispatchEvent(new Event("input", {bubbles: true}))
-      this.hiddenInput.dispatchEvent(new Event("change", {bubbles: true}))
-    }
+      this.editor = editor
+      this.quill = editor.createQuill(this.editorSurface, this.el.dataset.placeholder)
 
-    this.handleSubmit = () => {
-      const markdown = serializeQuillToMarkdown(this.quill)
+      editor.renderMarkdownInQuill(this.quill, this.hiddenInput.value)
+      this.lastSyncedValue = normalizeMarkdown(this.hiddenInput.value || "")
 
-      this.hiddenInput.value = markdown
-      this.lastSyncedValue = markdown
-    }
+      this.handleTextChange = () => {
+        const markdown = editor.serializeQuillToMarkdown(this.quill)
 
-    this.quill.on("text-change", this.handleTextChange)
-    this.form?.addEventListener("submit", this.handleSubmit)
+        if (markdown === this.lastSyncedValue) {
+          return
+        }
+
+        this.hiddenInput.value = markdown
+        this.lastSyncedValue = markdown
+        this.hiddenInput.dispatchEvent(new Event("input", {bubbles: true}))
+        this.hiddenInput.dispatchEvent(new Event("change", {bubbles: true}))
+      }
+
+      this.handleSubmit = () => {
+        const markdown = editor.serializeQuillToMarkdown(this.quill)
+
+        this.hiddenInput.value = markdown
+        this.lastSyncedValue = markdown
+      }
+
+      this.quill.on("text-change", this.handleTextChange)
+      this.form?.addEventListener("submit", this.handleSubmit)
+
+      // Apply any server value that arrived while the module was loading.
+      this.updated()
+    }).catch(error => {
+      console.error("Markdown editor failed to load", error)
+    })
   },
 
   updated() {
-    if (!this.quill || !this.hiddenInput) {
+    if (!this.quill || !this.hiddenInput || !this.editor) {
       return
     }
 
@@ -1109,7 +1061,7 @@ const MarkdownEditor = {
 
     const selection = this.quill.getSelection()
 
-    renderMarkdownInQuill(this.quill, serverValue)
+    this.editor.renderMarkdownInQuill(this.quill, serverValue)
     this.lastSyncedValue = serverValue
 
     if (selection) {
@@ -1118,6 +1070,7 @@ const MarkdownEditor = {
   },
 
   destroyed() {
+    this.destroyedBeforeLoad = true
     this.form?.removeEventListener("submit", this.handleSubmit)
   },
 }

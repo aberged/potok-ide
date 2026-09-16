@@ -13,6 +13,8 @@ defmodule PotokIde.Application do
 
     children = [
       PotokIdeWeb.Telemetry,
+      PotokIde.Cache,
+      {Task.Supervisor, name: PotokIde.TaskSupervisor},
       PotokIde.Repo,
       {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PotokIde.PubSub},

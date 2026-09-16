@@ -18,6 +18,11 @@ defmodule PotokIdeWeb.Router do
     plug :accepts, ["json"]
   end
 
+  # Public, cacheable image responses: no session, CSRF or account lookups.
+  pipeline :avatars do
+    plug :put_secure_browser_headers
+  end
+
   pipeline :browser_json do
     plug :accepts, ["json"]
     plug :fetch_session
@@ -51,7 +56,13 @@ defmodule PotokIdeWeb.Router do
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
     get "/privacy-policy", PageController, :privacy
-    get "/avatar/profile/:id", AvatarController, :profile
+  end
+
+  scope "/avatar", PotokIdeWeb do
+    pipe_through :avatars
+
+    get "/profile/:id", AvatarController, :profile
+    get "/group/:id", AvatarController, :group
   end
 
   # Other scopes may use custom stacks.

@@ -19,6 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
       />
       <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-lg overflow-y-auto">
         <h3 class="card-title">{gettext("Invite to group")}</h3>
+
         <.form
           for={@invite_form}
           id={"group-invite-form-#{@invite_form_version}"}
@@ -35,7 +36,6 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
               phx-debounce="200"
               required
             />
-
             <div
               :if={@invite_profile_suggestions != []}
               id="group-invite-suggestions"
@@ -81,6 +81,5 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
     """
   end
 
-  defp profile_avatar_url(%{profile_picture_url: url}) when is_binary(url) and url != "", do: url
-  defp profile_avatar_url(%{id: id}), do: "/avatar/profile/#{id}"
+  defp profile_avatar_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 end

@@ -95,6 +95,46 @@ defmodule PotokIde.Social do
 
   def get_profile!(id), do: Repo.get!(Profile, id)
 
+  @doc """
+  Loads the picture column (excluded from regular queries via `load_in_query: false`)
+  into an already fetched profile or group.
+  """
+  def load_picture(%Profile{id: id} = profile) do
+    url =
+      from(p in Profile, where: p.id == ^id, select: p.profile_picture_url)
+      |> Repo.one()
+
+    %{profile | profile_picture_url: url}
+  end
+
+  def load_picture(%Group{id: id} = group) do
+    url =
+      from(g in Group, where: g.id == ^id, select: g.group_picture_url)
+      |> Repo.one()
+
+    %{group | group_picture_url: url}
+  end
+
+  def load_picture(nil), do: nil
+
+  @doc "Minimal data needed to serve a profile avatar: `%{id, username, picture_url}` or nil."
+  def get_profile_avatar_source(id) do
+    from(p in Profile,
+      where: p.id == ^id,
+      select: %{id: p.id, name: p.username, picture_url: p.profile_picture_url}
+    )
+    |> Repo.one()
+  end
+
+  @doc "Minimal data needed to serve a group avatar: `%{id, name, picture_url}` or nil."
+  def get_group_avatar_source(id) do
+    from(g in Group,
+      where: g.id == ^id,
+      select: %{id: g.id, name: g.name, picture_url: g.group_picture_url}
+    )
+    |> Repo.one()
+  end
+
   def create_profile(attrs) do
     root_group = get_root_group!()
 
@@ -485,7 +525,6 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, %{invitation: invitation}} ->
             broadcast_profile_invitations_updated(invitee)
-            broadcast_pending_invitations_count_updated(invitee)
             broadcast_profile_group_join_requests_updated(invitee)
             broadcast_profile_invitations_updated(inviter)
             broadcast_group_join_request_updates_for_group(group)
@@ -554,7 +593,6 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, %{invitation: inv}} ->
           broadcast_profile_invitations_updated(invitee)
-          broadcast_pending_invitations_count_updated(invitee)
           broadcast_profile_group_join_requests_updated(invitee)
           broadcast_profile_invitations_updated(invitation.inviter)
           broadcast_group_join_request_updates_for_group(invitation.group)
@@ -573,8 +611,6 @@ defmodule PotokIde.Social do
     if invitation.invitee_id != invitee.id do
       {:error, :invitee_mismatch}
     else
-      pending_invitation? = is_nil(invitation.accepted_at)
-
       case Repo.delete(invitation) do
         {:ok, deleted_invitation} ->
           broadcast_profile_invitations_updated(invitee)
@@ -582,10 +618,6 @@ defmodule PotokIde.Social do
           case Repo.get(Profile, invitation.inviter_id) do
             %Profile{} = inviter -> broadcast_profile_invitations_updated(inviter)
             nil -> :ok
-          end
-
-          if pending_invitation? do
-            broadcast_pending_invitations_count_updated(invitee)
           end
 
           {:ok, deleted_invitation}
@@ -779,18 +811,23 @@ defmodule PotokIde.Social do
     offset = normalize_query_offset(opts[:offset])
     search = normalize_request_search_query(opts[:search])
 
-    requester
-    |> list_request_history_entries_for_requester(search)
-    |> maybe_drop_entries(offset)
-    |> maybe_take_entries(limit)
+    refs =
+      from(x in subquery(request_history_union_query(requester, search)),
+        order_by: [desc: x.sort_at, desc: x.rank, desc: x.id],
+        select: {x.kind, x.id}
+      )
+      |> maybe_limit(limit)
+      |> maybe_offset(offset)
+      |> Repo.all()
+
+    load_request_history_entries(refs)
   end
 
   def count_approved_group_join_requests_for_requester(%Profile{} = requester, opts \\ []) do
     search = normalize_request_search_query(opts[:search])
 
-    requester
-    |> list_request_history_entries_for_requester(search)
-    |> length()
+    from(x in subquery(request_history_union_query(requester, search)), select: count())
+    |> Repo.one()
   end
 
   def get_pending_group_join_request(%Profile{} = requester, %Group{} = group) do
@@ -834,7 +871,6 @@ defmodule PotokIde.Social do
           requester = Repo.get!(Profile, request.requester_id)
           broadcast_group_updated(group)
           broadcast_profile_invitations_updated(requester)
-          broadcast_pending_invitations_count_updated(requester)
           broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
           broadcast_profile_group_unread_counts_updated(requester, group.id)
@@ -881,6 +917,12 @@ defmodule PotokIde.Social do
 
   def get_value!(id), do: Repo.get!(Value, id)
 
+  @doc "Loads a single value with the associations the values tab renders, or nil."
+  def get_value_for_display(id) when is_integer(id) do
+    from(v in Value, where: v.id == ^id, preload: [:creator, :parent])
+    |> Repo.one()
+  end
+
   def create_value(%Profile{} = creator, %Group{} = group, attrs) do
     if not member_of_group?(creator, group) do
       {:error, :not_a_member_of_group}
@@ -899,7 +941,7 @@ defmodule PotokIde.Social do
       |> Repo.transaction()
       |> case do
         {:ok, %{value: value}} ->
-          broadcast_group_updated(group)
+          broadcast_value_created(group, value)
           broadcast_group_unread_counts_updated(group)
           notify_group_members_of_new_value(creator, group, value)
           {:ok, value}
@@ -919,7 +961,7 @@ defmodule PotokIde.Social do
       |> Repo.update()
       |> case do
         {:ok, updated_value} = ok ->
-          broadcast_group_updated(updated_value.group_id)
+          broadcast_value_updated(updated_value)
           ok
 
         error ->
@@ -935,7 +977,7 @@ defmodule PotokIde.Social do
       Repo.delete(value)
       |> case do
         {:ok, deleted_value} = ok ->
-          broadcast_group_updated(deleted_value.group_id)
+          broadcast_value_deleted(deleted_value)
           broadcast_group_unread_counts_updated(deleted_value.group_id)
           ok
 
@@ -1039,7 +1081,35 @@ defmodule PotokIde.Social do
   end
 
   def list_group_path(%Group{} = group) do
-    do_list_group_path(group, [])
+    ancestor_ids = ancestor_group_ids(group)
+
+    groups_by_id =
+      from(g in Group, where: g.id in ^ancestor_ids)
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(ancestor_ids, &Map.get(groups_by_id, &1)) |> Enum.reject(&is_nil/1)
+  end
+
+  # Ids from the root down to (and including) `group`, in one recursive query.
+  defp ancestor_group_ids(%Group{id: group_id}) do
+    sql = """
+    WITH RECURSIVE path AS (
+      SELECT g.id, g.parent_id, 0 AS depth
+      FROM groups g
+      WHERE g.id = $1
+      UNION ALL
+      SELECT parent.id, parent.parent_id, path.depth + 1
+      FROM groups parent
+      JOIN path ON parent.id = path.parent_id
+    )
+    SELECT id FROM path ORDER BY depth DESC
+    """
+
+    case Repo.query(sql, [group_id], cache_statement: "social_ancestor_group_ids") do
+      {:ok, %{rows: rows}} -> Enum.map(rows, fn [id] -> id end)
+      {:error, _reason} -> [group_id]
+    end
   end
 
   defp maybe_put_profile_reference(changes, _field, current_value, _profile_id)
@@ -1068,11 +1138,22 @@ defmodule PotokIde.Social do
   def list_visible_group_path_for_profile(%Group{} = group, nil), do: [group]
 
   def list_visible_group_path_for_profile(%Group{} = group, %Profile{} = profile) do
-    list_group_path(group)
-    |> maybe_preload_group_members()
+    path = list_group_path(group)
+
+    member_group_ids =
+      from(gm in GroupMembership,
+        where: gm.profile_id == ^profile.id and gm.group_id in ^Enum.map(path, & &1.id),
+        select: gm.group_id
+      )
+      |> Repo.all()
+      |> MapSet.new()
+
+    path
     |> Enum.filter(fn path_group ->
-      path_group.id == group.id or path_group.is_public or member_of_group?(profile, path_group)
+      path_group.id == group.id or path_group.is_public or
+        MapSet.member?(member_group_ids, path_group.id)
     end)
+    |> maybe_preload_group_members()
   end
 
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
@@ -1142,7 +1223,9 @@ defmodule PotokIde.Social do
       |> maybe_append_query_param(limit)
       |> maybe_append_query_param(offset)
 
-    case Repo.query(sql, params) do
+    case Repo.query(sql, params,
+           cache_statement: "social_ordered_child_group_ids_#{limit != nil}_#{offset != nil}"
+         ) do
       {:ok, %{rows: rows}} ->
         Enum.map(rows, fn [group_id] -> group_id end)
 
@@ -1191,6 +1274,7 @@ defmodule PotokIde.Social do
       SELECT v.group_id, MAX(v.inserted_at) AS latest_value_inserted_at
       FROM values v
       WHERE v.is_data = FALSE
+        AND v.group_id IN (SELECT id FROM visible_children)
       GROUP BY v.group_id
     )
     SELECT g.id
@@ -1373,8 +1457,12 @@ defmodule PotokIde.Social do
 
       latest_value_id ->
         case upsert_group_value_read(Repo, profile.id, group.id, latest_value_id) do
-          {:ok, _last_read_value_id} ->
+          {:ok, :updated} ->
             broadcast_profile_group_unread_counts_updated(profile, group.id)
+            :ok
+
+          # Nothing was unread; skip the broadcast so subscribers do not recount for no reason.
+          {:ok, :unchanged} ->
             :ok
 
           {:error, reason} ->
@@ -1404,6 +1492,83 @@ defmodule PotokIde.Social do
     |> Map.get(group.id, 0)
   end
 
+  @doc """
+  Unread count for the root group. Every non-root group is a descendant of the
+  root, so this is simply the sum of unread values across the profile's
+  memberships — no tree traversal needed.
+  """
+  def count_root_group_unread_values(nil), do: 0
+
+  def count_root_group_unread_values(%Profile{id: profile_id}) do
+    sql = """
+    SELECT COUNT(v.id)::bigint
+    FROM group_memberships gm
+    JOIN groups g ON g.id = gm.group_id AND g.is_root = FALSE
+    LEFT JOIN group_value_reads gvr
+      ON gvr.group_id = gm.group_id AND gvr.profile_id = $1
+    JOIN values v
+      ON v.group_id = gm.group_id
+     AND v.is_data = FALSE
+     AND v.id > COALESCE(gvr.last_read_value_id, 0)
+    WHERE gm.profile_id = $1
+    """
+
+    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count") do
+      {:ok, %{rows: [[count]]}} -> count
+      {:error, _reason} -> 0
+    end
+  end
+
+  @doc """
+  Sums unread values of the visible child groups (and their subtrees) of `group`,
+  split by whether the child is a direct group. Returns `%{direct: n, other: n}`.
+  """
+  def child_group_unread_summary(nil, _group), do: %{direct: 0, other: 0}
+
+  def child_group_unread_summary(%Profile{id: profile_id}, %Group{id: group_id}) do
+    sql = """
+    WITH RECURSIVE visible_children AS (
+      SELECT g.id, g.is_direct
+      FROM groups g
+      LEFT JOIN group_memberships gm
+        ON gm.group_id = g.id AND gm.profile_id = $2
+      WHERE g.parent_id = $1
+        AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
+    ),
+    subtree(root_id, group_id) AS (
+      SELECT vc.id, vc.id FROM visible_children vc
+      UNION ALL
+      SELECT s.root_id, child.id
+      FROM subtree s
+      JOIN groups child ON child.parent_id = s.group_id
+    ),
+    counts AS (
+      SELECT vc.is_direct, COUNT(v.id)::bigint AS unread_count
+      FROM subtree s
+      JOIN visible_children vc ON vc.id = s.root_id
+      JOIN groups g ON g.id = s.group_id AND g.is_root = FALSE
+      JOIN group_memberships gm
+        ON gm.group_id = s.group_id AND gm.profile_id = $2
+      LEFT JOIN group_value_reads gvr
+        ON gvr.group_id = s.group_id AND gvr.profile_id = $2
+      JOIN values v
+        ON v.group_id = s.group_id
+       AND v.is_data = FALSE
+       AND v.id > COALESCE(gvr.last_read_value_id, 0)
+      GROUP BY vc.is_direct
+    )
+    SELECT
+      COALESCE(SUM(unread_count) FILTER (WHERE is_direct), 0)::bigint,
+      COALESCE(SUM(unread_count) FILTER (WHERE NOT is_direct), 0)::bigint
+    FROM counts
+    """
+
+    case Repo.query(sql, [group_id, profile_id], cache_statement: "social_child_unread_summary") do
+      {:ok, %{rows: [[direct, other]]}} -> %{direct: direct, other: other}
+      _ -> %{direct: 0, other: 0}
+    end
+  end
+
   def count_group_direct_unread_values(%Profile{} = profile, %Group{} = group) do
     sql = """
     SELECT COUNT(v.id)::bigint AS unread_count
@@ -1419,7 +1584,7 @@ defmodule PotokIde.Social do
     WHERE g.id = $2 AND g.is_root = FALSE
     """
 
-    case Repo.query(sql, [profile.id, group.id]) do
+    case Repo.query(sql, [profile.id, group.id], cache_statement: "social_group_direct_unread") do
       {:ok, %{rows: [[unread_count]]}} -> unread_count
       {:error, _reason} -> 0
     end
@@ -1523,35 +1688,17 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  def count_pending_invitations(%Profile{} = invitee) do
-    count_pending_group_invitations(invitee) + count_pending_profile_invitations(invitee)
-  end
+  def count_pending_invitations(%Profile{id: invitee_id}) do
+    sql = """
+    SELECT
+      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL) +
+      (SELECT COUNT(*) FROM profile_invitations WHERE invitee_id = $1 AND accepted_at IS NULL)
+    """
 
-  defp do_list_group_path(%Group{parent_id: nil} = group, acc), do: [group | acc]
-
-  defp do_list_group_path(%Group{parent_id: parent_id} = group, acc) when is_integer(parent_id) do
-    parent = get_group!(parent_id)
-    do_list_group_path(parent, [group | acc])
-  end
-
-  defp count_pending_group_invitations(%Profile{} = invitee) do
-    import Ecto.Query, only: [from: 2]
-
-    from(i in GroupInvitation,
-      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
-      select: count(i.id)
-    )
-    |> Repo.one()
-  end
-
-  defp count_pending_profile_invitations(%Profile{} = invitee) do
-    import Ecto.Query, only: [from: 2]
-
-    from(i in ProfileInvitation,
-      where: i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
-      select: count(i.id)
-    )
-    |> Repo.one()
+    case Repo.query(sql, [invitee_id], cache_statement: "social_pending_invitations_count") do
+      {:ok, %{rows: [[count]]}} -> count
+      {:error, _reason} -> 0
+    end
   end
 
   def list_pending_profile_invitations(%Profile{} = invitee) do
@@ -1997,80 +2144,103 @@ defmodule PotokIde.Social do
   defp normalize_data_value_order_dir("desc"), do: :desc
   defp normalize_data_value_order_dir(_value), do: :asc
 
-  defp list_request_history_entries_for_requester(%Profile{} = requester, search) do
-    requester
-    |> requester_pending_join_request_entries()
-    |> Kernel.++(requester_approved_join_request_entries(requester))
-    |> filter_request_history_entries(search)
-    |> Enum.sort_by(
-      fn entry ->
-        {DateTime.to_unix(entry.sort_at, :microsecond), request_history_status_rank(entry.status),
-         entry.source_id}
-      end,
-      :desc
+  # Pending requests and approvals are merged in SQL so ordering, search and
+  # pagination happen in the database instead of loading the whole history.
+  defp request_history_union_query(%Profile{} = requester, search) do
+    pending =
+      from(r in GroupJoinRequest,
+        join: g in assoc(r, :group),
+        where: r.requester_id == ^requester.id,
+        where: ^request_history_search_dynamic(search, :pending),
+        select: %{
+          kind: fragment("'request'::text"),
+          id: r.id,
+          sort_at: r.inserted_at,
+          rank: fragment("0::integer")
+        }
+      )
+
+    approved =
+      from(a in GroupJoinRequestApproval,
+        join: g in assoc(a, :group),
+        join: approver in assoc(a, :approver),
+        where: a.requester_id == ^requester.id,
+        where: ^request_history_search_dynamic(search, :approved),
+        select: %{
+          kind: fragment("'approval'::text"),
+          id: a.id,
+          sort_at: a.approved_at,
+          rank: fragment("1::integer")
+        }
+      )
+
+    union_all(pending, ^approved)
+  end
+
+  defp request_history_search_dynamic("", _kind), do: true
+
+  defp request_history_search_dynamic(search_term, :pending) do
+    dynamic([_r, g], ilike(g.name, ^"%#{search_term}%"))
+  end
+
+  defp request_history_search_dynamic(search_term, :approved) do
+    dynamic(
+      [_a, g, approver],
+      ilike(g.name, ^"%#{search_term}%") or ilike(approver.username, ^"%#{search_term}%")
     )
   end
 
-  defp requester_pending_join_request_entries(%Profile{} = requester) do
-    from(r in GroupJoinRequest,
-      where: r.requester_id == ^requester.id,
-      order_by: [desc: r.inserted_at, desc: r.id],
-      preload: [:group]
-    )
-    |> Repo.all()
-    |> Enum.map(fn request ->
-      %{
-        id: "request-#{request.id}",
-        source_id: request.id,
-        status: :pending,
-        group: request.group,
-        approver: nil,
-        requested_at: request.inserted_at,
-        approved_at: nil,
-        sort_at: request.inserted_at
-      }
+  defp load_request_history_entries([]), do: []
+
+  defp load_request_history_entries(refs) do
+    request_ids = for {"request", id} <- refs, do: id
+    approval_ids = for {"approval", id} <- refs, do: id
+
+    requests =
+      from(r in GroupJoinRequest, where: r.id in ^request_ids, preload: [:group])
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    approvals =
+      from(a in GroupJoinRequestApproval,
+        where: a.id in ^approval_ids,
+        preload: [:group, :approver]
+      )
+      |> Repo.all()
+      |> Map.new(&{&1.id, &1})
+
+    refs
+    |> Enum.map(fn
+      {"request", id} -> requests[id] && pending_request_history_entry(requests[id])
+      {"approval", id} -> approvals[id] && approved_request_history_entry(approvals[id])
     end)
-  end
-
-  defp requester_approved_join_request_entries(%Profile{} = requester) do
-    from(a in GroupJoinRequestApproval,
-      where: a.requester_id == ^requester.id,
-      order_by: [desc: a.approved_at, desc: a.id],
-      preload: [:group, :approver]
-    )
-    |> Repo.all()
-    |> Enum.map(fn approval ->
-      %{
-        id: "approval-#{approval.id}",
-        source_id: approval.id,
-        status: :approved,
-        group: approval.group,
-        approver: approval.approver,
-        requested_at: nil,
-        approved_at: approval.approved_at,
-        sort_at: approval.approved_at
-      }
-    end)
-  end
-
-  defp filter_request_history_entries(entries, ""), do: entries
-
-  defp filter_request_history_entries(entries, search_term) do
-    normalized_search_term = String.downcase(search_term)
-
-    Enum.filter(entries, fn entry ->
-      request_entry_matches_search?(entry, normalized_search_term)
-    end)
-  end
-
-  defp request_entry_matches_search?(entry, normalized_search_term) do
-    [entry.group.name, entry.approver && entry.approver.username]
     |> Enum.reject(&is_nil/1)
-    |> Enum.any?(fn value ->
-      value
-      |> String.downcase()
-      |> String.contains?(normalized_search_term)
-    end)
+  end
+
+  defp pending_request_history_entry(%GroupJoinRequest{} = request) do
+    %{
+      id: "request-#{request.id}",
+      source_id: request.id,
+      status: :pending,
+      group: request.group,
+      approver: nil,
+      requested_at: request.inserted_at,
+      approved_at: nil,
+      sort_at: request.inserted_at
+    }
+  end
+
+  defp approved_request_history_entry(%GroupJoinRequestApproval{} = approval) do
+    %{
+      id: "approval-#{approval.id}",
+      source_id: approval.id,
+      status: :approved,
+      group: approval.group,
+      approver: approval.approver,
+      requested_at: nil,
+      approved_at: approval.approved_at,
+      sort_at: approval.approved_at
+    }
   end
 
   defp approved_request_name_search_dynamic(""), do: true
@@ -2090,21 +2260,6 @@ defmodule PotokIde.Social do
 
   defp normalize_request_search_query(_), do: ""
 
-  defp request_history_status_rank(:approved), do: 1
-  defp request_history_status_rank(:pending), do: 0
-
-  defp maybe_drop_entries(entries, offset) when is_integer(offset) and offset >= 0 do
-    Enum.drop(entries, offset)
-  end
-
-  defp maybe_drop_entries(entries, _offset), do: entries
-
-  defp maybe_take_entries(entries, limit) when is_integer(limit) and limit >= 0 do
-    Enum.take(entries, limit)
-  end
-
-  defp maybe_take_entries(entries, _limit), do: entries
-
   defp maybe_offset(query, offset) when is_integer(offset) and offset >= 0 do
     offset(query, ^offset)
   end
@@ -2121,9 +2276,24 @@ defmodule PotokIde.Social do
   defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     payload = group_value_notification_payload(creator, group, value)
 
-    group
-    |> recipient_accounts_for_group_value_notification(creator)
-    |> Enum.each(&deliver_account_push_notification(&1, payload, "group value", group.id))
+    run_notification(fn ->
+      group
+      |> recipient_accounts_for_group_value_notification(creator)
+      |> Enum.each(&deliver_account_push_notification(&1, payload, "group value", group.id))
+    end)
+  end
+
+  # Push delivery involves HTTP calls to FCM / web push endpoints; run it off the
+  # caller (usually a LiveView process) so the UI responds immediately. Tests
+  # run it inline so they can assert on the requests deterministically.
+  defp run_notification(fun) when is_function(fun, 0) do
+    if Application.get_env(:potok_ide, :async_notifications, true) do
+      {:ok, _pid} = Task.Supervisor.start_child(PotokIde.TaskSupervisor, fun)
+      :ok
+    else
+      fun.()
+      :ok
+    end
   end
 
   defp notify_profile_invitee_of_group_invitation(
@@ -2133,9 +2303,11 @@ defmodule PotokIde.Social do
        ) do
     payload = group_invitation_notification_payload(inviter, group)
 
-    invitee
-    |> recipient_accounts_for_profile_notification()
-    |> Enum.each(&deliver_profile_notification(&1, payload, "group invitation", inviter.id))
+    run_notification(fn ->
+      invitee
+      |> recipient_accounts_for_profile_notification()
+      |> Enum.each(&deliver_profile_notification(&1, payload, "group invitation", inviter.id))
+    end)
   end
 
   defp notify_profile_inviter_of_group_invitation_acceptance(
@@ -2144,11 +2316,13 @@ defmodule PotokIde.Social do
        ) do
     payload = group_invitation_accepted_notification_payload(invitation.group, invitee)
 
-    invitation.inviter
-    |> recipient_accounts_for_profile_notification()
-    |> Enum.each(
-      &deliver_profile_notification(&1, payload, "group invitation acceptance", invitee.id)
-    )
+    run_notification(fn ->
+      invitation.inviter
+      |> recipient_accounts_for_profile_notification()
+      |> Enum.each(
+        &deliver_profile_notification(&1, payload, "group invitation acceptance", invitee.id)
+      )
+    end)
   end
 
   defp notify_profile_invitee_of_shared_profile_invitation(
@@ -2158,11 +2332,13 @@ defmodule PotokIde.Social do
        ) do
     payload = shared_profile_invitation_notification_payload(inviter, shared_profile)
 
-    invitee
-    |> recipient_accounts_for_profile_notification()
-    |> Enum.each(
-      &deliver_profile_notification(&1, payload, "shared profile invitation", inviter.id)
-    )
+    run_notification(fn ->
+      invitee
+      |> recipient_accounts_for_profile_notification()
+      |> Enum.each(
+        &deliver_profile_notification(&1, payload, "shared profile invitation", inviter.id)
+      )
+    end)
   end
 
   defp notify_profile_inviter_of_shared_profile_acceptance(
@@ -2172,16 +2348,18 @@ defmodule PotokIde.Social do
        ) do
     payload = shared_profile_invitation_accepted_notification_payload(invitation.profile, invitee)
 
-    invitation.inviter
-    |> recipient_accounts_for_profile_notification([invitee_account.id])
-    |> Enum.each(
-      &deliver_profile_notification(
-        &1,
-        payload,
-        "shared profile invitation acceptance",
-        invitee.id
+    run_notification(fn ->
+      invitation.inviter
+      |> recipient_accounts_for_profile_notification([invitee_account.id])
+      |> Enum.each(
+        &deliver_profile_notification(
+          &1,
+          payload,
+          "shared profile invitation acceptance",
+          invitee.id
+        )
       )
-    )
+    end)
   end
 
   defp recipient_accounts_for_group_value_notification(%Group{} = group, %Profile{} = creator) do
@@ -2316,24 +2494,7 @@ defmodule PotokIde.Social do
 
   defp notification_excerpt(_content), do: nil
 
-  defp profile_avatar_url(%Profile{id: profile_id, profile_picture_url: url})
-       when is_binary(url) do
-    case String.trim(url) do
-      "" ->
-        "/avatar/profile/#{profile_id}"
-
-      trimmed ->
-        # Convert large base64 data URLs to avatar route URLs to save FCM payload space
-        if String.starts_with?(trimmed, "data:") and byte_size(trimmed) > 500 do
-          "/avatar/profile/#{profile_id}"
-        else
-          trimmed
-        end
-    end
-  end
-
   defp profile_avatar_url(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}"
-  defp profile_avatar_url(%Profile{}), do: "/images/pwa/icon-192.png"
 
   defp extract_group_id(%Group{id: id}), do: id
   defp extract_group_id(id) when is_integer(id), do: id
@@ -2382,7 +2543,7 @@ defmodule PotokIde.Social do
     LEFT JOIN counts c ON c.root_id = r.root_id
     """
 
-    case Repo.query(sql, [profile_id, group_ids]) do
+    case Repo.query(sql, [profile_id, group_ids], cache_statement: "social_unread_counts") do
       {:ok, %{rows: rows}} ->
         Map.new(rows, fn [group_id, unread_count] ->
           {group_id, unread_count}
@@ -2396,17 +2557,23 @@ defmodule PotokIde.Social do
   defp upsert_group_value_read(repo, profile_id, group_id, last_read_value_id) do
     now = DateTime.utc_now() |> DateTime.truncate(:second)
 
+    # The WHERE clause makes the upsert a no-op (num_rows = 0) when the read
+    # marker would not advance, which lets callers skip redundant broadcasts.
     sql = """
     INSERT INTO group_value_reads (profile_id, group_id, last_read_value_id, inserted_at, updated_at)
     VALUES ($1, $2, $3, $4, $5)
     ON CONFLICT (profile_id, group_id)
     DO UPDATE SET
-      last_read_value_id = GREATEST(COALESCE(group_value_reads.last_read_value_id, 0), EXCLUDED.last_read_value_id),
+      last_read_value_id = EXCLUDED.last_read_value_id,
       updated_at = EXCLUDED.updated_at
+    WHERE COALESCE(group_value_reads.last_read_value_id, 0) < EXCLUDED.last_read_value_id
     """
 
-    case repo.query(sql, [profile_id, group_id, last_read_value_id, now, now]) do
-      {:ok, _result} -> {:ok, last_read_value_id}
+    case repo.query(sql, [profile_id, group_id, last_read_value_id, now, now],
+           cache_statement: "social_upsert_group_value_read"
+         ) do
+      {:ok, %{num_rows: 0}} -> {:ok, :unchanged}
+      {:ok, _result} -> {:ok, :updated}
       {:error, reason} -> {:error, reason}
     end
   end
@@ -2458,21 +2625,11 @@ defmodule PotokIde.Social do
     )
   end
 
-  defp broadcast_pending_group_join_requests_count_updated(%Profile{id: profile_id} = profile) do
-    Phoenix.PubSub.broadcast(
-      PotokIde.PubSub,
-      profile_topic(profile_id),
-      {:pending_group_join_requests_count_updated, profile_id,
-       count_pending_group_join_requests_for_approver(profile)}
-    )
-  end
-
   defp broadcast_group_join_request_updates_for_group(%Group{creator_id: creator_id})
        when is_integer(creator_id) do
     case Repo.get(Profile, creator_id) do
       %Profile{} = creator ->
         broadcast_profile_group_join_requests_updated(creator)
-        broadcast_pending_group_join_requests_count_updated(creator)
 
       nil ->
         :ok
@@ -2524,6 +2681,30 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       group_topic(group_id),
       {:group_updated, group_id}
+    )
+  end
+
+  defp broadcast_value_created(%Group{id: group_id}, %Value{id: value_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:value_created, group_id, value_id}
+    )
+  end
+
+  defp broadcast_value_updated(%Value{group_id: group_id, id: value_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:value_updated, group_id, value_id}
+    )
+  end
+
+  defp broadcast_value_deleted(%Value{group_id: group_id, id: value_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:value_deleted, group_id, value_id}
     )
   end
 

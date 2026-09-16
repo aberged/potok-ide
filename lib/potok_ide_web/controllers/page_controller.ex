@@ -1,6 +1,10 @@
 defmodule PotokIdeWeb.PageController do
   use PotokIdeWeb, :controller
 
+  import PotokIdeWeb.AccountAuth, only: [assign_nav_counts: 2]
+
+  plug :assign_nav_counts when action in [:privacy]
+
   @privacy_policy_path Path.expand("../../../priv/static/PRIVACY_POLICY.md", __DIR__)
   @external_resource @privacy_policy_path
   @privacy_policy_html @privacy_policy_path

@@ -207,14 +207,7 @@ defmodule PotokIdeWeb.ProfileAuth do
     push_event(socket, "root_group_unread_count_updated", %{count: count})
   end
 
-  defp profile_picture_url(%{profile_picture_url: url}) when is_binary(url) do
-    case String.trim(url) do
-      "" -> nil
-      trimmed_url -> trimmed_url
-    end
-  end
-
-  defp profile_picture_url(_), do: nil
+  defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 
   defp pending_invitations_count(nil), do: 0
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
@@ -227,7 +220,5 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp root_group_unread_count(nil), do: 0
 
-  defp root_group_unread_count(profile) do
-    Social.count_group_unread_values(profile, Social.get_root_group!())
-  end
+  defp root_group_unread_count(profile), do: Social.count_root_group_unread_values(profile)
 end

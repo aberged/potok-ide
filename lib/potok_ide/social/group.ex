@@ -10,7 +10,8 @@ defmodule PotokIde.Social.Group do
 
   schema "groups" do
     field :name, :string
-    field :group_picture_url, :string
+    # See Profile.profile_picture_url: loaded only on demand via `Social.load_picture/1`.
+    field :group_picture_url, :string, load_in_query: false
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
     field :home_page, Ecto.Enum, values: @home_pages, default: :description

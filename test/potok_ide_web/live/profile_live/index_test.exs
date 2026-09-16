@@ -158,7 +158,10 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert html =~ "Profile created."
       assert html =~ "beta-prof"
-      assert html =~ "https://example.com/avatar.png"
+      # Pictures are never inlined; they are served through the avatar route.
+      refute html =~ "https://example.com/avatar.png"
+      created = Social.get_profile_by_username("beta-prof")
+      assert html =~ "/avatar/profile/#{created.id}"
     end
 
     test "edits a profile on the dedicated page and updates the selected profile banner", %{
@@ -201,7 +204,8 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       assert result =~ "Profile updated."
       assert result =~ "Current profile:"
       assert result =~ "beta-prof"
-      assert result =~ "https://example.com/avatar.png"
+      refute result =~ "https://example.com/avatar.png"
+      assert result =~ "/avatar/profile/#{profile.id}"
       refute result =~ "alpha-prof"
     end
 
