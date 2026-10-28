@@ -27,7 +27,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="relative h-[calc(100dvh-4rem)] overflow-y-auto px-4 py-4">
+      <div class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
         <.header>
           {gettext("Invitations")}
           <:subtitle>
@@ -88,10 +88,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                   <h3 class="text-base font-semibold text-base-content">
                     {gettext("Invitations for me")}
                   </h3>
+
                   <p class="text-sm text-base-content/70">
                     {gettext("Invitations addressed to your current profile.")}
                   </p>
                 </div>
+
                 <div class="flex items-center gap-2">
                   <span class="rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
                     {@invitations_pagination.total_count}
@@ -105,7 +107,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                   />
                 </div>
               </button>
-
               <div :if={@invitations_expanded?} class="space-y-4">
                 <div
                   :if={@invitations_pagination.total_count == 0}
@@ -132,7 +133,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                           unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
                           highlight_query={@invitations_search_query}
                         />
-
                         <div class="text-sm text-base-content/70">
                           {gettext("Invited by:")}
                           <Components.highlighted_text
@@ -157,6 +157,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                             {gettext("Accept")}
                           </.button>
                         </div>
+
                         <div :if={!is_nil(inv.accepted_at)} class="mt-1 text-sm text-green-600">
                           {gettext("Accepted on")}
                           <Components.local_time
@@ -165,6 +166,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                             class="ml-1"
                           />
                         </div>
+
                         <.button
                           id={"invitation-delete-#{inv.id}"}
                           phx-click="delete_invitation"
@@ -205,10 +207,12 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                   <h3 class="text-base font-semibold text-base-content">
                     {gettext("Invitations sent by me")}
                   </h3>
+
                   <p class="text-sm text-base-content/70">
                     {gettext("Invitations your current profile has sent to other profiles.")}
                   </p>
                 </div>
+
                 <div class="flex items-center gap-2">
                   <span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
                     {@sent_invitations_pagination.total_count}
@@ -222,7 +226,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                   />
                 </div>
               </button>
-
               <div :if={@sent_invitations_expanded?} class="space-y-4">
                 <div
                   :if={@sent_invitations_pagination.total_count == 0}
@@ -249,7 +252,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                           unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
                           highlight_query={@invitations_search_query}
                         />
-
                         <div class="text-sm text-base-content/70">
                           {gettext("Invited:")}
                           <Components.highlighted_text

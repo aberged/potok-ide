@@ -35,6 +35,8 @@ config :potok_ide, PotokIdeWeb.Endpoint,
   secret_key_base: "x2qaGeS2rr/PTpNCKmKCROlQvrev+2/+H057QVgemsgE0lWBVLENjlDcBNtW4/1i",
   watchers: [
     esbuild: {Esbuild, :install_and_run, [:potok_ide, ~w(--sourcemap=inline --watch)]},
+    esbuild_app_sdk:
+      {Esbuild, :install_and_run, [:potok_app_sdk, ~w(--sourcemap=inline --watch)]},
     tailwind: {Tailwind, :install_and_run, [:potok_ide, ~w(--watch)]}
   ]
 

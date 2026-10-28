@@ -466,6 +466,34 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Updates only the description of a group. Sub-group lists never show the
+  description, so unlike `update_group/3` this neither notifies the parent
+  nor triggers a full reload in the group's own subscribers.
+  """
+  def update_group_description(%Profile{} = editor, %Group{} = group, attrs) do
+    if editor.id != group.creator_id do
+      {:error, :not_group_creator}
+    else
+      attrs =
+        attrs
+        |> Map.new(fn {key, value} -> {to_string(key), value} end)
+        |> Map.take(["description", "description_format"])
+
+      group
+      |> Group.update_changeset(attrs)
+      |> Repo.update()
+      |> case do
+        {:ok, updated_group} ->
+          broadcast_group_description_updated(updated_group)
+          {:ok, updated_group}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
   def delete_group(%Profile{} = profile, %Group{} = group) do
     cond do
       group.is_root ->
@@ -924,32 +952,72 @@ defmodule PotokIde.Social do
   end
 
   def create_value(%Profile{} = creator, %Group{} = group, attrs) do
+    attrs = Map.new(attrs)
+
+    cond do
+      data_value_attrs?(attrs) ->
+        create_data_value(creator, group, attrs)
+
+      not member_of_group?(creator, group) ->
+        {:error, :not_a_member_of_group}
+
+      true ->
+        attrs =
+          attrs
+          |> Map.put_new("creator_id", creator.id)
+          |> Map.put_new("group_id", group.id)
+
+        Multi.new()
+        |> Multi.insert(:value, Value.changeset(%Value{}, attrs))
+        |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
+          upsert_group_value_read(repo, creator.id, group.id, value.id)
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{value: value}} ->
+            value = Repo.preload(value, [:creator, :parent])
+            broadcast_value_created(group, value)
+            broadcast_group_unread_counts_updated(group)
+            notify_group_members_of_new_value(creator, group, value)
+            {:ok, value}
+
+          error ->
+            error
+        end
+    end
+  end
+
+  @doc """
+  Inserts an app (data) value. Data values never count as unread and never
+  notify anyone, so this skips the read marker, the per-member unread
+  broadcasts and push notifications that chat values trigger.
+  """
+  def create_data_value(%Profile{} = creator, %Group{} = group, attrs) do
     if not member_of_group?(creator, group) do
       {:error, :not_a_member_of_group}
     else
       attrs =
         attrs
-        |> Map.new()
-        |> Map.put_new("creator_id", creator.id)
-        |> Map.put_new("group_id", group.id)
+        |> Map.new(fn {key, value} -> {to_string(key), value} end)
+        |> Map.merge(%{"is_data" => true, "creator_id" => creator.id, "group_id" => group.id})
 
-      Multi.new()
-      |> Multi.insert(:value, Value.changeset(%Value{}, attrs))
-      |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
-        upsert_group_value_read(repo, creator.id, group.id, value.id)
-      end)
-      |> Repo.transaction()
+      %Value{}
+      |> Value.changeset(attrs)
+      |> Repo.insert()
       |> case do
-        {:ok, %{value: value}} ->
-          broadcast_value_created(group, value)
-          broadcast_group_unread_counts_updated(group)
-          notify_group_members_of_new_value(creator, group, value)
+        {:ok, value} ->
+          value = %{value | creator: creator}
+          broadcast_data_value_created(group, value)
           {:ok, value}
 
         error ->
           error
       end
     end
+  end
+
+  defp data_value_attrs?(attrs) do
+    Map.get(attrs, "is_data", Map.get(attrs, :is_data)) in [true, "true"]
   end
 
   def update_value(%Profile{} = profile, %Value{} = value, attrs) do
@@ -960,9 +1028,10 @@ defmodule PotokIde.Social do
       |> Value.changeset(attrs)
       |> Repo.update()
       |> case do
-        {:ok, updated_value} = ok ->
+        {:ok, updated_value} ->
+          updated_value = Repo.preload(updated_value, [:creator, :parent], force: true)
           broadcast_value_updated(updated_value)
-          ok
+          {:ok, updated_value}
 
         error ->
           error
@@ -1392,6 +1461,32 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  @doc """
+  Keyset page of chat values: the newest `limit` values older than
+  `before_id` (or the newest overall), oldest first. Fetches one extra row
+  to tell whether older values exist, so no count query is needed.
+  """
+  def list_group_values_page(%Group{} = group, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 20)
+
+    rows =
+      from(v in Value,
+        where: v.group_id == ^group.id and v.is_data == false,
+        order_by: [desc: v.id],
+        limit: ^(limit + 1),
+        preload: [:creator, :parent]
+      )
+      |> maybe_before_id(opts[:before_id])
+      |> Repo.all()
+
+    {Enum.reverse(Enum.take(rows, limit)), length(rows) > limit}
+  end
+
+  defp maybe_before_id(query, before_id) when is_integer(before_id),
+    do: from(v in query, where: v.id < ^before_id)
+
+  defp maybe_before_id(query, _before_id), do: query
+
   def count_group_values(%Group{} = group) do
     import Ecto.Query, only: [from: 2]
 
@@ -1414,6 +1509,49 @@ defmodule PotokIde.Social do
     |> maybe_paginate(opts)
     |> Repo.all()
   end
+
+  @doc """
+  Data values for the app API as plain maps. Joins only the creator's
+  username instead of preloading full structs, caps the page size and
+  supports `after_id` / `before_id` cursors for incremental reads.
+  Returns `{rows, has_more?}`.
+  """
+  def list_group_data_value_rows(%Group{} = group, opts \\ []) do
+    limit = opts[:limit] |> Kernel.||(50) |> min(200) |> max(1)
+
+    rows =
+      from(v in Value,
+        join: c in assoc(v, :creator),
+        where: v.group_id == ^group.id and v.is_data == true,
+        limit: ^(limit + 1),
+        select: %{
+          id: v.id,
+          content: v.content,
+          data: v.data,
+          content_format: v.content_format,
+          is_data: v.is_data,
+          group_id: v.group_id,
+          parent_id: v.parent_id,
+          creator_id: v.creator_id,
+          creator_username: c.username,
+          inserted_at: v.inserted_at,
+          updated_at: v.updated_at
+        }
+      )
+      |> maybe_after_id(opts[:after_id])
+      |> maybe_before_id(opts[:before_id])
+      |> maybe_filter_data_value_field(opts[:search_field], opts[:search_value])
+      |> maybe_order_data_value_field(opts[:order_by], opts[:order_dir])
+      |> maybe_offset(opts[:offset])
+      |> Repo.all()
+
+    {Enum.take(rows, limit), length(rows) > limit}
+  end
+
+  defp maybe_after_id(query, after_id) when is_integer(after_id),
+    do: from(v in query, where: v.id > ^after_id)
+
+  defp maybe_after_id(query, _after_id), do: query
 
   def get_latest_data_value_id_for_group(%Group{} = group) do
     import Ecto.Query, only: [from: 2]
@@ -2684,19 +2822,37 @@ defmodule PotokIde.Social do
     )
   end
 
-  defp broadcast_value_created(%Group{id: group_id}, %Value{id: value_id}) do
+  # Value broadcasts carry the preloaded value so subscribers do not each
+  # query it again.
+  defp broadcast_value_created(%Group{id: group_id}, %Value{} = value) do
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
       group_topic(group_id),
-      {:value_created, group_id, value_id}
+      {:value_created, group_id, value}
     )
   end
 
-  defp broadcast_value_updated(%Value{group_id: group_id, id: value_id}) do
+  defp broadcast_data_value_created(%Group{id: group_id}, %Value{} = value) do
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
       group_topic(group_id),
-      {:value_updated, group_id, value_id}
+      {:data_value_created, group_id, value}
+    )
+  end
+
+  defp broadcast_value_updated(%Value{group_id: group_id} = value) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:value_updated, group_id, value}
+    )
+  end
+
+  defp broadcast_group_description_updated(%Group{id: group_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:group_description_updated, group_id}
     )
   end
 

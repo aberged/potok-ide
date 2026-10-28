@@ -6,6 +6,9 @@ config :pbkdf2_elixir, :rounds, 1
 # Deliver push notifications inline so tests can assert on the requests.
 config :potok_ide, async_notifications: false
 
+# Apply group refresh broadcasts inline so LiveView tests stay synchronous.
+config :potok_ide, live_refresh_debounce_ms: 0
+
 # Configure your database
 #
 # The MIX_TEST_PARTITION environment variable can be used

@@ -5,11 +5,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
   attr :values, :any, required: true
-  attr :pagination, :map, required: true
+  attr :has_more, :boolean, required: true
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
-  attr :online_profile_ids, :any, required: true
-  attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
   attr :editing_value, :map, default: nil
   attr :edit_value_form, :any, default: nil
@@ -24,11 +22,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           id="group-values-feed"
           phx-hook=".ValuesFeed"
           class={[
-            "flex h-[calc(100dvh-15rem)] flex-col gap-4 overflow-y-auto px-4 py-5 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+1rem)] sm:px-6",
-            if(@editing_value, do: "pb-[16rem]", else: "")
+            "flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-4 py-5 sm:px-6"
           ]}
         >
-          <div :if={@pagination.has_more?} class="flex justify-center">
+          <div :if={@has_more} class="flex justify-center">
             <button
               id="group-values-load-more"
               type="button"
@@ -60,8 +57,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               value={value}
               uses_api={@group.uses_api}
               current_profile={@current_profile}
-              online_profile_ids={@online_profile_ids}
-              expanded_value_ids={@expanded_value_ids}
               editing_value_id={@editing_value_id}
             />
           </div>
@@ -69,7 +64,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <div
           :if={@is_member}
-          class="sticky z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur bottom-(--app-system-safe-area-bottom) sm:px-6"
+          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           <%= if @editing_value do %>
             <.form
@@ -134,11 +129,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 placeholder={gettext("Write a value...")}
                 rows="1"
                 type="textarea"
+                phx-debounce="400"
                 phx-hook=".SubmitOnEnter"
               />
               <.button
                 aria-label={gettext("Post value")}
-                disabled={!@new_value_form[:content].value or @new_value_form[:content].value == ""}
+                id="group-value-submit"
                 class="btn btn-primary btn-circle size-10 flex-none"
               >
                 <.icon name="hero-paper-airplane" class="size-4" />
@@ -149,7 +145,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <div
           :if={!@is_member}
-          class="sticky z-10 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur bottom-(--app-safe-area-bottom) sm:px-6"
+          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           {gettext("Join this group to reply and post new values.")}
         </div>
@@ -240,9 +236,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".SubmitOnEnter">
           export default {
             mounted() {
-              this.handleInput = () => this.autoResize()
+              // Typing is debounced on the server, so the send button and the
+              // post-submit reset are handled here instead of waiting for diffs.
+              this.submitButton = this.el.form?.querySelector("#group-value-submit")
+              this.handleInput = () => {
+                this.autoResize()
+                this.syncSubmitButton()
+              }
+              this.handleEvent("value_composer_reset", () => {
+                this.el.value = ""
+                this.autoResize()
+                this.syncSubmitButton()
+              })
+              // Enter sends on devices with a fine pointer (desktop web); touch
+              // keyboards keep Enter as a newline. Shift+Enter is always a newline.
+              this.sendOnEnter = window.matchMedia("(pointer: fine)").matches
               this.handleKeydown = (event) => {
-                if (true || event.key !== "Enter" || event.shiftKey || event.isComposing) {
+                if (!this.sendOnEnter || event.key !== "Enter" || event.shiftKey || event.isComposing) {
                   return
                 }
 
@@ -253,15 +263,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.addEventListener("input", this.handleInput)
               this.el.addEventListener("keydown", this.handleKeydown)
               this.autoResize()
+              this.syncSubmitButton()
             },
 
             updated() {
               this.autoResize()
+              this.syncSubmitButton()
             },
 
             destroyed() {
               this.el.removeEventListener("input", this.handleInput)
               this.el.removeEventListener("keydown", this.handleKeydown)
+            },
+
+            syncSubmitButton() {
+              if (this.submitButton) {
+                this.submitButton.disabled = this.el.value.trim() === ""
+              }
             },
 
             autoResize() {

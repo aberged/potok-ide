@@ -29,6 +29,10 @@ config :potok_ide, :android_app_links, package_name: "rs.potok.ide"
 # In dev/test, Plug.SSL canonical redirect is disabled (no canonical host).
 config :potok_ide, :canonical_host, nil
 
+# How long a group LiveView collects `group_updated` / unread broadcasts
+# before reloading once (see GroupLive.Show.schedule_refresh/2).
+config :potok_ide, live_refresh_debounce_ms: 100
+
 config :potok_ide, :ios_app_links,
   bundle_id: "rs.potok.ide",
   paths: ["/accounts/log-in/*"]
@@ -64,6 +68,12 @@ config :esbuild,
       ~w(js/app.js --bundle --target=es2022 --format=esm --splitting --chunk-names=chunks/[name]-[hash] --outdir=../priv/static/assets/js --external:/fonts/* --external:/images/* --alias:@=.),
     cd: Path.expand("../assets", __DIR__),
     env: %{"NODE_PATH" => [Path.expand("../deps", __DIR__), Mix.Project.build_path()]}
+  ],
+  # Classic (non-module) script loaded inside sandboxed app iframes.
+  potok_app_sdk: [
+    args:
+      ~w(js/potok_app_sdk.js --bundle --target=es2020 --format=iife --outfile=../priv/static/assets/js/potok_app_sdk.js),
+    cd: Path.expand("../assets", __DIR__)
   ]
 
 # Configure tailwind (the version is required)

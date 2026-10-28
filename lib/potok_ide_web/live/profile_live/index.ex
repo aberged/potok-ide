@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="space-y-2 px-4 py-4 flex h-[calc(100dvh-4rem)] max-w-3xl mx-auto overflow-y-auto flex-col">
+      <div class="mx-auto flex min-h-0 flex-1 overflow-y-auto overscroll-contain w-full max-w-3xl flex-col space-y-2 px-4 py-4">
         <div class="flex flex-wrap items-start justify-between gap-3">
           <.header>
             {gettext("Profiles")}

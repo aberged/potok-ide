@@ -6,14 +6,14 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
     /> <meta name="csrf-token" content={get_csrf_token()} />
-    <meta name="theme-color" content="#4ba8c0" />
+    <meta name="theme-color" content="#4ba8c0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#262b33" media="(prefers-color-scheme: dark)" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Potok" />
     <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="apple-touch-icon" href="/images/pwa/apple-touch-icon.svg" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png" />
     <link rel="apple-touch-icon" sizes="152x152" href="/images/pwa/icon-152.png" />
     <link rel="apple-touch-icon" sizes="120x120" href="/images/pwa/icon-120.png" />
@@ -44,5 +44,20 @@
 
   <body class="min-h-[100dvh] overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
     {@inner_content}
+    <%!-- Lives in the root layout so live navigation never re-renders (and re-hides) it. --%>
+    <div
+      id="app-update-toast"
+      class="toast toast-center toast-bottom z-5000 mb-(--app-safe-area-bottom)"
+      role="status"
+      hidden
+    >
+      <div class="alert flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm shadow-xl">
+        <.icon name="hero-arrow-path" class="size-5 text-primary" />
+        <span>{gettext("A new version of Potok is ready.")}</span>
+        <button id="app-update-reload" type="button" class="btn btn-primary btn-sm rounded-full">
+          {gettext("Refresh")}
+        </button>
+      </div>
+    </div>
   </body>
 </html>

@@ -18,11 +18,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.ProfileAuth
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
 
   @children_page_size 20
   @members_page_size 20
   @values_page_size 20
+
+  # Bursts of `group_updated` / unread broadcasts are coalesced into one
+  # reload. 0 (the test config) applies them inline.
+  @refresh_debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
 
   @impl true
   def render(assigns) do
@@ -37,7 +41,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="sticky top-16 max-w-dvw lg:max-w-6xl justify-center z-50 rounded-4xl border border-base-300/70 bg-base-30/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
+      <%!-- Online indicators are toggled by this rule set instead of re-rendering streamed items. --%>
+      <style id="group-presence-style">
+        <%= Components.presence_css(@online_profile_ids) %>
+      </style>
+
+      <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <.link
@@ -243,7 +252,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </div>
 
-          <Layouts.drop_down_menu icon="hero-ellipsis-horizontal">
+          <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
             <div class="flex min-w-56 flex-col gap-2 z-100">
               <Components.group_tab_button
                 :if={!@group.is_root}
@@ -308,7 +317,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         </div>
       </div>
 
-      <div class="min-h-0 flex-1 overflow-clip">
+      <div class="flex min-h-0 flex-1 flex-col overflow-clip">
         <div class="flex min-h-0 flex-1 flex-col gap-2">
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
@@ -329,7 +338,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             members={@streams.members}
             pagination={@members_pagination}
             current_profile={@current_profile}
-            online_profile_ids={@online_profile_ids}
             group={@group}
             join_requests={@pending_join_requests}
             pending_join_requests_count={@pending_join_requests_count}
@@ -337,13 +345,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <ValuesTab.panel
             :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
             values={@streams.values}
-            pagination={@values_pagination}
+            has_more={@values_has_more?}
             group={@group}
             current_profile={@current_profile}
-            online_profile_ids={@online_profile_ids}
-            expanded_value_ids={@expanded_value_ids}
-            editing_value_id={@editing_value_id}
-            editing_value={find_value(@loaded_values, @editing_value_id)}
+            editing_value_id={@editing_value && @editing_value.id}
+            editing_value={@editing_value}
             edit_value_form={@edit_value_form}
             new_value_form={@new_value_form}
             is_member={@is_member}
@@ -411,10 +417,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> stream_configure(:values, dom_id: &"value-#{&1.id}")
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
-       |> assign(:values_pagination, default_pagination(@values_page_size))
+       |> assign(:values_has_more?, false)
+       |> assign(:oldest_value_id, nil)
+       |> assign(:newest_value_id, nil)
+       |> assign(:loaded_value_ids, MapSet.new())
        |> assign(:loaded_children, [])
-       |> assign(:loaded_members, [])
-       |> assign(:loaded_values, [])
+       |> assign(:pending_refresh, MapSet.new())
+       |> assign(:app_api_bucket, AppApi.new_bucket())
        |> assign(:child_pending_join_request_counts, %{})
        |> assign(:group_unread_counts, %{})
        |> assign(:current_group_unread_count, 0)
@@ -433,7 +442,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:is_member, is_member)
        |> assign(:group, group)
        |> assign(:active_tab, active_tab)
-       |> assign(:editing_value_id, nil)
+       |> assign(:editing_value, nil)
        |> assign(:edit_value_form, nil)
        |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
        |> assign(:home_page_options, home_page_options())
@@ -448,7 +457,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:pending_join_request, nil)
        |> assign(:pending_join_requests, [])
        |> assign(:pending_join_requests_count, 0)
-       |> assign(:latest_data_value_id, nil)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
     else
@@ -511,13 +519,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if not socket.assigns.is_member do
       {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
     else
-      case Social.create_value(current_profile, group, normalize_select_nil(attrs, "parent_id")) do
+      # The chat composer only posts chat values; app data goes through `app_api`.
+      attrs =
+        attrs
+        |> Map.drop(["is_data", "data"])
+        |> normalize_select_nil("parent_id")
+
+      case Social.create_value(current_profile, group, attrs) do
         {:ok, value} ->
           socket =
             socket
             |> assign(:active_tab, "values")
             |> assign(:new_value_form, empty_new_value_form())
-            |> apply_value_created(value.id)
+            |> push_event("value_composer_reset", %{})
+            |> apply_value_created(value)
 
           {:noreply, socket}
 
@@ -530,112 +545,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  def handle_event("create_data_value", %{"value" => attrs}, socket) do
-    current_profile = socket.assigns.current_profile
-    group = socket.assigns.group
-
-    if not socket.assigns.is_member do
-      {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
-    else
-      case Social.create_value(current_profile, group, normalize_select_nil(attrs, "parent_id")) do
-        {:ok, value} ->
-          socket =
-            socket
-            |> assign(:active_tab, socket.assigns.active_tab || "values")
-            |> assign(:new_value_form, empty_new_value_form())
-            |> announce_new_data_value(value)
-            |> apply_value_created(value.id)
-
-          {:noreply, socket}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign(socket, :new_value_form, to_form(changeset))}
-
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
-      end
-    end
+  # Single entry point for the sandboxed app frame (see `AppApi`). The client
+  # hook only forwards whitelisted methods; the server checks them again.
+  def handle_event("app_api", %{"method" => method} = params, socket) when is_binary(method) do
+    {reply, socket} = AppApi.call(method, Map.get(params, "params") || %{}, socket)
+    {:reply, reply, socket}
   end
 
-  def handle_event("update_group_description", params, socket) do
-    current_profile = socket.assigns.current_profile
-    group = socket.assigns.group
-
-    if not can_edit_group?(current_profile, group) do
-      {:reply, %{ok: false, error: gettext("Only the group creator can edit this group.")},
-       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
-    else
-      attrs = %{
-        "description" => Map.get(params, "description", group.description || ""),
-        "description_format" => Map.get(params, "description_format", group.description_format)
-      }
-
-      case Social.update_group(current_profile, group, attrs) do
-        {:ok, updated_group} ->
-          socket =
-            socket
-            |> assign(:group, updated_group)
-            |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
-            |> refresh_group_data()
-
-          {:reply,
-           %{
-             ok: true,
-             group: %{
-               id: updated_group.id,
-               description: updated_group.description,
-               description_format: updated_group.description_format
-             }
-           }, socket}
-
-        {:error, :not_group_creator} ->
-          {:reply, %{ok: false, error: gettext("Only the group creator can edit this group.")},
-           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
-
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:reply, %{ok: false, error: gettext("Could not update group description.")},
-           assign(socket, :edit_group_form, to_form(Map.put(changeset, :action, :validate)))}
-
-        {:error, _reason} ->
-          {:reply, %{ok: false, error: gettext("Could not update group description.")},
-           put_flash(socket, :error, gettext("Could not update group description."))}
-      end
-    end
-  end
-
-  def handle_event("list_group_data_values", params, socket) do
-    if not socket.assigns.is_member do
-      {:reply,
-       %{ok: false, error: gettext("You must be a group member to access group data values.")},
-       put_flash(
-         socket,
-         :error,
-         gettext("You must be a group member to access group data values.")
-       )}
-    else
-      opts = [
-        limit: normalize_non_negative_integer_param(params["limit"]),
-        offset: normalize_non_negative_integer_param(params["offset"]),
-        search_field: normalize_optional_string_param(params["search_field"]),
-        search_value: normalize_optional_string_param(params["search_value"]),
-        order_by: normalize_optional_string_param(params["order_by"]),
-        order_dir: normalize_optional_string_param(params["order_dir"])
-      ]
-
-      values =
-        socket.assigns.group
-        |> Social.list_group_data_values(opts)
-        |> Enum.map(&value_payload/1)
-
-      {:reply, %{ok: true, values: values}, socket}
-    end
+  def handle_event("app_api", _params, socket) do
+    {:reply, %{ok: false, error: "unknown_method"}, socket}
   end
 
   def handle_event("start_edit_value", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
-    previous_editing_value_id = socket.assigns.editing_value_id
+    previous_editing_value = socket.assigns.editing_value
 
-    case find_value(socket.assigns.loaded_values, id) do
+    case loaded_value(socket, id) do
       nil ->
         {:noreply, put_flash(socket, :error, gettext("Value not found."))}
 
@@ -643,16 +568,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
 
       value ->
+        # Re-insert both items so their edit buttons reflect the new editing state.
         {:noreply,
          socket
-         |> assign(:editing_value_id, value.id)
+         |> assign(:editing_value, value)
          |> assign(:edit_value_form, to_form(Value.changeset(value, %{})))
-         |> restream_values([previous_editing_value_id, value.id])}
+         |> restream_value(previous_editing_value)
+         |> restream_value(value)}
     end
   end
 
   def handle_event("validate_edit_value", %{"value" => attrs}, socket) do
-    case current_editing_value(socket) do
+    case socket.assigns.editing_value do
       nil ->
         {:noreply, socket}
 
@@ -662,17 +589,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
           |> Value.changeset(attrs)
           |> Map.put(:action, :validate)
 
-        {:noreply,
-         socket
-         |> assign(:edit_value_form, to_form(changeset))
-         |> restream_values([value.id])}
+        {:noreply, assign(socket, :edit_value_form, to_form(changeset))}
     end
   end
 
   def handle_event("save_edit_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
 
-    case current_editing_value(socket) do
+    case socket.assigns.editing_value do
       nil ->
         {:noreply, put_flash(socket, :error, gettext("Value not found."))}
 
@@ -682,18 +606,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, gettext("Value updated."))
-             |> assign(:editing_value_id, nil)
+             |> assign(:editing_value, nil)
              |> assign(:edit_value_form, nil)
-             |> apply_value_updated(updated_value.id)}
+             |> apply_value_updated(updated_value)}
 
           {:error, :not_value_creator} ->
             {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
-             socket
-             |> assign(:edit_value_form, to_form(Map.put(changeset, :action, :validate)))
-             |> restream_values([value.id])}
+             assign(socket, :edit_value_form, to_form(Map.put(changeset, :action, :validate)))}
 
           {:error, _reason} ->
             {:noreply, put_flash(socket, :error, gettext("Could not update value."))}
@@ -708,7 +630,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("delete_value", %{"id" => id}, socket) do
     current_profile = socket.assigns.current_profile
 
-    case find_value(socket.assigns.loaded_values, id) do
+    case loaded_value(socket, id) do
       nil ->
         {:noreply, put_flash(socket, :error, gettext("Value not found."))}
 
@@ -718,7 +640,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             {:noreply,
              socket
              |> put_flash(:info, gettext("Value deleted."))
-             |> remove_value(value)}
+             |> remove_value(value.id)}
 
           {:error, :not_value_creator} ->
             {:noreply, put_flash(socket, :error, gettext("You can only delete your own values."))}
@@ -766,10 +688,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("load_more_children", _params, socket) do
-    {:noreply,
-     socket
-     |> maybe_increment_pagination(:children_pagination)
-     |> refresh_group_data()}
+    {:noreply, load_more_children(socket)}
   end
 
   def handle_event("search_children", %{"children_search" => %{"q" => query}}, socket) do
@@ -782,7 +701,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        socket
        |> assign(:children_search_query, next_query)
        |> assign(:children_pagination, default_pagination(@children_page_size))
-       |> refresh_group_data()}
+       |> reload_children()}
     end
   end
 
@@ -793,7 +712,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
      socket
      |> assign(:children_search_query, "")
      |> assign(:children_pagination, default_pagination(@children_page_size))
-     |> refresh_group_data()}
+     |> reload_children()}
   end
 
   def handle_event("switch_sub_groups_kind", %{"kind" => kind}, socket) do
@@ -813,10 +732,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("load_more_members", _params, socket) do
-    {:noreply,
-     socket
-     |> maybe_increment_pagination(:members_pagination)
-     |> refresh_group_data()}
+    {:noreply, load_more_members(socket)}
   end
 
   def handle_event("request_join", _params, socket) do
@@ -911,10 +827,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("load_more_values", _params, socket) do
-    {:noreply,
-     socket
-     |> maybe_increment_pagination(:values_pagination)
-     |> refresh_group_data()}
+    {:noreply, load_more_values(socket)}
   end
 
   def handle_event("validate_group", %{"group" => attrs}, socket) do
@@ -1168,22 +1081,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  def handle_event("toggle_value_expansion", %{"id" => id}, socket) do
-    value_id = String.to_integer(id)
-
-    expanded_value_ids =
-      if MapSet.member?(socket.assigns.expanded_value_ids, value_id) do
-        MapSet.delete(socket.assigns.expanded_value_ids, value_id)
-      else
-        MapSet.put(socket.assigns.expanded_value_ids, value_id)
-      end
-
-    {:noreply,
-     socket
-     |> assign(:expanded_value_ids, expanded_value_ids)
-     |> restream_values([value_id])}
-  end
-
   def handle_event("invite_account", _params, socket) do
     {:noreply, push_navigate(socket, to: ~p"/accounts/register")}
   end
@@ -1194,45 +1091,42 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_info({:group_updated, group_id}, socket) when socket.assigns.group.id == group_id do
-    current_profile = socket.assigns.current_profile
-    group = Social.get_group!(group_id)
-    is_member = Social.member_of_group?(current_profile, group)
-    previous_loaded_values = socket.assigns.loaded_values
-    previous_values_pagination = socket.assigns.values_pagination
-    previous_latest_data_value_id = socket.assigns.latest_data_value_id
-
-    if can_view_group?(group, is_member) do
-      socket =
-        socket
-        |> assign(:is_member, is_member)
-        |> load_group_data(group)
-        |> maybe_scroll_values_to_latest(previous_loaded_values, previous_values_pagination)
-        |> maybe_new_data_value(previous_latest_data_value_id, group)
-
-      {:noreply, socket}
-    else
-      {:noreply,
-       socket
-       |> put_flash(:error, gettext("You do not have access to that group."))
-       |> push_navigate(to: ~p"/groups")}
-    end
+    {:noreply, schedule_refresh(socket, :group)}
   end
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
-  def handle_info({:value_created, group_id, value_id}, socket)
+  def handle_info({:group_description_updated, group_id}, socket)
       when socket.assigns.group.id == group_id do
-    {:noreply, apply_value_created(socket, value_id)}
+    {:noreply, assign(socket, :group, Social.get_group!(group_id))}
   end
 
-  def handle_info({:value_created, _group_id, _value_id}, socket), do: {:noreply, socket}
+  def handle_info({:group_description_updated, _group_id}, socket), do: {:noreply, socket}
 
-  def handle_info({:value_updated, group_id, value_id}, socket)
-      when socket.assigns.group.id == group_id do
-    {:noreply, apply_value_updated(socket, value_id)}
+  def handle_info(:flush_refresh, socket) do
+    {:noreply, flush_refresh(socket)}
   end
 
-  def handle_info({:value_updated, _group_id, _value_id}, socket), do: {:noreply, socket}
+  def handle_info({:value_created, group_id, %Value{} = value}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_created(socket, value)}
+  end
+
+  def handle_info({:value_created, _group_id, _value}, socket), do: {:noreply, socket}
+
+  def handle_info({:data_value_created, group_id, %Value{} = value}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, announce_new_data_value(socket, value)}
+  end
+
+  def handle_info({:data_value_created, _group_id, _value}, socket), do: {:noreply, socket}
+
+  def handle_info({:value_updated, group_id, %Value{} = value}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_updated(socket, value)}
+  end
+
+  def handle_info({:value_updated, _group_id, _value}, socket), do: {:noreply, socket}
 
   def handle_info({:value_deleted, group_id, value_id}, socket)
       when socket.assigns.group.id == group_id do
@@ -1288,12 +1182,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         %{assigns: %{current_profile: %{id: current_profile_id}}} = socket
       )
       when profile_id == current_profile_id do
-    {:noreply,
-     socket
-     |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
-     |> assign_root_group_unread_count()
-     |> assign_group_unread_counts()
-     |> maybe_push_root_group_unread_count()}
+    {:noreply, schedule_refresh(socket, :unread)}
   end
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
@@ -1353,7 +1242,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
-    |> maybe_load_latest_data_value_id(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
     |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
@@ -1365,34 +1253,69 @@ defmodule PotokIdeWeb.GroupLive.Show do
     load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
   end
 
-  # Only re-render the members and values whose online indicator actually
-  # changed; a presence diff would otherwise re-render every streamed item.
-  defp refresh_group_presence(socket) do
-    previous_online_ids = socket.assigns.online_profile_ids
-    online_ids = Social.list_online_profile_ids_for_group(socket.assigns.group)
+  # A value posted in a big group fans out `group_updated` / unread broadcasts
+  # to every member; collecting them for a moment turns a burst into one reload.
+  defp schedule_refresh(socket, kind) do
+    already_scheduled? = MapSet.size(socket.assigns.pending_refresh) > 0
+    socket = update(socket, :pending_refresh, &MapSet.put(&1, kind))
 
-    changed_profile_ids =
-      MapSet.union(
-        MapSet.difference(previous_online_ids, online_ids),
-        MapSet.difference(online_ids, previous_online_ids)
-      )
+    case refresh_debounce_ms() do
+      0 ->
+        flush_refresh(socket)
 
+      delay ->
+        if not already_scheduled?, do: Process.send_after(self(), :flush_refresh, delay)
+        socket
+    end
+  end
+
+  defp refresh_debounce_ms, do: @refresh_debounce_ms
+
+  defp flush_refresh(socket) do
+    pending = socket.assigns.pending_refresh
+    socket = assign(socket, :pending_refresh, MapSet.new())
+
+    cond do
+      MapSet.member?(pending, :group) -> reload_current_group(socket)
+      MapSet.member?(pending, :unread) -> refresh_unread_counts(socket)
+      true -> socket
+    end
+  end
+
+  defp reload_current_group(socket) do
+    current_profile = socket.assigns.current_profile
+    group = Social.get_group!(socket.assigns.group.id)
+    is_member = Social.member_of_group?(current_profile, group)
+    previous_newest_value_id = socket.assigns.newest_value_id
+
+    if can_view_group?(group, is_member) do
+      socket
+      |> assign(:is_member, is_member)
+      |> load_group_data(group)
+      |> maybe_scroll_values_to_latest(previous_newest_value_id)
+    else
+      socket
+      |> put_flash(:error, gettext("You do not have access to that group."))
+      |> push_navigate(to: ~p"/groups")
+    end
+  end
+
+  defp refresh_unread_counts(socket) do
     socket
-    |> assign(:online_profile_ids, online_ids)
-    |> restream_members_for_profiles(changed_profile_ids)
-    |> restream_values_for_creators(changed_profile_ids)
+    |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
+    |> assign_root_group_unread_count()
+    |> assign_group_unread_counts()
+    |> maybe_push_root_group_unread_count()
   end
 
-  defp restream_members_for_profiles(socket, profile_ids) do
-    socket.assigns.loaded_members
-    |> Enum.filter(&MapSet.member?(profile_ids, &1.id))
-    |> Enum.reduce(socket, fn member, acc -> stream_insert(acc, :members, member) end)
-  end
-
-  defp restream_values_for_creators(socket, profile_ids) do
-    socket.assigns.loaded_values
-    |> Enum.filter(&MapSet.member?(profile_ids, &1.creator_id))
-    |> Enum.reduce(socket, fn value, acc -> stream_insert(acc, :values, value) end)
+  # Online dots are driven by the `#group-presence-style` rule set, so a
+  # presence diff only changes that one element instead of streamed items.
+  defp refresh_group_presence(socket) do
+    assign(
+      socket,
+      :online_profile_ids,
+      Social.list_online_profile_ids_for_group(socket.assigns.group)
+    )
   end
 
   defp sync_group_presence(socket) do
@@ -1422,23 +1345,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
     assign(socket, :presence_profile_id, current_profile && current_profile.id)
   end
 
-  defp maybe_scroll_values_to_latest(socket, previous_loaded_values, previous_values_pagination) do
-    if newer_value_arrived?(socket, previous_loaded_values, previous_values_pagination) do
+  defp maybe_scroll_values_to_latest(socket, previous_newest_value_id) do
+    newest_value_id = socket.assigns.newest_value_id
+
+    if needs_values?(socket.assigns.group, socket.assigns.active_tab) and
+         is_integer(newest_value_id) and
+         (is_nil(previous_newest_value_id) or newest_value_id > previous_newest_value_id) do
       push_event(socket, "scroll_values_to_latest", %{})
-    else
-      socket
-    end
-  end
-
-  defp maybe_new_data_value(socket, previous_latest_data_value_id, group) do
-    if previous_latest_data_value_id != socket.assigns.latest_data_value_id do
-      case Social.get_latest_data_value_for_group(group) do
-        %Value{} = latest_data_value ->
-          push_event(socket, "new_data_value", value_payload(latest_data_value))
-
-        nil ->
-          socket
-      end
     else
       socket
     end
@@ -1446,89 +1359,72 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Incremental value updates. These are idempotent so the acting LiveView and
   # the PubSub broadcast it also receives can both apply them safely.
-  defp apply_value_created(socket, value_id) do
+  defp apply_value_created(socket, %Value{is_data: true}), do: socket
+
+  defp apply_value_created(socket, %Value{} = value) do
     group = socket.assigns.group
     active_tab = socket.assigns.active_tab
 
     # Unread badges are refreshed by the `group_unread_counts_updated` broadcast
     # that Social sends to every member right after the value broadcast.
-    case Social.get_value_for_display(value_id) do
-      nil ->
-        socket
-
-      %Value{is_data: true} = value ->
-        if needs_latest_data_value_id?(group, active_tab) or active_tab == "values" do
-          announce_new_data_value(socket, value)
-        else
-          socket
-        end
-
-      %Value{} = value ->
-        if needs_values?(group, active_tab) and
-             is_nil(find_value(socket.assigns.loaded_values, value.id)) do
-          socket
-          |> assign(:loaded_values, socket.assigns.loaded_values ++ [value])
-          |> update(:values_pagination, &bump_pagination(&1, 1))
-          |> stream_insert(:values, value)
-          |> maybe_mark_group_values_read(group, active_tab)
-          |> push_event("scroll_values_to_latest", %{})
-        else
-          socket
-        end
+    if needs_values?(group, active_tab) and
+         not MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
+      socket
+      |> update(:loaded_value_ids, &MapSet.put(&1, value.id))
+      |> assign(:newest_value_id, max(socket.assigns.newest_value_id || 0, value.id))
+      |> assign(:oldest_value_id, socket.assigns.oldest_value_id || value.id)
+      |> stream_insert(:values, value)
+      |> maybe_mark_group_values_read(group, active_tab)
+      |> push_event("scroll_values_to_latest", %{})
+    else
+      socket
     end
   end
 
-  defp apply_value_updated(socket, value_id) do
-    with %Value{} <- find_value(socket.assigns.loaded_values, value_id),
-         %Value{} = value <- Social.get_value_for_display(value_id) do
-      loaded_values =
-        Enum.map(socket.assigns.loaded_values, fn
-          %{id: ^value_id} -> value
-          other -> other
-        end)
-
-      socket
-      |> assign(:loaded_values, loaded_values)
-      |> stream_insert(:values, value)
+  defp apply_value_updated(socket, %Value{} = value) do
+    if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
+      stream_insert(socket, :values, value)
     else
-      _ -> socket
+      socket
     end
   end
 
   defp apply_value_deleted(socket, value_id) do
     socket =
-      if socket.assigns.editing_value_id == value_id do
-        socket
-        |> assign(:editing_value_id, nil)
-        |> assign(:edit_value_form, nil)
-      else
-        socket
+      case socket.assigns.editing_value do
+        %Value{id: ^value_id} ->
+          socket
+          |> assign(:editing_value, nil)
+          |> assign(:edit_value_form, nil)
+
+        _ ->
+          socket
       end
 
-    case find_value(socket.assigns.loaded_values, value_id) do
-      nil -> socket
-      value -> remove_value(socket, value)
-    end
-  end
-
-  defp announce_new_data_value(socket, %Value{} = value) do
-    if socket.assigns.latest_data_value_id == value.id do
-      socket
+    if MapSet.member?(socket.assigns.loaded_value_ids, value_id) do
+      remove_value(socket, value_id)
     else
       socket
-      |> assign(:latest_data_value_id, value.id)
-      |> push_event("new_data_value", value_payload(value))
     end
   end
 
-  defp bump_pagination(pagination, delta) do
-    pagination
-    |> Map.update!(:loaded_count, &max(&1 + delta, 0))
-    |> Map.update!(:total_count, &max(&1 + delta, 0))
-    |> then(fn p -> Map.put(p, :has_more?, p.loaded_count < p.total_count) end)
+  # Only the app frame listens for data values, so they are pushed only while
+  # the group description is on screen.
+  defp announce_new_data_value(socket, %Value{} = value) do
+    if description_visible?(socket.assigns) do
+      push_event(socket, "new_data_value", value_payload(value))
+    else
+      socket
+    end
   end
 
-  defp value_payload(%Value{} = value, creator_username \\ nil) do
+  defp description_visible?(%{active_tab: active_tab, group: group, is_member: is_member}) do
+    active_tab == "group_home" or
+      (active_tab == "values" and group.parent_id != nil and not is_member)
+  end
+
+  @doc false
+  def value_payload(%Value{} = value) do
     %{
       id: value.id,
       content: value.content,
@@ -1538,70 +1434,55 @@ defmodule PotokIdeWeb.GroupLive.Show do
       group_id: value.group_id,
       parent_id: value.parent_id,
       creator_id: value.creator_id,
-      creator_username: creator_username || value_creator_username(value)
+      creator_username: value_creator_username(value)
     }
   end
 
   defp value_creator_username(%Value{creator: %{username: username}}), do: username
   defp value_creator_username(_), do: nil
 
-  defp current_editing_value(socket) do
-    find_value(socket.assigns.loaded_values, socket.assigns.editing_value_id)
-  end
-
-  defp find_value(_values, nil), do: nil
-
-  defp find_value(values, id) when is_integer(id) do
-    Enum.find(values, &(&1.id == id))
-  end
-
-  defp find_value(values, id) when is_binary(id) do
-    Enum.find(values, &(Integer.to_string(&1.id) == id))
+  # Values are only held in the stream; events re-read the row and check it
+  # belongs to a value this LiveView has rendered.
+  defp loaded_value(socket, id) do
+    with {value_id, ""} <- Integer.parse(to_string(id)),
+         true <- MapSet.member?(socket.assigns.loaded_value_ids, value_id),
+         %Value{} = value <- Social.get_value_for_display(value_id),
+         true <- value.group_id == socket.assigns.group.id do
+      value
+    else
+      _ -> nil
+    end
   end
 
   defp clear_edit_value(socket) do
-    editing_value_id = socket.assigns.editing_value_id
+    editing_value = socket.assigns.editing_value
 
     socket
-    |> assign(:editing_value_id, nil)
+    |> assign(:editing_value, nil)
     |> assign(:edit_value_form, nil)
-    |> restream_values([editing_value_id])
+    |> restream_value(editing_value)
   end
 
-  defp remove_value(socket, value) do
-    loaded_values = Enum.reject(socket.assigns.loaded_values, &(&1.id == value.id))
-
-    expanded_value_ids = MapSet.delete(socket.assigns.expanded_value_ids, value.id)
-
-    values_pagination =
-      socket.assigns.values_pagination
-      |> Map.update!(:loaded_count, &max(&1 - 1, 0))
-      |> Map.update!(:total_count, &max(&1 - 1, 0))
-      |> then(fn pagination ->
-        Map.put(pagination, :has_more?, pagination.loaded_count < pagination.total_count)
-      end)
-
+  defp remove_value(socket, value_id) do
     socket
-    |> assign(:loaded_values, loaded_values)
-    |> assign(:expanded_value_ids, expanded_value_ids)
-    |> assign(:values_pagination, values_pagination)
-    |> stream_delete(:values, value)
+    |> update(:loaded_value_ids, &MapSet.delete(&1, value_id))
+    |> stream_delete_by_dom_id(:values, "value-#{value_id}")
   end
 
-  defp restream_values(socket, value_ids) do
-    value_ids
-    |> Enum.reject(&is_nil/1)
-    |> Enum.uniq()
-    |> Enum.reduce(socket, fn value_id, acc ->
-      case find_value(acc.assigns.loaded_values, value_id) do
-        nil -> acc
-        value -> stream_insert(acc, :values, value)
-      end
-    end)
+  # Re-reads the row so a stale struct never overwrites newer content.
+  defp restream_value(socket, nil), do: socket
+
+  defp restream_value(socket, %Value{id: value_id}) do
+    with true <- MapSet.member?(socket.assigns.loaded_value_ids, value_id),
+         %Value{} = value <- Social.get_value_for_display(value_id) do
+      stream_insert(socket, :values, value)
+    else
+      _ -> socket
+    end
   end
 
   defp default_pagination(per_page) do
-    %{page: 1, per_page: per_page, loaded_count: 0, total_count: 0, has_more?: false}
+    %{per_page: per_page, loaded_count: 0, total_count: 0, has_more?: false}
   end
 
   defp empty_new_value_form do
@@ -1736,72 +1617,136 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Accounts.change_account_email(%Account{}, %{"email" => identifier}, validate_unique: false).valid?
   end
 
-  defp maybe_increment_pagination(socket, key) do
-    if socket.assigns[key].has_more? do
-      update(socket, key, &Map.update!(&1, :page, fn page -> page + 1 end))
+  defp list_children(socket, opts) do
+    Social.list_child_groups_for_profile(
+      socket.assigns.group,
+      socket.assigns.current_profile,
+      Keyword.merge(opts,
+        is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
+        search: normalize_children_search_query(socket.assigns.children_search_query)
+      )
+    )
+  end
+
+  defp count_children(socket) do
+    Social.count_child_groups_for_profile(
+      socket.assigns.group,
+      socket.assigns.current_profile,
+      is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
+      search: normalize_children_search_query(socket.assigns.children_search_query)
+    )
+  end
+
+  # Reloads keep the window the viewer already scrolled to; "load more" only
+  # fetches the next page and appends it to the stream.
+  defp reload_limit(%{loaded_count: loaded_count, per_page: per_page}),
+    do: max(loaded_count, per_page)
+
+  defp loaded_pagination(pagination, loaded_count, total_count) do
+    %{
+      pagination
+      | loaded_count: loaded_count,
+        total_count: total_count,
+        has_more?: loaded_count < total_count
+    }
+  end
+
+  defp reload_children(socket) do
+    socket
+    |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
+    |> assign_child_pending_join_request_counts()
+    |> assign_group_unread_counts()
+  end
+
+  defp load_more_children(socket) do
+    pagination = socket.assigns.children_pagination
+
+    if pagination.has_more? and needs_children?(socket.assigns.group, socket.assigns.active_tab) do
+      loaded_ids = MapSet.new(socket.assigns.loaded_children, & &1.id)
+
+      entries =
+        socket
+        |> list_children(limit: pagination.per_page, offset: pagination.loaded_count)
+        |> Enum.reject(&MapSet.member?(loaded_ids, &1.id))
+
+      loaded_children = socket.assigns.loaded_children ++ entries
+
+      socket
+      |> assign(:loaded_children, loaded_children)
+      |> assign(
+        :children_pagination,
+        loaded_pagination(pagination, length(loaded_children), pagination.total_count)
+      )
+      |> merge_child_counts(entries)
+      |> stream(:children, entries)
     else
       socket
     end
   end
 
-  defp child_groups_page(group, current_profile, pagination, sub_groups_kind, search_query) do
-    direct_filter = child_group_direct_filter(sub_groups_kind)
-    normalized_search_query = normalize_children_search_query(search_query)
+  defp merge_child_counts(socket, children) do
+    current_profile = socket.assigns.current_profile
+    manageable_children = Enum.filter(children, &can_manage_join_requests?(current_profile, &1))
 
-    total_count =
-      Social.count_child_groups_for_profile(group, current_profile,
-        is_direct: direct_filter,
-        search: normalized_search_query
+    socket
+    |> update(
+      :group_unread_counts,
+      &Map.merge(&1, Social.list_group_unread_counts(current_profile, children))
+    )
+    |> update(
+      :child_pending_join_request_counts,
+      &Map.merge(&1, Social.list_pending_group_join_request_counts(manageable_children))
+    )
+  end
+
+  defp load_more_members(socket) do
+    pagination = socket.assigns.members_pagination
+
+    if pagination.has_more? and needs_members?(socket.assigns.group, socket.assigns.active_tab) do
+      entries =
+        Social.list_group_members(socket.assigns.group,
+          limit: pagination.per_page,
+          offset: pagination.loaded_count
+        )
+
+      socket
+      |> assign(
+        :members_pagination,
+        loaded_pagination(
+          pagination,
+          pagination.loaded_count + length(entries),
+          pagination.total_count
+        )
       )
-
-    limit = pagination_limit(pagination)
-
-    entries =
-      Social.list_child_groups_for_profile(group, current_profile,
-        limit: limit,
-        is_direct: direct_filter,
-        search: normalized_search_query
-      )
-
-    pagination_result(pagination, entries, total_count)
+      |> stream(:members, entries)
+    else
+      socket
+    end
   end
 
-  defp members_page(group, pagination) do
-    total_count = Social.count_group_members(group)
-    limit = pagination_limit(pagination)
-    entries = Social.list_group_members(group, limit: limit)
+  defp load_more_values(socket) do
+    if socket.assigns.values_has_more? and
+         needs_values?(socket.assigns.group, socket.assigns.active_tab) do
+      {older_values, has_more?} =
+        Social.list_group_values_page(socket.assigns.group,
+          before_id: socket.assigns.oldest_value_id,
+          limit: @values_page_size
+        )
 
-    pagination_result(pagination, entries, total_count)
+      socket
+      |> update(:loaded_value_ids, fn ids -> Enum.into(older_values, ids, & &1.id) end)
+      |> assign(:values_has_more?, has_more?)
+      |> assign(:oldest_value_id, first_value_id(older_values) || socket.assigns.oldest_value_id)
+      |> stream(:values, Enum.reverse(older_values), at: 0)
+    else
+      socket
+    end
   end
 
-  defp values_page(group, pagination) do
-    total_count = Social.count_group_values(group)
-    limit = pagination_limit(pagination)
-    offset = max(total_count - limit, 0)
+  defp first_value_id([%{id: id} | _]), do: id
+  defp first_value_id([]), do: nil
 
-    entries =
-      Social.list_group_values(group,
-        offset: offset,
-        limit: limit
-      )
-
-    pagination_result(pagination, entries, total_count)
-  end
-
-  defp pagination_limit(%{page: page, per_page: per_page}), do: page * per_page
-
-  defp pagination_result(pagination, entries, total_count) do
-    loaded_count = length(entries)
-
-    pagination
-    |> Map.put(:loaded_count, loaded_count)
-    |> Map.put(:total_count, total_count)
-    |> Map.put(:has_more?, loaded_count < total_count)
-    |> Map.put(:entries, entries)
-  end
-
-  defp pagination_metadata(%{entries: _entries} = pagination),
-    do: Map.delete(pagination, :entries)
+  defp last_value_id(values), do: values |> Enum.reverse() |> first_value_id()
 
   defp load_member_summary(socket, group) do
     if group.parent_id != nil do
@@ -1848,22 +1793,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_load_children(socket, group, active_tab) do
     if needs_children?(group, active_tab) do
-      current_profile = socket.assigns.current_profile
-      sub_groups_kind = socket.assigns.sub_groups_kind
-
-      children_page =
-        child_groups_page(
-          group,
-          current_profile,
-          socket.assigns.children_pagination,
-          sub_groups_kind,
-          socket.assigns.children_search_query
-        )
+      pagination = socket.assigns.children_pagination
+      entries = list_children(socket, limit: reload_limit(pagination))
 
       socket
-      |> assign(:loaded_children, children_page.entries)
-      |> assign(:children_pagination, pagination_metadata(children_page))
-      |> stream(:children, children_page.entries, reset: true)
+      |> assign(:loaded_children, entries)
+      |> assign(
+        :children_pagination,
+        loaded_pagination(pagination, length(entries), count_children(socket))
+      )
+      |> stream(:children, entries, reset: true)
     else
       assign(socket, :loaded_children, [])
     end
@@ -1871,12 +1810,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_load_members(socket, group, active_tab) do
     if needs_members?(group, active_tab) do
-      members_page = members_page(group, socket.assigns.members_pagination)
+      pagination = socket.assigns.members_pagination
+      entries = Social.list_group_members(group, limit: reload_limit(pagination))
 
       socket
-      |> assign(:loaded_members, members_page.entries)
-      |> assign(:members_pagination, pagination_metadata(members_page))
-      |> stream(:members, members_page.entries, reset: true)
+      |> assign(
+        :members_pagination,
+        loaded_pagination(pagination, length(entries), Social.count_group_members(group))
+      )
+      |> stream(:members, entries, reset: true)
     else
       socket
     end
@@ -1884,28 +1826,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_load_values(socket, group, active_tab) do
     if needs_values?(group, active_tab) do
-      values_page = values_page(group, socket.assigns.values_pagination)
-      values = values_page.entries
-      value_ids = MapSet.new(Enum.map(values, & &1.id))
-
-      expanded_value_ids =
-        socket.assigns
-        |> Map.get(:expanded_value_ids, MapSet.new())
-        |> MapSet.intersection(value_ids)
+      limit = max(MapSet.size(socket.assigns.loaded_value_ids), @values_page_size)
+      {values, has_more?} = Social.list_group_values_page(group, limit: limit)
 
       socket
-      |> assign(:loaded_values, values)
-      |> assign(:values_pagination, pagination_metadata(values_page))
-      |> assign(:expanded_value_ids, expanded_value_ids)
+      |> assign(:loaded_value_ids, MapSet.new(values, & &1.id))
+      |> assign(:values_has_more?, has_more?)
+      |> assign(:oldest_value_id, first_value_id(values))
+      |> assign(:newest_value_id, last_value_id(values))
       |> stream(:values, values, reset: true)
-    else
-      socket
-    end
-  end
-
-  defp maybe_load_latest_data_value_id(socket, group, active_tab) do
-    if needs_latest_data_value_id?(group, active_tab) do
-      assign(socket, :latest_data_value_id, Social.get_latest_data_value_id_for_group(group))
     else
       socket
     end
@@ -2013,26 +1942,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group.parent_id != nil and active_tab == "values"
   end
 
-  defp needs_latest_data_value_id?(group, active_tab) do
-    group.parent_id != nil and active_tab == "group_home"
-  end
-
-  defp newer_value_arrived?(socket, previous_loaded_values, previous_values_pagination) do
-    needs_values?(socket.assigns.group, socket.assigns.active_tab) and
-      latest_loaded_value_id(socket.assigns.loaded_values) !=
-        latest_loaded_value_id(previous_loaded_values) and
-      socket.assigns.values_pagination.total_count > previous_values_pagination.total_count
-  end
-
-  defp latest_loaded_value_id(values) when is_list(values) do
-    values
-    |> List.last()
-    |> case do
-      %{id: id} -> id
-      _ -> nil
-    end
-  end
-
   defp needs_value_parent_options?(socket, active_tab) do
     socket.assigns.is_member and active_tab == "create_group"
   end
@@ -2132,27 +2041,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _ -> attrs
     end
   end
-
-  defp normalize_non_negative_integer_param(value) when is_integer(value) and value >= 0,
-    do: value
-
-  defp normalize_non_negative_integer_param(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {integer, ""} when integer >= 0 -> integer
-      _ -> nil
-    end
-  end
-
-  defp normalize_non_negative_integer_param(_value), do: nil
-
-  defp normalize_optional_string_param(value) when is_binary(value) do
-    case String.trim(value) do
-      "" -> nil
-      trimmed -> trimmed
-    end
-  end
-
-  defp normalize_optional_string_param(_value), do: nil
 
   defp handle_join_request_action(socket, id, action, success_message) do
     current_profile = socket.assigns.current_profile

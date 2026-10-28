@@ -90,10 +90,16 @@ defmodule PotokIde.MixProject do
         "esbuild.install --if-missing",
         "cmd --cd assets npm install"
       ],
-      "assets.build": ["compile", "tailwind potok_ide", "esbuild potok_ide"],
+      "assets.build": [
+        "compile",
+        "tailwind potok_ide",
+        "esbuild potok_ide",
+        "esbuild potok_app_sdk"
+      ],
       "assets.deploy": [
         "tailwind potok_ide --minify",
         "esbuild potok_ide --minify",
+        "esbuild potok_app_sdk --minify",
         "phx.digest"
       ],
       precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]

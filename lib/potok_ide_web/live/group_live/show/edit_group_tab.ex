@@ -12,13 +12,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-edit-group" class="max-w-dvw lg:max-w-6xl px-2">
+    <div id="group-panel-edit-group" class="flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
+      <div class="card-body min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <h3 class="card-title">{gettext("Edit group")}</h3>
 
         <.form
@@ -46,13 +46,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               type="checkbox"
             />
           </div>
+
           <.input
             field={@edit_group_form[:home_page]}
             label={gettext("Home page")}
             type="select"
             options={@home_page_options}
           />
-
           <details
             open={@description_details_open}
             class="rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-3 w-full mb-4 shadow-sm"
@@ -161,15 +161,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 }
               </script>
 
-              <div
-                style="height: calc(100vh - 24rem);"
-                class="grid group-description-layout gap-4 grid-cols-2 card-body overflow-y-auto p-0"
-              >
+              <div class="grid group-description-layout min-h-[28rem] gap-4 grid-cols-2 card-body p-0">
                 <div class="group-description-pane group-description-pane-editor rounded-2xl border border-base-300/80 bg-base-100/80 p-3 shadow-sm">
                   <.input
                     field={@edit_group_form[:description]}
                     type="textarea"
                     rows="16"
+                    phx-debounce="500"
                   />
                 </div>
 
@@ -185,13 +183,25 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                     {gettext("Start typing to preview the description.")}
                   </div>
 
+                  <Components.app_frame
+                    :if={
+                      !blank_description?(@edit_group_form[:description].value) and
+                        uses_api?(@edit_group_form[:uses_api].value)
+                    }
+                    id="group-app-frame-preview"
+                    html={@edit_group_form[:description].value}
+                    api={false}
+                    class="min-h-96"
+                  />
                   <Components.formatted_content
-                    :if={!blank_description?(@edit_group_form[:description].value)}
+                    :if={
+                      !blank_description?(@edit_group_form[:description].value) and
+                        !uses_api?(@edit_group_form[:uses_api].value)
+                    }
                     content={@edit_group_form[:description].value || ""}
                     content_format={
                       normalize_description_format(@edit_group_form[:description_format].value)
                     }
-                    uses_api={@edit_group_form[:uses_api].value || false}
                     class="min-h-48"
                   />
                 </div>
@@ -237,7 +247,6 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 <.icon name="hero-trash" class="size-4" />
                 <span>{gettext("Delete Data Values")}</span>
               </button>
-
               <button
                 :if={!@group.is_root}
                 id="group-delete-button"
@@ -249,6 +258,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 <.icon name="hero-trash" class="size-4" /> <span>{gettext("Delete group")}</span>
               </button>
             </div>
+
             <.button phx-disable-with={gettext("Saving...")} variant="primary">
               {gettext("Save changes")}
             </.button>
@@ -276,4 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   defp normalize_description_format(_), do: :markdown
 
   defp blank_description?(description), do: is_nil(description) or String.trim(description) == ""
+
+  # Form values arrive as strings after a change event ("true" / "false").
+  defp uses_api?(value), do: value in [true, "true"]
 end

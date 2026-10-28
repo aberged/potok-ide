@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="space-y-6 px-4 py-4 h-[calc(100dvh-8rem)] overflow-y-auto">
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-6 px-4 py-4">
         <div class="text-center">
           <.header>
             {gettext("Account Settings")}
@@ -45,9 +45,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             {gettext("Change Email")}
           </.button> --%>
         </.form>
-
         <div class="divider" />
-
         <.form
           for={@password_form}
           id="password_form"
@@ -83,9 +81,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             {gettext("Save Password")}
           </.button>
         </.form>
-
         <div class="divider" />
-
         <section
           id="push-notifications-panel"
           phx-hook="PushNotifications"
@@ -97,9 +93,8 @@ defmodule PotokIdeWeb.AccountLive.Settings do
         >
           <div class="space-y-4">
             <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-base-content">
-                {gettext("Push Notifications")}
-              </h2>
+              <h2 class="text-lg font-semibold text-base-content">{gettext("Push Notifications")}</h2>
+
               <p class="text-sm text-base-content/70">
                 {gettext(
                   "Enable notifications for this browser or for the installed Potok app on your device."
@@ -123,7 +118,6 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               >
                 {gettext("Enable notifications")}
               </button>
-
               <button
                 type="button"
                 data-push-test
@@ -132,7 +126,6 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               >
                 {gettext("Send test notification")}
               </button>
-
               <button
                 type="button"
                 data-push-disable
@@ -160,6 +153,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               <h2 class="text-lg font-semibold text-base-content">
                 {gettext("Stored Push Subscriptions")}
               </h2>
+
               <p class="text-sm text-base-content/70">
                 {gettext("All saved push subscription entities for this account.")}
               </p>
@@ -188,6 +182,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                         {push_subscription_platform(subscription)}
                       </span>
                     </div>
+
                     <p class="font-mono text-xs break-all text-base-content/75">
                       {push_subscription_identifier(subscription)}
                     </p>
@@ -195,6 +190,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
                   <div class="text-right text-xs text-base-content/55">
                     <p>{gettext("Updated")}: {format_push_datetime(subscription.updated_at)}</p>
+
                     <p>{gettext("Inserted")}: {format_push_datetime(subscription.inserted_at)}</p>
                   </div>
                 </div>
@@ -204,6 +200,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("ID")}
                     </dt>
+
                     <dd class="mt-1 font-mono text-xs text-base-content/80">{subscription.id}</dd>
                   </div>
 
@@ -211,6 +208,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Last Success")}
                     </dt>
+
                     <dd class="mt-1 text-base-content/80">
                       {format_push_datetime(subscription.last_success_at)}
                     </dd>
@@ -220,6 +218,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Endpoint")}
                     </dt>
+
                     <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
                       {present_push_field(subscription.endpoint)}
                     </dd>
@@ -229,6 +228,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Device Token")}
                     </dt>
+
                     <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
                       {present_push_field(subscription.device_token)}
                     </dd>
@@ -238,6 +238,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Auth")}
                     </dt>
+
                     <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
                       {present_push_field(subscription.auth)}
                     </dd>
@@ -247,6 +248,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("P256DH")}
                     </dt>
+
                     <dd class="mt-1 font-mono text-xs break-all text-base-content/80">
                       {present_push_field(subscription.p256dh)}
                     </dd>
@@ -256,6 +258,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Expires At")}
                     </dt>
+
                     <dd class="mt-1 text-base-content/80">
                       {format_push_datetime(subscription.expires_at)}
                     </dd>
@@ -265,6 +268,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Last Failure")}
                     </dt>
+
                     <dd class="mt-1 text-base-content/80">
                       {format_push_datetime(subscription.last_failure_at)}
                     </dd>
@@ -274,6 +278,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("Failure Reason")}
                     </dt>
+
                     <dd class="mt-1 wrap-break-word text-base-content/80">
                       {present_push_field(subscription.failure_reason)}
                     </dd>
@@ -283,6 +288,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
                       {gettext("User Agent")}
                     </dt>
+
                     <dd class="mt-1 wrap-break-word text-base-content/80">
                       {present_push_field(subscription.user_agent)}
                     </dd>

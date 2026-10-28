@@ -26,7 +26,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     ~H"""
     <div
       id="group-panel-sub-groups"
-      class="card relative h-[calc(100dvh-8rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-dvw px-2 lg:max-w-6xl"
+      class="card relative flex min-h-0 flex-1 flex-col px-2"
     >
       <.form
         for={@children_search_form}
@@ -69,8 +69,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-
-      <div class="min-h-0 flex-1 overflow-y-auto p-2 pb-4">
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24">
         <p
           :if={@pagination.loaded_count == 0}
           id="group-children-empty"

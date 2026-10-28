@@ -379,19 +379,24 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/members")
 
-      assert has_element?(owner_lv, "#group-member-presence-#{owner_profile.id}", "Online")
-      refute has_element?(owner_lv, "#group-member-presence-#{invitee_profile.id}")
+      # Badges are always rendered; `#group-presence-style` reveals the online ones.
+      assert has_element?(
+               owner_lv,
+               "#group-member-presence-#{owner_profile.id}.presence-p#{owner_profile.id}",
+               "Online"
+             )
+
+      assert shown_online?(owner_lv, owner_profile.id)
+      refute shown_online?(owner_lv, invitee_profile.id)
 
       {:ok, invitee_lv, _html} =
         Phoenix.ConnTest.build_conn()
         |> log_in_account(invitee_account)
         |> live(~p"/groups/#{group.id}/members")
 
-      assert has_element?(invitee_lv, "#group-member-presence-#{invitee_profile.id}", "Online")
+      assert shown_online?(invitee_lv, invitee_profile.id)
 
-      assert eventually(fn ->
-               has_element?(owner_lv, "#group-member-presence-#{invitee_profile.id}", "Online")
-             end)
+      assert eventually(fn -> shown_online?(owner_lv, invitee_profile.id) end)
 
       assert eventually(fn ->
                online_profile_ids = Social.list_online_profile_ids_for_group(group)
@@ -792,18 +797,21 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/values")
 
-      refute has_element?(owner_lv, "#value-creator-presence-#{invitee_value.id}")
+      assert has_element?(
+               owner_lv,
+               "#value-creator-presence-#{invitee_value.id}.presence-p#{invitee_profile.id}"
+             )
+
+      refute shown_online?(owner_lv, invitee_profile.id)
 
       {:ok, invitee_lv, _html} =
         Phoenix.ConnTest.build_conn()
         |> log_in_account(invitee_account)
         |> live(~p"/groups/#{group.id}/values")
 
-      assert has_element?(invitee_lv, "#value-creator-presence-#{invitee_value.id}")
+      assert shown_online?(invitee_lv, invitee_profile.id)
 
-      assert eventually(fn ->
-               has_element?(owner_lv, "#value-creator-presence-#{invitee_value.id}")
-             end)
+      assert eventually(fn -> shown_online?(owner_lv, invitee_profile.id) end)
     end
 
     test "shows only sub-groups where current profile is a member", %{conn: conn} do
@@ -1336,6 +1344,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> render_click()
 
       assert has_element?(lv, "#group-values-list", "paged value 01")
+      assert has_element?(lv, "#group-values-list", "paged value 21")
       refute has_element?(lv, "#group-values-load-more")
     end
 
@@ -1627,7 +1636,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute rendered =~ "<script>alert('boom')</script>"
     end
 
-    test "renders raw html descriptions when uses_api is true", %{conn: conn} do
+    test "runs uses_api descriptions in a sandboxed app frame", %{conn: conn} do
       owner_account = account_fixture()
       viewer_account = account_fixture()
 
@@ -1667,11 +1676,71 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(viewer_account)
         |> live(~p"/groups/#{group.id}")
 
-      rendered = render(element(lv, "#group-panel-description .ql-snow.chat-show"))
+      assert has_element?(lv, "#group-panel-description #group-app-frame iframe[sandbox]")
+      refute has_element?(lv, "#group-app-frame iframe[sandbox*='allow-same-origin']")
+      refute has_element?(lv, "#group-panel-description .ql-snow.chat-show")
 
-      assert has_element?(lv, "#group-panel-description")
-      assert rendered =~ "href=\"javascript:alert(&#39;boom&#39;)\""
-      assert rendered =~ "onclick=\"alert(&#39;boom&#39;)\""
+      assert has_element?(lv, "#group-app-frame[data-storage-key='potok-app:#{group.id}']")
+
+      frame_html = lv |> element("#group-app-frame-iframe") |> render()
+
+      assert frame_html =~ "srcdoc="
+      assert frame_html =~ "potok_app_sdk.js"
+      assert frame_html =~ "app.css"
+      assert frame_html =~ "unsafe link"
+    end
+
+    test "restarts the app frame when its viewer becomes a member", %{conn: conn} do
+      owner_account = account_fixture()
+      requester_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "apjn-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, requester_profile} =
+        Social.create_profile_for_account(requester_account, %{
+          username: "apjn-req",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      requester_account = Accounts.get_account!(requester_account.id)
+
+      {:ok, group} =
+        Social.create_group(owner_profile, Social.get_root_group!(), %{
+          "name" => "app-join-group",
+          "description" => "<div id=\"app-main\"></div>",
+          "description_format" => :html,
+          "is_public" => true,
+          "uses_api" => true
+        })
+
+      {:ok, requester_lv, _html} =
+        conn
+        |> log_in_account(requester_account)
+        |> live(~p"/groups/#{group.id}")
+
+      guest_srcdoc = requester_lv |> element("#group-app-frame-iframe") |> render()
+      assert guest_srcdoc =~ "#{requester_profile.id}:false"
+
+      requester_lv |> element("#group-request-access") |> render_click()
+      [request] = Social.list_pending_group_join_requests(group)
+      {:ok, _} = Social.accept_group_join_request(owner_profile, group, request.id)
+
+      # A new srcdoc makes the browser load the app again, now with access.
+      assert eventually(fn ->
+               requester_lv
+               |> element("#group-app-frame-iframe")
+               |> render() =~ "#{requester_profile.id}:true"
+             end)
     end
 
     test "allows a non-member to request access and the creator to approve it from the members tab",
@@ -2045,19 +2114,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert html =~ "See more"
 
-      expanded_html =
-        lv
-        |> element("button[phx-click=toggle_value_expansion][phx-value-id='#{value.id}']")
-        |> render_click()
+      # Expansion is a client-side attribute toggle on the value element; both
+      # labels are rendered and CSS shows the one matching `data-expanded`.
+      toggle_html = lv |> element("#value-toggle-#{value.id}") |> render()
 
-      assert expanded_html =~ "See less"
-
-      collapsed_html =
-        lv
-        |> element("button[phx-click=toggle_value_expansion][phx-value-id='#{value.id}']")
-        |> render_click()
-
-      assert collapsed_html =~ "See more"
+      assert toggle_html =~ "See more"
+      assert toggle_html =~ "See less"
+      assert toggle_html =~ "data-expanded"
+      assert toggle_html =~ "#value-#{value.id}"
     end
 
     test "updates values when a new value is added externally", %{conn: conn} do
@@ -2433,6 +2497,147 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     end
   end
 
+  describe "app api" do
+    setup %{conn: conn} do
+      owner_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "app-api-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group =
+        create_child_group!(owner_profile, "app-api-group", %{
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "is_public" => true,
+          "uses_api" => true
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/group_home")
+
+      %{lv: lv, group: group, owner_profile: owner_profile, owner_account: owner_account}
+    end
+
+    test "inserts and lists data values", %{lv: lv, group: group} do
+      assert has_element?(lv, "#group-app-frame")
+
+      render_hook(lv, "app_api", %{
+        "method" => "insert_value",
+        "params" => %{"data" => ~s({"score": 3})}
+      })
+
+      assert_reply(lv, %{ok: true, value: %{is_data: true, data: %{"score" => 3}} = value})
+      assert value.group_id == group.id
+      assert value.creator_username == "app-api-owner"
+
+      render_hook(lv, "app_api", %{"method" => "list_values", "params" => %{"limit" => "500"}})
+      assert_reply(lv, %{ok: true, values: [listed], has_more: false})
+      assert listed.id == value.id
+
+      render_hook(lv, "app_api", %{
+        "method" => "list_values",
+        "params" => %{"after_id" => value.id}
+      })
+
+      assert_reply(lv, %{ok: true, values: [], has_more: false})
+
+      # Data values never show up in the chat stream.
+      assert Social.count_group_values(group) == 0
+    end
+
+    test "updates the description for the creator only", %{lv: lv, group: group, conn: conn} do
+      render_hook(lv, "app_api", %{
+        "method" => "update_description",
+        "params" => %{"description" => "<p>v2</p>"}
+      })
+
+      assert_reply(lv, %{ok: true, group: %{description: "<p>v2</p>"}})
+      assert Social.get_group!(group.id).description == "<p>v2</p>"
+
+      viewer_account = account_fixture()
+
+      {:ok, _viewer_profile} =
+        Social.create_profile_for_account(viewer_account, %{
+          username: "app-api-viewer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, viewer_lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(viewer_account.id))
+        |> live(~p"/groups/#{group.id}/group_home")
+
+      render_hook(viewer_lv, "app_api", %{
+        "method" => "update_description",
+        "params" => %{"description" => "<p>hijack</p>"}
+      })
+
+      assert_reply(viewer_lv, %{ok: false, error: "forbidden"})
+
+      render_hook(viewer_lv, "app_api", %{
+        "method" => "insert_value",
+        "params" => %{"data" => "{}"}
+      })
+
+      assert_reply(viewer_lv, %{ok: false, error: "not_a_member"})
+
+      render_hook(viewer_lv, "app_api", %{"method" => "get_description", "params" => %{}})
+      assert_reply(viewer_lv, %{ok: true, group: %{description: "<p>v2</p>"}})
+
+      assert Social.get_group!(group.id).description == "<p>v2</p>"
+    end
+
+    test "rejects unknown methods and rate limits writes", %{lv: lv} do
+      render_hook(lv, "app_api", %{"method" => "delete_group", "params" => %{}})
+      assert_reply(lv, %{ok: false, error: "unknown_method"})
+
+      for _ <- 1..30 do
+        render_hook(lv, "app_api", %{"method" => "insert_value", "params" => %{"data" => "{}"}})
+        assert_reply(lv, %{ok: true})
+      end
+
+      render_hook(lv, "app_api", %{"method" => "insert_value", "params" => %{"data" => "{}"}})
+      assert_reply(lv, %{ok: false, error: "rate_limited"})
+    end
+
+    test "sanitizes html chat values in app groups", %{
+      conn: conn,
+      group: group,
+      owner_profile: owner_profile,
+      owner_account: owner_account
+    } do
+      {:ok, _value} =
+        Social.create_value(owner_profile, group, %{
+          "content" => ~s|<b>bold</b><img src="x" onerror="alert(1)"><script>alert(2)</script>|,
+          "content_format" => :html
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      rendered = lv |> element("#group-values-list") |> render()
+
+      assert rendered =~ "<b>bold</b>"
+      refute rendered =~ "onerror"
+      refute rendered =~ "<script>"
+    end
+  end
+
   defp create_child_group!(profile, name, attrs \\ %{}) do
     root_group = Social.get_root_group!()
 
@@ -2469,6 +2674,12 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     {:ok, _accepted_invitation} = Social.accept_group_invitation(invitation, profile)
 
     profile
+  end
+
+  defp shown_online?(lv, profile_id) do
+    lv
+    |> element("#group-presence-style")
+    |> render() =~ ".presence-p#{profile_id}{"
   end
 
   defp pad_2(value) do

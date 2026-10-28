@@ -431,6 +431,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :subtitle, :string, default: nil
   attr :me, :boolean, default: false
   attr :online?, :boolean, default: false
+
+  attr :presence_profile_id, :integer,
+    default: nil,
+    doc: "always render the badge and let `presence_css/1` show it while this profile is online"
+
   attr :presence_badge_id, :string, default: nil
   attr :sharing_badge_text_class, :string, default: "text-xs"
   attr :current_profile, :map, default: nil
@@ -451,6 +456,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         subtitle={@subtitle}
         me={@me}
         online?={@online?}
+        presence_profile_id={@presence_profile_id}
         presence_badge_id={@presence_badge_id}
         sharing_badge_text_class={@sharing_badge_text_class}
       />
@@ -464,6 +470,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       subtitle={@subtitle}
       me={@me}
       online?={@online?}
+      presence_profile_id={@presence_profile_id}
       presence_badge_id={@presence_badge_id}
       sharing_badge_text_class={@sharing_badge_text_class}
     />
@@ -477,6 +484,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :subtitle, :string, default: nil
   attr :me, :boolean, default: false
   attr :online?, :boolean, default: false
+
+  attr :presence_profile_id, :integer,
+    default: nil,
+    doc: "always render the badge and let `presence_css/1` show it while this profile is online"
+
   attr :presence_badge_id, :string, default: nil
   attr :sharing_badge_text_class, :string, default: "text-xs"
 
@@ -497,7 +509,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <% else %>
           <div class={[
             @avatar_size,
-            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-400 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
           ]}>
             {profile_initials(@profile.username)}
           </div>
@@ -529,9 +541,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
 
         <div
-          :if={@online?}
+          :if={@online? or @presence_profile_id}
           id={@presence_badge_id}
-          class="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
+          class={[
+            "mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700",
+            @presence_profile_id && "presence-dot presence-p#{@presence_profile_id}"
+          ]}
         >
           <span class="size-2 rounded-full bg-emerald-500" /> <span>{gettext("Online")}</span>
         </div>
@@ -686,11 +701,93 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end)
   end
 
+  @doc """
+  CSS that reveals the `presence-dot` markers of online profiles. Rendered
+  once per page outside of streams, so presence changes never re-render
+  streamed values or members. Selectors stay unquoted because EEx escapes
+  quotes inside `<style>`.
+  """
+  def presence_css(online_profile_ids) do
+    Enum.map_join(online_profile_ids, fn profile_id ->
+      ".presence-dot.presence-p#{profile_id}{display:inline-flex}"
+    end)
+  end
+
+  attr :id, :string, required: true
+  attr :html, :string, required: true, doc: "the app's HTML (the group description)"
+  attr :api, :boolean, default: true, doc: "false renders a preview whose API calls are refused"
+
+  attr :storage_key, :string,
+    default: nil,
+    doc: "page `localStorage` key that keeps the app's `localStorage`; nil keeps it in memory"
+
+  attr :viewer_key, :string,
+    default: nil,
+    doc: "describes the viewer's access (profile, membership); a new value restarts the app"
+
+  attr :class, :any, default: nil
+
+  @doc """
+  Runs an app group's HTML in a sandboxed iframe. Without `allow-same-origin`
+  the frame gets an opaque origin: it cannot touch this page, its cookies or
+  the LiveSocket, and talks to Potok only through `potok_app_sdk.js` and the
+  `GroupAppFrame` hook. The `srcdoc` only changes (and reloads the app) when
+  the HTML or `viewer_key` changes: apps load their data once, so one that
+  started without access (before its viewer joined) must start again.
+  """
+  def app_frame(assigns) do
+    assigns =
+      assign(assigns, :srcdoc, app_frame_srcdoc(assigns.html, assigns.viewer_key))
+
+    ~H"""
+    <div
+      id={@id}
+      phx-hook="GroupAppFrame"
+      data-api={to_string(@api)}
+      data-storage-key={@storage_key}
+      class={["flex min-h-0 flex-1 flex-col", @class]}
+    >
+      <iframe
+        id={"#{@id}-iframe"}
+        title={gettext("Group app")}
+        sandbox="allow-scripts allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads"
+        referrerpolicy="no-referrer"
+        srcdoc={@srcdoc}
+        class="min-h-0 w-full flex-1 border-0 bg-transparent"
+      >
+      </iframe>
+    </div>
+    """
+  end
+
+  # Apps written before the sandbox ran inside this page: they use its daisyUI
+  # classes and theme, size themselves from the parent of
+  # `#group-panel-description` and find the API on its `potok` property (set
+  # by the SDK's legacy shim).
+  defp app_frame_srcdoc(html, viewer_key) do
+    css_url = ~p"/assets/css/app.css"
+    sdk_url = ~p"/assets/js/potok_app_sdk.js"
+
+    viewer_meta =
+      if viewer_key do
+        escaped = viewer_key |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+        ~s(<meta name="potok-viewer" content="#{escaped}">)
+      end
+
+    """
+    <!doctype html><html><head><meta charset="utf-8">\
+    <meta name="viewport" content="width=device-width, initial-scale=1">#{viewer_meta}\
+    <base target="_blank"><link rel="stylesheet" href="#{css_url}">\
+    <style>html,body{height:100%}</style>\
+    <script src="#{sdk_url}"></script></head>\
+    <body><div id="group-panel-description">\
+    #{UTF8.replace_invalid(html || "")}</div></body></html>\
+    """
+  end
+
   attr :value, :map, required: true
   attr :dom_id, :string, required: true
   attr :current_profile, :map, default: nil
-  attr :online_profile_ids, :any, required: true
-  attr :expanded_value_ids, :any, required: true
   attr :editing_value_id, :integer, default: nil
   attr :uses_api, :boolean, default: false
 
@@ -702,14 +799,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       assigns
       |> assign(:mine?, mine?)
       |> assign(:editing?, editing?)
+      |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
-      |> assign(
-        :creator_online?,
-        MapSet.member?(assigns.online_profile_ids, assigns.value.creator_id)
-      )
 
     ~H"""
-    <div id={@dom_id} class={["chat", (@mine? && "chat-end") || "chat-start"]}>
+    <div id={@dom_id} class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}>
       <.inspect_tree
         :if={false}
         id={"value-message-assigns-#{@value.id}"}
@@ -724,9 +818,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
 
           <span
-            :if={@creator_online?}
             id={"value-creator-presence-#{@value.id}"}
-            class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
+            class={[
+              "presence-dot absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500",
+              "presence-p#{@value.creator_id}"
+            ]}
             title={gettext("Online")}
           />
           <%!-- <span
@@ -744,9 +840,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           <div class="relative flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
             {profile_initials(@value.creator.username)}
             <span
-              :if={@creator_online?}
               id={"value-creator-presence-#{@value.id}"}
-              class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
+              class={[
+                "presence-dot absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500",
+                "presence-p#{@value.creator_id}"
+              ]}
               title={gettext("Online")}
             />
           </div>
@@ -792,14 +890,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
+        <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
         <div class="relative">
-          <div
-            class={[
-              !value_expanded?(@expanded_value_ids, @value) && value_expandable?(@value) &&
-                "overflow-hidden"
-            ]}
-            style={collapsed_value_style(@expanded_value_ids, @value)}
-          >
+          <div class={[
+            @expandable? &&
+              "max-h-[7.5rem] overflow-hidden group-data-expanded/value:max-h-none group-data-expanded/value:overflow-visible"
+          ]}>
             <.formatted_content
               content={@value.content}
               content_format={@value.content_format}
@@ -808,9 +904,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
 
           <div
-            :if={value_expandable?(@value) and !value_expanded?(@expanded_value_ids, @value)}
+            :if={@expandable?}
             class={[
-              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t",
+              "pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t group-data-expanded/value:hidden",
               @mine? && "from-primary to-transparent",
               !@mine? && "from-base-100 to-transparent"
             ]}
@@ -818,19 +914,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
 
           <button
-            :if={value_expandable?(@value)}
+            :if={@expandable?}
+            id={"value-toggle-#{@value.id}"}
             type="button"
-            phx-click="toggle_value_expansion"
-            phx-value-id={@value.id}
+            phx-click={JS.toggle_attribute({"data-expanded", "true"}, to: "##{@dom_id}")}
             class={[
               "mt-3 text-sm font-semibold transition-opacity hover:opacity-80",
               @mine? && "text-primary-content",
               !@mine? && "text-primary"
             ]}
           >
-            {if value_expanded?(@expanded_value_ids, @value),
-              do: gettext("See less"),
-              else: gettext("See more")}
+            <span class="group-data-expanded/value:hidden">{gettext("See more")}</span>
+            <span class="hidden group-data-expanded/value:inline">{gettext("See less")}</span>
           </button>
         </div>
       </div>
@@ -838,8 +933,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  # App groups get the richer html5 allow-list for chat values; their scripts
+  # only ever run inside the sandboxed `app_frame/1`.
   defp render_formatted_content(%{content: content, content_format: :html, uses_api: true}) do
     content
+    |> UTF8.replace_invalid()
+    |> HtmlSanitizeEx.html5()
     |> UTF8.replace_invalid()
     |> raw()
   end
@@ -939,18 +1038,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp value_expandable?(_), do: false
-
-  defp value_expanded?(expanded_value_ids, %{id: value_id}) do
-    MapSet.member?(expanded_value_ids, value_id)
-  end
-
-  defp collapsed_value_style(expanded_value_ids, value) do
-    if value_expandable?(value) and !value_expanded?(expanded_value_ids, value) do
-      "max-height: calc(1.5rem * 5);"
-    else
-      nil
-    end
-  end
 
   defp profile_picture_url(profile), do: Avatars.profile_avatar_url(profile)
 

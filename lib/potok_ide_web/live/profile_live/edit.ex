@@ -18,7 +18,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="flex h-[calc(100dvh-4rem)] flex-col overflow-y-auto px-4 pt-4">
+      <div class="flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col px-4 pt-4">
         <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8">
           <div class="card">
             <div class="card-body gap-5">

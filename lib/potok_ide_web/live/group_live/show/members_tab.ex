@@ -6,26 +6,26 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :members, :any, required: true
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
-  attr :online_profile_ids, :any, required: true
   attr :group, :map, required: true
   attr :join_requests, :list, default: []
   attr :pending_join_requests_count, :integer, default: 0
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-members" class="card max-w-dvw lg:max-w-6xl px-2">
+    <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="pt-4 h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto">
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
         <h3 :if={!@group.is_direct} class="card-title mb-2">{gettext("Members")}</h3>
 
         <div class=" flex flex-row">
           <.icon :if={@group.is_direct} name="hero-user" />
           <.icon :if={@group.is_direct} name="hero-user" />
         </div>
+
         <div
           :if={@group.creator_id == @current_profile.id && !@group.is_direct}
           id="group-join-requests-panel"
@@ -34,6 +34,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
               <h4 class="text-sm font-semibold text-base-950">{gettext("Access requests")}</h4>
+
               <p class="text-xs text-base-900/70">
                 {gettext("Profiles waiting for approval to join this public group.")}
               </p>
@@ -82,7 +83,6 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   >
                     {gettext("Accept")}
                   </button>
-
                   <button
                     id={"group-reject-join-request-#{request.id}"}
                     type="button"
@@ -112,12 +112,11 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               <Components.profile_identity
                 profile={member}
                 me={member.id == @current_profile.id}
-                online?={MapSet.member?(@online_profile_ids, member.id)}
+                presence_profile_id={member.id}
                 presence_badge_id={"group-member-presence-#{member.id}"}
                 current_profile={@current_profile}
                 direct_group_link={true}
               />
-
               <button
                 :if={
                   @group.creator_id == @current_profile.id && member.id != @group.creator_id &&

@@ -16,7 +16,7 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
     >
-      <div class="flex h-[calc(100dvh-4rem)] items-center justify-center px-4">
+      <div class="flex min-h-0 flex-1 items-center justify-center px-4">
         <div class="text-sm text-base-content/70">{gettext("Opening direct group...")}</div>
       </div>
     </Layouts.app>

@@ -18,8 +18,10 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
 
       assert html =~ ~s(rel="manifest")
       assert html =~ "/manifest.webmanifest"
-      assert html =~ "/images/pwa/apple-touch-icon.svg"
+      assert html =~ "/images/pwa/icon-180.png"
       assert html =~ ~s(name="theme-color")
+      assert html =~ ~s|media="(prefers-color-scheme: dark)"|
+      assert html =~ ~s(id="app-update-toast")
     end
 
     test "renders login page in polish when locale is stored in session", %{conn: conn} do

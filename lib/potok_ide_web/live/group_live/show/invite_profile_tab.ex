@@ -11,13 +11,13 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-invite-profile" class="card max-w-dvw lg:max-w-6xl px-2">
+    <div id="group-panel-invite-profile" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] max-w-lg overflow-y-auto">
+      <div class="card-body min-h-0 flex-1 overflow-y-auto overscroll-contain max-w-lg">
         <h3 class="card-title">{gettext("Invite to group")}</h3>
 
         <.form

@@ -1,7 +1,7 @@
 /* See the Tailwind configuration guide for advanced usage
    https://tailwindcss.com/docs/configuration */
 
-@import "tailwindcss";
+@import "tailwindcss" source(none);
 @source "../css";
 @source "../js";
 @source "../../lib/potok_ide_web";
@@ -162,6 +162,10 @@
 
 /* Make LiveView wrapper divs transparent for layout */
 [data-phx-session], [data-phx-teleported-src] { display: contents }
+
+/* Online indicators: hidden by default and revealed per profile by the
+   `#group-presence-style` rules, so presence changes never re-render items. */
+.presence-dot { display: none; }
 
 /* Group description editor layout modes */
 .group-description-layout-button {
@@ -438,7 +442,7 @@
 }
 
 .chat-show.chat-show-markdown .ql-editor blockquote {
-  background: var(--color-base-400);
+  background: var(--color-base-300);
   border-left: 0.25rem solid var(--color-warning);
   border-radius: 0 0.75rem 0.75rem 0;
   color: var(--color-base-content);

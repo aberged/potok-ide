@@ -12,14 +12,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
 
   def panel(assigns) do
     ~H"""
-    <div id="group-panel-create-group" class="px-2">
+    <div id="group-panel-create-group" class="flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
         :if={!@group.is_root}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="h-[calc(100dvh-12rem-var(--app-safe-area-bottom)-var(--app-safe-area-top))] overflow-y-auto px-2 py-4">
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 py-4">
         <h3 class="card-title">{gettext("Create sub-group")}</h3>
 
         <.form

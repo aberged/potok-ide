@@ -1936,4 +1936,239 @@ defmodule PotokIde.SocialTest do
                "data:image/png;base64,QUJD"
     end
   end
+
+  describe "app data values" do
+    setup do
+      account = account_fixture()
+
+      {:ok, owner} =
+        Social.create_profile_for_account(account, %{
+          username: "app-data-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "app-data-member",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "app-data-group",
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "is_public" => false,
+          "uses_api" => true
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner, group, member)
+      {:ok, _} = Social.accept_group_invitation(invitation, member)
+
+      %{owner: owner, member: member, group: group}
+    end
+
+    test "create_data_value/3 skips read markers and unread broadcasts", %{
+      owner: owner,
+      member: member,
+      group: group
+    } do
+      Social.subscribe_group(group)
+      Social.subscribe_profile(member)
+
+      assert {:ok, value} =
+               Social.create_data_value(owner, group, %{
+                 "content" => "data:",
+                 "data" => ~s({"n": 1})
+               })
+
+      assert value.is_data
+      assert value.data == %{"n" => 1}
+      assert value.creator.id == owner.id
+
+      assert_receive {:data_value_created, group_id, %{id: value_id}}
+      assert group_id == group.id
+      assert value_id == value.id
+
+      refute_receive {:group_unread_counts_updated, _profile_id, _group_id}
+      refute_receive {:value_created, _group_id, _value}
+
+      refute Repo.exists?(
+               from r in PotokIde.Social.GroupValueRead,
+                 where: r.group_id == ^group.id and r.last_read_value_id == ^value.id
+             )
+    end
+
+    test "create_value/3 routes is_data values to create_data_value/3", %{
+      owner: owner,
+      group: group
+    } do
+      Social.subscribe_group(group)
+
+      assert {:ok, value} =
+               Social.create_value(owner, group, %{"content" => "data:", "is_data" => true})
+
+      assert value.is_data
+      assert_receive {:data_value_created, _group_id, %{id: value_id}}
+      assert value_id == value.id
+    end
+
+    test "list_group_data_value_rows/2 caps the limit and supports cursors", %{
+      owner: owner,
+      group: group
+    } do
+      values =
+        for n <- 1..3 do
+          {:ok, value} =
+            Social.create_data_value(owner, group, %{"content" => "data:", "data" => %{"n" => n}})
+
+          value
+        end
+
+      [first, second, third] = values
+
+      assert {[row], true} = Social.list_group_data_value_rows(group, limit: 1)
+      assert row.id == first.id
+      assert row.creator_username == "app-data-owner"
+      assert row.data == %{"n" => 1}
+
+      assert {rows, false} = Social.list_group_data_value_rows(group, after_id: first.id)
+      assert Enum.map(rows, & &1.id) == [second.id, third.id]
+
+      assert {rows, false} = Social.list_group_data_value_rows(group, before_id: third.id)
+      assert Enum.map(rows, & &1.id) == [first.id, second.id]
+
+      assert {rows, false} = Social.list_group_data_value_rows(group, limit: 10_000)
+      assert length(rows) == 3
+    end
+  end
+
+  describe "list_group_values_page/2" do
+    test "returns the newest page oldest-first and pages backwards by id" do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "keyset-prof",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(profile, Social.get_root_group!(), %{
+          "name" => "keyset-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      ids =
+        for n <- 1..5 do
+          {:ok, value} =
+            Social.create_value(profile, group, %{
+              "content" => "keyset #{n}",
+              "content_format" => :markdown
+            })
+
+          value.id
+        end
+
+      {:ok, _data_value} =
+        Social.create_data_value(profile, group, %{"content" => "data:", "data" => %{}})
+
+      assert {newest, true} = Social.list_group_values_page(group, limit: 2)
+      assert Enum.map(newest, & &1.id) == Enum.slice(ids, 3, 2)
+
+      assert {older, true} =
+               Social.list_group_values_page(group, before_id: hd(newest).id, limit: 2)
+
+      assert Enum.map(older, & &1.id) == Enum.slice(ids, 1, 2)
+
+      assert {oldest, false} =
+               Social.list_group_values_page(group, before_id: hd(older).id, limit: 2)
+
+      assert Enum.map(oldest, & &1.id) == [hd(ids)]
+    end
+  end
+
+  describe "update_group_description/3" do
+    test "updates only the description and notifies only the group" do
+      account = account_fixture()
+
+      {:ok, owner} =
+        Social.create_profile_for_account(account, %{
+          username: "desc-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "desc-group",
+          "description" => "<p>old</p>",
+          "description_format" => :html,
+          "is_public" => false,
+          "uses_api" => true
+        })
+
+      Social.subscribe_group(group)
+      Social.subscribe_group(%Group{id: group.parent_id})
+
+      assert {:ok, updated} =
+               Social.update_group_description(owner, group, %{
+                 "description" => "<p>new</p>",
+                 "name" => "ignored"
+               })
+
+      assert updated.description == "<p>new</p>"
+      assert updated.name == "desc-group"
+
+      assert_receive {:group_description_updated, group_id}
+      assert group_id == group.id
+      refute_receive {:group_updated, _group_id}
+    end
+
+    test "rejects non-creators" do
+      account = account_fixture()
+
+      {:ok, owner} =
+        Social.create_profile_for_account(account, %{
+          username: "desc-owner-2",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "desc-other",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "desc-group-2",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:error, :not_group_creator} =
+               Social.update_group_description(other, group, %{"description" => "x"})
+    end
+  end
 end

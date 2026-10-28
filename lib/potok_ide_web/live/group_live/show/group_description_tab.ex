@@ -9,16 +9,17 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   attr :pending_join_request, :map, default: nil
 
   def panel(assigns) do
-    assigns = assign(assigns, :empty_description_image_src, empty_description_image_src())
+    assigns =
+      assign(assigns, :empty_description_image_src, empty_description_image_src(assigns.group))
 
     ~H"""
-    <div class="h-[calc(100dvh-8rem)] max-w-dvw px-2 pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+4rem)] lg:max-w-6xl">
+    <div class="flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
         group={@group}
         current_profile={@current_profile}
         class="shadow-md sticky"
       />
-      <div class="h-[calc(100dvh-12rem)] max-w-dvw overflow-y-auto pb-[calc(var(--app-safe-area-bottom)+var(--app-safe-area-top)+4rem)] lg:max-w-6xl">
+      <div class="flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col pb-4">
         <div
           :if={blank_description?(@group.description)}
           id="group-description-empty"
@@ -39,20 +40,25 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         </div>
 
         <div
-          :if={!blank_description?(@group.description)}
-          class=""
+          :if={!blank_description?(@group.description) and @group.uses_api}
           id="group-panel-description"
-          phx-hook="GroupDescriptionActions"
-          data-group-id={@group.id}
-          data-current-profile-id={@current_profile && @current_profile.id}
-          data-current-profile={current_profile_payload(@current_profile)}
-          data-description={@group.description || ""}
-          data-description-format={@group.description_format}
+          class="flex min-h-0 flex-1 flex-col"
+        >
+          <Components.app_frame
+            id="group-app-frame"
+            html={@group.description}
+            storage_key={"potok-app:#{@group.id}"}
+            viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}"}
+          />
+        </div>
+
+        <div
+          :if={!blank_description?(@group.description) and !@group.uses_api}
+          id="group-panel-description"
         >
           <Components.formatted_content
             content={@group.description}
             content_format={@group.description_format}
-            uses_api={@group.uses_api}
           />
         </div>
       </div>
@@ -62,36 +68,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   defp blank_description?(description), do: is_nil(description) or String.trim(description) == ""
 
-  defp empty_description_image_src do
-    random_number = :rand.uniform()
-
-    cond do
-      random_number < 1 / 4 ->
-        ~p"/images/social-media.gif"
-
-      random_number < 2 / 4 ->
-        "https://img.daisyui.com/images/daisyui/mark-rotating.svg"
-
-      random_number < 3 / 4 ->
-        ~p"/images/pencil.gif"
-
-      true ->
-        ~p"/images/idea.gif"
+  # Picked per group instead of at random, so re-renders never swap the image.
+  defp empty_description_image_src(group) do
+    case rem(group.id || 0, 4) do
+      0 -> ~p"/images/social-media.gif"
+      1 -> ~p"/images/mark-rotating.svg"
+      2 -> ~p"/images/pencil.gif"
+      _ -> ~p"/images/idea.gif"
     end
-  end
-
-  defp current_profile_payload(nil), do: ""
-
-  defp current_profile_payload(current_profile) do
-    Jason.encode!(%{
-      id: current_profile.id,
-      username: current_profile.username,
-      profile_picture_url: PotokIdeWeb.Avatars.profile_avatar_url(current_profile),
-      description: current_profile.description,
-      description_format: current_profile.description_format,
-      sharing: current_profile.sharing,
-      inserted_at: current_profile.inserted_at,
-      updated_at: current_profile.updated_at
-    })
   end
 end

@@ -25,6 +25,10 @@ defmodule PotokIdeWeb.Layouts do
       </Layouts.app>
 
   """
+  # The active link is marked with `aria-current` by app.js (as a sticky JS
+  # command, so LiveView patches keep it).
+  @nav_link_class "rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content aria-[current=page]:border-base-content aria-[current=page]:bg-base-content aria-[current=page]:text-base-100 aria-[current=page]:shadow-sm"
+
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :current_scope, :map,
@@ -41,14 +45,170 @@ defmodule PotokIdeWeb.Layouts do
   slot :inner_block, required: true
 
   def app(assigns) do
+    assigns = assign(assigns, :nav_link_class, @nav_link_class)
+
     ~H"""
-    <div class="relative flex min-h-dvh max-h-dvh flex-col overflow-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
-      <nav class="sticky z-100">
-        <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
-          <% profile = @current_profile %>
-          <.header_menu>
+    <%!--
+      App shell: one flex column per screen height. The top bar never scrolls,
+      `#main-content` is the only flexible region and pages put their own
+      `min-h-0 flex-1 overflow-y-auto` scroll area inside it. On lg+ the drawer
+      is a permanent sidebar; below that it slides in from the menu button.
+    --%>
+    <div
+      id="app-shell"
+      class={["drawer h-dvh overflow-hidden", @current_scope && "lg:drawer-open"]}
+      phx-hook="HeaderDrawer"
+    >
+      <%!-- Ignored by patches, otherwise every re-render would reset `checked` and close the drawer. --%>
+      <input id="app-drawer-toggle" type="checkbox" class="drawer-toggle" phx-update="ignore" />
+      <div class="drawer-content flex h-dvh min-w-0 flex-col overflow-hidden pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
+        <nav class="relative z-100 shrink-0">
+          <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
+            <label
+              for="app-drawer-toggle"
+              aria-label={gettext("Open menu")}
+              class={[
+                "btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur",
+                @current_scope && "lg:hidden"
+              ]}
+            >
+              <.icon name="hero-bars-3" class="size-5" />
+            </label>
+            <.link
+              id="nav-root-group-link"
+              navigate={home_path(@current_scope, @current_profile)}
+              alt={gettext("Groups")}
+              aria-label={gettext("Groups")}
+              class="relative"
+            >
+              <.icon name="hero-home" class="size-6" />
+              <span
+                id="nav-root-group-unread-badge"
+                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                hidden={@root_group_unread_count <= 0}
+              >
+                {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
+              </span>
+            </.link>
+            <div class="flex items-right gap-4 items-center ml-auto">
+              <.link
+                id="nav-invitations-link"
+                navigate={~p"/invitations"}
+                alt={gettext("Invitations")}
+                class="relative"
+                aria-label={gettext("Invitations")}
+                hidden={is_nil(@current_profile)}
+              >
+                <.icon name="hero-inbox-arrow-down" class="size-6" />
+                <span
+                  id="nav-invitations-count-badge"
+                  class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                  hidden={@pending_invitations_count <= 0}
+                >
+                  {if(@pending_invitations_count > 999,
+                    do: "999+",
+                    else: @pending_invitations_count
+                  )}
+                </span>
+              </.link>
+              <.link
+                id="nav-requests-link"
+                navigate={~p"/requests"}
+                alt={gettext("Requests")}
+                class="relative"
+                aria-label={gettext("Requests")}
+                hidden={is_nil(@current_profile)}
+              >
+                <.icon name="hero-hand-raised" class="size-6" />
+                <span
+                  id="nav-requests-count-badge"
+                  class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                  hidden={@pending_group_join_requests_count <= 0}
+                >
+                  {if(@pending_group_join_requests_count > 999,
+                    do: "999+",
+                    else: @pending_group_join_requests_count
+                  )}
+                </span>
+              </.link>
+              <.link
+                navigate={~p"/profiles"}
+                class="flex min-w-0 items-center flex-row gap-3 self-start"
+              >
+                <span class="min-w-0 text-right">
+                  <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
+                    Potok
+                  </span>
+                  <span
+                    id="nav-brand-title"
+                    data-default-title=""
+                    class="block truncate text-sm font-semibold text-base-content"
+                  >
+                    <%= if @current_profile do %>
+                      {@current_profile.username}
+                    <% else %>
+                      {gettext("Welcome!")}
+                    <% end %>
+                  </span>
+                </span>
+                <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
+                  <%= if @current_profile do %>
+                    <img
+                      id="nav-brand-profile-avatar"
+                      src={PotokIdeWeb.Avatars.profile_avatar_url(@current_profile)}
+                      alt={@current_profile.username}
+                      class="size-10 rounded-2xl object-cover"
+                    />
+                  <% else %>
+                    <img
+                      id="nav-brand-logo"
+                      src={~p"/images/pwa/icon-512.png"}
+                      width="34"
+                      alt="Potok"
+                      class="rounded-2xl object-cover"
+                    />
+                  <% end %>
+                </span>
+              </.link>
+            </div>
+          </div>
+        </nav>
+
+        <main
+          id="main-content"
+          class="relative z-0 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto overscroll-contain"
+        >
+          {render_slot(@inner_block)}
+        </main>
+      </div>
+
+      <div class="drawer-side z-4000 lg:z-auto">
+        <label
+          for="app-drawer-toggle"
+          aria-label={gettext("close")}
+          class="drawer-overlay bg-base-content/25 backdrop-blur-[2px]"
+        />
+        <aside
+          id="app-sidebar"
+          class="flex h-full w-[min(18rem,calc(100vw-1.25rem))] flex-col border-r border-base-300/70 bg-base-100/95 p-4 pt-[calc(var(--app-safe-area-top)+1rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] shadow-2xl shadow-primary/10 backdrop-blur sm:w-80 lg:w-72 lg:shadow-none"
+        >
+          <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
+            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+              Potok
+            </div>
+
+            <label
+              for="app-drawer-toggle"
+              class="btn btn-ghost btn-circle border border-base-300 bg-base-100 lg:hidden"
+            >
+              <span class="sr-only">{gettext("close")}</span>
+              <.icon name="hero-x-mark" class="size-5" />
+            </label>
+          </div>
+
+          <div class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1">
             <%= if @current_scope do %>
-              <div class="mb-4 max-w-full z-50 truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
+              <div class="mb-4 max-w-full truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
                 {@current_scope.account.email}
               </div>
             <% end %>
@@ -61,48 +221,48 @@ defmodule PotokIdeWeb.Layouts do
               <div class="flex flex-col gap-2" data-drawer-nav>
                 <%= if @current_scope do %>
                   <.link
-                    href={~p"/profiles"}
+                    navigate={~p"/profiles"}
                     data-nav-link
                     data-nav-target="/profiles"
                     data-nav-match="prefix"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-users" class="size-6" /> {gettext("Profiles")}
                   </.link>
                   <.link
-                    href={~p"/groups"}
+                    navigate={~p"/groups"}
                     data-nav-link
                     data-nav-target="/groups"
                     data-nav-match="prefix"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-user-group" class="size-6" /> {gettext("Groups")}
                   </.link>
                   <.link
-                    href={~p"/invitations"}
+                    navigate={~p"/invitations"}
                     data-nav-link
                     data-nav-target="/invitations"
                     data-nav-match="prefix"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-inbox-arrow-down" class="size-6" /> {gettext("Invitations")}
                   </.link>
                   <.link
-                    href={~p"/requests"}
+                    navigate={~p"/requests"}
                     data-nav-link
                     data-nav-target="/requests"
                     data-nav-match="prefix"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-hand-raised" class="size-6" /> {gettext("Requests")}
                   </.link>
                 <% else %>
                   <.link
-                    href={~p"/accounts/log-in"}
+                    navigate={~p"/accounts/log-in"}
                     data-nav-link
                     data-nav-target="/accounts/log-in"
                     data-nav-match="exact"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" /> {gettext(
                       "Log in"
@@ -120,19 +280,15 @@ defmodule PotokIdeWeb.Layouts do
 
                 <div class="flex flex-col gap-2" data-drawer-nav>
                   <.link
-                    href={~p"/accounts/settings"}
+                    navigate={~p"/accounts/settings"}
                     data-nav-link
                     data-nav-target="/accounts/settings"
                     data-nav-match="prefix"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                    class={@nav_link_class}
                   >
                     <.icon name="hero-cog-6-tooth" class="size-6" /> {gettext("Settings")}
                   </.link>
-                  <.link
-                    href={~p"/accounts/log-out"}
-                    method="delete"
-                    class="rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
-                  >
+                  <.link href={~p"/accounts/log-out"} method="delete" class={@nav_link_class}>
                     <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" /> {gettext(
                       "Log out"
                     )}
@@ -153,124 +309,19 @@ defmodule PotokIdeWeb.Layouts do
                 /> <.theme_toggle />
               </div>
             </div>
-          </.header_menu>
-
-          <.link
-            id="nav-root-group-link"
-            href={~p"/"}
-            alt={gettext("Groups")}
-            aria-label={gettext("Groups")}
-            class="relative"
-          >
-            <.icon name="hero-home" class="size-6" />
-            <span
-              id="nav-root-group-unread-badge"
-              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
-              hidden={@root_group_unread_count <= 0}
-            >
-              {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
-            </span>
-          </.link>
-          <div class="flex items-right gap-4 items-center ml-auto">
-            <.link
-              id="nav-invitations-link"
-              href={~p"/invitations"}
-              alt={gettext("Invitations")}
-              class="relative"
-              aria-label={gettext("Invitations")}
-              hidden={is_nil(@current_profile)}
-            >
-              <.icon name="hero-inbox-arrow-down" class="size-6" />
-              <span
-                id="nav-invitations-count-badge"
-                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
-                hidden={@pending_invitations_count <= 0}
-              >
-                {if(@pending_invitations_count > 999,
-                  do: "999+",
-                  else: @pending_invitations_count
-                )}
-              </span>
-            </.link>
-            <.link
-              id="nav-requests-link"
-              href={~p"/requests"}
-              alt={gettext("Requests")}
-              class="relative"
-              aria-label={gettext("Requests")}
-              hidden={is_nil(@current_profile)}
-            >
-              <.icon name="hero-hand-raised" class="size-6" />
-              <span
-                id="nav-requests-count-badge"
-                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
-                hidden={@pending_group_join_requests_count <= 0}
-              >
-                {if(@pending_group_join_requests_count > 999,
-                  do: "999+",
-                  else: @pending_group_join_requests_count
-                )}
-              </span>
-            </.link>
-            <.link
-              href={~p"/profiles"}
-              class="flex min-w-0 items-center flex-row gap-3 self-start"
-            >
-              <span class="min-w-0 text-right">
-                <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
-                  Potok
-                </span>
-                <span
-                  id="nav-brand-title"
-                  data-default-title=""
-                  class="block truncate text-sm font-semibold text-base-content"
-                >
-                  <%= if profile do %>
-                    {profile.username}
-                  <% else %>
-                    {gettext("Welcome!")}
-                  <% end %>
-                </span>
-              </span>
-              <span class="flex size-10 items-center justify-center rounded-2xl border border-base-300 bg-gradient-to-br from-primary/15 via-base-100 to-secondary/10 shadow-sm">
-                <%= if profile do %>
-                  <img
-                    id="nav-brand-profile-avatar"
-                    src={PotokIdeWeb.Avatars.profile_avatar_url(@current_profile)}
-                    alt={if(@current_profile, do: @current_profile.username, else: "Potok")}
-                    class={[
-                      "size-10 rounded-2xl object-cover"
-                    ]}
-                  />
-                <% else %>
-                  <img
-                    id="nav-brand-logo"
-                    src={~p"/images/pwa/icon-512.png"}
-                    width="34"
-                    alt="Potok"
-                    class={["rounded-2xl object-cover"]}
-                  />
-                <% end %>
-              </span>
-            </.link>
           </div>
-        </div>
-      </nav>
-
-      <div class="relative z-0 flex max-w-screen flex-1 justify-center">
-        <main class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center">
-          <div
-            id="main-content"
-            class="flex flex-col flex-1 max-w-dvw lg:max-w-6xl justify-center overflow-clip"
-          >
-            {render_slot(@inner_block)}
-          </div>
-        </main>
+        </aside>
       </div>
-      <.flash_group flash={@flash} />
     </div>
+    <.flash_group flash={@flash} />
     """
   end
+
+  # The home button goes straight to the page `PageController.home/2` would
+  # redirect to, saving a round trip and allowing live navigation.
+  defp home_path(_current_scope, %{} = _current_profile), do: ~p"/groups"
+  defp home_path(%{account: %{}}, nil), do: ~p"/profiles"
+  defp home_path(_current_scope, _current_profile), do: ~p"/accounts/log-in"
 
   @doc """
   Shows the flash group with standard titles and content.
@@ -386,73 +437,13 @@ defmodule PotokIdeWeb.Layouts do
 
   slot :inner_block, required: true
 
-  attr :id, :string, default: nil
-  attr :icon, :string, default: "hero-bars-3"
-
-  def header_menu(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :id,
-        assigns[:id] || "header-drawer-#{System.unique_integer([:positive, :monotonic])}"
-      )
-
-    ~H"""
-    <div id={"#{@id}-container"} class="drawer w-auto flex-none" phx-hook="HeaderDrawer">
-      <input id={@id} type="checkbox" class="drawer-toggle" />
-      <div class="drawer-content">
-        <label
-          for={@id}
-          class="btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur"
-        >
-          <.icon name={@icon} class="size-5" />
-        </label>
-      </div>
-
-      <div class="drawer-side z-4000">
-        <label
-          for={@id}
-          aria-label={gettext("close")}
-          class="drawer-overlay bg-base-content/25 backdrop-blur-[2px]"
-        />
-        <div class="min-h-full w-[min(18rem,calc(100vw-1.25rem))] sm:w-80 lg:w-96 border-r border-base-300/70 bg-base-100/95 p-4 shadow-2xl shadow-primary/10 backdrop-blur">
-          <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
-            <div>
-              <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
-                Potok
-              </div>
-            </div>
-
-            <label for={@id} class="btn btn-ghost btn-circle border border-base-300 bg-base-100">
-              <span class="sr-only">{gettext("close")}</span>
-              <.icon name="hero-x-mark" class="size-5" />
-            </label>
-          </div>
-
-          <div class="flex max-h-[calc(100vh-6rem)] flex-col overflow-y-auto pr-1">
-            {render_slot(@inner_block)}
-          </div>
-        </div>
-      </div>
-    </div>
-    """
-  end
-
-  slot :inner_block, required: true
-
-  attr :id, :string, default: nil
+  # A stable id keeps the hook mounted (and the menu open) across re-renders.
+  attr :id, :string, required: true
   attr :icon, :string, default: "hero-ellipsis-horizontal"
   attr :label, :string, default: nil
   attr :menu_class, :string, default: nil
 
   def drop_down_menu(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :id,
-        assigns[:id] || "dropdown-menu-#{System.unique_integer([:positive, :monotonic])}"
-      )
-
     ~H"""
     <div
       id={"#{@id}-container"}

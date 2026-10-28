@@ -788,163 +788,147 @@ const PushNotifications = {
   },
 }
 
-const GroupDescriptionActions = {
-  
-  groupPanelDescription: new WeakSet(),
-  newValueCallback: null,
-  
+// Bridge between a sandboxed app iframe (see `Components.app_frame/1` and
+// `potok_app_sdk.js`) and the LiveView. The iframe has an opaque origin, so
+// messages are matched by `event.source` and every method is checked again
+// on the server (`GroupLive.Show.AppApi`).
+const APP_FRAME_METHODS = new Set([
+  "insert_value",
+  "list_values",
+  "update_description",
+  "get_description",
+  "current_profile",
+])
+
+// The app's `localStorage` lives in one key of the page's storage per group
+// (`data-storage-key`), capped so an app cannot fill the page's quota.
+const APP_FRAME_STORAGE_MAX_CHARS = 256 * 1024
+
+const GroupAppFrame = {
   mounted() {
-    this.abortController = new AbortController()
-    console.debug("<#HOOK-LC#> Mounting GroupDescriptionActions hook for element", this.el.id)
-    window.addEventListener( "phx:new_data_value", e => {
-      if (this.newValueCallback) {
-        this.newValueCallback(e)
+    this.iframe = this.el.querySelector("iframe")
+
+    this.handleMessage = event => {
+      const message = event.data
+
+      if (!this.iframe || event.source !== this.iframe.contentWindow) return
+      if (!message || message.potok !== 1) return
+
+      // The SDK may have loaded before this hook mounted; answer its hello.
+      if (message.event === "hello") {
+        this.postReady()
+        return
       }
-      console.debug("Received new_data_value event in GroupDescriptionActions hook", e)
-    }, {signal: this.abortController.signal});
-    this.exposePOTOK()
-    this.reloadDescriptionScriptsIfNeeded()
+
+      if (message.event === "storage") {
+        this.writeStorage(message.items)
+        return
+      }
+
+      if (typeof message.id === "number") {
+        void this.handleCall(message)
+      }
+    }
+
+    window.addEventListener("message", this.handleMessage)
+    this.postReady()
+
+    this.themeObserver = new MutationObserver(() => {
+      this.post({potok: 1, event: "theme", theme: this.theme()})
+    })
+    this.themeObserver.observe(document.documentElement, {attributeFilter: ["data-theme"]})
+
+    this.handleEvent("new_data_value", value => {
+      this.post({potok: 1, event: "new_value", value})
+    })
   },
 
-  updated() {
-    console.debug("<#HOOK-LC#> Updating GroupDescriptionActions hook for element", this.el.id)
-    this.abortController.abort()
-    this.abortController = new AbortController()
-    this.exposePOTOK()
-    this.reloadDescriptionScriptsIfNeeded()
+  reconnected() {
+    this.post({potok: 1, event: "reconnected"})
   },
 
   destroyed() {
-    console.debug("<#HOOK-LC#> Destroying GroupDescriptionActions hook for element", this.el.id)
-    this.abortController.abort()
-    if (this.el.potok === this) {
-      delete this.el.potok
+    window.removeEventListener("message", this.handleMessage)
+    this.themeObserver?.disconnect()
+  },
+
+  postReady() {
+    this.post({potok: 1, event: "ready", theme: this.theme(), storage: this.readStorage()})
+  },
+
+  theme() {
+    return document.documentElement.getAttribute("data-theme")
+  },
+
+  readStorage() {
+    const key = this.el.dataset.storageKey
+    if (!key) return {}
+
+    try {
+      const items = JSON.parse(localStorage.getItem(key) || "{}")
+      return items && typeof items === "object" && !Array.isArray(items) ? items : {}
+    } catch (_error) {
+      return {}
     }
   },
 
-  exposePOTOK() {
-    this.el.potok = this;
-    console.debug("<#HOOK#> Exposing Potok API for element", this.el.id)
+  writeStorage(items) {
+    const key = this.el.dataset.storageKey
+    if (!key || !items || typeof items !== "object" || Array.isArray(items)) return
 
-    this.insertGroupValue = async (content, options = {}) => {
-      const normalizedContent = typeof content === "string" ? content : ""
-      const res = await this.pushEvent("create_data_value", {
-        value: {
-          content: "data:",
-          data: normalizedContent,
-          content_format: options.contentFormat || options.content_format || "markdown",
-          is_data: true, //options.isData === true || options.is_data === true,
-          parent_id: "" //options.parentId || options.parent_id || "",
-        },
-      })
-      return res;
-    }
+    try {
+      const serialized = JSON.stringify(items)
 
-    this.updateGroupDescription = async (description, options = {}) => {
-      const normalizedDescription = typeof description === "string" ? description : ""
-      const descriptionFormat =
-        options.descriptionFormat ||
-        options.description_format ||
-        this.el.dataset.descriptionFormat ||
-        "html"
-
-      const res = await this.pushEvent("update_group_description", {
-        description: normalizedDescription,
-        description_format: descriptionFormat,
-      })
-
-      return res
-    }
-
-    this.getGroupDescription = async () => ({
-      description: this.el.dataset.description || "",
-      descriptionFormat: this.el.dataset.descriptionFormat || "html",
-    })
-
-    this.getGroupDataValues = async (options = {}) => {
-      const res = await this.pushEvent("list_group_data_values", {
-        limit: options.limit ?? null,
-        offset: options.offset ?? null,
-        search_field: options.searchField ?? options.search_field ?? null,
-        search_value: options.searchValue ?? options.search_value ?? null,
-        order_by: options.orderBy ?? options.order_by ?? null,
-        order_dir: options.orderDir ?? options.order_dir ?? null,
-      })
-      return res
-    }
-
-    this.getCurrentProfile = async () => {
-      const serializedCurrentProfile = this.el.dataset.currentProfile || ""
-
-      if (!serializedCurrentProfile) {
-        return null
+      if (serialized.length <= APP_FRAME_STORAGE_MAX_CHARS) {
+        localStorage.setItem(key, serialized)
       }
-
-      try {
-        return JSON.parse(serializedCurrentProfile)
-      } catch (_error) {
-        return null
-      }
+    } catch (_error) {
+      // Storage full or blocked: the app keeps working with its in-memory copy.
     }
-
-    this.setNewValueCallback = (fn) => {
-      if (typeof fn === "function") {
-        this.newValueCallback = fn
-      }
-    }
-
   },
 
-  async reloadDescriptionScriptsIfNeeded() {
-    console.debug("<#HOOK#> reloadDescriptionScriptsIfNeeded for element", this.el)
-    const contentElement = this.el;
-    const descriptionSignature = `${this.el.dataset.descriptionFormat || ""}:${this.el.dataset.description || ""}`
-
-    if (!contentElement) {
-      this.lastDescriptionSignature = descriptionSignature
-      console.debug("<#HOOK#> No content element found for description, skipping script reload")
+  async handleCall({id, method, params}) {
+    if (this.el.dataset.api !== "true") {
+      this.post({potok: 1, id, ok: false, error: "preview"})
       return
     }
 
-    this.lastDescriptionSignature = descriptionSignature
+    if (!APP_FRAME_METHODS.has(method)) {
+      this.post({potok: 1, id, ok: false, error: "unknown_method"})
+      return
+    }
 
-    const scripts = Array.from(contentElement.querySelectorAll("script"))
-    console.debug("<#HOOK#> Found description content scripts to reload:", scripts)
-
-    for (const existingScript of scripts) {
-      const replacementScript = document.createElement("script")
-
-      for (const {name, value} of Array.from(existingScript.attributes)) {
-        replacementScript.setAttribute(name, value)
-      }
-
-      if (
-        existingScript.src &&
-        !existingScript.hasAttribute("async") &&
-        !existingScript.hasAttribute("defer") &&
-        existingScript.type !== "module"
-      ) {
-        replacementScript.async = false
-      }
-
-      if (existingScript.src) {
-        const loadPromise = new Promise(resolve => {
-          replacementScript.addEventListener("load", resolve, {once: true})
-          replacementScript.addEventListener("error", resolve, {once: true})
-        })
-        try {
-          existingScript.replaceWith(replacementScript)
-        } catch (error) {}
-        await loadPromise
-        continue
-      }
-
-      replacementScript.textContent = existingScript.textContent
-      try {
-        existingScript.replaceWith(replacementScript)
-      } catch (error) {}
+    try {
+      const reply = await this.pushEvent("app_api", {method, params: params || {}})
+      this.post({potok: 1, id, ...reply})
+    } catch (_error) {
+      this.post({potok: 1, id, ok: false, error: "disconnected"})
     }
   },
+
+  post(message) {
+    // "*" is required: a sandboxed frame without allow-same-origin has an opaque origin.
+    this.iframe?.contentWindow?.postMessage(message, "*")
+  },
+}
+
+// A waiting worker means a new version is installed. Instead of reloading on
+// its own (possibly while someone is typing), the page shows the update toast
+// from the root layout and only switches when the user asks for it.
+const showUpdateToast = registration => {
+  const toast = document.getElementById("app-update-toast")
+  const reloadButton = document.getElementById("app-update-reload")
+
+  if (!toast || !reloadButton || !registration.waiting || !navigator.serviceWorker.controller) {
+    return
+  }
+
+  reloadButton.onclick = () => {
+    reloadButton.disabled = true
+    registration.waiting?.postMessage({type: "SKIP_WAITING"})
+  }
+
+  toast.hidden = false
 }
 
 const registerServiceWorker = async () => {
@@ -955,9 +939,7 @@ const registerServiceWorker = async () => {
   try {
     const registration = await navigator.serviceWorker.register("/sw.js", {scope: "/"})
 
-    if (registration.waiting) {
-      registration.waiting.postMessage({type: "SKIP_WAITING"})
-    }
+    showUpdateToast(registration)
 
     registration.addEventListener("updatefound", () => {
       const installing = registration.installing
@@ -967,14 +949,15 @@ const registerServiceWorker = async () => {
       }
 
       installing.addEventListener("statechange", () => {
-        if (installing.state === "installed" && navigator.serviceWorker.controller) {
-          window.location.reload()
+        if (installing.state === "installed") {
+          showUpdateToast(registration)
         }
       })
     })
 
     let refreshing = false
 
+    // Fires once the waiting worker took over after the toast's button.
     navigator.serviceWorker.addEventListener("controllerchange", () => {
       if (refreshing) {
         return
@@ -1476,7 +1459,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     DropdownMenu,
     AutoDismissFlash,
     PushNotifications,
-    GroupDescriptionActions,
+    GroupAppFrame,
     MarkdownEditor,
     ...colocatedHooks,
   },
@@ -1489,6 +1472,22 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 
 installPasswordToggleButtons()
 
+// Inside a LiveView the attribute is set through a JS command: those are
+// sticky, while plain DOM changes would be undone by the next patch.
+const setNavLinkCurrent = (link, isActive) => {
+  if (link.closest("[data-phx-session]")) {
+    const command = isActive
+      ? [["set_attr", {attr: ["aria-current", "page"]}]]
+      : [["remove_attr", {attr: "aria-current"}]]
+
+    liveSocket.execJS(link, JSON.stringify(command))
+  } else if (isActive) {
+    link.setAttribute("aria-current", "page")
+  } else {
+    link.removeAttribute("aria-current")
+  }
+}
+
 const updateDrawerActiveLinks = () => {
   const pathname = window.location.pathname
 
@@ -1499,21 +1498,7 @@ const updateDrawerActiveLinks = () => {
       ? pathname === target || pathname.startsWith(`${target}/`)
       : pathname === target
 
-    link.dataset.active = isActive ? "true" : "false"
-
-    link.classList.toggle("bg-base-content", isActive)
-    link.classList.toggle("text-base-100", isActive)
-    link.classList.toggle("border-base-content", isActive)
-    link.classList.toggle("shadow-sm", isActive)
-
-    link.classList.toggle("bg-base-200", !isActive && !link.dataset.navPrimary)
-    link.classList.toggle("text-base-content/70", !isActive && !link.dataset.navPrimary)
-
-    if (isActive) {
-      link.setAttribute("aria-current", "page")
-    } else {
-      link.removeAttribute("aria-current")
-    }
+    setNavLinkCurrent(link, isActive)
   })
 }
 
