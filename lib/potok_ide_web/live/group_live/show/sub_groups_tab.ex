@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
+  attr :group_path, :list, required: true
   attr :children, :any, required: true
   attr :pagination, :map, required: true
   attr :pending_join_request_counts, :map, required: true
@@ -152,6 +153,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
       <Components.group_path
         :if={!@group.is_root}
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"

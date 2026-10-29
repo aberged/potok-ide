@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :has_more, :boolean, required: true
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
+  attr :group_path, :list, required: true
   attr :editing_value_id, :integer, default: nil
   attr :editing_value, :map, default: nil
   attr :edit_value_form, :any, default: nil
@@ -38,6 +39,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     ~H"""
     <div id="group-panel-values" class="card flex min-h-0 flex-1 shadow-sm">
       <div class="flex min-h-0 flex-1 flex-col">
+        <Components.group_path
+          path={@group_path}
+          group={@group}
+          current_profile={@current_profile}
+          class="mx-2 shadow-md"
+        />
         <div
           :if={@thread_origin}
           id="group-thread-origin"

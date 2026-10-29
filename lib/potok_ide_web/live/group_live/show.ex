@@ -406,6 +406,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
             children={@streams.children}
             pagination={@children_pagination}
             pending_join_request_counts={@child_pending_join_request_counts}
@@ -426,6 +427,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             members={@streams.members}
             pagination={@members_pagination}
             current_profile={@current_profile}
+            group_path={@group_path}
             group={@group}
             access={@access}
             join_requests={@pending_join_requests}
@@ -437,6 +439,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             has_more={@values_has_more?}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
             editing_value_id={@editing_value && @editing_value.id}
             editing_value={@editing_value}
             edit_value_form={@edit_value_form}
@@ -452,6 +455,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "files"}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
             files={@streams.files}
             files_view={@files_view}
             has_more={@files_has_more?}
@@ -465,6 +469,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             }
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
             is_member={@is_member}
             viewer_roles={Enum.join(@access.role_keys, ",")}
             pending_join_request={@pending_join_request}
@@ -477,6 +482,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             value_parent_options={@value_parent_options}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
           />
           <EditGroupTab.panel
             :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
@@ -487,6 +493,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             home_page_options={@home_page_options}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
           />
           <InviteProfileTab.panel
             :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -495,11 +502,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
             invite_profile_suggestions={@invite_profile_suggestions}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
           />
           <RolesTab.panel
             :if={@is_member and !@group.is_direct and @active_tab == "roles"}
             group={@group}
             current_profile={@current_profile}
+            group_path={@group_path}
             access={@access}
             manifest_owner={@manifest_owner}
             new_role_form={@new_role_form}
@@ -1648,6 +1657,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> normalize_sub_groups_kind(group)
 
     socket
+    |> assign_group_path(group)
     |> assign(:group, group)
     |> assign(:active_tab, active_tab)
     |> assign(:sub_groups_kind, sub_groups_kind)
@@ -1669,6 +1679,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp refresh_group_data(socket) do
     load_group_data(socket, socket.assigns.group, socket.assigns.active_tab)
+  end
+
+  # The path only changes with the group or the viewing profile, so tab switches
+  # and refreshes reuse it instead of querying the ancestors again.
+  defp assign_group_path(
+         %{assigns: %{group_path_for: {group, profile}, current_profile: profile}} = socket,
+         group
+       ),
+       do: socket
+
+  defp assign_group_path(socket, group) do
+    profile = socket.assigns.current_profile
+    path = Social.list_visible_group_path_for_profile(group, profile)
+
+    socket
+    |> assign(:group_path, path)
+    |> assign(:group_path_for, {group, profile})
   end
 
   # A value posted in a big group fans out `group_updated` / unread broadcasts

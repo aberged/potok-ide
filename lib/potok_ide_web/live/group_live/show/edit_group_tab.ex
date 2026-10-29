@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
+  attr :group_path, :list, required: true
   attr :edit_group_form, :any, required: true
   attr :format_options, :list, required: true
   attr :home_page_options, :list, required: true
@@ -15,6 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     ~H"""
     <div id="group-panel-edit-group" class="flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"

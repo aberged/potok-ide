@@ -1040,6 +1040,16 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              )
 
       assert has_element?(lv, "#group-path span", "path-current-group")
+
+      lv |> element("#group-values-summary") |> render_click()
+
+      assert has_element?(
+               lv,
+               "#group-panel-values #group-path a[href='#{~p"/groups/#{parent_group.id}/sub_groups"}']",
+               "path-parent-group"
+             )
+
+      assert has_element?(lv, "#group-panel-values #group-path span", "path-current-group")
     end
 
     test "shows the other member username for direct groups in the current group path", %{
@@ -1473,6 +1483,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert updated_group.home_page == :chat
       assert updated_group.uses_api
       refute updated_group.has_public_chat
+
+      # The path is loaded once, but a rename of the group itself reloads it.
+      assert has_element?(owner_lv, "#group-path span", "edited-group")
 
       {:ok, viewer_lv, _html} =
         conn

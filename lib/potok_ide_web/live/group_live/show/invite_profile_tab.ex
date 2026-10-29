@@ -8,11 +8,13 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
   attr :invite_profile_suggestions, :list, default: []
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
+  attr :group_path, :list, required: true
 
   def panel(assigns) do
     ~H"""
     <div id="group-panel-invite-profile" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"

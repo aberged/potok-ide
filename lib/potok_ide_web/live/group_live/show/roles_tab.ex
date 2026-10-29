@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
+  attr :group_path, :list, required: true
   attr :access, Access, required: true
   attr :manifest_owner, :map, default: nil, doc: "the group whose manifest this group uses"
   attr :new_role_form, :any, required: true
@@ -33,7 +34,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
     ~H"""
     <div id="group-panel-roles" class="card flex min-h-0 flex-1 flex-col px-2">
-      <Components.group_path group={@group} current_profile={@current_profile} class="shadow-md" />
+      <Components.group_path
+        path={@group_path}
+        group={@group}
+        current_profile={@current_profile}
+        class="shadow-md"
+      />
 
       <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-6">
         <div class="mb-4 px-1">

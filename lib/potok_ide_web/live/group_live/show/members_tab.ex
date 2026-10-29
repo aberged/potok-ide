@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
+  attr :group_path, :list, required: true
   attr :group, :map, required: true
   attr :access, Access, required: true
   attr :join_requests, :list, default: []
@@ -26,6 +27,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
     ~H"""
     <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"

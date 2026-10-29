@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
+  attr :group_path, :list, required: true
   attr :is_member, :boolean, default: false
 
   attr :viewer_roles, :string,
@@ -20,6 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     ~H"""
     <div class="flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md sticky"

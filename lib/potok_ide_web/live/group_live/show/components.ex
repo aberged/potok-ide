@@ -3,7 +3,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   alias PotokIdeWeb.Avatars
 
-  alias PotokIde.Social
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
 
@@ -389,25 +388,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   attr :group, :map, required: true
+
+  attr :path, :list,
+    required: true,
+    doc: "`Social.list_visible_group_path_for_profile/2` of the group, loaded by the LiveView"
+
   attr :current_profile, :map, default: nil
   attr :id, :string, default: "group-path"
   attr :class, :any, default: nil
 
   def group_path(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :group_path,
-        Social.list_visible_group_path_for_profile(assigns.group, assigns.current_profile)
-      )
-
     ~H"""
     <div id={@id} class={["px-4 py-4 text-sm text-base-content/60 relative z-40", @class]}>
       <nav
         aria-label={gettext("Current group path")}
         class="flex flex-wrap items-center align-center gap-x-1 gap-y-1"
       >
-        <%= for {path_group, idx} <- Enum.with_index(@group_path) do %>
+        <%= for {path_group, idx} <- Enum.with_index(@path) do %>
           <%= if idx > 0 do %>
             <span aria-hidden="true" class="text-base-content/35">/</span>
           <% end %>

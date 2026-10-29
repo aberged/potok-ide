@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
+  attr :group_path, :list, required: true
   attr :files, :any, required: true, doc: "stream of the group's attachments, newest first"
   attr :files_view, :string, required: true, doc: "\"list\" or \"tree\""
   attr :has_more, :boolean, default: false
@@ -16,6 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
     ~H"""
     <div id="group-panel-files" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.group_path
+        path={@group_path}
         group={@group}
         current_profile={@current_profile}
         class="shadow-md"
