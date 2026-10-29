@@ -1,0 +1,8 @@
+# Shell scripts run on Linux (the release image, Android builds), so they stay
+# LF even in checkouts with core.autocrlf=true: a CRLF shebang ("#!/bin/sh\r")
+# makes /app/bin/migrate fail with "No such file or directory".
+rel/** text eol=lf
+assets/android/gradlew text eol=lf
+
+# Windows batch files expect CRLF.
+*.bat text eol=crlf
