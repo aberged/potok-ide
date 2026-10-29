@@ -24,13 +24,17 @@ defmodule PotokIde.Social.Value do
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
     has_many :reactions, PotokIde.Social.ValueReaction
+    has_many :attachments, PotokIde.Social.ValueAttachment
     # The sub-group started from this value (`Social.get_or_create_value_thread/4`).
     has_one :thread, PotokIde.Social.Group, foreign_key: :parent_value_id
 
     timestamps(type: :utc_datetime)
   end
 
-  def changeset(value, attrs) do
+  @doc """
+  With `attachments?: true` the value carries files, so its text may be empty.
+  """
+  def changeset(value, attrs, opts \\ []) do
     attrs =
       attrs
       |> normalize_data_attr()
@@ -47,7 +51,7 @@ defmodule PotokIde.Social.Value do
       :parent_id
     ])
     |> validate_required([:content_format, :creator_id, :group_id])
-    |> validate_content_required()
+    |> validate_content_required(Keyword.get(opts, :attachments?, false))
     |> check_constraint(:content_format, name: :values_content_format_check)
   end
 
@@ -74,22 +78,36 @@ defmodule PotokIde.Social.Value do
   @doc """
   The value's content as one line of plain text, for reply quotes and thread
   names: markdown syntax and html tags are stripped, whitespace is collapsed
-  and the text is cut to `max_length` characters. Returns nil when nothing
-  readable is left.
+  and the text is cut to `max_length` characters. A value with no readable
+  text falls back to `attachment_summary/2`; nil when that is empty too.
   """
   def excerpt(value, max_length \\ 120)
 
-  def excerpt(%__MODULE__{content: content, content_format: format}, max_length)
+  def excerpt(%__MODULE__{content: content, content_format: format} = value, max_length)
       when is_binary(content) and is_integer(max_length) and max_length > 1 do
     content
     |> UTF8.replace_invalid()
     |> plain_text(format)
     |> String.replace(~r/\s+/u, " ")
     |> String.trim()
-    |> truncate(max_length)
+    |> truncate(max_length) || attachment_summary(value, max_length)
   end
 
   def excerpt(_value, _max_length), do: nil
+
+  @doc """
+  "📎 report.pdf +2" for a value with loaded attachments, cut to `max_length`
+  characters; nil when it has none or they are not loaded.
+  """
+  def attachment_summary(%__MODULE__{attachments: [first | rest]}, max_length)
+      when is_integer(max_length) and max_length > 1 do
+    more = if rest == [], do: "", else: " +#{length(rest)}"
+    name_length = max(max_length - String.length(more), 2)
+
+    truncate("📎 " <> first.filename, name_length) <> more
+  end
+
+  def attachment_summary(_value, _max_length), do: nil
 
   defp plain_text(html, :html) do
     html
@@ -128,11 +146,21 @@ defmodule PotokIde.Social.Value do
     end
   end
 
-  defp validate_content_required(changeset) do
-    if get_field(changeset, :is_data) do
-      changeset
-    else
-      validate_required(changeset, [:content])
+  # The column is NOT NULL, and casting "" yields nil, so a value that only
+  # carries files stores "" explicitly.
+  defp validate_content_required(changeset, attachments?) do
+    cond do
+      get_field(changeset, :is_data) ->
+        changeset
+
+      attachments? and get_field(changeset, :content) == nil ->
+        put_change(changeset, :content, "")
+
+      attachments? ->
+        changeset
+
+      true ->
+        validate_required(changeset, [:content])
     end
   end
 

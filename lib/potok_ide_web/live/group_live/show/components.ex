@@ -4,7 +4,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   alias PotokIdeWeb.Avatars
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, Mentions, Profile, Value}
+  alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
@@ -833,6 +833,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
+      |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
+      |> assign_value_attachments(assigns.value)
 
     ~H"""
     <div
@@ -1003,7 +1005,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </span>
         </button>
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
-        <div class="relative">
+        <div :if={@has_text?} class="relative">
           <div class={[
             @expandable? &&
               "max-h-[7.5rem] overflow-hidden group-data-expanded/value:max-h-none group-data-expanded/value:overflow-visible"
@@ -1040,6 +1042,70 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <span class="group-data-expanded/value:hidden">{gettext("See more")}</span>
             <span class="hidden group-data-expanded/value:inline">{gettext("See less")}</span>
           </button>
+        </div>
+
+        <div
+          :if={@images != [] or @files != []}
+          id={"value-attachments-#{@value.id}"}
+          class={["flex flex-col gap-2", @has_text? && "mt-2.5"]}
+        >
+          <div :if={@images != []} class="flex flex-wrap gap-2">
+            <a
+              :for={image <- @images}
+              id={"value-attachment-#{image.id}"}
+              href={~p"/files/#{image.id}"}
+              target="_blank"
+              rel="noopener"
+              title={image.filename}
+              class={[
+                "group/image block overflow-hidden rounded-2xl border transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",
+                if(@mine?, do: "border-primary-content/25", else: "border-base-300")
+              ]}
+            >
+              <img
+                src={~p"/files/#{image.id}"}
+                alt={image.filename}
+                loading="lazy"
+                decoding="async"
+                class="block h-48 w-auto min-w-24 max-w-full bg-base-200 object-cover transition-transform duration-300 ease-out group-hover/image:scale-[1.02] sm:max-w-80"
+              />
+            </a>
+          </div>
+          <a
+            :for={file <- @files}
+            id={"value-attachment-#{file.id}"}
+            href={~p"/files/#{file.id}"}
+            download={file.filename}
+            title={file.filename}
+            class={[
+              "group/file flex min-w-0 items-center gap-3 rounded-2xl border py-2 pr-3 pl-2 transition duration-150 ease-out hover:-translate-y-px sm:min-w-64",
+              if(@mine?,
+                do:
+                  "border-primary-content/25 bg-primary-content/10 text-primary-content hover:bg-primary-content/15",
+                else: "border-base-300 bg-base-200/60 text-base-content hover:bg-base-200"
+              )
+            ]}
+          >
+            <span class={[
+              "inline-flex size-9 shrink-0 items-center justify-center rounded-xl",
+              if(@mine?, do: "bg-primary-content/15", else: "bg-base-100 text-base-content/60")
+            ]}>
+              <.icon name={file_icon(file.content_type)} class="size-5" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-sm font-medium">{file.filename}</span>
+              <span class={[
+                "block text-xs tabular-nums",
+                if(@mine?, do: "text-primary-content/70", else: "text-base-content/55")
+              ]}>
+                {format_bytes(file.byte_size)}
+              </span>
+            </span>
+            <.icon
+              name="hero-arrow-down-tray"
+              class="size-4 shrink-0 opacity-60 transition-opacity group-hover/file:opacity-100"
+            />
+          </a>
         </div>
       </div>
 
@@ -1110,6 +1176,68 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   # Association matches stay defensive: a value that was not loaded with
   # `Social` display preloads renders without its quote or thread link.
+  # Raster images show as previews, every other file as a download row.
+  defp assign_value_attachments(assigns, %Value{attachments: attachments})
+       when is_list(attachments) do
+    {images, files} = Enum.split_with(attachments, &ValueAttachment.image?/1)
+
+    assigns
+    |> assign(:images, images)
+    |> assign(:files, files)
+  end
+
+  defp assign_value_attachments(assigns, _value),
+    do: assigns |> assign(:images, []) |> assign(:files, [])
+
+  @doc "A heroicon name for a file of the given content type."
+  def file_icon(type)
+      when type in [
+             "application/zip",
+             "application/gzip",
+             "application/x-7z-compressed",
+             "application/x-rar-compressed",
+             "application/x-tar",
+             "application/vnd.rar"
+           ],
+      do: "hero-archive-box"
+
+  def file_icon(type)
+      when type in [
+             "text/csv",
+             "application/vnd.ms-excel",
+             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+             "application/vnd.oasis.opendocument.spreadsheet"
+           ],
+      do: "hero-table-cells"
+
+  def file_icon("image/" <> _subtype), do: "hero-photo"
+  def file_icon("video/" <> _subtype), do: "hero-film"
+  def file_icon("audio/" <> _subtype), do: "hero-musical-note"
+  def file_icon("text/" <> _subtype), do: "hero-document-text"
+  def file_icon("application/pdf"), do: "hero-document-text"
+  def file_icon(_type), do: "hero-document"
+
+  @doc "A byte count in decimal units: `840 B`, `2.4 MB`, `100 MB`."
+  def format_bytes(bytes) when is_integer(bytes) and bytes < 1000, do: "#{bytes} B"
+
+  def format_bytes(bytes) when is_integer(bytes) do
+    {size, unit} =
+      Enum.find([{1.0e9, "GB"}, {1.0e6, "MB"}, {1.0e3, "kB"}], fn {size, _unit} ->
+        bytes >= size
+      end)
+
+    value = bytes / size
+
+    number =
+      if value < 10,
+        do: :erlang.float_to_binary(value, decimals: 1),
+        else: Integer.to_string(round(value))
+
+    "#{number} #{unit}"
+  end
+
+  def format_bytes(_bytes), do: ""
+
   defp reply_parent(%Value{parent: %Value{creator: %Profile{}} = parent}), do: parent
   defp reply_parent(_value), do: nil
 

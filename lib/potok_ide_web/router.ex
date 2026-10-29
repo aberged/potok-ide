@@ -23,6 +23,15 @@ defmodule PotokIdeWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  # Files attached to values: the account's session decides access, and the
+  # response is the file (or a redirect to it), never a page.
+  pipeline :files do
+    plug :fetch_session
+    plug :fetch_live_flash
+    plug :put_secure_browser_headers
+    plug :fetch_current_scope_for_account
+  end
+
   pipeline :browser_json do
     plug :accepts, ["json"]
     plug :fetch_session
@@ -95,6 +104,14 @@ defmodule PotokIdeWeb.Router do
     post "/accounts/push-subscriptions", PushSubscriptionController, :create
     delete "/accounts/push-subscriptions", PushSubscriptionController, :delete
     post "/accounts/push-subscriptions/test", PushSubscriptionController, :test
+  end
+
+  # Logged-out visitors go to the login page and come back here afterwards;
+  # the controller then checks membership in the file's group.
+  scope "/files", PotokIdeWeb do
+    pipe_through [:files, :require_authenticated_account]
+
+    get "/:id", AttachmentController, :show
   end
 
   scope "/", PotokIdeWeb do

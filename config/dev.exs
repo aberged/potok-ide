@@ -81,6 +81,11 @@ config :potok_ide, PotokIdeWeb.Endpoint,
 # Enable dev routes for dashboard and mailbox
 config :potok_ide, dev_routes: true
 
+# Attached files go to ./uploads (git-ignored).
+config :potok_ide, PotokIde.Storage,
+  adapter: PotokIde.Storage.Local,
+  root: Path.expand("../uploads", __DIR__)
+
 # Do not include metadata nor timestamps in development logs
 config :logger, :default_formatter, format: "[$level] $message\n"
 

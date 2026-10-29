@@ -16,6 +16,7 @@ defmodule PotokIde.Social.GroupRole do
   # Order is the order shown in the roles tab.
   @permissions [
     :post_values,
+    :attach_files,
     :react,
     :open_threads,
     :create_subgroups,

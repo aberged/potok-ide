@@ -365,6 +365,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def role_label(%GroupRole{name: name}), do: name
 
   def permission_label(:post_values), do: gettext("Post values")
+  def permission_label(:attach_files), do: gettext("Attach files")
   def permission_label(:react), do: gettext("React")
   def permission_label(:open_threads), do: gettext("Open threads")
   def permission_label(:create_subgroups), do: gettext("Create sub-groups")
@@ -376,6 +377,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:edit_group), do: gettext("Edit group")
 
   defp permission_description(:post_values), do: gettext("Write values and replies in the chat.")
+  defp permission_description(:attach_files), do: gettext("Attach files to values.")
   defp permission_description(:react), do: gettext("Add emoji reactions to values.")
   defp permission_description(:open_threads), do: gettext("Start a thread from a value.")
   defp permission_description(:create_subgroups), do: gettext("Create groups inside this group.")

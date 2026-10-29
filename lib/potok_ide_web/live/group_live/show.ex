@@ -4,12 +4,24 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group, GroupAccountInvitation, GroupInvitation, GroupRole, Value}
+
+  alias PotokIde.Social.{
+    Access,
+    Group,
+    GroupAccountInvitation,
+    GroupInvitation,
+    GroupRole,
+    Value,
+    ValueAttachment
+  }
+
+  alias PotokIde.Storage
 
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
     CreateGroupTab,
     EditGroupTab,
+    FilesTab,
     GroupDescriptionTab,
     InviteProfileTab,
     MembersTab,
@@ -24,6 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @children_page_size 20
   @members_page_size 20
   @values_page_size 20
+  @files_page_size 30
 
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
   # reload. 0 (the test config) applies them inline.
@@ -276,6 +289,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-chat-bubble-oval-left-ellipsis"
               />
               <Components.group_tab_button
+                :if={@group.parent_id != nil and @is_member}
+                id="group-tab-files"
+                tab="files"
+                active_tab={@active_tab}
+                label={gettext("Files")}
+                icon="hero-paper-clip"
+              />
+              <Components.group_tab_button
                 :if={@group.is_root or @is_member or @group.is_public}
                 id="group-tab-sub-groups"
                 tab="sub_groups"
@@ -376,6 +397,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
             thread_origin={@thread_origin}
             is_member={@is_member}
             access={@access}
+            attachments={@uploads.attachments}
+            can_attach={can_attach?(@access)}
+          />
+          <FilesTab.panel
+            :if={@active_tab == "files"}
+            group={@group}
+            current_profile={@current_profile}
+            files={@streams.files}
+            files_view={@files_view}
+            has_more={@files_has_more?}
+            tree={@file_tree}
+            tree_truncated={@file_tree_truncated?}
           />
           <GroupDescriptionTab.panel
             :if={
@@ -451,12 +484,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
        |> stream_configure(:members, dom_id: &"member-#{&1.id}")
        |> stream_configure(:values, dom_id: &"value-#{&1.id}")
+       |> stream_configure(:files, dom_id: &"file-#{&1.id}")
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
        |> assign(:values_has_more?, false)
        |> assign(:oldest_value_id, nil)
        |> assign(:newest_value_id, nil)
        |> assign(:loaded_value_ids, MapSet.new())
+       |> assign(:files_view, "list")
+       |> assign(:files_has_more?, false)
+       |> assign(:files_loaded_count, 0)
+       |> assign(:oldest_file_id, nil)
+       |> assign(:file_tree, nil)
+       |> assign(:file_tree_truncated?, false)
+       |> allow_attachments_upload()
        |> assign(:loaded_children, [])
        |> assign(:pending_refresh, MapSet.new())
        |> assign(:app_api_bucket, AppApi.new_bucket())
@@ -564,28 +605,55 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> Map.drop(["is_data", "data", "parent_id"])
         |> maybe_put_reply_parent(socket.assigns.replying_to_value)
 
-      case Social.create_value(current_profile, group, attrs) do
-        {:ok, value} ->
-          socket =
-            socket
-            |> assign(:active_tab, "values")
-            |> assign(:replying_to_value, nil)
-            |> assign(:new_value_form, empty_new_value_form())
-            |> push_event("value_composer_reset", %{})
-            |> apply_value_created(value)
+      with {:ok, attachments} <- consume_attachments(socket),
+           {:ok, value} <- create_value_or_drop_files(current_profile, group, attrs, attachments) do
+        socket =
+          socket
+          |> assign(:active_tab, "values")
+          |> assign(:replying_to_value, nil)
+          |> assign(:new_value_form, empty_new_value_form())
+          |> push_event("value_composer_reset", %{})
+          |> apply_value_created(value)
 
-          {:noreply, socket}
-
+        {:noreply, socket}
+      else
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, :new_value_form, to_form(changeset))}
 
         {:error, :not_permitted} ->
           {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
+        {:error, :too_many_attachments} ->
+          {:noreply,
+           put_flash(
+             socket,
+             :error,
+             gettext("Attach at most %{count} files.", count: Storage.max_files())
+           )}
+
+        {:error, message} when is_binary(message) ->
+          {:noreply, put_flash(socket, :error, message)}
+
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
       end
     end
+  end
+
+  def handle_event("cancel_attachment", %{"ref" => ref}, socket) do
+    {:noreply, cancel_upload(socket, :attachments, ref)}
+  end
+
+  def handle_event("set_files_view", %{"view" => view}, socket) when view in ["list", "tree"] do
+    {:noreply,
+     socket
+     |> assign(:files_view, view)
+     |> assign(:files_loaded_count, 0)
+     |> maybe_load_files(socket.assigns.group, socket.assigns.active_tab)}
+  end
+
+  def handle_event("load_more_files", _params, socket) do
+    {:noreply, load_more_files(socket)}
   end
 
   # Single entry point for the sandboxed app frame (see `AppApi`). The client
@@ -1511,6 +1579,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> maybe_load_files(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
@@ -1633,6 +1702,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp apply_value_created(socket, %Value{is_data: true}), do: socket
 
   defp apply_value_created(socket, %Value{} = value) do
+    socket
+    |> insert_created_value(value)
+    |> maybe_reload_files(value)
+  end
+
+  defp insert_created_value(socket, %Value{} = value) do
     group = socket.assigns.group
     active_tab = socket.assigns.active_tab
 
@@ -1684,12 +1759,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
         _ -> socket
       end
 
-    if MapSet.member?(socket.assigns.loaded_value_ids, value_id) do
-      remove_value(socket, value_id)
-    else
-      socket
+    socket =
+      if MapSet.member?(socket.assigns.loaded_value_ids, value_id) do
+        remove_value(socket, value_id)
+      else
+        socket
+      end
+
+    # The files of the deleted value are gone with it.
+    maybe_reload_files(socket, nil)
+  end
+
+  # `nil` is a deleted value, whose files may have been on screen.
+  defp maybe_reload_files(%{assigns: %{active_tab: "files"}} = socket, value) do
+    case value do
+      %Value{attachments: []} -> socket
+      _value -> maybe_load_files(socket, socket.assigns.group, "files")
     end
   end
+
+  defp maybe_reload_files(socket, _value), do: socket
 
   # Only the app frame listens for data values, so they are pushed only while
   # the group description is on screen.
@@ -1734,6 +1823,122 @@ defmodule PotokIdeWeb.GroupLive.Show do
       value
     else
       _ -> nil
+    end
+  end
+
+  defp can_attach?(%Access{} = access),
+    do: Storage.enabled?() and access.member? and Access.can?(access, :attach_files)
+
+  # Browsers upload through the LiveView channel, or straight to the bucket
+  # when the storage hands out presigned URLs.
+  defp allow_attachments_upload(socket) do
+    opts = [
+      accept: :any,
+      max_entries: Storage.max_files(),
+      max_file_size: Storage.max_file_size()
+    ]
+
+    opts =
+      if Storage.direct_upload?(),
+        do: Keyword.put(opts, :external, &presign_attachment/2),
+        else: opts
+
+    allow_upload(socket, :attachments, opts)
+  end
+
+  defp presign_attachment(entry, socket) do
+    key = Storage.new_key(socket.assigns.group.id)
+    content_type = ValueAttachment.clean_content_type(entry.client_type)
+
+    with true <- can_attach?(socket.assigns.access),
+         {:ok, url} <- Storage.presign_put(key, content_type, entry.client_size) do
+      {:ok, %{uploader: "S3", key: key, url: url, content_type: content_type}, socket}
+    else
+      _ -> {:error, %{reason: "not_permitted"}, socket}
+    end
+  end
+
+  # The composer's files, stored and checked, as attrs for
+  # `Social.create_value/4`. Nothing is consumed until every file is ready.
+  defp consume_attachments(socket) do
+    upload = socket.assigns.uploads.attachments
+    {_completed, in_progress} = uploaded_entries(socket, :attachments)
+
+    cond do
+      upload.entries == [] ->
+        {:ok, []}
+
+      not can_attach?(socket.assigns.access) ->
+        {:error, :not_permitted}
+
+      upload_errors(upload) != [] or Enum.any?(upload.entries, &(not &1.valid?)) ->
+        {:error, gettext("Remove the files that cannot be attached.")}
+
+      in_progress != [] ->
+        {:error, gettext("Wait until the files finish uploading.")}
+
+      true ->
+        group = socket.assigns.group
+
+        socket
+        |> consume_uploaded_entries(:attachments, &{:ok, store_attachment(group, &1, &2)})
+        |> Enum.split_with(&match?({:ok, _attrs}, &1))
+        |> case do
+          {stored, []} ->
+            {:ok, Enum.map(stored, fn {:ok, attrs} -> attrs end)}
+
+          {stored, _failed} ->
+            Storage.delete_later(Enum.map(stored, fn {:ok, attrs} -> attrs.storage_key end))
+            {:error, gettext("Some files could not be uploaded. Please try again.")}
+        end
+    end
+  end
+
+  # A channel upload is a temporary file that moves into storage. A direct
+  # upload is already in the bucket, but its size came from the browser, so
+  # the stored object is checked against it.
+  defp store_attachment(group, %{path: path}, entry) do
+    key = Storage.new_key(group.id)
+
+    with :ok <- Storage.put_file(key, path),
+         {:ok, byte_size} <- Storage.stat(key) do
+      {:ok, attachment_attrs(key, entry, byte_size)}
+    else
+      _error ->
+        Storage.delete_later([key])
+        :error
+    end
+  end
+
+  defp store_attachment(_group, %{key: key}, entry) do
+    case Storage.stat(key) do
+      {:ok, byte_size} when byte_size == entry.client_size ->
+        {:ok, attachment_attrs(key, entry, byte_size)}
+
+      _error ->
+        Storage.delete_later([key])
+        :error
+    end
+  end
+
+  defp attachment_attrs(key, entry, byte_size) do
+    %{
+      storage_key: key,
+      filename: entry.client_name,
+      content_type: entry.client_type,
+      byte_size: byte_size
+    }
+  end
+
+  # Files already in storage are removed again when the value is refused.
+  defp create_value_or_drop_files(profile, group, attrs, attachments) do
+    case Social.create_value(profile, group, attrs, attachments) do
+      {:ok, value} ->
+        {:ok, value}
+
+      error ->
+        Storage.delete_later(Enum.map(attachments, & &1.storage_key))
+        error
     end
   end
 
@@ -2160,6 +2365,46 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  defp maybe_load_files(socket, group, "files") do
+    case socket.assigns.files_view do
+      "tree" ->
+        {tree, truncated?} = Social.attachment_tree(group, socket.assigns.current_profile)
+
+        socket
+        |> assign(:file_tree, tree)
+        |> assign(:file_tree_truncated?, truncated?)
+
+      _list ->
+        limit = max(socket.assigns.files_loaded_count, @files_page_size)
+        {files, has_more?} = Social.list_group_attachments(group, limit: limit)
+
+        socket
+        |> assign(:files_has_more?, has_more?)
+        |> assign(:files_loaded_count, length(files))
+        |> assign(:oldest_file_id, last_value_id(files))
+        |> stream(:files, files, reset: true)
+    end
+  end
+
+  defp maybe_load_files(socket, _group, _active_tab), do: socket
+
+  defp load_more_files(%{assigns: %{files_has_more?: true, oldest_file_id: before_id}} = socket)
+       when is_integer(before_id) do
+    {files, has_more?} =
+      Social.list_group_attachments(socket.assigns.group,
+        limit: @files_page_size,
+        before_id: before_id
+      )
+
+    socket
+    |> assign(:files_has_more?, has_more?)
+    |> update(:files_loaded_count, &(&1 + length(files)))
+    |> assign(:oldest_file_id, last_value_id(files) || before_id)
+    |> stream(:files, files)
+  end
+
+  defp load_more_files(socket), do: socket
+
   # Members are streamed with their role keys in the group.
   defp member_entries(profiles, group) do
     keys_by_profile = Access.role_keys_by_profile(group, Enum.map(profiles, & &1.id))
@@ -2458,6 +2703,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp normalize_active_tab("roles", %Group{is_direct: false}, %Access{member?: true}),
     do: "roles"
+
+  defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})
+       when not is_nil(parent_id),
+       do: "files"
 
   defp normalize_active_tab(tab, group, %Access{} = access)
        when tab in ["create_group", "invite_profile", "edit_group"] do

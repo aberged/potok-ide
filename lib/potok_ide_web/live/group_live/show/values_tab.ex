@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.{Access, Value}
+  alias PotokIde.Storage
   alias PotokIdeWeb.GroupLive.Show.Components
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
@@ -17,6 +18,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :thread_origin, :map, default: nil
   attr :is_member, :boolean, required: true
   attr :access, Access, required: true
+  attr :attachments, Phoenix.LiveView.UploadConfig, required: true
+  attr :can_attach, :boolean, default: false
 
   def panel(assigns) do
     access = assigns.access
@@ -227,33 +230,135 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 class="absolute inset-x-0 bottom-full z-30 mb-2 max-h-72 overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-xl shadow-base-content/10"
               >
               </div>
+              <%!-- Files can be dropped anywhere on the form; LiveView marks it `phx-drop-target-active` meanwhile. --%>
               <.form
                 for={@new_value_form}
                 id="group-value-form"
-                class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
+                class="rounded-[1.75rem] flex flex-col border border-base-300 bg-base-100 p-3 shadow-sm transition-colors duration-150 [&.phx-drop-target-active]:border-primary [&.phx-drop-target-active]:bg-primary/5"
                 phx-change="validate_value"
                 phx-submit="create_value"
+                phx-drop-target={@can_attach && @attachments.ref}
               >
-                <.input
-                  field={@new_value_form[:content]}
-                  id="group-value-content"
-                  aria-label={gettext("Value")}
-                  aria-autocomplete="list"
-                  aria-controls="group-value-mention-menu"
-                  class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-                  placeholder={gettext("Write a value...")}
-                  rows="1"
-                  type="textarea"
-                  phx-debounce="400"
-                  phx-hook=".SubmitOnEnter"
-                />
-                <.button
-                  aria-label={gettext("Post value")}
-                  id="group-value-submit"
-                  class="btn btn-primary btn-circle size-10 flex-none"
+                <div
+                  :if={@can_attach and @attachments.entries != []}
+                  id="group-value-attachments"
+                  class="mb-2 flex flex-col gap-1.5"
                 >
-                  <.icon name="hero-paper-airplane" class="size-4" />
-                </.button>
+                  <div
+                    :for={entry <- @attachments.entries}
+                    id={"group-value-attachment-#{entry.ref}"}
+                    phx-mounted={
+                      JS.transition(
+                        {"transition ease-out duration-150", "opacity-0 translate-y-1",
+                         "opacity-100 translate-y-0"}
+                      )
+                    }
+                    class={[
+                      "flex items-center gap-3 rounded-2xl border py-2 pr-2 pl-2.5",
+                      if(entry.valid?,
+                        do: "border-base-300 bg-base-200/60",
+                        else: "border-error/40 bg-error/5"
+                      )
+                    ]}
+                  >
+                    <span class={[
+                      "inline-flex size-9 shrink-0 items-center justify-center rounded-xl",
+                      if(entry.valid?,
+                        do: "bg-base-100 text-base-content/60",
+                        else: "bg-error/10 text-error"
+                      )
+                    ]}>
+                      <.icon name={Components.file_icon(entry.client_type)} class="size-5" />
+                    </span>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-baseline gap-2">
+                        <p class="truncate text-sm font-medium text-base-content">
+                          {entry.client_name}
+                        </p>
+                        <span class="shrink-0 text-xs tabular-nums text-base-content/50">
+                          {Components.format_bytes(entry.client_size)}
+                        </span>
+                      </div>
+                      <div
+                        :if={entry.valid? and entry.progress > 0 and !entry.done?}
+                        role="progressbar"
+                        aria-valuemin="0"
+                        aria-valuemax="100"
+                        aria-valuenow={entry.progress}
+                        aria-label={gettext("Upload progress")}
+                        class="mt-1.5 h-1 overflow-hidden rounded-full bg-base-300"
+                      >
+                        <div
+                          class="h-full rounded-full bg-primary transition-[width] duration-200 ease-out"
+                          style={"width: #{entry.progress}%"}
+                        >
+                        </div>
+                      </div>
+                      <p
+                        :for={error <- upload_errors(@attachments, entry)}
+                        class="mt-0.5 text-xs text-error"
+                      >
+                        {upload_error_message(error)}
+                      </p>
+                    </div>
+                    <button
+                      id={"group-value-attachment-cancel-#{entry.ref}"}
+                      type="button"
+                      phx-click="cancel_attachment"
+                      phx-value-ref={entry.ref}
+                      aria-label={gettext("Remove file")}
+                      title={gettext("Remove file")}
+                      class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+                    >
+                      <.icon name="hero-x-mark" class="size-4" />
+                    </button>
+                  </div>
+                </div>
+                <p
+                  :for={error <- if(@can_attach, do: upload_errors(@attachments), else: [])}
+                  id={"group-value-attachments-error-#{error}"}
+                  class="mb-2 flex items-center gap-2 px-1 text-sm text-error"
+                >
+                  <.icon name="hero-exclamation-circle" class="size-4 shrink-0" />
+                  {upload_error_message(error)}
+                </p>
+                <div class="flex items-end gap-1.5">
+                  <label
+                    :if={@can_attach}
+                    id="group-value-attach"
+                    title={gettext("Add files")}
+                    class="inline-flex size-10 flex-none cursor-pointer items-center justify-center rounded-full text-base-content/55 transition duration-150 ease-out hover:bg-base-200 hover:text-base-content active:scale-95 has-focus-visible:ring-2 has-focus-visible:ring-primary/40"
+                  >
+                    <.icon name="hero-paper-clip" class="size-5" />
+                    <span class="sr-only">{gettext("Add files")}</span>
+                    <.live_file_input upload={@attachments} class="sr-only" />
+                  </label>
+                  <.input
+                    field={@new_value_form[:content]}
+                    id="group-value-content"
+                    aria-label={gettext("Value")}
+                    aria-autocomplete="list"
+                    aria-controls="group-value-mention-menu"
+                    class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+                    placeholder={gettext("Write a value...")}
+                    rows="1"
+                    type="textarea"
+                    phx-debounce="400"
+                    phx-hook=".SubmitOnEnter"
+                  />
+                  <%!-- `.ComposerSubmit` re-checks the button when files come and go; typing is handled by `.SubmitOnEnter`. --%>
+                  <.button
+                    aria-label={gettext("Post value")}
+                    id="group-value-submit"
+                    phx-hook=".ComposerSubmit"
+                    data-has-attachments={
+                      to_string(@can_attach and Enum.any?(@attachments.entries, & &1.valid?))
+                    }
+                    class="btn btn-primary btn-circle size-10 flex-none"
+                  >
+                    <.icon name="hero-paper-airplane" class="size-4" />
+                  </.button>
+                </div>
               </.form>
             </div>
           <% end %>
@@ -631,9 +736,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.removeEventListener("keydown", this.handleKeydown)
             },
 
+            // A value needs text or at least one file.
             syncSubmitButton() {
               if (this.submitButton) {
-                this.submitButton.disabled = this.el.value.trim() === ""
+                this.submitButton.disabled =
+                  this.el.value.trim() === "" && this.submitButton.dataset.hasAttachments !== "true"
               }
             },
 
@@ -643,10 +750,43 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
           }
         </script>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".ComposerSubmit">
+          export default {
+            mounted() {
+              this.sync()
+            },
+
+            updated() {
+              this.sync()
+            },
+
+            sync() {
+              const textarea = this.el.form?.querySelector("#group-value-content")
+              const empty = !textarea || textarea.value.trim() === ""
+
+              this.el.disabled = empty && this.el.dataset.hasAttachments !== "true"
+            },
+          }
+        </script>
       </div>
     </div>
     """
   end
+
+  defp upload_error_message(:too_large),
+    do:
+      gettext("This file is larger than %{size}.",
+        size: Components.format_bytes(Storage.max_file_size())
+      )
+
+  defp upload_error_message(:too_many_files),
+    do: gettext("Attach at most %{count} files.", count: Storage.max_files())
+
+  defp upload_error_message(:external_client_failure),
+    do: gettext("The upload failed. Remove the file and try again.")
+
+  defp upload_error_message(_error), do: gettext("This file cannot be attached.")
 
   # Emojibase has no Serbian data, so `sr` searches with English keywords.
   defp emoji_data_locale do

@@ -29,6 +29,7 @@ import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installLongPressLinkMenu } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
+import { Uploaders } from "./uploaders"
 
 const HeaderDrawer = {
   mounted() {
@@ -1465,6 +1466,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     ReactionPicker,
     ...colocatedHooks,
   },
+  uploaders: Uploaders,
 })
 
 // Show progress bar on live navigation and form submits

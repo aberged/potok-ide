@@ -11,6 +11,7 @@ defmodule PotokIde.Social do
   alias Ecto.Multi
   alias PotokIde.Presence
   alias PotokIde.Repo
+  alias PotokIde.Storage
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
@@ -32,6 +33,7 @@ defmodule PotokIde.Social do
     Profile,
     ProfileInvitation,
     Value,
+    ValueAttachment,
     ValueReaction
   }
 
@@ -533,18 +535,27 @@ defmodule PotokIde.Social do
       true ->
         parent_id = group.parent_id
 
-        Repo.delete(group)
+        # The group has no sub-groups, so its own values hold all the files
+        # that go with it.
+        Multi.new()
+        |> Multi.delete_all(
+          :attachments,
+          from(a in ValueAttachment, where: a.group_id == ^group.id, select: a.storage_key)
+        )
+        |> Multi.delete(:group, group)
+        |> Repo.transaction()
         |> case do
-          {:ok, deleted_group} = ok ->
+          {:ok, %{group: deleted_group, attachments: {_count, storage_keys}}} ->
+            Storage.delete_later(storage_keys)
             broadcast_group_deleted(deleted_group.id, parent_id)
 
             if parent_id do
               broadcast_group_updated(parent_id)
             end
 
-            ok
+            {:ok, deleted_group}
 
-          {:error, reason} ->
+          {:error, _step, reason, _changes} ->
             {:error, reason}
         end
     end
@@ -1022,24 +1033,49 @@ defmodule PotokIde.Social do
   end
 
   # Everything `Components.value_message/1` renders for a chat value: the
-  # replied-to value with its author for the quote, and the value's thread.
+  # replied-to value with its author for the quote (or its files when it has
+  # no text), the value's files and its thread.
   defp value_display_preloads do
     reactions = from(r in ValueReaction, order_by: [asc: r.id])
-    [:creator, :thread, parent: :creator, reactions: {reactions, :profile}]
+
+    [
+      :creator,
+      :thread,
+      attachments: attachments_in_order(),
+      parent: [:creator, attachments: attachments_in_order()],
+      reactions: {reactions, :profile}
+    ]
   end
 
-  def create_value(%Profile{} = creator, %Group{} = group, attrs) do
+  defp attachments_in_order, do: from(a in ValueAttachment, order_by: [asc: a.id])
+
+  @doc """
+  Posts a chat value. `attachments` are files already in `PotokIde.Storage`,
+  as maps with `:storage_key`, `:filename`, `:content_type` and `:byte_size`;
+  they come from the upload, never from `attrs`. A value with files may have
+  no text.
+  """
+  def create_value(%Profile{} = creator, %Group{} = group, attrs, attachments \\ []) do
     attrs = Map.new(attrs)
 
     cond do
-      data_value_attrs?(attrs) ->
+      data_value_attrs?(attrs) and attachments == [] ->
         create_data_value(creator, group, attrs)
+
+      data_value_attrs?(attrs) ->
+        {:error, :invalid_attachments}
 
       not member_of_group?(creator, group) ->
         {:error, :not_a_member_of_group}
 
       not Access.can?(creator, group, :post_values) ->
         {:error, :not_permitted}
+
+      attachments != [] and not Access.can?(creator, group, :attach_files) ->
+        {:error, :not_permitted}
+
+      length(attachments) > Storage.max_files() ->
+        {:error, :too_many_attachments}
 
       # The reply quote shows the parent's content, so it must be a chat
       # value the group's members can already read.
@@ -1054,11 +1090,14 @@ defmodule PotokIde.Social do
 
         changeset =
           %Value{}
-          |> Value.changeset(attrs)
+          |> Value.changeset(attrs, attachments?: attachments != [])
           |> put_mentions(creator, group)
 
         Multi.new()
         |> Multi.insert(:value, changeset)
+        |> Multi.run(:attachments, fn repo, %{value: value} ->
+          insert_value_attachments(repo, value, attachments)
+        end)
         |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
           upsert_group_value_read(repo, creator.id, group.id, value.id)
         end)
@@ -1071,10 +1110,27 @@ defmodule PotokIde.Social do
             notify_group_members_of_new_value(creator, group, value)
             {:ok, value}
 
-          error ->
-            error
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
         end
     end
+  end
+
+  defp insert_value_attachments(repo, %Value{} = value, attachments) do
+    Enum.reduce_while(attachments, {:ok, []}, fn file, {:ok, inserted} ->
+      %ValueAttachment{
+        value_id: value.id,
+        group_id: value.group_id,
+        profile_id: value.creator_id,
+        storage_key: Map.fetch!(file, :storage_key)
+      }
+      |> ValueAttachment.changeset(Map.take(file, [:filename, :content_type, :byte_size]))
+      |> repo.insert()
+      |> case do
+        {:ok, attachment} -> {:cont, {:ok, [attachment | inserted]}}
+        {:error, changeset} -> {:halt, {:error, changeset}}
+      end
+    end)
   end
 
   @doc """
@@ -1136,9 +1192,10 @@ defmodule PotokIde.Social do
     else
       attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
 
-      # Mentions follow the new text, but an edit notifies nobody.
+      # Mentions follow the new text, but an edit notifies nobody. A value
+      # with files may lose its text.
       value
-      |> Value.changeset(attrs)
+      |> Value.changeset(attrs, attachments?: value_has_attachments?(value))
       |> put_mentions(profile, Repo.get!(Group, value.group_id))
       |> Repo.update()
       |> case do
@@ -1162,19 +1219,32 @@ defmodule PotokIde.Social do
       # Read before the delete: `values.parent_id` is nilified with it.
       reply_ids = reply_ids(value)
 
-      Repo.delete(value)
+      Multi.new()
+      |> Multi.delete_all(
+        :attachments,
+        from(a in ValueAttachment, where: a.value_id == ^value.id, select: a.storage_key)
+      )
+      |> Multi.delete(:value, value)
+      |> Repo.transaction()
       |> case do
-        {:ok, deleted_value} = ok ->
+        {:ok, %{value: deleted_value, attachments: {_count, storage_keys}}} ->
+          Storage.delete_later(storage_keys)
           broadcast_value_deleted(deleted_value)
           broadcast_group_unread_counts_updated(deleted_value.group_id)
           broadcast_values_updated(reply_ids)
-          ok
+          {:ok, deleted_value}
 
-        error ->
-          error
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
       end
     end
   end
+
+  defp value_has_attachments?(%Value{attachments: attachments}) when is_list(attachments),
+    do: attachments != []
+
+  defp value_has_attachments?(%Value{id: value_id}),
+    do: Repo.exists?(from(a in ValueAttachment, where: a.value_id == ^value_id))
 
   # Chat values only: data values never mention anyone.
   defp put_mentions(%Ecto.Changeset{} = changeset, %Profile{} = author, %Group{} = group) do
@@ -1343,7 +1413,7 @@ defmodule PotokIde.Social do
     from(v in Value,
       join: g in assoc(v, :group),
       where: v.id == ^value_id and v.is_data == false,
-      preload: [:creator, group: g]
+      preload: [:creator, attachments: ^attachments_in_order(), group: g]
     )
     |> Repo.one()
     |> case do
@@ -2213,6 +2283,165 @@ defmodule PotokIde.Social do
     do: from(v in query, where: v.id < ^before_id)
 
   defp maybe_before_id(query, _before_id), do: query
+
+  @doc """
+  Keyset page of the files attached in the group, newest first, with their
+  uploaders. Returns `{attachments, more?}` like `list_group_values_page/2`.
+  """
+  def list_group_attachments(%Group{} = group, opts \\ []) do
+    limit = Keyword.get(opts, :limit, 30)
+
+    rows =
+      from(a in ValueAttachment,
+        where: a.group_id == ^group.id,
+        order_by: [desc: a.id],
+        limit: ^(limit + 1),
+        preload: :profile
+      )
+      |> maybe_before_id(opts[:before_id])
+      |> Repo.all()
+
+    {Enum.take(rows, limit), length(rows) > limit}
+  end
+
+  @doc """
+  The attachment when the profile is a member of the group it was posted in
+  (only members read a group's values); nil otherwise.
+  """
+  def get_attachment_for_download(%Profile{id: profile_id}, attachment_id)
+      when is_integer(attachment_id) do
+    from(a in ValueAttachment,
+      join: gm in GroupMembership,
+      on: gm.group_id == a.group_id and gm.profile_id == ^profile_id,
+      where: a.id == ^attachment_id
+    )
+    |> Repo.one()
+  end
+
+  def get_attachment_for_download(_profile, _attachment_id), do: nil
+
+  @attachment_tree_max_depth 10
+  @attachment_tree_max_groups 500
+  @attachment_tree_max_files 1000
+
+  @doc """
+  The files of `group` and its sub-groups as a folder tree for the profile.
+  It walks down through the sub-groups the profile can see, the same rule as
+  the sub-groups tab (members, or public groups), skipping direct
+  conversations. Files are listed only for groups the profile is a member of,
+  and folders with no files anywhere below them are left out.
+
+  Each node is `%{group: %{id, name, thread?, member?}, files: [...],
+  children: [...], file_count: n, byte_size: n}`. The walk stops at
+  #{@attachment_tree_max_depth} levels and #{@attachment_tree_max_groups} groups,
+  and only the newest #{@attachment_tree_max_files} files are placed;
+  `{tree, truncated?}` tells whether anything was cut.
+  """
+  def attachment_tree(%Group{} = group, %Profile{} = profile) do
+    %Postgrex.Result{rows: rows} =
+      Repo.query!(
+        """
+        WITH RECURSIVE tree AS (
+          SELECT g.id, g.parent_id, g.name, g.parent_value_id, 0 AS depth
+          FROM groups g
+          WHERE g.id = $1
+
+          UNION ALL
+
+          SELECT c.id, c.parent_id, c.name, c.parent_value_id, t.depth + 1
+          FROM groups c
+          JOIN tree t ON c.parent_id = t.id
+          WHERE t.depth < $3
+            AND c.is_direct = FALSE
+            AND (
+              c.is_public = TRUE
+              OR EXISTS (
+                SELECT 1 FROM group_memberships gm
+                WHERE gm.group_id = c.id AND gm.profile_id = $2
+              )
+            )
+        )
+        SELECT
+          t.id,
+          t.parent_id,
+          t.name,
+          t.parent_value_id IS NOT NULL,
+          EXISTS (
+            SELECT 1 FROM group_memberships gm
+            WHERE gm.group_id = t.id AND gm.profile_id = $2
+          )
+        FROM tree t
+        ORDER BY t.depth, t.id
+        LIMIT $4
+        """,
+        [
+          group.id,
+          profile.id,
+          @attachment_tree_max_depth,
+          @attachment_tree_max_groups + 1
+        ]
+      )
+
+    groups_truncated? = length(rows) > @attachment_tree_max_groups
+
+    folders =
+      rows
+      |> Enum.take(@attachment_tree_max_groups)
+      |> Enum.map(fn [id, parent_id, name, thread?, member?] ->
+        %{id: id, parent_id: parent_id, name: name, thread?: thread?, member?: member?}
+      end)
+
+    member_group_ids = for folder <- folders, folder.member?, do: folder.id
+
+    files =
+      from(a in ValueAttachment,
+        where: a.group_id in ^member_group_ids,
+        order_by: [desc: a.id],
+        limit: ^(@attachment_tree_max_files + 1)
+      )
+      |> Repo.all()
+
+    files_truncated? = length(files) > @attachment_tree_max_files
+
+    files_by_group =
+      files
+      |> Enum.take(@attachment_tree_max_files)
+      |> Enum.group_by(& &1.group_id)
+
+    folders_by_parent = Enum.group_by(folders, & &1.parent_id)
+    [root | _] = folders
+
+    {build_attachment_folder(root, folders_by_parent, files_by_group, true),
+     groups_truncated? or files_truncated?}
+  end
+
+  defp build_attachment_folder(folder, folders_by_parent, files_by_group, root?) do
+    children =
+      folders_by_parent
+      |> Map.get(folder.id, [])
+      |> Enum.map(&build_attachment_folder(&1, folders_by_parent, files_by_group, false))
+      |> Enum.reject(&is_nil/1)
+      |> Enum.sort_by(&{String.downcase(&1.group.name), &1.group.id})
+
+    files =
+      files_by_group
+      |> Map.get(folder.id, [])
+      |> Enum.sort_by(&{String.downcase(&1.filename), &1.id})
+
+    file_count = length(files) + Enum.sum_by(children, & &1.file_count)
+
+    if file_count == 0 and not root? do
+      nil
+    else
+      %{
+        group: Map.delete(folder, :parent_id),
+        files: files,
+        children: children,
+        file_count: file_count,
+        byte_size: Enum.sum_by(files, & &1.byte_size) + Enum.sum_by(children, & &1.byte_size)
+      }
+    end
+  end
 
   def count_group_values(%Group{} = group) do
     import Ecto.Query, only: [from: 2]
@@ -3373,7 +3602,7 @@ defmodule PotokIde.Social do
          emoji
        ) do
     body =
-      case notification_excerpt(value.content) do
+      case notification_excerpt(value) do
         nil -> group.name
         snippet -> "#{group.name}: #{snippet}"
       end
@@ -3434,7 +3663,7 @@ defmodule PotokIde.Social do
   end
 
   defp group_value_notification_body(%Group{} = group, %Value{} = value) do
-    excerpt = notification_excerpt(value.content)
+    excerpt = notification_excerpt(value)
 
     case excerpt do
       nil ->
@@ -3444,6 +3673,9 @@ defmodule PotokIde.Social do
         "New value in #{group.name}: #{snippet}"
     end
   end
+
+  defp notification_excerpt(%Value{content: content} = value),
+    do: notification_excerpt(content) || Value.attachment_summary(value, 120)
 
   defp notification_excerpt(content) when is_binary(content) do
     trimmed = String.trim(content)

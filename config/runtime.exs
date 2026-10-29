@@ -164,6 +164,53 @@ if (is_binary(firebase_service_account_json) and String.trim(firebase_service_ac
   config :potok_ide, PotokIde.PushNotifications, firebase_push_config
 end
 
+# Attached files go to an S3-compatible bucket when one is configured.
+# `fly storage create` (Tigris) sets BUCKET_NAME, AWS_ACCESS_KEY_ID,
+# AWS_SECRET_ACCESS_KEY, AWS_ENDPOINT_URL_S3 and AWS_REGION as app secrets.
+if config_env() != :test do
+  case System.get_env("BUCKET_NAME") do
+    bucket when is_binary(bucket) and bucket != "" ->
+      config :potok_ide, PotokIde.Storage,
+        adapter: PotokIde.Storage.S3,
+        bucket: bucket,
+        endpoint: System.get_env("AWS_ENDPOINT_URL_S3") || "https://fly.storage.tigris.dev",
+        region: System.get_env("AWS_REGION") || "auto",
+        access_key_id:
+          System.get_env("AWS_ACCESS_KEY_ID") ||
+            raise("environment variable AWS_ACCESS_KEY_ID is missing"),
+        secret_access_key:
+          System.get_env("AWS_SECRET_ACCESS_KEY") ||
+            raise("environment variable AWS_SECRET_ACCESS_KEY is missing"),
+        virtual_host: System.get_env("S3_VIRTUAL_HOST") in ~w(true 1)
+
+    _bucket ->
+      :ok
+  end
+
+  attachment_limits =
+    [
+      max_file_size:
+        with value when is_binary(value) <- System.get_env("ATTACHMENT_MAX_FILE_SIZE_MB"),
+             {megabytes, ""} when megabytes > 0 <- Integer.parse(String.trim(value)) do
+          megabytes * 1_000_000
+        else
+          _ -> nil
+        end,
+      max_files:
+        with value when is_binary(value) <- System.get_env("ATTACHMENT_MAX_FILES"),
+             {count, ""} when count > 0 <- Integer.parse(String.trim(value)) do
+          count
+        else
+          _ -> nil
+        end
+    ]
+    |> Enum.reject(fn {_key, value} -> is_nil(value) end)
+
+  if attachment_limits != [] do
+    config :potok_ide, PotokIde.Storage, attachment_limits
+  end
+end
+
 if config_env() == :prod do
   present? = fn
     value when is_binary(value) -> String.trim(value) != ""

@@ -33,6 +33,14 @@ config :potok_ide, :canonical_host, nil
 # before reloading once (see GroupLive.Show.schedule_refresh/2).
 config :potok_ide, live_refresh_debounce_ms: 100
 
+# Files attached to values (see PotokIde.Storage). Without an adapter
+# attachments are off; dev and test keep files on disk, and runtime.exs
+# switches to a bucket when BUCKET_NAME is set.
+config :potok_ide, PotokIde.Storage,
+  adapter: nil,
+  max_files: 10,
+  max_file_size: 100_000_000
+
 config :potok_ide, :ios_app_links,
   bundle_id: "rs.potok.ide",
   paths: ["/accounts/log-in/*"]
