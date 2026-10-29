@@ -790,6 +790,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :current_profile, :map, default: nil
   attr :editing_value_id, :integer, default: nil
   attr :uses_api, :boolean, default: false
+  attr :can_react, :boolean, default: false
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -801,6 +802,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:editing?, editing?)
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
+      |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
 
     ~H"""
     <div id={@dom_id} class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}>
@@ -860,8 +862,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         >
           {gettext("reply")}
         </span>
-        <div :if={@mine? and !@editing?} class="ml-auto flex items-center gap-1">
+        <div :if={@can_react or (@mine? and !@editing?)} class="ml-auto flex items-center gap-1">
+          <%!-- Opens the page's single emoji picker (`ReactionPicker` hook in the values tab). --%>
           <button
+            :if={@can_react}
+            id={"value-react-#{@value.id}"}
+            type="button"
+            data-reaction-trigger
+            data-value-id={@value.id}
+            aria-haspopup="dialog"
+            aria-label={gettext("Add reaction")}
+            title={gettext("Add reaction")}
+            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+          >
+            <.icon name="hero-face-smile" class="size-4" />
+          </button>
+          <button
+            :if={@mine? and !@editing?}
             id={"value-edit-#{@value.id}"}
             type="button"
             phx-click="start_edit_value"
@@ -872,6 +889,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <.icon name="hero-pencil-square" class="size-4" />
           </button>
           <button
+            :if={@mine? and !@editing?}
             id={"value-delete-#{@value.id}"}
             type="button"
             phx-click="delete_value"
@@ -929,9 +947,64 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </button>
         </div>
       </div>
+
+      <div
+        :if={@reactions != []}
+        id={"value-reactions-#{@value.id}"}
+        class={[
+          "chat-footer mt-1.5 flex max-w-full flex-wrap items-center gap-1 sm:max-w-[42rem]",
+          @mine? && "justify-end"
+        ]}
+      >
+        <button
+          :for={reaction <- @reactions}
+          id={"value-reaction-#{@value.id}-#{reaction.key}"}
+          type="button"
+          phx-click="toggle_reaction"
+          phx-value-id={@value.id}
+          phx-value-emoji={reaction.emoji}
+          aria-pressed={to_string(reaction.mine?)}
+          title={Enum.join(reaction.names, ", ")}
+          disabled={!@can_react}
+          class={[
+            "inline-flex h-7 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out",
+            "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
+            if(reaction.mine?,
+              do: "border-primary/50 bg-primary/10 text-primary",
+              else:
+                "border-base-300 bg-base-100 text-base-content/70 enabled:hover:border-base-content/25 enabled:hover:bg-base-200"
+            )
+          ]}
+        >
+          <span class="text-base leading-none">{reaction.emoji}</span>
+          <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
+        </button>
+      </div>
     </div>
     """
   end
+
+  # One pill per emoji, in the order the emoji was first used on the value.
+  defp reaction_summary(reactions, current_profile) when is_list(reactions) do
+    by_emoji = Enum.group_by(reactions, & &1.emoji)
+    current_profile_id = current_profile && current_profile.id
+
+    reactions
+    |> Enum.uniq_by(& &1.emoji)
+    |> Enum.map(fn %{emoji: emoji} ->
+      emoji_reactions = Map.fetch!(by_emoji, emoji)
+
+      %{
+        emoji: emoji,
+        key: Base.encode16(emoji, case: :lower),
+        count: length(emoji_reactions),
+        mine?: Enum.any?(emoji_reactions, &(&1.profile_id == current_profile_id)),
+        names: for(%{profile: %{username: username}} <- emoji_reactions, do: username)
+      }
+    end)
+  end
+
+  defp reaction_summary(_reactions, _current_profile), do: []
 
   # App groups get the richer html5 allow-list for chat values; their scripts
   # only ever run inside the sandboxed `app_frame/1`.

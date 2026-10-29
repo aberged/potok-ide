@@ -2099,6 +2099,145 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "toggle_value_reaction/4" do
+    setup do
+      {:ok, owner} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "react-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, outsider} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "react-outsider",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "react-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, value} =
+        Social.create_value(owner, group, %{
+          "content" => "react to me",
+          "content_format" => :markdown
+        })
+
+      %{owner: owner, outsider: outsider, group: group, value: value}
+    end
+
+    test "adds a reaction and removes it on the second toggle", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      assert value.reactions == []
+
+      assert {:ok, reacted} = Social.toggle_value_reaction(owner, group, value, "👍")
+      assert [%{emoji: "👍", profile_id: profile_id, profile: profile}] = reacted.reactions
+      assert profile_id == owner.id
+      assert profile.username == "react-owner"
+
+      assert {:ok, unreacted} = Social.toggle_value_reaction(owner, group, value, "👍")
+      assert unreacted.reactions == []
+    end
+
+    test "lets one profile hold several different emoji on a value", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍")
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍🏽")
+      {:ok, reacted} = Social.toggle_value_reaction(owner, group, value, "👨‍👩‍👧")
+
+      assert Enum.map(reacted.reactions, & &1.emoji) == ["👍", "👍🏽", "👨‍👩‍👧"]
+
+      assert [%{reactions: reactions}] = Social.list_group_values(group)
+      assert length(reactions) == 3
+    end
+
+    test "broadcasts the reloaded value to the group", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      Social.subscribe_group(group)
+
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "🎉")
+
+      assert_receive {:value_updated, group_id, %{id: value_id, reactions: [%{emoji: "🎉"}]}}
+      assert group_id == group.id
+      assert value_id == value.id
+    end
+
+    test "rejects profiles that are not group members", %{
+      outsider: outsider,
+      group: group,
+      value: value
+    } do
+      assert {:error, :not_a_member_of_group} =
+               Social.toggle_value_reaction(outsider, group, value, "👍")
+
+      assert [%{reactions: []}] = Social.list_group_values(group)
+    end
+
+    test "rejects anything that is not a single emoji", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      for invalid <- ["", "a", "ab", "7", " ", "👍👍"] do
+        assert {:error, %Ecto.Changeset{} = changeset} =
+                 Social.toggle_value_reaction(owner, group, value, invalid)
+
+        assert changeset.errors[:emoji], "expected #{inspect(invalid)} to be rejected"
+      end
+
+      assert {:error, :invalid_emoji} = Social.toggle_value_reaction(owner, group, value, nil)
+    end
+
+    test "rejects data values and values from another group", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      {:ok, data_value} =
+        Social.create_data_value(owner, group, %{"content" => "data:", "data" => %{}})
+
+      assert {:error, :value_not_found} =
+               Social.toggle_value_reaction(owner, group, data_value, "👍")
+
+      {:ok, other_group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "react-other",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      assert {:error, :value_not_found} =
+               Social.toggle_value_reaction(owner, other_group, value, "👍")
+    end
+
+    test "deleting a value deletes its reactions", %{owner: owner, group: group, value: value} do
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍")
+      {:ok, _deleted} = Social.delete_value(owner, value)
+
+      refute Repo.exists?(from r in PotokIde.Social.ValueReaction, where: r.value_id == ^value.id)
+    end
+  end
+
   describe "update_group_description/3" do
     test "updates only the description and notifies only the group" do
       account = account_fixture()

@@ -18,6 +18,7 @@ defmodule PotokIde.Social.Value do
 
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
+    has_many :reactions, PotokIde.Social.ValueReaction
 
     timestamps(type: :utc_datetime)
   end

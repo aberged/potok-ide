@@ -58,8 +58,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               uses_api={@group.uses_api}
               current_profile={@current_profile}
               editing_value_id={@editing_value_id}
+              can_react={@is_member}
             />
           </div>
+        </div>
+
+        <%!-- One picker for the whole feed; the `ReactionPicker` hook opens it from any `[data-reaction-trigger]`. --%>
+        <div
+          :if={@is_member}
+          id="reaction-picker"
+          phx-hook="ReactionPicker"
+          phx-update="ignore"
+          hidden
+          role="dialog"
+          aria-label={gettext("Add reaction")}
+          data-locale={emoji_data_locale()}
+          data-data-source={emoji_data_source()}
+          data-i18n={Jason.encode!(emoji_picker_i18n())}
+          class="reaction-picker fixed z-50 overflow-hidden border border-base-300 bg-base-100 opacity-0 translate-y-1 shadow-2xl shadow-base-content/10 transition duration-150 ease-out"
+        >
         </div>
 
         <div
@@ -291,5 +308,65 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
       </div>
     </div>
     """
+  end
+
+  # Emojibase has no Serbian data, so `sr` searches with English keywords.
+  defp emoji_data_locale do
+    case Gettext.get_locale(PotokIdeWeb.Gettext) do
+      "pl" -> "pl"
+      _ -> "en"
+    end
+  end
+
+  defp emoji_data_source do
+    case emoji_data_locale() do
+      "pl" -> ~p"/emoji/pl.json"
+      _ -> ~p"/emoji/en.json"
+    end
+  end
+
+  # Labels for emoji-picker-element; the shape follows its `i18n/en.js`.
+  defp emoji_picker_i18n do
+    %{
+      categoriesLabel: pgettext("emoji picker", "Categories"),
+      emojiUnsupportedMessage:
+        pgettext("emoji picker", "Your browser does not support color emoji."),
+      favoritesLabel: pgettext("emoji picker", "Favorites"),
+      loadingMessage: pgettext("emoji picker", "Loading…"),
+      networkErrorMessage: pgettext("emoji picker", "Could not load emoji."),
+      regionLabel: pgettext("emoji picker", "Emoji picker"),
+      searchDescription:
+        pgettext(
+          "emoji picker",
+          "When search results are available, press up or down to select and enter to choose."
+        ),
+      searchLabel: pgettext("emoji picker", "Search"),
+      searchResultsLabel: pgettext("emoji picker", "Search results"),
+      skinToneDescription:
+        pgettext("emoji picker", "When expanded, press up or down to select and enter to choose."),
+      # `{skinTone}` is filled in by the picker, not by Gettext.
+      skinToneLabel: pgettext("emoji picker", "Choose a skin tone (currently {skinTone})"),
+      skinTonesLabel: pgettext("emoji picker", "Skin tones"),
+      skinTones: [
+        pgettext("emoji skin tone", "Default"),
+        pgettext("emoji skin tone", "Light"),
+        pgettext("emoji skin tone", "Medium-Light"),
+        pgettext("emoji skin tone", "Medium"),
+        pgettext("emoji skin tone", "Medium-Dark"),
+        pgettext("emoji skin tone", "Dark")
+      ],
+      categories: %{
+        "custom" => pgettext("emoji category", "Custom"),
+        "smileys-emotion" => pgettext("emoji category", "Smileys and emoticons"),
+        "people-body" => pgettext("emoji category", "People and body"),
+        "animals-nature" => pgettext("emoji category", "Animals and nature"),
+        "food-drink" => pgettext("emoji category", "Food and drink"),
+        "travel-places" => pgettext("emoji category", "Travel and places"),
+        "activities" => pgettext("emoji category", "Activities"),
+        "objects" => pgettext("emoji category", "Objects"),
+        "symbols" => pgettext("emoji category", "Symbols"),
+        "flags" => pgettext("emoji category", "Flags")
+      }
+    }
   end
 end

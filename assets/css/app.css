@@ -528,3 +528,36 @@
   height: auto;
   max-width: 100%;
 }
+
+/* Emoji picker for message reactions (`ReactionPicker` hook). Document styles
+   beat the picker's `:host` rules, so mapping its palette onto the daisyUI
+   tokens makes it follow every theme without JS. */
+.reaction-picker {
+  border-radius: 1rem;
+  transform-origin: top right;
+}
+
+.reaction-picker.reaction-picker-sheet {
+  border-bottom-width: 0;
+  border-radius: 1.25rem 1.25rem 0 0;
+  padding-bottom: var(--app-safe-area-bottom);
+}
+
+.reaction-picker emoji-picker {
+  --background: var(--color-base-100);
+  --border-size: 0;
+  --button-active-background: var(--color-base-300);
+  --button-hover-background: var(--color-base-200);
+  --category-font-color: color-mix(in oklab, var(--color-base-content) 65%, transparent);
+  --indicator-color: var(--color-primary);
+  --input-border-color: var(--color-base-300);
+  --input-border-radius: 9999px;
+  --input-font-color: var(--color-base-content);
+  --input-placeholder-color: color-mix(in oklab, var(--color-base-content) 45%, transparent);
+  --outline-color: var(--color-primary);
+  height: 22rem;
+}
+
+.reaction-picker.reaction-picker-sheet emoji-picker {
+  width: 100%;
+}

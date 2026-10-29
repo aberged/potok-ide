@@ -651,6 +651,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # Sent by the reaction pills (`phx-click`) and by the emoji picker hook.
+  def handle_event("toggle_reaction", %{"id" => id, "emoji" => emoji}, socket) do
+    if not socket.assigns.is_member do
+      {:noreply, put_flash(socket, :error, gettext("You must be a group member to react."))}
+    else
+      case loaded_value(socket, id) do
+        nil ->
+          {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+
+        value ->
+          case Social.toggle_value_reaction(
+                 socket.assigns.current_profile,
+                 socket.assigns.group,
+                 value,
+                 emoji
+               ) do
+            {:ok, updated_value} ->
+              {:noreply, apply_value_updated(socket, updated_value)}
+
+            {:error, _reason} ->
+              {:noreply, put_flash(socket, :error, gettext("Could not update reaction."))}
+          end
+      end
+    end
+  end
+
   def handle_event("switch_tab", %{"tab" => "group_home"}, socket) do
     {:noreply,
      redirect(

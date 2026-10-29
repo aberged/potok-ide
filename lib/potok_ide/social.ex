@@ -26,7 +26,8 @@ defmodule PotokIde.Social do
     GroupValueRead,
     Profile,
     ProfileInvitation,
-    Value
+    Value,
+    ValueReaction
   }
 
   def subscribe_account(%Account{id: account_id}) when is_integer(account_id) do
@@ -947,8 +948,14 @@ defmodule PotokIde.Social do
 
   @doc "Loads a single value with the associations the values tab renders, or nil."
   def get_value_for_display(id) when is_integer(id) do
-    from(v in Value, where: v.id == ^id, preload: [:creator, :parent])
+    from(v in Value, where: v.id == ^id, preload: ^value_display_preloads())
     |> Repo.one()
+  end
+
+  # Everything `Components.value_message/1` renders for a chat value.
+  defp value_display_preloads do
+    reactions = from(r in ValueReaction, order_by: [asc: r.id])
+    [:creator, :parent, reactions: {reactions, :profile}]
   end
 
   def create_value(%Profile{} = creator, %Group{} = group, attrs) do
@@ -975,7 +982,7 @@ defmodule PotokIde.Social do
         |> Repo.transaction()
         |> case do
           {:ok, %{value: value}} ->
-            value = Repo.preload(value, [:creator, :parent])
+            value = Repo.preload(value, value_display_preloads())
             broadcast_value_created(group, value)
             broadcast_group_unread_counts_updated(group)
             notify_group_members_of_new_value(creator, group, value)
@@ -1029,7 +1036,7 @@ defmodule PotokIde.Social do
       |> Repo.update()
       |> case do
         {:ok, updated_value} ->
-          updated_value = Repo.preload(updated_value, [:creator, :parent], force: true)
+          updated_value = Repo.preload(updated_value, value_display_preloads(), force: true)
           broadcast_value_updated(updated_value)
           {:ok, updated_value}
 
@@ -1053,6 +1060,54 @@ defmodule PotokIde.Social do
         error ->
           error
       end
+    end
+  end
+
+  @doc """
+  Adds the profile's `emoji` reaction to a chat value, or removes it when the
+  profile already reacted with that emoji. A profile can hold several
+  different emoji on the same value. Returns the value reloaded for display
+  and broadcasts it as a `:value_updated` so every viewer re-renders it.
+  """
+  def toggle_value_reaction(%Profile{} = profile, %Group{} = group, %Value{} = value, emoji) do
+    cond do
+      value.group_id != group.id or value.is_data ->
+        {:error, :value_not_found}
+
+      not is_binary(emoji) ->
+        {:error, :invalid_emoji}
+
+      not member_of_group?(profile, group) ->
+        {:error, :not_a_member_of_group}
+
+      true ->
+        existing =
+          from(r in ValueReaction,
+            where: r.value_id == ^value.id and r.profile_id == ^profile.id and r.emoji == ^emoji
+          )
+
+        result =
+          if Repo.exists?(existing) do
+            Repo.delete_all(existing)
+            :ok
+          else
+            %ValueReaction{value_id: value.id, profile_id: profile.id}
+            |> ValueReaction.changeset(%{emoji: emoji})
+            # A double click races the existence check; the unique index settles it.
+            |> Repo.insert(on_conflict: :nothing)
+          end
+
+        case {result, get_value_for_display(value.id)} do
+          {{:error, %Ecto.Changeset{}} = error, _value} ->
+            error
+
+          {_result, nil} ->
+            {:error, :value_not_found}
+
+          {_result, %Value{} = updated_value} ->
+            broadcast_value_updated(updated_value)
+            {:ok, updated_value}
+        end
     end
   end
 
@@ -1455,7 +1510,7 @@ defmodule PotokIde.Social do
     from(v in Value,
       where: v.group_id == ^group.id and v.is_data == false,
       order_by: [asc: v.inserted_at, asc: v.id],
-      preload: [:creator, :parent]
+      preload: ^value_display_preloads()
     )
     |> maybe_paginate(opts)
     |> Repo.all()
@@ -1474,7 +1529,7 @@ defmodule PotokIde.Social do
         where: v.group_id == ^group.id and v.is_data == false,
         order_by: [desc: v.id],
         limit: ^(limit + 1),
-        preload: [:creator, :parent]
+        preload: ^value_display_preloads()
       )
       |> maybe_before_id(opts[:before_id])
       |> Repo.all()

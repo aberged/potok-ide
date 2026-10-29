@@ -2497,6 +2497,97 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     end
   end
 
+  describe "value reactions" do
+    # Pill ids carry the emoji as lowercase hex: "👍" is f09f918d.
+    @thumbs_up_key "f09f918d"
+
+    setup %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "react-live",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "react-live-group")
+
+      {:ok, value} =
+        Social.create_value(profile, group, %{
+          "content" => "react to this",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      %{lv: lv, profile: profile, group: group, value: value}
+    end
+
+    test "members get the picker trigger and a single picker for the feed", %{
+      lv: lv,
+      value: value
+    } do
+      assert has_element?(lv, "#value-react-#{value.id}[data-reaction-trigger]")
+      assert has_element?(lv, "#reaction-picker[phx-hook='ReactionPicker'][data-i18n]")
+      assert has_element?(lv, "#reaction-picker[data-data-source^='/emoji/en']")
+      refute has_element?(lv, "#value-reactions-#{value.id}")
+    end
+
+    test "the picker event adds a reaction and clicking the pill removes it", %{
+      lv: lv,
+      value: value
+    } do
+      render_hook(lv, "toggle_reaction", %{"id" => to_string(value.id), "emoji" => "👍"})
+
+      pill = "#value-reaction-#{value.id}-#{@thumbs_up_key}"
+      assert has_element?(lv, "#{pill}[aria-pressed='true']", "1")
+
+      lv
+      |> element(pill)
+      |> render_click()
+
+      refute has_element?(lv, pill)
+      refute has_element?(lv, "#value-reactions-#{value.id}")
+    end
+
+    test "rejects an invalid emoji without adding a reaction", %{lv: lv, value: value} do
+      render_hook(lv, "toggle_reaction", %{"id" => to_string(value.id), "emoji" => "nope"})
+
+      refute has_element?(lv, "#value-reactions-#{value.id}")
+      assert render(lv) =~ "Could not update reaction."
+    end
+
+    test "shows other members' reactions live and joins them on click", %{
+      lv: lv,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      other = add_group_member!(profile, group, "react-other")
+      {:ok, _value} = Social.toggle_value_reaction(other, group, value, "👍")
+
+      pill = "#value-reaction-#{value.id}-#{@thumbs_up_key}"
+      assert has_element?(lv, "#{pill}[aria-pressed='false'][title='react-other']", "1")
+
+      lv
+      |> element(pill)
+      |> render_click()
+
+      assert has_element?(
+               lv,
+               "#{pill}[aria-pressed='true'][title='react-other, react-live']",
+               "2"
+             )
+    end
+  end
+
   describe "app api" do
     setup %{conn: conn} do
       owner_account = account_fixture()

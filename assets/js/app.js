@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installLongPressLinkMenu } from "./longpress"
+import { ReactionPicker } from "./reaction_picker"
 
 const HeaderDrawer = {
   mounted() {
@@ -1461,6 +1462,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     PushNotifications,
     GroupAppFrame,
     MarkdownEditor,
+    ReactionPicker,
     ...colocatedHooks,
   },
 })
