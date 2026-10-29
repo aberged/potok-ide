@@ -63,9 +63,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
-            <%!-- A thread returns to the chat it was started from. --%>
+            <%!-- Goes back like the browser does. With no page of this site
+                 behind (opened from a notification, a link or a new tab) it
+                 goes to the parent; a thread to the chat it was started from. --%>
             <.link
               id="group-back-link"
+              phx-hook=".HistoryBack"
               navigate={
                 if(@group.parent_value_id,
                   do: ~p"/groups/#{@group.parent_id}/values",
@@ -76,6 +79,38 @@ defmodule PotokIdeWeb.GroupLive.Show do
             >
               {"❮"}
             </.link>
+            <script :type={Phoenix.LiveView.ColocatedHook} name=".HistoryBack">
+              const hasAppPageBehind = () => {
+                // The Navigation API lists only this site's entries in this tab.
+                if (window.navigation) return window.navigation.canGoBack
+                if (window.history.length < 2) return false
+                // LiveView numbers the entries of a tab from 0, the first page.
+                if ((window.history.state?.position ?? 0) > 0) return true
+
+                // A full page load that this site opened in the same tab.
+                try {
+                  return new URL(document.referrer).origin === window.location.origin
+                } catch (_error) {
+                  return false
+                }
+              }
+
+              export default {
+                mounted() {
+                  this.el.addEventListener("click", event => {
+                    const newTab =
+                      event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+
+                    if (newTab || !hasAppPageBehind()) return
+
+                    event.preventDefault()
+                    // LiveView's own link handler on window ignores defaultPrevented.
+                    event.stopPropagation()
+                    window.history.back()
+                  })
+                },
+              }
+            </script>
           </div>
 
           <div class="min-w-0 flex-1">

@@ -48,6 +48,12 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                "a[href='/groups/#{root_group.id}/sub_groups']",
                "❮"
              )
+
+      # The hook goes back in history; the href is where it goes without one.
+      assert has_element?(
+               child_lv,
+               "#group-back-link[phx-hook][href='/groups/#{root_group.id}/sub_groups']"
+             )
     end
 
     test "shows values first with composer at the bottom and switches tabs", %{conn: conn} do
