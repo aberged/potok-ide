@@ -2621,6 +2621,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:sub_groups_unread_count, 0)
     |> assign(:direct_sub_groups_unread_count, 0)
     |> assign(:other_sub_groups_unread_count, 0)
+    |> put_sub_group_tree_unread_counts()
   end
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
@@ -2649,6 +2650,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:sub_groups_unread_count, sub_groups_unread_count)
     |> assign(:direct_sub_groups_unread_count, direct_sub_groups_unread_count)
     |> assign(:other_sub_groups_unread_count, other_sub_groups_unread_count)
+    |> put_sub_group_tree_unread_counts()
+  end
+
+  # Each folder carries its own unread count instead of the folder view
+  # taking the whole map: LiveView re-sends a `:for` entry only when its
+  # node changed, so a new value re-sends just the folders on its path.
+  defp put_sub_group_tree_unread_counts(%{assigns: %{sub_group_tree: %{} = tree}} = socket) do
+    counts = socket.assigns.group_unread_counts
+    assign(socket, :sub_group_tree, %{tree | nodes: put_node_unread_counts(tree.nodes, counts)})
+  end
+
+  defp put_sub_group_tree_unread_counts(socket), do: socket
+
+  defp put_node_unread_counts(nodes, counts) do
+    Enum.map(nodes, fn node ->
+      node
+      |> Map.put(:children, put_node_unread_counts(node.children, counts))
+      |> Map.put(:unread_count, Map.get(counts, node.group.id, 0))
+    end)
   end
 
   defp assign_child_pending_join_request_counts(%{assigns: %{current_profile: nil}} = socket) do

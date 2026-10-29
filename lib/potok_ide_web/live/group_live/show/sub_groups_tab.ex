@@ -180,8 +180,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           >
             <.tree_node
               :for={node <- @tree.nodes}
+              :key={node.group.id}
               node={node}
-              unread_counts={@unread_counts}
               search_query={@children_search_query}
             />
           </div>
@@ -236,8 +236,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     """
   end
 
-  attr :node, :map, required: true
-  attr :unread_counts, :map, required: true
+  attr :node, :map,
+    required: true,
+    doc: "a `Social.sub_group_tree/3` node with its `unread_count`"
+
   attr :search_query, :string, default: ""
 
   # The chevron opens and closes a folder; the name opens the group. `open`
@@ -262,7 +264,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="flex items-center rounded-xl pr-2 transition-colors hover:bg-base-200"
       >
         <span class="size-8 shrink-0" aria-hidden="true"></span>
-        <.tree_node_link node={@node} unread_counts={@unread_counts} search_query={@search_query} />
+        <.tree_node_link node={@node} search_query={@search_query} />
       </div>
     <% else %>
       <details id={@dom_id} open={@node.open?} phx-mounted={JS.ignore_attributes(["open"])}>
@@ -273,13 +275,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               class="size-3.5 transition-transform duration-150 [details[open]>summary_&]:rotate-90"
             />
           </span>
-          <.tree_node_link node={@node} unread_counts={@unread_counts} search_query={@search_query} />
+          <.tree_node_link node={@node} search_query={@search_query} />
         </summary>
         <div class="ml-4 space-y-0.5 border-l border-base-300/70 pl-1">
           <.tree_node
             :for={child <- @node.children}
+            :key={child.group.id}
             node={child}
-            unread_counts={@unread_counts}
             search_query={@search_query}
           />
         </div>
@@ -289,14 +291,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   end
 
   attr :node, :map, required: true
-  attr :unread_counts, :map, required: true
   attr :search_query, :string, required: true
 
   defp tree_node_link(assigns) do
     assigns =
       assigns
       |> assign(:group, assigns.node.group)
-      |> assign(:unread_count, Map.get(assigns.unread_counts, assigns.node.group.id, 0))
+      |> assign(:unread_count, assigns.node.unread_count)
 
     ~H"""
     <.link
