@@ -159,7 +159,10 @@ defmodule PotokIde.GmailToken do
 
     {:error,
      {:gmail_token_request_failed, 400,
-      %{"error" => "invalid_grant", "error_description" => "Persisted refresh token expired or revoked."}}}
+      %{
+        "error" => "invalid_grant",
+        "error_description" => "Persisted refresh token expired or revoked."
+      }}}
   end
 
   defp maybe_retry_refresh_access_token(

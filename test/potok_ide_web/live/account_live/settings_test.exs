@@ -196,7 +196,12 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
 
       assert has_element?(lv, "#password_form")
       assert has_element?(lv, "#password_form [data-password-toggle]", "")
-      assert has_element?(lv, "#password_form [data-password-toggle] [data-password-show-icon]", "")
+
+      assert has_element?(
+               lv,
+               "#password_form [data-password-toggle] [data-password-show-icon]",
+               ""
+             )
     end
   end
 
