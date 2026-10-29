@@ -372,6 +372,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             children_search_query={@children_search_query}
             show_thread_sub_groups={@show_thread_sub_groups}
             thread_sub_groups_count={@thread_sub_groups_count}
+            sub_groups_view={@sub_groups_view}
+            tree={@sub_group_tree}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -472,6 +474,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     access = Social.get_group_access(current_profile, group)
     is_member = access.member?
     active_tab = normalize_active_tab(Map.get(params, "tab"), group, access)
+    sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
 
     if can_view_group?(group, is_member) do
       if connected?(socket) do
@@ -510,10 +513,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:children_search_query, "")
        |> assign(:show_thread_sub_groups, true)
        |> assign(:thread_sub_groups_count, 0)
+       |> assign(:sub_groups_kind, sub_groups_kind)
        |> assign(
-         :sub_groups_kind,
-         normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
+         :sub_groups_view,
+         normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
        )
+       |> assign(:sub_group_tree, nil)
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
@@ -559,17 +564,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
     sub_groups_kind =
       normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
 
-    if active_tab == socket.assigns.active_tab and
-         sub_groups_kind == socket.assigns.sub_groups_kind do
-      {:noreply, socket}
-    else
-      {:noreply,
-       socket
-       |> assign(:active_tab, active_tab)
-       |> assign(:sub_groups_kind, sub_groups_kind)
-       |> assign(:children_pagination, default_pagination(@children_page_size))
-       |> maybe_reload_edit_group_form(active_tab)
-       |> load_group_data(socket.assigns.group, active_tab)}
+    sub_groups_view = normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
+
+    cond do
+      active_tab != socket.assigns.active_tab or
+          sub_groups_kind != socket.assigns.sub_groups_kind ->
+        {:noreply,
+         socket
+         |> assign(:active_tab, active_tab)
+         |> assign(:sub_groups_kind, sub_groups_kind)
+         |> assign(:sub_groups_view, sub_groups_view)
+         |> assign(:children_pagination, default_pagination(@children_page_size))
+         |> maybe_reload_edit_group_form(active_tab)
+         |> load_group_data(socket.assigns.group, active_tab)}
+
+      sub_groups_view != socket.assigns.sub_groups_view ->
+        {:noreply,
+         socket
+         |> assign(:sub_groups_view, sub_groups_view)
+         |> assign(:children_pagination, default_pagination(@children_page_size))
+         |> reload_children()}
+
+      true ->
+        {:noreply, socket}
     end
   end
 
@@ -840,7 +857,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          group_tab_path(
            socket.assigns.group,
            normalize_active_tab("group_home", socket.assigns.group, socket.assigns.access),
-           sub_groups_kind: socket.assigns.sub_groups_kind
+           sub_groups_kind: socket.assigns.sub_groups_kind,
+           sub_groups_view: socket.assigns.sub_groups_view
          )
      )}
   end
@@ -853,7 +871,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
          group_tab_path(
            socket.assigns.group,
            normalize_active_tab(tab, socket.assigns.group, socket.assigns.access),
-           sub_groups_kind: socket.assigns.sub_groups_kind
+           sub_groups_kind: socket.assigns.sub_groups_kind,
+           sub_groups_view: socket.assigns.sub_groups_view
+         )
+     )}
+  end
+
+  def handle_event("set_sub_groups_view", %{"view" => view}, socket)
+      when view in ["list", "tree"] do
+    {:noreply,
+     push_patch(socket,
+       to:
+         group_tab_path(socket.assigns.group, socket.assigns.active_tab,
+           sub_groups_kind: socket.assigns.sub_groups_kind,
+           sub_groups_view: view
          )
      )}
   end
@@ -904,7 +935,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        push_patch(socket,
          to:
            group_tab_path(socket.assigns.group, socket.assigns.active_tab,
-             sub_groups_kind: next_kind
+             sub_groups_kind: next_kind,
+             sub_groups_view: socket.assigns.sub_groups_view
            )
        )}
     end
@@ -2312,21 +2344,54 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp maybe_load_children(socket, group, active_tab) do
-    if needs_children?(group, active_tab) do
-      pagination = socket.assigns.children_pagination
-      entries = list_children(socket, limit: reload_limit(pagination))
+    cond do
+      not needs_children?(group, active_tab) ->
+        socket
+        |> assign(:loaded_children, [])
+        |> assign(:sub_group_tree, nil)
 
-      socket
-      |> assign(:loaded_children, entries)
-      |> assign(
-        :children_pagination,
-        loaded_pagination(pagination, length(entries), count_children(socket))
-      )
-      |> assign(:thread_sub_groups_count, count_thread_children(socket))
-      |> stream(:children, entries, reset: true)
-    else
-      assign(socket, :loaded_children, [])
+      socket.assigns.sub_groups_view == "tree" ->
+        load_sub_group_tree(socket, group)
+
+      true ->
+        pagination = socket.assigns.children_pagination
+        entries = list_children(socket, limit: reload_limit(pagination))
+
+        socket
+        |> assign(:loaded_children, entries)
+        |> assign(:sub_group_tree, nil)
+        |> assign(
+          :children_pagination,
+          loaded_pagination(pagination, length(entries), count_children(socket))
+        )
+        |> assign(:thread_sub_groups_count, count_thread_children(socket))
+        |> stream(:children, entries, reset: true)
     end
+  end
+
+  # The folder view loads the whole tree at once; the pagination only carries
+  # the top-level count, so the list's empty states work for the tree too.
+  defp load_sub_group_tree(socket, group) do
+    filters = children_filters(socket)
+
+    tree =
+      Social.sub_group_tree(group, socket.assigns.current_profile,
+        threads?: filters[:is_thread] != false,
+        search: filters[:search]
+      )
+
+    top_level_count = length(tree.nodes)
+
+    socket
+    |> assign(:loaded_children, [])
+    |> assign(:sub_group_tree, tree)
+    |> assign(
+      :children_pagination,
+      loaded_pagination(socket.assigns.children_pagination, top_level_count, top_level_count)
+    )
+    |> assign(:thread_sub_groups_count, tree.thread_count)
+    # The panel always takes `@streams.children`, so it must exist.
+    |> stream(:children, [], reset: true)
   end
 
   defp maybe_load_members(socket, group, active_tab) do
@@ -2560,7 +2625,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
     current_profile = socket.assigns.current_profile
-    groups = [group | Map.get(socket.assigns, :loaded_children, [])]
+
+    tree_ids =
+      case Map.get(socket.assigns, :sub_group_tree) do
+        %{ids: ids} -> ids
+        nil -> []
+      end
+
+    groups = [group | Map.get(socket.assigns, :loaded_children, [])] ++ tree_ids
 
     group_unread_counts = Social.list_group_unread_counts(current_profile, groups)
     current_group_unread_count = Social.count_group_direct_unread_values(current_profile, group)
@@ -2640,6 +2712,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ]
   end
 
+  # Direct conversations are flat, so they have no folder view.
+  defp normalize_sub_groups_view("tree", sub_groups_kind) when sub_groups_kind != "direct",
+    do: "tree"
+
+  defp normalize_sub_groups_view(_view, _sub_groups_kind), do: "list"
+
   defp normalize_sub_groups_kind(_kind, %Group{is_root: false}), do: "other"
   defp normalize_sub_groups_kind("direct", %Group{is_root: true}), do: "direct"
   defp normalize_sub_groups_kind("other", %Group{is_root: true}), do: "other"
@@ -2676,6 +2754,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     query_params =
       %{}
       |> maybe_put_sub_groups_kind_query(group, tab, opts[:sub_groups_kind])
+      |> maybe_put_sub_groups_view_query(group, tab, opts)
 
     append_query_params(base_path, query_params)
   end
@@ -2683,6 +2762,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_put_sub_groups_kind_query(query_params, group, tab, sub_groups_kind) do
     if group.is_root and needs_children?(group, tab) do
       Map.put(query_params, "sub_groups_kind", normalize_sub_groups_kind(sub_groups_kind, group))
+    else
+      query_params
+    end
+  end
+
+  # The list is the default, so only the folder view shows up in the URL.
+  defp maybe_put_sub_groups_view_query(query_params, group, tab, opts) do
+    sub_groups_kind = normalize_sub_groups_kind(opts[:sub_groups_kind], group)
+
+    if needs_children?(group, tab) and
+         normalize_sub_groups_view(opts[:sub_groups_view], sub_groups_kind) == "tree" do
+      Map.put(query_params, "view", "tree")
     else
       query_params
     end

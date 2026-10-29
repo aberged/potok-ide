@@ -2320,35 +2320,27 @@ defmodule PotokIde.Social do
 
   def get_attachment_for_download(_profile, _attachment_id), do: nil
 
-  @attachment_tree_max_depth 10
-  @attachment_tree_max_groups 500
+  @group_tree_max_depth 10
+  @group_tree_max_groups 500
   @attachment_tree_max_files 1000
 
-  @doc """
-  The files of `group` and its sub-groups as a folder tree for the profile.
-  It walks down through the sub-groups the profile can see, the same rule as
-  the sub-groups tab (members, or public groups), skipping direct
-  conversations. Files are listed only for groups the profile is a member of,
-  and folders with no files anywhere below them are left out.
-
-  Each node is `%{group: %{id, name, thread?, member?}, files: [...],
-  children: [...], file_count: n, byte_size: n}`. The walk stops at
-  #{@attachment_tree_max_depth} levels and #{@attachment_tree_max_groups} groups,
-  and only the newest #{@attachment_tree_max_files} files are placed;
-  `{tree, truncated?}` tells whether anything was cut.
-  """
-  def attachment_tree(%Group{} = group, %Profile{} = profile) do
+  # `group` and the sub-groups below it the profile can see, the same rule as
+  # the sub-groups tab (members, or public groups), skipping direct
+  # conversations. Breadth first, so `group` comes first; the walk stops at
+  # #{@group_tree_max_depth} levels and #{@group_tree_max_groups} groups.
+  # Returns `{rows, truncated?}`.
+  defp visible_group_tree_rows(%Group{} = group, profile_id) do
     %Postgrex.Result{rows: rows} =
       Repo.query!(
         """
         WITH RECURSIVE tree AS (
-          SELECT g.id, g.parent_id, g.name, g.parent_value_id, 0 AS depth
+          SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, 0 AS depth
           FROM groups g
           WHERE g.id = $1
 
           UNION ALL
 
-          SELECT c.id, c.parent_id, c.name, c.parent_value_id, t.depth + 1
+          SELECT c.id, c.parent_id, c.name, c.parent_value_id, c.is_public, t.depth + 1
           FROM groups c
           JOIN tree t ON c.parent_id = t.id
           WHERE t.depth < $3
@@ -2366,6 +2358,7 @@ defmodule PotokIde.Social do
           t.parent_id,
           t.name,
           t.parent_value_id IS NOT NULL,
+          t.is_public,
           EXISTS (
             SELECT 1 FROM group_memberships gm
             WHERE gm.group_id = t.id AND gm.profile_id = $2
@@ -2374,22 +2367,124 @@ defmodule PotokIde.Social do
         ORDER BY t.depth, t.id
         LIMIT $4
         """,
-        [
-          group.id,
-          profile.id,
-          @attachment_tree_max_depth,
-          @attachment_tree_max_groups + 1
-        ]
+        [group.id, profile_id, @group_tree_max_depth, @group_tree_max_groups + 1]
       )
 
-    groups_truncated? = length(rows) > @attachment_tree_max_groups
-
-    folders =
+    groups =
       rows
-      |> Enum.take(@attachment_tree_max_groups)
-      |> Enum.map(fn [id, parent_id, name, thread?, member?] ->
-        %{id: id, parent_id: parent_id, name: name, thread?: thread?, member?: member?}
+      |> Enum.take(@group_tree_max_groups)
+      |> Enum.map(fn [id, parent_id, name, thread?, public?, member?] ->
+        %{
+          id: id,
+          parent_id: parent_id,
+          name: name,
+          thread?: thread?,
+          public?: public?,
+          member?: member?
+        }
       end)
+
+    {groups, length(rows) > @group_tree_max_groups}
+  end
+
+  @doc """
+  The sub-groups below `group` the profile can see, as a folder tree: the
+  same groups as the sub-groups tab lists level by level (members, or public
+  groups; no direct conversations), sorted by name. A nil profile sees only
+  public groups.
+
+  Options: `threads?: false` leaves out threads and everything below them;
+  `search:` keeps the groups whose name contains the term and the folders on
+  the way to them.
+
+  Each node is `%{group: %{id, name, thread?, public?, member?}, children:
+  [...], descendant_count: n, match?: bool, open?: bool}`; `open?` is set on
+  the folders that lead to a search match. Returns `%{nodes, ids,
+  thread_count, truncated?}`: `ids` of every node shown, `thread_count` of
+  the threads in the tree before any filter, and whether the walk stopped at
+  #{@group_tree_max_depth} levels or #{@group_tree_max_groups} groups.
+  """
+  def sub_group_tree(%Group{} = group, profile, opts \\ []) do
+    {groups, truncated?} = visible_group_tree_rows(group, profile && profile.id)
+
+    search =
+      case normalize_group_search_term(opts[:search]) do
+        nil -> nil
+        term -> String.downcase(term)
+      end
+
+    groups_by_parent =
+      groups
+      |> Enum.reject(&(&1.id == group.id))
+      |> Enum.reject(&(&1.thread? and opts[:threads?] == false))
+      |> Enum.group_by(& &1.parent_id)
+
+    nodes =
+      group.id
+      |> build_sub_group_nodes(groups_by_parent, search)
+      |> prune_sub_group_nodes(search)
+
+    %{
+      nodes: nodes,
+      ids: sub_group_node_ids(nodes),
+      thread_count: Enum.count(groups, &(&1.thread? and &1.id != group.id)),
+      truncated?: truncated?
+    }
+  end
+
+  defp build_sub_group_nodes(parent_id, groups_by_parent, search) do
+    groups_by_parent
+    |> Map.get(parent_id, [])
+    |> Enum.map(fn sub_group ->
+      children = build_sub_group_nodes(sub_group.id, groups_by_parent, search)
+      match? = search != nil and String.contains?(String.downcase(sub_group.name), search)
+
+      %{
+        group: Map.delete(sub_group, :parent_id),
+        children: children,
+        descendant_count: Enum.sum_by(children, &(&1.descendant_count + 1)),
+        match?: match?,
+        open?: false
+      }
+    end)
+    |> Enum.sort_by(&{String.downcase(&1.group.name), &1.group.id})
+  end
+
+  # Counts stay those of the whole tree, so a folder keeps saying how many
+  # sub-groups it has while a search shows only some of them.
+  defp prune_sub_group_nodes(nodes, nil), do: nodes
+
+  defp prune_sub_group_nodes(nodes, search) do
+    Enum.flat_map(nodes, fn node ->
+      children = prune_sub_group_nodes(node.children, search)
+
+      if node.match? or children != [] do
+        [%{node | children: children, open?: children != []}]
+      else
+        []
+      end
+    end)
+  end
+
+  defp sub_group_node_ids(nodes) do
+    Enum.flat_map(nodes, &[&1.group.id | sub_group_node_ids(&1.children)])
+  end
+
+  @doc """
+  The files of `group` and its sub-groups as a folder tree for the profile.
+  It walks down through the sub-groups the profile can see, the same rule as
+  the sub-groups tab (members, or public groups), skipping direct
+  conversations. Files are listed only for groups the profile is a member of,
+  and folders with no files anywhere below them are left out.
+
+  Each node is `%{group: %{id, name, thread?, public?, member?}, files: [...],
+  children: [...], file_count: n, byte_size: n}`. The walk stops at
+  #{@group_tree_max_depth} levels and #{@group_tree_max_groups} groups,
+  and only the newest #{@attachment_tree_max_files} files are placed;
+  `{tree, truncated?}` tells whether anything was cut.
+  """
+  def attachment_tree(%Group{} = group, %Profile{} = profile) do
+    {folders, groups_truncated?} = visible_group_tree_rows(group, profile.id)
 
     member_group_ids = for folder <- folders, folder.member?, do: folder.id
 

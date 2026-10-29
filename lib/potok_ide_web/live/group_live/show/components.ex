@@ -89,6 +89,38 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  attr :id, :string, required: true
+  attr :event, :string, required: true
+  attr :view, :string, required: true
+  attr :active, :boolean, required: true
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :label_class, :any, default: nil
+
+  # One option of a list/folders view switch.
+  def view_toggle_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      phx-click={@event}
+      phx-value-view={@view}
+      aria-pressed={to_string(@active)}
+      title={@label}
+      class={[
+        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition duration-150 ease-out phx-click-loading:opacity-70",
+        if(@active,
+          do: "bg-base-100 text-base-content shadow-sm",
+          else: "text-base-content/60 hover:text-base-content"
+        )
+      ]}
+    >
+      <.icon name={@icon} class="size-4" />
+      <span class={@label_class}>{@label}</span>
+    </button>
+    """
+  end
+
   attr :field, :any, required: true
 
   def group_picture_form_field(assigns) do

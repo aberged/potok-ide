@@ -36,15 +36,17 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             aria-label={gettext("Show files as")}
             class="inline-flex shrink-0 rounded-full border border-base-300 bg-base-200/70 p-0.5"
           >
-            <.view_button
+            <Components.view_toggle_button
               id="group-files-view-list"
+              event="set_files_view"
               view="list"
               active={@files_view == "list"}
               icon="hero-list-bullet"
               label={gettext("List")}
             />
-            <.view_button
+            <Components.view_toggle_button
               id="group-files-view-tree"
+              event="set_files_view"
               view="tree"
               active={@files_view == "tree"}
               icon="hero-folder"
@@ -110,34 +112,6 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         <% end %>
       </div>
     </div>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :view, :string, required: true
-  attr :active, :boolean, required: true
-  attr :icon, :string, required: true
-  attr :label, :string, required: true
-
-  defp view_button(assigns) do
-    ~H"""
-    <button
-      id={@id}
-      type="button"
-      phx-click="set_files_view"
-      phx-value-view={@view}
-      aria-pressed={to_string(@active)}
-      class={[
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition duration-150 ease-out phx-click-loading:opacity-70",
-        if(@active,
-          do: "bg-base-100 text-base-content shadow-sm",
-          else: "text-base-content/60 hover:text-base-content"
-        )
-      ]}
-    >
-      <.icon name={@icon} class="size-4" />
-      {@label}
-    </button>
     """
   end
 
