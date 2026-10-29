@@ -12,6 +12,11 @@ defmodule PotokIde.Social.Value do
     field :content_format, Ecto.Enum, values: @content_formats, default: :markdown
     field :is_data, :boolean, default: false
     field :data, :map
+    # Set from the content by `Social.Mentions`, never cast: the handles that
+    # resolved (`%{"profiles" => [...], "roles" => [...]}`, lowercased) and the
+    # members they reached.
+    field :mentions, :map, default: %{}
+    field :mentioned_profile_ids, {:array, :id}, default: []
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group

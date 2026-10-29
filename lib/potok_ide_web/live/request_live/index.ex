@@ -151,7 +151,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 </h3>
 
                 <p class="text-sm text-base-content/70">
-                  {gettext("History of access requests you approved as the group creator.")}
+                  {gettext("History of access requests you approved.")}
                 </p>
               </div>
 
@@ -750,9 +750,13 @@ defmodule PotokIdeWeb.RequestLive.Index do
               {:error, :request_not_found} ->
                 {:noreply, put_flash(socket, :error, gettext("Access request not found."))}
 
-              {:error, :not_group_creator} ->
+              {:error, :not_permitted} ->
                 {:noreply,
-                 put_flash(socket, :error, gettext("Only the group creator can manage requests."))}
+                 put_flash(
+                   socket,
+                   :error,
+                   gettext("Your roles in this group do not allow managing requests.")
+                 )}
 
               {:error, _reason} ->
                 {:noreply, put_flash(socket, :error, gettext("Could not update access request."))}

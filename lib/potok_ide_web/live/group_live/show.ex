@@ -4,7 +4,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupAccountInvitation, GroupInvitation, Value}
+  alias PotokIde.Social.{Access, Group, GroupAccountInvitation, GroupInvitation, GroupRole, Value}
 
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
@@ -13,6 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupDescriptionTab,
     InviteProfileTab,
     MembersTab,
+    RolesTab,
     SubGroupsTab,
     ValuesTab
   }
@@ -71,12 +72,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 current_profile={@current_profile}
                 avatar_size="size-10"
                 text_class="text-md"
-                pending_join_requests_count={
-                  if(@group.creator_id == @current_profile.id,
-                    do: @pending_join_requests_count,
-                    else: 0
-                  )
-                }
+                pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               />
             </div>
@@ -199,7 +195,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </button>
           <button
-            :if={@group.parent_id != nil && @is_member && !@group.is_direct}
+            :if={
+              @group.parent_id != nil && !@group.is_direct && Access.can?(@access, :invite_members)
+            }
             id="group-invite-summary"
             type="button"
             phx-click="switch_tab"
@@ -251,7 +249,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               </div>
             </button>
             <span
-              :if={@pending_join_requests_count > 0 and @group.creator_id == @current_profile.id}
+              :if={@pending_join_requests_count > 0}
               id="group-join-requests-badge"
               class="absolute -right-1 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
             >
@@ -290,11 +288,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 id="group-tab-members"
                 tab="members"
                 active_tab={@active_tab}
-                label={members_tab_label(@pending_join_requests_count, @group, @current_profile)}
+                label={members_tab_label(@pending_join_requests_count)}
                 icon="hero-user-group"
               />
               <Components.group_tab_button
-                :if={@is_member}
+                :if={@is_member and !@group.is_direct}
+                id="group-tab-roles"
+                tab="roles"
+                active_tab={@active_tab}
+                label={gettext("Roles")}
+                icon="hero-shield-check"
+              />
+              <Components.group_tab_button
+                :if={Access.can?(@access, :create_subgroups)}
                 id="group-tab-create-sub-group"
                 tab="create_group"
                 active_tab={@active_tab}
@@ -302,7 +308,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-folder-plus"
               />
               <Components.group_tab_button
-                :if={@is_member && @group.parent_id != nil && !@group.is_direct}
+                :if={
+                  @group.parent_id != nil && !@group.is_direct &&
+                    Access.can?(@access, :invite_members)
+                }
                 id="group-tab-invite-profile"
                 tab="invite_profile"
                 active_tab={@active_tab}
@@ -311,7 +320,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               />
               <div class="flex flex-row justify-end gap-2">
                 <Components.group_tab_button
-                  :if={can_edit_group?(@current_profile, @group) and !@group.is_root}
+                  :if={Access.can?(@access, :edit_group) and !@group.is_root}
                   id="group-tab-edit-group"
                   tab="edit_group"
                   active_tab={@active_tab}
@@ -335,6 +344,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
             is_member={@is_member}
+            can_create_subgroups={Access.can?(@access, :create_subgroups)}
             sub_groups_kind={@sub_groups_kind}
             direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
             other_sub_groups_unread_count={@other_sub_groups_unread_count}
@@ -348,6 +358,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pagination={@members_pagination}
             current_profile={@current_profile}
             group={@group}
+            access={@access}
             join_requests={@pending_join_requests}
             pending_join_requests_count={@pending_join_requests_count}
           />
@@ -364,6 +375,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             replying_to_value={@replying_to_value}
             thread_origin={@thread_origin}
             is_member={@is_member}
+            access={@access}
           />
           <GroupDescriptionTab.panel
             :if={
@@ -373,10 +385,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
             group={@group}
             current_profile={@current_profile}
             is_member={@is_member}
+            viewer_roles={Enum.join(@access.role_keys, ",")}
             pending_join_request={@pending_join_request}
           />
           <CreateGroupTab.panel
-            :if={@is_member and @active_tab == "create_group"}
+            :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
             new_group_form={@new_group_form}
             format_options={@format_options}
             home_page_options={@home_page_options}
@@ -385,8 +398,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
           />
           <EditGroupTab.panel
-            :if={can_edit_group?(@current_profile, @group) and @active_tab == "edit_group"}
+            :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
+            can_delete_group={@access.admin?}
             description_details_open={@description_details_open}
             format_options={@format_options}
             home_page_options={@home_page_options}
@@ -394,12 +408,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
           />
           <InviteProfileTab.panel
-            :if={@is_member and @active_tab == "invite_profile"}
+            :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
             invite_form={@invite_form}
             invite_form_version={@invite_form_version}
             invite_profile_suggestions={@invite_profile_suggestions}
             group={@group}
             current_profile={@current_profile}
+          />
+          <RolesTab.panel
+            :if={@is_member and !@group.is_direct and @active_tab == "roles"}
+            group={@group}
+            current_profile={@current_profile}
+            access={@access}
+            manifest_owner={@manifest_owner}
+            new_role_form={@new_role_form}
+            role_member_counts={@role_member_counts}
+            members_count={@members_count}
           />
         </div>
       </div>
@@ -412,8 +436,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(id)
 
-    is_member = Social.member_of_group?(current_profile, group)
-    active_tab = normalize_active_tab(Map.get(params, "tab"), group, is_member, current_profile)
+    access = Social.get_group_access(current_profile, group)
+    is_member = access.member?
+    active_tab = normalize_active_tab(Map.get(params, "tab"), group, access)
 
     if can_view_group?(group, is_member) do
       if connected?(socket) do
@@ -452,9 +477,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
        |> assign(:presence_profile_id, nil)
-       |> assign(:is_member, is_member)
+       |> assign_access(access)
        |> assign(:group, group)
        |> assign(:active_tab, active_tab)
+       |> assign(:manifest_owner, nil)
+       |> assign(:new_role_form, empty_new_role_form())
+       |> assign(:role_member_counts, %{})
        |> assign(:editing_value, nil)
        |> assign(:edit_value_form, nil)
        |> assign(:replying_to_value, nil)
@@ -485,12 +513,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @impl true
   def handle_params(params, _uri, socket) do
     active_tab =
-      normalize_active_tab(
-        Map.get(params, "tab"),
-        socket.assigns.group,
-        socket.assigns.is_member,
-        socket.assigns.current_profile
-      )
+      normalize_active_tab(Map.get(params, "tab"), socket.assigns.group, socket.assigns.access)
 
     sub_groups_kind =
       normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
@@ -555,6 +578,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, :new_value_form, to_form(changeset))}
+
+        {:error, :not_permitted} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
@@ -652,6 +678,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:noreply,
          put_flash(socket, :error, gettext("You must be a group member to post values."))}
 
+      not Access.can?(socket.assigns.access, :post_values) ->
+        {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
+
       value = loaded_value(socket, id) ->
         {:noreply,
          socket
@@ -742,12 +771,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        to:
          group_tab_path(
            socket.assigns.group,
-           normalize_active_tab(
-             "group_home",
-             socket.assigns.group,
-             socket.assigns.is_member,
-             socket.assigns.current_profile
-           ),
+           normalize_active_tab("group_home", socket.assigns.group, socket.assigns.access),
            sub_groups_kind: socket.assigns.sub_groups_kind
          )
      )}
@@ -760,12 +784,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        to:
          group_tab_path(
            socket.assigns.group,
-           normalize_active_tab(
-             tab,
-             socket.assigns.group,
-             socket.assigns.is_member,
-             socket.assigns.current_profile
-           ),
+           normalize_active_tab(tab, socket.assigns.group, socket.assigns.access),
            sub_groups_kind: socket.assigns.sub_groups_kind
          )
      )}
@@ -874,12 +893,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
              |> put_flash(:info, gettext("Member removed."))
              |> refresh_group_data()}
 
-          {:error, :not_group_creator} ->
-            {:noreply,
-             put_flash(socket, :error, gettext("Only the group creator can remove members."))}
-
-          {:error, :cannot_remove_group_creator} ->
-            {:noreply, put_flash(socket, :error, gettext("The group creator cannot be removed."))}
+          {:error, reason} when reason in [:not_permitted, :last_admin, :direct_group] ->
+            {:noreply, put_flash(socket, :error, access_error_message(reason))}
 
           {:error, :not_a_group_member} ->
             {:noreply, put_flash(socket, :error, gettext("That profile is not a group member."))}
@@ -944,7 +959,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     parent = socket.assigns.group
 
-    if not socket.assigns.is_member do
+    if not Access.can?(socket.assigns.access, :create_subgroups) do
       {:noreply,
        put_flash(socket, :error, gettext("You must be a group member to create sub-groups."))}
     else
@@ -963,6 +978,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply, assign(socket, :new_group_form, to_form(changeset))}
 
+        {:error, :not_permitted} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
+
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not create group."))}
       end
@@ -970,7 +988,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_event("validate_edit_group", %{"group" => attrs}, socket) do
-    if can_edit_group?(socket.assigns.current_profile, socket.assigns.group) do
+    if Access.can?(socket.assigns.access, :edit_group) do
       changeset =
         socket.assigns.group
         |> Group.update_changeset(attrs)
@@ -978,8 +996,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       {:noreply, assign(socket, :edit_group_form, to_form(changeset))}
     else
-      {:noreply,
-       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+      {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
     end
   end
 
@@ -987,9 +1004,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not can_edit_group?(current_profile, group) do
-      {:noreply,
-       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+    if not Access.can?(socket.assigns.access, :edit_group) do
+      {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
     else
       case Social.update_group(current_profile, group, attrs) do
         {:ok, updated_group} ->
@@ -1000,9 +1016,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
            |> put_flash(:info, gettext("Group updated."))
            |> refresh_group_data()}
 
-        {:error, :not_group_creator} ->
-          {:noreply,
-           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+        {:error, :not_permitted} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
         {:error, %Ecto.Changeset{} = changeset} ->
           {:noreply,
@@ -1018,9 +1033,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not can_edit_group?(current_profile, group) do
-      {:noreply,
-       put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+    if not Access.can?(socket.assigns.access, :edit_group) do
+      {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
     else
       case Social.delete_group_data_values(current_profile, group) do
         {:ok, 0} ->
@@ -1040,9 +1054,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
              )
            )}
 
-        {:error, :not_group_creator} ->
-          {:noreply,
-           put_flash(socket, :error, gettext("Only the group creator can edit this group."))}
+        {:error, :not_permitted} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
         {:error, _reason} ->
           {:noreply, put_flash(socket, :error, gettext("Could not delete data values."))}
@@ -1071,6 +1084,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, :not_a_group_member} ->
           {:noreply,
            put_flash(socket, :error, gettext("You must be a group member to delete this group."))}
+
+        {:error, :not_permitted} ->
+          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
         {:error, :group_has_children} ->
           {:noreply,
@@ -1164,6 +1180,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:error, :cannot_invite_self} ->
           {:noreply, put_flash(socket, :error, gettext("You cannot invite yourself."))}
 
+        {:error, reason} when reason in [:not_permitted, :direct_group] ->
+          {:noreply, put_flash(socket, :error, access_error_message(reason))}
+
         {:error, %Ecto.Changeset{}} ->
           {:noreply, put_flash(socket, :error, gettext("An invitation is already pending."))}
 
@@ -1177,6 +1196,154 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, push_navigate(socket, to: ~p"/accounts/register")}
   end
 
+  # Replies to the composer's `.MentionComposer` hook.
+  def handle_event("suggest_mentions", %{"query" => query}, socket) when is_binary(query) do
+    items =
+      socket.assigns.current_profile
+      |> Social.list_mention_candidates(socket.assigns.group, query)
+      |> Enum.map(&mention_candidate_payload/1)
+
+    {:reply, %{items: items}, socket}
+  end
+
+  def handle_event("suggest_mentions", _params, socket), do: {:reply, %{items: []}, socket}
+
+  def handle_event("validate_role", %{"group_role" => attrs}, socket) do
+    form =
+      %GroupRole{}
+      |> Social.change_group_role(attrs)
+      |> Map.put(:action, :validate)
+      |> to_form()
+
+    {:noreply, assign(socket, :new_role_form, form)}
+  end
+
+  def handle_event("create_role", %{"group_role" => attrs}, socket) do
+    case Social.create_group_role(socket.assigns.current_profile, socket.assigns.group, attrs) do
+      {:ok, role} ->
+        {:noreply,
+         socket
+         |> assign(:new_role_form, empty_new_role_form())
+         |> put_flash(:info, gettext("Role %{name} added.", name: role.name))
+         |> reload_access()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :new_role_form, to_form(Map.put(changeset, :action, :insert)))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  def handle_event("rename_role", %{"role" => %{"key" => key} = attrs}, socket) do
+    case Social.rename_group_role(
+           socket.assigns.current_profile,
+           socket.assigns.group,
+           key,
+           attrs
+         ) do
+      {:ok, _role} ->
+        {:noreply, socket |> put_flash(:info, gettext("Role renamed.")) |> reload_access()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, changeset_error_message(changeset))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  def handle_event("delete_role", %{"key" => key}, socket) do
+    case Social.delete_group_role(socket.assigns.current_profile, socket.assigns.group, key) do
+      {:ok, role} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("Role %{name} deleted.", name: role.name))
+         |> reload_access()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  def handle_event(
+        "set_role_permission",
+        %{"key" => key, "permission" => permission, "state" => state},
+        socket
+      ) do
+    with permission when not is_nil(permission) <- parse_permission(permission),
+         state when not is_nil(state) <- parse_permission_state(state),
+         {:ok, _role} <-
+           Social.set_group_role_permission(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             key,
+             permission,
+             state
+           ) do
+      {:noreply, reload_access(socket)}
+    else
+      {:error, reason} -> {:noreply, put_flash(socket, :error, access_error_message(reason))}
+      _ -> {:noreply, put_flash(socket, :error, access_error_message(:invalid_permission))}
+    end
+  end
+
+  def handle_event("create_own_manifest", _params, socket) do
+    case Social.create_own_group_manifest(socket.assigns.current_profile, socket.assigns.group) do
+      {:ok, _manifest} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("This group now has its own manifest."))
+         |> reload_access()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  def handle_event("revert_manifest", _params, socket) do
+    case Social.revert_to_inherited_group_manifest(
+           socket.assigns.current_profile,
+           socket.assigns.group
+         ) do
+      {:ok, _manifest} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, gettext("This group uses its parent's roles again."))
+         |> reload_access()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
+    end
+  end
+
+  def handle_event("toggle_member_role", %{"profile-id" => profile_id, "key" => key}, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    with {profile_id, ""} <- Integer.parse(profile_id),
+         :ok <- toggle_member_role(current_profile, group, profile_id, key) do
+      {:noreply, socket |> reload_access() |> restream_member(profile_id)}
+    else
+      {:error, reason} -> {:noreply, put_flash(socket, :error, access_error_message(reason))}
+      _ -> {:noreply, put_flash(socket, :error, gettext("Profile not found."))}
+    end
+  end
+
+  defp toggle_member_role(current_profile, group, profile_id, key) do
+    role_keys = Map.get(Access.role_keys_by_profile(group, [profile_id]), profile_id, [])
+
+    result =
+      if key in role_keys,
+        do: Social.unassign_group_member_role(current_profile, group, profile_id, key),
+        else: Social.assign_group_member_role(current_profile, group, profile_id, key)
+
+    case result do
+      {:ok, _member_role} -> :ok
+      other -> other
+    end
+  end
+
   @impl true
   def handle_info({:group_updated, _group_id}, %{assigns: %{current_profile: nil}} = socket) do
     {:noreply, socket}
@@ -1187,6 +1354,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
+
+  # A manifest or role assignment changed: permissions are recomputed with the
+  # group reload, which also re-renders streamed values and members.
+  def handle_info(
+        {:group_roles_updated, _group_id},
+        %{assigns: %{current_profile: nil}} = socket
+      ),
+      do: {:noreply, socket}
+
+  def handle_info({:group_roles_updated, group_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, schedule_refresh(socket, :group)}
+  end
+
+  def handle_info({:group_roles_updated, _group_id}, socket), do: {:noreply, socket}
 
   def handle_info({:group_description_updated, group_id}, socket)
       when socket.assigns.group.id == group_id do
@@ -1286,12 +1468,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket,
       fn socket, current_profile ->
         group = Social.get_group!(socket.assigns.group.id)
-        is_member = Social.member_of_group?(current_profile, group)
+        access = Social.get_group_access(current_profile, group)
 
-        if can_view_group?(group, is_member) do
+        if can_view_group?(group, access.member?) do
           {:noreply,
            socket
-           |> assign(:is_member, is_member)
+           |> assign_access(access)
            |> load_group_data(group)
            |> sync_group_presence()}
         else
@@ -1312,12 +1494,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
       active_tab ||
-        normalize_active_tab(
-          Map.get(socket.assigns, :active_tab),
-          group,
-          socket.assigns.is_member,
-          socket.assigns.current_profile
-        )
+        normalize_active_tab(Map.get(socket.assigns, :active_tab), group, socket.assigns.access)
 
     sub_groups_kind =
       socket.assigns
@@ -1334,6 +1511,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
     |> assign_root_group_unread_count()
@@ -1378,12 +1556,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp reload_current_group(socket) do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(socket.assigns.group.id)
-    is_member = Social.member_of_group?(current_profile, group)
+    access = Social.get_group_access(current_profile, group)
     previous_newest_value_id = socket.assigns.newest_value_id
 
-    if can_view_group?(group, is_member) do
+    if can_view_group?(group, access.member?) do
       socket
-      |> assign(:is_member, is_member)
+      |> assign_access(access)
       |> load_group_data(group)
       |> maybe_scroll_values_to_latest(previous_newest_value_id)
     else
@@ -1814,7 +1992,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp merge_child_counts(socket, children) do
     current_profile = socket.assigns.current_profile
-    manageable_children = Enum.filter(children, &can_manage_join_requests?(current_profile, &1))
 
     socket
     |> update(
@@ -1823,8 +2000,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
     )
     |> update(
       :child_pending_join_request_counts,
-      &Map.merge(&1, Social.list_pending_group_join_request_counts(manageable_children))
+      &Map.merge(&1, manageable_pending_join_request_counts(current_profile, children))
     )
+  end
+
+  # Only groups with pending requests need a permission check.
+  defp manageable_pending_join_request_counts(current_profile, groups) do
+    groups_by_id = Map.new(groups, &{&1.id, &1})
+
+    groups
+    |> Social.list_pending_group_join_request_counts()
+    |> Map.filter(fn {group_id, _count} ->
+      Access.can?(current_profile, Map.fetch!(groups_by_id, group_id), :manage_join_requests)
+    end)
   end
 
   defp load_more_members(socket) do
@@ -1832,10 +2020,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     if pagination.has_more? and needs_members?(socket.assigns.group, socket.assigns.active_tab) do
       entries =
-        Social.list_group_members(socket.assigns.group,
-          limit: pagination.per_page,
-          offset: pagination.loaded_count
-        )
+        socket.assigns.group
+        |> Social.list_group_members(limit: pagination.per_page, offset: pagination.loaded_count)
+        |> member_entries(socket.assigns.group)
 
       socket
       |> assign(
@@ -1890,7 +2077,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp load_join_request_data(socket, group, active_tab) do
     current_profile = socket.assigns.current_profile
-    can_manage_join_requests = can_manage_join_requests?(current_profile, group)
+    can_manage_join_requests = Access.can?(socket.assigns.access, :manage_join_requests)
 
     pending_join_request =
       if group.is_public and not socket.assigns.is_member do
@@ -1940,7 +2127,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_members(socket, group, active_tab) do
     if needs_members?(group, active_tab) do
       pagination = socket.assigns.members_pagination
-      entries = Social.list_group_members(group, limit: reload_limit(pagination))
+
+      entries =
+        group
+        |> Social.list_group_members(limit: reload_limit(pagination))
+        |> member_entries(group)
 
       socket
       |> assign(
@@ -1968,6 +2159,121 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket
     end
   end
+
+  # Members are streamed with their role keys in the group.
+  defp member_entries(profiles, group) do
+    keys_by_profile = Access.role_keys_by_profile(group, Enum.map(profiles, & &1.id))
+
+    Enum.map(profiles, fn profile ->
+      %{id: profile.id, profile: profile, role_keys: Map.get(keys_by_profile, profile.id, [])}
+    end)
+  end
+
+  defp restream_member(socket, profile_id) do
+    group = socket.assigns.group
+
+    if needs_members?(group, socket.assigns.active_tab) do
+      case Social.get_profile(profile_id) do
+        nil -> socket
+        profile -> stream_insert(socket, :members, hd(member_entries([profile], group)))
+      end
+    else
+      socket
+    end
+  end
+
+  defp maybe_load_roles(socket, group, "roles") do
+    manifest = socket.assigns.access.manifest
+
+    manifest_owner =
+      if manifest && manifest.group_id != group.id, do: Social.get_group!(manifest.group_id)
+
+    socket
+    |> assign(:manifest_owner, manifest_owner)
+    |> assign(:role_member_counts, Access.role_member_counts(group))
+  end
+
+  defp maybe_load_roles(socket, _group, _active_tab), do: socket
+
+  defp assign_access(socket, %Access{} = access) do
+    socket
+    |> assign(:access, access)
+    |> assign(:is_member, access.member?)
+  end
+
+  # After the viewer changed roles: their own access and the roles tab. Other
+  # viewers catch up through the `group_roles_updated` broadcast.
+  defp reload_access(socket) do
+    group = socket.assigns.group
+
+    socket
+    |> assign_access(Social.get_group_access(socket.assigns.current_profile, group))
+    |> maybe_load_roles(group, socket.assigns.active_tab)
+  end
+
+  defp empty_new_role_form, do: to_form(Social.change_group_role(%GroupRole{}))
+
+  defp mention_candidate_payload(%{kind: :role} = role) do
+    %{
+      kind: "role",
+      name: role.name,
+      everyone: role.key == GroupRole.everyone_key(),
+      hint:
+        ngettext("Role · %{count} member", "Role · %{count} members", role.member_count,
+          count: role.member_count
+        )
+    }
+  end
+
+  defp mention_candidate_payload(%{kind: :profile} = profile) do
+    %{
+      kind: "profile",
+      name: profile.name,
+      avatar_url: PotokIdeWeb.Avatars.profile_avatar_url(profile)
+    }
+  end
+
+  defp parse_permission(permission) do
+    Enum.find(GroupRole.permissions(), &(Atom.to_string(&1) == permission))
+  end
+
+  defp parse_permission_state("allow"), do: :allow
+  defp parse_permission_state("deny"), do: :deny
+  defp parse_permission_state("neutral"), do: :neutral
+  defp parse_permission_state(_state), do: nil
+
+  defp access_error_message(:not_permitted),
+    do: gettext("Your roles in this group do not allow that.")
+
+  defp access_error_message(:last_admin), do: gettext("A group must keep at least one admin.")
+
+  defp access_error_message(:direct_group),
+    do: gettext("Direct conversations do not have roles or invitations.")
+
+  defp access_error_message(:manifest_is_inherited),
+    do: gettext("This group inherits its roles. Create its own manifest to change them.")
+
+  defp access_error_message(:root_manifest_is_fixed),
+    do: gettext("The default manifest cannot be changed.")
+
+  defp access_error_message(:own_manifest),
+    do: gettext("This group already has its own manifest.")
+
+  defp access_error_message(:builtin_role),
+    do: gettext("The admin and everyone roles cannot be renamed or deleted.")
+
+  defp access_error_message(:role_not_found), do: gettext("Role not found.")
+
+  defp access_error_message(:not_a_group_member),
+    do: gettext("That profile is not a group member.")
+
+  defp access_error_message(_reason), do: gettext("Could not update roles.")
+
+  defp changeset_error_message(%Ecto.Changeset{errors: [{field, error} | _]}) do
+    "#{Phoenix.Naming.humanize(field)} #{translate_error(error)}"
+  end
+
+  defp changeset_error_message(_changeset), do: gettext("Could not update roles.")
 
   # The value a thread group was started from, shown above its chat.
   defp maybe_load_thread_origin(socket, group, active_tab) do
@@ -2033,17 +2339,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp assign_child_pending_join_request_counts(socket) do
-    current_profile = socket.assigns.current_profile
-
-    manageable_children =
-      socket.assigns
-      |> Map.get(:loaded_children, [])
-      |> Enum.filter(&can_manage_join_requests?(current_profile, &1))
-
     assign(
       socket,
       :child_pending_join_request_counts,
-      Social.list_pending_group_join_request_counts(manageable_children)
+      manageable_pending_join_request_counts(
+        socket.assigns.current_profile,
+        Map.get(socket.assigns, :loaded_children, [])
+      )
     )
   end
 
@@ -2116,15 +2418,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp default_active_tab(%Group{home_page: :subgroups}), do: "sub_groups"
   defp default_active_tab(%Group{}), do: "group_home"
 
-  defp can_manage_join_requests?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
-  defp can_manage_join_requests?(_, _group), do: false
-
-  defp members_tab_label(count, %Group{creator_id: creator_id}, %{id: creator_id})
-       when count > 0 do
+  # The count is only loaded for profiles that manage access requests.
+  defp members_tab_label(count) when count > 0 do
     gettext("Members (%{count} requests)", count: count)
   end
 
-  defp members_tab_label(_count, _group, _profile), do: gettext("Members")
+  defp members_tab_label(_count), do: gettext("Members")
 
   defp group_tab_path(%Group{} = group, tab, opts) do
     base_path = ~p"/groups/#{group.id}/#{tab}"
@@ -2153,23 +2452,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp delete_group_redirect_path(nil), do: ~p"/groups"
   defp delete_group_redirect_path(parent_id), do: ~p"/groups/#{parent_id}"
 
-  defp normalize_active_tab(tab, _group, _is_member, _current_profile)
+  defp normalize_active_tab(tab, _group, _access)
        when tab in ["values", "sub_groups", "members", "group_home"],
        do: tab
 
-  defp normalize_active_tab(tab, _group, true, _current_profile)
-       when tab in ["create_group", "invite_profile"],
-       do: tab
+  defp normalize_active_tab("roles", %Group{is_direct: false}, %Access{member?: true}),
+    do: "roles"
 
-  defp normalize_active_tab("edit_group", group, _is_member, current_profile)
-       when not is_nil(current_profile) do
-    if can_edit_group?(current_profile, group), do: "edit_group", else: default_active_tab(group)
+  defp normalize_active_tab(tab, group, %Access{} = access)
+       when tab in ["create_group", "invite_profile", "edit_group"] do
+    if Access.can?(access, tab_permission(tab)), do: tab, else: default_active_tab(group)
   end
 
-  defp normalize_active_tab(_, group, _is_member, _current_profile), do: default_active_tab(group)
+  defp normalize_active_tab(_, group, _access), do: default_active_tab(group)
 
-  defp can_edit_group?(%{id: profile_id}, %Group{creator_id: profile_id}), do: true
-  defp can_edit_group?(_, _group), do: false
+  defp tab_permission("create_group"), do: :create_subgroups
+  defp tab_permission("invite_profile"), do: :invite_members
+  defp tab_permission("edit_group"), do: :edit_group
 
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
@@ -2194,13 +2493,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
              |> put_flash(:info, success_message)
              |> refresh_group_data()}
 
-          {:error, :not_group_creator} ->
-            {:noreply,
-             put_flash(
-               socket,
-               :error,
-               gettext("Only the group creator can manage access requests.")
-             )}
+          {:error, :not_permitted} ->
+            {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
           {:error, :request_not_found} ->
             {:noreply, put_flash(socket, :error, gettext("Access request not found."))}

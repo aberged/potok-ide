@@ -27,6 +27,7 @@ defmodule PotokIde.Social.Group do
     belongs_to :parent_value, PotokIde.Social.Value
 
     has_many :children, __MODULE__, foreign_key: :parent_id
+    has_one :manifest, PotokIde.Social.GroupManifest
 
     many_to_many :members, PotokIde.Social.Profile,
       join_through: PotokIde.Social.GroupMembership,

@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.Value
+  alias PotokIde.Social.{Access, Value}
   alias PotokIdeWeb.GroupLive.Show.Components
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
@@ -16,10 +16,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :replying_to_value, :map, default: nil
   attr :thread_origin, :map, default: nil
   attr :is_member, :boolean, required: true
+  attr :access, Access, required: true
 
   def panel(assigns) do
-    # Threads are sub-groups, which direct conversations do not have.
-    assigns = assign(assigns, :can_thread, assigns.is_member and not assigns.group.is_direct)
+    access = assigns.access
+
+    assigns =
+      assigns
+      |> assign(:can_post, Access.can?(access, :post_values))
+      |> assign(:can_react, Access.can?(access, :react))
+      |> assign(:can_delete_any, Access.can?(access, :delete_values))
+      # Threads are sub-groups, which direct conversations do not have.
+      |> assign(
+        :can_thread,
+        Access.can?(access, :open_threads) and not assigns.group.is_direct
+      )
 
     ~H"""
     <div id="group-panel-values" class="card flex min-h-0 flex-1 shadow-sm">
@@ -95,16 +106,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               uses_api={@group.uses_api}
               current_profile={@current_profile}
               editing_value_id={@editing_value_id}
-              can_react={@is_member}
-              can_reply={@is_member}
+              can_react={@can_react}
+              can_reply={@can_post}
               can_thread={@can_thread}
+              can_join_thread={@is_member}
+              can_delete_any={@can_delete_any}
             />
           </div>
         </div>
 
         <%!-- One picker for the whole feed; the `ReactionPicker` hook opens it from any `[data-reaction-trigger]`. --%>
         <div
-          :if={@is_member}
+          :if={@can_react}
           id="reaction-picker"
           phx-hook="ReactionPicker"
           phx-update="ignore"
@@ -119,7 +132,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         </div>
 
         <div
-          :if={@is_member}
+          :if={@is_member and (@can_post or @editing_value)}
           class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
           <%= if @editing_value do %>
@@ -203,33 +216,56 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 <.icon name="hero-x-mark" class="size-4" />
               </button>
             </div>
-            <.form
-              for={@new_value_form}
-              id="group-value-form"
-              class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
-              phx-change="validate_value"
-              phx-submit="create_value"
-            >
-              <.input
-                field={@new_value_form[:content]}
-                id="group-value-content"
-                aria-label={gettext("Value")}
-                class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-                placeholder={gettext("Write a value...")}
-                rows="1"
-                type="textarea"
-                phx-debounce="400"
-                phx-hook=".SubmitOnEnter"
-              />
-              <.button
-                aria-label={gettext("Post value")}
-                id="group-value-submit"
-                class="btn btn-primary btn-circle size-10 flex-none"
+            <%!-- `.MentionComposer` suggests `@` mentions; it handles keys before `.SubmitOnEnter`. --%>
+            <div id="group-value-mentions" phx-hook=".MentionComposer" class="relative">
+              <div
+                id="group-value-mention-menu"
+                phx-update="ignore"
+                hidden
+                role="listbox"
+                aria-label={gettext("Mention suggestions")}
+                class="absolute inset-x-0 bottom-full z-30 mb-2 max-h-72 overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-xl shadow-base-content/10"
               >
-                <.icon name="hero-paper-airplane" class="size-4" />
-              </.button>
-            </.form>
+              </div>
+              <.form
+                for={@new_value_form}
+                id="group-value-form"
+                class="rounded-[1.75rem] flex border border-base-300 bg-base-100 p-3 shadow-sm"
+                phx-change="validate_value"
+                phx-submit="create_value"
+              >
+                <.input
+                  field={@new_value_form[:content]}
+                  id="group-value-content"
+                  aria-label={gettext("Value")}
+                  aria-autocomplete="list"
+                  aria-controls="group-value-mention-menu"
+                  class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+                  placeholder={gettext("Write a value...")}
+                  rows="1"
+                  type="textarea"
+                  phx-debounce="400"
+                  phx-hook=".SubmitOnEnter"
+                />
+                <.button
+                  aria-label={gettext("Post value")}
+                  id="group-value-submit"
+                  class="btn btn-primary btn-circle size-10 flex-none"
+                >
+                  <.icon name="hero-paper-airplane" class="size-4" />
+                </.button>
+              </.form>
+            </div>
           <% end %>
+        </div>
+
+        <div
+          :if={@is_member and !@can_post and !@editing_value}
+          id="group-value-composer-disabled"
+          class="relative z-10 flex shrink-0 items-center gap-2 border-t border-base-300/70 bg-base-100/95 px-4 py-4 text-sm text-base-content/65 backdrop-blur sm:px-6"
+        >
+          <.icon name="hero-no-symbol" class="size-4 shrink-0" />
+          {gettext("Your roles in this group do not allow posting values.")}
         </div>
 
         <div
@@ -335,6 +371,209 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               }
 
               this.pushEvent("load_more_values", {})
+            },
+          }
+        </script>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".MentionComposer">
+          // Suggests members and roles for the `@handle` being typed in the
+          // composer. Suggestions come from the server (`suggest_mentions`).
+          // Keys are caught in the capture phase, before `.SubmitOnEnter`, so
+          // Enter picks a suggestion instead of sending the value.
+          const MENTION_AT_CARET = /(?:^|[^\p{L}\p{Nd}_.@-])@([\p{L}\p{Nd}_.-]{0,32})$/u
+
+          export default {
+            mounted() {
+              this.menu = this.el.querySelector("#group-value-mention-menu")
+              this.items = []
+              this.activeIndex = 0
+              this.range = null
+              this.requestId = 0
+
+              this.handleInput = (event) => {
+                if (event.target.id === "group-value-content") this.scheduleLookup(event.target)
+              }
+
+              this.handleKeydown = (event) => {
+                if (event.target.id !== "group-value-content" || !this.isOpen()) return
+
+                if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+                  const step = event.key === "ArrowDown" ? 1 : -1
+                  this.activeIndex = (this.activeIndex + step + this.items.length) % this.items.length
+                  this.render()
+                } else if ((event.key === "Enter" || event.key === "Tab") && !event.shiftKey) {
+                  this.select(this.activeIndex)
+                } else if (event.key === "Escape") {
+                  this.close()
+                } else {
+                  return
+                }
+
+                event.preventDefault()
+                event.stopPropagation()
+              }
+
+              // Keep the textarea focused while a suggestion is clicked.
+              this.handleMenuMousedown = (event) => event.preventDefault()
+              this.handleMenuClick = (event) => {
+                const option = event.target.closest("[data-mention-index]")
+                if (option) this.select(Number(option.dataset.mentionIndex))
+              }
+              this.handleFocusOut = (event) => {
+                if (!this.el.contains(event.relatedTarget)) this.close()
+              }
+
+              this.el.addEventListener("input", this.handleInput)
+              this.el.addEventListener("keydown", this.handleKeydown, true)
+              this.el.addEventListener("focusout", this.handleFocusOut)
+              this.menu.addEventListener("mousedown", this.handleMenuMousedown)
+              this.menu.addEventListener("click", this.handleMenuClick)
+              this.handleEvent("value_composer_reset", () => this.close())
+            },
+
+            destroyed() {
+              clearTimeout(this.lookupTimer)
+              this.el.removeEventListener("input", this.handleInput)
+              this.el.removeEventListener("keydown", this.handleKeydown, true)
+              this.el.removeEventListener("focusout", this.handleFocusOut)
+            },
+
+            textarea() {
+              return this.el.querySelector("#group-value-content")
+            },
+
+            isOpen() {
+              return !this.menu.hidden && this.items.length > 0
+            },
+
+            // The `@handle` that ends at the caret, if any.
+            mentionAtCaret(textarea) {
+              if (!textarea || textarea.selectionStart !== textarea.selectionEnd) return null
+
+              const caret = textarea.selectionStart
+              const match = textarea.value.slice(0, caret).match(MENTION_AT_CARET)
+              if (!match) return null
+
+              return { query: match[1], start: caret - match[1].length - 1, end: caret }
+            },
+
+            scheduleLookup(textarea) {
+              clearTimeout(this.lookupTimer)
+              const mention = this.mentionAtCaret(textarea)
+
+              if (!mention) {
+                this.close()
+                return
+              }
+
+              this.lookupTimer = setTimeout(() => this.lookup(mention), 120)
+            },
+
+            lookup(mention) {
+              const requestId = ++this.requestId
+
+              this.pushEvent("suggest_mentions", { query: mention.query }, (reply) => {
+                // Drop stale replies and replies for a caret that moved on.
+                const current = this.mentionAtCaret(this.textarea())
+                if (requestId !== this.requestId || !current || current.start !== mention.start) return
+
+                this.range = current
+                this.items = reply.items || []
+                this.activeIndex = 0
+                this.render()
+              })
+            },
+
+            render() {
+              if (this.items.length === 0) {
+                this.close()
+                return
+              }
+
+              this.menu.replaceChildren(...this.items.map((item, index) => this.renderItem(item, index)))
+              this.menu.hidden = false
+              this.textarea()?.setAttribute("aria-expanded", "true")
+              this.menu.querySelector("[aria-selected=true]")?.scrollIntoView({ block: "nearest" })
+            },
+
+            renderItem(item, index) {
+              const option = document.createElement("button")
+              option.type = "button"
+              option.id = `group-value-mention-option-${index}`
+              option.dataset.mentionIndex = String(index)
+              option.dataset.mentionKind = item.kind
+              option.setAttribute("role", "option")
+              option.setAttribute("aria-selected", String(index === this.activeIndex))
+              option.className =
+                "flex w-full items-center gap-3 rounded-xl px-2.5 py-2 text-left text-sm transition-colors duration-100 hover:bg-base-200 aria-selected:bg-primary/10 aria-selected:text-primary"
+
+              const badge = document.createElement("span")
+
+              if (item.kind === "role") {
+                badge.className =
+                  "inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary"
+                const icon = document.createElement("span")
+                icon.className = item.everyone ? "hero-megaphone size-4" : "hero-user-group size-4"
+                badge.append(icon)
+              } else {
+                badge.className =
+                  "inline-flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75"
+                badge.textContent = item.name.slice(0, 2)
+
+                if (item.avatar_url) {
+                  const img = document.createElement("img")
+                  img.src = item.avatar_url
+                  img.alt = ""
+                  img.className = "size-full object-cover"
+                  img.addEventListener("error", () => img.remove())
+                  badge.replaceChildren(img)
+                }
+              }
+
+              const text = document.createElement("span")
+              text.className = "flex min-w-0 flex-1 flex-col"
+
+              const name = document.createElement("span")
+              name.className = "truncate font-semibold"
+              name.textContent = `@${item.name}`
+              text.append(name)
+
+              if (item.hint) {
+                const hint = document.createElement("span")
+                hint.className = "truncate text-xs text-base-content/55"
+                hint.textContent = item.hint
+                text.append(hint)
+              }
+
+              option.append(badge, text)
+              return option
+            },
+
+            select(index) {
+              const item = this.items[index]
+              const textarea = this.textarea()
+              if (!item || !textarea || !this.range) return
+
+              const { start, end } = this.range
+              const insert = `@${item.name} `
+              textarea.value = textarea.value.slice(0, start) + insert + textarea.value.slice(end)
+
+              const caret = start + insert.length
+              textarea.setSelectionRange(caret, caret)
+              this.close()
+              textarea.focus()
+              // Lets LiveView, autoresize and the send button see the new text.
+              textarea.dispatchEvent(new Event("input", { bubbles: true }))
+            },
+
+            close() {
+              clearTimeout(this.lookupTimer)
+              this.requestId++
+              this.items = []
+              this.range = null
+              this.menu.hidden = true
+              this.menu.replaceChildren()
+              this.textarea()?.setAttribute("aria-expanded", "false")
             },
           }
         </script>

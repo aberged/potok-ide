@@ -16,14 +16,19 @@ defmodule PotokIde.Social do
   alias PotokIde.Accounts.Account
 
   alias PotokIde.Social.{
+    Access,
     AccountProfile,
     Group,
     GroupAccountInvitation,
     GroupInvitation,
     GroupJoinRequestApproval,
     GroupJoinRequest,
+    GroupManifest,
+    GroupMemberRole,
     GroupMembership,
+    GroupRole,
     GroupValueRead,
+    Mentions,
     Profile,
     ProfileInvitation,
     Value,
@@ -368,6 +373,9 @@ defmodule PotokIde.Social do
       not member_of_group?(creator, parent) ->
         {:error, :not_a_member_of_parent_group}
 
+      not Access.can?(creator, parent, :create_subgroups) ->
+        {:error, :not_permitted}
+
       # A thread group may only point at a chat value of its own parent.
       not chat_value_in_group?(Map.get(attrs, "parent_value_id"), parent.id) ->
         {:error, :invalid_parent_value}
@@ -393,6 +401,7 @@ defmodule PotokIde.Social do
         profile_id: creator.id
       })
     end)
+    |> insert_admin_role(creator)
     |> Repo.transaction()
     |> case do
       {:ok, %{group: group}} ->
@@ -443,6 +452,7 @@ defmodule PotokIde.Social do
             profile_id: other_profile.id
           })
         end)
+        |> insert_admin_role(current_profile)
         |> Repo.transaction()
         |> case do
           {:ok, %{group: group}} ->
@@ -456,8 +466,8 @@ defmodule PotokIde.Social do
   end
 
   def update_group(%Profile{} = editor, %Group{} = group, attrs) do
-    if editor.id != group.creator_id do
-      {:error, :not_group_creator}
+    if not Access.can?(editor, group, :edit_group) do
+      {:error, :not_permitted}
     else
       group
       |> Group.update_changeset(Map.new(attrs))
@@ -484,8 +494,8 @@ defmodule PotokIde.Social do
   nor triggers a full reload in the group's own subscribers.
   """
   def update_group_description(%Profile{} = editor, %Group{} = group, attrs) do
-    if editor.id != group.creator_id do
-      {:error, :not_group_creator}
+    if not Access.can?(editor, group, :edit_group) do
+      {:error, :not_permitted}
     else
       attrs =
         attrs
@@ -514,6 +524,9 @@ defmodule PotokIde.Social do
       not member_of_group?(profile, group) ->
         {:error, :not_a_group_member}
 
+      not Access.admin?(profile, group) ->
+        {:error, :not_permitted}
+
       Repo.exists?(from child in Group, where: child.parent_id == ^group.id, select: 1) ->
         {:error, :group_has_children}
 
@@ -541,6 +554,12 @@ defmodule PotokIde.Social do
     cond do
       not member_of_group?(inviter, group) ->
         {:error, :inviter_not_a_member}
+
+      group.is_direct ->
+        {:error, :direct_group}
+
+      not Access.can?(inviter, group, :invite_members) ->
+        {:error, :not_permitted}
 
       inviter.id == invitee.id ->
         {:error, :cannot_invite_self}
@@ -587,6 +606,12 @@ defmodule PotokIde.Social do
     cond do
       not member_of_group?(inviter, group) ->
         {:error, :inviter_not_a_member}
+
+      group.is_direct ->
+        {:error, :direct_group}
+
+      not Access.can?(inviter, group, :invite_members) ->
+        {:error, :not_permitted}
 
       profile = get_account_default_profile(account) ->
         case invite_profile_to_group(inviter, group, profile) do
@@ -680,46 +705,54 @@ defmodule PotokIde.Social do
   end
 
   def remove_group_member(%Profile{} = actor, %Group{} = group, %Profile{} = member) do
+    actor_access = Access.for_profile(actor, group)
+    member_access = Access.for_profile(member, group, manifest: actor_access.manifest)
+
     cond do
       group.is_root ->
         {:error, :cannot_remove_root_group_members}
 
-      actor.id != group.creator_id ->
-        {:error, :not_group_creator}
+      group.is_direct ->
+        {:error, :direct_group}
 
-      member.id == group.creator_id ->
-        {:error, :cannot_remove_group_creator}
+      not Access.can?(actor_access, :remove_members) ->
+        {:error, :not_permitted}
+
+      not member_access.member? ->
+        {:error, :not_a_group_member}
+
+      # Only admins remove admins, and a group never loses its last admin.
+      member_access.admin? and not actor_access.admin? ->
+        {:error, :not_permitted}
+
+      member_access.admin? and Access.count_admins(group) <= 1 ->
+        {:error, :last_admin}
 
       true ->
-        case Repo.get_by(GroupMembership, group_id: group.id, profile_id: member.id) do
-          nil ->
-            {:error, :not_a_group_member}
+        # The member's roles go with the membership (composite foreign key).
+        Multi.new()
+        |> Multi.delete_all(
+          :membership,
+          from(gm in GroupMembership,
+            where: gm.group_id == ^group.id and gm.profile_id == ^member.id
+          )
+        )
+        |> Multi.delete_all(
+          :group_value_reads,
+          from(gvr in GroupValueRead,
+            where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
+          )
+        )
+        |> Repo.transaction()
+        |> case do
+          {:ok, _changes} ->
+            broadcast_group_updated(group)
+            broadcast_group_unread_counts_updated(group)
+            broadcast_profile_group_unread_counts_updated(member, group.id)
+            {:ok, member}
 
-          %GroupMembership{} ->
-            Multi.new()
-            |> Multi.delete_all(
-              :membership,
-              from(gm in GroupMembership,
-                where: gm.group_id == ^group.id and gm.profile_id == ^member.id
-              )
-            )
-            |> Multi.delete_all(
-              :group_value_reads,
-              from(gvr in GroupValueRead,
-                where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
-              )
-            )
-            |> Repo.transaction()
-            |> case do
-              {:ok, _changes} ->
-                broadcast_group_updated(group)
-                broadcast_group_unread_counts_updated(group)
-                broadcast_profile_group_unread_counts_updated(member, group.id)
-                {:ok, member}
-
-              {:error, _step, reason, _changes} ->
-                {:error, reason}
-            end
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
         end
     end
   end
@@ -770,24 +803,49 @@ defmodule PotokIde.Social do
   end
 
   def list_pending_group_join_requests_for_approver(%Profile{} = approver) do
-    from(r in GroupJoinRequest,
-      join: g in assoc(r, :group),
-      on: g.id == r.group_id,
-      where: g.creator_id == ^approver.id,
-      order_by: [desc: r.inserted_at, desc: r.id],
-      preload: [:requester, group: :members]
-    )
-    |> Repo.all()
+    requests =
+      from(r in GroupJoinRequest,
+        join: gm in GroupMembership,
+        on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
+        order_by: [desc: r.inserted_at, desc: r.id],
+        preload: [:requester, group: :members]
+      )
+      |> Repo.all()
+
+    approvable_ids =
+      requests
+      |> Enum.map(& &1.group)
+      |> Enum.uniq_by(& &1.id)
+      |> approvable_group_ids(approver)
+
+    Enum.filter(requests, &MapSet.member?(approvable_ids, &1.group_id))
   end
 
   def count_pending_group_join_requests_for_approver(%Profile{} = approver) do
-    from(r in GroupJoinRequest,
-      join: g in assoc(r, :group),
-      on: g.id == r.group_id,
-      where: g.creator_id == ^approver.id,
-      select: count(r.id)
-    )
-    |> Repo.one()
+    counts =
+      from(r in GroupJoinRequest,
+        join: gm in GroupMembership,
+        on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
+        group_by: r.group_id,
+        select: {r.group_id, count(r.id)}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    approvable_ids =
+      from(g in Group, where: g.id in ^Map.keys(counts))
+      |> Repo.all()
+      |> approvable_group_ids(approver)
+
+    counts
+    |> Enum.filter(fn {group_id, _count} -> MapSet.member?(approvable_ids, group_id) end)
+    |> Enum.reduce(0, fn {_group_id, count}, total -> total + count end)
+  end
+
+  defp approvable_group_ids(groups, %Profile{} = approver) do
+    groups
+    |> Enum.filter(&Access.can?(approver, &1, :manage_join_requests))
+    |> MapSet.new(& &1.id)
   end
 
   def list_pending_group_join_request_counts(groups) when is_list(groups) do
@@ -879,7 +937,7 @@ defmodule PotokIde.Social do
 
   def accept_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
       when is_integer(request_id) do
-    with :ok <- ensure_group_creator(actor, group),
+    with :ok <- ensure_permission(actor, group, :manage_join_requests),
          %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
       Multi.new()
       |> Multi.insert(:membership, fn _changes ->
@@ -930,7 +988,7 @@ defmodule PotokIde.Social do
 
   def reject_group_join_request(%Profile{} = actor, %Group{} = group, request_id)
       when is_integer(request_id) do
-    with :ok <- ensure_group_creator(actor, group),
+    with :ok <- ensure_permission(actor, group, :manage_join_requests),
          %GroupJoinRequest{} = request <- get_group_join_request(group, request_id) do
       Repo.delete(request)
       |> case do
@@ -980,6 +1038,9 @@ defmodule PotokIde.Social do
       not member_of_group?(creator, group) ->
         {:error, :not_a_member_of_group}
 
+      not Access.can?(creator, group, :post_values) ->
+        {:error, :not_permitted}
+
       # The reply quote shows the parent's content, so it must be a chat
       # value the group's members can already read.
       not chat_value_in_group?(Map.get(attrs, "parent_id"), group.id) ->
@@ -991,8 +1052,13 @@ defmodule PotokIde.Social do
           |> Map.put("creator_id", creator.id)
           |> Map.put("group_id", group.id)
 
+        changeset =
+          %Value{}
+          |> Value.changeset(attrs)
+          |> put_mentions(creator, group)
+
         Multi.new()
-        |> Multi.insert(:value, Value.changeset(%Value{}, attrs))
+        |> Multi.insert(:value, changeset)
         |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
           upsert_group_value_read(repo, creator.id, group.id, value.id)
         end)
@@ -1070,8 +1136,10 @@ defmodule PotokIde.Social do
     else
       attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
 
+      # Mentions follow the new text, but an edit notifies nobody.
       value
       |> Value.changeset(attrs)
+      |> put_mentions(profile, Repo.get!(Group, value.group_id))
       |> Repo.update()
       |> case do
         {:ok, updated_value} ->
@@ -1087,7 +1155,8 @@ defmodule PotokIde.Social do
   end
 
   def delete_value(%Profile{} = profile, %Value{} = value) do
-    if value.creator_id != profile.id do
+    if value.creator_id != profile.id and
+         not Access.can?(profile, Repo.get!(Group, value.group_id), :delete_values) do
       {:error, :not_value_creator}
     else
       # Read before the delete: `values.parent_id` is nilified with it.
@@ -1104,6 +1173,20 @@ defmodule PotokIde.Social do
         error ->
           error
       end
+    end
+  end
+
+  # Chat values only: data values never mention anyone.
+  defp put_mentions(%Ecto.Changeset{} = changeset, %Profile{} = author, %Group{} = group) do
+    if Ecto.Changeset.get_field(changeset, :is_data) do
+      changeset
+    else
+      {mentions, profile_ids} =
+        changeset
+        |> Ecto.Changeset.get_field(:content)
+        |> Mentions.resolve(author, group)
+
+      Ecto.Changeset.change(changeset, mentions: mentions, mentioned_profile_ids: profile_ids)
     end
   end
 
@@ -1144,6 +1227,9 @@ defmodule PotokIde.Social do
       thread = get_value_thread(value) ->
         join_value_thread(profile, thread)
 
+      not Access.can?(profile, group, :open_threads) ->
+        {:error, :not_permitted}
+
       true ->
         create_value_thread(profile, group, value, attrs)
     end
@@ -1153,14 +1239,43 @@ defmodule PotokIde.Social do
     Repo.one(from(g in Group, where: g.parent_value_id == ^value_id))
   end
 
+  # A profile that joins a thread late brings along its roles from the parent
+  # group, like the members copied when the thread was opened.
   defp join_value_thread(%Profile{} = profile, %Group{} = thread) do
-    %GroupMembership{}
-    |> GroupMembership.changeset(%{group_id: thread.id, profile_id: profile.id})
-    |> Repo.insert(on_conflict: :nothing)
-    |> case do
-      {:ok, _membership} -> {:ok, thread}
-      {:error, reason} -> {:error, reason}
-    end
+    now = DateTime.utc_now(:second)
+
+    Repo.transaction(fn ->
+      {inserted, _} =
+        Repo.insert_all(
+          GroupMembership,
+          [%{group_id: thread.id, profile_id: profile.id, inserted_at: now, updated_at: now}],
+          on_conflict: :nothing
+        )
+
+      if inserted == 1 do
+        Repo.insert_all(
+          GroupMemberRole,
+          parent_member_roles_query(thread.parent_id, thread.id, now)
+          |> where([r], r.profile_id == ^profile.id),
+          on_conflict: :nothing
+        )
+      end
+
+      thread
+    end)
+  end
+
+  defp parent_member_roles_query(parent_id, thread_id, now) do
+    from(r in GroupMemberRole,
+      where: r.group_id == ^parent_id,
+      select: %{
+        group_id: type(^thread_id, :id),
+        profile_id: r.profile_id,
+        role_key: r.role_key,
+        inserted_at: type(^now, :utc_datetime),
+        updated_at: type(^now, :utc_datetime)
+      }
+    )
   end
 
   defp create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
@@ -1192,6 +1307,14 @@ defmodule PotokIde.Social do
         }
       )
     end)
+    |> Multi.insert_all(:member_roles, GroupMemberRole, fn %{group: thread} ->
+      parent_member_roles_query(group.id, thread.id, now)
+    end)
+    |> Multi.insert(
+      :admin_role,
+      fn %{group: thread} -> admin_member_role(thread.id, profile.id) end,
+      on_conflict: :nothing
+    )
     |> Repo.transaction()
     |> case do
       {:ok, %{group: thread}} ->
@@ -1251,6 +1374,9 @@ defmodule PotokIde.Social do
       not member_of_group?(profile, group) ->
         {:error, :not_a_member_of_group}
 
+      not Access.can?(profile, group, :react) ->
+        {:error, :not_permitted}
+
       true ->
         existing =
           from(r in ValueReaction,
@@ -1283,7 +1409,7 @@ defmodule PotokIde.Social do
   end
 
   def delete_group_data_values(%Profile{} = actor, %Group{} = group) do
-    with :ok <- ensure_group_creator(actor, group) do
+    with :ok <- ensure_permission(actor, group, :edit_group) do
       {deleted_count, _} =
         from(v in Value,
           where: v.group_id == ^group.id and v.is_data == true
@@ -1296,6 +1422,358 @@ defmodule PotokIde.Social do
 
       {:ok, deleted_count}
     end
+  end
+
+  # ---------
+  # Roles
+  # ---------
+
+  @doc "What `profile` may do in `group`; see `PotokIde.Social.Access`."
+  def get_group_access(profile, %Group{} = group), do: Access.for_profile(profile, group)
+
+  def change_group_role(%GroupRole{} = role, attrs \\ %{}), do: GroupRole.changeset(role, attrs)
+
+  @doc """
+  Adds a custom role to the group's own manifest. Only admins of the group
+  that owns the manifest change it; the root manifest is fixed.
+  """
+  def create_group_role(%Profile{} = actor, %Group{} = group, attrs) do
+    with {:ok, manifest} <- editable_manifest(actor, group) do
+      position = manifest.roles |> Enum.map(& &1.position) |> Enum.max(fn -> 0 end)
+
+      %GroupRole{manifest_id: manifest.id, key: Ecto.UUID.generate(), position: position + 1}
+      |> GroupRole.changeset(take_role_attrs(attrs))
+      |> Repo.insert()
+      |> case do
+        {:ok, role} ->
+          broadcast_manifest_updated(manifest)
+          {:ok, role}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  def rename_group_role(%Profile{} = actor, %Group{} = group, role_key, attrs) do
+    with {:ok, manifest} <- editable_manifest(actor, group),
+         {:ok, role} <- fetch_custom_role(manifest, role_key) do
+      role
+      |> GroupRole.changeset(take_role_attrs(attrs))
+      |> Repo.update()
+      |> case do
+        {:ok, role} ->
+          broadcast_manifest_updated(manifest)
+          {:ok, role}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  defp take_role_attrs(attrs) do
+    attrs
+    |> Map.new(fn {key, value} -> {to_string(key), value} end)
+    |> Map.take(["name"])
+  end
+
+  @doc """
+  Sets whether the role allows (`:allow`), denies (`:deny`) or says nothing
+  about (`:neutral`) a permission. "admin" always holds every permission and
+  "everyone" can only allow.
+  """
+  def set_group_role_permission(%Profile{} = actor, %Group{} = group, role_key, permission, state)
+      when state in [:allow, :deny, :neutral] do
+    with {:ok, manifest} <- editable_manifest(actor, group),
+         {:ok, role} <- fetch_role(manifest, role_key),
+         :ok <- validate_permission_change(role, permission, state) do
+      allowed = List.delete(role.allowed, permission)
+      denied = List.delete(role.denied, permission)
+
+      {allowed, denied} =
+        case state do
+          :allow -> {[permission | allowed], denied}
+          :deny -> {allowed, [permission | denied]}
+          :neutral -> {allowed, denied}
+        end
+
+      role
+      |> GroupRole.permissions_changeset(
+        sort_permissions(allowed),
+        sort_permissions(denied)
+      )
+      |> Repo.update()
+      |> case do
+        {:ok, role} ->
+          broadcast_manifest_updated(manifest)
+          {:ok, role}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  defp validate_permission_change(%GroupRole{key: key}, permission, state) do
+    cond do
+      permission not in GroupRole.permissions() -> {:error, :invalid_permission}
+      key == GroupRole.admin_key() -> {:error, :builtin_role}
+      key == GroupRole.everyone_key() and state == :deny -> {:error, :invalid_permission}
+      true -> :ok
+    end
+  end
+
+  defp sort_permissions(permissions) do
+    Enum.filter(GroupRole.permissions(), &(&1 in permissions))
+  end
+
+  @doc """
+  Deletes a custom role together with its assignments in every group that
+  uses the manifest. Groups with a copy of the manifest keep their own.
+  """
+  def delete_group_role(%Profile{} = actor, %Group{} = group, role_key) do
+    with {:ok, manifest} <- editable_manifest(actor, group),
+         {:ok, role} <- fetch_custom_role(manifest, role_key) do
+      group_ids = Access.group_ids_using_manifest(manifest)
+
+      Multi.new()
+      |> Multi.delete(:role, role)
+      |> Multi.delete_all(
+        :assignments,
+        from(r in GroupMemberRole, where: r.group_id in ^group_ids and r.role_key == ^role.key)
+      )
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{role: role}} ->
+          broadcast_group_roles_updated(group_ids)
+          {:ok, role}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  @doc """
+  Gives a group that inherits its manifest a copy of it to change. Role keys
+  are kept, so every assignment stays valid.
+  """
+  def create_own_group_manifest(%Profile{} = actor, %Group{} = group) do
+    access = Access.for_profile(actor, group)
+
+    cond do
+      group.is_direct ->
+        {:error, :direct_group}
+
+      not access.admin? ->
+        {:error, :not_permitted}
+
+      Access.own_manifest?(group, access.manifest) ->
+        {:error, :own_manifest}
+
+      true ->
+        now = DateTime.utc_now(:second)
+
+        Multi.new()
+        |> Multi.insert(:manifest, %GroupManifest{group_id: group.id})
+        |> Multi.insert_all(:roles, GroupRole, fn %{manifest: manifest} ->
+          Enum.map(access.manifest.roles, fn role ->
+            role
+            |> Map.take([:key, :name, :allowed, :denied, :position])
+            |> Map.merge(%{manifest_id: manifest.id, inserted_at: now, updated_at: now})
+          end)
+        end)
+        |> Repo.transaction()
+        |> case do
+          {:ok, %{manifest: manifest}} ->
+            broadcast_manifest_updated(manifest)
+            {:ok, Access.effective_manifest(group)}
+
+          {:error, _step, reason, _changes} ->
+            {:error, reason}
+        end
+    end
+  end
+
+  @doc """
+  Drops the group's own manifest so it inherits again. Assignments of roles
+  the inherited manifest does not have are deleted, except "admin".
+  """
+  def revert_to_inherited_group_manifest(%Profile{} = actor, %Group{} = group) do
+    with {:ok, manifest} <- editable_manifest(actor, group) do
+      group_ids = Access.group_ids_using_manifest(manifest)
+
+      Repo.transaction(fn ->
+        Repo.delete_all(from(m in GroupManifest, where: m.id == ^manifest.id))
+
+        kept_keys = [
+          GroupRole.admin_key()
+          | Enum.map(Access.effective_manifest(group).roles, & &1.key)
+        ]
+
+        from(r in GroupMemberRole,
+          where: r.group_id in ^group_ids and r.role_key not in ^kept_keys
+        )
+        |> Repo.delete_all()
+      end)
+      |> case do
+        {:ok, _deleted} ->
+          broadcast_group_roles_updated(group_ids)
+          {:ok, Access.effective_manifest(group)}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp editable_manifest(%Profile{} = actor, %Group{} = group) do
+    access = Access.for_profile(actor, group)
+
+    cond do
+      group.is_root -> {:error, :root_manifest_is_fixed}
+      not access.admin? -> {:error, :not_permitted}
+      not Access.own_manifest?(group, access.manifest) -> {:error, :manifest_is_inherited}
+      true -> {:ok, access.manifest}
+    end
+  end
+
+  defp fetch_role(%GroupManifest{roles: roles}, role_key) do
+    case Enum.find(roles, &(&1.key == role_key)) do
+      %GroupRole{} = role -> {:ok, role}
+      nil -> {:error, :role_not_found}
+    end
+  end
+
+  defp fetch_custom_role(manifest, role_key) do
+    case fetch_role(manifest, role_key) do
+      {:ok, role} -> if GroupRole.builtin?(role), do: {:error, :builtin_role}, else: {:ok, role}
+      error -> error
+    end
+  end
+
+  defp broadcast_manifest_updated(%GroupManifest{} = manifest) do
+    manifest
+    |> Access.group_ids_using_manifest()
+    |> broadcast_group_roles_updated()
+  end
+
+  @doc """
+  Gives a member of the group one of the effective manifest's roles. Only
+  the group's admins assign roles; "everyone" is implicit.
+  """
+  def assign_group_member_role(%Profile{} = actor, %Group{} = group, profile_id, role_key)
+      when is_integer(profile_id) and is_binary(role_key) do
+    with {:ok, _access} <- ensure_role_assignable(actor, group, profile_id, role_key) do
+      %GroupMemberRole{group_id: group.id, profile_id: profile_id, role_key: role_key}
+      |> Repo.insert(on_conflict: :nothing)
+      |> case do
+        {:ok, member_role} ->
+          broadcast_group_roles_updated([group.id])
+          {:ok, member_role}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  def unassign_group_member_role(%Profile{} = actor, %Group{} = group, profile_id, role_key)
+      when is_integer(profile_id) and is_binary(role_key) do
+    with {:ok, access} <- ensure_role_assignable(actor, group, profile_id, role_key) do
+      member_access =
+        Access.for_profile(%Profile{id: profile_id}, group, manifest: access.manifest)
+
+      if role_key == GroupRole.admin_key() and member_access.admin? and
+           Access.count_admins(group) <= 1 do
+        {:error, :last_admin}
+      else
+        from(r in GroupMemberRole,
+          where:
+            r.group_id == ^group.id and r.profile_id == ^profile_id and r.role_key == ^role_key
+        )
+        |> Repo.delete_all()
+
+        broadcast_group_roles_updated([group.id])
+        :ok
+      end
+    end
+  end
+
+  defp ensure_role_assignable(%Profile{} = actor, %Group{} = group, profile_id, role_key) do
+    access = Access.for_profile(actor, group)
+    role_keys = Enum.map(access.manifest.roles, & &1.key)
+
+    cond do
+      group.is_direct ->
+        {:error, :direct_group}
+
+      not access.admin? ->
+        {:error, :not_permitted}
+
+      role_key == GroupRole.everyone_key() or role_key not in role_keys ->
+        {:error, :role_not_found}
+
+      not member_of_group?(%Profile{id: profile_id}, group) ->
+        {:error, :not_a_group_member}
+
+      true ->
+        {:ok, access}
+    end
+  end
+
+  @doc """
+  Suggestions for an `@` mention typed in the group's composer: members whose
+  username starts with `query` and, when the profile may mention roles, the
+  matching roles of the effective manifest.
+  """
+  def list_mention_candidates(%Profile{} = profile, %Group{} = group, query)
+      when is_binary(query) do
+    access = Access.for_profile(profile, group)
+    query = query |> String.trim() |> String.downcase() |> String.slice(0, 32)
+
+    if Access.can?(access, :post_values) do
+      roles = mention_role_candidates(access, group, query)
+      profiles = mention_profile_candidates(profile, group, query, 8 - length(roles))
+      roles ++ profiles
+    else
+      []
+    end
+  end
+
+  defp mention_role_candidates(%Access{} = access, %Group{} = group, query) do
+    if Access.can?(access, :mention_roles) do
+      counts = Access.role_member_counts(group)
+
+      access.manifest.roles
+      |> Enum.filter(&String.starts_with?(String.downcase(&1.name), query))
+      |> Enum.take(3)
+      |> Enum.map(fn role ->
+        count =
+          if role.key == GroupRole.everyone_key(),
+            do: count_group_members(group),
+            else: Map.get(counts, role.key, 0)
+
+        %{kind: :role, key: role.key, name: role.name, member_count: count}
+      end)
+    else
+      []
+    end
+  end
+
+  defp mention_profile_candidates(%Profile{} = profile, %Group{} = group, query, limit) do
+    pattern = String.replace(query, ~r/[\\%_]/, "\\\\\\0") <> "%"
+
+    from(p in Profile,
+      join: gm in GroupMembership,
+      on: gm.profile_id == p.id,
+      where: gm.group_id == ^group.id and p.id != ^profile.id and ilike(p.username, ^pattern),
+      order_by: [asc: fragment("lower(?)", p.username)],
+      limit: ^limit,
+      select: %{kind: :profile, id: p.id, name: p.username, updated_at: p.updated_at}
+    )
+    |> Repo.all()
   end
 
   # ---------
@@ -2198,8 +2676,21 @@ defmodule PotokIde.Social do
   def member_of_group?(%Profile{} = profile, %Group{} = group),
     do: member_of_group_private?(profile, group)
 
-  defp ensure_group_creator(%Profile{id: actor_id}, %Group{creator_id: actor_id}), do: :ok
-  defp ensure_group_creator(%Profile{}, %Group{}), do: {:error, :not_group_creator}
+  defp ensure_permission(%Profile{} = actor, %Group{} = group, permission) do
+    if Access.can?(actor, group, permission), do: :ok, else: {:error, :not_permitted}
+  end
+
+  # The creator of a group is its first admin. Runs after the `:group` step and
+  # the creator's membership.
+  defp insert_admin_role(%Multi{} = multi, %Profile{id: profile_id}) do
+    Multi.insert(multi, :admin_role, fn %{group: group} ->
+      admin_member_role(group.id, profile_id)
+    end)
+  end
+
+  defp admin_member_role(group_id, profile_id) do
+    %GroupMemberRole{group_id: group_id, profile_id: profile_id, role_key: GroupRole.admin_key()}
+  end
 
   defp get_group_join_request(%Group{} = group, request_id) when is_integer(request_id) do
     from(r in GroupJoinRequest,
@@ -2336,6 +2827,7 @@ defmodule PotokIde.Social do
             profile_id: other_profile.id
           })
         end)
+        |> insert_admin_role(current_profile)
         |> repo.transaction()
         |> case do
           {:ok, %{group: group}} -> {:ok, group}
@@ -2659,14 +3151,39 @@ defmodule PotokIde.Social do
        ),
        do: :ok
 
+  # Accounts of mentioned members get the mention payload instead of the
+  # generic one, so nobody is notified twice about the same value.
   defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     payload = group_value_notification_payload(creator, group, value)
+    mention_payload = group_value_mention_notification_payload(creator, group, value)
 
     run_notification(fn ->
+      mentioned_account_ids =
+        value.mentioned_profile_ids
+        |> recipient_account_ids_for_profiles()
+        |> MapSet.new()
+
       group
       |> recipient_accounts_for_group_value_notification(creator)
-      |> Enum.each(&deliver_account_push_notification(&1, payload, "group value", group.id))
+      |> Enum.each(fn account ->
+        if MapSet.member?(mentioned_account_ids, account.id) do
+          deliver_account_push_notification(account, mention_payload, "group mention", group.id)
+        else
+          deliver_account_push_notification(account, payload, "group value", group.id)
+        end
+      end)
     end)
+  end
+
+  defp recipient_account_ids_for_profiles([]), do: []
+
+  defp recipient_account_ids_for_profiles(profile_ids) do
+    from(ap in AccountProfile,
+      where: ap.profile_id in ^profile_ids,
+      distinct: true,
+      select: ap.account_id
+    )
+    |> Repo.all()
   end
 
   # Push delivery involves HTTP calls to FCM / web push endpoints; run it off the
@@ -2807,6 +3324,17 @@ defmodule PotokIde.Social do
       tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",
       badge: profile_avatar_url(creator)
+    }
+  end
+
+  defp group_value_mention_notification_payload(
+         %Profile{} = creator,
+         %Group{} = group,
+         %Value{} = value
+       ) do
+    %{
+      group_value_notification_payload(creator, group, value)
+      | title: "#{creator.username} mentioned you in #{group.name}"
     }
   end
 
@@ -3011,18 +3539,11 @@ defmodule PotokIde.Social do
     )
   end
 
-  defp broadcast_group_join_request_updates_for_group(%Group{creator_id: creator_id})
-       when is_integer(creator_id) do
-    case Repo.get(Profile, creator_id) do
-      %Profile{} = creator ->
-        broadcast_profile_group_join_requests_updated(creator)
-
-      nil ->
-        :ok
-    end
+  defp broadcast_group_join_request_updates_for_group(%Group{} = group) do
+    group
+    |> Access.profile_ids_with_permission(:manage_join_requests)
+    |> Enum.each(&broadcast_profile_group_join_requests_updated(%Profile{id: &1}))
   end
-
-  defp broadcast_group_join_request_updates_for_group(_group), do: :ok
 
   defp broadcast_profile_group_unread_counts_updated(%Profile{id: profile_id}, group_id) do
     Phoenix.PubSub.broadcast(
@@ -3058,6 +3579,16 @@ defmodule PotokIde.Social do
       profile_topic(profile_id),
       {:profile_updated, profile_id}
     )
+  end
+
+  defp broadcast_group_roles_updated(group_ids) when is_list(group_ids) do
+    Enum.each(group_ids, fn group_id ->
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        group_topic(group_id),
+        {:group_roles_updated, group_id}
+      )
+    end)
   end
 
   defp broadcast_group_updated(%Group{id: group_id}), do: broadcast_group_updated(group_id)

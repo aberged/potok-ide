@@ -4,14 +4,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   sandboxed iframe (`potok_app_sdk.js` -> `GroupAppFrame` hook -> `app_api`).
 
   The hook only forwards whitelisted methods, but every permission is checked
-  here again: the iframe content is written by the group creator and runs for
-  every viewer.
+  here again: the iframe content is written by the group's editors and runs
+  for every viewer.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
 
   import Phoenix.Component, only: [assign: 3]
 
   alias PotokIde.Social
+  alias PotokIde.Social.Access
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
 
@@ -80,9 +81,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   def call("update_description", params, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
-    not_creator = gettext("Only the group creator can edit this group.")
+    forbidden = gettext("Your roles in this group do not allow that.")
 
-    with true <- creator?(current_profile, group) || {:error, error("forbidden", not_creator)},
+    with true <-
+           Access.can?(socket.assigns.access, :edit_group) ||
+             {:error, error("forbidden", forbidden)},
          {:ok, socket} <- take_write_token(socket) do
       attrs = %{
         "description" => string_param(params["description"], group.description || ""),
@@ -95,8 +98,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
           {%{ok: true, group: description_payload(updated_group)},
            assign(socket, :group, updated_group)}
 
-        {:error, :not_group_creator} ->
-          {error("forbidden", not_creator), socket}
+        {:error, :not_permitted} ->
+          {error("forbidden", forbidden), socket}
 
         {:error, _reason} ->
           {error("invalid_description", gettext("Could not update group description.")), socket}
@@ -111,7 +114,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   def call("current_profile", _params, socket) do
-    {%{ok: true, profile: profile_payload(socket.assigns.current_profile)}, socket}
+    {%{ok: true, profile: profile_payload(socket.assigns.current_profile, socket.assigns.access)},
+     socket}
   end
 
   def call(_method, _params, socket) do
@@ -121,9 +125,6 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp require_member(socket, message) do
     if socket.assigns.is_member, do: :ok, else: {:error, error("not_a_member", message)}
   end
-
-  defp creator?(%{id: profile_id}, %{creator_id: profile_id}), do: true
-  defp creator?(_profile, _group), do: false
 
   defp take_write_token(socket) do
     now = System.monotonic_time(:millisecond)
@@ -150,9 +151,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     }
   end
 
-  defp profile_payload(nil), do: nil
+  defp profile_payload(nil, _access), do: nil
 
-  defp profile_payload(profile) do
+  # `roles` are the role names (handles) the profile holds in the group.
+  defp profile_payload(profile, %Access{} = access) do
+    roles = if access.manifest, do: access.manifest.roles, else: []
+
     %{
       id: profile.id,
       username: profile.username,
@@ -161,7 +165,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       description_format: profile.description_format,
       sharing: profile.sharing,
       inserted_at: profile.inserted_at,
-      updated_at: profile.updated_at
+      updated_at: profile.updated_at,
+      admin: access.admin?,
+      roles: for(role <- roles, role.key in access.role_keys, do: role.name)
     }
   end
 

@@ -4,7 +4,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   alias PotokIdeWeb.Avatars
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, Profile, Value}
+  alias PotokIde.Social.{Group, Mentions, Profile, Value}
   alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
@@ -686,6 +686,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :content, :string, default: ""
   attr :content_format, :any, default: :markdown
   attr :uses_api, :boolean, default: false
+  attr :mentions, :map, default: %{}, doc: "resolved `@` mentions to highlight (`Value.mentions`)"
   attr :class, :any, default: nil
 
   def formatted_content(assigns) do
@@ -694,25 +695,30 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <div class={[@class, "ql-snow chat-show", @content_format_class]}>
-      {cached_formatted_content(@content, @content_format, @uses_api)}
+      {cached_formatted_content(@content, @content_format, @uses_api, @mentions)}
     </div>
     """
   end
 
-  # Markdown parsing + sanitizing is pure in (content, format, uses_api) and
-  # runs on every render of every streamed value, so the result is memoized.
+  # Markdown parsing + sanitizing is pure in (content, format, uses_api,
+  # mentions) and runs on every render of every streamed value, so the result
+  # is memoized.
   @formatted_content_cache_ttl :timer.hours(1)
 
-  defp cached_formatted_content(content, content_format, uses_api) do
+  defp cached_formatted_content(content, content_format, uses_api, mentions) do
     key =
       {:formatted_content,
-       :crypto.hash(:sha256, :erlang.term_to_binary({content, content_format, uses_api}))}
+       :crypto.hash(
+         :sha256,
+         :erlang.term_to_binary({content, content_format, uses_api, mentions})
+       )}
 
     PotokIde.Cache.fetch(key, @formatted_content_cache_ttl, fn ->
       render_formatted_content(%{
         content: content,
         content_format: content_format,
-        uses_api: uses_api
+        uses_api: uses_api,
+        mentions: mentions || %{}
       })
     end)
   end
@@ -808,7 +814,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :uses_api, :boolean, default: false
   attr :can_react, :boolean, default: false
   attr :can_reply, :boolean, default: false
-  attr :can_thread, :boolean, default: false
+  attr :can_thread, :boolean, default: false, doc: "may open a new thread on the value"
+  attr :can_join_thread, :boolean, default: false, doc: "may open the value's existing thread"
+  attr :can_delete_any, :boolean, default: false, doc: "may delete other members' values"
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -818,6 +826,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       assigns
       |> assign(:mine?, mine?)
       |> assign(:editing?, editing?)
+      |> assign(:can_delete?, (mine? or assigns.can_delete_any) and not editing?)
+      |> assign(:mentions_me?, mentions_profile?(assigns.value, assigns.current_profile))
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
       |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
@@ -825,7 +835,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:thread, value_thread(assigns.value))
 
     ~H"""
-    <div id={@dom_id} class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}>
+    <div
+      id={@dom_id}
+      data-mentions-me={@mentions_me? && "true"}
+      class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}
+    >
       <.inspect_tree
         :if={false}
         id={"value-message-assigns-#{@value.id}"}
@@ -876,8 +890,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
         <span class="font-semibold text-base-content">{@value.creator.username}</span>
         <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} />
+        <span
+          :if={@mentions_me?}
+          id={"value-mentions-me-#{@value.id}"}
+          class="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700"
+        >
+          <.icon name="hero-at-symbol" class="size-3" />
+          {gettext("Mentioned you")}
+        </span>
         <div
-          :if={@can_react or @can_reply or @can_thread or (@mine? and !@editing?)}
+          :if={@can_react or @can_reply or @can_thread or @can_delete? or (@mine? and !@editing?)}
           class="ml-auto flex items-center gap-1"
         >
           <button
@@ -931,7 +953,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <.icon name="hero-pencil-square" class="size-4" />
           </button>
           <button
-            :if={@mine? and !@editing?}
+            :if={@can_delete?}
             id={"value-delete-#{@value.id}"}
             type="button"
             phx-click="delete_value"
@@ -949,6 +971,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class={[
         "chat-bubble max-w-full rounded-3xl shadow-sm ring-warning/60 transition-shadow duration-500 sm:max-w-[42rem]",
         "group-data-highlighted/value:ring-4",
+        @mentions_me? && "ring-2 ring-amber-400/70",
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
@@ -989,6 +1012,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               content={@value.content}
               content_format={@value.content_format}
               uses_api={@uses_api}
+              mentions={@value.mentions}
             />
           </div>
 
@@ -1034,7 +1058,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           type="button"
           phx-click="open_value_thread"
           phx-value-id={@value.id}
-          disabled={!@can_thread}
+          disabled={!@can_join_thread}
           title={@thread.name}
           class="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 text-xs font-semibold text-primary shadow-xs transition duration-150 ease-out enabled:hover:-translate-y-px enabled:hover:bg-primary/15 enabled:active:scale-95 disabled:cursor-default phx-click-loading:animate-pulse"
         >
@@ -1079,6 +1103,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  defp mentions_profile?(%Value{mentioned_profile_ids: [_ | _] = ids}, %{id: profile_id}),
+    do: profile_id in ids
+
+  defp mentions_profile?(_value, _profile), do: false
+
   # Association matches stay defensive: a value that was not loaded with
   # `Social` display preloads renders without its quote or thread link.
   defp reply_parent(%Value{parent: %Value{creator: %Profile{}} = parent}), do: parent
@@ -1111,26 +1140,32 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   # App groups get the richer html5 allow-list for chat values; their scripts
   # only ever run inside the sandboxed `app_frame/1`.
-  defp render_formatted_content(%{content: content, content_format: :html, uses_api: true}) do
+  # Mentions are wrapped after sanitizing, which would drop their attributes.
+  defp render_formatted_content(
+         %{content: content, content_format: :html, uses_api: true} = params
+       ) do
     content
     |> UTF8.replace_invalid()
     |> HtmlSanitizeEx.html5()
     |> UTF8.replace_invalid()
+    |> Mentions.highlight(params.mentions)
     |> raw()
   end
 
-  defp render_formatted_content(%{content: content, content_format: :html}) do
+  defp render_formatted_content(%{content: content, content_format: :html} = params) do
     content
     |> sanitize_html()
     |> UTF8.replace_invalid()
+    |> Mentions.highlight(params.mentions)
     |> raw()
   end
 
-  defp render_formatted_content(%{content: content, content_format: :markdown}) do
+  defp render_formatted_content(%{content: content, content_format: :markdown} = params) do
     content
     |> markdown_to_quill_html()
     |> sanitize_html()
     |> UTF8.replace_invalid()
+    |> Mentions.highlight(params.mentions)
     |> raw()
   end
 

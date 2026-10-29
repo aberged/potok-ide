@@ -6,6 +6,11 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
   attr :is_member, :boolean, default: false
+
+  attr :viewer_roles, :string,
+    default: "",
+    doc: "the viewer's role keys; a change restarts the app"
+
   attr :pending_join_request, :map, default: nil
 
   def panel(assigns) do
@@ -48,7 +53,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
             id="group-app-frame"
             html={@group.description}
             storage_key={"potok-app:#{@group.id}"}
-            viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}"}
+            viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}:#{@viewer_roles}"}
           />
         </div>
 

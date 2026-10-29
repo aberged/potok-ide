@@ -9,6 +9,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :format_options, :list, required: true
   attr :home_page_options, :list, required: true
   attr :description_details_open, :boolean, required: true
+  attr :can_delete_group, :boolean, default: false
 
   def panel(assigns) do
     ~H"""
@@ -248,7 +249,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 <span>{gettext("Delete Data Values")}</span>
               </button>
               <button
-                :if={!@group.is_root}
+                :if={!@group.is_root and @can_delete_group}
                 id="group-delete-button"
                 type="button"
                 phx-click="delete_group"

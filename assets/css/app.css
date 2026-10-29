@@ -561,3 +561,28 @@
 .reaction-picker.reaction-picker-sheet emoji-picker {
   width: 100%;
 }
+
+/* `@` mentions in chat values (`Social.Mentions.highlight/2`). Roles get a
+   dashed outline so they read differently from people. */
+.chat-show .mention {
+  background: color-mix(in oklab, var(--color-primary) 14%, transparent);
+  border-radius: 0.375rem;
+  color: var(--color-primary);
+  font-weight: 600;
+  padding: 0 0.25rem;
+  white-space: nowrap;
+}
+
+.chat-show .mention.mention-role {
+  outline: 1px dashed color-mix(in oklab, var(--color-primary) 45%, transparent);
+  outline-offset: -1px;
+}
+
+.chat-bubble-primary .chat-show .mention {
+  background: color-mix(in oklab, var(--color-primary-content) 22%, transparent);
+  color: var(--color-primary-content);
+}
+
+.chat-bubble-primary .chat-show .mention.mention-role {
+  outline-color: color-mix(in oklab, var(--color-primary-content) 55%, transparent);
+}

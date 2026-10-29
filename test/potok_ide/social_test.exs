@@ -971,7 +971,7 @@ defmodule PotokIde.SocialTest do
       assert {:ok, _accepted_target_invitation} =
                Social.accept_group_invitation(target_invitation, target_profile)
 
-      assert {:error, :not_group_creator} =
+      assert {:error, :not_permitted} =
                Social.remove_group_member(member_profile, group, target_profile.id)
 
       assert Social.member_of_group?(target_profile, group)
@@ -1423,7 +1423,7 @@ defmodule PotokIde.SocialTest do
                  "is_data" => true
                })
 
-      assert {:error, :not_group_creator} = Social.delete_group_data_values(member_profile, group)
+      assert {:error, :not_permitted} = Social.delete_group_data_values(member_profile, group)
       assert Social.count_group_data_values(group) == 1
     end
   end
@@ -2306,7 +2306,7 @@ defmodule PotokIde.SocialTest do
           "is_public" => false
         })
 
-      assert {:error, :not_group_creator} =
+      assert {:error, :not_permitted} =
                Social.update_group_description(other, group, %{"description" => "x"})
     end
   end

@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :pending_join_request_counts, :map, required: true
   attr :unread_counts, :map, required: true
   attr :is_member, :boolean, required: true
+  attr :can_create_subgroups, :boolean, default: false
   attr :sub_groups_kind, :string, required: true
   attr :direct_sub_groups_unread_count, :integer, required: true
   attr :other_sub_groups_unread_count, :integer, required: true
@@ -152,7 +153,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       </div>
 
       <button
-        :if={@is_member}
+        :if={@can_create_subgroups}
         id="group-sub-groups-create-fab"
         type="button"
         phx-click="switch_tab"
