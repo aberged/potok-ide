@@ -28,9 +28,11 @@ defmodule PotokIde.Social.GroupRole do
     :edit_group
   ]
 
-  # What every member could do before roles existed; the rest was creator-only.
+  # What "everyone" holds by default: what every member could do before roles
+  # existed, and attaching files. The rest was creator-only.
   @default_everyone_permissions [
     :post_values,
+    :attach_files,
     :react,
     :open_threads,
     :create_subgroups,
