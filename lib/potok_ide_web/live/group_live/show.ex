@@ -49,8 +49,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
         <div class="flex items-center gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
+            <%!-- A thread returns to the chat it was started from. --%>
             <.link
-              navigate={~p"/groups/#{@group.parent_id}/sub_groups"}
+              id="group-back-link"
+              navigate={
+                if(@group.parent_value_id,
+                  do: ~p"/groups/#{@group.parent_id}/values",
+                  else: ~p"/groups/#{@group.parent_id}/sub_groups"
+                )
+              }
               class="link text-xl no-underline"
             >
               {"❮"}
@@ -332,6 +339,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
             other_sub_groups_unread_count={@other_sub_groups_unread_count}
             children_search_query={@children_search_query}
+            show_thread_sub_groups={@show_thread_sub_groups}
+            thread_sub_groups_count={@thread_sub_groups_count}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -352,6 +361,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             editing_value={@editing_value}
             edit_value_form={@edit_value_form}
             new_value_form={@new_value_form}
+            replying_to_value={@replying_to_value}
+            thread_origin={@thread_origin}
             is_member={@is_member}
           />
           <GroupDescriptionTab.panel
@@ -431,6 +442,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:direct_sub_groups_unread_count, 0)
        |> assign(:other_sub_groups_unread_count, 0)
        |> assign(:children_search_query, "")
+       |> assign(:show_thread_sub_groups, true)
+       |> assign(:thread_sub_groups_count, 0)
        |> assign(
          :sub_groups_kind,
          normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
@@ -444,6 +457,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:active_tab, active_tab)
        |> assign(:editing_value, nil)
        |> assign(:edit_value_form, nil)
+       |> assign(:replying_to_value, nil)
+       |> assign(:thread_origin, nil)
        |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
        |> assign(:home_page_options, home_page_options())
        |> assign(:value_parent_options, [])
@@ -520,16 +535,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
     else
       # The chat composer only posts chat values; app data goes through `app_api`.
+      # The replied-to value comes from the server-side reply state, never the form.
       attrs =
         attrs
-        |> Map.drop(["is_data", "data"])
-        |> normalize_select_nil("parent_id")
+        |> Map.drop(["is_data", "data", "parent_id"])
+        |> maybe_put_reply_parent(socket.assigns.replying_to_value)
 
       case Social.create_value(current_profile, group, attrs) do
         {:ok, value} ->
           socket =
             socket
             |> assign(:active_tab, "values")
+            |> assign(:replying_to_value, nil)
             |> assign(:new_value_form, empty_new_value_form())
             |> push_event("value_composer_reset", %{})
             |> apply_value_created(value)
@@ -571,6 +588,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         # Re-insert both items so their edit buttons reflect the new editing state.
         {:noreply,
          socket
+         |> assign(:replying_to_value, nil)
          |> assign(:editing_value, value)
          |> assign(:edit_value_form, to_form(Value.changeset(value, %{})))
          |> restream_value(previous_editing_value)
@@ -625,6 +643,46 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("cancel_edit_value", _params, socket) do
     {:noreply, clear_edit_value(socket)}
+  end
+
+  # Inline reply: the composer shows the value and the next post quotes it.
+  def handle_event("start_reply_value", %{"id" => id}, socket) do
+    cond do
+      not socket.assigns.is_member ->
+        {:noreply,
+         put_flash(socket, :error, gettext("You must be a group member to post values."))}
+
+      value = loaded_value(socket, id) ->
+        {:noreply,
+         socket
+         |> clear_edit_value()
+         |> assign(:replying_to_value, value)
+         |> push_event("value_composer_focus", %{})}
+
+      true ->
+        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+    end
+  end
+
+  def handle_event("cancel_reply_value", _params, socket) do
+    {:noreply, assign(socket, :replying_to_value, nil)}
+  end
+
+  # In-thread reply: opens (creating on first use) the value's thread group.
+  def handle_event("open_value_thread", %{"id" => id}, socket) do
+    with true <- socket.assigns.is_member,
+         %Value{} = value <- loaded_value(socket, id),
+         {:ok, thread} <-
+           Social.get_or_create_value_thread(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             value,
+             %{"name" => Value.excerpt(value, 60) || gettext("Thread")}
+           ) do
+      {:noreply, push_navigate(socket, to: ~p"/groups/#{thread.id}/values")}
+    else
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not open thread."))}
+    end
   end
 
   def handle_event("delete_value", %{"id" => id}, socket) do
@@ -737,6 +795,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> assign(:children_search_query, "")
+     |> assign(:children_pagination, default_pagination(@children_page_size))
+     |> reload_children()}
+  end
+
+  def handle_event("toggle_thread_sub_groups", _params, socket) do
+    {:noreply,
+     socket
+     |> update(:show_thread_sub_groups, &(not &1))
      |> assign(:children_pagination, default_pagination(@children_page_size))
      |> reload_children()}
   end
@@ -1268,6 +1334,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
+    |> maybe_load_thread_origin(group, active_tab)
     |> maybe_mark_group_values_read(group, active_tab)
     |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
@@ -1408,6 +1475,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp apply_value_updated(socket, %Value{} = value) do
+    socket =
+      case socket.assigns.replying_to_value do
+        %Value{id: id} when id == value.id -> assign(socket, :replying_to_value, value)
+        _ -> socket
+      end
+
     if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
       stream_insert(socket, :values, value)
     else
@@ -1425,6 +1498,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         _ ->
           socket
+      end
+
+    socket =
+      case socket.assigns.replying_to_value do
+        %Value{id: ^value_id} -> assign(socket, :replying_to_value, nil)
+        _ -> socket
       end
 
     if MapSet.member?(socket.assigns.loaded_value_ids, value_id) do
@@ -1479,6 +1558,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _ -> nil
     end
   end
+
+  defp maybe_put_reply_parent(attrs, %Value{id: parent_id}),
+    do: Map.put(attrs, "parent_id", parent_id)
+
+  defp maybe_put_reply_parent(attrs, nil), do: attrs
 
   defp clear_edit_value(socket) do
     editing_value = socket.assigns.editing_value
@@ -1647,10 +1731,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Social.list_child_groups_for_profile(
       socket.assigns.group,
       socket.assigns.current_profile,
-      Keyword.merge(opts,
-        is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
-        search: normalize_children_search_query(socket.assigns.children_search_query)
-      )
+      Keyword.merge(opts, children_filters(socket))
     )
   end
 
@@ -1658,8 +1739,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Social.count_child_groups_for_profile(
       socket.assigns.group,
       socket.assigns.current_profile,
+      children_filters(socket)
+    )
+  end
+
+  # Hidden threads are filtered out; shown ones mix with the other sub-groups.
+  defp children_filters(socket) do
+    [
       is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
+      is_thread: if(socket.assigns.show_thread_sub_groups, do: nil, else: false),
       search: normalize_children_search_query(socket.assigns.children_search_query)
+    ]
+  end
+
+  # The threads filter is only offered when the group has thread sub-groups;
+  # the count ignores the search so the filter stays put while searching.
+  defp count_thread_children(%{assigns: %{group: %Group{is_root: true}}}), do: 0
+
+  defp count_thread_children(socket) do
+    Social.count_child_groups_for_profile(
+      socket.assigns.group,
+      socket.assigns.current_profile,
+      is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
+      is_thread: true
     )
   end
 
@@ -1828,6 +1930,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         :children_pagination,
         loaded_pagination(pagination, length(entries), count_children(socket))
       )
+      |> assign(:thread_sub_groups_count, count_thread_children(socket))
       |> stream(:children, entries, reset: true)
     else
       assign(socket, :loaded_children, [])
@@ -1864,6 +1967,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       socket
     end
+  end
+
+  # The value a thread group was started from, shown above its chat.
+  defp maybe_load_thread_origin(socket, group, active_tab) do
+    thread_origin =
+      if group.parent_value_id && needs_values?(group, active_tab) do
+        Social.get_thread_origin(socket.assigns.current_profile, group)
+      end
+
+    assign(socket, :thread_origin, thread_origin)
   end
 
   defp maybe_load_value_parent_options(socket, _group, active_tab) do

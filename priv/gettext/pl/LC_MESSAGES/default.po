@@ -37,7 +37,7 @@ msgstr "Konto zostało pomyślnie potwierdzone."
 msgid "Actions"
 msgstr "Akcje"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1102
+#: lib/potok_ide_web/live/group_live/show.ex:1168
 #, elixir-autogen, elixir-format
 msgid "An invitation is already pending."
 msgstr "Zaproszenie już oczekuje."
@@ -89,18 +89,18 @@ msgstr "Potwierdzanie..."
 msgid "Could not accept invitation."
 msgstr "Nie udało się zaakceptować zaproszenia."
 
-#: lib/potok_ide_web/live/group_live/show.ex:901
+#: lib/potok_ide_web/live/group_live/show.ex:967
 #, elixir-autogen, elixir-format
 msgid "Could not create group."
 msgstr "Nie udało się utworzyć grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:543
+#: lib/potok_ide_web/live/group_live/show.ex:560
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:47
 #, elixir-autogen, elixir-format
 msgid "Could not create value."
 msgstr "Nie udało się utworzyć wartości."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1105
+#: lib/potok_ide_web/live/group_live/show.ex:1171
 #, elixir-autogen, elixir-format
 msgid "Could not send invitation."
 msgstr "Nie udało się wysłać zaproszenia."
@@ -116,9 +116,9 @@ msgstr "Utwórz"
 msgid "Create profile"
 msgstr "Utwórz profil"
 
-#: lib/potok_ide_web/live/group_live/show.ex:294
+#: lib/potok_ide_web/live/group_live/show.ex:301
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:23
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:115
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:160
 #, elixir-autogen, elixir-format
 msgid "Create sub-group"
 msgstr "Utwórz podgrupę"
@@ -139,7 +139,7 @@ msgstr "Bieżący profil:"
 msgid "Deploy your application"
 msgstr "Wdróż swoją aplikację"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1977
+#: lib/potok_ide_web/live/group_live/show.ex:2090
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:42
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:65
 #: lib/potok_ide_web/live/profile_live/components.ex:138
@@ -185,7 +185,7 @@ msgstr "Podaj swój adres e-mail, a wyślemy Ci link do logowania."
 msgid "Format"
 msgstr "Format"
 
-#: lib/potok_ide_web/live/group_live/show.ex:894
+#: lib/potok_ide_web/live/group_live/show.ex:960
 #, elixir-autogen, elixir-format
 msgid "Group created."
 msgstr "Grupa została utworzona."
@@ -202,7 +202,7 @@ msgstr "Grupy"
 msgid "Guides & Docs"
 msgstr "Przewodniki i dokumentacja"
 
-#: lib/potok_ide_web/live/group_live/show.ex:447
+#: lib/potok_ide_web/live/group_live/show.ex:462
 #: lib/potok_ide_web/live/profile_live/components.ex:311
 #, elixir-autogen, elixir-format
 msgid "HTML"
@@ -260,9 +260,9 @@ msgstr "Nie znaleziono zaproszenia lub zostało już zaakceptowane."
 msgid "Invitation not found."
 msgstr "Nie znaleziono zaproszenia."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1598
-#: lib/potok_ide_web/live/group_live/show.ex:1621
-#: lib/potok_ide_web/live/group_live/show.ex:1632
+#: lib/potok_ide_web/live/group_live/show.ex:1682
+#: lib/potok_ide_web/live/group_live/show.ex:1705
+#: lib/potok_ide_web/live/group_live/show.ex:1716
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr "Zaproszenie zostało wysłane."
@@ -306,7 +306,7 @@ msgstr "Zaproszenia, które bieżący profil wysłał do innych profili."
 msgid "Invite"
 msgstr "Zaproś"
 
-#: lib/potok_ide_web/live/group_live/show.ex:302
+#: lib/potok_ide_web/live/group_live/show.ex:309
 #, elixir-autogen, elixir-format
 msgid "Invite profile"
 msgstr "Zaproś profil"
@@ -413,13 +413,13 @@ msgstr "Link magiczny jest nieprawidłowy lub wygasł."
 msgid "Manage your account email address and password settings"
 msgstr "Zarządzaj adresem e-mail i ustawieniami hasła swojego konta"
 
-#: lib/potok_ide_web/live/group_live/show.ex:447
+#: lib/potok_ide_web/live/group_live/show.ex:462
 #: lib/potok_ide_web/live/profile_live/components.ex:310
 #, elixir-autogen, elixir-format
 msgid "Markdown"
 msgstr "Markdown"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2014
+#: lib/potok_ide_web/live/group_live/show.ex:2127
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:22
 #, elixir-autogen, elixir-format
 msgid "Members"
@@ -461,7 +461,7 @@ msgstr "Ten profil nie wysłał jeszcze żadnych zaproszeń."
 msgid "No sent invitations match your search."
 msgstr "Żadne wysłane zaproszenia nie pasują do wyszukiwania."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1093
+#: lib/potok_ide_web/live/group_live/show.ex:1159
 #, elixir-autogen, elixir-format
 msgid "No profile found with that username."
 msgstr "Nie znaleziono profilu o tej nazwie użytkownika."
@@ -471,7 +471,7 @@ msgstr "Nie znaleziono profilu o tej nazwie użytkownika."
 msgid "No profiles yet."
 msgstr "Brak profili."
 
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:79
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:124
 #, elixir-autogen, elixir-format
 msgid "No sub-groups yet."
 msgstr "Brak podgrup."
@@ -560,8 +560,8 @@ msgstr "Udostępnianie"
 msgid "Source Code"
 msgstr "Kod źródłowy"
 
-#: lib/potok_ide_web/live/group_live/show.ex:278
-#: lib/potok_ide_web/live/group_live/show.ex:1979
+#: lib/potok_ide_web/live/group_live/show.ex:285
+#: lib/potok_ide_web/live/group_live/show.ex:2092
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
 msgstr "Podgrupy"
@@ -606,7 +606,7 @@ msgstr "Instrukcje zmiany adresu e-mail"
 msgid "Username"
 msgstr "Nazwa użytkownika"
 
-#: lib/potok_ide_web/live/group_live/show.ex:270
+#: lib/potok_ide_web/live/group_live/show.ex:277
 #, elixir-autogen, elixir-format
 msgid "Values"
 msgstr "Chat"
@@ -646,31 +646,32 @@ msgstr "Możesz potwierdzić konto, odwiedzając poniższy adres URL:"
 msgid "You can log into your account by visiting the URL below:"
 msgstr "Możesz zalogować się na swoje konto, odwiedzając poniższy adres URL:"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1099
+#: lib/potok_ide_web/live/group_live/show.ex:1165
 #, elixir-autogen, elixir-format
 msgid "You cannot invite yourself."
 msgstr "Nie możesz zaprosić samego siebie."
 
-#: lib/potok_ide_web/live/group_live/show.ex:465
-#: lib/potok_ide_web/live/group_live/show.ex:1234
-#: lib/potok_ide_web/live/group_live/show.ex:1324
+#: lib/potok_ide_web/live/group_live/show.ex:480
+#: lib/potok_ide_web/live/group_live/show.ex:1300
+#: lib/potok_ide_web/live/group_live/show.ex:1391
 #, elixir-autogen, elixir-format
 msgid "You do not have access to that group."
 msgstr "Nie masz dostępu do tej grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:883
+#: lib/potok_ide_web/live/group_live/show.ex:949
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to create sub-groups."
 msgstr "Aby tworzyć podgrupy, musisz być członkiem grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:520
+#: lib/potok_ide_web/live/group_live/show.ex:535
+#: lib/potok_ide_web/live/group_live/show.ex:653
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:30
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to post values."
 msgstr "Aby publikować wartości, musisz być członkiem grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1065
-#: lib/potok_ide_web/live/group_live/show.ex:1096
+#: lib/potok_ide_web/live/group_live/show.ex:1131
+#: lib/potok_ide_web/live/group_live/show.ex:1162
 #, elixir-autogen, elixir-format
 msgid "You must be a member to invite."
 msgstr "Musisz być członkiem, aby zapraszać."
@@ -710,24 +711,24 @@ msgid "the mailbox page"
 msgstr "stronę skrzynki pocztowej"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:79
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:130
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:169
 #: lib/potok_ide_web/live/profile_live/edit.ex:50
 #: lib/potok_ide_web/live/profile_live/new.ex:43
 #, elixir-autogen, elixir-format
 msgid "Cancel"
 msgstr "Anuluj"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:167
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:239
 #, elixir-autogen, elixir-format
 msgid "Join this group to reply and post new values."
 msgstr "Dołącz do tej grupy, aby odpowiadać i publikować nowe wartości."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:44
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:81
 #, elixir-autogen, elixir-format
 msgid "No values yet. Start the conversation below."
 msgstr "Jeszcze nie ma wartości. Rozpocznij rozmowę poniżej."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:153
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:225
 #, elixir-autogen, elixir-format
 msgid "Post value"
 msgstr "Opublikuj wartość"
@@ -738,18 +739,18 @@ msgid "Profile updated."
 msgstr "Profil został zaktualizowany."
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:263
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:129
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:168
 #: lib/potok_ide_web/live/profile_live/edit.ex:48
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr "Zapisz zmiany"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:946
+#: lib/potok_ide_web/live/group_live/show/components.ex:1017
 #, elixir-autogen, elixir-format
 msgid "See less"
 msgstr "Pokaż mniej"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:945
+#: lib/potok_ide_web/live/group_live/show/components.ex:1016
 #, elixir-autogen, elixir-format
 msgid "See more"
 msgstr "Pokaż więcej"
@@ -759,23 +760,18 @@ msgstr "Pokaż więcej"
 msgid "Update the selected profile details."
 msgstr "Zaktualizuj dane wybranego profilu."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:118
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:144
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:157
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:216
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr "Wartość"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:146
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:218
 #, elixir-autogen, elixir-format
 msgid "Write a value..."
 msgstr "Napisz wartość..."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:863
-#, elixir-autogen, elixir-format
-msgid "reply"
-msgstr "odpowiedź"
-
-#: lib/potok_ide_web/live/group_live/show/components.ex:103
+#: lib/potok_ide_web/live/group_live/show/components.ex:104
 #, elixir-autogen, elixir-format
 msgid "Group picture URL"
 msgstr "URL obrazka grupy"
@@ -795,66 +791,67 @@ msgstr "Nawigacja"
 msgid "Preferences"
 msgstr "Preferencje"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:898
+#: lib/potok_ide_web/live/group_live/show/components.ex:940
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this value?"
 msgstr "Czy na pewno chcesz usunąć tę wartość?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:649
+#: lib/potok_ide_web/live/group_live/show.ex:707
 #, elixir-autogen, elixir-format
 msgid "Could not delete value."
 msgstr "Nie udało się usunąć wartości."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:897
+#: lib/potok_ide_web/live/group_live/show/components.ex:939
 #, elixir-autogen, elixir-format
 msgid "Delete value"
 msgstr "Usuń wartość"
 
-#: lib/potok_ide_web/live/group_live/show.ex:228
+#: lib/potok_ide_web/live/group_live/show.ex:235
 #, elixir-autogen, elixir-format
 msgid "Open members tab"
 msgstr "Otwórz kartę członków"
 
-#: lib/potok_ide_web/live/group_live/show.ex:642
+#: lib/potok_ide_web/live/group_live/show.ex:700
 #, elixir-autogen, elixir-format
 msgid "Value deleted."
 msgstr "Wartość została usunięta."
 
-#: lib/potok_ide_web/live/group_live/show.ex:565
-#: lib/potok_ide_web/live/group_live/show.ex:601
-#: lib/potok_ide_web/live/group_live/show.ex:635
-#: lib/potok_ide_web/live/group_live/show.ex:661
+#: lib/potok_ide_web/live/group_live/show.ex:582
+#: lib/potok_ide_web/live/group_live/show.ex:619
+#: lib/potok_ide_web/live/group_live/show.ex:663
+#: lib/potok_ide_web/live/group_live/show.ex:693
+#: lib/potok_ide_web/live/group_live/show.ex:719
 #, elixir-autogen, elixir-format
 msgid "Value not found."
 msgstr "Nie znaleziono wartości."
 
-#: lib/potok_ide_web/live/group_live/show.ex:646
+#: lib/potok_ide_web/live/group_live/show.ex:704
 #, elixir-autogen, elixir-format
 msgid "You can only delete your own values."
 msgstr "Możesz usuwać tylko własne wartości."
 
-#: lib/potok_ide_web/live/group_live/show.ex:621
+#: lib/potok_ide_web/live/group_live/show.ex:639
 #, elixir-autogen, elixir-format
 msgid "Could not update value."
 msgstr "Nie udało się zaktualizować wartości."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:886
+#: lib/potok_ide_web/live/group_live/show/components.ex:928
 #, elixir-autogen, elixir-format
 msgid "Edit value"
 msgstr "Edytuj wartość"
 
-#: lib/potok_ide_web/live/group_live/show.ex:179
+#: lib/potok_ide_web/live/group_live/show.ex:186
 #, elixir-autogen, elixir-format
 msgid "Open sub-groups tab"
 msgstr "Otwórz kartę podgrup"
 
-#: lib/potok_ide_web/live/group_live/show.ex:608
+#: lib/potok_ide_web/live/group_live/show.ex:626
 #, elixir-autogen, elixir-format
 msgid "Value updated."
 msgstr "Wartość została zaktualizowana."
 
-#: lib/potok_ide_web/live/group_live/show.ex:568
-#: lib/potok_ide_web/live/group_live/show.ex:614
+#: lib/potok_ide_web/live/group_live/show.ex:585
+#: lib/potok_ide_web/live/group_live/show.ex:632
 #, elixir-autogen, elixir-format
 msgid "You can only edit your own values."
 msgstr "Możesz edytować tylko własne wartości."
@@ -925,7 +922,7 @@ msgstr "Zapros profil do wspoldzielonego profilu"
 msgid "Invited by: "
 msgstr "Zaprosil: "
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:35
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:72
 #, elixir-autogen, elixir-format
 msgid "Load earlier values"
 msgstr "Załaduj wcześniejsze wartości"
@@ -935,7 +932,7 @@ msgstr "Załaduj wcześniejsze wartości"
 msgid "Load more members"
 msgstr "Zaladuj wiecej czlonkow"
 
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:104
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:149
 #, elixir-autogen, elixir-format
 msgid "Load more sub-groups"
 msgstr "Zaladuj wiecej podgrup"
@@ -950,9 +947,9 @@ msgstr "Szczegoly nowego profilu"
 msgid "No profile exists for that username."
 msgstr "Nie istnieje profil o tej nazwie uzytkownika."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:551
-#: lib/potok_ide_web/live/group_live/show/components.ex:828
-#: lib/potok_ide_web/live/group_live/show/components.ex:850
+#: lib/potok_ide_web/live/group_live/show/components.ex:552
+#: lib/potok_ide_web/live/group_live/show/components.ex:848
+#: lib/potok_ide_web/live/group_live/show/components.ex:870
 #, elixir-autogen, elixir-format
 msgid "Online"
 msgstr "Online"
@@ -962,7 +959,7 @@ msgstr "Online"
 msgid "Only shared profiles can be invited."
 msgstr "Zapraszac mozna tylko wspoldzielone profile."
 
-#: lib/potok_ide_web/live/group_live/show.ex:200
+#: lib/potok_ide_web/live/group_live/show.ex:207
 #, elixir-autogen, elixir-format
 msgid "Open invite profile tab"
 msgstr "Otworz karte zapraszania profilu"
@@ -1047,19 +1044,19 @@ msgstr "Zaproszenia do wspoldzielonych profili"
 msgid "You cannot invite your own profile."
 msgstr "Nie mozesz zaprosic wlasnego profilu."
 
-#: lib/potok_ide_web/live/group_live/show.ex:842
+#: lib/potok_ide_web/live/group_live/show.ex:908
 #: lib/potok_ide_web/live/request_live/index.ex:485
 #, elixir-autogen, elixir-format
 msgid "Access request accepted."
 msgstr "Prośba o dostęp została zaakceptowana."
 
-#: lib/potok_ide_web/live/group_live/show.ex:791
+#: lib/potok_ide_web/live/group_live/show.ex:857
 #, elixir-autogen, elixir-format
 msgid "Access request already pending."
 msgstr "Prośba o dostęp już oczekuje."
 
-#: lib/potok_ide_web/live/group_live/show.ex:2093
-#: lib/potok_ide_web/live/group_live/show.ex:2103
+#: lib/potok_ide_web/live/group_live/show.ex:2206
+#: lib/potok_ide_web/live/group_live/show.ex:2216
 #: lib/potok_ide_web/live/request_live/index.ex:740
 #: lib/potok_ide_web/live/request_live/index.ex:751
 #: lib/potok_ide_web/live/request_live/index.ex:763
@@ -1067,18 +1064,18 @@ msgstr "Prośba o dostęp już oczekuje."
 msgid "Access request not found."
 msgstr "Nie znaleziono prośby o dostęp."
 
-#: lib/potok_ide_web/live/group_live/show.ex:148
+#: lib/potok_ide_web/live/group_live/show.ex:155
 #, elixir-autogen, elixir-format
 msgid "Access request pending"
 msgstr "Prośba o dostęp oczekuje"
 
-#: lib/potok_ide_web/live/group_live/show.ex:851
+#: lib/potok_ide_web/live/group_live/show.ex:917
 #: lib/potok_ide_web/live/request_live/index.ex:494
 #, elixir-autogen, elixir-format
 msgid "Access request rejected."
 msgstr "Prośba o dostęp została odrzucona."
 
-#: lib/potok_ide_web/live/group_live/show.ex:772
+#: lib/potok_ide_web/live/group_live/show.ex:838
 #, elixir-autogen, elixir-format
 msgid "Access request sent."
 msgstr "Prośba o dostęp została wysłana."
@@ -1098,23 +1095,23 @@ msgstr "Czy na pewno chcesz usunąć tę grupę?"
 msgid "Choose another profile to open a direct group."
 msgstr "Wybierz inny profil, aby otworzyć grupę bezpośrednią."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1018
+#: lib/potok_ide_web/live/group_live/show.ex:1084
 #, elixir-autogen, elixir-format
 msgid "Could not delete group."
 msgstr "Nie udało się usunąć grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:829
+#: lib/potok_ide_web/live/group_live/show.ex:895
 #, elixir-autogen, elixir-format
 msgid "Could not remove member."
 msgstr "Nie udało się usunąć członka."
 
-#: lib/potok_ide_web/live/group_live/show.ex:794
+#: lib/potok_ide_web/live/group_live/show.ex:860
 #, elixir-autogen, elixir-format
 msgid "Could not send access request."
 msgstr "Nie udało się wysłać prośby o dostęp."
 
-#: lib/potok_ide_web/live/group_live/show.ex:2096
-#: lib/potok_ide_web/live/group_live/show.ex:2099
+#: lib/potok_ide_web/live/group_live/show.ex:2209
+#: lib/potok_ide_web/live/group_live/show.ex:2212
 #: lib/potok_ide_web/live/request_live/index.ex:758
 #, elixir-autogen, elixir-format
 msgid "Could not update access request."
@@ -1125,12 +1122,12 @@ msgstr "Nie udało się zaktualizować prośby o dostęp."
 msgid "Could not update group description."
 msgstr "Nie udało się zaktualizować opisu grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:946
+#: lib/potok_ide_web/live/group_live/show.ex:1012
 #, elixir-autogen, elixir-format
 msgid "Could not update group."
 msgstr "Nie udało się zaktualizować grupy."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:374
+#: lib/potok_ide_web/live/group_live/show/components.ex:375
 #, elixir-autogen, elixir-format
 msgid "Current group path"
 msgstr "Ścieżka bieżącej grupy"
@@ -1150,7 +1147,7 @@ msgstr "Profil domyślny:"
 msgid "Delete group"
 msgstr "Usuń grupę"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1014
+#: lib/potok_ide_web/live/group_live/show.ex:1080
 #, elixir-autogen, elixir-format
 msgid "Delete this group's sub-groups before deleting the group."
 msgstr "Usuń podgrupy tej grupy przed usunięciem grupy."
@@ -1165,13 +1162,13 @@ msgstr "Edytuj grupę"
 msgid "Editor"
 msgstr "Edytor"
 
-#: lib/potok_ide_web/live/group_live/show.ex:999
-#: lib/potok_ide_web/live/group_live/show.ex:1168
+#: lib/potok_ide_web/live/group_live/show.ex:1065
+#: lib/potok_ide_web/live/group_live/show.ex:1234
 #, elixir-autogen, elixir-format
 msgid "Group deleted."
 msgstr "Grupa została usunięta."
 
-#: lib/potok_ide_web/live/group_live/show.ex:934
+#: lib/potok_ide_web/live/group_live/show.ex:1000
 #, elixir-autogen, elixir-format
 msgid "Group updated."
 msgstr "Grupa została zaktualizowana."
@@ -1181,12 +1178,12 @@ msgstr "Grupa została zaktualizowana."
 msgid "Live preview"
 msgstr "Podgląd na żywo"
 
-#: lib/potok_ide_web/live/group_live/show.ex:808
+#: lib/potok_ide_web/live/group_live/show.ex:874
 #, elixir-autogen, elixir-format
 msgid "Member removed."
 msgstr "Członek został usunięty."
 
-#: lib/potok_ide_web/live/group_live/show.ex:2011
+#: lib/potok_ide_web/live/group_live/show.ex:2124
 #, elixir-autogen, elixir-format
 msgid "Members (%{count} requests)"
 msgstr "Członkowie (%{count} próśb)"
@@ -1201,12 +1198,12 @@ msgstr "Brak oczekujących próśb o dostęp."
 msgid "No pending approval requests."
 msgstr "Brak oczekujących próśb do zatwierdzenia."
 
-#: lib/potok_ide_web/live/group_live/show.ex:777
+#: lib/potok_ide_web/live/group_live/show.ex:843
 #, elixir-autogen, elixir-format
 msgid "Only public groups accept access requests."
 msgstr "Tylko publiczne grupy przyjmują prośby o dostęp."
 
-#: lib/potok_ide_web/live/group_live/show.ex:2089
+#: lib/potok_ide_web/live/group_live/show.ex:2202
 #, elixir-autogen, elixir-format
 msgid "Only the group creator can manage access requests."
 msgstr "Tylko twórca grupy może zarządzać prośbami o dostęp."
@@ -1216,17 +1213,17 @@ msgstr "Tylko twórca grupy może zarządzać prośbami o dostęp."
 msgid "Only the group creator can manage requests."
 msgstr "Tylko twórca grupy może zarządzać prośbami."
 
-#: lib/potok_ide_web/live/group_live/show.ex:813
+#: lib/potok_ide_web/live/group_live/show.ex:879
 #, elixir-autogen, elixir-format
 msgid "Only the group creator can remove members."
 msgstr "Tylko twórca grupy może usuwać członków."
 
-#: lib/potok_ide_web/live/group_live/show.ex:213
+#: lib/potok_ide_web/live/group_live/show.ex:220
 #, elixir-autogen, elixir-format
 msgid "Open invite account tab"
 msgstr "Otwórz kartę zapraszania konta"
 
-#: lib/potok_ide_web/live/group_live/show.ex:158
+#: lib/potok_ide_web/live/group_live/show.ex:165
 #, elixir-autogen, elixir-format
 msgid "Open values tab"
 msgstr "Otwórz kartę wartości"
@@ -1253,13 +1250,13 @@ msgstr "Oczekujące prośby o dostęp do grup, które może zatwierdzić Twój b
 msgid "Preview"
 msgstr "Podgląd"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:658
+#: lib/potok_ide_web/live/group_live/show/components.ex:670
 #, elixir-autogen, elixir-format
 msgid "Private group"
 msgstr "Grupa prywatna"
 
-#: lib/potok_ide_web/live/group_live/show.ex:822
-#: lib/potok_ide_web/live/group_live/show.ex:833
+#: lib/potok_ide_web/live/group_live/show.ex:888
+#: lib/potok_ide_web/live/group_live/show.ex:899
 #: lib/potok_ide_web/live/profile_live/direct.ex:34
 #, elixir-autogen, elixir-format
 msgid "Profile not found."
@@ -1270,7 +1267,7 @@ msgstr "Nie znaleziono profilu."
 msgid "Profiles waiting for approval to join this public group."
 msgstr "Profile oczekujące na zatwierdzenie do dołączenia do tej publicznej grupy."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:658
+#: lib/potok_ide_web/live/group_live/show/components.ex:670
 #, elixir-autogen, elixir-format
 msgid "Public group"
 msgstr "Grupa publiczna"
@@ -1297,7 +1294,7 @@ msgstr "Usuń %{username}"
 msgid "Remove %{username} from this group?"
 msgstr "Usunąć %{username} z tej grupy?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:141
+#: lib/potok_ide_web/live/group_live/show.ex:148
 #, elixir-autogen, elixir-format
 msgid "Request access"
 msgstr "Poproś o dostęp"
@@ -1327,7 +1324,7 @@ msgstr "Prośby"
 msgid "Review this access request for the selected group."
 msgstr "Przejrzyj tę prośbę o dostęp dla wybranej grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:826
+#: lib/potok_ide_web/live/group_live/show.ex:892
 #, elixir-autogen, elixir-format
 msgid "Root group members cannot be removed."
 msgstr "Członkowie grupy głównej nie mogą zostać usunięci."
@@ -1342,17 +1339,17 @@ msgstr "Podziel"
 msgid "Start typing to preview the description."
 msgstr "Zacznij pisać, aby podejrzeć opis."
 
-#: lib/potok_ide_web/live/group_live/show.ex:819
+#: lib/potok_ide_web/live/group_live/show.ex:885
 #, elixir-autogen, elixir-format
 msgid "That profile is not a group member."
 msgstr "Ten profil nie jest członkiem grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:816
+#: lib/potok_ide_web/live/group_live/show.ex:882
 #, elixir-autogen, elixir-format
 msgid "The group creator cannot be removed."
 msgstr "Twórca grupy nie może zostać usunięty."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1003
+#: lib/potok_ide_web/live/group_live/show.ex:1069
 #, elixir-autogen, elixir-format
 msgid "The root group cannot be deleted."
 msgstr "Grupa główna nie może zostać usunięta."
@@ -1367,12 +1364,12 @@ msgstr "Ta grupa nie ma jeszcze opisu."
 msgid "Unable to open a direct group right now."
 msgstr "Nie można teraz otworzyć grupy bezpośredniej."
 
-#: lib/potok_ide_web/live/group_live/show.ex:787
+#: lib/potok_ide_web/live/group_live/show.ex:853
 #, elixir-autogen, elixir-format
 msgid "You already have a pending invitation to this group."
 msgstr "Masz już oczekujące zaproszenie do tej grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:780
+#: lib/potok_ide_web/live/group_live/show.ex:846
 #, elixir-autogen, elixir-format
 msgid "You are already a group member."
 msgstr "Jesteś już członkiem grupy."
@@ -1382,13 +1379,13 @@ msgstr "Jesteś już członkiem grupy."
 msgid "You must be a group member to access group data values."
 msgstr "Musisz być członkiem grupy, aby uzyskać dostęp do wartości danych grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:993
-#: lib/potok_ide_web/live/group_live/show.ex:1007
+#: lib/potok_ide_web/live/group_live/show.ex:1059
+#: lib/potok_ide_web/live/group_live/show.ex:1073
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to delete this group."
 msgstr "Musisz być członkiem grupy, aby usunąć tę grupę."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1618
+#: lib/potok_ide_web/live/group_live/show.ex:1702
 #, elixir-autogen, elixir-format
 msgid "Account invitation email sent."
 msgstr ""
@@ -1435,48 +1432,48 @@ msgstr ""
 msgid "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1978
+#: lib/potok_ide_web/live/group_live/show.ex:2091
 #, elixir-autogen, elixir-format
 msgid "Chat"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:115
+#: lib/potok_ide_web/live/group_live/show/components.ex:116
 #: lib/potok_ide_web/live/profile_live/components.ex:64
 #, elixir-autogen, elixir-format
 msgid "Choose a valid image file."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:114
+#: lib/potok_ide_web/live/group_live/show/components.ex:115
 #: lib/potok_ide_web/live/profile_live/components.ex:63
 #, elixir-autogen, elixir-format
 msgid "Choose an image smaller than 5 MB."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:133
+#: lib/potok_ide_web/live/group_live/show/components.ex:134
 #: lib/potok_ide_web/live/profile_live/components.ex:82
 #, elixir-autogen, elixir-format
 msgid "Choose image"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:140
+#: lib/potok_ide_web/live/group_live/show/components.ex:141
 #: lib/potok_ide_web/live/profile_live/components.ex:89
 #, elixir-autogen, elixir-format
 msgid "Clear image"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:43
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:82
 #: lib/potok_ide_web/live/invitation_live/index.ex:54
 #: lib/potok_ide_web/live/request_live/index.ex:54
 #, elixir-autogen, elixir-format
 msgid "Clear search"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:982
+#: lib/potok_ide_web/live/group_live/show.ex:1048
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Could not delete data values."
 msgstr "Nie udało się usunąć wartości."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:116
+#: lib/potok_ide_web/live/group_live/show/components.ex:117
 #: lib/potok_ide_web/live/profile_live/components.ex:65
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Could not process that image."
@@ -1487,7 +1484,7 @@ msgstr "Nie udało się utworzyć grupy."
 msgid "Delete Data Values"
 msgstr "Usuń wartości danych"
 
-#: lib/potok_ide_web/live/group_live/show.ex:969
+#: lib/potok_ide_web/live/group_live/show.ex:1035
 #, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
@@ -1515,7 +1512,7 @@ msgstr ""
 msgid "Enter a username to invite an existing profile, or an email to invite an account."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1090
+#: lib/potok_ide_web/live/group_live/show.ex:1156
 #, elixir-autogen, elixir-format
 msgid "Enter a valid email address."
 msgstr ""
@@ -1535,7 +1532,7 @@ msgstr ""
 msgid "Failure Reason"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:167
+#: lib/potok_ide_web/live/group_live/show/components.ex:168
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Group picture preview"
 msgstr "URL obrazka grupy"
@@ -1566,7 +1563,7 @@ msgstr ""
 msgid "If you use the Potok Android app, you can open this link there:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:124
+#: lib/potok_ide_web/live/group_live/show/components.ex:125
 #: lib/potok_ide_web/live/profile_live/components.ex:73
 #, elixir-autogen, elixir-format
 msgid "Images are resized to fit within 200 x 200 and files over 5 MB are rejected."
@@ -1577,7 +1574,7 @@ msgstr ""
 msgid "Inserted"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1635
+#: lib/potok_ide_web/live/group_live/show.ex:1719
 #, elixir-autogen, elixir-format
 msgid "Invitation will be sent when they create their first profile."
 msgstr ""
@@ -1632,7 +1629,7 @@ msgstr "Ten profil nie ma jeszcze żadnych zaakceptowanych utworzonych próśb."
 msgid "No approved requests yet."
 msgstr "Brak jeszcze zaakceptowanych próśb."
 
-#: lib/potok_ide_web/live/group_live/show.ex:961
+#: lib/potok_ide_web/live/group_live/show.ex:1027
 #, elixir-autogen, elixir-format
 msgid "No data values to delete."
 msgstr ""
@@ -1657,7 +1654,7 @@ msgstr "Nie mogliśmy teraz wysłać e-maila z zaproszeniem. Spróbuj ponownie p
 msgid "No push subscriptions have been stored for this account yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:80
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:120
 #, elixir-autogen, elixir-format, fuzzy
 msgid "No sub-groups match your search."
 msgstr "Brak podgrup."
@@ -1668,11 +1665,11 @@ msgstr "Brak podgrup."
 msgid "Not set"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:916
-#: lib/potok_ide_web/live/group_live/show.ex:926
-#: lib/potok_ide_web/live/group_live/show.ex:939
-#: lib/potok_ide_web/live/group_live/show.ex:957
-#: lib/potok_ide_web/live/group_live/show.ex:979
+#: lib/potok_ide_web/live/group_live/show.ex:982
+#: lib/potok_ide_web/live/group_live/show.ex:992
+#: lib/potok_ide_web/live/group_live/show.ex:1005
+#: lib/potok_ide_web/live/group_live/show.ex:1023
+#: lib/potok_ide_web/live/group_live/show.ex:1045
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:83
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Only the group creator can edit this group."
@@ -1688,7 +1685,7 @@ msgstr ""
 msgid "Password"
 msgstr "Zapisz hasło"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:173
+#: lib/potok_ide_web/live/group_live/show/components.ex:174
 #, elixir-autogen, elixir-format
 msgid "Preview of the current group picture value."
 msgstr ""
@@ -1714,7 +1711,7 @@ msgstr "Prośby utworzone przeze mnie"
 msgid "Root public"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:55
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:94
 #, elixir-autogen, elixir-format
 msgid "Search by name"
 msgstr ""
@@ -1750,7 +1747,7 @@ msgstr ""
 msgid "Updated"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:121
+#: lib/potok_ide_web/live/group_live/show/components.ex:122
 #: lib/potok_ide_web/live/profile_live/components.ex:70
 #, elixir-autogen, elixir-format
 msgid "Upload from your device"
@@ -1776,12 +1773,12 @@ msgstr ""
 msgid "User Agent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1087
+#: lib/potok_ide_web/live/group_live/show.ex:1153
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Username or email is required."
 msgstr "Nazwa użytkownika jest wymagana."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:98
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:137
 #, elixir-autogen, elixir-format
 msgid "Write your value in Markdown"
 msgstr ""
@@ -1797,7 +1794,7 @@ msgstr ""
 msgid "https://example.com/avatar.png or data:image/..."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:105
+#: lib/potok_ide_web/live/group_live/show/components.ex:106
 #, elixir-autogen, elixir-format
 msgid "https://example.com/group.png or data:image/..."
 msgstr ""
@@ -1822,7 +1819,7 @@ msgstr "Kończenie logowania..."
 msgid "Confirming your account and signing you in..."
 msgstr "Potwierdzanie konta i logowanie..."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:752
+#: lib/potok_ide_web/live/group_live/show/components.ex:768
 #, elixir-autogen, elixir-format
 msgid "Group app"
 msgstr "Aplikacja grupy"
@@ -1874,187 +1871,251 @@ msgstr "Zbyt wiele zmian w krótkim czasie. Spróbuj ponownie za chwilę."
 msgid "Uses API"
 msgstr "Używa API"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:874
-#: lib/potok_ide_web/live/group_live/show/components.ex:875
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:74
+#: lib/potok_ide_web/live/group_live/show/components.ex:916
+#: lib/potok_ide_web/live/group_live/show/components.ex:917
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:113
 #, elixir-autogen, elixir-format
 msgid "Add reaction"
 msgstr "Dodaj reakcję"
 
-#: lib/potok_ide_web/live/group_live/show.ex:674
+#: lib/potok_ide_web/live/group_live/show.ex:732
 #, elixir-autogen, elixir-format
 msgid "Could not update reaction."
 msgstr "Nie udało się zaktualizować reakcji."
 
-#: lib/potok_ide_web/live/group_live/show.ex:657
+#: lib/potok_ide_web/live/group_live/show.ex:715
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to react."
 msgstr "Musisz być członkiem grupy, aby reagować."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:365
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:464
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Activities"
 msgstr "Aktywności"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:362
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:461
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Animals and nature"
 msgstr "Zwierzęta i natura"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:359
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:458
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Custom"
 msgstr "Własne"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:368
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:467
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Flags"
 msgstr "Flagi"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:363
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:462
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Food and drink"
 msgstr "Żywność i napoje"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:366
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:465
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Objects"
 msgstr "Obiekty"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:361
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:460
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "People and body"
 msgstr "Ludzie"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:360
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:459
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Smileys and emoticons"
 msgstr "Uśmiechy"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:367
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:466
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Symbols"
 msgstr "Symbole"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:364
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:463
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Travel and places"
 msgstr "Podróże i miejsca"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:331
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:430
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Categories"
 msgstr "Kategorie"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:348
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:447
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Choose a skin tone (currently {skinTone})"
 msgstr "Wybierz odcień skóry (aktualnie {skinTone})"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:336
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:435
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Could not load emoji."
 msgstr "Nie można załadować emoji."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:337
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:436
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Emoji picker"
 msgstr "Selektor emoji"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:334
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:433
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Favorites"
 msgstr "Ulubione"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:335
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:434
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Loading…"
 msgstr "Ładuję…"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:343
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:442
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search"
 msgstr "Wyszukaj"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:344
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:443
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search results"
 msgstr "Wyniki wyszukiwania"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:349
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:448
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Skin tones"
 msgstr "Odcienie skóry"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:346
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:445
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When expanded, press up or down to select and enter to choose."
 msgstr "Po rozwinięciu wciśnij góra lub dół aby wybrać oraz enter aby zatwierdzić wybór."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:339
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:438
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When search results are available, press up or down to select and enter to choose."
 msgstr "Kiedy wyniki wyszukiwania będą dostępne, wciśnij góra lub dół aby wybrać oraz enter aby zatwierdzić wybór."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:333
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:432
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Your browser does not support color emoji."
 msgstr "Twoja przeglądarka nie wspiera kolorowych emotikon."
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:356
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:455
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Dark"
 msgstr "Ciemna"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:351
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:450
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Default"
 msgstr "Domyślna"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:352
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:451
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Light"
 msgstr "Jasna"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:354
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:453
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium"
 msgstr "Średnia"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:355
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:454
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Dark"
 msgstr "Średnio-ciemna"
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:353
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:452
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Light"
 msgstr "Średnio-jasna"
+
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:199
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:200
+#, elixir-autogen, elixir-format
+msgid "Cancel reply"
+msgstr "Anuluj odpowiedź"
+
+#: lib/potok_ide_web/live/group_live/show.ex:684
+#, elixir-autogen, elixir-format
+msgid "Could not open thread."
+msgstr "Nie udało się otworzyć wątku."
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:889
+#: lib/potok_ide_web/live/group_live/show/components.ex:890
+#, elixir-autogen, elixir-format
+msgid "Reply"
+msgstr "Odpowiedz"
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:902
+#: lib/potok_ide_web/live/group_live/show/components.ex:903
+#, elixir-autogen, elixir-format
+msgid "Reply in thread"
+msgstr "Odpowiedz w wątku"
+
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:187
+#, elixir-autogen, elixir-format
+msgid "Replying to %{username}"
+msgstr "Odpowiedź dla %{username}"
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:961
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:50
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:51
+#, elixir-autogen, elixir-format
+msgid "Show original value"
+msgstr "Pokaż oryginalną wartość"
+
+#: lib/potok_ide_web/live/group_live/show.ex:680
+#: lib/potok_ide_web/live/group_live/show/components.ex:648
+#: lib/potok_ide_web/live/group_live/show/components.ex:652
+#: lib/potok_ide_web/live/group_live/show/components.ex:1042
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:37
+#, elixir-autogen, elixir-format
+msgid "Thread"
+msgstr "Wątek"
+
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:42
+#, elixir-autogen, elixir-format
+msgid "Hide threads"
+msgstr "Ukryj wątki"
+
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:122
+#, elixir-autogen, elixir-format
+msgid "Only threads here, and they are hidden."
+msgstr "Są tu tylko wątki, a są ukryte."
+
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:42
+#, elixir-autogen, elixir-format
+msgid "Show threads"
+msgstr "Pokaż wątki"
+
+#: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:59
+#, elixir-autogen, elixir-format
+msgid "Threads"
+msgstr "Wątki"

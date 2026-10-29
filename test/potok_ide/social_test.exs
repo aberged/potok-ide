@@ -2310,4 +2310,326 @@ defmodule PotokIde.SocialTest do
                Social.update_group_description(other, group, %{"description" => "x"})
     end
   end
+
+  describe "value replies" do
+    setup do
+      owner = reply_profile!("reply-owner")
+      member = reply_profile!("reply-member")
+      group = reply_group!(owner, "reply-group", %{"is_public" => false})
+      add_member!(owner, group, member)
+
+      {:ok, parent} = Social.create_value(owner, group, %{"content" => "the question"})
+
+      %{owner: owner, member: member, group: group, parent: parent}
+    end
+
+    test "creates a reply that preloads its parent and the parent's author", %{
+      member: member,
+      group: group,
+      parent: parent
+    } do
+      assert {:ok, reply} =
+               Social.create_value(member, group, %{
+                 "content" => "the answer",
+                 "parent_id" => to_string(parent.id)
+               })
+
+      assert reply.parent_id == parent.id
+      assert reply.parent.creator.username == "reply-owner"
+    end
+
+    test "rejects a parent from another group or a data value", %{
+      owner: owner,
+      group: group
+    } do
+      other_group = reply_group!(owner, "reply-other", %{"is_public" => false})
+      {:ok, foreign} = Social.create_value(owner, other_group, %{"content" => "secret"})
+
+      {:ok, data_value} =
+        Social.create_data_value(owner, group, %{"content" => "data:", "data" => %{"k" => 1}})
+
+      assert {:error, :invalid_parent} =
+               Social.create_value(owner, group, %{"content" => "x", "parent_id" => foreign.id})
+
+      assert {:error, :invalid_parent} =
+               Social.create_value(owner, group, %{
+                 "content" => "x",
+                 "parent_id" => data_value.id
+               })
+
+      assert {:error, :invalid_parent} =
+               Social.create_value(owner, group, %{"content" => "x", "parent_id" => "nope"})
+    end
+
+    test "ignores client-sent creator and group ids", %{
+      owner: owner,
+      member: member,
+      group: group
+    } do
+      other_group = reply_group!(owner, "reply-elsewhere", %{})
+
+      assert {:ok, value} =
+               Social.create_value(member, group, %{
+                 "content" => "mine",
+                 "creator_id" => owner.id,
+                 "group_id" => other_group.id
+               })
+
+      assert value.creator_id == member.id
+      assert value.group_id == group.id
+    end
+
+    test "update_value only changes the content", %{owner: owner, group: group, parent: parent} do
+      {:ok, other_parent} = Social.create_value(owner, group, %{"content" => "other"})
+
+      {:ok, reply} =
+        Social.create_value(owner, group, %{"content" => "r", "parent_id" => parent.id})
+
+      assert {:ok, updated} =
+               Social.update_value(owner, reply, %{
+                 "content" => "edited",
+                 "parent_id" => other_parent.id,
+                 "group_id" => Social.get_root_group!().id
+               })
+
+      assert updated.content == "edited"
+      assert updated.parent_id == parent.id
+      assert updated.group_id == group.id
+    end
+
+    test "editing a parent re-broadcasts its replies", %{
+      owner: owner,
+      member: member,
+      group: group,
+      parent: parent
+    } do
+      {:ok, reply} =
+        Social.create_value(member, group, %{"content" => "r", "parent_id" => parent.id})
+
+      Social.subscribe_group(group)
+
+      {:ok, _parent} = Social.update_value(owner, parent, %{"content" => "the new question"})
+
+      reply_id = reply.id
+
+      assert_receive {:value_updated, _group_id,
+                      %{id: ^reply_id, parent: %{content: "the new question"}}}
+    end
+
+    test "deleting a parent re-broadcasts its replies without the parent", %{
+      owner: owner,
+      member: member,
+      group: group,
+      parent: parent
+    } do
+      {:ok, reply} =
+        Social.create_value(member, group, %{"content" => "r", "parent_id" => parent.id})
+
+      Social.subscribe_group(group)
+
+      {:ok, _deleted} = Social.delete_value(owner, parent)
+
+      reply_id = reply.id
+      assert_receive {:value_updated, _group_id, %{id: ^reply_id, parent_id: nil, parent: nil}}
+    end
+  end
+
+  describe "get_or_create_value_thread/4" do
+    setup do
+      owner = reply_profile!("thread-owner")
+      member = reply_profile!("thread-member")
+      outsider = reply_profile!("thread-outsider")
+      group = reply_group!(owner, "thread-group", %{"is_public" => true})
+      add_member!(owner, group, member)
+
+      {:ok, value} = Social.create_value(owner, group, %{"content" => "start a thread"})
+
+      %{owner: owner, member: member, outsider: outsider, group: group, value: value}
+    end
+
+    test "creates a chat sub-group of the value's group with all of its members", %{
+      owner: owner,
+      member: member,
+      group: group,
+      value: value
+    } do
+      assert {:ok, thread} =
+               Social.get_or_create_value_thread(member, group, value, %{"name" => "Thread name"})
+
+      assert thread.name == "Thread name"
+      assert thread.parent_id == group.id
+      assert thread.parent_value_id == value.id
+      assert thread.creator_id == member.id
+      assert thread.home_page == :chat
+      assert thread.is_public
+      refute thread.is_direct
+
+      member_ids = thread |> Social.list_group_members() |> Enum.map(& &1.id) |> Enum.sort()
+      assert member_ids == Enum.sort([owner.id, member.id])
+    end
+
+    test "returns the same thread on later calls and adds members who joined since", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
+
+      latecomer = reply_profile!("thread-late")
+      add_member!(owner, group, latecomer)
+      refute Social.member_of_group?(latecomer, thread)
+
+      assert {:ok, same_thread} =
+               Social.get_or_create_value_thread(latecomer, group, value, %{"name" => "other"})
+
+      assert same_thread.id == thread.id
+      assert same_thread.name == "t"
+      assert Social.member_of_group?(latecomer, thread)
+    end
+
+    test "broadcasts the value with its thread to the group", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      Social.subscribe_group(group)
+
+      {:ok, thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
+
+      value_id = value.id
+      thread_id = thread.id
+      assert_receive {:value_updated, _group_id, %{id: ^value_id, thread: %Group{id: ^thread_id}}}
+
+      assert %{thread: %Group{id: ^thread_id}} = Social.get_value_for_display(value.id)
+    end
+
+    test "rejects non-members, foreign values and direct groups", %{
+      owner: owner,
+      member: member,
+      outsider: outsider,
+      group: group,
+      value: value
+    } do
+      assert {:error, :not_a_member_of_group} =
+               Social.get_or_create_value_thread(outsider, group, value, %{"name" => "t"})
+
+      other_group = reply_group!(owner, "thread-other", %{})
+
+      assert {:error, :value_not_found} =
+               Social.get_or_create_value_thread(owner, other_group, value, %{"name" => "t"})
+
+      {:ok, direct} = Social.get_or_create_direct_group(owner, member)
+      {:ok, direct_value} = Social.create_value(owner, direct, %{"content" => "dm"})
+
+      assert {:error, :threads_not_supported} =
+               Social.get_or_create_value_thread(owner, direct, direct_value, %{"name" => "t"})
+    end
+
+    test "allows only one group per value", %{owner: owner, group: group, value: value} do
+      {:ok, _thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Social.create_group(owner, group, %{
+                 "name" => "second",
+                 "parent_value_id" => to_string(value.id)
+               })
+
+      assert {"has already been taken", _} = changeset.errors[:parent_value_id]
+    end
+
+    test "child group listings can keep, drop or only return threads", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
+      {:ok, plain} = Social.create_group(owner, group, %{"name" => "plain"})
+
+      ids = fn opts ->
+        group
+        |> Social.list_child_groups_for_profile(owner, opts)
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+      end
+
+      assert ids.([]) == Enum.sort([thread.id, plain.id])
+      assert ids.(is_thread: false) == [plain.id]
+      assert ids.(is_thread: true) == [thread.id]
+      assert ids.(is_thread: false, limit: 5, offset: 0) == [plain.id]
+      assert length(ids.(limit: 1, offset: 1)) == 1
+      assert length(ids.(offset: 1)) == 1
+
+      assert Social.count_child_groups_for_profile(group, owner) == 2
+      assert Social.count_child_groups_for_profile(group, owner, is_thread: true) == 1
+      assert Social.count_child_groups_for_profile(group, owner, is_thread: false) == 1
+    end
+
+    test "create_group rejects a parent value from another group", %{owner: owner, value: value} do
+      other_group = reply_group!(owner, "thread-foreign", %{})
+
+      assert {:error, :invalid_parent_value} =
+               Social.create_group(owner, other_group, %{
+                 "name" => "hijack",
+                 "parent_value_id" => to_string(value.id)
+               })
+    end
+
+    test "get_thread_origin/2 returns the value only to profiles that can read its group", %{
+      owner: owner,
+      outsider: outsider,
+      value: value
+    } do
+      private_group = reply_group!(owner, "thread-private", %{"is_public" => false})
+      {:ok, private_value} = Social.create_value(owner, private_group, %{"content" => "hidden"})
+
+      {:ok, thread} =
+        Social.get_or_create_value_thread(owner, private_group, private_value, %{"name" => "t"})
+
+      assert %{id: origin_id, creator: %{username: "thread-owner"}} =
+               Social.get_thread_origin(owner, thread)
+
+      assert origin_id == private_value.id
+      assert Social.get_thread_origin(outsider, thread) == nil
+
+      public_group = Social.get_group!(value.group_id)
+
+      {:ok, public_thread} =
+        Social.get_or_create_value_thread(owner, public_group, value, %{"name" => "p"})
+
+      assert %{id: _} = Social.get_thread_origin(outsider, public_thread)
+    end
+  end
+
+  defp reply_profile!(username) do
+    {:ok, profile} =
+      Social.create_profile_for_account(account_fixture(), %{
+        username: username,
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    profile
+  end
+
+  defp reply_group!(owner, name, attrs) do
+    {:ok, group} =
+      Social.create_group(
+        owner,
+        Social.get_root_group!(),
+        Map.merge(
+          %{"name" => name, "description" => "", "description_format" => :markdown},
+          attrs
+        )
+      )
+
+    group
+  end
+
+  defp add_member!(owner, group, profile) do
+    {:ok, invitation} = Social.invite_profile_to_group(owner, group, profile)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+    :ok
+  end
 end

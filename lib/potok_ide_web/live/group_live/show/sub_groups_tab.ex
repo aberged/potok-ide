@@ -14,6 +14,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :direct_sub_groups_unread_count, :integer, required: true
   attr :other_sub_groups_unread_count, :integer, required: true
   attr :children_search_query, :string, default: ""
+  attr :show_thread_sub_groups, :boolean, default: true
+  attr :thread_sub_groups_count, :integer, default: 0
 
   def panel(assigns) do
     assigns =
@@ -28,40 +30,78 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       id="group-panel-sub-groups"
       class="card relative flex min-h-0 flex-1 flex-col px-2"
     >
-      <.form
-        for={@children_search_form}
-        id="group-children-search-form"
-        phx-change="search_children"
-        class="mb-3 absolute right-4 -top-[.06rem] z-45"
-      >
-        <div class="relative w-fit">
-          <button
-            :if={@children_search_query != ""}
-            id="group-children-search-reset"
-            type="button"
-            phx-click="clear_children_search"
-            aria-label={gettext("Clear search")}
-            class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
-          >
-            <.icon name="hero-x-mark" class="size-4" />
-          </button>
-          <.input
-            field={@children_search_form[:q]}
-            id="group-children-search-input"
-            type="text"
-            phx-debounce="300"
-            autocomplete="off"
-            class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
-            placeholder={gettext("Search by name")}
+      <div class="group/filters absolute right-4 -top-[.06rem] z-45 mb-3 flex items-start gap-2">
+        <%!-- Shown or hidden thread sub-groups (groups started from a chat value).
+             Phones give the expanded search the whole row while it has focus. --%>
+        <button
+          :if={@thread_sub_groups_count > 0}
+          id="group-children-threads-toggle"
+          type="button"
+          phx-click="toggle_thread_sub_groups"
+          aria-pressed={to_string(@show_thread_sub_groups)}
+          title={
+            if(@show_thread_sub_groups, do: gettext("Hide threads"), else: gettext("Show threads"))
+          }
+          class={[
+            "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+            if(@show_thread_sub_groups,
+              do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
+              else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
+            )
+          ]}
+        >
+          <.icon
+            name={
+              if(@show_thread_sub_groups, do: "hero-chat-bubble-left-right", else: "hero-eye-slash")
+            }
+            class="size-4"
           />
-          <div class="absolute right-0 top-0 mt-4 mr-4">
-            <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-              <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
-              </path>
-            </svg>
+          <span class="hidden sm:inline">{gettext("Threads")}</span>
+          <span class={[
+            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none tabular-nums",
+            if(@show_thread_sub_groups,
+              do: "bg-primary text-primary-content",
+              else: "bg-base-300 text-base-content/70"
+            )
+          ]}>
+            {@thread_sub_groups_count}
+          </span>
+        </button>
+
+        <.form
+          for={@children_search_form}
+          id="group-children-search-form"
+          phx-change="search_children"
+        >
+          <div class="relative w-fit">
+            <button
+              :if={@children_search_query != ""}
+              id="group-children-search-reset"
+              type="button"
+              phx-click="clear_children_search"
+              aria-label={gettext("Clear search")}
+              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+            >
+              <.icon name="hero-x-mark" class="size-4" />
+            </button>
+            <.input
+              field={@children_search_form[:q]}
+              id="group-children-search-input"
+              type="text"
+              phx-debounce="300"
+              autocomplete="off"
+              class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
+              placeholder={gettext("Search by name")}
+            />
+            <div class="absolute right-0 top-0 mt-4 mr-4">
+              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
+                </path>
+              </svg>
+            </div>
           </div>
-        </div>
-      </.form>
+        </.form>
+      </div>
 
       <Components.group_path
         :if={!@group.is_root}
@@ -75,9 +115,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           id="group-children-empty"
           class="text-base-content/70"
         >
-          {if String.trim(@children_search_query) == "",
-            do: gettext("No sub-groups yet."),
-            else: gettext("No sub-groups match your search.")}
+          <%= cond do %>
+            <% String.trim(@children_search_query) != "" -> %>
+              {gettext("No sub-groups match your search.")}
+            <% !@show_thread_sub_groups and @thread_sub_groups_count > 0 -> %>
+              {gettext("Only threads here, and they are hidden.")}
+            <% true -> %>
+              {gettext("No sub-groups yet.")}
+          <% end %>
         </p>
 
         <ul id="group-children-list" class="space-y-4" phx-update="stream">

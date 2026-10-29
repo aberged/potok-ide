@@ -1,6 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social.Value
   alias PotokIdeWeb.GroupLive.Show.Components
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
@@ -12,12 +13,48 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :editing_value, :map, default: nil
   attr :edit_value_form, :any, default: nil
   attr :new_value_form, :any, required: true
+  attr :replying_to_value, :map, default: nil
+  attr :thread_origin, :map, default: nil
   attr :is_member, :boolean, required: true
 
   def panel(assigns) do
+    # Threads are sub-groups, which direct conversations do not have.
+    assigns = assign(assigns, :can_thread, assigns.is_member and not assigns.group.is_direct)
+
     ~H"""
     <div id="group-panel-values" class="card flex min-h-0 flex-1 shadow-sm">
       <div class="flex min-h-0 flex-1 flex-col">
+        <div
+          :if={@thread_origin}
+          id="group-thread-origin"
+          class="relative z-10 flex shrink-0 items-start gap-3 border-b border-base-300/70 bg-base-100/95 px-4 py-3 backdrop-blur sm:px-6"
+        >
+          <span class="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+            <.icon name="hero-chat-bubble-left-right" class="size-4" />
+          </span>
+          <div class="min-w-0 flex-1">
+            <p class="flex items-center gap-1.5 text-xs text-base-content/55">
+              <span class="font-semibold uppercase tracking-[0.14em]">{gettext("Thread")}</span>
+              <span aria-hidden="true">·</span>
+              <span class="truncate font-semibold text-base-content">
+                {@thread_origin.creator.username}
+              </span>
+            </p>
+            <p class="mt-0.5 line-clamp-2 text-sm text-base-content/75 wrap-break-word">
+              {Value.excerpt(@thread_origin, 240)}
+            </p>
+          </div>
+          <.link
+            id="group-thread-origin-link"
+            navigate={~p"/groups/#{@thread_origin.group_id}/values"}
+            title={gettext("Show original value")}
+            aria-label={gettext("Show original value")}
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+          >
+            <.icon name="hero-arrow-up-right" class="size-4" />
+          </.link>
+        </div>
+
         <div
           id="group-values-feed"
           phx-hook=".ValuesFeed"
@@ -59,6 +96,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               current_profile={@current_profile}
               editing_value_id={@editing_value_id}
               can_react={@is_member}
+              can_reply={@is_member}
+              can_thread={@can_thread}
             />
           </div>
         </div>
@@ -131,6 +170,39 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               </div>
             </.form>
           <% else %>
+            <div
+              :if={@replying_to_value}
+              id="group-value-reply-preview"
+              phx-mounted={
+                JS.transition(
+                  {"transition ease-out duration-150", "opacity-0 translate-y-1",
+                   "opacity-100 translate-y-0"}
+                )
+              }
+              class="mb-2 flex items-center gap-3 rounded-2xl border-l-4 border-primary bg-base-200/70 py-2 pr-2 pl-3"
+            >
+              <.icon name="hero-arrow-uturn-left" class="size-4 shrink-0 text-primary" />
+              <div class="min-w-0 flex-1">
+                <p class="truncate text-xs font-semibold text-primary">
+                  {gettext("Replying to %{username}",
+                    username: @replying_to_value.creator.username
+                  )}
+                </p>
+                <p class="truncate text-sm text-base-content/70">
+                  {Value.excerpt(@replying_to_value, 160)}
+                </p>
+              </div>
+              <button
+                id="group-value-reply-cancel"
+                type="button"
+                phx-click="cancel_reply_value"
+                aria-label={gettext("Cancel reply")}
+                title={gettext("Cancel reply")}
+                class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+            </div>
             <.form
               for={@new_value_form}
               id="group-value-form"
@@ -192,8 +264,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 this.loadMoreValues()
               }
 
+              // Reply quotes dispatch this on the quoted value (`JS.dispatch`).
+              this.handleScrollToValue = (event) => {
+                const target = event.target
+                target.scrollIntoView({ block: "center", behavior: "smooth" })
+
+                clearTimeout(this.highlightTimer)
+                this.highlighted?.removeAttribute("data-highlighted")
+                target.setAttribute("data-highlighted", "true")
+                this.highlighted = target
+                this.highlightTimer = setTimeout(() => {
+                  target.removeAttribute("data-highlighted")
+                }, 1600)
+              }
+
               this.el.addEventListener("click", this.handleClick)
               this.el.addEventListener("scroll", this.handleScroll)
+              this.el.addEventListener("potok:scroll-to-value", this.handleScrollToValue)
 
               requestAnimationFrame(() => {
                 this.scrollToLatest()
@@ -221,8 +308,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
 
             destroyed() {
+              clearTimeout(this.highlightTimer)
               this.el.removeEventListener("click", this.handleClick)
               this.el.removeEventListener("scroll", this.handleScroll)
+              this.el.removeEventListener("potok:scroll-to-value", this.handleScrollToValue)
             },
 
             scrollToLatest() {
@@ -265,10 +354,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 this.autoResize()
                 this.syncSubmitButton()
               })
+              // Sent when a reply starts, so typing can begin right away.
+              this.handleEvent("value_composer_focus", () => {
+                this.el.focus()
+              })
               // Enter sends on devices with a fine pointer (desktop web); touch
               // keyboards keep Enter as a newline. Shift+Enter is always a newline.
               this.sendOnEnter = window.matchMedia("(pointer: fine)").matches
               this.handleKeydown = (event) => {
+                if (event.key === "Escape" && document.getElementById("group-value-reply-preview")) {
+                  event.preventDefault()
+                  this.pushEvent("cancel_reply_value", {})
+                  return
+                }
+
                 if (!this.sendOnEnter || event.key !== "Enter" || event.shiftKey || event.isComposing) {
                   return
                 }

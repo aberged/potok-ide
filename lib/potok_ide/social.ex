@@ -362,34 +362,45 @@ defmodule PotokIde.Social do
   end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
-    if not member_of_group?(creator, parent) do
-      {:error, :not_a_member_of_parent_group}
-    else
-      attrs =
-        attrs
-        |> Map.new()
-        |> Map.put_new("creator_id", creator.id)
-        |> Map.put_new("parent_id", parent.id)
-        |> Map.put_new("is_direct", false)
-        |> Map.put_new("is_root", false)
+    attrs = Map.new(attrs)
 
-      Multi.new()
-      |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
-      |> Multi.insert(:membership, fn %{group: group} ->
-        GroupMembership.changeset(%GroupMembership{}, %{
-          group_id: group.id,
-          profile_id: creator.id
-        })
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{group: group}} ->
-          broadcast_group_updated(parent)
-          {:ok, group}
+    cond do
+      not member_of_group?(creator, parent) ->
+        {:error, :not_a_member_of_parent_group}
 
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
-      end
+      # A thread group may only point at a chat value of its own parent.
+      not chat_value_in_group?(Map.get(attrs, "parent_value_id"), parent.id) ->
+        {:error, :invalid_parent_value}
+
+      true ->
+        attrs =
+          attrs
+          |> Map.put("creator_id", creator.id)
+          |> Map.put("parent_id", parent.id)
+          |> Map.put_new("is_direct", false)
+          |> Map.put_new("is_root", false)
+
+        insert_group_with_creator(creator, parent, attrs)
+    end
+  end
+
+  defp insert_group_with_creator(%Profile{} = creator, %Group{} = parent, attrs) do
+    Multi.new()
+    |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
+    |> Multi.insert(:membership, fn %{group: group} ->
+      GroupMembership.changeset(%GroupMembership{}, %{
+        group_id: group.id,
+        profile_id: creator.id
+      })
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{group: group}} ->
+        broadcast_group_updated(parent)
+        {:ok, group}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -952,10 +963,11 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  # Everything `Components.value_message/1` renders for a chat value.
+  # Everything `Components.value_message/1` renders for a chat value: the
+  # replied-to value with its author for the quote, and the value's thread.
   defp value_display_preloads do
     reactions = from(r in ValueReaction, order_by: [asc: r.id])
-    [:creator, :parent, reactions: {reactions, :profile}]
+    [:creator, :thread, parent: :creator, reactions: {reactions, :profile}]
   end
 
   def create_value(%Profile{} = creator, %Group{} = group, attrs) do
@@ -968,11 +980,16 @@ defmodule PotokIde.Social do
       not member_of_group?(creator, group) ->
         {:error, :not_a_member_of_group}
 
+      # The reply quote shows the parent's content, so it must be a chat
+      # value the group's members can already read.
+      not chat_value_in_group?(Map.get(attrs, "parent_id"), group.id) ->
+        {:error, :invalid_parent}
+
       true ->
         attrs =
           attrs
-          |> Map.put_new("creator_id", creator.id)
-          |> Map.put_new("group_id", group.id)
+          |> Map.put("creator_id", creator.id)
+          |> Map.put("group_id", group.id)
 
         Multi.new()
         |> Multi.insert(:value, Value.changeset(%Value{}, attrs))
@@ -1027,10 +1044,32 @@ defmodule PotokIde.Social do
     Map.get(attrs, "is_data", Map.get(attrs, :is_data)) in [true, "true"]
   end
 
+  # True when `value_id` is empty or names a chat value of the group.
+  defp chat_value_in_group?(value_id, _group_id) when value_id in [nil, ""], do: true
+
+  defp chat_value_in_group?(value_id, group_id) do
+    case Integer.parse(to_string(value_id)) do
+      {id, ""} ->
+        Repo.exists?(
+          from(v in Value, where: v.id == ^id and v.group_id == ^group_id and v.is_data == false)
+        )
+
+      _ ->
+        false
+    end
+  end
+
+  @doc """
+  Updates the content of the profile's own value. Only `content` and
+  `content_format` can change, so an edit never moves a value or changes what
+  it replies to. Replies are re-broadcast so their quotes show the new text.
+  """
   def update_value(%Profile{} = profile, %Value{} = value, attrs) do
     if value.creator_id != profile.id do
       {:error, :not_value_creator}
     else
+      attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
+
       value
       |> Value.changeset(attrs)
       |> Repo.update()
@@ -1038,6 +1077,7 @@ defmodule PotokIde.Social do
         {:ok, updated_value} ->
           updated_value = Repo.preload(updated_value, value_display_preloads(), force: true)
           broadcast_value_updated(updated_value)
+          broadcast_values_updated(reply_ids(updated_value))
           {:ok, updated_value}
 
         error ->
@@ -1050,11 +1090,15 @@ defmodule PotokIde.Social do
     if value.creator_id != profile.id do
       {:error, :not_value_creator}
     else
+      # Read before the delete: `values.parent_id` is nilified with it.
+      reply_ids = reply_ids(value)
+
       Repo.delete(value)
       |> case do
         {:ok, deleted_value} = ok ->
           broadcast_value_deleted(deleted_value)
           broadcast_group_unread_counts_updated(deleted_value.group_id)
+          broadcast_values_updated(reply_ids)
           ok
 
         error ->
@@ -1062,6 +1106,133 @@ defmodule PotokIde.Social do
       end
     end
   end
+
+  defp reply_ids(%Value{id: value_id}) do
+    from(v in Value, where: v.parent_id == ^value_id and v.is_data == false, select: v.id)
+    |> Repo.all()
+  end
+
+  # Re-sends values whose rendering depends on another row: replies quote
+  # their parent, and a value shows a link to its thread.
+  defp broadcast_values_updated([]), do: :ok
+
+  defp broadcast_values_updated(value_ids) do
+    from(v in Value, where: v.id in ^value_ids, preload: ^value_display_preloads())
+    |> Repo.all()
+    |> Enum.each(&broadcast_value_updated/1)
+  end
+
+  @doc """
+  Opens the thread of chat `value`: the sub-group of the value's group that
+  points at it through `parent_value_id`. The first call creates it as a
+  chat-first group with every member of `group`, named by `attrs["name"]`;
+  later calls return it and add the profile when it joined `group` after the
+  thread was created. Viewers of `group` are sent the value again so its
+  thread link appears.
+  """
+  def get_or_create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
+    cond do
+      value.group_id != group.id or value.is_data ->
+        {:error, :value_not_found}
+
+      group.is_direct or group.is_root ->
+        {:error, :threads_not_supported}
+
+      not member_of_group?(profile, group) ->
+        {:error, :not_a_member_of_group}
+
+      thread = get_value_thread(value) ->
+        join_value_thread(profile, thread)
+
+      true ->
+        create_value_thread(profile, group, value, attrs)
+    end
+  end
+
+  defp get_value_thread(%Value{id: value_id}) do
+    Repo.one(from(g in Group, where: g.parent_value_id == ^value_id))
+  end
+
+  defp join_value_thread(%Profile{} = profile, %Group{} = thread) do
+    %GroupMembership{}
+    |> GroupMembership.changeset(%{group_id: thread.id, profile_id: profile.id})
+    |> Repo.insert(on_conflict: :nothing)
+    |> case do
+      {:ok, _membership} -> {:ok, thread}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
+  defp create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
+    now = DateTime.utc_now(:second)
+
+    group_attrs = %{
+      "name" => Map.get(Map.new(attrs), "name"),
+      "description" => "",
+      "description_format" => :markdown,
+      "home_page" => :chat,
+      "is_public" => group.is_public,
+      "is_direct" => false,
+      "is_root" => false,
+      "creator_id" => profile.id,
+      "parent_id" => group.id,
+      "parent_value_id" => value.id
+    }
+
+    Multi.new()
+    |> Multi.insert(:group, Group.changeset(%Group{}, group_attrs))
+    |> Multi.insert_all(:memberships, GroupMembership, fn %{group: thread} ->
+      from(gm in GroupMembership,
+        where: gm.group_id == ^group.id,
+        select: %{
+          group_id: type(^thread.id, :id),
+          profile_id: gm.profile_id,
+          inserted_at: type(^now, :utc_datetime),
+          updated_at: type(^now, :utc_datetime)
+        }
+      )
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{group: thread}} ->
+        broadcast_group_updated(group)
+        broadcast_values_updated([value.id])
+        {:ok, thread}
+
+      {:error, :group, %Ecto.Changeset{} = changeset, _changes} ->
+        # Someone else opened the thread first: the unique index kept theirs.
+        case {Keyword.has_key?(changeset.errors, :parent_value_id), get_value_thread(value)} do
+          {true, %Group{} = thread} -> join_value_thread(profile, thread)
+          _ -> {:error, changeset}
+        end
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  @doc """
+  The chat value a thread group was started from, with its author, when the
+  profile can read the group the value lives in; nil otherwise.
+  """
+  def get_thread_origin(%Profile{} = profile, %Group{parent_value_id: value_id})
+      when is_integer(value_id) do
+    from(v in Value,
+      join: g in assoc(v, :group),
+      where: v.id == ^value_id and v.is_data == false,
+      preload: [:creator, group: g]
+    )
+    |> Repo.one()
+    |> case do
+      %Value{group: group} = value ->
+        if group.is_public or member_of_group?(profile, group), do: value
+
+      nil ->
+        nil
+    end
+  end
+
+  def get_thread_origin(_profile, _group), do: nil
 
   @doc """
   Adds the profile's `emoji` reaction to a chat value, or removes it when the
@@ -1280,8 +1451,15 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
+  @doc """
+  Child groups of `group` the profile can see, most active first. Options:
+  `:is_direct` and `:is_thread` (true or false keep only those groups, nil
+  keeps both; thread groups are the ones started from a chat value),
+  `:search` on the name, and `:limit` / `:offset`.
+  """
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
-    is_direct = normalize_group_direct_filter(opts[:is_direct])
+    is_direct = normalize_boolean_filter(opts[:is_direct])
+    is_thread = normalize_boolean_filter(opts[:is_thread])
     search_term = normalize_group_search_term(opts[:search])
 
     ordered_ids =
@@ -1289,6 +1467,7 @@ defmodule PotokIde.Social do
         group.id,
         profile.id,
         is_direct,
+        is_thread,
         search_term,
         normalize_query_limit(opts[:limit]),
         normalize_query_offset(opts[:offset])
@@ -1309,10 +1488,12 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc "Counts what `list_child_groups_for_profile/3` returns, with the same filters."
   def count_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
-    is_direct = normalize_group_direct_filter(opts[:is_direct])
+    is_direct = normalize_boolean_filter(opts[:is_direct])
+    is_thread = normalize_boolean_filter(opts[:is_thread])
     search_term = normalize_group_search_term(opts[:search])
 
     base_query =
@@ -1325,6 +1506,7 @@ defmodule PotokIde.Social do
     query =
       base_query
       |> maybe_filter_group_direct(is_direct)
+      |> maybe_filter_group_thread(is_thread)
       |> maybe_filter_group_name_search(search_term)
 
     from(g in query, select: count(g.id, :distinct))
@@ -1335,6 +1517,7 @@ defmodule PotokIde.Social do
          parent_group_id,
          profile_id,
          is_direct,
+         is_thread,
          search_term,
          limit,
          offset
@@ -1343,12 +1526,12 @@ defmodule PotokIde.Social do
     sql = ordered_child_group_ids_query(limit, offset)
 
     params =
-      [parent_group_id, profile_id, is_direct, search_term]
+      [parent_group_id, profile_id, is_direct, search_term, is_thread]
       |> maybe_append_query_param(limit)
       |> maybe_append_query_param(offset)
 
     case Repo.query(sql, params,
-           cache_statement: "social_ordered_child_group_ids_#{limit != nil}_#{offset != nil}"
+           cache_statement: "social_child_group_ids_#{limit != nil}_#{offset != nil}"
          ) do
       {:ok, %{rows: rows}} ->
         Enum.map(rows, fn [group_id] -> group_id end)
@@ -1368,6 +1551,7 @@ defmodule PotokIde.Social do
       WHERE g.parent_id = $1
         AND ($3::boolean IS NULL OR g.is_direct = $3)
         AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')
+        AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)
         AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
     ),
     subtree(root_id, group_id) AS (
@@ -1421,15 +1605,16 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $5"]
+  # $1..$5 are the filters of `ordered_child_group_ids_query/2`.
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $6"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
   defp maybe_add_offset_sql(parts, limit, offset)
        when is_integer(limit) and is_integer(offset),
-       do: parts ++ [" OFFSET $6"]
+       do: parts ++ [" OFFSET $7"]
 
   defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
-    do: parts ++ [" OFFSET $5"]
+    do: parts ++ [" OFFSET $6"]
 
   defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
 
@@ -1442,9 +1627,9 @@ defmodule PotokIde.Social do
   defp normalize_query_offset(offset) when is_integer(offset) and offset >= 0, do: offset
   defp normalize_query_offset(_offset), do: nil
 
-  defp normalize_group_direct_filter(true), do: true
-  defp normalize_group_direct_filter(false), do: false
-  defp normalize_group_direct_filter(_), do: nil
+  defp normalize_boolean_filter(true), do: true
+  defp normalize_boolean_filter(false), do: false
+  defp normalize_boolean_filter(_), do: nil
 
   defp normalize_group_search_term(search_term) when is_binary(search_term) do
     search_term
@@ -1462,6 +1647,14 @@ defmodule PotokIde.Social do
   defp maybe_filter_group_direct(query, direct_flag) when is_boolean(direct_flag) do
     from(g in query, where: g.is_direct == ^direct_flag)
   end
+
+  defp maybe_filter_group_thread(query, nil), do: query
+
+  defp maybe_filter_group_thread(query, true),
+    do: from(g in query, where: not is_nil(g.parent_value_id))
+
+  defp maybe_filter_group_thread(query, false),
+    do: from(g in query, where: is_nil(g.parent_value_id))
 
   defp maybe_filter_group_name_search(query, nil), do: query
 

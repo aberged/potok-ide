@@ -2729,6 +2729,240 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     end
   end
 
+  describe "value replies" do
+    setup %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "reply-live",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "reply-live-group")
+      member = add_group_member!(profile, group, "reply-live-mate")
+
+      {:ok, value} =
+        Social.create_value(member, group, %{
+          "content" => "**What** do you think?",
+          "content_format" => :markdown
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      %{
+        conn: conn,
+        account: account,
+        lv: lv,
+        profile: profile,
+        member: member,
+        group: group,
+        value: value
+      }
+    end
+
+    test "an inline reply quotes the replied-to value", %{lv: lv, group: group, value: value} do
+      lv
+      |> element("#value-reply-#{value.id}")
+      |> render_click()
+
+      assert_push_event(lv, "value_composer_focus", %{})
+      assert has_element?(lv, "#group-value-reply-preview", "reply-live-mate")
+      assert has_element?(lv, "#group-value-reply-preview", "What do you think?")
+
+      lv
+      |> form("#group-value-form", value: %{content: "I agree"})
+      |> render_submit()
+
+      refute has_element?(lv, "#group-value-reply-preview")
+
+      assert [reply] = Enum.filter(Social.list_group_values(group), &(&1.parent_id == value.id))
+      assert reply.content == "I agree"
+      assert has_element?(lv, "#value-reply-quote-#{reply.id}", "What do you think?")
+      assert has_element?(lv, ~s(#value-reply-quote-#{reply.id}[phx-click*="#value-#{value.id}"]))
+    end
+
+    test "cancelling the reply posts a plain value", %{lv: lv, group: group, value: value} do
+      lv
+      |> element("#value-reply-#{value.id}")
+      |> render_click()
+
+      lv
+      |> element("#group-value-reply-cancel")
+      |> render_click()
+
+      refute has_element?(lv, "#group-value-reply-preview")
+
+      lv
+      |> form("#group-value-form", value: %{content: "unrelated"})
+      |> render_submit()
+
+      assert %{parent_id: nil} =
+               Enum.find(Social.list_group_values(group), &(&1.content == "unrelated"))
+    end
+
+    test "ignores a parent_id sent by the client", %{lv: lv, group: group, value: value} do
+      render_hook(lv, "create_value", %{
+        "value" => %{"content" => "sneaky", "parent_id" => to_string(value.id)}
+      })
+
+      assert %{parent_id: nil} =
+               Enum.find(Social.list_group_values(group), &(&1.content == "sneaky"))
+    end
+
+    test "reply in thread opens a new sub-group started from the value", %{
+      conn: conn,
+      account: account,
+      lv: lv,
+      group: group,
+      value: value
+    } do
+      assert {:error, {:live_redirect, %{to: to}}} =
+               lv
+               |> element("#value-thread-#{value.id}")
+               |> render_click()
+
+      %{thread: thread} = Social.get_value_for_display(value.id)
+      assert to == ~p"/groups/#{thread.id}/values"
+      assert thread.parent_id == group.id
+
+      {:ok, thread_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(to)
+
+      assert has_element?(thread_lv, "#group-thread-origin", "reply-live-mate")
+      assert has_element?(thread_lv, "#group-thread-origin", "What do you think?")
+
+      assert has_element?(
+               thread_lv,
+               "#group-thread-origin-link[href='/groups/#{group.id}/values']"
+             )
+
+      assert has_element?(thread_lv, "#group-back-link[href='/groups/#{group.id}/values']")
+      assert has_element?(thread_lv, "#group-value-form")
+    end
+
+    test "a value with a thread links to it instead of offering a new one", %{
+      lv: lv,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+
+      assert has_element?(lv, "#value-thread-link-#{value.id}")
+      refute has_element?(lv, "#value-thread-#{value.id}")
+
+      assert {:error, {:live_redirect, %{to: to}}} =
+               lv
+               |> element("#value-thread-link-#{value.id}")
+               |> render_click()
+
+      assert to == ~p"/groups/#{thread.id}/values"
+    end
+
+    test "the sub-groups list marks threads and can hide them", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+      {:ok, plain} = Social.create_group(profile, group, %{"name" => "plain-sub"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/sub_groups")
+
+      assert has_element?(lv, "#child-group-#{thread.id} #group-thread-badge-#{thread.id}")
+      refute has_element?(lv, "#group-thread-badge-#{plain.id}")
+      assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='true']", "1")
+
+      lv
+      |> element("#group-children-threads-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='false']", "1")
+      refute has_element?(lv, "#child-group-#{thread.id}")
+      assert has_element?(lv, "#child-group-#{plain.id}")
+
+      lv
+      |> element("#group-children-threads-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#child-group-#{thread.id}")
+    end
+
+    test "hiding the only sub-groups explains the empty list", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/sub_groups")
+
+      refute has_element?(lv, "#group-children-threads-toggle")
+
+      {:ok, _thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+      assert has_element?(lv, "#group-children-threads-toggle")
+
+      lv
+      |> element("#group-children-threads-toggle")
+      |> render_click()
+
+      assert has_element?(lv, "#group-children-empty", "hidden")
+    end
+
+    test "a thread's header carries the thread mark", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{thread.id}/values")
+
+      assert has_element?(lv, "#group-thread-badge-#{thread.id}")
+    end
+
+    test "direct conversations offer inline replies but no threads", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      member: member
+    } do
+      {:ok, direct} = Social.get_or_create_direct_group(profile, member)
+      {:ok, direct_value} = Social.create_value(member, direct, %{"content" => "hi there"})
+
+      {:ok, direct_lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{direct.id}/values")
+
+      assert has_element?(direct_lv, "#value-reply-#{direct_value.id}")
+      refute has_element?(direct_lv, "#value-thread-#{direct_value.id}")
+    end
+  end
+
   defp create_child_group!(profile, name, attrs \\ %{}) do
     root_group = Social.get_root_group!()
 

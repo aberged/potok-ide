@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   alias PotokIdeWeb.Avatars
 
   alias PotokIde.Social
+  alias PotokIde.Social.{Group, Profile, Value}
   alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
@@ -634,11 +635,22 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           :if={!@group.is_root}
           class="min-w-0 shrink"
         >
-          <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-            <.highlighted_text
-              text={group_identity_name(@group, @current_profile)}
-              query={@highlight_query}
-            />
+          <div class="flex min-w-0 items-center gap-1.5">
+            <div class={[@text_class, "truncate font-semibold text-base-content"]}>
+              <.highlighted_text
+                text={group_identity_name(@group, @current_profile)}
+                query={@highlight_query}
+              />
+            </div>
+            <span
+              :if={thread_group?(@group)}
+              id={"group-thread-badge-#{@group.id}"}
+              title={gettext("Thread")}
+              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-primary"
+            >
+              <.icon name="hero-chat-bubble-left-right" class="size-3" />
+              <span class="hidden sm:inline">{gettext("Thread")}</span>
+            </span>
           </div>
 
           <div
@@ -663,6 +675,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     </.link>
     """
   end
+
+  # A thread is the sub-group started from a chat value.
+  defp thread_group?(%{parent_value_id: value_id}) when not is_nil(value_id), do: true
+  defp thread_group?(_group), do: false
 
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
@@ -791,6 +807,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :editing_value_id, :integer, default: nil
   attr :uses_api, :boolean, default: false
   attr :can_react, :boolean, default: false
+  attr :can_reply, :boolean, default: false
+  attr :can_thread, :boolean, default: false
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -803,6 +821,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
       |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
+      |> assign(:reply_parent, reply_parent(assigns.value))
+      |> assign(:thread, value_thread(assigns.value))
 
     ~H"""
     <div id={@dom_id} class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}>
@@ -856,13 +876,35 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
         <span class="font-semibold text-base-content">{@value.creator.username}</span>
         <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} />
-        <span
-          :if={@value.parent_id}
-          class="rounded-full bg-base-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-base-content/45"
+        <div
+          :if={@can_react or @can_reply or @can_thread or (@mine? and !@editing?)}
+          class="ml-auto flex items-center gap-1"
         >
-          {gettext("reply")}
-        </span>
-        <div :if={@can_react or (@mine? and !@editing?)} class="ml-auto flex items-center gap-1">
+          <button
+            :if={@can_reply and !@editing?}
+            id={"value-reply-#{@value.id}"}
+            type="button"
+            phx-click="start_reply_value"
+            phx-value-id={@value.id}
+            aria-label={gettext("Reply")}
+            title={gettext("Reply")}
+            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
+          >
+            <.icon name="hero-arrow-uturn-left" class="size-4" />
+          </button>
+          <%!-- Once the thread exists, the footer pill opens it instead. --%>
+          <button
+            :if={@can_thread and is_nil(@thread)}
+            id={"value-thread-#{@value.id}"}
+            type="button"
+            phx-click="open_value_thread"
+            phx-value-id={@value.id}
+            aria-label={gettext("Reply in thread")}
+            title={gettext("Reply in thread")}
+            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"
+          >
+            <.icon name="hero-chat-bubble-left-right" class="size-4" />
+          </button>
           <%!-- Opens the page's single emoji picker (`ReactionPicker` hook in the values tab). --%>
           <button
             :if={@can_react}
@@ -903,11 +945,40 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </div>
       </div>
 
+      <%!-- `data-highlighted` is set by the `.ValuesFeed` hook after jumping here from a reply quote. --%>
       <div class={[
-        "chat-bubble max-w-full rounded-3xl shadow-sm sm:max-w-[42rem]",
+        "chat-bubble max-w-full rounded-3xl shadow-sm ring-warning/60 transition-shadow duration-500 sm:max-w-[42rem]",
+        "group-data-highlighted/value:ring-4",
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
+        <%!-- Jumps to the replied-to value when it is in the feed; otherwise the dispatch finds no target. --%>
+        <button
+          :if={@reply_parent}
+          id={"value-reply-quote-#{@value.id}"}
+          type="button"
+          phx-click={JS.dispatch("potok:scroll-to-value", to: "#value-#{@reply_parent.id}")}
+          title={gettext("Show original value")}
+          class={[
+            "mb-2 block w-full min-w-0 rounded-xl border-l-4 px-3 py-1.5 text-left text-sm transition-colors",
+            @mine? &&
+              "border-primary-content/50 bg-primary-content/10 hover:bg-primary-content/15",
+            !@mine? && "border-primary/60 bg-base-200 hover:bg-base-300"
+          ]}
+        >
+          <span class={[
+            "block text-xs font-semibold",
+            if(@mine?, do: "text-primary-content", else: "text-primary")
+          ]}>
+            {@reply_parent.creator.username}
+          </span>
+          <span class={[
+            "line-clamp-2 wrap-break-word",
+            if(@mine?, do: "text-primary-content/80", else: "text-base-content/70")
+          ]}>
+            {Value.excerpt(@reply_parent, 160)}
+          </span>
+        </button>
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
         <div class="relative">
           <div class={[
@@ -949,40 +1020,72 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div
-        :if={@reactions != []}
-        id={"value-reactions-#{@value.id}"}
+        :if={@reactions != [] or @thread}
+        id={"value-footer-#{@value.id}"}
         class={[
           "chat-footer mt-1.5 flex max-w-full flex-wrap items-center gap-1 sm:max-w-[42rem]",
-          @mine? && "justify-end"
+          @mine? && "flex-row-reverse"
         ]}
       >
+        <%!-- An event rather than a link: opening the thread also joins members who came later. --%>
         <button
-          :for={reaction <- @reactions}
-          id={"value-reaction-#{@value.id}-#{reaction.key}"}
+          :if={@thread}
+          id={"value-thread-link-#{@value.id}"}
           type="button"
-          phx-click="toggle_reaction"
+          phx-click="open_value_thread"
           phx-value-id={@value.id}
-          phx-value-emoji={reaction.emoji}
-          aria-pressed={to_string(reaction.mine?)}
-          title={Enum.join(reaction.names, ", ")}
-          disabled={!@can_react}
+          disabled={!@can_thread}
+          title={@thread.name}
+          class="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 text-xs font-semibold text-primary shadow-xs transition duration-150 ease-out enabled:hover:-translate-y-px enabled:hover:bg-primary/15 enabled:active:scale-95 disabled:cursor-default phx-click-loading:animate-pulse"
+        >
+          <.icon name="hero-chat-bubble-left-right" class="size-4" />
+          {gettext("Thread")}
+          <.icon name="hero-chevron-right" class="size-3" />
+        </button>
+        <div
+          :if={@reactions != []}
+          id={"value-reactions-#{@value.id}"}
           class={[
-            "inline-flex h-7 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out",
-            "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
-            if(reaction.mine?,
-              do: "border-primary/50 bg-primary/10 text-primary",
-              else:
-                "border-base-300 bg-base-100 text-base-content/70 enabled:hover:border-base-content/25 enabled:hover:bg-base-200"
-            )
+            "flex flex-wrap items-center gap-1",
+            @mine? && "justify-end"
           ]}
         >
-          <span class="text-base leading-none">{reaction.emoji}</span>
-          <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
-        </button>
+          <button
+            :for={reaction <- @reactions}
+            id={"value-reaction-#{@value.id}-#{reaction.key}"}
+            type="button"
+            phx-click="toggle_reaction"
+            phx-value-id={@value.id}
+            phx-value-emoji={reaction.emoji}
+            aria-pressed={to_string(reaction.mine?)}
+            title={Enum.join(reaction.names, ", ")}
+            disabled={!@can_react}
+            class={[
+              "inline-flex h-7 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out",
+              "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
+              if(reaction.mine?,
+                do: "border-primary/50 bg-primary/10 text-primary",
+                else:
+                  "border-base-300 bg-base-100 text-base-content/70 enabled:hover:border-base-content/25 enabled:hover:bg-base-200"
+              )
+            ]}
+          >
+            <span class="text-base leading-none">{reaction.emoji}</span>
+            <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
+          </button>
+        </div>
       </div>
     </div>
     """
   end
+
+  # Association matches stay defensive: a value that was not loaded with
+  # `Social` display preloads renders without its quote or thread link.
+  defp reply_parent(%Value{parent: %Value{creator: %Profile{}} = parent}), do: parent
+  defp reply_parent(_value), do: nil
+
+  defp value_thread(%Value{thread: %Group{} = thread}), do: thread
+  defp value_thread(_value), do: nil
 
   # One pill per emoji, in the order the emoji was first used on the value.
   defp reaction_summary(reactions, current_profile) when is_list(reactions) do

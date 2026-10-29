@@ -69,6 +69,7 @@ defmodule PotokIde.Social.Group do
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
     |> add_check_constraints()
+    |> unique_constraint(:parent_value_id)
     |> validate_creation_constraints()
   end
 
