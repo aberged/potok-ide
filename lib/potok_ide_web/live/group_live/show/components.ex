@@ -689,12 +689,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :mentions, :map, default: %{}, doc: "resolved `@` mentions to highlight (`Value.mentions`)"
   attr :class, :any, default: nil
 
+  # The `rich-content` wrapper lives here, not in the rendered HTML: the
+  # sanitizer would strip its class.
   def formatted_content(assigns) do
-    assigns =
-      assign(assigns, :content_format_class, formatted_content_class(assigns.content_format))
-
     ~H"""
-    <div class={[@class, "ql-snow chat-show", @content_format_class]}>
+    <div class={[@class, "rich-content"]}>
       {cached_formatted_content(@content, @content_format, @uses_api, @mentions)}
     </div>
     """
@@ -702,15 +701,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   # Markdown parsing + sanitizing is pure in (content, format, uses_api,
   # mentions) and runs on every render of every streamed value, so the result
-  # is memoized.
+  # is memoized. The renderer modules' md5s are part of the key, so a code
+  # reload (dev) never serves HTML that the old code rendered.
   @formatted_content_cache_ttl :timer.hours(1)
 
   defp cached_formatted_content(content, content_format, uses_api, mentions) do
+    renderer =
+      {__MODULE__.module_info(:md5), PotokIdeWeb.RichContentScrubber.module_info(:md5),
+       Mentions.module_info(:md5)}
+
     key =
       {:formatted_content,
        :crypto.hash(
          :sha256,
-         :erlang.term_to_binary({content, content_format, uses_api, mentions})
+         :erlang.term_to_binary({renderer, content, content_format, uses_api, mentions})
        )}
 
     PotokIde.Cache.fetch(key, @formatted_content_cache_ttl, fn ->
@@ -1290,7 +1294,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp render_formatted_content(%{content: content, content_format: :markdown} = params) do
     content
-    |> markdown_to_quill_html()
+    |> markdown_to_html()
     |> sanitize_html()
     |> UTF8.replace_invalid()
     |> Mentions.highlight(params.mentions)
@@ -1300,62 +1304,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp render_formatted_content(%{content: content}) when is_binary(content),
     do: UTF8.replace_invalid(content)
 
-  defp formatted_content_class(:markdown), do: "chat-show-markdown"
-  defp formatted_content_class(_content_format), do: nil
-
   defp sanitize_html(content) when is_binary(content) do
     content
     |> UTF8.replace_invalid()
-    |> HtmlSanitizeEx.basic_html()
+    |> HtmlSanitizeEx.Scrubber.scrub(PotokIdeWeb.RichContentScrubber)
     |> UTF8.replace_invalid()
   end
 
-  defp markdown_to_quill_html(content) when is_binary(content) do
+  # Compact output: no indentation between tags to show up as stray spaces.
+  defp markdown_to_html(content) when is_binary(content) do
     content
     |> UTF8.replace_invalid()
     |> String.trim()
-    |> case do
-      "" ->
-        ~s(<div class="ql-editor"><p><br></p></div>)
-
-      markdown ->
-        markdown
-        |> Earmark.as_html!(breaks: true)
-        |> normalize_quill_paragraphs()
-        |> normalize_quill_code_blocks()
-        |> normalize_quill_strikethrough()
-        |> then(&~s(<div class="ql-editor">#{&1}</div>))
-    end
-  end
-
-  defp normalize_quill_strikethrough(html) when is_binary(html) do
-    html
-    |> String.replace("<del>", "<s>")
-    |> String.replace("</del>", "</s>")
-  end
-
-  defp normalize_quill_paragraphs(html) when is_binary(html) do
-    Regex.replace(~r/<p>(.*?)<\/p>/s, html, fn _, paragraph ->
-      normalized_paragraph =
-        paragraph
-        |> String.replace("\r\n", "")
-        |> String.replace("\n", "")
-        |> String.replace("\r", "")
-
-      ~s(<p>#{normalized_paragraph}</p>)
-    end)
-  end
-
-  defp normalize_quill_code_blocks(html) when is_binary(html) do
-    Regex.replace(~r/<pre><code(?: class="[^"]*")?>(.*?)<\/code><\/pre>/s, html, fn _, code ->
-      code
-      |> String.split("\n", trim: false)
-      |> Enum.map_join(fn line ->
-        content = if line == "", do: "<br>", else: line
-        ~s(<div class="ql-code-block">#{content}</div>)
-      end)
-      |> then(&~s(<div class="ql-code-block-container" spellcheck="false">#{&1}</div>))
-    end)
+    |> Earmark.as_html!(breaks: true, compact_output: true)
   end
 
   defp datetime_to_iso8601(datetime) do

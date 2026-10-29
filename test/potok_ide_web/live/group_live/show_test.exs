@@ -1627,7 +1627,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(viewer_account)
         |> live(~p"/groups/#{group.id}")
 
-      rendered = render(element(lv, "#group-panel-description .ql-snow.chat-show"))
+      rendered = render(element(lv, "#group-panel-description .rich-content"))
 
       assert has_element?(lv, "#group-panel-description")
       assert rendered =~ "unsafe link"
@@ -1678,7 +1678,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(lv, "#group-panel-description #group-app-frame iframe[sandbox]")
       refute has_element?(lv, "#group-app-frame iframe[sandbox*='allow-same-origin']")
-      refute has_element?(lv, "#group-panel-description .ql-snow.chat-show")
+      refute has_element?(lv, "#group-panel-description .rich-content")
 
       assert has_element?(lv, "#group-app-frame[data-storage-key='potok-app:#{group.id}']")
 
