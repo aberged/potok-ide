@@ -3,7 +3,7 @@
 <div class="flex flex-row gap-2">
 <img src="https://icon.icepanel.io/Technology/svg/Elixir.svg" width="50"/>
 <img src="https://upload.wikimedia.org/wikipedia/en/thumb/1/1e/Phoenix_Framework_Logo.svg/1920px-Phoenix_Framework_Logo.svg.png" width="55"/>
-<img src="https://tailwindcss.com/_next/static/media/tailwindcss-mark.96ee6a5a.svg" width="56"/>
+<img src="https://www.svgrepo.com/download/374118/tailwind.svg" width="56"/>
 <img src="https://img.daisyui.com/images/daisyui/mark-rotating.svg" alt="daisyUI logo" width="44"/>
 </div>
 
