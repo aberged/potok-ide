@@ -61,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       </style>
 
       <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 sm:gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <%!-- Goes back like the browser does. With no page of this site
                  behind (opened from a notification, a link or a new tab) it
@@ -207,19 +207,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="values"
             aria-label={gettext("Open values tab")}
-            class="relative cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            aria-current={@active_tab == "values" && "true"}
+            class={header_shortcut_class(@active_tab == "values")}
           >
-            <.icon
-              name="hero-chat-bubble-oval-left-ellipsis"
-              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-            />
+            <.icon name="hero-chat-bubble-oval-left-ellipsis" class="size-6 shrink-0" />
             <span
               :if={@current_group_unread_count > 0}
               id="group-values-unread-badge"
-              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+              class="absolute right-0 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
             >
               {unread_badge_label(@current_group_unread_count)}
             </span>
+          </button>
+          <button
+            :if={@group.parent_id != nil and @is_member}
+            id="group-files-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="files"
+            aria-label={gettext("Open files tab")}
+            aria-current={@active_tab == "files" && "true"}
+            class={header_shortcut_class(@active_tab == "files")}
+          >
+            <.icon name="hero-paper-clip" class="size-6 shrink-0" />
           </button>
           <button
             :if={(!@group.is_root and @is_member) or @group.is_public}
@@ -228,16 +238,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="sub_groups"
             aria-label={gettext("Open sub-groups tab")}
-            class="relative cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            aria-current={needs_children?(@group, @active_tab) && "true"}
+            class={header_shortcut_class(needs_children?(@group, @active_tab))}
           >
-            <.icon
-              name="hero-folder-open"
-              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-            />
+            <.icon name="hero-folder-open" class="size-6 shrink-0" />
             <span
               :if={@sub_groups_unread_count > 0}
               id="group-sub-groups-unread-badge"
-              class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+              class="absolute right-0 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
             >
               {unread_badge_label(@sub_groups_unread_count)}
             </span>
@@ -251,12 +259,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-click="switch_tab"
             phx-value-tab="invite_profile"
             aria-label={gettext("Open invite profile tab")}
-            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+            aria-current={@active_tab == "invite_profile" && "true"}
+            class={header_shortcut_class(@active_tab == "invite_profile")}
           >
-            <.icon
-              name="hero-user-plus"
-              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-            />
+            <.icon name="hero-user-plus" class="size-6 shrink-0" />
           </button>
           <button
             :if={@group.parent_id == nil && @is_member}
@@ -279,7 +285,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
               phx-click="switch_tab"
               phx-value-tab="members"
               aria-label={gettext("Open members tab")}
-              class="avatar-group relative -space-x-6 cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              aria-current={@active_tab == "members" && "true"}
+              class={[
+                "avatar-group relative -space-x-6 cursor-pointer rounded-full transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                @active_tab == "members" &&
+                  "ring-1 ring-base-content/30 ring-offset-2 ring-offset-base-100"
+              ]}
             >
               <div :for={m <- @first3_members} class="">
                 <Components.profile_identity
@@ -2867,6 +2878,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
+
+  # Header shortcuts: the active one gets a thin ring. `-m-1 p-1` makes room
+  # for it around the icon without taking more room in the header.
+  defp header_shortcut_class(active?) do
+    [
+      "relative -m-1 inline-flex cursor-pointer items-center justify-center rounded-full p-1 transition duration-150 hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      active? && "ring-1 ring-base-content/30"
+    ]
+  end
 
   defp normalize_select_nil(attrs, key) when is_binary(key) do
     case Map.get(attrs, key) do

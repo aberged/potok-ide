@@ -137,6 +137,39 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
       assert has_element?(lv, "#files-tree-file-#{own.id}")
     end
 
+    test "the header button opens the files tab", %{conn: conn, group: group} do
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, ~s(#group-values-summary[aria-current="true"]))
+      refute has_element?(lv, ~s(#group-files-summary[aria-current="true"]))
+
+      lv |> element("#group-files-summary") |> render_click()
+      assert_patch(lv, ~p"/groups/#{group.id}/files")
+
+      assert has_element?(lv, "#group-files-empty")
+      assert has_element?(lv, ~s(#group-files-summary[aria-current="true"]))
+      refute has_element?(lv, ~s(#group-values-summary[aria-current="true"]))
+    end
+
+    test "has no header button for visitors who are not members", %{conn: conn} do
+      {_owner_account, owner} = account_with_profile!("fhead-owner")
+      {visitor_account, _visitor} = account_with_profile!("fhead-visitor")
+
+      {:ok, public_group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "files-public-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, lv, _html} =
+        conn |> log_in_account(visitor_account) |> live(~p"/groups/#{public_group.id}")
+
+      assert has_element?(lv, "#group-subgroups-summary")
+      refute has_element?(lv, "#group-files-summary")
+    end
+
     test "shows a new file while the list is open", %{conn: conn, profile: profile, group: group} do
       {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
 
