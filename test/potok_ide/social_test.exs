@@ -2181,6 +2181,42 @@ defmodule PotokIde.SocialTest do
       assert value_id == value.id
     end
 
+    test "pushes to the value's author when another member adds a reaction", %{
+      owner: owner,
+      group: group
+    } do
+      configure_push_notifications(self())
+      author_account = account_fixture()
+
+      {:ok, author} =
+        Social.create_profile_for_account(author_account, %{
+          username: "react-author",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner, group, author)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, author)
+
+      {:ok, subscription} =
+        author_account.id
+        |> Accounts.get_account!()
+        |> Accounts.upsert_push_subscription(valid_push_subscription_attrs())
+
+      {:ok, value} = Social.create_value(author, group, %{"content" => "react to mine"})
+
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍")
+      assert_receive {:push_request, request_options}
+      assert request_options[:url] == subscription.endpoint
+
+      # Removing a reaction and reacting to one's own value notify nobody.
+      {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍")
+      {:ok, _value} = Social.toggle_value_reaction(author, group, value, "🎉")
+      refute_receive {:push_request, _request}
+    end
+
     test "rejects profiles that are not group members", %{
       outsider: outsider,
       group: group,

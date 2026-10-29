@@ -1403,6 +1403,7 @@ defmodule PotokIde.Social do
 
           {_result, %Value{} = updated_value} ->
             broadcast_value_updated(updated_value)
+            notify_value_creator_of_reaction(result, profile, group, updated_value)
             {:ok, updated_value}
         end
     end
@@ -3175,6 +3176,32 @@ defmodule PotokIde.Social do
     end)
   end
 
+  # Only a reaction that was added notifies (a racing duplicate comes back
+  # without an id), and only an author who is still a member and is not the
+  # reactor. Accounts that also hold the reactor's profile are skipped.
+  defp notify_value_creator_of_reaction(
+         {:ok, %ValueReaction{id: reaction_id, emoji: emoji}},
+         %Profile{} = reactor,
+         %Group{} = group,
+         %Value{creator: %Profile{} = creator} = value
+       )
+       when not is_nil(reaction_id) do
+    if creator.id != reactor.id and member_of_group?(creator, group) do
+      payload = value_reaction_notification_payload(reactor, group, value, emoji)
+      reactor_account_ids = recipient_account_ids_for_profiles([reactor.id])
+
+      run_notification(fn ->
+        creator
+        |> recipient_accounts_for_profile_notification(reactor_account_ids)
+        |> Enum.each(&deliver_account_push_notification(&1, payload, "value reaction", group.id))
+      end)
+    end
+
+    :ok
+  end
+
+  defp notify_value_creator_of_reaction(_result, _reactor, _group, _value), do: :ok
+
   defp recipient_account_ids_for_profiles([]), do: []
 
   defp recipient_account_ids_for_profiles(profile_ids) do
@@ -3335,6 +3362,28 @@ defmodule PotokIde.Social do
     %{
       group_value_notification_payload(creator, group, value)
       | title: "#{creator.username} mentioned you in #{group.name}"
+    }
+  end
+
+  # One tag per value, so later reactions replace the earlier notification.
+  defp value_reaction_notification_payload(
+         %Profile{} = reactor,
+         %Group{} = group,
+         %Value{} = value,
+         emoji
+       ) do
+    body =
+      case notification_excerpt(value.content) do
+        nil -> group.name
+        snippet -> "#{group.name}: #{snippet}"
+      end
+
+    %{
+      title: "#{reactor.username} reacted #{emoji} to your value",
+      body: body,
+      tag: "group-#{group.id}-value-#{value.id}-reactions",
+      url: "/groups/#{group.id}/values",
+      badge: profile_avatar_url(reactor)
     }
   end
 
