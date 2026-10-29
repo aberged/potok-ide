@@ -4,8 +4,11 @@ defmodule PotokIdeWeb.Locale do
   import Plug.Conn, except: [assign: 3]
   import Phoenix.Component, only: [assign: 3]
 
-  @default_locale "en"
+  @default_locale "sr"
   @supported_locales ~w(en pl sr)
+  # Nearly every browser lists English somewhere in Accept-Language, so it says
+  # little about the visitor; only the other languages override the default.
+  @browser_locales @supported_locales -- ["en"]
   @locale_names %{
     "en" => "English",
     "pl" => "Polski",
@@ -70,11 +73,14 @@ defmodule PotokIdeWeb.Locale do
     header
     |> String.split(",")
     |> Enum.find_value(fn entry ->
-      entry
-      |> String.split(";", parts: 2)
-      |> List.first()
-      |> String.trim()
-      |> normalize_locale()
+      locale =
+        entry
+        |> String.split(";", parts: 2)
+        |> List.first()
+        |> String.trim()
+        |> normalize_locale()
+
+      if locale in @browser_locales, do: locale
     end)
   end
 

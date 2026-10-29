@@ -44,7 +44,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert {:ok, _request} = Social.request_group_access(requester_profile, group)
 
       html =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(owner_account)
         |> get(~p"/requests")
         |> html_response(200)

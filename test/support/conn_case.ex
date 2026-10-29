@@ -26,14 +26,25 @@ defmodule PotokIdeWeb.ConnCase do
 
       # Import conveniences for testing with connections
       import Plug.Conn
-      import Phoenix.ConnTest
+      import Phoenix.ConnTest, except: [build_conn: 0]
       import PotokIdeWeb.ConnCase
     end
   end
 
   setup tags do
     PotokIde.DataCase.setup_sandbox(tags)
-    {:ok, conn: Phoenix.ConnTest.build_conn()}
+    {:ok, conn: build_conn()}
+  end
+
+  @doc """
+  Builds a conn whose session has already picked English.
+
+  Assertions check the English copy (the msgids), while visitors default to
+  Serbian. `PotokIdeWeb.LocaleTest` covers that default with
+  `Phoenix.ConnTest.build_conn/0`.
+  """
+  def build_conn do
+    Phoenix.ConnTest.build_conn() |> Phoenix.ConnTest.init_test_session(%{locale: "en"})
   end
 
   @doc """

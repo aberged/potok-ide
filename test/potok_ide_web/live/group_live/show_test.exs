@@ -390,7 +390,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute shown_online?(owner_lv, invitee_profile.id)
 
       {:ok, invitee_lv, _html} =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(invitee_account)
         |> live(~p"/groups/#{group.id}/members")
 
@@ -805,7 +805,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute shown_online?(owner_lv, invitee_profile.id)
 
       {:ok, invitee_lv, _html} =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(invitee_account)
         |> live(~p"/groups/#{group.id}/values")
 
@@ -1794,7 +1794,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert Social.count_pending_group_join_requests(group) == 1
 
       {:ok, owner_lv, _html} =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{group.id}/members")
 
@@ -1862,7 +1862,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert Social.count_pending_group_join_requests(group) == 0
 
       {:ok, requester_lv, _html} =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(requester_account)
         |> live(~p"/groups/#{group.id}")
 
@@ -2270,7 +2270,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 2})
 
       {:ok, child_lv, _html} =
-        Phoenix.ConnTest.build_conn()
+        build_conn()
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{child_group.id}/values")
 

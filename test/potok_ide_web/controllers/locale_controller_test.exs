@@ -14,7 +14,7 @@ defmodule PotokIdeWeb.LocaleControllerTest do
   test "falls back to default locale for unsupported locales", %{conn: conn} do
     conn = get(conn, ~p"/locale/de")
 
-    assert get_session(conn, :locale) == "en"
+    assert get_session(conn, :locale) == "sr"
     assert redirected_to(conn) == ~p"/"
   end
 end
