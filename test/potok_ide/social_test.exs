@@ -1127,6 +1127,81 @@ defmodule PotokIde.SocialTest do
       refute_receive {:push_request, _other_request}
     end
 
+    test "pushes to every device of each member account and skips members without one" do
+      request_pid = self()
+      original_config = Application.get_env(:potok_ide, PushNotifications, [])
+      on_exit(fn -> Application.put_env(:potok_ide, PushNotifications, original_config) end)
+
+      Application.put_env(
+        :potok_ide,
+        PushNotifications,
+        ttl: 60,
+        vapid_subject: "mailto:test@example.com",
+        vapid_public_key:
+          Base.url_encode64(<<4>> <> :crypto.strong_rand_bytes(64), padding: false),
+        vapid_private_key: Base.url_encode64(:crypto.strong_rand_bytes(32), padding: false),
+        request_fun: fn options ->
+          send(request_pid, {:push_request, options[:url]})
+          {:ok, %Req.Response{status: 201, body: ""}}
+        end
+      )
+
+      [sender, two_devices, no_device] =
+        for name <- ["devices-send", "devices-two", "devices-none"] do
+          account = account_fixture()
+
+          {:ok, profile} =
+            Social.create_profile_for_account(account, %{
+              username: name,
+              profile_picture_url: nil,
+              description: "",
+              description_format: :markdown,
+              sharing: :unique
+            })
+
+          {account, profile}
+        end
+
+      {_sender_account, sender_profile} = sender
+
+      {:ok, group} =
+        Social.create_group(sender_profile, Social.get_root_group!(), %{
+          "name" => "devices-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      for {_account, profile} <- [two_devices, no_device] do
+        {:ok, invitation} = Social.invite_profile_to_group(sender_profile, group, profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+      end
+
+      {two_devices_account, _profile} = two_devices
+
+      endpoints =
+        for _device <- 1..2 do
+          {:ok, subscription} =
+            Accounts.upsert_push_subscription(
+              two_devices_account,
+              valid_push_subscription_attrs()
+            )
+
+          subscription.endpoint
+        end
+
+      assert {:ok, _value} =
+               Social.create_value(sender_profile, group, %{
+                 "content" => "to both devices",
+                 "content_format" => :markdown
+               })
+
+      assert_receive {:push_request, first_url}
+      assert_receive {:push_request, second_url}
+      assert Enum.sort([first_url, second_url]) == Enum.sort(endpoints)
+      refute_receive {:push_request, _other_url}
+    end
+
     test "does not send push notifications for data values" do
       request_pid = self()
       original_config = Application.get_env(:potok_ide, PushNotifications, [])
@@ -1248,6 +1323,52 @@ defmodule PotokIde.SocialTest do
 
       assert values_by_id[default_value.id].is_data == false
       assert data_values_by_id[data_value.id].is_data == true
+    end
+
+    test "keeps the group's last_value_at on its newest chat value" do
+      {:ok, profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "lastval-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(profile, Social.get_root_group!(), %{
+          "name" => "last-value-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      last_value_at = fn -> PotokIde.Repo.get!(Group, group.id).last_value_at end
+      assert last_value_at.() == nil
+
+      {:ok, older} =
+        Social.create_value(profile, group, %{"content" => "older", "content_format" => :markdown})
+
+      older_at = DateTime.add(older.inserted_at, -60, :second)
+
+      from(v in PotokIde.Social.Value, where: v.id == ^older.id)
+      |> PotokIde.Repo.update_all(set: [inserted_at: older_at])
+
+      {:ok, newer} =
+        Social.create_value(profile, group, %{"content" => "newer", "content_format" => :markdown})
+
+      assert last_value_at.() == newer.inserted_at
+
+      # App data never moves it.
+      {:ok, _data} = Social.create_data_value(profile, group, %{"content" => "data:"})
+      assert last_value_at.() == newer.inserted_at
+
+      # Deleting the newest falls back to the one before it, then to none.
+      {:ok, _deleted} = Social.delete_value(profile, newer)
+      assert last_value_at.() == older_at
+
+      {:ok, _deleted} = Social.delete_value(profile, older)
+      assert last_value_at.() == nil
     end
   end
 
@@ -1687,6 +1808,18 @@ defmodule PotokIde.SocialTest do
         set: [inserted_at: base_inserted_at, updated_at: base_inserted_at]
       )
 
+      # The list sorts by `groups.last_value_at`, which follows each group's newest value.
+      for {group, seconds_ago} <- [
+            {older_unread_group, 120},
+            {read_group, 60},
+            {newest_unread_group, 0}
+          ] do
+        from(g in Group, where: g.id == ^group.id)
+        |> PotokIde.Repo.update_all(
+          set: [last_value_at: DateTime.add(base_inserted_at, -seconds_ago, :second)]
+        )
+      end
+
       assert :ok = Social.mark_group_values_read(owner_profile, read_group)
 
       assert Enum.map(
@@ -1857,9 +1990,292 @@ defmodule PotokIde.SocialTest do
       assert Social.count_root_group_unread_values(owner_profile) == 2
 
       # Marking an already-read group again must not broadcast.
-      Social.subscribe_profile(owner_profile)
+      forward_profile_messages(owner_profile)
       assert :ok = Social.mark_group_values_read(owner_profile, child_group)
-      refute_receive {:group_unread_counts_updated, _profile_id, _group_id}
+      refute_receive {:forwarded, {:group_unread_counts_updated, _profile_id, _group_id}}
+    end
+
+    test "unread_overview/1 gives own and sub-group counts; a value id moves the marker" do
+      [owner_profile, writer_profile] =
+        for name <- ["overview-own", "overview-wri"] do
+          {:ok, profile} =
+            Social.create_profile_for_account(account_fixture(), %{
+              username: name,
+              profile_picture_url: nil,
+              description: "",
+              description_format: :markdown,
+              sharing: :unique
+            })
+
+          profile
+        end
+
+      root_group = Social.get_root_group!()
+
+      {:ok, child_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "overview-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, grandchild_group} =
+        Social.create_group(owner_profile, child_group, %{
+          "name" => "overview-grandchild",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      for group <- [child_group, grandchild_group] do
+        {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      end
+
+      post = fn group, content ->
+        {:ok, value} =
+          Social.create_value(writer_profile, group, %{
+            "content" => content,
+            "content_format" => :markdown
+          })
+
+        value
+      end
+
+      first_value = post.(child_group, "first")
+      _second_value = post.(child_group, "second")
+      _grandchild_value = post.(grandchild_group, "below")
+
+      overview = Social.unread_overview(owner_profile)
+      root_id = root_group.id
+
+      assert overview.total == 3
+      assert overview.groups[root_group.id].subtree == 3
+
+      assert %{own: 2, subtree: 3, parent_id: ^root_id, direct?: false, visible?: true} =
+               overview.groups[child_group.id]
+
+      assert %{own: 1, subtree: 1} = overview.groups[grandchild_group.id]
+
+      assert Social.unread_counts_for(overview, [child_group.id, -1]) == %{
+               child_group.id => 3,
+               -1 => 0
+             }
+
+      assert Social.child_unread_summary(overview, child_group.id) == %{direct: 0, other: 1}
+      assert Social.unread_overview(nil) == %{total: 0, as_of: 0, groups: %{}}
+
+      assert :ok = Social.mark_group_values_read(owner_profile, child_group, first_value.id)
+      assert %{own: 1, subtree: 2} = Social.unread_overview(owner_profile).groups[child_group.id]
+
+      # The marker never moves back.
+      assert :ok = Social.mark_group_values_read(owner_profile, child_group)
+      assert :ok = Social.mark_group_values_read(owner_profile, child_group, first_value.id)
+      assert %{own: 0, subtree: 1} = Social.unread_overview(owner_profile).groups[child_group.id]
+    end
+
+    test "a new value reaches the other members as one more unread value, counted without a query" do
+      [owner_profile, writer_profile] = unread_profiles(["delta-owner", "delta-writer"])
+      root_group = Social.get_root_group!()
+      child_group = unread_group!(owner_profile, root_group, "delta-child")
+      grandchild_group = unread_group!(owner_profile, child_group, "delta-grandchild")
+
+      for group <- [child_group, grandchild_group] do
+        {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      end
+
+      before = Social.unread_overview(owner_profile)
+      Social.subscribe_profile(owner_profile)
+      forward_profile_messages(writer_profile)
+
+      {:ok, value} =
+        Social.create_value(writer_profile, grandchild_group, %{"content" => "news"})
+
+      owner_id = owner_profile.id
+      writer_id = writer_profile.id
+      grandchild_id = grandchild_group.id
+      assert_receive {:group_value_unread, ^owner_id, unread}
+
+      assert %{group_id: ^grandchild_id} = unread
+      assert unread.value_id == value.id
+
+      assert MapSet.new(unread.chain, & &1.id) ==
+               MapSet.new([root_group.id, child_group.id, grandchild_group.id])
+
+      # The writer read it by posting it; the writer's other pages recount.
+      assert_receive {:forwarded, {:group_unread_counts_updated, ^writer_id, ^grandchild_id}}
+      refute_received {:forwarded, {:group_value_unread, _profile_id, _unread}}
+
+      {:ok, added} = Social.add_unread_value(before, unread, MapSet.new())
+      counted = Social.unread_overview(owner_profile)
+
+      assert added.total == counted.total
+
+      assert Map.new(added.groups, &unread_entry/1) == Map.new(counted.groups, &unread_entry/1)
+      assert Social.add_unread_value(counted, unread, MapSet.new()) == :counted
+
+      # The value's own group is a membership; the others only the page can tell.
+      assert added.groups[grandchild_group.id].visible? == true
+      assert added.groups[child_group.id].visible? == nil
+
+      {:ok, shown} = Social.add_unread_value(before, unread, MapSet.new([child_group.id]))
+      assert shown.groups[child_group.id].visible? == true
+    end
+
+    test "root values reach no one, and a read is not echoed to the page that marked it" do
+      [owner_profile, writer_profile] = unread_profiles(["echo-owner", "echo-writer"])
+      root_group = Social.get_root_group!()
+      group = unread_group!(owner_profile, root_group, "echo-group")
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      {:ok, _value} = Social.create_value(writer_profile, group, %{"content" => "unread"})
+
+      Social.subscribe_profile(owner_profile)
+      forward_profile_messages(owner_profile)
+
+      {:ok, _root_value} = Social.create_value(writer_profile, root_group, %{"content" => "root"})
+      refute_receive {:group_value_unread, _profile_id, _unread}
+
+      owner_id = owner_profile.id
+      group_id = group.id
+      assert :ok = Social.mark_group_values_read(owner_profile, group)
+      assert_receive {:forwarded, {:group_unread_counts_updated, ^owner_id, ^group_id}}
+      refute_received {:group_unread_counts_updated, _profile_id, _group_id}
+    end
+
+    test "sort_child_groups/2 orders sub-groups like the database" do
+      [owner_profile, writer_profile] = unread_profiles(["sort-owner", "sort-writer"])
+      parent = unread_group!(owner_profile, Social.get_root_group!(), "sort-parent")
+
+      [quiet, one, read, two] =
+        for name <- ~w(quiet one read two),
+            do: unread_group!(owner_profile, parent, "sort-#{name}")
+
+      for group <- [one, two] do
+        {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      end
+
+      {:ok, _value} = Social.create_value(writer_profile, one, %{"content" => "one"})
+      {:ok, _value} = Social.create_value(writer_profile, two, %{"content" => "two"})
+      {:ok, _value} = Social.create_value(writer_profile, two, %{"content" => "two again"})
+      {:ok, _value} = Social.create_value(owner_profile, read, %{"content" => "own"})
+
+      groups = Social.list_child_groups_for_profile(parent, owner_profile)
+      overview = Social.unread_overview(owner_profile)
+
+      assert Enum.map(groups, & &1.id) == Enum.map([two, one, read, quiet], & &1.id)
+
+      assert groups
+             |> Enum.reverse()
+             |> Social.sort_child_groups(overview)
+             |> Enum.map(& &1.id) == Enum.map(groups, & &1.id)
+    end
+
+    test "a page of sub-groups comes with the count of all, like the list and the count" do
+      [owner_profile, writer_profile] = unread_profiles(["page-owner", "page-writer"])
+      parent = unread_group!(owner_profile, Social.get_root_group!(), "page-parent")
+
+      [_first, _second, third] =
+        for name <- ~w(first second third),
+            do: unread_group!(owner_profile, parent, "page-#{name}")
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, third, writer_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      {:ok, _value} = Social.create_value(writer_profile, third, %{"content" => "unread"})
+
+      # A thread of a value in the parent is one more sub-group of it.
+      {:ok, value} = Social.create_value(owner_profile, parent, %{"content" => "thread start"})
+
+      {:ok, _thread} =
+        Social.get_or_create_value_thread(owner_profile, parent, value, %{"name" => "talk"})
+
+      for opts <- [[], [limit: 2], [limit: 0], [search: "thi"], [is_thread: false]] do
+        assert Social.list_child_groups_page_for_profile(parent, owner_profile, opts) ==
+                 {Social.list_child_groups_for_profile(parent, owner_profile, opts),
+                  Social.count_child_groups_for_profile(parent, owner_profile, opts)}
+      end
+
+      third_id = third.id
+
+      assert {[%{id: ^third_id}], 4} =
+               Social.list_child_groups_page_for_profile(parent, owner_profile, limit: 1)
+
+      assert {_groups, 3} =
+               Social.list_child_groups_page_for_profile(parent, owner_profile, is_thread: false)
+    end
+
+    test "unread_overview/1 keeps as_of when nothing is unread" do
+      [profile] = unread_profiles(["asof-quiet"])
+      group = unread_group!(profile, Social.get_root_group!(), "asof-group")
+      {:ok, value} = Social.create_value(profile, group, %{"content" => "own"})
+
+      overview = Social.unread_overview(profile)
+
+      assert %{total: 0, groups: groups} = overview
+      assert groups == %{}
+      assert overview.as_of >= value.id
+    end
+  end
+
+  defp unread_profiles(names) do
+    for name <- names do
+      {:ok, profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: name,
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      profile
+    end
+  end
+
+  defp unread_group!(profile, parent, name) do
+    {:ok, group} =
+      Social.create_group(profile, parent, %{
+        "name" => name,
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => false
+      })
+
+    group
+  end
+
+  defp unread_entry({group_id, entry}),
+    do: {group_id, Map.take(entry, [:own, :subtree, :parent_id, :direct?])}
+
+  # Subscribes another process to the profile's topic, as another page of the
+  # profile would be, and forwards what it gets to the test: a broadcast from
+  # the test process itself may skip the test process.
+  defp forward_profile_messages(profile) do
+    test_pid = self()
+
+    start_supervised!(
+      Supervisor.child_spec(
+        {Task,
+         fn ->
+           Social.subscribe_profile(profile)
+           send(test_pid, :forwarding)
+           forward_messages(test_pid)
+         end},
+        id: {:forward_profile_messages, profile.id}
+      )
+    )
+
+    assert_receive :forwarding
+  end
+
+  defp forward_messages(test_pid) do
+    receive do
+      message ->
+        send(test_pid, {:forwarded, message})
+        forward_messages(test_pid)
     end
   end
 
@@ -1898,6 +2314,36 @@ defmodule PotokIde.SocialTest do
                [root_group.id, child_group.id, grandchild_group.id]
 
       assert Enum.map(Social.list_group_path(root_group), & &1.id) == [root_group.id]
+    end
+
+    test "the visible path keeps the group, public ancestors and memberships" do
+      [owner, viewer] = unread_profiles(["vpath-owner", "vpath-viewer"])
+      root_group = Social.get_root_group!()
+      private_group = unread_group!(owner, root_group, "vpath-private")
+
+      {:ok, public_group} =
+        Social.create_group(owner, private_group, %{
+          "name" => "vpath-public",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      member_group = unread_group!(owner, public_group, "vpath-member")
+      leaf_group = unread_group!(owner, member_group, "vpath-leaf")
+      {:ok, invitation} = Social.invite_profile_to_group(owner, member_group, viewer)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, viewer)
+
+      # The viewer is not in the private group, so it is left out of the path.
+      assert Enum.map(Social.list_visible_group_path_for_profile(leaf_group, viewer), & &1.id) ==
+               [root_group.id, public_group.id, member_group.id, leaf_group.id]
+
+      # The owner sees the whole path, loaded like any other query loads groups.
+      assert Social.list_visible_group_path_for_profile(leaf_group, owner) ==
+               Social.list_group_path(leaf_group)
+
+      assert [%Group{} = loaded] = Social.list_visible_group_path_for_profile(root_group, viewer)
+      assert loaded.id == root_group.id
     end
   end
 

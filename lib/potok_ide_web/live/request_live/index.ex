@@ -521,9 +521,6 @@ defmodule PotokIdeWeb.RequestLive.Index do
   def handle_info({:pending_invitations_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
-  def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
-    do: {:noreply, socket}
-
   @impl true
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id and

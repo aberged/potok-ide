@@ -22,7 +22,13 @@ defmodule PotokIdeWeb.Endpoint do
                  end)
 
   socket "/live", Phoenix.LiveView.Socket,
-    websocket: [connect_info: [session: @session_options], check_origin: @check_origin],
+    # A full sweep on every collection keeps each socket process's heap near
+    # its small live data instead of growing an old heap of rendered pages.
+    websocket: [
+      connect_info: [session: @session_options],
+      check_origin: @check_origin,
+      fullsweep_after: 0
+    ],
     longpoll: [connect_info: [session: @session_options], check_origin: @check_origin]
 
   # Serve at "/" the static files from "priv/static" directory.

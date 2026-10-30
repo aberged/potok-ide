@@ -21,6 +21,8 @@ defmodule PotokIde.Social.Group do
     field :is_root, :boolean, default: false
     field :is_root_public, :boolean, default: false
     field :uses_api, :boolean, default: false
+    # When the newest chat value was posted; kept by Social, never cast.
+    field :last_value_at, :utc_datetime
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__

@@ -107,6 +107,21 @@ defmodule PotokIde.Social.AccessTest do
       assert Access.effective_manifest(child).group_id == root.id
     end
 
+    test "a cached manifest follows role changes right away" do
+      owner = profile!("cache-owner")
+      group = group!(owner, "cache-group")
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, group)
+      role_keys = fn -> Enum.map(Access.effective_manifest(group).roles, & &1.key) end
+
+      assert role_keys.() == ["admin", "everyone"]
+
+      {:ok, role} = Social.create_group_role(owner, group, %{"name" => "helpers"})
+      assert role.key in role_keys.()
+
+      assert {:ok, _deleted} = Social.delete_group_role(owner, group, role.key)
+      assert role_keys.() == ["admin", "everyone"]
+    end
+
     test "only admins of the owning group change a manifest, and the default one is fixed" do
       owner = profile!("edit-owner")
       member = profile!("edit-member")

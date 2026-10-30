@@ -8,6 +8,8 @@ defmodule PotokIdeWeb.AvatarController do
   @cache_control "public, max-age=86400"
   # Generated initials PNGs are cached in memory so ImageMagick runs once per name.
   @initials_cache_ttl :timer.hours(24)
+  # The SVG is only ever shown as an image: nothing in it may run or load.
+  @svg_csp "default-src 'none'; style-src 'unsafe-inline'"
 
   def profile(conn, %{"id" => id}) do
     id
@@ -51,13 +53,22 @@ defmodule PotokIdeWeb.AvatarController do
     end
   end
 
-  defp send_initials(conn, name) do
+  # Initials are drawn as an SVG, which costs nothing to make. Push
+  # notifications cannot show SVG, so their URLs ask for `?format=png`, which
+  # ImageMagick renders (about 0.2 s of CPU) once per name.
+  defp send_initials(%{params: %{"format" => "png"}} = conn, name) do
     {image_data, content_type} =
       PotokIde.Cache.fetch({:initials_avatar, name}, @initials_cache_ttl, fn ->
-        generate_initials_avatar(name)
+        generate_initials_png(name)
       end)
 
     send_image(conn, image_data, content_type)
+  end
+
+  defp send_initials(conn, name) do
+    conn
+    |> put_resp_header("content-security-policy", @svg_csp)
+    |> send_image(initials_svg(name), "image/svg+xml")
   end
 
   defp send_image(conn, image_data, mime_type) do
@@ -118,7 +129,22 @@ defmodule PotokIdeWeb.AvatarController do
     {"#ea580c", "#ffedd5"}
   ]
 
-  defp generate_initials_avatar(username) do
+  defp generate_initials_png(username) do
+    svg = initials_svg(username)
+
+    case svg_to_png(svg) do
+      {:ok, png_data} ->
+        {png_data, "image/png"}
+
+      :error ->
+        case default_avatar_png() do
+          {:ok, png_data} -> {png_data, "image/png"}
+          :error -> {svg, "image/svg+xml"}
+        end
+    end
+  end
+
+  defp initials_svg(username) do
     initials =
       username
       |> to_string()
@@ -133,11 +159,14 @@ defmodule PotokIdeWeb.AvatarController do
         "" -> "?"
         initials -> String.upcase(initials)
       end
+      # Group names may hold any character.
+      |> Phoenix.HTML.html_escape()
+      |> Phoenix.HTML.safe_to_string()
 
     color_index = :erlang.phash2(username, length(@avatar_colors))
     {bg_color, text_color} = Enum.at(@avatar_colors, color_index)
 
-    svg = """
+    """
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
       <rect width="192" height="192" rx="96" fill="#{bg_color}"/>
       <text x="96" y="96" dominant-baseline="central" text-anchor="middle"
@@ -145,17 +174,6 @@ defmodule PotokIdeWeb.AvatarController do
             fill="#{text_color}">#{initials}</text>
     </svg>
     """
-
-    case svg_to_png(svg) do
-      {:ok, png_data} ->
-        {png_data, "image/png"}
-
-      :error ->
-        case default_avatar_png() do
-          {:ok, png_data} -> {png_data, "image/png"}
-          :error -> {svg, "image/svg+xml"}
-        end
-    end
   end
 
   defp default_avatar_png do

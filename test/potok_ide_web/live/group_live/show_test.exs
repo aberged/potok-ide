@@ -412,6 +412,59 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              end)
     end
 
+    test "renders only the header first and loads the panel once connected", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "skeleton-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "skeleton-group")
+      conn = log_in_account(conn, Accounts.get_account!(account.id))
+
+      dead =
+        conn
+        |> get(~p"/groups/#{group.id}/values")
+        |> html_response(200)
+        |> LazyHTML.from_document()
+
+      assert Enum.count(LazyHTML.query(dead, "#group-panel-loading")) == 1
+      assert Enum.empty?(LazyHTML.query(dead, "#group-panel-values"))
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+
+      refute has_element?(lv, "#group-panel-loading")
+      assert has_element?(lv, "#group-panel-values")
+    end
+
+    test "does not track presence on the root page, which shows no online dots", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, _profile} =
+        Social.create_profile_for_account(account, %{
+          username: "presence-root",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      root_group = Social.get_root_group!()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-presence-style")
+      assert Social.list_online_profile_ids_for_group(root_group) == MapSet.new()
+    end
+
     test "allows the group creator to remove a member from the members tab", %{conn: conn} do
       owner_account = account_fixture()
       invitee_account = account_fixture()
@@ -2306,6 +2359,51 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert_push_event(root_lv, "root_group_unread_count_updated", %{count: 1})
     end
 
+    test "moves a sub-group with a new unread value to the top of the list", %{conn: conn} do
+      owner_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "order-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, writer_profile} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "order-writer",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      older_group = create_child_group!(owner_profile, "order-older")
+      newer_group = create_child_group!(owner_profile, "order-newer")
+
+      {:ok, invitation} =
+        Social.invite_profile_to_group(owner_profile, older_group, writer_profile)
+
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+
+      {:ok, root_lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(owner_account.id))
+        |> live(~p"/groups/#{Social.get_root_group!().id}")
+
+      assert child_group_dom_ids(root_lv) ==
+               ["child-group-#{newer_group.id}", "child-group-#{older_group.id}"]
+
+      {:ok, _value} = Social.create_value(writer_profile, older_group, %{"content" => "news"})
+
+      assert has_element?(root_lv, "#group-unread-badge-#{older_group.id}", "1")
+
+      assert child_group_dom_ids(root_lv) ==
+               ["child-group-#{older_group.id}", "child-group-#{newer_group.id}"]
+    end
+
     test "allows the creator profile to delete a value", %{conn: conn} do
       account = account_fixture()
 
@@ -3030,6 +3128,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     value
     |> Integer.to_string()
     |> String.pad_leading(2, "0")
+  end
+
+  defp child_group_dom_ids(lv) do
+    lv
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#group-children-list > li")
+    |> LazyHTML.attribute("id")
   end
 
   defp eventually(fun, attempts \\ 20)

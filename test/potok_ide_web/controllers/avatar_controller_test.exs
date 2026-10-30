@@ -29,6 +29,21 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert content_type in ["image/png", "image/svg+xml"]
     end
 
+    test "draws initials as SVG unless PNG is asked for", %{conn: conn, profile: profile} do
+      conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+
+      assert response(conn, 200) =~ "<svg"
+      assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
+      assert [csp] = get_resp_header(conn, "content-security-policy")
+      assert csp =~ "default-src 'none'"
+
+      # Push notifications ask for PNG; without ImageMagick it falls back to SVG.
+      png_conn = get(build_conn(), ~p"/avatar/profile/#{profile.id}?format=png")
+      assert response(png_conn, 200)
+      [content_type] = get_resp_header(png_conn, "content-type")
+      assert content_type in ["image/png", "image/svg+xml"]
+    end
+
     test "decodes base64 image data and returns it", %{conn: conn, profile: profile} do
       # Create a small test PNG (1x1 transparent pixel)
       png_bytes =
@@ -152,6 +167,14 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert response(conn, 200)
       [content_type] = get_resp_header(conn, "content-type")
       assert content_type in ["image/png", "image/svg+xml"]
+    end
+
+    test "escapes the initials of the group name", %{conn: conn, group: group} do
+      {:ok, group} = group |> Ecto.Changeset.change(name: "&co <b>") |> Repo.update()
+
+      body = conn |> get(~p"/avatar/group/#{group.id}") |> response(200)
+
+      assert body =~ ">&amp;&lt;</text>"
     end
 
     test "decodes base64 picture data", %{conn: conn, group: group} do

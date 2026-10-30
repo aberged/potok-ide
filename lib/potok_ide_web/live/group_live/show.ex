@@ -41,6 +41,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
   # reload. 0 (the test config) applies them inline.
   @refresh_debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
+  # A value fans an unread refresh out to every member online. Each page waits
+  # a random part of this on top of the debounce, so a big group's members do
+  # not all recount or re-render in the same instant.
+  @unread_refresh_spread_ms 1_000
+  # Values posted by others only add to badges, so their pages wait longer:
+  # a run of posts in a big group becomes one render per page, spread over a
+  # few seconds, instead of one per post from every member online at once.
+  # The chat on screen does not wait: its values come as `:value_created`.
+  @unread_values_spread_ms 5_000
 
   @impl true
   def render(assigns) do
@@ -401,7 +410,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
       </div>
 
       <div class="flex min-h-0 flex-1 flex-col overflow-clip">
-        <div class="flex min-h-0 flex-1 flex-col gap-2">
+        <%!-- The first HTML only carries the header; the panel arrives once the socket connects. --%>
+        <div
+          :if={!@loaded?}
+          id="group-panel-loading"
+          aria-busy="true"
+          class="flex min-h-0 flex-1 flex-col gap-3 p-2"
+        >
+          <span class="sr-only">{gettext("Loading…")}</span>
+          <div :for={_row <- 1..4} class="h-14 animate-pulse rounded-3xl bg-base-200/70" />
+        </div>
+
+        <div :if={@loaded?} class="flex min-h-0 flex-1 flex-col gap-2">
           <SubGroupsTab.panel
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             group={@group}
@@ -532,10 +552,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
 
     if can_view_group?(group, is_member) do
-      if connected?(socket) do
-        Social.subscribe_group(group)
-        Social.subscribe_group_presence(group)
-      end
+      if connected?(socket), do: Social.subscribe_group(group)
 
       {:ok,
        socket
@@ -558,6 +575,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> allow_attachments_upload()
        |> assign(:loaded_children, [])
        |> assign(:pending_refresh, MapSet.new())
+       |> assign(:refresh_due_at, nil)
+       |> assign(:unread_overview, nil)
+       |> assign(:pending_unread_values, [])
        |> assign(:app_api_bucket, AppApi.new_bucket())
        |> assign(:child_pending_join_request_counts, %{})
        |> assign(:group_unread_counts, %{})
@@ -577,6 +597,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:members_count, 0)
        |> assign(:first3_members, [])
        |> assign(:online_profile_ids, MapSet.new())
+       |> assign(:presence_watched, MapSet.new())
        |> assign(:presence_profile_id, nil)
        |> assign_access(access)
        |> assign(:group, group)
@@ -1574,19 +1595,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_deleted, _group_id, _parent_id}, socket), do: {:noreply, socket}
 
-  def handle_info(%Phoenix.Socket.Broadcast{event: "presence_diff", topic: topic}, socket) do
-    if topic == Social.group_presence_topic(socket.assigns.group) do
-      {:noreply, refresh_group_presence(socket)}
+  def handle_info({:presence_changed, topic, key, online?}, socket) do
+    with true <- topic == Social.group_presence_topic(socket.assigns.group),
+         {profile_id, ""} <- Integer.parse(key) do
+      {:noreply, apply_presence_change(socket, profile_id, online?)}
     else
-      {:noreply, socket}
-    end
-  end
-
-  def handle_info({:presence_updated, topic}, socket) do
-    if topic == Social.group_presence_topic(socket.assigns.group) do
-      {:noreply, refresh_group_presence(socket)}
-    else
-      {:noreply, socket}
+      _ -> {:noreply, socket}
     end
   end
 
@@ -1616,6 +1630,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
+
+  def handle_info(
+        {:group_value_unread, profile_id, unread},
+        %{assigns: %{current_profile: %{id: current_profile_id}}} = socket
+      )
+      when profile_id == current_profile_id do
+    {:noreply,
+     socket
+     |> update(:pending_unread_values, &[unread | &1])
+     |> schedule_refresh(:unread_values)}
+  end
+
+  def handle_info({:group_value_unread, _profile_id, _unread}, socket), do: {:noreply, socket}
 
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do
@@ -1656,24 +1683,43 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> Map.get(:sub_groups_kind, normalize_sub_groups_kind(nil, group))
       |> normalize_sub_groups_kind(group)
 
+    socket =
+      socket
+      |> assign_group_path(group)
+      |> assign(:group, group)
+      |> assign(:active_tab, active_tab)
+      |> assign(:sub_groups_kind, sub_groups_kind)
+
+    # The first, disconnected render shows only the header. The panel and
+    # the counts load once the socket connects, so a page view queries them
+    # once instead of twice.
+    if connected?(socket) do
+      load_group_panel(socket, group, active_tab)
+    else
+      assign(socket, :loaded?, false)
+    end
+  end
+
+  defp load_group_panel(socket, group, active_tab) do
+    socket = maybe_mark_group_values_read(socket, group, active_tab)
+    # One unread overview orders the sub-groups and feeds every count.
+    overview = Social.unread_overview(socket.assigns.current_profile)
+
     socket
-    |> assign_group_path(group)
-    |> assign(:group, group)
-    |> assign(:active_tab, active_tab)
-    |> assign(:sub_groups_kind, sub_groups_kind)
+    |> assign(:loaded?, true)
+    |> put_unread_overview(overview)
     |> load_member_summary(group)
     |> load_join_request_data(group, active_tab)
-    |> maybe_load_children(group, active_tab)
+    |> maybe_load_children(group, active_tab, overview)
     |> assign_child_pending_join_request_counts()
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
     |> maybe_load_files(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
-    |> maybe_mark_group_values_read(group, active_tab)
-    |> assign_root_group_unread_count()
+    |> assign(:root_group_unread_count, overview.total)
+    |> assign_group_unread_counts(overview)
     |> maybe_push_root_group_unread_count()
-    |> assign_group_unread_counts()
     |> maybe_load_value_parent_options(group, active_tab)
   end
 
@@ -1701,30 +1747,61 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # A value posted in a big group fans out `group_updated` / unread broadcasts
   # to every member; collecting them for a moment turns a burst into one reload.
   defp schedule_refresh(socket, kind) do
-    already_scheduled? = MapSet.size(socket.assigns.pending_refresh) > 0
     socket = update(socket, :pending_refresh, &MapSet.put(&1, kind))
 
     case refresh_debounce_ms() do
-      0 ->
-        flush_refresh(socket)
+      0 -> flush_refresh(socket)
+      delay -> schedule_flush(socket, delay + refresh_spread_ms(kind))
+    end
+  end
 
-      delay ->
-        if not already_scheduled?, do: Process.send_after(self(), :flush_refresh, delay)
+  # One flush covers every pending kind. A kind that should not wait as long
+  # as the flush already planned sets an earlier one; the later timer then
+  # finds nothing to do, or flushes what came since a little early.
+  defp schedule_flush(socket, delay) do
+    due_at = System.monotonic_time(:millisecond) + delay
+
+    case socket.assigns.refresh_due_at do
+      planned when is_integer(planned) and planned <= due_at ->
         socket
+
+      _planned ->
+        Process.send_after(self(), :flush_refresh, delay)
+        assign(socket, :refresh_due_at, due_at)
     end
   end
 
   defp refresh_debounce_ms, do: @refresh_debounce_ms
 
+  defp refresh_spread_ms(:unread), do: :rand.uniform(@unread_refresh_spread_ms)
+  defp refresh_spread_ms(:unread_values), do: :rand.uniform(@unread_values_spread_ms)
+  defp refresh_spread_ms(_kind), do: 0
+
+  # `:unread_values` are values posted since the last count, added without a
+  # query; a reload or a recount counts them anyway.
   defp flush_refresh(socket) do
     pending = socket.assigns.pending_refresh
-    socket = assign(socket, :pending_refresh, MapSet.new())
+
+    socket =
+      socket
+      |> assign(:pending_refresh, MapSet.new())
+      |> assign(:refresh_due_at, nil)
 
     cond do
       MapSet.member?(pending, :group) -> reload_current_group(socket)
-      MapSet.member?(pending, :unread) -> refresh_unread_counts(socket)
+      MapSet.member?(pending, :unread) -> refresh_unread_counts_or_retry(socket)
+      MapSet.member?(pending, :unread_values) -> add_unread_values(socket)
       true -> socket
     end
+  end
+
+  # The counts refresh in the background, so one that finds no free database
+  # connection is tried again a little later instead of crashing the page,
+  # whose remount would cost the database far more.
+  defp refresh_unread_counts_or_retry(socket) do
+    refresh_unread_counts(socket)
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :unread)
   end
 
   defp reload_current_group(socket) do
@@ -1746,48 +1823,287 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp refresh_unread_counts(socket) do
+    overview = Social.unread_overview(socket.assigns.current_profile)
+
     socket
-    |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
-    |> assign_root_group_unread_count()
-    |> assign_group_unread_counts()
+    |> put_unread_overview(overview)
+    |> refresh_children_order(overview)
+    |> assign(:root_group_unread_count, overview.total)
+    |> assign_group_unread_counts(overview)
     |> maybe_push_root_group_unread_count()
   end
 
-  # Online dots are driven by the `#group-presence-style` rule set, so a
-  # presence diff only changes that one element instead of streamed items.
-  defp refresh_group_presence(socket) do
-    assign(
-      socket,
-      :online_profile_ids,
-      Social.list_online_profile_ids_for_group(socket.assigns.group)
+  # A fresh count holds every value broadcast before it, so the ones still
+  # waiting are dropped.
+  defp put_unread_overview(socket, overview) do
+    socket
+    |> assign(:unread_overview, overview)
+    |> assign(:pending_unread_values, [])
+  end
+
+  # Values others posted since the last count, one more unread each. They are
+  # added in memory; the sub-groups list is only read again when a value moves
+  # a sub-group that is not loaded. A value in the chat on screen is already
+  # read (`insert_created_value/2` marked it). When a value falls below a
+  # sub-group whose visibility only a recount can tell, the page recounts.
+  defp add_unread_values(%{assigns: %{unread_overview: nil}} = socket),
+    do: refresh_unread_counts_or_retry(socket)
+
+  defp add_unread_values(socket) do
+    %{unread_overview: overview, pending_unread_values: pending, group: group} = socket.assigns
+    visible_ids = page_group_ids(socket)
+    socket = assign(socket, :pending_unread_values, [])
+
+    pending
+    |> Enum.reverse()
+    |> Enum.reject(&shown_chat_value?(socket, &1))
+    |> Enum.reduce_while({overview, []}, fn unread, {overview, added} ->
+      case Social.add_unread_value(overview, unread, visible_ids) do
+        :counted ->
+          {:cont, {overview, added}}
+
+        {:ok, overview} ->
+          if unknown_child?(overview, unread, group),
+            do: {:halt, :recount},
+            else: {:cont, {overview, [unread | added]}}
+      end
+    end)
+    |> case do
+      :recount ->
+        refresh_unread_counts_or_retry(socket)
+
+      {_overview, []} ->
+        socket
+
+      {overview, added} ->
+        socket
+        |> assign(:unread_overview, overview)
+        |> move_children_up(overview, Enum.reverse(added))
+        |> assign(:root_group_unread_count, overview.total)
+        |> assign_group_unread_counts(overview)
+        |> maybe_push_root_group_unread_count()
+    end
+  end
+
+  defp shown_chat_value?(%{assigns: %{group: group, active_tab: active_tab}}, unread),
+    do: unread.group_id == group.id and needs_values?(group, active_tab)
+
+  # The groups the page shows, which the profile can therefore see.
+  defp page_group_ids(socket) do
+    tree_ids =
+      case socket.assigns.sub_group_tree do
+        %{ids: ids} -> ids
+        nil -> []
+      end
+
+    MapSet.new(
+      [socket.assigns.group.id | Enum.map(socket.assigns.loaded_children, & &1.id)] ++ tree_ids
     )
   end
 
+  defp unknown_child?(overview, unread, group) do
+    case page_child(unread, group) do
+      nil -> false
+      child -> overview.groups[child.id].visible? == nil
+    end
+  end
+
+  # The sub-group of the page's group that a value sits in or below, if any.
+  defp page_child(%{chain: chain}, %Group{id: group_id}),
+    do: Enum.find(chain, &(&1.parent_id == group_id))
+
+  # A value only adds to a count, so it can only move a sub-group up the list
+  # (unread first, then the newest). The list holds the first sub-groups in
+  # that order, so a loaded one is moved in memory. One that is not loaded may
+  # now belong in it, which only the database can tell, unless the list's
+  # filters leave it out anyway.
+  defp move_children_up(socket, overview, unread_values) do
+    %{group: group, active_tab: active_tab, loaded_children: loaded_children} = socket.assigns
+
+    if needs_children?(group, active_tab) and socket.assigns.sub_groups_view != "tree" do
+      loaded = Map.new(loaded_children, &{&1.id, &1})
+
+      {loaded, moved, unloaded?} =
+        Enum.reduce(unread_values, {loaded, MapSet.new(), false}, &track_child(socket, &1, &2))
+
+      # The loaded sub-groups keep their newest value either way, as the
+      # in-memory order needs it.
+      socket = assign(socket, :loaded_children, Enum.map(loaded_children, &loaded[&1.id]))
+
+      if unloaded? do
+        refresh_children_order(socket, overview)
+      else
+        children = Social.sort_child_groups(Map.values(loaded), overview)
+        stream_moved_children(socket, children, moved)
+      end
+    else
+      socket
+    end
+  end
+
+  # Notes the page's sub-group a value counts in: a loaded one gets the
+  # value's time when the value is its own, and one that is not loaded asks
+  # for the database if the list could show it.
+  defp track_child(socket, unread, {loaded, moved, unloaded?}) do
+    case page_child(unread, socket.assigns.group) do
+      nil ->
+        {loaded, moved, unloaded?}
+
+      %{id: id} = child ->
+        case loaded do
+          %{^id => loaded_child} when id == unread.group_id ->
+            loaded_child = %{loaded_child | last_value_at: unread.inserted_at}
+            {Map.put(loaded, id, loaded_child), MapSet.put(moved, id), unloaded?}
+
+          %{^id => _loaded_child} ->
+            {loaded, MapSet.put(moved, id), unloaded?}
+
+          _ ->
+            {loaded, moved, unloaded? or may_list_child?(socket, child)}
+        end
+    end
+  end
+
+  defp may_list_child?(socket, child) do
+    filters = children_filters(socket)
+
+    filters[:search] != "" or
+      (child.direct? == filters[:is_direct] and
+         not (child.thread? and filters[:is_thread] == false))
+  end
+
+  # Moved sub-groups are taken out and put back at their new place, in list
+  # order, so each lands after everything that precedes it; the others stay.
+  defp stream_moved_children(socket, children, moved) do
+    socket =
+      if Enum.map(children, & &1.id) == Enum.map(socket.assigns.loaded_children, & &1.id) do
+        children
+        |> Enum.filter(&MapSet.member?(moved, &1.id))
+        |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
+      else
+        moved_children = Enum.filter(children, &MapSet.member?(moved, &1.id))
+        socket = Enum.reduce(moved_children, socket, &stream_delete(&2, :children, &1))
+
+        children
+        |> Enum.with_index()
+        |> Enum.filter(fn {child, _index} -> MapSet.member?(moved, child.id) end)
+        |> Enum.reduce(socket, fn {child, index}, socket ->
+          stream_insert(socket, :children, child, at: index)
+        end)
+      end
+
+    assign(socket, :loaded_children, children)
+  end
+
+  # A new value can move a sub-group up the list (unread first, then the
+  # newest), so the order is read again. The groups are only fetched again when
+  # it changed; otherwise just the rows whose count changed are re-sent.
+  defp refresh_children_order(socket, overview) do
+    %{group: group, active_tab: active_tab, loaded_children: loaded_children} = socket.assigns
+
+    if needs_children?(group, active_tab) and socket.assigns.sub_groups_view != "tree" do
+      ids =
+        list_children_ids(socket,
+          limit: reload_limit(socket.assigns.children_pagination),
+          unread_overview: overview
+        )
+
+      if ids == Enum.map(loaded_children, & &1.id) do
+        previous_counts = socket.assigns.group_unread_counts
+        counts = Social.unread_counts_for(overview, ids)
+
+        loaded_children
+        |> Enum.filter(&(Map.get(previous_counts, &1.id, 0) != counts[&1.id]))
+        |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
+      else
+        maybe_load_children(socket, group, active_tab, overview)
+      end
+    else
+      socket
+    end
+  end
+
+  # Online dots are driven by the `#group-presence-style` rule set, so a
+  # presence change only re-renders that one element instead of streamed
+  # items. The rule set covers just the profiles whose dot is on the page
+  # (see `watch_presence/2`). The root page shows no dots at all, so it
+  # neither tracks the viewer nor watches anyone: everybody passes through it.
   defp sync_group_presence(socket) do
     current_profile = socket.assigns.current_profile
     previous_profile_id = socket.assigns.presence_profile_id
     group = socket.assigns.group
 
-    socket =
-      if connected?(socket) do
-        if is_integer(previous_profile_id) and
-             (is_nil(current_profile) or previous_profile_id != current_profile.id) do
-          Social.untrack_group_presence(self(), group, previous_profile_id)
-        end
+    tracked_profile_id =
+      if connected?(socket) and not group.is_root and current_profile,
+        do: current_profile.id
 
-        if current_profile && current_profile.id != previous_profile_id do
-          case Social.track_group_presence(self(), group, current_profile) do
-            {:ok, _meta} -> :ok
-            {:error, _reason} -> :ok
-          end
-        end
+    if previous_profile_id != tracked_profile_id do
+      if previous_profile_id,
+        do: Social.untrack_group_presence(self(), group, previous_profile_id)
 
-        assign(socket, :online_profile_ids, Social.list_online_profile_ids_for_group(group))
-      else
-        assign(socket, :online_profile_ids, MapSet.new())
+      if tracked_profile_id do
+        case Social.track_group_presence(self(), group, current_profile) do
+          {:ok, _meta} -> :ok
+          {:error, _reason} -> :ok
+        end
       end
+    end
 
-    assign(socket, :presence_profile_id, current_profile && current_profile.id)
+    # The viewer is online as soon as it is tracked; the presence broadcast
+    # for its own join arrives a moment later.
+    online = MapSet.delete(socket.assigns.online_profile_ids, previous_profile_id)
+    online = if tracked_profile_id, do: MapSet.put(online, tracked_profile_id), else: online
+
+    socket
+    |> assign(:presence_profile_id, tracked_profile_id)
+    |> assign(:online_profile_ids, online)
+  end
+
+  # Subscribes to the presence of the profiles whose dot was just rendered
+  # (members and value authors), so a join or leave elsewhere reaches only
+  # the pages that show that profile.
+  defp watch_presence(socket, profile_ids) do
+    watched = socket.assigns.presence_watched
+
+    new_ids =
+      profile_ids
+      |> Enum.uniq()
+      |> Enum.reject(&MapSet.member?(watched, &1))
+
+    if new_ids != [] and connected?(socket) and not socket.assigns.group.is_root do
+      group = socket.assigns.group
+      online_ids = Enum.filter(new_ids, &Social.watch_group_presence(group, &1))
+
+      socket
+      |> assign(:presence_watched, Enum.into(new_ids, watched))
+      |> then(fn socket ->
+        if online_ids == [],
+          do: socket,
+          else: update(socket, :online_profile_ids, &Enum.into(online_ids, &1))
+      end)
+    else
+      socket
+    end
+  end
+
+  defp apply_presence_change(socket, profile_id, online?) do
+    online = socket.assigns.online_profile_ids
+
+    cond do
+      online? and not MapSet.member?(online, profile_id) ->
+        assign(socket, :online_profile_ids, MapSet.put(online, profile_id))
+
+      # This page's own presence keeps the viewer online whatever its other
+      # tabs do.
+      online? or profile_id == socket.assigns.presence_profile_id ->
+        socket
+
+      MapSet.member?(online, profile_id) ->
+        assign(socket, :online_profile_ids, MapSet.delete(online, profile_id))
+
+      true ->
+        socket
+    end
   end
 
   defp maybe_scroll_values_to_latest(socket, previous_newest_value_id) do
@@ -1816,8 +2132,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = socket.assigns.group
     active_tab = socket.assigns.active_tab
 
-    # Unread badges are refreshed by the `group_unread_counts_updated` broadcast
-    # that Social sends to every member right after the value broadcast.
+    # Unread badges are updated by the `group_value_unread` broadcast that
+    # Social sends to every member right after the value broadcast. The value
+    # is marked read here, so this page skips that one (`shown_chat_value?/2`).
     if needs_values?(group, active_tab) and
          not MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
       socket
@@ -1825,7 +2142,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:newest_value_id, max(socket.assigns.newest_value_id || 0, value.id))
       |> assign(:oldest_value_id, socket.assigns.oldest_value_id || value.id)
       |> stream_insert(:values, value)
-      |> maybe_mark_group_values_read(group, active_tab)
+      |> watch_presence([value.creator_id])
+      |> mark_value_read(value)
       |> push_event("scroll_values_to_latest", %{})
     else
       socket
@@ -2223,11 +2541,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
     )
   end
 
-  defp count_children(socket) do
-    Social.count_child_groups_for_profile(
+  # The loaded window with the count of all sub-groups, in one query.
+  defp list_children_page(socket, opts) do
+    Social.list_child_groups_page_for_profile(
       socket.assigns.group,
       socket.assigns.current_profile,
-      children_filters(socket)
+      Keyword.merge(opts, children_filters(socket))
+    )
+  end
+
+  defp list_children_ids(socket, opts) do
+    Social.list_child_group_ids_for_profile(
+      socket.assigns.group,
+      socket.assigns.current_profile,
+      Keyword.merge(opts, children_filters(socket))
     )
   end
 
@@ -2269,7 +2596,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp reload_children(socket) do
     socket
-    |> maybe_load_children(socket.assigns.group, socket.assigns.active_tab)
+    |> maybe_load_children(
+      socket.assigns.group,
+      socket.assigns.active_tab,
+      socket.assigns.unread_overview
+    )
     |> assign_child_pending_join_request_counts()
     |> assign_group_unread_counts()
   end
@@ -2306,7 +2637,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket
     |> update(
       :group_unread_counts,
-      &Map.merge(&1, Social.list_group_unread_counts(current_profile, children))
+      &Map.merge(&1, unread_counts_for(socket, children))
     )
     |> update(
       :child_pending_join_request_counts,
@@ -2344,6 +2675,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         )
       )
       |> stream(:members, entries)
+      |> watch_presence(Enum.map(entries, & &1.id))
     else
       socket
     end
@@ -2363,6 +2695,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:values_has_more?, has_more?)
       |> assign(:oldest_value_id, first_value_id(older_values) || socket.assigns.oldest_value_id)
       |> stream(:values, Enum.reverse(older_values), at: 0)
+      |> watch_presence(Enum.map(older_values, & &1.creator_id))
     else
       socket
     end
@@ -2416,7 +2749,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:pending_join_requests_count, pending_join_requests_count)
   end
 
-  defp maybe_load_children(socket, group, active_tab) do
+  defp maybe_load_children(socket, group, active_tab, unread_overview) do
     cond do
       not needs_children?(group, active_tab) ->
         socket
@@ -2428,14 +2761,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       true ->
         pagination = socket.assigns.children_pagination
-        entries = list_children(socket, limit: reload_limit(pagination))
+
+        {entries, total_count} =
+          list_children_page(socket,
+            limit: reload_limit(pagination),
+            unread_overview: unread_overview
+          )
 
         socket
         |> assign(:loaded_children, entries)
         |> assign(:sub_group_tree, nil)
         |> assign(
           :children_pagination,
-          loaded_pagination(pagination, length(entries), count_children(socket))
+          loaded_pagination(pagination, length(entries), total_count)
         )
         |> assign(:thread_sub_groups_count, count_thread_children(socket))
         |> stream(:children, entries, reset: true)
@@ -2482,6 +2820,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         loaded_pagination(pagination, length(entries), Social.count_group_members(group))
       )
       |> stream(:members, entries, reset: true)
+      |> watch_presence(Enum.map(entries, & &1.id))
     else
       socket
     end
@@ -2498,6 +2837,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:oldest_value_id, first_value_id(values))
       |> assign(:newest_value_id, last_value_id(values))
       |> stream(:values, values, reset: true)
+      |> watch_presence(Enum.map(values, & &1.creator_id))
     else
       socket
     end
@@ -2678,6 +3018,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # A value that just arrived is the newest one the viewer has seen, so its id
+  # is the read marker; no need to look up the group's latest value.
+  defp mark_value_read(socket, %Value{} = value) do
+    _ =
+      Social.mark_group_values_read(
+        socket.assigns.current_profile,
+        socket.assigns.group,
+        value.id
+      )
+
+    socket
+  end
+
   defp maybe_mark_group_values_read(socket, group, active_tab) do
     if needs_values?(group, active_tab) and socket.assigns.current_profile do
       _ = Social.mark_group_values_read(socket.assigns.current_profile, group)
@@ -2687,35 +3040,38 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp assign_group_unread_counts(%{assigns: %{current_profile: nil}} = socket) do
-    socket
-    |> assign(:group_unread_counts, %{})
-    |> assign(:current_group_unread_count, 0)
-    |> assign(:sub_groups_unread_count, 0)
-    |> assign(:direct_sub_groups_unread_count, 0)
-    |> assign(:other_sub_groups_unread_count, 0)
-    |> put_sub_group_tree_unread_counts()
+  defp assign_group_unread_counts(socket) do
+    assign_group_unread_counts(socket, current_unread_overview(socket))
   end
 
-  defp assign_group_unread_counts(%{assigns: %{group: group}} = socket) do
-    current_profile = socket.assigns.current_profile
+  defp unread_counts_for(socket, groups) do
+    Social.unread_counts_for(current_unread_overview(socket), Enum.map(groups, & &1.id))
+  end
 
+  # The overview the page keeps up to date; only a page that has not loaded
+  # its panel yet counts.
+  defp current_unread_overview(socket) do
+    socket.assigns.unread_overview || Social.unread_overview(socket.assigns.current_profile)
+  end
+
+  defp assign_group_unread_counts(%{assigns: %{group: group}} = socket, overview) do
     tree_ids =
       case Map.get(socket.assigns, :sub_group_tree) do
         %{ids: ids} -> ids
         nil -> []
       end
 
-    groups = [group | Map.get(socket.assigns, :loaded_children, [])] ++ tree_ids
+    group_ids =
+      [group.id | Enum.map(Map.get(socket.assigns, :loaded_children, []), & &1.id)] ++ tree_ids
 
-    group_unread_counts = Social.list_group_unread_counts(current_profile, groups)
-    current_group_unread_count = Social.count_group_direct_unread_values(current_profile, group)
+    group_unread_counts = Social.unread_counts_for(overview, group_ids)
+    current_group_unread_count = get_in(overview.groups, [group.id, :own]) || 0
 
     sub_groups_unread_count =
       max(Map.get(group_unread_counts, group.id, 0) - current_group_unread_count, 0)
 
     %{direct: direct_sub_groups_unread_count, other: other_sub_groups_unread_count} =
-      Social.child_group_unread_summary(current_profile, group)
+      Social.child_unread_summary(overview, group.id)
 
     socket
     |> assign(:group_unread_counts, group_unread_counts)
@@ -2756,18 +3112,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
         socket.assigns.current_profile,
         Map.get(socket.assigns, :loaded_children, [])
       )
-    )
-  end
-
-  defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
-    assign(socket, :root_group_unread_count, 0)
-  end
-
-  defp assign_root_group_unread_count(socket) do
-    assign(
-      socket,
-      :root_group_unread_count,
-      Social.count_root_group_unread_values(socket.assigns.current_profile)
     )
   end
 

@@ -87,15 +87,12 @@ defmodule PotokIdeWeb.AccountAuth do
   pages that render the app layout, not on every request.
   """
   def assign_nav_counts(conn, _opts) do
-    current_profile = conn.assigns[:current_profile]
+    counts = Social.nav_counts(conn.assigns[:current_profile])
 
     conn
-    |> assign(:pending_invitations_count, pending_invitations_count_for_profile(current_profile))
-    |> assign(
-      :pending_group_join_requests_count,
-      pending_group_join_requests_count_for_profile(current_profile)
-    )
-    |> assign(:root_group_unread_count, root_group_unread_count_for_profile(current_profile))
+    |> assign(:pending_invitations_count, counts.pending_invitations)
+    |> assign(:pending_group_join_requests_count, counts.pending_group_join_requests)
+    |> assign(:root_group_unread_count, counts.root_unread)
   end
 
   defp ensure_account_token(conn) do
@@ -309,18 +306,63 @@ defmodule PotokIdeWeb.AccountAuth do
         Scope.for_account(account)
       end)
 
-    Phoenix.Component.assign_new(socket, :current_profile, fn ->
+    socket
+    |> Phoenix.Component.assign_new(:current_profile, fn ->
       current_profile_for_scope(socket.assigns[:current_scope])
     end)
-    |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
-      pending_invitations_count_for_profile(socket.assigns[:current_profile])
-    end)
-    |> Phoenix.Component.assign_new(:pending_group_join_requests_count, fn ->
-      pending_group_join_requests_count_for_profile(socket.assigns[:current_profile])
-    end)
-    |> Phoenix.Component.assign_new(:root_group_unread_count, fn ->
-      root_group_unread_count_for_profile(socket.assigns[:current_profile])
-    end)
+    |> mount_nav_counts()
+  end
+
+  @doc """
+  Assigns the header badges unless they already are. They cost one query
+  (`Social.nav_counts/2`), made once the socket is connected: the first HTML
+  shows them empty, as the rest of the page arrives after the connect too.
+  The unread count's `as_of` goes to the socket's private
+  `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values; a
+  view that counts unread values itself
+  (`PotokIdeWeb.ProfileAuth.counts_unread_itself?/1`) gets no unread count.
+  """
+  def mount_nav_counts(socket) do
+    keys = [
+      :pending_invitations_count,
+      :pending_group_join_requests_count,
+      :root_group_unread_count
+    ]
+
+    counts =
+      cond do
+        Enum.all?(keys, &Map.has_key?(socket.assigns, &1)) ->
+          nil
+
+        Phoenix.LiveView.connected?(socket) ->
+          Social.nav_counts(socket.assigns[:current_profile],
+            unread: not PotokIdeWeb.ProfileAuth.counts_unread_itself?(socket)
+          )
+
+        true ->
+          Social.nav_counts(nil)
+      end
+
+    if counts do
+      socket
+      |> put_root_unread_as_of(counts)
+      |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
+        counts.pending_invitations
+      end)
+      |> Phoenix.Component.assign_new(:pending_group_join_requests_count, fn ->
+        counts.pending_group_join_requests
+      end)
+      |> Phoenix.Component.assign_new(:root_group_unread_count, fn -> counts.root_unread end)
+    else
+      socket
+    end
+  end
+
+  # Only when this count is the one the badge shows.
+  defp put_root_unread_as_of(socket, counts) do
+    if Map.has_key?(socket.assigns, :root_group_unread_count),
+      do: socket,
+      else: Phoenix.LiveView.put_private(socket, :root_unread_as_of, counts.root_unread_as_of)
   end
 
   defp current_profile_for_scope(%Scope{account: %Accounts.Account{} = account}),
@@ -332,21 +374,6 @@ defmodule PotokIdeWeb.AccountAuth do
     do: Social.get_account_current_profile(account)
 
   defp current_profile_for_account(_), do: nil
-
-  defp pending_invitations_count_for_profile(nil), do: 0
-
-  defp pending_invitations_count_for_profile(profile),
-    do: Social.count_pending_invitations(profile)
-
-  defp pending_group_join_requests_count_for_profile(nil), do: 0
-
-  defp pending_group_join_requests_count_for_profile(profile),
-    do: Social.count_pending_group_join_requests_for_approver(profile)
-
-  defp root_group_unread_count_for_profile(nil), do: 0
-
-  defp root_group_unread_count_for_profile(profile),
-    do: Social.count_root_group_unread_values(profile)
 
   @doc "Returns the path to redirect to after log in."
   # the account was already logged in, redirect to settings

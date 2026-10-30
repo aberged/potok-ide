@@ -206,21 +206,29 @@ defmodule PotokIde.Accounts do
   Delivers a push notification payload to all saved subscriptions for an account.
   """
   def deliver_push_notification(%Account{} = account, payload) when is_map(payload) do
-    subscriptions = list_push_subscriptions(account)
+    account
+    |> list_push_subscriptions()
+    |> deliver_push_notification_to_subscriptions(payload)
+  end
 
-    if subscriptions == [] do
-      {:error, :no_push_subscriptions}
-    else
-      results =
-        subscriptions
-        |> Task.async_stream(&deliver_push_notification_to_subscription(&1, payload),
-          ordered: false,
-          timeout: :infinity
-        )
-        |> Enum.map(fn {:ok, result} -> result end)
+  @doc """
+  Delivers a push notification payload to subscriptions that are already
+  loaded, so a caller notifying many accounts can load them all in one query.
+  """
+  def deliver_push_notification_to_subscriptions([], _payload),
+    do: {:error, :no_push_subscriptions}
 
-      {:ok, results}
-    end
+  def deliver_push_notification_to_subscriptions(subscriptions, payload)
+      when is_list(subscriptions) and is_map(payload) do
+    results =
+      subscriptions
+      |> Task.async_stream(&deliver_push_notification_to_subscription(&1, payload),
+        ordered: false,
+        timeout: :infinity
+      )
+      |> Enum.map(fn {:ok, result} -> result end)
+
+    {:ok, results}
   end
 
   @doc """

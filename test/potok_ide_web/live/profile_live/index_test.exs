@@ -324,5 +324,51 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       assert result =~ "shared-invite"
       refute has_element?(lv, "#accept-profile-invitation-#{invitation.id}")
     end
+
+    test "keeps running and updates the unread badge when a value is posted in a group",
+         %{conn: conn} do
+      account = account_fixture()
+      author_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "unread-reader",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, author} =
+        Social.create_profile_for_account(author_account, %{
+          username: "unread-author",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(author, Social.get_root_group!(), %{
+          "name" => "unread-badge-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(author, group, profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/profiles")
+
+      {:ok, _value} =
+        Social.create_value(author, group, %{"content" => "hello", "content_format" => :markdown})
+
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 1})
+      assert has_element?(lv, "a[href='/profiles/#{profile.id}/edit']")
+    end
   end
 end

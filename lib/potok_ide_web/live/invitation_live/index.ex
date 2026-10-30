@@ -520,16 +520,32 @@ defmodule PotokIdeWeb.InvitationLive.Index do
              socket.assigns.current_profile.id == profile_id do
     {:noreply,
      socket
-     |> assign(
-       :root_group_unread_count,
-       Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
-     )
+     |> assign_unread_overview()
      |> maybe_push_root_group_unread_count()
      |> assign_group_unread_counts()}
   end
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
+
+  # A value someone else posted is added to the counts without a query.
+  def handle_info({:group_value_unread, profile_id, unread}, socket)
+      when not is_nil(socket.assigns.current_profile) and
+             socket.assigns.current_profile.id == profile_id do
+    case Social.add_unread_value(socket.assigns.unread_overview, unread, MapSet.new()) do
+      :counted ->
+        {:noreply, socket}
+
+      {:ok, overview} ->
+        {:noreply,
+         socket
+         |> put_unread_overview(overview)
+         |> maybe_push_root_group_unread_count()
+         |> assign_group_unread_counts()}
+    end
+  end
+
+  def handle_info({:group_value_unread, _profile_id, _unread}, socket), do: {:noreply, socket}
 
   @impl true
   def handle_info({:account_profiles_updated, account_id}, socket)
@@ -565,25 +581,27 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  # The unread overview comes first: the invitation lists read their groups'
+  # counts from it.
   defp assign_invitations(socket, nil) do
     socket
+    |> assign_unread_overview()
     |> assign(:invitations_pagination, default_invitations_pagination())
     |> assign(:sent_invitations_pagination, default_sent_invitations_pagination())
     |> assign_visible_invitations([])
     |> assign_visible_sent_invitations([])
     |> stream(:invitations, [], reset: true)
     |> stream(:sent_invitations, [], reset: true)
-    |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
   end
 
   defp assign_invitations(socket, profile) do
     socket
+    |> assign_unread_overview()
     |> assign(:invitations_pagination, default_invitations_pagination())
     |> assign(:sent_invitations_pagination, default_sent_invitations_pagination())
     |> refresh_invitations(profile)
     |> refresh_sent_invitations(profile)
-    |> assign_root_group_unread_count()
     |> maybe_push_root_group_unread_count()
   end
 
@@ -627,16 +645,16 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     |> stream(:sent_invitations, invitations_page.entries, reset: true)
   end
 
-  defp assign_root_group_unread_count(%{assigns: %{current_profile: nil}} = socket) do
-    assign(socket, :root_group_unread_count, 0)
+  # One overview gives the header badge (its total) and the counts of the
+  # invitations' groups.
+  defp assign_unread_overview(socket) do
+    put_unread_overview(socket, Social.unread_overview(socket.assigns.current_profile))
   end
 
-  defp assign_root_group_unread_count(socket) do
-    assign(
-      socket,
-      :root_group_unread_count,
-      Social.count_group_unread_values(socket.assigns.current_profile, Social.get_root_group!())
-    )
+  defp put_unread_overview(socket, overview) do
+    socket
+    |> assign(:unread_overview, overview)
+    |> assign(:root_group_unread_count, overview.total)
   end
 
   defp maybe_push_root_group_unread_count(socket) do
@@ -654,19 +672,16 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   end
 
   defp assign_group_unread_counts(socket) do
-    groups =
+    group_ids =
       socket.assigns.visible_invitations
       |> Kernel.++(socket.assigns.visible_sent_invitations)
-      |> Enum.map(& &1.group)
-      |> Enum.uniq_by(& &1.id)
+      |> Enum.map(& &1.group.id)
+      |> Enum.uniq()
 
     assign(
       socket,
       :group_unread_counts,
-      Social.list_group_unread_counts(
-        socket.assigns.current_profile,
-        groups
-      )
+      Social.unread_counts_for(socket.assigns.unread_overview, group_ids)
     )
   end
 

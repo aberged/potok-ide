@@ -15,6 +15,7 @@ defmodule PotokIde.Social.Access do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.Cache
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -25,6 +26,9 @@ defmodule PotokIde.Social.Access do
     GroupRole,
     Profile
   }
+
+  # Manifests change rarely and every page mount needs one; see `forget_manifests/1`.
+  @manifest_ttl :timer.minutes(1)
 
   defstruct member?: false,
             admin?: false,
@@ -48,6 +52,30 @@ defmodule PotokIde.Social.Access do
   def effective_manifest(%Group{id: group_id}), do: effective_manifest(group_id)
 
   def effective_manifest(group_id) when is_integer(group_id) do
+    Cache.fetch({:effective_manifest, group_id}, @manifest_ttl, fn ->
+      load_effective_manifest(group_id)
+    end)
+  end
+
+  @doc """
+  Forgets the cached manifests of `group_ids`, on this node and the others.
+  Called after any change to a manifest or its roles, before telling the
+  pages; the TTL bounds an entry that a load racing with the change stored.
+  """
+  def forget_manifests(group_ids) when is_list(group_ids) do
+    keys = Enum.map(group_ids, &{:effective_manifest, &1})
+    Cache.delete_many(keys)
+    :erpc.multicast(Node.list(), Cache, :delete_many, [keys])
+    :ok
+  end
+
+  @doc """
+  `effective_manifest/1` read from the database, past the cache: for a
+  transaction that changes manifests and must see its own writes.
+  """
+  def load_effective_manifest(%Group{id: group_id}), do: load_effective_manifest(group_id)
+
+  def load_effective_manifest(group_id) when is_integer(group_id) do
     sql = """
     WITH RECURSIVE path AS (
       SELECT g.id, g.parent_id, 0 AS depth

@@ -9,6 +9,10 @@ config :potok_ide, async_notifications: false
 # Apply group refresh broadcasts inline so LiveView tests stay synchronous.
 config :potok_ide, live_refresh_debounce_ms: 0
 
+# The LiveViewTest client stands in for the websocket process and does not
+# take `:garbage_collect` (this also leaves the LiveView's own collection off).
+config :potok_ide, transport_gc_delay_ms: nil
+
 # Attached files on disk, deleted inline so tests can assert they are gone.
 config :potok_ide, async_storage_cleanup: false
 

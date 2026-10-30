@@ -15,6 +15,7 @@ defmodule PotokIde.Social do
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
+  alias PotokIde.Accounts.PushSubscription
 
   alias PotokIde.Social.{
     Access,
@@ -53,8 +54,16 @@ defmodule PotokIde.Social do
     Phoenix.PubSub.subscribe(PotokIde.PubSub, group_topic(group_id))
   end
 
-  def subscribe_group_presence(%Group{id: group_id}) when is_integer(group_id) do
-    Phoenix.PubSub.subscribe(PotokIde.PubSub, group_presence_topic(group_id))
+  @doc """
+  Subscribes the caller to `{:presence_changed, topic, key, online?}` for one
+  profile in `group` and returns whether that profile is online there now.
+  """
+  def watch_group_presence(%Group{} = group, profile_id) when is_integer(profile_id) do
+    topic = group_presence_topic(group)
+    key = Integer.to_string(profile_id)
+    # Subscribing first means a change between the two calls still arrives.
+    :ok = Phoenix.PubSub.subscribe(PotokIde.PubSub, Presence.key_topic(topic, key))
+    Presence.online?(topic, key)
   end
 
   def track_group_presence(pid, %Group{} = group, %Profile{} = profile) when is_pid(pid) do
@@ -833,15 +842,23 @@ defmodule PotokIde.Social do
   end
 
   def count_pending_group_join_requests_for_approver(%Profile{} = approver) do
-    counts =
-      from(r in GroupJoinRequest,
-        join: gm in GroupMembership,
-        on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
-        group_by: r.group_id,
-        select: {r.group_id, count(r.id)}
-      )
-      |> Repo.all()
-      |> Map.new()
+    from(r in GroupJoinRequest,
+      join: gm in GroupMembership,
+      on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
+      group_by: r.group_id,
+      select: {r.group_id, count(r.id)}
+    )
+    |> Repo.all()
+    |> approvable_join_request_total(approver)
+  end
+
+  # Join request counts per group the approver belongs to, summed over the
+  # groups where they may manage requests. Groups are only loaded when there
+  # are requests at all.
+  defp approvable_join_request_total([], _approver), do: 0
+
+  defp approvable_join_request_total(counts, %Profile{} = approver) do
+    counts = Map.new(counts)
 
     approvable_ids =
       from(g in Group, where: g.id in ^Map.keys(counts))
@@ -851,6 +868,85 @@ defmodule PotokIde.Social do
     counts
     |> Enum.filter(fn {group_id, _count} -> MapSet.member?(approvable_ids, group_id) end)
     |> Enum.reduce(0, fn {_group_id, count}, total -> total + count end)
+  end
+
+  @doc """
+  The three header badges in one query: pending invitations, join requests
+  the profile may approve and unread values (the root group's count). The
+  same numbers as `count_pending_invitations/1`,
+  `count_pending_group_join_requests_for_approver/1` and
+  `count_root_group_unread_values/1`; the approver's groups are only loaded
+  when some of them have join requests. `root_unread_as_of` is the
+  unread count's `as_of` (see `root_group_unread_snapshot/1`).
+
+  `unread: false` leaves the unread count out (0, `as_of` nil), for pages
+  that count unread values themselves.
+  """
+  def nav_counts(profile, opts \\ [])
+
+  def nav_counts(nil, _opts),
+    do: %{
+      pending_invitations: 0,
+      pending_group_join_requests: 0,
+      root_unread: 0,
+      root_unread_as_of: nil
+    }
+
+  def nav_counts(%Profile{id: profile_id} = profile, opts) do
+    unread? = Keyword.get(opts, :unread, true)
+
+    unread_sql =
+      if unread? do
+        """
+        (
+          SELECT COUNT(v.id)
+          FROM group_memberships gm
+          LEFT JOIN group_value_reads gvr
+            ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
+          JOIN values v
+            ON v.group_id = gm.group_id
+           AND v.is_data = FALSE
+           AND v.id > COALESCE(gvr.last_read_value_id, 0)
+          WHERE gm.profile_id = $1
+            AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+        ),
+        (SELECT COALESCE(MAX(id), 0)::bigint FROM values)
+        """
+      else
+        "0::bigint, NULL::bigint"
+      end
+
+    sql = """
+    SELECT
+      (SELECT COUNT(*) FROM group_invitations WHERE invitee_id = $1 AND accepted_at IS NULL) +
+      (SELECT COUNT(*) FROM profile_invitations WHERE invitee_id = $1 AND accepted_at IS NULL),
+      (
+        SELECT COALESCE(array_agg(ARRAY[r.group_id, r.request_count]), '{}')
+        FROM (
+          SELECT jr.group_id, COUNT(*) AS request_count
+          FROM group_join_requests jr
+          JOIN group_memberships gm ON gm.group_id = jr.group_id AND gm.profile_id = $1
+          GROUP BY jr.group_id
+        ) r
+      ),
+      #{unread_sql}
+    """
+
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_#{unread?}") do
+      {:ok, %{rows: [[invitations, join_request_counts, unread, unread_as_of]]}} ->
+        %{
+          pending_invitations: invitations,
+          pending_group_join_requests:
+            join_request_counts
+            |> Enum.map(fn [group_id, count] -> {group_id, count} end)
+            |> approvable_join_request_total(profile),
+          root_unread: unread,
+          root_unread_as_of: unread_as_of
+        }
+
+      {:error, _reason} ->
+        nav_counts(nil, opts)
+    end
   end
 
   defp approvable_group_ids(groups, %Profile{} = approver) do
@@ -1101,12 +1197,15 @@ defmodule PotokIde.Social do
         |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
           upsert_group_value_read(repo, creator.id, group.id, value.id)
         end)
+        |> Multi.run(:group_last_value_at, fn repo, %{value: value} ->
+          {:ok, set_group_last_value_at(repo, group.id, value.inserted_at)}
+        end)
         |> Repo.transaction()
         |> case do
           {:ok, %{value: value}} ->
             value = Repo.preload(value, value_display_preloads())
             broadcast_value_created(group, value)
-            broadcast_group_unread_counts_updated(group)
+            broadcast_group_value_unread(creator, group, value)
             notify_group_members_of_new_value(creator, group, value)
             {:ok, value}
 
@@ -1225,6 +1324,16 @@ defmodule PotokIde.Social do
         from(a in ValueAttachment, where: a.value_id == ^value.id, select: a.storage_key)
       )
       |> Multi.delete(:value, value)
+      |> Multi.run(:group_last_value_at, fn repo, _changes ->
+        latest =
+          from(v in Value,
+            where: v.group_id == ^value.group_id and v.is_data == false,
+            select: max(v.inserted_at)
+          )
+          |> repo.one()
+
+        {:ok, set_group_last_value_at(repo, value.group_id, latest)}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{value: deleted_value, attachments: {_count, storage_keys}}} ->
@@ -1238,6 +1347,16 @@ defmodule PotokIde.Social do
           {:error, reason}
       end
     end
+  end
+
+  # `groups.last_value_at` orders the sub-groups list. `update_all` leaves
+  # `updated_at` alone, which the group avatar URL uses as its cache buster.
+  defp set_group_last_value_at(repo, group_id, last_value_at) do
+    {count, _} =
+      from(g in Group, where: g.id == ^group_id)
+      |> repo.update_all(set: [last_value_at: last_value_at])
+
+    count
   end
 
   defp value_has_attachments?(%Value{attachments: attachments}) when is_list(attachments),
@@ -1680,7 +1799,7 @@ defmodule PotokIde.Social do
 
         kept_keys = [
           GroupRole.admin_key()
-          | Enum.map(Access.effective_manifest(group).roles, & &1.key)
+          | Enum.map(Access.load_effective_manifest(group).roles, & &1.key)
         ]
 
         from(r in GroupMemberRole,
@@ -1979,23 +2098,49 @@ defmodule PotokIde.Social do
 
   defp get_account_profile(%Account{}, _profile_id), do: nil
 
+  @doc """
+  The path from the root down to `group` (see `list_group_path/1`), keeping
+  only the groups the profile can see: the group itself, public ones and its
+  memberships. The root's path is the root alone, so it costs no query.
+  """
   def list_visible_group_path_for_profile(%Group{} = group, nil), do: [group]
 
+  def list_visible_group_path_for_profile(%Group{parent_id: nil} = group, %Profile{}),
+    do: maybe_preload_group_members([group])
+
   def list_visible_group_path_for_profile(%Group{} = group, %Profile{} = profile) do
-    path = list_group_path(group)
+    fields = Group.__schema__(:query_fields)
 
-    member_group_ids =
-      from(gm in GroupMembership,
-        where: gm.profile_id == ^profile.id and gm.group_id in ^Enum.map(path, & &1.id),
-        select: gm.group_id
+    # The ancestors with their columns and the membership, in one statement.
+    sql = """
+    WITH RECURSIVE path AS (
+      SELECT g.id, g.parent_id, 0 AS depth
+      FROM groups g
+      WHERE g.id = $1
+      UNION ALL
+      SELECT parent.id, parent.parent_id, path.depth + 1
+      FROM groups parent
+      JOIN path ON parent.id = path.parent_id
+    )
+    SELECT #{group_columns_sql(fields)},
+      EXISTS (
+        SELECT 1 FROM group_memberships gm WHERE gm.group_id = g.id AND gm.profile_id = $2
       )
-      |> Repo.all()
-      |> MapSet.new()
+    FROM path
+    JOIN groups g ON g.id = path.id
+    ORDER BY path.depth DESC
+    """
 
-    path
-    |> Enum.filter(fn path_group ->
-      path_group.id == group.id or path_group.is_public or
-        MapSet.member?(member_group_ids, path_group.id)
+    %{rows: rows} =
+      Repo.query!(sql, [group.id, profile.id], cache_statement: "social_visible_group_path")
+
+    rows
+    |> Enum.flat_map(fn row ->
+      {path_group, [member?]} = load_group_row(fields, row)
+
+      if path_group.id == group.id or path_group.is_public or member?,
+        do: [path_group],
+        else: []
     end)
     |> maybe_preload_group_members()
   end
@@ -2007,143 +2152,207 @@ defmodule PotokIde.Social do
   `:search` on the name, and `:limit` / `:offset`.
   """
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
-    is_direct = normalize_boolean_filter(opts[:is_direct])
-    is_thread = normalize_boolean_filter(opts[:is_thread])
-    search_term = normalize_group_search_term(opts[:search])
-
-    ordered_ids =
-      ordered_child_group_ids_for_profile(
-        group.id,
-        profile.id,
-        is_direct,
-        is_thread,
-        search_term,
-        normalize_query_limit(opts[:limit]),
-        normalize_query_offset(opts[:offset])
-      )
-
-    case ordered_ids do
-      [] ->
-        []
-
-      _ ->
-        groups_by_id =
-          from(g in Group, where: g.id in ^ordered_ids)
-          |> Repo.all()
-          |> maybe_preload_group_members()
-          |> Map.new(&{&1.id, &1})
-
-        Enum.map(ordered_ids, &Map.fetch!(groups_by_id, &1))
-    end
+    {groups, _rest} = child_group_rows(group, profile, opts, false)
+    groups
   end
 
   @doc "Counts what `list_child_groups_for_profile/3` returns, with the same filters."
   def count_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
-    import Ecto.Query, only: [from: 2]
-
-    is_direct = normalize_boolean_filter(opts[:is_direct])
-    is_thread = normalize_boolean_filter(opts[:is_thread])
-    search_term = normalize_group_search_term(opts[:search])
-
-    base_query =
-      from(g in Group,
-        join: gm in GroupMembership,
-        on: gm.group_id == g.id,
-        where: g.parent_id == ^group.id and (gm.profile_id == ^profile.id or g.is_public == true)
+    %{rows: [[count]]} =
+      Repo.query!(
+        "WITH #{visible_children_sql()} SELECT COUNT(*) FROM visible_children",
+        visible_children_params(group, profile, opts),
+        cache_statement: "social_count_child_groups"
       )
 
-    query =
-      base_query
-      |> maybe_filter_group_direct(is_direct)
-      |> maybe_filter_group_thread(is_thread)
-      |> maybe_filter_group_name_search(search_term)
-
-    from(g in query, select: count(g.id, :distinct))
-    |> Repo.one()
+    count
   end
 
-  defp ordered_child_group_ids_for_profile(
-         parent_group_id,
-         profile_id,
-         is_direct,
-         is_thread,
-         search_term,
-         limit,
-         offset
-       )
-       when is_integer(parent_group_id) and is_integer(profile_id) do
-    sql = ordered_child_group_ids_query(limit, offset)
-
-    params =
-      [parent_group_id, profile_id, is_direct, search_term, is_thread]
-      |> maybe_append_query_param(limit)
-      |> maybe_append_query_param(offset)
-
-    case Repo.query(sql, params,
-           cache_statement: "social_child_group_ids_#{limit != nil}_#{offset != nil}"
-         ) do
-      {:ok, %{rows: rows}} ->
-        Enum.map(rows, fn [group_id] -> group_id end)
-
-      {:error, _reason} ->
-        []
-    end
+  @doc """
+  The ids `list_child_groups_for_profile/3` would return, in the same order.
+  Takes the same options, plus `:unread_overview` to reuse one the caller
+  already loaded with `unread_overview/1`.
+  """
+  def list_child_group_ids_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
+    ordered_child_group_ids_for_profile(group, profile, opts)
   end
 
-  defp ordered_child_group_ids_query(limit, offset) do
-    """
-    WITH RECURSIVE visible_children AS (
-      SELECT DISTINCT g.id
-      FROM groups g
-      LEFT JOIN group_memberships gm
-        ON gm.group_id = g.id AND gm.profile_id = $2
-      WHERE g.parent_id = $1
-        AND ($3::boolean IS NULL OR g.is_direct = $3)
-        AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')
-        AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)
-        AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
-    ),
-    subtree(root_id, group_id) AS (
-      SELECT vc.id, vc.id
-      FROM visible_children vc
+  @doc """
+  A page of `list_child_groups_for_profile/3` with the count of everything it
+  pages through (`count_child_groups_for_profile/3`), in one query:
+  `{groups, total}`. Takes the options of `list_child_group_ids_for_profile/3`
+  but `:offset`.
+  """
+  def list_child_groups_page_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
+    opts = Keyword.delete(opts, :offset)
+    {groups, totals} = child_group_rows(group, profile, opts, true)
 
-      UNION ALL
+    # The count comes with the rows, so an empty page means nothing to count
+    # unless the page itself was empty by asking for no rows.
+    total =
+      case {totals, normalize_query_limit(opts[:limit])} do
+        {[[total] | _], _limit} -> total
+        {[], 0} -> count_child_groups_for_profile(group, profile, opts)
+        {[], _limit} -> 0
+      end
 
-      SELECT s.root_id, child.id
-      FROM subtree s
-      JOIN groups child ON child.parent_id = s.group_id
-    ),
-    unread_counts AS (
-      SELECT
-        s.root_id,
-        COUNT(v.id) FILTER (WHERE v.id > COALESCE(gvr.last_read_value_id, 0))::bigint AS unread_count
-      FROM subtree s
-      JOIN groups g ON g.id = s.group_id
-      JOIN group_memberships gm
-        ON gm.group_id = s.group_id AND gm.profile_id = $2
-      LEFT JOIN values v
-        ON v.group_id = s.group_id AND g.is_root = FALSE AND v.is_data = FALSE
-      LEFT JOIN group_value_reads gvr
-        ON gvr.group_id = s.group_id AND gvr.profile_id = $2
-      GROUP BY s.root_id
-    ),
-    latest_values AS (
-      SELECT v.group_id, MAX(v.inserted_at) AS latest_value_inserted_at
-      FROM values v
-      WHERE v.is_data = FALSE
-        AND v.group_id IN (SELECT id FROM visible_children)
-      GROUP BY v.group_id
+    {groups, total}
+  end
+
+  # The ordered sub-groups with their columns in one query, and per group the
+  # columns after them: the count of all (`count?`) or none.
+  # The order, the page and the count work on narrow rows; only the page's
+  # groups are read in full (sorting every visible group's full row measured
+  # slower than the two queries this replaces).
+  defp child_group_rows(group, profile, opts, count?) do
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+    fields = Group.__schema__(:query_fields)
+    total = if count?, do: ", COUNT(*) OVER () AS total", else: ""
+
+    sql = """
+    WITH page AS (
+      #{ordered_child_groups_query("vc.id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset)}
     )
-    SELECT g.id
+    SELECT #{group_columns_sql(fields)}#{if count?, do: ", page.total", else: ""}
+    FROM page
+    JOIN groups g ON g.id = page.id
+    ORDER BY page.unread DESC, g.last_value_at DESC NULLS LAST, g.inserted_at DESC, g.id DESC
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, ordered_child_groups_params(group, profile, opts, limit, offset),
+        cache_statement: "social_child_groups_#{count?}_#{limit != nil}_#{offset != nil}"
+      )
+
+    {groups, rest} =
+      rows
+      |> Enum.map(&load_group_row(fields, &1))
+      |> Enum.unzip()
+
+    {maybe_preload_group_members(groups), rest}
+  end
+
+  defp ordered_child_group_ids_for_profile(%Group{} = group, %Profile{} = profile, opts) do
+    limit = normalize_query_limit(opts[:limit])
+    offset = normalize_query_offset(opts[:offset])
+
+    %{rows: rows} =
+      Repo.query!(
+        ordered_child_group_ids_query(limit, offset),
+        ordered_child_groups_params(group, profile, opts, limit, offset),
+        cache_statement: "social_child_group_ids_#{limit != nil}_#{offset != nil}"
+      )
+
+    Enum.map(rows, fn [group_id] -> group_id end)
+  end
+
+  defp ordered_child_groups_params(group, profile, opts, limit, offset) do
+    # Only children with something unread below them sort by it; the counts
+    # come from the overview instead of a walk down every child's sub-tree.
+    {unread_ids, unread_counts} =
+      (opts[:unread_overview] || unread_overview(profile)).groups
+      |> Enum.filter(fn {_id, info} -> info.parent_id == group.id and info.visible? end)
+      |> Enum.map(fn {id, info} -> {id, info.subtree} end)
+      |> Enum.unzip()
+
+    visible_children_params(group, profile, opts)
+    |> Kernel.++([unread_ids, unread_counts])
+    |> maybe_append_query_param(limit)
+    |> maybe_append_query_param(offset)
+  end
+
+  # The `groups g` columns `Repo.load/2` makes a `Group` of.
+  defp group_columns_sql(fields),
+    do: Enum.map_join(fields, ", ", &"g.#{Group.__schema__(:field_source, &1)}")
+
+  # A `Group` from a row that starts with `group_columns_sql/1`, and the
+  # row's other columns.
+  defp load_group_row(fields, row) do
+    {values, rest} = Enum.split(row, length(fields))
+    {Repo.load(Group, {fields, values}), rest}
+  end
+
+  # The sub-groups of $1 that profile $2 can see: its memberships plus the
+  # public ones, filtered by $3 (direct), $4 (name search) and $5 (thread).
+  # The memberships are read first, behind OFFSET 0: the cached generic plan
+  # would otherwise walk every child of the group to probe them, and the root
+  # is the parent of every direct conversation.
+  defp visible_children_sql do
+    filters =
+      "($3::boolean IS NULL OR g.is_direct = $3)" <>
+        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')" <>
+        " AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
+
+    """
+    visible_children AS (
+      SELECT g.id, g.inserted_at, g.last_value_at
+      FROM (
+        SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $2 OFFSET 0
+      ) m
+      JOIN groups g ON g.id = m.group_id
+      WHERE g.parent_id = $1
+        AND #{filters}
+
+      UNION
+
+      SELECT g.id, g.inserted_at, g.last_value_at
+      FROM groups g
+      WHERE g.parent_id = $1
+        AND g.is_public = TRUE
+        AND #{filters}
+    )
+    """
+  end
+
+  defp visible_children_params(%Group{} = group, %Profile{} = profile, opts) do
+    [
+      group.id,
+      profile.id,
+      normalize_boolean_filter(opts[:is_direct]),
+      normalize_group_search_term(opts[:search]),
+      normalize_boolean_filter(opts[:is_thread])
+    ]
+  end
+
+  @doc """
+  Sorts sub-groups the way `list_child_group_ids_for_profile/3` orders them,
+  with the unread counts of an `unread_overview/1` result, for a page that
+  keeps its list in memory.
+  """
+  def sort_child_groups(groups, %{groups: unread}) do
+    Enum.sort_by(groups, &child_group_sort_key(&1, unread), :desc)
+  end
+
+  # The ORDER BY of `ordered_child_groups_query/3`: unread first, then the
+  # newest value (groups without one last), the newest group and the id.
+  defp child_group_sort_key(%Group{} = group, unread) do
+    {
+      get_in(unread, [group.id, :subtree]) || 0,
+      if(group.last_value_at, do: DateTime.to_unix(group.last_value_at, :microsecond), else: -1),
+      DateTime.to_unix(group.inserted_at, :microsecond),
+      group.id
+    }
+  end
+
+  defp ordered_child_group_ids_query(limit, offset),
+    do: ordered_child_groups_query("vc.id", limit, offset)
+
+  # Unread counts arrive as $6 / $7; the newest chat value comes from
+  # `groups.last_value_at`, kept up to date by `create_value/4` and
+  # `delete_value/2`. `sort_child_groups/2` sorts the same way in memory.
+  defp ordered_child_groups_query(select, limit, offset) do
+    """
+    WITH #{visible_children_sql()}
+    SELECT #{select}
     FROM visible_children vc
-    JOIN groups g ON g.id = vc.id
-    LEFT JOIN unread_counts uc ON uc.root_id = g.id
-    LEFT JOIN latest_values lv ON lv.group_id = g.id
+    LEFT JOIN UNNEST($6::bigint[], $7::bigint[]) AS uc(group_id, unread_count)
+      ON uc.group_id = vc.id
     ORDER BY
       COALESCE(uc.unread_count, 0) DESC,
-      lv.latest_value_inserted_at DESC NULLS LAST,
-      g.inserted_at DESC,
-      g.id DESC#{ordered_child_group_pagination_sql(limit, offset)}
+      vc.last_value_at DESC NULLS LAST,
+      vc.inserted_at DESC,
+      vc.id DESC#{ordered_child_group_pagination_sql(limit, offset)}
     """
   end
 
@@ -2154,16 +2363,16 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  # $1..$5 are the filters of `ordered_child_group_ids_query/2`.
-  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $6"]
+  # $1..$7 are the filters and unread counts of `ordered_child_group_ids_query/2`.
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $8"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
   defp maybe_add_offset_sql(parts, limit, offset)
        when is_integer(limit) and is_integer(offset),
-       do: parts ++ [" OFFSET $7"]
+       do: parts ++ [" OFFSET $9"]
 
   defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
-    do: parts ++ [" OFFSET $6"]
+    do: parts ++ [" OFFSET $8"]
 
   defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
 
@@ -2190,26 +2399,6 @@ defmodule PotokIde.Social do
   end
 
   defp normalize_group_search_term(_), do: nil
-
-  defp maybe_filter_group_direct(query, nil), do: query
-
-  defp maybe_filter_group_direct(query, direct_flag) when is_boolean(direct_flag) do
-    from(g in query, where: g.is_direct == ^direct_flag)
-  end
-
-  defp maybe_filter_group_thread(query, nil), do: query
-
-  defp maybe_filter_group_thread(query, true),
-    do: from(g in query, where: not is_nil(g.parent_value_id))
-
-  defp maybe_filter_group_thread(query, false),
-    do: from(g in query, where: is_nil(g.parent_value_id))
-
-  defp maybe_filter_group_name_search(query, nil), do: query
-
-  defp maybe_filter_group_name_search(query, search_term) when is_binary(search_term) do
-    from(g in query, where: ilike(g.name, ^"%#{search_term}%"))
-  end
 
   def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
@@ -2637,17 +2826,27 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  def mark_group_values_read(nil, _group), do: :ok
+  @doc """
+  Moves the profile's read marker in `group` up to `up_to`: a value id, or
+  `:latest` for the group's newest chat value. It never moves back.
+  """
+  def mark_group_values_read(profile, group, up_to \\ :latest)
 
-  def mark_group_values_read(%Profile{} = profile, %Group{} = group) do
-    case latest_group_value_id(group) do
+  def mark_group_values_read(nil, _group, _up_to), do: :ok
+
+  def mark_group_values_read(%Profile{} = profile, %Group{} = group, up_to) do
+    latest_value_id = if up_to == :latest, do: latest_group_value_id(group), else: up_to
+
+    case latest_value_id do
       nil ->
         :ok
 
       latest_value_id ->
         case upsert_group_value_read(Repo, profile.id, group.id, latest_value_id) do
+          # A page marks what it shows and counts again itself, so only the
+          # profile's other pages are told.
           {:ok, :updated} ->
-            broadcast_profile_group_unread_counts_updated(profile, group.id)
+            broadcast_from_profile_group_unread_counts_updated(profile, group.id)
             :ok
 
           # Nothing was unread; skip the broadcast so subscribers do not recount for no reason.
@@ -2671,14 +2870,8 @@ defmodule PotokIde.Social do
 
     case group_ids do
       [] -> %{}
-      _ -> unread_counts_query(profile.id, group_ids)
+      _ -> profile |> unread_overview() |> unread_counts_for(group_ids)
     end
-  end
-
-  def count_group_unread_values(%Profile{} = profile, %Group{} = group) do
-    profile
-    |> list_group_unread_counts([group])
-    |> Map.get(group.id, 0)
   end
 
   @doc """
@@ -2686,25 +2879,36 @@ defmodule PotokIde.Social do
   root, so this is simply the sum of unread values across the profile's
   memberships — no tree traversal needed.
   """
-  def count_root_group_unread_values(nil), do: 0
+  def count_root_group_unread_values(profile), do: root_group_unread_snapshot(profile).count
 
-  def count_root_group_unread_values(%Profile{id: profile_id}) do
+  @doc """
+  `count_root_group_unread_values/1` with the newest value id the count saw
+  (`as_of`, as in `unread_overview/1`), so a page can add later values to it
+  one by one. `as_of` is `nil` when the count failed.
+  """
+  def root_group_unread_snapshot(nil), do: %{count: 0, as_of: nil}
+
+  def root_group_unread_snapshot(%Profile{id: profile_id}) do
     sql = """
-    SELECT COUNT(v.id)::bigint
-    FROM group_memberships gm
-    JOIN groups g ON g.id = gm.group_id AND g.is_root = FALSE
-    LEFT JOIN group_value_reads gvr
-      ON gvr.group_id = gm.group_id AND gvr.profile_id = $1
-    JOIN values v
-      ON v.group_id = gm.group_id
-     AND v.is_data = FALSE
-     AND v.id > COALESCE(gvr.last_read_value_id, 0)
-    WHERE gm.profile_id = $1
+    SELECT
+      (
+        SELECT COUNT(v.id)::bigint
+        FROM group_memberships gm
+        LEFT JOIN group_value_reads gvr
+          ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
+        JOIN values v
+          ON v.group_id = gm.group_id
+         AND v.is_data = FALSE
+         AND v.id > COALESCE(gvr.last_read_value_id, 0)
+        WHERE gm.profile_id = $1
+          AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+      ),
+      (SELECT COALESCE(MAX(id), 0)::bigint FROM values)
     """
 
     case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count") do
-      {:ok, %{rows: [[count]]}} -> count
-      {:error, _reason} -> 0
+      {:ok, %{rows: [[count, as_of]]}} -> %{count: count, as_of: as_of}
+      {:error, _reason} -> %{count: 0, as_of: nil}
     end
   end
 
@@ -2714,69 +2918,214 @@ defmodule PotokIde.Social do
   """
   def child_group_unread_summary(nil, _group), do: %{direct: 0, other: 0}
 
-  def child_group_unread_summary(%Profile{id: profile_id}, %Group{id: group_id}) do
+  def child_group_unread_summary(%Profile{} = profile, %Group{id: group_id}) do
+    profile
+    |> unread_overview()
+    |> child_unread_summary(group_id)
+  end
+
+  @doc """
+  A profile's unread values for every group that has some at or below it, in
+  one query: `%{total: n, as_of: id, groups: %{group_id => %{subtree: n,
+  own: n, parent_id: id, direct?: bool, visible?: bool}}}`. `own` counts the
+  group's own values, `subtree` adds those of its sub-groups, `visible?` says
+  whether the profile can see the group (member, or a public group) and
+  `total` is the root group's count. `as_of` is the newest value id when the
+  count was taken: `add_unread_value/3` skips values up to it.
+
+  Values only count in groups the profile is a member of, so the query starts
+  from those memberships and walks up to the root, instead of walking down
+  through every group below the one being looked at. Read the result with
+  `unread_counts_for/2` and `child_unread_summary/2`.
+  """
+  def unread_overview(nil), do: %{total: 0, as_of: 0, groups: %{}}
+
+  def unread_overview(%Profile{id: profile_id}) do
+    {own, as_of} = own_unread_counts(profile_id)
+
+    groups =
+      case Map.keys(own) do
+        [] -> %{}
+        group_ids -> group_chain(profile_id, group_ids)
+      end
+
+    subtree =
+      Enum.reduce(own, %{}, fn {group_id, count}, acc ->
+        group_id
+        |> self_and_ancestor_ids(groups)
+        |> Enum.reduce(acc, &Map.update(&2, &1, count, fn sum -> sum + count end))
+      end)
+
+    %{
+      total: own |> Map.values() |> Enum.sum(),
+      as_of: as_of,
+      groups:
+        Map.new(subtree, fn {group_id, count} ->
+          {group_id,
+           Map.merge(groups[group_id], %{subtree: count, own: Map.get(own, group_id, 0)})}
+        end)
+    }
+  end
+
+  # Unread chat values per group the profile is a member of (the root's own
+  # values never count), leaving out groups with none, and the newest value id
+  # the same statement saw: one statement, so one snapshot for both. (Folding
+  # `group_chain/2` into it saves a round trip but measured slower.)
+  defp own_unread_counts(profile_id) do
     sql = """
-    WITH RECURSIVE visible_children AS (
-      SELECT g.id, g.is_direct
-      FROM groups g
-      LEFT JOIN group_memberships gm
-        ON gm.group_id = g.id AND gm.profile_id = $2
-      WHERE g.parent_id = $1
-        AND (gm.profile_id IS NOT NULL OR g.is_public = TRUE)
-    ),
-    subtree(root_id, group_id) AS (
-      SELECT vc.id, vc.id FROM visible_children vc
-      UNION ALL
-      SELECT s.root_id, child.id
-      FROM subtree s
-      JOIN groups child ON child.parent_id = s.group_id
-    ),
-    counts AS (
-      SELECT vc.is_direct, COUNT(v.id)::bigint AS unread_count
-      FROM subtree s
-      JOIN visible_children vc ON vc.id = s.root_id
-      JOIN groups g ON g.id = s.group_id AND g.is_root = FALSE
-      JOIN group_memberships gm
-        ON gm.group_id = s.group_id AND gm.profile_id = $2
+    SELECT hw.max_id, c.group_id, c.unread
+    FROM (SELECT COALESCE(MAX(id), 0)::bigint AS max_id FROM values) hw
+    LEFT JOIN LATERAL (
+      SELECT gm.group_id, COUNT(v.id)::bigint AS unread
+      FROM group_memberships gm
       LEFT JOIN group_value_reads gvr
-        ON gvr.group_id = s.group_id AND gvr.profile_id = $2
+        ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
       JOIN values v
-        ON v.group_id = s.group_id
+        ON v.group_id = gm.group_id
        AND v.is_data = FALSE
        AND v.id > COALESCE(gvr.last_read_value_id, 0)
-      GROUP BY vc.is_direct
-    )
-    SELECT
-      COALESCE(SUM(unread_count) FILTER (WHERE is_direct), 0)::bigint,
-      COALESCE(SUM(unread_count) FILTER (WHERE NOT is_direct), 0)::bigint
-    FROM counts
+      WHERE gm.profile_id = $1
+        AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+      GROUP BY gm.group_id
+    ) c ON TRUE
     """
 
-    case Repo.query(sql, [group_id, profile_id], cache_statement: "social_child_unread_summary") do
-      {:ok, %{rows: [[direct, other]]}} -> %{direct: direct, other: other}
-      _ -> %{direct: 0, other: 0}
+    %{rows: [[as_of | _] | _] = rows} =
+      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts")
+
+    own =
+      for [_as_of, group_id, count] <- rows, group_id != nil, into: %{}, do: {group_id, count}
+
+    {own, as_of}
+  end
+
+  # `group_ids` and all their ancestors with what the overview needs about
+  # them.
+  defp group_chain(profile_id, group_ids) do
+    sql = """
+    WITH RECURSIVE #{group_chain_cte("g.id = ANY($2::bigint[])")}
+    SELECT c.id, c.parent_id, c.is_direct, c.is_public OR gm.profile_id IS NOT NULL
+    FROM chain c
+    LEFT JOIN group_memberships gm
+      ON gm.group_id = c.id AND gm.profile_id = $1
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, [profile_id, group_ids], cache_statement: "social_group_chain")
+
+    Map.new(rows, fn [group_id, parent_id, direct?, visible?] ->
+      {group_id, %{parent_id: parent_id, direct?: direct?, visible?: visible?}}
+    end)
+  end
+
+  # A group and its ancestors up to the root (in no particular order), with
+  # what a page needs to count a value of the group without a query: see
+  # `add_unread_value/3`. Groups never move, so this is the same for everyone.
+  defp group_ancestry(group_id) do
+    sql = """
+    WITH RECURSIVE #{group_chain_cte("g.id = ANY($1::bigint[])")}
+    SELECT c.id, c.parent_id, c.is_direct, c.is_public, c.is_thread
+    FROM chain c
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, [[group_id]], cache_statement: "social_group_ancestry")
+
+    Enum.map(rows, fn [id, parent_id, direct?, public?, thread?] ->
+      %{id: id, parent_id: parent_id, direct?: direct?, public?: public?, thread?: thread?}
+    end)
+  end
+
+  # The groups `seed` picks and all their ancestors. Each step looks one parent
+  # up by its primary key (the LATERAL ... LIMIT 1 keeps the planner from
+  # scanning every group for a handful of rows).
+  defp group_chain_cte(seed) do
+    """
+    chain(id, parent_id, is_direct, is_public, is_thread) AS (
+      SELECT g.id, g.parent_id, g.is_direct, g.is_public, g.parent_value_id IS NOT NULL
+      FROM groups g
+      WHERE #{seed}
+
+      UNION
+
+      SELECT p.id, p.parent_id, p.is_direct, p.is_public, p.is_thread
+      FROM chain c
+      CROSS JOIN LATERAL (
+        SELECT g.id, g.parent_id, g.is_direct, g.is_public,
+               g.parent_value_id IS NOT NULL AS is_thread
+        FROM groups g
+        WHERE g.id = c.parent_id
+        LIMIT 1
+      ) p
+    )
+    """
+  end
+
+  @doc """
+  Counts a value from a `{:group_value_unread, profile_id, unread}` broadcast
+  into an `unread_overview/1` result, without a query. Returns
+  `{:ok, overview}`, or `:counted` when the overview already holds the value
+  (it is not newer than `as_of`).
+
+  Groups of the value's chain the overview did not have yet are added. Their
+  `visible?` is `true` for a public group, the value's own group (the profile
+  is a member) and the ids in `visible_ids` (groups the page shows), and `nil`
+  when only a recount can tell.
+  """
+  def add_unread_value(%{as_of: as_of}, %{value_id: value_id}, _visible_ids)
+      when value_id <= as_of,
+      do: :counted
+
+  def add_unread_value(overview, %{group_id: group_id, chain: chain}, visible_ids) do
+    groups =
+      Enum.reduce(chain, overview.groups, fn node, groups ->
+        entry =
+          Map.get_lazy(groups, node.id, fn ->
+            %{
+              parent_id: node.parent_id,
+              direct?: node.direct?,
+              visible?: (node.public? or node.id == group_id or node.id in visible_ids) || nil,
+              subtree: 0,
+              own: 0
+            }
+          end)
+
+        own = if node.id == group_id, do: entry.own + 1, else: entry.own
+        Map.put(groups, node.id, %{entry | subtree: entry.subtree + 1, own: own})
+      end)
+
+    {:ok, %{overview | total: overview.total + 1, groups: groups}}
+  end
+
+  defp self_and_ancestor_ids(group_id, groups) do
+    case groups do
+      %{^group_id => %{parent_id: parent_id}} ->
+        [group_id | self_and_ancestor_ids(parent_id, groups)]
+
+      _ ->
+        []
     end
   end
 
-  def count_group_direct_unread_values(%Profile{} = profile, %Group{} = group) do
-    sql = """
-    SELECT COUNT(v.id)::bigint AS unread_count
-    FROM groups g
-    JOIN group_memberships gm
-      ON gm.group_id = g.id AND gm.profile_id = $1
-    LEFT JOIN group_value_reads gvr
-      ON gvr.group_id = g.id AND gvr.profile_id = $1
-    LEFT JOIN values v
-      ON v.group_id = g.id
-     AND v.is_data = FALSE
-     AND v.id > COALESCE(gvr.last_read_value_id, 0)
-    WHERE g.id = $2 AND g.is_root = FALSE
-    """
+  @doc "Unread values at or below each of `group_ids`, from `unread_overview/1`."
+  def unread_counts_for(%{groups: groups}, group_ids) do
+    Map.new(group_ids, fn group_id ->
+      {group_id, get_in(groups, [group_id, :subtree]) || 0}
+    end)
+  end
 
-    case Repo.query(sql, [profile.id, group.id], cache_statement: "social_group_direct_unread") do
-      {:ok, %{rows: [[unread_count]]}} -> unread_count
-      {:error, _reason} -> 0
-    end
+  @doc "`child_group_unread_summary/2` from an `unread_overview/1` result."
+  def child_unread_summary(%{groups: groups}, group_id) do
+    Enum.reduce(groups, %{direct: 0, other: 0}, fn
+      {_id, %{parent_id: ^group_id, visible?: true, direct?: true, subtree: count}}, acc ->
+        %{acc | direct: acc.direct + count}
+
+      {_id, %{parent_id: ^group_id, visible?: true, subtree: count}}, acc ->
+        %{acc | other: acc.other + count}
+
+      _group, acc ->
+        acc
+    end)
   end
 
   def list_pending_invitations(%Profile{} = invitee, opts \\ []) do
@@ -3489,12 +3838,24 @@ defmodule PotokIde.Social do
         |> MapSet.new()
 
       group
-      |> recipient_accounts_for_group_value_notification(creator)
-      |> Enum.each(fn account ->
-        if MapSet.member?(mentioned_account_ids, account.id) do
-          deliver_account_push_notification(account, mention_payload, "group mention", group.id)
+      |> push_subscriptions_for_group_value(creator)
+      |> Enum.each(fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
+        if MapSet.member?(mentioned_account_ids, account_id) do
+          deliver_push_to_subscriptions(
+            subscriptions,
+            account_id,
+            mention_payload,
+            "group mention",
+            group.id
+          )
         else
-          deliver_account_push_notification(account, payload, "group value", group.id)
+          deliver_push_to_subscriptions(
+            subscriptions,
+            account_id,
+            payload,
+            "group value",
+            group.id
+          )
         end
       end)
     end)
@@ -3616,17 +3977,24 @@ defmodule PotokIde.Social do
     end)
   end
 
-  defp recipient_accounts_for_group_value_notification(%Group{} = group, %Profile{} = creator) do
-    from(account in Account,
-      join: ap in AccountProfile,
-      on: ap.account_id == account.id,
-      join: gm in GroupMembership,
-      on: gm.profile_id == ap.profile_id,
-      where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
-      distinct: account.id,
-      order_by: [asc: account.id]
+  # The push subscriptions of the members' accounts, grouped per account in
+  # one query. Members without a subscribed device cost nothing, where loading
+  # every member's account and then its subscriptions took a query per member.
+  defp push_subscriptions_for_group_value(%Group{} = group, %Profile{} = creator) do
+    member_account_ids =
+      from(ap in AccountProfile,
+        join: gm in GroupMembership,
+        on: gm.profile_id == ap.profile_id,
+        where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
+        select: ap.account_id
+      )
+
+    from(subscription in PushSubscription,
+      where: subscription.account_id in subquery(member_account_ids),
+      order_by: [asc: subscription.account_id, desc: subscription.updated_at]
     )
     |> Repo.all()
+    |> Enum.chunk_by(& &1.account_id)
   end
 
   defp recipient_accounts_for_profile_notification(
@@ -3649,7 +4017,13 @@ defmodule PotokIde.Social do
   end
 
   defp deliver_account_push_notification(%Account{} = account, payload, context, context_id) do
-    case Accounts.deliver_push_notification(account, payload) do
+    account
+    |> Accounts.list_push_subscriptions()
+    |> deliver_push_to_subscriptions(account.id, payload, context, context_id)
+  end
+
+  defp deliver_push_to_subscriptions(subscriptions, account_id, payload, context, context_id) do
+    case Accounts.deliver_push_notification_to_subscriptions(subscriptions, payload) do
       {:ok, _results} ->
         :ok
 
@@ -3658,7 +4032,7 @@ defmodule PotokIde.Social do
 
       {:error, reason} ->
         Logger.warning(
-          "Push delivery failed for account #{account.id} (#{context}#{format_push_context_id(context_id)}): #{inspect(reason)}"
+          "Push delivery failed for account #{account_id} (#{context}#{format_push_context_id(context_id)}): #{inspect(reason)}"
         )
 
         :ok
@@ -3784,7 +4158,10 @@ defmodule PotokIde.Social do
 
   defp notification_excerpt(_content), do: nil
 
-  defp profile_avatar_url(%Profile{id: profile_id}), do: "/avatar/profile/#{profile_id}"
+  # Notification badges and icons cannot be SVG, which the avatar URL serves
+  # by default.
+  defp profile_avatar_url(%Profile{id: profile_id}),
+    do: "/avatar/profile/#{profile_id}?format=png"
 
   defp extract_group_id(%Group{id: id}), do: id
   defp extract_group_id(id) when is_integer(id), do: id
@@ -3796,52 +4173,6 @@ defmodule PotokIde.Social do
       select: max(v.id)
     )
     |> Repo.one()
-  end
-
-  defp unread_counts_query(profile_id, group_ids) do
-    sql = """
-    WITH RECURSIVE requested AS (
-      SELECT UNNEST($2::bigint[]) AS root_id
-    ),
-    subtree(root_id, group_id) AS (
-      SELECT r.root_id, g.id
-      FROM requested r
-      JOIN groups g ON g.id = r.root_id
-
-      UNION ALL
-
-      SELECT s.root_id, child.id
-      FROM subtree s
-      JOIN groups child ON child.parent_id = s.group_id
-    ),
-    counts AS (
-      SELECT
-        s.root_id,
-        COUNT(v.id) FILTER (WHERE v.id > COALESCE(gvr.last_read_value_id, 0))::bigint AS unread_count
-      FROM subtree s
-      JOIN groups g ON g.id = s.group_id
-      JOIN group_memberships gm
-        ON gm.group_id = s.group_id AND gm.profile_id = $1
-      LEFT JOIN values v
-        ON v.group_id = s.group_id AND g.is_root = FALSE AND v.is_data = FALSE
-      LEFT JOIN group_value_reads gvr
-        ON gvr.group_id = s.group_id AND gvr.profile_id = $1
-      GROUP BY s.root_id
-    )
-    SELECT r.root_id, COALESCE(c.unread_count, 0)::bigint AS unread_count
-    FROM requested r
-    LEFT JOIN counts c ON c.root_id = r.root_id
-    """
-
-    case Repo.query(sql, [profile_id, group_ids], cache_statement: "social_unread_counts") do
-      {:ok, %{rows: rows}} ->
-        Map.new(rows, fn [group_id, unread_count] ->
-          {group_id, unread_count}
-        end)
-
-      {:error, _reason} ->
-        Map.new(group_ids, &{&1, 0})
-    end
   end
 
   defp upsert_group_value_read(repo, profile_id, group_id, last_read_value_id) do
@@ -3934,12 +4265,8 @@ defmodule PotokIde.Social do
   end
 
   defp broadcast_group_unread_counts_updated(group_id) when is_integer(group_id) do
-    from(gm in GroupMembership,
-      where: gm.group_id == ^group_id,
-      select: gm.profile_id,
-      distinct: true
-    )
-    |> Repo.all()
+    group_id
+    |> group_member_profile_ids()
     |> Enum.each(fn profile_id ->
       Phoenix.PubSub.broadcast(
         PotokIde.PubSub,
@@ -3947,6 +4274,55 @@ defmodule PotokIde.Social do
         {:group_unread_counts_updated, profile_id, group_id}
       )
     end)
+  end
+
+  # Skips the calling process, which already knows (see `mark_group_values_read/3`).
+  defp broadcast_from_profile_group_unread_counts_updated(%Profile{id: profile_id}, group_id) do
+    Phoenix.PubSub.broadcast_from(
+      PotokIde.PubSub,
+      self(),
+      profile_topic(profile_id),
+      {:group_unread_counts_updated, profile_id, group_id}
+    )
+  end
+
+  # A new chat value is one more unread value for every member but its
+  # creator. It goes out with the group's chain up to the root, worked out
+  # once here, so each member's pages add it to their counts without a query
+  # (`add_unread_value/3`) instead of all counting again at once. The creator's
+  # read marker moved past it, which may have read older values too, so the
+  # creator's other pages count again. The root group's values never count.
+  defp broadcast_group_value_unread(_creator, %Group{is_root: true}, _value), do: :ok
+
+  defp broadcast_group_value_unread(%Profile{} = creator, %Group{id: group_id}, %Value{} = value) do
+    unread = %{
+      group_id: group_id,
+      value_id: value.id,
+      inserted_at: value.inserted_at,
+      chain: group_ancestry(group_id)
+    }
+
+    group_id
+    |> group_member_profile_ids()
+    |> Enum.reject(&(&1 == creator.id))
+    |> Enum.each(fn profile_id ->
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        profile_topic(profile_id),
+        {:group_value_unread, profile_id, unread}
+      )
+    end)
+
+    broadcast_from_profile_group_unread_counts_updated(creator, group_id)
+  end
+
+  defp group_member_profile_ids(group_id) do
+    from(gm in GroupMembership,
+      where: gm.group_id == ^group_id,
+      select: gm.profile_id,
+      distinct: true
+    )
+    |> Repo.all()
   end
 
   defp broadcast_profile_updated(%Profile{id: profile_id}) do
@@ -3957,7 +4333,11 @@ defmodule PotokIde.Social do
     )
   end
 
+  # Every manifest or role change ends here, so the cached manifests go first:
+  # the pages reload them on this message.
   defp broadcast_group_roles_updated(group_ids) when is_list(group_ids) do
+    Access.forget_manifests(group_ids)
+
     Enum.each(group_ids, fn group_id ->
       Phoenix.PubSub.broadcast(
         PotokIde.PubSub,

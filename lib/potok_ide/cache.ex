@@ -11,6 +11,9 @@ defmodule PotokIde.Cache do
 
   @table __MODULE__
   @sweep_interval_ms :timer.minutes(5)
+  # How long a caller waits for another one computing the same key before it
+  # computes the value itself.
+  @claim_timeout_ms :timer.seconds(30)
 
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, opts, name: __MODULE__)
@@ -19,17 +22,38 @@ defmodule PotokIde.Cache do
   @doc """
   Returns the cached value for `key`, computing and storing it with `fun`
   when missing or expired. `ttl` is in milliseconds or `:infinity`.
+
+  Concurrent misses of one key compute it once: the first caller runs `fun`
+  and the others wait for it. A page of uncached avatars requested by many
+  browsers at once would otherwise run ImageMagick once per request.
   """
   def fetch(key, ttl, fun) when is_function(fun, 0) do
     case get(key) do
-      {:ok, value} ->
-        value
-
-      :error ->
-        value = fun.()
-        put(key, value, ttl)
-        value
+      {:ok, value} -> value
+      :error -> fetch_missing(key, ttl, fun)
     end
+  end
+
+  defp fetch_missing(key, ttl, fun) do
+    case claim(key) do
+      :compute ->
+        try do
+          put(key, fun.(), ttl)
+        after
+          GenServer.cast(__MODULE__, {:done, key, self()})
+        end
+
+      # Another caller finished (or failed): look again.
+      :ready ->
+        fetch(key, ttl, fun)
+    end
+  end
+
+  defp claim(key) do
+    GenServer.call(__MODULE__, {:claim, key}, @claim_timeout_ms)
+  catch
+    # Not running, or the computing caller is stuck.
+    :exit, _reason -> :compute
   end
 
   def get(key) do
@@ -72,6 +96,10 @@ defmodule PotokIde.Cache do
     ArgumentError -> :ok
   end
 
+  def delete_many(keys) when is_list(keys) do
+    Enum.each(keys, &delete/1)
+  end
+
   @doc "Deletes every entry whose key is a tuple starting with `prefix`."
   def delete_prefix(prefix) do
     :ets.select_delete(@table, [
@@ -95,10 +123,41 @@ defmodule PotokIde.Cache do
   def init(_opts) do
     :ets.new(@table, [:named_table, :public, :set, read_concurrency: true])
     schedule_sweep()
-    {:ok, %{}}
+    # key => {computing pid, monitor ref, waiting callers}
+    {:ok, %{computing: %{}}}
   end
 
   @impl true
+  def handle_call({:claim, key}, {pid, _tag} = from, state) do
+    case state.computing do
+      # A nested fetch of the key from inside its own computation.
+      %{^key => {^pid, _ref, _waiters}} ->
+        {:reply, :compute, state}
+
+      %{^key => {owner, ref, waiters}} ->
+        {:noreply, put_in(state.computing[key], {owner, ref, [from | waiters]})}
+
+      _ ->
+        if match?({:ok, _}, get(key)) do
+          {:reply, :ready, state}
+        else
+          ref = Process.monitor(pid)
+          {:reply, :compute, put_in(state.computing[key], {pid, ref, []})}
+        end
+    end
+  end
+
+  @impl true
+  def handle_cast({:done, key, pid}, state), do: {:noreply, release(state, key, pid)}
+
+  @impl true
+  def handle_info({:DOWN, ref, :process, pid, _reason}, state) do
+    case Enum.find(state.computing, fn {_key, {_pid, key_ref, _}} -> key_ref == ref end) do
+      {key, _computing} -> {:noreply, release(state, key, pid)}
+      nil -> {:noreply, state}
+    end
+  end
+
   def handle_info(:sweep, state) do
     now = System.monotonic_time(:millisecond)
 
@@ -108,6 +167,18 @@ defmodule PotokIde.Cache do
 
     schedule_sweep()
     {:noreply, state}
+  end
+
+  defp release(state, key, pid) do
+    case state.computing do
+      %{^key => {^pid, ref, waiters}} ->
+        Process.demonitor(ref, [:flush])
+        Enum.each(waiters, &GenServer.reply(&1, :ready))
+        %{state | computing: Map.delete(state.computing, key)}
+
+      _ ->
+        state
+    end
   end
 
   defp schedule_sweep do

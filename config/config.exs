@@ -33,6 +33,10 @@ config :potok_ide, :canonical_host, nil
 # before reloading once (see GroupLive.Show.schedule_refresh/2).
 config :potok_ide, live_refresh_debounce_ms: 100
 
+# How long after a page mounts its websocket and LiveView processes collect
+# the garbage that rendering the page left (see ProfileAuth); nil turns it off.
+config :potok_ide, transport_gc_delay_ms: 2_000
+
 # Files attached to values (see PotokIde.Storage). Without an adapter
 # attachments are off; dev and test keep files on disk, and runtime.exs
 # switches to a bucket when BUCKET_NAME is set.
