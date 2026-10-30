@@ -1,0 +1,99 @@
+# Stress test stack: Postgres, the production release (built from the repo
+# Dockerfile) and the load generator. Driven by run.sh; see README.md.
+name: potok_load
+
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=pg_stat_statements
+      - -c
+      - pg_stat_statements.track=top
+      - -c
+      - max_connections=200
+      - -c
+      - shared_buffers=256MB
+    volumes:
+      - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql:ro
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  app:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    image: potok_load_app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
+    environment:
+      DATABASE_URL: ecto://postgres:postgres@db/${DB_NAME:-potok_load_1k}
+      # Local-only value; production uses its own secret.
+      SECRET_KEY_BASE: k9kt77mW0zmtN3no1Qhi2JfDkkEhrGjT9eJiy7/LRkbtSXUdcj61lbCyEu2B1EVv
+      PHX_HOST: localhost
+      PORT: "8080"
+      POOL_SIZE: ${POOL_SIZE:-10}
+      MAILER_FROM_EMAIL: load@potok.test
+      MAILGUN_API_KEY: load-test
+      MAILGUN_DOMAIN: potok.test
+      # rel/env.sh.eex uses long node names; the container hostname is not one.
+      RELEASE_NODE: potok_ide@127.0.0.1
+    # Fly machine size by default (fly.toml: 1 CPU, 512 MB); run.sh overrides it.
+    deploy:
+      resources:
+        limits:
+          cpus: "${APP_CPUS:-1}"
+          memory: ${APP_MEM:-512M}
+    # No swap, like a Fly machine: hitting the limit means an OOM kill.
+    memswap_limit: ${APP_MEM:-512M}
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    volumes:
+      - ./:/load_test
+    ports:
+      - "127.0.0.1:4020:8080"
+    restart: "no"
+
+  loadgen:
+    image: hexpm/elixir:1.18.2-erlang-27.3.4-debian-trixie-20260223-slim
+    profiles: ["loadgen"]
+    working_dir: /load_test
+    entrypoint:
+      - sh
+      - -c
+      - mix local.hex --force --if-missing >/dev/null && exec elixir --erl "+P 4000000 +Q 1000000" /load_test/loadgen.exs "$$@"
+      - loadgen
+    environment:
+      LANG: C.UTF-8
+    deploy:
+      resources:
+        limits:
+          cpus: "4"
+          memory: 2560M
+    ulimits:
+      nofile:
+        soft: 200000
+        hard: 200000
+    volumes:
+      - ./:/load_test
+      - mixhome:/root/.mix
+      - hexhome:/root/.hex
+      - mixcache:/root/.cache
+
+volumes:
+  pgdata:
+  mixhome:
+  hexhome:
+  mixcache:
