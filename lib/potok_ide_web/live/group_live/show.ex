@@ -24,6 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     FilesTab,
     GroupDescriptionTab,
     InviteProfileTab,
+    MediaViewer,
     MembersTab,
     RolesTab,
     SubGroupsTab,
@@ -538,6 +539,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           />
         </div>
       </div>
+
+      <MediaViewer.viewer />
     </Layouts.app>
     """
   end

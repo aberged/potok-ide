@@ -167,6 +167,60 @@
    `#group-presence-style` rules, so presence changes never re-render items. */
 .presence-dot { display: none; }
 
+/* Seek bar of the audio player in values: the played part (`--progress`,
+   set by the `.AudioPlayer` hook) takes the text color, the rest is a faint
+   track of the same color. */
+.audio-seek {
+  appearance: none;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: linear-gradient(
+    to right,
+    currentColor var(--progress, 0%),
+    color-mix(in oklab, currentColor 22%, transparent) var(--progress, 0%)
+  );
+  cursor: pointer;
+}
+
+.audio-seek:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.audio-seek::-webkit-slider-thumb {
+  appearance: none;
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 150ms ease-out;
+}
+
+.audio-seek::-moz-range-thumb {
+  width: 0.8rem;
+  height: 0.8rem;
+  border: 0;
+  border-radius: 9999px;
+  background: currentColor;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+  transition: transform 150ms ease-out;
+}
+
+.audio-seek::-moz-range-track {
+  background: transparent;
+}
+
+.audio-seek:enabled:hover::-webkit-slider-thumb,
+.audio-seek:enabled:focus-visible::-webkit-slider-thumb {
+  transform: scale(1.25);
+}
+
+.audio-seek:enabled:hover::-moz-range-thumb,
+.audio-seek:enabled:focus-visible::-moz-range-thumb {
+  transform: scale(1.25);
+}
+
 /* Group description editor layout modes */
 .group-description-layout-button {
   border: 1px solid var(--color-base-300);

@@ -182,6 +182,94 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
     end
   end
 
+  describe "media preview" do
+    setup %{profile: profile, group: group} do
+      {:ok, %{attachments: [image, video, audio, text]}} =
+        Social.create_value(profile, group, %{"content" => "media"}, [
+          stored_file!(group, "photo.png", "image/png"),
+          stored_file!(group, "clip.mp4", "video/mp4"),
+          stored_file!(group, "song.mp3", "audio/mpeg"),
+          stored_file!(group, "notes.txt")
+        ])
+
+      %{image: image, video: video, audio: audio, text: text}
+    end
+
+    test "a value shows images and videos as tiles for the viewer and audio as a player", %{
+      conn: conn,
+      group: group,
+      image: image,
+      video: video,
+      audio: audio,
+      text: text
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, "dialog#media-viewer[phx-hook]")
+
+      gallery = "value-#{image.value_id}"
+
+      assert has_element?(
+               lv,
+               ~s(a#value-attachment-#{image.id}[data-media="image"][data-media-gallery="#{gallery}"] img)
+             )
+
+      assert has_element?(
+               lv,
+               ~s(a#value-attachment-#{video.id}[data-media="video"][data-media-gallery="#{gallery}"] video)
+             )
+
+      assert has_element?(
+               lv,
+               ~s(a#value-attachment-#{video.id}[data-media-download="/files/#{video.id}?download=1"])
+             )
+
+      assert has_element?(lv, "#value-audio-#{audio.id}[phx-update=ignore] audio")
+
+      assert has_element?(
+               lv,
+               ~s(#value-audio-#{audio.id} a[href="/files/#{audio.id}?download=1"])
+             )
+
+      refute has_element?(lv, "#value-attachment-#{audio.id}")
+
+      assert has_element?(lv, "a#value-attachment-#{text.id}[download]")
+      refute has_element?(lv, "a#value-attachment-#{text.id}[data-media]")
+    end
+
+    test "the files tab opens media in the viewer and downloads the rest", %{
+      conn: conn,
+      group: group,
+      image: image,
+      video: video,
+      audio: audio,
+      text: text
+    } do
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
+
+      for {file, kind} <- [{image, "image"}, {video, "video"}, {audio, "audio"}] do
+        assert has_element?(
+                 lv,
+                 ~s(#file-#{file.id} a[data-media="#{kind}"][data-media-gallery="files-list"])
+               )
+
+        refute has_element?(lv, "#file-#{file.id} a[download]")
+      end
+
+      assert has_element?(lv, "#file-#{text.id} a[download]")
+      refute has_element?(lv, "#file-#{text.id} a[data-media]")
+
+      lv |> element("#group-files-view-tree") |> render_click()
+
+      assert has_element?(
+               lv,
+               ~s(a#files-tree-file-#{video.id}[data-media="video"][data-media-gallery="files-folder-#{group.id}"])
+             )
+
+      assert has_element?(lv, "a#files-tree-file-#{text.id}[download]")
+    end
+  end
+
   defp account_with_profile!(username) do
     account = account_fixture()
 
@@ -197,13 +285,13 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
     {Accounts.get_account!(account.id), profile}
   end
 
-  defp stored_file!(group, name) do
+  defp stored_file!(group, name, content_type \\ "text/plain") do
     key = Storage.new_key(group.id)
     path = Path.join(System.tmp_dir!(), "potok-upload-#{System.unique_integer([:positive])}")
     File.write!(path, "hello")
     :ok = Storage.put_file(key, path)
     File.rm!(path)
 
-    %{storage_key: key, filename: name, content_type: "text/plain", byte_size: 5}
+    %{storage_key: key, filename: name, content_type: content_type, byte_size: 5}
   end
 end

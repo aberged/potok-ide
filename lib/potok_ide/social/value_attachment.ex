@@ -11,8 +11,12 @@ defmodule PotokIde.Social.ValueAttachment do
   @max_filename_length 255
   @fallback_content_type "application/octet-stream"
   @content_type_format ~r{\A[\w.+-]+/[\w.+-]+\z}
-  # Raster images are the only files shown in place: they cannot run scripts.
-  @image_types ~w(image/png image/jpeg image/gif image/webp)
+  # Raster images, audio and video are the only files shown in place: the
+  # browser plays them with its own viewer and they cannot run scripts.
+  @image_types ~w(image/png image/jpeg image/gif image/webp image/avif)
+  @video_types ~w(video/mp4 video/webm video/ogg video/quicktime)
+  @audio_types ~w(audio/mpeg audio/mp3 audio/mp4 audio/x-m4a audio/aac audio/ogg audio/opus
+                  audio/wav audio/x-wav audio/wave audio/webm audio/flac audio/x-flac)
 
   schema "value_attachments" do
     field :storage_key, :string
@@ -81,4 +85,13 @@ defmodule PotokIde.Social.ValueAttachment do
   def image?(%__MODULE__{content_type: type}), do: type in @image_types
   def image?(type) when is_binary(type), do: type in @image_types
   def image?(_), do: false
+
+  @doc "How the app previews the file: `:image`, `:video`, `:audio`, or `nil` (download only)."
+  def media_kind(%__MODULE__{content_type: type}), do: media_kind(type)
+  def media_kind(type) when type in @image_types, do: :image
+  def media_kind(type) when type in @video_types, do: :video
+  def media_kind(type) when type in @audio_types, do: :audio
+  def media_kind(_type), do: nil
+
+  def previewable?(attachment), do: media_kind(attachment) != nil
 end

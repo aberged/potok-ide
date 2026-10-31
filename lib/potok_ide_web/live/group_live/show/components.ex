@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.Avatars
+  alias PotokIdeWeb.GroupLive.Show.MediaViewer
 
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
@@ -1078,32 +1079,58 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </div>
 
         <div
-          :if={@images != [] or @files != []}
+          :if={@media != [] or @audios != [] or @files != []}
           id={"value-attachments-#{@value.id}"}
           class={["flex flex-col gap-2", @has_text? && "mt-2.5"]}
         >
-          <div :if={@images != []} class="flex flex-wrap gap-2">
+          <div :if={@media != []} class="flex flex-wrap gap-2">
             <a
-              :for={image <- @images}
-              id={"value-attachment-#{image.id}"}
-              href={~p"/files/#{image.id}"}
+              :for={item <- @media}
+              id={"value-attachment-#{item.id}"}
+              href={~p"/files/#{item.id}"}
               target="_blank"
               rel="noopener"
-              title={image.filename}
+              title={item.filename}
+              {MediaViewer.media_data(item, "value-#{@value.id}")}
               class={[
-                "group/image block overflow-hidden rounded-2xl border transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",
+                "group/image relative block overflow-hidden rounded-2xl border transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",
                 if(@mine?, do: "border-primary-content/25", else: "border-base-300")
               ]}
             >
-              <img
-                src={~p"/files/#{image.id}"}
-                alt={image.filename}
-                loading="lazy"
-                decoding="async"
-                class="block h-48 w-auto min-w-24 max-w-full bg-base-200 object-cover transition-transform duration-300 ease-out group-hover/image:scale-[1.02] sm:max-w-80"
-              />
+              <%= if ValueAttachment.media_kind(item) == :video do %>
+                <%!-- The first frame stands in for a thumbnail; the viewer plays the video. --%>
+                <video
+                  src={"#{~p"/files/#{item.id}"}#t=0.1"}
+                  preload="metadata"
+                  muted
+                  playsinline
+                  disablepictureinpicture
+                  tabindex="-1"
+                  class="pointer-events-none block h-48 w-auto min-w-36 max-w-full bg-base-300 object-cover transition-transform duration-300 ease-out group-hover/image:scale-[1.02] sm:max-w-80"
+                >
+                </video>
+                <span class="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors duration-150 group-hover/image:bg-black/20">
+                  <span class="inline-flex size-12 items-center justify-center rounded-full bg-black/55 text-white shadow-lg backdrop-blur transition-transform duration-200 ease-out group-hover/image:scale-110">
+                    <.icon name="hero-play-solid" class="size-6 translate-x-0.5" />
+                  </span>
+                </span>
+              <% else %>
+                <img
+                  src={~p"/files/#{item.id}"}
+                  alt={item.filename}
+                  loading="lazy"
+                  decoding="async"
+                  class="block h-48 w-auto min-w-24 max-w-full bg-base-200 object-cover transition-transform duration-300 ease-out group-hover/image:scale-[1.02] sm:max-w-80"
+                />
+              <% end %>
             </a>
           </div>
+          <.audio_player
+            :for={audio <- @audios}
+            id={"value-audio-#{audio.id}"}
+            file={audio}
+            mine={@mine?}
+          />
           <a
             :for={file <- @files}
             id={"value-attachment-#{file.id}"}
@@ -1209,18 +1236,209 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   # Association matches stay defensive: a value that was not loaded with
   # `Social` display preloads renders without its quote or thread link.
-  # Raster images show as previews, every other file as a download row.
+  # Images and videos show as tiles that open the viewer, audio as a player,
+  # every other file as a download row.
   defp assign_value_attachments(assigns, %Value{attachments: attachments})
        when is_list(attachments) do
-    {images, files} = Enum.split_with(attachments, &ValueAttachment.image?/1)
+    sections = Enum.group_by(attachments, &attachment_section/1)
 
     assigns
-    |> assign(:images, images)
-    |> assign(:files, files)
+    |> assign(:media, Map.get(sections, :media, []))
+    |> assign(:audios, Map.get(sections, :audio, []))
+    |> assign(:files, Map.get(sections, :file, []))
   end
 
   defp assign_value_attachments(assigns, _value),
-    do: assigns |> assign(:images, []) |> assign(:files, [])
+    do: assigns |> assign(:media, []) |> assign(:audios, []) |> assign(:files, [])
+
+  defp attachment_section(attachment) do
+    case ValueAttachment.media_kind(attachment) do
+      kind when kind in [:image, :video] -> :media
+      :audio -> :audio
+      nil -> :file
+    end
+  end
+
+  attr :id, :string, required: true
+  attr :file, ValueAttachment, required: true
+  attr :mine, :boolean, default: false
+
+  # Ignored by LiveView once mounted, so re-rendering the value (a reaction,
+  # an edit) does not stop or rewind what is playing.
+  defp audio_player(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-hook=".AudioPlayer"
+      phx-update="ignore"
+      class={[
+        "flex min-w-0 items-center gap-3 rounded-2xl border py-2 pr-2 pl-2 sm:min-w-72",
+        if(@mine,
+          do: "border-primary-content/25 bg-primary-content/10 text-primary-content",
+          else: "border-base-300 bg-base-200/60 text-base-content"
+        )
+      ]}
+    >
+      <audio src={~p"/files/#{@file.id}"} preload="none"></audio>
+      <button
+        type="button"
+        data-audio-toggle
+        aria-pressed="false"
+        aria-label={gettext("Play")}
+        data-label-play={gettext("Play")}
+        data-label-pause={gettext("Pause")}
+        class={[
+          "group/toggle inline-flex size-9 shrink-0 items-center justify-center rounded-full shadow-sm transition duration-150 ease-out hover:scale-105 active:scale-95 disabled:opacity-50",
+          if(@mine,
+            do: "bg-primary-content text-primary",
+            else: "bg-primary text-primary-content"
+          )
+        ]}
+      >
+        <.icon
+          name="hero-play-solid"
+          class="size-4 translate-x-px group-aria-pressed/toggle:hidden"
+        />
+        <.icon name="hero-pause-solid" class="hidden size-4 group-aria-pressed/toggle:block" />
+      </button>
+      <div class="min-w-0 flex-1">
+        <div class="flex items-baseline gap-2">
+          <span class="min-w-0 flex-1 truncate text-sm font-medium" title={@file.filename}>
+            {@file.filename}
+          </span>
+          <span
+            data-audio-time
+            class={[
+              "shrink-0 text-xs tabular-nums",
+              if(@mine, do: "text-primary-content/70", else: "text-base-content/55")
+            ]}
+          >
+            {format_bytes(@file.byte_size)}
+          </span>
+        </div>
+        <input
+          type="range"
+          data-audio-seek
+          min="0"
+          max="1000"
+          step="1"
+          value="0"
+          aria-label={gettext("Playback position")}
+          class={[
+            "audio-seek mt-1.5 block w-full",
+            if(@mine, do: "text-primary-content", else: "text-primary")
+          ]}
+        />
+      </div>
+      <a
+        href={MediaViewer.download_path(@file)}
+        title={gettext("Download")}
+        aria-label={gettext("Download")}
+        class="inline-flex size-8 shrink-0 items-center justify-center rounded-full opacity-60 transition duration-150 ease-out hover:bg-current/10 hover:opacity-100"
+      >
+        <.icon name="hero-arrow-down-tray" class="size-4" />
+      </a>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".AudioPlayer">
+      const formatTime = seconds => {
+        const total = Math.max(Math.floor(seconds), 0)
+        const hours = Math.floor(total / 3600)
+        const minutes = Math.floor((total % 3600) / 60)
+        const rest = String(total % 60).padStart(2, "0")
+
+        return hours > 0
+          ? `${hours}:${String(minutes).padStart(2, "0")}:${rest}`
+          : `${minutes}:${rest}`
+      }
+
+      export default {
+        mounted() {
+          const audio = (this.audio = this.el.querySelector("audio"))
+          const toggle = this.el.querySelector("[data-audio-toggle]")
+          const seek = this.el.querySelector("[data-audio-seek]")
+          const time = this.el.querySelector("[data-audio-time]")
+          const size = time.textContent.trim()
+          let seeking = false
+          let pendingSeek = null
+
+          const knownDuration = () => Number.isFinite(audio.duration) && audio.duration > 0
+
+          const showTime = position => {
+            time.textContent = knownDuration()
+              ? `${formatTime(position)} / ${formatTime(audio.duration)}`
+              : size
+          }
+
+          const fill = () => seek.style.setProperty("--progress", `${seek.value / 10}%`)
+
+          const render = () => {
+            if (seeking) return
+            seek.value = knownDuration() ? Math.round((audio.currentTime / audio.duration) * 1000) : 0
+            fill()
+            showTime(audio.currentTime)
+          }
+
+          const renderPlaying = () => {
+            const playing = !audio.paused
+            toggle.setAttribute("aria-pressed", String(playing))
+            toggle.setAttribute(
+              "aria-label",
+              playing ? toggle.dataset.labelPause : toggle.dataset.labelPlay
+            )
+          }
+
+          toggle.addEventListener("click", () => {
+            if (audio.paused) audio.play()?.catch(() => {})
+            else audio.pause()
+          })
+
+          seek.addEventListener("input", () => {
+            seeking = true
+            fill()
+            if (knownDuration()) showTime((seek.value / 1000) * audio.duration)
+          })
+
+          // Seeking before the first play loads the metadata first.
+          seek.addEventListener("change", () => {
+            seeking = false
+
+            if (knownDuration()) {
+              audio.currentTime = (seek.value / 1000) * audio.duration
+            } else {
+              pendingSeek = seek.value / 1000
+              audio.preload = "metadata"
+              audio.load()
+            }
+          })
+
+          audio.addEventListener("loadedmetadata", () => {
+            if (pendingSeek !== null && knownDuration()) {
+              audio.currentTime = pendingSeek * audio.duration
+              pendingSeek = null
+            }
+
+            render()
+          })
+
+          audio.addEventListener("timeupdate", render)
+          audio.addEventListener("durationchange", render)
+          audio.addEventListener("play", renderPlaying)
+          audio.addEventListener("pause", renderPlaying)
+          audio.addEventListener("ended", renderPlaying)
+          audio.addEventListener("error", () => {
+            toggle.disabled = true
+            seek.disabled = true
+            renderPlaying()
+          })
+        },
+
+        destroyed() {
+          this.audio?.pause()
+        },
+      }
+    </script>
+    """
+  end
 
   @doc "A heroicon name for a file of the given content type."
   def file_icon(type)

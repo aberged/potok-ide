@@ -2,7 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.ValueAttachment
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, MediaViewer}
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
@@ -86,6 +86,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             <li :for={{dom_id, file} <- @files} id={dom_id}>
               <.file_link
                 file={file}
+                gallery="files-list"
                 class="rounded-2xl border border-base-300/60 bg-base-100/70 px-2.5 py-2 shadow-sm"
               >
                 <:details>
@@ -174,6 +175,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
           :for={file <- @node.files}
           file={file}
           id={"files-tree-file-#{file.id}"}
+          gallery={"files-folder-#{@node.group.id}"}
           class="rounded-xl px-2 py-1.5"
           compact
         >
@@ -187,24 +189,33 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
   end
 
   attr :file, ValueAttachment, required: true
+  attr :gallery, :string, required: true, doc: "the files the viewer's arrows step through"
   attr :id, :string, default: nil
   attr :class, :any, default: nil
   attr :compact, :boolean, default: false
   slot :details
 
-  # Images open in a new tab; other files download (`/files/:id` sends them
-  # as attachments), so the page itself never navigates away.
+  # Images, videos and audio open in the viewer (a new tab without JS); other
+  # files download (`/files/:id` sends them as attachments), so the page
+  # itself never navigates away.
   defp file_link(assigns) do
-    assigns = assign(assigns, :image?, ValueAttachment.image?(assigns.file))
+    kind = ValueAttachment.media_kind(assigns.file)
+
+    assigns =
+      assigns
+      |> assign(:image?, kind == :image)
+      |> assign(:media?, kind != nil)
+      |> assign(:action_icon, action_icon(kind))
 
     ~H"""
     <a
       id={@id}
       href={~p"/files/#{@file.id}"}
-      target={@image? && "_blank"}
-      rel={@image? && "noopener"}
-      download={!@image? && @file.filename}
+      target={@media? && "_blank"}
+      rel={@media? && "noopener"}
+      download={!@media? && @file.filename}
       title={@file.filename}
+      {MediaViewer.media_data(@file, @gallery)}
       class={[
         "group/file flex min-w-0 items-center gap-3 transition duration-150 ease-out hover:bg-base-200",
         @class
@@ -243,12 +254,16 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         {render_slot(@details)}
       </span>
       <.icon
-        name={if(@image?, do: "hero-arrow-top-right-on-square", else: "hero-arrow-down-tray")}
+        name={@action_icon}
         class="size-4 shrink-0 text-base-content/40 transition-colors group-hover/file:text-base-content"
       />
     </a>
     """
   end
+
+  defp action_icon(kind) when kind in [:image, :video], do: "hero-arrows-pointing-out"
+  defp action_icon(:audio), do: "hero-play"
+  defp action_icon(nil), do: "hero-arrow-down-tray"
 
   attr :id, :string, default: nil
   attr :text, :string, required: true

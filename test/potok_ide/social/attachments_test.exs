@@ -221,6 +221,21 @@ defmodule PotokIde.Social.AttachmentsTest do
     end
   end
 
+  describe "ValueAttachment.media_kind/1" do
+    test "names the files the app previews and nothing else" do
+      assert ValueAttachment.media_kind(%ValueAttachment{content_type: "image/webp"}) == :image
+      assert ValueAttachment.media_kind("video/mp4") == :video
+      assert ValueAttachment.media_kind("video/quicktime") == :video
+      assert ValueAttachment.media_kind("audio/mpeg") == :audio
+      assert ValueAttachment.media_kind("audio/x-m4a") == :audio
+
+      for type <- ["image/svg+xml", "text/html", "application/pdf", "video/x-msvideo", nil] do
+        assert ValueAttachment.media_kind(type) == nil
+        refute ValueAttachment.previewable?(%ValueAttachment{content_type: type})
+      end
+    end
+  end
+
   describe "Storage.content_disposition/2" do
     test "has an ASCII fallback and the full UTF-8 name" do
       assert Storage.content_disposition(:attachment, ~s(Ćevapi "menu".pdf)) ==
