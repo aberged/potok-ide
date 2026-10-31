@@ -27,6 +27,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     MembersTab,
     RolesTab,
     SubGroupsTab,
+    SubGroupTree,
     ValuesTab
   }
 
@@ -967,6 +968,30 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("load_more_children", _params, socket) do
     {:noreply, load_more_children(socket)}
+  end
+
+  def handle_event("toggle_sub_group_folder", %{"id" => id}, socket) do
+    case Integer.parse(id) do
+      {group_id, ""} ->
+        profile = socket.assigns.current_profile
+        {:noreply, update_sub_group_tree(socket, &SubGroupTree.toggle(&1, group_id, profile))}
+
+      _invalid ->
+        {:noreply, socket}
+    end
+  end
+
+  # Without an id, the next page of the top level.
+  def handle_event("load_more_sub_group_folders", params, socket) do
+    profile = socket.assigns.current_profile
+
+    case Integer.parse(Map.get(params, "id", "")) do
+      {group_id, ""} ->
+        {:noreply, update_sub_group_tree(socket, &SubGroupTree.load_more(&1, group_id, profile))}
+
+      _top_level ->
+        {:noreply, update_sub_group_tree(socket, &SubGroupTree.load_more(&1, nil, profile))}
+    end
   end
 
   def handle_event("search_children", %{"children_search" => %{"q" => query}}, socket) do
@@ -2780,30 +2805,48 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  # The folder view loads the whole tree at once; the pagination only carries
-  # the top-level count, so the list's empty states work for the tree too.
+  # The folder view loads a level at a time (see `SubGroupTree`); a reload
+  # keeps the folders that were open.
   defp load_sub_group_tree(socket, group) do
     filters = children_filters(socket)
 
     tree =
-      Social.sub_group_tree(group, socket.assigns.current_profile,
+      SubGroupTree.load(group, socket.assigns.current_profile, socket.assigns.sub_group_tree,
         threads?: filters[:is_thread] != false,
-        search: filters[:search]
+        search: filters[:search],
+        thread_count: count_thread_children(socket)
       )
-
-    top_level_count = length(tree.nodes)
 
     socket
     |> assign(:loaded_children, [])
+    |> assign_sub_group_tree(tree)
+    # The panel always takes `@streams.children`, so it must exist.
+    |> stream(:children, [], reset: true)
+  end
+
+  # The pagination only carries the top-level count, so the list's empty
+  # states work for the tree too.
+  defp assign_sub_group_tree(socket, tree) do
+    top_level_count = length(tree.nodes)
+
+    socket
     |> assign(:sub_group_tree, tree)
     |> assign(
       :children_pagination,
       loaded_pagination(socket.assigns.children_pagination, top_level_count, top_level_count)
     )
     |> assign(:thread_sub_groups_count, tree.thread_count)
-    # The panel always takes `@streams.children`, so it must exist.
-    |> stream(:children, [], reset: true)
   end
+
+  # Opening a folder or loading another page adds folders, which then need
+  # their unread counts.
+  defp update_sub_group_tree(%{assigns: %{sub_group_tree: %{} = tree}} = socket, fun) do
+    socket
+    |> assign_sub_group_tree(fun.(tree))
+    |> assign_group_unread_counts()
+  end
+
+  defp update_sub_group_tree(socket, _fun), do: socket
 
   defp maybe_load_members(socket, group, active_tab) do
     if needs_members?(group, active_tab) do
@@ -3092,11 +3135,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp put_sub_group_tree_unread_counts(socket), do: socket
 
+  defp put_node_unread_counts(nil, _counts), do: nil
+
   defp put_node_unread_counts(nodes, counts) do
     Enum.map(nodes, fn node ->
-      node
-      |> Map.put(:children, put_node_unread_counts(node.children, counts))
-      |> Map.put(:unread_count, Map.get(counts, node.group.id, 0))
+      %{
+        node
+        | children: put_node_unread_counts(node.children, counts),
+          unread_count: Map.get(counts, node.group.id, 0)
+      }
     end)
   end
 

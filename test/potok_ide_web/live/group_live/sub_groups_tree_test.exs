@@ -35,19 +35,28 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
     assert_patch(lv, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
     assert has_element?(lv, "#group-children-view-flip[phx-value-view=list]")
 
-    assert has_element?(
-             lv,
-             "#group-children-tree #sub-group-folder-#{ctx.child.id} #sub-group-folder-#{ctx.grandchild.id}"
-           )
-
+    assert has_element?(lv, "#group-children-tree #sub-group-folder-#{ctx.child.id}")
     assert has_element?(lv, "#sub-group-folder-#{ctx.sibling.id}")
-    refute has_element?(lv, "#sub-group-folder-#{ctx.child.id}[open]")
     refute has_element?(lv, "#group-children-list")
 
+    # Only the top level is loaded until a folder is opened.
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=false]")
+    refute has_element?(lv, "#sub-group-folder-toggle-#{ctx.sibling.id}")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
+
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=true]")
+
     assert has_element?(
              lv,
-             "#sub-group-folder-link-#{ctx.grandchild.id}[href='/groups/#{ctx.grandchild.id}']"
+             "#sub-group-folder-#{ctx.child.id} #sub-group-folder-link-#{ctx.grandchild.id}[href='/groups/#{ctx.grandchild.id}']"
            )
+
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=false]")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
 
     lv |> element("#group-children-view-list") |> render_click()
     assert_patch(lv, ~p"/groups/#{ctx.group.id}/sub_groups")
@@ -65,10 +74,15 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
     |> form("#group-children-search-form", %{"children_search" => %{"q" => "grand"}})
     |> render_change()
 
-    assert has_element?(lv, "#sub-group-search-folder-#{ctx.child.id}[open]")
-    assert has_element?(lv, "#sub-group-search-folder-#{ctx.grandchild.id}")
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=true]")
+
+    assert has_element?(
+             lv,
+             "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{ctx.grandchild.id}"
+           )
+
     assert has_element?(lv, "#sub-group-folder-link-#{ctx.grandchild.id} .bg-yellow-300", "grand")
-    refute has_element?(lv, "#sub-group-search-folder-#{ctx.sibling.id}")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.sibling.id}")
 
     lv
     |> form("#group-children-search-form", %{"children_search" => %{"q" => "no-match"}})
@@ -79,8 +93,59 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
 
     lv |> element("#group-children-search-reset") |> render_click()
 
-    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}")
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=false]")
     assert has_element?(lv, "#sub-group-folder-#{ctx.sibling.id}")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
+  end
+
+  test "a match opens to show what is below it", ctx do
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+    lv
+    |> form("#group-children-search-form", %{"children_search" => %{"q" => "child-fold"}})
+    |> render_change()
+
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=false]")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
+
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+
+    assert has_element?(
+             lv,
+             "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{ctx.grandchild.id}"
+           )
+  end
+
+  test "each level loads a page at a time", ctx do
+    pages =
+      for index <- 1..50 do
+        group!(ctx.profile, ctx.child, "page-#{String.pad_leading("#{index}", 2, "0")}")
+      end
+
+    last_page = List.last(pages)
+
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+    refute has_element?(lv, "#group-children-tree-more")
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+
+    # "grandchild" sorts before "page-…", so the first page ends at page-49.
+    assert has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
+    assert has_element?(lv, "#sub-group-folder-more-#{ctx.child.id}")
+    refute has_element?(lv, "#sub-group-folder-#{last_page.id}")
+
+    lv |> element("#sub-group-folder-more-#{ctx.child.id}") |> render_click()
+
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{last_page.id}")
+    refute has_element?(lv, "#sub-group-folder-more-#{ctx.child.id}")
+
+    # On the child's own page the same 51 groups are the top level.
+    {:ok, child_lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.child.id}/sub_groups?view=tree")
+
+    refute has_element?(child_lv, "#sub-group-folder-#{last_page.id}")
+    child_lv |> element("#group-children-tree-more") |> render_click()
+    assert has_element?(child_lv, "#sub-group-folder-#{last_page.id}")
+    refute has_element?(child_lv, "#group-children-tree-more")
   end
 
   test "shows unread values on the folders that hold them", ctx do
@@ -92,11 +157,14 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
     {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
 
     assert has_element?(lv, "#sub-group-folder-unread-#{ctx.child.id}", "1")
-    assert has_element?(lv, "#sub-group-folder-unread-#{ctx.grandchild.id}", "1")
     refute has_element?(lv, "#sub-group-folder-unread-#{ctx.sibling.id}")
+
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+
+    assert has_element?(lv, "#sub-group-folder-unread-#{ctx.grandchild.id}", "1")
   end
 
-  test "the threads switch hides threads anywhere in the tree", ctx do
+  test "the threads switch hides threads anywhere, keeping open folders open", ctx do
     {:ok, value} = Social.create_value(ctx.profile, ctx.child, %{"content" => "thread start"})
 
     {:ok, thread} =
@@ -104,12 +172,30 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
 
     {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
 
+    # The thread is below the child, which the switch counts before it opens.
+    assert has_element?(lv, "#group-children-threads-toggle")
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
     assert has_element?(lv, "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{thread.id}")
 
     lv |> element("#group-children-threads-toggle") |> render_click()
 
     refute has_element?(lv, "#sub-group-folder-#{thread.id}")
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=true]")
     assert has_element?(lv, "#sub-group-folder-#{ctx.grandchild.id}")
+  end
+
+  test "a new sub-group shows up without closing the open folders", ctx do
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+    lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+    newcomer = group!(ctx.profile, ctx.group, "newcomer")
+
+    assert has_element?(lv, "#sub-group-folder-#{newcomer.id}")
+
+    assert has_element?(
+             lv,
+             "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{ctx.grandchild.id}"
+           )
   end
 
   test "direct conversations on the root group stay a list", %{conn: conn} do

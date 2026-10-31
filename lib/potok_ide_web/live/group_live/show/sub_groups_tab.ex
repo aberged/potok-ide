@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :show_thread_sub_groups, :boolean, default: true
   attr :thread_sub_groups_count, :integer, default: 0
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
-  attr :tree, :map, default: nil, doc: "`Social.sub_group_tree/3` of the group"
+  attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
 
   def panel(assigns) do
     assigns =
@@ -178,6 +178,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <div
             :if={@tree && @tree.nodes != []}
             id="group-children-tree"
+            role="tree"
             class="mt-2 rounded-3xl border border-base-300/70 bg-base-100/70 p-2 shadow-sm"
           >
             <.tree_node
@@ -186,6 +187,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               node={node}
               search_query={@children_search_query}
             />
+            <.tree_more_button :if={@tree.more?} id="group-children-tree-more" />
           </div>
           <p
             :if={@tree && @tree.truncated?}
@@ -193,7 +195,9 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             class="mt-3 flex items-center gap-2 px-1 text-xs text-base-content/60"
           >
             <.icon name="hero-information-circle" class="size-4 shrink-0" />
-            {gettext("Only part of the tree is shown. Open a sub-group to see what is below it.")}
+            {gettext(
+              "Only part of the results is shown. Narrow the search, or open a sub-group to search inside it."
+            )}
           </p>
         <% else %>
           <ul id="group-children-list" class="space-y-4" phx-update="stream">
@@ -238,57 +242,88 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     """
   end
 
-  attr :node, :map,
-    required: true,
-    doc: "a `Social.sub_group_tree/3` node with its `unread_count`"
-
+  attr :node, :map, required: true, doc: "a `SubGroupTree` node"
   attr :search_query, :string, default: ""
 
-  # The chevron opens and closes a folder; the name opens the group. `open`
-  # is left to the browser after mount, so refreshes keep folders as they
-  # were. Searching renders the folders under other ids, so they mount again
-  # opened on the way to the matches, and again closed once the search ends.
+  # The chevron opens and closes a folder; the name opens the group. The
+  # server keeps which folders are open, so a reload keeps them as they were,
+  # and the first opening of a folder loads its sub-groups.
   defp tree_node(assigns) do
     assigns =
       assign(
         assigns,
-        :dom_id,
-        if(String.trim(assigns.search_query) == "",
-          do: "sub-group-folder-#{assigns.node.group.id}",
-          else: "sub-group-search-folder-#{assigns.node.group.id}"
-        )
+        :folder?,
+        assigns.node.child_count > 0 or assigns.node.children not in [nil, []]
       )
 
     ~H"""
-    <%= if @node.children == [] do %>
-      <div
-        id={@dom_id}
-        class="flex items-center rounded-xl pr-2 transition-colors hover:bg-base-200"
-      >
-        <span class="size-8 shrink-0" aria-hidden="true"></span>
-        <.tree_node_link node={@node} search_query={@search_query} />
-      </div>
-    <% else %>
-      <details id={@dom_id} open={@node.open?} phx-mounted={JS.ignore_attributes(["open"])}>
-        <summary class="flex cursor-pointer list-none items-center rounded-xl pr-2 transition-colors hover:bg-base-200 [&::-webkit-details-marker]:hidden">
-          <span class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-base-content/45 transition-colors hover:text-base-content">
+    <div
+      id={"sub-group-folder-#{@node.group.id}"}
+      role="treeitem"
+      aria-expanded={@folder? && to_string(@node.open?)}
+    >
+      <div class="flex items-center rounded-xl pr-2 transition-colors hover:bg-base-200">
+        <%= if @folder? do %>
+          <button
+            id={"sub-group-folder-toggle-#{@node.group.id}"}
+            type="button"
+            phx-click="toggle_sub_group_folder"
+            phx-value-id={@node.group.id}
+            aria-label={gettext("Sub-groups of %{name}", name: @node.group.name)}
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-base-content/45 transition-colors hover:text-base-content"
+          >
             <.icon
               name="hero-chevron-right"
-              class="size-3.5 transition-transform duration-150 [details[open]>summary_&]:rotate-90"
+              class={[
+                "size-3.5 transition-transform duration-150 phx-click-loading:hidden",
+                @node.open? && "rotate-90"
+              ]}
             />
-          </span>
-          <.tree_node_link node={@node} search_query={@search_query} />
-        </summary>
-        <div class="ml-4 space-y-0.5 border-l border-base-300/70 pl-1">
-          <.tree_node
-            :for={child <- @node.children}
-            :key={child.group.id}
-            node={child}
-            search_query={@search_query}
-          />
-        </div>
-      </details>
-    <% end %>
+            <%!-- Shown while the sub-groups of a folder opened for the first time load. --%>
+            <span class="hidden size-3.5 animate-spin rounded-full border-2 border-current border-t-transparent phx-click-loading:block">
+            </span>
+          </button>
+        <% else %>
+          <span class="size-8 shrink-0" aria-hidden="true"></span>
+        <% end %>
+        <.tree_node_link node={@node} search_query={@search_query} />
+      </div>
+      <div
+        :if={@node.open? and @node.children not in [nil, []]}
+        role="group"
+        class="ml-4 space-y-0.5 border-l border-base-300/70 pl-1"
+      >
+        <.tree_node
+          :for={child <- @node.children}
+          :key={child.group.id}
+          node={child}
+          search_query={@search_query}
+        />
+        <.tree_more_button
+          :if={@node.more?}
+          id={"sub-group-folder-more-#{@node.group.id}"}
+          parent_id={@node.group.id}
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :parent_id, :integer, default: nil, doc: "the folder to page, nil for the top level"
+
+  defp tree_more_button(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      phx-click="load_more_sub_group_folders"
+      phx-value-id={@parent_id}
+      class="ml-8 mt-0.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition duration-150 ease-out hover:bg-primary/10 active:scale-95 phx-click-loading:opacity-60"
+    >
+      <.icon name="hero-ellipsis-horizontal" class="size-4" />
+      {gettext("Load more sub-groups")}
+    </button>
     """
   end
 
@@ -299,6 +334,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     assigns =
       assigns
       |> assign(:group, assigns.node.group)
+      |> assign(:open?, assigns.node.open?)
       |> assign(:unread_count, assigns.node.unread_count)
 
     ~H"""
@@ -318,12 +354,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <.icon name="hero-chat-bubble-left-right" class={["size-5", node_icon_color(@group)]} />
         <% else %>
           <.icon
-            name="hero-folder"
-            class={["size-5 [details[open]>summary_&]:hidden", node_icon_color(@group)]}
-          />
-          <.icon
-            name="hero-folder-open"
-            class={["hidden size-5 [details[open]>summary_&]:block", node_icon_color(@group)]}
+            name={if(@open?, do: "hero-folder-open", else: "hero-folder")}
+            class={["size-5", node_icon_color(@group)]}
           />
         <% end %>
         <span class="absolute -bottom-1 -left-1 text-[0.6rem] leading-none" aria-hidden="true">
@@ -339,10 +371,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         ]}
       />
       <span
-        :if={@node.descendant_count > 0}
+        :if={@node.child_count > 0}
         class="shrink-0 text-xs tabular-nums text-base-content/50"
       >
-        {ngettext("1 sub-group", "%{count} sub-groups", @node.descendant_count)}
+        {ngettext("1 sub-group", "%{count} sub-groups", @node.child_count)}
       </span>
       <span
         :if={@unread_count > 0}

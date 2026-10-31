@@ -2576,87 +2576,193 @@ defmodule PotokIde.Social do
     {groups, length(rows) > @group_tree_max_groups}
   end
 
+  @sub_group_search_max_groups 5000
+  @sub_group_search_max_matches 100
+
   @doc """
-  The sub-groups below `group` the profile can see, as a folder tree: the
-  same groups as the sub-groups tab lists level by level (members, or public
-  groups; no direct conversations), sorted by name. A nil profile sees only
-  public groups.
+  A page of the sub-groups below each of `parents` the profile can see, for
+  the folder view of the sub-groups tab: the groups the tab lists (members,
+  or public groups; no direct conversations), sorted by name. A nil profile
+  sees only public groups.
 
-  Options: `threads?: false` leaves out threads and everything below them;
-  `search:` keeps the groups whose name contains the term and the folders on
-  the way to them.
+  `parents` are `{parent_id, limit, after}`: up to `limit` folders sorting
+  after `after`, the `%{id, name}` of the last folder already shown, or nil
+  for the first page. Option `threads?: false` leaves out threads.
 
-  Each node is `%{group: %{id, name, thread?, public?, member?}, children:
-  [...], descendant_count: n, match?: bool, open?: bool}`; `open?` is set on
-  the folders that lead to a search match. Returns `%{nodes, ids,
-  thread_count, truncated?}`: `ids` of every node shown, `thread_count` of
-  the threads in the tree before any filter, and whether the walk stopped at
-  #{@group_tree_max_depth} levels or #{@group_tree_max_groups} groups.
+  Returns `%{parent_id => {folders, more?}}`, an entry per parent. Each
+  folder is `%{id, name, thread?, public?, member?, child_count,
+  thread_child_count}`: how many sub-groups the folder view shows below it,
+  and how many of the sub-groups below it are threads, shown or not.
   """
-  def sub_group_tree(%Group{} = group, profile, opts \\ []) do
-    {groups, truncated?} = visible_group_tree_rows(group, profile && profile.id)
+  def list_sub_group_folders(profile, parents, opts \\ [])
 
-    search =
-      case normalize_group_search_term(opts[:search]) do
-        nil -> nil
-        term -> String.downcase(term)
+  def list_sub_group_folders(_profile, [], _opts), do: %{}
+
+  def list_sub_group_folders(profile, parents, opts) do
+    sql = """
+    WITH #{sub_group_memberships_sql()}
+    SELECT p.parent_id, f.id, f.name, f.is_thread, f.is_public, f.is_member,
+      counts.child_count, counts.thread_child_count
+    FROM UNNEST($1::bigint[], $2::integer[], $3::text[], $4::bigint[])
+      AS p(parent_id, page_limit, after_name, after_id)
+    CROSS JOIN LATERAL (
+      SELECT v.id, v.name, v.is_thread, v.is_public, v.is_member
+      FROM (
+        SELECT g.id, g.name, g.parent_value_id IS NOT NULL AS is_thread, g.is_public,
+          TRUE AS is_member
+        FROM mine
+        JOIN groups g ON g.id = mine.group_id
+        WHERE g.parent_id = p.parent_id AND #{sub_group_filter_sql("g")}
+
+        UNION
+
+        SELECT g.id, g.name, g.parent_value_id IS NOT NULL, g.is_public,
+          g.id IN (SELECT group_id FROM mine)
+        FROM groups g
+        WHERE g.parent_id = p.parent_id AND g.is_public AND #{sub_group_filter_sql("g")}
+      ) v
+      WHERE p.after_id IS NULL OR (lower(v.name), v.id) > (lower(p.after_name), p.after_id)
+      ORDER BY lower(v.name), v.id
+      LIMIT p.page_limit + 1
+    ) f
+    #{sub_group_counts_sql("f")}
+    ORDER BY p.parent_id, lower(f.name), f.id
+    """
+
+    params = [
+      Enum.map(parents, &elem(&1, 0)),
+      Enum.map(parents, &elem(&1, 1)),
+      Enum.map(parents, fn {_parent_id, _limit, last} -> last && last.name end),
+      Enum.map(parents, fn {_parent_id, _limit, last} -> last && last.id end),
+      profile && profile.id,
+      Keyword.get(opts, :threads?, true)
+    ]
+
+    %{rows: rows} = Repo.query!(sql, params, cache_statement: "social_sub_group_folders")
+    folders_by_parent = Enum.group_by(rows, &hd/1, &sub_group_folder(tl(&1)))
+
+    Map.new(parents, fn {parent_id, limit, _after} ->
+      folders = Map.get(folders_by_parent, parent_id, [])
+      {parent_id, {Enum.take(folders, limit), length(folders) > limit}}
+    end)
+  end
+
+  @doc """
+  The sub-groups below `group` the profile can see whose name contains
+  `search`, and the folders on the way to them: folders of
+  `list_sub_group_folders/3` with their `parent_id`, sorted by name. The
+  search walks down breadth first through #{@sub_group_search_max_groups}
+  sub-groups at most and keeps the first #{@sub_group_search_max_matches}
+  matches; `{folders, truncated?}` tells whether it cut either. Takes the
+  options of `list_sub_group_folders/3`; threads leave out what is below
+  them too.
+  """
+  def search_sub_group_folders(%Group{} = group, profile, search, opts \\ []) do
+    case normalize_group_search_term(search) do
+      nil -> {[], false}
+      term -> run_sub_group_search(group, profile, term, Keyword.get(opts, :threads?, true))
+    end
+  end
+
+  defp run_sub_group_search(group, profile, term, threads?) do
+    visible =
+      "#{sub_group_filter_sql("g")} AND (g.is_public OR g.id IN (SELECT group_id FROM mine))"
+
+    sql = """
+    WITH RECURSIVE #{sub_group_memberships_sql()},
+    tree AS (
+      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, ARRAY[g.id] AS path
+      FROM groups g
+      WHERE g.parent_id = $1 AND #{visible}
+
+      UNION ALL
+
+      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, t.path || g.id
+      FROM tree t
+      JOIN groups g ON g.parent_id = t.id
+      WHERE #{visible}
+    ),
+    walked AS (SELECT * FROM tree LIMIT $3::integer + 1),
+    matches AS (
+      SELECT w.path FROM walked w
+      WHERE w.name ILIKE '%' || $2::text || '%'
+      LIMIT $4::integer + 1
+    ),
+    shown AS (
+      SELECT DISTINCT unnest(m.path) AS id FROM (SELECT path FROM matches LIMIT $4) m
+    )
+    SELECT cut.truncated, f.parent_id, f.id, f.name, f.is_thread, f.is_public, f.is_member,
+      counts.child_count, counts.thread_child_count
+    FROM (
+      SELECT (SELECT COUNT(*) FROM walked) > $3 OR (SELECT COUNT(*) FROM matches) > $4
+        AS truncated
+    ) cut
+    LEFT JOIN (
+      SELECT w.id, w.parent_id, w.name, w.parent_value_id IS NOT NULL AS is_thread,
+        w.is_public, w.id IN (SELECT group_id FROM mine) AS is_member
+      FROM walked w
+      JOIN shown s ON s.id = w.id
+    ) f ON TRUE
+    #{sub_group_counts_sql("f")}
+    ORDER BY lower(f.name), f.id
+    """
+
+    params = [
+      group.id,
+      term,
+      @sub_group_search_max_groups,
+      @sub_group_search_max_matches,
+      profile && profile.id,
+      threads?
+    ]
+
+    %{rows: [[truncated? | _] | _] = rows} =
+      Repo.query!(sql, params, cache_statement: "social_search_sub_group_folders")
+
+    folders =
+      for [_truncated?, parent_id | folder] <- rows, parent_id != nil do
+        folder |> sub_group_folder() |> Map.put(:parent_id, parent_id)
       end
 
-    groups_by_parent =
-      groups
-      |> Enum.reject(&(&1.id == group.id))
-      |> Enum.reject(&(&1.thread? and opts[:threads?] == false))
-      |> Enum.group_by(& &1.parent_id)
+    {folders, truncated?}
+  end
 
-    nodes =
-      group.id
-      |> build_sub_group_nodes(groups_by_parent, search)
-      |> prune_sub_group_nodes(search)
+  # The folder queries take the profile as $5 (nil sees no memberships) and
+  # whether threads are shown as $6.
+  defp sub_group_memberships_sql do
+    "mine AS MATERIALIZED (SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $5)"
+  end
 
+  defp sub_group_filter_sql(alias) do
+    "#{alias}.is_direct = FALSE AND ($6::boolean OR #{alias}.parent_value_id IS NULL)"
+  end
+
+  # Per folder: the visible sub-groups the folder view shows below it, and the
+  # threads among all of them for the threads switch.
+  defp sub_group_counts_sql(folder) do
+    """
+    LEFT JOIN LATERAL (
+      SELECT
+        COUNT(*) FILTER (WHERE $6::boolean OR k.parent_value_id IS NULL) AS child_count,
+        COUNT(*) FILTER (WHERE k.parent_value_id IS NOT NULL) AS thread_child_count
+      FROM groups k
+      WHERE k.parent_id = #{folder}.id
+        AND k.is_direct = FALSE
+        AND (k.is_public OR k.id IN (SELECT group_id FROM mine))
+    ) counts ON TRUE
+    """
+  end
+
+  defp sub_group_folder([id, name, thread?, public?, member?, child_count, thread_child_count]) do
     %{
-      nodes: nodes,
-      ids: sub_group_node_ids(nodes),
-      thread_count: Enum.count(groups, &(&1.thread? and &1.id != group.id)),
-      truncated?: truncated?
+      id: id,
+      name: name,
+      thread?: thread?,
+      public?: public?,
+      member?: member?,
+      child_count: child_count,
+      thread_child_count: thread_child_count
     }
-  end
-
-  defp build_sub_group_nodes(parent_id, groups_by_parent, search) do
-    groups_by_parent
-    |> Map.get(parent_id, [])
-    |> Enum.map(fn sub_group ->
-      children = build_sub_group_nodes(sub_group.id, groups_by_parent, search)
-      match? = search != nil and String.contains?(String.downcase(sub_group.name), search)
-
-      %{
-        group: Map.delete(sub_group, :parent_id),
-        children: children,
-        descendant_count: Enum.sum_by(children, &(&1.descendant_count + 1)),
-        match?: match?,
-        open?: false
-      }
-    end)
-    |> Enum.sort_by(&{String.downcase(&1.group.name), &1.group.id})
-  end
-
-  # Counts stay those of the whole tree, so a folder keeps saying how many
-  # sub-groups it has while a search shows only some of them.
-  defp prune_sub_group_nodes(nodes, nil), do: nodes
-
-  defp prune_sub_group_nodes(nodes, search) do
-    Enum.flat_map(nodes, fn node ->
-      children = prune_sub_group_nodes(node.children, search)
-
-      if node.match? or children != [] do
-        [%{node | children: children, open?: children != []}]
-      else
-        []
-      end
-    end)
-  end
-
-  defp sub_group_node_ids(nodes) do
-    Enum.flat_map(nodes, &[&1.group.id | sub_group_node_ids(&1.children)])
   end
 
   @doc """

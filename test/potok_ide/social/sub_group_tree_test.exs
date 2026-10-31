@@ -5,113 +5,130 @@ defmodule PotokIde.Social.SubGroupTreeTest do
 
   alias PotokIde.Social
 
-  describe "sub_group_tree/3" do
-    setup do
-      owner = profile!("subtree-owner")
-      other = profile!("subtree-other")
-      group = group!(owner, "subtree-root")
-      add_member!(owner, group, other)
+  setup do
+    owner = profile!("subtree-owner")
+    other = profile!("subtree-other")
+    group = group!(owner, "subtree-root")
+    add_member!(owner, group, other)
 
-      # Sorted by name, not by creation.
-      beta = child!(owner, group, "Beta")
-      alpha = child!(owner, group, "alpha")
-      nested = child!(owner, alpha, "alpha-nested")
-      deep = child!(owner, nested, "deep-leaf")
+    # Sorted by name, not by creation.
+    beta = child!(owner, group, "Beta")
+    alpha = child!(owner, group, "alpha")
+    nested = child!(owner, alpha, "alpha-nested")
+    deep = child!(owner, nested, "deep-leaf")
 
-      # Public, but the owner is not a member: shown, as a non-member.
-      public_child = child!(other, group, "gamma-public", %{"is_public" => true})
+    # Public, but the owner is not a member: shown, as a non-member.
+    public_child = child!(other, group, "gamma-public", %{"is_public" => true})
 
-      # Private and the owner is not a member: never shown, nor what is below it.
-      private_child = child!(other, group, "hidden-private")
-      add_member!(other, child!(other, private_child, "below-private"), owner)
+    # Private and the owner is not a member: never shown, nor what is below it.
+    private_child = child!(other, group, "hidden-private")
+    add_member!(other, child!(other, private_child, "below-private"), owner)
 
-      {:ok, value} = Social.create_value(owner, beta, %{"content" => "thread start"})
-      {:ok, thread} = Social.get_or_create_value_thread(owner, beta, value, %{"name" => "talk"})
-      thread_child = child!(owner, thread, "under-thread")
+    {:ok, value} = Social.create_value(owner, beta, %{"content" => "thread start"})
+    {:ok, thread} = Social.get_or_create_value_thread(owner, beta, value, %{"name" => "talk"})
+    thread_child = child!(owner, thread, "under-thread")
 
-      %{
-        owner: owner,
-        group: group,
-        alpha: alpha,
-        beta: beta,
-        nested: nested,
-        deep: deep,
-        public_child: public_child,
-        thread: thread,
-        thread_child: thread_child
-      }
+    %{
+      owner: owner,
+      group: group,
+      alpha: alpha,
+      beta: beta,
+      nested: nested,
+      deep: deep,
+      public_child: public_child,
+      thread: thread,
+      thread_child: thread_child
+    }
+  end
+
+  describe "list_sub_group_folders/3" do
+    test "lists the visible sub-groups of each folder, sorted by name", ctx do
+      pages =
+        Social.list_sub_group_folders(ctx.owner, [
+          {ctx.group.id, 10, nil},
+          {ctx.alpha.id, 10, nil},
+          {ctx.deep.id, 10, nil}
+        ])
+
+      assert {[alpha, beta, public], false} = pages[ctx.group.id]
+      assert Enum.map([alpha, beta, public], & &1.name) == ["alpha", "Beta", "gamma-public"]
+
+      assert %{child_count: 1, thread_child_count: 0, member?: true, public?: false} = alpha
+      refute alpha.thread?
+      assert %{child_count: 1, thread_child_count: 1} = beta
+
+      assert public.id == ctx.public_child.id
+      assert public.public?
+      refute public.member?
+
+      assert {[%{id: nested_id, child_count: 1}], false} = pages[ctx.alpha.id]
+      assert nested_id == ctx.nested.id
+      assert pages[ctx.deep.id] == {[], false}
     end
 
-    test "nests the visible sub-groups below the group, sorted by name", ctx do
-      assert %{nodes: nodes, ids: ids, thread_count: 1, truncated?: false} =
-               Social.sub_group_tree(ctx.group, ctx.owner)
+    test "pages on after the last folder shown", ctx do
+      group_id = ctx.group.id
 
-      assert Enum.map(nodes, & &1.group.name) == ["alpha", "Beta", "gamma-public"]
-      assert [alpha, beta, public] = nodes
+      assert %{^group_id => {[_alpha, beta], true}} =
+               Social.list_sub_group_folders(ctx.owner, [{group_id, 2, nil}])
 
-      assert alpha.descendant_count == 2
-      assert [%{group: %{id: nested_id}, children: [%{group: %{id: deep_id}}]}] = alpha.children
-      assert {nested_id, deep_id} == {ctx.nested.id, ctx.deep.id}
-      assert alpha.group.member? and not alpha.group.public?
+      assert %{^group_id => {[%{name: "gamma-public"}], false}} =
+               Social.list_sub_group_folders(ctx.owner, [{group_id, 2, beta}])
+    end
 
-      assert [%{group: %{id: thread_id, thread?: true}} = thread] = beta.children
+    test "can leave out threads, still counting them", ctx do
+      pages =
+        Social.list_sub_group_folders(
+          ctx.owner,
+          [{ctx.group.id, 10, nil}, {ctx.beta.id, 10, nil}],
+          threads?: false
+        )
+
+      assert {[_alpha, beta, _public], false} = pages[ctx.group.id]
+      assert %{child_count: 0, thread_child_count: 1} = beta
+      assert pages[ctx.beta.id] == {[], false}
+
+      pages = Social.list_sub_group_folders(ctx.owner, [{ctx.beta.id, 10, nil}])
+      assert {[%{id: thread_id, thread?: true}], false} = pages[ctx.beta.id]
       assert thread_id == ctx.thread.id
-      assert [%{group: %{name: "under-thread"}}] = thread.children
-
-      assert public.group.id == ctx.public_child.id
-      assert public.group.public?
-      refute public.group.member?
-      refute Enum.any?(nodes, &(&1.match? or &1.open?))
-
-      assert Enum.sort(ids) ==
-               Enum.sort([
-                 ctx.alpha.id,
-                 ctx.nested.id,
-                 ctx.deep.id,
-                 ctx.beta.id,
-                 ctx.thread.id,
-                 ctx.thread_child.id,
-                 ctx.public_child.id
-               ])
-    end
-
-    test "can leave out threads and what is below them", ctx do
-      assert %{nodes: [_alpha, beta, _public], ids: ids, thread_count: 1} =
-               Social.sub_group_tree(ctx.group, ctx.owner, threads?: false)
-
-      assert beta.children == []
-      assert beta.descendant_count == 0
-      refute ctx.thread.id in ids
-      refute ctx.thread_child.id in ids
-    end
-
-    test "a search keeps the matches and the folders on the way to them", ctx do
-      assert %{nodes: [alpha]} = Social.sub_group_tree(ctx.group, ctx.owner, search: " DEEP ")
-
-      assert alpha.open? and not alpha.match?
-      assert [nested] = alpha.children
-      assert nested.open? and not nested.match?
-      assert [%{match?: true, open?: false, children: []}] = nested.children
-
-      assert %{nodes: [%{group: %{name: "alpha"}, match?: true} = alpha]} =
-               Social.sub_group_tree(ctx.group, ctx.owner, search: "alph")
-
-      assert alpha.open?
-      assert [%{group: %{name: "alpha-nested"}, match?: true, children: []}] = alpha.children
-
-      # The counts are those of the whole tree, not of the search.
-      assert alpha.descendant_count == 2
-      assert [%{descendant_count: 1}] = alpha.children
-
-      assert %{nodes: []} = Social.sub_group_tree(ctx.group, ctx.owner, search: "nothing-here")
     end
 
     test "without a profile only public groups are shown", ctx do
-      assert %{nodes: [public], ids: [public_id], thread_count: 0} =
-               Social.sub_group_tree(ctx.group, nil)
+      pages = Social.list_sub_group_folders(nil, [{ctx.group.id, 10, nil}])
 
-      assert public_id == ctx.public_child.id
-      refute public.group.member?
+      assert {[public], false} = pages[ctx.group.id]
+      assert public.id == ctx.public_child.id
+      refute public.member?
+    end
+  end
+
+  describe "search_sub_group_folders/4" do
+    test "finds matches at any depth with the folders on the way", ctx do
+      assert {folders, false} = Social.search_sub_group_folders(ctx.group, ctx.owner, " DEEP ")
+
+      assert Enum.map(folders, &{&1.name, &1.parent_id}) == [
+               {"alpha", ctx.group.id},
+               {"alpha-nested", ctx.alpha.id},
+               {"deep-leaf", ctx.nested.id}
+             ]
+
+      assert {folders, false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "alph")
+      assert Enum.map(folders, & &1.name) == ["alpha", "alpha-nested"]
+      assert [%{child_count: 1}, %{child_count: 1}] = folders
+    end
+
+    test "leaves out threads and what is below them when asked", ctx do
+      assert {folders, false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "under")
+      assert Enum.map(folders, & &1.name) == ["Beta", "talk", "under-thread"]
+
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "under", threads?: false)
+    end
+
+    test "never finds what is below a group the profile cannot see", ctx do
+      assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "below")
+      assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "nothing-here")
+      assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "  ")
     end
   end
 
@@ -120,8 +137,12 @@ defmodule PotokIde.Social.SubGroupTreeTest do
     other = profile!("subtree-dm-other")
     {:ok, direct_group} = Social.get_or_create_direct_group(owner, other)
     group = group!(owner, "subtree-direct-group")
+    root_id = Social.get_root_group!().id
 
-    assert %{ids: ids} = Social.sub_group_tree(Social.get_root_group!(), owner)
+    assert %{^root_id => {folders, false}} =
+             Social.list_sub_group_folders(owner, [{root_id, 1000, nil}])
+
+    ids = Enum.map(folders, & &1.id)
     assert group.id in ids
     refute direct_group.id in ids
   end
