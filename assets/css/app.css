@@ -247,9 +247,10 @@
   transform: translateY(-1px);
 }
 
-.group-description-workspace:has(#group-description-layout-editor:checked) label[for="group-description-layout-editor"],
-.group-description-workspace:has(#group-description-layout-split:checked) label[for="group-description-layout-split"],
-.group-description-workspace:has(#group-description-layout-preview:checked) label[for="group-description-layout-preview"] {
+/* Matched by value, not id: the edit tab can show two workspaces at once. */
+.group-description-workspace:has(.group-description-layout-input[value="editor"]:checked) .group-description-layout-button[data-layout="editor"],
+.group-description-workspace:has(.group-description-layout-input[value="split"]:checked) .group-description-layout-button[data-layout="split"],
+.group-description-workspace:has(.group-description-layout-input[value="preview"]:checked) .group-description-layout-button[data-layout="preview"] {
   background: var(--color-primary);
   border-color: var(--color-primary);
   box-shadow: 0 8px 24px rgb(0 0 0 / 0.12);
@@ -260,24 +261,24 @@
   min-width: 0;
 }
 
-.group-description-workspace:has(#group-description-layout-editor:checked) .group-description-layout {
+.group-description-workspace:has(.group-description-layout-input[value="editor"]:checked) .group-description-layout {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.group-description-workspace:has(#group-description-layout-editor:checked) .group-description-pane-preview {
+.group-description-workspace:has(.group-description-layout-input[value="editor"]:checked) .group-description-pane-preview {
   display: none;
 }
 
-.group-description-workspace:has(#group-description-layout-preview:checked) .group-description-layout {
+.group-description-workspace:has(.group-description-layout-input[value="preview"]:checked) .group-description-layout {
   grid-template-columns: minmax(0, 1fr);
 }
 
-.group-description-workspace:has(#group-description-layout-preview:checked) .group-description-pane-editor {
+.group-description-workspace:has(.group-description-layout-input[value="preview"]:checked) .group-description-pane-editor {
   display: none;
 }
 
 @media (max-width: 63.999rem) {
-  .group-description-workspace:has(#group-description-layout-split:checked) .group-description-layout {
+  .group-description-workspace:has(.group-description-layout-input[value="split"]:checked) .group-description-layout {
     grid-template-columns: minmax(0, 1fr);
   }
 }

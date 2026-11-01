@@ -802,7 +802,7 @@ const APP_FRAME_METHODS = new Set([
   "current_profile",
 ])
 
-// The app's `localStorage` lives in one key of the page's storage per group
+// The app's `localStorage` lives in one key of the page's storage per app
 // (`data-storage-key`), capped so an app cannot fill the page's quota.
 const APP_FRAME_STORAGE_MAX_CHARS = 256 * 1024
 
@@ -901,7 +901,12 @@ const GroupAppFrame = {
     }
 
     try {
-      const reply = await this.pushEvent("app_api", {method, params: params || {}})
+      // The server refuses calls whose app is no longer the one on screen.
+      const reply = await this.pushEvent("app_api", {
+        method,
+        params: params || {},
+        app_id: this.el.dataset.appId || "",
+      })
       this.post({potok: 1, id, ...reply})
     } catch (_error) {
       this.post({potok: 1, id, ok: false, error: "disconnected"})

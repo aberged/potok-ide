@@ -9,6 +9,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Access,
     Group,
     GroupAccountInvitation,
+    GroupAltDescription,
     GroupInvitation,
     GroupRole,
     Value,
@@ -495,6 +496,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             is_member={@is_member}
             viewer_roles={Enum.join(@access.role_keys, ",")}
             pending_join_request={@pending_join_request}
+            alt_descriptions={@visible_alt_descriptions}
+            active_alt_description={@active_alt_description}
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -516,6 +519,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
             group={@group}
             current_profile={@current_profile}
             group_path={@group_path}
+            alt_descriptions={@alt_descriptions}
+            alt_description_form={@alt_description_form}
+            editing_alt_description={@editing_alt_description}
+            roles={if(@access.manifest, do: @access.manifest.roles, else: [])}
+            max_alt_descriptions={Social.max_alt_descriptions()}
           />
           <InviteProfileTab.panel
             :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -603,6 +611,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:online_profile_ids, MapSet.new())
        |> assign(:presence_watched, MapSet.new())
        |> assign(:presence_profile_id, nil)
+       |> assign(:description_param, Map.get(params, "d"))
+       |> assign(:alt_descriptions, [])
+       |> assign(:visible_alt_descriptions, [])
+       |> assign(:active_alt_description, nil)
+       |> assign(:alt_description_form, nil)
+       |> assign(:editing_alt_description, nil)
        |> assign_access(access)
        |> assign(:group, group)
        |> assign(:active_tab, active_tab)
@@ -645,12 +659,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
       normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), socket.assigns.group)
 
     sub_groups_view = normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
+    description_param = Map.get(params, "d")
 
     cond do
       active_tab != socket.assigns.active_tab or
           sub_groups_kind != socket.assigns.sub_groups_kind ->
         {:noreply,
          socket
+         |> assign(:description_param, description_param)
          |> assign(:active_tab, active_tab)
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(:sub_groups_view, sub_groups_view)
@@ -664,6 +680,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
          |> reload_children()}
+
+      description_param != socket.assigns.description_param ->
+        {:noreply,
+         socket
+         |> assign(:description_param, description_param)
+         |> put_active_alt_description()}
 
       true ->
         {:noreply, socket}
@@ -756,7 +778,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Single entry point for the sandboxed app frame (see `AppApi`). The client
   # hook only forwards whitelisted methods; the server checks them again.
   def handle_event("app_api", %{"method" => method} = params, socket) when is_binary(method) do
-    {reply, socket} = AppApi.call(method, Map.get(params, "params") || %{}, socket)
+    {reply, socket} =
+      AppApi.call(method, Map.get(params, "params") || %{}, Map.get(params, "app_id"), socket)
+
     {:reply, reply, socket}
   end
 
@@ -1306,6 +1330,152 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  def handle_event("new_alt_description", _params, socket) do
+    with_edit_group(socket, fn socket ->
+      open_alt_description_form(socket, %GroupAltDescription{})
+    end)
+  end
+
+  def handle_event("edit_alt_description", %{"id" => id}, socket) do
+    with_alt_description(socket, id, &open_alt_description_form/2)
+  end
+
+  def handle_event("cancel_alt_description", _params, socket) do
+    {:noreply, close_alt_description_form(socket)}
+  end
+
+  def handle_event("validate_alt_description", %{"group_alt_description" => attrs}, socket) do
+    case socket.assigns.editing_alt_description do
+      %GroupAltDescription{} = editing ->
+        changeset =
+          editing
+          |> Social.change_alt_description(attrs)
+          |> Map.put(:action, :validate)
+
+        {:noreply, assign(socket, :alt_description_form, to_form(changeset))}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("save_alt_description", %{"group_alt_description" => attrs}, socket) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    result =
+      case socket.assigns.editing_alt_description do
+        %GroupAltDescription{id: nil} ->
+          Social.create_alt_description(current_profile, group, attrs)
+
+        %GroupAltDescription{} = editing ->
+          Social.update_alt_description(current_profile, group, editing, attrs)
+
+        nil ->
+          {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _alt_description} ->
+        {:noreply,
+         socket
+         |> close_alt_description_form()
+         |> reload_alt_descriptions()
+         |> put_flash(:info, gettext("Description saved."))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         assign(socket, :alt_description_form, to_form(Map.put(changeset, :action, :validate)))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, alt_description_error_message(reason))}
+    end
+  end
+
+  def handle_event("delete_alt_description", %{"id" => id}, socket) do
+    with_alt_description(socket, id, fn socket, alt_description ->
+      case Social.delete_alt_description(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             alt_description
+           ) do
+        {:ok, _deleted} ->
+          socket
+          |> maybe_close_alt_description_form(alt_description)
+          |> reload_alt_descriptions()
+          |> put_flash(:info, gettext("Description deleted."))
+
+        {:error, reason} ->
+          put_flash(socket, :error, alt_description_error_message(reason))
+      end
+    end)
+  end
+
+  def handle_event("move_alt_description", %{"id" => id, "direction" => direction}, socket)
+      when direction in ["up", "down"] do
+    with_alt_description(socket, id, fn socket, alt_description ->
+      case Social.move_alt_description(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             alt_description,
+             if(direction == "up", do: :up, else: :down)
+           ) do
+        {:ok, _moved} -> reload_alt_descriptions(socket)
+        {:error, reason} -> put_flash(socket, :error, alt_description_error_message(reason))
+      end
+    end)
+  end
+
+  def handle_event("promote_alt_description", %{"id" => id}, socket) do
+    with_alt_description(socket, id, fn socket, alt_description ->
+      case Social.promote_alt_description(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             alt_description,
+             gettext("Description")
+           ) do
+        {:ok, group, _demoted} ->
+          socket
+          |> close_alt_description_form()
+          |> assign(:group, group)
+          |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+          |> reload_alt_descriptions()
+          |> put_flash(:info, gettext("The description is now the default."))
+
+        {:error, reason} ->
+          put_flash(socket, :error, alt_description_error_message(reason))
+      end
+    end)
+  end
+
+  def handle_event("delete_alt_description_data_values", %{"id" => id}, socket) do
+    with_alt_description(socket, id, fn socket, alt_description ->
+      case Social.delete_group_data_values(
+             socket.assigns.current_profile,
+             socket.assigns.group,
+             alt_description
+           ) do
+        {:ok, 0} ->
+          put_flash(socket, :info, gettext("No data values to delete."))
+
+        {:ok, deleted_count} ->
+          put_flash(
+            socket,
+            :info,
+            ngettext(
+              "Deleted 1 data value.",
+              "Deleted %{count} data values.",
+              deleted_count,
+              count: deleted_count
+            )
+          )
+
+        {:error, reason} ->
+          put_flash(socket, :error, alt_description_error_message(reason))
+      end
+    end)
+  end
+
   def handle_event("set_edit_group_description_open", %{"open" => open}, socket) do
     {:noreply, assign(socket, :description_details_open, open == "true")}
   end
@@ -1581,6 +1751,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_description_updated, _group_id}, socket), do: {:noreply, socket}
 
+  # The group too: a promotion swaps its description and deleting the home
+  # description clears its pointer.
+  def handle_info({:alt_descriptions_updated, group_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply,
+     socket
+     |> assign(:group, Social.get_group!(group_id))
+     |> reload_alt_descriptions()}
+  end
+
+  def handle_info({:alt_descriptions_updated, _group_id}, socket), do: {:noreply, socket}
+
   def handle_info(:flush_refresh, socket) do
     {:noreply, flush_refresh(socket)}
   end
@@ -1745,6 +1927,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_files(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
+    |> maybe_load_alt_descriptions(group, active_tab)
     |> assign(:root_group_unread_count, overview.total)
     |> assign_group_unread_counts(overview)
     |> maybe_push_root_group_unread_count()
@@ -2232,14 +2415,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_reload_files(socket, _value), do: socket
 
   # Only the app frame listens for data values, so they are pushed only while
-  # the group description is on screen.
+  # the group description is on screen, and only those of apps the viewer
+  # can open. The SDK hands an app its own values unless it asked for all.
   defp announce_new_data_value(socket, %Value{} = value) do
-    if description_visible?(socket.assigns) do
+    if description_visible?(socket.assigns) and data_value_visible?(socket.assigns, value) do
       push_event(socket, "new_data_value", value_payload(value))
     else
       socket
     end
   end
+
+  defp data_value_visible?(_assigns, %Value{alt_description_id: nil}), do: true
+
+  defp data_value_visible?(assigns, %Value{alt_description_id: id}),
+    do: Enum.any?(assigns.visible_alt_descriptions, &(&1.id == id))
 
   defp description_visible?(%{active_tab: active_tab, group: group, is_member: is_member}) do
     active_tab == "group_home" or
@@ -2257,7 +2446,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       group_id: value.group_id,
       parent_id: value.parent_id,
       creator_id: value.creator_id,
-      creator_username: value_creator_username(value)
+      creator_username: value_creator_username(value),
+      description_id: value.alt_description_id
     }
   end
 
@@ -2468,6 +2658,139 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp maybe_reload_edit_group_form(socket, _active_tab), do: socket
+
+  # Alternative descriptions are only needed where the description shows and
+  # in the edit tab: apps can be large, so the other tabs skip them.
+  defp maybe_load_alt_descriptions(socket, group, active_tab) do
+    alt_descriptions =
+      if active_tab == "edit_group" or
+           description_visible?(%{
+             active_tab: active_tab,
+             group: group,
+             is_member: socket.assigns.is_member
+           }),
+         do: Social.list_alt_descriptions(group),
+         else: []
+
+    socket
+    |> assign(:alt_descriptions, alt_descriptions)
+    |> put_active_alt_description()
+  end
+
+  defp reload_alt_descriptions(socket) do
+    socket
+    |> maybe_load_alt_descriptions(socket.assigns.group, socket.assigns.active_tab)
+    |> maybe_close_deleted_alt_description_form()
+  end
+
+  # `d` in the URL: "default", an alternative description's id, or nothing
+  # for the group's home description. One the viewer cannot see shows the
+  # default instead.
+  defp put_active_alt_description(socket) do
+    %{alt_descriptions: alt_descriptions, access: access, group: group} = socket.assigns
+    visible = Enum.filter(alt_descriptions, &Access.sees_alt_description?(access, &1))
+
+    socket
+    |> assign(:visible_alt_descriptions, visible)
+    |> assign(
+      :active_alt_description,
+      resolve_alt_description(visible, group, socket.assigns.description_param)
+    )
+  end
+
+  defp resolve_alt_description(_visible, _group, "default"), do: nil
+
+  defp resolve_alt_description(visible, group, nil),
+    do: find_alt_description(visible, group.home_alt_description_id)
+
+  defp resolve_alt_description(visible, _group, param) when is_binary(param) do
+    case Integer.parse(param) do
+      {id, ""} -> find_alt_description(visible, id)
+      _ -> nil
+    end
+  end
+
+  defp resolve_alt_description(_visible, _group, _param), do: nil
+
+  defp find_alt_description(_visible, nil), do: nil
+  defp find_alt_description(visible, id), do: Enum.find(visible, &(&1.id == id))
+
+  defp with_edit_group(socket, fun) do
+    if Access.can?(socket.assigns.access, :edit_group) do
+      {:noreply, fun.(socket)}
+    else
+      {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
+    end
+  end
+
+  # The description comes from the loaded list, so it is one of this group's.
+  defp with_alt_description(socket, id, fun) do
+    with_edit_group(socket, fn socket ->
+      case Enum.find(socket.assigns.alt_descriptions, &(to_string(&1.id) == to_string(id))) do
+        nil ->
+          socket
+          |> reload_alt_descriptions()
+          |> put_flash(:error, alt_description_error_message(:not_found))
+
+        alt_description ->
+          fun.(socket, alt_description)
+      end
+    end)
+  end
+
+  defp open_alt_description_form(socket, %GroupAltDescription{} = alt_description) do
+    socket
+    |> assign(:editing_alt_description, alt_description)
+    |> assign(:alt_description_form, to_form(Social.change_alt_description(alt_description)))
+  end
+
+  defp close_alt_description_form(socket) do
+    socket
+    |> assign(:editing_alt_description, nil)
+    |> assign(:alt_description_form, nil)
+  end
+
+  defp maybe_close_alt_description_form(socket, %GroupAltDescription{id: id}) do
+    case socket.assigns.editing_alt_description do
+      %GroupAltDescription{id: ^id} -> close_alt_description_form(socket)
+      _editing -> socket
+    end
+  end
+
+  # Someone else deleted the description being edited.
+  defp maybe_close_deleted_alt_description_form(socket) do
+    case socket.assigns.editing_alt_description do
+      %GroupAltDescription{id: id} when not is_nil(id) ->
+        if Enum.any?(socket.assigns.alt_descriptions, &(&1.id == id)),
+          do: socket,
+          else: close_alt_description_form(socket)
+
+      _editing ->
+        socket
+    end
+  end
+
+  defp alt_description_error_message(:not_permitted), do: access_error_message(:not_permitted)
+
+  defp alt_description_error_message(:too_many_alt_descriptions),
+    do:
+      gettext("A group can have at most %{count} alternative descriptions.",
+        count: Social.max_alt_descriptions()
+      )
+
+  defp alt_description_error_message(:alt_description_restricted),
+    do: gettext("Remove the role limit to make it the default.")
+
+  defp alt_description_error_message(:not_found),
+    do: gettext("That description no longer exists.")
+
+  defp alt_description_error_message(%Ecto.Changeset{} = changeset) do
+    if Keyword.has_key?(changeset.errors, :name),
+      do: gettext("Another description already uses the name of the current default."),
+      else: gettext("Could not save the description.")
+  end
+
+  defp alt_description_error_message(_reason), do: gettext("Could not save the description.")
 
   defp empty_invite_form do
     invite_form()
@@ -2986,6 +3309,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket
     |> assign_access(Social.get_group_access(socket.assigns.current_profile, group))
+    |> put_active_alt_description()
     |> maybe_load_roles(group, socket.assigns.active_tab)
   end
 

@@ -1,6 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social.GroupRole
   alias PotokIdeWeb.GroupLive.Show.Components
 
   attr :group, :map, required: true
@@ -11,6 +12,16 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :home_page_options, :list, required: true
   attr :description_details_open, :boolean, required: true
   attr :can_delete_group, :boolean, default: false
+
+  attr :alt_descriptions, :list, default: [], doc: "every alternative description of the group"
+
+  attr :alt_description_form, :any,
+    default: nil,
+    doc: "the open form of a new or edited alternative description"
+
+  attr :editing_alt_description, :any, default: nil
+  attr :roles, :list, default: [], doc: "roles of the group's manifest"
+  attr :max_alt_descriptions, :integer, required: true
 
   def panel(assigns) do
     ~H"""
@@ -56,6 +67,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             type="select"
             options={@home_page_options}
           />
+          <.input
+            :if={@alt_descriptions != []}
+            field={@edit_group_form[:home_alt_description_id]}
+            label={gettext("Home description")}
+            type="select"
+            options={home_description_options(@group, @alt_descriptions)}
+          />
           <details
             open={@description_details_open}
             class="rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-3 w-full mb-4 shadow-sm"
@@ -68,172 +86,21 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               {gettext("Description")}
             </summary>
 
-            <div class="group-description-workspace mt-4">
-              <div
-                id="group-description-layout-selector"
-                phx-hook=".PersistDescriptionLayout"
-                phx-update="ignore"
-                data-storage-key="potok:group-description-layout"
-              >
-                <input
-                  id="group-description-layout-editor"
-                  type="radio"
-                  name="group-description-layout"
-                  value="editor"
-                  class="group-description-layout-input sr-only"
-                />
-                <input
-                  id="group-description-layout-split"
-                  type="radio"
-                  name="group-description-layout"
-                  value="split"
-                  class="group-description-layout-input sr-only"
-                  checked
-                />
-                <input
-                  id="group-description-layout-preview"
-                  type="radio"
-                  name="group-description-layout"
-                  value="preview"
-                  class="group-description-layout-input sr-only"
-                />
-                <div class="group-description-layout-controls mb-4 flex flex-wrap gap-2">
-                  <label
-                    for="group-description-layout-editor"
-                    class="group-description-layout-button"
-                  >
-                    {gettext("Editor")}
-                  </label>
-                  <label
-                    for="group-description-layout-split"
-                    class="group-description-layout-button"
-                  >
-                    {gettext("Split")}
-                  </label>
-                  <label
-                    for="group-description-layout-preview"
-                    class="group-description-layout-button"
-                  >
-                    {gettext("Preview")}
-                  </label>
-                </div>
-              </div>
-
-              <script :type={Phoenix.LiveView.ColocatedHook} name=".PersistDescriptionLayout">
-                const validLayouts = new Set(["editor", "split", "preview"])
-
-                const storedLayout = el => {
-                  const storageKey = el.dataset.storageKey
-                  if (!storageKey) return null
-
-                  const value = window.sessionStorage.getItem(storageKey)
-                  return validLayouts.has(value) ? value : null
-                }
-
-                const persistLayout = (el, value) => {
-                  const storageKey = el.dataset.storageKey
-                  if (!storageKey || !validLayouts.has(value)) return
-
-                  window.sessionStorage.setItem(storageKey, value)
-                }
-
-                const applyStoredLayout = el => {
-                  const value = storedLayout(el)
-                  if (!value) return
-
-                  const input = el.querySelector(`input[name="group-description-layout"][value="${value}"]`)
-                  if (input) input.checked = true
-                }
-
-                export default {
-                  mounted() {
-                    applyStoredLayout(this.el)
-
-                    this.handleChange = event => {
-                      if (event.target?.name !== "group-description-layout") return
-
-                      persistLayout(this.el, event.target.value)
-                    }
-
-                    this.el.addEventListener("change", this.handleChange)
-                  },
-
-                  destroyed() {
-                    this.el.removeEventListener("change", this.handleChange)
-                  },
-                }
-              </script>
-
-              <div class="grid group-description-layout min-h-[28rem] gap-4 grid-cols-2 card-body p-0">
-                <div class="group-description-pane group-description-pane-editor rounded-2xl border border-base-300/80 bg-base-100/80 p-3 shadow-sm">
-                  <.input
-                    field={@edit_group_form[:description]}
-                    type="textarea"
-                    rows="16"
-                    phx-debounce="500"
-                  />
-                </div>
-
-                <div class="group-description-pane group-description-pane-preview rounded-2xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm">
-                  <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/55">
-                    {gettext("Live preview")}
-                  </div>
-
-                  <div
-                    :if={blank_description?(@edit_group_form[:description].value)}
-                    class="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-base-300 bg-base-200/50 px-6 text-center text-sm text-base-content/60"
-                  >
-                    {gettext("Start typing to preview the description.")}
-                  </div>
-
-                  <Components.app_frame
-                    :if={
-                      !blank_description?(@edit_group_form[:description].value) and
-                        uses_api?(@edit_group_form[:uses_api].value)
-                    }
-                    id="group-app-frame-preview"
-                    html={@edit_group_form[:description].value}
-                    api={false}
-                    class="min-h-96"
-                  />
-                  <Components.formatted_content
-                    :if={
-                      !blank_description?(@edit_group_form[:description].value) and
-                        !uses_api?(@edit_group_form[:uses_api].value)
-                    }
-                    content={@edit_group_form[:description].value || ""}
-                    content_format={
-                      normalize_description_format(@edit_group_form[:description_format].value)
-                    }
-                    class="min-h-48"
-                  />
-                </div>
-              </div>
+            <div class="mt-4">
+              <.input
+                field={@edit_group_form[:description_name]}
+                label={gettext("Name next to the alternative descriptions")}
+                placeholder={gettext("Description")}
+              />
             </div>
 
-            <div class="mt-3 flex items-start gap-4 h-3/4 overflow-auto">
-              <fieldset class="fieldset">
-                <div class="flex flex-wrap gap-3">
-                  <label
-                    :for={{label, value} <- @format_options}
-                    class="inline-flex items-center gap-2"
-                  >
-                    <input
-                      type="radio"
-                      name={@edit_group_form[:description_format].name}
-                      value={Atom.to_string(value)}
-                      checked={
-                        description_format_checked?(
-                          @edit_group_form[:description_format].value,
-                          value
-                        )
-                      }
-                      class="radio radio-sm"
-                    /> <span>{label}</span>
-                  </label>
-                </div>
-              </fieldset>
-            </div>
+            <Components.description_workspace
+              id_prefix="group-description"
+              description_field={@edit_group_form[:description]}
+              format_field={@edit_group_form[:description_format]}
+              uses_api={@edit_group_form[:uses_api].value}
+              format_options={@format_options}
+            />
           </details>
 
           <div class="flex flex-wrap items-center justify-between gap-3">
@@ -243,7 +110,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 type="button"
                 phx-click="delete_group_data_values"
                 data-confirm={
-                  gettext("Are you sure you want to delete all data values in this group?")
+                  if(@alt_descriptions == [],
+                    do: gettext("Are you sure you want to delete all data values in this group?"),
+                    else:
+                      gettext(
+                        "Delete every data value of the default description's app? The other apps keep theirs."
+                      )
+                  )
                 }
                 class="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
               >
@@ -267,29 +140,256 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             </.button>
           </div>
         </.form>
+
+        <section
+          id="group-alt-descriptions"
+          class="mt-6 rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-4 shadow-sm"
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <div class="min-w-0">
+              <h4 class="font-medium text-base-content">{gettext("Alternative descriptions")}</h4>
+              <p class="mt-1 text-sm text-base-content/60">
+                {gettext(
+                  "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
+                )}
+              </p>
+            </div>
+            <button
+              :if={
+                is_nil(@alt_description_form) and length(@alt_descriptions) < @max_alt_descriptions
+              }
+              id="alt-description-new"
+              type="button"
+              phx-click="new_alt_description"
+              class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition duration-150 hover:-translate-y-px hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <.icon name="hero-plus" class="size-4" /> <span>{gettext("New description")}</span>
+            </button>
+          </div>
+
+          <ul :if={@alt_descriptions != []} id="alt-description-list" class="mt-4 flex flex-col gap-2">
+            <li
+              :for={{alt, index} <- Enum.with_index(@alt_descriptions)}
+              id={"alt-description-#{alt.id}"}
+              class={[
+                "flex flex-wrap items-center gap-3 rounded-2xl border px-3 py-2 transition duration-150",
+                if(editing?(@editing_alt_description, alt),
+                  do: "border-primary/50 bg-primary/5",
+                  else: "border-base-300/80 bg-base-100 hover:border-base-content/20"
+                )
+              ]}
+            >
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <div class="flex min-w-0 items-center gap-2">
+                  <span class="truncate font-medium text-base-content">{alt.name}</span>
+                  <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
+                    {kind_label(alt)}
+                  </span>
+                </div>
+                <div :if={alt.visible_role_keys != []} class="flex flex-wrap gap-1">
+                  <span
+                    :for={name <- role_names(alt.visible_role_keys, @roles)}
+                    class="inline-flex items-center gap-1 rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70"
+                  >
+                    <.icon name="hero-lock-closed" class="size-3" /> {name}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1">
+                <button
+                  id={"alt-description-#{alt.id}-up"}
+                  type="button"
+                  phx-click="move_alt_description"
+                  phx-value-id={alt.id}
+                  phx-value-direction="up"
+                  disabled={index == 0}
+                  title={gettext("Move up")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-arrow-up" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-down"}
+                  type="button"
+                  phx-click="move_alt_description"
+                  phx-value-id={alt.id}
+                  phx-value-direction="down"
+                  disabled={index == length(@alt_descriptions) - 1}
+                  title={gettext("Move down")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-arrow-down" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-edit"}
+                  type="button"
+                  phx-click="edit_alt_description"
+                  phx-value-id={alt.id}
+                  title={gettext("Edit")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-pencil-square" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-promote"}
+                  type="button"
+                  phx-click="promote_alt_description"
+                  phx-value-id={alt.id}
+                  disabled={alt.visible_role_keys != []}
+                  title={
+                    if(alt.visible_role_keys == [],
+                      do: gettext("Make default"),
+                      else: gettext("Remove the role limit to make it the default")
+                    )
+                  }
+                  data-confirm={
+                    gettext(
+                      "Make this the default description? The current default takes its place in the list."
+                    )
+                  }
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-star" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-delete"}
+                  type="button"
+                  phx-click="delete_alt_description"
+                  phx-value-id={alt.id}
+                  title={gettext("Delete")}
+                  data-confirm={
+                    gettext("Delete this description? The data values of its app are deleted too.")
+                  }
+                  class={[alt_action_class(), "hover:text-error"]}
+                >
+                  <.icon name="hero-trash" class="size-4" />
+                </button>
+              </div>
+            </li>
+          </ul>
+
+          <.form
+            :if={@alt_description_form}
+            for={@alt_description_form}
+            id="alt-description-form"
+            phx-change="validate_alt_description"
+            phx-submit="save_alt_description"
+            class="mt-4 rounded-2xl border border-primary/30 bg-base-100 p-4 shadow-sm"
+          >
+            <h5 class="mb-2 font-medium text-base-content">
+              {if(new_alt_description?(@editing_alt_description),
+                do: gettext("New description"),
+                else: gettext("Edit description")
+              )}
+            </h5>
+
+            <.input field={@alt_description_form[:name]} label={gettext("Name")} required />
+            <.input
+              field={@alt_description_form[:uses_api]}
+              label={gettext("Uses API")}
+              type="checkbox"
+            />
+
+            <fieldset id="alt-description-roles" class="fieldset mt-2">
+              <legend class="fieldset-legend">{gettext("Visible to")}</legend>
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "Without a role it is visible to everyone who sees the group's description. Editors always see it."
+                )}
+              </p>
+              <input
+                type="hidden"
+                name={@alt_description_form[:visible_role_keys].name <> "[]"}
+                value=""
+              />
+              <div class="mt-1 flex flex-wrap gap-3">
+                <label :for={role <- @roles} class="inline-flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    name={@alt_description_form[:visible_role_keys].name <> "[]"}
+                    value={role.key}
+                    checked={role.key in List.wrap(@alt_description_form[:visible_role_keys].value)}
+                    class="checkbox checkbox-sm"
+                  />
+                  <span>{role_label(role)}</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <Components.description_workspace
+              id_prefix="alt-description"
+              description_field={@alt_description_form[:description]}
+              format_field={@alt_description_form[:description_format]}
+              uses_api={@alt_description_form[:uses_api].value}
+              format_options={@format_options}
+            />
+
+            <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
+              <button
+                :if={!new_alt_description?(@editing_alt_description)}
+                id="alt-description-delete-data-values"
+                type="button"
+                phx-click="delete_alt_description_data_values"
+                phx-value-id={@editing_alt_description.id}
+                data-confirm={gettext("Delete every data value of this description's app?")}
+                class="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+              >
+                <.icon name="hero-trash" class="size-4" />
+                <span>{gettext("Delete Data Values")}</span>
+              </button>
+              <div class="ml-auto flex items-center gap-2">
+                <button
+                  id="alt-description-cancel"
+                  type="button"
+                  phx-click="cancel_alt_description"
+                  class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+                >
+                  {gettext("Cancel")}
+                </button>
+                <.button
+                  id="alt-description-save"
+                  phx-disable-with={gettext("Saving...")}
+                  variant="primary"
+                >
+                  {gettext("Save description")}
+                </.button>
+              </div>
+            </div>
+          </.form>
+        </section>
       </div>
     </div>
     """
   end
 
-  defp description_format_checked?(current_value, option_value)
-       when is_atom(current_value) and is_atom(option_value),
-       do: current_value == option_value
+  defp home_description_options(group, alt_descriptions) do
+    [
+      {Components.default_description_label(group), ""}
+      | Enum.map(alt_descriptions, &{&1.name, &1.id})
+    ]
+  end
 
-  defp description_format_checked?(current_value, option_value) when is_binary(current_value),
-    do: current_value == Atom.to_string(option_value)
+  defp editing?(%{id: id}, %{id: id}) when not is_nil(id), do: true
+  defp editing?(_editing, _alt), do: false
 
-  defp description_format_checked?(_, _), do: false
+  defp new_alt_description?(%{id: nil}), do: true
+  defp new_alt_description?(_editing), do: false
 
-  defp normalize_description_format(current_value) when current_value in [:markdown, :html],
-    do: current_value
+  defp kind_label(%{uses_api: true}), do: gettext("App")
+  defp kind_label(%{description_format: :html}), do: gettext("HTML")
+  defp kind_label(_alt), do: gettext("Markdown")
 
-  defp normalize_description_format("markdown"), do: :markdown
-  defp normalize_description_format("html"), do: :html
-  defp normalize_description_format(_), do: :markdown
+  # Roles deleted since are held by nobody and are not shown.
+  defp role_names(keys, roles) do
+    for role <- roles, role.key in keys, do: role_label(role)
+  end
 
-  defp blank_description?(description), do: is_nil(description) or String.trim(description) == ""
+  defp role_label(%{key: key} = role) do
+    if key == GroupRole.everyone_key(), do: gettext("All members"), else: role.name
+  end
 
-  # Form values arrive as strings after a change event ("true" / "false").
-  defp uses_api?(value), do: value in [true, "true"]
+  defp alt_action_class do
+    "inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-base-content/60 transition duration-150 hover:bg-base-200 hover:text-base-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
+  end
 end

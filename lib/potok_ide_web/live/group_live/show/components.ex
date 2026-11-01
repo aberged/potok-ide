@@ -781,6 +781,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: nil,
     doc: "describes the viewer's access (profile, membership); a new value restarts the app"
 
+  attr :app_id, :string,
+    default: "",
+    doc: "which of the group's apps this is (`AppApi.app_id/1`); sent with every API call"
+
   attr :class, :any, default: nil
 
   @doc """
@@ -793,13 +797,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   """
   def app_frame(assigns) do
     assigns =
-      assign(assigns, :srcdoc, app_frame_srcdoc(assigns.html, assigns.viewer_key))
+      assign(
+        assigns,
+        :srcdoc,
+        app_frame_srcdoc(assigns.html, assigns.viewer_key, assigns.app_id)
+      )
 
     ~H"""
     <div
       id={@id}
       phx-hook="GroupAppFrame"
       data-api={to_string(@api)}
+      data-app-id={@app_id}
       data-storage-key={@storage_key}
       class={["flex min-h-0 flex-1 flex-col", @class]}
     >
@@ -819,20 +828,22 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # Apps written before the sandbox ran inside this page: they use its daisyUI
   # classes and theme, size themselves from the parent of
   # `#group-panel-description` and find the API on its `potok` property (set
-  # by the SDK's legacy shim).
-  defp app_frame_srcdoc(html, viewer_key) do
+  # by the SDK's legacy shim). `potok-app` tells the SDK which app it runs,
+  # so it can pick that app's values out of the group's.
+  defp app_frame_srcdoc(html, viewer_key, app_id) do
     css_url = ~p"/assets/css/app.css"
     sdk_url = ~p"/assets/js/potok_app_sdk.js"
 
     viewer_meta =
       if viewer_key do
-        escaped = viewer_key |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
-        ~s(<meta name="potok-viewer" content="#{escaped}">)
+        ~s(<meta name="potok-viewer" content="#{escape_attr(viewer_key)}">)
       end
+
+    app_meta = ~s(<meta name="potok-app" content="#{escape_attr(app_id || "")}">)
 
     """
     <!doctype html><html><head><meta charset="utf-8">\
-    <meta name="viewport" content="width=device-width, initial-scale=1">#{viewer_meta}\
+    <meta name="viewport" content="width=device-width, initial-scale=1">#{viewer_meta}#{app_meta}\
     <base target="_blank"><link rel="stylesheet" href="#{css_url}">\
     <style>html,body{height:100%}</style>\
     <script src="#{sdk_url}"></script></head>\
@@ -840,6 +851,193 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     #{UTF8.replace_invalid(html || "")}</div></body></html>\
     """
   end
+
+  defp escape_attr(value),
+    do: value |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
+
+  @doc "Name of the group's default description next to its alternative ones."
+  def default_description_label(%Group{description_name: name})
+      when is_binary(name) and name != "",
+      do: name
+
+  def default_description_label(%Group{}), do: gettext("Description")
+
+  attr :id_prefix, :string,
+    required: true,
+    doc: "prefix of the workspace's ids, unique on the page"
+
+  attr :description_field, Phoenix.HTML.FormField, required: true
+  attr :format_field, Phoenix.HTML.FormField, required: true
+  attr :uses_api, :any, required: true, doc: "the form's `uses_api` value"
+  attr :format_options, :list, required: true
+
+  @doc """
+  Writes a description (the default one or an alternative): editor,
+  side-by-side or preview layout with a live preview, which runs apps with
+  their API refused, and the format choice. The layout is remembered for
+  the browser session.
+  """
+  def description_workspace(assigns) do
+    assigns = assign(assigns, :app?, assigns.uses_api in [true, "true"])
+
+    ~H"""
+    <div>
+      <div class="group-description-workspace mt-4">
+        <div
+          id={"#{@id_prefix}-layout-selector"}
+          phx-hook=".PersistDescriptionLayout"
+          phx-update="ignore"
+          data-storage-key="potok:group-description-layout"
+        >
+          <input
+            :for={layout <- ~w(editor split preview)}
+            id={"#{@id_prefix}-layout-#{layout}"}
+            type="radio"
+            name={"#{@id_prefix}-layout"}
+            value={layout}
+            class="group-description-layout-input sr-only"
+            checked={layout == "split"}
+          />
+          <div class="group-description-layout-controls mb-4 flex flex-wrap gap-2">
+            <label
+              for={"#{@id_prefix}-layout-editor"}
+              data-layout="editor"
+              class="group-description-layout-button"
+            >
+              {gettext("Editor")}
+            </label>
+            <label
+              for={"#{@id_prefix}-layout-split"}
+              data-layout="split"
+              class="group-description-layout-button"
+            >
+              {gettext("Split")}
+            </label>
+            <label
+              for={"#{@id_prefix}-layout-preview"}
+              data-layout="preview"
+              class="group-description-layout-button"
+            >
+              {gettext("Preview")}
+            </label>
+          </div>
+        </div>
+
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".PersistDescriptionLayout">
+          const validLayouts = new Set(["editor", "split", "preview"])
+
+          const storedLayout = el => {
+            const storageKey = el.dataset.storageKey
+            if (!storageKey) return null
+
+            const value = window.sessionStorage.getItem(storageKey)
+            return validLayouts.has(value) ? value : null
+          }
+
+          const persistLayout = (el, value) => {
+            const storageKey = el.dataset.storageKey
+            if (!storageKey || !validLayouts.has(value)) return
+
+            window.sessionStorage.setItem(storageKey, value)
+          }
+
+          const applyStoredLayout = el => {
+            const value = storedLayout(el)
+            if (!value) return
+
+            const input = el.querySelector(`input[type="radio"][value="${value}"]`)
+            if (input) input.checked = true
+          }
+
+          export default {
+            mounted() {
+              applyStoredLayout(this.el)
+
+              this.handleChange = event => {
+                if (event.target?.type !== "radio") return
+
+                persistLayout(this.el, event.target.value)
+              }
+
+              this.el.addEventListener("change", this.handleChange)
+            },
+
+            destroyed() {
+              this.el.removeEventListener("change", this.handleChange)
+            },
+          }
+        </script>
+
+        <div class="grid group-description-layout min-h-112 gap-4 grid-cols-2 card-body p-0">
+          <div class="group-description-pane group-description-pane-editor rounded-2xl border border-base-300/80 bg-base-100/80 p-3 shadow-sm">
+            <.input field={@description_field} type="textarea" rows="16" phx-debounce="500" />
+          </div>
+
+          <div class="group-description-pane group-description-pane-preview rounded-2xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm">
+            <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/55">
+              {gettext("Live preview")}
+            </div>
+
+            <div
+              :if={blank_text?(@description_field.value)}
+              class="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-base-300 bg-base-200/50 px-6 text-center text-sm text-base-content/60"
+            >
+              {gettext("Start typing to preview the description.")}
+            </div>
+
+            <.app_frame
+              :if={!blank_text?(@description_field.value) and @app?}
+              id={"#{@id_prefix}-app-frame-preview"}
+              html={@description_field.value}
+              api={false}
+              class="min-h-96"
+            />
+            <.formatted_content
+              :if={!blank_text?(@description_field.value) and !@app?}
+              content={@description_field.value || ""}
+              content_format={normalize_description_format(@format_field.value)}
+              class="min-h-48"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-3 flex items-start gap-4 h-3/4 overflow-auto">
+        <fieldset class="fieldset">
+          <div class="flex flex-wrap gap-3">
+            <label :for={{label, value} <- @format_options} class="inline-flex items-center gap-2">
+              <input
+                type="radio"
+                name={@format_field.name}
+                value={Atom.to_string(value)}
+                checked={description_format_checked?(@format_field.value, value)}
+                class="radio radio-sm"
+              /> <span>{label}</span>
+            </label>
+          </div>
+        </fieldset>
+      </div>
+    </div>
+    """
+  end
+
+  defp description_format_checked?(current_value, option_value)
+       when is_atom(current_value) and is_atom(option_value),
+       do: current_value == option_value
+
+  defp description_format_checked?(current_value, option_value) when is_binary(current_value),
+    do: current_value == Atom.to_string(option_value)
+
+  defp description_format_checked?(_, _), do: false
+
+  defp normalize_description_format(current_value) when current_value in [:markdown, :html],
+    do: current_value
+
+  defp normalize_description_format("markdown"), do: :markdown
+  defp normalize_description_format("html"), do: :html
+  defp normalize_description_format(_), do: :markdown
+
+  defp blank_text?(text), do: is_nil(text) or String.trim(text) == ""
 
   attr :value, :map, required: true
   attr :dom_id, :string, required: true

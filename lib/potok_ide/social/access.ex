@@ -20,6 +20,7 @@ defmodule PotokIde.Social.Access do
 
   alias PotokIde.Social.{
     Group,
+    GroupAltDescription,
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
@@ -194,6 +195,20 @@ defmodule PotokIde.Social.Access do
     do: profile |> for_profile(group) |> can?(permission)
 
   def admin?(%Profile{} = profile, %Group{} = group), do: for_profile(profile, group).admin?
+
+  @doc """
+  Whether the viewer sees an alternative description of a group whose
+  description they can see. One without roles is visible to them all;
+  otherwise only to members holding one of the roles ("everyone" = every
+  member) and to those who can edit the group. A role deleted since is
+  held by nobody, which leaves the description to the editors.
+  """
+  def sees_alt_description?(%__MODULE__{}, %GroupAltDescription{visible_role_keys: []}),
+    do: true
+
+  def sees_alt_description?(%__MODULE__{} = access, %GroupAltDescription{visible_role_keys: keys}) do
+    access.admin? or can?(access, :edit_group) or Enum.any?(keys, &(&1 in access.role_keys))
+  end
 
   @doc """
   The access of every member of the group, as `%{profile_id => %Access{}}`.

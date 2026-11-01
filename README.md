@@ -16,6 +16,7 @@ The main concepts in the system are:
 * `Account`: the authenticated identity. An account has an email, optional password login, confirmation state, many profiles, one selected `current_profile`, and one `default_profile` used as the fallback profile when no explicit current profile is set.
 * `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
 * `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, optional parent relations, and a persisted `home_page` preference that controls which panel opens by default.
+* `GroupAltDescription`: an alternative description of a group (text or an app), shown next to the default description kept on the group. It can be limited to roles and can be the group's home description.
 * `Value`: content posted by a profile in a group, optionally as part of a reply chain.
 * `GroupMembership`: the join entity between profiles and groups.
 * `GroupInvitation`: an invitation from one profile to another profile to join a group.
@@ -34,6 +35,10 @@ Group access and direct-group behavior:
 * Groups persist a `home_page` enum with the values `description`, `chat`, and `subgroups`. The create-group and edit-group panels expose that setting so members can control the default landing panel for a group.
 * Opening a group without an explicit tab uses its `home_page`: `description` opens the description panel, `chat` opens the values panel, and `subgroups` opens the sub-groups panel.
 * Root groups ignore `home_page` and always open on the sub-groups panel.
+* Besides its default description, a group can have up to 20 alternative descriptions (`GroupAltDescription`), managed in the edit-group panel. Each one is markdown, HTML or an app (`uses_api`). When a group has any, the description panel shows them as tabs after the default one, and `?d=<id>` (or `?d=default`) opens one directly.
+* An alternative description with `visible_role_keys` is shown only to members holding one of those roles (`everyone` = every member) and to those who can edit the group. Without roles it is shown to everyone who sees the description.
+* `home_alt_description_id` makes an alternative description open first instead of the default one. A viewer who cannot see it gets the default.
+* "Make default" swaps an alternative description with the default one: their contents, names and app data values trade places. Descriptions limited to roles cannot be made the default.
 * Direct groups are derived conversation groups, not a separate invitation flow. Opening `/profiles/:id/direct` finds or creates a private non-root group under the root group for exactly two profiles and then navigates to that group's values tab.
 * Direct private groups ignore `home_page` and always open on the values panel.
 * Because direct groups are fixed to two members, the group UI hides profile-invite actions, join-request management, and member removal controls for them.
@@ -449,34 +454,81 @@ The router uses separate LiveView sessions for:
 * authenticated profile selection (`:authenticated`)
 * profile-required collaboration screens (`:profile_required`)
 
-## Frontend Hook APIs
+## App API
 
-The group description panel exposes a browser API through the `GroupDescriptionActions` LiveView hook in `assets/js/app.js`.
+In groups with `uses_api`, the group description is an app: HTML that runs in a sandboxed iframe (`Components.app_frame/1`) instead of being rendered as formatted content. An alternative description with `uses_api` is an app too, so a group can have one app per description. Each app has its own data values, `localStorage` and API calls; the default description's app is the one that existed before (its values have no `description_id`). The iframe has no `allow-same-origin`, so it gets an opaque origin and cannot reach the page, its cookies or the LiveSocket.
 
-The API is attached to the hooked DOM element as `element.potok` while the panel is mounted.
+The frame loads `assets/js/potok_app_sdk.js` first. The SDK talks to the `GroupAppFrame` hook in `assets/js/app.js` over `postMessage`. The hook forwards whitelisted methods to the LiveView (`app_api` event) together with the frame's app id (`data-app-id`), and `PotokIdeWeb.GroupLive.Show.AppApi` checks every call again on the server. Calls act on the description on screen; a call from an app the viewer has just switched away from is refused with `stale_app`.
 
-Available functions:
+The frame document looks like this:
 
-* `insertGroupValue(content, options)` pushes a `create_data_value` event and returns the server reply.
-  * `content` is normalized to a string.
-  * `options.contentFormat` / `options.content_format` controls `value.content_format` (default: `"markdown"`).
-* `updateGroupDescription(description, options)` pushes an `update_group_description` event and returns the server reply.
-  * `description` is normalized to a string.
-  * `options.descriptionFormat` / `options.description_format` controls `description_format`.
-  * If no format is provided, the hook uses `data-description-format` from the element and falls back to `"html"`.
-* `getGroupDescription()` returns the current raw group description and format from hook dataset attributes.
-* `getGroupDataValues()` pushes a `list_group_data_values` event and returns the server reply.
-* `getCurrentProfile()` returns the parsed JSON object from `data-current-profile`, or `null` if missing/invalid.
-* `setNewValueCallback(fn)` registers a callback invoked when the browser receives a `phx:new_data_value` event.
+```html
+<head>
+  <link rel="stylesheet" href="/assets/css/app.css">  <!-- the page's daisyUI styles -->
+  <meta name="potok-app" content="">  <!-- "" for the default description, else the alternative description's id -->
+  <script src="/assets/js/potok_app_sdk.js"></script>
+</head>
+<body><div id="group-panel-description"><!-- group description --></div></body>
+```
 
-`getGroupDescription()` resolves to:
+### `window.potok`
+
+Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error, message?}`, and rejects if the page does not answer within 10 seconds.
+
+* `insertValue(data, options)` creates a data value of this app and resolves to `{ok: true, value}`.
+  * `data` is an object or a JSON object string; anything else is refused with `invalid_value`.
+  * `options.contentFormat`: `"markdown"` (default) or `"html"`.
+  * Members only; rate limited.
+* `listValues(options)` resolves to `{ok: true, values, has_more}`. Members only. Options:
+  * `scope`: without it, only this app's values; `"group"` adds the values of the group's other apps that the viewer can open (each carries its `description_id`)
+  * `limit` (at most 200, default 50), `offset`
+  * `afterId` / `beforeId`: only values with a greater / smaller id
+  * `searchField` + `searchValue`: case-insensitive substring match on `data[searchField]`
+  * `orderBy`: a key in `data` (`"number"` sorts numerically first); without it values come in insertion order
+  * `orderDir`: `"asc"` (default) or `"desc"`
+  * snake_case names (`after_id`, `order_by`, ...) work too.
+* `updateDescription(description, options)` resolves to `{ok: true, group}`. It changes the app's own description (the default or an alternative one). `options.descriptionFormat` sets the format. It needs the `edit_group` permission and is rate limited. A new description is new app HTML, so the app restarts.
+* `getDescription()` resolves to `{ok: true, group}` for the app's own description.
+* `getCurrentProfile()` resolves to the profile, or `null`.
+* `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
+
+Reply shapes:
 
 ```js
-{
-  description: "...",
-  descriptionFormat: "html"
-}
+// value (insertValue, onNewValue); listed values also have inserted_at and updated_at
+{id, content: "data:", data: {...}, content_format, is_data: true, group_id, parent_id, creator_id, creator_username, description_id}
+
+// group (updateDescription, getDescription); description_id is null for the default description
+{id, description_id, name, description, description_format}
+
+// profile; roles are the names of the roles the profile holds in the group
+{id, username, profile_picture_url, description, description_format, sharing, inserted_at, updated_at, admin, roles}
 ```
+
+Error codes (`error`):
+
+* From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
+* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `unknown_method`.
+* From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`.
+
+The frame environment:
+
+* `localStorage` in the frame is an in-memory `Storage`. The page keeps a copy per app (`potok-app:<group id>` for the default description, `potok-app:<group id>:alt-<id>` for an alternative one, at most 256 KB) and restores it, so it survives reloads. `sessionStorage` is in memory only. The copy belongs to the place, not the app: after "Make default" swaps two apps, each finds the other's saved copy.
+* The frame follows the page's daisyUI theme (`data-theme`).
+* After a LiveSocket reconnect the frame reloads, because values pushed while offline never arrive.
+* The app also restarts when the description or the viewer's access (profile, membership, roles) changes.
+
+### Legacy API
+
+Apps written before the sandbox ran inside the page and found the API on `document.getElementById("group-panel-description").potok`. The SDK keeps that working. Once the page is ready, it sets `potok` on `#group-panel-description` to a shim (also `window.__potokLegacy`):
+
+* `el` (`#group-panel-description`) and `abortController` (for `{signal}` listener options)
+* `insertGroupValue(content, options)`: `insertValue`, where `content` must be a string (a JSON object)
+* `updateGroupDescription(description, options)`: `updateDescription`
+* `getGroupDescription()`: resolves to `{description, descriptionFormat}` (format defaults to `"html"`)
+* `getGroupDataValues(options)`: without `options.limit`, resolves to every value as `{ok: true, values}` (fetched in pages of 200, at most 5,000); with it, to one `listValues` page
+* `getCurrentProfile()`
+* `setNewValueCallback(fn)`: a single callback (a new one replaces it) that receives a `phx:new_data_value` `CustomEvent` with the value as `detail`
 
 ## Internationalization
 

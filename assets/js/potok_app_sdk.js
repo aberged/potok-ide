@@ -16,7 +16,13 @@ const STORAGE_SAVE_DELAY_MS = 200
 
 let nextCallId = 1
 const pendingCalls = new Map()
-const newValueListeners = new Set()
+// listener -> whether it gets the values of every app in the group.
+const newValueListeners = new Map()
+
+// A group has one app per description: "" for the default description, an
+// alternative description's id otherwise. Values carry it as `description_id`.
+const ownAppId = document.querySelector('meta[name="potok-app"]')?.content ?? ""
+const ownValue = value => String(value?.description_id ?? "") === ownAppId
 
 // The frame can start before the page's LiveView has connected and mounted
 // the hook, so calls wait for its "ready" (sent on mount and in reply to
@@ -145,7 +151,11 @@ window.addEventListener("message", event => {
   }
 
   if (message.event === "new_value") {
-    newValueListeners.forEach(listener => {
+    const own = ownValue(message.value)
+
+    newValueListeners.forEach((allApps, listener) => {
+      if (!own && !allApps) return
+
       try {
         listener(message.value)
       } catch (error) {
@@ -153,7 +163,7 @@ window.addEventListener("message", event => {
       }
     })
 
-    window.dispatchEvent(new CustomEvent("phx:new_data_value", {detail: message.value}))
+    if (own) window.dispatchEvent(new CustomEvent("phx:new_data_value", {detail: message.value}))
     return
   }
 
@@ -178,6 +188,7 @@ const listParams = (options = {}) => ({
   search_value: options.searchValue ?? options.search_value ?? null,
   order_by: options.orderBy ?? options.order_by ?? null,
   order_dir: options.orderDir ?? options.order_dir ?? null,
+  scope: options.scope ?? null,
 })
 
 const potok = {
@@ -188,6 +199,7 @@ const potok = {
     }),
 
   // Up to 200 values per call; page with `afterId` / `beforeId` or `offset`.
+  // `scope: "group"` also lists the values of the group's other apps.
   listValues: (options = {}) => call("list_values", listParams(options)),
 
   updateDescription: (description, options = {}) =>
@@ -203,10 +215,11 @@ const potok = {
     return reply.ok ? reply.profile : null
   },
 
-  onNewValue(listener) {
+  // `{scope: "group"}` also passes on the values of the group's other apps.
+  onNewValue(listener, options = {}) {
     if (typeof listener !== "function") return () => {}
 
-    newValueListeners.add(listener)
+    newValueListeners.set(listener, options.scope === "group")
     return () => newValueListeners.delete(listener)
   },
 }
@@ -266,7 +279,7 @@ const legacy = {
     // The old callback received the `phx:new_data_value` event itself.
     if (legacyCallback) newValueListeners.delete(legacyCallback)
     legacyCallback = value => fn(new CustomEvent("phx:new_data_value", {detail: value}))
-    newValueListeners.add(legacyCallback)
+    newValueListeners.set(legacyCallback, false)
   },
 }
 

@@ -6,6 +6,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   The hook only forwards whitelisted methods, but every permission is checked
   here again: the iframe content is written by the group's editors and runs
   for every viewer.
+
+  A group has one app per description: the default one (`app_id` "") and
+  each alternative description with `uses_api`. Calls act on the description
+  on screen (`active_alt_description`) and name the app they come from, so a
+  call that was on its way while the viewer switched apps is refused.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
 
@@ -26,8 +31,21 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
   end
 
-  @doc "Runs an API method and returns `{reply, socket}`."
-  def call("insert_value", params, socket) do
+  @doc "The id an app frame sends with its calls: \"\" for the default description."
+  def app_id(nil), do: ""
+  def app_id(%{id: id}), do: Integer.to_string(id)
+
+  @doc "Runs an API method for the app `app_id` and returns `{reply, socket}`."
+  def call(method, params, app_id, socket) do
+    # Hooks of pages loaded before apps had ids send none; they only ran the default app.
+    if (app_id || "") == app_id(socket.assigns.active_alt_description) do
+      run(method, params, socket)
+    else
+      {error("stale_app", nil), socket}
+    end
+  end
+
+  defp run("insert_value", params, socket) do
     with :ok <- require_member(socket, gettext("You must be a group member to post values.")),
          {:ok, socket} <- take_write_token(socket) do
       attrs = %{
@@ -39,7 +57,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       case Social.create_data_value(
              socket.assigns.current_profile,
              socket.assigns.group,
-             attrs
+             attrs,
+             socket.assigns.active_alt_description
            ) do
         {:ok, value} ->
           {%{ok: true, value: Show.value_payload(value)}, socket}
@@ -52,7 +71,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  def call("list_values", params, socket) do
+  defp run("list_values", params, socket) do
     case require_member(
            socket,
            gettext("You must be a group member to access group data values.")
@@ -60,6 +79,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       :ok ->
         {rows, has_more?} =
           Social.list_group_data_value_rows(socket.assigns.group,
+            scope: list_scope(params["scope"], socket.assigns),
             limit: non_negative_integer(params["limit"]) |> clamp_limit(),
             offset: non_negative_integer(params["offset"]),
             after_id: non_negative_integer(params["after_id"]),
@@ -78,25 +98,23 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  def call("update_description", params, socket) do
-    current_profile = socket.assigns.current_profile
-    group = socket.assigns.group
+  defp run("update_description", params, socket) do
     forbidden = gettext("Your roles in this group do not allow that.")
+    current = description_source(socket.assigns)
 
     with true <-
            Access.can?(socket.assigns.access, :edit_group) ||
              {:error, error("forbidden", forbidden)},
          {:ok, socket} <- take_write_token(socket) do
       attrs = %{
-        "description" => string_param(params["description"], group.description || ""),
+        "description" => string_param(params["description"], current.description || ""),
         "description_format" =>
-          string_param(params["description_format"], to_string(group.description_format))
+          string_param(params["description_format"], to_string(current.description_format))
       }
 
-      case Social.update_group_description(current_profile, group, attrs) do
-        {:ok, updated_group} ->
-          {%{ok: true, group: description_payload(updated_group)},
-           assign(socket, :group, updated_group)}
+      case update_description(socket, attrs) do
+        {:ok, socket} ->
+          {%{ok: true, group: description_payload(socket.assigns)}, socket}
 
         {:error, :not_permitted} ->
           {error("forbidden", forbidden), socket}
@@ -109,18 +127,50 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  def call("get_description", _params, socket) do
-    {%{ok: true, group: description_payload(socket.assigns.group)}, socket}
+  defp run("get_description", _params, socket) do
+    {%{ok: true, group: description_payload(socket.assigns)}, socket}
   end
 
-  def call("current_profile", _params, socket) do
+  defp run("current_profile", _params, socket) do
     {%{ok: true, profile: profile_payload(socket.assigns.current_profile, socket.assigns.access)},
      socket}
   end
 
-  def call(_method, _params, socket) do
+  defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
   end
+
+  defp update_description(%{assigns: %{active_alt_description: nil}} = socket, attrs) do
+    case Social.update_group_description(
+           socket.assigns.current_profile,
+           socket.assigns.group,
+           attrs
+         ) do
+      {:ok, group} -> {:ok, assign(socket, :group, group)}
+      error -> error
+    end
+  end
+
+  defp update_description(%{assigns: %{active_alt_description: alt}} = socket, attrs) do
+    case Social.update_alt_description(
+           socket.assigns.current_profile,
+           socket.assigns.group,
+           alt,
+           attrs
+         ) do
+      {:ok, alt} -> {:ok, assign(socket, :active_alt_description, alt)}
+      error -> error
+    end
+  end
+
+  # "group": the values of every app the viewer can open in the group.
+  defp list_scope("group", assigns),
+    do: {:group, Enum.map(assigns.visible_alt_descriptions, & &1.id)}
+
+  defp list_scope(_scope, %{active_alt_description: alt}), do: {:app, alt && alt.id}
+
+  defp description_source(%{active_alt_description: nil, group: group}), do: group
+  defp description_source(%{active_alt_description: alt}), do: alt
 
   defp require_member(socket, message) do
     if socket.assigns.is_member, do: :ok, else: {:error, error("not_a_member", message)}
@@ -143,11 +193,16 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp error(code, nil), do: %{ok: false, error: code}
   defp error(code, message), do: %{ok: false, error: code, message: message}
 
-  defp description_payload(group) do
+  # `id` is the group's; `description_id` is nil for the default description.
+  defp description_payload(%{group: group, active_alt_description: alt} = assigns) do
+    source = description_source(assigns)
+
     %{
       id: group.id,
-      description: group.description || "",
-      description_format: to_string(group.description_format)
+      description_id: alt && alt.id,
+      name: if(alt, do: alt.name, else: group.description_name),
+      description: source.description || "",
+      description_format: to_string(source.description_format)
     }
   end
 

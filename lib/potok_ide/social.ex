@@ -22,6 +22,7 @@ defmodule PotokIde.Social do
     AccountProfile,
     Group,
     GroupAccountInvitation,
+    GroupAltDescription,
     GroupInvitation,
     GroupJoinRequestApproval,
     GroupJoinRequest,
@@ -482,6 +483,7 @@ defmodule PotokIde.Social do
     else
       group
       |> Group.update_changeset(Map.new(attrs))
+      |> validate_home_alt_description(group)
       |> Repo.update()
       |> case do
         {:ok, updated_group} ->
@@ -524,6 +526,291 @@ defmodule PotokIde.Social do
         {:error, reason} ->
           {:error, reason}
       end
+    end
+  end
+
+  defp validate_home_alt_description(changeset, %Group{id: group_id}) do
+    Ecto.Changeset.validate_change(changeset, :home_alt_description_id, fn _field, id ->
+      if Repo.exists?(
+           from(d in GroupAltDescription, where: d.id == ^id and d.group_id == ^group_id)
+         ),
+         do: [],
+         else: [home_alt_description_id: "is not a description of this group"]
+    end)
+  end
+
+  # ---------
+  # Alternative descriptions
+  #
+  # Extra descriptions (text or apps) next to the default one on the group.
+  # Every change broadcasts `{:alt_descriptions_updated, group_id}`.
+
+  @max_alt_descriptions 20
+
+  def max_alt_descriptions, do: @max_alt_descriptions
+
+  @doc "The group's alternative descriptions in display order."
+  def list_alt_descriptions(%Group{id: group_id}) do
+    from(d in GroupAltDescription,
+      where: d.group_id == ^group_id,
+      order_by: [asc: d.position, asc: d.id]
+    )
+    |> Repo.all()
+  end
+
+  def get_alt_description(%Group{id: group_id}, id) do
+    Repo.get_by(GroupAltDescription, id: id, group_id: group_id)
+  end
+
+  def change_alt_description(%GroupAltDescription{} = alt_description, attrs \\ %{}) do
+    GroupAltDescription.changeset(alt_description, attrs)
+  end
+
+  @doc "Adds an alternative description after the existing ones."
+  def create_alt_description(%Profile{} = editor, %Group{} = group, attrs) do
+    with :ok <- ensure_permission(editor, group, :edit_group) do
+      Multi.new()
+      |> Multi.run(:lock, fn repo, _changes -> lock_group(repo, group) end)
+      |> Multi.run(:position, fn repo, _changes ->
+        {count, max_position} =
+          repo.one(
+            from(d in GroupAltDescription,
+              where: d.group_id == ^group.id,
+              select: {count(), max(d.position)}
+            )
+          )
+
+        if count >= @max_alt_descriptions,
+          do: {:error, :too_many_alt_descriptions},
+          else: {:ok, (max_position || -1) + 1}
+      end)
+      |> Multi.insert(:alt_description, fn %{position: position} ->
+        %GroupAltDescription{group_id: group.id, creator_id: editor.id, position: position}
+        |> GroupAltDescription.changeset(attrs)
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{alt_description: alt_description}} ->
+          broadcast_alt_descriptions_updated(group)
+          {:ok, alt_description}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  def update_alt_description(
+        %Profile{} = editor,
+        %Group{} = group,
+        %GroupAltDescription{} = alt_description,
+        attrs
+      ) do
+    with :ok <- ensure_permission(editor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt_description) do
+      alt_description
+      |> GroupAltDescription.changeset(attrs)
+      |> Repo.update()
+      |> case do
+        {:ok, updated} ->
+          broadcast_alt_descriptions_updated(group)
+          {:ok, updated}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  @doc """
+  Deletes an alternative description together with its app's data values.
+  A home pointer to it falls back to the default description.
+  """
+  def delete_alt_description(
+        %Profile{} = editor,
+        %Group{} = group,
+        %GroupAltDescription{} = alt_description
+      ) do
+    with :ok <- ensure_permission(editor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt_description) do
+      {:ok, deleted} = Repo.delete(alt_description, allow_stale: true)
+      broadcast_alt_descriptions_updated(group)
+      {:ok, deleted}
+    end
+  end
+
+  @doc "Swaps an alternative description with its neighbour in `direction`."
+  def move_alt_description(
+        %Profile{} = editor,
+        %Group{} = group,
+        %GroupAltDescription{} = alt_description,
+        direction
+      )
+      when direction in [:up, :down] do
+    with :ok <- ensure_permission(editor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt_description) do
+      Multi.new()
+      |> Multi.run(:lock, fn repo, _changes -> lock_group(repo, group) end)
+      |> Multi.run(:move, fn repo, _changes ->
+        move_in_order(repo, group, alt_description.id, direction)
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{move: :moved}} ->
+          broadcast_alt_descriptions_updated(group)
+          {:ok, :moved}
+
+        {:ok, %{move: :unchanged}} ->
+          {:ok, :unchanged}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  # Renumbers the whole list, so positions that ever got equal still move.
+  defp move_in_order(repo, group, id, direction) do
+    alt_descriptions =
+      repo.all(
+        from(d in GroupAltDescription,
+          where: d.group_id == ^group.id,
+          order_by: [asc: d.position, asc: d.id],
+          select: %{id: d.id, position: d.position}
+        )
+      )
+
+    index = Enum.find_index(alt_descriptions, &(&1.id == id))
+    neighbour_index = if direction == :up, do: (index || 0) - 1, else: (index || 0) + 1
+
+    cond do
+      index == nil ->
+        {:error, :not_found}
+
+      neighbour_index < 0 or neighbour_index >= length(alt_descriptions) ->
+        {:ok, :unchanged}
+
+      true ->
+        current = Enum.at(alt_descriptions, index)
+        neighbour = Enum.at(alt_descriptions, neighbour_index)
+
+        alt_descriptions
+        |> List.replace_at(index, neighbour)
+        |> List.replace_at(neighbour_index, current)
+        |> Enum.with_index()
+        |> Enum.each(fn {%{id: id, position: old}, position} ->
+          if old != position do
+            repo.update_all(from(d in GroupAltDescription, where: d.id == ^id),
+              set: [position: position]
+            )
+          end
+        end)
+
+        {:ok, :moved}
+    end
+  end
+
+  @doc """
+  Makes an alternative description the group's default by swapping their
+  contents: the old default takes the alternative's place in the list, and
+  each app's data values follow it. One limited to some roles is refused,
+  since the default is visible to everyone who sees the group.
+
+  `default_name` names the old default in the list when it had no name of
+  its own (its label then came from the page's locale).
+  """
+  def promote_alt_description(
+        %Profile{} = editor,
+        %Group{} = group,
+        %GroupAltDescription{} = alt_description,
+        default_name
+      )
+      when is_binary(default_name) do
+    with :ok <- ensure_permission(editor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt_description) do
+      Multi.new()
+      |> Multi.run(:group, fn repo, _changes ->
+        {:ok, repo.one!(from(g in Group, where: g.id == ^group.id, lock: "FOR UPDATE"))}
+      end)
+      |> Multi.run(:alt_description, fn repo, _changes ->
+        case repo.one(
+               from(d in GroupAltDescription,
+                 where: d.id == ^alt_description.id and d.group_id == ^group.id,
+                 lock: "FOR UPDATE"
+               )
+             ) do
+          nil -> {:error, :not_found}
+          %GroupAltDescription{visible_role_keys: []} = locked -> {:ok, locked}
+          %GroupAltDescription{} -> {:error, :alt_description_restricted}
+        end
+      end)
+      |> Multi.update(:updated_alt_description, fn %{group: old, alt_description: alt} ->
+        alt
+        |> Ecto.Changeset.change(
+          name: old.description_name || default_name,
+          description: old.description || "",
+          description_format: old.description_format,
+          uses_api: old.uses_api
+        )
+        |> Ecto.Changeset.unique_constraint(:name,
+          name: :group_alt_descriptions_group_id_lower_name_index,
+          message: "is already used by another description"
+        )
+      end)
+      |> Multi.update(:updated_group, fn %{group: old, alt_description: alt} ->
+        Ecto.Changeset.change(old,
+          description_name: alt.name,
+          description: alt.description,
+          description_format: alt.description_format,
+          uses_api: alt.uses_api,
+          home_alt_description_id:
+            if(old.home_alt_description_id == alt.id, do: nil, else: old.home_alt_description_id)
+        )
+      end)
+      |> Multi.update_all(
+        :data_values,
+        fn %{alt_description: alt} ->
+          from(v in Value,
+            where:
+              v.group_id == ^group.id and v.is_data == true and
+                (is_nil(v.alt_description_id) or v.alt_description_id == ^alt.id),
+            update: [
+              set: [
+                alt_description_id:
+                  fragment(
+                    "CASE WHEN ? IS NULL THEN ?::bigint ELSE NULL END",
+                    v.alt_description_id,
+                    ^alt.id
+                  )
+              ]
+            ]
+          )
+        end,
+        []
+      )
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{updated_group: updated_group, updated_alt_description: updated}} ->
+          broadcast_alt_descriptions_updated(group)
+          {:ok, updated_group, updated}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp ensure_own_alt_description(_group, nil), do: :ok
+
+  defp ensure_own_alt_description(%Group{id: group_id}, %GroupAltDescription{group_id: group_id}),
+    do: :ok
+
+  defp ensure_own_alt_description(_group, _alt_description), do: {:error, :not_found}
+
+  defp lock_group(repo, %Group{id: group_id}) do
+    case repo.one(from(g in Group, where: g.id == ^group_id, lock: "FOR UPDATE", select: g.id)) do
+      nil -> {:error, :not_found}
+      id -> {:ok, id}
     end
   end
 
@@ -1236,28 +1523,40 @@ defmodule PotokIde.Social do
   Inserts an app (data) value. Data values never count as unread and never
   notify anyone, so this skips the read marker, the per-member unread
   broadcasts and push notifications that chat values trigger.
+
+  `alt_description` is the app it belongs to: nil for the default
+  description's app.
   """
-  def create_data_value(%Profile{} = creator, %Group{} = group, attrs) do
-    if not member_of_group?(creator, group) do
-      {:error, :not_a_member_of_group}
-    else
-      attrs =
-        attrs
-        |> Map.new(fn {key, value} -> {to_string(key), value} end)
-        |> Map.merge(%{"is_data" => true, "creator_id" => creator.id, "group_id" => group.id})
+  def create_data_value(%Profile{} = creator, %Group{} = group, attrs, alt_description \\ nil) do
+    cond do
+      not member_of_group?(creator, group) ->
+        {:error, :not_a_member_of_group}
 
-      %Value{}
-      |> Value.changeset(attrs)
-      |> Repo.insert()
-      |> case do
-        {:ok, value} ->
-          value = %{value | creator: creator}
-          broadcast_data_value_created(group, value)
-          {:ok, value}
+      ensure_own_alt_description(group, alt_description) != :ok ->
+        {:error, :not_found}
 
-        error ->
-          error
-      end
+      true ->
+        insert_data_value(creator, group, attrs, alt_description)
+    end
+  end
+
+  defp insert_data_value(creator, group, attrs, alt_description) do
+    attrs =
+      attrs
+      |> Map.new(fn {key, value} -> {to_string(key), value} end)
+      |> Map.merge(%{"is_data" => true, "creator_id" => creator.id, "group_id" => group.id})
+
+    %Value{alt_description_id: alt_description && alt_description.id}
+    |> Value.changeset(attrs)
+    |> Repo.insert()
+    |> case do
+      {:ok, value} ->
+        value = %{value | creator: creator}
+        broadcast_data_value_created(group, value)
+        {:ok, value}
+
+      error ->
+        error
     end
   end
 
@@ -1598,12 +1897,18 @@ defmodule PotokIde.Social do
     end
   end
 
-  def delete_group_data_values(%Profile{} = actor, %Group{} = group) do
-    with :ok <- ensure_permission(actor, group, :edit_group) do
+  @doc """
+  Deletes the data values of one app of the group: the default
+  description's (nil) or an alternative description's.
+  """
+  def delete_group_data_values(%Profile{} = actor, %Group{} = group, alt_description \\ nil) do
+    with :ok <- ensure_permission(actor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt_description) do
       {deleted_count, _} =
         from(v in Value,
           where: v.group_id == ^group.id and v.is_data == true
         )
+        |> filter_data_value_scope({:app, alt_description && alt_description.id})
         |> Repo.delete_all()
 
       if deleted_count > 0 do
@@ -2861,6 +3166,10 @@ defmodule PotokIde.Social do
   username instead of preloading full structs, caps the page size and
   supports `after_id` / `before_id` cursors for incremental reads.
   Returns `{rows, has_more?}`.
+
+  `scope` picks the apps whose values are read: `{:app, nil}` (the default
+  description's, also when omitted), `{:app, alt_description_id}` or
+  `{:group, alt_description_ids}` (the default's and those alternatives').
   """
   def list_group_data_value_rows(%Group{} = group, opts \\ []) do
     limit = opts[:limit] |> Kernel.||(50) |> min(200) |> max(1)
@@ -2880,10 +3189,12 @@ defmodule PotokIde.Social do
           parent_id: v.parent_id,
           creator_id: v.creator_id,
           creator_username: c.username,
+          description_id: v.alt_description_id,
           inserted_at: v.inserted_at,
           updated_at: v.updated_at
         }
       )
+      |> filter_data_value_scope(opts[:scope])
       |> maybe_after_id(opts[:after_id])
       |> maybe_before_id(opts[:before_id])
       |> maybe_filter_data_value_field(opts[:search_field], opts[:search_value])
@@ -2893,6 +3204,20 @@ defmodule PotokIde.Social do
 
     {Enum.take(rows, limit), length(rows) > limit}
   end
+
+  defp filter_data_value_scope(query, {:app, alt_description_id})
+       when is_integer(alt_description_id),
+       do: from(v in query, where: v.alt_description_id == ^alt_description_id)
+
+  defp filter_data_value_scope(query, {:group, alt_description_ids})
+       when is_list(alt_description_ids) do
+    from(v in query,
+      where: is_nil(v.alt_description_id) or v.alt_description_id in ^alt_description_ids
+    )
+  end
+
+  defp filter_data_value_scope(query, _default_app),
+    do: from(v in query, where: is_nil(v.alt_description_id))
 
   defp maybe_after_id(query, after_id) when is_integer(after_id),
     do: from(v in query, where: v.id > ^after_id)
@@ -4486,6 +4811,14 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       group_topic(group_id),
       {:value_updated, group_id, value}
+    )
+  end
+
+  defp broadcast_alt_descriptions_updated(%Group{id: group_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:alt_descriptions_updated, group_id}
     )
   end
 

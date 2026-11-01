@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   use PotokIdeWeb, :html
 
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
@@ -14,9 +14,21 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   attr :pending_join_request, :map, default: nil
 
+  attr :alt_descriptions, :list,
+    default: [],
+    doc: "the alternative descriptions the viewer sees, in order"
+
+  attr :active_alt_description, :any,
+    default: nil,
+    doc: "the alternative description on screen; nil shows the default one"
+
   def panel(assigns) do
+    source = assigns.active_alt_description || assigns.group
+
     assigns =
-      assign(assigns, :empty_description_image_src, empty_description_image_src(assigns.group))
+      assigns
+      |> assign(:source, source)
+      |> assign(:empty_description_image_src, empty_description_image_src(assigns.group))
 
     ~H"""
     <div class="flex min-h-0 flex-1 flex-col px-2">
@@ -26,9 +38,39 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         current_profile={@current_profile}
         class="shadow-md sticky"
       />
+      <nav
+        :if={@alt_descriptions != []}
+        id="group-description-switcher"
+        aria-label={gettext("Descriptions")}
+        class="-mx-2 flex shrink-0 gap-2 overflow-x-auto px-2 pt-1 pb-2 [scrollbar-width:none]"
+      >
+        <.link
+          id="group-description-switcher-default"
+          patch={~p"/groups/#{@group.id}/group_home?#{[d: "default"]}"}
+          aria-current={if(is_nil(@active_alt_description), do: "page")}
+          class={switcher_chip_class(is_nil(@active_alt_description))}
+        >
+          {Components.default_description_label(@group)}
+        </.link>
+        <.link
+          :for={alt <- @alt_descriptions}
+          id={"group-description-switcher-#{alt.id}"}
+          patch={~p"/groups/#{@group.id}/group_home?#{[d: alt.id]}"}
+          aria-current={if(active?(@active_alt_description, alt), do: "page")}
+          class={switcher_chip_class(active?(@active_alt_description, alt))}
+        >
+          <.icon :if={alt.uses_api} name="hero-squares-2x2-mini" class="size-3.5 opacity-70" />
+          <.icon
+            :if={alt.visible_role_keys != []}
+            name="hero-lock-closed-mini"
+            class="size-3.5 opacity-70"
+          />
+          <span class="truncate">{alt.name}</span>
+        </.link>
+      </nav>
       <div class="flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col pb-4">
         <div
-          :if={blank_description?(@group.description)}
+          :if={blank_description?(@source.description)}
           id="group-description-empty"
           class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
         >
@@ -46,31 +88,54 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           </div>
         </div>
 
+        <%!-- Each app gets its own frame id, so switching apps mounts a new hook
+        with that app's storage instead of reusing the previous one. --%>
         <div
-          :if={!blank_description?(@group.description) and @group.uses_api}
+          :if={!blank_description?(@source.description) and @source.uses_api}
           id="group-panel-description"
           class="flex min-h-0 flex-1 flex-col"
         >
           <Components.app_frame
-            id="group-app-frame"
-            html={@group.description}
-            storage_key={"potok-app:#{@group.id}"}
+            id={app_frame_id(@active_alt_description)}
+            html={@source.description}
+            app_id={AppApi.app_id(@active_alt_description)}
+            storage_key={storage_key(@group, @active_alt_description)}
             viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}:#{@viewer_roles}"}
           />
         </div>
 
         <div
-          :if={!blank_description?(@group.description) and !@group.uses_api}
+          :if={!blank_description?(@source.description) and !@source.uses_api}
           id="group-panel-description"
         >
           <Components.formatted_content
-            content={@group.description}
-            content_format={@group.description_format}
+            content={@source.description}
+            content_format={@source.description_format}
           />
         </div>
       </div>
     </div>
     """
+  end
+
+  defp active?(%{id: id}, %{id: id}), do: true
+  defp active?(_active, _alt), do: false
+
+  defp app_frame_id(nil), do: "group-app-frame"
+  defp app_frame_id(%{id: id}), do: "group-app-frame-alt-#{id}"
+
+  defp storage_key(group, nil), do: "potok-app:#{group.id}"
+  defp storage_key(group, %{id: id}), do: "potok-app:#{group.id}:alt-#{id}"
+
+  defp switcher_chip_class(active?) do
+    [
+      "inline-flex max-w-56 shrink-0 items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium transition duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      if(active?,
+        do: "border-primary bg-primary text-primary-content shadow-sm",
+        else:
+          "border-base-300 bg-base-100 text-base-content/75 hover:-translate-y-px hover:border-base-content/30 hover:text-base-content"
+      )
+    ]
   end
 
   defp blank_description?(description), do: is_nil(description) or String.trim(description) == ""

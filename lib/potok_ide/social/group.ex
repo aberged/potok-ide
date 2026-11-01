@@ -14,6 +14,8 @@ defmodule PotokIde.Social.Group do
     field :group_picture_url, :string, load_in_query: false
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
+    # Label of the default description next to the alternative ones.
+    field :description_name, :string
     field :home_page, Ecto.Enum, values: @home_pages, default: :description
     field :has_public_chat, :boolean, default: false
     field :is_direct, :boolean, default: false
@@ -27,8 +29,12 @@ defmodule PotokIde.Social.Group do
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__
     belongs_to :parent_value, PotokIde.Social.Value
+    # Opened instead of the default description; nil opens the default.
+    # `Social.update_group/3` checks that it is one of the group's own.
+    belongs_to :home_alt_description, PotokIde.Social.GroupAltDescription
 
     has_many :children, __MODULE__, foreign_key: :parent_id
+    has_many :alt_descriptions, PotokIde.Social.GroupAltDescription
     has_one :manifest, PotokIde.Social.GroupManifest
 
     many_to_many :members, PotokIde.Social.Profile,
@@ -83,12 +89,15 @@ defmodule PotokIde.Social.Group do
       :group_picture_url,
       :description,
       :description_format,
+      :description_name,
       :home_page,
+      :home_alt_description_id,
       :has_public_chat,
       :is_public,
       :is_root_public,
       :uses_api
     ])
+    |> update_change(:description_name, &trim/1)
     |> validate_required([
       :name,
       :description_format,
@@ -98,11 +107,16 @@ defmodule PotokIde.Social.Group do
       :is_root_public
     ])
     |> validate_length(:name, min: 1, max: 120)
+    |> validate_length(:description_name, max: 60)
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
     |> add_check_constraints()
+    |> foreign_key_constraint(:home_alt_description_id)
   end
+
+  defp trim(value) when is_binary(value), do: String.trim(value)
+  defp trim(value), do: value
 
   defp maybe_force_public_from_root_public(changeset) do
     if get_field(changeset, :is_root_public) do

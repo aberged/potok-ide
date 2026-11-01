@@ -20,6 +20,9 @@ defmodule PotokIde.Social.Value do
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group
+    # The app a data value belongs to: nil for the default description's app.
+    # Set by `Social.create_data_value/4`, never cast.
+    belongs_to :alt_description, PotokIde.Social.GroupAltDescription
 
     belongs_to :parent, __MODULE__
     has_many :children, __MODULE__, foreign_key: :parent_id
