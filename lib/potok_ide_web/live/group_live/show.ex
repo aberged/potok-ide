@@ -2331,8 +2331,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
       true ->
         group = socket.assigns.group
 
+        # Consumed entries come back in reverse; the value keeps the files in
+        # the order they were picked, which is the order of `upload.entries`.
+        position = Map.new(Enum.with_index(upload.entries, &{&1.ref, &2}))
+
         socket
-        |> consume_uploaded_entries(:attachments, &{:ok, store_attachment(group, &1, &2)})
+        |> consume_uploaded_entries(
+          :attachments,
+          &{:ok, {&2.ref, store_attachment(group, &1, &2)}}
+        )
+        |> Enum.sort_by(fn {ref, _result} -> Map.fetch!(position, ref) end)
+        |> Enum.map(fn {_ref, result} -> result end)
         |> Enum.split_with(&match?({:ok, _attrs}, &1))
         |> case do
           {stored, []} ->
