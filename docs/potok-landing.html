@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Potok</title>
+<!-- Za opis grupe sa uključenim „Koristi API“. Pozadina i tekst prate temu Potoka. -->
+<style>
+  :root {
+    --lp-sky: #69cbf5;
+    --lp-blue: #2e8fde;
+    --lp-deep: #0056c4;
+    --lp-navy: #17224d;
+
+    --lp-bg-fallback: #ffffff;
+    --lp-text-fallback: #1f2430;
+    --lp-accent: #0056c4;
+    --lp-accent-soft: rgba(46, 143, 222, 0.12);
+    --lp-shadow: 0 1px 2px rgba(23, 34, 77, 0.06), 0 8px 24px -12px rgba(23, 34, 77, 0.18);
+    --lp-shadow-hover: 0 2px 4px rgba(23, 34, 77, 0.08), 0 18px 36px -16px rgba(0, 86, 196, 0.35);
+  }
+
+  :root[data-theme="dark"] {
+    --lp-bg-fallback: #262b35;
+    --lp-text-fallback: #eef2fb;
+    --lp-accent: #69cbf5;
+    --lp-accent-soft: rgba(105, 203, 245, 0.14);
+    --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
+    --lp-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -18px rgba(46, 143, 222, 0.45);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) {
+      --lp-bg-fallback: #262b35;
+      --lp-text-fallback: #eef2fb;
+      --lp-accent: #69cbf5;
+      --lp-accent-soft: rgba(105, 203, 245, 0.14);
+      --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
+      --lp-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -18px rgba(46, 143, 222, 0.45);
+    }
+  }
+
+  :root {
+    --lp-bg: var(--color-base-100, var(--lp-bg-fallback));
+    --lp-text: var(--color-base-content, var(--lp-text-fallback));
+    --lp-muted: color-mix(in oklab, var(--lp-text) 70%, transparent);
+    --lp-line: color-mix(in oklab, var(--lp-text) 11%, transparent);
+    --lp-card: color-mix(in oklab, var(--lp-text) 3%, var(--lp-bg));
+  }
+
+  body {
+    margin: 0;
+    background: var(--lp-bg);
+  }
+
+  .lp {
+    box-sizing: border-box;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 16px 16px 40px;
+    color: var(--lp-text);
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .lp *,
+  .lp *::before,
+  .lp *::after {
+    box-sizing: border-box;
+  }
+
+  :where(.lp) :where(h1, h2, h3, p, ul) {
+    margin: 0;
+    padding: 0;
+  }
+
+  :where(.lp) ul {
+    list-style: none;
+  }
+
+  :where(.lp) a {
+    color: inherit;
+  }
+
+  /* Hero */
+
+  /* The bottom edge is the wave, so only the top corners are rounded. */
+  .lp-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px 28px 0 0;
+    color: #ffffff;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(105, 203, 245, 0.55), transparent 42%),
+      linear-gradient(160deg, #0a47a3 0%, #1565c6 55%, #2e8fde 100%);
+  }
+
+  .lp-watermark {
+    position: absolute;
+    top: -12%;
+    right: -14%;
+    width: min(70%, 460px);
+    height: auto;
+    aspect-ratio: 1;
+    opacity: 0.1;
+    pointer-events: none;
+  }
+
+  .lp-hero-body {
+    position: relative;
+    z-index: 1;
+    padding: clamp(28px, 6vw, 56px) clamp(20px, 6vw, 56px) clamp(72px, 10vw, 96px);
+  }
+
+  .lp-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: clamp(20px, 4vw, 32px);
+  }
+
+  .lp-mark {
+    display: grid;
+    place-items: center;
+    width: 52px;
+    height: 52px;
+    border-radius: 15px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px -6px rgba(10, 30, 80, 0.55);
+  }
+
+  .lp-mark svg {
+    display: block;
+    width: 40px;
+    height: 40px;
+  }
+
+  .lp-brand-name {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .lp-hero h1 {
+    max-width: 16ch;
+    font-size: clamp(30px, 6.4vw, 52px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .lp-lead {
+    max-width: 34rem;
+    margin-top: 16px;
+    font-size: clamp(16px, 2.2vw, 19px);
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .lp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .lp-pills li {
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .lp-waves {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -1px;
+    height: 64px;
+    pointer-events: none;
+  }
+
+  .lp-wave {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    display: flex;
+    width: 200%;
+    height: 100%;
+    animation: lp-flow 18s linear infinite;
+  }
+
+  .lp-wave svg {
+    display: block;
+    flex: 0 0 50%;
+    width: 50%;
+    height: 100%;
+  }
+
+  .lp-wave-light {
+    height: 82%;
+    animation-duration: 11s;
+    animation-direction: reverse;
+  }
+
+  .lp-wave-light path {
+    fill: rgba(255, 255, 255, 0.16);
+  }
+
+  .lp-wave-ground {
+    height: 52%;
+  }
+
+  .lp-wave-ground path {
+    fill: var(--lp-bg);
+  }
+
+  @keyframes lp-flow {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
+  /* Sekcije */
+
+  .lp-section {
+    margin-top: clamp(36px, 7vw, 56px);
+  }
+
+  .lp-kicker {
+    color: var(--lp-accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .lp-section h2 {
+    margin-top: 6px;
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .lp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .lp-feature {
+    padding: 22px;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+    box-shadow: var(--lp-shadow);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .lp-feature:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--lp-accent) 35%, transparent);
+    box-shadow: var(--lp-shadow-hover);
+  }
+
+  .lp-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: var(--lp-accent-soft);
+    color: var(--lp-accent);
+  }
+
+  .lp-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .lp-feature h3 {
+    margin-top: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .lp-feature p {
+    margin-top: 6px;
+    color: var(--lp-muted);
+    font-size: 15px;
+  }
+
+  /* On phones the icon sits next to the heading, which keeps the cards short. */
+  @media (max-width: 520px) {
+    .lp-feature {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      column-gap: 14px;
+      padding: 18px;
+    }
+
+    .lp-feature h3 {
+      margin-top: 0;
+    }
+
+    .lp-feature p {
+      grid-column: 1 / -1;
+      margin-top: 12px;
+    }
+  }
+
+  /* Uvek uz tebe */
+
+  .lp-perks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 4px 20px;
+    margin-top: 20px;
+    padding: 10px 20px;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+  }
+
+  .lp-perks li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .lp-perks .lp-icon {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .lp-perks .lp-icon svg {
+    width: 20px;
+    height: 20px;
+  }
+
+  .lp-perks strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .lp-perks strong + span {
+    display: block;
+    color: var(--lp-muted);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  /* Poziv */
+
+  .lp-cta {
+    margin-top: clamp(36px, 7vw, 56px);
+    padding: clamp(24px, 5vw, 40px);
+    border: 1px solid color-mix(in oklab, var(--lp-blue) 30%, transparent);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 0% 100%, color-mix(in oklab, var(--lp-sky) 22%, transparent), transparent 55%),
+      color-mix(in oklab, var(--lp-blue) 7%, var(--lp-bg));
+    text-align: center;
+  }
+
+  .lp-cta h2 {
+    font-size: clamp(22px, 3.6vw, 28px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .lp-cta p {
+    max-width: 30rem;
+    margin: 10px auto 0;
+    color: var(--lp-muted);
+  }
+
+  .lp-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 22px;
+    padding: 13px 22px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, var(--lp-blue), var(--lp-deep));
+    box-shadow: 0 10px 24px -10px rgba(0, 86, 196, 0.7);
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  }
+
+  .lp-button:hover {
+    transform: translateY(-2px);
+    filter: brightness(1.06);
+    box-shadow: 0 16px 30px -12px rgba(0, 86, 196, 0.8);
+  }
+
+  .lp-button:focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--lp-sky) 70%, transparent);
+    outline-offset: 3px;
+  }
+
+  .lp-button svg {
+    width: 18px;
+    height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 160ms ease;
+  }
+
+  .lp-button:hover svg {
+    transform: translateX(3px);
+  }
+
+  .lp-cta .lp-fine {
+    margin-top: 18px;
+    font-size: 14px;
+  }
+
+  .lp-fine a {
+    color: var(--lp-muted);
+    text-decoration: none;
+    border-bottom: 1px solid var(--lp-line);
+    transition: color 160ms ease, border-color 160ms ease;
+  }
+
+  .lp-fine a:hover {
+    color: var(--lp-accent);
+    border-color: currentColor;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .lp-wave {
+      animation: none;
+    }
+
+    .lp-feature,
+    .lp-button,
+    .lp-button svg {
+      transition: none;
+    }
+  }
+</style>
+</head>
+<body>
+<main class="lp">
+  <header class="lp-hero">
+    <svg class="lp-watermark" viewBox="247 142 540 540" aria-hidden="true"><use href="#lp-mark-shape" fill="#ffffff"/></svg>
+    <div class="lp-hero-body">
+      <div class="lp-brand">
+        <span class="lp-mark">
+          <svg viewBox="247 142 540 540" aria-hidden="true">
+            <defs>
+              <linearGradient id="lp-mark-gradient" x1="614.86" y1="182" x2="614.86" y2="518.37" gradientTransform="matrix(1.0648 0 0 1.5118 -137.57 -117.57)" gradientUnits="userSpaceOnUse">
+                <stop offset="0" stop-color="#69cbf5"/>
+                <stop offset="0.45" stop-color="#2e8fde"/>
+                <stop offset="1" stop-color="#0056c4"/>
+              </linearGradient>
+              <path id="lp-mark-shape" d="m 674.01932,396.85242 c 13.95963,29.86298 23.09625,60.54444 22.17121,93.28308 -1.24783,44.16177 -15.95191,83.43815 -45.36201,116.82792 -1.21933,1.38428 -2.23986,3.12007 -4.78685,3.41667 -2.0492,-1.99134 -1.66361,-4.97542 -2.00289,-7.47084 -1.41324,-10.39427 -4.47739,-20.24088 -9.70759,-29.27488 -2.05803,-3.55475 -1.54977,-6.02275 0.54542,-9.17186 19.18496,-28.83385 26.17573,-60.81065 22.42971,-94.87463 -2.4893,-22.63609 -10.53228,-43.83776 -21.20171,-63.9588 -2.3458,-4.42388 -4.15004,-9.18676 -7.64911,-13.42671 -3.30019,2.45154 -3.77863,6.22913 -5.34575,9.25239 -11.04301,21.3042 -29.26389,34.54261 -50.01774,45.02568 -16.6135,8.39178 -34.56829,13.73489 -51.01257,22.50524 -4.8732,2.59904 -9.45738,5.56441 -13.22676,9.6937 -9.5859,10.50103 -9.02495,22.13097 1.67155,31.56648 8.68296,7.65937 19.21129,12.24696 29.42853,17.29587 20.09622,9.93052 40.43073,19.44799 57.47596,34.44163 16.18059,14.23308 25.849,31.6426 25.44793,53.70051 -0.0801,4.40204 -0.90468,8.81345 -1.65648,13.17382 -0.71596,4.15229 -3.03101,7.17749 -6.74916,9.4477 -41.15822,25.13035 -85.51688,33.60119 -132.69468,23.90328 -61.91989,-12.72831 -105.34418,-49.04609 -129.91485,-107.03789 -18.07285,-42.6556 -17.60944,-86.26095 -3.07414,-130.03547 12.5374,-37.75766 33.5891,-70.9529 55.08947,-103.89645 35.01388,-53.6492 71.47927,-106.31244 108.56256,-158.54868 1.20508,-1.69745 2.19316,-3.60479 4.9947,-5.09971 5.55477,7.86459 11.17435,15.68595 16.65532,23.60328 32.60938,47.10486 65.83963,93.78652 97.12073,141.79867 15.4634,23.73422 30.66938,47.63637 42.8092,73.86 m -133.42186,33.60901 c 6.75783,-3.47983 13.68239,-6.67257 20.24607,-10.48655 39.43661,-22.91565 46.47756,-64.65151 23.51088,-98.70125 -17.59515,-26.08609 -35.24327,-52.13652 -52.90348,-78.17867 -4.55568,-6.71794 -9.24542,-13.34497 -14.16462,-20.43313 -1.68893,2.04684 -2.71047,3.11139 -3.53631,4.31058 -35.22802,51.15255 -70.79685,102.08616 -102.80711,155.36008 -13.20043,21.9692 -24.47739,44.91002 -30.37123,70.04082 -8.60746,36.70135 -4.48491,71.86335 14.83519,104.52985 22.45994,37.97527 56.01862,60.16661 99.44062,67.16133 14.15785,2.28059 26.7241,-6.15285 29.70012,-18.77018 2.51617,-10.66787 -2.49874,-18.85497 -9.42911,-26.10255 -9.71128,-10.15575 -21.68723,-17.48247 -32.95021,-25.68165 -9.75708,-7.10298 -19.60315,-14.13372 -26.8736,-23.93971 -7.15828,-9.65485 -11.0719,-20.29478 -8.56022,-32.6205 3.40424,-16.70615 14.87124,-27.02159 28.23744,-35.76031 20.13807,-13.16616 42.95835,-20.66646 65.62557,-30.72816 z"/>
+            </defs>
+            <use href="#lp-mark-shape" fill="url(#lp-mark-gradient)"/>
+          </svg>
+        </span>
+        <span class="lp-brand-name">Potok</span>
+      </div>
+      <h1>Sve što tvoja grupa radi, na jednom mestu.</h1>
+      <p class="lp-lead">Razgovori, događaji, fajlovi i uloge, složeni u grupe i podgrupe. Na računaru i na telefonu.</p>
+      <ul class="lp-pills">
+        <li>Chat</li>
+        <li>Kalendar</li>
+        <li>Fajlovi</li>
+        <li>Uloge</li>
+      </ul>
+    </div>
+    <div class="lp-waves" aria-hidden="true">
+      <div class="lp-wave lp-wave-light">
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="M0 30 C200 60 400 0 600 30 C800 60 1000 0 1200 30 V60 H0 Z"/></svg>
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="M0 30 C200 60 400 0 600 30 C800 60 1000 0 1200 30 V60 H0 Z"/></svg>
+      </div>
+      <div class="lp-wave lp-wave-ground">
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="M0 28 C250 48 350 8 600 28 C850 48 950 8 1200 28 V60 H0 Z"/></svg>
+        <svg viewBox="0 0 1200 60" preserveAspectRatio="none"><path d="M0 28 C250 48 350 8 600 28 C850 48 950 8 1200 28 V60 H0 Z"/></svg>
+      </div>
+    </div>
+  </header>
+
+  <section class="lp-section">
+    <p class="lp-kicker">Šta Potok ume</p>
+    <h2>Jedno mesto umesto pet aplikacija.</h2>
+
+    <div class="lp-grid">
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="2.5" width="8" height="5.5" rx="1.75"/><rect x="13" y="9.5" width="8" height="5" rx="1.75"/><rect x="13" y="16.5" width="8" height="5" rx="1.75"/><path d="M7 8v9a2 2 0 0 0 2 2h4M7 12h6"/></svg>
+        </div>
+        <h3>Grupe i podgrupe</h3>
+        <p>Granaj grupe koliko god treba. Svaka je javna ili privatna, podgrupa može da nasledi članove i uloge, a broj nepročitanih poruka sabira se kroz celo stablo.</p>
+      </article>
+
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v7a2.5 2.5 0 0 1-2.5 2.5H11l-4.5 4v-4A2.5 2.5 0 0 1 4 13.5z"/><path d="M8.5 8.5h7M8.5 11.5h4"/></svg>
+        </div>
+        <h3>Chat</h3>
+        <p>Odgovori sa citatom, niti za duže razgovore, reakcije i @pominjanje ljudi ili celih uloga. Linkovi dobijaju pregled, a poruku možeš i da izmeniš.</p>
+      </article>
+
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4M9 15l2 2 4-4"/></svg>
+        </div>
+        <h3>Kalendar</h3>
+        <p>Jednokratni, celodnevni i ponavljajući događaji, odgovori Dolazim, Možda ili Ne dolazim i podsetnici. Moj kalendar skuplja događaje iz svih tvojih grupa, a možeš ih izvesti u Google, Apple ili Outlook.</p>
+      </article>
+
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8z"/><path d="M14 3v5h5M10.5 12.5v5l4-2.5z"/></svg>
+        </div>
+        <h3>Fajlovi</h3>
+        <p>Do 10 fajlova po poruci, do 100 MB svaki. Slike, video i zvuk otvaraju se odmah u razgovoru, sve ostaje u kartici Fajlovi, a preuzimaju ih samo članovi.</p>
+      </article>
+
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5.5c0 4.4-2.9 8-7 9.5-4.1-1.5-7-5.1-7-9.5V6z"/><path d="M9 12l2 2 4-4"/></svg>
+        </div>
+        <h3>Uloge i dozvole</h3>
+        <p>Administrator, Svi i uloge koje sam napraviš, sa 13 dozvola: od pisanja i slanja fajlova do pravljenja događaja i uređivanja grupe. Podgrupa preuzima uloge roditelja ili ima svoje.</p>
+      </article>
+
+      <article class="lp-feature">
+        <div class="lp-icon">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.75"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.75"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.75"/><path d="M17 13.5v7M13.5 17h7"/></svg>
+        </div>
+        <h3>Aplikacije u grupi</h3>
+        <p>Opis grupe ne mora da bude samo tekst. Može da bude i mala aplikacija, na primer anketa ili spisak zaduženja. Ova stranica je napravljena baš tako.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="lp-section">
+    <p class="lp-kicker">Uvek uz tebe</p>
+    <ul class="lp-perks">
+      <li>
+        <span class="lp-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 10a6 6 0 0 1 12 0c0 4.5 2 6 2 6H4s2-1.5 2-6M10 20a2 2 0 0 0 4 0"/></svg></span>
+        <div><strong>Obaveštenja</strong><span>Na telefonu i u pregledaču, za poruke, pominjanja i događaje.</span></div>
+      </li>
+      <li>
+        <span class="lp-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></span>
+        <div><strong>Na telefonu</strong><span>Aplikacija za telefon ili instalacija pravo iz pregledača.</span></div>
+      </li>
+      <li>
+        <span class="lp-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.2A6.5 6.5 0 0 1 21.5 20"/></svg></span>
+        <div><strong>Više profila</strong><span>Lični i deljeni, na primer za porodicu ili udruženje.</span></div>
+      </li>
+      <li>
+        <span class="lp-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></span>
+        <div><strong>Svetla i tamna tema</strong><span>Ili kako je podešen sistem.</span></div>
+      </li>
+      <li>
+        <span class="lp-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5z"/></svg></span>
+        <div><strong>Tri jezika</strong><span>Srpski, English i polski.</span></div>
+      </li>
+    </ul>
+  </section>
+
+  <footer class="lp-cta">
+    <h2>Potok je za sada samo uz pozivnicu.</h2>
+    <p>Znaš nekoga kome bi dobro došao? Pošalji mu pozivnicu na imejl.</p>
+    <a class="lp-button" href="https://potok.rs/accounts/register" target="_blank" rel="noopener">
+      Pozovi nekoga u Potok
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+    <p class="lp-fine"><a href="https://potok.rs" target="_blank" rel="noopener">potok.rs</a></p>
+  </footer>
+</main>
+</body>
+</html>
