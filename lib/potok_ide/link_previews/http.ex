@@ -112,6 +112,8 @@ defmodule PotokIde.LinkPreviews.HTTP do
 
   defp ipv4(high, low), do: {high >>> 8, high &&& 0xFF, low >>> 8, low &&& 0xFF}
 
+  # This module is the adapter (`run/1`); the checked address travels in the
+  # request's private data.
   defp request(uri, address) do
     [
       method: :get,
@@ -121,9 +123,10 @@ defmodule PotokIde.LinkPreviews.HTTP do
       retry: false,
       compressed: false,
       raw: true,
-      adapter: &mint_adapter(&1, address)
+      adapter: __MODULE__
     ]
     |> Req.new()
+    |> Req.Request.put_private(:link_preview_address, address)
     |> Req.merge(config(:req_options, []))
     |> Req.request()
   end
@@ -170,9 +173,12 @@ defmodule PotokIde.LinkPreviews.HTTP do
     end
   end
 
-  # One request on its own connection to the checked address, read until it
-  # is done, the head is over, the body passes the limit or time runs out.
-  defp mint_adapter(%Req.Request{url: uri} = request, address) do
+  # The Req adapter: one request on its own connection to the checked address,
+  # read until it is done, the head is over, the body passes the limit or
+  # time runs out.
+  @doc false
+  def run(%Req.Request{url: uri} = request) do
+    address = Req.Request.get_private(request, :link_preview_address)
     scheme = if uri.scheme == "https", do: :https, else: :http
     target = (uri.path || "/") <> if(uri.query, do: "?" <> uri.query, else: "")
     headers = for {name, values} <- request.headers, value <- values, do: {name, value}
