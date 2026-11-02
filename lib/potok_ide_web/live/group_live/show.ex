@@ -81,8 +81,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         <%= Components.presence_css(@online_profile_ids) %>
       </style>
 
-      <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur">
-        <div class="flex items-center gap-2 sm:gap-3">
+      <%!-- Tighter on phones, so the shortcuts leave room for the group's name. --%>
+      <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-3 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-4">
+        <div class="flex items-center gap-1.5 sm:gap-3">
           <div :if={!@group.is_root and @group.parent_id} class="pt-1">
             <%!-- Goes back like the browser does. With no page of this site
                  behind (opened from a notification, a link or a new tab) it
@@ -139,7 +140,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
               <Components.group_identity
                 group={@group}
                 current_profile={@current_profile}
-                avatar_size="size-10"
+                avatar_size="size-9 sm:size-10"
                 text_class="text-md"
                 pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
@@ -252,7 +253,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
           >
             <.icon name="hero-paper-clip" class="size-6 shrink-0" />
           </button>
-          <%!-- The header is full on phones; the menu always has the calendar. --%>
           <button
             :if={@is_member}
             id="group-calendar-summary"
@@ -261,7 +261,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             phx-value-tab="calendar"
             aria-label={gettext("Open calendar tab")}
             aria-current={@active_tab == "calendar" && "true"}
-            class={[header_shortcut_class(@active_tab == "calendar"), "max-sm:hidden"]}
+            class={header_shortcut_class(@active_tab == "calendar")}
           >
             <.icon name="hero-calendar-days" class="size-6 shrink-0" />
           </button>
