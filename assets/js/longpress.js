@@ -135,12 +135,22 @@ const showLinkActionSheet = (urlString, isExternal) => {
   document.body.appendChild(overlay)
 }
 
+// The menu opens after LONG_PRESS_MS of holding a link, or on touch when the
+// system recognizes the long press: Android fires `contextmenu` then, at the
+// phone's own touch-and-hold delay. That delay can be shorter than ours, and
+// right after it the WebView starts dragging the link and cancels the
+// pointer, which used to stop the timer before it fired, so no menu opened.
+// Touch drags of links are blocked for the same reason. A mouse keeps the
+// browser's own right-click menu.
 export const installLongPressLinkMenu = () => {
   let timer = null
   let startX = 0
   let startY = 0
   let activeLink = null
   let fired = false
+  let pointerType = null
+
+  const isTouch = () => pointerType === "touch" || pointerType === "pen"
 
   const clear = () => {
     if (timer) {
@@ -163,6 +173,7 @@ export const installLongPressLinkMenu = () => {
 
   document.addEventListener("pointerdown", event => {
     fired = false
+    pointerType = event.pointerType
     const link = isNavigableLink(event.target)
     if (!link) return
 
@@ -202,9 +213,15 @@ export const installLongPressLinkMenu = () => {
     }
   }, true)
 
+  document.addEventListener("dragstart", event => {
+    if (isTouch() && isNavigableLink(event.target)) event.preventDefault()
+  }, true)
+
   document.addEventListener("contextmenu", event => {
     const link = isNavigableLink(event.target)
-    if (!link) return
+    if (!link || !isTouch()) return
     event.preventDefault()
+    if (!fired) openMenu(link)
+    clear()
   })
 }
