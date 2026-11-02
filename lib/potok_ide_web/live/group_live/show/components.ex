@@ -1066,6 +1066,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
       |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
+      |> assign(:link_preview, value_link_preview(assigns.value))
       |> assign_value_attachments(assigns.value)
 
     ~H"""
@@ -1276,10 +1277,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </button>
         </div>
 
+        <.link_preview_card
+          :if={@link_preview}
+          value_id={@value.id}
+          preview={@link_preview}
+          mine={@mine?}
+          can_dismiss={@mine? and !@editing?}
+          class={(@has_text? or @reply_parent) && "mt-2.5"}
+        />
+
         <div
           :if={@media != [] or @audios != [] or @files != []}
           id={"value-attachments-#{@value.id}"}
-          class={["flex flex-col gap-2", @has_text? && "mt-2.5"]}
+          class={["flex flex-col gap-2", (@has_text? or @link_preview) && "mt-2.5"]}
         >
           <div :if={@media != []} class="flex flex-wrap gap-2">
             <a
@@ -1427,6 +1437,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  # A preview fetched by `Social` once the value was posted (`PotokIde.LinkPreviews`).
+  defp value_link_preview(%Value{link_preview: %{"url" => url} = preview}) when is_binary(url),
+    do: preview
+
+  defp value_link_preview(_value), do: nil
+
   defp mentions_profile?(%Value{mentioned_profile_ids: [_ | _] = ids}, %{id: profile_id}),
     do: profile_id in ids
 
@@ -1455,6 +1471,112 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       :audio -> :audio
       nil -> :file
     end
+  end
+
+  attr :value_id, :integer, required: true
+  attr :preview, :map, required: true
+  attr :mine, :boolean, default: false
+  attr :can_dismiss, :boolean, default: false
+  attr :class, :any, default: nil
+
+  # The image comes straight from the linked site, without a referrer.
+  # `.LinkPreviewImage` hides one that fails to load, fits a banner to the
+  # image's own proportions and turns a small or squarish image (a logo)
+  # into a thumbnail beside the text; re-renders keep what it set.
+  defp link_preview_card(assigns) do
+    ~H"""
+    <div
+      id={"value-link-preview-#{@value_id}"}
+      class={["group/preview relative w-80 max-w-full sm:w-96", @class]}
+    >
+      <a
+        id={"value-link-preview-link-#{@value_id}"}
+        href={@preview["url"]}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+        class={[
+          "block overflow-hidden rounded-2xl border border-l-4 transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",
+          if(@mine,
+            do:
+              "border-primary-content/25 border-l-primary-content/60 bg-primary-content/10 text-primary-content hover:bg-primary-content/15",
+            else:
+              "border-base-300 border-l-primary bg-base-200/60 text-base-content hover:bg-base-200"
+          )
+        ]}
+      >
+        <img
+          :if={@preview["image_url"]}
+          id={"value-link-preview-image-#{@value_id}"}
+          phx-hook=".LinkPreviewImage"
+          phx-mounted={JS.ignore_attributes(["hidden", "data-shape", "style"])}
+          src={@preview["image_url"]}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          referrerpolicy="no-referrer"
+          class="block aspect-[1.91/1] w-full bg-base-300/40 object-cover data-[shape=thumb]:float-left data-[shape=thumb]:m-2.5 data-[shape=thumb]:size-16 data-[shape=thumb]:rounded-xl sm:data-[shape=thumb]:size-20"
+        />
+        <div class={["px-3 py-2.5", @can_dismiss && "pr-10"]}>
+          <p
+            :if={@preview["site_name"]}
+            class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-60"
+          >
+            {@preview["site_name"]}
+          </p>
+          <p :if={@preview["title"]} class="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug">
+            {@preview["title"]}
+          </p>
+          <p
+            :if={@preview["description"]}
+            class="mt-0.5 line-clamp-2 text-sm leading-snug opacity-75"
+          >
+            {@preview["description"]}
+          </p>
+        </div>
+      </a>
+      <%!-- Outside the link, so removing the preview does not open it. Revealed on hover where there is one. --%>
+      <button
+        :if={@can_dismiss}
+        id={"value-link-preview-dismiss-#{@value_id}"}
+        type="button"
+        phx-click="dismiss_link_preview"
+        phx-value-id={@value_id}
+        title={gettext("Remove preview")}
+        aria-label={gettext("Remove preview")}
+        class="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full bg-base-100/85 text-base-content/70 shadow-sm backdrop-blur transition duration-150 ease-out hover:bg-base-100 hover:text-base-content active:scale-95 focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover/preview:opacity-100 phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"
+      >
+        <.icon name="hero-x-mark" class="size-4" />
+      </button>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".LinkPreviewImage">
+      // Open Graph asks for 1.91:1 banners. Wider and slightly narrower ones
+      // keep their own proportions; a small or squarish image would be cut
+      // or blown up, so it becomes a thumbnail.
+      const ratio = img => img.naturalWidth / img.naturalHeight
+      const isThumbnail = img => img.naturalWidth < 300 || ratio(img) < 1.3
+
+      export default {
+        mounted() {
+          this.el.addEventListener("error", () => this.hide())
+          this.el.addEventListener("load", () => this.measure())
+
+          if (this.el.complete) {
+            if (this.el.naturalWidth === 0) this.hide()
+            else this.measure()
+          }
+        },
+
+        hide() {
+          this.el.hidden = true
+        },
+
+        measure() {
+          if (isThumbnail(this.el)) this.el.dataset.shape = "thumb"
+          else this.el.style.aspectRatio = String(Math.min(Math.max(ratio(this.el), 1.5), 2.6))
+        },
+      }
+    </script>
+    """
   end
 
   attr :id, :string, required: true

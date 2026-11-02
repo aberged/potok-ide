@@ -13,6 +13,14 @@ config :potok_ide, live_refresh_debounce_ms: 0
 # take `:garbage_collect` (this also leaves the LiveView's own collection off).
 config :potok_ide, transport_gc_delay_ms: nil
 
+# Link previews are fetched inline, uncached, from `Req.Test` stubs; test
+# hosts resolve to a public documentation address without the network.
+config :potok_ide, PotokIde.LinkPreviews,
+  async: false,
+  cache_ttl: 0,
+  req_options: [plug: {Req.Test, PotokIde.LinkPreviews}],
+  resolver: &PotokIde.LinkPreviewsTestResolver.resolve/1
+
 # Attached files on disk, deleted inline so tests can assert they are gone.
 config :potok_ide, async_storage_cleanup: false
 

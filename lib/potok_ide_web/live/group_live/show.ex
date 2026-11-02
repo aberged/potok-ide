@@ -953,6 +953,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  def handle_event("dismiss_link_preview", %{"id" => id}, socket) do
+    case loaded_value(socket, id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+
+      value ->
+        case Social.dismiss_value_link_preview(socket.assigns.current_profile, value) do
+          {:ok, updated_value} ->
+            {:noreply, apply_value_updated(socket, updated_value)}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not remove the preview."))}
+        end
+    end
+  end
+
   def handle_event("switch_tab", %{"tab" => "group_home"}, socket) do
     {:noreply,
      redirect(

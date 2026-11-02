@@ -17,6 +17,11 @@ defmodule PotokIde.Social.Value do
     # members they reached.
     field :mentions, :map, default: %{}
     field :mentioned_profile_ids, {:array, :id}, default: []
+    # Set by `Social` after the first link's page is fetched, never cast:
+    # `%{"url", "title", "description", "site_name", "image_url"}`. The
+    # author can dismiss it, and then it is never fetched again.
+    field :link_preview, :map
+    field :link_preview_dismissed, :boolean, default: false
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group

@@ -9,6 +9,7 @@ defmodule PotokIde.Social do
   require Logger
 
   alias Ecto.Multi
+  alias PotokIde.LinkPreviews
   alias PotokIde.Presence
   alias PotokIde.Repo
   alias PotokIde.Storage
@@ -1494,6 +1495,7 @@ defmodule PotokIde.Social do
             broadcast_value_created(group, value)
             broadcast_group_value_unread(creator, group, value)
             notify_group_members_of_new_value(creator, group, value)
+            schedule_link_preview(value)
             {:ok, value}
 
           {:error, _step, reason, _changes} ->
@@ -1595,12 +1597,19 @@ defmodule PotokIde.Social do
       value
       |> Value.changeset(attrs, attachments?: value_has_attachments?(value))
       |> put_mentions(profile, Repo.get!(Group, value.group_id))
+      |> reset_link_preview(value)
       |> Repo.update()
       |> case do
         {:ok, updated_value} ->
-          updated_value = Repo.preload(updated_value, value_display_preloads(), force: true)
+          # Read again rather than preloaded: `value` may predate its link
+          # preview, which is written outside of edits.
+          updated_value =
+            get_value_for_display(updated_value.id) ||
+              Repo.preload(updated_value, value_display_preloads(), force: true)
+
           broadcast_value_updated(updated_value)
           broadcast_values_updated(reply_ids(updated_value))
+          schedule_link_preview(updated_value)
           {:ok, updated_value}
 
         error ->
@@ -1675,6 +1684,83 @@ defmodule PotokIde.Social do
         |> Mentions.resolve(author, group)
 
       Ecto.Changeset.change(changeset, mentions: mentions, mentioned_profile_ids: profile_ids)
+    end
+  end
+
+  # An edit that changes the first link drops the old link's preview; the
+  # new one is fetched once the edit is saved. Forced, since `value` may have
+  # been read before its preview was written.
+  defp reset_link_preview(%Ecto.Changeset{} = changeset, %Value{} = value) do
+    new_url = changeset |> Ecto.Changeset.get_field(:content) |> LinkPreviews.first_url()
+
+    if new_url == LinkPreviews.first_url(value.content),
+      do: changeset,
+      else: Ecto.Changeset.force_change(changeset, :link_preview, nil)
+  end
+
+  # The preview of a value's first link comes later: the page is fetched off
+  # the caller, then every viewer is sent the value again with its card.
+  defp schedule_link_preview(%Value{is_data: true}), do: :ok
+  defp schedule_link_preview(%Value{link_preview_dismissed: true}), do: :ok
+  defp schedule_link_preview(%Value{link_preview: %{}}), do: :ok
+
+  defp schedule_link_preview(%Value{id: value_id, content: content}) do
+    case LinkPreviews.first_url(content) do
+      nil -> :ok
+      url -> run_link_preview(fn -> fetch_value_link_preview(value_id, url) end)
+    end
+  end
+
+  defp run_link_preview(fun) do
+    if LinkPreviews.async?() do
+      {:ok, _pid} = Task.Supervisor.start_child(PotokIde.TaskSupervisor, fun)
+      :ok
+    else
+      fun.()
+    end
+  end
+
+  # Kept only while the value still leads with `url`: the text it was
+  # fetched for must not have been edited or the preview dismissed meanwhile.
+  # `updated_at` stays, since a preview is not an edit.
+  defp fetch_value_link_preview(value_id, url) do
+    with {:ok, preview} <- LinkPreviews.fetch(url),
+         %Value{is_data: false, link_preview_dismissed: false} = value <-
+           Repo.get(Value, value_id),
+         ^url <- LinkPreviews.first_url(value.content),
+         {1, _} <-
+           from(v in Value,
+             where:
+               v.id == ^value_id and v.content == ^value.content and
+                 v.link_preview_dismissed == false
+           )
+           |> Repo.update_all(set: [link_preview: preview]),
+         %Value{} = updated_value <- get_value_for_display(value_id) do
+      broadcast_value_updated(updated_value)
+    end
+
+    :ok
+  end
+
+  @doc """
+  Hides the link preview of the profile's own value for good: later edits
+  do not fetch another one.
+  """
+  def dismiss_value_link_preview(%Profile{} = profile, %Value{} = value) do
+    if value.creator_id != profile.id do
+      {:error, :not_value_creator}
+    else
+      from(v in Value, where: v.id == ^value.id)
+      |> Repo.update_all(set: [link_preview: nil, link_preview_dismissed: true])
+
+      case get_value_for_display(value.id) do
+        nil ->
+          {:error, :not_found}
+
+        updated_value ->
+          broadcast_value_updated(updated_value)
+          {:ok, updated_value}
+      end
     end
   end
 
