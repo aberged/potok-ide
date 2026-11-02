@@ -2694,6 +2694,23 @@ defmodule PotokIde.SocialTest do
       assert length(reactions) == 3
     end
 
+    # Erlang's PCRE sees these single-codepoint emoji as unassigned; the kiss
+    # with two skin tones is 35 bytes.
+    test "accepts emoji newer than Erlang's Unicode tables and long ZWJ sequences", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
+      emoji = ["🤣", "🙃", "🫠", "🥲", "🧑🏻‍❤️‍💋‍🧑🏼"]
+
+      for e <- emoji do
+        assert {:ok, _value} = Social.toggle_value_reaction(owner, group, value, e)
+      end
+
+      assert [%{reactions: reactions}] = Social.list_group_values(group)
+      assert Enum.map(reactions, & &1.emoji) == emoji
+    end
+
     test "broadcasts the reloaded value to the group", %{
       owner: owner,
       group: group,
@@ -2760,7 +2777,7 @@ defmodule PotokIde.SocialTest do
       group: group,
       value: value
     } do
-      for invalid <- ["", "a", "ab", "7", " ", "👍👍"] do
+      for invalid <- ["", "a", "ab", "7", " ", "👍👍", "‍", "", " "] do
         assert {:error, %Ecto.Changeset{} = changeset} =
                  Social.toggle_value_reaction(owner, group, value, invalid)
 

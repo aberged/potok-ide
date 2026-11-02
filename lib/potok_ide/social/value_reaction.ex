@@ -3,7 +3,8 @@ defmodule PotokIde.Social.ValueReaction do
 
   import Ecto.Changeset
 
-  @max_emoji_bytes 32
+  # The longest emoji in the picker data, a kiss with two skin tones, is 35 bytes.
+  @max_emoji_bytes 64
 
   schema "value_reactions" do
     field :emoji, :string
@@ -27,9 +28,11 @@ defmodule PotokIde.Social.ValueReaction do
     )
   end
 
-  # Accepts a single grapheme that is not a letter, number, separator or
-  # control character. Multi-codepoint emoji (skin tones, ZWJ families, flags,
-  # keycaps) are one grapheme, so they pass.
+  # Accepts a single grapheme that is not a letter, number, separator, control,
+  # format or private-use character. Multi-codepoint emoji (skin tones, ZWJ
+  # families, flags, keycaps) are one grapheme, so they pass. Unassigned (Cn)
+  # is allowed on purpose: Erlang's PCRE has old Unicode tables that treat
+  # many emoji, such as 🙃 and 🥰, as unassigned.
   defp validate_emoji(changeset) do
     validate_change(changeset, :emoji, fn :emoji, emoji ->
       if emoji?(emoji), do: [], else: [emoji: "is not a valid emoji"]
@@ -39,7 +42,8 @@ defmodule PotokIde.Social.ValueReaction do
   @doc false
   def emoji?(emoji) when is_binary(emoji) do
     String.valid?(emoji) and byte_size(emoji) <= @max_emoji_bytes and
-      String.length(emoji) == 1 and not String.match?(emoji, ~r/^[\p{L}\p{N}\p{Z}\p{C}]$/u)
+      String.length(emoji) == 1 and
+      not String.match?(emoji, ~r/^[\p{L}\p{N}\p{Z}\p{Cc}\p{Cf}\p{Co}]$/u)
   end
 
   def emoji?(_emoji), do: false
