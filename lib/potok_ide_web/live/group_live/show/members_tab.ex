@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   alias PotokIde.Social.{Access, GroupRole}
   alias PotokIdeWeb.GroupLive.Show.{Components, RolesTab}
+  alias PotokIdeWeb.TagComponents
 
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
   attr :pagination, :map, required: true
@@ -173,7 +174,14 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                     {RolesTab.role_label(role)}
                   </span>
                 </div>
+                <TagComponents.tag_chips id={"member-#{member.id}-tag-list"} tags={member.tags} />
               </div>
+              <TagComponents.tag_button
+                id={"member-tags-#{member.id}"}
+                kind={:profile}
+                item_id={member.id}
+                class="shrink-0 p-1.5"
+              />
               <button
                 :if={@manage_roles?}
                 id={"member-#{member.id}-roles-toggle"}

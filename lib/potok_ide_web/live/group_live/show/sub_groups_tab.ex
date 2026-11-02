@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.TagComponents
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
@@ -23,10 +24,16 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   def panel(assigns) do
     assigns =
-      assign(
-        assigns,
+      assigns
+      |> assign(
         :children_search_form,
         to_form(%{"q" => assigns.children_search_query}, as: :children_search)
+      )
+      # The view is not a filter: the list holds the same sub-groups either way.
+      |> assign(
+        :filters_active?,
+        String.trim(assigns.children_search_query) != "" or
+          (not assigns.show_thread_sub_groups and assigns.thread_sub_groups_count > 0)
       )
 
     ~H"""
@@ -34,121 +41,194 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       id="group-panel-sub-groups"
       class="card relative flex min-h-0 flex-1 flex-col px-2"
     >
-      <div class="group/filters absolute right-4 -top-[.06rem] z-45 mb-3 flex items-start gap-2">
-        <%!-- List or folder tree; direct conversations are always a list.
+      <%!-- The controls fold into one button when they cover the list. The
+           browser remembers the choice (`.CollapsibleFilters`) and patches
+           keep what the hook set. --%>
+      <div
+        id="group-children-filters"
+        phx-hook=".CollapsibleFilters"
+        phx-mounted={JS.ignore_attributes(["data-collapsed"])}
+        class="group/filters absolute right-4 -top-[.06rem] z-45 mb-3 flex items-start gap-2"
+      >
+        <div
+          id="group-children-filters-body"
+          class="flex items-start gap-2 group-data-collapsed/filters:hidden"
+        >
+          <%!-- List or folder tree; direct conversations are always a list.
              Phones get one button that flips to the other view, so the
              group path keeps its room. --%>
-        <button
-          :if={@sub_groups_kind != "direct"}
-          id="group-children-view-flip"
-          type="button"
-          phx-click="set_sub_groups_view"
-          phx-value-view={if(@sub_groups_view == "tree", do: "list", else: "tree")}
-          aria-label={if(@sub_groups_view == "tree", do: gettext("List"), else: gettext("Folders"))}
-          class="mt-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-500/50 bg-base-100 text-base-content/70 shadow-xs transition duration-150 ease-out hover:text-base-content active:scale-95 phx-click-loading:opacity-60 sm:hidden max-sm:group-has-[input:focus]/filters:hidden"
-        >
-          <.icon
-            name={if(@sub_groups_view == "tree", do: "hero-list-bullet", else: "hero-folder")}
-            class="size-4"
-          />
-        </button>
-        <div
-          :if={@sub_groups_kind != "direct"}
-          id="group-children-view"
-          role="group"
-          aria-label={gettext("Show sub-groups as")}
-          class="mt-1 hidden h-10 shrink-0 items-center rounded-full border border-gray-500/50 bg-base-100 p-0.5 shadow-xs sm:inline-flex"
-        >
-          <Components.view_toggle_button
-            id="group-children-view-list"
-            event="set_sub_groups_view"
-            view="list"
-            active={@sub_groups_view == "list"}
-            icon="hero-list-bullet"
-            label={gettext("List")}
-            label_class="sr-only"
-          />
-          <Components.view_toggle_button
-            id="group-children-view-tree"
-            event="set_sub_groups_view"
-            view="tree"
-            active={@sub_groups_view == "tree"}
-            icon="hero-folder"
-            label={gettext("Folders")}
-            label_class="sr-only"
-          />
+          <button
+            :if={@sub_groups_kind != "direct"}
+            id="group-children-view-flip"
+            type="button"
+            phx-click="set_sub_groups_view"
+            phx-value-view={if(@sub_groups_view == "tree", do: "list", else: "tree")}
+            aria-label={if(@sub_groups_view == "tree", do: gettext("List"), else: gettext("Folders"))}
+            class="mt-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-500/50 bg-base-100 text-base-content/70 shadow-xs transition duration-150 ease-out hover:text-base-content active:scale-95 phx-click-loading:opacity-60 sm:hidden max-sm:group-has-[input:focus]/filters:hidden"
+          >
+            <.icon
+              name={if(@sub_groups_view == "tree", do: "hero-list-bullet", else: "hero-folder")}
+              class="size-4"
+            />
+          </button>
+          <div
+            :if={@sub_groups_kind != "direct"}
+            id="group-children-view"
+            role="group"
+            aria-label={gettext("Show sub-groups as")}
+            class="mt-1 hidden h-10 shrink-0 items-center rounded-full border border-gray-500/50 bg-base-100 p-0.5 shadow-xs sm:inline-flex"
+          >
+            <Components.view_toggle_button
+              id="group-children-view-list"
+              event="set_sub_groups_view"
+              view="list"
+              active={@sub_groups_view == "list"}
+              icon="hero-list-bullet"
+              label={gettext("List")}
+              label_class="sr-only"
+            />
+            <Components.view_toggle_button
+              id="group-children-view-tree"
+              event="set_sub_groups_view"
+              view="tree"
+              active={@sub_groups_view == "tree"}
+              icon="hero-folder"
+              label={gettext("Folders")}
+              label_class="sr-only"
+            />
+          </div>
+
+          <%!-- Shown or hidden thread sub-groups (groups started from a chat value).
+             Phones give the expanded search the whole row while it has focus. --%>
+          <button
+            :if={@thread_sub_groups_count > 0}
+            id="group-children-threads-toggle"
+            type="button"
+            phx-click="toggle_thread_sub_groups"
+            aria-pressed={to_string(@show_thread_sub_groups)}
+            title={
+              if(@show_thread_sub_groups, do: gettext("Hide threads"), else: gettext("Show threads"))
+            }
+            class={[
+              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+              if(@show_thread_sub_groups,
+                do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
+                else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
+              )
+            ]}
+          >
+            <.icon
+              name={
+                if(@show_thread_sub_groups, do: "hero-chat-bubble-left-right", else: "hero-eye-slash")
+              }
+              class="size-4"
+            />
+            <span class="hidden sm:inline">{gettext("Threads")}</span>
+            <span class={[
+              "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none tabular-nums",
+              if(@show_thread_sub_groups,
+                do: "bg-primary text-primary-content",
+                else: "bg-base-300 text-base-content/70"
+              )
+            ]}>
+              {@thread_sub_groups_count}
+            </span>
+          </button>
+
+          <.form
+            for={@children_search_form}
+            id="group-children-search-form"
+            phx-change="search_children"
+          >
+            <div class="relative w-fit">
+              <button
+                :if={@children_search_query != ""}
+                id="group-children-search-reset"
+                type="button"
+                phx-click="clear_children_search"
+                aria-label={gettext("Clear search")}
+                class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+              </button>
+              <.input
+                field={@children_search_form[:q]}
+                id="group-children-search-input"
+                type="text"
+                phx-debounce="300"
+                autocomplete="off"
+                class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
+                placeholder={gettext("Search by name")}
+              />
+              <div class="absolute right-0 top-0 mt-4 mr-4">
+                <svg
+                  class="h-4 w-4 fill-current"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
+                  </path>
+                </svg>
+              </div>
+            </div>
+          </.form>
         </div>
 
-        <%!-- Shown or hidden thread sub-groups (groups started from a chat value).
-             Phones give the expanded search the whole row while it has focus. --%>
+        <%!-- Last, so a folded bar leaves only this button at the edge. The dot
+             tells a folded bar that the list is filtered. --%>
         <button
-          :if={@thread_sub_groups_count > 0}
-          id="group-children-threads-toggle"
+          id="group-children-filters-toggle"
           type="button"
-          phx-click="toggle_thread_sub_groups"
-          aria-pressed={to_string(@show_thread_sub_groups)}
-          title={
-            if(@show_thread_sub_groups, do: gettext("Hide threads"), else: gettext("Show threads"))
-          }
-          class={[
-            "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
-            if(@show_thread_sub_groups,
-              do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
-              else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
-            )
-          ]}
+          aria-controls="group-children-filters-body"
+          aria-expanded="true"
+          aria-label={gettext("Filters")}
+          title={gettext("Filters")}
+          phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+          class="relative mt-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-500/50 bg-base-100 text-base-content/70 shadow-xs transition duration-150 ease-out hover:-translate-y-px hover:text-base-content active:scale-95"
         >
+          <.icon name="hero-chevron-right" class="size-4 group-data-collapsed/filters:hidden" />
           <.icon
-            name={
-              if(@show_thread_sub_groups, do: "hero-chat-bubble-left-right", else: "hero-eye-slash")
-            }
-            class="size-4"
+            name="hero-adjustments-horizontal"
+            class="hidden size-4 group-data-collapsed/filters:block"
           />
-          <span class="hidden sm:inline">{gettext("Threads")}</span>
-          <span class={[
-            "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] leading-none tabular-nums",
-            if(@show_thread_sub_groups,
-              do: "bg-primary text-primary-content",
-              else: "bg-base-300 text-base-content/70"
-            )
-          ]}>
-            {@thread_sub_groups_count}
+          <span
+            :if={@filters_active?}
+            id="group-children-filters-active"
+            class="absolute -right-0.5 -top-0.5 hidden size-2.5 rounded-full bg-primary ring-2 ring-base-100 group-data-collapsed/filters:block"
+          >
           </span>
         </button>
+        <script :type={Phoenix.LiveView.ColocatedHook} name=".CollapsibleFilters">
+          const STORAGE_KEY = "potok:sub-groups-filters"
 
-        <.form
-          for={@children_search_form}
-          id="group-children-search-form"
-          phx-change="search_children"
-        >
-          <div class="relative w-fit">
-            <button
-              :if={@children_search_query != ""}
-              id="group-children-search-reset"
-              type="button"
-              phx-click="clear_children_search"
-              aria-label={gettext("Clear search")}
-              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
-            >
-              <.icon name="hero-x-mark" class="size-4" />
-            </button>
-            <.input
-              field={@children_search_form[:q]}
-              id="group-children-search-input"
-              type="text"
-              phx-debounce="300"
-              autocomplete="off"
-              class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
-              placeholder={gettext("Search by name")}
-            />
-            <div class="absolute right-0 top-0 mt-4 mr-4">
-              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
-                </path>
-              </svg>
-            </div>
-          </div>
-        </.form>
+          export default {
+            mounted() {
+              const toggle = () => this.el.querySelector("#group-children-filters-toggle")
+
+              const apply = collapsed => {
+                this.el.toggleAttribute("data-collapsed", collapsed)
+                toggle()?.setAttribute("aria-expanded", String(!collapsed))
+              }
+
+              let stored = null
+              try {
+                stored = window.localStorage.getItem(STORAGE_KEY)
+              } catch (_error) {}
+              apply(stored === "collapsed")
+
+              this.el.addEventListener("click", event => {
+                if (!event.target.closest("#group-children-filters-toggle")) return
+
+                const collapsed = !this.el.hasAttribute("data-collapsed")
+                apply(collapsed)
+
+                try {
+                  window.localStorage.setItem(STORAGE_KEY, collapsed ? "collapsed" : "expanded")
+                } catch (_error) {}
+              })
+            },
+          }
+        </script>
       </div>
 
       <Components.group_path
@@ -158,7 +238,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24">
+      <%!-- The root has no group path for the filters to sit in, so the list
+           leaves them their row. --%>
+      <div class={[
+        "min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24",
+        @group.is_root && "pt-14"
+      ]}>
         <p
           :if={@pagination.loaded_count == 0}
           id="group-children-empty"
@@ -201,16 +286,31 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </p>
         <% else %>
           <ul id="group-children-list" class="space-y-4" phx-update="stream">
-            <li :for={{dom_id, group} <- @children} id={dom_id}>
-              <Components.group_identity
-                group={group}
-                current_profile={@current_profile}
-                avatar_size="size-10"
-                text_class="text-sm"
-                highlight_query={@children_search_query}
-                pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
-                unread_count={Map.get(@unread_counts, group.id, 0)}
-              />
+            <li :for={{dom_id, group} <- @children} id={dom_id} class="group/child">
+              <div class="flex items-start gap-1">
+                <div class="min-w-0 flex-1">
+                  <Components.group_identity
+                    group={group}
+                    current_profile={@current_profile}
+                    avatar_size="size-10"
+                    text_class="text-sm"
+                    highlight_query={@children_search_query}
+                    pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
+                    unread_count={Map.get(@unread_counts, group.id, 0)}
+                  />
+                  <TagComponents.tag_chips
+                    id={"child-group-tag-list-#{group.id}"}
+                    tags={group.tags}
+                    class="mt-1 pl-13"
+                  />
+                </div>
+                <TagComponents.tag_button
+                  id={"child-group-tags-#{group.id}"}
+                  kind={:group}
+                  item_id={group.id}
+                  class="mt-2 shrink-0 opacity-60 transition-opacity group-hover/child:opacity-100 focus-visible:opacity-100"
+                />
+              </div>
             </li>
           </ul>
 

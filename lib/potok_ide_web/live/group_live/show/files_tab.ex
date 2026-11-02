@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
 
   alias PotokIde.Social.ValueAttachment
   alias PotokIdeWeb.GroupLive.Show.{Components, MediaViewer}
+  alias PotokIdeWeb.TagComponents
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
@@ -83,23 +84,40 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             <li id="group-files-empty" class="hidden only:block">
               <.empty_state text={gettext("No files yet. Attach one to a value with the paper clip.")} />
             </li>
-            <li :for={{dom_id, file} <- @files} id={dom_id}>
-              <.file_link
-                file={file}
-                gallery="files-list"
-                class="rounded-2xl border border-base-300/60 bg-base-100/70 px-2.5 py-2 shadow-sm"
-              >
-                <:details>
-                  <span>{file.profile.username}</span>
-                  <span aria-hidden="true">·</span>
-                  <Components.local_time
-                    id={"file-inserted-at-#{file.id}"}
-                    datetime={file.inserted_at}
-                  />
-                  <span aria-hidden="true">·</span>
-                  <span class="tabular-nums">{Components.format_bytes(file.byte_size)}</span>
-                </:details>
-              </.file_link>
+            <li
+              :for={{dom_id, file} <- @files}
+              id={dom_id}
+              class="rounded-2xl border border-base-300/60 bg-base-100/70 shadow-sm"
+            >
+              <div class="flex items-center gap-1 pr-1.5">
+                <.file_link
+                  file={file}
+                  gallery="files-list"
+                  class="min-w-0 flex-1 rounded-2xl px-2.5 py-2"
+                >
+                  <:details>
+                    <span>{file.profile.username}</span>
+                    <span aria-hidden="true">·</span>
+                    <Components.local_time
+                      id={"file-inserted-at-#{file.id}"}
+                      datetime={file.inserted_at}
+                    />
+                    <span aria-hidden="true">·</span>
+                    <span class="tabular-nums">{Components.format_bytes(file.byte_size)}</span>
+                  </:details>
+                </.file_link>
+                <TagComponents.tag_button
+                  id={"file-tags-#{file.id}"}
+                  kind={:attachment}
+                  item_id={file.id}
+                  class="shrink-0"
+                />
+              </div>
+              <TagComponents.tag_chips
+                id={"file-tag-list-#{file.id}"}
+                tags={file.tags}
+                class="px-2.5 pb-2"
+              />
             </li>
           </ul>
           <div :if={@has_more} class="mt-3 flex justify-center">

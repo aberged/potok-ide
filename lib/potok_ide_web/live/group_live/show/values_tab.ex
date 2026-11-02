@@ -134,6 +134,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 can_thread={@can_thread}
                 can_join_thread={@is_member}
                 can_delete_any={@can_delete_any}
+                can_tag={@is_member}
               />
             </div>
 

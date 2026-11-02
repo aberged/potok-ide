@@ -17,6 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIde.Storage
+  alias PotokIde.Tags
 
   alias PotokIdeWeb.GroupLive.Show.{
     CalendarState,
@@ -36,6 +37,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.{TagComponents, TagEditor}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
 
   @children_page_size 20
@@ -146,6 +148,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               />
             </div>
+            <TagComponents.tag_chips
+              :if={!@group.is_root}
+              id="group-tag-list"
+              tags={@group_tags}
+              class="mt-1 pl-12 sm:pl-13"
+            />
 
             <div
               :if={@group.is_root}
@@ -400,6 +408,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={members_tab_label(@pending_join_requests_count)}
                 icon="hero-user-group"
               />
+              <button
+                :if={!@group.is_root}
+                id="group-tags-button"
+                type="button"
+                data-dropdown-close
+                phx-click="tag_editor_open"
+                phx-value-kind="group"
+                phx-value-id={@group.id}
+                class={menu_item_class()}
+              >
+                <.icon name="hero-hashtag" class="size-4" />
+                <span class="ml-2 truncate">{gettext("Tags of this group")}</span>
+              </button>
+              <.link
+                id="group-tags-browse"
+                navigate={TagComponents.tags_path([], if(@group.is_root, do: nil, else: @group.id))}
+                class={menu_item_class()}
+              >
+                <.icon name="hero-squares-2x2" class="size-4" />
+                <span class="ml-2 truncate">{gettext("Browse by tags")}</span>
+              </.link>
               <Components.group_tab_button
                 :if={@is_member and !@group.is_direct}
                 id="group-tab-roles"
@@ -608,6 +637,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       </div>
 
       <MediaViewer.viewer />
+      <TagComponents.tag_editor editor={@tag_editor} />
     </Layouts.app>
     """
   end
@@ -705,6 +735,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:pending_join_request, nil)
        |> assign(:pending_join_requests, [])
        |> assign(:pending_join_requests_count, 0)
+       |> assign(:group_tags, [])
+       |> TagEditor.init()
        |> CalendarState.init(params)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
@@ -767,6 +799,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @impl true
   def handle_event("calendar_" <> _ = event, params, socket),
     do: CalendarState.handle_event(event, params, socket)
+
+  def handle_event("tag_editor_" <> _ = event, params, socket),
+    do: TagEditor.handle_event(event, params, socket)
 
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
@@ -1901,6 +1936,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:calendar, message}, socket), do: CalendarState.handle_info(message, socket)
 
+  # From the tag editor, or a public tag changed by another member.
+  def handle_info({:tags_changed, kind, item_id}, socket) do
+    {:noreply,
+     socket
+     |> apply_tags_changed(kind, item_id)
+     |> TagEditor.refresh(kind, item_id)}
+  end
+
   def handle_info({:value_created, group_id, %Value{} = value}, socket)
       when socket.assigns.group.id == group_id do
     {:noreply, apply_value_created(socket, value)}
@@ -2063,6 +2106,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
+    |> assign_group_tags(group)
     |> assign(:root_group_unread_count, overview.total)
     |> assign_group_unread_counts(overview)
     |> maybe_push_root_group_unread_count()
@@ -2523,12 +2567,76 @@ defmodule PotokIdeWeb.GroupLive.Show do
         _ -> socket
       end
 
+    # Broadcasts carry the value without tags, which depend on the viewer.
     if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
-      stream_insert(socket, :values, value)
+      stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
     else
       socket
     end
   end
+
+  # Reads the item again with the tags this profile sees, when it is on the page.
+  defp apply_tags_changed(socket, :value, value_id),
+    do: restream_value(socket, %Value{id: value_id})
+
+  defp apply_tags_changed(
+         %{assigns: %{active_tab: "files", files_view: "list"}} = socket,
+         :attachment,
+         attachment_id
+       ) do
+    # The list holds the newest files down to `oldest_file_id`.
+    with oldest_id when is_integer(oldest_id) and attachment_id >= oldest_id <-
+           socket.assigns.oldest_file_id,
+         %ValueAttachment{} = file <-
+           Social.get_group_attachment(socket.assigns.group, attachment_id) do
+      stream_insert(
+        socket,
+        :files,
+        Tags.put_tags(file, socket.assigns.current_profile, :attachment)
+      )
+    else
+      _ -> socket
+    end
+  end
+
+  defp apply_tags_changed(socket, :attachment, _attachment_id), do: socket
+
+  defp apply_tags_changed(socket, :group, group_id) do
+    socket =
+      if socket.assigns.group.id == group_id,
+        do: assign_group_tags(socket, socket.assigns.group),
+        else: socket
+
+    case Enum.find(socket.assigns.loaded_children, &(&1.id == group_id)) do
+      nil ->
+        socket
+
+      child ->
+        child = Tags.put_tags(child, socket.assigns.current_profile, :group)
+
+        socket
+        |> update(:loaded_children, fn children ->
+          Enum.map(children, &if(&1.id == group_id, do: child, else: &1))
+        end)
+        |> stream_insert(:children, child)
+    end
+  end
+
+  defp apply_tags_changed(socket, :profile, profile_id), do: restream_member(socket, profile_id)
+
+  defp apply_tags_changed(socket, :event, event_id),
+    do: CalendarState.refresh_event_tags(socket, event_id)
+
+  defp assign_group_tags(socket, %Group{is_root: true}), do: assign(socket, :group_tags, [])
+
+  defp assign_group_tags(socket, %Group{id: group_id}) do
+    tags = Tags.tags_for(socket.assigns.current_profile, :group, [group_id])
+    assign(socket, :group_tags, Map.get(tags, group_id, []))
+  end
+
+  defp menu_item_class,
+    do:
+      "flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
 
   defp apply_value_deleted(socket, value_id) do
     socket =
@@ -2773,7 +2881,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp restream_value(socket, %Value{id: value_id}) do
     with true <- MapSet.member?(socket.assigns.loaded_value_ids, value_id),
          %Value{} = value <- Social.get_value_for_display(value_id) do
-      stream_insert(socket, :values, value)
+      stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
     else
       _ -> socket
     end
@@ -3134,6 +3242,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         socket
         |> list_children(limit: pagination.per_page, offset: pagination.loaded_count)
         |> Enum.reject(&MapSet.member?(loaded_ids, &1.id))
+        |> Tags.put_tags(socket.assigns.current_profile, :group)
 
       loaded_children = socket.assigns.loaded_children ++ entries
 
@@ -3182,7 +3291,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       entries =
         socket.assigns.group
         |> Social.list_group_members(limit: pagination.per_page, offset: pagination.loaded_count)
-        |> member_entries(socket.assigns.group)
+        |> member_entries(socket.assigns.group, socket.assigns.current_profile)
 
       socket
       |> assign(
@@ -3209,6 +3318,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           limit: @values_page_size
         )
 
+      older_values = Tags.put_tags(older_values, socket.assigns.current_profile, :value)
+
       socket
       |> update(:loaded_value_ids, fn ids -> Enum.into(older_values, ids, & &1.id) end)
       |> assign(:values_has_more?, has_more?)
@@ -3229,6 +3340,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           after_id: socket.assigns.newest_value_id,
           limit: @values_page_size
         )
+
+      newer_values = Tags.put_tags(newer_values, socket.assigns.current_profile, :value)
 
       socket
       |> update(:loaded_value_ids, fn ids -> Enum.into(newer_values, ids, & &1.id) end)
@@ -3347,6 +3460,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             unread_overview: unread_overview
           )
 
+        entries = Tags.put_tags(entries, socket.assigns.current_profile, :group)
+
         socket
         |> assign(:loaded_children, entries)
         |> assign(:sub_group_tree, nil)
@@ -3409,7 +3524,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       entries =
         group
         |> Social.list_group_members(limit: reload_limit(pagination))
-        |> member_entries(group)
+        |> member_entries(group, socket.assigns.current_profile)
 
       socket
       |> assign(
@@ -3478,6 +3593,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Replaces the feed with `values`, a contiguous run oldest first.
   defp put_values(socket, values, has_more?, has_newer?) do
+    values = Tags.put_tags(values, socket.assigns.current_profile, :value)
+
     socket
     |> assign(:loaded_value_ids, MapSet.new(values, & &1.id))
     |> assign(:values_has_more?, has_more?)
@@ -3509,6 +3626,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _list ->
         limit = max(socket.assigns.files_loaded_count, @files_page_size)
         {files, has_more?} = Social.list_group_attachments(group, limit: limit)
+        files = Tags.put_tags(files, socket.assigns.current_profile, :attachment)
 
         socket
         |> assign(:files_has_more?, has_more?)
@@ -3528,6 +3646,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         before_id: before_id
       )
 
+    files = Tags.put_tags(files, socket.assigns.current_profile, :attachment)
+
     socket
     |> assign(:files_has_more?, has_more?)
     |> update(:files_loaded_count, &(&1 + length(files)))
@@ -3537,14 +3657,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp load_more_files(socket), do: socket
 
-  # Members are streamed with their role keys in the group and what they
-  # hold through the parent, which the group itself cannot take away.
-  defp member_entries(profiles, group) do
+  # Members are streamed with their role keys in the group, what they hold
+  # through the parent, which the group itself cannot take away, and the
+  # tags the viewer sees on them.
+  defp member_entries(profiles, group, viewer) do
     profile_ids = Enum.map(profiles, & &1.id)
     keys_by_profile = Access.role_keys_by_profile(group, profile_ids)
     inherited = Access.inherited_by_profile(group, profile_ids)
 
-    Enum.map(profiles, fn profile ->
+    profiles
+    |> Tags.put_tags(viewer, :profile)
+    |> Enum.map(fn profile ->
       %{
         id: profile.id,
         profile: profile,
@@ -3560,8 +3683,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     if needs_members?(group, socket.assigns.active_tab) do
       case Social.get_profile(profile_id) do
-        nil -> socket
-        profile -> stream_insert(socket, :members, hd(member_entries([profile], group)))
+        nil ->
+          socket
+
+        profile ->
+          [entry] = member_entries([profile], group, socket.assigns.current_profile)
+          stream_insert(socket, :members, entry)
       end
     else
       socket

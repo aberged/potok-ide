@@ -22,6 +22,9 @@ defmodule PotokIde.Social.Value do
     # author can dismiss it, and then it is never fetched again.
     field :link_preview, :map
     field :link_preview_dismissed, :boolean, default: false
+    # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
+    # public ones and its own private ones.
+    field :tags, {:array, :any}, virtual: true, default: []
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group

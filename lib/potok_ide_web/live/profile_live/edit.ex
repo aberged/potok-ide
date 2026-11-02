@@ -3,7 +3,10 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
 
   alias PotokIde.Social
   alias PotokIde.Social.Profile
+  alias PotokIde.Tags
+  alias PotokIde.Tags.Tag
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
+  alias PotokIdeWeb.{TagComponents, TagEditor}
 
   @impl true
   def render(assigns) do
@@ -51,6 +54,38 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                 </div>
               </.form>
 
+              <div id="profile-tags-section" class="border-t border-base-300/70 pt-5">
+                <div class="flex flex-wrap items-start justify-between gap-3">
+                  <div class="min-w-0">
+                    <h3 class="text-base font-semibold text-base-content">
+                      {gettext("Public tags")}
+                    </h3>
+                    <p class="mt-1 text-sm text-base-content/60">
+                      {gettext(
+                        "Everyone sees these tags on the profile, say its interests or skills."
+                      )}
+                    </p>
+                  </div>
+                  <button
+                    id="profile-tags-edit"
+                    type="button"
+                    phx-click="edit_profile_tags"
+                    class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-base-300 bg-base-100 px-3.5 text-sm font-semibold shadow-sm transition hover:-translate-y-px hover:border-primary/40 hover:text-primary active:scale-95"
+                  >
+                    <.icon name="hero-hashtag" class="size-4" />
+                    {gettext("Edit tags")}
+                  </button>
+                </div>
+                <TagComponents.tag_chips id="profile-tag-list" tags={@profile_tags} class="mt-3" />
+                <p
+                  :if={@profile_tags == []}
+                  id="profile-tags-empty"
+                  class="mt-3 text-sm text-base-content/55"
+                >
+                  {gettext("No public tags yet.")}
+                </p>
+              </div>
+
               <div :if={@profile.sharing == :shared} class="border-t border-base-300/70 pt-5">
                 <h3 class="text-base font-semibold text-base-content">
                   {gettext("Invite profile to shared profile")}
@@ -82,6 +117,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
           </div>
         </div>
       </div>
+      <TagComponents.tag_editor editor={@tag_editor} />
     </Layouts.app>
     """
   end
@@ -103,6 +139,8 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
             {:ok,
              socket
              |> assign(:profile, profile)
+             |> assign(:profile_tags, public_tags(profile))
+             |> TagEditor.init()
              |> assign(:form, to_form(Profile.changeset(profile, %{})))
              |> assign(:profile_invitation_form, new_profile_invitation_form())
              |> assign(
@@ -152,6 +190,15 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
         {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate)))}
     end
   end
+
+  # The profile puts public tags on itself; the account is linked to it.
+  def handle_event("edit_profile_tags", _params, socket) do
+    profile = socket.assigns.profile
+    {:noreply, TagEditor.open(socket, profile, :profile, profile.id, public_only?: true)}
+  end
+
+  def handle_event("tag_editor_" <> _ = event, params, socket),
+    do: TagEditor.handle_event(event, params, socket)
 
   def handle_event(
         "invite_profile_to_profile",
@@ -223,6 +270,24 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
             end
         end
     end
+  end
+
+  @impl true
+  def handle_info({:tags_changed, :profile, profile_id}, socket)
+      when profile_id == socket.assigns.profile.id do
+    {:noreply,
+     socket
+     |> assign(:profile_tags, public_tags(socket.assigns.profile))
+     |> TagEditor.refresh(:profile, profile_id)}
+  end
+
+  def handle_info(_message, socket), do: {:noreply, socket}
+
+  defp public_tags(%Profile{id: id} = profile) do
+    profile
+    |> Tags.tags_for(:profile, [id])
+    |> Map.get(id, [])
+    |> Enum.filter(&Tag.public?/1)
   end
 
   defp parse_profile_id(raw_id) do

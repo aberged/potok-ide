@@ -23,6 +23,9 @@ defmodule PotokIde.Social.ValueAttachment do
     field :filename, :string
     field :content_type, :string
     field :byte_size, :integer
+    # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
+    # public ones and its own private ones.
+    field :tags, {:array, :any}, virtual: true, default: []
 
     belongs_to :value, PotokIde.Social.Value
     belongs_to :group, PotokIde.Social.Group

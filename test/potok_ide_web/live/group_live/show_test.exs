@@ -3090,6 +3090,47 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-children-empty", "hidden")
     end
 
+    test "the sub-group filters fold into a button that marks an active filter", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, _thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+      {:ok, _plain} = Social.create_group(profile, group, %{"name" => "plain-sub"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/sub_groups")
+
+      # Folding happens in the browser (`.CollapsibleFilters`).
+      assert has_element?(lv, "#group-children-filters[phx-hook]")
+
+      assert has_element?(
+               lv,
+               "#group-children-filters-toggle[aria-controls='group-children-filters-body']"
+             )
+
+      assert has_element?(lv, "#group-children-filters-body #group-children-search-form")
+      assert has_element?(lv, "#group-children-filters-body #group-children-threads-toggle")
+      refute has_element?(lv, "#group-children-filters-active")
+
+      lv
+      |> form("#group-children-search-form", %{"children_search" => %{"q" => "plain"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-children-filters-active")
+
+      lv |> element("#group-children-search-reset") |> render_click()
+      refute has_element?(lv, "#group-children-filters-active")
+
+      # Hidden threads filter the list too; the view does not.
+      lv |> element("#group-children-threads-toggle") |> render_click()
+      assert has_element?(lv, "#group-children-filters-active")
+    end
+
     test "a thread's header carries the thread mark", %{
       conn: conn,
       account: account,

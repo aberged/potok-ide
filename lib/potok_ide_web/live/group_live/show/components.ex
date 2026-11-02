@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.{EventCard, MediaViewer}
+  alias PotokIdeWeb.TagComponents
 
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
@@ -1058,6 +1059,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :can_thread, :boolean, default: false, doc: "may open a new thread on the value"
   attr :can_join_thread, :boolean, default: false, doc: "may open the value's existing thread"
   attr :can_delete_any, :boolean, default: false, doc: "may delete other members' values"
+  attr :can_tag, :boolean, default: false, doc: "may open the value's tags (members)"
 
   def value_message(assigns) do
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -1144,7 +1146,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           {gettext("Mentioned you")}
         </span>
         <div
-          :if={@can_react or @can_reply or @can_thread or @can_delete? or (@mine? and !@editing?)}
+          :if={
+            @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or
+              (@mine? and !@editing?)
+          }
           class="ml-auto flex items-center gap-1"
         >
           <button
@@ -1186,6 +1191,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             <.icon name="hero-face-smile" class="size-4" />
           </button>
+          <TagComponents.tag_button
+            :if={@can_tag}
+            id={"value-tags-#{@value.id}"}
+            kind={:value}
+            item_id={@value.id}
+          />
           <%!-- An event's card is changed in the calendar. --%>
           <button
             :if={@mine? and !@editing? and is_nil(@event)}
@@ -1395,7 +1406,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <div
-        :if={@reactions != [] or @thread}
+        :if={@reactions != [] or @value.tags != [] or @thread}
         id={"value-footer-#{@value.id}"}
         class={[
           "chat-footer mt-1.5 flex max-w-full flex-wrap items-center gap-1 sm:max-w-[42rem]",
@@ -1449,6 +1460,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
           </button>
         </div>
+        <TagComponents.tag_chips
+          id={"value-tag-list-#{@value.id}"}
+          tags={@value.tags}
+          class={@mine? && "justify-end"}
+        />
       </div>
     </div>
     """

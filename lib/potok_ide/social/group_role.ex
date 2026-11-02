@@ -27,6 +27,7 @@ defmodule PotokIde.Social.GroupRole do
     :delete_values,
     :create_events,
     :manage_events,
+    :manage_tags,
     :edit_group
   ]
 

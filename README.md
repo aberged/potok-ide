@@ -35,6 +35,8 @@ The main concepts in the system are:
 * `Event`: an event in a group's calendar, once or repeating, kept in its IANA time zone, with the organizer's reminders and the chat value that announced it.
 * `Events.Response`: a member's answer (going, maybe, not going) for one occurrence of an event, named by its local start date.
 * `Events.MemberSetting`: a member's own reminders for an event, in place of the organizer's.
+* `Tag`: a tag for groups, profiles, events, values and files. Without an owner it is public; otherwise it is the private tag of its owner profile.
+* `Tagging`: one tag on one item. Each item kind has its own column, so deleting the item deletes its taggings.
 
 Invitation behavior:
 
@@ -61,7 +63,7 @@ Group access and direct-group behavior:
 Roles and permissions:
 
 * Every group uses a manifest: its own, or the one of its nearest ancestor that has one. The root group always has one, and its default manifest is fixed.
-* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events` and `edit_group`.
+* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events`, `manage_tags` and `edit_group`.
 * The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles` and `create_events`.
 * For other roles a permission is granted when one of the member's roles allows it and none denies it. `everyone` can only allow.
 * Creators become admins of their groups. Admins create roles, give a group its own manifest (a copy of the inherited one) or revert it to the inherited one, and assign roles per group in the members tab.
@@ -96,6 +98,16 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Thread groups are marked, and a threads toggle hides or shows them.
+
+Tags:
+
+* Groups, profiles, events, values and files can carry tags (`PotokIde.Tags`). The `#` button on an item opens its tags: the current ones, a field with suggestions and, for those who may, a private/public switch.
+* A private tag belongs to one profile, which can put it on anything it can open (a group it sees, the values, files and events of its groups, any profile). Only that profile sees it, so every account sharing a profile sees its private tags. Private tags stay until their owner deletes them on the tags page.
+* A public tag is seen by everyone who can open the item. Public tags are one vocabulary for the whole app: a public tag is created when it is first used, and lists and suggestions show only those still on some item.
+* Public tags on values, files and events need `manage_tags` in the item's group; on a group, `manage_tags` in that group or in its parent. Admins hold it, and they can give it through a role. A profile's public tags are put on it by the profile itself, from its edit page or its row in a members list.
+* An item carries at most 10 public tags and 10 private tags per profile.
+* `/tags` lists the profile's private tags (to rename or delete) and the public tags in use. `?t=3,7` shows what carries every one of the tags and the profile can open, by kind (`kind=groups|values|files|events|profiles`), optionally inside one group and its sub-groups (`group=12`; for profiles, its members). Clicking a tag anywhere opens it there, and a group's menu links to its tags and to the tags page limited to it.
+* Changes to public tags reach the open pages of the item's group live.
 
 Calendar:
 
@@ -140,6 +152,9 @@ Value 1----0..1 Event (announcement)
 
 Event 1----* Events.Response *----1 Profile
 Event 1----* Events.MemberSetting *----1 Profile
+
+Tag 0..1----1 owner (Profile, private tags)
+Tag 1----* Tagging *----1 Group | Profile | Event | Value | ValueAttachment
 
 GroupInvitation belongs_to group, inviter(profile), invitee(profile)
 GroupAccountInvitation belongs_to group, inviter(profile), account

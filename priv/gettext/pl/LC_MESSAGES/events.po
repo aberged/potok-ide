@@ -457,5 +457,4 @@ msgstr "ostatnia środa"
 #, elixir-autogen, elixir-format
 msgctxt "short month"
 msgid "May"
-
 msgstr "maj"

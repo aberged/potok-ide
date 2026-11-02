@@ -52,6 +52,11 @@ defmodule PotokIdeWeb.GroupLive.RolesTest do
       lv |> element("#role-#{role.key}-post_values-deny") |> render_click()
       assert has_element?(lv, ~s(#role-#{role.key}-post_values-deny[aria-checked="true"]))
       assert :post_values in role_named(ctx.group, "muted").denied
+
+      # A role for tagging, the kind admins hand out for public tags.
+      assert has_element?(lv, "#role-#{role.key}-manage_tags", "Manage tags")
+      lv |> element("#role-#{role.key}-manage_tags-allow") |> render_click()
+      assert :manage_tags in role_named(ctx.group, "muted").allowed
     end
 
     test "members see the roles without controls", ctx do

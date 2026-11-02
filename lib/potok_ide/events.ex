@@ -56,6 +56,10 @@ defmodule PotokIde.Events do
 
   defp topic(group_id), do: "group_events:#{group_id}"
 
+  @doc "Tells open calendars of the group that its events changed (say, their tags)."
+  def broadcast_events_changed(group_id) when is_integer(group_id),
+    do: broadcast(group_id, {:events_changed, group_id})
+
   defp broadcast(group_id, message),
     do: Phoenix.PubSub.broadcast(PotokIde.PubSub, topic(group_id), {:calendar, message})
 

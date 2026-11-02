@@ -64,6 +64,9 @@ defmodule PotokIde.Events.Event do
     field :start_time, :time, virtual: true
     field :end_date, :date, virtual: true
     field :end_time, :time, virtual: true
+    # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
+    # public ones and its own private ones.
+    field :tags, {:array, :any}, virtual: true, default: []
 
     belongs_to :group, PotokIde.Social.Group
     belongs_to :creator, PotokIde.Social.Profile

@@ -92,6 +92,15 @@ defmodule PotokIdeWeb.Layouts do
             </.link>
             <div class="flex items-right gap-4 items-center ml-auto">
               <.link
+                id="nav-tags-link"
+                navigate={~p"/tags"}
+                alt={gettext("Tags")}
+                aria-label={gettext("Tags")}
+                hidden={is_nil(@current_profile)}
+              >
+                <.icon name="hero-hashtag" class="size-6" />
+              </.link>
+              <.link
                 id="nav-invitations-link"
                 navigate={~p"/invitations"}
                 alt={gettext("Invitations")}
@@ -255,6 +264,15 @@ defmodule PotokIdeWeb.Layouts do
                     class={@nav_link_class}
                   >
                     <.icon name="hero-hand-raised" class="size-6" /> {gettext("Requests")}
+                  </.link>
+                  <.link
+                    navigate={~p"/tags"}
+                    data-nav-link
+                    data-nav-target="/tags"
+                    data-nav-match="prefix"
+                    class={@nav_link_class}
+                  >
+                    <.icon name="hero-hashtag" class="size-6" /> {gettext("Tags")}
                   </.link>
                 <% else %>
                   <.link

@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Format, Occurrence}
   alias PotokIdeWeb.GroupLive.Show.{CalendarState, Components}
+  alias PotokIdeWeb.TagComponents
 
   # Chip colours of sub-groups' events; the group's own use the primary colour.
   @palette [
@@ -426,7 +427,20 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             {@event.title}
           </h3>
         </div>
+        <TagComponents.tag_button
+          :if={!@cancelled?}
+          id={"event-tags-#{@event.id}"}
+          kind={:event}
+          item_id={@event.id}
+          class="shrink-0 p-1.5"
+        />
       </div>
+
+      <TagComponents.tag_chips
+        id={"event-tag-list-#{@event.id}"}
+        tags={@event.tags}
+        class="mt-2 pl-9"
+      />
 
       <p
         :if={@cancelled?}

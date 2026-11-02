@@ -21,6 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Occurrence, Recurrence}
   alias PotokIde.Social.{Access, Group}
+  alias PotokIde.Tags
 
   # Changes from other members are applied after this, like the group's own
   # refreshes; 0 (the test config) applies them at once.
@@ -315,7 +316,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
             else: Access.for_profile(profile, event.group)
 
         socket
-        |> assign(:calendar_event, event)
+        |> assign(:calendar_event, Tags.put_tags(event, profile, :event))
         |> assign(:calendar_occurrence, occurrence)
         |> assign(:calendar_occurrence_cancelled?, cancelled?)
         |> assign(
@@ -331,6 +332,20 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
         |> put_flash(:error, gettext("That event was not found."))
     end
   end
+
+  @doc "Reads the tags of the open event again, when it is `event_id`."
+  def refresh_event_tags(
+        %{assigns: %{calendar_event: %Event{id: event_id} = event}} = socket,
+        event_id
+      ),
+      do:
+        assign(
+          socket,
+          :calendar_event,
+          Tags.put_tags(event, socket.assigns.current_profile, :event)
+        )
+
+  def refresh_event_tags(socket, _event_id), do: socket
 
   defp clear_detail(socket) do
     assign(socket,

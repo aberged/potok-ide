@@ -382,6 +382,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:delete_values), do: gettext("Delete values")
   def permission_label(:create_events), do: gettext("Add events")
   def permission_label(:manage_events), do: gettext("Manage events")
+  def permission_label(:manage_tags), do: gettext("Manage tags")
   def permission_label(:edit_group), do: gettext("Edit group")
 
   defp permission_description(:post_values), do: gettext("Write values and replies in the chat.")
@@ -404,6 +405,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
   defp permission_description(:manage_events),
     do: gettext("Change and cancel events added by others.")
+
+  defp permission_description(:manage_tags),
+    do: gettext("Put public tags on values, files, events and this group.")
 
   defp permission_description(:edit_group),
     do: gettext("Change the group's settings, description and app data.")

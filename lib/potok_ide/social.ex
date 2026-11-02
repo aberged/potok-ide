@@ -381,6 +381,14 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
+  @doc "The group when `profile` can see it: a member, or anyone for a public group."
+  def get_visible_group(%Profile{} = profile, id) when is_integer(id) do
+    case Repo.get(Group, id) do
+      %Group{} = group -> if group.is_public or member_of_group?(profile, group), do: group
+      nil -> nil
+    end
+  end
+
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
     attrs = Map.new(attrs)
 
@@ -3033,6 +3041,15 @@ defmodule PotokIde.Social do
     {Enum.take(rows, limit), length(rows) > limit}
   end
 
+  @doc "A file of the group with its uploader, as `list_group_attachments/2` lists it."
+  def get_group_attachment(%Group{id: group_id}, attachment_id) when is_integer(attachment_id) do
+    from(a in ValueAttachment,
+      where: a.id == ^attachment_id and a.group_id == ^group_id,
+      preload: :profile
+    )
+    |> Repo.one()
+  end
+
   @doc """
   The attachment when the profile is a member of the group it was posted in
   (only members read a group's values); nil otherwise.
@@ -4989,6 +5006,19 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       group_topic(group_id),
       {:group_updated, group_id}
+    )
+  end
+
+  @doc """
+  Tells the group's pages that the public tags of an item shown there
+  changed (`PotokIde.Tags`); each page reads the tags it sees again.
+  """
+  def broadcast_tags_changed(group_id, kind, item_id)
+      when is_integer(group_id) and is_atom(kind) and is_integer(item_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:tags_changed, kind, item_id}
     )
   end
 
