@@ -25,8 +25,6 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
 
         <div class="text-center">
           <.header>
-            <p>{gettext("Log in")}</p>
-
             <:subtitle>
               <%= if @current_scope do %>
                 {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
