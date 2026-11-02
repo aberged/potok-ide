@@ -7,7 +7,7 @@
 <img src="https://img.daisyui.com/images/daisyui/mark-rotating.svg" alt="daisyUI logo" width="44"/>
 </div>
 
-Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
+Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. Group chats support replies, threads, reactions, @mentions, file attachments and link previews, and what members may do is set by per-group roles. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
 
 ## Domain Model
 
@@ -17,11 +17,21 @@ The main concepts in the system are:
 * `Profile`: the social identity used inside groups. A profile can be `unique` or `shared`, can be linked to one or more accounts depending on sharing rules, and can create groups and values.
 * `Group`: a hierarchical collaboration container with a creator profile, memberships, child groups, optional parent relations, and a persisted `home_page` preference that controls which panel opens by default.
 * `GroupAltDescription`: an alternative description of a group (text or an app), shown next to the default description kept on the group. It can be limited to roles and can be the group's home description.
-* `Value`: content posted by a profile in a group, optionally as part of a reply chain.
-* `GroupMembership`: the join entity between profiles and groups.
+* `Value`: content posted by a profile in a group. A chat value can quote another value as an inline reply and carry @mentions, file attachments, reactions and a link preview. A data value (`is_data`) is written by a group app and never shows in the chat.
+* `ValueReaction`: one emoji a profile put on a value.
+* `ValueAttachment`: a file attached to a chat value. The bytes live in `PotokIde.Storage`.
+* `GroupMembership`: the join entity between profiles and groups. A membership held only through the parent group is marked `inherited`.
+* `GroupManifest`: the roles of a group. A group without its own manifest uses the one of its nearest ancestor.
+* `GroupRole`: a role of a manifest that allows or denies permissions.
+* `GroupMemberRole`: a role held by a member in one group.
+* `GroupValueRead`: the last value a profile has read in a group, the base of unread counts.
 * `GroupInvitation`: an invitation from one profile to another profile to join a group.
-* `GroupJoinRequest`: a pending request from a non-member profile to join a public group, reviewed by the group creator.
+* `GroupAccountInvitation`: a group invitation sent by email to an account without a profile yet. It becomes a `GroupInvitation` when the account creates its first profile.
+* `GroupJoinRequest`: a pending request from a non-member profile to join a public group.
+* `GroupJoinRequestApproval`: the record of an accepted join request and who accepted it.
+* `ProfileInvitation`: an invitation to share a `shared` profile with another profile's account. Accepting it links the profile to that account.
 * `AccountProfile`: the join entity between accounts and profiles.
+* `PushSubscription`: a Web Push subscription or native push token of an account.
 
 Invitation behavior:
 
@@ -31,7 +41,8 @@ Invitation behavior:
 
 Group access and direct-group behavior:
 
-* Public groups support access requests from non-member profiles. Group creators review those pending requests from the members tab and can accept or reject them there.
+* Public groups support access requests from non-member profiles. Members with the `manage_join_requests` permission review those pending requests from the members tab and can accept or reject them there.
+* Members with `invite_members` can invite a profile by username or anyone by email. An email without an account gets a new account and a login link, and the invitation waits as a `GroupAccountInvitation` until that account creates its first profile.
 * Groups persist a `home_page` enum with the values `description`, `chat`, and `subgroups`. The create-group and edit-group panels expose that setting so members can control the default landing panel for a group.
 * Opening a group without an explicit tab uses its `home_page`: `description` opens the description panel, `chat` opens the values panel, and `subgroups` opens the sub-groups panel.
 * Root groups ignore `home_page` and always open on the sub-groups panel.
@@ -42,6 +53,46 @@ Group access and direct-group behavior:
 * Direct groups are derived conversation groups, not a separate invitation flow. Opening `/profiles/:id/direct` finds or creates a private non-root group under the root group for exactly two profiles and then navigates to that group's values tab.
 * Direct private groups ignore `home_page` and always open on the values panel.
 * Because direct groups are fixed to two members, the group UI hides profile-invite actions, join-request management, and member removal controls for them.
+* Groups that use the API (`uses_api`) show a 🧩 badge on the group avatar.
+
+Roles and permissions:
+
+* Every group uses a manifest: its own, or the one of its nearest ancestor that has one. The root group always has one, and its default manifest is fixed.
+* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values` and `edit_group`.
+* The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members` and `mention_roles`.
+* For other roles a permission is granted when one of the member's roles allows it and none denies it. `everyone` can only allow.
+* Creators become admins of their groups. Admins create roles, give a group its own manifest (a copy of the inherited one) or revert it to the inherited one, and assign roles per group in the members tab.
+
+Member inheritance:
+
+* A sub-group can be set to inherit members (`inherits_members`) when it is created or edited. It then holds every member of its parent with the roles they hold there, and follows the parent as members join or leave and as their roles change, down a whole chain of inheriting groups.
+* Inherited memberships and roles are marked `inherited` and cannot be removed in the sub-group. Members and roles added in the sub-group itself stay when the parent ones go. Turning inheritance off keeps everyone as a direct member.
+* Members who arrive through inheritance start with the sub-group's history read.
+* Threads always inherit. Groups directly in the root group and direct groups never inherit, as they would hold every profile.
+
+Chat values:
+
+* A reply quotes the value it answers. Clicking the quote jumps to the original, even when it is not loaded, and quotes refresh when the original is edited or deleted.
+* "Reply in thread" opens the value's thread: a chat-first sub-group of the value's group, created on first use (one per value, `groups.parent_value_id`). Its "Show original value" link opens the parent chat at that value (`?value=<id>`). Direct groups have inline replies only.
+* `@username` and `@role` mentions are resolved against the group's members and its manifest's roles (roles only with `mention_roles`). Mentioned members get a mention push instead of the generic one.
+* Reactions are single emoji. The value's author gets a push when someone reacts.
+* The first http(s) link of a chat value gets an Open Graph preview card (title, description, site name, image), fetched after posting and cached per URL for 6 hours. The fetcher only connects to public addresses. The author can remove the card.
+* The feed holds at most 200 values. Opening a value loads a window around it (ten older, twenty newer), scrolling loads pages of twenty at either end and drops as many at the other, and a button brings the feed back to the newest values.
+* Unread counts come from `GroupValueRead`. A group's folder in the sub-groups tree shows the unread values of its whole subtree, and the root group's count is the sum over all groups.
+
+Files:
+
+* Members with `attach_files` can attach up to 10 files of up to 100 MB each to a value (limits from `ATTACHMENT_MAX_FILES` and `ATTACHMENT_MAX_FILE_SIZE_MB`). A value may carry only files.
+* Images, video and audio are shown in place; other files are download rows.
+* `GET /files/:id` serves a file only to members of its group, either by redirecting to a short-lived signed URL or by sending it with a sandboxing CSP.
+* The Files tab lists a group's files newest first, or shows the group and its visible sub-groups as folders.
+* `PotokIde.Storage.Local` keeps files in `./uploads` in dev and test. `PotokIde.Storage.S3` keeps them in an S3-compatible bucket (Tigris on Fly, R2, S3) when `BUCKET_NAME` is set; browsers upload to it directly with presigned URLs. Without an adapter attachments are off.
+* Deleting a value or a group deletes its stored files.
+
+Sub-groups:
+
+* The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
+* Thread groups are marked, and a threads toggle hides or shows them.
 
 Relationship summary:
 
@@ -49,21 +100,31 @@ Relationship summary:
 Account 1----* AccountProfile *----1 Profile
 Account 1----0..1 current_profile -> Profile
 Account 1----0..1 default_profile -> Profile
+Account 1----* PushSubscription
 
 Profile 1----* GroupMembership *----1 Group
+Profile 1----* GroupMemberRole *----1 Group
+Profile 1----* GroupValueRead *----1 Group
 Profile 1----* created_groups
 Profile 1----* values
 
 Group 1----* child_groups
 Group 1----* values
+Group 1----0..1 GroupManifest 1----* GroupRole
+Group 1----* GroupAltDescription
 Group 0..1----1 parent_group
-Group 0..1----1 parent_value
+Group 0..1----1 parent_value (thread groups)
 
-Value 0..1----1 parent_value
+Value 0..1----1 parent_value (reply)
 Value 1----* child_values
+Value 1----* ValueReaction
+Value 1----* ValueAttachment
 
 GroupInvitation belongs_to group, inviter(profile), invitee(profile)
+GroupAccountInvitation belongs_to group, inviter(profile), account
 GroupJoinRequest belongs_to group, requester(profile)
+GroupJoinRequestApproval belongs_to group, requester(profile), approver(profile)
+ProfileInvitation belongs_to profile, inviter(profile), invitee(profile)
 ```
 
 Default profile behavior:
@@ -76,6 +137,7 @@ Avatar behavior:
 
 * Profile avatars are resolved from `profile_picture_url` only when it is a non-empty string.
 * When a profile has no avatar URL (or an empty URL), the app uses `GET /avatar/profile/:id` to render initials.
+* Group avatars are served from `GET /avatar/group/:id` the same way, from `group_picture_url` or the group's initials.
 * The nav bar updates this avatar source during profile switches through the `phx:current_profile_updated` event so changing from a profile with a URL to one without a URL immediately falls back to `/avatar/profile/:id`.
 * Push-notification avatar fields follow the same fallback route strategy and are converted to absolute URLs before sending FCM payloads.
 
@@ -331,6 +393,7 @@ The default development configuration includes:
 * mailbox preview at `http://localhost:4000/dev/mailbox`
 * LiveDashboard at `http://localhost:4000/dev/dashboard`
 * live asset rebuilding through Phoenix endpoint watchers
+* file attachments stored on disk in `./uploads` (git-ignored)
 
 ### Production email delivery
 
@@ -381,12 +444,19 @@ Backend and framework:
 * `Ecto` and `ecto_sql`
 * `Postgrex`
 * `Bandit`
+* `dns_cluster`
 
 Authentication, email, and HTTP:
 
 * `pbkdf2_elixir`
-* `Swoosh`
+* `Swoosh` and `mail`
 * `Req`
+
+Content:
+
+* `Earmark` for Markdown
+* `html_sanitize_ex` for sanitizing Markdown and HTML descriptions and values
+* `LazyHTML` for parsing pages when building link previews
 
 Frontend and assets:
 
@@ -411,26 +481,34 @@ Testing and DX:
 
 The router is organized by authentication and profile requirements.
 
-Public browser routes:
+Public routes:
 
 * `GET /` redirects based on account and profile state
 * `GET /locale/:locale` updates the active locale
-* `GET /accounts/log-in`
-* `GET /accounts/log-in/:token`
-* `POST /accounts/log-in`
+* `GET /privacy-policy` renders `priv/static/PRIVACY_POLICY.md`
+* `GET /avatar/profile/:id` and `GET /avatar/group/:id` serve avatar images (no session)
+* `GET /.well-known/assetlinks.json` for Android App Links
+* `GET /.well-known/apple-app-site-association` and `GET /apple-app-site-association` for iOS Universal Links
 * `DELETE /accounts/log-out`
+
+Routes for logged-out visitors only (logged-in accounts are redirected):
+
+* `GET /accounts/log-in` and `GET /accounts/log-in/password` for password login
+* `GET /accounts/log-in/magic-link` to request a login link
+* `GET /accounts/log-in/:token` to confirm a login link
+* `POST /accounts/log-in`
 
 Authenticated routes:
 
 * `GET /profiles` for profile selection and setup
 * `GET /profiles/new`
 * `GET /profiles/:id/edit`
-* `GET /accounts/settings`
 * `GET /accounts/settings/confirm-email/:token`
 * `POST /accounts/update-password`
 * `POST /accounts/push-subscriptions`
 * `DELETE /accounts/push-subscriptions`
 * `POST /accounts/push-subscriptions/test`
+* `GET /files/:id` serves an attached file to members of its group (logged-out visitors go to the login page and come back)
 
 Authenticated routes that require a current profile:
 
@@ -441,6 +519,7 @@ Authenticated routes that require a current profile:
 * `GET /invitations`
 * `GET /requests`
 * `GET /accounts/register`
+* `GET /accounts/settings`
 
 Development-only routes when `dev_routes` is enabled:
 
@@ -449,10 +528,10 @@ Development-only routes when `dev_routes` is enabled:
 
 The router uses separate LiveView sessions for:
 
-* auth-aware public pages (`:current_account`)
-* authenticated account settings (`:require_authenticated_account`)
+* logged-out login pages (`:current_account`)
+* email-change confirmation (`:require_authenticated_account`)
 * authenticated profile selection (`:authenticated`)
-* profile-required collaboration screens (`:profile_required`)
+* profile-required collaboration screens and account settings (`:profile_required`)
 
 ## App API
 
@@ -536,7 +615,7 @@ The application currently ships with:
 
 * `en` for English
 * `pl` for Polish
-* `sr` for Serbian
+* `sr` for Serbian (the default locale)
 
 Translations live under `priv/gettext/`. Locale switching is exposed through the UI and backed by `PotokIdeWeb.Locale` in both Plug and LiveView flows.
 
@@ -546,15 +625,21 @@ High-level layout:
 
 ```text
 .
+|- .github/workflows/      # iOS build/TestFlight and Fly deploy workflows
 |- assets/
 |  |- css/                 # Tailwind CSS entrypoint
-|  |- js/                  # Phoenix / LiveView JavaScript entrypoint
+|  |- js/                  # Phoenix / LiveView JavaScript entrypoint and app SDK
 |  |- vendor/              # Bundled frontend vendor files
+|  |- android/, ios/       # Capacitor native projects
 |- config/                 # Environment-specific configuration
+|- docs/                   # iOS secrets and checklist
 |- lib/
 |  |- potok_ide/           # Domain contexts, schemas, repo, mailer, release helpers
 |  |  |- accounts/         # Account schema and auth-related domain code
-|  |  |- social/           # Profile, group, value, membership, invitation schemas
+|  |  |- social/           # Profile, group, value, role, attachment schemas, access and inheritance
+|  |  |- storage/          # Local and S3 storage adapters for attachments
+|  |  |- link_previews/    # HTTP fetcher for Open Graph previews
+|  |  |- push_notifications/ # Web Push and FCM senders
 |  |  |- accounts.ex       # Account context
 |  |  |- social.ex         # Social context
 |  |- potok_ide_web/       # Web interface, routing, LiveViews, components
@@ -570,6 +655,7 @@ High-level layout:
 |  |- repo/                # Migrations and seeds
 |  |- static/              # Compiled static assets
 |- rel/                    # Release overlays and startup scripts
+|- load_test/              # Docker stress test of the production release
 |- test/                   # ExUnit tests for contexts and web layer
 |- Dockerfile              # Multi-stage production image build
 |- fly.toml                # Fly.io deployment configuration
@@ -670,6 +756,18 @@ Optional environment variables:
 * `GMAIL_TOKEN_URL` overrides the Gmail OAuth token endpoint
 * `GMAIL_REFRESH_TOKEN` can be provided for initial Gmail token bootstrap
 * `PHX_SERVER=true` enables the web server for releases if your runtime does not already set it
+* `BOOTSTRAP_ACCOUNT_EMAIL` and `BOOTSTRAP_ACCOUNT_PASSWORD` (both together) make sure an account with that login exists at startup
+* `ANDROID_APP_LINK_PACKAGE` (default `rs.potok.ide`) and `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` for Android App Links
+* `IOS_APP_LINK_TEAM_ID`, `IOS_APP_LINK_BUNDLE_ID` (default `rs.potok.ide`), `IOS_APP_LINK_APP_ID` and `IOS_APP_LINK_PATHS` (default `/accounts/log-in/*`) for iOS Universal Links
+
+File attachments (without `BUCKET_NAME` attachments are off in production):
+
+* `BUCKET_NAME` turns on the S3 storage adapter
+* `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` are required with it
+* `AWS_ENDPOINT_URL_S3` defaults to `https://fly.storage.tigris.dev`
+* `AWS_REGION` defaults to `auto`
+* `S3_VIRTUAL_HOST=true` uses virtual-host style bucket URLs
+* `ATTACHMENT_MAX_FILES` (default `10`) and `ATTACHMENT_MAX_FILE_SIZE_MB` (default `100`) set the limits per value
 
 Operational notes:
 
@@ -700,6 +798,8 @@ fly secrets set ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS="your-signing-cert-sha
 fly secrets set IOS_APP_LINK_TEAM_ID="ABCDE12345" IOS_APP_LINK_BUNDLE_ID="rs.potok.ide"
 ```
 
+For file attachments, `fly storage create` creates a Tigris bucket and sets `BUCKET_NAME`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_ENDPOINT_URL_S3` and `AWS_REGION` as app secrets.
+
 For Android App Links, `ANDROID_APP_LINK_SHA256_CERT_FINGERPRINTS` should contain one or more comma-separated SHA-256 certificate fingerprints for the APK signing keys that should be allowed to open `https://potok.rs/accounts/log-in/...` inside the app. Use your debug key for `npm run cap:run:android` testing and add your release key fingerprint before shipping a signed release.
 
 For iOS Universal Links, `IOS_APP_LINK_TEAM_ID` should be your Apple Developer Team ID and `IOS_APP_LINK_BUNDLE_ID` should match the bundle identifier used by the signed iOS app. If you prefer to set the full value yourself, use `IOS_APP_LINK_APP_ID` with the `TEAMID.bundle.id` format.
@@ -711,6 +811,8 @@ fly deploy
 ```
 
 `fly.toml` already enables HTTPS, exposes the app on port `8080`, and runs migrations during deployment.
+
+`.github/workflows/fly-deploy.yml` deploys on pushes to `main`, which this repository does not use (the main branch is `dev`), so deploys are run by hand with `fly deploy`.
 
 ### iOS build and TestFlight workflow
 
