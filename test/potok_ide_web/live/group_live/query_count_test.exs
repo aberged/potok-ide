@@ -10,10 +10,11 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
   # Every page view runs these on the database (they were 9 for the first
   # HTML, 13 for the root page and ~27 for a chat page). Raise a bound only
-  # for a query added on purpose.
+  # for a query added on purpose. The chat page's 18th loads the events that
+  # values announced, for their cards.
   @max_dead_render_queries 5
   @max_root_page_queries 8
-  @max_chat_page_queries 17
+  @max_chat_page_queries 18
 
   setup %{conn: conn} do
     account = account_fixture()

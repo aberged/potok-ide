@@ -114,6 +114,14 @@ defmodule PotokIdeWeb.Router do
     get "/:id", AttachmentController, :show
   end
 
+  # A calendar file of an event, like `/files`: logged-out visitors log in
+  # and come back, and the controller checks membership in the event's group.
+  scope "/events", PotokIdeWeb do
+    pipe_through [:files, :require_authenticated_account]
+
+    get "/:id/event.ics", EventIcsController, :show
+  end
+
   scope "/", PotokIdeWeb do
     pipe_through [:browser, :require_authenticated_account]
 

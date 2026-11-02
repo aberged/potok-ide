@@ -4,8 +4,11 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   alias PotokIde.Accounts
   alias PotokIde.Accounts.PushSubscription
 
+  # The device keeps the language of the session that saves it, so its
+  # notifications come in that language.
   def create(conn, %{"subscription" => subscription_params}) do
     with {:ok, attrs} <- normalize_subscription_params(subscription_params, user_agent(conn)),
+         attrs = Map.put(attrs, :locale, conn.assigns[:current_locale]),
          {:ok, subscription} <-
            Accounts.upsert_push_subscription(conn.assigns.current_scope.account, attrs) do
       json(conn, create_response(subscription))

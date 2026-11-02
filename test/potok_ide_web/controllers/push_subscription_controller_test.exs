@@ -31,6 +31,20 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       assert account_id == account.id
     end
 
+    test "stores the language of the session with the subscription", %{
+      conn: conn,
+      account: account
+    } do
+      conn
+      |> json_conn()
+      |> post(~p"/accounts/push-subscriptions?locale=pl", %{
+        "subscription" => valid_subscription_params()
+      })
+      |> json_response(200)
+
+      assert [%PushSubscription{locale: "pl"}] = Accounts.list_push_subscriptions(account)
+    end
+
     test "stores a native push token for the current account", %{conn: conn, account: account} do
       params = valid_native_subscription_params()
 

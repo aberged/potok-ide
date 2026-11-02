@@ -42,7 +42,10 @@
     </script>
   </head>
 
-  <body class="min-h-[100dvh] overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent">
+  <body
+    class="min-h-[100dvh] overflow-clip text-base-content bg-gradient-to-b from-primary/10 via-transparent to-transparent"
+    data-signed-in={assigns[:current_scope] && "true"}
+  >
     {@inner_content}
     <%!-- Lives in the root layout so live navigation never re-renders (and re-hides) it. --%>
     <div

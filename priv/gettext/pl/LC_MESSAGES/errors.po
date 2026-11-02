@@ -101,3 +101,15 @@ msgstr "musi być większe lub równe %{number}"
 
 msgid "must be equal to %{number}"
 msgstr "musi być równe %{number}"
+
+msgid "must not be before the start"
+msgstr "nie może być przed początkiem"
+
+msgid "does not match the start date"
+msgstr "nie pasuje do daty początku"
+
+msgid "must be at most %{count} days after the start"
+msgid_plural "must be at most %{count} days after the start"
+msgstr[0] "może być najwyżej %{count} dzień po początku"
+msgstr[1] "może być najwyżej %{count} dni po początku"
+msgstr[2] "może być najwyżej %{count} dni po początku"

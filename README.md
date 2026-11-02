@@ -7,7 +7,7 @@
 <img src="https://img.daisyui.com/images/daisyui/mark-rotating.svg" alt="daisyUI logo" width="44"/>
 </div>
 
-Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. Group chats support replies, threads, reactions, @mentions, file attachments and link previews, and what members may do is set by per-group roles. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
+Potok is a Phoenix 1.8 and LiveView application for account-based collaboration around profiles, groups, invitations, and posted values. The app is server-rendered, locale-aware, and organized around two states after login: profile selection and profile-scoped group activity. Group chats support replies, threads, reactions, @mentions, file attachments and link previews, groups keep a calendar of events with answers and reminders, and what members may do is set by per-group roles. It also exposes browser-side Potok APIs through LiveView hooks, providing a foundation for Potok-scoped application development on top of group descriptions and values.
 
 ## Domain Model
 
@@ -31,7 +31,10 @@ The main concepts in the system are:
 * `GroupJoinRequestApproval`: the record of an accepted join request and who accepted it.
 * `ProfileInvitation`: an invitation to share a `shared` profile with another profile's account. Accepting it links the profile to that account.
 * `AccountProfile`: the join entity between accounts and profiles.
-* `PushSubscription`: a Web Push subscription or native push token of an account.
+* `PushSubscription`: a Web Push subscription or native push token of an account, with the language of the session that saved it.
+* `Event`: an event in a group's calendar, once or repeating, kept in its IANA time zone, with the organizer's reminders and the chat value that announced it.
+* `Events.Response`: a member's answer (going, maybe, not going) for one occurrence of an event, named by its local start date.
+* `Events.MemberSetting`: a member's own reminders for an event, in place of the organizer's.
 
 Invitation behavior:
 
@@ -58,8 +61,8 @@ Group access and direct-group behavior:
 Roles and permissions:
 
 * Every group uses a manifest: its own, or the one of its nearest ancestor that has one. The root group always has one, and its default manifest is fixed.
-* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values` and `edit_group`.
-* The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members` and `mention_roles`.
+* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events` and `edit_group`.
+* The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles` and `create_events`.
 * For other roles a permission is granted when one of the member's roles allows it and none denies it. `everyone` can only allow.
 * Creators become admins of their groups. Admins create roles, give a group its own manifest (a copy of the inherited one) or revert it to the inherited one, and assign roles per group in the members tab.
 
@@ -94,6 +97,19 @@ Sub-groups:
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
+Calendar:
+
+* The calendar tab (`/groups/:id/calendar`) shows a month (`?month=2026-11`) or that month as a list (`mode=list`), and an open occurrence (`event=12&on=2026-11-07`). Only members see it. Other groups can include the events of the sub-groups the profile is a member of; the root group's calendar ("My calendar") shows the events of every group the profile is a member of.
+* Members with `create_events` add events, except in the root group. Authors change and cancel their own events while they are members; `manage_events` changes anyone's. A cancelled event leaves the calendar and its chat card says it was cancelled. A single occurrence of a repeating event can be cancelled as well.
+* Events happen once, all day or repeatedly: every N days, weeks (on chosen weekdays), months (on the start's day of the month, or its nth or last weekday) or years, optionally until a date. The rules follow RFC 5545, so an exported RRULE yields the same dates.
+* Times are kept in the event's IANA zone (the creator's browser zone, through the `tz` database), so repeats keep their wall-clock time across daylight saving changes. Pages show times in the viewer's zone, which the browser sends when the LiveView socket connects.
+* An occurrence is named by its local start date. Members answer going, maybe or not going per occurrence. Answers to come are dropped when the event's time changes, or when their date is no longer an occurrence.
+* A new event can be announced in the group's chat: a chat value that shows the event's card, counts as unread and sends members a push. Members are also told when an event's time, place or repeat rule changes, and when the event or one of its occurrences is cancelled.
+* The organizer picks the event's reminders (from "when it starts" to a week before; for all-day events counted from 09:00 on the day), and every member can pick their own or turn them off. Members who declined an occurrence get no reminder for it.
+* `PotokIde.Events.ReminderScheduler` runs on every node and sends due reminders every 30 seconds. It takes events with `FOR UPDATE SKIP LOCKED`, so no reminder is sent twice, and drops reminders found more than 10 minutes late (say, after a deploy).
+* Push notifications about events are written in the language each device saved its push subscription with; the browser saves it again when the language changes.
+* `GET /events/:id/event.ics` downloads an event for Google, Apple or Outlook calendars.
+
 Relationship summary:
 
 ```text
@@ -112,6 +128,7 @@ Group 1----* child_groups
 Group 1----* values
 Group 1----0..1 GroupManifest 1----* GroupRole
 Group 1----* GroupAltDescription
+Group 1----* Event
 Group 0..1----1 parent_group
 Group 0..1----1 parent_value (thread groups)
 
@@ -119,6 +136,10 @@ Value 0..1----1 parent_value (reply)
 Value 1----* child_values
 Value 1----* ValueReaction
 Value 1----* ValueAttachment
+Value 1----0..1 Event (announcement)
+
+Event 1----* Events.Response *----1 Profile
+Event 1----* Events.MemberSetting *----1 Profile
 
 GroupInvitation belongs_to group, inviter(profile), invitee(profile)
 GroupAccountInvitation belongs_to group, inviter(profile), account
@@ -445,6 +466,7 @@ Backend and framework:
 * `Postgrex`
 * `Bandit`
 * `dns_cluster`
+* `tz` for IANA time zones of calendar events
 
 Authentication, email, and HTTP:
 
@@ -509,6 +531,7 @@ Authenticated routes:
 * `DELETE /accounts/push-subscriptions`
 * `POST /accounts/push-subscriptions/test`
 * `GET /files/:id` serves an attached file to members of its group (logged-out visitors go to the login page and come back)
+* `GET /events/:id/event.ics` serves an event as an iCalendar file to members of its group (logged-out visitors go to the login page and come back)
 
 Authenticated routes that require a current profile:
 
@@ -637,11 +660,13 @@ High-level layout:
 |  |- potok_ide/           # Domain contexts, schemas, repo, mailer, release helpers
 |  |  |- accounts/         # Account schema and auth-related domain code
 |  |  |- social/           # Profile, group, value, role, attachment schemas, access and inheritance
+|  |  |- events/           # Calendar events, repeat rules, reminders and iCalendar export
 |  |  |- storage/          # Local and S3 storage adapters for attachments
 |  |  |- link_previews/    # HTTP fetcher for Open Graph previews
 |  |  |- push_notifications/ # Web Push and FCM senders
 |  |  |- accounts.ex       # Account context
 |  |  |- social.ex         # Social context
+|  |  |- events.ex         # Calendar context
 |  |- potok_ide_web/       # Web interface, routing, LiveViews, components
 |  |  |- components/       # Shared UI components and layouts
 |  |  |- controllers/      # Controller endpoints and session actions

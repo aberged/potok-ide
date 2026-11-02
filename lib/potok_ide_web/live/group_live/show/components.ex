@@ -2,7 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.Avatars
-  alias PotokIdeWeb.GroupLive.Show.MediaViewer
+  alias PotokIdeWeb.GroupLive.Show.{EventCard, MediaViewer}
 
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
@@ -1076,6 +1076,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:thread, value_thread(assigns.value))
       |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
       |> assign(:link_preview, value_link_preview(assigns.value))
+      |> assign(:event, value_event(assigns.value))
       |> assign_value_attachments(assigns.value)
 
     ~H"""
@@ -1185,8 +1186,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             <.icon name="hero-face-smile" class="size-4" />
           </button>
+          <%!-- An event's card is changed in the calendar. --%>
           <button
-            :if={@mine? and !@editing?}
+            :if={@mine? and !@editing? and is_nil(@event)}
             id={"value-edit-#{@value.id}"}
             type="button"
             phx-click="start_edit_value"
@@ -1251,8 +1253,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {Value.excerpt(@reply_parent, 160)}
           </span>
         </button>
+        <EventCard.card :if={@event} value_id={@value.id} event={@event} mine={@mine?} />
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
-        <div :if={@has_text?} class="relative">
+        <div :if={@has_text? and is_nil(@event)} class="relative">
           <div class={[
             @expandable? &&
               "max-h-[7.5rem] overflow-hidden group-data-expanded/value:max-h-none group-data-expanded/value:overflow-visible"
@@ -1854,6 +1857,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # App groups get the richer html5 allow-list for chat values; their scripts
   # only ever run inside the sandboxed `app_frame/1`.
   # Mentions are wrapped after sanitizing, which would drop their attributes.
+  # The event the value announced, when it was loaded with it.
+  defp value_event(%Value{event: %PotokIde.Events.Event{} = event}), do: event
+  defp value_event(_value), do: nil
+
   defp render_formatted_content(
          %{content: content, content_format: :html, uses_api: true} = params
        ) do

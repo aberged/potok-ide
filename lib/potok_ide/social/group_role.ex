@@ -25,11 +25,13 @@ defmodule PotokIde.Social.GroupRole do
     :manage_join_requests,
     :remove_members,
     :delete_values,
+    :create_events,
+    :manage_events,
     :edit_group
   ]
 
   # What "everyone" holds by default: what every member could do before roles
-  # existed, and attaching files. The rest was creator-only.
+  # existed, attaching files and adding events. The rest was creator-only.
   @default_everyone_permissions [
     :post_values,
     :attach_files,
@@ -37,7 +39,8 @@ defmodule PotokIde.Social.GroupRole do
     :open_threads,
     :create_subgroups,
     :invite_members,
-    :mention_roles
+    :mention_roles,
+    :create_events
   ]
 
   # Same characters as usernames, so `@name` mentions parse the same way.

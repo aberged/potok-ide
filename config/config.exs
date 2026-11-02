@@ -109,6 +109,15 @@ config :phoenix, :json_library, Jason
 
 config :potok_ide, PotokIde.PushNotifications, ttl: 60
 
+# Event times are kept in the IANA zone of the event, so recurring events keep
+# their wall-clock time across daylight saving changes.
+config :elixir, :time_zone_database, Tz.TimeZoneDatabase
+
+# How often the scheduler looks for event reminders that are due.
+config :potok_ide, PotokIde.Events.ReminderScheduler,
+  enabled: true,
+  interval_ms: 30_000
+
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"

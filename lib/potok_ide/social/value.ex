@@ -35,6 +35,8 @@ defmodule PotokIde.Social.Value do
     has_many :attachments, PotokIde.Social.ValueAttachment
     # The sub-group started from this value (`Social.get_or_create_value_thread/4`).
     has_one :thread, PotokIde.Social.Group, foreign_key: :parent_value_id
+    # The calendar event this value announced (`Social.post_event_announcement/5`).
+    has_one :event, PotokIde.Events.Event, foreign_key: :value_id
 
     timestamps(type: :utc_datetime)
   end

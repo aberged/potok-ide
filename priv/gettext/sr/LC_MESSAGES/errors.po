@@ -101,3 +101,15 @@ msgstr "mora biti veće ili jednako %{number}"
 
 msgid "must be equal to %{number}"
 msgstr "mora biti jednako %{number}"
+
+msgid "must not be before the start"
+msgstr "ne može biti pre početka"
+
+msgid "does not match the start date"
+msgstr "ne odgovara datumu početka"
+
+msgid "must be at most %{count} days after the start"
+msgid_plural "must be at most %{count} days after the start"
+msgstr[0] "može biti najviše %{count} dan posle početka"
+msgstr[1] "može biti najviše %{count} dana posle početka"
+msgstr[2] "može biti najviše %{count} dana posle početka"

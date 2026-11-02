@@ -21,6 +21,9 @@ config :potok_ide, PotokIde.LinkPreviews,
   req_options: [plug: {Req.Test, PotokIde.LinkPreviews}],
   resolver: &PotokIde.LinkPreviewsTestResolver.resolve/1
 
+# Tests send event reminders by calling `Events.send_due_reminders/1`.
+config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
+
 # Attached files on disk, deleted inline so tests can assert they are gone.
 config :potok_ide, async_storage_cleanup: false
 

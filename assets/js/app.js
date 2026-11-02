@@ -190,6 +190,8 @@ const installPasswordToggleButtons = () => {
 }
 
 const POTOK_PUSH_TOKEN_KEY = "potok:push-token"
+// The page language the device's push subscription was last saved with.
+const POTOK_PUSH_LOCALE_KEY = "potok:push-locale"
 const POTOK_PUSH_CHANNEL_ID = "potok-default"
 const POTOK_IOS_PUSH_REGISTRATION_EVENT = "potokNativePushRegistration"
 const POTOK_IOS_PUSH_REGISTRATION_ERROR_EVENT = "potokNativePushRegistrationError"
@@ -668,6 +670,7 @@ const PushNotifications = {
       body: JSON.stringify({subscription: subscription.toJSON()}),
     })
 
+    rememberPushLocale()
     await this.refreshPushSubscriptions()
 
     return response
@@ -687,6 +690,7 @@ const PushNotifications = {
       }),
     })
 
+    rememberPushLocale()
     await this.refreshPushSubscriptions()
 
     return response
@@ -1458,9 +1462,64 @@ const registerCapacitorPushNotifications = () => {
 }
 
 const csrfToken = document.querySelector("meta[name='csrf-token']").getAttribute("content")
+
+function rememberPushLocale() {
+  try {
+    window.localStorage.setItem(POTOK_PUSH_LOCALE_KEY, document.documentElement.lang)
+  } catch (_error) {
+    // Without storage the subscription is saved again on the next load.
+  }
+}
+
+// The server sends notifications in the language a device saved its push
+// subscription with. After the language changes, save it again.
+async function syncPushLocale() {
+  const locale = document.documentElement.lang
+  let saved = null
+
+  try {
+    saved = window.localStorage.getItem(POTOK_PUSH_LOCALE_KEY)
+  } catch (_error) {
+    return
+  }
+
+  if (!locale || saved === locale || document.body.dataset.signedIn !== "true") {
+    return
+  }
+
+  let subscription = null
+
+  if (NativePushManager.isSupported()) {
+    const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
+    if (token) subscription = {type: "fcm", token, platform: Capacitor.getPlatform()}
+  } else if ("serviceWorker" in navigator && "PushManager" in window &&
+             "Notification" in window && Notification.permission === "granted") {
+    const registration = await navigator.serviceWorker.getRegistration()
+    const existing = await registration?.pushManager.getSubscription()
+    if (existing) subscription = existing.toJSON()
+  }
+
+  if (!subscription) {
+    return
+  }
+
+  const response = await fetch("/accounts/push-subscriptions", {
+    method: "POST",
+    credentials: "same-origin",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "x-csrf-token": csrfToken,
+    },
+    body: JSON.stringify({subscription}),
+  })
+
+  if (response.ok) rememberPushLocale()
+}
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  params: {_csrf_token: csrfToken},
+  // The calendar shows times in the viewer's zone.
+  params: {_csrf_token: csrfToken, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone},
   hooks: {
     HeaderDrawer,
     DropdownMenu,
@@ -1521,6 +1580,7 @@ window.addEventListener("phx:page-loading-stop", () => {
 })
 window.addEventListener("load", () => {
   void registerServiceWorker()
+  syncPushLocale().catch(error => console.warn("Unable to update the push language", error))
 })
 
 window.addEventListener("phx:current_profile_updated", ({detail}) => {

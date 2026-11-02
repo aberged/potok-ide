@@ -19,6 +19,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Storage
 
   alias PotokIdeWeb.GroupLive.Show.{
+    CalendarState,
+    CalendarTab,
     Components,
     CreateGroupTab,
     EditGroupTab,
@@ -250,6 +252,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
           >
             <.icon name="hero-paper-clip" class="size-6 shrink-0" />
           </button>
+          <%!-- The header is full on phones; the menu always has the calendar. --%>
+          <button
+            :if={@is_member}
+            id="group-calendar-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="calendar"
+            aria-label={gettext("Open calendar tab")}
+            aria-current={@active_tab == "calendar" && "true"}
+            class={[header_shortcut_class(@active_tab == "calendar"), "max-sm:hidden"]}
+          >
+            <.icon name="hero-calendar-days" class="size-6 shrink-0" />
+          </button>
           <button
             :if={(!@group.is_root and @is_member) or @group.is_public}
             id="group-subgroups-summary"
@@ -360,6 +375,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 active_tab={@active_tab}
                 label={gettext("Files")}
                 icon="hero-paper-clip"
+              />
+              <Components.group_tab_button
+                :if={@is_member}
+                id="group-tab-calendar"
+                tab="calendar"
+                active_tab={@active_tab}
+                label={if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
+                icon="hero-calendar-days"
               />
               <Components.group_tab_button
                 :if={@group.is_root or @is_member or @group.is_public}
@@ -493,6 +516,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
             has_more={@files_has_more?}
             tree={@file_tree}
             tree_truncated={@file_tree_truncated?}
+          />
+          <CalendarTab.panel
+            :if={@active_tab == "calendar"}
+            group={@group}
+            current_profile={@current_profile}
+            group_path={@group_path}
+            access={@access}
+            time_zone={@calendar_time_zone}
+            month={@calendar_month}
+            mode={@calendar_mode}
+            weeks={@calendar_weeks}
+            by_day={@calendar_by_day}
+            occurrences={@streams.calendar_occurrences}
+            occurrences_empty={@calendar_occurrences_empty?}
+            selected_date={@calendar_selected_date}
+            include_subgroups={@calendar_include_subgroups?}
+            event={@calendar_event}
+            occurrence={@calendar_occurrence}
+            occurrence_cancelled={@calendar_occurrence_cancelled?}
+            summary={@calendar_summary}
+            can_manage={@calendar_can_manage?}
+            my_reminders={@calendar_my_reminders}
+            form={@calendar_form}
+            form_values={@calendar_form_values}
+            announce={@calendar_announce?}
+            notify={@calendar_notify?}
           />
           <GroupDescriptionTab.panel
             :if={
@@ -656,6 +705,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:pending_join_request, nil)
        |> assign(:pending_join_requests, [])
        |> assign(:pending_join_requests_count, 0)
+       |> CalendarState.init(params)
        |> load_group_data(group, active_tab)
        |> sync_group_presence()}
     else
@@ -690,7 +740,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
          |> maybe_reload_edit_group_form(active_tab)
+         |> CalendarState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
+
+      active_tab == "calendar" and CalendarState.params_changed?(socket, params) ->
+        {:noreply, CalendarState.handle_params(socket, params)}
 
       sub_groups_view != socket.assigns.sub_groups_view ->
         {:noreply,
@@ -711,6 +765,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   @impl true
+  def handle_event("calendar_" <> _ = event, params, socket),
+    do: CalendarState.handle_event(event, params, socket)
+
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -1842,6 +1899,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, flush_refresh(socket)}
   end
 
+  def handle_info({:calendar, message}, socket), do: CalendarState.handle_info(message, socket)
+
   def handle_info({:value_created, group_id, %Value{} = value}, socket)
       when socket.assigns.group.id == group_id do
     {:noreply, apply_value_created(socket, value)}
@@ -2000,6 +2059,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_members(group, active_tab)
     |> maybe_load_values(group, active_tab)
     |> maybe_load_files(group, active_tab)
+    |> CalendarState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
@@ -3845,6 +3905,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp normalize_active_tab("roles", %Group{is_direct: false}, %Access{member?: true}),
     do: "roles"
+
+  # In the root group, the events of every group the profile is in.
+  defp normalize_active_tab("calendar", _group, %Access{member?: true}), do: "calendar"
 
   defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})
        when not is_nil(parent_id),

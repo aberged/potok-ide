@@ -69,6 +69,7 @@ defmodule PotokIde.MixProject do
       {:earmark, "~> 1.4"},
       {:html_sanitize_ex, "~> 1.4"},
       {:dns_cluster, "~> 0.2.0"},
+      {:tz, "~> 0.28.4"},
       {:bandit, "~> 1.5"}
     ]
   end

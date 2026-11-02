@@ -107,3 +107,14 @@ msgstr ""
 
 msgid "must be equal to %{number}"
 msgstr ""
+
+msgid "must not be before the start"
+msgstr ""
+
+msgid "does not match the start date"
+msgstr ""
+
+msgid "must be at most %{count} days after the start"
+msgid_plural "must be at most %{count} days after the start"
+msgstr[0] ""
+msgstr[1] ""

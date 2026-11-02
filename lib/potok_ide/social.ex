@@ -11,6 +11,7 @@ defmodule PotokIde.Social do
   alias Ecto.Multi
   alias PotokIde.LinkPreviews
   alias PotokIde.Presence
+  alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Storage
 
@@ -1496,13 +1497,14 @@ defmodule PotokIde.Social do
 
   # Everything `Components.value_message/1` renders for a chat value: the
   # replied-to value with its author for the quote (or its files when it has
-  # no text), the value's files and its thread.
+  # no text), the value's files, its thread and the event it announced.
   defp value_display_preloads do
     reactions = from(r in ValueReaction, order_by: [asc: r.id])
 
     [
       :creator,
       :thread,
+      :event,
       attachments: attachments_in_order(),
       parent: [:creator, attachments: attachments_in_order()],
       reactions: {reactions, :profile}
@@ -1581,6 +1583,61 @@ defmodule PotokIde.Social do
         end
     end
   end
+
+  @doc """
+  Posts the chat value that announces a calendar event. It counts as unread
+  like any chat value, but takes no @mentions or link preview, and members
+  get `payload_for`'s push (it gets a device's locale) instead of the
+  generic one. `link` gets the repo and the value inside the transaction and
+  points the event at it.
+  """
+  def post_event_announcement(%Profile{} = creator, %Group{} = group, content, link, payload_for)
+      when is_function(link, 2) and is_function(payload_for, 1) do
+    if Access.can?(creator, group, :post_values) do
+      changeset =
+        %Value{link_preview_dismissed: true}
+        |> Value.changeset(%{
+          "content" => content,
+          "content_format" => :markdown,
+          "creator_id" => creator.id,
+          "group_id" => group.id
+        })
+
+      Multi.new()
+      |> Multi.insert(:value, changeset)
+      |> Multi.run(:event, fn repo, %{value: value} -> link.(repo, value) end)
+      |> Multi.run(:mark_creator_read, fn repo, %{value: value} ->
+        upsert_group_value_read(repo, creator.id, group.id, value.id)
+      end)
+      |> Multi.run(:group_last_value_at, fn repo, %{value: value} ->
+        {:ok, set_group_last_value_at(repo, group.id, value.inserted_at)}
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{value: value}} ->
+          value = Repo.preload(value, value_display_preloads())
+          broadcast_value_created(group, value)
+          broadcast_group_value_unread(creator, group, value)
+
+          run_notification(fn ->
+            group
+            |> push_subscriptions_for_group_value(creator)
+            |> Dispatch.deliver_localized("group event", group.id, payload_for)
+          end)
+
+          {:ok, value}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    else
+      {:error, :not_permitted}
+    end
+  end
+
+  @doc "Sends a chat value to its viewers again, e.g. after its event changed."
+  def refresh_value(nil), do: :ok
+  def refresh_value(value_id) when is_integer(value_id), do: broadcast_values_updated([value_id])
 
   defp insert_value_attachments(repo, %Value{} = value, attachments) do
     Enum.reduce_while(attachments, {:ok, []}, fn file, {:ok, inserted} ->
@@ -1665,34 +1722,44 @@ defmodule PotokIde.Social do
   it replies to. Replies are re-broadcast so their quotes show the new text.
   """
   def update_value(%Profile{} = profile, %Value{} = value, attrs) do
-    if value.creator_id != profile.id do
-      {:error, :not_value_creator}
-    else
-      attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
+    cond do
+      value.creator_id != profile.id ->
+        {:error, :not_value_creator}
 
-      # Mentions follow the new text, but an edit notifies nobody. A value
-      # with files may lose its text.
-      value
-      |> Value.changeset(attrs, attachments?: value_has_attachments?(value))
-      |> put_mentions(profile, Repo.get!(Group, value.group_id))
-      |> reset_link_preview(value)
-      |> Repo.update()
-      |> case do
-        {:ok, updated_value} ->
-          # Read again rather than preloaded: `value` may predate its link
-          # preview, which is written outside of edits.
-          updated_value =
-            get_value_for_display(updated_value.id) ||
-              Repo.preload(updated_value, value_display_preloads(), force: true)
+      # Its card shows the event, which is changed in the calendar.
+      Repo.exists?(from(e in PotokIde.Events.Event, where: e.value_id == ^value.id)) ->
+        {:error, :announcement}
 
-          broadcast_value_updated(updated_value)
-          broadcast_values_updated(reply_ids(updated_value))
-          schedule_link_preview(updated_value)
-          {:ok, updated_value}
+      true ->
+        do_update_value(profile, value, attrs)
+    end
+  end
 
-        error ->
-          error
-      end
+  defp do_update_value(profile, value, attrs) do
+    attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
+
+    # Mentions follow the new text, but an edit notifies nobody. A value
+    # with files may lose its text.
+    value
+    |> Value.changeset(attrs, attachments?: value_has_attachments?(value))
+    |> put_mentions(profile, Repo.get!(Group, value.group_id))
+    |> reset_link_preview(value)
+    |> Repo.update()
+    |> case do
+      {:ok, updated_value} ->
+        # Read again rather than preloaded: `value` may predate its link
+        # preview, which is written outside of edits.
+        updated_value =
+          get_value_for_display(updated_value.id) ||
+            Repo.preload(updated_value, value_display_preloads(), force: true)
+
+        broadcast_value_updated(updated_value)
+        broadcast_values_updated(reply_ids(updated_value))
+        schedule_link_preview(updated_value)
+        {:ok, updated_value}
+
+      error ->
+        error
     end
   end
 
@@ -4438,24 +4505,10 @@ defmodule PotokIde.Social do
 
       group
       |> push_subscriptions_for_group_value(creator)
-      |> Enum.each(fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
-        if MapSet.member?(mentioned_account_ids, account_id) do
-          deliver_push_to_subscriptions(
-            subscriptions,
-            account_id,
-            mention_payload,
-            "group mention",
-            group.id
-          )
-        else
-          deliver_push_to_subscriptions(
-            subscriptions,
-            account_id,
-            payload,
-            "group value",
-            group.id
-          )
-        end
+      |> Dispatch.deliver_each(group.id, fn [%PushSubscription{account_id: account_id} | _] ->
+        if MapSet.member?(mentioned_account_ids, account_id),
+          do: {mention_payload, "group mention"},
+          else: {payload, "group value"}
       end)
     end)
   end
@@ -4497,18 +4550,7 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  # Push delivery involves HTTP calls to FCM / web push endpoints; run it off the
-  # caller (usually a LiveView process) so the UI responds immediately. Tests
-  # run it inline so they can assert on the requests deterministically.
-  defp run_notification(fun) when is_function(fun, 0) do
-    if Application.get_env(:potok_ide, :async_notifications, true) do
-      {:ok, _pid} = Task.Supervisor.start_child(PotokIde.TaskSupervisor, fun)
-      :ok
-    else
-      fun.()
-      :ok
-    end
-  end
+  defp run_notification(fun), do: Dispatch.run(fun)
 
   defp notify_profile_invitee_of_group_invitation(
          %Profile{} = inviter,
@@ -4580,20 +4622,13 @@ defmodule PotokIde.Social do
   # one query. Members without a subscribed device cost nothing, where loading
   # every member's account and then its subscriptions took a query per member.
   defp push_subscriptions_for_group_value(%Group{} = group, %Profile{} = creator) do
-    member_account_ids =
-      from(ap in AccountProfile,
-        join: gm in GroupMembership,
-        on: gm.profile_id == ap.profile_id,
-        where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
-        select: ap.account_id
-      )
-
-    from(subscription in PushSubscription,
-      where: subscription.account_id in subquery(member_account_ids),
-      order_by: [asc: subscription.account_id, desc: subscription.updated_at]
+    from(ap in AccountProfile,
+      join: gm in GroupMembership,
+      on: gm.profile_id == ap.profile_id,
+      where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
+      select: ap.account_id
     )
-    |> Repo.all()
-    |> Enum.chunk_by(& &1.account_id)
+    |> Dispatch.subscriptions_by_account()
   end
 
   defp recipient_accounts_for_profile_notification(
@@ -4621,25 +4656,8 @@ defmodule PotokIde.Social do
     |> deliver_push_to_subscriptions(account.id, payload, context, context_id)
   end
 
-  defp deliver_push_to_subscriptions(subscriptions, account_id, payload, context, context_id) do
-    case Accounts.deliver_push_notification_to_subscriptions(subscriptions, payload) do
-      {:ok, _results} ->
-        :ok
-
-      {:error, :no_push_subscriptions} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Push delivery failed for account #{account_id} (#{context}#{format_push_context_id(context_id)}): #{inspect(reason)}"
-        )
-
-        :ok
-    end
-  end
-
-  defp format_push_context_id(nil), do: ""
-  defp format_push_context_id(context_id), do: " #{context_id}"
+  defp deliver_push_to_subscriptions(subscriptions, account_id, payload, context, context_id),
+    do: Dispatch.deliver(subscriptions, account_id, payload, context, context_id)
 
   defp group_value_notification_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     %{

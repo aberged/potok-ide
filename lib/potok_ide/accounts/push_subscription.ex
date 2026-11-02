@@ -17,6 +17,8 @@ defmodule PotokIde.Accounts.PushSubscription do
     field :last_success_at, :utc_datetime
     field :last_failure_at, :utc_datetime
     field :failure_reason, :string
+    # The language of the session that saved it; nil is the default language.
+    field :locale, :string
 
     belongs_to :account, PotokIde.Accounts.Account
 
@@ -36,7 +38,8 @@ defmodule PotokIde.Accounts.PushSubscription do
       :user_agent,
       :last_success_at,
       :last_failure_at,
-      :failure_reason
+      :failure_reason,
+      :locale
     ])
     |> put_default_subscription_type()
     |> validate_required([:subscription_type])
@@ -44,6 +47,7 @@ defmodule PotokIde.Accounts.PushSubscription do
     |> validate_length(:p256dh, max: 255)
     |> validate_length(:auth, max: 255)
     |> validate_length(:device_token, max: 4096)
+    |> validate_length(:locale, max: 16)
     |> validate_required_fields_for_type()
     |> unique_constraint(:endpoint)
     |> unique_constraint(:device_token, name: :push_subscriptions_device_token_index)
