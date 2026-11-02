@@ -2887,29 +2887,64 @@ defmodule PotokIde.Social do
 
   @doc """
   Keyset page of chat values: the newest `limit` values older than
-  `before_id` (or the newest overall), oldest first. Fetches one extra row
-  to tell whether older values exist, so no count query is needed.
+  `before_id` (or the newest overall), oldest first. With `after_id`, the
+  oldest `limit` values newer than it instead. Fetches one extra row to tell
+  whether more values exist that way, so no count query is needed.
   """
   def list_group_values_page(%Group{} = group, opts \\ []) do
     limit = Keyword.get(opts, :limit, 20)
 
-    rows =
+    query =
       from(v in Value,
         where: v.group_id == ^group.id and v.is_data == false,
-        order_by: [desc: v.id],
         limit: ^(limit + 1),
         preload: ^value_display_preloads()
       )
-      |> maybe_before_id(opts[:before_id])
-      |> Repo.all()
 
-    {Enum.reverse(Enum.take(rows, limit)), length(rows) > limit}
+    case opts[:after_id] do
+      after_id when is_integer(after_id) ->
+        rows =
+          from(v in query, where: v.id > ^after_id, order_by: [asc: v.id])
+          |> Repo.all()
+
+        {Enum.take(rows, limit), length(rows) > limit}
+
+      nil ->
+        rows =
+          from(v in query, order_by: [desc: v.id])
+          |> maybe_before_id(opts[:before_id])
+          |> Repo.all()
+
+        {Enum.reverse(Enum.take(rows, limit)), length(rows) > limit}
+    end
   end
 
   defp maybe_before_id(query, before_id) when is_integer(before_id),
     do: from(v in query, where: v.id < ^before_id)
 
   defp maybe_before_id(query, _before_id), do: query
+
+  @doc """
+  The chat values around `value_id`, oldest first: up to `older` values
+  before it, the value itself and up to `newer` values after it. Returns
+  `{values, older?, newer?}`, or nil when it is not a chat value of the group.
+  Two keyset pages, however far back the value is.
+  """
+  def list_group_values_around(%Group{} = group, value_id, opts \\ [])
+      when is_integer(value_id) do
+    older = Keyword.get(opts, :older, 10)
+    newer = Keyword.get(opts, :newer, 20)
+
+    # `after_id` is exclusive, so starting one id lower takes the value first.
+    case list_group_values_page(group, after_id: value_id - 1, limit: newer + 1) do
+      {[%Value{id: ^value_id} | _] = from_value, newer?} ->
+        {before, older?} = list_group_values_page(group, before_id: value_id, limit: older)
+        {before ++ from_value, older?, newer?}
+
+      _ ->
+        nil
+    end
+  end
 
   @doc """
   Keyset page of the files attached in the group, newest first, with their

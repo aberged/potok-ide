@@ -5,7 +5,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Social.Value
 
   describe "group page" do
     test "shows parent link only for non-root groups", %{conn: conn} do
@@ -2946,7 +2948,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert [reply] = Enum.filter(Social.list_group_values(group), &(&1.parent_id == value.id))
       assert reply.content == "I agree"
       assert has_element?(lv, "#value-reply-quote-#{reply.id}", "What do you think?")
-      assert has_element?(lv, ~s(#value-reply-quote-#{reply.id}[phx-click*="#value-#{value.id}"]))
+      assert has_element?(lv, ~s(#value-reply-quote-#{reply.id}[phx-click*="potok:show-value"]))
+      assert has_element?(lv, ~s(#value-reply-quote-#{reply.id}[phx-click*='"id":#{value.id}']))
     end
 
     test "cancelling the reply posts a plain value", %{lv: lv, group: group, value: value} do
@@ -3003,7 +3006,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                thread_lv,
-               "#group-thread-origin-link[href='/groups/#{group.id}/values']"
+               "#group-thread-origin-link[href='/groups/#{group.id}/values?value=#{value.id}']"
              )
 
       assert has_element?(thread_lv, "#group-back-link[href='/groups/#{group.id}/values']")
@@ -3102,6 +3105,208 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> live(~p"/groups/#{thread.id}/values")
 
       assert has_element?(lv, "#group-thread-badge-#{thread.id}")
+    end
+
+    test "a link to a value loads the chat back to it", %{
+      conn: conn,
+      account: account,
+      member: member,
+      group: group,
+      value: value
+    } do
+      for n <- 1..25 do
+        {:ok, _later} = Social.create_value(member, group, %{"content" => "later #{n}"})
+      end
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      refute has_element?(lv, "#value-#{value.id}")
+      refute has_element?(lv, "#group-values-feed[data-focus-value-id]")
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values?value=#{value.id}")
+
+      assert has_element?(lv, "#value-#{value.id}")
+      assert has_element?(lv, "#group-values-feed[data-focus-value-id='#{value.id}']")
+
+      # Only a window of values after it loads; the rest comes page by page.
+      assert has_element?(lv, "#group-values-feed[data-has-newer='true']")
+      refute has_element?(lv, "#group-values-list", "later 25")
+
+      lv
+      |> element("#group-values-load-newer")
+      |> render_click()
+
+      assert has_element?(lv, "#group-values-list", "later 25")
+      refute has_element?(lv, "#group-values-load-newer")
+      assert has_element?(lv, "#group-values-feed[data-has-newer='false']")
+    end
+
+    test "a reply quote loads the chat around a value that is not in the feed", %{
+      conn: conn,
+      account: account,
+      member: member,
+      group: group,
+      value: value
+    } do
+      for n <- 1..25 do
+        {:ok, _later} = Social.create_value(member, group, %{"content" => "later #{n}"})
+      end
+
+      {:ok, reply} =
+        Social.create_value(member, group, %{"content" => "late reply", "parent_id" => value.id})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, ~s(#value-reply-quote-#{reply.id}[phx-click*="potok:show-value"]))
+      refute has_element?(lv, "#value-#{value.id}")
+
+      render_hook(lv, "show_value", %{"id" => value.id})
+
+      assert_push_event(lv, "show_value", %{id: value_id})
+      assert value_id == value.id
+      assert has_element?(lv, "#value-#{value.id}")
+      refute has_element?(lv, "#value-#{reply.id}")
+      assert has_element?(lv, "#group-values-load-newer")
+
+      # A value already in the feed is only scrolled to.
+      render_hook(lv, "show_value", %{"id" => value.id})
+      assert_push_event(lv, "show_value", %{id: ^value_id})
+
+      render_hook(lv, "jump_to_latest_values", %{})
+
+      assert_push_event(lv, "scroll_values_to_latest", %{force: true})
+      assert has_element?(lv, "#value-#{reply.id}")
+      refute has_element?(lv, "#group-values-load-newer")
+    end
+
+    test "a quote of a value that is gone explains it", %{lv: lv, value: value} do
+      render_hook(lv, "show_value", %{"id" => value.id + 1_000_000})
+
+      refute_push_event(lv, "show_value", %{})
+      assert render(lv) =~ "The original value is no longer available."
+    end
+
+    test "a feed showing earlier values waits for others' values but not the viewer's", %{
+      conn: conn,
+      account: account,
+      member: member,
+      group: group,
+      value: value
+    } do
+      for n <- 1..25 do
+        {:ok, _later} = Social.create_value(member, group, %{"content" => "later #{n}"})
+      end
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values?value=#{value.id}")
+
+      {:ok, theirs} = Social.create_value(member, group, %{"content" => "theirs"})
+
+      assert_push_event(lv, "scroll_values_to_latest", %{force: false})
+      refute has_element?(lv, "#value-#{theirs.id}")
+      assert has_element?(lv, "#group-values-feed[data-has-newer='true']")
+
+      lv
+      |> form("#group-value-form", value: %{content: "mine"})
+      |> render_submit()
+
+      assert_push_event(lv, "scroll_values_to_latest", %{force: true})
+      assert has_element?(lv, "#value-#{theirs.id}")
+      assert has_element?(lv, "#group-values-list", "mine")
+      refute has_element?(lv, "#value-#{value.id}")
+      assert has_element?(lv, "#group-values-feed[data-has-newer='false']")
+    end
+
+    test "the feed keeps at most 200 values", %{
+      conn: conn,
+      account: account,
+      member: member,
+      group: group,
+      value: value
+    } do
+      ids = [value.id | insert_values!(member, group, 229)]
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/values")
+
+      for _page <- 1..9, do: lv |> element("#group-values-load-more") |> render_click()
+
+      assert feed_value_count(lv) == 200
+      assert has_element?(lv, "#value-#{Enum.at(ids, 30)}")
+
+      # A new value at the bottom drops the oldest one at the top.
+      {:ok, theirs} = Social.create_value(member, group, %{"content" => "theirs"})
+
+      assert feed_value_count(lv) == 200
+      assert has_element?(lv, "#value-#{theirs.id}")
+      refute has_element?(lv, "#value-#{Enum.at(ids, 30)}")
+
+      # An earlier page at the top drops as many of the newest at the bottom.
+      lv |> element("#group-values-load-more") |> render_click()
+
+      assert feed_value_count(lv) == 200
+      assert has_element?(lv, "#value-#{Enum.at(ids, 11)}")
+      refute has_element?(lv, "#value-#{theirs.id}")
+      assert has_element?(lv, "#group-values-feed[data-has-newer='true']")
+
+      lv |> element("#group-values-load-newer") |> render_click()
+
+      assert feed_value_count(lv) == 200
+      assert has_element?(lv, "#value-#{theirs.id}")
+      refute has_element?(lv, "#value-#{Enum.at(ids, 11)}")
+      assert has_element?(lv, "#group-values-feed[data-has-newer='false']")
+    end
+
+    test "a link to a value outside the chat opens it at the newest", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      other_group = create_child_group!(profile, "reply-live-other")
+      {:ok, elsewhere} = Social.create_value(profile, other_group, %{"content" => "elsewhere"})
+
+      for param <- ["abc", to_string(elsewhere.id)] do
+        {:ok, lv, _html} =
+          conn
+          |> log_in_account(account)
+          |> live(~p"/groups/#{group.id}/values?value=#{param}")
+
+        assert has_element?(lv, "#value-#{value.id}")
+        refute has_element?(lv, "#group-values-feed[data-focus-value-id]")
+      end
+    end
+
+    test "the feed follows the viewer's own values, not others'", %{
+      lv: lv,
+      member: member,
+      group: group
+    } do
+      assert has_element?(lv, "#group-values-jump-latest")
+
+      lv
+      |> form("#group-value-form", value: %{content: "mine"})
+      |> render_submit()
+
+      assert_push_event(lv, "scroll_values_to_latest", %{force: true})
+
+      {:ok, _theirs} = Social.create_value(member, group, %{"content" => "theirs"})
+
+      assert_push_event(lv, "scroll_values_to_latest", %{force: false})
     end
 
     test "direct conversations offer inline replies but no threads", %{
@@ -3283,6 +3488,38 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     {:ok, _accepted_invitation} = Social.accept_group_invitation(invitation, profile)
 
     profile
+  end
+
+  # Many chat values in one insert, without the broadcasts of `create_value`.
+  # Returns their ids, oldest first.
+  defp insert_values!(creator, group, count) do
+    now = DateTime.utc_now(:second)
+
+    rows =
+      for n <- 1..count do
+        %{
+          content: "bulk #{n}",
+          content_format: :markdown,
+          is_data: false,
+          mentions: %{},
+          mentioned_profile_ids: [],
+          creator_id: creator.id,
+          group_id: group.id,
+          inserted_at: now,
+          updated_at: now
+        }
+      end
+
+    {^count, values} = Repo.insert_all(Value, rows, returning: [:id])
+    values |> Enum.map(& &1.id) |> Enum.sort()
+  end
+
+  defp feed_value_count(lv) do
+    lv
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query("#group-values-list > [id^='value-']")
+    |> Enum.count()
   end
 
   defp shown_online?(lv, profile_id) do

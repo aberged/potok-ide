@@ -40,6 +40,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @members_page_size 20
   @values_page_size 20
   @files_page_size 30
+  # A jump to a value (a `?value=` link or a reply quote) loads this many
+  # values before and after it, however far back it is.
+  @values_window_older 10
+  @values_window_newer 20
+  # The feed holds at most this many values: a page loaded at one end drops
+  # as many from the other, which load again when scrolled back to.
+  @values_max_loaded 200
 
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
   # reload. 0 (the test config) applies them inline.
@@ -460,6 +467,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
             values={@streams.values}
             has_more={@values_has_more?}
+            has_newer={@values_has_newer?}
             group={@group}
             current_profile={@current_profile}
             group_path={@group_path}
@@ -469,6 +477,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             new_value_form={@new_value_form}
             replying_to_value={@replying_to_value}
             thread_origin={@thread_origin}
+            focus_value_id={@focus_value_id}
             is_member={@is_member}
             access={@access}
             attachments={@uploads.attachments}
@@ -576,9 +585,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:children_pagination, default_pagination(@children_page_size))
        |> assign(:members_pagination, default_pagination(@members_page_size))
        |> assign(:values_has_more?, false)
+       |> assign(:values_has_newer?, false)
        |> assign(:oldest_value_id, nil)
        |> assign(:newest_value_id, nil)
        |> assign(:loaded_value_ids, MapSet.new())
+       |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
        |> assign(:files_view, "list")
        |> assign(:files_has_more?, false)
        |> assign(:files_loaded_count, 0)
@@ -673,6 +684,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          socket
          |> assign(:description_param, description_param)
          |> assign(:active_tab, active_tab)
+         |> assign(:focus_value_id, nil)
+         |> assign(:values_has_newer?, false)
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
@@ -1185,6 +1198,46 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("load_more_values", _params, socket) do
     {:noreply, load_more_values(socket)}
+  end
+
+  def handle_event("load_newer_values", _params, socket) do
+    {:noreply, load_newer_values(socket)}
+  end
+
+  # A reply quote whose value is not in the feed: the chat reloads around it.
+  def handle_event("show_value", %{"id" => id}, socket) do
+    with true <- needs_values?(socket.assigns.group, socket.assigns.active_tab),
+         {value_id, ""} <- Integer.parse(to_string(id)) do
+      if MapSet.member?(socket.assigns.loaded_value_ids, value_id) do
+        {:noreply, push_event(socket, "show_value", %{id: value_id})}
+      else
+        case load_values_around(socket, value_id) do
+          {:ok, socket} ->
+            {:noreply,
+             socket
+             |> assign(:focus_value_id, nil)
+             |> push_event("show_value", %{id: value_id})}
+
+          :error ->
+            {:noreply,
+             put_flash(socket, :error, gettext("The original value is no longer available."))}
+        end
+      end
+    else
+      _ -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("jump_to_latest_values", _params, socket) do
+    if needs_values?(socket.assigns.group, socket.assigns.active_tab) do
+      {:noreply,
+       socket
+       |> assign(:focus_value_id, nil)
+       |> load_latest_values(socket.assigns.group)
+       |> push_event("scroll_values_to_latest", %{force: true})}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("validate_group", %{"group" => attrs}, socket) do
@@ -2345,7 +2398,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if needs_values?(socket.assigns.group, socket.assigns.active_tab) and
          is_integer(newest_value_id) and
          (is_nil(previous_newest_value_id) or newest_value_id > previous_newest_value_id) do
-      push_event(socket, "scroll_values_to_latest", %{})
+      push_event(socket, "scroll_values_to_latest", %{force: false})
     else
       socket
     end
@@ -2365,21 +2418,41 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = socket.assigns.group
     active_tab = socket.assigns.active_tab
 
+    mine? = value.creator_id == socket.assigns.current_profile.id
+
     # Unread badges are updated by the `group_value_unread` broadcast that
     # Social sends to every member right after the value broadcast. The value
     # is marked read here, so this page skips that one (`shown_chat_value?/2`).
-    if needs_values?(group, active_tab) and
-         not MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
-      socket
-      |> update(:loaded_value_ids, &MapSet.put(&1, value.id))
-      |> assign(:newest_value_id, max(socket.assigns.newest_value_id || 0, value.id))
-      |> assign(:oldest_value_id, socket.assigns.oldest_value_id || value.id)
-      |> stream_insert(:values, value)
-      |> watch_presence([value.creator_id])
-      |> mark_value_read(value)
-      |> push_event("scroll_values_to_latest", %{})
-    else
-      socket
+    cond do
+      not needs_values?(group, active_tab) or
+          MapSet.member?(socket.assigns.loaded_value_ids, value.id) ->
+        socket
+
+      # The feed shows earlier values, so the new one would not join on: the
+      # viewer's own value brings the feed back to the newest, others' only
+      # light the dot on the jump button.
+      socket.assigns.values_has_newer? and mine? ->
+        socket
+        |> load_latest_values(group)
+        |> mark_value_read(value)
+        |> push_event("scroll_values_to_latest", %{force: true})
+
+      socket.assigns.values_has_newer? ->
+        socket
+        |> mark_value_read(value)
+        |> push_event("scroll_values_to_latest", %{force: false})
+
+      true ->
+        socket
+        |> update(:loaded_value_ids, &MapSet.put(&1, value.id))
+        |> assign(:newest_value_id, max(socket.assigns.newest_value_id || 0, value.id))
+        |> assign(:oldest_value_id, socket.assigns.oldest_value_id || value.id)
+        |> stream_insert(:values, value)
+        |> prune_values(:oldest)
+        |> watch_presence([value.creator_id])
+        |> mark_value_read(value)
+        # The feed follows its own values; others' wait while it is scrolled up.
+        |> push_event("scroll_values_to_latest", %{force: mine?})
     end
   end
 
@@ -3081,7 +3154,67 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:values_has_more?, has_more?)
       |> assign(:oldest_value_id, first_value_id(older_values) || socket.assigns.oldest_value_id)
       |> stream(:values, Enum.reverse(older_values), at: 0)
+      |> prune_values(:newest)
       |> watch_presence(Enum.map(older_values, & &1.creator_id))
+    else
+      socket
+    end
+  end
+
+  defp load_newer_values(socket) do
+    if socket.assigns.values_has_newer? and
+         needs_values?(socket.assigns.group, socket.assigns.active_tab) do
+      {newer_values, has_newer?} =
+        Social.list_group_values_page(socket.assigns.group,
+          after_id: socket.assigns.newest_value_id,
+          limit: @values_page_size
+        )
+
+      socket
+      |> update(:loaded_value_ids, fn ids -> Enum.into(newer_values, ids, & &1.id) end)
+      |> assign(:values_has_newer?, has_newer?)
+      |> assign(:newest_value_id, last_value_id(newer_values) || socket.assigns.newest_value_id)
+      |> stream(:values, newer_values)
+      |> prune_values(:oldest)
+      |> watch_presence(Enum.map(newer_values, & &1.creator_id))
+    else
+      socket
+    end
+  end
+
+  # Keeps the feed at `@values_max_loaded` values by dropping the excess from
+  # one end; the values are contiguous by id, so the cursors move to the new
+  # ends. Explicit deletes rather than the stream's `:limit`, which would count
+  # the empty-state element among the values.
+  defp prune_values(socket, drop) do
+    loaded = socket.assigns.loaded_value_ids
+    excess = MapSet.size(loaded) - @values_max_loaded
+
+    if excess > 0 do
+      sorted = Enum.sort(loaded)
+
+      {dropped, kept, socket} =
+        case drop do
+          :oldest ->
+            {dropped, kept} = Enum.split(sorted, excess)
+
+            {dropped, kept,
+             socket
+             |> assign(:oldest_value_id, hd(kept))
+             |> assign(:values_has_more?, true)}
+
+          :newest ->
+            {kept, dropped} = Enum.split(sorted, -excess)
+
+            {dropped, kept,
+             socket
+             |> assign(:newest_value_id, List.last(kept))
+             |> assign(:values_has_newer?, true)}
+        end
+
+      dropped
+      |> Enum.reduce(socket, &stream_delete_by_dom_id(&2, :values, "value-#{&1}"))
+      |> assign(:loaded_value_ids, MapSet.new(kept))
     else
       socket
     end
@@ -3230,22 +3363,79 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # The first load after a `?value=` link opens the chat around that value,
+  # which the `.ValuesFeed` hook then scrolls to; a value not in this chat is
+  # dropped. A feed showing earlier values reloads the same span, and one at
+  # the newest reloads as many of the newest as it had.
   defp maybe_load_values(socket, group, active_tab) do
     if needs_values?(group, active_tab) do
-      limit = max(MapSet.size(socket.assigns.loaded_value_ids), @values_page_size)
-      {values, has_more?} = Social.list_group_values_page(group, limit: limit)
+      %{focus_value_id: focus_value_id, loaded_value_ids: loaded} = socket.assigns
+      limit = max(MapSet.size(loaded), @values_page_size)
 
-      socket
-      |> assign(:loaded_value_ids, MapSet.new(values, & &1.id))
-      |> assign(:values_has_more?, has_more?)
-      |> assign(:oldest_value_id, first_value_id(values))
-      |> assign(:newest_value_id, last_value_id(values))
-      |> stream(:values, values, reset: true)
-      |> watch_presence(Enum.map(values, & &1.creator_id))
+      cond do
+        is_integer(focus_value_id) and MapSet.size(loaded) == 0 ->
+          case load_values_around(socket, focus_value_id) do
+            {:ok, socket} ->
+              socket
+
+            :error ->
+              socket
+              |> assign(:focus_value_id, nil)
+              |> load_latest_values(group)
+          end
+
+        socket.assigns.values_has_newer? and is_integer(socket.assigns.oldest_value_id) ->
+          {values, has_newer?} =
+            Social.list_group_values_page(group,
+              after_id: socket.assigns.oldest_value_id - 1,
+              limit: limit
+            )
+
+          put_values(socket, values, socket.assigns.values_has_more?, has_newer?)
+
+        true ->
+          load_latest_values(socket, group, limit)
+      end
     else
       socket
     end
   end
+
+  defp load_latest_values(socket, group, limit \\ @values_page_size) do
+    {values, has_more?} = Social.list_group_values_page(group, limit: limit)
+    put_values(socket, values, has_more?, false)
+  end
+
+  defp load_values_around(socket, value_id) do
+    case Social.list_group_values_around(socket.assigns.group, value_id,
+           older: @values_window_older,
+           newer: @values_window_newer
+         ) do
+      {values, has_more?, has_newer?} -> {:ok, put_values(socket, values, has_more?, has_newer?)}
+      nil -> :error
+    end
+  end
+
+  # Replaces the feed with `values`, a contiguous run oldest first.
+  defp put_values(socket, values, has_more?, has_newer?) do
+    socket
+    |> assign(:loaded_value_ids, MapSet.new(values, & &1.id))
+    |> assign(:values_has_more?, has_more?)
+    |> assign(:values_has_newer?, has_newer?)
+    |> assign(:oldest_value_id, first_value_id(values))
+    |> assign(:newest_value_id, last_value_id(values))
+    |> stream(:values, values, reset: true)
+    |> watch_presence(Enum.map(values, & &1.creator_id))
+  end
+
+  defp parse_focus_value_id(param) when is_binary(param) do
+    case Integer.parse(param) do
+      {id, ""} when id > 0 -> id
+      _ -> nil
+    end
+  end
+
+  defp parse_focus_value_id(_param), do: nil
 
   defp maybe_load_files(socket, group, "files") do
     case socket.assigns.files_view do

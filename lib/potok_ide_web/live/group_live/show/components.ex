@@ -1211,7 +1211,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </div>
       </div>
 
-      <%!-- `data-highlighted` is set by the `.ValuesFeed` hook after jumping here from a reply quote. --%>
+      <%!-- `data-highlighted` is set by the `.ValuesFeed` hook after jumping here from a reply quote or a link. --%>
       <div class={[
         "chat-bubble max-w-full rounded-3xl shadow-sm ring-warning/60 transition-shadow duration-500 sm:max-w-[42rem]",
         "group-data-highlighted/value:ring-4",
@@ -1219,12 +1219,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         @mine? && "chat-bubble-primary",
         !@mine? && "border border-base-300 bg-base-100 text-base-content"
       ]}>
-        <%!-- Jumps to the replied-to value when it is in the feed; otherwise the dispatch finds no target. --%>
+        <%!-- `.ValuesFeed` jumps to the replied-to value, or asks the server to load the chat around it. --%>
         <button
           :if={@reply_parent}
           id={"value-reply-quote-#{@value.id}"}
           type="button"
-          phx-click={JS.dispatch("potok:scroll-to-value", to: "#value-#{@reply_parent.id}")}
+          phx-click={
+            JS.dispatch("potok:show-value",
+              to: "#group-values-feed",
+              detail: %{id: @reply_parent.id}
+            )
+          }
           title={gettext("Show original value")}
           class={[
             "mb-2 block w-full min-w-0 rounded-xl border-l-4 px-3 py-1.5 text-left text-sm transition-colors",

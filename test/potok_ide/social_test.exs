@@ -2545,6 +2545,87 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  describe "list_group_values_around/3" do
+    setup do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "around-prof",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      [group, other_group] =
+        for name <- ["around-group", "around-other"] do
+          {:ok, group} =
+            Social.create_group(profile, Social.get_root_group!(), %{
+              "name" => name,
+              "description" => "",
+              "description_format" => :markdown,
+              "is_public" => false
+            })
+
+          group
+        end
+
+      ids =
+        for n <- 1..9 do
+          {:ok, value} = Social.create_value(profile, group, %{"content" => "around #{n}"})
+          value.id
+        end
+
+      %{profile: profile, group: group, other_group: other_group, ids: ids}
+    end
+
+    test "pages forwards with after_id", %{group: group, ids: ids} do
+      assert {newer, true} =
+               Social.list_group_values_page(group, after_id: Enum.at(ids, 2), limit: 3)
+
+      assert Enum.map(newer, & &1.id) == Enum.slice(ids, 3, 3)
+
+      assert {last, false} =
+               Social.list_group_values_page(group, after_id: Enum.at(ids, 5), limit: 3)
+
+      assert Enum.map(last, & &1.id) == Enum.slice(ids, 6, 3)
+    end
+
+    test "returns the values before and after one, oldest first", %{group: group, ids: ids} do
+      assert {values, true, true} =
+               Social.list_group_values_around(group, Enum.at(ids, 4), older: 2, newer: 2)
+
+      assert Enum.map(values, & &1.id) == Enum.slice(ids, 2, 5)
+
+      assert {values, false, true} =
+               Social.list_group_values_around(group, hd(ids), older: 2, newer: 2)
+
+      assert Enum.map(values, & &1.id) == Enum.slice(ids, 0, 3)
+
+      assert {values, true, false} =
+               Social.list_group_values_around(group, List.last(ids), older: 2, newer: 2)
+
+      assert Enum.map(values, & &1.id) == Enum.slice(ids, 6, 3)
+    end
+
+    test "is nil for a value that is not a chat value of the group", %{
+      profile: profile,
+      group: group,
+      other_group: other_group,
+      ids: ids
+    } do
+      {:ok, data_value} =
+        Social.create_data_value(profile, group, %{"content" => "data:", "data" => %{}})
+
+      {:ok, elsewhere} = Social.create_value(profile, other_group, %{"content" => "elsewhere"})
+
+      assert Social.list_group_values_around(group, data_value.id) == nil
+      assert Social.list_group_values_around(group, elsewhere.id) == nil
+      assert Social.list_group_values_around(other_group, hd(ids)) == nil
+    end
+  end
+
   describe "toggle_value_reaction/4" do
     setup do
       {:ok, owner} =

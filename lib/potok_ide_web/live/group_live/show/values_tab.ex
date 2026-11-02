@@ -8,6 +8,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   attr :values, :any, required: true
   attr :has_more, :boolean, required: true
+
+  attr :has_newer, :boolean,
+    default: false,
+    doc: "the feed shows earlier values and newer ones are not loaded"
+
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
   attr :group_path, :list, required: true
@@ -17,6 +22,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :new_value_form, :any, required: true
   attr :replying_to_value, :map, default: nil
   attr :thread_origin, :map, default: nil
+
+  attr :focus_value_id, :integer,
+    default: nil,
+    doc: "the linked value (`?value=`) the feed opens at instead of the newest"
+
   attr :is_member, :boolean, required: true
   attr :access, Access, required: true
   attr :attachments, Phoenix.LiveView.UploadConfig, required: true
@@ -67,7 +77,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           </div>
           <.link
             id="group-thread-origin-link"
-            navigate={~p"/groups/#{@thread_origin.group_id}/values"}
+            navigate={~p"/groups/#{@thread_origin.group_id}/values?#{[value: @thread_origin.id]}"}
             title={gettext("Show original value")}
             aria-label={gettext("Show original value")}
             class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
@@ -76,52 +86,92 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           </.link>
         </div>
 
-        <div
-          id="group-values-feed"
-          phx-hook=".ValuesFeed"
-          class={[
-            "flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-4 py-5 sm:px-6"
-          ]}
-        >
-          <div :if={@has_more} class="flex justify-center">
-            <button
-              id="group-values-load-more"
-              type="button"
-              phx-click="load_more_values"
-              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
-            >
-              {gettext("Load earlier values")}
-            </button>
-          </div>
-
-          <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
-            <div
-              id="group-values-empty"
-              class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
-            >
-              {gettext("No values yet. Start the conversation below.")}
+        <div class="relative flex min-h-0 flex-1 flex-col">
+          <div
+            id="group-values-feed"
+            phx-hook=".ValuesFeed"
+            data-focus-value-id={@focus_value_id}
+            data-has-newer={to_string(@has_newer)}
+            class={[
+              "relative flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-4 py-5 [overflow-anchor:none] sm:px-6"
+            ]}
+          >
+            <div :if={@has_more} class="flex justify-center">
+              <button
+                id="group-values-load-more"
+                type="button"
+                phx-click="load_more_values"
+                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+              >
+                {gettext("Load earlier values")}
+              </button>
             </div>
 
-            <.inspect_tree
-              :if={false}
-              id="value-message-assigns"
-              data={@values}
-              label="values"
-              class="mb-3 w-full"
-            />
-            <Components.value_message
-              :for={{dom_id, value} <- @values}
-              dom_id={dom_id}
-              value={value}
-              uses_api={@group.uses_api}
-              current_profile={@current_profile}
-              editing_value_id={@editing_value_id}
-              can_react={@can_react}
-              can_reply={@can_post}
-              can_thread={@can_thread}
-              can_join_thread={@is_member}
-              can_delete_any={@can_delete_any}
-            />
+            <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
+              <div
+                id="group-values-empty"
+                class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
+              >
+                {gettext("No values yet. Start the conversation below.")}
+              </div>
+
+              <.inspect_tree
+                :if={false}
+                id="value-message-assigns"
+                data={@values}
+                label="values"
+                class="mb-3 w-full"
+              />
+              <Components.value_message
+                :for={{dom_id, value} <- @values}
+                dom_id={dom_id}
+                value={value}
+                uses_api={@group.uses_api}
+                current_profile={@current_profile}
+                editing_value_id={@editing_value_id}
+                can_react={@can_react}
+                can_reply={@can_post}
+                can_thread={@can_thread}
+                can_join_thread={@is_member}
+                can_delete_any={@can_delete_any}
+              />
+            </div>
+
+            <div :if={@has_newer} class="flex justify-center">
+              <button
+                id="group-values-load-newer"
+                type="button"
+                phx-click="load_newer_values"
+                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+              >
+                {gettext("Load newer values")}
+              </button>
+            </div>
+          </div>
+
+          <%!-- `.ValuesFeed` shows the button while the feed is scrolled away from the newest values,
+             and lights the dot when others post meanwhile. Ignored so patches keep its state. --%>
+          <div
+            id="group-values-jump-latest-wrap"
+            phx-update="ignore"
+            class="pointer-events-none absolute right-4 bottom-4 z-20 sm:right-6"
+          >
+            <button
+              id="group-values-jump-latest"
+              type="button"
+              inert
+              aria-label={gettext("Jump to latest values")}
+              title={gettext("Jump to latest values")}
+              class="relative inline-flex size-10 translate-y-2 items-center justify-center rounded-full border border-base-300 bg-base-100/95 text-base-content/70 opacity-0 shadow-lg shadow-base-content/10 backdrop-blur transition duration-200 ease-out hover:bg-base-200 hover:text-base-content active:scale-95 data-visible:pointer-events-auto data-visible:translate-y-0 data-visible:opacity-100"
+            >
+              <.icon name="hero-arrow-down" class="size-5" />
+              <span
+                data-new-values
+                hidden
+                class="absolute -top-0.5 -right-0.5 size-3 rounded-full bg-primary ring-2 ring-base-100"
+              >
+              </span>
+            </button>
           </div>
         </div>
 
@@ -388,70 +438,122 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         </div>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
+          // The feed counts as showing the newest values this close to its bottom.
+          const NEAR_LATEST_PX = 200
+
+          // The feed may show a run of earlier values without the newest ones
+          // (`data-has-newer`): after a jump to a quoted or linked value, or once
+          // the newest were dropped to keep the feed short. Scrolling then loads
+          // newer pages, and the jump button reloads the newest.
           export default {
             mounted() {
-              this.pendingPrependAdjustment = null
               this.loadingMoreValues = false
+              this.loadingNewerValues = false
+              this.nearLatest = true
+              this.hadNewer = this.hasNewer()
+              this.anchor = null
+              this.jumpButton = document.getElementById("group-values-jump-latest")
+              this.newValuesDot = this.jumpButton?.querySelector("[data-new-values]")
 
               this.handleClick = (event) => {
-                const loadMoreButton = event.target.closest("#group-values-load-more")
-                if (!loadMoreButton) return
-
-                this.loadingMoreValues = true
-                this.pendingPrependAdjustment = {
-                  scrollTop: this.el.scrollTop,
-                  scrollHeight: this.el.scrollHeight,
-                }
+                if (event.target.closest("#group-values-load-more")) this.loadingMoreValues = true
+                if (event.target.closest("#group-values-load-newer")) this.loadingNewerValues = true
               }
 
               this.handleScroll = () => {
-                if (this.el.scrollTop > 16) {
-                  return
-                }
+                this.anchor = this.findAnchor()
 
-                this.loadMoreValues()
+                const distance = this.distanceToBottom()
+                this.setNearLatest(distance <= NEAR_LATEST_PX && !this.hasNewer())
+
+                if (this.el.scrollTop <= 16) {
+                  this.loadMoreValues()
+                } else if (distance <= NEAR_LATEST_PX && this.hasNewer()) {
+                  this.loadNewerValues()
+                }
               }
 
-              // Reply quotes dispatch this on the quoted value (`JS.dispatch`).
-              this.handleScrollToValue = (event) => {
-                const target = event.target
-                target.scrollIntoView({ block: "center", behavior: "smooth" })
+              // Reply quotes dispatch this with the quoted value's id (`JS.dispatch`).
+              this.handleShowValue = (event) => {
+                const id = event.detail.id
+                const target = document.getElementById(`value-${id}`)
 
-                clearTimeout(this.highlightTimer)
-                this.highlighted?.removeAttribute("data-highlighted")
-                target.setAttribute("data-highlighted", "true")
-                this.highlighted = target
-                this.highlightTimer = setTimeout(() => {
-                  target.removeAttribute("data-highlighted")
-                }, 1600)
+                if (target) {
+                  this.showValue(target, "smooth")
+                } else {
+                  this.pushEvent("show_value", { id })
+                }
+              }
+
+              this.handleJumpClick = () => {
+                if (this.hasNewer()) {
+                  this.pushEvent("jump_to_latest_values", {})
+                } else {
+                  this.el.scrollTo({ top: this.el.scrollHeight, behavior: "smooth" })
+                }
               }
 
               this.el.addEventListener("click", this.handleClick)
               this.el.addEventListener("scroll", this.handleScroll)
-              this.el.addEventListener("potok:scroll-to-value", this.handleScrollToValue)
+              this.el.addEventListener("potok:show-value", this.handleShowValue)
+              this.jumpButton?.addEventListener("click", this.handleJumpClick)
 
+              // A link to a value (`?value=`) opens the feed at it instead of the newest.
               requestAnimationFrame(() => {
-                this.scrollToLatest()
+                const focusValueId = this.el.dataset.focusValueId
+                const target = focusValueId && document.getElementById(`value-${focusValueId}`)
+
+                if (target) {
+                  this.showValue(target, "instant")
+                } else {
+                  this.scrollToLatest()
+                }
               })
 
-              this.handleEvent("scroll_values_to_latest", (data) => {
-                this.scrollToLatest()
+              // Others' values do not pull a feed scrolled up to earlier ones;
+              // the dot on the jump button tells of them instead.
+              this.handleEvent("scroll_values_to_latest", ({ force }) => {
+                if (force || (this.nearLatest && !this.hasNewer())) {
+                  this.scrollToLatest()
+                } else {
+                  this.newValuesDot?.removeAttribute("hidden")
+                }
+              })
+
+              // The server loaded the chat around a quoted value.
+              this.handleEvent("show_value", ({ id }) => {
+                const target = document.getElementById(`value-${id}`)
+                if (target) this.showValue(target, "instant")
               })
             },
 
             updated() {
+              // Values that came or went above the view (an earlier page, values
+              // dropped to keep the feed short, a reload) would move what is on
+              // screen; scrolling by as much keeps the value at the top in place.
+              // The feed sets `overflow-anchor: none`, so the browser never moves
+              // it first. The shift counts from the position noted with the
+              // anchor: values removed before others were added can clamp
+              // `scrollTop` in the middle of the patch.
+              const anchored = this.anchor && document.getElementById(this.anchor.id)
+
+              if (anchored) {
+                const shift = anchored.offsetTop - this.anchor.offset
+                if (shift !== 0) this.el.scrollTop = this.anchor.scrollTop + shift
+              }
+
+              this.anchor = this.findAnchor()
+
+              // Not on every update: a value just added below would turn off
+              // following the newest before `scroll_values_to_latest` comes.
+              if (this.hasNewer() !== this.hadNewer) {
+                this.hadNewer = this.hasNewer()
+                this.setNearLatest(this.distanceToBottom() <= NEAR_LATEST_PX && !this.hadNewer)
+              }
+
               requestAnimationFrame(() => {
                 this.loadingMoreValues = false
-
-                if (!this.pendingPrependAdjustment) {
-                  return
-                }
-
-                const { scrollTop, scrollHeight } = this.pendingPrependAdjustment
-                const heightDelta = this.el.scrollHeight - scrollHeight
-
-                this.el.scrollTop = scrollTop + heightDelta
-                this.pendingPrependAdjustment = null
+                this.loadingNewerValues = false
               })
             },
 
@@ -459,11 +561,79 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               clearTimeout(this.highlightTimer)
               this.el.removeEventListener("click", this.handleClick)
               this.el.removeEventListener("scroll", this.handleScroll)
-              this.el.removeEventListener("potok:scroll-to-value", this.handleScrollToValue)
+              this.el.removeEventListener("potok:show-value", this.handleShowValue)
+              this.jumpButton?.removeEventListener("click", this.handleJumpClick)
+            },
+
+            hasNewer() {
+              return this.el.dataset.hasNewer === "true"
+            },
+
+            distanceToBottom() {
+              return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
+            },
+
+            // The first value showing at the top of the feed, found by binary
+            // search, with its place in the scrolled content (the feed is the
+            // values' offset parent) and the scroll position at the time.
+            findAnchor() {
+              const items = this.el.querySelectorAll("#group-values-list > [id^='value-']")
+              const top = this.el.scrollTop
+              let low = 0
+              let high = items.length - 1
+              let anchor = null
+
+              while (low <= high) {
+                const mid = (low + high) >> 1
+                const item = items[mid]
+
+                if (item.offsetTop + item.offsetHeight > top) {
+                  anchor = item
+                  high = mid - 1
+                } else {
+                  low = mid + 1
+                }
+              }
+
+              return anchor && { id: anchor.id, offset: anchor.offsetTop, scrollTop: top }
             },
 
             scrollToLatest() {
               this.el.scrollTop = this.el.scrollHeight
+              this.setNearLatest(!this.hasNewer())
+            },
+
+            showValue(target, behavior) {
+              target.scrollIntoView({ block: "center", behavior })
+
+              clearTimeout(this.highlightTimer)
+              this.highlighted?.removeAttribute("data-highlighted")
+              target.setAttribute("data-highlighted", "true")
+              this.highlighted = target
+              this.highlightTimer = setTimeout(() => {
+                target.removeAttribute("data-highlighted")
+              }, 1600)
+            },
+
+            // Away from the newest values the jump button shows; back at them
+            // it hides and the dot goes out.
+            setNearLatest(near) {
+              if (near === this.nearLatest) {
+                return
+              }
+
+              this.nearLatest = near
+
+              if (!this.jumpButton) {
+                return
+              }
+
+              this.jumpButton.toggleAttribute("data-visible", !near)
+              this.jumpButton.inert = near
+
+              if (near) {
+                this.newValuesDot?.setAttribute("hidden", "")
+              }
             },
 
             loadMoreValues() {
@@ -477,12 +647,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               }
 
               this.loadingMoreValues = true
-              this.pendingPrependAdjustment = {
-                scrollTop: this.el.scrollTop,
-                scrollHeight: this.el.scrollHeight,
+              this.pushEvent("load_more_values", {})
+            },
+
+            loadNewerValues() {
+              if (this.loadingNewerValues || !this.el.querySelector("#group-values-load-newer")) {
+                return
               }
 
-              this.pushEvent("load_more_values", {})
+              this.loadingNewerValues = true
+              this.pushEvent("load_newer_values", {})
             },
           }
         </script>
