@@ -1516,10 +1516,34 @@ async function syncPushLocale() {
 
   if (response.ok) rememberPushLocale()
 }
+
+// The sub-groups tab hides thread sub-groups until the viewer shows them, and
+// keeps that choice in this browser. The server says when it changes.
+const SUB_GROUPS_THREADS_KEY = "potok:sub-groups-threads"
+
+function storedShowThreads() {
+  try {
+    return window.localStorage.getItem(SUB_GROUPS_THREADS_KEY) === "shown"
+  } catch (_error) {
+    return false
+  }
+}
+
+window.addEventListener("phx:sub_groups_threads", ({detail}) => {
+  try {
+    window.localStorage.setItem(SUB_GROUPS_THREADS_KEY, detail.shown ? "shown" : "hidden")
+  } catch (_error) {}
+})
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
-  // The calendar shows times in the viewer's zone.
-  params: {_csrf_token: csrfToken, time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone},
+  // Read on every join, so a page opened by live navigation gets the latest
+  // choices. The calendar shows times in the viewer's zone.
+  params: () => ({
+    _csrf_token: csrfToken,
+    time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    show_threads: storedShowThreads(),
+  }),
   hooks: {
     HeaderDrawer,
     DropdownMenu,

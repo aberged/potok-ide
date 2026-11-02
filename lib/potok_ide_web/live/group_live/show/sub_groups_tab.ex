@@ -17,7 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :direct_sub_groups_unread_count, :integer, required: true
   attr :other_sub_groups_unread_count, :integer, required: true
   attr :children_search_query, :string, default: ""
-  attr :show_thread_sub_groups, :boolean, default: true
+  attr :show_thread_sub_groups, :boolean, default: false
   attr :thread_sub_groups_count, :integer, default: 0
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
@@ -29,12 +29,9 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         :children_search_form,
         to_form(%{"q" => assigns.children_search_query}, as: :children_search)
       )
-      # The view is not a filter: the list holds the same sub-groups either way.
-      |> assign(
-        :filters_active?,
-        String.trim(assigns.children_search_query) != "" or
-          (not assigns.show_thread_sub_groups and assigns.thread_sub_groups_count > 0)
-      )
+      # Only a search narrows the list: hidden threads are the default and the
+      # view shows the same sub-groups either way.
+      |> assign(:filters_active?, String.trim(assigns.children_search_query) != "")
 
     ~H"""
     <div

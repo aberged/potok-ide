@@ -164,7 +164,7 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
     assert has_element?(lv, "#sub-group-folder-unread-#{ctx.grandchild.id}", "1")
   end
 
-  test "the threads switch hides threads anywhere, keeping open folders open", ctx do
+  test "the threads switch shows and hides threads anywhere, keeping open folders open", ctx do
     {:ok, value} = Social.create_value(ctx.profile, ctx.child, %{"content" => "thread start"})
 
     {:ok, thread} =
@@ -173,9 +173,15 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
     {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
 
     # The thread is below the child, which the switch counts before it opens.
-    assert has_element?(lv, "#group-children-threads-toggle")
+    # Threads start hidden.
+    assert has_element?(lv, "#group-children-threads-toggle[aria-pressed=false]")
     lv |> element("#sub-group-folder-toggle-#{ctx.child.id}") |> render_click()
+    refute has_element?(lv, "#sub-group-folder-#{thread.id}")
+
+    lv |> element("#group-children-threads-toggle") |> render_click()
+
     assert has_element?(lv, "#sub-group-folder-#{ctx.child.id} #sub-group-folder-#{thread.id}")
+    assert has_element?(lv, "#sub-group-folder-#{ctx.child.id}[aria-expanded=true]")
 
     lv |> element("#group-children-threads-toggle") |> render_click()
 

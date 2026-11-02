@@ -3610,10 +3610,10 @@ defmodule PotokIde.Social do
   @doc """
   A profile's unread values for every group that has some at or below it, in
   one query: `%{total: n, as_of: id, groups: %{group_id => %{subtree: n,
-  own: n, parent_id: id, direct?: bool, visible?: bool}}}`. `own` counts the
-  group's own values, `subtree` adds those of its sub-groups, `visible?` says
-  whether the profile can see the group (member, or a public group) and
-  `total` is the root group's count. `as_of` is the newest value id when the
+  own: n, parent_id: id, direct?: bool, visible?: bool, thread?: bool}}}`.
+  `own` counts the group's own values, `subtree` adds those of its
+  sub-groups, `visible?` says whether the profile can see the group (member,
+  or a public group) and `total` is the root group's count. `as_of` is the newest value id when the
   count was taken: `add_unread_value/3` skips values up to it.
 
   Values only count in groups the profile is a member of, so the query starts
@@ -3687,7 +3687,7 @@ defmodule PotokIde.Social do
   defp group_chain(profile_id, group_ids) do
     sql = """
     WITH RECURSIVE #{group_chain_cte("g.id = ANY($2::bigint[])")}
-    SELECT c.id, c.parent_id, c.is_direct, c.is_public OR gm.profile_id IS NOT NULL
+    SELECT c.id, c.parent_id, c.is_direct, c.is_public OR gm.profile_id IS NOT NULL, c.is_thread
     FROM chain c
     LEFT JOIN group_memberships gm
       ON gm.group_id = c.id AND gm.profile_id = $1
@@ -3696,8 +3696,8 @@ defmodule PotokIde.Social do
     %{rows: rows} =
       Repo.query!(sql, [profile_id, group_ids], cache_statement: "social_group_chain")
 
-    Map.new(rows, fn [group_id, parent_id, direct?, visible?] ->
-      {group_id, %{parent_id: parent_id, direct?: direct?, visible?: visible?}}
+    Map.new(rows, fn [group_id, parent_id, direct?, visible?, thread?] ->
+      {group_id, %{parent_id: parent_id, direct?: direct?, visible?: visible?, thread?: thread?}}
     end)
   end
 
@@ -3768,6 +3768,7 @@ defmodule PotokIde.Social do
               parent_id: node.parent_id,
               direct?: node.direct?,
               visible?: (node.public? or node.id == group_id or node.id in visible_ids) || nil,
+              thread?: node.thread?,
               subtree: 0,
               own: 0
             }
@@ -3787,6 +3788,46 @@ defmodule PotokIde.Social do
 
       _ ->
         []
+    end
+  end
+
+  @doc """
+  The `unread_overview/1` result as a page that hides thread sub-groups counts
+  it: a thread other than the page's group (`page_group_id`) and everything
+  below it add nothing to the counts above it, nor to its own. The page's
+  group counts as usual even when it is a thread itself. `own` and `total`
+  stay as they are.
+  """
+  def without_threads_below(%{groups: groups} = overview, page_group_id) do
+    subtree =
+      Enum.reduce(groups, %{}, fn {group_id, entry}, acc ->
+        if entry.own > 0,
+          do: credit_outside_threads(group_id, entry.own, groups, page_group_id, acc),
+          else: acc
+      end)
+
+    %{
+      overview
+      | groups:
+          Map.new(groups, fn {group_id, entry} ->
+            {group_id, %{entry | subtree: Map.get(subtree, group_id, 0)}}
+          end)
+    }
+  end
+
+  # Adds `count` to the group and its ancestors, stopping at the first thread
+  # that is not the page's group.
+  defp credit_outside_threads(group_id, count, groups, page_group_id, acc) do
+    case groups do
+      %{^group_id => %{thread?: true}} when group_id != page_group_id ->
+        acc
+
+      %{^group_id => %{parent_id: parent_id}} ->
+        acc = Map.update(acc, group_id, count, &(&1 + count))
+        credit_outside_threads(parent_id, count, groups, page_group_id, acc)
+
+      _ ->
+        acc
     end
   end
 

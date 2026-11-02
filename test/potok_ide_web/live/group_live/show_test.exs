@@ -2930,6 +2930,36 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       }
     end
 
+    test "hidden threads leave the sub-groups' unread counts", %{
+      conn: conn,
+      account: account,
+      member: member,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "in the thread"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/sub_groups")
+
+      refute has_element?(lv, "#group-sub-groups-unread-badge")
+
+      lv |> element("#group-children-threads-toggle") |> render_click()
+      assert has_element?(lv, "#group-sub-groups-unread-badge", "1")
+      assert has_element?(lv, "#group-unread-badge-#{thread.id}", "1")
+
+      # A new value in a hidden thread does not add to them either.
+      lv |> element("#group-children-threads-toggle") |> render_click()
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "more"})
+      refute has_element?(lv, "#group-sub-groups-unread-badge")
+
+      lv |> element("#group-children-threads-toggle") |> render_click()
+      assert has_element?(lv, "#group-sub-groups-unread-badge", "2")
+    end
+
     test "an inline reply quotes the replied-to value", %{lv: lv, group: group, value: value} do
       lv
       |> element("#value-reply-#{value.id}")
@@ -3032,7 +3062,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert to == ~p"/groups/#{thread.id}/values"
     end
 
-    test "the sub-groups list marks threads and can hide them", %{
+    test "the sub-groups list hides threads until shown, and marks them", %{
       conn: conn,
       account: account,
       profile: profile,
@@ -3047,14 +3077,6 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{group.id}/sub_groups")
 
-      assert has_element?(lv, "#child-group-#{thread.id} #group-thread-badge-#{thread.id}")
-      refute has_element?(lv, "#group-thread-badge-#{plain.id}")
-      assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='true']", "1")
-
-      lv
-      |> element("#group-children-threads-toggle")
-      |> render_click()
-
       assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='false']", "1")
       refute has_element?(lv, "#child-group-#{thread.id}")
       assert has_element?(lv, "#child-group-#{plain.id}")
@@ -3063,10 +3085,40 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> element("#group-children-threads-toggle")
       |> render_click()
 
+      # The browser keeps the choice for the next pages.
+      assert_push_event(lv, "sub_groups_threads", %{shown: true})
+      assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='true']", "1")
+      assert has_element?(lv, "#child-group-#{thread.id} #group-thread-badge-#{thread.id}")
+      refute has_element?(lv, "#group-thread-badge-#{plain.id}")
+
+      lv
+      |> element("#group-children-threads-toggle")
+      |> render_click()
+
+      assert_push_event(lv, "sub_groups_threads", %{shown: false})
+      refute has_element?(lv, "#child-group-#{thread.id}")
+    end
+
+    test "the browser's last choice shows threads from the start", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> put_connect_params(%{"show_threads" => true})
+        |> live(~p"/groups/#{group.id}/sub_groups")
+
+      assert has_element?(lv, "#group-children-threads-toggle[aria-pressed='true']")
       assert has_element?(lv, "#child-group-#{thread.id}")
     end
 
-    test "hiding the only sub-groups explains the empty list", %{
+    test "hidden threads as the only sub-groups explain the empty list", %{
       conn: conn,
       account: account,
       profile: profile,
@@ -3080,13 +3132,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       refute has_element?(lv, "#group-children-threads-toggle")
 
-      {:ok, _thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
+      {:ok, thread} = Social.get_or_create_value_thread(profile, group, value, %{"name" => "t"})
       assert has_element?(lv, "#group-children-threads-toggle")
-
-      lv
-      |> element("#group-children-threads-toggle")
-      |> render_click()
-
+      refute has_element?(lv, "#child-group-#{thread.id}")
       assert has_element?(lv, "#group-children-empty", "hidden")
     end
 
@@ -3126,9 +3174,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       lv |> element("#group-children-search-reset") |> render_click()
       refute has_element?(lv, "#group-children-filters-active")
 
-      # Hidden threads filter the list too; the view does not.
+      # Hidden threads are the default, so neither state counts as a filter.
       lv |> element("#group-children-threads-toggle") |> render_click()
-      assert has_element?(lv, "#group-children-filters-active")
+      refute has_element?(lv, "#group-children-filters-active")
     end
 
     test "a thread's header carries the thread mark", %{

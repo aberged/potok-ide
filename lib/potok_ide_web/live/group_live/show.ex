@@ -689,7 +689,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:direct_sub_groups_unread_count, 0)
        |> assign(:other_sub_groups_unread_count, 0)
        |> assign(:children_search_query, "")
-       |> assign(:show_thread_sub_groups, true)
+       |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
        |> assign(:thread_sub_groups_count, 0)
        |> assign(:sub_groups_kind, sub_groups_kind)
        |> assign(
@@ -1171,12 +1171,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
      |> reload_children()}
   end
 
+  # The browser keeps the choice for the next pages (`show_threads` in app.js).
   def handle_event("toggle_thread_sub_groups", _params, socket) do
+    show? = not socket.assigns.show_thread_sub_groups
+
     {:noreply,
      socket
-     |> update(:show_thread_sub_groups, &(not &1))
+     |> assign(:show_thread_sub_groups, show?)
      |> assign(:children_pagination, default_pagination(@children_page_size))
-     |> reload_children()}
+     |> reload_children()
+     |> push_event("sub_groups_threads", %{shown: show?})}
   end
 
   def handle_event("switch_sub_groups_kind", %{"kind" => kind}, socket) do
@@ -2323,7 +2327,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       if unloaded? do
         refresh_children_order(socket, overview)
       else
-        children = Social.sort_child_groups(Map.values(loaded), overview)
+        children = Social.sort_child_groups(Map.values(loaded), page_overview(socket, overview))
         stream_moved_children(socket, children, moved)
       end
     else
@@ -2390,6 +2394,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # it changed; otherwise just the rows whose count changed are re-sent.
   defp refresh_children_order(socket, overview) do
     %{group: group, active_tab: active_tab, loaded_children: loaded_children} = socket.assigns
+    overview = page_overview(socket, overview)
 
     if needs_children?(group, active_tab) and socket.assigns.sub_groups_view != "tree" do
       ids =
@@ -3185,6 +3190,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     )
   end
 
+  # Threads start hidden; the browser sends the viewer's last choice (app.js).
+  defp connect_show_threads?(socket),
+    do: connected?(socket) and (get_connect_params(socket) || %{})["show_threads"] == true
+
   # Hidden threads are filtered out; shown ones mix with the other sub-groups.
   defp children_filters(socket) do
     [
@@ -3457,7 +3466,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {entries, total_count} =
           list_children_page(socket,
             limit: reload_limit(pagination),
-            unread_overview: unread_overview
+            unread_overview: page_overview(socket, unread_overview)
           )
 
         entries = Tags.put_tags(entries, socket.assigns.current_profile, :group)
@@ -3842,8 +3851,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp unread_counts_for(socket, groups) do
-    Social.unread_counts_for(current_unread_overview(socket), Enum.map(groups, & &1.id))
+    socket
+    |> page_overview(current_unread_overview(socket))
+    |> Social.unread_counts_for(Enum.map(groups, & &1.id))
   end
+
+  # With thread sub-groups hidden, their values leave the sub-groups' counts
+  # and order too, as the list leaves the threads out. The nav total keeps them.
+  defp page_overview(_socket, nil), do: nil
+  defp page_overview(%{assigns: %{show_thread_sub_groups: true}}, overview), do: overview
+
+  defp page_overview(socket, overview),
+    do: Social.without_threads_below(overview, socket.assigns.group.id)
 
   # The overview the page keeps up to date; only a page that has not loaded
   # its panel yet counts.
@@ -3852,6 +3871,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket, overview) do
+    overview = page_overview(socket, overview)
+
     tree_ids =
       case Map.get(socket.assigns, :sub_group_tree) do
         %{ids: ids} -> ids

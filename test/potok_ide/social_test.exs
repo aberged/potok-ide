@@ -2075,6 +2075,41 @@ defmodule PotokIde.SocialTest do
       assert %{own: 0, subtree: 1} = Social.unread_overview(owner_profile).groups[child_group.id]
     end
 
+    test "without_threads_below/2 leaves hidden threads out of the counts above them" do
+      [owner_profile, writer_profile] = unread_profiles(["nothread-owner", "nothread-writer"])
+      parent = unread_group!(owner_profile, Social.get_root_group!(), "nothread-parent")
+      child = unread_group!(owner_profile, parent, "nothread-child")
+
+      for group <- [parent, child] do
+        {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+        {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      end
+
+      {:ok, start} = Social.create_value(writer_profile, parent, %{"content" => "start"})
+
+      {:ok, thread} =
+        Social.get_or_create_value_thread(writer_profile, parent, start, %{"name" => "talk"})
+
+      {:ok, _value} = Social.create_value(writer_profile, thread, %{"content" => "in thread"})
+      {:ok, _value} = Social.create_value(writer_profile, thread, %{"content" => "again"})
+      {:ok, _value} = Social.create_value(writer_profile, child, %{"content" => "in child"})
+
+      overview = Social.unread_overview(owner_profile)
+      assert %{thread?: true, subtree: 2} = overview.groups[thread.id]
+      assert %{thread?: false, own: 1, subtree: 4} = overview.groups[parent.id]
+
+      hidden = Social.without_threads_below(overview, parent.id)
+
+      assert hidden.total == overview.total
+      assert %{own: 1, subtree: 2} = hidden.groups[parent.id]
+      assert hidden.groups[child.id].subtree == 1
+      assert %{own: 2, subtree: 0} = hidden.groups[thread.id]
+      assert Social.child_unread_summary(hidden, parent.id) == %{direct: 0, other: 1}
+
+      # A thread's own page counts its values.
+      assert Social.without_threads_below(overview, thread.id).groups[thread.id].subtree == 2
+    end
+
     test "a new value reaches the other members as one more unread value, counted without a query" do
       [owner_profile, writer_profile] = unread_profiles(["delta-owner", "delta-writer"])
       root_group = Social.get_root_group!()
@@ -2248,7 +2283,7 @@ defmodule PotokIde.SocialTest do
   end
 
   defp unread_entry({group_id, entry}),
-    do: {group_id, Map.take(entry, [:own, :subtree, :parent_id, :direct?])}
+    do: {group_id, Map.take(entry, [:own, :subtree, :parent_id, :direct?, :thread?])}
 
   # Subscribes another process to the profile's topic, as another page of the
   # profile would be, and forwards what it gets to the test: a broadcast from
