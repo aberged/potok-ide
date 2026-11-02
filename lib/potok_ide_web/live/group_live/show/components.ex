@@ -645,6 +645,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               else: "🔐"}
           </div>
 
+          <div
+            :if={@group.uses_api && !@group.is_direct && !@group.is_root}
+            id={"group-app-badge-#{@group.id}"}
+            title={gettext("App")}
+            class="absolute bottom-0 right-0 -mr-1 -mb-1 text-[0.8rem]"
+          >
+            🧩
+          </div>
+
           <span
             :if={!@group.is_root and @pending_join_requests_count > 0}
             id={"group-pending-join-requests-badge-#{@group.id}"}

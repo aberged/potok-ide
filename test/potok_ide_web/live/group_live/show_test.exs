@@ -1282,6 +1282,49 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-pending-join-requests-badge-#{public_child_group.id}", "1")
     end
 
+    test "sub-groups list marks app groups next to the avatar", %{conn: conn} do
+      owner_account = account_fixture()
+
+      {:ok, owner_profile} =
+        Social.create_profile_for_account(owner_account, %{
+          username: "appbadge-own",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      owner_account = Accounts.get_account!(owner_account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, app_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "subgroup-app-badge-app",
+          "description" => "",
+          "description_format" => :html,
+          "is_public" => true,
+          "has_public_chat" => false,
+          "uses_api" => true
+        })
+
+      {:ok, plain_group} =
+        Social.create_group(owner_profile, root_group, %{
+          "name" => "subgroup-app-badge-plain",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true,
+          "has_public_chat" => false
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{root_group.id}")
+
+      assert has_element?(lv, "#group-app-badge-#{app_group.id}")
+      refute has_element?(lv, "#group-app-badge-#{plain_group.id}")
+    end
+
     test "renders group pictures in header and sub-group list", %{conn: conn} do
       account = account_fixture()
 
