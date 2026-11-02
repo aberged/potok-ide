@@ -512,6 +512,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <EditGroupTab.panel
             :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
+            inherits_members_option={@inherits_members_option?}
             can_delete_group={@access.admin?}
             description_details_open={@description_details_open}
             format_options={@format_options}
@@ -633,6 +634,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:new_value_form, empty_new_value_form())
        |> assign(:new_group_form, empty_new_group_form())
        |> assign(:edit_group_form, edit_group_form(group, active_tab))
+       |> assign(
+         :inherits_members_option?,
+         active_tab == "edit_group" and Social.inherits_members_option?(group)
+       )
        |> assign(:description_details_open, true)
        |> assign(:invite_form, empty_invite_form())
        |> assign(:invite_form_version, 0)
@@ -1137,7 +1142,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
              |> put_flash(:info, gettext("Member removed."))
              |> refresh_group_data()}
 
-          {:error, reason} when reason in [:not_permitted, :last_admin, :direct_group] ->
+          {:error, reason}
+          when reason in [:not_permitted, :last_admin, :direct_group, :inherited_member] ->
             {:noreply, put_flash(socket, :error, access_error_message(reason))}
 
           {:error, :not_a_group_member} ->
@@ -2669,7 +2675,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if socket.assigns.active_tab == "edit_group" do
       socket
     else
-      assign(socket, :edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
+      group = socket.assigns.group
+
+      socket
+      |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+      |> assign(:inherits_members_option?, Social.inherits_members_option?(group))
     end
   end
 
@@ -3277,12 +3287,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp load_more_files(socket), do: socket
 
-  # Members are streamed with their role keys in the group.
+  # Members are streamed with their role keys in the group and what they
+  # hold through the parent, which the group itself cannot take away.
   defp member_entries(profiles, group) do
-    keys_by_profile = Access.role_keys_by_profile(group, Enum.map(profiles, & &1.id))
+    profile_ids = Enum.map(profiles, & &1.id)
+    keys_by_profile = Access.role_keys_by_profile(group, profile_ids)
+    inherited = Access.inherited_by_profile(group, profile_ids)
 
     Enum.map(profiles, fn profile ->
-      %{id: profile.id, profile: profile, role_keys: Map.get(keys_by_profile, profile.id, [])}
+      %{
+        id: profile.id,
+        profile: profile,
+        role_keys: Map.get(keys_by_profile, profile.id, []),
+        inherited?: Map.has_key?(inherited, profile.id),
+        inherited_role_keys: Map.get(inherited, profile.id, [])
+      }
     end)
   end
 
@@ -3381,6 +3400,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     do: gettext("The admin and everyone roles cannot be renamed or deleted.")
 
   defp access_error_message(:role_not_found), do: gettext("Role not found.")
+
+  defp access_error_message(:inherited_member),
+    do: gettext("This member comes from the parent group. Remove them there.")
+
+  defp access_error_message(:inherited_role),
+    do: gettext("This role comes from the parent group. Change it there.")
 
   defp access_error_message(:not_a_group_member),
     do: gettext("That profile is not a group member.")

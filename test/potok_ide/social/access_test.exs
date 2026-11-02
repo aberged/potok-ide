@@ -247,7 +247,7 @@ defmodule PotokIde.Social.AccessTest do
       assert Access.role_keys_by_profile(child, [member.id]) == %{}
     end
 
-    test "a thread copies the members' roles and its opener becomes an admin" do
+    test "a thread inherits the members' roles and its opener becomes an admin" do
       owner = profile!("thr-owner")
       member = profile!("thr-member")
       late = profile!("thr-late")

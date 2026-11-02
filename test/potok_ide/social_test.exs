@@ -2950,16 +2950,17 @@ defmodule PotokIde.SocialTest do
       assert member_ids == Enum.sort([owner.id, member.id])
     end
 
-    test "returns the same thread on later calls and adds members who joined since", %{
-      owner: owner,
-      group: group,
-      value: value
-    } do
+    test "returns the same thread on later calls, which already holds members who joined since",
+         %{
+           owner: owner,
+           group: group,
+           value: value
+         } do
       {:ok, thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
 
       latecomer = reply_profile!("thread-late")
       add_member!(owner, group, latecomer)
-      refute Social.member_of_group?(latecomer, thread)
+      assert Social.member_of_group?(latecomer, thread)
 
       assert {:ok, same_thread} =
                Social.get_or_create_value_thread(latecomer, group, value, %{"name" => "other"})

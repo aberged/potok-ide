@@ -65,6 +65,19 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
             label={gettext("Uses API")}
             type="checkbox"
           />
+          <%!-- The root's children never inherit: they would hold every profile. --%>
+          <div :if={!@group.is_root} id="group-create-inherits-members">
+            <.input
+              field={@new_group_form[:inherits_members]}
+              label={gettext("Inherit members")}
+              type="checkbox"
+            />
+            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+              {gettext(
+                "Every member of this group is also a member of the sub-group, with the same roles."
+              )}
+            </p>
+          </div>
           <.input
             :if={false}
             field={@new_group_form[:parent_value_id]}

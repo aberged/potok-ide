@@ -275,6 +275,27 @@ defmodule PotokIde.Social.Access do
     |> Enum.group_by(fn {profile_id, _key} -> profile_id end, fn {_id, key} -> key end)
   end
 
+  @doc """
+  What members of an inheriting group hold through its parent, as
+  `%{profile_id => [role_key]}` for those of `profile_ids` who are members of
+  the parent. The group itself can neither remove them nor take those roles.
+  Empty for a group that does not inherit.
+  """
+  def inherited_by_profile(%Group{inherits_members: true, parent_id: parent_id}, profile_ids)
+      when is_integer(parent_id) and is_list(profile_ids) do
+    from(gm in GroupMembership,
+      left_join: r in GroupMemberRole,
+      on: r.group_id == gm.group_id and r.profile_id == gm.profile_id,
+      where: gm.group_id == ^parent_id and gm.profile_id in ^profile_ids,
+      select: {gm.profile_id, r.role_key}
+    )
+    |> Repo.all()
+    |> Enum.group_by(fn {profile_id, _key} -> profile_id end, fn {_id, key} -> key end)
+    |> Map.new(fn {profile_id, keys} -> {profile_id, Enum.reject(keys, &is_nil/1)} end)
+  end
+
+  def inherited_by_profile(%Group{}, profile_ids) when is_list(profile_ids), do: %{}
+
   @doc "How many members of the group hold each assigned role: `%{key => count}`."
   def role_member_counts(%Group{id: group_id}) do
     from(r in GroupMemberRole,

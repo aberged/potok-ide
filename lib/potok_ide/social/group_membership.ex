@@ -7,6 +7,8 @@ defmodule PotokIde.Social.GroupMembership do
   schema "group_memberships" do
     belongs_to :group, PotokIde.Social.Group
     belongs_to :profile, PotokIde.Social.Profile
+    # Held only through the parent group (see `Social.MemberInheritance`).
+    field :inherited, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end

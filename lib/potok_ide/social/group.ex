@@ -23,6 +23,9 @@ defmodule PotokIde.Social.Group do
     field :is_root, :boolean, default: false
     field :is_root_public, :boolean, default: false
     field :uses_api, :boolean, default: false
+    # Holds every member of the parent (see `Social.MemberInheritance`).
+    # Threads always do; `Social` keeps it off for the root's children.
+    field :inherits_members, :boolean, default: false
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
 
@@ -60,6 +63,7 @@ defmodule PotokIde.Social.Group do
       :is_root,
       :is_root_public,
       :uses_api,
+      :inherits_members,
       :creator_id,
       :parent_id,
       :parent_value_id
@@ -77,6 +81,7 @@ defmodule PotokIde.Social.Group do
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
+    |> maybe_force_inherits_members_for_thread()
     |> add_check_constraints()
     |> unique_constraint(:parent_value_id)
     |> validate_creation_constraints()
@@ -95,7 +100,8 @@ defmodule PotokIde.Social.Group do
       :has_public_chat,
       :is_public,
       :is_root_public,
-      :uses_api
+      :uses_api,
+      :inherits_members
     ])
     |> update_change(:description_name, &trim/1)
     |> validate_required([
@@ -111,6 +117,7 @@ defmodule PotokIde.Social.Group do
     |> validate_length(:group_picture_url, max: @max_group_picture_url_length)
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
+    |> maybe_force_inherits_members_for_thread()
     |> add_check_constraints()
     |> foreign_key_constraint(:home_alt_description_id)
   end
@@ -134,6 +141,15 @@ defmodule PotokIde.Social.Group do
     end
   end
 
+  # A thread holds the members of the group its value was posted in.
+  defp maybe_force_inherits_members_for_thread(changeset) do
+    if get_field(changeset, :parent_value_id) do
+      put_change(changeset, :inherits_members, true)
+    else
+      changeset
+    end
+  end
+
   defp add_check_constraints(changeset) do
     changeset
     |> check_constraint(:description_format, name: :groups_description_format_check)
@@ -141,6 +157,8 @@ defmodule PotokIde.Social.Group do
     |> check_constraint(:is_public, name: :groups_root_private_check)
     |> check_constraint(:parent_id, name: :groups_root_parent_check)
     |> check_constraint(:creator_id, name: :groups_root_creator_check)
+    |> check_constraint(:inherits_members, name: :groups_inherits_members_check)
+    |> check_constraint(:inherits_members, name: :groups_thread_inherits_members_check)
   end
 
   defp validate_creation_constraints(changeset) do

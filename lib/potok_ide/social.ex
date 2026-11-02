@@ -32,6 +32,7 @@ defmodule PotokIde.Social do
     GroupMembership,
     GroupRole,
     GroupValueRead,
+    MemberInheritance,
     Mentions,
     Profile,
     ProfileInvitation,
@@ -405,9 +406,16 @@ defmodule PotokIde.Social do
     end
   end
 
+  # The creator is a direct member and admin; an inheriting group then gets
+  # the parent's members.
   defp insert_group_with_creator(%Profile{} = creator, %Group{} = parent, attrs) do
+    changeset =
+      %Group{}
+      |> Group.changeset(attrs)
+      |> validate_inheritance_parent(parent.id)
+
     Multi.new()
-    |> Multi.insert(:group, Group.changeset(%Group{}, attrs))
+    |> Multi.insert(:group, changeset)
     |> Multi.insert(:membership, fn %{group: group} ->
       GroupMembership.changeset(%GroupMembership{}, %{
         group_id: group.id,
@@ -415,10 +423,14 @@ defmodule PotokIde.Social do
       })
     end)
     |> insert_admin_role(creator)
+    |> Multi.run(:inheritance, fn repo, %{group: group} ->
+      {:ok, MemberInheritance.sync(repo, group.id)}
+    end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{group: group}} ->
+      {:ok, %{group: group, inheritance: changes}} ->
         broadcast_group_updated(parent)
+        broadcast_inheritance_changes(changes)
         {:ok, group}
 
       {:error, _step, reason, _changes} ->
@@ -482,25 +494,75 @@ defmodule PotokIde.Social do
     if not Access.can?(editor, group, :edit_group) do
       {:error, :not_permitted}
     else
-      group
-      |> Group.update_changeset(Map.new(attrs))
-      |> validate_home_alt_description(group)
-      |> Repo.update()
+      changeset =
+        group
+        |> Group.update_changeset(Map.new(attrs))
+        |> validate_home_alt_description(group)
+        |> validate_inheritance_parent(group.parent_id)
+
+      Multi.new()
+      |> Multi.update(:group, changeset)
+      |> Multi.run(:inheritance, fn repo, %{group: updated_group} ->
+        {:ok, switch_inheritance(repo, group, updated_group)}
+      end)
+      |> Repo.transaction()
       |> case do
-        {:ok, updated_group} ->
+        {:ok, %{group: updated_group, inheritance: changes}} ->
           broadcast_group_updated(updated_group)
 
           if updated_group.parent_id do
             broadcast_group_updated(updated_group.parent_id)
           end
 
+          broadcast_inheritance_changes(changes)
           {:ok, updated_group}
 
-        {:error, reason} ->
+        {:error, _step, reason, _changes} ->
           {:error, reason}
       end
     end
   end
+
+  # Starting to inherit brings in the parent's members; stopping keeps them
+  # all, as direct members.
+  defp switch_inheritance(
+         repo,
+         %Group{inherits_members: false},
+         %Group{inherits_members: true} = group
+       ),
+       do: MemberInheritance.sync(repo, group.id)
+
+  defp switch_inheritance(
+         repo,
+         %Group{inherits_members: true},
+         %Group{inherits_members: false} = group
+       ) do
+    :ok = MemberInheritance.release(repo, group.id)
+    []
+  end
+
+  defp switch_inheritance(_repo, _group, _updated_group), do: []
+
+  @doc """
+  Whether the group can be set to inherit members: not the root, a direct
+  group or one of the root's children, which would hold every profile.
+  """
+  def inherits_members_option?(%Group{is_root: true}), do: false
+  def inherits_members_option?(%Group{is_direct: true}), do: false
+  def inherits_members_option?(%Group{parent_id: parent_id}), do: not root_group_id?(parent_id)
+
+  defp validate_inheritance_parent(changeset, parent_id) do
+    Ecto.Changeset.validate_change(changeset, :inherits_members, fn _field, inherits? ->
+      if inherits? and root_group_id?(parent_id),
+        do: [inherits_members: "is not available for groups in the root group"],
+        else: []
+    end)
+  end
+
+  defp root_group_id?(group_id) when is_integer(group_id),
+    do: Repo.exists?(from(g in Group, where: g.id == ^group_id and g.is_root))
+
+  defp root_group_id?(nil), do: false
 
   @doc """
   Updates only the description of a group. Sub-group lists never show the
@@ -962,15 +1024,19 @@ defmodule PotokIde.Social do
           where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
         )
       )
+      |> Multi.run(:inheritance, fn repo, %{invitation: inv} ->
+        {:ok, MemberInheritance.sync(repo, inv.group_id, [inv.invitee_id])}
+      end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{invitation: inv}} ->
+        {:ok, %{invitation: inv, inheritance: changes}} ->
           broadcast_profile_invitations_updated(invitee)
           broadcast_profile_group_join_requests_updated(invitee)
           broadcast_profile_invitations_updated(invitation.inviter)
           broadcast_group_join_request_updates_for_group(invitation.group)
           broadcast_group_updated(inv.group_id)
           broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
+          broadcast_inheritance_changes(changes)
           notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
           {:ok, inv}
 
@@ -1029,6 +1095,10 @@ defmodule PotokIde.Social do
       not member_access.member? ->
         {:error, :not_a_group_member}
 
+      # Members held through the parent are removed there.
+      Map.has_key?(Access.inherited_by_profile(group, [member.id]), member.id) ->
+        {:error, :inherited_member}
+
       # Only admins remove admins, and a group never loses its last admin.
       member_access.admin? and not actor_access.admin? ->
         {:error, :not_permitted}
@@ -1051,12 +1121,16 @@ defmodule PotokIde.Social do
             where: gvr.group_id == ^group.id and gvr.profile_id == ^member.id
           )
         )
+        |> Multi.run(:inheritance, fn repo, _changes ->
+          {:ok, MemberInheritance.sync(repo, group.id, [member.id])}
+        end)
         |> Repo.transaction()
         |> case do
-          {:ok, _changes} ->
+          {:ok, %{inheritance: changes}} ->
             broadcast_group_updated(group)
             broadcast_group_unread_counts_updated(group)
             broadcast_profile_group_unread_counts_updated(member, group.id)
+            broadcast_inheritance_changes(changes)
             {:ok, member}
 
           {:error, _step, reason, _changes} ->
@@ -1358,15 +1432,19 @@ defmodule PotokIde.Social do
           approved_at: DateTime.utc_now(:second)
         })
       end)
+      |> Multi.run(:inheritance, fn repo, _changes ->
+        {:ok, MemberInheritance.sync(repo, group.id, [request.requester_id])}
+      end)
       |> Repo.transaction()
       |> case do
-        {:ok, _changes} ->
+        {:ok, %{inheritance: changes}} ->
           requester = Repo.get!(Profile, request.requester_id)
           broadcast_group_updated(group)
           broadcast_profile_invitations_updated(requester)
           broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
           broadcast_profile_group_unread_counts_updated(requester, group.id)
+          broadcast_inheritance_changes(changes)
           {:ok, requester}
 
         {:error, :membership, reason, _changes} ->
@@ -1782,10 +1860,9 @@ defmodule PotokIde.Social do
   @doc """
   Opens the thread of chat `value`: the sub-group of the value's group that
   points at it through `parent_value_id`. The first call creates it as a
-  chat-first group with every member of `group`, named by `attrs["name"]`;
-  later calls return it and add the profile when it joined `group` after the
-  thread was created. Viewers of `group` are sent the value again so its
-  thread link appears.
+  chat-first group named by `attrs["name"]` that inherits the members of
+  `group`; later calls return it. Viewers of `group` are sent the value again
+  so its thread link appears.
   """
   def get_or_create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
     cond do
@@ -1799,7 +1876,7 @@ defmodule PotokIde.Social do
         {:error, :not_a_member_of_group}
 
       thread = get_value_thread(value) ->
-        join_value_thread(profile, thread)
+        {:ok, thread}
 
       not Access.can?(profile, group, :open_threads) ->
         {:error, :not_permitted}
@@ -1813,48 +1890,9 @@ defmodule PotokIde.Social do
     Repo.one(from(g in Group, where: g.parent_value_id == ^value_id))
   end
 
-  # A profile that joins a thread late brings along its roles from the parent
-  # group, like the members copied when the thread was opened.
-  defp join_value_thread(%Profile{} = profile, %Group{} = thread) do
-    now = DateTime.utc_now(:second)
-
-    Repo.transaction(fn ->
-      {inserted, _} =
-        Repo.insert_all(
-          GroupMembership,
-          [%{group_id: thread.id, profile_id: profile.id, inserted_at: now, updated_at: now}],
-          on_conflict: :nothing
-        )
-
-      if inserted == 1 do
-        Repo.insert_all(
-          GroupMemberRole,
-          parent_member_roles_query(thread.parent_id, thread.id, now)
-          |> where([r], r.profile_id == ^profile.id),
-          on_conflict: :nothing
-        )
-      end
-
-      thread
-    end)
-  end
-
-  defp parent_member_roles_query(parent_id, thread_id, now) do
-    from(r in GroupMemberRole,
-      where: r.group_id == ^parent_id,
-      select: %{
-        group_id: type(^thread_id, :id),
-        profile_id: r.profile_id,
-        role_key: r.role_key,
-        inserted_at: type(^now, :utc_datetime),
-        updated_at: type(^now, :utc_datetime)
-      }
-    )
-  end
-
+  # The thread inherits the members of `group`, so the profile opening it
+  # later is already one of them.
   defp create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
-    now = DateTime.utc_now(:second)
-
     group_attrs = %{
       "name" => Map.get(Map.new(attrs), "name"),
       "description" => "",
@@ -1863,47 +1901,25 @@ defmodule PotokIde.Social do
       "is_public" => group.is_public,
       "is_direct" => false,
       "is_root" => false,
+      "inherits_members" => true,
       "creator_id" => profile.id,
       "parent_id" => group.id,
       "parent_value_id" => value.id
     }
 
-    Multi.new()
-    |> Multi.insert(:group, Group.changeset(%Group{}, group_attrs))
-    |> Multi.insert_all(:memberships, GroupMembership, fn %{group: thread} ->
-      from(gm in GroupMembership,
-        where: gm.group_id == ^group.id,
-        select: %{
-          group_id: type(^thread.id, :id),
-          profile_id: gm.profile_id,
-          inserted_at: type(^now, :utc_datetime),
-          updated_at: type(^now, :utc_datetime)
-        }
-      )
-    end)
-    |> Multi.insert_all(:member_roles, GroupMemberRole, fn %{group: thread} ->
-      parent_member_roles_query(group.id, thread.id, now)
-    end)
-    |> Multi.insert(
-      :admin_role,
-      fn %{group: thread} -> admin_member_role(thread.id, profile.id) end,
-      on_conflict: :nothing
-    )
-    |> Repo.transaction()
-    |> case do
-      {:ok, %{group: thread}} ->
-        broadcast_group_updated(group)
+    case insert_group_with_creator(profile, group, group_attrs) do
+      {:ok, thread} ->
         broadcast_values_updated([value.id])
         {:ok, thread}
 
-      {:error, :group, %Ecto.Changeset{} = changeset, _changes} ->
+      {:error, %Ecto.Changeset{} = changeset} ->
         # Someone else opened the thread first: the unique index kept theirs.
         case {Keyword.has_key?(changeset.errors, :parent_value_id), get_value_thread(value)} do
-          {true, %Group{} = thread} -> join_value_thread(profile, thread)
+          {true, %Group{} = thread} -> {:ok, thread}
           _ -> {:error, changeset}
         end
 
-      {:error, _step, reason, _changes} ->
+      {:error, reason} ->
         {:error, reason}
     end
   end
@@ -2247,15 +2263,24 @@ defmodule PotokIde.Social do
   def assign_group_member_role(%Profile{} = actor, %Group{} = group, profile_id, role_key)
       when is_integer(profile_id) and is_binary(role_key) do
     with {:ok, _access} <- ensure_role_assignable(actor, group, profile_id, role_key) do
-      %GroupMemberRole{group_id: group.id, profile_id: profile_id, role_key: role_key}
-      |> Repo.insert(on_conflict: :nothing)
+      Multi.new()
+      |> Multi.insert(
+        :member_role,
+        %GroupMemberRole{group_id: group.id, profile_id: profile_id, role_key: role_key},
+        on_conflict: :nothing
+      )
+      |> Multi.run(:inheritance, fn repo, _changes ->
+        {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
+      end)
+      |> Repo.transaction()
       |> case do
-        {:ok, member_role} ->
+        {:ok, %{member_role: member_role, inheritance: changes}} ->
           broadcast_group_roles_updated([group.id])
+          broadcast_inheritance_changes(changes)
           {:ok, member_role}
 
-        error ->
-          error
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
       end
     end
   end
@@ -2266,18 +2291,40 @@ defmodule PotokIde.Social do
       member_access =
         Access.for_profile(%Profile{id: profile_id}, group, manifest: access.manifest)
 
-      if role_key == GroupRole.admin_key() and member_access.admin? and
-           Access.count_admins(group) <= 1 do
-        {:error, :last_admin}
-      else
-        from(r in GroupMemberRole,
-          where:
-            r.group_id == ^group.id and r.profile_id == ^profile_id and r.role_key == ^role_key
-        )
-        |> Repo.delete_all()
+      inherited_keys = Map.get(Access.inherited_by_profile(group, [profile_id]), profile_id, [])
 
-        broadcast_group_roles_updated([group.id])
-        :ok
+      cond do
+        # Roles held through the parent are taken there.
+        role_key in inherited_keys ->
+          {:error, :inherited_role}
+
+        role_key == GroupRole.admin_key() and member_access.admin? and
+            Access.count_admins(group) <= 1 ->
+          {:error, :last_admin}
+
+        true ->
+          Multi.new()
+          |> Multi.delete_all(
+            :member_role,
+            from(r in GroupMemberRole,
+              where:
+                r.group_id == ^group.id and r.profile_id == ^profile_id and
+                  r.role_key == ^role_key
+            )
+          )
+          |> Multi.run(:inheritance, fn repo, _changes ->
+            {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
+          end)
+          |> Repo.transaction()
+          |> case do
+            {:ok, %{inheritance: changes}} ->
+              broadcast_group_roles_updated([group.id])
+              broadcast_inheritance_changes(changes)
+              :ok
+
+            {:error, _step, reason, _changes} ->
+              {:error, reason}
+          end
       end
     end
   end
@@ -4862,6 +4909,24 @@ defmodule PotokIde.Social do
         {:group_roles_updated, group_id}
       )
     end)
+  end
+
+  # The groups `MemberInheritance.sync/3` changed: their pages reload, and
+  # the profiles who came or went recount their unread values.
+  defp broadcast_inheritance_changes(changes) do
+    Enum.each(changes, fn %{group_id: group_id, added: added, removed: removed} ->
+      broadcast_group_updated(group_id)
+
+      Enum.each(
+        added ++ removed,
+        &broadcast_profile_group_unread_counts_updated(%Profile{id: &1}, group_id)
+      )
+    end)
+
+    case for(%{roles_changed?: true, group_id: group_id} <- changes, do: group_id) do
+      [] -> :ok
+      group_ids -> broadcast_group_roles_updated(group_ids)
+    end
   end
 
   defp broadcast_group_updated(%Group{id: group_id}), do: broadcast_group_updated(group_id)

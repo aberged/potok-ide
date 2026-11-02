@@ -122,7 +122,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </li>
 
           <li
-            :for={{dom_id, %{profile: member, role_keys: role_keys}} <- @members}
+            :for={
+              {dom_id,
+               %{
+                 profile: member,
+                 role_keys: role_keys,
+                 inherited?: inherited?,
+                 inherited_role_keys: inherited_role_keys
+               }} <- @members
+            }
             id={dom_id}
             class="rounded-2xl border border-base-300/60 bg-base-100/70 px-2 py-1 shadow-sm"
           >
@@ -136,6 +144,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   current_profile={@current_profile}
                   direct_group_link={true}
                 />
+                <span
+                  :if={inherited?}
+                  id={"member-#{member.id}-inherited"}
+                  title={gettext("Member of the parent group")}
+                  class="inline-flex h-6 items-center gap-1 rounded-full bg-base-200 px-2 text-[11px] font-semibold text-base-content/60"
+                >
+                  <.icon name="hero-arrow-turn-down-right" class="size-3" />
+                  {gettext("Inherited")}
+                </span>
                 <div
                   :if={!@group.is_direct and member_roles(@assignable_roles, role_keys) != []}
                   id={"member-#{member.id}-roles"}
@@ -172,7 +189,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               <button
                 :if={
                   @can_remove? && member.id != @current_profile.id && !@group.is_direct &&
-                    (@access.admin? or GroupRole.admin_key() not in role_keys)
+                    !inherited? && (@access.admin? or GroupRole.admin_key() not in role_keys)
                 }
                 id={"group-remove-member-#{member.id}"}
                 type="button"
@@ -201,17 +218,17 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 phx-value-profile-id={member.id}
                 phx-value-key={role.key}
                 aria-pressed={to_string(role.key in role_keys)}
+                disabled={role.key in inherited_role_keys}
+                title={
+                  if(role.key in inherited_role_keys, do: gettext("Inherited from the parent group"))
+                }
                 class={[
-                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95",
-                  if(role.key in role_keys,
-                    do: "border-primary/50 bg-primary/10 text-primary",
-                    else:
-                      "border-base-300 bg-base-100 text-base-content/65 hover:border-base-content/25 hover:bg-base-200"
-                  )
+                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold shadow-xs transition duration-150 ease-out",
+                  role_toggle_class(role.key, role_keys, inherited_role_keys)
                 ]}
               >
                 <.icon
-                  name={if(role.key in role_keys, do: "hero-check", else: "hero-plus")}
+                  name={role_toggle_icon(role.key, role_keys, inherited_role_keys)}
                   class="size-3.5"
                 />
                 {RolesTab.role_label(role)}
@@ -233,6 +250,28 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       </div>
     </div>
     """
+  end
+
+  # A role held through the parent is locked: it is changed there.
+  defp role_toggle_class(key, role_keys, inherited_role_keys) do
+    cond do
+      key in inherited_role_keys ->
+        "cursor-not-allowed border-primary/25 bg-primary/5 text-primary/70"
+
+      key in role_keys ->
+        "border-primary/50 bg-primary/10 text-primary hover:-translate-y-px active:scale-95"
+
+      true ->
+        "border-base-300 bg-base-100 text-base-content/65 hover:-translate-y-px hover:border-base-content/25 hover:bg-base-200 active:scale-95"
+    end
+  end
+
+  defp role_toggle_icon(key, role_keys, inherited_role_keys) do
+    cond do
+      key in inherited_role_keys -> "hero-lock-closed"
+      key in role_keys -> "hero-check"
+      true -> "hero-plus"
+    end
   end
 
   # Assigned roles in the manifest's display order; keys of roles missing

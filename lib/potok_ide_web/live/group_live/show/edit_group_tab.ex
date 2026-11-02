@@ -13,6 +13,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :description_details_open, :boolean, required: true
   attr :can_delete_group, :boolean, default: false
 
+  attr :inherits_members_option, :boolean,
+    default: false,
+    doc: "whether the group can inherit members (see `Social.inherits_members_option?/1`)"
+
   attr :alt_descriptions, :list, default: [], doc: "every alternative description of the group"
 
   attr :alt_description_form, :any,
@@ -59,6 +63,24 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               label={gettext("Uses API")}
               type="checkbox"
             />
+          </div>
+
+          <div :if={@inherits_members_option} id="group-edit-inherits-members">
+            <.input
+              field={@edit_group_form[:inherits_members]}
+              label={gettext("Inherit members")}
+              type="checkbox"
+              disabled={!is_nil(@group.parent_value_id)}
+            />
+            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+              {if(@group.parent_value_id,
+                do: gettext("Threads always inherit the members of their group."),
+                else:
+                  gettext(
+                    "Every member of the parent group is also a member here, with the same roles."
+                  )
+              )}
+            </p>
           </div>
 
           <.input

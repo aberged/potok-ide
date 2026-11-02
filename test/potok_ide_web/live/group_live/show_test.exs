@@ -3123,6 +3123,130 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     end
   end
 
+  describe "member inheritance" do
+    setup do
+      account = account_fixture()
+
+      {:ok, owner} =
+        Social.create_profile_for_account(account, %{
+          username: "inh-ui-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      parent = create_child_group!(owner, "inh-ui-parent")
+      member = add_group_member!(owner, parent, "inh-ui-member")
+
+      %{account: Accounts.get_account!(account.id), owner: owner, parent: parent, member: member}
+    end
+
+    test "the create form offers inheritance in sub-groups, not in the root group", %{
+      conn: conn,
+      account: account,
+      owner: owner,
+      parent: parent,
+      member: member
+    } do
+      conn = log_in_account(conn, account)
+
+      {:ok, root_lv, _html} = live(conn, ~p"/groups/#{Social.get_root_group!().id}/create_group")
+      refute has_element?(root_lv, "#group-create-inherits-members")
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{parent.id}/create_group")
+      assert has_element?(lv, "#group-create-inherits-members input[type='checkbox']")
+
+      lv
+      |> form("#group-create-form", %{
+        "group" => %{"name" => "inh-ui-child", "description" => "", "inherits_members" => "true"}
+      })
+      |> render_submit()
+
+      child =
+        parent
+        |> Social.list_child_groups_for_profile(owner, limit: 20)
+        |> Enum.find(&(&1.name == "inh-ui-child"))
+
+      assert child.inherits_members
+      assert Social.member_of_group?(member, child)
+    end
+
+    test "the edit form switches inheritance, locked on for threads", %{
+      conn: conn,
+      account: account,
+      owner: owner,
+      parent: parent,
+      member: member
+    } do
+      conn = log_in_account(conn, account)
+      child = create_sub_group!(owner, parent, "inh-ui-edit")
+
+      {:ok, parent_lv, _html} = live(conn, ~p"/groups/#{parent.id}/edit_group")
+      refute has_element?(parent_lv, "#group-edit-inherits-members")
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{child.id}/edit_group")
+
+      lv
+      |> form("#group-edit-form", %{"group" => %{"inherits_members" => "true"}})
+      |> render_submit()
+
+      assert Social.member_of_group?(member, child)
+
+      {:ok, value} = Social.create_value(owner, parent, %{"content" => "thread me"})
+      {:ok, thread} = Social.get_or_create_value_thread(owner, parent, value, %{"name" => "t"})
+
+      {:ok, thread_lv, _html} = live(conn, ~p"/groups/#{thread.id}/edit_group")
+
+      assert has_element?(
+               thread_lv,
+               "#group-edit-inherits-members input[type='checkbox'][disabled]"
+             )
+    end
+
+    test "inherited members can be neither removed nor have parent roles taken", %{
+      conn: conn,
+      account: account,
+      owner: owner,
+      parent: parent,
+      member: member
+    } do
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, parent)
+      {:ok, helpers} = Social.create_group_role(owner, parent, %{"name" => "helpers"})
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, helpers.key)
+
+      child = create_sub_group!(owner, parent, "inh-ui-members", %{"inherits_members" => "true"})
+      direct = add_group_member!(owner, child, "inh-ui-direct")
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{child.id}/members")
+
+      assert has_element?(lv, "#member-#{member.id}-inherited")
+      refute has_element?(lv, "#group-remove-member-#{member.id}")
+      assert has_element?(lv, "#member-#{member.id}-role-#{helpers.key}[disabled]")
+      refute has_element?(lv, "#member-#{member.id}-role-admin[disabled]")
+
+      refute has_element?(lv, "#member-#{direct.id}-inherited")
+      assert has_element?(lv, "#group-remove-member-#{direct.id}")
+    end
+  end
+
+  defp create_sub_group!(profile, parent, name, attrs \\ %{}) do
+    {:ok, group} =
+      Social.create_group(
+        profile,
+        parent,
+        Map.merge(
+          %{"name" => name, "description" => "", "description_format" => :markdown},
+          attrs
+        )
+      )
+
+    group
+  end
+
   defp create_child_group!(profile, name, attrs \\ %{}) do
     root_group = Social.get_root_group!()
 
