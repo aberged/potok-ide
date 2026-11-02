@@ -8,15 +8,19 @@ defmodule PotokIdeWeb.RichContentScrubber do
   `position`, `z-index`, `transform` and `url()`. `class` and `id` are never
   kept, so content cannot borrow the app's classes or clash with its DOM ids.
 
-  The `Meta` macros need literal tag lists.
+  The `Meta` macros need literal tag lists. `use HtmlSanitizeEx` removes
+  CDATA sections and strips every tag and attribute not allowed here.
   """
 
-  require HtmlSanitizeEx.Scrubber.Meta
+  use HtmlSanitizeEx
+
   alias HtmlSanitizeEx.Scrubber.Meta
 
   @valid_schemes ["http", "https", "mailto"]
 
-  Meta.remove_cdata_sections_before_scrub()
+  # `use` makes `scrub/1` overridable, and the clauses below replace its
+  # comment clause, so comments are stripped here again. Without this a
+  # comment in member content crashes the scrubber.
   Meta.strip_comments()
 
   Meta.allow_tags_with_style_attributes([
@@ -128,6 +132,4 @@ defmodule PotokIdeWeb.RichContentScrubber do
   def scrub({tag, _attributes, _children})
       when tag in ["script", "style", "template", "noscript", "title"],
       do: ""
-
-  Meta.strip_everything_not_covered()
 end
