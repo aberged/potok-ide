@@ -58,7 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
+      <div data-tab-scroll class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
         <.page_header id="group-calendar-header" icon="hero-calendar-days" class="px-1">
           {if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
           <:subtitle>{@scope_text}</:subtitle>
@@ -170,33 +170,34 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             </div>
 
             <%= if @mode == "month" do %>
+              <div id="calendar-day-list" class="mb-4 flex flex-col gap-2 sm:hidden">
+                <div class="flex flex-wrap items-baseline gap-x-2 px-1 text-sm">
+                  <h4 class="font-semibold first-letter:uppercase">
+                    {Format.date(@selected_date, @today)}
+                  </h4>
+                  <p
+                    :if={Map.get(@by_day, @selected_date, []) == []}
+                    id="calendar-day-empty"
+                    class="text-base-content/55"
+                  >
+                    {gettext("No events on this day.")}
+                  </p>
+                </div>
+                <.occurrence_row
+                  :for={occurrence <- Map.get(@by_day, @selected_date, [])}
+                  id={"calendar-day-occurrence-#{occurrence.event.id}-#{occurrence.date}"}
+                  occurrence={occurrence}
+                  group={@group}
+                  time_zone={@time_zone}
+                  today={@today}
+                />
+              </div>
               <.month_grid
                 weeks={@weeks}
                 selected_date={@selected_date}
                 group={@group}
                 time_zone={@time_zone}
               />
-              <div id="calendar-day-list" class="mt-4 sm:hidden">
-                <h4 class="mb-2 px-1 text-sm font-semibold first-letter:uppercase">
-                  {Format.date(@selected_date, @today)}
-                </h4>
-                <div class="flex flex-col gap-2">
-                  <.occurrence_row
-                    :for={occurrence <- Map.get(@by_day, @selected_date, [])}
-                    id={"calendar-day-occurrence-#{occurrence.event.id}-#{occurrence.date}"}
-                    occurrence={occurrence}
-                    group={@group}
-                    time_zone={@time_zone}
-                    today={@today}
-                  />
-                  <p
-                    :if={Map.get(@by_day, @selected_date, []) == []}
-                    class="rounded-2xl border border-dashed border-base-300 px-4 py-5 text-center text-sm text-base-content/55"
-                  >
-                    {gettext("No events on this day.")}
-                  </p>
-                </div>
-              </div>
             <% else %>
               <div id="calendar-list" phx-update="stream" class="flex flex-col gap-2">
                 <.occurrence_row
@@ -297,6 +298,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
     <div
       id="calendar-grid"
       role="grid"
+      phx-hook=".DayList"
       class="overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/80 shadow-sm"
     >
       <div
@@ -332,7 +334,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           ]}>
             {day.date.day}
           </span>
-          <%!-- Dots on phones, where the day's events are listed below the grid. --%>
+          <%!-- Dots on phones, where the day's events are listed above the grid. --%>
           <div class="mt-1 flex flex-wrap gap-0.5 px-0.5 sm:hidden">
             <span
               :for={occurrence <- Enum.take(day.occurrences, 4)}
@@ -373,6 +375,24 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         </div>
       </div>
     </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".DayList">
+      // Picked further down the grid, a day would list its events out of view, above it.
+      export default {
+        mounted() {
+          this.el.addEventListener("click", event => {
+            if (!event.target.closest("[role='gridcell']")) return
+
+            const list = document.getElementById("calendar-day-list")
+            const scroller = this.el.closest("[data-tab-scroll]")
+            // Hidden on wider screens, where the days show their events themselves.
+            if (!list?.offsetParent || !scroller) return
+
+            const above = list.getBoundingClientRect().top - scroller.getBoundingClientRect().top
+            if (above < 0) scroller.scrollBy({top: above - 8, behavior: "smooth"})
+          })
+        },
+      }
+    </script>
     """
   end
 

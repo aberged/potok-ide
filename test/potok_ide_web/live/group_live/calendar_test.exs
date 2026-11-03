@@ -76,6 +76,21 @@ defmodule PotokIdeWeb.GroupLive.CalendarTest do
     assert has_element?(lv, "#calendar-list #calendar-occurrence-#{event.id}-#{ctx.date}")
   end
 
+  test "a picked day's events are listed above the grid", ctx do
+    event = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date))
+    {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
+
+    assert has_element?(lv, "#calendar-day-list + #calendar-grid")
+
+    lv |> element("#calendar-day-#{ctx.date}") |> render_click()
+    assert has_element?(lv, "#calendar-day-list #calendar-day-occurrence-#{event.id}-#{ctx.date}")
+    refute has_element?(lv, "#calendar-day-empty")
+
+    lv |> element("#calendar-day-#{Date.add(ctx.date, 1)}") |> render_click()
+    refute has_element?(lv, "#calendar-day-occurrence-#{event.id}-#{ctx.date}")
+    assert has_element?(lv, "#calendar-day-list #calendar-day-empty")
+  end
+
   test "a member adds an event that is announced in the chat", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
 
