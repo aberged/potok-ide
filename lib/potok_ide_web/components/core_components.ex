@@ -423,18 +423,22 @@ defmodule PotokIdeWeb.CoreComponents do
   attr :class, :any, default: nil
   slot :inner_block, required: true
   slot :subtitle
+  slot :actions, doc: "controls at the header's end, such as a view switch"
 
   def page_header(assigns) do
     ~H"""
-    <header id={@id} class={["mb-5 flex items-start gap-3", @class]}>
+    <header id={@id} class={["mb-5 flex flex-wrap items-start gap-3", @class]}>
       <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
         <.icon name={@icon} class="size-6" />
       </span>
-      <div class="min-w-0">
+      <div class="min-w-0 flex-1 basis-48">
         <h1 class="text-xl font-semibold leading-tight">{render_slot(@inner_block)}</h1>
         <p :if={@subtitle != []} class="mt-0.5 text-sm text-base-content/60">
           {render_slot(@subtitle)}
         </p>
+      </div>
+      <div :if={@actions != []} class="flex shrink-0 flex-wrap items-center gap-2">
+        {render_slot(@actions)}
       </div>
     </header>
     """

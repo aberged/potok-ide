@@ -389,6 +389,137 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  attr :id, :string, default: nil
+  slot :inner_block, required: true
+
+  @doc """
+  The scrolling body of a group tab under its path: one centered column, so
+  the settings-like tabs share a width and place. The top space is the
+  column's, so a `sticky top-0` bar sticks flush to the scroll area's edge.
+  """
+  def tab_body(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      data-tab-scroll
+      class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4 sm:px-4"
+    >
+      <div class="mx-auto w-full max-w-3xl pt-4">{render_slot(@inner_block)}</div>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :tabs, :list, required: true, doc: "`{key, panel id, label, danger?}`, in order"
+  attr :current, :string, required: true, doc: "the key of the card on screen"
+  attr :event, :string, required: true, doc: "pushed with the picked key as `section`"
+
+  attr :tab_id_prefix, :string,
+    required: true,
+    doc: "each tab's id is the prefix, `-` and its key"
+
+  @doc """
+  The tab bar of a settings tab (edit group, create sub-group): it sticks to
+  the top of the `tab_body/1` it is in, and a picked tab starts its card at
+  the top.
+  """
+  def settings_tabs(assigns) do
+    ~H"""
+    <nav
+      id={@id}
+      phx-hook=".SectionTabs"
+      role="tablist"
+      aria-label={gettext("Sections")}
+      class="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 overflow-x-auto rounded-full border border-base-300/70 bg-base-100/90 p-1 shadow-sm backdrop-blur"
+    >
+      <button
+        :for={{key, panel_id, label, danger?} <- @tabs}
+        id={"#{@tab_id_prefix}-#{key}"}
+        type="button"
+        role="tab"
+        aria-selected={to_string(@current == key)}
+        aria-controls={panel_id}
+        phx-click={@event}
+        phx-value-section={key}
+        class={[
+          "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95",
+          settings_tab_class(@current == key, danger?)
+        ]}
+      >
+        {label}
+      </button>
+    </nav>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".SectionTabs">
+      // A new card starts at the top of the tab, under its header.
+      export default {
+        mounted() {
+          this.el.addEventListener("click", event => {
+            if (!event.target.closest("[role='tab']")) return
+
+            this.el.closest("[data-tab-scroll]")?.scrollTo({top: 0})
+          })
+        },
+      }
+    </script>
+    """
+  end
+
+  defp settings_tab_class(true, false), do: "bg-base-content text-base-100 shadow-sm"
+  defp settings_tab_class(true, true), do: "bg-error text-error-content shadow-sm"
+
+  defp settings_tab_class(false, false),
+    do: "text-base-content/70 hover:bg-base-200 hover:text-base-content"
+
+  defp settings_tab_class(false, true), do: "text-error/80 hover:bg-error/10 hover:text-error"
+
+  attr :id, :string, required: true
+  attr :tab_id, :string, required: true, doc: "the id of the tab that shows the card"
+  attr :active, :boolean, required: true, doc: "whether the card is on screen"
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :subtitle, :string, required: true
+  slot :inner_block, required: true
+
+  @doc """
+  One card of a settings tab. A card that is not on screen is only hidden,
+  so a form around the cards still sends every field.
+  """
+  def settings_card(assigns) do
+    ~H"""
+    <section
+      id={@id}
+      role="tabpanel"
+      aria-labelledby={@tab_id}
+      class={[
+        "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5",
+        !@active && "hidden"
+      ]}
+    >
+      <.card_title icon={@icon} title={@title} subtitle={@subtitle} class="mb-4" />
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :subtitle, :string, required: true
+  attr :class, :any, default: nil
+
+  def card_title(assigns) do
+    ~H"""
+    <div class={["flex min-w-0 items-start gap-3", @class]}>
+      <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <.icon name={@icon} class="size-5" />
+      </span>
+      <div class="min-w-0">
+        <h2 class="font-semibold leading-tight">{@title}</h2>
+        <p class="mt-0.5 text-sm text-base-content/60">{@subtitle}</p>
+      </div>
+    </div>
+    """
+  end
+
   attr :group, :map, required: true
 
   attr :path, :list,

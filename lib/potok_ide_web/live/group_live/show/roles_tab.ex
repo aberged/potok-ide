@@ -41,15 +41,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
         class="shadow-md"
       />
 
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-6">
-        <div class="mb-4 px-1">
-          <h3 class="card-title">{gettext("Roles")}</h3>
-          <p class="mt-1 text-sm text-base-content/65">
+      <Components.tab_body>
+        <.page_header id="group-roles-header" icon="hero-shield-check">
+          {gettext("Roles")}
+          <:subtitle>
             {gettext(
               "Roles allow or deny what members can do in this group. A denial wins over an allowance, and every member has the everyone role."
             )}
-          </p>
-        </div>
+          </:subtitle>
+        </.page_header>
 
         <div
           id="group-manifest-source"
@@ -61,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               class="size-5"
             />
           </span>
-          <div class="min-w-0 flex-1">
+          <div class="min-w-0 flex-1 basis-48">
             <%= cond do %>
               <% @group.is_root -> %>
                 <p class="text-sm font-semibold">{gettext("Default manifest")}</p>
@@ -249,7 +249,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
             </div>
           </li>
         </ul>
-      </div>
+      </Components.tab_body>
     </div>
     """
   end

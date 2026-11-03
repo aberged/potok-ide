@@ -19,8 +19,11 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="card-body min-h-0 flex-1 overflow-y-auto overscroll-contain max-w-lg">
-        <h3 class="card-title">{gettext("Invite to group")}</h3>
+      <Components.tab_body>
+        <.page_header id="group-invite-header" icon="hero-user-plus">
+          {gettext("Invite to group")}
+          <:subtitle>{gettext("Invite a profile by its username, or anyone by email.")}</:subtitle>
+        </.page_header>
 
         <.form
           for={@invite_form}
@@ -78,7 +81,7 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
         <div class="mt-2 text-xs text-base-content/60">
           {gettext("Invitees accept invitations at")} <.link navigate={~p"/invitations"} class="link">/invitations</.link>.
         </div>
-      </div>
+      </Components.tab_body>
     </div>
     """
   end

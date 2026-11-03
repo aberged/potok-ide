@@ -1498,8 +1498,75 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(lv, "input[name='group[is_public]'][type='hidden']")
       assert has_element?(lv, "input[name='group[is_public]'][type='checkbox']")
-      assert has_element?(lv, "input[name='group[is_root_public]'][type='hidden']")
-      assert has_element?(lv, "input[name='group[is_root_public]'][type='checkbox']")
+      # "Root public" is folded into "Public", as on the edit tab.
+      assert has_element?(lv, "input[name='group[is_root_public]'][type='hidden'][value='false']")
+      refute has_element?(lv, "input[name='group[is_root_public]'][type='checkbox']")
+    end
+
+    test "create sub-group shows one card at a time, with its actions in reach", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "create-cards",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "create-cards-parent")
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/create_group")
+
+      cards = [
+        basics: "group-create-basics",
+        access: "group-create-access",
+        home: "group-create-home",
+        description: "group-create-description"
+      ]
+
+      for {key, id} <- cards do
+        assert has_element?(lv, "#group-create-tab-#{key}[aria-controls='#{id}']")
+
+        if key == :basics,
+          do: assert(has_element?(lv, "##{id}:not(.hidden)")),
+          else: assert(has_element?(lv, "##{id}.hidden"))
+      end
+
+      assert has_element?(lv, "#group-create-bar #group-create-submit[form='group-create-form']")
+      # The browser cannot point at a required field in a hidden card.
+      assert has_element?(lv, "#group-create-form[novalidate]")
+      assert has_element?(lv, "#group-create-description textarea[name='group[description]']")
+
+      lv |> element("#group-create-tab-description") |> render_click()
+      assert has_element?(lv, "#group-create-description:not(.hidden)")
+      assert has_element?(lv, "#group-create-basics.hidden")
+
+      # An empty name opens "Basics" again.
+      lv |> form("#group-create-form", group: %{name: ""}) |> render_submit()
+      assert has_element?(lv, "#group-create-basics:not(.hidden)")
+
+      # Fields of several cards are sent together.
+      lv |> form("#group-create-form", group: %{name: "made-in-cards"}) |> render_change()
+      lv |> element("#group-create-tab-description") |> render_click()
+
+      lv
+      |> form("#group-create-form", group: %{description: "Hello", is_public: "true"})
+      |> render_submit()
+
+      created =
+        group
+        |> Social.list_child_groups_for_profile(profile, limit: 20)
+        |> Enum.find(&(&1.name == "made-in-cards"))
+
+      assert created.description == "Hello"
+      assert created.is_public
+      refute created.is_root_public
     end
 
     test "edit group shows one card at a time, with a save bar for unsaved changes", %{
@@ -1545,6 +1612,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       end
 
       assert has_element?(lv, "#group-edit-tab-basics[aria-selected='true']")
+      assert has_element?(lv, "#group-edit-form[novalidate]")
 
       lv |> element("#group-edit-tab-danger") |> render_click()
       assert has_element?(lv, "#group-edit-danger:not(.hidden)")
@@ -1591,6 +1659,10 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute saved.is_root_public
       assert saved.is_public
       refute has_element?(lv, "#group-edit-save-bar")
+
+      # A cleared name is no change to save, but the bar still shows for it.
+      lv |> form("#group-edit-form", group: %{name: ""}) |> render_change()
+      assert has_element?(lv, "#group-edit-save-bar")
 
       # A save that fails opens the card with the error.
       lv |> form("#group-edit-form", group: %{name: ""}) |> render_submit()
@@ -1741,8 +1813,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "description" => "",
           "group_picture_url" => "",
           "home_page" => "subgroups",
-          "is_root_public" => "true",
-          "is_public" => "false",
+          "is_public" => "true",
           "uses_api" => "true"
         }
       })
@@ -1754,7 +1825,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> Enum.find(&(&1.name == "created-with-public-chat"))
 
       assert created_group
-      assert created_group.is_root_public
+      # The form leaves "Root public" off; "Public" alone decides.
+      refute created_group.is_root_public
       assert created_group.is_public
       assert created_group.home_page == :subgroups
       assert created_group.uses_api
@@ -3059,6 +3131,22 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       lv |> element("#group-children-threads-toggle") |> render_click()
       assert has_element?(lv, "#group-sub-groups-unread-badge", "2")
+    end
+
+    test "the group's tabs share the page header", %{conn: conn, account: account, group: group} do
+      conn = log_in_account(conn, account)
+
+      for {tab, id, title} <- [
+            {"files", "group-files-header", "Files"},
+            {"calendar", "group-calendar-header", "Calendar"},
+            {"invite_profile", "group-invite-header", "Invite to group"},
+            {"members", "group-members-header", "Members"},
+            {"roles", "group-roles-header", "Roles"},
+            {"create_group", "group-create-header", "Create sub-group"}
+          ] do
+        {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/#{tab}")
+        assert has_element?(lv, "##{id} h1", title)
+      end
     end
 
     test "an inline reply quotes the replied-to value", %{lv: lv, group: group, value: value} do

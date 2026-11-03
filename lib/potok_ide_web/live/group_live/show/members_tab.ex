@@ -33,8 +33,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
-        <h3 :if={!@group.is_direct} class="card-title mb-2">{gettext("Members")}</h3>
+      <Components.tab_body>
+        <.page_header
+          :if={!@group.is_direct}
+          id="group-members-header"
+          icon="hero-user-group"
+        >
+          {gettext("Members")}
+          <:subtitle>{gettext("Who is in the group, with their roles.")}</:subtitle>
+        </.page_header>
 
         <div class=" flex flex-row">
           <.icon :if={@group.is_direct} name="hero-user" />
@@ -255,7 +262,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
             {gettext("Load more members")}
           </button>
         </div>
-      </div>
+      </Components.tab_body>
     </div>
     """
   end

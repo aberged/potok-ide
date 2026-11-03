@@ -23,40 +23,40 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
-        <div class="mb-4 flex flex-wrap items-start justify-between gap-3 px-1">
-          <div class="min-w-0">
-            <h3 class="card-title">{gettext("Files")}</h3>
-            <p class="text-xs text-base-content/60">
-              {if @files_view == "tree",
-                do: gettext("Files of this group and its sub-groups, folder by folder."),
-                else: gettext("Files attached to values in this group, newest first.")}
-            </p>
-          </div>
-          <div
-            id="group-files-view"
-            role="group"
-            aria-label={gettext("Show files as")}
-            class="inline-flex shrink-0 rounded-full border border-base-300 bg-base-200/70 p-0.5"
-          >
-            <Components.view_toggle_button
-              id="group-files-view-list"
-              event="set_files_view"
-              view="list"
-              active={@files_view == "list"}
-              icon="hero-list-bullet"
-              label={gettext("List")}
-            />
-            <Components.view_toggle_button
-              id="group-files-view-tree"
-              event="set_files_view"
-              view="tree"
-              active={@files_view == "tree"}
-              icon="hero-folder"
-              label={gettext("Folders")}
-            />
-          </div>
-        </div>
+      <Components.tab_body>
+        <.page_header id="group-files-header" icon="hero-paper-clip">
+          {gettext("Files")}
+          <:subtitle>
+            {if @files_view == "tree",
+              do: gettext("Files of this group and its sub-groups, folder by folder."),
+              else: gettext("Files attached to values in this group, newest first.")}
+          </:subtitle>
+          <:actions>
+            <div
+              id="group-files-view"
+              role="group"
+              aria-label={gettext("Show files as")}
+              class="inline-flex shrink-0 rounded-full border border-base-300 bg-base-200/70 p-0.5"
+            >
+              <Components.view_toggle_button
+                id="group-files-view-list"
+                event="set_files_view"
+                view="list"
+                active={@files_view == "list"}
+                icon="hero-list-bullet"
+                label={gettext("List")}
+              />
+              <Components.view_toggle_button
+                id="group-files-view-tree"
+                event="set_files_view"
+                view="tree"
+                active={@files_view == "tree"}
+                icon="hero-folder"
+                label={gettext("Folders")}
+              />
+            </div>
+          </:actions>
+        </.page_header>
 
         <%= if @files_view == "tree" do %>
           <div
@@ -131,7 +131,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             </button>
           </div>
         <% end %>
-      </div>
+      </Components.tab_body>
     </div>
     """
   end

@@ -55,17 +55,19 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         class="shadow-md"
       />
       <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
+        <.page_header id="group-calendar-header" icon="hero-calendar-days" class="px-1">
+          {if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
+          <:subtitle>{scope_text(@group, @include_subgroups)}</:subtitle>
+        </.page_header>
+
         <div class={[
           @side? && "lg:grid lg:grid-cols-[minmax(0,1fr)_23rem] lg:items-start lg:gap-4"
         ]}>
           <section id="calendar-main" class={["min-w-0", @side? && "hidden lg:block"]}>
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3 px-1">
-              <div class="min-w-0">
-                <h3 id="calendar-month-title" class="card-title">
-                  {upcase_first(Format.month_year(@month.year, @month.month))}
-                </h3>
-                <p class="text-xs text-base-content/60">{scope_text(@group, @include_subgroups)}</p>
-              </div>
+              <h3 id="calendar-month-title" class="min-w-0 text-lg font-semibold">
+                {upcase_first(Format.month_year(@month.year, @month.month))}
+              </h3>
               <div class="flex flex-wrap items-center gap-2">
                 <div class="inline-flex items-center rounded-full border border-base-300 bg-base-200/70 p-0.5">
                   <button

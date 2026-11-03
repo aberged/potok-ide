@@ -52,10 +52,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # as many from the other, which load again when scrolled back to.
   @values_max_loaded 200
 
-  # The cards of the edit tab (`EditGroupTab.sections/0`), and the form fields
-  # of each, so a save that fails opens the card with the error.
+  # The cards of the edit and create tabs (`sections/0` of each), and the
+  # form fields of each card, so a save that fails opens the card with the
+  # error.
   @edit_group_sections ~w(basics access home description alt_descriptions danger)
-  @edit_group_section_fields [
+  @create_group_sections ~w(basics access home description)
+  @group_form_section_fields [
     {"basics", [:name, :group_picture_url]},
     {"access", [:is_public, :is_root_public, :inherits_members]},
     {"home", [:home_page, :home_alt_description_id]},
@@ -598,6 +600,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
+            section={@create_group_section}
             new_group_form={@new_group_form}
             format_options={@format_options}
             home_page_options={@home_page_options}
@@ -737,6 +740,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
        |> assign(:new_group_form, empty_new_group_form())
        |> assign(:edit_group_form, edit_group_form(group, active_tab))
        |> assign(:edit_group_section, "basics")
+       |> assign(:create_group_section, "basics")
        |> assign(
          :inherits_members_option?,
          active_tab == "edit_group" and Social.inherits_members_option?(group)
@@ -785,6 +789,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
          |> maybe_reload_edit_group_form(active_tab)
+         |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
 
@@ -1388,7 +1393,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
            |> push_navigate(to: ~p"/groups/#{child.id}")}
 
         {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply, assign(socket, :new_group_form, to_form(changeset))}
+          {:noreply,
+           socket
+           |> assign(:new_group_form, to_form(changeset))
+           |> assign(
+             :create_group_section,
+             group_form_error_section(changeset) || socket.assigns.create_group_section
+           )}
 
         {:error, :not_permitted} ->
           {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
@@ -1421,6 +1432,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("set_edit_group_section", _params, socket), do: {:noreply, socket}
 
+  def handle_event("set_create_group_section", %{"section" => section}, socket)
+      when section in @create_group_sections,
+      do: {:noreply, assign(socket, :create_group_section, section)}
+
+  def handle_event("set_create_group_section", _params, socket), do: {:noreply, socket}
+
   def handle_event("discard_edit_group", _params, socket) do
     with_edit_group(socket, fn socket ->
       assign(socket, :edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
@@ -1452,7 +1469,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
            |> assign(:edit_group_form, to_form(Map.put(changeset, :action, :validate)))
            |> assign(
              :edit_group_section,
-             edit_group_error_section(changeset) || socket.assigns.edit_group_section
+             group_form_error_section(changeset) || socket.assigns.edit_group_section
            )}
 
         {:error, _reason} ->
@@ -2951,8 +2968,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp edit_group_form(group, _active_tab), do: to_form(Group.update_changeset(group, %{}))
 
   # Whether the edit form holds something not saved yet (its save bar shows).
-  defp edit_group_dirty?(%Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes}}),
-    do: changes != %{}
+  # A field that fails validation, like a cleared name, is dropped from the
+  # changes, so errors count too: the bar's save then shows what is wrong.
+  defp edit_group_dirty?(%Phoenix.HTML.Form{
+         source: %Ecto.Changeset{changes: changes, errors: errors}
+       }),
+       do: changes != %{} or errors != []
 
   defp edit_group_dirty?(_form), do: false
 
@@ -2971,11 +2992,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_reload_edit_group_form(socket, _active_tab), do: socket
 
+  # Opening the create tab starts on its first card.
+  defp assign_new_tab_section(socket, "create_group"),
+    do: assign(socket, :create_group_section, "basics")
+
+  defp assign_new_tab_section(socket, _active_tab), do: socket
+
   # The first card, in bar order, holding a field with an error.
-  defp edit_group_error_section(%Ecto.Changeset{errors: errors}) do
+  defp group_form_error_section(%Ecto.Changeset{errors: errors}) do
     fields = Keyword.keys(errors)
 
-    Enum.find_value(@edit_group_section_fields, fn {section, section_fields} ->
+    Enum.find_value(@group_form_section_fields, fn {section, section_fields} ->
       if Enum.any?(fields, &(&1 in section_fields)), do: section
     end)
   end

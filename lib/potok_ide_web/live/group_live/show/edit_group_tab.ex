@@ -37,7 +37,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # zone. The other cards are only hidden, so the group form still sends
   # every field and an edit made in one card survives a switch to another.
   # The save bar shows while the group form has unsaved changes, whichever
-  # card is on screen, and never sits next to a delete button.
+  # card is on screen, and never sits next to a delete button. The form is
+  # `novalidate`, as a required field in a hidden card would silently stop the
+  # browser from submitting; the server opens the card with the error instead.
   def panel(assigns) do
     ~H"""
     <div id="group-panel-edit-group" class="flex min-h-0 flex-1 flex-col px-2">
@@ -47,504 +49,425 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         current_profile={@current_profile}
         class="shadow-md"
       />
-      <div
-        id="group-edit-scroll"
-        class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-4 sm:px-4"
-      >
-        <%!-- The top space is the column's, so the section bar sticks flush
-             to the scroll area's edge instead of showing content above it. --%>
-        <div class="mx-auto w-full max-w-3xl pt-4">
-          <.page_header id="group-edit-header" icon="hero-cog-6-tooth">
-            {pgettext("page title", "Edit group")}
-            <:subtitle>
-              {gettext("Name, picture, visibility, description and apps of the group.")}
-            </:subtitle>
-          </.page_header>
+      <Components.tab_body id="group-edit-scroll">
+        <.page_header id="group-edit-header" icon="hero-cog-6-tooth">
+          {pgettext("page title", "Edit group")}
+          <:subtitle>
+            {gettext("Name, picture, visibility, description and apps of the group.")}
+          </:subtitle>
+        </.page_header>
 
-          <nav
-            id="group-edit-sections"
-            phx-hook=".SectionTabs"
-            role="tablist"
-            aria-label={gettext("Sections")}
-            class="sticky top-0 z-10 -mx-1 mb-4 flex gap-1 overflow-x-auto rounded-full border border-base-300/70 bg-base-100/90 p-1 shadow-sm backdrop-blur"
+        <Components.settings_tabs
+          id="group-edit-sections"
+          tabs={sections()}
+          current={@section}
+          event="set_edit_group_section"
+          tab_id_prefix="group-edit-tab"
+        />
+
+        <.form
+          for={@edit_group_form}
+          id="group-edit-form"
+          phx-change="validate_edit_group"
+          phx-submit="save_edit_group"
+          novalidate
+          class="space-y-4"
+        >
+          <Components.settings_card
+            id="group-edit-basics"
+            tab_id="group-edit-tab-basics"
+            active={@section == "basics"}
+            icon="hero-identification"
+            title={gettext("Basics")}
+            subtitle={gettext("The name and picture members see.")}
           >
+            <.input field={@edit_group_form[:name]} label={gettext("Name")} required />
+            <Components.group_picture_form_field field={@edit_group_form[:group_picture_url]} />
+          </Components.settings_card>
+
+          <Components.settings_card
+            id="group-edit-access"
+            tab_id="group-edit-tab-access"
+            active={@section == "access"}
+            icon="hero-lock-open"
+            title={gettext("Access and members")}
+            subtitle={gettext("Who sees the group and who is a member.")}
+          >
+            <%!-- "Root public" only ever turned "Public" on, so the form
+                   leaves it off and "Public" alone decides. --%>
+            <input
+              type="hidden"
+              name={@edit_group_form[:is_root_public].name}
+              value="false"
+            />
+            <.input
+              field={@edit_group_form[:is_public]}
+              label={gettext("Public group")}
+              type="checkbox"
+            />
+            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+              {gettext("Everyone can see the group and ask to join it.")}
+            </p>
+
+            <div :if={@inherits_members_option} id="group-edit-inherits-members">
+              <.input
+                field={@edit_group_form[:inherits_members]}
+                label={gettext("Inherit members")}
+                type="checkbox"
+                disabled={!is_nil(@group.parent_value_id)}
+              />
+              <p class="-mt-1 mb-1 text-xs text-base-content/60">
+                {if(@group.parent_value_id,
+                  do: gettext("Threads always inherit the members of their group."),
+                  else:
+                    gettext(
+                      "Every member of the parent group is also a member here, with the same roles."
+                    )
+                )}
+              </p>
+            </div>
+          </Components.settings_card>
+
+          <Components.settings_card
+            id="group-edit-home"
+            tab_id="group-edit-tab-home"
+            active={@section == "home"}
+            icon="hero-home"
+            title={gettext("What opens first")}
+            subtitle={gettext("The panel and the description a member sees on opening the group.")}
+          >
+            <.input
+              field={@edit_group_form[:home_page]}
+              label={gettext("Home page")}
+              type="select"
+              options={@home_page_options}
+            />
+            <.input
+              :if={@alt_descriptions != []}
+              field={@edit_group_form[:home_alt_description_id]}
+              label={gettext("Home description")}
+              type="select"
+              options={home_description_options(@group, @alt_descriptions)}
+            />
+          </Components.settings_card>
+
+          <Components.settings_card
+            id="group-edit-description"
+            tab_id="group-edit-tab-description"
+            active={@section == "description"}
+            icon="hero-document-text"
+            title={gettext("Description")}
+            subtitle={gettext("The text or app on the group's home page.")}
+          >
+            <.input
+              field={@edit_group_form[:description_name]}
+              label={gettext("Name next to the alternative descriptions")}
+              placeholder={gettext("Description")}
+            />
+            <.input
+              field={@edit_group_form[:uses_api]}
+              label={gettext("The description is an app (API)")}
+              type="checkbox"
+            />
+            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+              {gettext("The app runs on the group's home page and can keep its own data.")}
+            </p>
+
+            <details
+              id="group-edit-description-editor"
+              open={@description_details_open}
+              class="w-full rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-3 shadow-sm"
+            >
+              <summary
+                phx-click="set_edit_group_description_open"
+                phx-value-open={if(@description_details_open, do: "false", else: "true")}
+                class="cursor-pointer select-none font-medium text-base-content"
+              >
+                {gettext("Content")}
+              </summary>
+
+              <Components.description_workspace
+                id_prefix="group-description"
+                description_field={@edit_group_form[:description]}
+                format_field={@edit_group_form[:description_format]}
+                uses_api={@edit_group_form[:uses_api].value}
+                format_options={@format_options}
+              />
+            </details>
+          </Components.settings_card>
+        </.form>
+
+        <section
+          id="group-alt-descriptions"
+          role="tabpanel"
+          aria-labelledby="group-edit-tab-alt_descriptions"
+          class={[
+            "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5",
+            @section != "alt_descriptions" && "hidden"
+          ]}
+        >
+          <div class="flex flex-wrap items-start justify-between gap-3">
+            <Components.card_title
+              icon="hero-squares-plus"
+              title={gettext("Alternative descriptions")}
+              subtitle={
+                gettext(
+                  "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
+                )
+              }
+            />
             <button
-              :for={{key, panel_id, label, danger?} <- sections()}
-              id={"group-edit-tab-#{key}"}
+              :if={
+                is_nil(@alt_description_form) and length(@alt_descriptions) < @max_alt_descriptions
+              }
+              id="alt-description-new"
               type="button"
-              role="tab"
-              aria-selected={to_string(@section == key)}
-              aria-controls={panel_id}
-              phx-click="set_edit_group_section"
-              phx-value-section={key}
+              phx-click="new_alt_description"
+              class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition duration-150 hover:-translate-y-px hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <.icon name="hero-plus" class="size-4" /> <span>{gettext("New description")}</span>
+            </button>
+          </div>
+
+          <ul
+            :if={@alt_descriptions != []}
+            id="alt-description-list"
+            class="mt-4 flex flex-col gap-2"
+          >
+            <li
+              :for={{alt, index} <- Enum.with_index(@alt_descriptions)}
+              id={"alt-description-#{alt.id}"}
               class={[
-                "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95",
-                section_tab_class(@section == key, danger?)
+                "flex flex-wrap items-center gap-3 rounded-2xl border px-3 py-2 transition duration-150",
+                if(editing?(@editing_alt_description, alt),
+                  do: "border-primary/50 bg-primary/5",
+                  else: "border-base-300/80 bg-base-100 hover:border-base-content/20"
+                )
               ]}
             >
-              {label}
-            </button>
-          </nav>
-          <script :type={Phoenix.LiveView.ColocatedHook} name=".SectionTabs">
-            // A new card starts at the top of the tab, under its header.
-            export default {
-              mounted() {
-                this.el.addEventListener("click", event => {
-                  if (!event.target.closest("[role='tab']")) return
+              <div class="flex min-w-0 flex-1 flex-col gap-1">
+                <div class="flex min-w-0 items-center gap-2">
+                  <span class="truncate font-medium text-base-content">{alt.name}</span>
+                  <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
+                    {kind_label(alt)}
+                  </span>
+                </div>
+                <div :if={alt.visible_role_keys != []} class="flex flex-wrap gap-1">
+                  <span
+                    :for={name <- role_names(alt.visible_role_keys, @roles)}
+                    class="inline-flex items-center gap-1 rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70"
+                  >
+                    <.icon name="hero-lock-closed" class="size-3" /> {name}
+                  </span>
+                </div>
+              </div>
 
-                  document.getElementById("group-edit-scroll")?.scrollTo({top: 0})
-                })
-              },
-            }
-          </script>
+              <div class="flex items-center gap-1">
+                <button
+                  id={"alt-description-#{alt.id}-up"}
+                  type="button"
+                  phx-click="move_alt_description"
+                  phx-value-id={alt.id}
+                  phx-value-direction="up"
+                  disabled={index == 0}
+                  title={gettext("Move up")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-arrow-up" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-down"}
+                  type="button"
+                  phx-click="move_alt_description"
+                  phx-value-id={alt.id}
+                  phx-value-direction="down"
+                  disabled={index == length(@alt_descriptions) - 1}
+                  title={gettext("Move down")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-arrow-down" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-edit"}
+                  type="button"
+                  phx-click="edit_alt_description"
+                  phx-value-id={alt.id}
+                  title={gettext("Edit")}
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-pencil-square" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-promote"}
+                  type="button"
+                  phx-click="promote_alt_description"
+                  phx-value-id={alt.id}
+                  disabled={alt.visible_role_keys != []}
+                  title={
+                    if(alt.visible_role_keys == [],
+                      do: gettext("Make default"),
+                      else: gettext("Remove the role limit to make it the default")
+                    )
+                  }
+                  data-confirm={
+                    gettext(
+                      "Make this the default description? The current default takes its place in the list."
+                    )
+                  }
+                  class={alt_action_class()}
+                >
+                  <.icon name="hero-star" class="size-4" />
+                </button>
+                <button
+                  id={"alt-description-#{alt.id}-delete"}
+                  type="button"
+                  phx-click="delete_alt_description"
+                  phx-value-id={alt.id}
+                  title={gettext("Delete")}
+                  data-confirm={
+                    gettext("Delete this description? The data values of its app are deleted too.")
+                  }
+                  class={[alt_action_class(), "hover:text-error"]}
+                >
+                  <.icon name="hero-trash" class="size-4" />
+                </button>
+              </div>
 
-          <.form
-            for={@edit_group_form}
-            id="group-edit-form"
-            phx-change="validate_edit_group"
-            phx-submit="save_edit_group"
-            class="space-y-4"
-          >
-            <.section_card
-              id="group-edit-basics"
-              tab="basics"
-              section={@section}
-              icon="hero-identification"
-              title={gettext("Basics")}
-              subtitle={gettext("The name and picture members see.")}
-            >
-              <.input field={@edit_group_form[:name]} label={gettext("Name")} required />
-              <Components.group_picture_form_field field={@edit_group_form[:group_picture_url]} />
-            </.section_card>
-
-            <.section_card
-              id="group-edit-access"
-              tab="access"
-              section={@section}
-              icon="hero-lock-open"
-              title={gettext("Access and members")}
-              subtitle={gettext("Who sees the group and who is a member.")}
-            >
-              <%!-- "Root public" only ever turned "Public" on, so the form
-                   leaves it off and "Public" alone decides. --%>
-              <input
-                type="hidden"
-                name={@edit_group_form[:is_root_public].name}
-                value="false"
+              <%!-- An edited description opens right under its row. --%>
+              <.alt_description_form
+                :if={@alt_description_form && editing?(@editing_alt_description, alt)}
+                form={@alt_description_form}
+                editing={@editing_alt_description}
+                roles={@roles}
+                format_options={@format_options}
+                class="basis-full"
               />
-              <.input
-                field={@edit_group_form[:is_public]}
-                label={gettext("Public group")}
-                type="checkbox"
-              />
-              <p class="-mt-1 mb-3 text-xs text-base-content/60">
-                {gettext("Everyone can see the group and ask to join it.")}
+            </li>
+          </ul>
+
+          <.alt_description_form
+            :if={@alt_description_form && new_alt_description?(@editing_alt_description)}
+            form={@alt_description_form}
+            editing={@editing_alt_description}
+            roles={@roles}
+            format_options={@format_options}
+            class="mt-4"
+          />
+        </section>
+
+        <section
+          id="group-edit-danger"
+          role="tabpanel"
+          aria-labelledby="group-edit-tab-danger"
+          class={[
+            "rounded-3xl border border-error/30 bg-error/5 p-4 sm:p-5",
+            @section != "danger" && "hidden"
+          ]}
+        >
+          <div class="flex items-start gap-3">
+            <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-error/10 text-error">
+              <.icon name="hero-exclamation-triangle" class="size-5" />
+            </span>
+            <div class="min-w-0">
+              <h2 class="font-semibold leading-tight text-error">{gettext("Danger zone")}</h2>
+              <p class="mt-0.5 text-sm text-base-content/60">
+                {gettext("None of this can be undone.")}
               </p>
+            </div>
+          </div>
 
-              <div :if={@inherits_members_option} id="group-edit-inherits-members">
-                <.input
-                  field={@edit_group_form[:inherits_members]}
-                  label={gettext("Inherit members")}
-                  type="checkbox"
-                  disabled={!is_nil(@group.parent_value_id)}
-                />
-                <p class="-mt-1 mb-1 text-xs text-base-content/60">
-                  {if(@group.parent_value_id,
-                    do: gettext("Threads always inherit the members of their group."),
+          <div class="mt-4 divide-y divide-error/15">
+            <div class="flex flex-wrap items-center justify-between gap-3 py-3">
+              <div class="min-w-0 flex-1 basis-60">
+                <p class="font-medium">{gettext("Delete the app's data")}</p>
+                <p class="text-sm text-base-content/60">
+                  {if(@alt_descriptions == [],
+                    do: gettext("Deletes every data value the group's app saved."),
                     else:
                       gettext(
-                        "Every member of the parent group is also a member here, with the same roles."
+                        "Deletes the data values of the default description's app. The other apps keep theirs."
                       )
                   )}
                 </p>
               </div>
-            </.section_card>
-
-            <.section_card
-              id="group-edit-home"
-              tab="home"
-              section={@section}
-              icon="hero-home"
-              title={gettext("What opens first")}
-              subtitle={gettext("The panel and the description a member sees on opening the group.")}
-            >
-              <.input
-                field={@edit_group_form[:home_page]}
-                label={gettext("Home page")}
-                type="select"
-                options={@home_page_options}
-              />
-              <.input
-                :if={@alt_descriptions != []}
-                field={@edit_group_form[:home_alt_description_id]}
-                label={gettext("Home description")}
-                type="select"
-                options={home_description_options(@group, @alt_descriptions)}
-              />
-            </.section_card>
-
-            <.section_card
-              id="group-edit-description"
-              tab="description"
-              section={@section}
-              icon="hero-document-text"
-              title={gettext("Description")}
-              subtitle={gettext("The text or app on the group's home page.")}
-            >
-              <.input
-                field={@edit_group_form[:description_name]}
-                label={gettext("Name next to the alternative descriptions")}
-                placeholder={gettext("Description")}
-              />
-              <.input
-                field={@edit_group_form[:uses_api]}
-                label={gettext("The description is an app (API)")}
-                type="checkbox"
-              />
-              <p class="-mt-1 mb-3 text-xs text-base-content/60">
-                {gettext("The app runs on the group's home page and can keep its own data.")}
-              </p>
-
-              <details
-                id="group-edit-description-editor"
-                open={@description_details_open}
-                class="w-full rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-3 shadow-sm"
-              >
-                <summary
-                  phx-click="set_edit_group_description_open"
-                  phx-value-open={if(@description_details_open, do: "false", else: "true")}
-                  class="cursor-pointer select-none font-medium text-base-content"
-                >
-                  {gettext("Content")}
-                </summary>
-
-                <Components.description_workspace
-                  id_prefix="group-description"
-                  description_field={@edit_group_form[:description]}
-                  format_field={@edit_group_form[:description_format]}
-                  uses_api={@edit_group_form[:uses_api].value}
-                  format_options={@format_options}
-                />
-              </details>
-            </.section_card>
-          </.form>
-
-          <section
-            id="group-alt-descriptions"
-            role="tabpanel"
-            aria-labelledby="group-edit-tab-alt_descriptions"
-            class={[
-              "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5",
-              @section != "alt_descriptions" && "hidden"
-            ]}
-          >
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <.card_title
-                icon="hero-squares-plus"
-                title={gettext("Alternative descriptions")}
-                subtitle={
-                  gettext(
-                    "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
+              <button
+                id="group-delete-data-values-button"
+                type="button"
+                phx-click="delete_group_data_values"
+                data-confirm={
+                  if(@alt_descriptions == [],
+                    do: gettext("Are you sure you want to delete all data values in this group?"),
+                    else:
+                      gettext(
+                        "Delete every data value of the default description's app? The other apps keep theirs."
+                      )
                   )
                 }
-              />
-              <button
-                :if={
-                  is_nil(@alt_description_form) and length(@alt_descriptions) < @max_alt_descriptions
-                }
-                id="alt-description-new"
-                type="button"
-                phx-click="new_alt_description"
-                class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition duration-150 hover:-translate-y-px hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary/30"
+                class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:text-amber-200"
               >
-                <.icon name="hero-plus" class="size-4" /> <span>{gettext("New description")}</span>
+                <.icon name="hero-trash" class="size-4" />
+                <span>{gettext("Delete Data Values")}</span>
               </button>
             </div>
 
-            <ul
-              :if={@alt_descriptions != []}
-              id="alt-description-list"
-              class="mt-4 flex flex-col gap-2"
+            <div
+              :if={!@group.is_root and @can_delete_group}
+              class="flex flex-wrap items-center justify-between gap-3 py-3"
             >
-              <li
-                :for={{alt, index} <- Enum.with_index(@alt_descriptions)}
-                id={"alt-description-#{alt.id}"}
-                class={[
-                  "flex flex-wrap items-center gap-3 rounded-2xl border px-3 py-2 transition duration-150",
-                  if(editing?(@editing_alt_description, alt),
-                    do: "border-primary/50 bg-primary/5",
-                    else: "border-base-300/80 bg-base-100 hover:border-base-content/20"
-                  )
-                ]}
-              >
-                <div class="flex min-w-0 flex-1 flex-col gap-1">
-                  <div class="flex min-w-0 items-center gap-2">
-                    <span class="truncate font-medium text-base-content">{alt.name}</span>
-                    <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
-                      {kind_label(alt)}
-                    </span>
-                  </div>
-                  <div :if={alt.visible_role_keys != []} class="flex flex-wrap gap-1">
-                    <span
-                      :for={name <- role_names(alt.visible_role_keys, @roles)}
-                      class="inline-flex items-center gap-1 rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70"
-                    >
-                      <.icon name="hero-lock-closed" class="size-3" /> {name}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="flex items-center gap-1">
-                  <button
-                    id={"alt-description-#{alt.id}-up"}
-                    type="button"
-                    phx-click="move_alt_description"
-                    phx-value-id={alt.id}
-                    phx-value-direction="up"
-                    disabled={index == 0}
-                    title={gettext("Move up")}
-                    class={alt_action_class()}
-                  >
-                    <.icon name="hero-arrow-up" class="size-4" />
-                  </button>
-                  <button
-                    id={"alt-description-#{alt.id}-down"}
-                    type="button"
-                    phx-click="move_alt_description"
-                    phx-value-id={alt.id}
-                    phx-value-direction="down"
-                    disabled={index == length(@alt_descriptions) - 1}
-                    title={gettext("Move down")}
-                    class={alt_action_class()}
-                  >
-                    <.icon name="hero-arrow-down" class="size-4" />
-                  </button>
-                  <button
-                    id={"alt-description-#{alt.id}-edit"}
-                    type="button"
-                    phx-click="edit_alt_description"
-                    phx-value-id={alt.id}
-                    title={gettext("Edit")}
-                    class={alt_action_class()}
-                  >
-                    <.icon name="hero-pencil-square" class="size-4" />
-                  </button>
-                  <button
-                    id={"alt-description-#{alt.id}-promote"}
-                    type="button"
-                    phx-click="promote_alt_description"
-                    phx-value-id={alt.id}
-                    disabled={alt.visible_role_keys != []}
-                    title={
-                      if(alt.visible_role_keys == [],
-                        do: gettext("Make default"),
-                        else: gettext("Remove the role limit to make it the default")
-                      )
-                    }
-                    data-confirm={
-                      gettext(
-                        "Make this the default description? The current default takes its place in the list."
-                      )
-                    }
-                    class={alt_action_class()}
-                  >
-                    <.icon name="hero-star" class="size-4" />
-                  </button>
-                  <button
-                    id={"alt-description-#{alt.id}-delete"}
-                    type="button"
-                    phx-click="delete_alt_description"
-                    phx-value-id={alt.id}
-                    title={gettext("Delete")}
-                    data-confirm={
-                      gettext("Delete this description? The data values of its app are deleted too.")
-                    }
-                    class={[alt_action_class(), "hover:text-error"]}
-                  >
-                    <.icon name="hero-trash" class="size-4" />
-                  </button>
-                </div>
-
-                <%!-- An edited description opens right under its row. --%>
-                <.alt_description_form
-                  :if={@alt_description_form && editing?(@editing_alt_description, alt)}
-                  form={@alt_description_form}
-                  editing={@editing_alt_description}
-                  roles={@roles}
-                  format_options={@format_options}
-                  class="basis-full"
-                />
-              </li>
-            </ul>
-
-            <.alt_description_form
-              :if={@alt_description_form && new_alt_description?(@editing_alt_description)}
-              form={@alt_description_form}
-              editing={@editing_alt_description}
-              roles={@roles}
-              format_options={@format_options}
-              class="mt-4"
-            />
-          </section>
-
-          <section
-            id="group-edit-danger"
-            role="tabpanel"
-            aria-labelledby="group-edit-tab-danger"
-            class={[
-              "rounded-3xl border border-error/30 bg-error/5 p-4 sm:p-5",
-              @section != "danger" && "hidden"
-            ]}
-          >
-            <div class="flex items-start gap-3">
-              <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-error/10 text-error">
-                <.icon name="hero-exclamation-triangle" class="size-5" />
-              </span>
-              <div class="min-w-0">
-                <h2 class="font-semibold leading-tight text-error">{gettext("Danger zone")}</h2>
-                <p class="mt-0.5 text-sm text-base-content/60">
-                  {gettext("None of this can be undone.")}
+              <div class="min-w-0 flex-1 basis-60">
+                <p class="font-medium">{gettext("Delete the group")}</p>
+                <p class="text-sm text-base-content/60">
+                  {gettext(
+                    "Deletes the group with its values and files. A group with sub-groups cannot be deleted."
+                  )}
                 </p>
               </div>
-            </div>
-
-            <div class="mt-4 divide-y divide-error/15">
-              <div class="flex flex-wrap items-center justify-between gap-3 py-3">
-                <div class="min-w-0 flex-1 basis-60">
-                  <p class="font-medium">{gettext("Delete the app's data")}</p>
-                  <p class="text-sm text-base-content/60">
-                    {if(@alt_descriptions == [],
-                      do: gettext("Deletes every data value the group's app saved."),
-                      else:
-                        gettext(
-                          "Deletes the data values of the default description's app. The other apps keep theirs."
-                        )
-                    )}
-                  </p>
-                </div>
-                <button
-                  id="group-delete-data-values-button"
-                  type="button"
-                  phx-click="delete_group_data_values"
-                  data-confirm={
-                    if(@alt_descriptions == [],
-                      do: gettext("Are you sure you want to delete all data values in this group?"),
-                      else:
-                        gettext(
-                          "Delete every data value of the default description's app? The other apps keep theirs."
-                        )
-                    )
-                  }
-                  class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:text-amber-200"
-                >
-                  <.icon name="hero-trash" class="size-4" />
-                  <span>{gettext("Delete Data Values")}</span>
-                </button>
-              </div>
-
-              <div
-                :if={!@group.is_root and @can_delete_group}
-                class="flex flex-wrap items-center justify-between gap-3 py-3"
-              >
-                <div class="min-w-0 flex-1 basis-60">
-                  <p class="font-medium">{gettext("Delete the group")}</p>
-                  <p class="text-sm text-base-content/60">
-                    {gettext(
-                      "Deletes the group with its values and files. A group with sub-groups cannot be deleted."
-                    )}
-                  </p>
-                </div>
-                <button
-                  id="group-delete-button"
-                  type="button"
-                  phx-click="delete_group"
-                  data-confirm={gettext("Are you sure you want to delete this group?")}
-                  class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-error/30 bg-error/10 px-4 py-2 text-sm font-medium text-error transition hover:bg-error/15 focus:outline-none focus:ring-2 focus:ring-error/30"
-                >
-                  <.icon name="hero-trash" class="size-4" />
-                  <span>{gettext("Delete group")}</span>
-                </button>
-              </div>
-            </div>
-          </section>
-
-          <%!-- Outside the form, which it submits through `form`, so it can
-               stick to the bottom over every section. --%>
-          <div
-            :if={@dirty}
-            id="group-edit-save-bar"
-            class="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-primary/30 bg-base-100/95 px-4 py-3 shadow-xl shadow-primary/10 backdrop-blur"
-          >
-            <p class="flex items-center gap-2 text-sm font-medium">
-              <span class="size-2 shrink-0 rounded-full bg-primary"></span>
-              {gettext("You have unsaved changes.")}
-            </p>
-            <div class="ml-auto flex items-center gap-2">
               <button
-                id="group-edit-discard"
+                id="group-delete-button"
                 type="button"
-                phx-click="discard_edit_group"
-                class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+                phx-click="delete_group"
+                data-confirm={gettext("Are you sure you want to delete this group?")}
+                class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-error/30 bg-error/10 px-4 py-2 text-sm font-medium text-error transition hover:bg-error/15 focus:outline-none focus:ring-2 focus:ring-error/30"
               >
-                {gettext("Discard")}
-              </button>
-              <button
-                id="group-edit-save"
-                type="submit"
-                form="group-edit-form"
-                phx-disable-with={gettext("Saving...")}
-                class="btn btn-primary rounded-2xl"
-              >
-                {gettext("Save changes")}
+                <.icon name="hero-trash" class="size-4" />
+                <span>{gettext("Delete group")}</span>
               </button>
             </div>
           </div>
+        </section>
+
+        <%!-- Outside the form, which it submits through `form`, so it can
+               stick to the bottom over every section. --%>
+        <div
+          :if={@dirty}
+          id="group-edit-save-bar"
+          class="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-primary/30 bg-base-100/95 px-4 py-3 shadow-xl shadow-primary/10 backdrop-blur"
+        >
+          <p class="flex items-center gap-2 text-sm font-medium">
+            <span class="size-2 shrink-0 rounded-full bg-primary"></span>
+            {gettext("You have unsaved changes.")}
+          </p>
+          <div class="ml-auto flex items-center gap-2">
+            <button
+              id="group-edit-discard"
+              type="button"
+              phx-click="discard_edit_group"
+              class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+            >
+              {gettext("Discard")}
+            </button>
+            <button
+              id="group-edit-save"
+              type="submit"
+              form="group-edit-form"
+              phx-disable-with={gettext("Saving...")}
+              class="btn btn-primary rounded-2xl"
+            >
+              {gettext("Save changes")}
+            </button>
+          </div>
         </div>
-      </div>
-    </div>
-    """
-  end
-
-  attr :id, :string, required: true
-  attr :tab, :string, required: true, doc: "the card's key in `sections/0`"
-  attr :section, :string, required: true, doc: "the key of the card on screen"
-  attr :icon, :string, required: true
-  attr :title, :string, required: true
-  attr :subtitle, :string, required: true
-  slot :inner_block, required: true
-
-  defp section_card(assigns) do
-    ~H"""
-    <section
-      id={@id}
-      role="tabpanel"
-      aria-labelledby={"group-edit-tab-#{@tab}"}
-      class={[
-        "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5",
-        @tab != @section && "hidden"
-      ]}
-    >
-      <.card_title icon={@icon} title={@title} subtitle={@subtitle} class="mb-4" />
-      {render_slot(@inner_block)}
-    </section>
-    """
-  end
-
-  attr :icon, :string, required: true
-  attr :title, :string, required: true
-  attr :subtitle, :string, required: true
-  attr :class, :any, default: nil
-
-  defp card_title(assigns) do
-    ~H"""
-    <div class={["flex min-w-0 items-start gap-3", @class]}>
-      <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <.icon name={@icon} class="size-5" />
-      </span>
-      <div class="min-w-0">
-        <h2 class="font-semibold leading-tight">{@title}</h2>
-        <p class="mt-0.5 text-sm text-base-content/60">{@subtitle}</p>
-      </div>
+      </Components.tab_body>
     </div>
     """
   end
@@ -656,14 +579,6 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
       {"danger", "group-edit-danger", gettext("Danger zone"), true}
     ]
   end
-
-  defp section_tab_class(true, false), do: "bg-base-content text-base-100 shadow-sm"
-  defp section_tab_class(true, true), do: "bg-error text-error-content shadow-sm"
-
-  defp section_tab_class(false, false),
-    do: "text-base-content/70 hover:bg-base-200 hover:text-base-content"
-
-  defp section_tab_class(false, true), do: "text-error/80 hover:bg-error/10 hover:text-error"
 
   defp home_description_options(group, alt_descriptions) do
     [
