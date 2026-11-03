@@ -22,6 +22,7 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert html =~ ~s(name="theme-color")
       assert html =~ ~s|media="(prefers-color-scheme: dark)"|
       assert html =~ ~s(id="app-update-toast")
+      assert html =~ ~s(id="lp-action-sheet")
     end
 
     test "renders login page in polish when locale is stored in session", %{conn: conn} do

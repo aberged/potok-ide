@@ -62,5 +62,80 @@
         </button>
       </div>
     </div>
+    <%!-- The menu of a long-pressed link (`longpress.js` fills in the link and
+         opens it), styled like the tag editor. The sheet takes the focus
+         itself, so opening it by a long press rings no button. --%>
+    <dialog
+      id="lp-action-sheet"
+      aria-labelledby="lp-action-sheet-title"
+      class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-transparent"
+    >
+      <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
+        <div
+          class="absolute inset-0 bg-base-content/30 backdrop-blur-[2px]"
+          data-lp-close
+          aria-hidden="true"
+        >
+        </div>
+        <section
+          tabindex="-1"
+          autofocus
+          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl shadow-base-content/10 outline-none sm:max-w-md sm:rounded-3xl sm:border-b"
+        >
+          <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-5 pb-4">
+            <span class="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <.icon name="hero-link" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <h2 id="lp-action-sheet-title" class="text-base font-semibold leading-tight">
+                {gettext("Link")}
+              </h2>
+              <p id="lp-action-sheet-url" class="mt-0.5 truncate text-sm text-base-content/60">
+              </p>
+            </div>
+            <button
+              id="lp-action-sheet-close"
+              type="button"
+              data-lp-close
+              aria-label={gettext("Close")}
+              class="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
+            >
+              <.icon name="hero-x-mark" class="size-5" />
+            </button>
+          </header>
+
+          <div class="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+            <button
+              :for={
+                {action, icon, label} <- [
+                  {"open", "hero-arrow-right", gettext("Open link")},
+                  {"browser", "hero-arrow-top-right-on-square", gettext("Open in browser")},
+                  {"copy", "hero-clipboard-document", gettext("Copy link")},
+                  {"share", "hero-share", gettext("Share")}
+                ]
+              }
+              id={"lp-action-sheet-#{action}"}
+              type="button"
+              data-lp-action={action}
+              class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition duration-150 hover:bg-base-200 active:scale-[0.99]"
+            >
+              <.icon name={icon} class="size-5 shrink-0 text-base-content/60" />
+              {label}
+            </button>
+          </div>
+
+          <footer class="border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] sm:pb-3">
+            <button
+              id="lp-action-sheet-cancel"
+              type="button"
+              data-lp-close
+              class="w-full rounded-full border border-base-300 bg-base-100 py-2.5 text-sm font-semibold text-base-content/80 transition hover:bg-base-200 hover:text-base-content active:scale-[0.98]"
+            >
+              {gettext("Cancel")}
+            </button>
+          </footer>
+        </section>
+      </div>
+    </dialog>
   </body>
 </html>

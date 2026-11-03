@@ -718,6 +718,7 @@ msgstr ""
 msgid "the mailbox page"
 msgstr ""
 
+#: lib/potok_ide_web/components/layouts/root.html.heex:134
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1006
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:164
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:554
@@ -2601,6 +2602,7 @@ msgstr ""
 msgid "Sub-groups of %{name}"
 msgstr ""
 
+#: lib/potok_ide_web/components/layouts/root.html.heex:100
 #: lib/potok_ide_web/components/tag_components.ex:172
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:801
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
@@ -3316,7 +3318,7 @@ msgstr ""
 msgid "Add a tag to narrow down"
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:328
+#: lib/potok_ide_web/components/tag_components.ex:330
 #, elixir-autogen, elixir-format
 msgid "All tags"
 msgstr ""
@@ -3417,17 +3419,17 @@ msgstr ""
 msgid "Pick a tag to see everything that carries it."
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:382
+#: lib/potok_ide_web/components/tag_components.ex:384
 #, elixir-autogen, elixir-format
 msgid "Private tag %{name}, seen only by you"
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:321
+#: lib/potok_ide_web/components/tag_components.ex:323
 #, elixir-autogen, elixir-format
 msgid "Private tags are seen only by you."
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:381
+#: lib/potok_ide_web/components/tag_components.ex:383
 #, elixir-autogen, elixir-format
 msgid "Public tag %{name}"
 msgstr ""
@@ -3561,13 +3563,13 @@ msgctxt "tag kind"
 msgid "Values"
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:363
+#: lib/potok_ide_web/components/tag_components.ex:365
 #, elixir-autogen, elixir-format
 msgctxt "tag visibility"
 msgid "Private"
 msgstr ""
 
-#: lib/potok_ide_web/components/tag_components.ex:364
+#: lib/potok_ide_web/components/tag_components.ex:366
 #, elixir-autogen, elixir-format
 msgctxt "tag visibility"
 msgid "Public"
@@ -3869,4 +3871,29 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1034
 #, elixir-autogen, elixir-format
 msgid "Public events of this group."
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:113
+#, elixir-autogen, elixir-format
+msgid "Copy link"
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:91
+#, elixir-autogen, elixir-format
+msgid "Link"
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:112
+#, elixir-autogen, elixir-format
+msgid "Open in browser"
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:111
+#, elixir-autogen, elixir-format
+msgid "Open link"
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:114
+#, elixir-autogen, elixir-format
+msgid "Share"
 msgstr ""

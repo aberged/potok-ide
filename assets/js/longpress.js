@@ -22,117 +22,43 @@ const toAbsoluteUrl = href => {
   }
 }
 
+// The sheet is a modal <dialog> of the root layout, translated and styled
+// there; this fills in the link and shows the actions that apply to it.
 const ACTION_SHEET_ID = "lp-action-sheet"
 
+const linkActions = {
+  open: url => window.location.assign(url),
+  browser: url => void Browser.open({ url }),
+  copy: url => void navigator.clipboard?.writeText(url),
+  share: url => void Share.share({ url }),
+}
+
 const showLinkActionSheet = (urlString, isExternal) => {
-  document.getElementById(ACTION_SHEET_ID)?.remove()
+  const dialog = document.getElementById(ACTION_SHEET_ID)
+  if (!dialog) return
 
-  const overlay = document.createElement("div")
-  overlay.id = ACTION_SHEET_ID
-  Object.assign(overlay.style, {
-    position: "fixed",
-    inset: "0",
-    zIndex: "99999",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "flex-end",
+  dialog.dataset.url = urlString
+  dialog.querySelector(`#${ACTION_SHEET_ID}-url`).textContent = urlString
+  dialog.querySelector('[data-lp-action="browser"]').hidden = !isExternal
+  dialog.querySelector('[data-lp-action="share"]').hidden = !Capacitor.isNativePlatform()
+
+  if (!dialog.open) dialog.showModal()
+}
+
+const installLinkActionSheet = () => {
+  const dialog = document.getElementById(ACTION_SHEET_ID)
+  if (!dialog) return
+
+  dialog.addEventListener("click", event => {
+    const action = event.target.closest("[data-lp-action]")?.dataset.lpAction
+
+    if (action) {
+      dialog.close()
+      linkActions[action]?.(dialog.dataset.url)
+    } else if (event.target.closest("[data-lp-close]")) {
+      dialog.close()
+    }
   })
-
-  const backdrop = document.createElement("div")
-  Object.assign(backdrop.style, {
-    position: "absolute",
-    inset: "0",
-    background: "rgba(0,0,0,0.45)",
-  })
-
-  const sheet = document.createElement("div")
-  Object.assign(sheet.style, {
-    position: "relative",
-    background: "var(--color-base-100, #fff)",
-    borderRadius: "1rem 1rem 0 0",
-    padding: "1.25rem 1rem 2.5rem",
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
-    boxShadow: "0 -4px 32px rgba(0,0,0,0.18)",
-  })
-
-  const urlLabel = document.createElement("p")
-  urlLabel.textContent = urlString
-  Object.assign(urlLabel.style, {
-    fontSize: "0.75rem",
-    color: "var(--color-base-content, #333)",
-    opacity: "0.5",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    whiteSpace: "nowrap",
-    marginBottom: "0.5rem",
-    padding: "0 0.25rem",
-  })
-  sheet.appendChild(urlLabel)
-
-  const close = () => overlay.remove()
-  backdrop.addEventListener("click", close)
-
-  const addBtn = (label, handler) => {
-    const btn = document.createElement("button")
-    btn.textContent = label
-    Object.assign(btn.style, {
-      padding: "0.85rem 1rem",
-      borderRadius: "0.5rem",
-      background: "var(--color-base-200, #f3f4f6)",
-      border: "none",
-      fontSize: "1rem",
-      cursor: "pointer",
-      textAlign: "left",
-      color: "var(--color-base-content, #111)",
-    })
-    btn.addEventListener("click", () => {
-      close()
-      handler()
-    })
-    sheet.appendChild(btn)
-  }
-
-  addBtn("Open link", () => {
-    window.location.assign(urlString)
-  })
-
-  if (isExternal) {
-    addBtn("Open in browser", () => {
-      void Browser.open({ url: urlString })
-    })
-  }
-
-  addBtn("Copy link", () => {
-    void navigator.clipboard?.writeText(urlString)
-  })
-
-  if (Capacitor.isNativePlatform()) {
-    addBtn("Share", () => {
-      void Share.share({ url: urlString })
-    })
-  }
-
-  const cancelBtn = document.createElement("button")
-  cancelBtn.textContent = "Cancel"
-  Object.assign(cancelBtn.style, {
-    padding: "0.85rem 1rem",
-    borderRadius: "0.5rem",
-    background: "transparent",
-    border: "1.5px solid var(--color-base-300, #ddd)",
-    fontSize: "1rem",
-    cursor: "pointer",
-    textAlign: "center",
-    color: "var(--color-base-content, #111)",
-    marginTop: "0.25rem",
-  })
-  cancelBtn.addEventListener("click", close)
-  sheet.appendChild(cancelBtn)
-
-  overlay.appendChild(backdrop)
-  overlay.appendChild(sheet)
-  document.body.appendChild(overlay)
 }
 
 // The menu opens after LONG_PRESS_MS of holding a link, or on touch when the
@@ -151,6 +77,8 @@ export const installLongPressLinkMenu = () => {
   let pointerType = null
 
   const isTouch = () => pointerType === "touch" || pointerType === "pen"
+
+  installLinkActionSheet()
 
   const clear = () => {
     if (timer) {

@@ -710,6 +710,7 @@ msgstr "zatvori"
 msgid "the mailbox page"
 msgstr "stranicu poštanskog sandučeta"
 
+#: lib/potok_ide_web/components/layouts/root.html.heex:134
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1006
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:164
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:554
@@ -2597,6 +2598,7 @@ msgstr "Prikazan je samo deo rezultata. Suzi pretragu ili otvori podgrupu da pre
 msgid "Sub-groups of %{name}"
 msgstr "Podgrupe grupe %{name}"
 
+#: lib/potok_ide_web/components/layouts/root.html.heex:100
 #: lib/potok_ide_web/components/tag_components.ex:172
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:801
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
@@ -3312,7 +3314,7 @@ msgstr "Dodaj"
 msgid "Add a tag to narrow down"
 msgstr "Dodajte tag da suzite izbor"
 
-#: lib/potok_ide_web/components/tag_components.ex:328
+#: lib/potok_ide_web/components/tag_components.ex:330
 #, elixir-autogen, elixir-format
 msgid "All tags"
 msgstr "Svi tagovi"
@@ -3413,17 +3415,17 @@ msgstr "Ništa što možete da otvorite nema ove tagove."
 msgid "Pick a tag to see everything that carries it."
 msgstr "Izaberite tag da vidite sve što ga nosi."
 
-#: lib/potok_ide_web/components/tag_components.ex:382
+#: lib/potok_ide_web/components/tag_components.ex:384
 #, elixir-autogen, elixir-format
 msgid "Private tag %{name}, seen only by you"
 msgstr "Privatni tag %{name}, vidite ga samo vi"
 
-#: lib/potok_ide_web/components/tag_components.ex:321
+#: lib/potok_ide_web/components/tag_components.ex:323
 #, elixir-autogen, elixir-format
 msgid "Private tags are seen only by you."
 msgstr "Privatne tagove vidite samo vi."
 
-#: lib/potok_ide_web/components/tag_components.ex:381
+#: lib/potok_ide_web/components/tag_components.ex:383
 #, elixir-autogen, elixir-format
 msgid "Public tag %{name}"
 msgstr "Javni tag %{name}"
@@ -3557,13 +3559,13 @@ msgctxt "tag kind"
 msgid "Values"
 msgstr "Vrednosti"
 
-#: lib/potok_ide_web/components/tag_components.ex:363
+#: lib/potok_ide_web/components/tag_components.ex:365
 #, elixir-autogen, elixir-format
 msgctxt "tag visibility"
 msgid "Private"
 msgstr "Privatni"
 
-#: lib/potok_ide_web/components/tag_components.ex:364
+#: lib/potok_ide_web/components/tag_components.ex:366
 #, elixir-autogen, elixir-format
 msgctxt "tag visibility"
 msgid "Public"
@@ -3867,3 +3869,28 @@ msgstr "Uključite filter iznad da biste videli događaje."
 #, elixir-autogen, elixir-format
 msgid "Public events of this group."
 msgstr "Javni događaji ove grupe."
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:113
+#, elixir-autogen, elixir-format
+msgid "Copy link"
+msgstr "Kopiraj link"
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:91
+#, elixir-autogen, elixir-format
+msgid "Link"
+msgstr "Link"
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:112
+#, elixir-autogen, elixir-format
+msgid "Open in browser"
+msgstr "Otvori u pregledaču"
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:111
+#, elixir-autogen, elixir-format
+msgid "Open link"
+msgstr "Otvori link"
+
+#: lib/potok_ide_web/components/layouts/root.html.heex:114
+#, elixir-autogen, elixir-format
+msgid "Share"
+msgstr "Podeli"
