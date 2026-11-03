@@ -121,7 +121,7 @@ msgstr "Bieżący profil:"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1740
 #: lib/potok_ide_web/live/group_live/show.ex:4161
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:931
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:951
 #: lib/potok_ide_web/live/group_live/show/components.ex:1007
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:122
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:188
@@ -610,7 +610,7 @@ msgid "the mailbox page"
 msgstr "stronę skrzynki pocztowej"
 
 #: lib/potok_ide_web/components/layouts/root.html.heex:133
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1004
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1024
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:164
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:548
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:245
@@ -2228,7 +2228,7 @@ msgstr "Role przydziela się w każdej grupie osobno. Utwórz własny manifest, 
 msgid "Roles of %{username}"
 msgstr "Role użytkownika %{username}"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1012
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1032
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:221
 #: lib/potok_ide_web/live/tag_live/index.ex:302
 #, elixir-autogen, elixir-format
@@ -2485,7 +2485,7 @@ msgstr "Podgrupy grupy %{name}"
 
 #: lib/potok_ide_web/components/layouts/root.html.heex:106
 #: lib/potok_ide_web/components/tag_components.ex:173
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:801
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:821
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:65
 #, elixir-autogen, elixir-format
@@ -2603,7 +2603,7 @@ msgstr "Opis zapisany."
 msgid "Descriptions"
 msgstr "Opisy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:681
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:701
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:293
 #: lib/potok_ide_web/live/profile_live/index.ex:111
 #, elixir-autogen, elixir-format
@@ -2770,7 +2770,7 @@ msgstr "Załaduj nowsze wartości"
 msgid "The original value is no longer available."
 msgstr "Oryginalna wartość nie jest już dostępna."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:372
 #, elixir-autogen, elixir-format
 msgid "+%{count} more"
 msgstr "jeszcze %{count}"
@@ -2785,35 +2785,35 @@ msgstr "Dodawanie wydarzeń"
 msgid "Add events to the calendar."
 msgstr "Dodawanie wydarzeń do kalendarza."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:660
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:680
 #, elixir-autogen, elixir-format
 msgid "Add to my calendar"
 msgstr "Dodaj do mojego kalendarza"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:824
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1039
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:844
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1059
 #: lib/potok_ide_web/live/group_live/show/event_card.ex:67
 #, elixir-autogen, elixir-format
 msgid "All day"
 msgstr "Cały dzień"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:981
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1001
 #, elixir-autogen, elixir-format
 msgid "Announce in the chat"
 msgstr "Ogłoś na czacie"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:591
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:611
 #, elixir-autogen, elixir-format
 msgid "Are you coming?"
 msgstr "Będziesz?"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:832
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:840
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:852
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:860
 #, elixir-autogen, elixir-format
 msgid "At"
 msgstr "Godzina"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:472
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:492
 #, elixir-autogen, elixir-format
 msgid "Back to the calendar"
 msgstr "Wróć do kalendarza"
@@ -2824,32 +2824,32 @@ msgstr "Wróć do kalendarza"
 msgid "Calendar"
 msgstr "Kalendarz"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:710
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:730
 #, elixir-autogen, elixir-format
 msgid "Cancel all occurrences"
 msgstr "Odwołaj wszystkie terminy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:711
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:731
 #, elixir-autogen, elixir-format
 msgid "Cancel event"
 msgstr "Odwołaj wydarzenie"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:701
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:721
 #, elixir-autogen, elixir-format
 msgid "Cancel every occurrence of this event? Members will be told."
 msgstr "Odwołać wszystkie terminy tego wydarzenia? Członkowie zostaną powiadomieni."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:688
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:708
 #, elixir-autogen, elixir-format
 msgid "Cancel only this occurrence? Members will be told."
 msgstr "Odwołać tylko ten termin? Członkowie zostaną powiadomieni."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:702
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:722
 #, elixir-autogen, elixir-format
 msgid "Cancel this event? Members will be told."
 msgstr "Odwołać to wydarzenie? Członkowie zostaną powiadomieni."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:693
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:713
 #, elixir-autogen, elixir-format
 msgid "Cancel this occurrence"
 msgstr "Odwołaj ten termin"
@@ -2859,22 +2859,22 @@ msgstr "Odwołaj ten termin"
 msgid "Change and cancel events added by others."
 msgstr "Zmienianie i odwoływanie wydarzeń dodanych przez innych."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1058
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1078
 #, elixir-autogen, elixir-format
 msgid "Daily"
 msgstr "Codziennie"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1057
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1077
 #, elixir-autogen, elixir-format
 msgid "Does not repeat"
 msgstr "Nie powtarza się"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:805
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:825
 #, elixir-autogen, elixir-format
 msgid "Edit event"
 msgstr "Edycja wydarzenia"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:835
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:855
 #, elixir-autogen, elixir-format
 msgid "Ends"
 msgstr "Koniec"
@@ -2890,42 +2890,42 @@ msgstr "Wydarzenie"
 msgid "Event cancelled"
 msgstr "Wydarzenie odwołane"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1024
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1044
 #, elixir-autogen, elixir-format
 msgid "Events of every group you are a member of."
 msgstr "Wydarzenia wszystkich grup, do których należysz."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1035
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1055
 #, elixir-autogen, elixir-format
 msgid "Events of this group and of its sub-groups you are in."
 msgstr "Wydarzenia tej grupy i jej podgrup, do których należysz."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1037
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1057
 #, elixir-autogen, elixir-format
 msgid "Events of this group."
 msgstr "Wydarzenia tej grupy."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1065
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1085
 #, elixir-autogen, elixir-format
 msgid "Every how many days"
 msgstr "Co ile dni"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1067
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1087
 #, elixir-autogen, elixir-format
 msgid "Every how many months"
 msgstr "Co ile miesięcy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1066
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1086
 #, elixir-autogen, elixir-format
 msgid "Every how many weeks"
 msgstr "Co ile tygodni"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1068
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1088
 #, elixir-autogen, elixir-format
 msgid "Every how many years"
 msgstr "Co ile lat"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1070
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1090
 #, elixir-autogen, elixir-format
 msgid "Going"
 msgstr "Będę"
@@ -2935,8 +2935,8 @@ msgstr "Będę"
 msgid "Include sub-groups"
 msgstr "Uwzględnij podgrupy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:558
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:924
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:578
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:944
 #, elixir-autogen, elixir-format
 msgid "Location"
 msgstr "Miejsce"
@@ -2946,12 +2946,12 @@ msgstr "Miejsce"
 msgid "Manage events"
 msgstr "Zarządzanie wydarzeniami"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1071
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1091
 #, elixir-autogen, elixir-format
 msgid "Maybe"
 msgstr "Może"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:966
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:986
 #, elixir-autogen, elixir-format
 msgid "Members can choose their own reminders."
 msgstr "Członkowie mogą wybrać własne przypomnienia."
@@ -2961,7 +2961,7 @@ msgstr "Członkowie mogą wybrać własne przypomnienia."
 msgid "Month"
 msgstr "Miesiąc"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1060
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1080
 #, elixir-autogen, elixir-format
 msgid "Monthly"
 msgstr "Co miesiąc"
@@ -2972,12 +2972,12 @@ msgstr "Co miesiąc"
 msgid "My calendar"
 msgstr "Mój kalendarz"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:737
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:757
 #, elixir-autogen, elixir-format
 msgid "My reminders"
 msgstr "Moje przypomnienia"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:805
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:825
 #, elixir-autogen, elixir-format
 msgid "New event"
 msgstr "Nowe wydarzenie"
@@ -2987,17 +2987,17 @@ msgstr "Nowe wydarzenie"
 msgid "Next month"
 msgstr "Następny miesiąc"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:196
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:183
 #, elixir-autogen, elixir-format
 msgid "No events on this day."
 msgstr "Brak wydarzeń tego dnia."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:220
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:221
 #, elixir-autogen, elixir-format
 msgid "No events this month."
 msgstr "Brak wydarzeń w tym miesiącu."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1072
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1092
 #, elixir-autogen, elixir-format
 msgid "Not going"
 msgstr "Nie będę"
@@ -3007,12 +3007,12 @@ msgstr "Nie będę"
 msgid "Open calendar tab"
 msgstr "Otwórz kartę kalendarza"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:671
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:691
 #, elixir-autogen, elixir-format
 msgid "Open in %{group}"
 msgstr "Otwórz w grupie %{group}"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:567
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:587
 #, elixir-autogen, elixir-format
 msgid "Organizer"
 msgstr "Organizator"
@@ -3022,23 +3022,23 @@ msgstr "Organizator"
 msgid "Previous month"
 msgstr "Poprzedni miesiąc"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:948
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:968
 #, elixir-autogen, elixir-format
 msgid "Reminders for members"
 msgstr "Przypomnienia dla członków"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:540
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:856
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:560
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:876
 #, elixir-autogen, elixir-format
 msgid "Repeats"
 msgstr "Powtarzanie"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:764
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:784
 #, elixir-autogen, elixir-format
 msgid "Save reminders"
 msgstr "Zapisz przypomnienia"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1009
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1029
 #, elixir-autogen, elixir-format
 msgid "Saving…"
 msgstr "Zapisywanie…"
@@ -3048,17 +3048,17 @@ msgstr "Zapisywanie…"
 msgid "Show calendar as"
 msgstr "Pokaż kalendarz jako"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:551
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:571
 #, elixir-autogen, elixir-format
 msgid "Shown in your time zone; the event is in %{zone}."
 msgstr "Pokazane w Twojej strefie czasowej; wydarzenie jest w strefie %{zone}."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:827
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:847
 #, elixir-autogen, elixir-format
 msgid "Starts"
 msgstr "Początek"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:993
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Tell members if the time or place changes"
 msgstr "Powiadom członków, jeśli zmieni się czas lub miejsce"
@@ -3078,28 +3078,28 @@ msgstr "Wydarzenie zostało odwołane."
 msgid "The event was saved."
 msgstr "Wydarzenie zostało zapisane."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:523
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:543
 #, elixir-autogen, elixir-format
 msgid "This event was cancelled."
 msgstr "To wydarzenie zostało odwołane."
 
 #: lib/potok_ide_web/live/group_live/show/calendar_state.ex:635
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:524
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:544
 #, elixir-autogen, elixir-format
 msgid "This occurrence was cancelled."
 msgstr "Ten termin został odwołany."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:548
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:568
 #, elixir-autogen, elixir-format
 msgid "Time zone"
 msgstr "Strefa czasowa"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:850
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:870
 #, elixir-autogen, elixir-format
 msgid "Times are in %{zone}, the event's time zone."
 msgstr "Godziny są w strefie %{zone}, strefie wydarzenia."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:819
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:839
 #, elixir-autogen, elixir-format
 msgid "Title"
 msgstr "Tytuł"
@@ -3109,27 +3109,27 @@ msgstr "Tytuł"
 msgid "Today"
 msgstr "Dziś"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:917
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:937
 #, elixir-autogen, elixir-format
 msgid "Until (optional)"
 msgstr "Do (opcjonalnie)"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:774
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:794
 #, elixir-autogen, elixir-format
 msgid "Use the organizer's"
 msgstr "Użyj przypomnień organizatora"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1059
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1079
 #, elixir-autogen, elixir-format
 msgid "Weekly"
 msgstr "Co tydzień"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:530
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:550
 #, elixir-autogen, elixir-format
 msgid "When"
 msgstr "Kiedy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1061
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1081
 #, elixir-autogen, elixir-format
 msgid "Yearly"
 msgstr "Co rok"
@@ -3146,12 +3146,12 @@ msgstr "Nie możesz odpowiedzieć na to wydarzenie."
 msgid "You cannot change this event."
 msgstr "Nie możesz zmienić tego wydarzenia."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:741
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:761
 #, elixir-autogen, elixir-format
 msgid "You chose your own reminders for this event."
 msgstr "Wybrano własne przypomnienia dla tego wydarzenia."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:742
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:762
 #, elixir-autogen, elixir-format
 msgid "You get the organizer's reminders."
 msgstr "Otrzymujesz przypomnienia organizatora."
@@ -3166,18 +3166,18 @@ msgstr "Nie udało się zapisać przypomnień."
 msgid "Your reminders were saved."
 msgstr "Przypomnienia zostały zapisane."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1074
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1094
 #, elixir-autogen, elixir-format
 msgid "Going:"
 msgstr "Będą:"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1075
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1095
 #, elixir-autogen, elixir-format
 msgid "Maybe:"
 msgstr "Może:"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:874
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:895
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:894
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:915
 #, elixir-autogen, elixir-format
 msgid "Repeats on"
 msgstr "Powtarza się"
@@ -3696,12 +3696,12 @@ msgstr[2] "%{count} członków"
 msgid "Not a member"
 msgstr "Nie jesteś członkiem"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1021
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1041
 #, elixir-autogen, elixir-format
 msgid "Events of your groups and public events."
 msgstr "Wydarzenia twoich grup i wydarzenia publiczne."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:943
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:963
 #, elixir-autogen, elixir-format
 msgid "Every user sees it in their calendar and can answer it."
 msgstr "Każdy użytkownik widzi je w swoim kalendarzu i może na nie odpowiedzieć."
@@ -3716,13 +3716,13 @@ msgstr "Oznaczanie wydarzeń jako publicznych, aby każdy użytkownik widział j
 msgid "My groups"
 msgstr "Moje grupy"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1029
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1049
 #, elixir-autogen, elixir-format
 msgid "No events are shown."
 msgstr "Żadne wydarzenia nie są wyświetlane."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:507
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:941
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:527
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:961
 #: lib/potok_ide_web/live/group_live/show/event_card.ex:96
 #, elixir-autogen, elixir-format
 msgid "Public event"
@@ -3733,7 +3733,7 @@ msgstr "Wydarzenie publiczne"
 msgid "Public events"
 msgstr "Wydarzenia publiczne"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1027
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1047
 #, elixir-autogen, elixir-format
 msgid "Public events of every group."
 msgstr "Wydarzenia publiczne wszystkich grup."
@@ -3743,17 +3743,17 @@ msgstr "Wydarzenia publiczne wszystkich grup."
 msgid "Publish events"
 msgstr "Publikowanie wydarzeń"
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:744
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:764
 #, elixir-autogen, elixir-format
 msgid "They come for the occurrences you answered Going or Maybe."
 msgstr "Przychodzą dla terminów, na które odpowiedziałeś Będę lub Może."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:219
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:220
 #, elixir-autogen, elixir-format
 msgid "Turn on a filter above to see events."
 msgstr "Włącz filtr powyżej, aby zobaczyć wydarzenia."
 
-#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1032
+#: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1052
 #, elixir-autogen, elixir-format
 msgid "Public events of this group."
 msgstr "Wydarzenia publiczne tej grupy."
@@ -3858,14 +3858,6 @@ msgstr "W tej grupie nie możesz załączać plików, pominięto: %{names}."
 #, elixir-autogen, elixir-format
 msgid "A plenum, an assembly, a working group. A subgroup can take over its parent's members and roles, so it doesn't start from scratch."
 msgstr "Plenum, zgromadzenie, grupa robocza. Podgrupa może przejąć członków i role grupy nadrzędnej, więc nie zaczyna od zera."
-
-#: lib/potok_ide_web/components/layouts.ex:416
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:20
-#: lib/potok_ide_web/emails/email_components.ex:24
-#: lib/potok_ide_web/emails/email_components.ex:135
-#, elixir-autogen, elixir-format
-msgid "A shared platform for assemblies"
-msgstr "Wspólna platforma mieszkańców"
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:160
 #, elixir-autogen, elixir-format
@@ -4332,3 +4324,11 @@ msgstr "Pokaż grupy publiczne, do których nie należysz"
 #, elixir-autogen, elixir-format
 msgid "You are not in any group yet."
 msgstr "Nie należysz jeszcze do żadnej grupy."
+
+#: lib/potok_ide_web/components/layouts.ex:416
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:20
+#: lib/potok_ide_web/emails/email_components.ex:24
+#: lib/potok_ide_web/emails/email_components.ex:135
+#, elixir-autogen, elixir-format
+msgid "A social application platform"
+msgstr "Aplikacyjna platforma społecznościowa"

@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.EmailComponents do
   Joins the plain-text body from its paragraphs, skipping the missing ones.
   """
   def to_text(paragraphs) do
-    footer = "Potok · " <> gettext("A shared platform for assemblies") <> "\n" <> home_url()
+    footer = "Potok · " <> gettext("A social application platform") <> "\n" <> home_url()
 
     (Enum.reject(paragraphs, &(&1 in [nil, ""])) ++ ["--\n" <> footer])
     |> Enum.join("\n\n")
@@ -132,7 +132,7 @@ defmodule PotokIdeWeb.EmailComponents do
                       <a
                         href={@home_url}
                         style="color:#7a8794;font-weight:600;text-decoration:none;"
-                      >potok</a>{" · " <> gettext("A shared platform for assemblies")}
+                      >potok</a>{" · " <> gettext("A social application platform")}
                     </p>
                     <p style="margin:4px 0 0;">
                       {gettext("Sent to %{email}.", email: @to)}

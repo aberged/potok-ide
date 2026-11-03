@@ -413,7 +413,7 @@ defmodule PotokIdeWeb.Layouts do
                 <span class="font-brand font-bold">potok</span>
               </div>
               <p class="mt-2 text-sm text-base-content/55">
-                {gettext("A shared platform for assemblies")}
+                {gettext("A social application platform")}
               </p>
               <p class="mt-1 text-xs text-base-content/45 hidden">
                 {gettext(
