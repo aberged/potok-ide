@@ -1497,7 +1497,8 @@ const registerCapacitorRoutePersistence = () => {
 // Android's back button closes the topmost open dialog the way Escape does:
 // a cancelable `cancel` event first, so a dialog that closes through the
 // server can take over. A listener turns off Capacitor's own handling, so
-// going back (and nothing else, as there) is done here too.
+// going back is done here too; with nowhere to go back to, the app goes to
+// the background like other Android apps, and comes back on the same page.
 const registerCapacitorBackButton = () => {
   if (Capacitor.getPlatform() !== "android") {
     return
@@ -1513,6 +1514,8 @@ const registerCapacitorBackButton = () => {
       }
     } else if (canGoBack) {
       window.history.back()
+    } else {
+      void App.minimizeApp()
     }
   })
 }
