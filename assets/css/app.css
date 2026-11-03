@@ -610,6 +610,30 @@
   outline-color: color-mix(in oklab, var(--color-primary-content) 55%, transparent);
 }
 
+/* Flash messages (`CoreComponents.flash/1`) drop in from above; the guest
+   pages tint their info flashes with the mark's blue instead of primary. */
+.flash-card {
+  animation: flash-in 240ms cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.landing .flash-card {
+  --color-primary: var(--lp-accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flash-card {
+    animation: none;
+  }
+}
+
+@keyframes flash-in {
+  from {
+    opacity: 0;
+    translate: 0 -0.75rem;
+    scale: 0.98;
+  }
+}
+
 /* Landing page for guests (`PageHTML.home`). Its blues come from the Potok
    mark, not from the theme's primary color (orange in the "system" theme).
    Layered as components so Tailwind utilities still win over these rules. */

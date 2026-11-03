@@ -32,7 +32,9 @@ defmodule PotokIdeWeb.CoreComponents do
   alias Phoenix.LiveView.JS
 
   @doc """
-  Renders flash notices.
+  Renders flash notices: a card like the app's own, dropped in under the top
+  safe area. Info takes the theme's primary color (on guest pages the mark's
+  blue, see `.flash-card` in app.css), errors the error color.
 
   ## Examples
 
@@ -56,33 +58,50 @@ defmodule PotokIdeWeb.CoreComponents do
     <div
       :if={msg = render_slot(@inner_block) || Phoenix.Flash.get(@flash, @kind)}
       id={@id}
-      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide("##{@id}")}
+      phx-click={JS.push("lv:clear-flash", value: %{key: @kind}) |> hide_flash("##{@id}")}
       phx-hook={@auto_dismiss && "AutoDismissFlash"}
       data-auto-dismiss-flash={if @auto_dismiss, do: "true", else: nil}
       data-dismiss-after-ms={if @auto_dismiss, do: @dismiss_after_ms, else: nil}
       role="alert"
-      class="absolute toast toast-top toast-center top-1 z-1000"
+      class="pointer-events-none fixed inset-x-0 top-[calc(var(--app-safe-area-top)+0.75rem)] z-1000 px-4"
       {@rest}
     >
       <div class={[
-        "alert w-80 sm:w-96 max-w-80 sm:max-w-96 text-wrap",
-        @kind == :info && "alert-info",
-        @kind == :error && "alert-error"
+        "flash-card pointer-events-auto mx-auto flex w-full max-w-sm cursor-pointer items-start gap-3 rounded-2xl border bg-base-100/95 p-2.5 text-sm text-base-content shadow-xl backdrop-blur transition duration-150 ease-out hover:-translate-y-px",
+        @kind == :info && "border-base-300/70 shadow-primary/10",
+        @kind == :error && "border-error/30 shadow-error/10"
       ]}>
-        <.icon :if={@kind == :info} name="hero-information-circle" class="size-5 shrink-0" />
-        <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5 shrink-0" />
-        <div>
+        <span class={[
+          "flex size-9 shrink-0 items-center justify-center rounded-full",
+          @kind == :info && "bg-primary/10 text-primary",
+          @kind == :error && "bg-error/10 text-error"
+        ]}>
+          <.icon :if={@kind == :info} name="hero-information-circle" class="size-5" />
+          <.icon :if={@kind == :error} name="hero-exclamation-circle" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1 self-center break-words py-1">
           <p :if={@title} class="font-semibold">{@title}</p>
-
-          <p>{msg}</p>
+          <p class={@title && "text-base-content/70"}>{msg}</p>
         </div>
-        <div class="flex-1" />
-        <button type="button" class="group self-start cursor-pointer" aria-label={gettext("close")}>
-          <.icon name="hero-x-mark" class="size-5 opacity-40 group-hover:opacity-70" />
+        <button type="button" class={icon_button_class("ghost", "sm")} aria-label={gettext("close")}>
+          <.icon name="hero-x-mark" class="size-4" />
         </button>
       </div>
     </div>
     """
+  end
+
+  @doc """
+  Hides a flash by sliding it back up, where it came from.
+  """
+  def hide_flash(js \\ %JS{}, selector) do
+    JS.hide(js,
+      to: selector,
+      time: 200,
+      transition:
+        {"transition-all ease-in duration-200", "opacity-100 translate-y-0",
+         "opacity-0 -translate-y-3"}
+    )
   end
 
   # Shared by `button/1` and `icon_button/1`. Hover and press effects sit

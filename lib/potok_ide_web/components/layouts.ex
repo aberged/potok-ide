@@ -440,8 +440,9 @@ defmodule PotokIdeWeb.Layouts do
           </div>
         </footer>
       </div>
+      <%!-- Inside `.landing`, so its flashes take the mark's blue. --%>
+      <.flash_group flash={@flash} />
     </div>
-    <.flash_group flash={@flash} />
     """
   end
 
@@ -537,8 +538,10 @@ defmodule PotokIdeWeb.Layouts do
         kind={:info}
         title={gettext("Reconnecting")}
         auto_dismiss={false}
-        phx-disconnected={show(".phx-client-error #client-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#client-error") |> JS.set_attribute({"hidden", ""})}
+        phx-disconnected={
+          JS.show(to: ".phx-client-error #client-error") |> JS.remove_attribute("hidden")
+        }
+        phx-connected={hide_flash("#client-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
         {gettext("Attempting to reconnect")}
@@ -550,8 +553,10 @@ defmodule PotokIdeWeb.Layouts do
         kind={:info}
         title={gettext("Reconnecting")}
         auto_dismiss={false}
-        phx-disconnected={show(".phx-server-error #server-error") |> JS.remove_attribute("hidden")}
-        phx-connected={hide("#server-error") |> JS.set_attribute({"hidden", ""})}
+        phx-disconnected={
+          JS.show(to: ".phx-server-error #server-error") |> JS.remove_attribute("hidden")
+        }
+        phx-connected={hide_flash("#server-error") |> JS.set_attribute({"hidden", ""})}
         hidden
       >
         {gettext("Attempting to reconnect")}
