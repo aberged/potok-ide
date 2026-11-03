@@ -38,14 +38,10 @@ defmodule PotokIdeWeb.ShareLive do
             {gettext("Share to Potok")}
             <:subtitle>{gettext("Pick the group or conversation to post it in.")}</:subtitle>
             <:actions>
-              <button
-                id="share-cancel"
-                type="button"
-                class="btn btn-ghost btn-sm rounded-full transition active:scale-95"
-              >
+              <.button id="share-cancel" type="button" variant="ghost" size="sm">
                 <.icon name="hero-x-mark" class="size-4" />
                 {gettext("Cancel")}
-              </button>
+              </.button>
             </:actions>
           </.page_header>
 
@@ -70,13 +66,15 @@ defmodule PotokIdeWeb.ShareLive do
             <p class="max-w-sm text-sm text-base-content/60">
               {gettext("Share a link, text or files from another app and pick Potok.")}
             </p>
-            <.link
+            <.button
               id="share-missing-home"
               navigate={~p"/groups"}
-              class="btn btn-primary btn-sm mt-1 rounded-full"
+              variant="primary"
+              size="sm"
+              class="mt-1"
             >
               {gettext("Go to groups")}
-            </.link>
+            </.button>
           </div>
 
           <section

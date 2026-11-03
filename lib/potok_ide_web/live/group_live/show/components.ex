@@ -162,16 +162,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div class="flex flex-wrap gap-2">
           <label
             for={"#{@field.id}-file"}
-            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-base-content px-4 py-2 text-sm font-medium text-base-100 transition hover:opacity-90"
+            class={button_class("secondary", "sm")}
           >
-            <.icon name="hero-photo" class="size-5" /> {gettext("Choose image")}
+            <.icon name="hero-photo" class="size-4" /> {gettext("Choose image")}
           </label>
           <button
             type="button"
             data-group-picture-clear
-            class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm font-medium text-base-content transition hover:border-base-content/30 hover:bg-base-100/80"
+            class={button_class("ghost", "sm")}
           >
-            <.icon name="hero-x-mark" class="size-5" /> {gettext("Clear image")}
+            <.icon name="hero-x-mark" class="size-4" /> {gettext("Clear image")}
           </button>
         </div>
       </div>
@@ -1286,45 +1286,40 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           }
           class="ml-auto flex items-center gap-1"
         >
-          <button
+          <.icon_button
             :if={@can_reply and !@editing?}
             id={"value-reply-#{@value.id}"}
             type="button"
             phx-click="start_reply_value"
             phx-value-id={@value.id}
-            aria-label={gettext("Reply")}
-            title={gettext("Reply")}
-            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-          >
-            <.icon name="hero-arrow-uturn-left" class="size-4" />
-          </button>
+            icon="hero-arrow-uturn-left"
+            label={gettext("Reply")}
+            size="xs"
+          />
           <%!-- Once the thread exists, the footer pill opens it instead. --%>
-          <button
+          <.icon_button
             :if={@can_thread and is_nil(@thread)}
             id={"value-thread-#{@value.id}"}
             type="button"
             phx-click="open_value_thread"
             phx-value-id={@value.id}
-            aria-label={gettext("Reply in thread")}
-            title={gettext("Reply in thread")}
-            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"
-          >
-            <.icon name="hero-chat-bubble-left-right" class="size-4" />
-          </button>
+            icon="hero-chat-bubble-left-right"
+            label={gettext("Reply in thread")}
+            size="xs"
+            class="phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"
+          />
           <%!-- Opens the page's single emoji picker (`ReactionPicker` hook in the values tab). --%>
-          <button
+          <.icon_button
             :if={@can_react}
             id={"value-react-#{@value.id}"}
             type="button"
             data-reaction-trigger
             data-value-id={@value.id}
             aria-haspopup="dialog"
-            aria-label={gettext("Add reaction")}
-            title={gettext("Add reaction")}
-            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-          >
-            <.icon name="hero-face-smile" class="size-4" />
-          </button>
+            icon="hero-face-smile"
+            label={gettext("Add reaction")}
+            size="xs"
+          />
           <TagComponents.tag_button
             :if={@can_tag}
             id={"value-tags-#{@value.id}"}
@@ -1332,29 +1327,28 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             item_id={@value.id}
           />
           <%!-- An event's card is changed in the calendar. --%>
-          <button
+          <.icon_button
             :if={@mine? and !@editing? and is_nil(@event)}
             id={"value-edit-#{@value.id}"}
             type="button"
             phx-click="start_edit_value"
             phx-value-id={@value.id}
-            aria-label={gettext("Edit value")}
-            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-          >
-            <.icon name="hero-pencil-square" class="size-4" />
-          </button>
-          <button
+            icon="hero-pencil-square"
+            label={gettext("Edit value")}
+            size="xs"
+          />
+          <.icon_button
             :if={@can_delete?}
             id={"value-delete-#{@value.id}"}
             type="button"
             phx-click="delete_value"
             phx-value-id={@value.id}
-            aria-label={gettext("Delete value")}
             data-confirm={gettext("Are you sure you want to delete this value?")}
-            class="inline-flex items-center rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
-          >
-            <.icon name="hero-trash" class="size-4" />
-          </button>
+            icon="hero-trash"
+            label={gettext("Delete value")}
+            variant="danger"
+            size="xs"
+          />
         </div>
       </div>
 

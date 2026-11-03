@@ -120,7 +120,7 @@ defmodule PotokIdeWeb.TagComponents do
       aria-label={gettext("Tags")}
       title={gettext("Tags")}
       class={[
-        "inline-flex items-center gap-1 rounded-full p-1 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content phx-click-loading:animate-pulse",
+        "inline-flex items-center gap-1 rounded-full p-1 text-base-content/60 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse",
         @class
       ]}
     >
@@ -165,15 +165,14 @@ defmodule PotokIdeWeb.TagComponents do
                 {@editor.title}
               </p>
             </div>
-            <button
+            <.icon_button
               id="tag-editor-close"
               type="button"
               phx-click="tag_editor_close"
-              aria-label={gettext("Close")}
-              class="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
-            >
-              <.icon name="hero-x-mark" class="size-5" />
-            </button>
+              icon="hero-x-mark"
+              label={gettext("Close")}
+              class="-mr-1"
+            />
           </header>
 
           <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
@@ -267,14 +266,15 @@ defmodule PotokIdeWeb.TagComponents do
                     class="h-10 w-full rounded-full border border-base-300 bg-base-100 px-4 text-sm transition focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-                <button
+                <.button
                   id="tag-editor-submit"
                   type="submit"
-                  class="inline-flex h-10 shrink-0 items-center gap-1 rounded-full bg-primary px-4 text-sm font-semibold text-primary-content shadow-sm shadow-primary/30 transition hover:-translate-y-px hover:shadow-md active:scale-95 phx-submit-loading:animate-pulse"
+                  variant="primary"
+                  class="shrink-0 phx-submit-loading:animate-pulse"
                 >
                   <.icon name="hero-plus" class="size-4" />
                   {gettext("Add")}
-                </button>
+                </.button>
               </div>
               <%!-- Shown here: the dialog covers the page's flash messages. --%>
               <p

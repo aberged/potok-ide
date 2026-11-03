@@ -126,16 +126,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                     label_class="hidden sm:inline"
                   />
                 </div>
-                <button
+                <.button
                   :if={Events.can_create?(@access, @group)}
                   id="calendar-new-event"
                   type="button"
                   phx-click="calendar_new"
-                  class="inline-flex items-center gap-1.5 rounded-full bg-primary px-3.5 py-1.5 text-sm font-semibold text-primary-content shadow-sm transition hover:-translate-y-px hover:shadow-md active:translate-y-0 phx-click-loading:opacity-70"
+                  variant="primary"
+                  size="sm"
                 >
                   <.icon name="hero-plus" class="size-4" />
                   <span>{gettext("Event")}</span>
-                </button>
+                </.button>
               </div>
             </div>
 
@@ -463,15 +464,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       class="rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm"
     >
       <div class="flex items-start gap-2">
-        <button
+        <.icon_button
           id="calendar-close"
           type="button"
           phx-click="calendar_close"
-          aria-label={gettext("Back to the calendar")}
-          class="-ml-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
-        >
-          <.icon name="hero-arrow-left" class="size-5" />
-        </button>
+          icon="hero-arrow-left"
+          label={gettext("Back to the calendar")}
+          class="-ml-1"
+        />
         <div class="min-w-0 flex-1 pt-0.5">
           <p
             :if={@event.group_id != @group.id}
@@ -649,49 +649,50 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       />
 
       <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-base-300/60 pt-4">
-        <a
+        <.button
           :if={!Event.cancelled?(@event)}
           id="calendar-ics"
           href={~p"/events/#{@event.id}/event.ics"}
           download
-          class={action_class()}
+          size="sm"
         >
           <.icon name="hero-arrow-down-tray" class="size-4" />
           {gettext("Add to my calendar")}
-        </a>
-        <.link
+        </.button>
+        <.button
           :if={@event.group_id != @group.id and (@member or @event.group.is_public)}
           id="calendar-open-group"
           navigate={
             ~p"/groups/#{@event.group_id}/calendar?#{[event: @event.id, on: Date.to_iso8601(@occurrence.date)]}"
           }
-          class={action_class()}
+          size="sm"
         >
           <.icon name="hero-arrow-top-right-on-square" class="size-4" />
           {gettext("Open in %{group}", group: @event.group.name)}
-        </.link>
+        </.button>
         <%= if @can_manage and !Event.cancelled?(@event) do %>
-          <button
+          <.button
             id="calendar-edit-event"
             type="button"
             phx-click="calendar_edit"
-            class={action_class()}
+            size="sm"
           >
             <.icon name="hero-pencil-square" class="size-4" />
             {gettext("Edit")}
-          </button>
-          <button
+          </.button>
+          <.button
             :if={Event.recurring?(@event) and @can_respond?}
             id="calendar-cancel-occurrence"
             type="button"
             phx-click="calendar_cancel_occurrence"
             data-confirm={gettext("Cancel only this occurrence? Members will be told.")}
-            class={action_class(:danger)}
+            variant="danger"
+            size="sm"
           >
             <.icon name="hero-calendar" class="size-4" />
             {gettext("Cancel this occurrence")}
-          </button>
-          <button
+          </.button>
+          <.button
             id="calendar-cancel-event"
             type="button"
             phx-click="calendar_cancel_event"
@@ -701,13 +702,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                 else: gettext("Cancel this event? Members will be told.")
               )
             }
-            class={action_class(:danger)}
+            variant="danger"
+            size="sm"
           >
             <.icon name="hero-no-symbol" class="size-4" />
             {if Event.recurring?(@event),
               do: gettext("Cancel all occurrences"),
               else: gettext("Cancel event")}
-          </button>
+          </.button>
         <% end %>
       </div>
     </div>
@@ -758,22 +760,19 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         </label>
       </div>
       <div class="mt-2 flex flex-wrap items-center gap-2">
-        <button
-          id="calendar-save-reminders"
-          type="submit"
-          class="rounded-full bg-base-content px-3 py-1 text-xs font-semibold text-base-100 transition hover:opacity-85 phx-submit-loading:opacity-60"
-        >
+        <.button id="calendar-save-reminders" type="submit" variant="primary" size="sm">
           {gettext("Save reminders")}
-        </button>
-        <button
+        </.button>
+        <.button
           :if={@own?}
           id="calendar-default-reminders"
           type="button"
           phx-click="calendar_default_reminders"
-          class="rounded-full px-3 py-1 text-xs font-semibold text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
+          variant="ghost"
+          size="sm"
         >
           {gettext("Use the organizer's")}
-        </button>
+        </.button>
       </div>
     </.form>
     """
@@ -794,15 +793,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       class="rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm"
     >
       <div class="mb-3 flex items-center gap-2">
-        <button
+        <.icon_button
           id="calendar-close-form"
           type="button"
           phx-click="calendar_close_form"
-          aria-label={gettext("Close")}
-          class="-ml-1 inline-flex size-8 items-center justify-center rounded-full text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
-        >
-          <.icon name="hero-x-mark" class="size-5" />
-        </button>
+          icon="hero-x-mark"
+          label={gettext("Close")}
+          class="-ml-1"
+        />
         <h3 class="text-lg font-semibold">
           {if @values.new?, do: gettext("New event"), else: gettext("Edit event")}
         </h3>
@@ -997,22 +995,22 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         </div>
 
         <div class="flex items-center justify-end gap-2 pt-3">
-          <button
+          <.button
             id="calendar-cancel-form"
             type="button"
             phx-click="calendar_close_form"
-            class="rounded-full px-4 py-2 text-sm font-semibold text-base-content/70 transition hover:bg-base-200 hover:text-base-content"
+            variant="ghost"
           >
             {gettext("Cancel")}
-          </button>
-          <button
+          </.button>
+          <.button
             id="calendar-save-event"
             type="submit"
             phx-disable-with={gettext("Saving…")}
-            class="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-content shadow-sm transition hover:-translate-y-px hover:shadow-md active:translate-y-0"
+            variant="primary"
           >
             {gettext("Save")}
-          </button>
+          </.button>
         </div>
       </.form>
     </div>
@@ -1095,16 +1093,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   defp nav_button_class,
     do:
       "inline-flex size-7 items-center justify-center rounded-full text-base-content/70 transition hover:bg-base-100 hover:text-base-content"
-
-  defp action_class(kind \\ :default)
-
-  defp action_class(:default),
-    do:
-      "inline-flex items-center gap-1.5 rounded-full border border-base-300 px-3 py-1.5 text-xs font-semibold text-base-content/80 transition hover:-translate-y-px hover:border-base-content/30 hover:shadow-sm"
-
-  defp action_class(:danger),
-    do:
-      "inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 px-3 py-1.5 text-xs font-semibold text-rose-700 transition hover:-translate-y-px hover:bg-rose-500/10 hover:shadow-sm dark:text-rose-300"
 
   defp chip_class(%Occurrence{event: %Event{group_id: id}}, %{id: id}),
     do: "bg-primary/15 text-base-content"

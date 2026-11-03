@@ -94,17 +94,18 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                 </p>
             <% end %>
           </div>
-          <button
+          <.button
             :if={@access.admin? and !@own? and !@group.is_direct}
             id="create-own-manifest-button"
             type="button"
             phx-click="create_own_manifest"
-            class="btn btn-sm rounded-full border border-primary/40 bg-primary/10 text-primary transition hover:-translate-y-px hover:bg-primary/15 active:scale-95"
+            variant="soft"
+            size="sm"
           >
             <.icon name="hero-document-duplicate" class="size-4" />
             {gettext("Create own manifest")}
-          </button>
-          <button
+          </.button>
+          <.button
             :if={@editable?}
             id="revert-manifest-button"
             type="button"
@@ -114,11 +115,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                 "Use the parent group's roles again? Roles that only exist in this manifest are removed from members."
               )
             }
-            class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 transition hover:-translate-y-px active:scale-95"
+            size="sm"
           >
             <.icon name="hero-arrow-uturn-up" class="size-4" />
             {gettext("Inherit again")}
-          </button>
+          </.button>
         </div>
 
         <.form
@@ -138,7 +139,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               autocomplete="off"
             />
           </div>
-          <.button id="new-role-submit" class="btn btn-primary rounded-full">
+          <.button id="new-role-submit" variant="primary">
             <.icon name="hero-plus" class="size-4" />
             {gettext("Add role")}
           </.button>
@@ -172,7 +173,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                 <.icon name="hero-user" class="size-3.5" />
                 {role_count(role, @role_member_counts, @members_count)}
               </span>
-              <button
+              <.icon_button
                 :if={@editable? and !GroupRole.builtin?(role)}
                 id={"role-#{role.key}-rename"}
                 type="button"
@@ -180,13 +181,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                   JS.toggle_class("hidden flex", to: "#role-#{role.key}-form")
                   |> JS.focus(to: "#role-#{role.key}-name")
                 }
-                aria-label={gettext("Rename role")}
-                title={gettext("Rename role")}
-                class="inline-flex items-center rounded-full p-1.5 text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-              >
-                <.icon name="hero-pencil-square" class="size-4" />
-              </button>
-              <button
+                icon="hero-pencil-square"
+                label={gettext("Rename role")}
+              />
+              <.icon_button
                 :if={@editable? and !GroupRole.builtin?(role)}
                 id={"role-#{role.key}-delete"}
                 type="button"
@@ -198,12 +196,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                     name: role.name
                   )
                 }
-                aria-label={gettext("Delete role")}
-                title={gettext("Delete role")}
-                class="inline-flex items-center rounded-full p-1.5 text-base-content/55 transition-colors hover:bg-error/10 hover:text-error"
-              >
-                <.icon name="hero-trash" class="size-4" />
-              </button>
+                icon="hero-trash"
+                label={gettext("Delete role")}
+                variant="danger"
+              />
             </div>
 
             <.form
@@ -222,7 +218,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                   autocomplete="off"
                 />
               </div>
-              <.button class="btn btn-primary rounded-full">{gettext("Save")}</.button>
+              <.button variant="primary">{gettext("Save")}</.button>
             </.form>
 
             <div

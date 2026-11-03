@@ -224,15 +224,16 @@ defmodule PotokIdeWeb.TagLive.Index do
                 {gettext("Show all (%{count})", count: Map.get(@counts, kind, 0))}
                 <.icon name="hero-chevron-right" class="size-4" />
               </.link>
-              <button
+              <.button
                 :if={@kind == kind and Map.get(@more, kind, false)}
                 id={"tags-load-more-#{param}"}
                 type="button"
                 phx-click="load_more"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4 phx-click-loading:animate-pulse"
+                size="sm"
+                class="phx-click-loading:animate-pulse"
               >
                 {gettext("Load more")}
-              </button>
+              </.button>
             </div>
           </section>
         <% end %>
@@ -291,21 +292,25 @@ defmodule PotokIdeWeb.TagLive.Index do
                     class="h-9 w-full rounded-full border border-base-300 bg-base-100 px-3 text-sm focus:border-primary/60 focus:outline-none focus:ring-2 focus:ring-primary/20"
                   />
                 </div>
-                <button
+                <.button
                   id={"tags-rename-save-#{tag.id}"}
                   type="submit"
-                  class="inline-flex h-9 items-center rounded-full bg-primary px-3 text-sm font-semibold text-primary-content transition hover:-translate-y-px active:scale-95"
+                  variant="primary"
+                  size="sm"
+                  class="mt-0.5"
                 >
                   {gettext("Save")}
-                </button>
-                <button
+                </.button>
+                <.button
                   id={"tags-rename-cancel-#{tag.id}"}
                   type="button"
                   phx-click="cancel_rename"
-                  class="inline-flex h-9 items-center rounded-full px-3 text-sm font-semibold text-base-content/60 transition hover:bg-base-200"
+                  variant="ghost"
+                  size="sm"
+                  class="mt-0.5"
                 >
                   {gettext("Cancel")}
-                </button>
+                </.button>
               </.form>
             <% else %>
               <.link
@@ -316,17 +321,15 @@ defmodule PotokIdeWeb.TagLive.Index do
                 <.icon name="hero-lock-closed" class="size-4 shrink-0 text-base-content/45" />
                 <span class="truncate">{tag.name}</span>
               </.link>
-              <button
+              <.icon_button
                 id={"tags-rename-#{tag.id}"}
                 type="button"
                 phx-click="start_rename"
                 phx-value-id={tag.id}
-                aria-label={gettext("Rename tag %{name}", name: tag.name)}
-                class="inline-flex size-8 items-center justify-center rounded-full text-base-content/55 transition hover:bg-base-200 hover:text-base-content"
-              >
-                <.icon name="hero-pencil-square" class="size-4" />
-              </button>
-              <button
+                icon="hero-pencil-square"
+                label={gettext("Rename tag %{name}", name: tag.name)}
+              />
+              <.icon_button
                 id={"tags-delete-#{tag.id}"}
                 type="button"
                 phx-click="delete_tag"
@@ -336,11 +339,10 @@ defmodule PotokIdeWeb.TagLive.Index do
                     name: tag.name
                   )
                 }
-                aria-label={gettext("Delete tag %{name}", name: tag.name)}
-                class="inline-flex size-8 items-center justify-center rounded-full text-base-content/55 transition hover:bg-error/10 hover:text-error"
-              >
-                <.icon name="hero-trash" class="size-4" />
-              </button>
+                icon="hero-trash"
+                label={gettext("Delete tag %{name}", name: tag.name)}
+                variant="danger"
+              />
             <% end %>
           </li>
         </ul>

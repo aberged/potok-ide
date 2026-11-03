@@ -77,16 +77,16 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         <div class="flex flex-wrap gap-2">
           <label
             for={"#{@form[:profile_picture_url].id}-file"}
-            class="inline-flex cursor-pointer items-center gap-2 rounded-full bg-base-content px-4 py-2 text-sm font-medium text-base-100 transition hover:opacity-90"
+            class={button_class("secondary", "sm")}
           >
-            <.icon name="hero-photo" class="size-5" /> {gettext("Choose image")}
+            <.icon name="hero-photo" class="size-4" /> {gettext("Choose image")}
           </label>
           <button
             type="button"
             data-profile-picture-clear
-            class="inline-flex items-center gap-2 rounded-full border border-base-300 bg-base-100 px-4 py-2 text-sm font-medium text-base-content transition hover:border-base-content/30 hover:bg-base-100/80"
+            class={button_class("ghost", "sm")}
           >
-            <.icon name="hero-x-mark" class="size-5" /> {gettext("Clear image")}
+            <.icon name="hero-x-mark" class="size-4" /> {gettext("Clear image")}
           </button>
         </div>
       </div>

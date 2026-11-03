@@ -72,10 +72,7 @@ defmodule PotokIdeWeb.Layouts do
             <label
               for="app-drawer-toggle"
               aria-label={gettext("Open menu")}
-              class={[
-                "btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur",
-                @current_scope && "lg:hidden"
-              ]}
+              class={[icon_button_class("secondary", "md"), @current_scope && "lg:hidden"]}
             >
               <.icon name="hero-bars-3" class="size-5" />
             </label>
@@ -216,7 +213,7 @@ defmodule PotokIdeWeb.Layouts do
 
             <label
               for="app-drawer-toggle"
-              class="btn btn-ghost btn-circle border border-base-300 bg-base-100 lg:hidden"
+              class={[icon_button_class("secondary", "md"), "lg:hidden"]}
             >
               <span class="sr-only">{gettext("close")}</span>
               <.icon name="hero-x-mark" class="size-5" />
@@ -653,7 +650,7 @@ defmodule PotokIdeWeb.Layouts do
         type="button"
         tabindex="0"
         aria-label={@label || gettext("Actions")}
-        class="btn btn-ghost btn-circle border border-base-300 bg-base-100/80 shadow-sm backdrop-blur"
+        class={icon_button_class("secondary", "md")}
       >
         <span class="sr-only">{@label || gettext("Actions")}</span>
         <.icon name={@icon} class="size-5" />

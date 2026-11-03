@@ -144,24 +144,25 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <button
+                  <.button
                     id={"request-accept-#{request.id}"}
                     type="button"
                     phx-click="accept"
                     phx-value-id={request.id}
-                    class="btn btn-sm rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:border-emerald-500/60 hover:bg-emerald-500/15"
+                    variant="success"
+                    size="sm"
                   >
                     {gettext("Accept")}
-                  </button>
-                  <button
+                  </.button>
+                  <.button
                     id={"request-reject-#{request.id}"}
                     type="button"
                     phx-click="reject"
                     phx-value-id={request.id}
-                    class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+                    size="sm"
                   >
                     {gettext("Reject")}
-                  </button>
+                  </.button>
                 </div>
               </div>
             </div>
@@ -228,15 +229,15 @@ defmodule PotokIdeWeb.RequestLive.Index do
               </div>
             </div>
 
-            <button
+            <.button
               :if={@approved_requests_pagination.has_more?}
               id="approved-requests-load-more"
               type="button"
               phx-click="load_more_approved_requests"
-              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+              size="sm"
             >
               {gettext("Load more approved requests")}
-            </button>
+            </.button>
           </div>
         </Components.settings_card>
 
@@ -321,15 +322,15 @@ defmodule PotokIdeWeb.RequestLive.Index do
               </div>
             </div>
 
-            <button
+            <.button
               :if={@created_requests_pagination.has_more?}
               id="created-requests-load-more"
               type="button"
               phx-click="load_more_created_requests"
-              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+              size="sm"
             >
               {gettext("Load more created requests")}
-            </button>
+            </.button>
           </div>
         </Components.settings_card>
       </.page_container>

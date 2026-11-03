@@ -216,17 +216,18 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 )
               }
             />
-            <button
+            <.button
               :if={
                 is_nil(@alt_description_form) and length(@alt_descriptions) < @max_alt_descriptions
               }
               id="alt-description-new"
               type="button"
               phx-click="new_alt_description"
-              class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition duration-150 hover:-translate-y-px hover:bg-primary/15 focus:outline-none focus:ring-2 focus:ring-primary/30"
+              variant="soft"
+              class="shrink-0"
             >
               <.icon name="hero-plus" class="size-4" /> <span>{gettext("New description")}</span>
-            </button>
+            </.button>
           </div>
 
           <ul
@@ -263,47 +264,42 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               </div>
 
               <div class="flex items-center gap-1">
-                <button
+                <.icon_button
                   id={"alt-description-#{alt.id}-up"}
                   type="button"
                   phx-click="move_alt_description"
                   phx-value-id={alt.id}
                   phx-value-direction="up"
                   disabled={index == 0}
-                  title={gettext("Move up")}
-                  class={alt_action_class()}
-                >
-                  <.icon name="hero-arrow-up" class="size-4" />
-                </button>
-                <button
+                  icon="hero-arrow-up"
+                  label={gettext("Move up")}
+                />
+                <.icon_button
                   id={"alt-description-#{alt.id}-down"}
                   type="button"
                   phx-click="move_alt_description"
                   phx-value-id={alt.id}
                   phx-value-direction="down"
                   disabled={index == length(@alt_descriptions) - 1}
-                  title={gettext("Move down")}
-                  class={alt_action_class()}
-                >
-                  <.icon name="hero-arrow-down" class="size-4" />
-                </button>
-                <button
+                  icon="hero-arrow-down"
+                  label={gettext("Move down")}
+                />
+                <.icon_button
                   id={"alt-description-#{alt.id}-edit"}
                   type="button"
                   phx-click="edit_alt_description"
                   phx-value-id={alt.id}
-                  title={gettext("Edit")}
-                  class={alt_action_class()}
-                >
-                  <.icon name="hero-pencil-square" class="size-4" />
-                </button>
-                <button
+                  icon="hero-pencil-square"
+                  label={gettext("Edit")}
+                />
+                <.icon_button
                   id={"alt-description-#{alt.id}-promote"}
                   type="button"
                   phx-click="promote_alt_description"
                   phx-value-id={alt.id}
                   disabled={alt.visible_role_keys != []}
-                  title={
+                  icon="hero-star"
+                  label={
                     if(alt.visible_role_keys == [],
                       do: gettext("Make default"),
                       else: gettext("Remove the role limit to make it the default")
@@ -314,23 +310,19 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                       "Make this the default description? The current default takes its place in the list."
                     )
                   }
-                  class={alt_action_class()}
-                >
-                  <.icon name="hero-star" class="size-4" />
-                </button>
-                <button
+                />
+                <.icon_button
                   id={"alt-description-#{alt.id}-delete"}
                   type="button"
                   phx-click="delete_alt_description"
                   phx-value-id={alt.id}
-                  title={gettext("Delete")}
+                  icon="hero-trash"
+                  label={gettext("Delete")}
+                  variant="danger"
                   data-confirm={
                     gettext("Delete this description? The data values of its app are deleted too.")
                   }
-                  class={[alt_action_class(), "hover:text-error"]}
-                >
-                  <.icon name="hero-trash" class="size-4" />
-                </button>
+                />
               </div>
 
               <%!-- An edited description opens right under its row. --%>
@@ -390,7 +382,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   )}
                 </p>
               </div>
-              <button
+              <.button
                 id="group-delete-data-values-button"
                 type="button"
                 phx-click="delete_group_data_values"
@@ -403,11 +395,12 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                       )
                   )
                 }
-                class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:text-amber-200"
+                variant="warning"
+                class="shrink-0"
               >
                 <.icon name="hero-trash" class="size-4" />
                 <span>{gettext("Delete Data Values")}</span>
-              </button>
+              </.button>
             </div>
 
             <div
@@ -422,16 +415,17 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   )}
                 </p>
               </div>
-              <button
+              <.button
                 id="group-delete-button"
                 type="button"
                 phx-click="delete_group"
                 data-confirm={gettext("Are you sure you want to delete this group?")}
-                class="inline-flex shrink-0 items-center gap-2 rounded-2xl border border-error/30 bg-error/10 px-4 py-2 text-sm font-medium text-error transition hover:bg-error/15 focus:outline-none focus:ring-2 focus:ring-error/30"
+                variant="danger"
+                class="shrink-0"
               >
                 <.icon name="hero-trash" class="size-4" />
                 <span>{gettext("Delete group")}</span>
-              </button>
+              </.button>
             </div>
           </div>
         </section>
@@ -448,23 +442,23 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             {gettext("You have unsaved changes.")}
           </p>
           <div class="ml-auto flex items-center gap-2">
-            <button
+            <.button
               id="group-edit-discard"
               type="button"
               phx-click="discard_edit_group"
-              class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+              variant="ghost"
             >
               {gettext("Discard")}
-            </button>
-            <button
+            </.button>
+            <.button
               id="group-edit-save"
               type="submit"
               form="group-edit-form"
               phx-disable-with={gettext("Saving...")}
-              class="btn btn-primary rounded-2xl"
+              variant="primary"
             >
               {gettext("Save changes")}
-            </button>
+            </.button>
           </div>
         </div>
       </Components.tab_body>
@@ -532,27 +526,27 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
       />
 
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
-        <button
+        <.button
           :if={!new_alt_description?(@editing)}
           id="alt-description-delete-data-values"
           type="button"
           phx-click="delete_alt_description_data_values"
           phx-value-id={@editing.id}
           data-confirm={gettext("Delete every data value of this description's app?")}
-          class="inline-flex items-center gap-2 rounded-2xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm font-medium text-amber-900 transition hover:bg-amber-500/15 focus:outline-none focus:ring-2 focus:ring-amber-500/30 dark:text-amber-200"
+          variant="warning"
         >
           <.icon name="hero-trash" class="size-4" />
           <span>{gettext("Delete Data Values")}</span>
-        </button>
+        </.button>
         <div class="ml-auto flex items-center gap-2">
-          <button
+          <.button
             id="alt-description-cancel"
             type="button"
             phx-click="cancel_alt_description"
-            class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+            variant="ghost"
           >
             {gettext("Cancel")}
-          </button>
+          </.button>
           <.button
             id="alt-description-save"
             phx-disable-with={gettext("Saving...")}
@@ -604,9 +598,5 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   defp role_label(%{key: key} = role) do
     if key == GroupRole.everyone_key(), do: gettext("All members"), else: role.name
-  end
-
-  defp alt_action_class do
-    "inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-base-content/60 transition duration-150 hover:bg-base-200 hover:text-base-content focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent"
   end
 end

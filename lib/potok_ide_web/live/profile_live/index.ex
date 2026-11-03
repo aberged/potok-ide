@@ -67,7 +67,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
                   phx-click="accept_profile_invitation"
                   phx-value-id={invitation.id}
                   id={"accept-profile-invitation-#{invitation.id}"}
-                  variant="primary"
+                  variant="success"
                 >
                   {gettext("Accept shared profile")}
                 </.button>
@@ -87,33 +87,46 @@ defmodule PotokIdeWeb.ProfileLive.Index do
               subtitle={Atom.to_string(profile.sharing)}
             />
             <div class="flex shrink-0 items-center gap-2">
-              <.button
+              <.icon_button
+                icon="hero-check-badge"
+                label={gettext("Use this profile")}
+                variant="secondary"
+                size="md"
                 disabled={!(is_nil(@current_profile) or @current_profile.id != profile.id)}
                 phx-click="use"
                 phx-value-id={profile.id}
-                class="btn btn-square"
-              >
-                <.icon name="hero-check-badge" class="size-4" />
-              </.button>
-              <.button
+              />
+              <.icon_button
+                icon="hero-globe-alt"
+                label={gettext("Make default")}
+                variant="secondary"
+                size="md"
                 disabled={!(is_nil(@default_profile) or @default_profile.id != profile.id)}
                 phx-click="set_default"
                 phx-value-id={profile.id}
                 id={"set-default-profile-#{profile.id}"}
-                class="btn btn-square"
-              >
-                <.icon name="hero-globe-alt" class="size-4" />
-              </.button>
-              <.button navigate={~p"/profiles/#{profile.id}/edit"} class="btn btn-square ml-3">
-                <.icon name="hero-pencil" class="size-4" />
-              </.button>
+              />
+              <.icon_button
+                icon="hero-pencil"
+                label={gettext("Edit")}
+                variant="secondary"
+                size="md"
+                navigate={~p"/profiles/#{profile.id}/edit"}
+                class="ml-3"
+              />
             </div>
           </li>
         </ul>
 
         <div class="mt-4 flex flex-row justify-between">
-          <.button navigate={~p"/groups"}><.icon name="hero-home" class="size-4" /></.button>
-          <.button navigate={~p"/profiles/new"}>
+          <.icon_button
+            icon="hero-home"
+            label={gettext("Groups")}
+            variant="secondary"
+            size="md"
+            navigate={~p"/groups"}
+          />
+          <.button navigate={~p"/profiles/new"} variant="soft">
             <.icon name="hero-plus" class="size-4" /> {gettext("Create profile")}
           </.button>
         </div>

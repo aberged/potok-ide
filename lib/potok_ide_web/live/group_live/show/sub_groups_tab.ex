@@ -313,29 +313,30 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </ul>
 
           <div :if={@pagination.has_more?} class="mt-4 flex justify-center">
-            <button
+            <.button
               id="group-children-load-more"
               type="button"
               phx-click="load_more_children"
-              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+              size="sm"
             >
               {gettext("Load more sub-groups")}
-            </button>
+            </.button>
           </div>
         <% end %>
       </div>
 
-      <button
+      <.icon_button
         :if={@can_create_subgroups}
         id="group-sub-groups-create-fab"
         type="button"
         phx-click="switch_tab"
         phx-value-tab="create_group"
-        aria-label={gettext("Create sub-group")}
-        class="absolute bottom-[1.5rem] right-0 ml-auto mr-6 inline-flex size-14 items-center justify-center rounded-full bg-primary text-primary-content shadow-lg shadow-primary/30 transition-transform duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-primary/40"
-      >
-        <.icon name="hero-plus" class="size-6" />
-      </button>
+        icon="hero-plus"
+        label={gettext("Create sub-group")}
+        variant="primary"
+        size="lg"
+        class="absolute bottom-[1.5rem] right-0 mr-6"
+      />
     </div>
     """
   end
@@ -484,16 +485,17 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   defp tree_more_button(assigns) do
     ~H"""
-    <button
+    <.button
       id={@id}
       type="button"
       phx-click="load_more_sub_group_folders"
       phx-value-id={@parent_id}
-      class="ml-8 mt-0.5 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-primary transition duration-150 ease-out hover:bg-primary/10 active:scale-95 phx-click-loading:opacity-60"
+      size="sm"
+      class="ml-8 mt-0.5"
     >
       <.icon name="hero-ellipsis-horizontal" class="size-4" />
       {gettext("Load more sub-groups")}
-    </button>
+    </.button>
     """
   end
 

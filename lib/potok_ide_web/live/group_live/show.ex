@@ -239,15 +239,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
             id="group-join-request-callout"
             class="flex shrink-0 items-center"
           >
-            <button
+            <.button
               :if={is_nil(@pending_join_request)}
               id="group-request-access"
               type="button"
               phx-click="request_join"
-              class="btn rounded-full border border-sky-500/40 bg-sky-500/10 text-sky-700 hover:border-sky-500/60 hover:bg-sky-500/15"
+              variant="soft"
             >
               {gettext("Request access")}
-            </button>
+            </.button>
             <div
               :if={!is_nil(@pending_join_request)}
               id="group-request-access-pending"

@@ -156,22 +156,22 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
           id="group-create-bar"
           class="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-end gap-2 rounded-3xl border border-base-300/70 bg-base-100/95 px-4 py-3 shadow-xl shadow-primary/10 backdrop-blur"
         >
-          <.link
+          <.button
             id="group-create-cancel"
             navigate={~p"/groups/#{@group.id}/sub_groups"}
-            class="rounded-2xl px-4 py-2 text-sm font-medium text-base-content/70 transition hover:bg-base-200 hover:text-base-content focus:outline-none focus:ring-2 focus:ring-base-content/20"
+            variant="ghost"
           >
             {gettext("Cancel")}
-          </.link>
-          <button
+          </.button>
+          <.button
             id="group-create-submit"
             type="submit"
             form="group-create-form"
             phx-disable-with={gettext("Creating...")}
-            class="btn btn-primary rounded-2xl"
+            variant="primary"
           >
             {gettext("Create")}
-          </button>
+          </.button>
         </div>
       </Components.tab_body>
     </div>

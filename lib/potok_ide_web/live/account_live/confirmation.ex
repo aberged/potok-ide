@@ -44,13 +44,15 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
               name={@form[:remember_me].name}
               value="true"
               phx-disable-with={gettext("Confirming...")}
-              class="lp-button w-full justify-center"
+              variant="landing"
+              class="w-full"
             >
               {gettext("Confirm and stay logged in")}
             </.button>
             <.button
               phx-disable-with={gettext("Confirming...")}
-              class="lp-button-quiet mt-3 w-full"
+              variant="landing_quiet"
+              class="mt-3 w-full"
             >
               {gettext("Confirm and log in only this time")}
             </.button>
@@ -72,7 +74,8 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
             <%= if @current_scope do %>
               <.button
                 phx-disable-with={gettext("Logging in...")}
-                class="lp-button w-full justify-center"
+                variant="landing"
+                class="w-full"
               >
                 {gettext("Log in")}
               </.button>
@@ -81,13 +84,15 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
                 name={@form[:remember_me].name}
                 value="true"
                 phx-disable-with={gettext("Logging in...")}
-                class="lp-button w-full justify-center"
+                variant="landing"
+                class="w-full"
               >
                 {gettext("Keep me logged in on this device")}
               </.button>
               <.button
                 phx-disable-with={gettext("Logging in...")}
-                class="lp-button-quiet mt-3 w-full"
+                variant="landing_quiet"
+                class="mt-3 w-full"
               >
                 {gettext("Log me in only this time")}
               </.button>

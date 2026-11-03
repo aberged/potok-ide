@@ -50,7 +50,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                   <.button phx-disable-with={gettext("Saving...")} variant="primary">
                     {gettext("Save changes")}
                   </.button>
-                  <.button navigate={~p"/profiles"} type="button">{gettext("Cancel")}</.button>
+                  <.button navigate={~p"/profiles"} variant="ghost">{gettext("Cancel")}</.button>
                 </div>
               </.form>
 
@@ -70,7 +70,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
                     id="profile-tags-edit"
                     type="button"
                     phx-click="edit_profile_tags"
-                    class="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-base-300 bg-base-100 px-3.5 text-sm font-semibold shadow-sm transition hover:-translate-y-px hover:border-primary/40 hover:text-primary active:scale-95"
+                    class={[button_class("secondary", "sm"), "shrink-0"]}
                   >
                     <.icon name="hero-hashtag" class="size-4" />
                     {gettext("Edit tags")}

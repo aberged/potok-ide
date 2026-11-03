@@ -85,27 +85,45 @@ defmodule PotokIdeWeb.CoreComponents do
     """
   end
 
+  # Shared by `button/1` and `icon_button/1`. Hover and press effects sit
+  # behind `not-disabled:` (not `enabled:`, which links never match).
+  @control_base "cursor-pointer transition duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50 phx-click-loading:opacity-70 phx-submit-loading:opacity-70"
+
   @doc """
   Renders a button with navigation support.
 
+  `variant` picks the look and `size` the height. `class` is added after
+  them, for layout only (width, margins, position); it never replaces the
+  look, so every button in the app stays the same pill.
+
+    * `primary` - the one main action of a form, dialog or bar
+    * `secondary` - a neutral side action, e.g. "Load more" or "Reject"
+    * `ghost` - "Cancel" or "Discard" next to a primary button
+    * `soft` - a call to action that is not the form's submit
+    * `success`, `warning`, `danger` - accept, risky and destructive actions
+    * `landing`, `landing_quiet` - the guest pages' look (`lp-button`)
+
   ## Examples
 
-      <.button>Send!</.button>
+      <.button>Load more</.button>
       <.button phx-click="go" variant="primary">Send!</.button>
-      <.button navigate={~p"/"}>Home</.button>
+      <.button navigate={~p"/"} variant="ghost" size="sm">Home</.button>
   """
-  attr :rest, :global, include: ~w(href navigate patch method download name value disabled)
-  attr :class, :any
-  attr :variant, :string, values: ~w(primary)
+  attr :rest, :global,
+    include: ~w(href navigate patch method download name value disabled form type)
+
+  attr :class, :any, default: nil, doc: "layout classes, added after the variant's"
+
+  attr :variant, :string,
+    default: "secondary",
+    values: ~w(primary secondary ghost soft success warning danger landing landing_quiet)
+
+  attr :size, :string, default: "md", values: ~w(sm md)
   slot :inner_block, required: true
 
   def button(%{rest: rest} = assigns) do
-    variants = %{"primary" => "btn-primary", nil => "btn-primary btn-soft"}
-
     assigns =
-      assign_new(assigns, :class, fn ->
-        ["btn", Map.fetch!(variants, assigns[:variant])]
-      end)
+      assign(assigns, :class, [button_class(assigns.variant, assigns.size), assigns.class])
 
     if rest[:href] || rest[:navigate] || rest[:patch] do
       ~H"""
@@ -117,6 +135,136 @@ defmodule PotokIdeWeb.CoreComponents do
       """
     end
   end
+
+  @doc """
+  The classes of `button/1`, for an element that cannot be one, like the
+  `<label>` of a file input.
+  """
+  def button_class(variant \\ "secondary", size \\ "md")
+
+  # The guest pages keep the blues of the Potok mark (`lp-button` in app.css).
+  def button_class("landing", _size), do: "lp-button justify-center"
+  def button_class("landing_quiet", _size), do: "lp-button-quiet"
+
+  def button_class(variant, size) do
+    [
+      "inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-full font-semibold not-disabled:active:scale-[0.97]",
+      @control_base,
+      button_size(size),
+      button_variant(variant)
+    ]
+  end
+
+  defp button_size("sm"), do: "h-8 px-3.5 text-xs"
+  defp button_size("md"), do: "h-10 px-5 text-sm"
+
+  defp button_variant("primary"),
+    do:
+      "bg-primary text-primary-content shadow-sm shadow-primary/30 not-disabled:hover:-translate-y-px not-disabled:hover:shadow-md"
+
+  defp button_variant("secondary"),
+    do:
+      "border border-base-300 bg-base-100 text-base-content not-disabled:hover:-translate-y-px not-disabled:hover:border-base-content/30 not-disabled:hover:bg-base-200"
+
+  defp button_variant("ghost"),
+    do:
+      "text-base-content/70 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
+
+  defp button_variant("soft"),
+    do:
+      "border border-primary/30 bg-primary/10 text-primary not-disabled:hover:-translate-y-px not-disabled:hover:bg-primary/15"
+
+  defp button_variant("success"),
+    do:
+      "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 not-disabled:hover:-translate-y-px not-disabled:hover:bg-emerald-500/15 dark:text-emerald-300"
+
+  defp button_variant("warning"),
+    do:
+      "border border-amber-500/30 bg-amber-500/10 text-amber-900 not-disabled:hover:-translate-y-px not-disabled:hover:bg-amber-500/15 dark:text-amber-200"
+
+  defp button_variant("danger"),
+    do:
+      "border border-error/30 bg-error/10 text-error not-disabled:hover:-translate-y-px not-disabled:hover:bg-error/15"
+
+  @doc """
+  Renders a round button that shows only an icon, with navigation support.
+  `label` names it for screen readers and as its tooltip.
+
+  `ghost` is for actions in rows and toolbars, `danger` the same for
+  deleting, `secondary` a framed button on its own, `primary` the main one.
+  Add `relative` through `class` when the inner block holds a badge.
+
+  ## Examples
+
+      <.icon_button icon="hero-pencil-square" label={gettext("Edit")} phx-click="edit" />
+      <.icon_button icon="hero-trash" label={gettext("Delete")} variant="danger" />
+  """
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :variant, :string, default: "ghost", values: ~w(ghost danger secondary primary)
+  attr :size, :string, default: "sm", values: ~w(xs sm md lg)
+  attr :class, :any, default: nil, doc: "layout classes, added after the variant's"
+
+  attr :rest, :global,
+    include: ~w(href navigate patch method download name value disabled form type)
+
+  slot :inner_block, doc: "extras next to the icon, like an unread badge"
+
+  def icon_button(%{rest: rest} = assigns) do
+    assigns =
+      assign(assigns, :class, [icon_button_class(assigns.variant, assigns.size), assigns.class])
+
+    if rest[:href] || rest[:navigate] || rest[:patch] do
+      ~H"""
+      <.link class={@class} aria-label={@label} title={@label} {@rest}>
+        <.icon name={@icon} class={icon_button_icon_size(@size)} />{render_slot(@inner_block)}
+      </.link>
+      """
+    else
+      ~H"""
+      <button class={@class} aria-label={@label} title={@label} {@rest}>
+        <.icon name={@icon} class={icon_button_icon_size(@size)} />{render_slot(@inner_block)}
+      </button>
+      """
+    end
+  end
+
+  @doc """
+  The classes of `icon_button/1`, for an element that cannot be one, like the
+  `<label>` of a file input or of the drawer toggle.
+  """
+  def icon_button_class(variant \\ "ghost", size \\ "sm") do
+    [
+      "inline-flex shrink-0 items-center justify-center rounded-full not-disabled:active:scale-95",
+      @control_base,
+      icon_button_size(size),
+      icon_button_variant(variant)
+    ]
+  end
+
+  defp icon_button_size("xs"), do: "size-6"
+  defp icon_button_size("sm"), do: "size-8"
+  defp icon_button_size("md"), do: "size-10"
+  defp icon_button_size("lg"), do: "size-14"
+
+  defp icon_button_icon_size("md"), do: "size-5"
+  defp icon_button_icon_size("lg"), do: "size-6"
+  defp icon_button_icon_size(_size), do: "size-4"
+
+  defp icon_button_variant("ghost"),
+    do:
+      "text-base-content/60 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
+
+  defp icon_button_variant("danger"),
+    do: "text-base-content/60 not-disabled:hover:bg-error/10 not-disabled:hover:text-error"
+
+  defp icon_button_variant("secondary"),
+    do:
+      "border border-base-300 bg-base-100 text-base-content/70 shadow-xs not-disabled:hover:-translate-y-px not-disabled:hover:border-base-content/30 not-disabled:hover:text-base-content"
+
+  defp icon_button_variant("primary"),
+    do:
+      "bg-primary text-primary-content shadow-sm shadow-primary/30 not-disabled:hover:-translate-y-px not-disabled:hover:shadow-md"
 
   @doc """
   Renders an input with label and error messages.
@@ -325,7 +473,7 @@ defmodule PotokIdeWeb.CoreComponents do
           />
           <button
             type="button"
-            class="btn btn-ghost btn-xs absolute inset-y-0 right-1 my-auto h-8 min-h-0 rounded-full px-2 text-base-content/60 hover:text-base-content"
+            class={[icon_button_class(), "absolute inset-y-0 right-1 my-auto"]}
             data-password-toggle
             data-show-label={gettext("Show password")}
             data-hide-label={gettext("Hide password")}

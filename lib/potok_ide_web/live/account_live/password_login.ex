@@ -51,7 +51,7 @@ defmodule PotokIdeWeb.AccountLive.PasswordLogin do
             type="checkbox"
             label={gettext("Keep me logged in on this device")}
           />
-          <.button class="lp-button group mt-4 w-full justify-center">
+          <.button variant="landing" class="group mt-4 w-full">
             {gettext("Log in")}
             <.icon
               name="hero-arrow-right"

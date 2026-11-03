@@ -121,14 +121,15 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             </li>
           </ul>
           <div :if={@has_more} class="mt-3 flex justify-center">
-            <button
+            <.button
               id="group-files-load-more"
               type="button"
               phx-click="load_more_files"
-              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4 phx-click-loading:animate-pulse"
+              size="sm"
+              class="phx-click-loading:animate-pulse"
             >
               {gettext("Load more files")}
-            </button>
+            </.button>
           </div>
         <% end %>
       </Components.tab_body>
@@ -176,16 +177,13 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             @node.byte_size
           )}
         </span>
-        <.link
+        <.icon_button
           :if={!@root}
           id={"files-folder-open-#{@node.group.id}"}
           navigate={~p"/groups/#{@node.group.id}"}
-          title={gettext("Open group")}
-          aria-label={gettext("Open group")}
-          class="inline-flex size-7 shrink-0 items-center justify-center rounded-full text-base-content/50 transition-colors hover:bg-base-300 hover:text-base-content"
-        >
-          <.icon name="hero-arrow-up-right" class="size-4" />
-        </.link>
+          icon="hero-arrow-up-right"
+          label={gettext("Open group")}
+        />
       </summary>
       <div class="ml-[1.05rem] space-y-0.5 border-l border-base-300/70 pl-2">
         <.tree_folder :for={child <- @node.children} node={child} />

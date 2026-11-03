@@ -136,29 +136,15 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             </div>
 
             <div class="flex flex-wrap gap-3">
-              <button
-                type="button"
-                data-push-enable
-                class="inline-flex items-center justify-center rounded-2xl bg-base-content px-4 py-3 text-sm font-medium text-base-100 transition-opacity hover:opacity-90"
-              >
+              <.button type="button" data-push-enable variant="primary">
                 {gettext("Enable notifications")}
-              </button>
-              <button
-                type="button"
-                data-push-test
-                hidden
-                class="inline-flex items-center justify-center rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content transition-colors hover:bg-base-200"
-              >
+              </.button>
+              <.button type="button" data-push-test hidden>
                 {gettext("Send test notification")}
-              </button>
-              <button
-                type="button"
-                data-push-disable
-                hidden
-                class="inline-flex items-center justify-center rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm font-medium text-base-content transition-colors hover:bg-base-200"
-              >
+              </.button>
+              <.button type="button" data-push-disable hidden>
                 {gettext("Disable")}
-              </button>
+              </.button>
             </div>
 
             <p class="text-xs text-base-content/55">

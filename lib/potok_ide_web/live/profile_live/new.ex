@@ -40,7 +40,7 @@ defmodule PotokIdeWeb.ProfileLive.New do
                   <.button phx-disable-with={gettext("Creating...")} variant="primary">
                     {gettext("Create profile")}
                   </.button>
-                  <.button navigate={~p"/profiles"} type="button">{gettext("Cancel")}</.button>
+                  <.button navigate={~p"/profiles"} variant="ghost">{gettext("Cancel")}</.button>
                 </div>
               </.form>
             </div>

@@ -62,9 +62,9 @@
       <div class="alert flex items-center gap-3 rounded-2xl border border-base-300 bg-base-100 px-4 py-3 text-sm shadow-xl">
         <.icon name="hero-arrow-path" class="size-5 text-primary" />
         <span>{gettext("A new version of Potok is ready.")}</span>
-        <button id="app-update-reload" type="button" class="btn btn-primary btn-sm rounded-full">
+        <.button id="app-update-reload" type="button" variant="primary" size="sm">
           {gettext("Refresh")}
-        </button>
+        </.button>
       </div>
     </div>
     <%!-- The menu of a long-pressed link (`longpress.js` fills in the link and
@@ -98,15 +98,14 @@
               <p id="lp-action-sheet-url" class="mt-0.5 truncate text-sm text-base-content/60">
               </p>
             </div>
-            <button
+            <.icon_button
               id="lp-action-sheet-close"
               type="button"
               data-lp-close
-              aria-label={gettext("Close")}
-              class="-mr-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/60 transition hover:bg-base-200 hover:text-base-content"
-            >
-              <.icon name="hero-x-mark" class="size-5" />
-            </button>
+              icon="hero-x-mark"
+              label={gettext("Close")}
+              class="-mr-1"
+            />
           </header>
 
           <div class="min-h-0 flex-1 overflow-y-auto px-3 py-2">
@@ -130,14 +129,9 @@
           </div>
 
           <footer class="border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] sm:pb-3">
-            <button
-              id="lp-action-sheet-cancel"
-              type="button"
-              data-lp-close
-              class="w-full rounded-full border border-base-300 bg-base-100 py-2.5 text-sm font-semibold text-base-content/80 transition hover:bg-base-200 hover:text-base-content active:scale-[0.98]"
-            >
+            <.button id="lp-action-sheet-cancel" type="button" data-lp-close class="w-full">
               {gettext("Cancel")}
-            </button>
+            </.button>
           </footer>
         </section>
       </div>

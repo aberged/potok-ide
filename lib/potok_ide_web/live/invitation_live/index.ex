@@ -145,7 +145,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                         id={"invitation-accept-#{inv.id}"}
                         phx-click="accept"
                         phx-value-id={inv.id}
-                        variant="primary"
+                        variant="success"
+                        size="sm"
                       >
                         {gettext("Accept")}
                       </.button>
@@ -160,28 +161,29 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                       />
                     </div>
 
-                    <.button
+                    <.icon_button
                       id={"invitation-delete-#{inv.id}"}
                       phx-click="delete_invitation"
                       phx-value-id={inv.id}
                       data-confirm={gettext("Are you sure you want to delete this invitation?")}
-                      class="absolute right-0 inline-flex items-center rounded-full p-1 px-2 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
-                    >
-                      <.icon name="hero-trash" class="size-4" />
-                    </.button>
+                      icon="hero-trash"
+                      label={gettext("Delete")}
+                      variant="danger"
+                      class="absolute right-0"
+                    />
                   </div>
                 </div>
               </div>
 
-              <button
+              <.button
                 :if={@invitations_pagination.has_more?}
                 id="invitations-load-more"
                 type="button"
                 phx-click="load_more_invitations"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+                size="sm"
               >
                 {gettext("Load more invitations")}
-              </button>
+              </.button>
             </div>
           </div>
         </Components.settings_card>
@@ -261,15 +263,15 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                 </div>
               </div>
 
-              <button
+              <.button
                 :if={@sent_invitations_pagination.has_more?}
                 id="sent-invitations-load-more"
                 type="button"
                 phx-click="load_more_sent_invitations"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+                size="sm"
               >
                 {gettext("Load more sent invitations")}
-              </button>
+              </.button>
             </div>
           </div>
         </Components.settings_card>

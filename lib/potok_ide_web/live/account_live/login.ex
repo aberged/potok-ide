@@ -51,7 +51,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
             required
             phx-mounted={JS.focus()}
           />
-          <.button class="lp-button group mt-4 w-full justify-center">
+          <.button variant="landing" class="group mt-4 w-full">
             {gettext("Log in with email")}
             <.icon
               name="hero-arrow-right"

@@ -79,15 +79,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               {Value.excerpt(@thread_origin, 240)}
             </p>
           </div>
-          <.link
+          <.icon_button
             id="group-thread-origin-link"
             navigate={~p"/groups/#{@thread_origin.group_id}/values?#{[value: @thread_origin.id]}"}
-            title={gettext("Show original value")}
-            aria-label={gettext("Show original value")}
-            class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-          >
-            <.icon name="hero-arrow-up-right" class="size-4" />
-          </.link>
+            icon="hero-arrow-up-right"
+            label={gettext("Show original value")}
+          />
         </div>
 
         <div class="relative flex min-h-0 flex-1 flex-col">
@@ -101,14 +98,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             ]}
           >
             <div :if={@has_more} class="flex justify-center">
-              <button
+              <.button
                 id="group-values-load-more"
                 type="button"
                 phx-click="load_more_values"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+                size="sm"
               >
                 {gettext("Load earlier values")}
-              </button>
+              </.button>
             </div>
 
             <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
@@ -143,14 +140,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             </div>
 
             <div :if={@has_newer} class="flex justify-center">
-              <button
+              <.button
                 id="group-values-load-newer"
                 type="button"
                 phx-click="load_newer_values"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4"
+                size="sm"
               >
                 {gettext("Load newer values")}
-              </button>
+              </.button>
             </div>
           </div>
 
@@ -244,7 +241,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
               <div class="flex justify-end gap-2">
                 <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
-                <.button type="button" phx-click="cancel_edit_value">{gettext("Cancel")}</.button>
+                <.button type="button" phx-click="cancel_edit_value" variant="ghost">
+                  {gettext("Cancel")}
+                </.button>
               </div>
             </.form>
           <% else %>
@@ -270,16 +269,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   {Value.excerpt(@replying_to_value, 160)}
                 </p>
               </div>
-              <button
+              <.icon_button
                 id="group-value-reply-cancel"
                 type="button"
                 phx-click="cancel_reply_value"
-                aria-label={gettext("Cancel reply")}
-                title={gettext("Cancel reply")}
-                class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-              >
-                <.icon name="hero-x-mark" class="size-4" />
-              </button>
+                icon="hero-x-mark"
+                label={gettext("Cancel reply")}
+              />
             </div>
             <%!-- Fills the composer with what was shared from another app (`assets/js/share_inbox.js`). --%>
             <div
@@ -375,17 +371,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                         {upload_error_message(error)}
                       </p>
                     </div>
-                    <button
+                    <.icon_button
                       id={"group-value-attachment-cancel-#{entry.ref}"}
                       type="button"
                       phx-click="cancel_attachment"
                       phx-value-ref={entry.ref}
-                      aria-label={gettext("Remove file")}
-                      title={gettext("Remove file")}
-                      class="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-base-content/55 transition-colors hover:bg-base-300 hover:text-base-content"
-                    >
-                      <.icon name="hero-x-mark" class="size-4" />
-                    </button>
+                      icon="hero-x-mark"
+                      label={gettext("Remove file")}
+                    />
                   </div>
                 </div>
                 <p
@@ -401,7 +394,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     :if={@can_attach}
                     id="group-value-attach"
                     title={gettext("Add files")}
-                    class="inline-flex size-10 flex-none cursor-pointer items-center justify-center rounded-full text-base-content/55 transition duration-150 ease-out hover:bg-base-200 hover:text-base-content active:scale-95 has-focus-visible:ring-2 has-focus-visible:ring-primary/40"
+                    class={[
+                      icon_button_class("ghost", "md"),
+                      "has-focus-visible:ring-2 has-focus-visible:ring-primary/40"
+                    ]}
                   >
                     <.icon name="hero-paper-clip" class="size-5" />
                     <span class="sr-only">{gettext("Add files")}</span>
@@ -421,17 +417,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     phx-hook=".SubmitOnEnter"
                   />
                   <%!-- `.ComposerSubmit` re-checks the button when files come and go; typing is handled by `.SubmitOnEnter`. --%>
-                  <.button
-                    aria-label={gettext("Post value")}
+                  <.icon_button
                     id="group-value-submit"
+                    type="submit"
                     phx-hook=".ComposerSubmit"
                     data-has-attachments={
                       to_string(@can_attach and Enum.any?(@attachments.entries, & &1.valid?))
                     }
-                    class="btn btn-primary btn-circle size-10 flex-none"
-                  >
-                    <.icon name="hero-paper-airplane" class="size-4" />
-                  </.button>
+                    icon="hero-paper-airplane"
+                    label={gettext("Post value")}
+                    variant="primary"
+                    size="md"
+                  />
                 </div>
               </.form>
             </div>
