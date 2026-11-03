@@ -30,9 +30,12 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
           Accounts.deliver_login_instructions(account, url)
         end)
 
-      {:ok, _lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
+      {:ok, lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
       refute html =~ "Confirm my account"
       assert html =~ "Keep me logged in on this device"
+      assert has_element?(lv, "#login-confirmation-card #login_form")
+      assert has_element?(lv, "#guest-about-link")
+      refute has_element?(lv, "#login-confirmation-card-invitation-note")
     end
 
     test "auto-submits for already logged in confirmed account", %{
@@ -49,6 +52,7 @@ defmodule PotokIdeWeb.AccountLive.ConfirmationTest do
       {:ok, lv, html} = live(conn, ~p"/accounts/log-in/#{token}")
       assert html =~ "Completing sign in..."
       refute html =~ "Log in"
+      refute has_element?(lv, "#guest-about-link")
 
       form = form(lv, "#login_form")
       conn = follow_trigger_action(form, conn)

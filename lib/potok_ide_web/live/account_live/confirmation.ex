@@ -6,22 +6,20 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app
+    <Layouts.guest
       flash={@flash}
-      current_scope={@current_scope}
-      current_profile={@current_profile}
       current_locale={@current_locale}
       available_locales={@available_locales}
-      pending_invitations_count={@pending_invitations_count}
-      pending_group_join_requests_count={@pending_group_join_requests_count}
-      root_group_unread_count={@root_group_unread_count}
+      about_link={!@current_scope}
+      centered
     >
-      <div class="mx-auto max-w-sm px-4 pt-4">
-        <div class="text-center">
-          <.header>{gettext("Welcome %{email}", email: @account.email)}</.header>
-        </div>
-
-        <div :if={@auto_submit} class="alert alert-info mt-6">
+      <Layouts.guest_card
+        id="login-confirmation-card"
+        title={gettext("Welcome!")}
+        subtitle={@account.email}
+      >
+        <div :if={@auto_submit} class="lp-note">
+          <.icon name="hero-arrow-path" class="lp-accent size-5 shrink-0 animate-spin" />
           <span>
             <%= if @account.confirmed_at do %>
               {gettext("Completing sign in...")}
@@ -46,13 +44,13 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
               name={@form[:remember_me].name}
               value="true"
               phx-disable-with={gettext("Confirming...")}
-              class="btn btn-primary w-full"
+              class="lp-button w-full justify-center"
             >
               {gettext("Confirm and stay logged in")}
             </.button>
             <.button
               phx-disable-with={gettext("Confirming...")}
-              class="btn btn-primary btn-soft w-full mt-2"
+              class="lp-button-quiet mt-3 w-full"
             >
               {gettext("Confirm and log in only this time")}
             </.button>
@@ -72,7 +70,10 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
           <%= if @auto_submit do %>
           <% else %>
             <%= if @current_scope do %>
-              <.button phx-disable-with={gettext("Logging in...")} class="btn btn-primary w-full">
+              <.button
+                phx-disable-with={gettext("Logging in...")}
+                class="lp-button w-full justify-center"
+              >
                 {gettext("Log in")}
               </.button>
             <% else %>
@@ -80,13 +81,13 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
                 name={@form[:remember_me].name}
                 value="true"
                 phx-disable-with={gettext("Logging in...")}
-                class="btn btn-primary w-full h-auto p-2"
+                class="lp-button w-full justify-center"
               >
                 {gettext("Keep me logged in on this device")}
               </.button>
               <.button
                 phx-disable-with={gettext("Logging in...")}
-                class="btn btn-primary btn-soft w-full h-auto p-2 mt-2"
+                class="lp-button-quiet mt-3 w-full"
               >
                 {gettext("Log me in only this time")}
               </.button>
@@ -94,11 +95,14 @@ defmodule PotokIdeWeb.AccountLive.Confirmation do
           <% end %>
         </.form>
 
-        <p :if={!@account.confirmed_at} class="alert alert-outline mt-8">
-          {gettext("Tip: If you prefer passwords, you can enable them in the account settings.")}
+        <p :if={!@account.confirmed_at} class="lp-note mt-6">
+          <.icon name="hero-information-circle" class="lp-accent size-5 shrink-0" />
+          <span>
+            {gettext("Tip: If you prefer passwords, you can enable them in the account settings.")}
+          </span>
         </p>
-      </div>
-    </Layouts.app>
+      </Layouts.guest_card>
+    </Layouts.guest>
     """
   end
 

@@ -6,41 +6,25 @@ defmodule PotokIdeWeb.AccountLive.Login do
   @impl true
   def render(assigns) do
     ~H"""
-    <Layouts.app
+    <Layouts.guest
       flash={@flash}
-      current_scope={@current_scope}
-      current_profile={@current_profile}
       current_locale={@current_locale}
       available_locales={@available_locales}
-      pending_invitations_count={@pending_invitations_count}
-      pending_group_join_requests_count={@pending_group_join_requests_count}
-      root_group_unread_count={@root_group_unread_count}
+      about_link={!@current_scope}
+      centered
     >
-      <div class="mx-auto max-w-sm space-y-2 px-6 pt-4 pb-4 flex-1">
-        <div class="flex justify-center mb-0">
-          <img
-            src={~p"/images/icon-transparent.svg"}
-            alt="Potok"
-            class="h-30 w-30"
-          />
-        </div>
-
-        <div class="text-center">
-          <.header>
-            <p>{gettext("Log in")}</p>
-
-            <:subtitle>
-              <%= if @current_scope do %>
-                {gettext("You need to reauthenticate to perform sensitive actions on your account.")}
-              <% else %>
-                {gettext("Enter your email and we'll send you a sign-in link.")}
-              <% end %>
-            </:subtitle>
-          </.header>
-        </div>
-
-        <div :if={local_mail_adapter?() and false} class="alert alert-info">
-          <.icon name="hero-information-circle" class="size-6 shrink-0" />
+      <Layouts.guest_card
+        id="login-magic-card"
+        title={gettext("Log in")}
+        subtitle={
+          if @current_scope,
+            do: gettext("You need to reauthenticate to perform sensitive actions on your account."),
+            else: gettext("Enter your email and we'll send you a sign-in link.")
+        }
+        invitation_note={!@current_scope}
+      >
+        <div :if={local_mail_adapter?() and false} class="lp-note mb-6">
+          <.icon name="hero-information-circle" class="lp-accent size-5 shrink-0" />
           <div>
             <p>{gettext("You are running the local mail adapter.")}</p>
 
@@ -67,18 +51,22 @@ defmodule PotokIdeWeb.AccountLive.Login do
             required
             phx-mounted={JS.focus()}
           />
-          <.button class="btn btn-primary rounded-full w-full mt-4 p-6">
-            {gettext("Log in with email")} <span aria-hidden="true">→</span>
+          <.button class="lp-button group mt-4 w-full justify-center">
+            {gettext("Log in with email")}
+            <.icon
+              name="hero-arrow-right"
+              class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
           </.button>
         </.form>
 
-        <p class="text-center text-sm text-base-content/70">
-          <.link navigate={~p"/accounts/log-in"} class="font-medium underline">
+        <p class="mt-6 text-center text-sm">
+          <.link navigate={~p"/accounts/log-in"} class="lp-link">
             {gettext("Use email and password instead")}
           </.link>
         </p>
-      </div>
-    </Layouts.app>
+      </Layouts.guest_card>
+    </Layouts.guest>
     """
   end
 

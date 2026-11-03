@@ -28,7 +28,12 @@ defmodule PotokIdeWeb.PageController do
         redirect(conn, to: ~p"/profiles")
 
       true ->
-        redirect(conn, to: ~p"/accounts/log-in")
+        render(conn, :home,
+          page_description:
+            gettext(
+              "Potok is where groups talk, exchange values, decide and remember what they decided."
+            )
+        )
     end
   end
 

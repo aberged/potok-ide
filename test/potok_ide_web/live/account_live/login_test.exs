@@ -13,6 +13,15 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert html =~ ~p"/accounts/log-in"
     end
 
+    test "uses the landing page's look, with the way back to it", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/accounts/log-in/magic-link")
+
+      assert has_element?(lv, "#guest-header #guest-about-link[href='/']")
+      assert has_element?(lv, "#guest-footer")
+      assert has_element?(lv, "#login-magic-card #login_form_magic")
+      assert has_element?(lv, "#login-magic-card-invitation-note a[href='/#landing-join']")
+    end
+
     test "renders PWA metadata in the shared root layout", %{conn: conn} do
       {:ok, _lv, html} = live(conn, ~p"/accounts/log-in/magic-link")
 

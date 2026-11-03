@@ -14,6 +14,15 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
       assert has_element?(lv, "#login_form_password [data-password-toggle]")
     end
 
+    test "uses the landing page's look, with the way back to it", %{conn: conn} do
+      {:ok, lv, _html} = live(conn, ~p"/accounts/log-in")
+
+      assert has_element?(lv, "#guest-header #guest-about-link[href='/']")
+      assert has_element?(lv, "#guest-footer #guest-privacy-link")
+      assert has_element?(lv, "#login-password-card #login_form_password")
+      assert has_element?(lv, "#login-password-card-invitation-note a[href='/#landing-join']")
+    end
+
     test "renders password login page in polish when locale is stored in session", %{conn: conn} do
       {:ok, _lv, html} =
         conn

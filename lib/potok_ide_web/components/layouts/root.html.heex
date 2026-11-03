@@ -12,6 +12,11 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Potok" />
+    <meta
+      :if={assigns[:page_description]}
+      name="description"
+      content={assigns[:page_description]}
+    />
     <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="apple-touch-icon" sizes="180x180" href="/images/pwa/icon-180.png" />

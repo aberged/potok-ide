@@ -609,3 +609,378 @@
 .chat-bubble-primary .rich-content .mention.mention-role {
   outline-color: color-mix(in oklab, var(--color-primary-content) 55%, transparent);
 }
+
+/* Landing page for guests (`PageHTML.home`). Its blues come from the Potok
+   mark, not from the theme's primary color (orange in the "system" theme).
+   Layered as components so Tailwind utilities still win over these rules. */
+@layer components {
+  .landing {
+    --lp-sky: #69cbf5;
+    --lp-blue: #2e8fde;
+    --lp-deep: #0056c4;
+    --lp-accent: #0a5bc4;
+    --lp-line: color-mix(in oklab, var(--lp-blue) 55%, transparent);
+    scroll-behavior: smooth;
+  }
+
+  [data-theme="dark"] .landing {
+    --lp-accent: #7fd2f7;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .landing {
+      --lp-accent: #7fd2f7;
+    }
+  }
+
+  .landing ::selection {
+    background: color-mix(in oklab, var(--lp-sky) 35%, transparent);
+  }
+
+  .lp-serif {
+    font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, serif;
+  }
+
+  .lp-eyebrow {
+    color: var(--lp-accent);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  .lp-accent {
+    color: var(--lp-accent);
+  }
+
+  .lp-glow {
+    background:
+      radial-gradient(60% 55% at 85% 0%, color-mix(in oklab, var(--lp-sky) 22%, transparent), transparent 70%),
+      radial-gradient(45% 40% at 5% 10%, color-mix(in oklab, var(--lp-blue) 10%, transparent), transparent 70%);
+  }
+
+  /* The mark again, large and faint, so the hero's empty half on wide
+     screens reads as calm rather than missing. */
+  .lp-hero-mark {
+    opacity: 0.08;
+    rotate: 8deg;
+  }
+
+  [data-theme="dark"] .lp-hero-mark {
+    opacity: 0.12;
+  }
+
+  .lp-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    border-radius: 9999px;
+    padding: 0.8rem 1.4rem;
+    background: linear-gradient(135deg, var(--lp-blue), var(--lp-deep));
+    box-shadow: 0 10px 24px -12px color-mix(in oklab, var(--lp-deep) 80%, transparent);
+    color: #ffffff;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transition: transform 200ms ease, box-shadow 200ms ease, filter 200ms ease;
+  }
+
+  .lp-button:hover {
+    transform: translateY(-1px);
+    filter: brightness(1.06);
+    box-shadow: 0 16px 30px -14px color-mix(in oklab, var(--lp-deep) 90%, transparent);
+  }
+
+  .lp-button:active {
+    transform: scale(0.98);
+  }
+
+  .lp-button:focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--lp-sky) 70%, transparent);
+    outline-offset: 3px;
+  }
+
+  /* Cards lift with `transform`; the reveal animations move them with
+     `translate`, so the two never fight over the same property. */
+  .lp-card {
+    border: 1px solid color-mix(in oklab, var(--color-base-content) 9%, transparent);
+    border-radius: 1.5rem;
+    background: var(--color-base-100);
+    transition: transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
+  }
+
+  .lp-card:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in oklab, var(--lp-blue) 35%, transparent);
+    box-shadow: 0 18px 40px -24px color-mix(in oklab, var(--lp-deep) 45%, transparent);
+  }
+
+  .lp-icon {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.875rem;
+    background: color-mix(in oklab, var(--lp-blue) 12%, transparent);
+    color: var(--lp-accent);
+  }
+
+  .lp-join {
+    border: 1px solid color-mix(in oklab, var(--lp-blue) 22%, transparent);
+    background:
+      radial-gradient(70% 90% at 50% 0%, color-mix(in oklab, var(--lp-sky) 16%, transparent), transparent 70%),
+      color-mix(in oklab, var(--lp-blue) 5%, var(--color-base-100));
+  }
+
+  .lp-button:disabled {
+    cursor: progress;
+    opacity: 0.75;
+  }
+
+  /* The second choice next to an `lp-button`, e.g. "log me in only this time". */
+  .lp-button-quiet {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid color-mix(in oklab, var(--lp-blue) 25%, transparent);
+    border-radius: 9999px;
+    padding: 0.8rem 1.4rem;
+    background: color-mix(in oklab, var(--lp-blue) 7%, var(--color-base-100));
+    color: var(--lp-accent);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    transition: background-color 200ms ease, transform 200ms ease;
+  }
+
+  .lp-button-quiet:hover {
+    background: color-mix(in oklab, var(--lp-blue) 14%, var(--color-base-100));
+  }
+
+  .lp-button-quiet:active {
+    transform: scale(0.98);
+  }
+
+  .lp-button-quiet:focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--lp-sky) 70%, transparent);
+    outline-offset: 3px;
+  }
+
+  /* The card of a log-in page: like `lp-card`, but it holds a form, so it
+     stays still under the pointer. */
+  .lp-panel {
+    border: 1px solid color-mix(in oklab, var(--color-base-content) 9%, transparent);
+    border-radius: 2rem;
+    background: var(--color-base-100);
+    box-shadow: 0 30px 60px -36px color-mix(in oklab, var(--lp-deep) 40%, transparent);
+  }
+
+  .lp-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    border-radius: 1rem;
+    padding: 0.875rem 1rem;
+    background: color-mix(in oklab, var(--lp-blue) 8%, transparent);
+    color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+  }
+
+  .lp-link {
+    color: var(--lp-accent);
+    font-weight: 600;
+    text-underline-offset: 4px;
+  }
+
+  .lp-link:hover {
+    text-decoration: underline;
+  }
+
+  .lp-waves path {
+    stroke-linecap: round;
+  }
+
+  .lp-wave-a path {
+    stroke: color-mix(in oklab, var(--lp-blue) 45%, transparent);
+    stroke-width: 1.5;
+  }
+
+  .lp-wave-b path {
+    stroke: color-mix(in oklab, var(--lp-sky) 60%, transparent);
+    stroke-width: 1;
+  }
+
+  .lp-wave-c path {
+    stroke: var(--lp-accent);
+    stroke-width: 1.25;
+    stroke-dasharray: 2 9;
+    opacity: 0.55;
+  }
+
+  .lp-drift {
+    animation: lp-drift 26s linear infinite;
+  }
+
+  .lp-wave-b {
+    animation-duration: 38s;
+    animation-direction: reverse;
+  }
+
+  .lp-wave-c {
+    animation-duration: 18s;
+  }
+
+  .lp-merge path {
+    fill: none;
+    stroke-linecap: round;
+  }
+
+  .lp-merge-bed {
+    stroke: color-mix(in oklab, var(--lp-blue) 12%, transparent);
+    stroke-width: 10;
+  }
+
+  .lp-merge-flow {
+    stroke: var(--lp-line);
+    stroke-width: 2;
+    stroke-dasharray: 3 10;
+    animation: lp-dash 2.4s linear infinite;
+  }
+
+  .lp-vline {
+    background: repeating-linear-gradient(to bottom, var(--lp-line) 0 4px, transparent 4px 12px);
+    background-size: 100% 24px;
+    animation: lp-fall 1.6s linear infinite;
+  }
+
+  .lp-flow-dot {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: grid;
+    place-items: center;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 1px solid color-mix(in oklab, var(--lp-blue) 30%, transparent);
+    border-radius: 9999px;
+    background: color-mix(in oklab, var(--lp-blue) 8%, var(--color-base-100));
+    color: var(--lp-accent);
+    transition: transform 250ms ease, background-color 250ms ease;
+  }
+
+  .lp-flow > li:hover .lp-flow-dot {
+    transform: scale(1.08);
+    background-color: color-mix(in oklab, var(--lp-blue) 16%, var(--color-base-100));
+  }
+
+  /* Each step draws the stretch of stream to the next one: down while the
+     steps stack, across once they sit in a row (lg). */
+  .lp-flow > li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 3.25rem;
+    bottom: -1.5rem;
+    left: calc(1.375rem - 1px);
+    width: 2px;
+    border-radius: 2px;
+    background: repeating-linear-gradient(to bottom, var(--lp-line) 0 4px, transparent 4px 12px);
+    background-size: 100% 24px;
+    animation: lp-fall 1.6s linear infinite;
+  }
+
+  @media (width >= 64rem) {
+    .lp-flow > li:not(:last-child)::after {
+      top: calc(1.375rem - 1px);
+      right: -1rem;
+      bottom: auto;
+      left: 3.25rem;
+      width: auto;
+      height: 2px;
+      background: repeating-linear-gradient(to right, var(--lp-line) 0 4px, transparent 4px 12px);
+      background-size: 24px 100%;
+      animation-name: lp-run;
+    }
+  }
+
+  .lp-turn {
+    transition: rotate 700ms ease;
+  }
+
+  :hover > .lp-turn {
+    rotate: -180deg;
+  }
+
+  .lp-rise {
+    animation: lp-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  }
+
+  .lp-rise:nth-child(2) { animation-delay: 80ms; }
+  .lp-rise:nth-child(3) { animation-delay: 160ms; }
+  .lp-rise:nth-child(4) { animation-delay: 240ms; }
+  .lp-rise:nth-child(5) { animation-delay: 320ms; }
+
+  /* Sections fade in as they scroll into view, where the browser can tie an
+     animation to scrolling; elsewhere they are simply there. */
+  @supports (animation-timeline: view()) {
+    .lp-reveal {
+      animation: lp-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 40%;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .landing {
+      scroll-behavior: auto;
+    }
+
+    .landing *,
+    .landing *::after {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+}
+
+/* Form fields keep the `<.input>` defaults; on guest pages they are taller,
+   rounder and take the mark's blue when focused. daisyUI draws the border
+   and the focus outline from `--input-color`. Its rules live in Tailwind's
+   utilities layer, so these stay outside the layers to win over them. */
+.landing .input {
+  --size: 3rem;
+  border-radius: 0.875rem;
+}
+
+.landing .input:not(.input-error):focus,
+.landing .input:not(.input-error):focus-within {
+  --input-color: var(--lp-blue);
+}
+
+.landing .checkbox:checked {
+  --input-color: var(--lp-blue);
+  color: #ffffff;
+}
+
+@keyframes lp-rise {
+  from {
+    opacity: 0;
+    translate: 0 0.75rem;
+  }
+}
+
+@keyframes lp-drift {
+  to { transform: translateX(-50%); }
+}
+
+@keyframes lp-dash {
+  to { stroke-dashoffset: -26; }
+}
+
+@keyframes lp-fall {
+  to { background-position: 0 24px; }
+}
+
+@keyframes lp-run {
+  to { background-position: 24px 0; }
+}

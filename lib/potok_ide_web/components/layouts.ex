@@ -343,6 +343,178 @@ defmodule PotokIdeWeb.Layouts do
     """
   end
 
+  @doc """
+  Renders the layout of the pages for guests: the landing page and the log-in
+  pages. Instead of the app's menu it has the landing page's own header and
+  footer, and since the body never scrolls, the page is its own scroll area.
+
+  ## Examples
+
+      <Layouts.guest flash={@flash} current_locale={@current_locale} centered>
+        <Layouts.guest_card id="login" title={gettext("Log in")}>...</Layouts.guest_card>
+      </Layouts.guest>
+
+  """
+  attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :current_locale, :string, default: nil, doc: "the active locale"
+  attr :available_locales, :list, default: PotokIdeWeb.Locale.supported_locales()
+
+  attr :centered, :boolean,
+    default: false,
+    doc: "centers the content (a single card) between the header and the footer"
+
+  attr :about_link, :boolean,
+    default: false,
+    doc: "links the header back to the landing page, for pages without a `header_action`"
+
+  slot :inner_block, required: true
+  slot :header_action, doc: "a link at the right end of the header"
+
+  def guest(assigns) do
+    ~H"""
+    <div
+      id="guest"
+      class="landing h-dvh overflow-y-auto overscroll-contain bg-base-100 text-base-content"
+    >
+      <div class="relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
+        <div class="lp-glow absolute inset-x-0 top-0 -z-10 h-[42rem]" aria-hidden="true"></div>
+
+        <header
+          id="guest-header"
+          class="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-5 sm:px-8"
+        >
+          <a href={~p"/"} class="group flex items-center gap-2.5" aria-label="Potok">
+            <.mark
+              id="guest-header-mark"
+              class="size-9 transition-transform duration-500 group-hover:-rotate-6"
+            />
+            <span class="lp-serif text-xl font-semibold tracking-tight">Potok</span>
+          </a>
+          {render_slot(@header_action)}
+          <.link
+            :if={@about_link && @header_action == []}
+            id="guest-about-link"
+            href={~p"/"}
+            class="rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+          >
+            {gettext("What is Potok?")}
+          </.link>
+        </header>
+
+        <main class={[
+          "flex-1",
+          @centered && "flex flex-col items-center justify-center px-5 py-10 sm:py-16"
+        ]}>
+          {render_slot(@inner_block)}
+        </main>
+
+        <footer id="guest-footer" class="border-t border-base-content/8">
+          <div class="mx-auto flex max-w-5xl flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div class="flex items-center gap-2">
+                <.mark id="guest-footer-mark" class="size-6" />
+                <span class="lp-serif font-semibold">Potok</span>
+              </div>
+              <p class="mt-2 text-sm text-base-content/55">
+                {gettext("A shared platform for assemblies")}
+              </p>
+              <p class="mt-1 text-xs text-base-content/45 hidden">
+                {gettext(
+                  "No ads, no tracking. The only cookie here is the one that keeps you logged in."
+                )}
+              </p>
+            </div>
+            <div class="flex flex-col gap-4 md:items-end">
+              <div class="flex flex-wrap items-center gap-3 md:justify-end">
+                <.locale_switcher
+                  current_locale={@current_locale}
+                  available_locales={@available_locales}
+                />
+                <.theme_toggle />
+              </div>
+              <.link
+                id="guest-privacy-link"
+                href={~p"/privacy-policy"}
+                class="text-sm text-base-content/60 underline-offset-4 transition hover:text-base-content hover:underline"
+              >
+                {gettext("Privacy policy")}
+              </.link>
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+    <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
+  The card of a log-in page inside a centered `guest/1` layout: the mark, a
+  title and a line under it, then the page's form.
+  """
+  attr :id, :string, required: true
+  attr :title, :string, required: true
+  attr :subtitle, :string, default: nil
+
+  attr :invitation_note, :boolean,
+    default: false,
+    doc: "tells visitors without an account, under the card, how to get one"
+
+  slot :inner_block, required: true
+
+  def guest_card(assigns) do
+    ~H"""
+    <div id={@id} class="w-full max-w-md">
+      <section class="lp-panel lp-rise px-6 py-8 sm:px-10 sm:py-10">
+        <div class="text-center">
+          <.mark id={"#{@id}-mark"} class="mx-auto size-12" />
+          <h1 class="lp-serif mt-5 text-3xl tracking-tight text-balance sm:text-4xl">
+            {@title}
+          </h1>
+          <p :if={@subtitle} class="mt-3 leading-7 text-pretty wrap-break-word text-base-content/70">
+            {@subtitle}
+          </p>
+        </div>
+        <div class="mt-8">{render_slot(@inner_block)}</div>
+      </section>
+      <p
+        :if={@invitation_note}
+        id={"#{@id}-invitation-note"}
+        class="lp-rise mt-6 text-center text-sm leading-6 text-pretty text-base-content/60"
+      >
+        {gettext("No account yet?")}
+        <.link href={~p"/" <> "#landing-join"} class="lp-link">
+          {gettext("Potok is invitation only for now.")}
+        </.link>
+      </p>
+    </div>
+    """
+  end
+
+  @doc """
+  The Potok mark: a drop that turns into a stream.
+  """
+  attr :id, :string, required: true, doc: "unique on the page, it names the mark's gradient"
+  attr :class, :string, default: nil
+
+  def mark(assigns) do
+    ~H"""
+    <svg id={@id} viewBox="247 142 540 540" class={@class} aria-hidden="true">
+      <defs>
+        <linearGradient id={"#{@id}-gradient"} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#69cbf5" />
+          <stop offset="0.45" stop-color="#2e8fde" />
+          <stop offset="1" stop-color="#0056c4" />
+        </linearGradient>
+      </defs>
+      <path
+        fill={"url(##{@id}-gradient)"}
+        d="m 674.01932,396.85242 c 13.95963,29.86298 23.09625,60.54444 22.17121,93.28308 -1.24783,44.16177 -15.95191,83.43815 -45.36201,116.82792 -1.21933,1.38428 -2.23986,3.12007 -4.78685,3.41667 -2.0492,-1.99134 -1.66361,-4.97542 -2.00289,-7.47084 -1.41324,-10.39427 -4.47739,-20.24088 -9.70759,-29.27488 -2.05803,-3.55475 -1.54977,-6.02275 0.54542,-9.17186 19.18496,-28.83385 26.17573,-60.81065 22.42971,-94.87463 -2.4893,-22.63609 -10.53228,-43.83776 -21.20171,-63.9588 -2.3458,-4.42388 -4.15004,-9.18676 -7.64911,-13.42671 -3.30019,2.45154 -3.77863,6.22913 -5.34575,9.25239 -11.04301,21.3042 -29.26389,34.54261 -50.01774,45.02568 -16.6135,8.39178 -34.56829,13.73489 -51.01257,22.50524 -4.8732,2.59904 -9.45738,5.56441 -13.22676,9.6937 -9.5859,10.50103 -9.02495,22.13097 1.67155,31.56648 8.68296,7.65937 19.21129,12.24696 29.42853,17.29587 20.09622,9.93052 40.43073,19.44799 57.47596,34.44163 16.18059,14.23308 25.849,31.6426 25.44793,53.70051 -0.0801,4.40204 -0.90468,8.81345 -1.65648,13.17382 -0.71596,4.15229 -3.03101,7.17749 -6.74916,9.4477 -41.15822,25.13035 -85.51688,33.60119 -132.69468,23.90328 -61.91989,-12.72831 -105.34418,-49.04609 -129.91485,-107.03789 -18.07285,-42.6556 -17.60944,-86.26095 -3.07414,-130.03547 12.5374,-37.75766 33.5891,-70.9529 55.08947,-103.89645 35.01388,-53.6492 71.47927,-106.31244 108.56256,-158.54868 1.20508,-1.69745 2.19316,-3.60479 4.9947,-5.09971 5.55477,7.86459 11.17435,15.68595 16.65532,23.60328 32.60938,47.10486 65.83963,93.78652 97.12073,141.79867 15.4634,23.73422 30.66938,47.63637 42.8092,73.86 m -133.42186,33.60901 c 6.75783,-3.47983 13.68239,-6.67257 20.24607,-10.48655 39.43661,-22.91565 46.47756,-64.65151 23.51088,-98.70125 -17.59515,-26.08609 -35.24327,-52.13652 -52.90348,-78.17867 -4.55568,-6.71794 -9.24542,-13.34497 -14.16462,-20.43313 -1.68893,2.04684 -2.71047,3.11139 -3.53631,4.31058 -35.22802,51.15255 -70.79685,102.08616 -102.80711,155.36008 -13.20043,21.9692 -24.47739,44.91002 -30.37123,70.04082 -8.60746,36.70135 -4.48491,71.86335 14.83519,104.52985 22.45994,37.97527 56.01862,60.16661 99.44062,67.16133 14.15785,2.28059 26.7241,-6.15285 29.70012,-18.77018 2.51617,-10.66787 -2.49874,-18.85497 -9.42911,-26.10255 -9.71128,-10.15575 -21.68723,-17.48247 -32.95021,-25.68165 -9.75708,-7.10298 -19.60315,-14.13372 -26.8736,-23.93971 -7.15828,-9.65485 -11.0719,-20.29478 -8.56022,-32.6205 3.40424,-16.70615 14.87124,-27.02159 28.23744,-35.76031 20.13807,-13.16616 42.95835,-20.66646 65.62557,-30.72816 z"
+      />
+    </svg>
+    """
+  end
+
   # The home button goes straight to the page `PageController.home/2` would
   # redirect to, saving a round trip and allowing live navigation.
   defp home_path(_current_scope, %{} = _current_profile), do: ~p"/groups"
