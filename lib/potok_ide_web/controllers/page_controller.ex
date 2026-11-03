@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.PageController do
         render(conn, :home,
           page_description:
             gettext(
-              "Potok is where groups talk, exchange values, decide and remember what they decided."
+              "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
             )
         )
     end

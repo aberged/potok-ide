@@ -8,91 +8,98 @@ defmodule PotokIdeWeb.PageHTML do
 
   embed_templates "page_html/*"
 
-  # The steps of the landing page's "how it flows" section, from the spring
-  # (an account) to the mouth (what a group does with what it agreed on).
-  defp flow_steps do
+  # The cards of the landing page's "what Potok can do" section.
+  defp features do
     [
       %{
-        id: "identity",
-        icon: "hero-finger-print",
-        title: pgettext("landing step", "Identity"),
-        tagline: gettext("You, once."),
-        text:
-          gettext(
-            "One account and one email address. That's all Potok needs to know to recognize you."
-          )
-      },
-      %{
-        id: "profile",
-        icon: "hero-user-circle",
-        title: pgettext("landing step", "Profile"),
-        tagline: gettext("How you show up."),
-        text:
-          gettext(
-            "You can have several: a personal one, or a shared one, like an assembly's profile run by a few people."
-          )
-      },
-      %{
-        id: "group",
+        id: "groups",
         icon: "hero-user-group",
-        title: pgettext("landing step", "Group"),
-        tagline: gettext("Where you gather."),
+        title: gettext("Groups and sub-groups"),
         text:
           gettext(
-            "A plenum, an assembly, a working group. A subgroup can take over its parent's members and roles, so it doesn't start from scratch."
+            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree."
           )
       },
       %{
-        id: "values",
+        id: "chat",
         icon: "hero-chat-bubble-left-right",
-        title: pgettext("landing step", "Values"),
-        tagline: gettext("What comes out of it."),
+        title: gettext("Chat"),
         text:
           gettext(
-            "Messages, decisions, events and files stay on record, so tomorrow everyone still knows what was agreed yesterday."
+            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too."
           )
       },
       %{
-        id: "application",
-        icon: "hero-sparkles",
-        title: pgettext("landing step", "Application"),
-        tagline: gettext("What gets done."),
+        id: "calendar",
+        icon: "hero-calendar-days",
+        title: gettext("Calendar"),
         text:
           gettext(
-            "Polls, task lists, the calendar and small apps inside the group turn an agreement into action."
+            "One-off, all-day and repeating events, the answers Going, Maybe or Not going, and reminders. My calendar gathers the events of all your groups, and you can export them to Google, Apple or Outlook."
+          )
+      },
+      %{
+        id: "files",
+        icon: "hero-paper-clip",
+        title: gettext("Files"),
+        text:
+          gettext(
+            "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
+          )
+      },
+      %{
+        id: "roles",
+        icon: "hero-shield-check",
+        title: gettext("Roles and permissions"),
+        text:
+          gettext(
+            "Administrator, All members and roles you make yourself, with 15 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
+          )
+      },
+      %{
+        id: "apps",
+        icon: "hero-squares-plus",
+        title: gettext("Apps in a group"),
+        text:
+          gettext(
+            "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list."
           )
       }
     ]
   end
 
-  defp why_points do
+  # The rows of the landing page's "always with you" section.
+  defp perks do
     [
       %{
-        id: "data",
-        icon: "hero-shield-check",
-        title: gettext("Data belongs to the community"),
-        text:
-          gettext(
-            "What a group writes stays with the group. We don't sell it and we don't turn it into a profile for advertisers."
-          )
+        id: "notifications",
+        icon: "hero-bell",
+        title: gettext("Notifications"),
+        text: gettext("On your phone and in the browser, for messages, mentions and events.")
       },
       %{
-        id: "order",
-        icon: "hero-clock",
-        title: gettext("In order, without an algorithm"),
-        text:
-          gettext(
-            "Messages arrive in the order they were written. Nobody decides for you what matters today."
-          )
+        id: "phone",
+        icon: "hero-device-phone-mobile",
+        title: gettext("On your phone"),
+        text: gettext("An app for your phone, or an install straight from the browser.")
       },
       %{
-        id: "riverbed",
-        icon: "hero-rectangle-group",
-        title: gettext("One riverbed"),
-        text:
-          gettext(
-            "Chat, calendar, files, roles and small apps in one place, connected on purpose rather than by the habit of everyone using the same thing."
-          )
+        id: "profiles",
+        icon: "hero-users",
+        title: gettext("Several profiles"),
+        text: gettext("Personal and shared, say for a family or an association.")
+      },
+      %{
+        id: "theme",
+        icon: "hero-moon",
+        title: gettext("Light and dark theme"),
+        text: gettext("Or the way your system is set.")
+      },
+      %{
+        id: "languages",
+        icon: "hero-globe-alt",
+        title: gettext("Three languages"),
+        text: gettext("Srpski, English and polski.")
       }
     ]
   end

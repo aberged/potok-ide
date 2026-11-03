@@ -667,17 +667,28 @@
     --lp-blue: #2e8fde;
     --lp-deep: #0056c4;
     --lp-accent: #0a5bc4;
-    --lp-line: color-mix(in oklab, var(--lp-blue) 55%, transparent);
+    --lp-accent-soft: rgba(46, 143, 222, 0.12);
+    --lp-muted: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+    --lp-line: color-mix(in oklab, var(--color-base-content) 11%, transparent);
+    --lp-card: color-mix(in oklab, var(--color-base-content) 3%, var(--color-base-100));
+    --lp-shadow: 0 1px 2px rgba(23, 34, 77, 0.06), 0 8px 24px -12px rgba(23, 34, 77, 0.18);
+    --lp-shadow-hover: 0 2px 4px rgba(23, 34, 77, 0.08), 0 18px 36px -16px rgba(0, 86, 196, 0.35);
     scroll-behavior: smooth;
   }
 
   [data-theme="dark"] .landing {
     --lp-accent: #7fd2f7;
+    --lp-accent-soft: rgba(105, 203, 245, 0.14);
+    --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
+    --lp-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -18px rgba(46, 143, 222, 0.45);
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme]) .landing {
       --lp-accent: #7fd2f7;
+      --lp-accent-soft: rgba(105, 203, 245, 0.14);
+      --lp-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 10px 28px -14px rgba(0, 0, 0, 0.6);
+      --lp-shadow-hover: 0 2px 4px rgba(0, 0, 0, 0.35), 0 20px 40px -18px rgba(46, 143, 222, 0.45);
     }
   }
 
@@ -687,14 +698,6 @@
 
   .lp-serif {
     font-family: ui-serif, "Iowan Old Style", "Palatino Linotype", Palatino, Charter, Georgia, serif;
-  }
-
-  .lp-eyebrow {
-    color: var(--lp-accent);
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
   }
 
   .lp-accent {
@@ -707,15 +710,221 @@
       radial-gradient(45% 40% at 5% 10%, color-mix(in oklab, var(--lp-blue) 10%, transparent), transparent 70%);
   }
 
-  /* The mark again, large and faint, so the hero's empty half on wide
-     screens reads as calm rather than missing. */
-  .lp-hero-mark {
-    opacity: 0.08;
-    rotate: 8deg;
+  /* The landing page's hero is the mark's blue in both themes, with the mark
+     itself large and faint behind the text. */
+  .lp-hero {
+    position: relative;
+    overflow: hidden;
+    border-radius: 28px;
+    color: #ffffff;
+    background:
+      radial-gradient(circle at 100% 0%, rgba(105, 203, 245, 0.55), transparent 42%),
+      linear-gradient(160deg, #0a47a3 0%, #1565c6 55%, #2e8fde 100%);
   }
 
-  [data-theme="dark"] .lp-hero-mark {
-    opacity: 0.12;
+  .lp-watermark {
+    position: absolute;
+    top: -12%;
+    right: -14%;
+    width: min(70%, 460px);
+    height: auto;
+    aspect-ratio: 1;
+    opacity: 0.1;
+    pointer-events: none;
+  }
+
+  .lp-watermark path {
+    fill: #ffffff;
+  }
+
+  .lp-hero-body {
+    position: relative;
+    z-index: 1;
+    padding: clamp(28px, 6vw, 56px) clamp(20px, 6vw, 56px);
+  }
+
+  .lp-hero h1 {
+    max-width: 16ch;
+    font-size: clamp(30px, 6.4vw, 52px);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .lp-lead {
+    max-width: 34rem;
+    margin-top: 16px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(16px, 2.2vw, 19px);
+    line-height: 1.55;
+  }
+
+  .lp-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 24px;
+  }
+
+  .lp-pills li {
+    padding: 5px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.12);
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .lp-section + .lp-section {
+    margin-top: clamp(36px, 7vw, 56px);
+  }
+
+  .lp-kicker {
+    color: var(--lp-accent);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .lp-section h2 {
+    margin-top: 6px;
+    font-size: clamp(24px, 4vw, 32px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .lp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    margin-top: 24px;
+  }
+
+  .lp-feature {
+    padding: 22px;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+    box-shadow: var(--lp-shadow);
+    transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  }
+
+  .lp-feature:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--lp-accent) 35%, transparent);
+    box-shadow: var(--lp-shadow-hover);
+  }
+
+  .lp-icon {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 13px;
+    background: var(--lp-accent-soft);
+    color: var(--lp-accent);
+  }
+
+  .lp-feature h3 {
+    margin-top: 16px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+  }
+
+  .lp-feature p {
+    margin-top: 6px;
+    color: var(--lp-muted);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  /* On phones the icon sits next to the heading, which keeps the cards short. */
+  @media (max-width: 520px) {
+    .lp-feature {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      column-gap: 14px;
+      padding: 18px;
+    }
+
+    .lp-feature h3 {
+      margin-top: 0;
+    }
+
+    .lp-feature p {
+      grid-column: 1 / -1;
+      margin-top: 12px;
+    }
+  }
+
+  /* At most three columns, so the five rows never leave one alone. */
+  .lp-perks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(max(200px, 30%), 1fr));
+    gap: 4px 20px;
+    margin-top: 20px;
+    padding: 10px 20px;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+  }
+
+  .lp-perks li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 0;
+  }
+
+  .lp-perks .lp-icon {
+    flex: 0 0 auto;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+  }
+
+  .lp-perks strong {
+    display: block;
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .lp-perks strong + span {
+    display: block;
+    color: var(--lp-muted);
+    font-size: 14px;
+    line-height: 1.45;
+  }
+
+  .lp-cta {
+    margin-top: clamp(36px, 7vw, 56px);
+    padding: clamp(24px, 5vw, 40px);
+    border: 1px solid color-mix(in oklab, var(--lp-blue) 30%, transparent);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 0% 100%, color-mix(in oklab, var(--lp-sky) 22%, transparent), transparent 55%),
+      color-mix(in oklab, var(--lp-blue) 7%, var(--color-base-100));
+    text-align: center;
+  }
+
+  .lp-cta h2 {
+    font-size: clamp(22px, 3.6vw, 28px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .lp-cta p {
+    max-width: 30rem;
+    margin: 10px auto 0;
+    color: var(--lp-muted);
   }
 
   .lp-button {
@@ -745,39 +954,6 @@
   .lp-button:focus-visible {
     outline: 3px solid color-mix(in oklab, var(--lp-sky) 70%, transparent);
     outline-offset: 3px;
-  }
-
-  /* Cards lift with `transform`; the reveal animations move them with
-     `translate`, so the two never fight over the same property. */
-  .lp-card {
-    border: 1px solid color-mix(in oklab, var(--color-base-content) 9%, transparent);
-    border-radius: 1.5rem;
-    background: var(--color-base-100);
-    transition: transform 250ms ease, border-color 250ms ease, box-shadow 250ms ease;
-  }
-
-  .lp-card:hover {
-    transform: translateY(-2px);
-    border-color: color-mix(in oklab, var(--lp-blue) 35%, transparent);
-    box-shadow: 0 18px 40px -24px color-mix(in oklab, var(--lp-deep) 45%, transparent);
-  }
-
-  .lp-icon {
-    display: grid;
-    flex: none;
-    place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 0.875rem;
-    background: color-mix(in oklab, var(--lp-blue) 12%, transparent);
-    color: var(--lp-accent);
-  }
-
-  .lp-join {
-    border: 1px solid color-mix(in oklab, var(--lp-blue) 22%, transparent);
-    background:
-      radial-gradient(70% 90% at 50% 0%, color-mix(in oklab, var(--lp-sky) 16%, transparent), transparent 70%),
-      color-mix(in oklab, var(--lp-blue) 5%, var(--color-base-100));
   }
 
   .lp-button:disabled {
@@ -814,8 +990,7 @@
     outline-offset: 3px;
   }
 
-  /* The card of a log-in page: like `lp-card`, but it holds a form, so it
-     stays still under the pointer. */
+  /* The card of a log-in page. */
   .lp-panel {
     border: 1px solid color-mix(in oklab, var(--color-base-content) 9%, transparent);
     border-radius: 2rem;
@@ -879,86 +1054,6 @@
     animation-duration: 18s;
   }
 
-  .lp-merge path {
-    fill: none;
-    stroke-linecap: round;
-  }
-
-  .lp-merge-bed {
-    stroke: color-mix(in oklab, var(--lp-blue) 12%, transparent);
-    stroke-width: 10;
-  }
-
-  .lp-merge-flow {
-    stroke: var(--lp-line);
-    stroke-width: 2;
-    stroke-dasharray: 3 10;
-    animation: lp-dash 2.4s linear infinite;
-  }
-
-  .lp-vline {
-    background: repeating-linear-gradient(to bottom, var(--lp-line) 0 4px, transparent 4px 12px);
-    background-size: 100% 24px;
-    animation: lp-fall 1.6s linear infinite;
-  }
-
-  .lp-flow-dot {
-    position: absolute;
-    top: 0;
-    left: 0;
-    display: grid;
-    place-items: center;
-    width: 2.75rem;
-    height: 2.75rem;
-    border: 1px solid color-mix(in oklab, var(--lp-blue) 30%, transparent);
-    border-radius: 9999px;
-    background: color-mix(in oklab, var(--lp-blue) 8%, var(--color-base-100));
-    color: var(--lp-accent);
-    transition: transform 250ms ease, background-color 250ms ease;
-  }
-
-  .lp-flow > li:hover .lp-flow-dot {
-    transform: scale(1.08);
-    background-color: color-mix(in oklab, var(--lp-blue) 16%, var(--color-base-100));
-  }
-
-  /* Each step draws the stretch of stream to the next one: down while the
-     steps stack, across once they sit in a row (lg). */
-  .lp-flow > li:not(:last-child)::after {
-    content: "";
-    position: absolute;
-    top: 3.25rem;
-    bottom: -1.5rem;
-    left: calc(1.375rem - 1px);
-    width: 2px;
-    border-radius: 2px;
-    background: repeating-linear-gradient(to bottom, var(--lp-line) 0 4px, transparent 4px 12px);
-    background-size: 100% 24px;
-    animation: lp-fall 1.6s linear infinite;
-  }
-
-  @media (width >= 64rem) {
-    .lp-flow > li:not(:last-child)::after {
-      top: calc(1.375rem - 1px);
-      right: -1rem;
-      bottom: auto;
-      left: 3.25rem;
-      width: auto;
-      height: 2px;
-      background: repeating-linear-gradient(to right, var(--lp-line) 0 4px, transparent 4px 12px);
-      background-size: 24px 100%;
-      animation-name: lp-run;
-    }
-  }
-
-  .lp-turn {
-    transition: rotate 700ms ease;
-  }
-
-  :hover > .lp-turn {
-    rotate: -180deg;
-  }
-
   .lp-rise {
     animation: lp-rise 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
   }
@@ -967,16 +1062,6 @@
   .lp-rise:nth-child(3) { animation-delay: 160ms; }
   .lp-rise:nth-child(4) { animation-delay: 240ms; }
   .lp-rise:nth-child(5) { animation-delay: 320ms; }
-
-  /* Sections fade in as they scroll into view, where the browser can tie an
-     animation to scrolling; elsewhere they are simply there. */
-  @supports (animation-timeline: view()) {
-    .lp-reveal {
-      animation: lp-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 40%;
-    }
-  }
 
   @media (prefers-reduced-motion: reduce) {
     .landing {
@@ -1019,16 +1104,4 @@
 
 @keyframes lp-drift {
   to { transform: translateX(-50%); }
-}
-
-@keyframes lp-dash {
-  to { stroke-dashoffset: -26; }
-}
-
-@keyframes lp-fall {
-  to { background-position: 0 24px; }
-}
-
-@keyframes lp-run {
-  to { background-position: 24px 0; }
 }

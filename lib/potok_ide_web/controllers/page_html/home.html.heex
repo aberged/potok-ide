@@ -12,53 +12,35 @@
       {gettext("Log in")}
     </.link>
   </:header_action>
-  <section
-    id="landing-hero"
-    class="relative mx-auto max-w-5xl px-5 pt-12 pb-4 sm:px-8 sm:pt-24"
-  >
-    <p class="lp-rise lp-eyebrow">
-      {gettext("A social application platform")}
-    </p>
-    <h1 class="lp-rise lp-serif mt-5 max-w-3xl text-[2.6rem] leading-[1.06] tracking-tight text-balance sm:text-6xl sm:leading-[1.04]">
-      {gettext("Everything flows easier when the riverbed is shared.")}
-    </h1>
-    <p class="lp-rise mt-6 max-w-xl text-lg leading-8 text-pretty text-base-content/70">
-      {gettext(
-        "Potok is where groups talk, exchange values, decide and remember what they decided."
-      )}
-    </p>
-    <div class="lp-rise mt-9 flex flex-wrap items-center gap-3">
-      <.link id="landing-hero-login" href={~p"/accounts/log-in"} class="lp-button group">
-        {gettext("Log in")}
-        <.icon
-          name="hero-arrow-right"
-          class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-        />
-      </.link>
-      <a
-        id="landing-join-link"
-        href="#landing-join"
-        class="group inline-flex items-center gap-2 rounded-full px-4 py-3 text-sm font-semibold text-base-content/70 transition duration-200 hover:bg-base-content/5 hover:text-base-content"
-      >
-        {gettext("How do I get in?")}
-        <.icon
-          name="hero-arrow-down"
-          class="size-4 transition-transform duration-200 group-hover:translate-y-0.5"
-        />
-      </a>
-    </div>
-    <p class="lp-rise mt-5 text-sm text-base-content/50">
-      {gettext("Invitation only, for now. Explained below, no fine print.")}
-    </p>
-    <Layouts.mark
-      id="landing-hero-mark"
-      class="lp-hero-mark pointer-events-none absolute top-16 right-8 -z-10 hidden size-80 lg:block"
-    />
-  </section>
+
+  <div class="mx-auto max-w-5xl px-5 pt-2 sm:px-8 sm:pt-4">
+    <section id="landing-hero" class="lp-hero">
+      <Layouts.mark id="landing-hero-mark" class="lp-watermark" />
+      <div class="lp-hero-body">
+        <h1>{gettext("Society for society")}</h1>
+        <p class="lp-lead">
+          {gettext(
+            "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
+          )}
+        </p>
+        <ul class="lp-pills">
+          <li :for={
+            pill <- [gettext("Chat"), gettext("Calendar"), gettext("Files"), gettext("Roles")]
+          }>
+            {pill}
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
 
   <%!-- Each strip holds the same wave twice and slides by half its width,
            so the loop has no seam. --%>
-  <div class="lp-waves relative h-24 overflow-hidden sm:h-32" aria-hidden="true">
+  <div
+    id="landing-waves"
+    class="lp-waves relative h-24 overflow-hidden sm:h-32"
+    aria-hidden="true"
+  >
     <div
       :for={
         {wave, d} <- [
@@ -80,164 +62,47 @@
     </div>
   </div>
 
-  <section id="landing-streams" class="mx-auto max-w-5xl px-5 py-16 sm:px-8 sm:py-24">
-    <div class="lp-reveal max-w-2xl">
-      <p class="lp-eyebrow">{gettext("Two streams")}</p>
-      <h2 class="lp-serif mt-3 text-3xl tracking-tight text-balance sm:text-4xl">
-        {gettext("Different beds, the same water.")}
-      </h2>
-      <p class="mt-5 text-base leading-7 text-pretty text-base-content/70 sm:text-lg sm:leading-8">
-        {gettext(
-          "Student plenums and citizens' assemblies grew up in different places, but they decide the same way: together, out loud, and in touch with others like them."
-        )}
-      </p>
-    </div>
+  <div class="mx-auto max-w-5xl px-5 pb-16 sm:px-8 sm:pb-24">
+    <section id="landing-features" class="lp-section">
+      <p class="lp-kicker">{gettext("What Potok can do")}</p>
+      <h2>{gettext("One place instead of five apps.")}</h2>
 
-    <div class="mt-12 grid gap-4 sm:grid-cols-2 sm:gap-6">
-      <article id="landing-stream-plenums" class="lp-reveal lp-card p-6 sm:p-8">
-        <p class="lp-eyebrow">{gettext("Students")}</p>
-        <h3 class="lp-serif mt-2 text-2xl tracking-tight">{gettext("Plenums")}</h3>
-        <p class="mt-3 leading-7 text-pretty text-base-content/70">
-          {gettext(
-            "Tied to their faculty and university. They decide at the plenum and coordinate with the plenums of other faculties."
-          )}
-        </p>
-      </article>
-      <article id="landing-stream-assemblies" class="lp-reveal lp-card p-6 sm:p-8">
-        <p class="lp-eyebrow">{gettext("Neighbors")}</p>
-        <h3 class="lp-serif mt-2 text-2xl tracking-tight">{gettext("Assemblies")}</h3>
-        <p class="mt-3 leading-7 text-pretty text-base-content/70">
-          {gettext(
-            "Provided for by law and made up of the residents of a local community. They decide at the assembly and coordinate with the assemblies of other communities."
-          )}
-        </p>
-      </article>
-    </div>
-
-    <%!-- The two cards' streams join under them (one line when they stack). --%>
-    <svg
-      viewBox="0 0 800 130"
-      class="lp-merge mt-2 hidden h-auto w-full sm:block"
-      aria-hidden="true"
-    >
-      <path
-        class="lp-merge-bed"
-        d="M200 0 C200 70 400 50 400 130 M600 0 C600 70 400 50 400 130"
-      />
-      <path
-        class="lp-merge-flow"
-        d="M200 0 C200 70 400 50 400 130 M600 0 C600 70 400 50 400 130"
-      />
-    </svg>
-    <div class="lp-vline mx-auto my-5 h-14 w-0.5 sm:hidden" aria-hidden="true"></div>
-
-    <p
-      id="landing-streams-together"
-      class="lp-reveal lp-serif mx-auto mt-4 max-w-3xl text-center text-xl leading-relaxed text-balance sm:text-2xl sm:leading-relaxed"
-    >
-      {gettext(
-        "Each on its own sits at the edge of the institutions. Together they can be a permanent anchor: a political actor that doesn't wait for elections to be asked, and proof that political action can be spread more horizontally."
-      )}
-    </p>
-  </section>
-
-  <section
-    id="landing-why"
-    class="border-y border-base-content/8 bg-base-content/[0.025] hidden"
-  >
-    <div class="mx-auto grid max-w-5xl gap-12 px-5 py-16 sm:px-8 sm:py-24 lg:grid-cols-[1.15fr_1fr] lg:gap-16">
-      <div class="lp-reveal">
-        <p class="lp-eyebrow">{gettext("Why Potok")}</p>
-        <h2 class="lp-serif mt-3 text-3xl tracking-tight text-balance sm:text-4xl">
-          {gettext("Free, but not quite.")}
-        </h2>
-        <p class="mt-5 leading-7 text-pretty text-base-content/70 sm:text-lg sm:leading-8">
-          {gettext(
-            "We mostly organize through free tools owned by private companies. We pay for them another way: with the data and habits we leave behind while using them. In return they learn what we like, choose what we see, trade in statistics and slip paid content in between two messages about the meeting."
-          )}
-        </p>
-        <p class="mt-4 leading-7 text-pretty text-base-content/70 sm:text-lg sm:leading-8">
-          {gettext(
-            "A tool is never just a channel: it decides what a community notices and what slips past it. And when five such tools are held together only by habit (a group here, a spreadsheet there, a poll somewhere else), the agreement leaks out on every side."
-          )}
-        </p>
-      </div>
-
-      <ul class="flex flex-col gap-3 self-center">
-        <li
-          :for={point <- why_points()}
-          id={"landing-why-#{point.id}"}
-          class="lp-reveal lp-card flex items-start gap-4 p-5"
+      <div class="lp-grid">
+        <article
+          :for={feature <- features()}
+          id={"landing-feature-#{feature.id}"}
+          class="lp-feature"
         >
-          <span class="lp-icon">
-            <.icon name={point.icon} class="size-5" />
-          </span>
+          <div class="lp-icon"><.icon name={feature.icon} class="size-6" /></div>
+          <h3>{feature.title}</h3>
+          <p>{feature.text}</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="landing-perks" class="lp-section">
+      <p class="lp-kicker">{gettext("Always with you")}</p>
+      <ul class="lp-perks">
+        <li :for={perk <- perks()} id={"landing-perk-#{perk.id}"}>
+          <span class="lp-icon"><.icon name={perk.icon} class="size-5" /></span>
           <div>
-            <h3 class="font-semibold">{point.title}</h3>
-            <p class="mt-1 text-sm leading-6 text-base-content/65">{point.text}</p>
+            <strong>{perk.title}</strong>
+            <span>{perk.text}</span>
           </div>
         </li>
       </ul>
-    </div>
-  </section>
+    </section>
 
-  <section id="landing-flow" class="mx-auto max-w-5xl px-5 py-16 sm:px-8 sm:py-24 hidden">
-    <div class="lp-reveal max-w-2xl">
-      <p class="lp-eyebrow">{gettext("How it flows")}</p>
-      <h2 class="lp-serif mt-3 text-3xl tracking-tight text-balance sm:text-4xl">
-        {gettext("From the spring to the mouth.")}
-      </h2>
-      <p class="mt-5 leading-7 text-pretty text-base-content/70 sm:text-lg sm:leading-8">
-        {gettext("Potok is built in five steps. Each one feeds the next.")}
-      </p>
-    </div>
-
-    <ol class="lp-flow mt-12 grid gap-8 lg:grid-cols-5 lg:gap-6">
-      <li
-        :for={{step, number} <- Enum.with_index(flow_steps(), 1)}
-        id={"landing-flow-#{step.id}"}
-        class="lp-reveal relative pl-16 lg:pt-16 lg:pl-0"
-      >
-        <span class="lp-flow-dot">
-          <.icon name={step.icon} class="size-5" />
-        </span>
-        <p class="text-xs font-semibold tabular-nums text-base-content/40">0{number}</p>
-        <h3 class="lp-serif mt-1 text-xl tracking-tight">{step.title}</h3>
-        <p class="lp-accent mt-1 text-sm font-semibold">{step.tagline}</p>
-        <p class="mt-2 text-sm leading-6 text-base-content/65">{step.text}</p>
-      </li>
-    </ol>
-
-    <p class="lp-reveal mt-12 flex items-start gap-3 leading-7 text-base-content/70 lg:mt-14">
-      <.icon name="hero-arrow-path" class="lp-accent lp-turn mt-1 size-5 shrink-0" />
-      {gettext("And what gets done flows back into the conversation, and the stream keeps going.")}
-    </p>
-  </section>
-
-  <section id="landing-join" class="scroll-mt-6 px-5 pb-20 sm:px-8 sm:pb-28">
-    <div class="lp-reveal lp-join mx-auto max-w-3xl rounded-[2rem] px-6 py-12 text-center sm:px-12 sm:py-16">
-      <Layouts.mark id="landing-join-mark" class="mx-auto size-12" />
-      <p class="lp-eyebrow mt-6">{gettext("Joining")}</p>
-      <h2 class="lp-serif mt-3 text-3xl tracking-tight text-balance sm:text-4xl">
-        {gettext("Potok spreads by invitation.")}
-      </h2>
-      <p class="mx-auto mt-5 max-w-xl leading-7 text-pretty text-base-content/70">
-        {gettext(
-          "For now, you get into Potok with an invitation. If your group is already here, ask one of its members to invite you in. The invitation arrives by email, and that's the whole procedure."
-        )}
-      </p>
-      <p class="mx-auto mt-3 max-w-xl leading-7 text-pretty text-base-content/70">
-        {gettext(
-          "If it isn't here yet, you surely know someone who knows someone. That's how streams begin, too: drop by drop."
-        )}
-      </p>
-      <.link id="landing-join-login" href={~p"/accounts/log-in"} class="lp-button group mt-8">
+    <section id="landing-join" class="lp-cta scroll-mt-6">
+      <h2>{gettext("For now, Potok is by invitation only.")}</h2>
+      <p>{gettext("Know someone who could use it? Send them an invitation by email.")}</p>
+      <.link id="landing-join-login" href={~p"/accounts/log-in"} class="lp-button group mt-6">
         {gettext("Log in")}
         <.icon
           name="hero-arrow-right"
           class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
         />
       </.link>
-    </div>
-  </section>
+    </section>
+  </div>
 </Layouts.guest>

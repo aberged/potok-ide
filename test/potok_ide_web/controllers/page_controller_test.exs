@@ -15,9 +15,9 @@ defmodule PotokIdeWeb.PageControllerTest do
 
     for selector <- [
           "#landing-hero",
-          "#landing-streams",
-          "#landing-why",
-          "#landing-flow",
+          "#landing-waves",
+          "#landing-features",
+          "#landing-perks",
           "#landing-join",
           "#landing-login-link[href='/accounts/log-in']",
           "#landing-join-login[href='/accounts/log-in']",
@@ -28,7 +28,8 @@ defmodule PotokIdeWeb.PageControllerTest do
       assert Enum.count(LazyHTML.query(document, selector)) == 1, "missing #{selector}"
     end
 
-    assert Enum.count(LazyHTML.query(document, "#landing-flow li")) == 5
+    assert Enum.count(LazyHTML.query(document, "#landing-features article")) == 6
+    assert Enum.count(LazyHTML.query(document, "#landing-perks li")) == 5
   end
 
   test "GET / redirects authenticated accounts without a profile to profiles", %{conn: conn} do
