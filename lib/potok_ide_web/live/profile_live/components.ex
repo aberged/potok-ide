@@ -6,6 +6,14 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   @max_profile_picture_upload_size 5 * 1024 * 1024
   @max_profile_picture_dimension 200
 
+  # The cards of the profile form and the fields of each, so a save that fails
+  # opens the card with the error.
+  @form_section_fields [
+    {"basics", [:username, :profile_picture_url]},
+    {"description", [:description, :description_format]},
+    {"sharing", [:sharing]}
+  ]
+
   attr :profile, :map, required: true
   attr :title, :string, default: nil
   attr :subtitle, :string, default: nil
@@ -25,10 +33,84 @@ defmodule PotokIdeWeb.ProfileLive.Components do
   end
 
   attr :form, :any, required: true
+  attr :section, :string, required: true, doc: "the card on screen (see `form_sections/1`)"
+  attr :id_prefix, :string, required: true, doc: "starts the ids of the cards and of their tabs"
   attr :description_format_options, :list, required: true
   attr :sharing_options, :list, required: true
 
-  def profile_form_fields(assigns) do
+  @doc """
+  The cards of the new and edit pages' form, laid out like a group's. A card
+  not on screen is only hidden, so the form still sends every field.
+  """
+  def profile_form_cards(assigns) do
+    ~H"""
+    <GroupComponents.settings_card
+      id={"#{@id_prefix}-basics"}
+      tab_id={"#{@id_prefix}-tab-basics"}
+      active={@section == "basics"}
+      icon="hero-identification"
+      title={gettext("Basics")}
+      subtitle={gettext("The name and picture others see.")}
+    >
+      <.input
+        field={@form[:username]}
+        id={@form[:username].id}
+        label={gettext("Username")}
+        maxlength="16"
+        required
+      />
+      <p class="mb-4 text-sm text-base-content/60">
+        {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
+      </p>
+      <.profile_picture_field field={@form[:profile_picture_url]} />
+    </GroupComponents.settings_card>
+
+    <GroupComponents.settings_card
+      id={"#{@id_prefix}-description"}
+      tab_id={"#{@id_prefix}-tab-description"}
+      active={@section == "description"}
+      icon="hero-document-text"
+      title={gettext("Description")}
+      subtitle={gettext("What others read about this profile.")}
+    >
+      <.input
+        :if={false}
+        field={@form[:description_format]}
+        id={@form[:description_format].id}
+        label={gettext("Description format")}
+        type="select"
+        options={@description_format_options}
+      />
+      <.input
+        field={@form[:description]}
+        id={@form[:description].id}
+        label={gettext("Description")}
+        type="textarea"
+      />
+    </GroupComponents.settings_card>
+
+    <GroupComponents.settings_card
+      id={"#{@id_prefix}-sharing"}
+      tab_id={"#{@id_prefix}-tab-sharing"}
+      active={@section == "sharing"}
+      icon="hero-share"
+      title={gettext("Sharing")}
+      subtitle={gettext("Whether one account uses the profile, or several.")}
+    >
+      <.input
+        field={@form[:sharing]}
+        id={@form[:sharing].id}
+        label={gettext("Sharing")}
+        type="select"
+        options={@sharing_options}
+      />
+    </GroupComponents.settings_card>
+    """
+  end
+
+  attr :field, :any, required: true
+
+  defp profile_picture_field(assigns) do
     assigns =
       assigns
       |> assign(:max_profile_picture_upload_size, @max_profile_picture_upload_size)
@@ -36,28 +118,17 @@ defmodule PotokIdeWeb.ProfileLive.Components do
 
     ~H"""
     <.input
-      field={@form[:username]}
-      id={@form[:username].id}
-      label={gettext("Username")}
-      maxlength="16"
-      required
-    />
-    <p class="mb-4 text-sm text-base-content/60">
-      {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
-    </p>
-
-    <.input
-      field={@form[:profile_picture_url]}
-      id={@form[:profile_picture_url].id}
+      field={@field}
+      id={@field.id}
       label={gettext("Profile picture URL")}
       type="text"
       placeholder={gettext("https://example.com/avatar.png or data:image/...")}
     />
     <div
-      id={"#{@form[:profile_picture_url].id}-picker"}
+      id={"#{@field.id}-picker"}
       phx-hook=".ProfilePicturePicker"
       phx-update="ignore"
-      data-input-id={@form[:profile_picture_url].id}
+      data-input-id={@field.id}
       data-max-file-size={@max_profile_picture_upload_size}
       data-max-dimension={@max_profile_picture_dimension}
       data-file-too-large-message={gettext("Choose an image smaller than 5 MB.")}
@@ -76,7 +147,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
 
         <div class="flex flex-wrap gap-2">
           <label
-            for={"#{@form[:profile_picture_url].id}-file"}
+            for={"#{@field.id}-file"}
             class={button_class("secondary", "sm")}
           >
             <.icon name="hero-photo" class="size-4" /> {gettext("Choose image")}
@@ -92,7 +163,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       </div>
 
       <input
-        id={"#{@form[:profile_picture_url].id}-file"}
+        id={"#{@field.id}-file"}
         type="file"
         accept="image/*"
         class="sr-only"
@@ -108,8 +179,8 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       </p>
     </div>
 
-    <%= if preview_url = profile_picture_url(@form[:profile_picture_url].value) do %>
-      <div class="mb-4 flex items-center gap-4 rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm">
+    <%= if preview_url = profile_picture_url(@field.value) do %>
+      <div class="flex items-center gap-4 rounded-3xl border border-base-300/70 bg-base-100 p-4 shadow-sm">
         <div class="flex size-[72px] items-center justify-center overflow-hidden rounded-2xl border border-base-300/70 bg-base-200">
           <img
             src={preview_url}
@@ -123,28 +194,6 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         </p>
       </div>
     <% end %>
-
-    <.input
-      :if={false}
-      field={@form[:description_format]}
-      id={@form[:description_format].id}
-      label={gettext("Description format")}
-      type="select"
-      options={@description_format_options}
-    />
-    <.input
-      field={@form[:description]}
-      id={@form[:description].id}
-      label={gettext("Description")}
-      type="textarea"
-    />
-    <.input
-      field={@form[:sharing]}
-      id={@form[:sharing].id}
-      label={gettext("Sharing")}
-      type="select"
-      options={@sharing_options}
-    />
     <script :type={Phoenix.LiveView.ColocatedHook} name=".ProfilePicturePicker">
       const supportedOutputTypes = new Set(["image/jpeg", "image/png", "image/webp"])
 
@@ -303,6 +352,24 @@ defmodule PotokIdeWeb.ProfileLive.Components do
       }
     </script>
     """
+  end
+
+  @doc "The tabs of `profile_form_cards/1`: `{key, panel id, label, danger?}`, in order."
+  def form_sections(id_prefix) do
+    [
+      {"basics", "#{id_prefix}-basics", gettext("Basics"), false},
+      {"description", "#{id_prefix}-description", gettext("Description"), false},
+      {"sharing", "#{id_prefix}-sharing", gettext("Sharing"), false}
+    ]
+  end
+
+  @doc "The first card, in bar order, holding a field with an error."
+  def error_section(%Ecto.Changeset{errors: errors}) do
+    fields = Keyword.keys(errors)
+
+    Enum.find_value(@form_section_fields, fn {section, section_fields} ->
+      if Enum.any?(fields, &(&1 in section_fields)), do: section
+    end)
   end
 
   def description_format_options do

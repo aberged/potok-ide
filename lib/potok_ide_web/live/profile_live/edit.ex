@@ -5,9 +5,20 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
   alias PotokIde.Social.Profile
   alias PotokIde.Tags
   alias PotokIde.Tags.Tag
+  alias PotokIdeWeb.GroupLive.Show.Components, as: GroupComponents
   alias PotokIdeWeb.ProfileLive.Components, as: ProfileComponents
   alias PotokIdeWeb.{TagComponents, TagEditor}
 
+  # `ProfileComponents.form_sections/1` and the tags, see `sections/0`.
+  @sections ~w(basics description sharing tags)
+
+  # Laid out like a group's edit tab: cards picked one at a time, the other
+  # ones only hidden, so an edit made in one survives a switch to another. The
+  # invitation and the tags work on their own, outside the profile form. The
+  # save bar shows while the form has unsaved changes, whichever card is on
+  # screen. The form is `novalidate`, as a required field in a hidden card
+  # would silently stop the browser from submitting; the server opens the card
+  # with the error instead.
   @impl true
   def render(assigns) do
     ~H"""
@@ -20,103 +31,132 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col px-4 pt-4">
-        <div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 pb-8">
-          <div class="card">
-            <div class="card-body gap-5">
-              <div>
-                <ProfileComponents.profile_identity
-                  profile={@profile}
-                  subtitle={Atom.to_string(@profile.sharing)}
-                />
-                <p class="mt-3 text-sm text-base-content/60">
-                  {gettext("Update the selected profile details.")}
-                </p>
-              </div>
+      <.page_container id="profile-edit-page">
+        <.page_header id="profile-edit-header" icon="hero-user-circle">
+          {gettext("Edit profile")}
+          <:subtitle>{@profile.username}</:subtitle>
+          <:actions>
+            <.icon_button
+              id="profile-edit-back"
+              navigate={~p"/profiles"}
+              icon="hero-arrow-left"
+              label={gettext("Profiles")}
+              variant="secondary"
+              size="md"
+            />
+          </:actions>
+        </.page_header>
 
-              <.form
-                for={@form}
-                id="edit-profile-form"
-                phx-change="validate"
-                phx-submit="save"
-              >
-                <ProfileComponents.profile_form_fields
-                  form={@form}
-                  description_format_options={@description_format_options}
-                  sharing_options={@sharing_options}
-                />
-                <div class="mt-4 flex flex-wrap gap-2">
-                  <.button phx-disable-with={gettext("Saving...")} variant="primary">
-                    {gettext("Save changes")}
-                  </.button>
-                  <.button navigate={~p"/profiles"} variant="ghost">{gettext("Cancel")}</.button>
-                </div>
-              </.form>
+        <GroupComponents.settings_tabs
+          id="profile-edit-sections"
+          tabs={sections()}
+          current={@section}
+          event="set_section"
+          tab_id_prefix="profile-edit-tab"
+        />
 
-              <div id="profile-tags-section" class="border-t border-base-300/70 pt-5">
-                <div class="flex flex-wrap items-start justify-between gap-3">
-                  <div class="min-w-0">
-                    <h3 class="text-base font-semibold text-base-content">
-                      {gettext("Public tags")}
-                    </h3>
-                    <p class="mt-1 text-sm text-base-content/60">
-                      {gettext(
-                        "Everyone sees these tags on the profile, say its interests or skills."
-                      )}
-                    </p>
-                  </div>
-                  <button
-                    id="profile-tags-edit"
-                    type="button"
-                    phx-click="edit_profile_tags"
-                    class={[button_class("secondary", "sm"), "shrink-0"]}
-                  >
-                    <.icon name="hero-hashtag" class="size-4" />
-                    {gettext("Edit tags")}
-                  </button>
-                </div>
-                <TagComponents.tag_chips id="profile-tag-list" tags={@profile_tags} class="mt-3" />
-                <p
-                  :if={@profile_tags == []}
-                  id="profile-tags-empty"
-                  class="mt-3 text-sm text-base-content/55"
-                >
-                  {gettext("No public tags yet.")}
-                </p>
-              </div>
+        <.form
+          for={@form}
+          id="edit-profile-form"
+          phx-change="validate"
+          phx-submit="save"
+          novalidate
+        >
+          <ProfileComponents.profile_form_cards
+            form={@form}
+            section={@section}
+            id_prefix="profile-edit"
+            description_format_options={@description_format_options}
+            sharing_options={@sharing_options}
+          />
+        </.form>
 
-              <div :if={@profile.sharing == :shared} class="border-t border-base-300/70 pt-5">
-                <h3 class="text-base font-semibold text-base-content">
-                  {gettext("Invite profile to shared profile")}
-                </h3>
-
-                <p class="mt-1 text-sm text-base-content/60">
-                  {gettext("Send an invitation by profile username.")}
-                </p>
-
-                <.form
-                  for={@profile_invitation_form}
-                  id="shared-profile-invitation-form"
-                  phx-submit="invite_profile_to_profile"
-                >
-                  <.input
-                    field={@profile_invitation_form[:username]}
-                    id="shared-profile-invitation-username"
-                    label={gettext("Profile username")}
-                    required
-                  />
-                  <div class="mt-3">
-                    <.button phx-disable-with={gettext("Sending...")} variant="primary">
-                      {gettext("Send invitation")}
-                    </.button>
-                  </div>
-                </.form>
-              </div>
+        <GroupComponents.settings_card
+          :if={@profile.sharing == :shared}
+          id="profile-edit-invite"
+          tab_id="profile-edit-tab-sharing"
+          active={@section == "sharing"}
+          icon="hero-paper-airplane"
+          title={gettext("Invite profile to shared profile")}
+          subtitle={gettext("Send an invitation by profile username.")}
+          class="mt-4"
+        >
+          <.form
+            for={@profile_invitation_form}
+            id="shared-profile-invitation-form"
+            phx-submit="invite_profile_to_profile"
+          >
+            <.input
+              field={@profile_invitation_form[:username]}
+              id="shared-profile-invitation-username"
+              label={gettext("Profile username")}
+              required
+            />
+            <div class="mt-3">
+              <.button phx-disable-with={gettext("Sending...")} variant="primary">
+                {gettext("Send invitation")}
+              </.button>
             </div>
+          </.form>
+        </GroupComponents.settings_card>
+
+        <GroupComponents.settings_card
+          id="profile-tags-section"
+          tab_id="profile-edit-tab-tags"
+          active={@section == "tags"}
+          icon="hero-hashtag"
+          title={gettext("Public tags")}
+          subtitle={gettext("Everyone sees these tags on the profile, say its interests or skills.")}
+        >
+          <TagComponents.tag_chips id="profile-tag-list" tags={@profile_tags} />
+          <p
+            :if={@profile_tags == []}
+            id="profile-tags-empty"
+            class="text-sm text-base-content/55"
+          >
+            {gettext("No public tags yet.")}
+          </p>
+          <.button
+            id="profile-tags-edit"
+            type="button"
+            phx-click="edit_profile_tags"
+            variant="soft"
+            class="mt-4"
+          >
+            <.icon name="hero-hashtag" class="size-4" />
+            <span>{gettext("Edit tags")}</span>
+          </.button>
+        </GroupComponents.settings_card>
+
+        <%!-- Outside the form, which it submits through `form`, so it can
+             stick to the bottom over every card. --%>
+        <div
+          :if={dirty?(@form)}
+          id="profile-edit-save-bar"
+          class="sticky bottom-0 z-10 mt-4 flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-primary/30 bg-base-100/95 px-4 py-3 shadow-xl shadow-primary/10 backdrop-blur"
+        >
+          <p class="flex items-center gap-2 text-sm font-medium">
+            <span class="size-2 shrink-0 rounded-full bg-primary"></span>
+            {gettext("You have unsaved changes.")}
+          </p>
+          <div class="ml-auto flex items-center gap-2">
+            <.button id="profile-edit-discard" type="button" phx-click="discard" variant="ghost">
+              {gettext("Discard")}
+            </.button>
+            <.button
+              id="profile-edit-save"
+              type="submit"
+              form="edit-profile-form"
+              phx-disable-with={gettext("Saving...")}
+              variant="primary"
+            >
+              {gettext("Save changes")}
+            </.button>
           </div>
         </div>
-      </div>
+      </.page_container>
       <TagComponents.tag_editor editor={@tag_editor} />
     </Layouts.app>
     """
@@ -142,6 +182,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
              |> assign(:profile_tags, public_tags(profile))
              |> TagEditor.init()
              |> assign(:form, to_form(Profile.changeset(profile, %{})))
+             |> assign(:section, "basics")
              |> assign(:profile_invitation_form, new_profile_invitation_form())
              |> assign(
                :description_format_options,
@@ -168,6 +209,14 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
     {:noreply, assign(socket, :form, to_form(changeset))}
   end
 
+  def handle_event("set_section", %{"section" => section}, socket) when section in @sections,
+    do: {:noreply, assign(socket, :section, section)}
+
+  def handle_event("set_section", _params, socket), do: {:noreply, socket}
+
+  def handle_event("discard", _params, socket),
+    do: {:noreply, assign(socket, :form, to_form(Profile.changeset(socket.assigns.profile, %{})))}
+
   def handle_event("save", %{"profile" => attrs}, socket) do
     account = socket.assigns.current_scope.account
 
@@ -187,7 +236,10 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
          |> push_navigate(to: ~p"/profiles")}
 
       {:error, changeset} ->
-        {:noreply, assign(socket, :form, to_form(Map.put(changeset, :action, :validate)))}
+        {:noreply,
+         socket
+         |> assign(:form, to_form(Map.put(changeset, :action, :validate)))
+         |> assign(:section, ProfileComponents.error_section(changeset) || socket.assigns.section)}
     end
   end
 
@@ -282,6 +334,18 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
   end
 
   def handle_info(_message, socket), do: {:noreply, socket}
+
+  # The tabs: the form's cards and the tags. The keys are those of `@sections`.
+  defp sections do
+    ProfileComponents.form_sections("profile-edit") ++
+      [{"tags", "profile-tags-section", gettext("Tags"), false}]
+  end
+
+  # Whether the form holds something not saved yet (its save bar shows). A
+  # field that fails validation, like a cleared name, is dropped from the
+  # changes, so errors count too: the bar's save then shows what is wrong.
+  defp dirty?(%Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes, errors: errors}}),
+    do: changes != %{} or errors != []
 
   defp public_tags(%Profile{id: id} = profile) do
     profile

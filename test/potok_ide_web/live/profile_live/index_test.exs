@@ -182,12 +182,11 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
       account = Accounts.get_account!(account.id)
       conn = log_in_account(conn, account)
 
-      {:ok, lv, html} =
+      {:ok, lv, _html} =
         conn
         |> live(~p"/profiles/#{profile.id}/edit")
 
-      assert html =~ "alpha-prof"
-      assert html =~ "Update the selected profile details."
+      assert has_element?(lv, "#profile-edit-header", "alpha-prof")
 
       {:ok, _index_lv, result} =
         lv

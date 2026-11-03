@@ -422,9 +422,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   @doc """
   The tab bar of a settings tab (edit group, create sub-group) or of a
-  top-level page with sections (invitations, requests): it sticks to the top
-  of the `tab_body/1` or `page_container/1` it is in, and a picked tab starts
-  its card at the top.
+  top-level page with sections (invitations, requests, the profile forms): it
+  sticks to the top of the `tab_body/1` or `page_container/1` it is in, and a
+  picked tab starts its card at the top.
   """
   def settings_tabs(assigns) do
     ~H"""
@@ -490,6 +490,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :icon, :string, required: true
   attr :title, :string, required: true
   attr :subtitle, :string, required: true
+  attr :class, :any, default: nil
   slot :inner_block, required: true
 
   @doc """
@@ -504,7 +505,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       aria-labelledby={@tab_id}
       class={[
         "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5",
-        !@active && "hidden"
+        !@active && "hidden",
+        @class
       ]}
     >
       <.card_title icon={@icon} title={@title} subtitle={@subtitle} class="mb-4" />

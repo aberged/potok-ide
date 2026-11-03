@@ -667,11 +667,6 @@ msgstr ""
 msgid "See more"
 msgstr ""
 
-#: lib/potok_ide_web/live/profile_live/edit.ex:34
-#, elixir-autogen, elixir-format
-msgid "Update the selected profile details."
-msgstr ""
-
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:232
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:409
 #, elixir-autogen, elixir-format
@@ -849,11 +844,6 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:555
 #, elixir-autogen, elixir-format
 msgid "Load more sub-groups"
-msgstr ""
-
-#: lib/potok_ide_web/live/profile_live/new.ex:26
-#, elixir-autogen, elixir-format
-msgid "New profile details"
 msgstr ""
 
 #: lib/potok_ide_web/live/profile_live/edit.ex:233
@@ -4332,4 +4322,29 @@ msgstr ""
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "A social application platform"
+msgstr ""
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:38
+#, elixir-autogen, elixir-format
+msgid "Edit profile"
+msgstr ""
+
+#: lib/potok_ide_web/live/profile_live/new.ex:32
+#, elixir-autogen, elixir-format
+msgid "New profile"
+msgstr ""
+
+#: lib/potok_ide_web/live/profile_live/components.ex:53
+#, elixir-autogen, elixir-format
+msgid "The name and picture others see."
+msgstr ""
+
+#: lib/potok_ide_web/live/profile_live/components.ex:74
+#, elixir-autogen, elixir-format
+msgid "What others read about this profile."
+msgstr ""
+
+#: lib/potok_ide_web/live/profile_live/components.ex:98
+#, elixir-autogen, elixir-format
+msgid "Whether one account uses the profile, or several."
 msgstr ""

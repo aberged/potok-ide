@@ -659,11 +659,6 @@ msgstr "Prikaži manje"
 msgid "See more"
 msgstr "Prikaži više"
 
-#: lib/potok_ide_web/live/profile_live/edit.ex:34
-#, elixir-autogen, elixir-format
-msgid "Update the selected profile details."
-msgstr "Ažuriraj detalje izabranog profila."
-
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:232
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:409
 #, elixir-autogen, elixir-format
@@ -842,11 +837,6 @@ msgstr "Ucitaj jos clanova"
 #, elixir-autogen, elixir-format
 msgid "Load more sub-groups"
 msgstr "Ucitaj jos podgrupa"
-
-#: lib/potok_ide_web/live/profile_live/new.ex:26
-#, elixir-autogen, elixir-format
-msgid "New profile details"
-msgstr "Detalji novog profila"
 
 #: lib/potok_ide_web/live/profile_live/edit.ex:233
 #, elixir-autogen, elixir-format
@@ -4332,3 +4322,28 @@ msgstr "Još nisi član nijedne grupe."
 #, elixir-autogen, elixir-format
 msgid "A social application platform"
 msgstr "Aplikativna društvena platforma"
+
+#: lib/potok_ide_web/live/profile_live/edit.ex:38
+#, elixir-autogen, elixir-format
+msgid "Edit profile"
+msgstr "Uredi profil"
+
+#: lib/potok_ide_web/live/profile_live/new.ex:32
+#, elixir-autogen, elixir-format
+msgid "New profile"
+msgstr "Novi profil"
+
+#: lib/potok_ide_web/live/profile_live/components.ex:53
+#, elixir-autogen, elixir-format
+msgid "The name and picture others see."
+msgstr "Ime i slika koje drugi vide."
+
+#: lib/potok_ide_web/live/profile_live/components.ex:74
+#, elixir-autogen, elixir-format
+msgid "What others read about this profile."
+msgstr "Šta drugi čitaju o ovom profilu."
+
+#: lib/potok_ide_web/live/profile_live/components.ex:98
+#, elixir-autogen, elixir-format
+msgid "Whether one account uses the profile, or several."
+msgstr "Da li profil koristi jedan nalog ili više njih."
