@@ -31,6 +31,11 @@ defmodule PotokIde.Social.Group do
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
+    # Shown in the sub-groups list, which loads them with the page
+    # (`Social.list_child_groups_for_profile/3`); nil when not loaded.
+    field :member_count, :integer, virtual: true
+    field :sub_group_count, :integer, virtual: true
+    field :viewer_is_member, :boolean, virtual: true
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__

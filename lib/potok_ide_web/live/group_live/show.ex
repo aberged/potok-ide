@@ -158,14 +158,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 text_class="text-md"
                 pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
-              />
+              >
+                <%!-- Phones leave the name only a sliver beside the shortcuts,
+                     so there the tags fold into a count. --%>
+                <:subtitle :if={@group_tags != []}>
+                  <TagComponents.tag_chips
+                    id="group-tag-list"
+                    tags={@group_tags}
+                    size={:sm}
+                    max={3}
+                    class="max-sm:hidden"
+                  />
+                  <TagComponents.tag_count
+                    id="group-tag-count"
+                    tags={@group_tags}
+                    kind={:group}
+                    item_id={@group.id}
+                    class="sm:hidden"
+                  />
+                </:subtitle>
+              </Components.group_identity>
             </div>
-            <TagComponents.tag_chips
-              :if={!@group.is_root}
-              id="group-tag-list"
-              tags={@group_tags}
-              class="mt-1 pl-12 sm:pl-13"
-            />
 
             <div
               :if={@group.is_root}
@@ -505,6 +518,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pagination={@children_pagination}
             pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
+            time_zone={@calendar_time_zone}
             is_member={@is_member}
             can_create_subgroups={Access.can?(@access, :create_subgroups)}
             sub_groups_kind={@sub_groups_kind}

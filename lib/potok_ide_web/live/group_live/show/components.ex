@@ -723,120 +723,118 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :unread_count, :integer, default: 0
   attr :current_profile, :map, default: nil
   attr :highlight_query, :string, default: ""
+  slot :subtitle, doc: "a second line under the name, such as the group's tags"
 
+  # The link holds only the name, but its `after:` box covers the whole row:
+  # the row opens the group while links in the subtitle stay their own (links
+  # can't nest). The avatar spans both lines, so they stay centered on it.
   def group_identity(assigns) do
     ~H"""
-    <.link
-      navigate={~p"/groups/#{@group.id}"}
-      class="flex justify-start rounded-full w-full justify-items-start active:bg-base-200 hover:bg-base-100 pr-4"
-    >
-      <div class="flex min-w-0 items-center gap-3">
-        <div class="relative shrink-0">
-          <%= if avatar_url = group_identity_picture_url(@group, @current_profile) do %>
-            <img
-              :if={!@group.is_root}
-              src={avatar_url}
-              alt={@group.name}
-              class={[
-                @avatar_size,
-                "flex shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
-              ]}
-            />
-            <div
-              :if={@group.is_root}
-              class={[
-                @avatar_size,
-                "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
-              ]}
-            >
-              <.icon name="hero-home" class="size-4" />
-            </div>
-          <% else %>
-            <div class={[
+    <div class="relative grid w-full grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3 rounded-full pr-4 hover:bg-base-100 active:bg-base-200">
+      <div class={["relative shrink-0", @subtitle != [] && "row-span-2"]}>
+        <%= if avatar_url = group_identity_picture_url(@group, @current_profile) do %>
+          <img
+            :if={!@group.is_root}
+            src={avatar_url}
+            alt={@group.name}
+            class={[
+              @avatar_size,
+              "flex shrink-0 rounded-full border border-base-300 object-cover shadow-sm"
+            ]}
+          />
+          <div
+            :if={@group.is_root}
+            class={[
               @avatar_size,
               "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
-            ]}>
-              <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
-              <.icon :if={@group.is_root} name="hero-home" class="size-4" />
-            </div>
-          <% end %>
-
-          <div
-            :if={!@group.is_direct && !@group.is_root}
-            class="absolute bottom-0 left-0 -ml-1 -mb-1 text-[0.8rem]"
+            ]}
           >
-            {if @group.is_public,
-              do: "📢",
-              else: "🔐"}
+            <.icon name="hero-home" class="size-4" />
           </div>
-
-          <div
-            :if={@group.uses_api && !@group.is_direct && !@group.is_root}
-            id={"group-app-badge-#{@group.id}"}
-            title={gettext("App")}
-            class="absolute bottom-0 right-0 -mr-1 -mb-1 text-[0.8rem]"
-          >
-            🧩
+        <% else %>
+          <div class={[
+            @avatar_size,
+            "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
+          ]}>
+            <span :if={!@group.is_root}>{group_initials(@group.name)}</span>
+            <.icon :if={@group.is_root} name="hero-home" class="size-4" />
           </div>
+        <% end %>
 
-          <span
-            :if={!@group.is_root and @pending_join_requests_count > 0}
-            id={"group-pending-join-requests-badge-#{@group.id}"}
-            class="absolute -left-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
-          >
-            {unread_badge_label(@pending_join_requests_count)}
-          </span>
-          <span
-            :if={!@group.is_root and @unread_count > 0}
-            id={"group-unread-badge-#{@group.id}"}
-            class="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-          >
-            {unread_badge_label(@unread_count)}
-          </span>
+        <div
+          :if={!@group.is_direct && !@group.is_root}
+          class="absolute bottom-0 left-0 -ml-1 -mb-1 text-[0.8rem]"
+        >
+          {if @group.is_public,
+            do: "📢",
+            else: "🔐"}
         </div>
 
         <div
-          :if={!@group.is_root}
-          class="min-w-0 shrink"
+          :if={@group.uses_api && !@group.is_direct && !@group.is_root}
+          id={"group-app-badge-#{@group.id}"}
+          title={gettext("App")}
+          class="absolute bottom-0 right-0 -mr-1 -mb-1 text-[0.8rem]"
         >
-          <div class="flex min-w-0 items-center gap-1.5">
-            <div class={[@text_class, "truncate font-semibold text-base-content"]}>
-              <.highlighted_text
-                text={group_identity_name(@group, @current_profile)}
-                query={@highlight_query}
-              />
-            </div>
-            <span
-              :if={thread_group?(@group)}
-              id={"group-thread-badge-#{@group.id}"}
-              title={gettext("Thread")}
-              class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-primary"
-            >
-              <.icon name="hero-chat-bubble-left-right" class="size-3" />
-              <span class="hidden sm:inline">{gettext("Thread")}</span>
-            </span>
-          </div>
-
-          <div
-            :if={false}
-            class="mt-1 flex flex-wrap items-center gap-2 text-xs font-medium text-base-content/70"
-          >
-            <span
-              id={"group-visibility-badge-#{@group.id}"}
-              class={[
-                "inline-flex items-center rounded-full px-2 py-1",
-                if(@group.is_public,
-                  do: "bg-emerald-100 text-emerald-700",
-                  else: "bg-slate-200 text-slate-700"
-                )
-              ]}
-            >
-              {if @group.is_public, do: gettext("Public group"), else: gettext("Private group")}
-            </span>
-          </div>
+          🧩
         </div>
+
+        <span
+          :if={!@group.is_root and @pending_join_requests_count > 0}
+          id={"group-pending-join-requests-badge-#{@group.id}"}
+          class="absolute -left-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
+        >
+          {unread_badge_label(@pending_join_requests_count)}
+        </span>
+        <span
+          :if={!@group.is_root and @unread_count > 0}
+          id={"group-unread-badge-#{@group.id}"}
+          class="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
+        >
+          {unread_badge_label(@unread_count)}
+        </span>
       </div>
-    </.link>
+
+      <.link
+        navigate={~p"/groups/#{@group.id}"}
+        class={[
+          "flex min-w-0 items-center gap-1.5 after:absolute after:inset-0 after:rounded-full focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary/40",
+          @subtitle != [] && "self-end"
+        ]}
+      >
+        <%= if @group.is_root do %>
+          <span class="sr-only">{group_identity_name(@group, @current_profile)}</span>
+        <% else %>
+          <div class={[
+            @text_class,
+            "truncate font-semibold text-base-content",
+            @subtitle != [] && "leading-5"
+          ]}>
+            <.highlighted_text
+              text={group_identity_name(@group, @current_profile)}
+              query={@highlight_query}
+            />
+          </div>
+          <span
+            :if={thread_group?(@group)}
+            id={"group-thread-badge-#{@group.id}"}
+            title={gettext("Thread")}
+            class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-primary"
+          >
+            <.icon name="hero-chat-bubble-left-right" class="size-3" />
+            <span class="hidden sm:inline">{gettext("Thread")}</span>
+          </span>
+        <% end %>
+      </.link>
+
+      <%!-- Sized to its content, so the rest of the line still opens the group. --%>
+      <div
+        :if={@subtitle != []}
+        class="relative col-start-2 mt-0.5 flex min-w-0 max-w-full self-start justify-self-start"
+      >
+        {render_slot(@subtitle)}
+      </div>
+    </div>
     """
   end
 

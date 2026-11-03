@@ -176,6 +176,8 @@ defmodule PotokIdeWeb.GroupLive.TagsTest do
       tag = tag_named!(owner, "team")
       assert has_element?(owner_lv, "#group-tag-list-#{tag.id}", "team")
       assert has_element?(member_lv, "#group-tag-list-#{tag.id}", "team")
+      # Phones show a count that opens the editor instead.
+      assert has_element?(member_lv, "#group-tag-count[phx-click=tag_editor_open]", "1")
       assert has_element?(owner_lv, "#group-tags-browse[href='/tags?group=#{group.id}']")
       # Group pages keep the bounded layout.
       assert has_element?(owner_lv, "#main-content.max-w-6xl")
@@ -191,6 +193,25 @@ defmodule PotokIdeWeb.GroupLive.TagsTest do
 
       tag = tag_named!(member, "mine")
       assert has_element?(lv, "#child-group-tag-list-#{child.id}-#{tag.id}")
+      refute has_element?(lv, "#child-group-tag-list-#{child.id}-more")
+    end
+
+    test "a sub-group with many tags shows three and a count of the rest", ctx do
+      %{group: group, member: member, owner: owner} = ctx
+      child = group_with_members!(owner, [member], %{parent: group})
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{group.id}/sub_groups")
+
+      lv |> element("#child-group-tags-#{child.id}") |> render_click()
+      Enum.each(~w(one two three four), &add_tag(lv, &1))
+
+      chips =
+        lv
+        |> render()
+        |> LazyHTML.from_fragment()
+        |> LazyHTML.query("#child-group-tag-list-#{child.id} a")
+
+      assert Enum.count(chips) == 3
+      assert has_element?(lv, "#child-group-tag-list-#{child.id}-more", "+1")
     end
 
     test "a member puts public tags on itself in the members list", ctx do

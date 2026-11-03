@@ -1,6 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Events.{Format, Recurrence}
   alias PotokIdeWeb.GroupLive.Show.Components
   alias PotokIdeWeb.TagComponents
 
@@ -21,6 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :thread_sub_groups_count, :integer, default: 0
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
+  attr :time_zone, :string, required: true, doc: "the viewer's, for when sub-groups were active"
 
   def panel(assigns) do
     assigns =
@@ -284,7 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         <% else %>
           <ul id="group-children-list" class="space-y-4" phx-update="stream">
             <li :for={{dom_id, group} <- @children} id={dom_id} class="group/child">
-              <div class="flex items-start gap-1">
+              <div class="flex items-center gap-1">
                 <div class="min-w-0 flex-1">
                   <Components.group_identity
                     group={group}
@@ -294,18 +296,17 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                     highlight_query={@children_search_query}
                     pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
                     unread_count={Map.get(@unread_counts, group.id, 0)}
-                  />
-                  <TagComponents.tag_chips
-                    id={"child-group-tag-list-#{group.id}"}
-                    tags={group.tags}
-                    class="mt-1 pl-13"
-                  />
+                  >
+                    <:subtitle :if={child_details?(group)}>
+                      <.child_details group={group} time_zone={@time_zone} />
+                    </:subtitle>
+                  </Components.group_identity>
                 </div>
                 <TagComponents.tag_button
                   id={"child-group-tags-#{group.id}"}
                   kind={:group}
                   item_id={group.id}
-                  class="mt-2 shrink-0 opacity-60 transition-opacity group-hover/child:opacity-100 focus-visible:opacity-100"
+                  class="shrink-0 opacity-60 transition-opacity group-hover/child:opacity-100 focus-visible:opacity-100"
                 />
               </div>
             </li>
@@ -337,6 +338,78 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       </button>
     </div>
     """
+  end
+
+  # Direct conversations load no counts, so they show the time alone.
+  defp child_details?(group),
+    do: group.last_value_at != nil or group.member_count != nil or group.tags != []
+
+  attr :group, :map, required: true
+  attr :time_zone, :string, required: true
+
+  # The line below a sub-group's name: when it last had a value, its members
+  # and sub-groups, whether the viewer is in it (only public groups list
+  # without), and its tags, which give way when space runs out.
+  defp child_details(assigns) do
+    ~H"""
+    <div
+      id={"child-group-details-#{@group.id}"}
+      class="flex min-w-0 items-center gap-2 text-[11px] leading-4 text-base-content/55"
+    >
+      <time
+        :if={@group.last_value_at}
+        id={"child-group-last-value-#{@group.id}"}
+        datetime={DateTime.to_iso8601(@group.last_value_at)}
+        title={moment(@group.last_value_at, @time_zone)}
+        class="shrink-0 tabular-nums"
+      >
+        {Format.recent(@group.last_value_at, @time_zone, DateTime.utc_now())}
+      </time>
+      <span
+        :if={@group.member_count}
+        id={"child-group-members-#{@group.id}"}
+        title={ngettext("1 member", "%{count} members", @group.member_count)}
+        class="inline-flex shrink-0 items-center gap-0.5 tabular-nums"
+      >
+        <.icon name="hero-users" class="size-3 opacity-70" />
+        <span aria-hidden="true">{@group.member_count}</span>
+        <span class="sr-only">
+          {ngettext("1 member", "%{count} members", @group.member_count)}
+        </span>
+      </span>
+      <span
+        :if={(@group.sub_group_count || 0) > 0}
+        id={"child-group-sub-groups-#{@group.id}"}
+        title={ngettext("1 sub-group", "%{count} sub-groups", @group.sub_group_count)}
+        class="inline-flex shrink-0 items-center gap-0.5 tabular-nums"
+      >
+        <.icon name="hero-folder" class="size-3 opacity-70" />
+        <span aria-hidden="true">{@group.sub_group_count}</span>
+        <span class="sr-only">
+          {ngettext("1 sub-group", "%{count} sub-groups", @group.sub_group_count)}
+        </span>
+      </span>
+      <span
+        :if={@group.viewer_is_member == false}
+        id={"child-group-not-member-#{@group.id}"}
+        class="shrink-0"
+      >
+        {gettext("Not a member")}
+      </span>
+      <TagComponents.tag_chips
+        id={"child-group-tag-list-#{@group.id}"}
+        tags={@group.tags}
+        size={:sm}
+        max={3}
+      />
+    </div>
+    """
+  end
+
+  # "Tue, Nov 3 · 14:32", for the title of the short time.
+  defp moment(at, zone) do
+    today = Recurrence.local_date(DateTime.utc_now(), zone)
+    "#{Format.date(Recurrence.local_date(at, zone), today)} · #{Format.time(at, zone)}"
   end
 
   attr :node, :map, required: true, doc: "a `SubGroupTree` node"

@@ -87,6 +87,32 @@ defmodule PotokIde.Events.Format do
   def time(%DateTime{} = datetime, zone), do: datetime |> DateTime.shift_zone!(zone) |> time()
 
   @doc """
+  A past moment, as short as lists show it, in `zone`: "18:00" the same day,
+  "Yesterday", "Tue" within the week, "Nov 7" this year, "Nov 7, 2025" before.
+  A moment after `now` (clocks apart) counts as the same day.
+  """
+  def recent(%DateTime{} = at, zone, %DateTime{} = now) do
+    date = Recurrence.local_date(at, zone)
+    today = Recurrence.local_date(now, zone)
+
+    case Date.diff(today, date) do
+      days when days <= 0 -> time(at, zone)
+      1 -> dgettext("events", "Yesterday")
+      days when days < 7 -> weekday_short(Date.day_of_week(date))
+      _days when date.year == today.year -> day_month(date)
+      _days -> day_month_year(date)
+    end
+  end
+
+  defp day_month_year(%Date{} = date) do
+    dgettext("events", "%{month} %{day}, %{year}",
+      month: month_short(date.month),
+      day: date.day,
+      year: date.year
+    )
+  end
+
+  @doc """
   When an occurrence is, in `zone` (all-day ones in the event's own zone):
   "Fri, Nov 7 · 18:00–19:30", "Fri, Nov 7 18:00 – Sat, Nov 8 02:00",
   "Fri, Nov 7" or "Fri, Nov 7 – Sun, Nov 9".

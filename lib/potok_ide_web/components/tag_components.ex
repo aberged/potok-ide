@@ -14,23 +14,91 @@ defmodule PotokIdeWeb.TagComponents do
   attr :class, :any, default: nil
   attr :group_id, :integer, default: nil, doc: "keeps the tags page in this group"
 
+  attr :size, :atom,
+    default: :md,
+    values: [:md, :sm],
+    doc: "`:sm` keeps the chips on one line, shrinking them to the space there is"
+
+  attr :max, :integer, default: nil, doc: "chips shown; a `+N` chip stands for the rest"
+
   def tag_chips(assigns) do
+    {shown, hidden} =
+      if assigns.max, do: Enum.split(assigns.tags, assigns.max), else: {assigns.tags, []}
+
+    assigns = assign(assigns, shown: shown, hidden: hidden)
+
     ~H"""
-    <div :if={@tags != []} id={@id} class={["flex flex-wrap items-center gap-1", @class]}>
+    <div
+      :if={@tags != []}
+      id={@id}
+      class={[
+        "flex items-center gap-1",
+        if(@size == :sm, do: "min-w-0 flex-nowrap", else: "flex-wrap"),
+        @class
+      ]}
+    >
       <.link
-        :for={tag <- @tags}
+        :for={tag <- @shown}
         id={"#{@id}-#{tag.id}"}
         navigate={tags_path([tag.id], @group_id)}
         title={tag_title(tag)}
         class={[
-          "inline-flex h-6 max-w-48 items-center gap-0.5 rounded-full border px-2 text-xs font-medium leading-none transition duration-150 ease-out hover:-translate-y-px active:scale-95",
+          "inline-flex items-center gap-0.5 rounded-full border font-medium leading-4 transition duration-150 ease-out hover:-translate-y-px active:scale-95",
+          if(@size == :sm,
+            do: "h-5 min-w-0 max-w-32 shrink px-1.5 text-[11px]",
+            else: "h-6 max-w-48 px-2 text-xs"
+          ),
           chip_class(tag)
         ]}
       >
-        <.icon name={tag_icon(tag)} class="size-3 shrink-0 opacity-70" />
+        <.icon
+          name={tag_icon(tag)}
+          class={["shrink-0 opacity-70", if(@size == :sm, do: "size-2.5", else: "size-3")]}
+        />
         <span class="truncate">{tag.name}</span>
       </.link>
+      <span
+        :if={@hidden != []}
+        id={"#{@id}-more"}
+        title={Enum.map_join(@hidden, ", ", & &1.name)}
+        class={[
+          "inline-flex shrink-0 items-center rounded-full border border-base-300 bg-base-100 font-semibold leading-none tabular-nums text-base-content/60",
+          if(@size == :sm, do: "h-5 px-1.5 text-[11px]", else: "h-6 px-2 text-xs")
+        ]}
+      >
+        +{length(@hidden)}
+      </span>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :tags, :list, required: true
+  attr :kind, :atom, required: true
+  attr :item_id, :integer, required: true
+  attr :class, :any, default: nil
+
+  @doc "A `# N` chip for where the tags themselves don't fit; it opens the tag editor."
+  def tag_count(assigns) do
+    ~H"""
+    <button
+      :if={@tags != []}
+      id={@id}
+      type="button"
+      phx-click="tag_editor_open"
+      phx-value-kind={@kind}
+      phx-value-id={@item_id}
+      aria-haspopup="dialog"
+      aria-label={gettext("Tags")}
+      title={Enum.map_join(@tags, ", ", & &1.name)}
+      class={[
+        "inline-flex h-5 items-center gap-0.5 rounded-full border border-base-300 bg-base-200/70 px-1.5 text-[11px] font-semibold leading-4 tabular-nums text-base-content/75 transition duration-150 ease-out hover:bg-base-200 active:scale-95 phx-click-loading:animate-pulse",
+        @class
+      ]}
+    >
+      <.icon name="hero-hashtag" class="size-2.5 opacity-70" />
+      {length(@tags)}
+    </button>
     """
   end
 

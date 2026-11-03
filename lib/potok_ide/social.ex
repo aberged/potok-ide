@@ -2712,8 +2712,8 @@ defmodule PotokIde.Social do
     {groups, total}
   end
 
-  # The ordered sub-groups with their columns in one query, and per group the
-  # columns after them: the count of all (`count?`) or none.
+  # The ordered sub-groups with their columns and list details in one query,
+  # and per group the columns after them: the count of all (`count?`) or none.
   # The order, the page and the count work on narrow rows; only the page's
   # groups are read in full (sorting every visible group's full row measured
   # slower than the two queries this replaces).
@@ -2727,9 +2727,11 @@ defmodule PotokIde.Social do
     WITH page AS (
       #{ordered_child_groups_query("vc.id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset)}
     )
-    SELECT #{group_columns_sql(fields)}#{if count?, do: ", page.total", else: ""}
+    SELECT #{group_columns_sql(fields)},
+      details.member_count, details.sub_group_count, details.is_member#{if count?, do: ", page.total", else: ""}
     FROM page
     JOIN groups g ON g.id = page.id
+    #{child_group_details_sql()}
     ORDER BY page.unread DESC, g.last_value_at DESC NULLS LAST, g.inserted_at DESC, g.id DESC
     """
 
@@ -2740,10 +2742,46 @@ defmodule PotokIde.Social do
 
     {groups, rest} =
       rows
-      |> Enum.map(&load_group_row(fields, &1))
+      |> Enum.map(&load_child_group_row(fields, &1))
       |> Enum.unzip()
 
     {maybe_preload_group_members(groups), rest}
+  end
+
+  # What the sub-groups list shows below each group; direct conversations get
+  # NULLs. The sub-groups count by the rule of `sub_group_counts_sql/1`: the
+  # ones profile $2 can see, threads only when the page shows them ($5).
+  defp child_group_details_sql do
+    """
+    LEFT JOIN LATERAL (
+      SELECT
+        (SELECT COUNT(*) FROM group_memberships gm WHERE gm.group_id = g.id) AS member_count,
+        (
+          SELECT COUNT(*) FROM groups k
+          WHERE k.parent_id = g.id
+            AND k.is_direct = FALSE
+            AND ($5::boolean IS DISTINCT FROM FALSE OR k.parent_value_id IS NULL)
+            AND (k.is_public OR EXISTS (
+              SELECT 1 FROM group_memberships km WHERE km.group_id = k.id AND km.profile_id = $2
+            ))
+        ) AS sub_group_count,
+        EXISTS (
+          SELECT 1 FROM group_memberships gm WHERE gm.group_id = g.id AND gm.profile_id = $2
+        ) AS is_member
+      WHERE NOT g.is_direct
+    ) details ON TRUE
+    """
+  end
+
+  defp load_child_group_row(fields, row) do
+    {group, [member_count, sub_group_count, member? | rest]} = load_group_row(fields, row)
+
+    {%{
+       group
+       | member_count: member_count,
+         sub_group_count: sub_group_count,
+         viewer_is_member: member?
+     }, rest}
   end
 
   defp ordered_child_group_ids_for_profile(%Group{} = group, %Profile{} = profile, opts) do

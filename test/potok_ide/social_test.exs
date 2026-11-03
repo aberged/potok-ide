@@ -5,6 +5,7 @@ defmodule PotokIde.SocialTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.EventsFixtures
   alias PotokIde.PushNotifications
   alias PotokIde.Social
   alias PotokIde.Social.Group
@@ -1652,6 +1653,43 @@ defmodule PotokIde.SocialTest do
   end
 
   describe "list_child_groups_for_profile/2" do
+    test "sub-groups come with their members, visible sub-groups and the viewer's membership" do
+      {_account, owner} = EventsFixtures.account_with_profile!("details-owner")
+      {_account, viewer} = EventsFixtures.account_with_profile!("details-viewer")
+      {_account, member} = EventsFixtures.account_with_profile!("details-member")
+      parent = EventsFixtures.group_with_members!(owner, [viewer])
+      joined = EventsFixtures.group_with_members!(owner, [viewer, member], %{parent: parent})
+
+      open =
+        EventsFixtures.group_with_members!(owner, [], %{:parent => parent, "is_public" => true})
+
+      # Below `joined`: a public group, one with the viewer, one it can't see and a thread.
+      EventsFixtures.group_with_members!(owner, [], %{:parent => joined, "is_public" => true})
+      EventsFixtures.group_with_members!(owner, [viewer], %{parent: joined})
+      EventsFixtures.group_with_members!(owner, [], %{parent: joined})
+      {:ok, value} = Social.create_value(owner, joined, %{"content" => "thread start"})
+
+      {:ok, _thread} =
+        Social.get_or_create_value_thread(owner, joined, value, %{"name" => "talk"})
+
+      details = fn opts ->
+        parent
+        |> Social.list_child_groups_for_profile(viewer, opts)
+        |> Map.new(&{&1.id, {&1.member_count, &1.sub_group_count, &1.viewer_is_member}})
+      end
+
+      assert details.([]) == %{joined.id => {3, 3, true}, open.id => {1, 0, false}}
+      assert %{joined.id => {3, 2, true}} == Map.take(details.(is_thread: false), [joined.id])
+
+      # Direct conversations load none.
+      {:ok, _direct} = Social.get_or_create_direct_group(viewer, owner)
+
+      assert [%Group{member_count: nil, sub_group_count: nil, viewer_is_member: nil}] =
+               Social.list_child_groups_for_profile(Social.get_root_group!(), viewer,
+                 is_direct: true
+               )
+    end
+
     test "returns only child groups where the profile is a member" do
       account = account_fixture()
       other_account = account_fixture()
