@@ -1,0 +1,87 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: pl\n"
+"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+
+#: lib/potok_ide/social/notifications.ex:74
+#, elixir-autogen, elixir-format
+msgid "%{name} accepted your invitation"
+msgstr "%{name}: Twoje zaproszenie zostało przyjęte"
+
+#: lib/potok_ide/social/notifications.ex:108
+#, elixir-autogen, elixir-format
+msgid "%{name} accepted your shared profile invitation"
+msgstr "%{name}: Twoje zaproszenie do współdzielonego profilu zostało przyjęte"
+
+#: lib/potok_ide/social/notifications.ex:137
+#, elixir-autogen, elixir-format
+msgid "%{name} added a new value"
+msgstr "%{name}: nowa wartość"
+
+#: lib/potok_ide/social/notifications.ex:58
+#, elixir-autogen, elixir-format
+msgid "%{name} invited you to %{group}"
+msgstr "%{name} zaprasza Cię do grupy %{group}"
+
+#: lib/potok_ide/social/notifications.ex:76
+#, elixir-autogen, elixir-format
+msgid "%{name} joined %{group}."
+msgstr "%{name} jest teraz w grupie %{group}."
+
+#: lib/potok_ide/social/notifications.ex:23
+#, elixir-autogen, elixir-format
+msgid "%{name} mentioned you in %{group}"
+msgstr "%{name} wspomina o Tobie w grupie %{group}"
+
+#: lib/potok_ide/social/notifications.ex:112
+#, elixir-autogen, elixir-format
+msgid "%{name} now has access to %{profile}."
+msgstr "%{name} ma teraz dostęp do profilu %{profile}."
+
+#: lib/potok_ide/social/notifications.ex:42
+#, elixir-autogen, elixir-format
+msgid "%{name} reacted %{emoji} to your value"
+msgstr "%{name}: reakcja %{emoji} na Twoją wartość"
+
+#: lib/potok_ide/social/notifications.ex:91
+#, elixir-autogen, elixir-format
+msgid "%{name} shared %{profile}"
+msgstr "%{name} udostępnia Ci profil %{profile}"
+
+#: lib/potok_ide/social/notifications.ex:127
+#, elixir-autogen, elixir-format
+msgid "New value in %{group}"
+msgstr "Nowa wartość w grupie %{group}"
+
+#: lib/potok_ide/social/notifications.ex:130
+#, elixir-autogen, elixir-format
+msgid "New value in %{group}: %{excerpt}"
+msgstr "Nowa wartość w grupie %{group}: %{excerpt}"
+
+#: lib/potok_ide/social/notifications.ex:62
+#, elixir-autogen, elixir-format
+msgid "Open Potok to review this group invitation."
+msgstr "Otwórz Potok, aby zobaczyć zaproszenie."
+
+#: lib/potok_ide/social/notifications.ex:96
+#, elixir-autogen, elixir-format
+msgid "Open Potok to review this shared profile invitation."
+msgstr "Otwórz Potok, aby zobaczyć zaproszenie do współdzielonego profilu."
+
+#: lib/potok_ide/accounts.ex:266
+#, elixir-autogen, elixir-format
+msgid "Potok notifications are active"
+msgstr "Powiadomienia Potok są aktywne"
+
+#: lib/potok_ide/accounts.ex:267
+#, elixir-autogen, elixir-format
+msgid "Push notifications are enabled for your account."
+msgstr "Powiadomienia push są włączone dla Twojego konta."

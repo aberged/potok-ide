@@ -8,23 +8,10 @@ defmodule PotokIde.Events.Notifications do
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
+  import PotokIde.PushNotifications, only: [localized: 1]
+
   alias PotokIde.Events.{Event, Format, Occurrence, Recurrence}
   alias PotokIde.Social.{Group, Profile}
-
-  @doc """
-  `fun` evaluated in every supported locale, as a function from a device's
-  locale to the payload; devices without one get the default language.
-  """
-  def localized(fun) when is_function(fun, 0) do
-    payloads =
-      Map.new(PotokIdeWeb.Locale.supported_locales(), fn locale ->
-        {locale, Gettext.with_locale(PotokIdeWeb.Gettext, locale, fun)}
-      end)
-
-    default = Map.fetch!(payloads, PotokIdeWeb.Locale.default_locale())
-
-    fn locale -> Map.get(payloads, locale, default) end
-  end
 
   def created(%Profile{} = creator, %Group{} = group, %Occurrence{} = occurrence) do
     localized(fn ->

@@ -35,6 +35,7 @@ defmodule PotokIde.Social do
     GroupValueRead,
     MemberInheritance,
     Mentions,
+    Notifications,
     Profile,
     ProfileInvitation,
     Value,
@@ -4692,8 +4693,8 @@ defmodule PotokIde.Social do
   # Accounts of mentioned members get the mention payload instead of the
   # generic one, so nobody is notified twice about the same value.
   defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
-    payload = group_value_notification_payload(creator, group, value)
-    mention_payload = group_value_mention_notification_payload(creator, group, value)
+    payload_for = Notifications.value_created(creator, group, value)
+    mention_payload_for = Notifications.value_mention(creator, group, value)
 
     run_notification(fn ->
       mentioned_account_ids =
@@ -4705,8 +4706,8 @@ defmodule PotokIde.Social do
       |> push_subscriptions_for_group_value(creator)
       |> Dispatch.deliver_each(group.id, fn [%PushSubscription{account_id: account_id} | _] ->
         if MapSet.member?(mentioned_account_ids, account_id),
-          do: {mention_payload, "group mention"},
-          else: {payload, "group value"}
+          do: {mention_payload_for, "group mention"},
+          else: {payload_for, "group value"}
       end)
     end)
   end
@@ -4722,13 +4723,15 @@ defmodule PotokIde.Social do
        )
        when not is_nil(reaction_id) do
     if creator.id != reactor.id and member_of_group?(creator, group) do
-      payload = value_reaction_notification_payload(reactor, group, value, emoji)
+      payload_for = Notifications.value_reaction(reactor, group, value, emoji)
       reactor_account_ids = recipient_account_ids_for_profiles([reactor.id])
 
       run_notification(fn ->
         creator
         |> recipient_accounts_for_profile_notification(reactor_account_ids)
-        |> Enum.each(&deliver_account_push_notification(&1, payload, "value reaction", group.id))
+        |> Enum.each(
+          &deliver_account_push_notification(&1, payload_for, "value reaction", group.id)
+        )
       end)
     end
 
@@ -4755,12 +4758,12 @@ defmodule PotokIde.Social do
          %Group{} = group,
          %Profile{} = invitee
        ) do
-    payload = group_invitation_notification_payload(inviter, group)
+    payload_for = Notifications.group_invitation(inviter, group)
 
     run_notification(fn ->
       invitee
       |> recipient_accounts_for_profile_notification()
-      |> Enum.each(&deliver_profile_notification(&1, payload, "group invitation", inviter.id))
+      |> Enum.each(&deliver_profile_notification(&1, payload_for, "group invitation", inviter.id))
     end)
   end
 
@@ -4768,13 +4771,13 @@ defmodule PotokIde.Social do
          %GroupInvitation{} = invitation,
          %Profile{} = invitee
        ) do
-    payload = group_invitation_accepted_notification_payload(invitation.group, invitee)
+    payload_for = Notifications.group_invitation_accepted(invitation.group, invitee)
 
     run_notification(fn ->
       invitation.inviter
       |> recipient_accounts_for_profile_notification()
       |> Enum.each(
-        &deliver_profile_notification(&1, payload, "group invitation acceptance", invitee.id)
+        &deliver_profile_notification(&1, payload_for, "group invitation acceptance", invitee.id)
       )
     end)
   end
@@ -4784,13 +4787,13 @@ defmodule PotokIde.Social do
          %Profile{} = shared_profile,
          %Profile{} = invitee
        ) do
-    payload = shared_profile_invitation_notification_payload(inviter, shared_profile)
+    payload_for = Notifications.shared_profile_invitation(inviter, shared_profile)
 
     run_notification(fn ->
       invitee
       |> recipient_accounts_for_profile_notification()
       |> Enum.each(
-        &deliver_profile_notification(&1, payload, "shared profile invitation", inviter.id)
+        &deliver_profile_notification(&1, payload_for, "shared profile invitation", inviter.id)
       )
     end)
   end
@@ -4800,7 +4803,7 @@ defmodule PotokIde.Social do
          %Profile{} = invitee,
          %Account{} = invitee_account
        ) do
-    payload = shared_profile_invitation_accepted_notification_payload(invitation.profile, invitee)
+    payload_for = Notifications.shared_profile_invitation_accepted(invitation.profile, invitee)
 
     run_notification(fn ->
       invitation.inviter
@@ -4808,7 +4811,7 @@ defmodule PotokIde.Social do
       |> Enum.each(
         &deliver_profile_notification(
           &1,
-          payload,
+          payload_for,
           "shared profile invitation acceptance",
           invitee.id
         )
@@ -4844,139 +4847,15 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  defp deliver_profile_notification(%Account{} = account, payload, _context, _profile_id) do
-    deliver_account_push_notification(account, payload, "profile notification", nil)
+  defp deliver_profile_notification(%Account{} = account, payload_for, _context, _profile_id) do
+    deliver_account_push_notification(account, payload_for, "profile notification", nil)
   end
 
-  defp deliver_account_push_notification(%Account{} = account, payload, context, context_id) do
+  defp deliver_account_push_notification(%Account{} = account, payload_for, context, context_id) do
     account
     |> Accounts.list_push_subscriptions()
-    |> deliver_push_to_subscriptions(account.id, payload, context, context_id)
+    |> Dispatch.deliver(account.id, payload_for, context, context_id)
   end
-
-  defp deliver_push_to_subscriptions(subscriptions, account_id, payload, context, context_id),
-    do: Dispatch.deliver(subscriptions, account_id, payload, context, context_id)
-
-  defp group_value_notification_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
-    %{
-      title: "#{creator.username} added a new value",
-      body: group_value_notification_body(group, value),
-      tag: "group-#{group.id}-value-#{value.id}-created",
-      url: "/groups/#{group.id}/values",
-      badge: profile_avatar_url(creator)
-    }
-  end
-
-  defp group_value_mention_notification_payload(
-         %Profile{} = creator,
-         %Group{} = group,
-         %Value{} = value
-       ) do
-    %{
-      group_value_notification_payload(creator, group, value)
-      | title: "#{creator.username} mentioned you in #{group.name}"
-    }
-  end
-
-  # One tag per value, so later reactions replace the earlier notification.
-  defp value_reaction_notification_payload(
-         %Profile{} = reactor,
-         %Group{} = group,
-         %Value{} = value,
-         emoji
-       ) do
-    body =
-      case notification_excerpt(value) do
-        nil -> group.name
-        snippet -> "#{group.name}: #{snippet}"
-      end
-
-    %{
-      title: "#{reactor.username} reacted #{emoji} to your value",
-      body: body,
-      tag: "group-#{group.id}-value-#{value.id}-reactions",
-      url: "/groups/#{group.id}/values",
-      badge: profile_avatar_url(reactor)
-    }
-  end
-
-  defp group_invitation_notification_payload(%Profile{} = inviter, %Group{} = group) do
-    %{
-      title: "#{inviter.username} invited you to #{group.name}",
-      body: "Open Potok to review this group invitation.",
-      tag: "group-#{group.id}-invitation-#{inviter.id}",
-      url: "/invitations",
-      badge: profile_avatar_url(inviter)
-    }
-  end
-
-  defp group_invitation_accepted_notification_payload(%Group{} = group, %Profile{} = invitee) do
-    %{
-      title: "#{invitee.username} accepted your invitation",
-      body: "#{invitee.username} joined #{group.name}.",
-      tag: "group-#{group.id}-invitation-accepted",
-      url: "/groups/#{group.id}",
-      badge: profile_avatar_url(invitee)
-    }
-  end
-
-  defp shared_profile_invitation_notification_payload(
-         %Profile{} = inviter,
-         %Profile{} = shared_profile
-       ) do
-    %{
-      title: "#{inviter.username} shared #{shared_profile.username}",
-      body: "Open Potok to review this shared profile invitation.",
-      tag: "profile-#{shared_profile.id}-invitation",
-      url: "/profiles",
-      badge: profile_avatar_url(shared_profile)
-    }
-  end
-
-  defp shared_profile_invitation_accepted_notification_payload(
-         %Profile{} = shared_profile,
-         %Profile{} = invitee
-       ) do
-    %{
-      title: "#{invitee.username} accepted your shared profile invitation",
-      body: "#{invitee.username} now has access to #{shared_profile.username}.",
-      tag: "profile-#{shared_profile.id}-invitation-accepted",
-      url: "/profiles",
-      badge: profile_avatar_url(shared_profile)
-    }
-  end
-
-  defp group_value_notification_body(%Group{} = group, %Value{} = value) do
-    excerpt = notification_excerpt(value)
-
-    case excerpt do
-      nil ->
-        "New value in #{group.name}"
-
-      snippet ->
-        "New value in #{group.name}: #{snippet}"
-    end
-  end
-
-  defp notification_excerpt(%Value{content: content} = value),
-    do: notification_excerpt(content) || Value.attachment_summary(value, 120)
-
-  defp notification_excerpt(content) when is_binary(content) do
-    trimmed = String.trim(content)
-
-    cond do
-      trimmed == "" -> nil
-      String.length(trimmed) <= 120 -> trimmed
-      true -> String.slice(trimmed, 0, 117) <> "..."
-    end
-  end
-
-  defp notification_excerpt(_content), do: nil
-
-  # Notification badges and icons cannot be SVG, which the avatar URL serves
-  # by default.
-  defp profile_avatar_url(%Profile{id: profile_id}),
-    do: "/avatar/profile/#{profile_id}?format=png"
 
   defp extract_group_id(%Group{id: id}), do: id
   defp extract_group_id(id) when is_integer(id), do: id

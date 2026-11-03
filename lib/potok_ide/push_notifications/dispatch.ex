@@ -48,7 +48,7 @@ defmodule PotokIde.PushNotifications.Dispatch do
   @doc """
   Delivers to every account of `subscriptions_by_account`, several accounts
   at a time. `payload_fun` gets an account's subscriptions and returns
-  `{payload, context}`, or nil to skip the account.
+  `{payload_for, context}` (see `deliver/5`), or nil to skip the account.
   """
   def deliver_each(subscriptions_by_account, context_id, payload_fun)
       when is_function(payload_fun, 1) do
@@ -56,8 +56,11 @@ defmodule PotokIde.PushNotifications.Dispatch do
     |> Task.async_stream(
       fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
         case payload_fun.(subscriptions) do
-          {payload, context} -> deliver(subscriptions, account_id, payload, context, context_id)
-          nil -> :ok
+          {payload_for, context} ->
+            deliver(subscriptions, account_id, payload_for, context, context_id)
+
+          nil ->
+            :ok
         end
       end,
       max_concurrency: @account_concurrency,
@@ -67,34 +70,31 @@ defmodule PotokIde.PushNotifications.Dispatch do
     |> Stream.run()
   end
 
-  @doc """
-  Like `deliver_each/3`, but every device gets the payload in the language
-  it saved its subscription with: `payload_for` gets that locale (nil for
-  devices that saved none) and returns the payload.
-  """
+  @doc "`deliver_each/3` with the same payload for every account."
   def deliver_localized(subscriptions_by_account, context, context_id, payload_for)
       when is_function(payload_for, 1) do
-    subscriptions_by_account
-    |> Task.async_stream(
-      fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
-        subscriptions
-        |> Enum.group_by(& &1.locale)
-        |> Enum.each(fn {locale, same_locale} ->
-          deliver(same_locale, account_id, payload_for.(locale), context, context_id)
-        end)
-      end,
-      max_concurrency: @account_concurrency,
-      ordered: false,
-      timeout: :infinity
-    )
-    |> Stream.run()
+    deliver_each(subscriptions_by_account, context_id, fn _subscriptions ->
+      {payload_for, context}
+    end)
   end
 
   @doc """
-  Delivers `payload` to an account's subscriptions; failures are logged
-  (expired subscriptions are removed by `Accounts`).
+  Delivers to an account's subscriptions, every device in the language it
+  saved its subscription with: `payload_for` gets that locale (nil for
+  devices that saved none) and returns the payload, see
+  `PotokIde.PushNotifications.localized/1`. Failures are logged (expired
+  subscriptions are removed by `Accounts`).
   """
-  def deliver(subscriptions, account_id, payload, context, context_id) do
+  def deliver(subscriptions, account_id, payload_for, context, context_id)
+      when is_function(payload_for, 1) do
+    subscriptions
+    |> Enum.group_by(& &1.locale)
+    |> Enum.each(fn {locale, same_locale} ->
+      deliver_payload(same_locale, account_id, payload_for.(locale), context, context_id)
+    end)
+  end
+
+  defp deliver_payload(subscriptions, account_id, payload, context, context_id) do
     case Accounts.deliver_push_notification_to_subscriptions(subscriptions, payload) do
       {:ok, _results} ->
         :ok

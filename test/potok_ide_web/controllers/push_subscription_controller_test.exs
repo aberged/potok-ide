@@ -439,7 +439,8 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       subscription_type: :fcm,
       device_platform: native_device_platform(params["platform"]),
       device_token: params["token"],
-      user_agent: "ExUnit"
+      user_agent: "ExUnit",
+      locale: "en"
     }
   end
 

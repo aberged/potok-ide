@@ -3,6 +3,8 @@ defmodule PotokIde.Accounts do
   The Accounts context.
   """
 
+  use Gettext, backend: PotokIdeWeb.Gettext
+
   import Ecto.Query, warn: false
   alias PotokIde.Repo
 
@@ -232,7 +234,8 @@ defmodule PotokIde.Accounts do
   end
 
   @doc """
-  Sends a test push notification to one of the account's saved subscriptions.
+  Sends a test push notification to one of the account's saved subscriptions,
+  in the language that subscription was saved with.
   """
   def send_test_push_notification(%Account{} = account, identifier \\ nil) do
     subscription =
@@ -257,16 +260,22 @@ defmodule PotokIde.Accounts do
 
     case subscription do
       %PushSubscription{} = push_subscription ->
-        payload = %{
-          title: "Potok notifications are active",
-          body: "Push notifications are enabled for your account.",
-          tag: "potok-push-test",
-          url: "/accounts/settings",
-          icon: "/images/pwa/icon-192.png",
-          badge: "/images/pwa/icon-192.png"
-        }
+        payload_for =
+          PushNotifications.localized(fn ->
+            %{
+              title: dgettext("notifications", "Potok notifications are active"),
+              body: dgettext("notifications", "Push notifications are enabled for your account."),
+              tag: "potok-push-test",
+              url: "/accounts/settings",
+              icon: "/images/pwa/icon-192.png",
+              badge: "/images/pwa/icon-192.png"
+            }
+          end)
 
-        deliver_push_notification_to_subscription(push_subscription, payload)
+        deliver_push_notification_to_subscription(
+          push_subscription,
+          payload_for.(push_subscription.locale)
+        )
 
       nil ->
         {:error, :not_found}

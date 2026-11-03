@@ -55,7 +55,7 @@ msgstr "%{day} %{month}"
 msgid "%{month} %{year}"
 msgstr "%{month} %{year}"
 
-#: lib/potok_ide/events/notifications.ex:33
+#: lib/potok_ide/events/notifications.ex:20
 #, elixir-autogen, elixir-format
 msgid "%{name} added an event in %{group}"
 msgstr "%{name}: nowe wydarzenie w grupie %{group}"
@@ -131,7 +131,7 @@ msgstr "sie"
 msgid "August"
 msgstr "sierpień"
 
-#: lib/potok_ide/events/notifications.ex:72
+#: lib/potok_ide/events/notifications.ex:59
 #, elixir-autogen, elixir-format
 msgid "Cancelled: %{title}"
 msgstr "Odwołane: %{title}"
@@ -146,12 +146,12 @@ msgstr "gru"
 msgid "December"
 msgstr "grudzień"
 
-#: lib/potok_ide/events/notifications.ex:60
+#: lib/potok_ide/events/notifications.ex:47
 #, elixir-autogen, elixir-format
 msgid "Event cancelled: %{title}"
 msgstr "Odwołane wydarzenie: %{title}"
 
-#: lib/potok_ide/events/notifications.ex:48
+#: lib/potok_ide/events/notifications.ex:35
 #, elixir-autogen, elixir-format
 msgid "Event changed: %{title}"
 msgstr "Zmiana wydarzenia: %{title}"
@@ -228,8 +228,8 @@ msgstr "pt."
 msgid "Friday"
 msgstr "piątek"
 
-#: lib/potok_ide/events/notifications.ex:101
-#: lib/potok_ide/events/notifications.ex:112
+#: lib/potok_ide/events/notifications.ex:88
+#: lib/potok_ide/events/notifications.ex:99
 #, elixir-autogen, elixir-format
 msgid "In %{count} day"
 msgid_plural "In %{count} days"
@@ -237,7 +237,7 @@ msgstr[0] "Za %{count} dzień"
 msgstr[1] "Za %{count} dni"
 msgstr[2] "Za %{count} dni"
 
-#: lib/potok_ide/events/notifications.ex:109
+#: lib/potok_ide/events/notifications.ex:96
 #, elixir-autogen, elixir-format
 msgid "In %{count} hour"
 msgid_plural "In %{count} hours"
@@ -245,7 +245,7 @@ msgstr[0] "Za %{count} godzinę"
 msgstr[1] "Za %{count} godziny"
 msgstr[2] "Za %{count} godzin"
 
-#: lib/potok_ide/events/notifications.ex:106
+#: lib/potok_ide/events/notifications.ex:93
 #, elixir-autogen, elixir-format
 msgid "In %{count} minute"
 msgid_plural "In %{count} minutes"
@@ -348,7 +348,7 @@ msgstr "wrz"
 msgid "September"
 msgstr "wrzesień"
 
-#: lib/potok_ide/events/notifications.ex:103
+#: lib/potok_ide/events/notifications.ex:90
 #, elixir-autogen, elixir-format
 msgid "Starting now"
 msgstr "Zaczyna się teraz"
@@ -373,12 +373,12 @@ msgstr "czw."
 msgid "Thursday"
 msgstr "czwartek"
 
-#: lib/potok_ide/events/notifications.ex:97
+#: lib/potok_ide/events/notifications.ex:84
 #, elixir-autogen, elixir-format
 msgid "Today"
 msgstr "Dziś"
 
-#: lib/potok_ide/events/notifications.ex:98
+#: lib/potok_ide/events/notifications.ex:85
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
 msgstr "Jutro"

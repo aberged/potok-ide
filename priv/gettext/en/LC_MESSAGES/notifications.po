@@ -1,0 +1,87 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/potok_ide/social/notifications.ex:74
+#, elixir-autogen, elixir-format
+msgid "%{name} accepted your invitation"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:108
+#, elixir-autogen, elixir-format
+msgid "%{name} accepted your shared profile invitation"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:137
+#, elixir-autogen, elixir-format
+msgid "%{name} added a new value"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:58
+#, elixir-autogen, elixir-format
+msgid "%{name} invited you to %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:76
+#, elixir-autogen, elixir-format
+msgid "%{name} joined %{group}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:23
+#, elixir-autogen, elixir-format
+msgid "%{name} mentioned you in %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:112
+#, elixir-autogen, elixir-format
+msgid "%{name} now has access to %{profile}."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:42
+#, elixir-autogen, elixir-format
+msgid "%{name} reacted %{emoji} to your value"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:91
+#, elixir-autogen, elixir-format
+msgid "%{name} shared %{profile}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:127
+#, elixir-autogen, elixir-format
+msgid "New value in %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:130
+#, elixir-autogen, elixir-format
+msgid "New value in %{group}: %{excerpt}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:62
+#, elixir-autogen, elixir-format
+msgid "Open Potok to review this group invitation."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:96
+#, elixir-autogen, elixir-format
+msgid "Open Potok to review this shared profile invitation."
+msgstr ""
+
+#: lib/potok_ide/accounts.ex:266
+#, elixir-autogen, elixir-format
+msgid "Potok notifications are active"
+msgstr ""
+
+#: lib/potok_ide/accounts.ex:267
+#, elixir-autogen, elixir-format
+msgid "Push notifications are enabled for your account."
+msgstr ""
