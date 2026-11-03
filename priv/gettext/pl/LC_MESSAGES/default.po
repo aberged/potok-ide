@@ -63,11 +63,6 @@ msgstr "Potwierdź i pozostań zalogowany"
 msgid "Confirm new password"
 msgstr "Potwierdź nowe hasło"
 
-#: lib/potok_ide/accounts/account_notifier.ex:79
-#, elixir-autogen, elixir-format
-msgid "Confirmation instructions"
-msgstr "Instrukcje potwierdzenia"
-
 #: lib/potok_ide_web/live/account_live/confirmation.ex:46
 #: lib/potok_ide_web/live/account_live/confirmation.ex:52
 #, elixir-autogen, elixir-format
@@ -125,7 +120,7 @@ msgid "Current profile:"
 msgstr "Bieżący profil:"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1719
-#: lib/potok_ide_web/live/group_live/show.ex:4129
+#: lib/potok_ide_web/live/group_live/show.ex:4132
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:933
 #: lib/potok_ide_web/live/group_live/show/components.ex:1007
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:122
@@ -187,28 +182,6 @@ msgstr "Grupy"
 msgid "HTML"
 msgstr "HTML"
 
-#: lib/potok_ide/accounts/account_notifier.ex:37
-#: lib/potok_ide/accounts/account_notifier.ex:64
-#: lib/potok_ide/accounts/account_notifier.ex:83
-#, elixir-autogen, elixir-format
-msgid "Hi %{email},"
-msgstr "Cześć %{email},"
-
-#: lib/potok_ide/accounts/account_notifier.ex:91
-#, elixir-autogen, elixir-format
-msgid "If you didn't create an account with us, please ignore this."
-msgstr "Jeśli nie zakładałeś u nas konta, zignoruj tę wiadomość."
-
-#: lib/potok_ide/accounts/account_notifier.ex:43
-#, elixir-autogen, elixir-format
-msgid "If you didn't request this change, please ignore this."
-msgstr "Jeśli nie prosiłeś o tę zmianę, zignoruj tę wiadomość."
-
-#: lib/potok_ide/accounts/account_notifier.ex:72
-#, elixir-autogen, elixir-format
-msgid "If you didn't request this email, please ignore this."
-msgstr "Jeśli nie prosiłeś o tę wiadomość, zignoruj ją."
-
 #: lib/potok_ide_web/live/account_live/login.ex:94
 #, elixir-autogen, elixir-format
 msgid "If your email is in our system, you will receive instructions for logging in shortly."
@@ -240,8 +213,8 @@ msgid "Invitation not found."
 msgstr "Nie znaleziono zaproszenia."
 
 #: lib/potok_ide_web/live/group_live/show.ex:3260
-#: lib/potok_ide_web/live/group_live/show.ex:3283
-#: lib/potok_ide_web/live/group_live/show.ex:3294
+#: lib/potok_ide_web/live/group_live/show.ex:3286
+#: lib/potok_ide_web/live/group_live/show.ex:3297
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr "Zaproszenie zostało wysłane."
@@ -343,11 +316,6 @@ msgstr "Wybór języka"
 msgid "Log in"
 msgstr "Zaloguj się"
 
-#: lib/potok_ide/accounts/account_notifier.ex:60
-#, elixir-autogen, elixir-format
-msgid "Log in instructions"
-msgstr "Instrukcje logowania"
-
 #: lib/potok_ide_web/live/account_live/login.ex:55
 #, elixir-autogen, elixir-format
 msgid "Log in with email"
@@ -392,7 +360,7 @@ msgstr "Zarządzaj adresem e-mail i ustawieniami hasła swojego konta"
 msgid "Markdown"
 msgstr "Markdown"
 
-#: lib/potok_ide_web/live/group_live/show.ex:4169
+#: lib/potok_ide_web/live/group_live/show.ex:4172
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:42
 #, elixir-autogen, elixir-format
 msgid "Members"
@@ -515,7 +483,7 @@ msgid "Sharing"
 msgstr "Udostępnianie"
 
 #: lib/potok_ide_web/live/group_live/show.ex:427
-#: lib/potok_ide_web/live/group_live/show.ex:4131
+#: lib/potok_ide_web/live/group_live/show.ex:4134
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
 msgstr "Podgrupy"
@@ -550,11 +518,6 @@ msgstr "Aby zobaczyć wysłane e-maile, odwiedź"
 msgid "Unique"
 msgstr "Unikalny"
 
-#: lib/potok_ide/accounts/account_notifier.ex:33
-#, elixir-autogen, elixir-format
-msgid "Update email instructions"
-msgstr "Instrukcje zmiany adresu e-mail"
-
 #: lib/potok_ide_web/live/profile_live/components.ex:41
 #, elixir-autogen, elixir-format
 msgid "Username"
@@ -580,21 +543,6 @@ msgstr "Witaj!"
 #, elixir-autogen, elixir-format
 msgid "You are running the local mail adapter."
 msgstr "Korzystasz z lokalnego adaptera poczty."
-
-#: lib/potok_ide/accounts/account_notifier.ex:39
-#, elixir-autogen, elixir-format
-msgid "You can change your email by visiting the URL below:"
-msgstr "Możesz zmienić adres e-mail, odwiedzając poniższy adres URL:"
-
-#: lib/potok_ide/accounts/account_notifier.ex:85
-#, elixir-autogen, elixir-format
-msgid "You can confirm your account by visiting the URL below:"
-msgstr "Możesz potwierdzić konto, odwiedzając poniższy adres URL:"
-
-#: lib/potok_ide/accounts/account_notifier.ex:66
-#, elixir-autogen, elixir-format
-msgid "You can log into your account by visiting the URL below:"
-msgstr "Możesz zalogować się na swoje konto, odwiedzając poniższy adres URL:"
 
 #: lib/potok_ide_web/live/group_live/show.ex:1839
 #, elixir-autogen, elixir-format
@@ -1012,8 +960,8 @@ msgstr "Prośba o dostęp została zaakceptowana."
 msgid "Access request already pending."
 msgstr "Prośba o dostęp już oczekuje."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4283
-#: lib/potok_ide_web/live/group_live/show.ex:4293
+#: lib/potok_ide_web/live/group_live/show.ex:4286
+#: lib/potok_ide_web/live/group_live/show.ex:4296
 #: lib/potok_ide_web/live/request_live/index.ex:726
 #: lib/potok_ide_web/live/request_live/index.ex:737
 #: lib/potok_ide_web/live/request_live/index.ex:753
@@ -1067,8 +1015,8 @@ msgstr "Nie udało się usunąć członka."
 msgid "Could not send access request."
 msgstr "Nie udało się wysłać prośby o dostęp."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4286
 #: lib/potok_ide_web/live/group_live/show.ex:4289
+#: lib/potok_ide_web/live/group_live/show.ex:4292
 #: lib/potok_ide_web/live/request_live/index.ex:748
 #, elixir-autogen, elixir-format
 msgid "Could not update access request."
@@ -1140,7 +1088,7 @@ msgstr "Podgląd na żywo"
 msgid "Member removed."
 msgstr "Członek został usunięty."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4166
+#: lib/potok_ide_web/live/group_live/show.ex:4169
 #, elixir-autogen, elixir-format
 msgid "Members (%{count} requests)"
 msgstr "Członkowie (%{count} próśb)"
@@ -1279,7 +1227,7 @@ msgid "Start typing to preview the description."
 msgstr "Zacznij pisać, aby podejrzeć opis."
 
 #: lib/potok_ide_web/live/group_live/show.ex:1340
-#: lib/potok_ide_web/live/group_live/show.ex:3958
+#: lib/potok_ide_web/live/group_live/show.ex:3961
 #, elixir-autogen, elixir-format
 msgid "That profile is not a group member."
 msgstr "Ten profil nie jest członkiem grupy."
@@ -1320,7 +1268,7 @@ msgstr "Musisz być członkiem grupy, aby uzyskać dostęp do wartości danych g
 msgid "You must be a group member to delete this group."
 msgstr "Musisz być członkiem grupy, aby usunąć tę grupę."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3280
+#: lib/potok_ide_web/live/group_live/show.ex:3283
 #, elixir-autogen, elixir-format
 msgid "Account invitation email sent."
 msgstr ""
@@ -1367,7 +1315,7 @@ msgstr ""
 msgid "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4130
+#: lib/potok_ide_web/live/group_live/show.ex:4133
 #, elixir-autogen, elixir-format
 msgid "Chat"
 msgstr ""
@@ -1490,11 +1438,6 @@ msgstr ""
 msgid "ID"
 msgstr ""
 
-#: lib/potok_ide/accounts/account_notifier.ex:102
-#, elixir-autogen, elixir-format
-msgid "If you use the Potok Android app, you can open this link there:"
-msgstr ""
-
 #: lib/potok_ide_web/live/group_live/show/components.ex:158
 #: lib/potok_ide_web/live/profile_live/components.ex:73
 #, elixir-autogen, elixir-format
@@ -1506,7 +1449,7 @@ msgstr ""
 msgid "Inserted"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:3297
+#: lib/potok_ide_web/live/group_live/show.ex:3300
 #, elixir-autogen, elixir-format
 msgid "Invitation will be sent when they create their first profile."
 msgstr ""
@@ -2033,7 +1976,7 @@ msgstr "Pokaż wątki"
 msgid "Threads"
 msgstr "Wątki"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3932
+#: lib/potok_ide_web/live/group_live/show.ex:3935
 #, elixir-autogen, elixir-format
 msgid "A group must keep at least one admin."
 msgstr "Grupa musi mieć co najmniej jednego administratora."
@@ -2073,8 +2016,8 @@ msgstr "Przydzielana członkom przez administratora."
 msgid "Change the group's settings, description and app data."
 msgstr "Zmiana ustawień, opisu i danych aplikacji grupy."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3960
-#: lib/potok_ide_web/live/group_live/show.ex:3966
+#: lib/potok_ide_web/live/group_live/show.ex:3963
+#: lib/potok_ide_web/live/group_live/show.ex:3969
 #, elixir-autogen, elixir-format
 msgid "Could not update roles."
 msgstr "Nie udało się zaktualizować ról."
@@ -2125,7 +2068,7 @@ msgstr "Usuwanie wartości napisanych przez innych."
 msgid "Deny"
 msgstr "Zabroń"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3935
+#: lib/potok_ide_web/live/group_live/show.ex:3938
 #, elixir-autogen, elixir-format
 msgid "Direct conversations do not have roles or invitations."
 msgstr "Rozmowy bezpośrednie nie mają ról ani zaproszeń."
@@ -2252,7 +2195,7 @@ msgstr "Usunięto rolę %{name}."
 msgid "Role name"
 msgstr "Nazwa roli"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3949
+#: lib/potok_ide_web/live/group_live/show.ex:3952
 #, elixir-autogen, elixir-format
 msgid "Role not found."
 msgstr "Nie znaleziono roli."
@@ -2262,7 +2205,7 @@ msgstr "Nie znaleziono roli."
 msgid "Role renamed."
 msgstr "Zmieniono nazwę roli."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3906
+#: lib/potok_ide_web/live/group_live/show.ex:3909
 #, elixir-autogen, elixir-format
 msgid "Role · %{count} member"
 msgid_plural "Role · %{count} members"
@@ -2309,17 +2252,17 @@ msgstr "Rozpoczynanie wątku od wartości."
 msgid "Sub-groups without their own manifest use these roles too."
 msgstr "Podgrupy bez własnego manifestu również używają tych ról."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3947
+#: lib/potok_ide_web/live/group_live/show.ex:3950
 #, elixir-autogen, elixir-format
 msgid "The admin and everyone roles cannot be renamed or deleted."
 msgstr "Ról admin i everyone nie można przemianować ani usunąć."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3941
+#: lib/potok_ide_web/live/group_live/show.ex:3944
 #, elixir-autogen, elixir-format
 msgid "The default manifest cannot be changed."
 msgstr "Domyślnego manifestu nie można zmienić."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3944
+#: lib/potok_ide_web/live/group_live/show.ex:3947
 #, elixir-autogen, elixir-format
 msgid "This group already has its own manifest."
 msgstr "Ta grupa ma już własny manifest."
@@ -2329,7 +2272,7 @@ msgstr "Ta grupa ma już własny manifest."
 msgid "This group has its own manifest"
 msgstr "Ta grupa ma własny manifest"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3938
+#: lib/potok_ide_web/live/group_live/show.ex:3941
 #, elixir-autogen, elixir-format
 msgid "This group inherits its roles. Create its own manifest to change them."
 msgstr "Ta grupa dziedziczy role. Utwórz własny manifest, aby je zmieniać."
@@ -2364,7 +2307,7 @@ msgstr "Twoje role w tej grupie nie pozwalają na zarządzanie prośbami."
 msgid "Your roles in this group do not allow posting values."
 msgstr "Twoje role w tej grupie nie pozwalają na pisanie wartości."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3930
+#: lib/potok_ide_web/live/group_live/show.ex:3933
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:102
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
@@ -2802,12 +2745,12 @@ msgstr "Odziedziczone z grupy nadrzędnej"
 msgid "Member of the parent group"
 msgstr "Członek grupy nadrzędnej"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3952
+#: lib/potok_ide_web/live/group_live/show.ex:3955
 #, elixir-autogen, elixir-format
 msgid "This member comes from the parent group. Remove them there."
 msgstr "Ten członek pochodzi z grupy nadrzędnej. Usuń go tam."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3955
+#: lib/potok_ide_web/live/group_live/show.ex:3958
 #, elixir-autogen, elixir-format
 msgid "This role comes from the parent group. Change it there."
 msgstr "Ta rola pochodzi z grupy nadrzędnej. Zmień ją tam."
@@ -3846,7 +3789,7 @@ msgstr "Otwórz link"
 msgid "Share"
 msgstr "Udostępnij"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3780
+#: lib/potok_ide_web/live/group_live/show.ex:3783
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
 msgstr "%{names} i jeszcze %{count}"
@@ -3924,6 +3867,8 @@ msgstr "Plenum, zgromadzenie, grupa robocza. Podgrupa może przejąć członków
 
 #: lib/potok_ide_web/components/layouts.ex:419
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:20
+#: lib/potok_ide_web/emails/email_components.ex:24
+#: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "A shared platform for assemblies"
 msgstr "Wspólna platforma mieszkańców"
@@ -4165,6 +4110,7 @@ msgstr "Na razie do Potoku wchodzi się z zaproszeniem. Jeśli twoja grupa już 
 
 #: lib/potok_ide_web/controllers/page_controller.ex:33
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:26
+#: lib/potok_ide_web/emails/account_emails.ex:111
 #, elixir-autogen, elixir-format
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Potok to miejsce, w którym grupy rozmawiają, wymieniają się wartościami, decydują i pamiętają, co postanowiły."
@@ -4188,3 +4134,172 @@ msgstr "Potok rozchodzi się przez zaproszenia."
 #, elixir-autogen, elixir-format
 msgid "What is Potok?"
 msgstr "Czym jest Potok?"
+
+#: lib/potok_ide_web/emails/account_emails.ex:89
+#, elixir-autogen, elixir-format
+msgid "@%{username} invites you to Potok"
+msgstr "@%{username} zaprasza cię do Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:81
+#, elixir-autogen, elixir-format
+msgid "@%{username} invites you to “%{group}” on Potok"
+msgstr "@%{username} zaprasza cię do grupy „%{group}” w Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:196
+#, elixir-autogen, elixir-format
+msgid "A request came in to move your Potok account from %{old_email} to this address, %{new_email}."
+msgstr "Przyszła prośba o przeniesienie twojego konta w Potoku z %{old_email} na ten adres, %{new_email}."
+
+#: lib/potok_ide_web/emails/account_emails.ex:125
+#, elixir-autogen, elixir-format
+msgid "Accept the invitation"
+msgstr "Przyjmij zaproszenie"
+
+#: lib/potok_ide_web/emails/account_emails.ex:192
+#, elixir-autogen, elixir-format
+msgid "Address change"
+msgstr "Zmiana adresu"
+
+#: lib/potok_ide_web/emails/account_emails.ex:115
+#, elixir-autogen, elixir-format
+msgid "An account for %{email} is already set up. You don't need a password: the button takes you straight in."
+msgstr "Konto dla %{email} jest już założone. Hasło nie jest potrzebne: przycisk zaprowadzi cię prosto do środka."
+
+#: lib/potok_ide_web/emails/account_emails.ex:205
+#, elixir-autogen, elixir-format
+msgid "Confirm address"
+msgstr "Potwierdź adres"
+
+#: lib/potok_ide_web/emails/account_emails.ex:193
+#, elixir-autogen, elixir-format
+msgid "Confirm your new address"
+msgstr "Potwierdź nowy adres"
+
+#: lib/potok_ide_web/emails/account_emails.ex:219
+#, elixir-autogen, elixir-format
+msgid "Confirm your new email address for Potok"
+msgstr "Potwierdź nowy adres e-mail w Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:26
+#, elixir-autogen, elixir-format
+msgid "Here's your sign-in link"
+msgstr "Oto twój link do logowania"
+
+#: lib/potok_ide_web/emails/account_emails.ex:97
+#, elixir-autogen, elixir-format
+msgid "If it expires, enter %{email} on %{link} and a new one will arrive."
+msgstr "Jeśli wygaśnie, wpisz %{email} na %{link}, a przyjdzie nowy."
+
+#: lib/potok_ide_web/emails/email_components.ex:222
+#, elixir-autogen, elixir-format
+msgid "If the button doesn't work, copy this address into your browser:"
+msgstr "Jeśli przycisk nie działa, skopiuj ten adres do przeglądarki:"
+
+#: lib/potok_ide_web/emails/account_emails.ex:36
+#, elixir-autogen, elixir-format
+msgid "If this wasn't you, just ignore this email: no one gets into your account without this link."
+msgstr "Jeśli to nie ty, po prostu zignoruj tę wiadomość: bez tego linku nikt nie zaloguje się na twoje konto."
+
+#: lib/potok_ide_web/emails/account_emails.ex:213
+#, elixir-autogen, elixir-format
+msgid "If you don't know about this change, ignore this email: the account stays on the old address."
+msgstr "Jeśli nic nie wiesz o tej zmianie, zignoruj tę wiadomość: konto zostanie przy starym adresie."
+
+#: lib/potok_ide_web/emails/account_emails.ex:107
+#, elixir-autogen, elixir-format
+msgid "Invitation"
+msgstr "Zaproszenie"
+
+#: lib/potok_ide_web/emails/account_emails.ex:137
+#, elixir-autogen, elixir-format
+msgid "Not expecting this invitation? Just ignore this email: nothing happens until someone clicks the link."
+msgstr "Nie spodziewasz się tego zaproszenia? Po prostu zignoruj tę wiadomość: dopóki nikt nie kliknie linku, nic się nie dzieje."
+
+#: lib/potok_ide_web/emails/account_emails.ex:121
+#, elixir-autogen, elixir-format
+msgid "Once you create your profile, the invitation to “%{group}” will be waiting among your invitations."
+msgstr "Gdy utworzysz profil, zaproszenie do grupy „%{group}” będzie czekać wśród twoich zaproszeń."
+
+#: lib/potok_ide_web/emails/email_components.ex:218
+#: lib/potok_ide_web/emails/email_components.ex:239
+#, elixir-autogen, elixir-format
+msgid "Open this link in the app"
+msgstr "Otwórz link w aplikacji"
+
+#: lib/potok_ide_web/emails/account_emails.ex:93
+#, elixir-autogen, elixir-format
+msgid "Potok is waiting for you"
+msgstr "Potok na ciebie czeka"
+
+#: lib/potok_ide_web/emails/account_emails.ex:27
+#, elixir-autogen, elixir-format
+msgid "Press the button and you're in, no password needed."
+msgstr "Kliknij przycisk i już jesteś w środku, bez hasła."
+
+#: lib/potok_ide_web/emails/email_components.ex:138
+#, elixir-autogen, elixir-format
+msgid "Sent to %{email}."
+msgstr "Wysłano na adres %{email}."
+
+#: lib/potok_ide_web/emails/account_emails.ex:28
+#, elixir-autogen, elixir-format
+msgid "Sign in to Potok"
+msgstr "Zaloguj się do Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:25
+#, elixir-autogen, elixir-format
+msgid "Sign-in"
+msgstr "Logowanie"
+
+#: lib/potok_ide_web/emails/account_emails.ex:202
+#, elixir-autogen, elixir-format
+msgid "The link opens your account settings; if needed, Potok will ask you to sign in first."
+msgstr "Link otwiera ustawienia konta; w razie potrzeby Potok najpierw poprosi cię o zalogowanie."
+
+#: lib/potok_ide_web/emails/account_emails.ex:127
+#: lib/potok_ide_web/emails/account_emails.ex:207
+#, elixir-autogen, elixir-format
+msgid "The link works for %{count} day, and only once."
+msgid_plural "The link works for %{count} days, and only once."
+msgstr[0] "Link działa przez %{count} dzień i tylko raz."
+msgstr[1] "Link działa przez %{count} dni i tylko raz."
+msgstr[2] "Link działa przez %{count} dni i tylko raz."
+
+#: lib/potok_ide_web/emails/account_emails.ex:30
+#, elixir-autogen, elixir-format
+msgid "The link works for %{count} minute, and only once."
+msgid_plural "The link works for %{count} minutes, and only once."
+msgstr[0] "Link działa przez %{count} minutę i tylko raz."
+msgstr[1] "Link działa przez %{count} minuty i tylko raz."
+msgstr[2] "Link działa przez %{count} minut i tylko raz."
+
+#: lib/potok_ide_web/emails/account_emails.ex:194
+#, elixir-autogen, elixir-format
+msgid "Until you confirm, your account keeps the old address."
+msgstr "Dopóki nie potwierdzisz, konto używa starego adresu."
+
+#: lib/potok_ide_web/emails/email_components.ex:216
+#: lib/potok_ide_web/emails/email_components.ex:238
+#, elixir-autogen, elixir-format
+msgid "Using the Potok Android app?"
+msgstr "Korzystasz z aplikacji Potok na Androida?"
+
+#: lib/potok_ide_web/emails/account_emails.ex:42
+#, elixir-autogen, elixir-format
+msgid "Your Potok sign-in link"
+msgstr "Twój link do logowania w Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:109
+#, elixir-autogen, elixir-format
+msgid "Your account is ready, and you don't need a password."
+msgstr "Konto już na ciebie czeka, hasło nie jest potrzebne."
+
+#: lib/potok_ide_web/emails/account_emails.ex:93
+#, elixir-autogen, elixir-format
+msgid "Your invitation to Potok"
+msgstr "Twoje zaproszenie do Potoku"
+
+#: lib/potok_ide_web/emails/account_emails.ex:135
+#, elixir-autogen, elixir-format
+msgid "the sign-in page"
+msgstr "stronie logowania"

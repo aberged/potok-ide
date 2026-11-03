@@ -225,6 +225,24 @@ defmodule PotokIde.AccountsTest do
       assert account_token.sent_to == account.email
       assert account_token.context == "change:current@example.com"
     end
+
+    test "names both addresses and how long the link works", %{account: account} do
+      {:ok, email} =
+        Accounts.deliver_account_update_email_instructions(
+          account,
+          "current@example.com",
+          &"https://example.com/accounts/settings/confirm-email/#{&1}"
+        )
+
+      assert email.subject == "Confirm your new email address for Potok"
+
+      for body <- [email.html_body, email.text_body] do
+        assert body =~ "current@example.com"
+        assert body =~ account.email
+        assert body =~ "https://example.com/accounts/settings/confirm-email/"
+        assert body =~ "7 days"
+      end
+    end
   end
 
   describe "update_account_email/2" do
@@ -426,6 +444,27 @@ defmodule PotokIde.AccountsTest do
       {1, nil} = Repo.update_all(AccountToken, set: [inserted_at: ~N[2020-01-01 00:00:00]])
       refute Accounts.get_account_by_magic_link_token(token)
     end
+
+    test "expires a confirmed account's token after 15 minutes", %{token: token} do
+      minutes_ago = &DateTime.add(DateTime.utc_now(:second), -&1, :minute)
+
+      {1, nil} = Repo.update_all(AccountToken, set: [inserted_at: minutes_ago.(10)])
+      assert Accounts.get_account_by_magic_link_token(token)
+
+      {1, nil} = Repo.update_all(AccountToken, set: [inserted_at: minutes_ago.(16)])
+      refute Accounts.get_account_by_magic_link_token(token)
+    end
+
+    test "keeps an invitation's token for 7 days" do
+      account = unconfirmed_account_fixture()
+      {token, hashed_token} = generate_account_magic_link_token(account)
+
+      offset_account_token(hashed_token, -6, :day)
+      assert Accounts.get_account_by_magic_link_token(token).id == account.id
+
+      offset_account_token(hashed_token, -8, :day)
+      refute Accounts.get_account_by_magic_link_token(token)
+    end
   end
 
   describe "login_account_by_magic_link/1" do
@@ -512,6 +551,61 @@ defmodule PotokIde.AccountsTest do
       assert email.text_body =~ "https://example.com/accounts/log-in/"
       assert email.text_body =~ "?app=1"
     end
+
+    test "invites an unconfirmed account in an HTML and a text body", %{account: account} do
+      {:ok, email} =
+        Accounts.deliver_login_instructions(account, &"https://example.com/accounts/log-in/#{&1}")
+
+      assert email.subject == "Your invitation to Potok"
+      assert email.html_body =~ ~s(href="https://example.com/accounts/log-in/)
+      assert email.html_body =~ "/images/email/mark.png"
+      assert email.html_body =~ "/accounts/log-in/magic-link"
+      assert email.text_body =~ "7 days"
+      assert email.text_body =~ account.email
+    end
+
+    test "names the inviting profile and the group", %{account: account} do
+      inviter = profile_fixture("acct-mail-inv")
+
+      {:ok, email} =
+        Accounts.deliver_login_instructions(account, &"https://example.com/#{&1}",
+          invited_by: inviter,
+          group: %Social.Group{name: "Zbor Stari grad"}
+        )
+
+      assert email.subject == "@acct-mail-inv invites you to “Zbor Stari grad” on Potok"
+      assert email.text_body =~ "the invitation to “Zbor Stari grad” will be waiting"
+    end
+
+    test "names the profile that registered the account" do
+      inviter = profile_fixture("acct-mail-reg")
+      {:ok, account} = Accounts.register_account(valid_account_attributes(), inviter)
+
+      {:ok, email} = Accounts.deliver_login_instructions(account, &"https://example.com/#{&1}")
+
+      assert email.subject == "@acct-mail-reg invites you to Potok"
+    end
+
+    test "sends a confirmed account its sign-in link" do
+      account = account_fixture()
+
+      {:ok, email} = Accounts.deliver_login_instructions(account, &"https://example.com/#{&1}")
+
+      assert email.subject == "Your Potok sign-in link"
+      assert email.html_body =~ ~s(href="https://example.com/)
+      assert email.text_body =~ "15 minutes"
+    end
+  end
+
+  defp profile_fixture(username) do
+    {:ok, profile} =
+      Social.create_profile_for_account(account_fixture(), %{
+        username: username,
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    profile
   end
 
   describe "inspect/2 for the Account module" do

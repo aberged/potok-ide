@@ -3274,7 +3274,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       nil ->
         with {:ok, account} <- Accounts.register_account(%{email: email}),
              {:ok, _email} <-
-               Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}")),
+               Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}"),
+                 invited_by: current_profile,
+                 group: group
+               ),
              {:ok, %GroupAccountInvitation{}} <-
                Social.invite_account_to_group(current_profile, group, account) do
           {:ok, gettext("Account invitation email sent.")}

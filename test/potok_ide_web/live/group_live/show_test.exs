@@ -603,6 +603,10 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert result =~ "Account invitation email sent."
 
+      assert_received {:email, %Swoosh.Email{to: [{"", ^email}], subject: subject}}
+      assert subject =~ "@email-ui-own"
+      assert subject =~ group.name
+
       assert invited_account = Accounts.get_account_by_email(email)
       assert is_nil(invited_account.invited_by_id)
       assert is_nil(Social.get_account_default_profile(invited_account))

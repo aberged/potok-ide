@@ -9,6 +9,10 @@ defmodule PotokIde.Accounts.AccountToken do
   # It is very important to keep the magic link token expiry short,
   # since someone with access to the email may take over the account.
   @magic_link_validity_in_minutes 15
+  # An unconfirmed account was made by an invitation, which people often open
+  # hours or days later. Such an account has no password, and its link still
+  # works only once.
+  @invitation_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 14
 
@@ -21,6 +25,10 @@ defmodule PotokIde.Accounts.AccountToken do
 
     timestamps(type: :utc_datetime, updated_at: false)
   end
+
+  def magic_link_validity_in_minutes, do: @magic_link_validity_in_minutes
+  def invitation_validity_in_days, do: @invitation_validity_in_days
+  def change_email_validity_in_days, do: @change_email_validity_in_days
 
   @doc """
   Generates a token that will be stored in a signed place,
@@ -103,8 +111,9 @@ defmodule PotokIde.Accounts.AccountToken do
   If found, the query returns a tuple of the form `{account, token}`.
 
   The given token is valid if it matches its hashed counterpart in the
-  database. This function also checks whether the token has expired. The context
-  of a magic link token is always "login".
+  database. This function also checks whether the token has expired: after
+  @magic_link_validity_in_minutes, or @invitation_validity_in_days while the
+  account is unconfirmed. The context of a magic link token is always "login".
   """
   def verify_magic_link_token_query(token) do
     case Base.url_decode64(token, padding: false) do
@@ -114,7 +123,10 @@ defmodule PotokIde.Accounts.AccountToken do
         query =
           from token in by_token_and_context_query(hashed_token, "login"),
             join: account in assoc(token, :account),
-            where: token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute"),
+            where:
+              token.inserted_at > ago(^@magic_link_validity_in_minutes, "minute") or
+                (is_nil(account.confirmed_at) and
+                   token.inserted_at > ago(^@invitation_validity_in_days, "day")),
             where: token.sent_to == account.email,
             select: {account, token}
 

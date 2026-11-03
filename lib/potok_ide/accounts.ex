@@ -501,26 +501,52 @@ defmodule PotokIde.Accounts do
 
     AccountNotifier.deliver_update_email_instructions(
       account,
+      current_email,
       update_email_url_fun.(encoded_token)
     )
   end
 
   @doc """
   Delivers the magic link login instructions to the given account.
+
+  An unconfirmed account gets an invitation instead, naming its inviter: the
+  `:invited_by` profile, or else the profile that registered the account.
+
+  ## Options
+
+    * `:invited_by` - the profile inviting the account
+    * `:group` - the group the account is invited to
   """
-  def deliver_login_instructions(%Account{} = account, magic_link_url_fun)
+  def deliver_login_instructions(%Account{} = account, magic_link_url_fun, opts \\ [])
       when is_function(magic_link_url_fun, 1) do
     {encoded_token, account_token} = AccountToken.build_email_token(account, "login")
     Repo.insert!(account_token)
 
-    web_url = magic_link_url_fun.(encoded_token)
+    web_url = to_string(magic_link_url_fun.(encoded_token))
 
     AccountNotifier.deliver_login_instructions(
       account,
       web_url,
-      build_magic_link_app_url(web_url)
+      build_magic_link_app_url(web_url),
+      invitation_details(account, opts)
     )
   end
+
+  defp invitation_details(%Account{confirmed_at: nil} = account, opts) do
+    inviter =
+      cond do
+        opts[:invited_by] -> opts[:invited_by]
+        account.invited_by_id -> Repo.get(Profile, account.invited_by_id)
+        true -> nil
+      end
+
+    [
+      inviter: inviter && inviter.username,
+      group: opts[:group] && opts[:group].name
+    ]
+  end
+
+  defp invitation_details(%Account{}, _opts), do: []
 
   @doc """
   Deletes the signed token with the given context.

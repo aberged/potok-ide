@@ -1,20 +1,20 @@
 defmodule PotokIde.Accounts.AccountNotifier do
-  use Gettext, backend: PotokIdeWeb.Gettext
-
   import Swoosh.Email
   require Logger
 
   alias PotokIde.Mailer
   alias PotokIde.Accounts.Account
+  alias PotokIdeWeb.AccountEmails
 
   # Delivers the email using the application mailer.
-  defp deliver(recipient, subject, body) do
+  defp deliver(recipient, %{subject: subject, html: html, text: text}) do
     email =
       new()
       |> to(recipient)
       |> from(Mailer.from())
       |> subject(subject)
-      |> text_body(body)
+      |> html_body(html)
+      |> text_body(text)
 
     with {:ok, delivery_config} <- Mailer.delivery_config(),
          {:ok, _metadata} <- Mailer.deliver(email, delivery_config) do
@@ -27,81 +27,36 @@ defmodule PotokIde.Accounts.AccountNotifier do
   end
 
   @doc """
-  Deliver instructions to update a account email.
+  Deliver instructions to confirm a new account email, to that new address.
   """
-  def deliver_update_email_instructions(account, url) do
-    deliver(account.email, gettext("Update email instructions"), """
-
-    ==============================
-
-    #{gettext("Hi %{email},", email: account.email)}
-
-    #{gettext("You can change your email by visiting the URL below:")}
-
-    #{url}
-
-    #{gettext("If you didn't request this change, please ignore this.")}
-
-    ==============================
-    """)
+  def deliver_update_email_instructions(account, current_email, url) do
+    deliver(
+      account.email,
+      AccountEmails.email_change(%{to: account.email, old_email: current_email, url: url})
+    )
   end
 
   @doc """
-  Deliver instructions to log in with a magic link.
+  Deliver a magic link: the sign-in link of a confirmed account, or the
+  invitation of an unconfirmed one, which an invitation opened.
+
+  ## Options
+
+    * `:inviter` - the username of the profile who invited the account
+    * `:group` - the name of the group the account is invited to
   """
-  def deliver_login_instructions(account, web_url, app_url \\ nil) do
-    case account do
-      %Account{confirmed_at: nil} -> deliver_confirmation_instructions(account, web_url, app_url)
-      _ -> deliver_magic_link_instructions(account, web_url, app_url)
-    end
-  end
+  def deliver_login_instructions(account, web_url, app_url \\ nil, opts \\ []) do
+    params = %{to: account.email, url: web_url, app_url: app_url}
 
-  defp deliver_magic_link_instructions(account, web_url, app_url) do
-    deliver(account.email, gettext("Log in instructions"), """
+    email =
+      case account do
+        %Account{confirmed_at: nil} ->
+          AccountEmails.invitation(Map.merge(params, Map.new(opts)))
 
-    ==============================
+        _ ->
+          AccountEmails.sign_in(params)
+      end
 
-    #{gettext("Hi %{email},", email: account.email)}
-
-    #{gettext("You can log into your account by visiting the URL below:")}
-
-    #{web_url}
-
-    #{app_login_section(app_url)}
-
-    #{gettext("If you didn't request this email, please ignore this.")}
-
-    ==============================
-    """)
-  end
-
-  defp deliver_confirmation_instructions(account, web_url, app_url) do
-    deliver(account.email, gettext("Confirmation instructions"), """
-
-    ==============================
-
-    #{gettext("Hi %{email},", email: account.email)}
-
-    #{gettext("You can confirm your account by visiting the URL below:")}
-
-    #{web_url}
-
-    #{app_login_section(app_url)}
-
-    #{gettext("If you didn't create an account with us, please ignore this.")}
-
-    ==============================
-    """)
-  end
-
-  defp app_login_section(nil), do: ""
-
-  defp app_login_section(app_url) do
-    """
-
-    #{gettext("If you use the Potok Android app, you can open this link there:")}
-
-    #{app_url}
-    """
+    deliver(account.email, email)
   end
 end
