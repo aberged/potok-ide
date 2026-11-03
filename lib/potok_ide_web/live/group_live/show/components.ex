@@ -501,25 +501,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
-  attr :icon, :string, required: true
-  attr :title, :string, required: true
-  attr :subtitle, :string, required: true
-  attr :class, :any, default: nil
-
-  def card_title(assigns) do
-    ~H"""
-    <div class={["flex min-w-0 items-start gap-3", @class]}>
-      <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-        <.icon name={@icon} class="size-5" />
-      </span>
-      <div class="min-w-0">
-        <h2 class="font-semibold leading-tight">{@title}</h2>
-        <p class="mt-0.5 text-sm text-base-content/60">{@subtitle}</p>
-      </div>
-    </div>
-    """
-  end
-
   attr :group, :map, required: true
 
   attr :path, :list,

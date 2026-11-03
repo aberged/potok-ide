@@ -396,6 +396,29 @@ defmodule PotokIdeWeb.CoreComponents do
   end
 
   @doc """
+  The title of a card on a settings-like page: an icon tile, the title and a
+  line under it.
+  """
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :subtitle, :string, required: true
+  attr :class, :any, default: nil
+
+  def card_title(assigns) do
+    ~H"""
+    <div class={["flex min-w-0 items-start gap-3", @class]}>
+      <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <.icon name={@icon} class="size-5" />
+      </span>
+      <div class="min-w-0">
+        <h2 class="font-semibold leading-tight">{@title}</h2>
+        <p class="mt-0.5 text-sm text-base-content/60">{@subtitle}</p>
+      </div>
+    </div>
+    """
+  end
+
+  @doc """
   The scrolling body of a top-level page such as tags, invitations, requests
   and profiles: one centered column, so they are the same width on wide
   screens. `class` goes on the column. Those pages pass `full_width` to

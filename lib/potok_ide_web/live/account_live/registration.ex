@@ -18,22 +18,23 @@ defmodule PotokIdeWeb.AccountLive.Registration do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="mx-auto max-w-sm px-6 pt-4">
-        <div class="text-center">
-          <.header>
-            {gettext("Invite people to potok by email")}
-            <%!-- <:subtitle>
-              {gettext("Already registered?")}
-              <.link navigate={~p"/accounts/log-in"} class="font-semibold text-brand hover:underline">
-                {gettext("Log in")}
-              </.link>
-              {gettext("to your account now.")}
-            </:subtitle> --%>
-          </.header>
-        </div>
+      <.page_container id="registration-page">
+        <.page_header id="registration-header" icon="hero-envelope">
+          {gettext("Invite people to potok by email")}
+          <:subtitle>
+            {gettext("They get an email with a link that logs them in to Potok.")}
+          </:subtitle>
+        </.page_header>
 
-        <.form for={@form} id="registration_form" phx-submit="save" phx-change="validate">
+        <.form
+          for={@form}
+          id="registration_form"
+          phx-submit="save"
+          phx-change="validate"
+          class="rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5"
+        >
           <.input
             field={@form[:email]}
             type="email"
@@ -44,11 +45,13 @@ defmodule PotokIdeWeb.AccountLive.Registration do
             phx-mounted={JS.focus()}
           />
 
-          <.button phx-disable-with={gettext("Sending invitation...")} class="btn btn-primary w-full">
-            {gettext("Invite")}
-          </.button>
+          <div class="mt-2 flex justify-end">
+            <.button phx-disable-with={gettext("Sending invitation...")} variant="primary">
+              {gettext("Invite")}
+            </.button>
+          </div>
         </.form>
-      </div>
+      </.page_container>
     </Layouts.app>
     """
   end

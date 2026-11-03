@@ -8,6 +8,10 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   alias PotokIde.Accounts
   alias PotokIde.PushNotifications
 
+  # The cards of the page, like those of the group settings tabs.
+  defp settings_card_class,
+    do: "rounded-3xl border border-base-300/70 bg-base-100/80 p-4 shadow-sm sm:p-5"
+
   @impl true
   def render(assigns) do
     ~H"""
@@ -20,68 +24,89 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain space-y-6 px-4 py-4">
-        <div class="text-center">
-          <.header>
-            {gettext("Account Settings")}
-            <:subtitle>
-              {gettext("Manage your account email address and password settings")}
-            </:subtitle>
-          </.header>
-        </div>
+      <.page_container id="settings-page" class="space-y-4">
+        <.page_header id="settings-header" icon="hero-cog-6-tooth" class="mb-1">
+          {gettext("Account Settings")}
+          <:subtitle>
+            {gettext("Manage your account email address and password settings")}
+          </:subtitle>
+        </.page_header>
 
-        <.form for={@email_form} id="email_form" phx-submit="update_email" phx-change="validate_email">
-          <.input
-            field={@email_form[:email]}
-            type="email"
-            label={gettext("Email")}
-            autocomplete="username"
-            spellcheck="false"
-            required
-            class="disabled"
+        <section id="settings-email" class={settings_card_class()}>
+          <.card_title
+            icon="hero-envelope"
+            title={gettext("Email")}
+            subtitle={gettext("The address you log in with.")}
+            class="mb-4"
           />
-          <%!-- <.button variant="primary" phx-disable-with={gettext("Changing...")}>
+          <.form
+            for={@email_form}
+            id="email_form"
+            phx-submit="update_email"
+            phx-change="validate_email"
+          >
+            <.input
+              field={@email_form[:email]}
+              type="email"
+              label={gettext("Email")}
+              autocomplete="username"
+              spellcheck="false"
+              required
+              class="disabled"
+            />
+            <%!-- <.button variant="primary" phx-disable-with={gettext("Changing...")}>
             {gettext("Change Email")}
           </.button> --%>
-        </.form>
-        <div class="divider" />
-        <.form
-          for={@password_form}
-          id="password_form"
-          action={~p"/accounts/update-password"}
-          method="post"
-          phx-change="validate_password"
-          phx-submit="update_password"
-          phx-trigger-action={@trigger_submit}
-        >
-          <input
-            name={@password_form[:email].name}
-            type="hidden"
-            id="hidden_account_email"
-            spellcheck="false"
-            value={@current_email}
+          </.form>
+        </section>
+
+        <section id="settings-password" class={settings_card_class()}>
+          <.card_title
+            icon="hero-key"
+            title={gettext("Password")}
+            subtitle={gettext("Set a password to log in without a link from your email.")}
+            class="mb-4"
           />
-          <.input
-            field={@password_form[:password]}
-            type="password"
-            label={gettext("New password")}
-            autocomplete="new-password"
-            spellcheck="false"
-            required
-          />
-          <.input
-            field={@password_form[:password_confirmation]}
-            type="password"
-            label={gettext("Confirm new password")}
-            autocomplete="new-password"
-            spellcheck="false"
-          />
-          <.button variant="primary" phx-disable-with={gettext("Saving...")}>
-            {gettext("Save Password")}
-          </.button>
-        </.form>
-        <div class="divider" />
+          <.form
+            for={@password_form}
+            id="password_form"
+            action={~p"/accounts/update-password"}
+            method="post"
+            phx-change="validate_password"
+            phx-submit="update_password"
+            phx-trigger-action={@trigger_submit}
+          >
+            <input
+              name={@password_form[:email].name}
+              type="hidden"
+              id="hidden_account_email"
+              spellcheck="false"
+              value={@current_email}
+            />
+            <.input
+              field={@password_form[:password]}
+              type="password"
+              label={gettext("New password")}
+              autocomplete="new-password"
+              spellcheck="false"
+              required
+            />
+            <.input
+              field={@password_form[:password_confirmation]}
+              type="password"
+              label={gettext("Confirm new password")}
+              autocomplete="new-password"
+              spellcheck="false"
+            />
+            <div class="mt-2 flex justify-end">
+              <.button variant="primary" phx-disable-with={gettext("Saving...")}>
+                {gettext("Save Password")}
+              </.button>
+            </div>
+          </.form>
+        </section>
         <section
           id="push-notifications-panel"
           phx-hook="PushNotifications"
@@ -89,18 +114,18 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           data-vapid-public-key={@push_vapid_public_key || ""}
           data-subscribe-url={~p"/accounts/push-subscriptions"}
           data-test-url={~p"/accounts/push-subscriptions/test"}
-          class="rounded-4xl border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
+          class={settings_card_class()}
         >
           <div class="space-y-4">
-            <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-base-content">{gettext("Push Notifications")}</h2>
-
-              <p class="text-sm text-base-content/70">
-                {gettext(
+            <.card_title
+              icon="hero-bell"
+              title={gettext("Push Notifications")}
+              subtitle={
+                gettext(
                   "Enable notifications for this browser or for the installed Potok app on your device."
-                )}
-              </p>
-            </div>
+                )
+              }
+            />
 
             <div
               data-push-status
@@ -146,18 +171,14 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
         <section
           id="push-subscriptions-panel"
-          class="rounded-4xl border border-base-300/70 bg-base-100/80 p-5 shadow-sm shadow-primary/5"
+          class={settings_card_class()}
         >
           <div class="space-y-4">
-            <div class="space-y-1">
-              <h2 class="text-lg font-semibold text-base-content">
-                {gettext("Stored Push Subscriptions")}
-              </h2>
-
-              <p class="text-sm text-base-content/70">
-                {gettext("All saved push subscription entities for this account.")}
-              </p>
-            </div>
+            <.card_title
+              icon="hero-device-phone-mobile"
+              title={gettext("Stored Push Subscriptions")}
+              subtitle={gettext("All saved push subscription entities for this account.")}
+            />
 
             <div
               :if={@push_subscriptions == []}
@@ -298,7 +319,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             </div>
           </div>
         </section>
-      </div>
+      </.page_container>
     </Layouts.app>
     """
   end

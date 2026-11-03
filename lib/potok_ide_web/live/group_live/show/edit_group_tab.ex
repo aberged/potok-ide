@@ -207,7 +207,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           ]}
         >
           <div class="flex flex-wrap items-start justify-between gap-3">
-            <Components.card_title
+            <.card_title
               icon="hero-squares-plus"
               title={gettext("Alternative descriptions")}
               subtitle={

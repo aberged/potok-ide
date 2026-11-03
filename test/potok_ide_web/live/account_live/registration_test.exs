@@ -31,12 +31,15 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
     test "renders invite page for a signed-in account with a current profile", %{conn: conn} do
       {conn, _profile} = conn_with_current_profile(conn)
 
-      {:ok, _lv, html} =
+      {:ok, lv, html} =
         conn
         |> live(~p"/accounts/register")
 
       assert html =~ "Invite people to potok by email"
       assert html =~ "Invite"
+      # The page header and column of the other top-level pages.
+      assert has_element?(lv, "#registration-header h1", "Invite people to potok by email")
+      assert has_element?(lv, "#registration-page #registration_form")
     end
 
     test "renders errors for invalid data", %{conn: conn} do
