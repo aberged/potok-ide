@@ -1494,6 +1494,29 @@ const registerCapacitorRoutePersistence = () => {
   })
 }
 
+// Android's back button closes the topmost open dialog the way Escape does:
+// a cancelable `cancel` event first, so a dialog that closes through the
+// server can take over. A listener turns off Capacitor's own handling, so
+// going back (and nothing else, as there) is done here too.
+const registerCapacitorBackButton = () => {
+  if (Capacitor.getPlatform() !== "android") {
+    return
+  }
+
+  void App.addListener("backButton", ({canGoBack}) => {
+    const dialogs = document.querySelectorAll("dialog[open]")
+    const dialog = dialogs[dialogs.length - 1]
+
+    if (dialog) {
+      if (dialog.dispatchEvent(new Event("cancel", {cancelable: true}))) {
+        dialog.close()
+      }
+    } else if (canGoBack) {
+      window.history.back()
+    }
+  })
+}
+
 const registerCapacitorPushNotifications = () => {
   if (!NativePushManager.isSupported()) {
     return
@@ -1829,6 +1852,7 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 })
 
 registerCapacitorMagicLinks()
+registerCapacitorBackButton()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
 registerNativeIosKeyboardSafeAreaFix()
