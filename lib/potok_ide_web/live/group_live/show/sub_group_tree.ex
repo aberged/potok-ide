@@ -8,6 +8,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
   The tree is a map with the top level as `nodes` and whether it has another
   page as `more?`, the `ids` of every folder loaded, the `thread_count` for
   the threads switch and whether the search left matches out (`truncated?`).
+  It keeps its filters (`threads?`, `public?`) for the folders opened later.
   A node is `%{group, child_count, thread_child_count, children, more?,
   open?, unread_count}`; `children` stays nil until the folder is opened,
   and the page keeps `unread_count` up to date.
@@ -20,8 +21,9 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   @doc """
   The tree of `group`. Options: `threads?: false` leaves out threads,
-  `search:` shows the matches of a term, and `thread_count:` is the number of
-  threads directly below the group.
+  `public?: false` the public groups the profile is not in (see
+  `Social.list_sub_group_folders/3`), `search:` shows the matches of a term,
+  and `thread_count:` is the number of threads directly below the group.
 
   Without a search, the folders open in `previous` (the tree this one
   replaces) are loaded again as far as they were and stay open, so a reload
@@ -34,6 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     tree = %{
       group_id: group.id,
       threads?: Keyword.get(opts, :threads?, true),
+      public?: Keyword.get(opts, :public?, true),
       search: search,
       base_thread_count: Keyword.get(opts, :thread_count, 0),
       thread_count_floor: 0,
@@ -103,7 +106,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
       Social.list_sub_group_folders(
         profile,
         [{group.id, top_limit, nil} | Enum.map(open, &{&1.group.id, page_limit(&1), nil})],
-        threads?: tree.threads?
+        folder_filters(tree)
       )
 
     {nodes, more?} = build_level(group.id, pages)
@@ -112,7 +115,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   defp load_nodes(tree, group, profile, previous) do
     {folders, truncated?} =
-      Social.search_sub_group_folders(group, profile, tree.search, threads?: tree.threads?)
+      Social.search_sub_group_folders(group, profile, tree.search, folder_filters(tree))
 
     %{
       tree
@@ -173,8 +176,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     after_folder = last_node && %{id: last_node.group.id, name: last_node.group.name}
 
     %{^parent_id => {folders, more?}} =
-      Social.list_sub_group_folders(profile, [{parent_id, @page_size, after_folder}],
-        threads?: tree.threads?
+      Social.list_sub_group_folders(
+        profile,
+        [{parent_id, @page_size, after_folder}],
+        folder_filters(tree)
       )
 
     loaded_ids = MapSet.new(loaded, & &1.group.id)
@@ -184,6 +189,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
     {nodes, more?}
   end
+
+  defp folder_filters(tree), do: [threads?: tree.threads?, public?: tree.public?]
 
   defp new_node(folder) do
     %{

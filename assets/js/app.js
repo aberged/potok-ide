@@ -1578,6 +1578,24 @@ window.addEventListener("phx:sub_groups_threads", ({detail}) => {
   } catch (_error) {}
 })
 
+// The root group hides the public groups the viewer is not in until they are
+// shown, and this browser keeps that choice too.
+const ROOT_PUBLIC_GROUPS_KEY = "potok:root-public-groups"
+
+function storedShowPublicGroups() {
+  try {
+    return window.localStorage.getItem(ROOT_PUBLIC_GROUPS_KEY) === "shown"
+  } catch (_error) {
+    return false
+  }
+}
+
+window.addEventListener("phx:sub_groups_public", ({detail}) => {
+  try {
+    window.localStorage.setItem(ROOT_PUBLIC_GROUPS_KEY, detail.shown ? "shown" : "hidden")
+  } catch (_error) {}
+})
+
 // The root calendar's filters (its groups' events, public events), kept in
 // this browser; both are on until the viewer turns one off.
 const CALENDAR_FILTERS_KEY = "potok:calendar-filters"
@@ -1608,6 +1626,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     _csrf_token: csrfToken,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     show_threads: storedShowThreads(),
+    show_public_groups: storedShowPublicGroups(),
     calendar_filters: storedCalendarFilters(),
   }),
   hooks: {

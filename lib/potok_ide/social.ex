@@ -2662,7 +2662,9 @@ defmodule PotokIde.Social do
   Child groups of `group` the profile can see, most active first. Options:
   `:is_direct` and `:is_thread` (true or false keep only those groups, nil
   keeps both; thread groups are the ones started from a chat value),
-  `:search` on the name, and `:limit` / `:offset`.
+  `:search` on the name, `public: false` to leave out the public groups the
+  profile is not in, but those with one of its memberships below them, and
+  `:limit` / `:offset`.
   """
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     {groups, _rest} = child_group_rows(group, profile, opts, false)
@@ -2671,11 +2673,13 @@ defmodule PotokIde.Social do
 
   @doc "Counts what `list_child_groups_for_profile/3` returns, with the same filters."
   def count_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
+    public? = public_children?(opts)
+
     %{rows: [[count]]} =
       Repo.query!(
-        "WITH #{visible_children_sql()} SELECT COUNT(*) FROM visible_children",
+        "#{visible_children_sql(public?)} SELECT COUNT(*) FROM visible_children",
         visible_children_params(group, profile, opts),
-        cache_statement: "social_count_child_groups"
+        cache_statement: "social_count_child_groups_#{public?}"
       )
 
     count
@@ -2765,10 +2769,11 @@ defmodule PotokIde.Social do
     offset = normalize_query_offset(opts[:offset])
     fields = Group.__schema__(:query_fields)
     total = if count?, do: ", COUNT(*) OVER () AS total", else: ""
+    public? = public_children?(opts)
 
     sql = """
     WITH page AS (
-      #{ordered_child_groups_query("vc.id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset)}
+      #{ordered_child_groups_query("vc.id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset, public?)}
     )
     SELECT #{group_columns_sql(fields)},
       details.member_count, details.sub_group_count, details.is_member#{if count?, do: ", page.total", else: ""}
@@ -2780,7 +2785,8 @@ defmodule PotokIde.Social do
 
     %{rows: rows} =
       Repo.query!(sql, ordered_child_groups_params(group, profile, opts, limit, offset),
-        cache_statement: "social_child_groups_#{count?}_#{limit != nil}_#{offset != nil}"
+        cache_statement:
+          "social_child_groups_#{count?}_#{limit != nil}_#{offset != nil}_#{public?}"
       )
 
     {groups, rest} =
@@ -2830,12 +2836,13 @@ defmodule PotokIde.Social do
   defp ordered_child_group_ids_for_profile(%Group{} = group, %Profile{} = profile, opts) do
     limit = normalize_query_limit(opts[:limit])
     offset = normalize_query_offset(opts[:offset])
+    public? = public_children?(opts)
 
     %{rows: rows} =
       Repo.query!(
-        ordered_child_group_ids_query(limit, offset),
+        ordered_child_group_ids_query(limit, offset, public?),
         ordered_child_groups_params(group, profile, opts, limit, offset),
-        cache_statement: "social_child_group_ids_#{limit != nil}_#{offset != nil}"
+        cache_statement: "social_child_group_ids_#{limit != nil}_#{offset != nil}_#{public?}"
       )
 
     Enum.map(rows, fn [group_id] -> group_id end)
@@ -2867,19 +2874,23 @@ defmodule PotokIde.Social do
     {Repo.load(Group, {fields, values}), rest}
   end
 
-  # The sub-groups of $1 that profile $2 can see: its memberships plus the
-  # public ones, filtered by $3 (direct), $4 (name search) and $5 (thread).
+  # The `WITH` head that defines `visible_children`: the sub-groups of $1 that
+  # profile $2 can see, its memberships plus the public ones, filtered by $3
+  # (direct), $4 (name search) and $5 (thread). Without `public?`, only the
+  # public ones on the way to a membership further down (`member_paths`).
   # The memberships are read first, behind OFFSET 0: the cached generic plan
   # would otherwise walk every child of the group to probe them, and the root
   # is the parent of every direct conversation.
-  defp visible_children_sql do
+  defp visible_children_sql(public?) do
     filters =
       "($3::boolean IS NULL OR g.is_direct = $3)" <>
         " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')" <>
         " AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
 
+    public_filter = if public?, do: "", else: " AND g.id IN (SELECT id FROM member_paths)"
+
     """
-    visible_children AS (
+    #{visible_children_head(public?)} visible_children AS (
       SELECT g.id, g.inserted_at, g.last_value_at
       FROM (
         SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $2 OFFSET 0
@@ -2894,10 +2905,33 @@ defmodule PotokIde.Social do
       FROM groups g
       WHERE g.parent_id = $1
         AND g.is_public = TRUE
-        AND #{filters}
+        AND #{filters}#{public_filter}
     )
     """
   end
+
+  defp visible_children_head(true), do: "WITH"
+
+  # The groups above the profile's memberships.
+  defp visible_children_head(false) do
+    """
+    WITH RECURSIVE member_paths(id) AS (
+      SELECT g.parent_id
+      FROM group_memberships gm
+      JOIN groups g ON g.id = gm.group_id
+      WHERE gm.profile_id = $2 AND g.parent_id IS NOT NULL
+
+      UNION
+
+      SELECT g.parent_id
+      FROM member_paths mp
+      JOIN groups g ON g.id = mp.id
+      WHERE g.parent_id IS NOT NULL
+    ),
+    """
+  end
+
+  defp public_children?(opts), do: Keyword.get(opts, :public, true) != false
 
   defp visible_children_params(%Group{} = group, %Profile{} = profile, opts) do
     [
@@ -2918,7 +2952,7 @@ defmodule PotokIde.Social do
     Enum.sort_by(groups, &child_group_sort_key(&1, unread), :desc)
   end
 
-  # The ORDER BY of `ordered_child_groups_query/3`: unread first, then the
+  # The ORDER BY of `ordered_child_groups_query/4`: unread first, then the
   # newest value (groups without one last), the newest group and the id.
   defp child_group_sort_key(%Group{} = group, unread) do
     {
@@ -2929,15 +2963,15 @@ defmodule PotokIde.Social do
     }
   end
 
-  defp ordered_child_group_ids_query(limit, offset),
-    do: ordered_child_groups_query("vc.id", limit, offset)
+  defp ordered_child_group_ids_query(limit, offset, public?),
+    do: ordered_child_groups_query("vc.id", limit, offset, public?)
 
   # Unread counts arrive as $6 / $7; the newest chat value comes from
   # `groups.last_value_at`, kept up to date by `create_value/4` and
   # `delete_value/2`. `sort_child_groups/2` sorts the same way in memory.
-  defp ordered_child_groups_query(select, limit, offset) do
+  defp ordered_child_groups_query(select, limit, offset, public?) do
     """
-    WITH #{visible_children_sql()}
+    #{visible_children_sql(public?)}
     SELECT #{select}
     FROM visible_children vc
     LEFT JOIN UNNEST($6::bigint[], $7::bigint[]) AS uc(group_id, unread_count)
@@ -2957,7 +2991,7 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  # $1..$7 are the filters and unread counts of `ordered_child_group_ids_query/2`.
+  # $1..$7 are the filters and unread counts of `ordered_child_group_ids_query/3`.
   defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $8"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
@@ -3225,7 +3259,9 @@ defmodule PotokIde.Social do
 
   `parents` are `{parent_id, limit, after}`: up to `limit` folders sorting
   after `after`, the `%{id, name}` of the last folder already shown, or nil
-  for the first page. Option `threads?: false` leaves out threads.
+  for the first page. Options: `threads?: false` leaves out threads, and
+  `public?: false` the public groups the profile is not in, but those with
+  one of its memberships below them.
 
   Returns `%{parent_id => {folders, more?}}`, an entry per parent. Each
   folder is `%{id, name, thread?, public?, member?, child_count,
@@ -3238,7 +3274,7 @@ defmodule PotokIde.Social do
 
   def list_sub_group_folders(profile, parents, opts) do
     sql = """
-    WITH #{sub_group_memberships_sql()}
+    WITH RECURSIVE #{sub_group_memberships_sql()}
     SELECT p.parent_id, f.id, f.name, f.is_thread, f.is_public, f.is_member,
       counts.child_count, counts.thread_child_count
     FROM UNNEST($1::bigint[], $2::integer[], $3::text[], $4::bigint[])
@@ -3257,7 +3293,8 @@ defmodule PotokIde.Social do
         SELECT g.id, g.name, g.parent_value_id IS NOT NULL, g.is_public,
           g.id IN (SELECT group_id FROM mine)
         FROM groups g
-        WHERE g.parent_id = p.parent_id AND g.is_public AND #{sub_group_filter_sql("g")}
+        WHERE g.parent_id = p.parent_id AND #{sub_group_public_sql("g")}
+          AND #{sub_group_filter_sql("g")}
       ) v
       WHERE p.after_id IS NULL OR (lower(v.name), v.id) > (lower(p.after_name), p.after_id)
       ORDER BY lower(v.name), v.id
@@ -3273,7 +3310,8 @@ defmodule PotokIde.Social do
       Enum.map(parents, fn {_parent_id, _limit, last} -> last && last.name end),
       Enum.map(parents, fn {_parent_id, _limit, last} -> last && last.id end),
       profile && profile.id,
-      Keyword.get(opts, :threads?, true)
+      Keyword.get(opts, :threads?, true),
+      Keyword.get(opts, :public?, true)
     ]
 
     %{rows: rows} = Repo.query!(sql, params, cache_statement: "social_sub_group_folders")
@@ -3298,13 +3336,14 @@ defmodule PotokIde.Social do
   def search_sub_group_folders(%Group{} = group, profile, search, opts \\ []) do
     case normalize_group_search_term(search) do
       nil -> {[], false}
-      term -> run_sub_group_search(group, profile, term, Keyword.get(opts, :threads?, true))
+      term -> run_sub_group_search(group, profile, term, opts)
     end
   end
 
-  defp run_sub_group_search(group, profile, term, threads?) do
+  defp run_sub_group_search(group, profile, term, opts) do
     visible =
-      "#{sub_group_filter_sql("g")} AND (g.is_public OR g.id IN (SELECT group_id FROM mine))"
+      "#{sub_group_filter_sql("g")}" <>
+        " AND (g.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("g")})"
 
     sql = """
     WITH RECURSIVE #{sub_group_memberships_sql()},
@@ -3351,7 +3390,8 @@ defmodule PotokIde.Social do
       @sub_group_search_max_groups,
       @sub_group_search_max_matches,
       profile && profile.id,
-      threads?
+      Keyword.get(opts, :threads?, true),
+      Keyword.get(opts, :public?, true)
     ]
 
     %{rows: [[truncated? | _] | _] = rows} =
@@ -3365,14 +3405,33 @@ defmodule PotokIde.Social do
     {folders, truncated?}
   end
 
-  # The folder queries take the profile as $5 (nil sees no memberships) and
-  # whether threads are shown as $6.
+  # The folder queries take the profile as $5 (nil sees no memberships),
+  # whether threads are shown as $6 and whether every public group is as $7.
+  # `member_paths` are the groups above the memberships, needed only when $7 is
+  # false.
   defp sub_group_memberships_sql do
-    "mine AS MATERIALIZED (SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $5)"
+    """
+    mine AS MATERIALIZED (SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $5),
+    member_paths(id) AS (
+      SELECT g.parent_id FROM mine JOIN groups g ON g.id = mine.group_id
+      WHERE g.parent_id IS NOT NULL
+
+      UNION
+
+      SELECT g.parent_id FROM member_paths mp JOIN groups g ON g.id = mp.id
+      WHERE g.parent_id IS NOT NULL
+    )
+    """
   end
 
   defp sub_group_filter_sql(alias) do
     "#{alias}.is_direct = FALSE AND ($6::boolean OR #{alias}.parent_value_id IS NULL)"
+  end
+
+  # The public groups the folder view shows, members or not: all of them, or
+  # only those on the way to a membership.
+  defp sub_group_public_sql(alias) do
+    "#{alias}.is_public AND ($7::boolean OR #{alias}.id IN (SELECT id FROM member_paths))"
   end
 
   # Per folder: the visible sub-groups the folder view shows below it, and the
@@ -3386,7 +3445,7 @@ defmodule PotokIde.Social do
       FROM groups k
       WHERE k.parent_id = #{folder}.id
         AND k.is_direct = FALSE
-        AND (k.is_public OR k.id IN (SELECT group_id FROM mine))
+        AND (k.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("k")})
     ) counts ON TRUE
     """
   end

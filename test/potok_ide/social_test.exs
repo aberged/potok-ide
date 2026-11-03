@@ -1690,6 +1690,42 @@ defmodule PotokIde.SocialTest do
                )
     end
 
+    test "public: false leaves out public groups the viewer is not in, but the way to its own" do
+      {_account, owner} = EventsFixtures.account_with_profile!("pubhide-owner")
+      {_account, viewer} = EventsFixtures.account_with_profile!("pubhide-viewer")
+      parent = EventsFixtures.group_with_members!(owner, [viewer])
+      joined = EventsFixtures.group_with_members!(owner, [viewer], %{parent: parent})
+
+      open =
+        EventsFixtures.group_with_members!(owner, [], %{:parent => parent, "is_public" => true})
+
+      # Public, the viewer is not in it, but in a group two levels below it.
+      way =
+        EventsFixtures.group_with_members!(owner, [], %{:parent => parent, "is_public" => true})
+
+      below = EventsFixtures.group_with_members!(owner, [], %{parent: way})
+      EventsFixtures.group_with_members!(owner, [viewer], %{parent: below})
+
+      # Private and the viewer is not in it: never listed.
+      EventsFixtures.group_with_members!(owner, [], %{parent: parent})
+
+      ids = fn opts ->
+        parent |> Social.list_child_groups_for_profile(viewer, opts) |> Enum.map(& &1.id)
+      end
+
+      assert Enum.sort(ids.([])) == Enum.sort([joined.id, open.id, way.id])
+      assert Enum.sort(ids.(public: false)) == Enum.sort([joined.id, way.id])
+
+      assert Enum.sort(Social.list_child_group_ids_for_profile(parent, viewer, public: false)) ==
+               Enum.sort([joined.id, way.id])
+
+      assert Social.count_child_groups_for_profile(parent, viewer, public: false) == 2
+      assert Social.count_child_groups_for_profile(parent, viewer) == 3
+
+      assert {[_group], 2} =
+               Social.list_child_groups_page_for_profile(parent, viewer, public: false, limit: 1)
+    end
+
     test "returns only child groups where the profile is a member" do
       account = account_fixture()
       other_account = account_fixture()

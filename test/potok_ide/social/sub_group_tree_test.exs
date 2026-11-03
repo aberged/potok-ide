@@ -30,6 +30,7 @@ defmodule PotokIde.Social.SubGroupTreeTest do
 
     %{
       owner: owner,
+      other: other,
       group: group,
       alpha: alpha,
       beta: beta,
@@ -129,6 +130,59 @@ defmodule PotokIde.Social.SubGroupTreeTest do
       assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "below")
       assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "nothing-here")
       assert {[], false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "  ")
+    end
+  end
+
+  describe "without the public groups the profile is not in" do
+    setup %{owner: owner, other: other, group: group, alpha: alpha} do
+      # Public and the owner is not in it, but in a group below it.
+      way = child!(other, group, "delta-public", %{"is_public" => true})
+      mine = child!(other, way, "delta-mine")
+      add_member!(other, mine, owner)
+
+      # Public and the owner is not in it, inside one of the owner's groups.
+      add_member!(owner, alpha, other)
+      child!(other, alpha, "alpha-public", %{"is_public" => true})
+
+      %{way: way, mine: mine}
+    end
+
+    test "lists folders on every level without them, but on the way to the owner's", ctx do
+      parents = [{ctx.group.id, 10, nil}, {ctx.alpha.id, 10, nil}, {ctx.way.id, 10, nil}]
+      pages = Social.list_sub_group_folders(ctx.owner, parents, public?: false)
+
+      assert {[alpha, _beta, way], false} = pages[ctx.group.id]
+      assert way.id == ctx.way.id
+      assert %{member?: false, public?: true, child_count: 1} = way
+      assert %{child_count: 1} = alpha
+      assert {[%{name: "alpha-nested"}], false} = pages[ctx.alpha.id]
+      assert {[%{name: "delta-mine", member?: true}], false} = pages[ctx.way.id]
+
+      pages = Social.list_sub_group_folders(ctx.owner, parents)
+
+      assert {[%{child_count: 2}, _beta, _way, %{name: "gamma-public"}], false} =
+               pages[ctx.group.id]
+    end
+
+    test "searches without them", ctx do
+      assert {folders, false} = Social.search_sub_group_folders(ctx.group, ctx.owner, "public")
+
+      assert Enum.map(folders, & &1.name) == [
+               "alpha",
+               "alpha-public",
+               "delta-public",
+               "gamma-public"
+             ]
+
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "public", public?: false)
+
+      assert Enum.map(folders, & &1.name) == ["delta-public"]
+
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "mine", public?: false)
+
+      assert Enum.map(folders, & &1.name) == ["delta-mine", "delta-public"]
     end
   end
 

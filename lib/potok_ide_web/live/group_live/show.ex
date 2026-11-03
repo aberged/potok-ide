@@ -529,6 +529,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             children_search_query={@children_search_query}
             show_thread_sub_groups={@show_thread_sub_groups}
             thread_sub_groups_count={@thread_sub_groups_count}
+            show_public_sub_groups={@show_public_sub_groups}
             sub_groups_view={@sub_groups_view}
             tree={@sub_group_tree}
           />
@@ -729,6 +730,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:other_sub_groups_unread_count, 0)
          |> assign(:children_search_query, "")
          |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
+         |> assign(:show_public_sub_groups, connect_show_public_groups?(socket))
          |> assign(:thread_sub_groups_count, 0)
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(
@@ -1263,6 +1265,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
      |> reload_children()
      |> push_event("sub_groups_threads", %{shown: show?})}
   end
+
+  # Only the root has this switch; the browser keeps the choice for the next
+  # pages (`show_public_groups` in app.js).
+  def handle_event(
+        "toggle_public_sub_groups",
+        _params,
+        %{assigns: %{group: %Group{is_root: true}}} = socket
+      ) do
+    show? = not socket.assigns.show_public_sub_groups
+
+    {:noreply,
+     socket
+     |> assign(:show_public_sub_groups, show?)
+     |> assign(:children_pagination, default_pagination(@children_page_size))
+     |> reload_children()
+     |> push_event("sub_groups_public", %{shown: show?})}
+  end
+
+  def handle_event("toggle_public_sub_groups", _params, socket), do: {:noreply, socket}
 
   def handle_event("switch_sub_groups_kind", %{"kind" => kind}, socket) do
     next_kind = normalize_sub_groups_kind(kind, socket.assigns.group)
@@ -3337,11 +3358,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp connect_show_threads?(socket),
     do: connected?(socket) and (get_connect_params(socket) || %{})["show_threads"] == true
 
+  # So do the root's public groups the viewer is not in.
+  defp connect_show_public_groups?(socket),
+    do: connected?(socket) and (get_connect_params(socket) || %{})["show_public_groups"] == true
+
   # Hidden threads are filtered out; shown ones mix with the other sub-groups.
+  # The root leaves out the public groups the viewer is not in until shown,
+  # but those on the way to one of its groups.
   defp children_filters(socket) do
     [
       is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
       is_thread: if(socket.assigns.show_thread_sub_groups, do: nil, else: false),
+      public: socket.assigns.show_public_sub_groups or not socket.assigns.group.is_root,
       search: normalize_children_search_query(socket.assigns.children_search_query)
     ]
   end
@@ -3634,6 +3662,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     tree =
       SubGroupTree.load(group, socket.assigns.current_profile, socket.assigns.sub_group_tree,
         threads?: filters[:is_thread] != false,
+        public?: filters[:public],
         search: filters[:search],
         thread_count: count_thread_children(socket)
       )

@@ -20,6 +20,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :children_search_query, :string, default: ""
   attr :show_thread_sub_groups, :boolean, default: false
   attr :thread_sub_groups_count, :integer, default: 0
+
+  attr :show_public_sub_groups, :boolean,
+    default: false,
+    doc: "whether the root shows the public groups the viewer is not in"
+
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
   attr :time_zone, :string, required: true, doc: "the viewer's, for when sub-groups were active"
@@ -31,9 +36,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         :children_search_form,
         to_form(%{"q" => assigns.children_search_query}, as: :children_search)
       )
-      # Only a search narrows the list: hidden threads are the default and the
-      # view shows the same sub-groups either way.
+      # Only a search narrows the list: hidden threads and public groups are
+      # the default and the view shows the same sub-groups either way.
       |> assign(:filters_active?, String.trim(assigns.children_search_query) != "")
+      |> assign(
+        :public_hidden?,
+        assigns.group.is_root and assigns.sub_groups_kind != "direct" and
+          not assigns.show_public_sub_groups
+      )
 
     ~H"""
     <div
@@ -132,6 +142,35 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             ]}>
               {@thread_sub_groups_count}
             </span>
+          </button>
+
+          <%!-- The root's public groups the viewer is not in, hidden until shown;
+             those on the way to one of the viewer's groups stay. --%>
+          <button
+            :if={@group.is_root and @sub_groups_kind != "direct"}
+            id="group-children-public-toggle"
+            type="button"
+            phx-click="toggle_public_sub_groups"
+            aria-pressed={to_string(@show_public_sub_groups)}
+            title={
+              if(@show_public_sub_groups,
+                do: gettext("Hide public groups you are not in"),
+                else: gettext("Show public groups you are not in")
+              )
+            }
+            class={[
+              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+              if(@show_public_sub_groups,
+                do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
+                else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
+              )
+            ]}
+          >
+            <.icon
+              name={if(@show_public_sub_groups, do: "hero-megaphone", else: "hero-eye-slash")}
+              class="size-4"
+            />
+            <span class="hidden sm:inline">{gettext("Public groups")}</span>
           </button>
 
           <.form
@@ -253,10 +292,29 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               {gettext("No sub-groups match your search.")}
             <% !@show_thread_sub_groups and @thread_sub_groups_count > 0 -> %>
               {gettext("Only threads here, and they are hidden.")}
+            <% @public_hidden? -> %>
+              {gettext("You are not in any group yet.")}
             <% true -> %>
               {gettext("No sub-groups yet.")}
           <% end %>
         </p>
+        <%!-- Lets a new profile find groups to join. --%>
+        <div
+          :if={@pagination.loaded_count == 0 and @public_hidden?}
+          id="group-children-public-hidden"
+          class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/60"
+        >
+          <span>{gettext("Public groups you are not in are hidden.")}</span>
+          <.button
+            id="group-children-show-public"
+            type="button"
+            phx-click="toggle_public_sub_groups"
+            size="sm"
+          >
+            <.icon name="hero-megaphone" class="size-4" />
+            {gettext("Show public groups")}
+          </.button>
+        </div>
 
         <%= if @sub_groups_view == "tree" do %>
           <div
