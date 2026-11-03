@@ -30,9 +30,9 @@ msgstr "Ustawienia konta"
 msgid "Account confirmed successfully."
 msgstr "Konto zostało pomyślnie potwierdzone."
 
-#: lib/potok_ide_web/components/core_components.ex:660
-#: lib/potok_ide_web/components/layouts.ex:652
-#: lib/potok_ide_web/components/layouts.ex:655
+#: lib/potok_ide_web/components/core_components.ex:679
+#: lib/potok_ide_web/components/layouts.ex:657
+#: lib/potok_ide_web/components/layouts.ex:660
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Akcje"
@@ -42,8 +42,8 @@ msgstr "Akcje"
 msgid "An invitation is already pending."
 msgstr "Zaproszenie już oczekuje."
 
-#: lib/potok_ide_web/components/layouts.ex:544
-#: lib/potok_ide_web/components/layouts.ex:557
+#: lib/potok_ide_web/components/layouts.ex:547
+#: lib/potok_ide_web/components/layouts.ex:562
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Próba ponownego połączenia"
@@ -300,7 +300,7 @@ msgstr "Zapraszanie..."
 msgid "Keep me logged in on this device"
 msgstr "Pozostaw mnie zalogowanym na tym urządzeniu"
 
-#: lib/potok_ide_web/components/layouts.ex:611
+#: lib/potok_ide_web/components/layouts.ex:616
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr "Wybór języka"
@@ -597,7 +597,7 @@ msgstr "Aby wykonać wrażliwe działania na koncie, musisz ponownie się uwierz
 msgid "Your profiles"
 msgstr "Twoje profile"
 
-#: lib/potok_ide_web/components/core_components.ex:80
+#: lib/potok_ide_web/components/core_components.ex:86
 #: lib/potok_ide_web/components/layouts.ex:202
 #: lib/potok_ide_web/components/layouts.ex:218
 #, elixir-autogen, elixir-format
@@ -1160,8 +1160,8 @@ msgstr "Profile oczekujące na zatwierdzenie do dołączenia do tej publicznej g
 msgid "Public group"
 msgstr "Grupa publiczna"
 
-#: lib/potok_ide_web/components/layouts.ex:538
-#: lib/potok_ide_web/components/layouts.ex:551
+#: lib/potok_ide_web/components/layouts.ex:539
+#: lib/potok_ide_web/components/layouts.ex:554
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr "Ponowne łączenie"
@@ -1692,7 +1692,7 @@ msgstr "Aplikacja grupy"
 msgid "Group description illustration"
 msgstr "Ilustracja opisu grupy"
 
-#: lib/potok_ide_web/components/core_components.ex:479
+#: lib/potok_ide_web/components/core_components.ex:498
 #, elixir-autogen, elixir-format
 msgid "Hide password"
 msgstr "Ukryj hasło"
@@ -1717,8 +1717,8 @@ msgstr "Otwórz menu"
 msgid "Refresh"
 msgstr "Odśwież"
 
-#: lib/potok_ide_web/components/core_components.ex:478
-#: lib/potok_ide_web/components/core_components.ex:480
+#: lib/potok_ide_web/components/core_components.ex:497
+#: lib/potok_ide_web/components/core_components.ex:499
 #, elixir-autogen, elixir-format
 msgid "Show password"
 msgstr "Pokaż hasło"
@@ -3874,8 +3874,8 @@ msgstr "Narzędzie nigdy nie jest tylko kanałem: od niego zależy, co społeczn
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:23
 #, elixir-autogen, elixir-format
-msgid "Agreements flow easier when the riverbed is shared."
-msgstr "Porozumienie płynie łatwiej, gdy koryto jest wspólne."
+msgid "Everything flows easier when the riverbed is shared."
+msgstr "Wszystko płynie łatwiej, gdy koryto jest wspólne."
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:213
 #, elixir-autogen, elixir-format
@@ -4109,12 +4109,12 @@ msgstr "Na razie do Potoku wchodzi się z zaproszeniem. Jeśli twoja grupa już 
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Potok to miejsce, w którym grupy rozmawiają, wymieniają się wartościami, decydują i pamiętają, co postanowiły."
 
-#: lib/potok_ide_web/components/layouts.ex:482
+#: lib/potok_ide_web/components/layouts.ex:483
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr "Nie masz jeszcze konta?"
 
-#: lib/potok_ide_web/components/layouts.ex:484
+#: lib/potok_ide_web/components/layouts.ex:485
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr "Na razie do Potoku wchodzi się z zaproszeniem."

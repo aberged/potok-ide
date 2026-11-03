@@ -38,9 +38,9 @@ msgstr ""
 msgid "Account confirmed successfully."
 msgstr ""
 
-#: lib/potok_ide_web/components/core_components.ex:660
-#: lib/potok_ide_web/components/layouts.ex:652
-#: lib/potok_ide_web/components/layouts.ex:655
+#: lib/potok_ide_web/components/core_components.ex:679
+#: lib/potok_ide_web/components/layouts.ex:657
+#: lib/potok_ide_web/components/layouts.ex:660
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -50,8 +50,8 @@ msgstr ""
 msgid "An invitation is already pending."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:544
-#: lib/potok_ide_web/components/layouts.ex:557
+#: lib/potok_ide_web/components/layouts.ex:547
+#: lib/potok_ide_web/components/layouts.ex:562
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -308,7 +308,7 @@ msgstr ""
 msgid "Keep me logged in on this device"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:611
+#: lib/potok_ide_web/components/layouts.ex:616
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr ""
@@ -605,7 +605,7 @@ msgstr ""
 msgid "Your profiles"
 msgstr ""
 
-#: lib/potok_ide_web/components/core_components.ex:80
+#: lib/potok_ide_web/components/core_components.ex:86
 #: lib/potok_ide_web/components/layouts.ex:202
 #: lib/potok_ide_web/components/layouts.ex:218
 #, elixir-autogen, elixir-format
@@ -1168,8 +1168,8 @@ msgstr ""
 msgid "Public group"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:538
-#: lib/potok_ide_web/components/layouts.ex:551
+#: lib/potok_ide_web/components/layouts.ex:539
+#: lib/potok_ide_web/components/layouts.ex:554
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr ""
@@ -1699,7 +1699,7 @@ msgstr ""
 msgid "Group description illustration"
 msgstr ""
 
-#: lib/potok_ide_web/components/core_components.ex:479
+#: lib/potok_ide_web/components/core_components.ex:498
 #, elixir-autogen, elixir-format
 msgid "Hide password"
 msgstr ""
@@ -1724,8 +1724,8 @@ msgstr ""
 msgid "Refresh"
 msgstr ""
 
-#: lib/potok_ide_web/components/core_components.ex:478
-#: lib/potok_ide_web/components/core_components.ex:480
+#: lib/potok_ide_web/components/core_components.ex:497
+#: lib/potok_ide_web/components/core_components.ex:499
 #, elixir-autogen, elixir-format
 msgid "Show password"
 msgstr ""
@@ -3877,7 +3877,7 @@ msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:23
 #, elixir-autogen, elixir-format
-msgid "Agreements flow easier when the riverbed is shared."
+msgid "Everything flows easier when the riverbed is shared."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:213
@@ -4112,12 +4112,12 @@ msgstr ""
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:482
+#: lib/potok_ide_web/components/layouts.ex:483
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:484
+#: lib/potok_ide_web/components/layouts.ex:485
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr ""

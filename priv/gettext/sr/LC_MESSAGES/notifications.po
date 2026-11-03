@@ -16,12 +16,12 @@ msgstr ""
 msgid "%{name} accepted your invitation"
 msgstr "%{name}: tvoja pozivnica je prihvaćena"
 
-#: lib/potok_ide/social/notifications.ex:108
+#: lib/potok_ide/social/notifications.ex:107
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr "%{name}: tvoja pozivnica za deljeni profil je prihvaćena"
 
-#: lib/potok_ide/social/notifications.ex:137
+#: lib/potok_ide/social/notifications.ex:136
 #, elixir-autogen, elixir-format
 msgid "%{name} added a new value"
 msgstr "%{name}: nova vrednost"
@@ -41,7 +41,7 @@ msgstr "%{name} je sada u grupi %{group}."
 msgid "%{name} mentioned you in %{group}"
 msgstr "%{name} te pominje u grupi %{group}"
 
-#: lib/potok_ide/social/notifications.ex:112
+#: lib/potok_ide/social/notifications.ex:111
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr "%{name} sada ima pristup profilu %{profile}."
@@ -56,12 +56,12 @@ msgstr "%{name}: %{emoji} na tvoju vrednost"
 msgid "%{name} shared %{profile}"
 msgstr "%{name} deli profil %{profile} s tobom"
 
-#: lib/potok_ide/social/notifications.ex:127
+#: lib/potok_ide/social/notifications.ex:126
 #, elixir-autogen, elixir-format
 msgid "New value in %{group}"
 msgstr "Nova vrednost u grupi %{group}"
 
-#: lib/potok_ide/social/notifications.ex:130
+#: lib/potok_ide/social/notifications.ex:129
 #, elixir-autogen, elixir-format
 msgid "New value in %{group}: %{excerpt}"
 msgstr "Nova vrednost u grupi %{group}: %{excerpt}"
@@ -71,7 +71,7 @@ msgstr "Nova vrednost u grupi %{group}: %{excerpt}"
 msgid "Open Potok to review this group invitation."
 msgstr "Otvori Potok i pogledaj pozivnicu."
 
-#: lib/potok_ide/social/notifications.ex:96
+#: lib/potok_ide/social/notifications.ex:95
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr "Otvori Potok i pogledaj pozivnicu za deljeni profil."

@@ -16,12 +16,12 @@ msgstr ""
 msgid "%{name} accepted your invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:108
+#: lib/potok_ide/social/notifications.ex:107
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:137
+#: lib/potok_ide/social/notifications.ex:136
 #, elixir-autogen, elixir-format
 msgid "%{name} added a new value"
 msgstr ""
@@ -41,7 +41,7 @@ msgstr ""
 msgid "%{name} mentioned you in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:112
+#: lib/potok_ide/social/notifications.ex:111
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr ""
@@ -56,12 +56,12 @@ msgstr ""
 msgid "%{name} shared %{profile}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:127
+#: lib/potok_ide/social/notifications.ex:126
 #, elixir-autogen, elixir-format
 msgid "New value in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:130
+#: lib/potok_ide/social/notifications.ex:129
 #, elixir-autogen, elixir-format
 msgid "New value in %{group}: %{excerpt}"
 msgstr ""
@@ -71,7 +71,7 @@ msgstr ""
 msgid "Open Potok to review this group invitation."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:96
+#: lib/potok_ide/social/notifications.ex:95
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr ""

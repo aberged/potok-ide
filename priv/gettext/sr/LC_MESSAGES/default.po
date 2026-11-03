@@ -30,9 +30,9 @@ msgstr "Podešavanja naloga"
 msgid "Account confirmed successfully."
 msgstr "Nalog je uspešno potvrđen."
 
-#: lib/potok_ide_web/components/core_components.ex:660
-#: lib/potok_ide_web/components/layouts.ex:652
-#: lib/potok_ide_web/components/layouts.ex:655
+#: lib/potok_ide_web/components/core_components.ex:679
+#: lib/potok_ide_web/components/layouts.ex:657
+#: lib/potok_ide_web/components/layouts.ex:660
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Radnje"
@@ -42,8 +42,8 @@ msgstr "Radnje"
 msgid "An invitation is already pending."
 msgstr "Pozivnica je već na čekanju."
 
-#: lib/potok_ide_web/components/layouts.ex:544
-#: lib/potok_ide_web/components/layouts.ex:557
+#: lib/potok_ide_web/components/layouts.ex:547
+#: lib/potok_ide_web/components/layouts.ex:562
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Pokušavam ponovno povezivanje"
@@ -300,7 +300,7 @@ msgstr "Slanje pozivnice..."
 msgid "Keep me logged in on this device"
 msgstr "Ostavi me prijavljenim na ovom uređaju"
 
-#: lib/potok_ide_web/components/layouts.ex:611
+#: lib/potok_ide_web/components/layouts.ex:616
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr "Izbor jezika"
@@ -597,7 +597,7 @@ msgstr "Morate ponovo potvrditi identitet da biste izvršili osetljive radnje na
 msgid "Your profiles"
 msgstr "Vaši profili"
 
-#: lib/potok_ide_web/components/core_components.ex:80
+#: lib/potok_ide_web/components/core_components.ex:86
 #: lib/potok_ide_web/components/layouts.ex:202
 #: lib/potok_ide_web/components/layouts.ex:218
 #, elixir-autogen, elixir-format
@@ -1160,8 +1160,8 @@ msgstr "Profili koji čekaju odobrenje da se pridruže ovoj javnoj grupi."
 msgid "Public group"
 msgstr "Javna grupa"
 
-#: lib/potok_ide_web/components/layouts.ex:538
-#: lib/potok_ide_web/components/layouts.ex:551
+#: lib/potok_ide_web/components/layouts.ex:539
+#: lib/potok_ide_web/components/layouts.ex:554
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr "Ponovno povezivanje"
@@ -1692,7 +1692,7 @@ msgstr "Aplikacija grupe"
 msgid "Group description illustration"
 msgstr "Ilustracija opisa grupe"
 
-#: lib/potok_ide_web/components/core_components.ex:479
+#: lib/potok_ide_web/components/core_components.ex:498
 #, elixir-autogen, elixir-format
 msgid "Hide password"
 msgstr "Sakrij lozinku"
@@ -1717,8 +1717,8 @@ msgstr "Otvori meni"
 msgid "Refresh"
 msgstr "Osveži"
 
-#: lib/potok_ide_web/components/core_components.ex:478
-#: lib/potok_ide_web/components/core_components.ex:480
+#: lib/potok_ide_web/components/core_components.ex:497
+#: lib/potok_ide_web/components/core_components.ex:499
 #, elixir-autogen, elixir-format
 msgid "Show password"
 msgstr "Prikaži lozinku"
@@ -3874,8 +3874,8 @@ msgstr "Alat nikad nije samo kanal: od njega zavisi šta zajednica primeti, a š
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:23
 #, elixir-autogen, elixir-format
-msgid "Agreements flow easier when the riverbed is shared."
-msgstr "Dogovor teče lakše kad je korito zajedničko."
+msgid "Everything flows easier when the riverbed is shared."
+msgstr "Sve teče lakše kad je korito zajedničko."
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:213
 #, elixir-autogen, elixir-format
@@ -4109,12 +4109,12 @@ msgstr "Za sada se u Potok ulazi uz pozivnicu. Ako je tvoja grupa već tu, zamol
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Potok je mesto gde grupe razgovaraju, razmenjuju vrednosti, odlučuju i pamte šta su odlučili."
 
-#: lib/potok_ide_web/components/layouts.ex:482
+#: lib/potok_ide_web/components/layouts.ex:483
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr "Još nemaš nalog?"
 
-#: lib/potok_ide_web/components/layouts.ex:484
+#: lib/potok_ide_web/components/layouts.ex:485
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr "Za sada se u Potok ulazi uz pozivnicu."
