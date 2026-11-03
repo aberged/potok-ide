@@ -157,10 +157,17 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  @doc "Whether the group has a picture of its own. Does not load the picture."
-  def group_has_picture?(id) when is_integer(id) do
+  @svg_picture "^data:image/svg|\\.svg([?#]|$)"
+
+  @doc """
+  Whether the card of a shared link can show the group's picture: any but an
+  SVG, which sites that show cards do not read. Does not load the picture.
+  """
+  def group_has_card_picture?(id) when is_integer(id) do
     from(g in Group,
-      where: g.id == ^id and not is_nil(g.group_picture_url) and g.group_picture_url != ""
+      where:
+        g.id == ^id and g.group_picture_url != "" and
+          fragment("? !~* ?", g.group_picture_url, ^@svg_picture)
     )
     |> Repo.exists?()
   end

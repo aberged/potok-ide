@@ -132,6 +132,78 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       refute body =~ "potok.init"
     end
 
+    test "shows what an app says about itself, and none of its code", %{
+      conn: conn,
+      owner: owner
+    } do
+      group =
+        public_group!(owner, %{
+          "description" => """
+          <meta name="description" content="Igra pamćenja za dvoje.">
+          <div>tajna aplikacija</div>
+          <script>potok.init()</script>
+          """,
+          "uses_api" => true
+        })
+
+      body = conn |> get(~p"/groups/#{group.id}") |> html_response(200)
+      document = LazyHTML.from_document(body)
+
+      assert og(document, "description") == "Igra pamćenja za dvoje."
+      assert meta(document, ~s(meta[name="description"])) == "Igra pamćenja za dvoje."
+      refute body =~ "tajna aplikacija"
+      refute body =~ "potok.init"
+    end
+
+    test "cuts what an app says about itself", %{conn: conn, owner: owner} do
+      text = String.duplicate("reč ", 200)
+
+      group =
+        public_group!(owner, %{
+          "description" => ~s(<meta name="description" content="#{text}">),
+          "uses_api" => true
+        })
+
+      description = conn |> get(~p"/groups/#{group.id}") |> document() |> og("description")
+
+      assert String.length(description) <= 200
+      assert String.ends_with?(description, "…")
+    end
+
+    test "says what the link is when an app says nothing", %{conn: conn, owner: owner} do
+      for description <- [
+            "",
+            "<title>Igra</title>",
+            ~s(<meta name="description" content="   ">),
+            ~s|<script>document.write('<meta name="description" content="iz skripte">')</script>|
+          ] do
+        group = public_group!(owner, %{"description" => description, "uses_api" => true})
+
+        assert conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") ==
+                 "A group on Potok."
+      end
+    end
+
+    test "reads an app's own words from the default description only", %{
+      conn: conn,
+      owner: owner
+    } do
+      group = public_group!(owner, %{"uses_api" => true})
+
+      {:ok, _alt} =
+        Social.create_alt_description(owner, group, %{
+          "name" => "Samo za upravu",
+          "description" => ~s(<meta name="description" content="Samo za upravu">),
+          "description_format" => :html,
+          "uses_api" => true
+        })
+
+      body = conn |> get(~p"/groups/#{group.id}") |> html_response(200)
+
+      assert body |> LazyHTML.from_document() |> og("description") == "A group on Potok."
+      refute body =~ "Samo za upravu"
+    end
+
     test "shows its picture when it has one, and Potok's otherwise", %{conn: conn, owner: owner} do
       plain = conn |> get(~p"/groups/#{public_group!(owner).id}") |> document()
 
@@ -145,6 +217,26 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       assert og(pictured, "image") =~ url(~p"/avatar/group/#{group.id}")
       assert og(pictured, "image:width") == nil
       assert meta(pictured, ~s(meta[name="twitter:card"])) == "summary"
+    end
+
+    test "keeps Potok's picture on the card when the group's is an SVG", %{
+      conn: conn,
+      owner: owner
+    } do
+      for picture <- [
+            "https://deoba.example/favicon.svg",
+            "https://deoba.example/FAVICON.SVG?v=2",
+            "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4="
+          ] do
+        group = public_group!(owner, %{"group_picture_url" => picture})
+        document = conn |> get(~p"/groups/#{group.id}") |> document()
+
+        assert og(document, "image") == url(~p"/images/og.png")
+        assert meta(document, ~s(meta[name="twitter:card"])) == "summary_large_image"
+
+        # Browsers read it, so the page itself shows it.
+        assert found?(document, "#public-group-image[src^='/avatar/group/#{group.id}']")
+      end
     end
 
     test "keeps the chat and the members to itself", %{conn: conn, owner: owner} do

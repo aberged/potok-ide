@@ -21,6 +21,7 @@ defmodule PotokIdeWeb.PublicPreview do
 
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Format, Recurrence}
+  alias PotokIde.LinkPreviews
   alias PotokIde.PlainText
   alias PotokIde.Social
   alias PotokIde.Social.Group
@@ -74,18 +75,30 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
-  # The description of a group with the API on is the code of an app.
-  defp group_description(%Group{uses_api: true}), do: gettext("A group on Potok.")
+  # The description of a group with the API on is the code of an app, so its
+  # card only says what the app says about itself, in the meta tags of any page.
+  defp group_description(%Group{uses_api: true} = group),
+    do: app_description(group) || gettext("A group on Potok.")
 
   defp group_description(%Group{} = group) do
     PlainText.excerpt(group.description || "", group.description_format, @description_length) ||
       gettext("A group on Potok.")
   end
 
-  # A group without a picture has only its initials, an SVG that cards cannot
-  # show, so its card keeps Potok's picture.
+  defp app_description(%Group{} = group) do
+    case LinkPreviews.parse(group.description || "", url(~p"/groups/#{group.id}")) do
+      {:ok, %{"description" => description}} when is_binary(description) ->
+        PlainText.truncate(description, @description_length)
+
+      _ ->
+        nil
+    end
+  end
+
+  # A group's initials are an SVG, so a group without a picture a card can show
+  # keeps Potok's.
   defp group_image(%Group{} = group) do
-    if Social.group_has_picture?(group.id),
+    if Social.group_has_card_picture?(group.id),
       do: PotokIdeWeb.Endpoint.url() <> Avatars.group_avatar_url(group)
   end
 

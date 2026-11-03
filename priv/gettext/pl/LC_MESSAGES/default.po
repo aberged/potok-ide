@@ -3,7 +3,7 @@ msgstr ""
 "Language: pl\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<12 || n%100>14) ? 1 : 2);\n"
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:151
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:154
 #, elixir-autogen, elixir-format
 msgid "(none)"
 msgstr "(brak)"
@@ -90,7 +90,7 @@ msgstr "Nie udało się utworzyć wartości."
 msgid "Could not send invitation."
 msgstr "Nie udało się wysłać zaproszenia."
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:176
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:179
 #, elixir-autogen, elixir-format
 msgid "Create"
 msgstr "Utwórz"
@@ -108,7 +108,7 @@ msgstr "Utwórz profil"
 msgid "Create sub-group"
 msgstr "Utwórz podgrupę"
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:173
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:176
 #: lib/potok_ide_web/live/profile_live/new.ex:75
 #, elixir-autogen, elixir-format
 msgid "Creating..."
@@ -124,10 +124,10 @@ msgstr "Bieżący profil:"
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:951
 #: lib/potok_ide_web/live/group_live/show/components.ex:1009
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:125
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:191
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:194
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:162
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:168
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:574
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:577
 #: lib/potok_ide_web/live/profile_live/components.ex:73
 #: lib/potok_ide_web/live/profile_live/components.ex:87
 #: lib/potok_ide_web/live/profile_live/components.ex:361
@@ -179,7 +179,7 @@ msgid "Groups"
 msgstr "Grupy"
 
 #: lib/potok_ide_web/live/group_live/show.ex:762
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:594
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:597
 #: lib/potok_ide_web/live/profile_live/components.ex:378
 #, elixir-autogen, elixir-format
 msgid "HTML"
@@ -358,7 +358,7 @@ msgid "Manage your account email address and password settings"
 msgstr "Zarządzaj adresem e-mail i ustawieniami hasła swojego konta"
 
 #: lib/potok_ide_web/live/group_live/show.ex:762
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:595
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:598
 #: lib/potok_ide_web/live/profile_live/components.ex:377
 #, elixir-autogen, elixir-format
 msgid "Markdown"
@@ -372,7 +372,7 @@ msgstr "Członkowie"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:62
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:84
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:494
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:497
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Nazwa"
@@ -454,7 +454,7 @@ msgstr "Profil został wybrany."
 msgid "Profiles"
 msgstr "Profile"
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:149
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:152
 #, elixir-autogen, elixir-format
 msgid "Reply to value (optional)"
 msgstr "Odpowiedź na wartość (opcjonalnie)"
@@ -465,8 +465,8 @@ msgid "Save Password"
 msgstr "Zapisz hasło"
 
 #: lib/potok_ide_web/live/account_live/settings.ex:104
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:460
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:555
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:463
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:558
 #: lib/potok_ide_web/live/profile_live/edit.ex:152
 #, elixir-autogen, elixir-format
 msgid "Saving..."
@@ -617,8 +617,8 @@ msgstr "stronę skrzynki pocztowej"
 
 #: lib/potok_ide_web/components/layouts/root.html.heex:136
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1027
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:167
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:551
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:170
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:554
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:245
 #: lib/potok_ide_web/live/profile_live/new.ex:69
 #: lib/potok_ide_web/live/share_live.ex:43
@@ -647,7 +647,7 @@ msgstr "Opublikuj wartość"
 msgid "Profile updated."
 msgstr "Profil został zaktualizowany."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:463
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:466
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:243
 #: lib/potok_ide_web/live/profile_live/edit.ex:155
 #, elixir-autogen, elixir-format
@@ -986,7 +986,7 @@ msgstr "Prośba o dostęp została wysłana."
 msgid "Access requests"
 msgstr "Prośby o dostęp"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:425
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:428
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this group?"
 msgstr "Czy na pewno chcesz usunąć tę grupę?"
@@ -1043,7 +1043,7 @@ msgstr "Profil domyślny został zaktualizowany."
 msgid "Default profile:"
 msgstr "Profil domyślny:"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:430
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:433
 #, elixir-autogen, elixir-format
 msgid "Delete group"
 msgstr "Usuń grupę"
@@ -1296,7 +1296,7 @@ msgstr "Zaakceptowano"
 msgid "Approved requests"
 msgstr "Zaakceptowane prośby"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:394
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:397
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Are you sure you want to delete all data values in this group?"
 msgstr "Czy na pewno chcesz usunąć tę grupę?"
@@ -1360,8 +1360,8 @@ msgstr "Nie udało się usunąć wartości."
 msgid "Could not process that image."
 msgstr "Nie udało się utworzyć grupy."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:405
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:542
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:408
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:545
 #, elixir-autogen, elixir-format
 msgid "Delete Data Values"
 msgstr "Usuń wartości danych"
@@ -2543,13 +2543,13 @@ msgstr "Tego pliku nie można wyświetlić w przeglądarce."
 msgid "A group can have at most %{count} alternative descriptions."
 msgstr "Grupa może mieć najwyżej %{count} alternatywnych opisów."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:603
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:606
 #, elixir-autogen, elixir-format
 msgid "All members"
 msgstr "Wszyscy członkowie"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:215
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:575
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:218
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:578
 #, elixir-autogen, elixir-format
 msgid "Alternative descriptions"
 msgstr "Alternatywne opisy"
@@ -2560,7 +2560,7 @@ msgid "Another description already uses the name of the current default."
 msgstr "Inny opis używa już nazwy obecnego opisu domyślnego."
 
 #: lib/potok_ide_web/live/group_live/show/components.ex:790
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:593
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:596
 #, elixir-autogen, elixir-format
 msgid "App"
 msgstr "Aplikacja"
@@ -2571,18 +2571,18 @@ msgstr "Aplikacja"
 msgid "Could not save the description."
 msgstr "Nie udało się zapisać opisu."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:323
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:326
 #: lib/potok_ide_web/live/invitation_live/index.ex:170
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr "Usuń"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:538
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:541
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of this description's app?"
 msgstr "Usunąć wszystkie dane aplikacji tego opisu?"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:326
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:329
 #, elixir-autogen, elixir-format
 msgid "Delete this description? The data values of its app are deleted too."
 msgstr "Usunąć ten opis? Dane jego aplikacji też zostaną usunięte."
@@ -2603,18 +2603,18 @@ msgid "Descriptions"
 msgstr "Opisy"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:701
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:296
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:299
 #: lib/potok_ide_web/live/profile_live/index.ex:111
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Edytuj"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:490
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:493
 #, elixir-autogen, elixir-format
 msgid "Edit description"
 msgstr "Edytuj opis"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:217
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:220
 #, elixir-autogen, elixir-format
 msgid "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
 msgstr "Dodatkowe opisy lub aplikacje, wyświetlane jako karty obok opisu domyślnego. Każda aplikacja przechowuje własne dane."
@@ -2624,23 +2624,23 @@ msgstr "Dodatkowe opisy lub aplikacje, wyświetlane jako karty obok opisu domyś
 msgid "Home description"
 msgstr "Opis startowy"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:307
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:310
 #: lib/potok_ide_web/live/profile_live/index.ex:101
 #, elixir-autogen, elixir-format
 msgid "Make default"
 msgstr "Ustaw jako domyślny"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:312
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:315
 #, elixir-autogen, elixir-format
 msgid "Make this the default description? The current default takes its place in the list."
 msgstr "Ustawić ten opis jako domyślny? Obecny opis domyślny zajmie jego miejsce na liście."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:288
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:291
 #, elixir-autogen, elixir-format
 msgid "Move down"
 msgstr "Przesuń w dół"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:278
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:281
 #, elixir-autogen, elixir-format
 msgid "Move up"
 msgstr "Przesuń w górę"
@@ -2650,13 +2650,13 @@ msgstr "Przesuń w górę"
 msgid "Name next to the alternative descriptions"
 msgstr "Nazwa obok alternatywnych opisów"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:489
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:235
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:492
 #, elixir-autogen, elixir-format
 msgid "New description"
 msgstr "Nowy opis"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:308
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:311
 #, elixir-autogen, elixir-format
 msgid "Remove the role limit to make it the default"
 msgstr "Usuń ograniczenie ról, aby ustawić go jako domyślny"
@@ -2666,7 +2666,7 @@ msgstr "Usuń ograniczenie ról, aby ustawić go jako domyślny"
 msgid "Remove the role limit to make it the default."
 msgstr "Usuń ograniczenie ról, aby ustawić go jako domyślny."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:558
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:561
 #, elixir-autogen, elixir-format
 msgid "Save description"
 msgstr "Zapisz opis"
@@ -2681,17 +2681,17 @@ msgstr "Ten opis już nie istnieje."
 msgid "The description is now the default."
 msgstr "Opis jest teraz domyślny."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:502
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:505
 #, elixir-autogen, elixir-format
 msgid "Visible to"
 msgstr "Widoczne dla"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:504
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:507
 #, elixir-autogen, elixir-format
 msgid "Without a role it is visible to everyone who sees the group's description. Editors always see it."
 msgstr "Bez roli widzi go każdy, kto widzi opis grupy. Edytorzy widzą go zawsze."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:396
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:399
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of the default description's app? The other apps keep theirs."
 msgstr "Usunąć wszystkie dane aplikacji opisu domyślnego? Pozostałe aplikacje zachowają swoje."
@@ -3483,8 +3483,8 @@ msgctxt "page title"
 msgid "Edit group"
 msgstr "Edytuj grupę"
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:189
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:572
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:192
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:575
 #, elixir-autogen, elixir-format
 msgid "Access"
 msgstr "Dostęp"
@@ -3496,52 +3496,52 @@ msgid "Access and members"
 msgstr "Dostęp i członkowie"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:59
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:188
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:191
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:81
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:571
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:574
 #: lib/potok_ide_web/live/profile_live/components.ex:52
 #: lib/potok_ide_web/live/profile_live/components.ex:360
 #, elixir-autogen, elixir-format
 msgid "Basics"
 msgstr "Podstawy"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:189
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:192
 #, elixir-autogen, elixir-format
 msgid "Content"
 msgstr "Treść"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:367
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:576
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:579
 #, elixir-autogen, elixir-format
 msgid "Danger zone"
 msgstr "Strefa zagrożenia"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:377
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:380
 #, elixir-autogen, elixir-format
 msgid "Delete the app's data"
 msgstr "Usuwanie danych aplikacji"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:414
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:417
 #, elixir-autogen, elixir-format
 msgid "Delete the group"
 msgstr "Usuwanie grupy"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:380
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:383
 #, elixir-autogen, elixir-format
 msgid "Deletes every data value the group's app saved."
 msgstr "Usuwa wszystkie dane zapisane przez aplikację grupy."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:382
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:385
 #, elixir-autogen, elixir-format
 msgid "Deletes the data values of the default description's app. The other apps keep theirs."
 msgstr "Usuwa dane aplikacji domyślnego opisu. Pozostałe aplikacje zachowują swoje."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:416
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:419
 #, elixir-autogen, elixir-format
 msgid "Deletes the group with its values and files. A group with sub-groups cannot be deleted."
 msgstr "Usuwa grupę wraz z jej wartościami i plikami. Grupy z podgrupami nie można usunąć."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:454
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:457
 #: lib/potok_ide_web/live/profile_live/edit.ex:146
 #, elixir-autogen, elixir-format
 msgid "Discard"
@@ -3553,13 +3553,13 @@ msgstr "Odrzuć"
 msgid "Everyone can see the group and ask to join it."
 msgstr "Wszyscy widzą grupę i mogą poprosić o dołączenie."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:369
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:372
 #, elixir-autogen, elixir-format
 msgid "None of this can be undone."
 msgstr "Tego nie można cofnąć."
 
-#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:190
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:573
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:193
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:576
 #, elixir-autogen, elixir-format
 msgid "Opens first"
 msgstr "Otwiera się najpierw"
@@ -3577,7 +3577,7 @@ msgstr "Aplikacja działa na stronie głównej grupy i może przechowywać włas
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:130
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:172
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:497
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:500
 #, elixir-autogen, elixir-format
 msgid "The description is an app (API)"
 msgstr "Opis jest aplikacją (API)"
@@ -3612,7 +3612,7 @@ msgstr "Co otwiera się najpierw"
 msgid "Who sees the group and who is a member."
 msgstr "Kto widzi grupę i kto jest członkiem."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:445
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:448
 #: lib/potok_ide_web/live/profile_live/edit.ex:142
 #, elixir-autogen, elixir-format
 msgid "You have unsaved changes."
@@ -4257,8 +4257,8 @@ msgstr "Do 10 plików na wiadomość, do 100 MB każdy. Zdjęcia, wideo i dźwi�
 msgid "What Potok can do"
 msgstr "Co potrafi Potok"
 
-#: lib/potok_ide_web/public_preview.ex:78
-#: lib/potok_ide_web/public_preview.ex:82
+#: lib/potok_ide_web/public_preview.ex:81
+#: lib/potok_ide_web/public_preview.ex:85
 #, elixir-autogen, elixir-format
 msgid "A group on Potok."
 msgstr "Grupa w Potoku."
@@ -4273,3 +4273,9 @@ msgstr "Nazwa, zdjęcie i opis są widoczne także poza Potokiem, dla każdego, 
 #, elixir-autogen, elixir-format
 msgid "Its title, time, place and description also show outside Potok, to anyone with the link."
 msgstr "Tytuł, czas, miejsce i opis są widoczne także poza Potokiem, dla każdego, kto ma link."
+
+#: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:135
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:177
+#, elixir-autogen, elixir-format
+msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
+msgstr "Na potrzeby udostępnianych linków może opisać się tagiem <meta name=\"description\" content=\"...\">."

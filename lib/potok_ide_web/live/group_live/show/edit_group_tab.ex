@@ -174,6 +174,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             />
             <p class="-mt-1 mb-3 text-xs text-base-content/60">
               {gettext("The app runs on the group's home page and can keep its own data.")}
+              {gettext(
+                "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
+              )}
             </p>
 
             <details
