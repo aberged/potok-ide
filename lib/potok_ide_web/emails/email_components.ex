@@ -132,7 +132,7 @@ defmodule PotokIdeWeb.EmailComponents do
                       <a
                         href={@home_url}
                         style="color:#7a8794;font-weight:600;text-decoration:none;"
-                      >Potok</a>{" · " <> gettext("A shared platform for assemblies")}
+                      >potok</a>{" · " <> gettext("A shared platform for assemblies")}
                     </p>
                     <p style="margin:4px 0 0;">
                       {gettext("Sent to %{email}.", email: @to)}

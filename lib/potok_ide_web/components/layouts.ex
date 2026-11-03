@@ -147,7 +147,7 @@ defmodule PotokIdeWeb.Layouts do
                 class="flex min-w-0 items-center flex-row gap-3 self-start"
               >
                 <span class="min-w-0 text-right">
-                  <span class="block text-xs font-semibold uppercase tracking-[0.18em] text-base-content/55">
+                  <span class="block font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/55">
                     Potok
                   </span>
                   <span
@@ -207,7 +207,7 @@ defmodule PotokIdeWeb.Layouts do
           class="flex h-full w-[min(18rem,calc(100vw-1.25rem))] flex-col border-r border-base-300/70 bg-base-100/95 p-4 pt-[calc(var(--app-safe-area-top)+1rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] shadow-2xl shadow-primary/10 backdrop-blur sm:w-80 lg:w-72 lg:shadow-none"
         >
           <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
-            <div class="text-xs font-semibold uppercase tracking-[0.18em] text-base-content/50">
+            <div class="font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/50">
               Potok
             </div>
 
@@ -385,7 +385,7 @@ defmodule PotokIdeWeb.Layouts do
               id="guest-header-mark"
               class="size-9 transition-transform duration-500 group-hover:-rotate-6"
             />
-            <span class="lp-serif text-xl font-semibold tracking-tight">Potok</span>
+            <span class="font-brand text-xl font-bold">potok</span>
           </a>
           {render_slot(@header_action)}
           <.link
@@ -410,7 +410,7 @@ defmodule PotokIdeWeb.Layouts do
             <div>
               <div class="flex items-center gap-2">
                 <.mark id="guest-footer-mark" class="size-6" />
-                <span class="lp-serif font-semibold">Potok</span>
+                <span class="font-brand font-bold">potok</span>
               </div>
               <p class="mt-2 text-sm text-base-content/55">
                 {gettext("A shared platform for assemblies")}
