@@ -839,10 +839,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <% end %>
       </.link>
 
-      <%!-- Sized to its content, so the rest of the line still opens the group. --%>
+      <%!-- Clicks pass through to the row's link, except on the line's own links and buttons. --%>
       <div
         :if={@subtitle != []}
-        class="relative col-start-2 mt-0.5 flex min-w-0 max-w-full self-start justify-self-start"
+        class="pointer-events-none relative col-start-2 mt-0.5 flex min-w-0 max-w-full self-start justify-self-start [&_a]:pointer-events-auto [&_button]:pointer-events-auto"
       >
         {render_slot(@subtitle)}
       </div>

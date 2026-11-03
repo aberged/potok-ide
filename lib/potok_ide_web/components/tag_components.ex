@@ -60,7 +60,6 @@ defmodule PotokIdeWeb.TagComponents do
       <span
         :if={@hidden != []}
         id={"#{@id}-more"}
-        title={Enum.map_join(@hidden, ", ", & &1.name)}
         class={[
           "inline-flex shrink-0 items-center rounded-full border border-base-300 bg-base-100 font-semibold leading-none tabular-nums text-base-content/60",
           if(@size == :sm, do: "h-5 px-1.5 text-[11px]", else: "h-6 px-2 text-xs")

@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Events.{Format, Recurrence}
+  alias PotokIde.Events.Format
   alias PotokIdeWeb.GroupLive.Show.Components
   alias PotokIdeWeb.TagComponents
 
@@ -419,7 +419,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         :if={@group.last_value_at}
         id={"child-group-last-value-#{@group.id}"}
         datetime={DateTime.to_iso8601(@group.last_value_at)}
-        title={moment(@group.last_value_at, @time_zone)}
         class="shrink-0 tabular-nums"
       >
         {Format.recent(@group.last_value_at, @time_zone, DateTime.utc_now())}
@@ -427,7 +426,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       <span
         :if={@group.member_count}
         id={"child-group-members-#{@group.id}"}
-        title={ngettext("1 member", "%{count} members", @group.member_count)}
         class="inline-flex shrink-0 items-center gap-0.5 tabular-nums"
       >
         <.icon name="hero-users" class="size-3 opacity-70" />
@@ -439,7 +437,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       <span
         :if={(@group.sub_group_count || 0) > 0}
         id={"child-group-sub-groups-#{@group.id}"}
-        title={ngettext("1 sub-group", "%{count} sub-groups", @group.sub_group_count)}
         class="inline-flex shrink-0 items-center gap-0.5 tabular-nums"
       >
         <.icon name="hero-folder" class="size-3 opacity-70" />
@@ -463,12 +460,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       />
     </div>
     """
-  end
-
-  # "Tue, Nov 3 · 14:32", for the title of the short time.
-  defp moment(at, zone) do
-    today = Recurrence.local_date(DateTime.utc_now(), zone)
-    "#{Format.date(Recurrence.local_date(at, zone), today)} · #{Format.time(at, zone)}"
   end
 
   attr :node, :map, required: true, doc: "a `SubGroupTree` node"
