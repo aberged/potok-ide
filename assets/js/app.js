@@ -953,6 +953,10 @@ const registerServiceWorker = async () => {
     return
   }
 
+  // On a first visit the new worker claims the page as it activates, which
+  // also fires `controllerchange`; such a page has no old version to swap out.
+  const hadController = Boolean(navigator.serviceWorker.controller)
+
   try {
     const registration = await navigator.serviceWorker.register("/sw.js", {scope: "/"})
 
@@ -976,7 +980,7 @@ const registerServiceWorker = async () => {
 
     // Fires once the waiting worker took over after the toast's button.
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (refreshing) {
+      if (refreshing || !hadController) {
         return
       }
 
