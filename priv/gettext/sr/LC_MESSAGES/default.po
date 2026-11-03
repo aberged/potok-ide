@@ -3865,7 +3865,7 @@ msgstr "Plenum, zbor, radna grupa. Podgrupa može da preuzme članove i uloge ro
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
 msgid "A shared platform for assemblies"
-msgstr "Zajednička platforma zajednica"
+msgstr "Aplikativna društvena platforma"
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:160
 #, elixir-autogen, elixir-format
