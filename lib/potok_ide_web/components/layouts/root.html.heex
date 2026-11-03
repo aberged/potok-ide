@@ -12,10 +12,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Potok" />
-    <meta
-      :if={assigns[:page_description]}
-      name="description"
-      content={assigns[:page_description]}
+    <.social_meta
+      title={assigns[:page_title]}
+      description={assigns[:page_description]}
+      image={assigns[:page_image]}
+      url={assigns[:page_url] || PotokIdeWeb.Endpoint.url() <> @conn.request_path}
+      locale={assigns[:current_locale] || PotokIdeWeb.Locale.default_locale()}
+      noindex={assigns[:page_noindex] || false}
     />
     <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
     <link rel="manifest" href="/manifest.webmanifest" />

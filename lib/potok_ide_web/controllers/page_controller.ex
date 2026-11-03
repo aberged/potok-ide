@@ -28,12 +28,7 @@ defmodule PotokIdeWeb.PageController do
         redirect(conn, to: ~p"/profiles")
 
       true ->
-        render(conn, :home,
-          page_description:
-            gettext(
-              "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
-            )
-        )
+        render(conn, :home)
     end
   end
 

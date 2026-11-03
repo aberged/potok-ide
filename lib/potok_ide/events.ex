@@ -204,6 +204,12 @@ defmodule PotokIde.Events do
     |> Repo.exists?()
   end
 
+  @doc "The event when guests can see a preview of it (`PotokIdeWeb.PublicPreview`)."
+  def get_public_event(id) when is_integer(id) do
+    from(e in Event, where: e.id == ^id and e.is_public and is_nil(e.cancelled_at))
+    |> Repo.one()
+  end
+
   @doc "The event with its group and creator, when `profile` sees it (`visible?/2`)."
   def get_event(%Profile{} = profile, id) when is_integer(id) do
     with %Event{} = event <- Repo.get(Event, id),

@@ -961,6 +961,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           <.input field={@form[:is_public]} type="checkbox" label={gettext("Public event")} />
           <p class="-mt-1 mb-1 text-xs text-base-content/60">
             {gettext("Every user sees it in their calendar and can answer it.")}
+            {gettext(
+              "Its title, time, place and description also show outside Potok, to anyone with the link."
+            )}
           </p>
         </div>
 

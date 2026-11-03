@@ -157,6 +157,14 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
+  @doc "Whether the group has a picture of its own. Does not load the picture."
+  def group_has_picture?(id) when is_integer(id) do
+    from(g in Group,
+      where: g.id == ^id and not is_nil(g.group_picture_url) and g.group_picture_url != ""
+    )
+    |> Repo.exists?()
+  end
+
   def create_profile(attrs) do
     root_group = get_root_group!()
 
@@ -388,6 +396,19 @@ defmodule PotokIde.Social do
       %Group{} = group -> if group.is_public or member_of_group?(profile, group), do: group
       nil -> nil
     end
+  end
+
+  @doc """
+  The group when guests can see a preview of it (`PotokIdeWeb.PublicPreview`):
+  a public one, but never the root, a direct chat or a thread.
+  """
+  def get_public_group(id) when is_integer(id) do
+    from(g in Group,
+      where:
+        g.id == ^id and g.is_public and not g.is_root and not g.is_direct and
+          is_nil(g.parent_value_id)
+    )
+    |> Repo.one()
   end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do

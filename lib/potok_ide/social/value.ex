@@ -3,6 +3,7 @@ defmodule PotokIde.Social.Value do
 
   import Ecto.Changeset
 
+  alias PotokIde.PlainText
   alias PotokIde.UTF8
 
   @content_formats [:markdown, :html]
@@ -98,12 +99,7 @@ defmodule PotokIde.Social.Value do
 
   def excerpt(%__MODULE__{content: content, content_format: format} = value, max_length)
       when is_binary(content) and is_integer(max_length) and max_length > 1 do
-    content
-    |> UTF8.replace_invalid()
-    |> plain_text(format)
-    |> String.replace(~r/\s+/u, " ")
-    |> String.trim()
-    |> truncate(max_length) || attachment_summary(value, max_length)
+    PlainText.excerpt(content, format, max_length) || attachment_summary(value, max_length)
   end
 
   def excerpt(_value, _max_length), do: nil
@@ -117,47 +113,10 @@ defmodule PotokIde.Social.Value do
     more = if rest == [], do: "", else: " +#{length(rest)}"
     name_length = max(max_length - String.length(more), 2)
 
-    truncate("📎 " <> first.filename, name_length) <> more
+    PlainText.truncate("📎 " <> first.filename, name_length) <> more
   end
 
   def attachment_summary(_value, _max_length), do: nil
-
-  defp plain_text(html, :html) do
-    html
-    |> String.replace(~r{<(script|style)\b[^>]*>.*?</\1\s*>}isu, " ")
-    # Block boundaries would otherwise glue neighbouring words together.
-    |> String.replace(~r{<(?:br|/p|/div|/li|/h[1-6]|/tr|/blockquote)\b[^>]*>}iu, " ")
-    |> HtmlSanitizeEx.strip_tags()
-    |> decode_html_entities()
-  end
-
-  defp plain_text(markdown, _format) do
-    markdown
-    |> String.replace(~r/!\[([^\]]*)\]\([^)]*\)/u, "\\1")
-    |> String.replace(~r/\[([^\]]+)\]\([^)]*\)/u, "\\1")
-    |> String.replace(~r/^[ \t]*(?:#+|>+|[-*+]|\d+[.)])[ \t]+/mu, "")
-    |> String.replace(~r/\*\*|__|~~|`+/u, "")
-  end
-
-  defp decode_html_entities(text) do
-    text
-    |> String.replace("&nbsp;", " ")
-    |> String.replace("&lt;", "<")
-    |> String.replace("&gt;", ">")
-    |> String.replace("&quot;", "\"")
-    |> String.replace(["&#39;", "&#x27;", "&apos;"], "'")
-    |> String.replace("&amp;", "&")
-  end
-
-  defp truncate("", _max_length), do: nil
-
-  defp truncate(text, max_length) do
-    if String.length(text) <= max_length do
-      text
-    else
-      String.trim_trailing(String.slice(text, 0, max_length - 1)) <> "…"
-    end
-  end
 
   # The column is NOT NULL, and casting "" yields nil, so a value that only
   # carries files stores "" explicitly.

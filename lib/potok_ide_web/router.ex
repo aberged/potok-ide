@@ -46,6 +46,12 @@ defmodule PotokIdeWeb.Router do
     plug :redirect_if_account_is_authenticated
   end
 
+  # Before `:require_authenticated_account`: a guest at the link of a public
+  # group or event gets a preview of it instead of the redirect to log in.
+  pipeline :public_preview do
+    plug PotokIdeWeb.PublicPreview
+  end
+
   # The installed web app's share target, posted by the browser: it only
   # passes the text on to `/share`, so it needs no session or CSRF token.
   pipeline :share_target do
@@ -137,7 +143,7 @@ defmodule PotokIdeWeb.Router do
   end
 
   scope "/", PotokIdeWeb do
-    pipe_through [:browser, :require_authenticated_account]
+    pipe_through [:browser, :public_preview, :require_authenticated_account]
 
     live_session :authenticated,
       on_mount: [

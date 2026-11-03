@@ -1,0 +1,38 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  centered
+  about_link
+>
+  <Layouts.guest_card id="public-event" title={@event.title} subtitle={@time} invitation_note>
+    <div
+      :if={@recurrence || @location != "" || @description}
+      id="public-event-details"
+      class="mb-6 flex flex-col gap-2.5 text-sm leading-6 text-base-content/70"
+    >
+      <p :if={@recurrence} id="public-event-recurrence" class="flex gap-2.5">
+        <.icon name="hero-arrow-path" class="mt-0.5 size-5 shrink-0 text-base-content/45" />
+        <span class="min-w-0 wrap-break-word">{@recurrence}</span>
+      </p>
+      <p :if={@location != ""} id="public-event-location" class="flex gap-2.5">
+        <.icon name="hero-map-pin" class="mt-0.5 size-5 shrink-0 text-base-content/45" />
+        <span class="min-w-0 wrap-break-word">{@location}</span>
+      </p>
+      <p :if={@description} id="public-event-description" class="wrap-break-word">
+        {@description}
+      </p>
+    </div>
+    <.link
+      id="public-event-login"
+      href={~p"/accounts/log-in"}
+      class="lp-button group w-full justify-center"
+    >
+      {gettext("Log in")}
+      <.icon
+        name="hero-arrow-right"
+        class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+      />
+    </.link>
+  </Layouts.guest_card>
+</Layouts.guest>

@@ -78,6 +78,7 @@ We may share information only in the following circumstances:
 - With service providers that help operate Potok, such as email delivery, hosting, database infrastructure, and push notification providers
 - With Firebase Cloud Messaging when Android push notifications are enabled
 - With other Potok users as part of the normal functioning of the app, for example when your profile, group membership, invitations, or posted content are visible within groups or other collaboration features you use
+- With anyone who has the link, including people without an account and the services that show previews of shared links: the name, image, and a short part of the description of a public group, and the title, time, place, and a short part of the description of a public event
 - If required by law, legal process, or a valid governmental request
 - To protect the rights, safety, security, and integrity of Potok, our users, or the public
 - In connection with a merger, acquisition, financing, or sale of assets, subject to applicable law

@@ -107,6 +107,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             />
             <p class="-mt-1 mb-3 text-xs text-base-content/60">
               {gettext("Everyone can see the group and ask to join it.")}
+              {gettext(
+                "Its name, picture and description also show outside Potok, to anyone with the link."
+              )}
             </p>
 
             <div :if={@inherits_members_option} id="group-edit-inherits-members">

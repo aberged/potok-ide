@@ -32,6 +32,56 @@ defmodule PotokIdeWeb.PageControllerTest do
     assert Enum.count(LazyHTML.query(document, "#landing-perks li")) == 5
   end
 
+  describe "Potok's card for shared links" do
+    defp og(document, property) do
+      document
+      |> LazyHTML.query(~s(meta[property="og:#{property}"]))
+      |> LazyHTML.attribute("content")
+      |> List.first()
+    end
+
+    test "is on the landing page and the page private links end up on", %{conn: conn} do
+      for path <- [~p"/", ~p"/accounts/log-in"] do
+        document = conn |> get(path) |> html_response(200) |> LazyHTML.from_document()
+
+        assert og(document, "site_name") == "Potok"
+        assert og(document, "type") == "website"
+        assert og(document, "title") == "Potok · Society for society"
+        assert og(document, "description") =~ "Conversations, events, files and roles"
+        assert og(document, "url") == PotokIdeWeb.Endpoint.url() <> path
+        assert og(document, "image") == url(~p"/images/og.png")
+        assert og(document, "image:width") == "1200"
+        assert og(document, "image:height") == "630"
+        assert og(document, "locale") == "en_US"
+
+        assert Enum.count(LazyHTML.query(document, ~s(meta[name="description"]))) == 1
+        assert Enum.empty?(LazyHTML.query(document, ~s(meta[name="robots"])))
+
+        assert document
+               |> LazyHTML.query(~s(meta[name="twitter:card"]))
+               |> LazyHTML.attribute("content") == ["summary_large_image"]
+      end
+    end
+
+    test "is in Serbian for crawlers, which ask for no language" do
+      document =
+        Phoenix.ConnTest.build_conn()
+        |> get(~p"/")
+        |> html_response(200)
+        |> LazyHTML.from_document()
+
+      assert og(document, "title") == "Potok · Društvo društvu"
+      assert og(document, "locale") == "sr_RS"
+    end
+
+    test "has its picture", %{conn: conn} do
+      conn = get(conn, ~p"/images/og.png")
+
+      assert response(conn, 200)
+      assert response_content_type(conn, :png)
+    end
+  end
+
   test "GET / redirects authenticated accounts without a profile to profiles", %{conn: conn} do
     account = account_fixture()
 

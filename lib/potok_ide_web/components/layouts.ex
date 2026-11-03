@@ -340,10 +340,61 @@ defmodule PotokIdeWeb.Layouts do
     """
   end
 
+  @og_locales %{"en" => "en_US", "pl" => "pl_PL", "sr" => "sr_RS"}
+
   @doc """
-  Renders the layout of the pages for guests: the landing page and the log-in
-  pages. Instead of the app's menu it has the landing page's own header and
-  footer, and since the body never scrolls, the page is its own scroll area.
+  The tags other sites and apps read to show a link to this page as a card.
+  Without a title, description or image of its own, a page shows Potok's card:
+  a wide picture, as opposed to a group's square `image`.
+  """
+  attr :title, :string, default: nil
+  attr :description, :string, default: nil
+  attr :image, :string, default: nil, doc: "the absolute URL of a square picture"
+  attr :url, :string, required: true, doc: "the absolute URL the card stands for"
+  attr :locale, :string, required: true
+  attr :noindex, :boolean, default: false, doc: "keeps the page out of search engines"
+
+  def social_meta(assigns) do
+    assigns =
+      assigns
+      |> assign(:title, assigns.title || "Potok · " <> gettext("Society for society"))
+      |> assign(
+        :description,
+        assigns.description ||
+          gettext(
+            "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
+          )
+      )
+      |> assign(:og_locale, @og_locales[assigns.locale])
+
+    ~H"""
+    <meta name="description" content={@description} />
+    <meta :if={@noindex} name="robots" content="noindex" />
+    <meta property="og:site_name" content="Potok" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={@url} />
+    <meta property="og:title" content={@title} />
+    <meta property="og:description" content={@description} />
+    <meta property="og:locale" content={@og_locale} />
+    <%= if @image do %>
+      <meta property="og:image" content={@image} />
+      <meta name="twitter:card" content="summary" />
+    <% else %>
+      <meta property="og:image" content={url(~p"/images/og.png")} />
+      <meta property="og:image:type" content="image/png" />
+      <meta property="og:image:width" content="1200" />
+      <meta property="og:image:height" content="630" />
+      <meta property="og:image:alt" content="Potok" />
+      <meta name="twitter:card" content="summary_large_image" />
+    <% end %>
+    """
+  end
+
+  @doc """
+  Renders the layout of the pages for guests: the landing page, the log-in
+  pages and the previews of public groups and events. Instead of the app's
+  menu it has the landing page's own header and footer, and since the body
+  never scrolls, the page is its own scroll area.
 
   ## Examples
 
@@ -453,6 +504,7 @@ defmodule PotokIdeWeb.Layouts do
   attr :id, :string, required: true
   attr :title, :string, required: true
   attr :subtitle, :string, default: nil
+  attr :image, :string, default: nil, doc: "a picture to show instead of the mark"
 
   attr :invitation_note, :boolean,
     default: false,
@@ -465,8 +517,15 @@ defmodule PotokIdeWeb.Layouts do
     <div id={@id} class="w-full max-w-md">
       <section class="lp-panel lp-rise px-6 py-8 sm:px-10 sm:py-10">
         <div class="text-center">
-          <.mark id={"#{@id}-mark"} class="mx-auto size-12" />
-          <h1 class="lp-serif mt-5 text-3xl tracking-tight text-balance sm:text-4xl">
+          <img
+            :if={@image}
+            id={"#{@id}-image"}
+            src={@image}
+            alt=""
+            class="mx-auto size-20 rounded-full border border-base-300 bg-base-100 object-cover shadow-sm"
+          />
+          <.mark :if={!@image} id={"#{@id}-mark"} class="mx-auto size-12" />
+          <h1 class="lp-serif mt-5 text-3xl tracking-tight text-balance wrap-break-word sm:text-4xl">
             {@title}
           </h1>
           <p :if={@subtitle} class="mt-3 leading-7 text-pretty wrap-break-word text-base-content/70">
