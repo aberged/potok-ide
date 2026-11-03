@@ -423,7 +423,8 @@ defmodule PotokIdeWeb.CoreComponents do
   and profiles: one centered column, so they are the same width on wide
   screens. `class` goes on the column. Those pages pass `full_width` to
   `Layouts.app`, so the scroll area, and its scrollbar, reach the window's
-  edge.
+  edge. The top space is the column's, so a `sticky top-0` bar sticks flush
+  to the scroll area's edge.
   """
   attr :id, :string, default: nil
   attr :class, :any, default: nil
@@ -431,8 +432,12 @@ defmodule PotokIdeWeb.CoreComponents do
 
   def page_container(assigns) do
     ~H"""
-    <div id={@id} class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-      <div class={["mx-auto w-full max-w-3xl", @class]}>{render_slot(@inner_block)}</div>
+    <div
+      id={@id}
+      data-tab-scroll
+      class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 pb-4"
+    >
+      <div class={["mx-auto w-full max-w-3xl pt-4", @class]}>{render_slot(@inner_block)}</div>
     </div>
     """
   end

@@ -305,7 +305,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
         |> live(~p"/requests")
 
       lv
-      |> element("#created-requests-toggle")
+      |> element("#requests-tab-created")
       |> render_click()
 
       rendered = render(lv)
@@ -318,7 +318,9 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
       assert rendered =~ "Requested on"
     end
 
-    test "searches approved and created request history with one form", %{conn: conn} do
+    test "searches approved and created request history with one form across tabs", %{
+      conn: conn
+    } do
       current_account = account_fixture()
       requester_account = account_fixture()
       approver_account = account_fixture()
@@ -398,15 +400,16 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
         |> log_in_account(current_account)
         |> live(~p"/requests")
 
-      lv
-      |> element("#approved-requests-toggle")
-      |> render_click()
+      # The pending requests come first; the search only filters the histories.
+      assert has_element?(lv, "#requests-tab-pending[aria-selected=true]")
+      refute has_element?(lv, "#request-search-form")
 
       lv
-      |> element("#created-requests-toggle")
+      |> element("#requests-tab-approved")
       |> render_click()
 
       assert has_element?(lv, "#request-search-form")
+      refute has_element?(lv, "#created-requests")
 
       lv
       |> form("#request-search-form", request_search: %{q: "Alpha"})
@@ -414,15 +417,26 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       assert has_element?(lv, "#approved-requests", "Alpha Approval Group")
       refute has_element?(lv, "#approved-requests", "Beta Approval Group")
-      refute has_element?(lv, "#created-requests", "Gamma Created Group")
       assert has_element?(lv, "#request-search-reset")
+
+      lv
+      |> element("#requests-tab-created")
+      |> render_click()
+
+      refute has_element?(lv, "#approved-requests")
+      refute has_element?(lv, "#created-requests", "Gamma Created Group")
 
       lv
       |> form("#request-search-form", request_search: %{q: "reqsearch-own"})
       |> render_change()
 
-      refute has_element?(lv, "#approved-requests", "Alpha Approval Group")
       assert has_element?(lv, "#created-requests", "Gamma Created Group")
+
+      lv
+      |> element("#requests-tab-approved")
+      |> render_click()
+
+      refute has_element?(lv, "#approved-requests", "Alpha Approval Group")
 
       lv
       |> element("#request-search-reset")
@@ -430,6 +444,11 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
 
       assert has_element?(lv, "#approved-requests", "Alpha Approval Group")
       assert has_element?(lv, "#approved-requests", "Beta Approval Group")
+
+      lv
+      |> element("#requests-tab-created")
+      |> render_click()
+
       assert has_element?(lv, "#created-requests", "Gamma Created Group")
     end
 
@@ -476,7 +495,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
         |> live(~p"/requests")
 
       lv
-      |> element("#created-requests-toggle")
+      |> element("#requests-tab-created")
       |> render_click()
 
       assert has_element?(lv, "#created_requests-request-#{request.id}")

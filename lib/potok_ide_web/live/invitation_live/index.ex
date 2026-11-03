@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   alias PotokIdeWeb.GroupLive.Show.Components
   @invitations_per_page 20
   @sent_invitations_per_page 20
+  @sections ~w(received sent)
 
   @impl true
   def render(assigns) do
@@ -36,6 +37,21 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           </:subtitle>
         </.page_header>
 
+        <Components.settings_tabs
+          id="invitations-sections"
+          tabs={sections()}
+          current={@section}
+          event="set_section"
+          tab_id_prefix="invitations-tab"
+          counts={
+            %{
+              "received" => @invitations_pagination.total_count,
+              "sent" => @sent_invitations_pagination.total_count
+            }
+          }
+        />
+
+        <%!-- One search for both tabs. --%>
         <.form
           :if={
             @invitations_pagination.total_count > 0 or
@@ -44,7 +60,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           for={@invitation_search_form}
           id="invitation-search-form"
           phx-change="search_invitations"
-          class="mb-3 flex flex-row justify-end sticky right-4 top-1 z-45"
+          class="mb-3 flex flex-row justify-end"
         >
           <div class="relative w-fit">
             <button
@@ -75,239 +91,188 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           </div>
         </.form>
 
-        <div class="space-y-6">
-          <div class="card rounded-3xl border border-base-300/70 bg-base-100/70 shadow-sm">
-            <div class="card-body gap-4">
-              <button
-                id="invitations-toggle"
-                type="button"
-                phx-click="toggle_invitations"
-                class="flex w-full items-center justify-between gap-3 text-left"
-                aria-expanded={to_string(@invitations_expanded?)}
-              >
-                <div>
-                  <h3 class="text-base font-semibold text-base-content">
-                    {gettext("Invitations for me")}
-                  </h3>
+        <%!-- A card off screen holds no list: picking its tab loads it. --%>
+        <Components.settings_card
+          id="invitations-received"
+          tab_id="invitations-tab-received"
+          active={@section == "received"}
+          icon="hero-inbox-arrow-down"
+          title={gettext("Invitations for me")}
+          subtitle={gettext("Invitations addressed to your current profile.")}
+        >
+          <div :if={@section == "received"} class="space-y-4">
+            <div
+              :if={@invitations_pagination.total_count == 0}
+              class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+            >
+              {if String.trim(@invitations_search_query) == "",
+                do: gettext("No pending invitations."),
+                else: gettext("No invitations match your search.")}
+            </div>
 
-                  <p class="text-sm text-base-content/70">
-                    {gettext("Invitations addressed to your current profile.")}
-                  </p>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <span class="rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-                    {@invitations_pagination.total_count}
-                  </span>
-                  <.icon
-                    name="hero-chevron-down"
-                    class={[
-                      "size-5 transition-transform",
-                      @invitations_expanded? && "rotate-180"
-                    ]}
-                  />
-                </div>
-              </button>
-              <div :if={@invitations_expanded?} class="space-y-4">
+            <div :if={@invitations_pagination.total_count > 0} class="space-y-4">
+              <div id="invitations" phx-update="stream" class="space-y-4">
                 <div
-                  :if={@invitations_pagination.total_count == 0}
-                  class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+                  :for={{dom_id, inv} <- @streams.invitations}
+                  id={dom_id}
+                  class="card rounded-2xl border border-base-300/70 bg-base-100/80"
                 >
-                  {if String.trim(@invitations_search_query) == "",
-                    do: gettext("No pending invitations."),
-                    else: gettext("No invitations match your search.")}
-                </div>
-
-                <div :if={@invitations_pagination.total_count > 0} class="space-y-4">
-                  <div id="invitations" phx-update="stream" class="space-y-4">
-                    <div
-                      :for={{dom_id, inv} <- @streams.invitations}
-                      id={dom_id}
-                      class="card rounded-2xl border border-base-300/70 bg-base-100/80"
-                    >
-                      <div class="card-body relative mb-0 p-3">
-                        <Components.group_identity
-                          group={inv.group}
-                          current_profile={@current_profile}
-                          avatar_size="size-12"
-                          text_class="text-sm"
-                          unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
-                          highlight_query={@invitations_search_query}
-                        />
-                        <div class="text-sm text-base-content/70">
-                          {gettext("Invited by:")}
-                          <Components.highlighted_text
-                            text={inv.inviter.username}
-                            query={@invitations_search_query}
-                            class="font-semibold"
-                          />
-                          <Components.local_time
-                            id={"invitation-inserted-at-#{inv.id}"}
-                            datetime={inv.inserted_at}
-                            class="text-xs font-thin italic"
-                          />
-                        </div>
-
-                        <div :if={is_nil(inv.accepted_at)} class="mt-2 flex flex-wrap gap-2">
-                          <.button
-                            id={"invitation-accept-#{inv.id}"}
-                            phx-click="accept"
-                            phx-value-id={inv.id}
-                            variant="primary"
-                          >
-                            {gettext("Accept")}
-                          </.button>
-                        </div>
-
-                        <div :if={!is_nil(inv.accepted_at)} class="mt-1 text-sm text-green-600">
-                          {gettext("Accepted on")}
-                          <Components.local_time
-                            id={"invitation-accepted-at-#{inv.id}"}
-                            datetime={inv.accepted_at}
-                            class="ml-1"
-                          />
-                        </div>
-
-                        <.button
-                          id={"invitation-delete-#{inv.id}"}
-                          phx-click="delete_invitation"
-                          phx-value-id={inv.id}
-                          data-confirm={gettext("Are you sure you want to delete this invitation?")}
-                          class="absolute right-0 inline-flex items-center rounded-full p-1 px-2 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
-                        >
-                          <.icon name="hero-trash" class="size-4" />
-                        </.button>
-                      </div>
+                  <div class="card-body relative mb-0 p-3">
+                    <Components.group_identity
+                      group={inv.group}
+                      current_profile={@current_profile}
+                      avatar_size="size-12"
+                      text_class="text-sm"
+                      unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
+                      highlight_query={@invitations_search_query}
+                    />
+                    <div class="text-sm text-base-content/70">
+                      {gettext("Invited by:")}
+                      <Components.highlighted_text
+                        text={inv.inviter.username}
+                        query={@invitations_search_query}
+                        class="font-semibold"
+                      />
+                      <Components.local_time
+                        id={"invitation-inserted-at-#{inv.id}"}
+                        datetime={inv.inserted_at}
+                        class="text-xs font-thin italic"
+                      />
                     </div>
-                  </div>
 
-                  <button
-                    :if={@invitations_pagination.has_more?}
-                    id="invitations-load-more"
-                    type="button"
-                    phx-click="load_more_invitations"
-                    class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
-                  >
-                    {gettext("Load more invitations")}
-                  </button>
+                    <div :if={is_nil(inv.accepted_at)} class="mt-2 flex flex-wrap gap-2">
+                      <.button
+                        id={"invitation-accept-#{inv.id}"}
+                        phx-click="accept"
+                        phx-value-id={inv.id}
+                        variant="primary"
+                      >
+                        {gettext("Accept")}
+                      </.button>
+                    </div>
+
+                    <div :if={!is_nil(inv.accepted_at)} class="mt-1 text-sm text-green-600">
+                      {gettext("Accepted on")}
+                      <Components.local_time
+                        id={"invitation-accepted-at-#{inv.id}"}
+                        datetime={inv.accepted_at}
+                        class="ml-1"
+                      />
+                    </div>
+
+                    <.button
+                      id={"invitation-delete-#{inv.id}"}
+                      phx-click="delete_invitation"
+                      phx-value-id={inv.id}
+                      data-confirm={gettext("Are you sure you want to delete this invitation?")}
+                      class="absolute right-0 inline-flex items-center rounded-full p-1 px-2 text-base-content/55 transition-colors hover:bg-base-300 hover:text-error"
+                    >
+                      <.icon name="hero-trash" class="size-4" />
+                    </.button>
+                  </div>
                 </div>
               </div>
+
+              <button
+                :if={@invitations_pagination.has_more?}
+                id="invitations-load-more"
+                type="button"
+                phx-click="load_more_invitations"
+                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+              >
+                {gettext("Load more invitations")}
+              </button>
             </div>
           </div>
+        </Components.settings_card>
 
-          <div class="card rounded-3xl border border-base-300/70 bg-base-100/70 shadow-sm">
-            <div class="card-body gap-4">
-              <button
-                id="sent-invitations-toggle"
-                type="button"
-                phx-click="toggle_sent_invitations"
-                class="flex w-full items-center justify-between gap-3 text-left"
-                aria-expanded={to_string(@sent_invitations_expanded?)}
-              >
-                <div>
-                  <h3 class="text-base font-semibold text-base-content">
-                    {gettext("Invitations sent by me")}
-                  </h3>
+        <Components.settings_card
+          id="invitations-sent"
+          tab_id="invitations-tab-sent"
+          active={@section == "sent"}
+          icon="hero-paper-airplane"
+          title={gettext("Invitations sent by me")}
+          subtitle={gettext("Invitations your current profile has sent to other profiles.")}
+        >
+          <div :if={@section == "sent"} class="space-y-4">
+            <div
+              :if={@sent_invitations_pagination.total_count == 0}
+              class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+            >
+              {if String.trim(@invitations_search_query) == "",
+                do: gettext("No invitations sent by this profile."),
+                else: gettext("No sent invitations match your search.")}
+            </div>
 
-                  <p class="text-sm text-base-content/70">
-                    {gettext("Invitations your current profile has sent to other profiles.")}
-                  </p>
-                </div>
-
-                <div class="flex items-center gap-2">
-                  <span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                    {@sent_invitations_pagination.total_count}
-                  </span>
-                  <.icon
-                    name="hero-chevron-down"
-                    class={[
-                      "size-5 transition-transform",
-                      @sent_invitations_expanded? && "rotate-180"
-                    ]}
-                  />
-                </div>
-              </button>
-              <div :if={@sent_invitations_expanded?} class="space-y-4">
+            <div :if={@sent_invitations_pagination.total_count > 0} class="space-y-4">
+              <div id="sent-invitations" phx-update="stream" class="space-y-4">
                 <div
-                  :if={@sent_invitations_pagination.total_count == 0}
-                  class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+                  :for={{dom_id, inv} <- @streams.sent_invitations}
+                  id={dom_id}
+                  class="card rounded-2xl border border-base-300/70 bg-base-100/80"
                 >
-                  {if String.trim(@invitations_search_query) == "",
-                    do: gettext("No invitations sent by this profile."),
-                    else: gettext("No sent invitations match your search.")}
-                </div>
+                  <div class="card-body p-3">
+                    <Components.group_identity
+                      group={inv.group}
+                      current_profile={@current_profile}
+                      avatar_size="size-12"
+                      text_class="text-sm"
+                      unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
+                      highlight_query={@invitations_search_query}
+                    />
+                    <div class="text-sm text-base-content/70">
+                      {gettext("Invited:")}
+                      <Components.highlighted_text
+                        text={inv.invitee.username}
+                        query={@invitations_search_query}
+                        class="font-semibold"
+                      />
+                    </div>
 
-                <div :if={@sent_invitations_pagination.total_count > 0} class="space-y-4">
-                  <div id="sent-invitations" phx-update="stream" class="space-y-4">
-                    <div
-                      :for={{dom_id, inv} <- @streams.sent_invitations}
-                      id={dom_id}
-                      class="card rounded-2xl border border-base-300/70 bg-base-100/80"
-                    >
-                      <div class="card-body p-3">
-                        <Components.group_identity
-                          group={inv.group}
-                          current_profile={@current_profile}
-                          avatar_size="size-12"
-                          text_class="text-sm"
-                          unread_count={Map.get(@group_unread_counts, inv.group.id, 0)}
-                          highlight_query={@invitations_search_query}
-                        />
-                        <div class="text-sm text-base-content/70">
-                          {gettext("Invited:")}
-                          <Components.highlighted_text
-                            text={inv.invitee.username}
-                            query={@invitations_search_query}
-                            class="font-semibold"
-                          />
-                        </div>
-
-                        <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-                          <span class={[
-                            "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
-                            if(is_nil(inv.accepted_at),
-                              do: "bg-amber-500/10 text-amber-700",
-                              else: "bg-emerald-500/10 text-emerald-700"
-                            )
-                          ]}>
-                            {if is_nil(inv.accepted_at),
-                              do: gettext("Pending"),
-                              else: gettext("Accepted")}
-                          </span>
-                          <span>
-                            {if is_nil(inv.accepted_at),
-                              do: gettext("Sent on"),
-                              else: gettext("Accepted on")}
-                          </span>
-                          <Components.local_time
-                            id={"sent-invitation-timestamp-#{inv.id}"}
-                            datetime={
-                              if(is_nil(inv.accepted_at),
-                                do: inv.inserted_at,
-                                else: inv.accepted_at
-                              )
-                            }
-                            class="text-xs font-thin italic"
-                          />
-                        </div>
-                      </div>
+                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
+                      <span class={[
+                        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
+                        if(is_nil(inv.accepted_at),
+                          do: "bg-amber-500/10 text-amber-700",
+                          else: "bg-emerald-500/10 text-emerald-700"
+                        )
+                      ]}>
+                        {if is_nil(inv.accepted_at),
+                          do: gettext("Pending"),
+                          else: gettext("Accepted")}
+                      </span>
+                      <span>
+                        {if is_nil(inv.accepted_at),
+                          do: gettext("Sent on"),
+                          else: gettext("Accepted on")}
+                      </span>
+                      <Components.local_time
+                        id={"sent-invitation-timestamp-#{inv.id}"}
+                        datetime={
+                          if(is_nil(inv.accepted_at),
+                            do: inv.inserted_at,
+                            else: inv.accepted_at
+                          )
+                        }
+                        class="text-xs font-thin italic"
+                      />
                     </div>
                   </div>
-
-                  <button
-                    :if={@sent_invitations_pagination.has_more?}
-                    id="sent-invitations-load-more"
-                    type="button"
-                    phx-click="load_more_sent_invitations"
-                    class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
-                  >
-                    {gettext("Load more sent invitations")}
-                  </button>
                 </div>
               </div>
+
+              <button
+                :if={@sent_invitations_pagination.has_more?}
+                id="sent-invitations-load-more"
+                type="button"
+                phx-click="load_more_sent_invitations"
+                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+              >
+                {gettext("Load more sent invitations")}
+              </button>
             </div>
           </div>
-        </div>
+        </Components.settings_card>
 
         <%!-- <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div> --%>
       </.page_container>
@@ -320,9 +285,8 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     socket =
       socket
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
-      |> assign(:invitations_expanded?, true)
+      |> assign(:section, "received")
       |> assign(:invitations_pagination, default_invitations_pagination())
-      |> assign(:sent_invitations_expanded?, true)
       |> assign(:sent_invitations_pagination, default_sent_invitations_pagination())
       |> assign(:invitations_search_query, "")
       |> assign(:visible_invitations, [])
@@ -368,17 +332,20 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   end
 
   @impl true
-  def handle_event("toggle_invitations", _params, socket) do
-    expanded? = not socket.assigns.invitations_expanded?
-
-    socket = assign(socket, :invitations_expanded?, expanded?)
+  def handle_event("set_section", %{"section" => section}, socket)
+      when section in @sections do
+    socket = assign(socket, :section, section)
+    profile = socket.assigns.current_profile
 
     {:noreply,
-     if(expanded?,
-       do: refresh_invitations(socket, socket.assigns.current_profile),
-       else: socket
-     )}
+     cond do
+       is_nil(profile) -> socket
+       section == "received" -> refresh_invitations(socket, profile)
+       true -> refresh_sent_invitations(socket, profile)
+     end}
   end
+
+  def handle_event("set_section", _params, socket), do: {:noreply, socket}
 
   def handle_event(
         "load_more_sent_invitations",
@@ -408,19 +375,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     else
       {:noreply, socket}
     end
-  end
-
-  @impl true
-  def handle_event("toggle_sent_invitations", _params, socket) do
-    expanded? = not socket.assigns.sent_invitations_expanded?
-
-    socket = assign(socket, :sent_invitations_expanded?, expanded?)
-
-    {:noreply,
-     if(expanded?,
-       do: refresh_sent_invitations(socket, socket.assigns.current_profile),
-       else: socket
-     )}
   end
 
   @impl true
@@ -618,12 +572,17 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> Map.put(:total_count, total_count)
       |> Map.put(:has_more?, loaded_count < total_count)
 
-    invitations_page = invitations_page(profile, pagination, search, total_count)
+    # The tab off screen only needs its count; picking it loads the list.
+    if socket.assigns.section == "received" do
+      invitations_page = invitations_page(profile, pagination, search, total_count)
 
-    socket
-    |> assign(:invitations_pagination, pagination_metadata(invitations_page))
-    |> assign_visible_invitations(invitations_page.entries)
-    |> stream(:invitations, invitations_page.entries, reset: true)
+      socket
+      |> assign(:invitations_pagination, pagination_metadata(invitations_page))
+      |> assign_visible_invitations(invitations_page.entries)
+      |> stream(:invitations, invitations_page.entries, reset: true)
+    else
+      assign(socket, :invitations_pagination, pagination)
+    end
   end
 
   defp refresh_sent_invitations(socket, profile) do
@@ -638,12 +597,16 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       |> Map.put(:total_count, total_count)
       |> Map.put(:has_more?, loaded_count < total_count)
 
-    invitations_page = sent_invitations_page(profile, pagination, search, total_count)
+    if socket.assigns.section == "sent" do
+      invitations_page = sent_invitations_page(profile, pagination, search, total_count)
 
-    socket
-    |> assign(:sent_invitations_pagination, pagination_metadata(invitations_page))
-    |> assign_visible_sent_invitations(invitations_page.entries)
-    |> stream(:sent_invitations, invitations_page.entries, reset: true)
+      socket
+      |> assign(:sent_invitations_pagination, pagination_metadata(invitations_page))
+      |> assign_visible_sent_invitations(invitations_page.entries)
+      |> stream(:sent_invitations, invitations_page.entries, reset: true)
+    else
+      assign(socket, :sent_invitations_pagination, pagination)
+    end
   end
 
   # One overview gives the header badge (its total) and the counts of the
@@ -732,6 +695,14 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       )
 
     pagination_result(pagination, entries, total_count)
+  end
+
+  # The tabs, in order: `{key, panel id, label, danger?}`.
+  defp sections do
+    [
+      {"received", "invitations-received", pgettext("invitations tab", "Received"), false},
+      {"sent", "invitations-sent", pgettext("invitations tab", "Sent"), false}
+    ]
   end
 
   defp default_invitations_pagination do

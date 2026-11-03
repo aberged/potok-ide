@@ -442,21 +442,29 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
         |> log_in_account(current_account)
         |> live(~p"/invitations")
 
-      assert has_element?(lv, "#invitations-toggle")
-      assert has_element?(lv, "#sent-invitations-toggle")
+      assert has_element?(lv, "#invitations-tab-received[aria-selected=true]")
       assert has_element?(lv, "#invitations a", "Received Search Group")
+      refute has_element?(lv, "#sent-invitations")
+
+      pick_tab(lv, "sent")
+
+      assert has_element?(lv, "#invitations-tab-sent[aria-selected=true]")
       assert has_element?(lv, "#sent-invitations a", "Sent Search Group")
+      refute has_element?(lv, "#invitations")
 
       lv
       |> form("#invitation-search-form", invitation_search: %{q: "invsh-tgt"})
       |> render_change()
 
-      refute has_element?(lv, "#invitations a", "Received Search Group")
       assert has_element?(lv, "#sent-invitations a", "Sent Search Group")
       assert has_element?(lv, ".bg-yellow-300", "invsh-tgt")
+
+      pick_tab(lv, "received")
+
+      refute has_element?(lv, "#invitations a", "Received Search Group")
     end
 
-    test "repopulates collapsed sections after search when re-expanded", %{conn: conn} do
+    test "loads a tab's list with the current search when it is picked", %{conn: conn} do
       current_account = account_fixture()
       inviter_account = account_fixture()
       sent_invitee_account = account_fixture()
@@ -519,30 +527,28 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
         |> live(~p"/invitations")
 
       lv
-      |> element("#invitations-toggle")
-      |> render_click()
-
-      lv
-      |> element("#sent-invitations-toggle")
-      |> render_click()
-
-      lv
-      |> form("#invitation-search-form", invitation_search: %{q: "Collapsed"})
+      |> form("#invitation-search-form", invitation_search: %{q: "Collapsed Sent"})
       |> render_change()
 
       refute has_element?(lv, "#invitations a", "Collapsed Received Group")
-      refute has_element?(lv, "#sent-invitations a", "Collapsed Sent Group")
+
+      pick_tab(lv, "sent")
+
+      assert has_element?(lv, "#sent-invitations a", "Collapsed Sent Group")
 
       lv
-      |> element("#invitations-toggle")
+      |> element("#invitation-search-reset")
       |> render_click()
 
-      lv
-      |> element("#sent-invitations-toggle")
-      |> render_click()
+      pick_tab(lv, "received")
 
       assert has_element?(lv, "#invitations a", "Collapsed Received Group")
-      assert has_element?(lv, "#sent-invitations a", "Collapsed Sent Group")
     end
+  end
+
+  defp pick_tab(lv, key) do
+    lv
+    |> element("#invitations-tab-#{key}")
+    |> render_click()
   end
 end

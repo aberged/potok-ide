@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
   alias PotokIdeWeb.ProfileAuth
   @approved_requests_per_page 10
   @created_requests_per_page 10
+  @sections ~w(pending approved created)
 
   @impl true
   def render(assigns) do
@@ -32,19 +33,37 @@ defmodule PotokIdeWeb.RequestLive.Index do
         <.page_header id="requests-header" icon="hero-hand-raised">
           {gettext("Requests")}
           <:subtitle>
-            {gettext("Pending group access requests that your current profile can approve.")}
+            {gettext("Group access requests you can approve, and the ones you made.")}
           </:subtitle>
         </.page_header>
 
+        <Components.settings_tabs
+          id="requests-sections"
+          tabs={sections()}
+          current={@section}
+          event="set_section"
+          tab_id_prefix="requests-tab"
+          counts={
+            %{
+              "pending" => length(@requests),
+              "approved" => @approved_requests_pagination.total_count,
+              "created" => @created_requests_pagination.total_count
+            }
+          }
+        />
+
+        <%!-- One search for both histories; it does not filter the pending
+               requests, so their tab leaves it out. --%>
         <.form
           :if={
-            @approved_requests_pagination.total_count > 0 or
-              @created_requests_pagination.total_count > 0 or @requests_search_query != ""
+            @section != "pending" and
+              (@approved_requests_pagination.total_count > 0 or
+                 @created_requests_pagination.total_count > 0 or @requests_search_query != "")
           }
           for={@request_search_form}
           id="request-search-form"
           phx-change="search_requests"
-          class="mb-3 flex flex-row justify-end sticky right-4 top-1 z-45"
+          class="mb-3 flex flex-row justify-end"
         >
           <div class="relative w-fit">
             <button
@@ -72,284 +91,247 @@ defmodule PotokIdeWeb.RequestLive.Index do
           </div>
         </.form>
 
-        <div :if={@requests == []} class="text-base-content/70">
-          {gettext("No pending approval requests.")}
-        </div>
-
-        <div
-          :for={request <- @requests}
-          id={"approval-request-#{request.id}"}
-          class="card rounded-3xl border border-base-300/70 bg-base-100/80 shadow-sm"
+        <Components.settings_card
+          id="requests-pending"
+          tab_id="requests-tab-pending"
+          active={@section == "pending"}
+          icon="hero-clock"
+          title={gettext("Requests to approve")}
+          subtitle={gettext("Pending group access requests that your current profile can approve.")}
         >
-          <div class="card-body gap-3">
-            <Components.group_identity
-              group={request.group}
-              current_profile={@current_profile}
-              avatar_size="size-12"
-              text_class="text-sm"
-            />
-            <Components.profile_identity
-              profile={request.requester}
-              avatar_size="size-10"
-              text_class="text-sm"
-              title={gettext("Requester")}
-              current_profile={@current_profile}
-              direct_group_link={true}
-            />
-            <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-              <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-                {gettext("Pending")}
-              </span>
-              <span>{gettext("Review this access request for the selected group.")}</span>
-            </div>
+          <div
+            :if={@requests == []}
+            class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+          >
+            {gettext("No pending approval requests.")}
+          </div>
 
-            <div class="flex flex-wrap items-center justify-between gap-3">
-              <div class="text-sm text-base-content/70">
-                {gettext("Requested on")}
-                <Components.local_time
-                  id={"request-inserted-at-#{request.id}"}
-                  datetime={request.inserted_at}
-                  class="ml-1 text-xs font-thin italic"
-                />
+          <div :if={@requests != []} class="space-y-3">
+            <div
+              :for={request <- @requests}
+              id={"approval-request-#{request.id}"}
+              class="space-y-3 rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
+            >
+              <Components.group_identity
+                group={request.group}
+                current_profile={@current_profile}
+                avatar_size="size-12"
+                text_class="text-sm"
+              />
+              <Components.profile_identity
+                profile={request.requester}
+                avatar_size="size-10"
+                text_class="text-sm"
+                title={gettext("Requester")}
+                current_profile={@current_profile}
+                direct_group_link={true}
+              />
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
+                <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+                  {gettext("Pending")}
+                </span>
+                <span>{gettext("Review this access request for the selected group.")}</span>
               </div>
 
-              <div class="flex items-center gap-2">
-                <button
-                  id={"request-accept-#{request.id}"}
-                  type="button"
-                  phx-click="accept"
-                  phx-value-id={request.id}
-                  class="btn btn-sm rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:border-emerald-500/60 hover:bg-emerald-500/15"
-                >
-                  {gettext("Accept")}
-                </button>
-                <button
-                  id={"request-reject-#{request.id}"}
-                  type="button"
-                  phx-click="reject"
-                  phx-value-id={request.id}
-                  class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
-                >
-                  {gettext("Reject")}
-                </button>
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <div class="text-sm text-base-content/70">
+                  {gettext("Requested on")}
+                  <Components.local_time
+                    id={"request-inserted-at-#{request.id}"}
+                    datetime={request.inserted_at}
+                    class="ml-1 text-xs font-thin italic"
+                  />
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button
+                    id={"request-accept-#{request.id}"}
+                    type="button"
+                    phx-click="accept"
+                    phx-value-id={request.id}
+                    class="btn btn-sm rounded-full border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 hover:border-emerald-500/60 hover:bg-emerald-500/15"
+                  >
+                    {gettext("Accept")}
+                  </button>
+                  <button
+                    id={"request-reject-#{request.id}"}
+                    type="button"
+                    phx-click="reject"
+                    phx-value-id={request.id}
+                    class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+                  >
+                    {gettext("Reject")}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+        </Components.settings_card>
 
-        <div class="mt-6 card rounded-3xl border border-base-300/70 bg-base-100/70 shadow-sm">
-          <div class="card-body gap-4">
-            <button
-              id="approved-requests-toggle"
-              type="button"
-              phx-click="toggle_approved_requests"
-              class="flex w-full items-center justify-between gap-3 text-left"
-              aria-expanded={to_string(@approved_requests_expanded?)}
+        <%!-- A history card off screen holds no list: picking its tab loads it. --%>
+        <Components.settings_card
+          id="requests-approved"
+          tab_id="requests-tab-approved"
+          active={@section == "approved"}
+          icon="hero-check-badge"
+          title={gettext("Approved requests")}
+          subtitle={gettext("History of access requests you approved.")}
+        >
+          <div :if={@section == "approved"} class="space-y-3">
+            <div
+              :if={@approved_requests_pagination.total_count == 0}
+              class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
             >
-              <div>
-                <h3 class="text-base font-semibold text-base-content">
-                  {gettext("Approved requests")}
-                </h3>
+              {if String.trim(@requests_search_query) == "",
+                do: gettext("No approved requests yet."),
+                else: gettext("No approved requests match your search.")}
+            </div>
 
-                <p class="text-sm text-base-content/70">
-                  {gettext("History of access requests you approved.")}
-                </p>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span class="rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                  {@approved_requests_pagination.total_count}
-                </span>
-                <.icon
-                  name="hero-chevron-down"
-                  class={[
-                    "size-5 transition-transform",
-                    @approved_requests_expanded? && "rotate-180"
-                  ]}
-                />
-              </div>
-            </button>
-            <div :if={@approved_requests_expanded?} class="space-y-3">
+            <div
+              :if={@approved_requests_pagination.total_count > 0}
+              id="approved-requests"
+              phx-update="stream"
+              class="space-y-3"
+            >
               <div
-                :if={@approved_requests_pagination.total_count == 0}
-                class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+                :for={{dom_id, approval} <- @streams.approved_requests}
+                id={dom_id}
+                class="rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
               >
-                {if String.trim(@requests_search_query) == "",
-                  do: gettext("No approved requests yet."),
-                  else: gettext("No approved requests match your search.")}
-              </div>
-
-              <div
-                :if={@approved_requests_pagination.total_count > 0}
-                id="approved-requests"
-                phx-update="stream"
-                class="space-y-3"
-              >
-                <div
-                  :for={{dom_id, approval} <- @streams.approved_requests}
-                  id={dom_id}
-                  class="rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
-                >
-                  <div class="space-y-3">
-                    <Components.group_identity
-                      group={approval.group}
-                      current_profile={@current_profile}
-                      avatar_size="size-10"
-                      text_class="text-sm"
+                <div class="space-y-3">
+                  <Components.group_identity
+                    group={approval.group}
+                    current_profile={@current_profile}
+                    avatar_size="size-10"
+                    text_class="text-sm"
+                  />
+                  <Components.profile_identity
+                    profile={approval.requester}
+                    avatar_size="size-9"
+                    text_class="text-sm"
+                    title={gettext("Requester")}
+                    current_profile={@current_profile}
+                    direct_group_link={true}
+                  />
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
+                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                      {gettext("Approved")}
+                    </span>
+                    <span>{gettext("Approved on")}</span>
+                    <Components.local_time
+                      id={"request-approved-at-#{approval.id}"}
+                      datetime={approval.approved_at}
+                      class="text-xs font-thin italic"
                     />
-                    <Components.profile_identity
-                      profile={approval.requester}
-                      avatar_size="size-9"
-                      text_class="text-sm"
-                      title={gettext("Requester")}
-                      current_profile={@current_profile}
-                      direct_group_link={true}
-                    />
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-                      <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
-                        {gettext("Approved")}
-                      </span>
-                      <span>{gettext("Approved on")}</span>
-                      <Components.local_time
-                        id={"request-approved-at-#{approval.id}"}
-                        datetime={approval.approved_at}
-                        class="text-xs font-thin italic"
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
-
-              <button
-                :if={@approved_requests_pagination.has_more?}
-                id="approved-requests-load-more"
-                type="button"
-                phx-click="load_more_approved_requests"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
-              >
-                {gettext("Load more approved requests")}
-              </button>
             </div>
-          </div>
-        </div>
 
-        <div class="mt-6 card rounded-3xl border border-base-300/70 bg-base-100/70 shadow-sm">
-          <div class="card-body gap-4">
             <button
-              id="created-requests-toggle"
+              :if={@approved_requests_pagination.has_more?}
+              id="approved-requests-load-more"
               type="button"
-              phx-click="toggle_created_requests"
-              class="flex w-full items-center justify-between gap-3 text-left"
-              aria-expanded={to_string(@created_requests_expanded?)}
+              phx-click="load_more_approved_requests"
+              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
             >
-              <div>
-                <h3 class="text-base font-semibold text-base-content">
-                  {gettext("Requests created by me")}
-                </h3>
-
-                <p class="text-sm text-base-content/70">
-                  {gettext(
-                    "History of access requests your current profile created and that were approved."
-                  )}
-                </p>
-              </div>
-
-              <div class="flex items-center gap-2">
-                <span class="rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
-                  {@created_requests_pagination.total_count}
-                </span>
-                <.icon
-                  name="hero-chevron-down"
-                  class={[
-                    "size-5 transition-transform",
-                    @created_requests_expanded? && "rotate-180"
-                  ]}
-                />
-              </div>
+              {gettext("Load more approved requests")}
             </button>
-            <div :if={@created_requests_expanded?} class="space-y-3">
-              <div
-                :if={@created_requests_pagination.total_count == 0}
-                class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
-              >
-                {if String.trim(@requests_search_query) == "",
-                  do: gettext("No approved requests created by this profile yet."),
-                  else: gettext("No created requests match your search.")}
-              </div>
+          </div>
+        </Components.settings_card>
 
+        <Components.settings_card
+          id="requests-created"
+          tab_id="requests-tab-created"
+          active={@section == "created"}
+          icon="hero-paper-airplane"
+          title={gettext("Requests created by me")}
+          subtitle={
+            gettext("History of access requests your current profile created and that were approved.")
+          }
+        >
+          <div :if={@section == "created"} class="space-y-3">
+            <div
+              :if={@created_requests_pagination.total_count == 0}
+              class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+            >
+              {if String.trim(@requests_search_query) == "",
+                do: gettext("No approved requests created by this profile yet."),
+                else: gettext("No created requests match your search.")}
+            </div>
+
+            <div
+              :if={@created_requests_pagination.total_count > 0}
+              id="created-requests"
+              phx-update="stream"
+              class="space-y-3"
+            >
               <div
-                :if={@created_requests_pagination.total_count > 0}
-                id="created-requests"
-                phx-update="stream"
-                class="space-y-3"
+                :for={{dom_id, request} <- @streams.created_requests}
+                id={dom_id}
+                class="rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
               >
-                <div
-                  :for={{dom_id, request} <- @streams.created_requests}
-                  id={dom_id}
-                  class="rounded-2xl border border-base-300/70 bg-base-100/80 p-4"
-                >
-                  <div class="space-y-3">
-                    <Components.group_identity
-                      group={request.group}
-                      current_profile={@current_profile}
-                      avatar_size="size-10"
-                      text_class="text-sm"
-                    />
-                    <Components.profile_identity
-                      :if={request.approver}
-                      profile={request.approver}
-                      avatar_size="size-9"
-                      text_class="text-sm"
-                      title={gettext("Approved by")}
-                      current_profile={@current_profile}
-                      direct_group_link={true}
-                    />
-                    <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-                      <span class={[
-                        "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
+                <div class="space-y-3">
+                  <Components.group_identity
+                    group={request.group}
+                    current_profile={@current_profile}
+                    avatar_size="size-10"
+                    text_class="text-sm"
+                  />
+                  <Components.profile_identity
+                    :if={request.approver}
+                    profile={request.approver}
+                    avatar_size="size-9"
+                    text_class="text-sm"
+                    title={gettext("Approved by")}
+                    current_profile={@current_profile}
+                    direct_group_link={true}
+                  />
+                  <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
+                    <span class={[
+                      "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
+                      if(request.status == :approved,
+                        do: "bg-sky-500/10 text-sky-700",
+                        else: "bg-amber-500/10 text-amber-700"
+                      )
+                    ]}>
+                      {if(request.status == :approved,
+                        do: gettext("Approved"),
+                        else: gettext("Pending")
+                      )}
+                    </span>
+                    <span>
+                      {if(request.status == :approved,
+                        do: gettext("Approved on"),
+                        else: gettext("Requested on")
+                      )}
+                    </span>
+                    <Components.local_time
+                      id={"created-request-timestamp-#{request.id}"}
+                      datetime={
                         if(request.status == :approved,
-                          do: "bg-sky-500/10 text-sky-700",
-                          else: "bg-amber-500/10 text-amber-700"
+                          do: request.approved_at,
+                          else: request.requested_at
                         )
-                      ]}>
-                        {if(request.status == :approved,
-                          do: gettext("Approved"),
-                          else: gettext("Pending")
-                        )}
-                      </span>
-                      <span>
-                        {if(request.status == :approved,
-                          do: gettext("Approved on"),
-                          else: gettext("Requested on")
-                        )}
-                      </span>
-                      <Components.local_time
-                        id={"created-request-timestamp-#{request.id}"}
-                        datetime={
-                          if(request.status == :approved,
-                            do: request.approved_at,
-                            else: request.requested_at
-                          )
-                        }
-                        class="text-xs font-thin italic"
-                      />
-                    </div>
+                      }
+                      class="text-xs font-thin italic"
+                    />
                   </div>
                 </div>
               </div>
-
-              <button
-                :if={@created_requests_pagination.has_more?}
-                id="created-requests-load-more"
-                type="button"
-                phx-click="load_more_created_requests"
-                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
-              >
-                {gettext("Load more created requests")}
-              </button>
             </div>
+
+            <button
+              :if={@created_requests_pagination.has_more?}
+              id="created-requests-load-more"
+              type="button"
+              phx-click="load_more_created_requests"
+              class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80"
+            >
+              {gettext("Load more created requests")}
+            </button>
           </div>
-        </div>
+        </Components.settings_card>
       </.page_container>
     </Layouts.app>
     """
@@ -361,10 +343,9 @@ defmodule PotokIdeWeb.RequestLive.Index do
       socket
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
       |> assign(:requests_search_query, "")
-      |> assign(:approved_requests_expanded?, false)
+      |> assign(:section, "pending")
       |> assign(:approved_requests_pagination, default_approved_requests_pagination())
       |> stream(:approved_requests, [], reset: true)
-      |> assign(:created_requests_expanded?, false)
       |> assign(:created_requests_pagination, default_created_requests_pagination())
       |> stream(:created_requests, [], reset: true)
       |> ProfileAuth.sync_profile_subscription()
@@ -373,14 +354,20 @@ defmodule PotokIdeWeb.RequestLive.Index do
   end
 
   @impl true
-  def handle_event("toggle_approved_requests", _params, socket) do
-    expanded? = not socket.assigns.approved_requests_expanded?
+  def handle_event("set_section", %{"section" => section}, socket)
+      when section in @sections do
+    socket = assign(socket, :section, section)
+    profile = socket.assigns.current_profile
 
     {:noreply,
-     socket
-     |> assign(:approved_requests_expanded?, expanded?)
-     |> refresh_approved_requests(socket.assigns.current_profile)}
+     case section do
+       "pending" -> socket
+       "approved" -> refresh_approved_requests(socket, profile)
+       "created" -> refresh_created_requests(socket, profile)
+     end}
   end
+
+  def handle_event("set_section", _params, socket), do: {:noreply, socket}
 
   def handle_event(
         "load_more_approved_requests",
@@ -409,15 +396,6 @@ defmodule PotokIdeWeb.RequestLive.Index do
     else
       {:noreply, socket}
     end
-  end
-
-  def handle_event("toggle_created_requests", _params, socket) do
-    expanded? = not socket.assigns.created_requests_expanded?
-
-    {:noreply,
-     socket
-     |> assign(:created_requests_expanded?, expanded?)
-     |> refresh_created_requests(socket.assigns.current_profile)}
   end
 
   @impl true
@@ -594,7 +572,8 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> Map.put(:total_count, total_count)
       |> Map.put(:has_more?, loaded_count < total_count)
 
-    if socket.assigns.approved_requests_expanded? do
+    # The tab off screen only needs its count; picking it loads the list.
+    if socket.assigns.section == "approved" do
       approved_page =
         approved_requests_page(
           profile,
@@ -633,7 +612,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
       |> Map.put(:total_count, total_count)
       |> Map.put(:has_more?, loaded_count < total_count)
 
-    if socket.assigns.created_requests_expanded? do
+    if socket.assigns.section == "created" do
       created_page =
         created_requests_page(
           profile,
@@ -648,6 +627,15 @@ defmodule PotokIdeWeb.RequestLive.Index do
     else
       assign(socket, :created_requests_pagination, pagination)
     end
+  end
+
+  # The tabs, in order: `{key, panel id, label, danger?}`.
+  defp sections do
+    [
+      {"pending", "requests-pending", pgettext("requests tab", "To approve"), false},
+      {"approved", "requests-approved", pgettext("requests tab", "Approved"), false},
+      {"created", "requests-created", pgettext("requests tab", "My requests"), false}
+    ]
   end
 
   defp approved_requests_page(%{} = profile, pagination, search, total_count \\ nil) do

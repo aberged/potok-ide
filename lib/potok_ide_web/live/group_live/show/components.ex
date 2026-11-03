@@ -418,10 +418,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     required: true,
     doc: "each tab's id is the prefix, `-` and its key"
 
+  attr :counts, :map, default: %{}, doc: "a number shown after a tab's label, by key"
+
   @doc """
-  The tab bar of a settings tab (edit group, create sub-group): it sticks to
-  the top of the `tab_body/1` it is in, and a picked tab starts its card at
-  the top.
+  The tab bar of a settings tab (edit group, create sub-group) or of a
+  top-level page with sections (invitations, requests): it sticks to the top
+  of the `tab_body/1` or `page_container/1` it is in, and a picked tab starts
+  its card at the top.
   """
   def settings_tabs(assigns) do
     ~H"""
@@ -442,11 +445,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         phx-click={@event}
         phx-value-section={key}
         class={[
-          "shrink-0 rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95",
+          "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition duration-150 ease-out active:scale-95",
           settings_tab_class(@current == key, danger?)
         ]}
       >
         {label}
+        <span
+          :if={Map.has_key?(@counts, key)}
+          class={[
+            "min-w-5 rounded-full px-1.5 text-center text-xs font-semibold tabular-nums",
+            if(@current == key, do: "bg-base-100/20", else: "bg-base-content/10")
+          ]}
+        >
+          {@counts[key]}
+        </span>
       </button>
     </nav>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".SectionTabs">
