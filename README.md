@@ -357,6 +357,20 @@ Server-side Firebase configuration:
 
 Once the relevant browser or Firebase credentials are configured, `/accounts/settings` exposes the shared enable, disable, and test notification controls for the PWA and the installed native apps.
 
+### Share to Potok
+
+Potok appears in the system share sheet of the native apps and of the installed web app on Android. Shared text, links and files stay on the device until a group is picked on `/share`; the group's composer then takes them into its usual upload, so the file count, size and `attach_files` checks are the composer's own. `assets/js/share_inbox.js` reads the share from one of three places:
+
+* Android: `SEND` / `SEND_MULTIPLE` intent filters on `MainActivity` and `ShareInboxPlugin.java`, which copies shared files into the app cache
+* iOS: the `ShareExtension` target (`assets/ios/App/ShareExtension/`), which copies them into the App Group container `group.rs.potok.ide` and opens `potok://share/<id>`; `App/ShareInboxPlugin.swift` reads them from there
+* installed web app: `share_target` in `priv/static/manifest.webmanifest`; the service worker keeps the post in IndexedDB (`POST /share-target` is the text-only fallback)
+
+Native changes need a new app build. iOS setup in Apple Developer:
+
+* enable `App Groups` on the app's identifier and add the group `group.rs.potok.ide`
+* register the identifier `rs.potok.ide.share` with the same App Group
+* regenerate the app's App Store provisioning profile and create one for `rs.potok.ide.share`; the workflow takes the second one from `IOS_SHARE_PROVISION_PROFILE_BASE64` and `IOS_SHARE_PROVISION_PROFILE_NAME`
+
 ### Signed release APKs via Gradle
 
 The Android project is now set up so `assembleRelease` produces a signed APK and `bundleRelease` produces a signed Android App Bundle when the signing values are provided in `assets/android/release-signing.properties`, as Gradle properties, or as environment variables.
@@ -526,6 +540,7 @@ Public routes:
 * `GET /avatar/profile/:id` and `GET /avatar/group/:id` serve avatar images (no session)
 * `GET /.well-known/assetlinks.json` for Android App Links
 * `GET /.well-known/apple-app-site-association` and `GET /apple-app-site-association` for iOS Universal Links
+* `POST /share-target` passes text shared to the installed web app on to `/share` when no service worker took the post (no session or CSRF; see "Share to Potok")
 * `DELETE /accounts/log-out`
 
 Routes for logged-out visitors only (logged-in accounts are redirected):
@@ -552,6 +567,7 @@ Authenticated routes that require a current profile:
 
 * `GET /profiles/:id/direct`
 * `GET /groups`
+* `GET /share` picks the group for content shared from another app (see "Share to Potok")
 * `GET /groups/:id`
 * `GET /groups/:id/:tab`
 * `GET /invitations`
@@ -860,7 +876,7 @@ The repository now includes `.github/workflows/ios-build-publish.yml`, which run
 
 * installs npm dependencies in `assets/`
 * syncs the Capacitor iOS project with `npm run cap:sync:ios`
-* imports an Apple distribution certificate and provisioning profile
+* imports an Apple distribution certificate and the provisioning profiles of the app and its Share Extension
 * archives the Xcode project and exports an IPA
 * uploads the IPA as a GitHub artifact
 * optionally uploads the IPA to App Store Connect / TestFlight
@@ -879,6 +895,7 @@ Required GitHub Actions secrets:
 * `IOS_BUILD_KEYCHAIN_PASSWORD`
 * `IOS_BUILD_PROVISION_PROFILE_BASE64`
 * `IOS_BUILD_PROVISION_PROFILE_NAME`
+* `IOS_SHARE_PROVISION_PROFILE_BASE64` and `IOS_SHARE_PROVISION_PROFILE_NAME` (the Share Extension `<bundle id>.share`, see "Share to Potok")
 * `IOS_DEVELOPMENT_TEAM`
 * `IOS_BUNDLE_IDENTIFIER`
 * `IOS_FIREBASE_GOOGLE_SERVICE_INFO_BASE64`

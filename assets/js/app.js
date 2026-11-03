@@ -29,6 +29,12 @@ import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installLongPressLinkMenu } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
+import {
+  ShareComposer,
+  SharePreview,
+  onNativeShareReceived,
+  openPendingNativeShare,
+} from "./share_inbox"
 import { Uploaders } from "./uploaders"
 
 const HeaderDrawer = {
@@ -1345,6 +1351,23 @@ const scheduleCapacitorRouteRestore = () => {
   }, CAPACITOR_ROUTE_RESTORE_DELAY_MS)
 }
 
+// The iOS Share Extension opens `potok://share/<id>` after storing the share
+// where the app's `ShareInbox` plugin reads it.
+const openCapacitorShareUrl = urlString => {
+  try {
+    const url = new URL(urlString)
+
+    if (url.protocol !== "potok:" || url.hostname !== "share") {
+      return false
+    }
+  } catch (_error) {
+    return false
+  }
+
+  void openPendingNativeShare().catch(() => {})
+  return true
+}
+
 const handleCapacitorAppUrl = urlString => {
   const normalizedUrl = typeof urlString === "string" ? urlString.trim() : ""
 
@@ -1363,7 +1386,7 @@ const handleCapacitorAppUrl = urlString => {
     return true
   }
 
-  const handled = openNotificationUrl(normalizedUrl)
+  const handled = openCapacitorShareUrl(normalizedUrl) || openNotificationUrl(normalizedUrl)
 
   if (handled) {
     lastHandledCapacitorUrl = normalizedUrl
@@ -1382,11 +1405,19 @@ const registerCapacitorMagicLinks = () => {
     handleCapacitorAppUrl(url)
   })
 
-  void App.getLaunchUrl()
-    .then(result => {
-      const openedLaunchUrl = handleCapacitorAppUrl(result?.url || "")
+  onNativeShareReceived(() => {
+    cancelPendingCapacitorRouteRestore()
+    void openPendingNativeShare().catch(() => {})
+  })
 
-      if (!openedLaunchUrl) {
+  void App.getLaunchUrl()
+    .then(async result => {
+      if (handleCapacitorAppUrl(result?.url || "")) {
+        return
+      }
+
+      // An app opened from the share sheet goes to `/share`, not the last route.
+      if (!(await openPendingNativeShare().catch(() => false))) {
         scheduleCapacitorRouteRestore()
       }
     })
@@ -1399,6 +1430,14 @@ const persistCurrentCapacitorRoute = () => {
   }
 
   const route = `${window.location.pathname}${window.location.search}${window.location.hash}`
+
+  // A share is opened once; a later start must not come back to it.
+  if (
+    window.location.pathname === "/share" ||
+    new URLSearchParams(window.location.search).has("share")
+  ) {
+    return
+  }
 
   try {
     window.localStorage.setItem(CAPACITOR_LAST_ROUTE_KEY, route)
@@ -1575,6 +1614,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     GroupAppFrame,
     MarkdownEditor,
     ReactionPicker,
+    ShareComposer,
+    SharePreview,
     ...colocatedHooks,
   },
   uploaders: Uploaders,

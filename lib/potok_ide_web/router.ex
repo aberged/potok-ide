@@ -46,6 +46,12 @@ defmodule PotokIdeWeb.Router do
     plug :redirect_if_account_is_authenticated
   end
 
+  # The installed web app's share target, posted by the browser: it only
+  # passes the text on to `/share`, so it needs no session or CSRF token.
+  pipeline :share_target do
+    plug :put_secure_browser_headers
+  end
+
   scope "/.well-known", PotokIdeWeb do
     pipe_through :api
 
@@ -65,6 +71,14 @@ defmodule PotokIdeWeb.Router do
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
     get "/privacy-policy", PageController, :privacy
+  end
+
+  # The service worker takes these posts (`priv/static/sw.js`); this is for
+  # when no worker controls the page yet.
+  scope "/", PotokIdeWeb do
+    pipe_through :share_target
+
+    post "/share-target", ShareTargetController, :create
   end
 
   scope "/avatar", PotokIdeWeb do
@@ -145,6 +159,7 @@ defmodule PotokIdeWeb.Router do
       ] do
       live "/profiles/:id/direct", ProfileLive.Direct, :show
       live "/groups", GroupLive.Root, :show
+      live "/share", ShareLive, :index
       live "/groups/:id/:tab", GroupLive.Show, :show
       live "/groups/:id", GroupLive.Show, :show
       live "/invitations", InvitationLive.Index, :index

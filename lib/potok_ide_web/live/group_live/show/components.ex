@@ -734,6 +734,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :unread_count, :integer, default: 0
   attr :current_profile, :map, default: nil
   attr :highlight_query, :string, default: ""
+  attr :navigate, :string, default: nil, doc: "where the row leads instead of the group's page"
   slot :subtitle, doc: "a second line under the name, such as the group's tags"
 
   # The link holds only the name, but its `after:` box covers the whole row:
@@ -807,7 +808,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
 
       <.link
-        navigate={~p"/groups/#{@group.id}"}
+        navigate={@navigate || ~p"/groups/#{@group.id}"}
         class={[
           "flex min-w-0 items-center gap-1.5 after:absolute after:inset-0 after:rounded-full focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary/40",
           @subtitle != [] && "self-end"

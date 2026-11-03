@@ -2712,6 +2712,49 @@ defmodule PotokIde.Social do
     {groups, total}
   end
 
+  @doc """
+  The groups content shared from another app can go to, most recently active
+  first: the profile's memberships that have a chat (not the root, no
+  threads) and let it post values. Options: `:search` on the name, or on the
+  other member's username in a direct conversation, and `:limit` (30).
+  Parents come preloaded, and the members of direct conversations.
+  """
+  def list_share_target_groups(%Profile{} = profile, opts \\ []) do
+    from(g in Group,
+      as: :group,
+      join: gm in GroupMembership,
+      on: gm.group_id == g.id and gm.profile_id == ^profile.id,
+      where: not is_nil(g.parent_id) and is_nil(g.parent_value_id),
+      order_by: [desc_nulls_last: g.last_value_at, desc: g.inserted_at, desc: g.id],
+      limit: ^(opts[:limit] || 30),
+      preload: [:parent]
+    )
+    |> filter_share_targets(profile, normalize_group_search_term(opts[:search]))
+    |> Repo.all()
+    |> Enum.filter(&Access.can?(profile, &1, :post_values))
+    |> maybe_preload_group_members()
+  end
+
+  defp filter_share_targets(query, _profile, nil), do: query
+
+  defp filter_share_targets(query, %Profile{id: profile_id}, search) do
+    pattern = "%#{search}%"
+
+    other_member_matches =
+      from(m in GroupMembership,
+        join: p in Profile,
+        on: p.id == m.profile_id,
+        where:
+          m.group_id == parent_as(:group).id and m.profile_id != ^profile_id and
+            ilike(p.username, ^pattern),
+        select: 1
+      )
+
+    from(g in query,
+      where: ilike(g.name, ^pattern) or (g.is_direct and exists(other_member_matches))
+    )
+  end
+
   # The ordered sub-groups with their columns and list details in one query,
   # and per group the columns after them: the count of all (`count?`) or none.
   # The order, the page and the count work on narrow rows; only the page's

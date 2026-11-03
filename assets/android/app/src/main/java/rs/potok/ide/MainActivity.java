@@ -10,6 +10,7 @@ public class MainActivity extends BridgeActivity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		SplashScreen.installSplashScreen(this);
+		registerPlugin(ShareInboxPlugin.class);
 		super.onCreate(savedInstanceState);
 	}
 }

@@ -32,6 +32,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :attachments, Phoenix.LiveView.UploadConfig, required: true
   attr :can_attach, :boolean, default: false
 
+  attr :share_id, :string,
+    default: nil,
+    doc: "content shared from another app (`?share=`) for the composer to take"
+
   def panel(assigns) do
     access = assigns.access
 
@@ -276,6 +280,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               >
                 <.icon name="hero-x-mark" class="size-4" />
               </button>
+            </div>
+            <%!-- Fills the composer with what was shared from another app (`assets/js/share_inbox.js`). --%>
+            <div
+              :if={@share_id}
+              id="group-value-share"
+              phx-hook="ShareComposer"
+              data-share-id={@share_id}
+              data-can-attach={to_string(@can_attach)}
+              data-max-files={Storage.max_files()}
+              data-max-file-size={Storage.max_file_size()}
+              hidden
+            >
             </div>
             <%!-- `.MentionComposer` suggests `@` mentions; it handles keys before `.SubmitOnEnter`. --%>
             <div id="group-value-mentions" phx-hook=".MentionComposer" class="relative">

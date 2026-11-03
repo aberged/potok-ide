@@ -8,5 +8,9 @@
 	<array>
 		<string>applinks:potok.rs</string>
 	</array>
+	<key>com.apple.security.application-groups</key>
+	<array>
+		<string>$(POTOK_APP_GROUP)</string>
+	</array>
 </dict>
 </plist>

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "potok-static-v3"
+const CACHE_VERSION = "potok-static-v4"
 const STATIC_CACHE = CACHE_VERSION
 const STATIC_CACHE_MAX_ENTRIES = 80
 const STATIC_ASSETS = [
@@ -95,14 +95,71 @@ const staleWhileRevalidate = async (event, request) => {
   return cachedResponse || networkResponse
 }
 
+// The installed app's share target (`share_target` in the manifest) posts
+// here. The share is kept on the device, in the database that
+// `assets/js/share_inbox.js` reads, until a group is picked on `/share`;
+// only the newest one is kept.
+const SHARE_DB = "potok-share"
+const SHARE_STORE = "shares"
+const SHARE_KEY = "pending"
+
+const storeShare = share =>
+  new Promise((resolve, reject) => {
+    const request = indexedDB.open(SHARE_DB, 1)
+
+    request.onupgradeneeded = () => request.result.createObjectStore(SHARE_STORE)
+    request.onerror = () => reject(request.error)
+    request.onsuccess = () => {
+      const db = request.result
+      const transaction = db.transaction(SHARE_STORE, "readwrite")
+
+      transaction.objectStore(SHARE_STORE).put(share, SHARE_KEY)
+      transaction.oncomplete = () => {
+        db.close()
+        resolve()
+      }
+      transaction.onerror = () => {
+        db.close()
+        reject(transaction.error)
+      }
+    }
+  })
+
+const receiveShare = async request => {
+  try {
+    const form = await request.formData()
+    const text = name => (typeof form.get(name) === "string" ? form.get(name) : "")
+
+    await storeShare({
+      id: `w${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`,
+      title: text("title"),
+      text: text("text"),
+      url: text("url"),
+      files: form.getAll("files").filter(file => file instanceof File && file.name),
+    })
+  } catch (_error) {
+    // `/share` then says there is nothing to share.
+  }
+
+  return Response.redirect("/share", 303)
+}
+
 self.addEventListener("fetch", event => {
   const request = event.request
+  const url = new URL(request.url)
+
+  if (
+    request.method === "POST" &&
+    url.origin === self.location.origin &&
+    url.pathname === "/share-target"
+  ) {
+    event.respondWith(receiveShare(request))
+    return
+  }
 
   if (request.method !== "GET") {
     return
   }
-
-  const url = new URL(request.url)
 
   if (url.origin !== self.location.origin || url.pathname.startsWith("/live/")) {
     return

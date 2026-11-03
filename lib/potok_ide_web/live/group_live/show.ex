@@ -562,6 +562,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             access={@access}
             attachments={@uploads.attachments}
             can_attach={can_attach?(@access)}
+            share_id={@share_id}
           />
           <FilesTab.panel
             :if={@active_tab == "files"}
@@ -799,6 +800,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     sub_groups_view = normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
     description_param = Map.get(params, "d")
+    socket = assign(socket, :share_id, parse_share_id(Map.get(params, "share")))
 
     cond do
       active_tab != socket.assigns.active_tab or
@@ -913,6 +915,43 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("cancel_attachment", %{"ref" => ref}, socket) do
     {:noreply, cancel_upload(socket, :attachments, ref)}
+  end
+
+  # Shared files the `ShareComposer` hook left out of the composer, by reason.
+  def handle_event("share_files_skipped", params, socket) do
+    too_large = skipped_share_names(params["too_large"])
+    too_many = skipped_share_names(params["too_many"])
+    not_allowed = skipped_share_names(params["not_allowed"])
+    failed = skipped_share_names(params["failed"])
+
+    message =
+      [
+        too_large != "" &&
+          gettext("Larger than %{size}: %{names}.",
+            size: Components.format_bytes(Storage.max_file_size()),
+            names: too_large
+          ),
+        too_many != "" &&
+          gettext("Only %{count} files fit in a value: %{names} left out.",
+            count: Storage.max_files(),
+            names: too_many
+          ),
+        not_allowed != "" &&
+          gettext("You cannot attach files in this group: %{names} left out.",
+            names: not_allowed
+          ),
+        failed != "" && gettext("Could not read %{names}.", names: failed)
+      ]
+      |> Enum.filter(&is_binary/1)
+      |> Enum.join(" ")
+
+    {:noreply, if(message == "", do: socket, else: put_flash(socket, :error, message))}
+  end
+
+  # The shared content is posted (or no longer on the device): drop `?share`.
+  def handle_event("share_done", _params, socket) do
+    {:noreply,
+     push_patch(socket, to: ~p"/groups/#{socket.assigns.group.id}/#{socket.assigns.active_tab}")}
   end
 
   def handle_event("set_files_view", %{"view" => view}, socket) when view in ["list", "tree"] do
@@ -3723,6 +3762,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp parse_focus_value_id(_param), do: nil
+
+  # `?share=` names content shared from another app that waits on the device
+  # (see `ShareLive`); the composer's `ShareComposer` hook takes it from there.
+  defp parse_share_id(param) when is_binary(param) do
+    if Regex.match?(~r/\A[A-Za-z0-9_-]{1,64}\z/, param), do: param
+  end
+
+  defp parse_share_id(_param), do: nil
+
+  # The names of skipped shared files for a flash, a few at most.
+  defp skipped_share_names(names) when is_list(names) do
+    names = Enum.filter(names, &(is_binary(&1) and &1 != ""))
+    shown = names |> Enum.take(5) |> Enum.map_join(", ", &String.slice(&1, 0, 80))
+
+    case length(names) - 5 do
+      more when more > 0 -> gettext("%{names} and %{count} more", names: shown, count: more)
+      _none -> shown
+    end
+  end
+
+  defp skipped_share_names(_names), do: ""
 
   defp maybe_load_files(socket, group, "files") do
     case socket.assigns.files_view do
