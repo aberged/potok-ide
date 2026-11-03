@@ -115,6 +115,28 @@ defmodule PotokIde.Events.RemindersTest do
     assert pushed_endpoints() == Enum.sort([ctx.owner_device, ctx.member_device])
   end
 
+  test "of a public event, those who are no members get them when they come", ctx do
+    event = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"is_public" => "true"}))
+    {going_account, going} = account_with_profile!("rm-public-going")
+    {own_account, own} = account_with_profile!("rm-public-own")
+    {silent_account, _silent} = account_with_profile!("rm-public-silent")
+    going_device = push_device!(going_account)
+    own_device = push_device!(own_account)
+    _silent_device = push_device!(silent_account)
+
+    {:ok, _} = Events.respond(going, event, ctx.date, :going)
+    {:ok, _} = Events.respond(own, event, ctx.date, :maybe)
+    {:ok, _} = Events.set_member_reminders(own, event, %{"reminder_minutes" => ["", "1440"]})
+
+    Events.send_due_reminders(at(Date.add(ctx.date, -1), ~T[18:00:00]))
+    assert pushed_endpoints() == [own_device]
+
+    Events.send_due_reminders(at(ctx.date, ~T[17:00:00]))
+
+    assert pushed_endpoints() ==
+             Enum.sort([ctx.owner_device, ctx.member_device, ctx.other_device, going_device])
+  end
+
   test "an account with two member profiles gets one push per device", ctx do
     {account, first} = account_with_profile!("rm-twin-a")
 

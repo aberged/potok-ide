@@ -227,6 +227,177 @@ defmodule PotokIdeWeb.GroupLive.CalendarTest do
     refute has_element?(lv, "#calendar-subgroups-toggle")
   end
 
+  test "the root calendar has filters for the groups' events and public events", ctx do
+    elsewhere = group_with_members!(ctx.owner, [])
+    own = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"title" => "Own"}))
+
+    public =
+      create_event!(
+        ctx.owner,
+        elsewhere,
+        event_attrs(ctx.date, %{"title" => "Fair", "is_public" => "true"})
+      )
+
+    own_chip = "#calendar-chip-#{own.id}-#{ctx.date}"
+    public_chip = "#calendar-chip-#{public.id}-#{ctx.date}"
+    root = Social.get_root_group!()
+
+    {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(root, ctx.date))
+    assert has_element?(lv, own_chip)
+    assert has_element?(lv, public_chip)
+    refute has_element?(lv, "#calendar-subgroups-toggle")
+
+    lv |> element("#calendar-public-toggle") |> render_click()
+    assert has_element?(lv, ~s(#calendar-public-toggle[aria-checked="false"]))
+    assert has_element?(lv, own_chip)
+    refute has_element?(lv, public_chip)
+    assert_push_event(lv, "calendar_filters", %{groups: true, public: false})
+
+    lv |> element("#calendar-groups-toggle") |> render_click()
+    refute has_element?(lv, own_chip)
+    assert_push_event(lv, "calendar_filters", %{groups: false, public: false})
+
+    lv |> element("#calendar-public-toggle") |> render_click()
+    assert has_element?(lv, public_chip)
+    refute has_element?(lv, own_chip)
+
+    # The browser sends the filters as the viewer left them.
+    {:ok, lv, _html} =
+      build_conn()
+      |> log_in_account(ctx.member_account)
+      |> put_connect_params(%{
+        "time_zone" => zone(),
+        "calendar_filters" => %{"groups" => true, "public" => false}
+      })
+      |> live(calendar_path(root, ctx.date))
+
+    assert has_element?(lv, own_chip)
+    refute has_element?(lv, public_chip)
+
+    # A group's calendar has no such filters and shows its own events only.
+    {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
+    refute has_element?(lv, "#calendar-public-toggle")
+    refute has_element?(lv, "#calendar-groups-toggle")
+    refute has_element?(lv, public_chip)
+  end
+
+  test "those who may publish make an event public", ctx do
+    {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
+    lv |> element("#calendar-new-event") |> render_click()
+    assert has_element?(lv, "#calendar-event-form")
+    refute has_element?(lv, "#calendar-form-public")
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, calendar_path(ctx.group, ctx.date))
+    lv |> element("#calendar-day-#{ctx.date}") |> render_click()
+    lv |> element("#calendar-new-event") |> render_click()
+
+    lv
+    |> form("#calendar-event-form", event: %{"title" => "Open day", "is_public" => "true"})
+    |> render_submit(%{"announce" => "false"})
+
+    event = Repo.one!(Event)
+    assert event.is_public
+    assert has_element?(lv, "#calendar-event-public")
+  end
+
+  test "those who are no members open and answer a public event", ctx do
+    {outsider_account, outsider} = account_with_profile!("cal-pub-viewer")
+    closed_group = group_with_members!(ctx.owner, [])
+
+    event =
+      create_event!(ctx.owner, closed_group, event_attrs(ctx.date, %{"is_public" => "true"}))
+
+    root = Social.get_root_group!()
+
+    # Push notifications and calendar files link to the event's group.
+    assert {:error, {:live_redirect, %{to: to}}} =
+             live_as(
+               outsider_account,
+               calendar_path(closed_group, ctx.date, event: event.id, on: ctx.date)
+             )
+
+    assert to =~ ~p"/groups/#{root.id}/calendar"
+
+    {:ok, lv, _html} = live_as(outsider_account, to)
+    assert has_element?(lv, "#calendar-event-detail")
+    assert has_element?(lv, "#calendar-event-public")
+    assert has_element?(lv, "#calendar-my-reminders-public")
+    refute has_element?(lv, "#calendar-open-group")
+    refute has_element?(lv, "#calendar-edit-event")
+
+    lv |> element("#calendar-rsvp-going") |> render_click()
+    assert has_element?(lv, "#calendar-rsvp-going-count", "1")
+    assert Events.response_summary(event, ctx.date, outsider).mine == :going
+
+    # Made private, it is gone.
+    {:ok, _} = Events.update_event(ctx.owner, event, %{"is_public" => "false"})
+    refute has_element?(lv, "#calendar-chip-#{event.id}-#{ctx.date}")
+  end
+
+  test "those who are no members see a public group's public events in its calendar", ctx do
+    {guest_account, guest} = account_with_profile!("cal-pub-guest")
+    path = calendar_path(ctx.group, ctx.date)
+    private = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"title" => "Members"}))
+
+    # Without public events the calendar stays the members'.
+    {:ok, lv, _html} = live_as(guest_account, path)
+    refute has_element?(lv, "#group-tab-calendar")
+    refute has_element?(lv, "#group-panel-calendar")
+
+    public =
+      create_event!(
+        ctx.owner,
+        ctx.group,
+        event_attrs(ctx.date, %{"title" => "Open day", "is_public" => "true"})
+      )
+
+    public_chip = "#calendar-chip-#{public.id}-#{ctx.date}"
+
+    {:ok, lv, _html} = live_as(guest_account, path)
+    assert has_element?(lv, "#group-tab-calendar")
+    assert has_element?(lv, "#group-calendar-summary")
+    assert has_element?(lv, public_chip)
+    refute has_element?(lv, "#calendar-chip-#{private.id}-#{ctx.date}")
+    refute has_element?(lv, "#calendar-subgroups-toggle")
+    refute has_element?(lv, "#calendar-new-event")
+
+    lv |> element(public_chip) |> render_click()
+    assert has_element?(lv, "#calendar-event-public")
+    refute has_element?(lv, "#calendar-edit-event")
+    lv |> element("#calendar-rsvp-going") |> render_click()
+    assert Events.response_summary(public, ctx.date, guest).mine == :going
+
+    # A link to the event stays in the group.
+    {:ok, lv, _html} =
+      live_as(guest_account, calendar_path(ctx.group, ctx.date, event: public.id, on: ctx.date))
+
+    assert has_element?(lv, "#calendar-event-detail #calendar-event-title", "Open day")
+  end
+
+  test "a public event links to its group when the group is public", ctx do
+    {guest_account, _guest} = account_with_profile!("cal-pub-link")
+    closed_group = group_with_members!(ctx.owner, [])
+
+    open_event =
+      create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"is_public" => "true"}))
+
+    closed_event =
+      create_event!(ctx.owner, closed_group, event_attrs(ctx.date, %{"is_public" => "true"}))
+
+    root = Social.get_root_group!()
+
+    {:ok, lv, _html} =
+      live_as(guest_account, calendar_path(root, ctx.date, event: open_event.id, on: ctx.date))
+
+    assert has_element?(lv, ~s(#calendar-open-group[href^="/groups/#{ctx.group.id}/calendar"]))
+
+    {:ok, lv, _html} =
+      live_as(guest_account, calendar_path(root, ctx.date, event: closed_event.id, on: ctx.date))
+
+    assert has_element?(lv, "#calendar-event-detail")
+    refute has_element?(lv, "#calendar-open-group")
+  end
+
   test "events added by others appear while the calendar is open", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
 

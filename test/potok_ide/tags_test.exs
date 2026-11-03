@@ -100,6 +100,14 @@ defmodule PotokIde.TagsTest do
 
       assert {:error, :not_found} = Tags.add_tag(outsider, :event, event.id, "x", :private)
       assert {:error, :not_found} = Tags.add_tag(outsider, :group, group.id, "x", :private)
+
+      # Public events are seen by everyone.
+      public_event = create_event!(owner, group, event_attrs(today(), %{"is_public" => "true"}))
+      assert {:ok, _tag} = Tags.add_tag(outsider, :event, public_event.id, "x", :private)
+
+      assert {:error, :not_permitted} =
+               Tags.add_tag(outsider, :event, public_event.id, "x", :public)
+
       assert {:ok, _tag} = Tags.add_tag(outsider, :profile, owner.id, "x", :private)
 
       assert {:error, :not_found} =
@@ -316,7 +324,8 @@ defmodule PotokIde.TagsTest do
       assert Tags.count_tagged(member, :profile, [tag]) == 2
     end
 
-    test "groups show when public or joined, files and events to members", ctx do
+    test "groups show when public or joined, files and events to members (and public events to all)",
+         ctx do
       %{owner: owner, member: member, outsider: outsider, group: group} = ctx
       public = group_with_members!(owner, [], %{"is_public" => true})
       attachment = attachment!(owner, group)
@@ -336,8 +345,14 @@ defmodule PotokIde.TagsTest do
       assert Tags.count_tagged(outsider, :event, [tag]) == 0
       assert Tags.count_tagged(member, :event, [tag]) == 1
 
+      public_event = create_event!(owner, group, event_attrs(today(), %{"is_public" => "true"}))
+      {:ok, ^tag} = Tags.add_tag(owner, :event, public_event.id, "open", :public)
+      assert {[found], false} = Tags.list_tagged(outsider, :event, [tag])
+      assert found.id == public_event.id
+      assert Tags.count_tagged(member, :event, [tag]) == 2
+
       {:ok, _cancelled} = Events.cancel_event(owner, event)
-      assert Tags.count_tagged(member, :event, [tag]) == 0
+      assert Tags.count_tagged(member, :event, [tag]) == 1
     end
   end
 end

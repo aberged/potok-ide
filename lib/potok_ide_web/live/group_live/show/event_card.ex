@@ -47,8 +47,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
           "flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide",
           if(@mine, do: "text-primary-content/70", else: "text-base-content/55")
         ]}>
-          <.icon name="hero-calendar-days" class="size-3.5" />
-          {if @cancelled?, do: gettext("Event cancelled"), else: gettext("Event")}
+          <.icon
+            name={if(@event.is_public, do: "hero-globe-alt", else: "hero-calendar-days")}
+            class="size-3.5"
+          />
+          {label(@cancelled?, @event.is_public)}
         </p>
         <p class={[
           "truncate font-semibold",
@@ -88,4 +91,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
     </.link>
     """
   end
+
+  defp label(true, _public?), do: gettext("Event cancelled")
+  defp label(false, true), do: gettext("Public event")
+  defp label(false, false), do: gettext("Event")
 end

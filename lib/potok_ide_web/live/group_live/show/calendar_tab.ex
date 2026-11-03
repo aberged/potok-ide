@@ -29,11 +29,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :occurrences_empty, :boolean, default: true
   attr :selected_date, Date, required: true
   attr :include_subgroups, :boolean, default: false
+  attr :show_groups, :boolean, default: true, doc: "root calendar: events of the viewer's groups"
+  attr :show_public, :boolean, default: true, doc: "root calendar: public events"
   attr :event, :any, default: nil
   attr :occurrence, :any, default: nil
   attr :occurrence_cancelled, :boolean, default: false
   attr :summary, :any, default: nil
   attr :can_manage, :boolean, default: false
+  attr :event_member, :boolean, default: false, doc: "the viewer is a member of the event's group"
   attr :my_reminders, :any, default: nil
   attr :form, :any, default: nil
   attr :form_values, :any, default: nil
@@ -45,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       assigns
       |> assign(:today, CalendarState.today(assigns.time_zone))
       |> assign(:side?, assigns.form != nil or assigns.event != nil)
+      |> assign(:scope_text, scope_text(assigns))
 
     ~H"""
     <div id="group-panel-calendar" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -57,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
         <.page_header id="group-calendar-header" icon="hero-calendar-days" class="px-1">
           {if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
-          <:subtitle>{scope_text(@group, @include_subgroups)}</:subtitle>
+          <:subtitle>{@scope_text}</:subtitle>
         </.page_header>
 
         <div class={[
@@ -135,26 +139,34 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
               </div>
             </div>
 
-            <button
-              :if={!@group.is_root}
-              id="calendar-subgroups-toggle"
-              type="button"
-              phx-click="calendar_toggle_subgroups"
-              role="switch"
-              aria-checked={to_string(@include_subgroups)}
-              class="mb-3 ml-1 inline-flex items-center gap-2 text-xs font-medium text-base-content/70 transition hover:text-base-content"
+            <div
+              :if={@group.is_root or @access.member?}
+              class="mb-3 flex flex-wrap items-center gap-x-5 gap-y-2 px-1"
             >
-              <span class={[
-                "relative inline-flex h-4 w-7 items-center rounded-full transition-colors duration-200",
-                if(@include_subgroups, do: "bg-primary", else: "bg-base-300")
-              ]}>
-                <span class={[
-                  "inline-block size-3 rounded-full bg-base-100 shadow transition-transform duration-200",
-                  if(@include_subgroups, do: "translate-x-3.5", else: "translate-x-0.5")
-                ]} />
-              </span>
-              {gettext("Include sub-groups")}
-            </button>
+              <%= if @group.is_root do %>
+                <.switch
+                  id="calendar-groups-toggle"
+                  event="calendar_toggle_groups"
+                  checked={@show_groups}
+                  icon="hero-user-group"
+                  label={gettext("My groups")}
+                />
+                <.switch
+                  id="calendar-public-toggle"
+                  event="calendar_toggle_public"
+                  checked={@show_public}
+                  icon="hero-globe-alt"
+                  label={gettext("Public events")}
+                />
+              <% else %>
+                <.switch
+                  id="calendar-subgroups-toggle"
+                  event="calendar_toggle_subgroups"
+                  checked={@include_subgroups}
+                  label={gettext("Include sub-groups")}
+                />
+              <% end %>
+            </div>
 
             <%= if @mode == "month" do %>
               <.month_grid
@@ -202,7 +214,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                 class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
               >
                 <.icon name="hero-calendar" class="size-6 text-base-content/35" />
-                {gettext("No events this month.")}
+                {if @group.is_root and !@show_groups and !@show_public,
+                  do: gettext("Turn on a filter above to see events."),
+                  else: gettext("No events this month.")}
               </div>
             <% end %>
           </section>
@@ -217,6 +231,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                   announce={@announce}
                   notify={@notify}
                   can_announce={PotokIde.Social.Access.can?(@access, :post_values)}
+                  can_publish={Events.can_publish?(@access, @group)}
                 />
               <% @event -> %>
                 <.event_detail
@@ -225,6 +240,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                   occurrence_cancelled={@occurrence_cancelled}
                   summary={@summary}
                   can_manage={@can_manage}
+                  member={@event_member}
                   my_reminders={@my_reminders}
                   group={@group}
                   current_profile={@current_profile}
@@ -236,6 +252,37 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         </div>
       </div>
     </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :event, :string, required: true
+  attr :checked, :boolean, required: true
+  attr :label, :string, required: true
+  attr :icon, :string, default: nil
+
+  defp switch(assigns) do
+    ~H"""
+    <button
+      id={@id}
+      type="button"
+      phx-click={@event}
+      role="switch"
+      aria-checked={to_string(@checked)}
+      class="inline-flex items-center gap-2 text-xs font-medium text-base-content/70 transition hover:text-base-content"
+    >
+      <span class={[
+        "relative inline-flex h-4 w-7 items-center rounded-full transition-colors duration-200",
+        if(@checked, do: "bg-primary", else: "bg-base-300")
+      ]}>
+        <span class={[
+          "inline-block size-3 rounded-full bg-base-100 shadow transition-transform duration-200",
+          if(@checked, do: "translate-x-3.5", else: "translate-x-0.5")
+        ]} />
+      </span>
+      <.icon :if={@icon} name={@icon} class="size-4 text-base-content/50" />
+      {@label}
+    </button>
     """
   end
 
@@ -305,6 +352,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                 chip_class(occurrence, @group)
               ]}
             >
+              <.icon
+                :if={occurrence.event.is_public}
+                name="hero-globe-alt"
+                class="-mt-px size-3 opacity-60"
+              />
               <span :if={!occurrence.event.all_day} class="tabular-nums opacity-70">
                 {Format.time(occurrence.starts_at, @time_zone)}
               </span>
@@ -353,7 +405,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       </div>
       <span class={["h-9 w-1 shrink-0 rounded-full", dot_class(@occurrence, @group)]} />
       <div class="min-w-0 flex-1">
-        <p class="truncate text-sm font-semibold">{@event.title}</p>
+        <p class="flex min-w-0 items-center gap-1.5 text-sm font-semibold">
+          <span class="truncate">{@event.title}</span>
+          <.icon
+            :if={@event.is_public}
+            name="hero-globe-alt"
+            class="size-3.5 shrink-0 text-base-content/45"
+          />
+        </p>
         <p class="truncate text-xs text-base-content/60">
           <span class="tabular-nums">{time_range(@occurrence, @time_zone)}</span>
           <span :if={@event.location != ""}>{" · " <> @event.location}</span>
@@ -378,6 +437,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :occurrence_cancelled, :boolean, default: false
   attr :summary, :any, default: nil
   attr :can_manage, :boolean, default: false
+  attr :member, :boolean, default: false
   attr :my_reminders, :any, default: nil
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
@@ -437,6 +497,15 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           class="shrink-0 p-1.5"
         />
       </div>
+
+      <p
+        :if={@event.is_public}
+        id="calendar-event-public"
+        class="mt-2 ml-9 inline-flex items-center gap-1.5 rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-800 dark:text-sky-200"
+      >
+        <.icon name="hero-globe-alt" class="size-3.5" />
+        {gettext("Public event")}
+      </p>
 
       <TagComponents.tag_chips
         id={"event-tag-list-#{@event.id}"}
@@ -576,6 +645,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         :if={!Event.cancelled?(@event)}
         event={@event}
         my_reminders={@my_reminders}
+        member={@member}
       />
 
       <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-base-300/60 pt-4">
@@ -590,7 +660,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           {gettext("Add to my calendar")}
         </a>
         <.link
-          :if={@event.group_id != @group.id}
+          :if={@event.group_id != @group.id and (@member or @event.group.is_public)}
           id="calendar-open-group"
           navigate={
             ~p"/groups/#{@event.group_id}/calendar?#{[event: @event.id, on: Date.to_iso8601(@occurrence.date)]}"
@@ -646,6 +716,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
   attr :event, Event, required: true
   attr :my_reminders, :any, default: nil
+  attr :member, :boolean, default: true
 
   defp my_reminders(assigns) do
     assigns =
@@ -667,6 +738,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         {if @own?,
           do: gettext("You chose your own reminders for this event."),
           else: gettext("You get the organizer's reminders.")}
+        <span :if={!@member} id="calendar-my-reminders-public">
+          {gettext("They come for the occurrences you answered Going or Maybe.")}
+        </span>
       </p>
       <input type="hidden" name="reminders[reminder_minutes][]" value="" />
       <div class="flex flex-wrap gap-1.5">
@@ -711,6 +785,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :announce, :boolean, default: true
   attr :notify, :boolean, default: true
   attr :can_announce, :boolean, default: false
+  attr :can_publish, :boolean, default: false
 
   defp event_form(assigns) do
     ~H"""
@@ -860,6 +935,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           phx-debounce="300"
         />
 
+        <div
+          :if={@can_publish}
+          id="calendar-form-public"
+          class="mb-2 rounded-2xl border border-base-300/70 bg-base-200/40 px-3 pt-2 pb-1"
+        >
+          <.input field={@form[:is_public]} type="checkbox" label={gettext("Public event")} />
+          <p class="-mt-1 mb-1 text-xs text-base-content/60">
+            {gettext("Every user sees it in their calendar and can answer it.")}
+          </p>
+        </div>
+
         <div id="calendar-form-reminders" class="pt-1">
           <p class="label mb-1 text-sm">{gettext("Reminders for members")}</p>
           <input type="hidden" name={@form[:reminder_minutes].name <> "[]"} value="" />
@@ -933,13 +1019,24 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
     """
   end
 
-  defp scope_text(%{is_root: true}, _include_subgroups),
+  defp scope_text(%{group: %{is_root: true}, show_groups: true, show_public: true}),
+    do: gettext("Events of your groups and public events.")
+
+  defp scope_text(%{group: %{is_root: true}, show_groups: true}),
     do: gettext("Events of every group you are a member of.")
 
-  defp scope_text(_group, true),
+  defp scope_text(%{group: %{is_root: true}, show_public: true}),
+    do: gettext("Public events of every group.")
+
+  defp scope_text(%{group: %{is_root: true}}), do: gettext("No events are shown.")
+
+  # Those who are no members of a public group see its public events.
+  defp scope_text(%{access: %{member?: false}}), do: gettext("Public events of this group.")
+
+  defp scope_text(%{include_subgroups: true}),
     do: gettext("Events of this group and of its sub-groups you are in.")
 
-  defp scope_text(_group, false), do: gettext("Events of this group.")
+  defp scope_text(_assigns), do: gettext("Events of this group.")
 
   defp time_range(%Occurrence{event: %Event{all_day: true}}, _zone), do: gettext("All day")
 

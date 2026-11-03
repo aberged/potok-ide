@@ -1535,6 +1535,28 @@ window.addEventListener("phx:sub_groups_threads", ({detail}) => {
   } catch (_error) {}
 })
 
+// The root calendar's filters (its groups' events, public events), kept in
+// this browser; both are on until the viewer turns one off.
+const CALENDAR_FILTERS_KEY = "potok:calendar-filters"
+
+function storedCalendarFilters() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(CALENDAR_FILTERS_KEY) || "{}")
+    return {groups: stored?.groups !== false, public: stored?.public !== false}
+  } catch (_error) {
+    return {groups: true, public: true}
+  }
+}
+
+window.addEventListener("phx:calendar_filters", ({detail}) => {
+  try {
+    window.localStorage.setItem(
+      CALENDAR_FILTERS_KEY,
+      JSON.stringify({groups: detail.groups === true, public: detail.public === true})
+    )
+  } catch (_error) {}
+})
+
 const liveSocket = new LiveSocket("/live", Socket, {
   longPollFallbackMs: 2500,
   // Read on every join, so a page opened by live navigation gets the latest
@@ -1543,6 +1565,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     _csrf_token: csrfToken,
     time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     show_threads: storedShowThreads(),
+    calendar_filters: storedCalendarFilters(),
   }),
   hooks: {
     HeaderDrawer,

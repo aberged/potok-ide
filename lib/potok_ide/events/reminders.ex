@@ -6,7 +6,8 @@ defmodule PotokIde.Events.Reminders do
   or before 09:00 on the day of an all-day one. An event's offsets are the
   organizer's and every member's own (`MemberSetting`); each member gets
   the ones they chose, or the organizer's, unless they declined the
-  occurrence.
+  occurrence. Of a public event, those who are no members of its group get
+  them for the occurrences they said they come to (going or maybe).
 
   `Event.reminded_through` says up to when reminders are handled and is the
   source of truth; `Event.next_reminder_at` is when the scheduler should look
@@ -158,18 +159,46 @@ defmodule PotokIde.Events.Reminders do
   @doc """
   A query selecting the accounts of the members who get the reminder of
   `minutes` for the occurrence on `date`: those whose own reminders, or else
-  the organizer's, include it, and who did not decline. An account is
-  selected when any of its member profiles is.
+  the organizer's, include it, and who did not decline. Of a public event,
+  also those who are no members and said they come (going or maybe) with
+  such reminders. An account is selected when any of its profiles is.
   """
   def recipient_account_ids(%Event{} = event, %Date{} = date, minutes) do
-    from(gm in GroupMembership,
+    members =
+      from(gm in GroupMembership,
+        join: ap in AccountProfile,
+        on: ap.profile_id == gm.profile_id,
+        left_join: s in MemberSetting,
+        on: s.event_id == ^event.id and s.profile_id == gm.profile_id,
+        left_join: r in Response,
+        on: r.event_id == ^event.id and r.profile_id == gm.profile_id and r.occurs_on == ^date,
+        where: gm.group_id == ^event.group_id,
+        where:
+          fragment(
+            "? = ANY(COALESCE(?, ?))",
+            ^minutes,
+            s.reminder_minutes,
+            type(^event.reminder_minutes, {:array, :integer})
+          ),
+        where: is_nil(r.status) or r.status != ^:declined,
+        select: ap.account_id
+      )
+
+    if event.is_public,
+      do: union(members, ^follower_account_ids(event, date, minutes)),
+      else: members
+  end
+
+  defp follower_account_ids(%Event{} = event, %Date{} = date, minutes) do
+    from(r in Response,
       join: ap in AccountProfile,
-      on: ap.profile_id == gm.profile_id,
+      on: ap.profile_id == r.profile_id,
+      left_join: gm in GroupMembership,
+      on: gm.group_id == ^event.group_id and gm.profile_id == r.profile_id,
       left_join: s in MemberSetting,
-      on: s.event_id == ^event.id and s.profile_id == gm.profile_id,
-      left_join: r in Response,
-      on: r.event_id == ^event.id and r.profile_id == gm.profile_id and r.occurs_on == ^date,
-      where: gm.group_id == ^event.group_id,
+      on: s.event_id == ^event.id and s.profile_id == r.profile_id,
+      where: r.event_id == ^event.id and r.occurs_on == ^date and is_nil(gm.profile_id),
+      where: r.status in ^[:going, :maybe],
       where:
         fragment(
           "? = ANY(COALESCE(?, ?))",
@@ -177,7 +206,6 @@ defmodule PotokIde.Events.Reminders do
           s.reminder_minutes,
           type(^event.reminder_minutes, {:array, :integer})
         ),
-      where: is_nil(r.status) or r.status != ^:declined,
       select: ap.account_id
     )
   end

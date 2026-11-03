@@ -280,6 +280,180 @@ defmodule PotokIde.EventsTest do
     end
   end
 
+  describe "public events" do
+    setup do
+      {outsider_account, outsider} = account_with_profile!("ev-public-out")
+      %{outsider_account: outsider_account, outsider: outsider, date: Date.add(today(), 2)}
+    end
+
+    test "are made public, or private again, only with publish_events", ctx do
+      public_attrs = event_attrs(ctx.date, %{"is_public" => "true"})
+
+      refute create_event!(ctx.member, ctx.group, public_attrs).is_public
+      own = create_event!(ctx.member, ctx.group, event_attrs(ctx.date))
+      {:ok, own} = Events.update_event(ctx.member, own, %{"is_public" => "true"})
+      refute own.is_public
+
+      # Admins hold every permission.
+      event = create_event!(ctx.owner, ctx.group, public_attrs)
+      assert event.is_public
+
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.group)
+
+      {:ok, _role} =
+        Social.set_group_role_permission(
+          ctx.owner,
+          ctx.group,
+          "everyone",
+          :publish_events,
+          :allow
+        )
+
+      {:ok, own} = Events.update_event(ctx.member, own, %{"is_public" => "true"})
+      assert own.is_public
+
+      root = Social.get_root_group!()
+      refute Events.can_publish?(Social.get_group_access(ctx.owner, root), root)
+    end
+
+    test "every profile sees and answers them", ctx do
+      private = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"title" => "Closed"}))
+
+      public =
+        create_event!(
+          ctx.owner,
+          ctx.group,
+          event_attrs(ctx.date, %{"title" => "Open", "is_public" => "true"})
+        )
+
+      assert {:error, :not_found} = Events.get_event(ctx.outsider, private.id)
+      assert {:ok, %Event{id: public_id}} = Events.get_event(ctx.outsider, public.id)
+      assert public_id == public.id
+
+      {from, to} = window(ctx.date)
+      assert Events.list_occurrences([], from, to) == []
+
+      assert [%{event: %Event{id: ^public_id}}] =
+               Events.list_occurrences([], from, to, public: true)
+
+      # The profile's groups and the public events, each event once.
+      assert Events.list_occurrences([ctx.group.id], from, to, public: true)
+             |> Enum.map(& &1.event.id) == [private.id, public.id]
+
+      assert {:error, :not_a_member_of_group} =
+               Events.respond(ctx.outsider, private, ctx.date, :going)
+
+      assert {:ok, _} = Events.respond(ctx.outsider, public, ctx.date, :going)
+      assert {:ok, _} = Events.respond(ctx.member, public, ctx.date, :maybe)
+
+      summary = Events.response_summary(public, ctx.date, ctx.outsider)
+      assert summary.counts == %{going: 1, maybe: 1, declined: 0}
+      assert summary.mine == :going
+
+      reminders = %{"reminder_minutes" => ["", "1440"]}
+      assert {:ok, _} = Events.set_member_reminders(ctx.outsider, public, reminders)
+
+      assert {:error, :not_a_member_of_group} =
+               Events.set_member_reminders(ctx.outsider, private, reminders)
+
+      # Made private again, it is the members' only.
+      {:ok, closed} = Events.update_event(ctx.owner, public, %{"is_public" => "false"})
+      assert {:error, :not_found} = Events.get_event(ctx.outsider, public.id)
+      assert Events.response_summary(closed, ctx.date, ctx.member).counts.going == 0
+    end
+
+    test "a group's public events, for its calendar", ctx do
+      refute Events.public_events?(ctx.group)
+      _private = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date))
+      refute Events.public_events?(ctx.group)
+
+      public =
+        create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"is_public" => "true"}))
+
+      elsewhere = group_with_members!(ctx.owner, [])
+      create_event!(ctx.owner, elsewhere, event_attrs(ctx.date, %{"is_public" => "true"}))
+      assert Events.public_events?(ctx.group)
+
+      {from, to} = window(ctx.date)
+      public_id = public.id
+
+      assert [%{event: %Event{id: ^public_id}}] =
+               Events.list_occurrences([], from, to, public: [ctx.group.id])
+
+      assert Events.list_occurrences([], from, to, public: []) == []
+
+      {:ok, _cancelled} = Events.cancel_event(ctx.owner, public)
+      refute Events.public_events?(ctx.group)
+    end
+
+    test "changes reach those who said they come", ctx do
+      capture_push_requests!()
+
+      event =
+        create_event!(
+          ctx.owner,
+          ctx.group,
+          event_attrs(ctx.date, %{"is_public" => "true", "recurrence" => "weekly"})
+        )
+
+      next_week = Date.add(ctx.date, 7)
+      {away_account, away} = account_with_profile!("ev-public-away")
+      member_device = push_device!(ctx.member_account)
+      outsider_device = push_device!(ctx.outsider_account)
+      _away_device = push_device!(away_account)
+
+      {:ok, _} = Events.respond(ctx.outsider, event, next_week, :going)
+      {:ok, _} = Events.respond(away, event, ctx.date, :declined)
+
+      # The new time drops the answers to come, but they are told first.
+      {:ok, event} = Events.update_event(ctx.owner, event, %{"start_time" => "17:00"})
+      assert pushed_endpoints() == Enum.sort([member_device, outsider_device])
+
+      {:ok, _} = Events.respond(ctx.outsider, event, next_week, :maybe)
+      {:ok, event} = Events.cancel_occurrence(ctx.owner, event, next_week)
+      assert pushed_endpoints() == Enum.sort([member_device, outsider_device])
+
+      {:ok, _event} = Events.cancel_event(ctx.owner, event)
+      assert pushed_endpoints() == Enum.sort([member_device, outsider_device])
+    end
+
+    test "made private, they no longer concern those who are no members", ctx do
+      capture_push_requests!()
+      event = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"is_public" => "true"}))
+      member_device = push_device!(ctx.member_account)
+      _outsider_device = push_device!(ctx.outsider_account)
+      {:ok, _} = Events.respond(ctx.outsider, event, ctx.date, :going)
+
+      {:ok, _event} =
+        Events.update_event(ctx.owner, event, %{"is_public" => "false", "location" => "Hall 3"})
+
+      assert pushed_endpoints() == [member_device]
+    end
+
+    test "changes are broadcast to calendars that show public events", ctx do
+      Events.subscribe(:public)
+      group_id = ctx.group.id
+
+      private = create_event!(ctx.owner, ctx.group, event_attrs(ctx.date))
+      refute_received {:calendar, _}
+
+      public =
+        create_event!(ctx.owner, ctx.group, event_attrs(ctx.date, %{"is_public" => "true"}))
+
+      assert_received {:calendar, {:events_changed, ^group_id}}
+
+      {:ok, _} = Events.respond(ctx.outsider, public, ctx.date, :going)
+      assert_received {:calendar, {:responses_changed, _event_id, _date}}
+
+      # Made private: calendars showing it drop it.
+      {:ok, _} = Events.update_event(ctx.owner, public, %{"is_public" => "false"})
+      assert_received {:calendar, {:events_changed, ^group_id}}
+
+      {:ok, _} = Events.update_event(ctx.owner, private, %{"title" => "Renamed"})
+      refute_received {:calendar, _}
+    end
+  end
+
   describe "calendar_group_ids/3" do
     test "adds the sub-groups the profile is a member of", ctx do
       member_sub = group_with_members!(ctx.owner, [ctx.member], %{parent: ctx.group})

@@ -7,7 +7,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   The URL holds the month (`?month=2026-11`), the list mode (`mode=list`) and
   the open occurrence (`event=12&on=2026-11-07`); the event form and the
   "with sub-groups" switch live in assigns. Times are shown in the viewer's
-  zone, which the browser sends when the socket connects.
+  zone, which the browser sends when the socket connects, as it sends the
+  root calendar's filters (its groups' events, public events).
   """
 
   use PotokIdeWeb, :verified_routes
@@ -16,7 +17,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
 
   import Phoenix.LiveView,
-    only: [connected?: 1, get_connect_params: 1, push_patch: 2, put_flash: 3, stream: 4]
+    only: [
+      connected?: 1,
+      get_connect_params: 1,
+      push_event: 3,
+      push_patch: 2,
+      put_flash: 3,
+      stream: 4
+    ]
 
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Occurrence, Recurrence}
@@ -44,12 +52,31 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
 
   defp valid_zone?(zone), do: match?({:ok, _}, DateTime.now(zone))
 
+  # The root calendar's filters as the viewer left them (`calendar_filters`
+  # in app.js); both are on until then.
+  defp connect_filters(socket) do
+    filters =
+      with true <- connected?(socket),
+           %{"calendar_filters" => %{} = filters} <- get_connect_params(socket) do
+        filters
+      else
+        _ -> %{}
+      end
+
+    {filters["groups"] != false, filters["public"] != false}
+  end
+
   def init(socket, params) do
+    {show_groups?, show_public?} = connect_filters(socket)
+
     socket
     |> assign(
       calendar_time_zone: connect_time_zone(socket),
       calendar_include_subgroups?: false,
+      calendar_show_groups?: show_groups?,
+      calendar_show_public?: show_public?,
       calendar_group_ids: [],
+      calendar_public: false,
       calendar_subscribed: MapSet.new(),
       calendar_weeks: [],
       calendar_by_day: %{},
@@ -59,6 +86,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       calendar_occurrence_cancelled?: false,
       calendar_summary: nil,
       calendar_can_manage?: false,
+      calendar_event_member?: false,
       calendar_my_reminders: nil,
       calendar_form: nil,
       calendar_form_event: nil,
@@ -199,16 +227,38 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   membership and profile changes.
   """
   def maybe_load(socket, %Group{} = group, "calendar") do
+    assigns = socket.assigns
+    member? = assigns.access.member?
+
     group_ids =
-      Events.calendar_group_ids(
-        socket.assigns.current_profile,
-        group,
-        socket.assigns.calendar_include_subgroups?
-      )
+      if (group.is_root and not assigns.calendar_show_groups?) or not member?,
+        do: [],
+        else:
+          Events.calendar_group_ids(
+            assigns.current_profile,
+            group,
+            assigns.calendar_include_subgroups?
+          )
+
+    # The root calendar shows every public event; a group's calendar shows
+    # its own public events to those who are no members.
+    public =
+      cond do
+        group.is_root -> assigns.calendar_show_public?
+        member? -> false
+        true -> [group.id]
+      end
+
+    topics =
+      case public do
+        true -> [:public | group_ids]
+        false -> group_ids
+        public_ids -> public_ids ++ group_ids
+      end
 
     socket
-    |> assign(:calendar_group_ids, group_ids)
-    |> sync_subscriptions(group_ids)
+    |> assign(calendar_group_ids: group_ids, calendar_public: public)
+    |> sync_subscriptions(topics)
     |> load_month()
     |> load_detail()
   end
@@ -219,9 +269,10 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
     |> assign(:calendar_form, nil)
   end
 
-  defp sync_subscriptions(socket, group_ids) do
+  # `topics` are group ids and `:public` (see `Events.subscribe/1`).
+  defp sync_subscriptions(socket, topics) do
     if connected?(socket) do
-      wanted = MapSet.new(group_ids)
+      wanted = MapSet.new(topics)
       current = socket.assigns.calendar_subscribed
 
       current |> MapSet.difference(wanted) |> Enum.each(&Events.unsubscribe/1)
@@ -247,7 +298,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       Events.list_occurrences(
         socket.assigns.calendar_group_ids,
         Recurrence.to_utc(grid_start, ~T[00:00:00], zone),
-        Recurrence.to_utc(Date.add(grid_end, 1), ~T[00:00:00], zone)
+        Recurrence.to_utc(Date.add(grid_end, 1), ~T[00:00:00], zone),
+        public: socket.assigns.calendar_public
       )
 
     by_day =
@@ -323,6 +375,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
           :calendar_can_manage?,
           event.group_id == group.id and Events.can_manage?(access, profile, event)
         )
+        |> assign(:calendar_event_member?, access.member?)
         |> assign(:calendar_my_reminders, Events.member_reminders(profile, event))
         |> load_summary()
 
@@ -354,6 +407,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       calendar_occurrence_cancelled?: false,
       calendar_summary: nil,
       calendar_can_manage?: false,
+      calendar_event_member?: false,
       calendar_my_reminders: nil
     )
   end
@@ -407,6 +461,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
     socket = update_in_assign(socket, :calendar_include_subgroups?, &not/1)
     {:noreply, maybe_load(socket, socket.assigns.group, "calendar")}
   end
+
+  def handle_event("calendar_toggle_groups", _params, socket),
+    do: toggle_filter(socket, :calendar_show_groups?)
+
+  def handle_event("calendar_toggle_public", _params, socket),
+    do: toggle_filter(socket, :calendar_show_public?)
 
   def handle_event("calendar_select_day", %{"date" => date}, socket) do
     case parse_date(date) do
@@ -581,6 +641,22 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   end
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
+
+  # Only the root calendar has these filters. The browser keeps them for the
+  # next visits (`calendar_filters` in app.js).
+  defp toggle_filter(%{assigns: %{group: %Group{is_root: true}}} = socket, key) do
+    socket = update_in_assign(socket, key, &not/1)
+
+    {:noreply,
+     socket
+     |> maybe_load(socket.assigns.group, "calendar")
+     |> push_event("calendar_filters", %{
+       groups: socket.assigns.calendar_show_groups?,
+       public: socket.assigns.calendar_show_public?
+     })}
+  end
+
+  defp toggle_filter(socket, _key), do: {:noreply, socket}
 
   defp update_reminders(socket, attrs) do
     case socket.assigns.calendar_event do

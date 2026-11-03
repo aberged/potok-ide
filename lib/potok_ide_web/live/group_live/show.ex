@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Accounts
   alias PotokIde.Accounts.Account
+  alias PotokIde.Events
   alias PotokIde.Social
 
   alias PotokIde.Social.{
@@ -12,6 +13,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupAltDescription,
     GroupInvitation,
     GroupRole,
+    Profile,
     Value,
     ValueAttachment
   }
@@ -287,7 +289,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <.icon name="hero-paper-clip" class="size-6 shrink-0" />
           </button>
           <button
-            :if={@is_member}
+            :if={@calendar_tab?}
             id="group-calendar-summary"
             type="button"
             phx-click="switch_tab"
@@ -410,7 +412,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-paper-clip"
               />
               <Components.group_tab_button
-                :if={@is_member}
+                :if={@calendar_tab?}
                 id="group-tab-calendar"
                 tab="calendar"
                 active_tab={@active_tab}
@@ -587,11 +589,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
             occurrences_empty={@calendar_occurrences_empty?}
             selected_date={@calendar_selected_date}
             include_subgroups={@calendar_include_subgroups?}
+            show_groups={@calendar_show_groups?}
+            show_public={@calendar_show_public?}
             event={@calendar_event}
             occurrence={@calendar_occurrence}
             occurrence_cancelled={@calendar_occurrence_cancelled?}
             summary={@calendar_summary}
             can_manage={@calendar_can_manage?}
+            event_member={@calendar_event_member?}
             my_reminders={@calendar_my_reminders}
             form={@calendar_form}
             form_values={@calendar_form_values}
@@ -681,101 +686,106 @@ defmodule PotokIdeWeb.GroupLive.Show do
     active_tab = normalize_active_tab(Map.get(params, "tab"), group, access)
     sub_groups_kind = normalize_sub_groups_kind(Map.get(params, "sub_groups_kind"), group)
 
-    if can_view_group?(group, is_member) do
-      if connected?(socket), do: Social.subscribe_group(group)
+    cond do
+      path = public_event_path(params, access, active_tab, current_profile) ->
+        {:ok, push_navigate(socket, to: path)}
 
-      {:ok,
-       socket
-       |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
-       |> stream_configure(:members, dom_id: &"member-#{&1.id}")
-       |> stream_configure(:values, dom_id: &"value-#{&1.id}")
-       |> stream_configure(:files, dom_id: &"file-#{&1.id}")
-       |> assign(:children_pagination, default_pagination(@children_page_size))
-       |> assign(:members_pagination, default_pagination(@members_page_size))
-       |> assign(:values_has_more?, false)
-       |> assign(:values_has_newer?, false)
-       |> assign(:oldest_value_id, nil)
-       |> assign(:newest_value_id, nil)
-       |> assign(:loaded_value_ids, MapSet.new())
-       |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
-       |> assign(:files_view, "list")
-       |> assign(:files_has_more?, false)
-       |> assign(:files_loaded_count, 0)
-       |> assign(:oldest_file_id, nil)
-       |> assign(:file_tree, nil)
-       |> assign(:file_tree_truncated?, false)
-       |> allow_attachments_upload()
-       |> assign(:loaded_children, [])
-       |> assign(:pending_refresh, MapSet.new())
-       |> assign(:refresh_due_at, nil)
-       |> assign(:unread_overview, nil)
-       |> assign(:pending_unread_values, [])
-       |> assign(:app_api_bucket, AppApi.new_bucket())
-       |> assign(:child_pending_join_request_counts, %{})
-       |> assign(:group_unread_counts, %{})
-       |> assign(:current_group_unread_count, 0)
-       |> assign(:sub_groups_unread_count, 0)
-       |> assign(:direct_sub_groups_unread_count, 0)
-       |> assign(:other_sub_groups_unread_count, 0)
-       |> assign(:children_search_query, "")
-       |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
-       |> assign(:thread_sub_groups_count, 0)
-       |> assign(:sub_groups_kind, sub_groups_kind)
-       |> assign(
-         :sub_groups_view,
-         normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
-       )
-       |> assign(:sub_group_tree, nil)
-       |> assign(:members_count, 0)
-       |> assign(:first3_members, [])
-       |> assign(:online_profile_ids, MapSet.new())
-       |> assign(:presence_watched, MapSet.new())
-       |> assign(:presence_profile_id, nil)
-       |> assign(:description_param, Map.get(params, "d"))
-       |> assign(:alt_descriptions, [])
-       |> assign(:visible_alt_descriptions, [])
-       |> assign(:active_alt_description, nil)
-       |> assign(:alt_description_form, nil)
-       |> assign(:editing_alt_description, nil)
-       |> assign_access(access)
-       |> assign(:group, group)
-       |> assign(:active_tab, active_tab)
-       |> assign(:manifest_owner, nil)
-       |> assign(:new_role_form, empty_new_role_form())
-       |> assign(:role_member_counts, %{})
-       |> assign(:editing_value, nil)
-       |> assign(:edit_value_form, nil)
-       |> assign(:replying_to_value, nil)
-       |> assign(:thread_origin, nil)
-       |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
-       |> assign(:home_page_options, home_page_options())
-       |> assign(:value_parent_options, [])
-       |> assign(:new_value_form, empty_new_value_form())
-       |> assign(:new_group_form, empty_new_group_form())
-       |> assign(:edit_group_form, edit_group_form(group, active_tab))
-       |> assign(:edit_group_section, "basics")
-       |> assign(:create_group_section, "basics")
-       |> assign(
-         :inherits_members_option?,
-         active_tab == "edit_group" and Social.inherits_members_option?(group)
-       )
-       |> assign(:description_details_open, true)
-       |> assign(:invite_form, empty_invite_form())
-       |> assign(:invite_form_version, 0)
-       |> assign(:invite_profile_suggestions, [])
-       |> assign(:pending_join_request, nil)
-       |> assign(:pending_join_requests, [])
-       |> assign(:pending_join_requests_count, 0)
-       |> assign(:group_tags, [])
-       |> TagEditor.init()
-       |> CalendarState.init(params)
-       |> load_group_data(group, active_tab)
-       |> sync_group_presence()}
-    else
-      {:ok,
-       socket
-       |> put_flash(:error, gettext("You do not have access to that group."))
-       |> push_navigate(to: ~p"/groups")}
+      can_view_group?(group, is_member) ->
+        if connected?(socket), do: Social.subscribe_group(group)
+
+        {:ok,
+         socket
+         |> stream_configure(:children, dom_id: &"child-group-#{&1.id}")
+         |> stream_configure(:members, dom_id: &"member-#{&1.id}")
+         |> stream_configure(:values, dom_id: &"value-#{&1.id}")
+         |> stream_configure(:files, dom_id: &"file-#{&1.id}")
+         |> assign(:children_pagination, default_pagination(@children_page_size))
+         |> assign(:members_pagination, default_pagination(@members_page_size))
+         |> assign(:values_has_more?, false)
+         |> assign(:values_has_newer?, false)
+         |> assign(:oldest_value_id, nil)
+         |> assign(:newest_value_id, nil)
+         |> assign(:loaded_value_ids, MapSet.new())
+         |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
+         |> assign(:files_view, "list")
+         |> assign(:files_has_more?, false)
+         |> assign(:files_loaded_count, 0)
+         |> assign(:oldest_file_id, nil)
+         |> assign(:file_tree, nil)
+         |> assign(:file_tree_truncated?, false)
+         |> allow_attachments_upload()
+         |> assign(:loaded_children, [])
+         |> assign(:pending_refresh, MapSet.new())
+         |> assign(:refresh_due_at, nil)
+         |> assign(:unread_overview, nil)
+         |> assign(:pending_unread_values, [])
+         |> assign(:app_api_bucket, AppApi.new_bucket())
+         |> assign(:child_pending_join_request_counts, %{})
+         |> assign(:group_unread_counts, %{})
+         |> assign(:current_group_unread_count, 0)
+         |> assign(:sub_groups_unread_count, 0)
+         |> assign(:direct_sub_groups_unread_count, 0)
+         |> assign(:other_sub_groups_unread_count, 0)
+         |> assign(:children_search_query, "")
+         |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
+         |> assign(:thread_sub_groups_count, 0)
+         |> assign(:sub_groups_kind, sub_groups_kind)
+         |> assign(
+           :sub_groups_view,
+           normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
+         )
+         |> assign(:sub_group_tree, nil)
+         |> assign(:members_count, 0)
+         |> assign(:first3_members, [])
+         |> assign(:online_profile_ids, MapSet.new())
+         |> assign(:presence_watched, MapSet.new())
+         |> assign(:presence_profile_id, nil)
+         |> assign(:description_param, Map.get(params, "d"))
+         |> assign(:alt_descriptions, [])
+         |> assign(:visible_alt_descriptions, [])
+         |> assign(:active_alt_description, nil)
+         |> assign(:alt_description_form, nil)
+         |> assign(:editing_alt_description, nil)
+         |> assign_access(access)
+         |> assign(:group, group)
+         |> assign(:active_tab, active_tab)
+         |> assign(:manifest_owner, nil)
+         |> assign(:new_role_form, empty_new_role_form())
+         |> assign(:role_member_counts, %{})
+         |> assign(:editing_value, nil)
+         |> assign(:edit_value_form, nil)
+         |> assign(:replying_to_value, nil)
+         |> assign(:thread_origin, nil)
+         |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
+         |> assign(:home_page_options, home_page_options())
+         |> assign(:value_parent_options, [])
+         |> assign(:new_value_form, empty_new_value_form())
+         |> assign(:new_group_form, empty_new_group_form())
+         |> assign(:edit_group_form, edit_group_form(group, active_tab))
+         |> assign(:edit_group_section, "basics")
+         |> assign(:create_group_section, "basics")
+         |> assign(
+           :inherits_members_option?,
+           active_tab == "edit_group" and Social.inherits_members_option?(group)
+         )
+         |> assign(:description_details_open, true)
+         |> assign(:invite_form, empty_invite_form())
+         |> assign(:invite_form_version, 0)
+         |> assign(:invite_profile_suggestions, [])
+         |> assign(:pending_join_request, nil)
+         |> assign(:pending_join_requests, [])
+         |> assign(:pending_join_requests_count, 0)
+         |> assign(:group_tags, [])
+         |> TagEditor.init()
+         |> CalendarState.init(params)
+         |> load_group_data(group, active_tab)
+         |> sync_group_presence()}
+
+      true ->
+        {:ok,
+         socket
+         |> put_flash(:error, gettext("You do not have access to that group."))
+         |> push_navigate(to: ~p"/groups")}
     end
   end
 
@@ -2143,6 +2153,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign_group_path(group)
       |> assign(:group, group)
       |> assign(:active_tab, active_tab)
+      |> assign(:calendar_tab?, calendar_tab?(group, socket.assigns.access))
       |> assign(:sub_groups_kind, sub_groups_kind)
 
     # The first, disconnected render shows only the header. The panel and
@@ -4145,7 +4156,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     do: "roles"
 
   # In the root group, the events of every group the profile is in.
-  defp normalize_active_tab("calendar", _group, %Access{member?: true}), do: "calendar"
+  defp normalize_active_tab("calendar", group, %Access{} = access) do
+    if calendar_tab?(group, access), do: "calendar", else: default_active_tab(group)
+  end
 
   defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})
        when not is_nil(parent_id),
@@ -4157,6 +4170,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp normalize_active_tab(_, group, _access), do: default_active_tab(group)
+
+  # Members have the calendar; those who are not see the public events of a
+  # public group in it, when it has some.
+  defp calendar_tab?(_group, %Access{member?: true}), do: true
+
+  defp calendar_tab?(%Group{is_public: true, is_root: false} = group, _access),
+    do: Events.public_events?(group)
+
+  defp calendar_tab?(_group, _access), do: false
 
   defp tab_permission("create_group"), do: :create_subgroups
   defp tab_permission("invite_profile"), do: :invite_members
@@ -4215,4 +4237,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp can_view_group?(group, is_member) do
     group.is_public or is_member
   end
+
+  # Links to a public event in its group's calendar (push notifications,
+  # calendar files) open it in the root calendar for those who are no
+  # members of the group and cannot open its calendar (a private group).
+  defp public_event_path(
+         %{"tab" => "calendar", "event" => event_id} = params,
+         %Access{member?: false},
+         active_tab,
+         %Profile{} = profile
+       )
+       when active_tab != "calendar" do
+    with {id, ""} <- Integer.parse(event_id),
+         {:ok, event} <- Events.get_event(profile, id) do
+      query = params |> Map.take(["month", "on"]) |> Map.put("event", event.id)
+      ~p"/groups/#{Social.get_root_group!().id}/calendar?#{query}"
+    else
+      _ -> nil
+    end
+  end
+
+  defp public_event_path(_params, _access, _active_tab, _profile), do: nil
 end

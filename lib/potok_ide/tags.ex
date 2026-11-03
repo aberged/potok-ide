@@ -183,14 +183,15 @@ defmodule PotokIde.Tags do
     do: Repo.one(from a in ValueAttachment, where: a.id == ^id, preload: :group)
 
   # The same rules as the pages that show the items: groups to members and,
-  # when public, to everyone; values, files and events to members.
+  # when public, to everyone; values and files to members; events to members
+  # and, when public, to everyone.
   defp accessible?(profile, :group, %Group{} = group),
     do: not group.is_root and (group.is_public or Social.member_of_group?(profile, group))
 
   defp accessible?(_profile, :profile, %Profile{}), do: true
 
   defp accessible?(profile, :event, %Event{} = event),
-    do: is_nil(event.cancelled_at) and Social.member_of_group?(profile, event.group)
+    do: is_nil(event.cancelled_at) and Events.visible?(profile, event)
 
   defp accessible?(profile, :value, %Value{} = value),
     do: not value.is_data and Social.member_of_group?(profile, value.group)
@@ -273,8 +274,8 @@ defmodule PotokIde.Tags do
 
   defp maybe_broadcast(_tag, :profile, _profile), do: :ok
 
-  defp maybe_broadcast(_tag, :event, %Event{group_id: group_id}),
-    do: Events.broadcast_events_changed(group_id)
+  defp maybe_broadcast(_tag, :event, %Event{} = event),
+    do: Events.broadcast_events_changed(event)
 
   defp maybe_broadcast(_tag, :group, %Group{} = group) do
     # The parent lists the group among its sub-groups.
@@ -463,9 +464,9 @@ defmodule PotokIde.Tags do
 
   defp base_query(:event, viewer_id) do
     from(e in Event,
-      join: gm in GroupMembership,
+      left_join: gm in GroupMembership,
       on: gm.group_id == e.group_id and gm.profile_id == ^viewer_id,
-      where: is_nil(e.cancelled_at)
+      where: is_nil(e.cancelled_at) and (e.is_public or not is_nil(gm.profile_id))
     )
   end
 

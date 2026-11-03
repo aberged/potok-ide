@@ -32,6 +32,9 @@ defmodule PotokIde.Events.Event do
     field :description, :string, default: ""
     field :location, :string, default: ""
     field :all_day, :boolean, default: false
+    # Seen by every profile, not only the group's members; set by those with
+    # `publish_events` (`PotokIde.Events` drops the change for others).
+    field :is_public, :boolean, default: false
     field :starts_at, :utc_datetime
     field :ends_at, :utc_datetime
     field :time_zone, :string
@@ -129,6 +132,7 @@ defmodule PotokIde.Events.Event do
       :description,
       :location,
       :all_day,
+      :is_public,
       :start_date,
       :start_time,
       :end_date,

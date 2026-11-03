@@ -9,9 +9,16 @@ defmodule PotokIde.Events do
   profile, so it holds no events; its calendar shows the events of every
   group the profile is a member of.
 
+  Members with `publish_events` make an event public: every profile sees it
+  in the root calendar (and in the calendar of its group when the group is
+  public), may answer it and pick its own reminders. Those who
+  are no members get reminders and changes of the occurrences they said
+  they come to (going or maybe).
+
   Changes are broadcast on a topic per group (`subscribe/1`) as
   `{:calendar, {:events_changed, group_id}}` and
-  `{:calendar, {:responses_changed, event_id, date}}`.
+  `{:calendar, {:responses_changed, event_id, date}}`; those of public
+  events also on the topic `subscribe(:public)`.
   """
 
   import Ecto.Query, warn: false
@@ -51,17 +58,35 @@ defmodule PotokIde.Events do
 
   ## Live updates
 
-  def subscribe(group_id), do: Phoenix.PubSub.subscribe(PotokIde.PubSub, topic(group_id))
-  def unsubscribe(group_id), do: Phoenix.PubSub.unsubscribe(PotokIde.PubSub, topic(group_id))
+  @doc "Subscribes to the events of a group, or with `:public` to every public event."
+  def subscribe(group_id_or_public),
+    do: Phoenix.PubSub.subscribe(PotokIde.PubSub, topic(group_id_or_public))
 
+  def unsubscribe(group_id_or_public),
+    do: Phoenix.PubSub.unsubscribe(PotokIde.PubSub, topic(group_id_or_public))
+
+  defp topic(:public), do: "public_events"
   defp topic(group_id), do: "group_events:#{group_id}"
 
-  @doc "Tells open calendars of the group that its events changed (say, their tags)."
-  def broadcast_events_changed(group_id) when is_integer(group_id),
-    do: broadcast(group_id, {:events_changed, group_id})
+  @doc "Tells open calendars that show the event that it changed (say, its tags)."
+  def broadcast_events_changed(%Event{} = event),
+    do: broadcast_event(event, {:events_changed, event.group_id})
 
-  defp broadcast(group_id, message),
-    do: Phoenix.PubSub.broadcast(PotokIde.PubSub, topic(group_id), {:calendar, message})
+  # To the event's group and, when the event is public (or `was_public?`),
+  # to every calendar that shows public events.
+  defp broadcast_event(%Event{} = event, message, was_public? \\ false) do
+    broadcast(event.group_id, message)
+    if event.is_public or was_public?, do: broadcast(:public, message)
+    :ok
+  end
+
+  defp broadcast(group_id_or_public, message),
+    do:
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        topic(group_id_or_public),
+        {:calendar, message}
+      )
 
   ## Access
 
@@ -76,6 +101,14 @@ defmodule PotokIde.Events do
   def can_manage?(%Access{} = access, %Profile{} = profile, %Event{} = event) do
     access.member? and (event.creator_id == profile.id or Access.can?(access, :manage_events))
   end
+
+  @doc "Whether the holder of `access` to `group` may make its events public, or private again."
+  def can_publish?(%Access{} = access, %Group{} = group),
+    do: not group.is_root and not group.is_direct and Access.can?(access, :publish_events)
+
+  @doc "Whether `profile` sees the event: anyone a public one, members the others."
+  def visible?(%Profile{} = profile, %Event{} = event),
+    do: event.is_public or Social.member_of_group?(profile, event_group(event))
 
   ## Reading
 
@@ -116,16 +149,39 @@ defmodule PotokIde.Events do
 
   @doc """
   The occurrences of the events of `group_ids` that overlap `[from, to)`,
-  in order. Cancelled events are left out. Events come with their group.
+  in order, with `public: true` also those of every public event, or with
+  `public: other_group_ids` the public events of those groups. Cancelled
+  events are left out. Events come with their group.
   """
-  def list_occurrences([], _from, _to), do: []
+  def list_occurrences(group_ids, from, to, opts \\ [])
 
-  def list_occurrences(group_ids, %DateTime{} = from, %DateTime{} = to) do
+  def list_occurrences(group_ids, %DateTime{} = from, %DateTime{} = to, opts) do
+    public = Keyword.get(opts, :public, false)
+
+    if group_ids == [] and public in [false, []],
+      do: [],
+      else: query_occurrences(group_ids, from, to, public)
+  end
+
+  defp query_occurrences(group_ids, from, to, public) do
     # An occurrence on a series' last date may last up to 31 days.
     until_from = Date.add(DateTime.to_date(from), -32)
 
+    shown =
+      case public do
+        true ->
+          dynamic([e], e.group_id in ^group_ids or e.is_public)
+
+        public_ids when is_list(public_ids) ->
+          dynamic([e], e.group_id in ^group_ids or (e.is_public and e.group_id in ^public_ids))
+
+        false ->
+          dynamic([e], e.group_id in ^group_ids)
+      end
+
     from(e in Event,
-      where: e.group_id in ^group_ids and is_nil(e.cancelled_at),
+      where: ^shown,
+      where: is_nil(e.cancelled_at),
       where: e.starts_at < ^to,
       where:
         e.ends_at >= ^from or
@@ -140,11 +196,19 @@ defmodule PotokIde.Events do
     )
   end
 
-  @doc "The event with its group and creator, when `profile` is a member of its group."
+  @doc "Whether the group has a public event that is not cancelled."
+  def public_events?(%Group{id: group_id}) do
+    from(e in Event,
+      where: e.group_id == ^group_id and e.is_public and is_nil(e.cancelled_at)
+    )
+    |> Repo.exists?()
+  end
+
+  @doc "The event with its group and creator, when `profile` sees it (`visible?/2`)."
   def get_event(%Profile{} = profile, id) when is_integer(id) do
     with %Event{} = event <- Repo.get(Event, id),
          event = Repo.preload(event, [:group, :creator]),
-         true <- Social.member_of_group?(profile, event.group) do
+         true <- visible?(profile, event) do
       {:ok, event}
     else
       _ -> {:error, :not_found}
@@ -180,12 +244,13 @@ defmodule PotokIde.Events do
 
       %Event{group_id: group.id, creator_id: creator.id, reminded_through: now}
       |> Event.changeset(attrs, time_zone)
+      |> check_publish(access, group)
       |> put_next_reminder(now, [])
       |> Repo.insert()
       |> case do
         {:ok, event} ->
           event = %{event | group: group, creator: creator}
-          broadcast(group.id, {:events_changed, group.id})
+          broadcast_event(event, {:events_changed, group.id})
 
           event =
             if Keyword.get(opts, :announce, true) and Access.can?(access, :post_values),
@@ -244,8 +309,8 @@ defmodule PotokIde.Events do
 
   @doc """
   Changes an event. The form's times are read in the event's own zone. With
-  `notify: true` (the default) members are told when its time, place or
-  repeat rule changed.
+  `notify: true` (the default) members, and those who said they come to a
+  public event, are told when its time, place or repeat rule changed.
   """
   def update_event(%Profile{} = actor, %Event{} = event, attrs, opts \\ []) do
     group = event_group(event)
@@ -261,7 +326,12 @@ defmodule PotokIde.Events do
       true ->
         Repo.transaction(fn ->
           locked = lock_event!(event.id)
-          changeset = Event.changeset(locked, attrs, locked.time_zone)
+
+          changeset =
+            locked
+            |> Event.changeset(attrs, locked.time_zone)
+            |> check_publish(access, group)
+
           schedule_changed? = Enum.any?(@schedule_fields, &Map.has_key?(changeset.changes, &1))
           notable? = Enum.any?(@notable_fields, &Map.has_key?(changeset.changes, &1))
 
@@ -272,23 +342,29 @@ defmodule PotokIde.Events do
 
           changeset = put_next_reminder(changeset, locked.reminded_through, :stored)
 
+          # Read before the answers they gave may be dropped.
+          followers = if notable?, do: follower_ids(locked, {:since, today(locked)}), else: []
+
           case Repo.update(changeset) do
             {:ok, updated} ->
               if schedule_changed?, do: prune_responses(locked, updated)
-              {updated, notable?}
+              {updated, notable?, locked.is_public, followers}
 
             {:error, changeset} ->
               Repo.rollback(changeset)
           end
         end)
         |> case do
-          {:ok, {updated, notable?}} ->
+          {:ok, {updated, notable?, was_public?, followers}} ->
             updated = %{updated | group: group, creator: event.creator}
-            broadcast(group.id, {:events_changed, group.id})
+            broadcast_event(updated, {:events_changed, group.id}, was_public?)
             Social.refresh_value(updated.value_id)
 
+            # An event made private no longer concerns those who are no members.
+            followers = if updated.is_public, do: followers, else: []
+
             if notable? and Keyword.get(opts, :notify, true),
-              do: notify_changed(actor, group, updated)
+              do: notify_changed(actor, group, updated, followers)
 
             {:ok, updated}
 
@@ -300,7 +376,8 @@ defmodule PotokIde.Events do
 
   @doc """
   Cancels an event: it leaves the calendar, its chat card says it was
-  cancelled, and members who did not decline its next occurrence are told.
+  cancelled, and members who did not decline its next occurrence are told,
+  as are those who said they come to an occurrence of a public one.
   """
   def cancel_event(%Profile{} = actor, %Event{} = event) do
     group = event_group(event)
@@ -326,12 +403,21 @@ defmodule PotokIde.Events do
         |> case do
           {:ok, cancelled} ->
             cancelled = %{cancelled | group: group, creator: event.creator}
-            broadcast(group.id, {:events_changed, group.id})
+            broadcast_event(cancelled, {:events_changed, group.id})
             Social.refresh_value(cancelled.value_id)
 
             if next do
               payload_for = Notifications.cancelled(actor, group, cancelled)
-              notify_members(group, actor, {event.id, next.date}, "event cancel", payload_for)
+              followers = follower_ids(event, {:since, today(event)})
+
+              notify_members(
+                group,
+                actor,
+                {event.id, next.date},
+                followers,
+                "event cancel",
+                payload_for
+              )
             end
 
             {:ok, cancelled}
@@ -344,7 +430,8 @@ defmodule PotokIde.Events do
 
   @doc """
   Cancels the occurrence of a repeating event on the local `date`, which
-  must be to come. Members who did not decline it are told.
+  must be to come. Members who did not decline it are told, as are those
+  who said they come to it when the event is public.
   """
   def cancel_occurrence(%Profile{} = actor, %Event{} = event, %Date{} = date) do
     group = event_group(event)
@@ -378,10 +465,18 @@ defmodule PotokIde.Events do
         |> case do
           {:ok, updated} ->
             updated = %{updated | group: group, creator: event.creator}
-            broadcast(group.id, {:events_changed, group.id})
+            broadcast_event(updated, {:events_changed, group.id})
 
             payload_for = Notifications.occurrence_cancelled(actor, group, occurrence)
-            notify_members(group, actor, {event.id, date}, "event occurrence cancel", payload_for)
+
+            notify_members(
+              group,
+              actor,
+              {event.id, date},
+              follower_ids(updated, date),
+              "event occurrence cancel",
+              payload_for
+            )
 
             {:ok, updated}
 
@@ -395,16 +490,16 @@ defmodule PotokIde.Events do
 
   @doc """
   Sets the profile's answer (`:going`, `:maybe`, `:declined`, or nil to take
-  it back) for the occurrence on the local `date`, until it has ended.
+  it back) for the occurrence on the local `date`, until it has ended. Any
+  profile answers a public event; members the others.
   """
   def respond(%Profile{} = profile, %Event{} = event, %Date{} = date, status)
       when status in [:going, :maybe, :declined, nil] do
-    group = event_group(event)
     occurrence = Recurrence.occurrence(event, date)
     now = DateTime.utc_now(:second)
 
     cond do
-      not Social.member_of_group?(profile, group) ->
+      not visible?(profile, event) ->
         {:error, :not_a_member_of_group}
 
       Event.cancelled?(event) or is_nil(occurrence) or
@@ -417,7 +512,7 @@ defmodule PotokIde.Events do
         )
         |> Repo.delete_all()
 
-        broadcast(group.id, {:responses_changed, event.id, date})
+        broadcast_event(event, {:responses_changed, event.id, date})
         {:ok, nil}
 
       true ->
@@ -430,7 +525,7 @@ defmodule PotokIde.Events do
         )
         |> case do
           {:ok, response} ->
-            broadcast(group.id, {:responses_changed, event.id, date})
+            broadcast_event(event, {:responses_changed, event.id, date})
             {:ok, response}
 
           error ->
@@ -441,16 +536,20 @@ defmodule PotokIde.Events do
 
   @doc """
   The answers for the occurrence on `date`: counts per status and the first
-  #{@summary_profiles} profiles of each, counting current members only, and
-  `profile`'s own answer.
+  #{@summary_profiles} profiles of each, counting current members only (any
+  profile for a public event), and `profile`'s own answer.
   """
   def response_summary(%Event{} = event, %Date{} = date, %Profile{} = profile) do
+    all = from(r in Response, where: r.event_id == ^event.id and r.occurs_on == ^date)
+
     answers =
-      from(r in Response,
-        join: gm in GroupMembership,
-        on: gm.group_id == ^event.group_id and gm.profile_id == r.profile_id,
-        where: r.event_id == ^event.id and r.occurs_on == ^date
-      )
+      if event.is_public,
+        do: all,
+        else:
+          from([r] in all,
+            join: gm in GroupMembership,
+            on: gm.group_id == ^event.group_id and gm.profile_id == r.profile_id
+          )
 
     counts =
       from([r] in answers, group_by: r.status, select: {r.status, count(r.id)})
@@ -508,10 +607,11 @@ defmodule PotokIde.Events do
 
   @doc """
   Sets the profile's own reminders for every occurrence of the event, or
-  with `:default` goes back to the organizer's.
+  with `:default` goes back to the organizer's. Those who are no members of
+  a public event's group get them for the occurrences they come to.
   """
   def set_member_reminders(%Profile{} = profile, %Event{} = event, attrs) do
-    if Social.member_of_group?(profile, event_group(event)) do
+    if visible?(profile, event) do
       Repo.transaction(fn ->
         locked = lock_event!(event.id)
 
@@ -566,6 +666,15 @@ defmodule PotokIde.Events do
 
   defp lock_event!(id), do: Repo.one!(from(e in Event, where: e.id == ^id, lock: "FOR UPDATE"))
 
+  defp today(%Event{} = event), do: Recurrence.local_date(DateTime.utc_now(), event.time_zone)
+
+  # Only those who may publish make an event public, or private again.
+  defp check_publish(changeset, access, group) do
+    if can_publish?(access, group),
+      do: changeset,
+      else: Ecto.Changeset.delete_change(changeset, :is_public)
+  end
+
   # `next_reminder_at` from the new fields, counting the members' own
   # offsets (`:stored`, for an event that exists) or only the organizer's.
   defp put_next_reminder(%Ecto.Changeset{valid?: false} = changeset, _since, _members),
@@ -585,7 +694,7 @@ defmodule PotokIde.Events do
   # Answers are for a date and a time. Those to come are dropped when their
   # date is no longer an occurrence, or all of them when the time changed.
   defp prune_responses(%Event{} = old, %Event{} = new) do
-    today = Recurrence.local_date(DateTime.utc_now(), new.time_zone)
+    today = today(new)
     future = from(r in Response, where: r.event_id == ^new.id and r.occurs_on >= ^today)
 
     if local_time_and_length(old) != local_time_and_length(new) do
@@ -605,7 +714,7 @@ defmodule PotokIde.Events do
     {event.all_day, DateTime.to_time(local), DateTime.diff(event.ends_at, event.starts_at)}
   end
 
-  defp notify_changed(actor, group, event) do
+  defp notify_changed(actor, group, event, followers) do
     case Recurrence.next_occurrence_after(event, DateTime.utc_now(:second)) do
       nil ->
         :ok
@@ -615,21 +724,58 @@ defmodule PotokIde.Events do
           group,
           actor,
           nil,
+          followers,
           "event change",
           Notifications.changed(actor, group, next)
         )
     end
   end
 
-  # Members other than `actor`; with `{event_id, date}` not those who
-  # declined that occurrence.
-  defp notify_members(group, actor, declined, context, payload_for) do
+  # The profiles who are no members of a public event's group and said they
+  # come (going or maybe) to its occurrence on `date`, or with `{:since,
+  # date}` to any occurrence from that date on.
+  defp follower_ids(%Event{is_public: false}, _dates), do: []
+
+  defp follower_ids(%Event{} = event, dates) do
+    query =
+      from(r in Response,
+        left_join: gm in GroupMembership,
+        on: gm.group_id == ^event.group_id and gm.profile_id == r.profile_id,
+        where:
+          r.event_id == ^event.id and r.status in ^[:going, :maybe] and is_nil(gm.profile_id),
+        distinct: true,
+        select: r.profile_id
+      )
+
+    case dates do
+      %Date{} = date -> from([r] in query, where: r.occurs_on == ^date)
+      {:since, %Date{} = date} -> from([r] in query, where: r.occurs_on >= ^date)
+    end
+    |> Repo.all()
+  end
+
+  # Members other than `actor`, with `{event_id, date}` not those who
+  # declined that occurrence, and the `followers` (profile ids).
+  defp notify_members(group, actor, declined, followers, context, payload_for) do
     Dispatch.run(fn ->
       group
       |> member_account_ids(actor, declined)
+      |> with_follower_accounts(actor, followers)
       |> Dispatch.subscriptions_by_account()
       |> Dispatch.deliver_localized(context, group.id, payload_for)
     end)
+  end
+
+  defp with_follower_accounts(query, _actor, []), do: query
+
+  defp with_follower_accounts(query, %Profile{} = actor, followers) do
+    union(
+      query,
+      ^from(ap in AccountProfile,
+        where: ap.profile_id in ^followers and ap.profile_id != ^actor.id,
+        select: ap.account_id
+      )
+    )
   end
 
   defp member_account_ids(%Group{} = group, %Profile{} = actor, declined) do
