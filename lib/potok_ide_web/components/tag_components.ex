@@ -152,7 +152,7 @@ defmodule PotokIdeWeb.TagComponents do
           aria-hidden="true"
         >
         </div>
-        <section class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-base-300/70 bg-base-100 text-base-content shadow-2xl shadow-base-content/10 sm:max-w-md sm:rounded-3xl">
+        <section class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl shadow-base-content/10 sm:max-w-md sm:rounded-3xl sm:border-b">
           <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-5 pb-4">
             <span class="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <.icon name="hero-hashtag" class="size-5" />
@@ -315,7 +315,9 @@ defmodule PotokIdeWeb.TagComponents do
             </div>
           </div>
 
-          <footer class="flex items-center justify-between gap-3 border-t border-base-300/60 bg-base-200/40 px-5 py-3 text-xs text-base-content/60">
+          <%!-- On phones the sheet reaches the bottom edge, outside the layout's
+               safe-area padding: the footer keeps its links above the home bar. --%>
+          <footer class="flex items-center justify-between gap-3 border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] text-xs text-base-content/60 sm:pb-3">
             <span class="inline-flex items-center gap-1">
               <.icon name="hero-lock-closed" class="size-3.5" />
               {gettext("Private tags are seen only by you.")}
