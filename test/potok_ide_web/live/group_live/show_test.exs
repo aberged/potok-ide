@@ -1105,6 +1105,18 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              )
 
       assert has_element?(lv, "#group-panel-values #group-path span", "path-current-group")
+
+      # In the root group itself (its overview has no path), the house leads
+      # to the overview of every group.
+      {:ok, lv, _html} =
+        build_conn() |> log_in_account(account) |> live(~p"/groups/#{root_group.id}/calendar")
+
+      assert has_element?(
+               lv,
+               "#group-path a[href='#{~p"/groups/#{root_group.id}/sub_groups"}'][aria-current='page'] .hero-home"
+             )
+
+      refute has_element?(lv, "#group-path span", "/")
     end
 
     test "shows the other member username for direct groups in the current group path", %{

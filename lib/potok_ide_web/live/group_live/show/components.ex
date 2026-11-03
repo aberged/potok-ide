@@ -535,20 +535,31 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             <span aria-hidden="true" class="text-base-content/35">/</span>
           <% end %>
 
-          <%= if path_group.id == @group.id do %>
-            <span class="font-medium text-base-content">
-              {group_identity_name(path_group, @current_profile)}
-            </span>
-          <% else %>
-            <.link
-              navigate={~p"/groups/#{path_group.id}/sub_groups"}
-              class="transition-colors hover:text-base-content"
-            >
-              {if path_group.is_root,
-                do: "",
-                else: group_identity_name(path_group, @current_profile)}
-              <.icon :if={path_group.is_root} name="hero-home" class="size-4" />
-            </.link>
+          <%= cond do %>
+            <% path_group.is_root -> %>
+              <%!-- The root's name is "/": a house leads to the overview of every group. --%>
+              <.link
+                navigate={~p"/groups/#{path_group.id}/sub_groups"}
+                aria-label={gettext("Groups")}
+                aria-current={path_group.id == @group.id && "page"}
+                class={[
+                  "inline-flex items-center transition-colors hover:text-base-content",
+                  path_group.id == @group.id && "text-base-content"
+                ]}
+              >
+                <.icon name="hero-home" class="size-4" />
+              </.link>
+            <% path_group.id == @group.id -> %>
+              <span class="font-medium text-base-content">
+                {group_identity_name(path_group, @current_profile)}
+              </span>
+            <% true -> %>
+              <.link
+                navigate={~p"/groups/#{path_group.id}/sub_groups"}
+                class="transition-colors hover:text-base-content"
+              >
+                {group_identity_name(path_group, @current_profile)}
+              </.link>
           <% end %>
         <% end %>
       </nav>
