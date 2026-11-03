@@ -177,6 +177,8 @@ defmodule PotokIdeWeb.GroupLive.TagsTest do
       assert has_element?(owner_lv, "#group-tag-list-#{tag.id}", "team")
       assert has_element?(member_lv, "#group-tag-list-#{tag.id}", "team")
       assert has_element?(owner_lv, "#group-tags-browse[href='/tags?group=#{group.id}']")
+      # Group pages keep the bounded layout.
+      assert has_element?(owner_lv, "#main-content.max-w-6xl")
     end
 
     test "sub-groups carry tags in the parent's list", ctx do

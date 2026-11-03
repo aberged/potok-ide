@@ -26,14 +26,15 @@ defmodule PotokIdeWeb.RequestLive.Index do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <.header>
+      <.page_container id="requests-page">
+        <.page_header id="requests-header" icon="hero-hand-raised">
           {gettext("Requests")}
           <:subtitle>
             {gettext("Pending group access requests that your current profile can approve.")}
           </:subtitle>
-        </.header>
+        </.page_header>
 
         <.form
           :if={
@@ -349,7 +350,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
             </div>
           </div>
         </div>
-      </div>
+      </.page_container>
     </Layouts.app>
     """
   end

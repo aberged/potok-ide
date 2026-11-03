@@ -396,6 +396,51 @@ defmodule PotokIdeWeb.CoreComponents do
   end
 
   @doc """
+  The scrolling body of a top-level page such as tags, invitations, requests
+  and profiles: one centered column, so they are the same width on wide
+  screens. `class` goes on the column. Those pages pass `full_width` to
+  `Layouts.app`, so the scroll area, and its scrollbar, reach the window's
+  edge.
+  """
+  attr :id, :string, default: nil
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+
+  def page_container(assigns) do
+    ~H"""
+    <div id={@id} class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
+      <div class={["mx-auto w-full max-w-3xl", @class]}>{render_slot(@inner_block)}</div>
+    </div>
+    """
+  end
+
+  @doc """
+  The header of a top-level page such as tags, invitations, requests and
+  profiles: an icon tile, the title and a line under it.
+  """
+  attr :id, :string, default: nil
+  attr :icon, :string, required: true
+  attr :class, :any, default: nil
+  slot :inner_block, required: true
+  slot :subtitle
+
+  def page_header(assigns) do
+    ~H"""
+    <header id={@id} class={["mb-5 flex items-start gap-3", @class]}>
+      <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+        <.icon name={@icon} class="size-6" />
+      </span>
+      <div class="min-w-0">
+        <h1 class="text-xl font-semibold leading-tight">{render_slot(@inner_block)}</h1>
+        <p :if={@subtitle != []} class="mt-0.5 text-sm text-base-content/60">
+          {render_slot(@subtitle)}
+        </p>
+      </div>
+    </header>
+    """
+  end
+
+  @doc """
   Renders a table with generic styling.
 
   ## Examples

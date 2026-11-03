@@ -63,6 +63,8 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
         |> log_in_account(invitee_account)
         |> live(~p"/invitations")
 
+      assert has_element?(lv, "#invitations-header h1", "Invitations")
+
       html = render(lv)
 
       assert html =~ "Pending Group"

@@ -26,14 +26,15 @@ defmodule PotokIdeWeb.InvitationLive.Index do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <.header>
+      <.page_container id="invitations-page">
+        <.page_header id="invitations-header" icon="hero-inbox-arrow-down">
           {gettext("Invitations")}
           <:subtitle>
             {gettext("Received and sent group invitations for your current profile.")}
           </:subtitle>
-        </.header>
+        </.page_header>
 
         <.form
           :if={
@@ -309,7 +310,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
         </div>
 
         <%!-- <div><.link navigate={~p"/groups"} class="link">{gettext("Back to /")}</.link></div> --%>
-      </div>
+      </.page_container>
     </Layouts.app>
     """
   end

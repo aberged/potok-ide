@@ -42,6 +42,11 @@ defmodule PotokIdeWeb.Layouts do
   attr :pending_group_join_requests_count, :integer, default: 0
   attr :root_group_unread_count, :integer, default: 0
 
+  attr :full_width, :boolean,
+    default: false,
+    doc:
+      "lets the page's scroll area span the whole width, so its scrollbar sits at the window's edge"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -185,7 +190,10 @@ defmodule PotokIdeWeb.Layouts do
 
         <main
           id="main-content"
-          class="relative z-0 mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto overscroll-contain"
+          class={[
+            "relative z-0 mx-auto flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain",
+            !@full_width && "max-w-6xl"
+          ]}
         >
           {render_slot(@inner_block)}
         </main>

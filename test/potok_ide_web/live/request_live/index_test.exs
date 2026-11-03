@@ -54,6 +54,7 @@ defmodule PotokIdeWeb.RequestLive.IndexTest do
         |> log_in_account(owner_account)
         |> live(~p"/requests")
 
+      assert has_element?(lv, "#requests-header h1", "Requests")
       assert html =~ "nav-requests-count-badge"
       assert render(lv) =~ "Requested Group"
       assert render(lv) =~ requester_profile.username

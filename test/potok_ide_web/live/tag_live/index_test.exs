@@ -40,6 +40,9 @@ defmodule PotokIdeWeb.TagLive.IndexTest do
 
       # The app header links here, next to the invitations.
       assert has_element?(lv, "#nav-tags-link[href='/tags']")
+      assert has_element?(lv, "#tags-header h1", "Tags")
+      # The scroll area spans the window, so its scrollbar sits at the edge.
+      refute has_element?(lv, "#main-content.max-w-6xl")
       assert has_element?(lv, "#tags-mine-#{mine.id}", "later")
       assert has_element?(lv, "#tags-public-#{public.id}", "news")
       refute has_element?(lv, "#tags-mine-#{theirs.id}")

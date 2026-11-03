@@ -18,18 +18,17 @@ defmodule PotokIdeWeb.ProfileLive.Index do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div class="mx-auto flex min-h-0 flex-1 overflow-y-auto overscroll-contain w-full max-w-3xl flex-col space-y-2 px-4 py-4">
-        <div class="flex flex-wrap items-start justify-between gap-3">
-          <.header>
-            {gettext("Profiles")}
-            <:subtitle>
-              {gettext(
-                "Pick the profile you want to use, or open a dedicated page to create or edit one."
-              )}
-            </:subtitle>
-          </.header>
-        </div>
+      <.page_container id="profiles-page" class="flex flex-col space-y-2">
+        <.page_header id="profiles-header" icon="hero-users">
+          {gettext("Profiles")}
+          <:subtitle>
+            {gettext(
+              "Pick the profile you want to use, or open a dedicated page to create or edit one."
+            )}
+          </:subtitle>
+        </.page_header>
 
         <div :if={@current_profile} class="alert">
           <ProfileComponents.profile_identity
@@ -118,7 +117,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
             <.icon name="hero-plus" class="size-4" /> {gettext("Create profile")}
           </.button>
         </div>
-      </div>
+      </.page_container>
     </Layouts.app>
     """
   end

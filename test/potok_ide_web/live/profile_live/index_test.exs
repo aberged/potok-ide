@@ -27,6 +27,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> log_in_account(account)
         |> live(~p"/profiles")
 
+      assert has_element?(lv, "#profiles-header h1", "Profiles")
       assert has_element?(lv, "a[href='/profiles/new']")
       assert has_element?(lv, "a[href='/profiles/#{profile.id}/edit']")
       refute has_element?(lv, "#create-profile-form")

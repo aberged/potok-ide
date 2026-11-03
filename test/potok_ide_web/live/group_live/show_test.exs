@@ -1502,6 +1502,106 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "input[name='group[is_root_public]'][type='checkbox']")
     end
 
+    test "edit group shows one card at a time, with a save bar for unsaved changes", %{
+      conn: conn
+    } do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "edit-sections",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      group = create_child_group!(profile, "edit-sections-group")
+      {:ok, group} = Social.update_group(profile, group, %{"is_root_public" => "true"})
+      {:ok, alt} = Social.create_alt_description(profile, group, %{"name" => "Poll"})
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(account)
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      cards = [
+        basics: "group-edit-basics",
+        access: "group-edit-access",
+        home: "group-edit-home",
+        description: "group-edit-description",
+        alt_descriptions: "group-alt-descriptions",
+        danger: "group-edit-danger"
+      ]
+
+      # "Basics" is on screen first; every other card is there, hidden.
+      for {key, id} <- cards do
+        assert has_element?(lv, "#group-edit-tab-#{key}[aria-controls='#{id}']")
+
+        if key == :basics,
+          do: assert(has_element?(lv, "##{id}:not(.hidden)")),
+          else: assert(has_element?(lv, "##{id}.hidden"))
+      end
+
+      assert has_element?(lv, "#group-edit-tab-basics[aria-selected='true']")
+
+      lv |> element("#group-edit-tab-danger") |> render_click()
+      assert has_element?(lv, "#group-edit-danger:not(.hidden)")
+      assert has_element?(lv, "#group-edit-basics.hidden")
+      assert has_element?(lv, "#group-edit-tab-danger[aria-selected='true']")
+
+      # "Root public" is folded into "Public"; the app switch sits with the description.
+      refute has_element?(lv, "input[name='group[is_root_public]'][type='checkbox']")
+
+      assert has_element?(
+               lv,
+               "#group-edit-access input[name='group[is_public]'][type='checkbox']"
+             )
+
+      assert has_element?(
+               lv,
+               "#group-edit-description input[name='group[uses_api]'][type='checkbox']"
+             )
+
+      assert has_element?(lv, "#group-edit-danger #group-delete-button")
+      assert has_element?(lv, "#group-edit-danger #group-delete-data-values-button")
+      refute has_element?(lv, "#group-edit-save-bar")
+
+      lv |> form("#group-edit-form", group: %{name: "renamed"}) |> render_change()
+      assert has_element?(lv, "#group-edit-save-bar #group-edit-save[form='group-edit-form']")
+
+      lv |> element("#group-edit-discard") |> render_click()
+      refute has_element?(lv, "#group-edit-save-bar")
+
+      assert has_element?(
+               lv,
+               "#group-edit-form input[name='group[name]'][value='edit-sections-group']"
+             )
+
+      # An edit survives a switch to another card: the hidden cards still post.
+      lv |> element("#group-edit-tab-basics") |> render_click()
+      lv |> form("#group-edit-form", group: %{name: "renamed"}) |> render_change()
+      lv |> element("#group-edit-tab-description") |> render_click()
+      lv |> form("#group-edit-form", group: %{description_name: "About"}) |> render_submit()
+
+      saved = Social.get_group!(group.id)
+      assert saved.name == "renamed"
+      assert saved.description_name == "About"
+      refute saved.is_root_public
+      assert saved.is_public
+      refute has_element?(lv, "#group-edit-save-bar")
+
+      # A save that fails opens the card with the error.
+      lv |> form("#group-edit-form", group: %{name: ""}) |> render_submit()
+      assert has_element?(lv, "#group-edit-basics:not(.hidden)")
+      assert has_element?(lv, "#group-edit-description.hidden")
+
+      # An edited alternative description opens under its own row.
+      lv |> element("#alt-description-#{alt.id}-edit") |> render_click()
+      assert has_element?(lv, "#alt-description-#{alt.id} #alt-description-form")
+    end
+
     test "shows edit group only to members and persists edits", %{conn: conn} do
       owner_account = account_fixture()
       viewer_account = account_fixture()
@@ -1552,6 +1652,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(owner_lv, "#group-tab-edit-group")
       assert has_element?(owner_lv, "#group-panel-edit-group")
+      assert has_element?(owner_lv, "#group-edit-header h1", "Edit group")
       assert has_element?(owner_lv, "#group_group_picture_url-picker")
       assert has_element?(owner_lv, "#group-delete-data-values-button")
 

@@ -42,207 +42,201 @@ defmodule PotokIdeWeb.TagLive.Index do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      full_width
     >
-      <div id="tags-page" class="relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4">
-        <div class="mx-auto w-full max-w-3xl">
-          <header class="mb-5 flex items-start gap-3">
-            <span class="inline-flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
-              <.icon name="hero-hashtag" class="size-6" />
-            </span>
-            <div class="min-w-0">
-              <h1 class="text-xl font-semibold leading-tight">{gettext("Tags")}</h1>
-              <p class="mt-0.5 text-sm text-base-content/60">
-                {if @selected_tags == [],
-                  do: gettext("Pick a tag to see everything that carries it."),
-                  else: gettext("Everything you can open that carries every chosen tag.")}
-              </p>
-            </div>
-          </header>
+      <.page_container id="tags-page">
+        <.page_header id="tags-header" icon="hero-hashtag">
+          {gettext("Tags")}
+          <:subtitle>
+            {if @selected_tags == [],
+              do: gettext("Pick a tag to see everything that carries it."),
+              else: gettext("Everything you can open that carries every chosen tag.")}
+          </:subtitle>
+        </.page_header>
 
-          <div
-            id="tags-filter-bar"
-            class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/80 p-3 shadow-sm"
+        <div
+          id="tags-filter-bar"
+          class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/80 p-3 shadow-sm"
+        >
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span
+              :for={tag <- @selected_tags}
+              id={"tags-selected-#{tag.id}"}
+              class={[
+                "inline-flex h-8 items-center gap-1 rounded-full border pl-3 pr-1 text-sm font-semibold",
+                TagComponents.chip_class(tag)
+              ]}
+            >
+              <.icon name={TagComponents.tag_icon(tag)} class="size-3.5 opacity-70" />
+              <span class="max-w-48 truncate">{tag.name}</span>
+              <.link
+                id={"tags-selected-remove-#{tag.id}"}
+                patch={tags_url(assigns, t: List.delete(Enum.map(@selected_tags, & &1.id), tag.id))}
+                aria-label={gettext("Remove tag %{name}", name: tag.name)}
+                class="inline-flex size-6 items-center justify-center rounded-full transition hover:bg-base-content/10"
+              >
+                <.icon name="hero-x-mark" class="size-3.5" />
+              </.link>
+            </span>
+
+            <span
+              :if={@scope_group}
+              id="tags-scope"
+              class="inline-flex h-8 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-3 pr-1 text-sm font-semibold text-amber-800 dark:text-amber-200"
+            >
+              <.icon name="hero-folder-open" class="size-4 opacity-70" />
+              <span class="max-w-48 truncate">
+                {gettext("In %{group}", group: @scope_group.name)}
+              </span>
+              <.link
+                id="tags-scope-remove"
+                patch={tags_url(assigns, group: nil)}
+                aria-label={gettext("Search every group")}
+                class="inline-flex size-6 items-center justify-center rounded-full transition hover:bg-base-content/10"
+              >
+                <.icon name="hero-x-mark" class="size-3.5" />
+              </.link>
+            </span>
+
+            <.form
+              :if={length(@selected_tags) < Tags.max_filter_tags()}
+              for={@filter_form}
+              id="tags-filter-form"
+              phx-change="filter_search"
+              phx-submit="filter_search"
+              class="min-w-40 flex-1"
+            >
+              <.input
+                field={@filter_form[:q]}
+                id="tags-filter-input"
+                type="text"
+                phx-debounce="200"
+                autocomplete="off"
+                placeholder={
+                  if(@selected_tags == [],
+                    do: gettext("Search tags"),
+                    else: gettext("Add a tag to narrow down")
+                  )
+                }
+                aria-label={gettext("Search tags")}
+                class="h-8 w-full rounded-full border border-transparent bg-transparent px-3 text-sm transition focus:border-base-300 focus:bg-base-100 focus:outline-none"
+              />
+            </.form>
+          </div>
+
+          <ul
+            :if={@selected_tags != [] and @filter_suggestions != []}
+            id="tags-filter-suggestions"
+            class="mt-2 flex flex-wrap gap-1.5 border-t border-base-300/60 pt-2"
           >
-            <div class="flex flex-wrap items-center gap-1.5">
-              <span
-                :for={tag <- @selected_tags}
-                id={"tags-selected-#{tag.id}"}
+            <li :for={tag <- @filter_suggestions}>
+              <.link
+                id={"tags-filter-suggestion-#{tag.id}"}
+                patch={tags_url(assigns, t: Enum.map(@selected_tags, & &1.id) ++ [tag.id])}
                 class={[
-                  "inline-flex h-8 items-center gap-1 rounded-full border pl-3 pr-1 text-sm font-semibold",
+                  "inline-flex h-7 items-center gap-1 rounded-full border border-dashed px-2.5 text-sm transition hover:-translate-y-px hover:border-solid",
                   TagComponents.chip_class(tag)
                 ]}
               >
-                <.icon name={TagComponents.tag_icon(tag)} class="size-3.5 opacity-70" />
+                <.icon name="hero-plus" class="size-3.5 opacity-70" />
                 <span class="max-w-48 truncate">{tag.name}</span>
-                <.link
-                  id={"tags-selected-remove-#{tag.id}"}
-                  patch={tags_url(assigns, t: List.delete(Enum.map(@selected_tags, & &1.id), tag.id))}
-                  aria-label={gettext("Remove tag %{name}", name: tag.name)}
-                  class="inline-flex size-6 items-center justify-center rounded-full transition hover:bg-base-content/10"
-                >
-                  <.icon name="hero-x-mark" class="size-3.5" />
-                </.link>
-              </span>
+                <.icon :if={!Tag.public?(tag)} name="hero-lock-closed" class="size-3 opacity-60" />
+              </.link>
+            </li>
+          </ul>
+        </div>
 
-              <span
-                :if={@scope_group}
-                id="tags-scope"
-                class="inline-flex h-8 items-center gap-1.5 rounded-full border border-amber-500/30 bg-amber-500/10 pl-3 pr-1 text-sm font-semibold text-amber-800 dark:text-amber-200"
-              >
-                <.icon name="hero-folder-open" class="size-4 opacity-70" />
-                <span class="max-w-48 truncate">
-                  {gettext("In %{group}", group: @scope_group.name)}
-                </span>
-                <.link
-                  id="tags-scope-remove"
-                  patch={tags_url(assigns, group: nil)}
-                  aria-label={gettext("Search every group")}
-                  class="inline-flex size-6 items-center justify-center rounded-full transition hover:bg-base-content/10"
-                >
-                  <.icon name="hero-x-mark" class="size-3.5" />
-                </.link>
-              </span>
-
-              <.form
-                :if={length(@selected_tags) < Tags.max_filter_tags()}
-                for={@filter_form}
-                id="tags-filter-form"
-                phx-change="filter_search"
-                phx-submit="filter_search"
-                class="min-w-40 flex-1"
-              >
-                <.input
-                  field={@filter_form[:q]}
-                  id="tags-filter-input"
-                  type="text"
-                  phx-debounce="200"
-                  autocomplete="off"
-                  placeholder={
-                    if(@selected_tags == [],
-                      do: gettext("Search tags"),
-                      else: gettext("Add a tag to narrow down")
-                    )
-                  }
-                  aria-label={gettext("Search tags")}
-                  class="h-8 w-full rounded-full border border-transparent bg-transparent px-3 text-sm transition focus:border-base-300 focus:bg-base-100 focus:outline-none"
-                />
-              </.form>
-            </div>
-
-            <ul
-              :if={@selected_tags != [] and @filter_suggestions != []}
-              id="tags-filter-suggestions"
-              class="mt-2 flex flex-wrap gap-1.5 border-t border-base-300/60 pt-2"
+        <%= if @selected_tags == [] do %>
+          <.directory
+            directory={@directory}
+            renaming_tag_id={@renaming_tag_id}
+            rename_form={@rename_form}
+            assigns_for_urls={assigns}
+          />
+        <% else %>
+          <nav
+            id="tags-kinds"
+            aria-label={gettext("Kinds")}
+            class="mb-4 flex gap-1.5 overflow-x-auto pb-1"
+          >
+            <.link
+              id="tags-kind-all"
+              patch={tags_url(assigns, kind: nil)}
+              class={kind_tab_class(is_nil(@kind))}
             >
-              <li :for={tag <- @filter_suggestions}>
-                <.link
-                  id={"tags-filter-suggestion-#{tag.id}"}
-                  patch={tags_url(assigns, t: Enum.map(@selected_tags, & &1.id) ++ [tag.id])}
-                  class={[
-                    "inline-flex h-7 items-center gap-1 rounded-full border border-dashed px-2.5 text-sm transition hover:-translate-y-px hover:border-solid",
-                    TagComponents.chip_class(tag)
-                  ]}
-                >
-                  <.icon name="hero-plus" class="size-3.5 opacity-70" />
-                  <span class="max-w-48 truncate">{tag.name}</span>
-                  <.icon :if={!Tag.public?(tag)} name="hero-lock-closed" class="size-3 opacity-60" />
-                </.link>
-              </li>
-            </ul>
+              {pgettext("tag kind", "All")}
+              <span class="tabular-nums opacity-70">{@counts |> Map.values() |> Enum.sum()}</span>
+            </.link>
+            <.link
+              :for={{param, kind, _stream} <- kinds()}
+              id={"tags-kind-#{param}"}
+              patch={tags_url(assigns, kind: param)}
+              class={kind_tab_class(@kind == kind)}
+            >
+              <.icon name={kind_icon(kind)} class="size-4" />
+              {kind_label(kind)}
+              <span class="tabular-nums opacity-70">{Map.get(@counts, kind, 0)}</span>
+            </.link>
+          </nav>
+
+          <div
+            :if={@counts |> Map.values() |> Enum.sum() == 0}
+            id="tags-no-results"
+            class="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-base-300 px-6 py-12 text-center text-sm text-base-content/60"
+          >
+            <.icon name="hero-magnifying-glass" class="size-7 text-base-content/35" />
+            {gettext("Nothing you can open carries these tags.")}
           </div>
 
-          <%= if @selected_tags == [] do %>
-            <.directory
-              directory={@directory}
-              renaming_tag_id={@renaming_tag_id}
-              rename_form={@rename_form}
-              assigns_for_urls={assigns}
-            />
-          <% else %>
-            <nav
-              id="tags-kinds"
-              aria-label={gettext("Kinds")}
-              class="mb-4 flex gap-1.5 overflow-x-auto pb-1"
-            >
-              <.link
-                id="tags-kind-all"
-                patch={tags_url(assigns, kind: nil)}
-                class={kind_tab_class(is_nil(@kind))}
+          <section
+            :for={{param, kind, stream} <- kinds()}
+            :if={(is_nil(@kind) and Map.get(@counts, kind, 0) > 0) or @kind == kind}
+            id={"tags-section-#{param}"}
+            class="mb-6"
+          >
+            <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+              <.icon name={kind_icon(kind)} class="size-4" />
+              {kind_label(kind)}
+              <span class="tabular-nums">{Map.get(@counts, kind, 0)}</span>
+            </h2>
+            <ul id={"tags-results-#{param}"} phx-update="stream" class="space-y-2">
+              <li
+                id={"tags-results-#{param}-empty"}
+                class="hidden only:block px-1 text-sm text-base-content/55"
               >
-                {pgettext("tag kind", "All")}
-                <span class="tabular-nums opacity-70">{@counts |> Map.values() |> Enum.sum()}</span>
-              </.link>
+                {gettext("Nothing here.")}
+              </li>
+              <li
+                :for={{dom_id, item} <- Map.fetch!(@streams, stream)}
+                id={dom_id}
+                class="rounded-2xl border border-base-300/60 bg-base-100/80 shadow-sm transition hover:border-base-content/20 hover:shadow-md"
+              >
+                <.result_row kind={kind} item={item} current_profile={@current_profile} />
+              </li>
+            </ul>
+            <div class="mt-2 flex justify-center">
               <.link
-                :for={{param, kind, _stream} <- kinds()}
-                id={"tags-kind-#{param}"}
+                :if={is_nil(@kind) and Map.get(@counts, kind, 0) > length_shown(@shown, kind)}
+                id={"tags-show-all-#{param}"}
                 patch={tags_url(assigns, kind: param)}
-                class={kind_tab_class(@kind == kind)}
+                class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
               >
-                <.icon name={kind_icon(kind)} class="size-4" />
-                {kind_label(kind)}
-                <span class="tabular-nums opacity-70">{Map.get(@counts, kind, 0)}</span>
+                {gettext("Show all (%{count})", count: Map.get(@counts, kind, 0))}
+                <.icon name="hero-chevron-right" class="size-4" />
               </.link>
-            </nav>
-
-            <div
-              :if={@counts |> Map.values() |> Enum.sum() == 0}
-              id="tags-no-results"
-              class="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-base-300 px-6 py-12 text-center text-sm text-base-content/60"
-            >
-              <.icon name="hero-magnifying-glass" class="size-7 text-base-content/35" />
-              {gettext("Nothing you can open carries these tags.")}
+              <button
+                :if={@kind == kind and Map.get(@more, kind, false)}
+                id={"tags-load-more-#{param}"}
+                type="button"
+                phx-click="load_more"
+                class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4 phx-click-loading:animate-pulse"
+              >
+                {gettext("Load more")}
+              </button>
             </div>
-
-            <section
-              :for={{param, kind, stream} <- kinds()}
-              :if={(is_nil(@kind) and Map.get(@counts, kind, 0) > 0) or @kind == kind}
-              id={"tags-section-#{param}"}
-              class="mb-6"
-            >
-              <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
-                <.icon name={kind_icon(kind)} class="size-4" />
-                {kind_label(kind)}
-                <span class="tabular-nums">{Map.get(@counts, kind, 0)}</span>
-              </h2>
-              <ul id={"tags-results-#{param}"} phx-update="stream" class="space-y-2">
-                <li
-                  id={"tags-results-#{param}-empty"}
-                  class="hidden only:block px-1 text-sm text-base-content/55"
-                >
-                  {gettext("Nothing here.")}
-                </li>
-                <li
-                  :for={{dom_id, item} <- Map.fetch!(@streams, stream)}
-                  id={dom_id}
-                  class="rounded-2xl border border-base-300/60 bg-base-100/80 shadow-sm transition hover:border-base-content/20 hover:shadow-md"
-                >
-                  <.result_row kind={kind} item={item} current_profile={@current_profile} />
-                </li>
-              </ul>
-              <div class="mt-2 flex justify-center">
-                <.link
-                  :if={is_nil(@kind) and Map.get(@counts, kind, 0) > length_shown(@shown, kind)}
-                  id={"tags-show-all-#{param}"}
-                  patch={tags_url(assigns, kind: param)}
-                  class="inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10"
-                >
-                  {gettext("Show all (%{count})", count: Map.get(@counts, kind, 0))}
-                  <.icon name="hero-chevron-right" class="size-4" />
-                </.link>
-                <button
-                  :if={@kind == kind and Map.get(@more, kind, false)}
-                  id={"tags-load-more-#{param}"}
-                  type="button"
-                  phx-click="load_more"
-                  class="btn btn-ghost btn-sm rounded-full border border-base-300 bg-base-100/80 px-4 phx-click-loading:animate-pulse"
-                >
-                  {gettext("Load more")}
-                </button>
-              </div>
-            </section>
-          <% end %>
-        </div>
-      </div>
+          </section>
+        <% end %>
+      </.page_container>
     </Layouts.app>
     """
   end
