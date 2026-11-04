@@ -93,7 +93,7 @@ defmodule PotokIdeWeb.PublicPreviewTest do
         public_group!(owner, %{"description" => "# Naslov\n\n**Jako** i [link](https://a.b)"})
 
       assert conn |> get(~p"/groups/#{markdown.id}") |> document() |> og("description") ==
-               "Naslov Jako i link"
+               "Naslov. Jako i link"
 
       html =
         public_group!(owner, %{

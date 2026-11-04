@@ -6,10 +6,14 @@ defmodule PotokIde.PlainText do
 
   alias PotokIde.UTF8
 
+  # Stands in for the end of a heading until the text is one line and what
+  # follows the heading is known. A private use character, so no text has it.
+  @heading_end "\u{E000}"
+
   @doc """
   `text` as one line: markdown syntax and html tags are stripped, whitespace
-  is collapsed and the text is cut to `max_length` characters. nil when no
-  readable text is left.
+  is collapsed, a heading gets a full stop if text follows it, and the text is
+  cut to `max_length` characters. nil when no readable text is left.
   """
   def excerpt(text, format, max_length)
       when is_binary(text) and is_integer(max_length) and max_length > 1 do
@@ -17,6 +21,7 @@ defmodule PotokIde.PlainText do
     |> UTF8.replace_invalid()
     |> plain_text(format)
     |> String.replace(~r/\s+/u, " ")
+    |> end_headings()
     |> String.trim()
     |> truncate(max_length)
   end
@@ -36,7 +41,8 @@ defmodule PotokIde.PlainText do
     html
     |> String.replace(~r{<(script|style)\b[^>]*>.*?</\1\s*>}isu, " ")
     # Block boundaries would otherwise glue neighbouring words together.
-    |> String.replace(~r{<(?:br|/p|/div|/li|/h[1-6]|/tr|/blockquote)\b[^>]*>}iu, " ")
+    |> String.replace(~r{</h[1-6]\b[^>]*>}iu, @heading_end <> " ")
+    |> String.replace(~r{<(?:br|/p|/div|/li|/tr|/blockquote)\b[^>]*>}iu, " ")
     |> HtmlSanitizeEx.strip_tags()
     |> decode_html_entities()
   end
@@ -45,8 +51,19 @@ defmodule PotokIde.PlainText do
     markdown
     |> String.replace(~r/!\[([^\]]*)\]\([^)]*\)/u, "\\1")
     |> String.replace(~r/\[([^\]]+)\]\([^)]*\)/u, "\\1")
+    |> String.replace(~r/^[ \t]*#+[ \t].*$/mu, "\\0" <> @heading_end)
     |> String.replace(~r/^[ \t]*(?:#+|>+|[-*+]|\d+[.)])[ \t]+/mu, "")
     |> String.replace(~r/\*\*|__|~~|`+/u, "")
+  end
+
+  # On one line a heading would run into the text after it.
+  defp end_headings(text) do
+    text
+    |> String.replace(
+      ~r/(?<=[^\s.!?:;,…\x{E000}])\s*\x{E000}(?=[\s\x{E000}]*[^\s\x{E000}])/u,
+      "."
+    )
+    |> String.replace(@heading_end, "")
   end
 
   defp decode_html_entities(text) do

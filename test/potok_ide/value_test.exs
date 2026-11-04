@@ -25,7 +25,7 @@ defmodule PotokIde.ValueTest do
         content_format: :markdown
       }
 
-      assert Value.excerpt(value) == "Title bold and code a link img item quote"
+      assert Value.excerpt(value) == "Title. bold and code a link img item quote"
     end
 
     test "strips html tags, scripts and entities" do
