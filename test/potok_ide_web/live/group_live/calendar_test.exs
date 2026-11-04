@@ -46,13 +46,13 @@ defmodule PotokIdeWeb.GroupLive.CalendarTest do
   test "members have the calendar, others do not", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, calendar_path(ctx.group, ctx.date))
     assert has_element?(lv, "#group-panel-calendar")
-    assert has_element?(lv, "#group-tab-calendar")
+    assert has_element?(lv, "#group-calendar-summary")
     assert has_element?(lv, "#calendar-day-#{ctx.date}")
 
     {outsider_account, _outsider} = account_with_profile!("cal-outsider")
     {:ok, lv, _html} = live_as(outsider_account, calendar_path(ctx.group, ctx.date))
     refute has_element?(lv, "#group-panel-calendar")
-    refute has_element?(lv, "#group-tab-calendar")
+    refute has_element?(lv, "#group-calendar-summary")
   end
 
   test "shows the month's events and moves between months", ctx do
@@ -356,7 +356,7 @@ defmodule PotokIdeWeb.GroupLive.CalendarTest do
 
     # Without public events the calendar stays the members'.
     {:ok, lv, _html} = live_as(guest_account, path)
-    refute has_element?(lv, "#group-tab-calendar")
+    refute has_element?(lv, "#group-calendar-summary")
     refute has_element?(lv, "#group-panel-calendar")
 
     public =
@@ -369,7 +369,6 @@ defmodule PotokIdeWeb.GroupLive.CalendarTest do
     public_chip = "#calendar-chip-#{public.id}-#{ctx.date}"
 
     {:ok, lv, _html} = live_as(guest_account, path)
-    assert has_element?(lv, "#group-tab-calendar")
     assert has_element?(lv, "#group-calendar-summary")
     assert has_element?(lv, public_chip)
     refute has_element?(lv, "#calendar-chip-#{private.id}-#{ctx.date}")

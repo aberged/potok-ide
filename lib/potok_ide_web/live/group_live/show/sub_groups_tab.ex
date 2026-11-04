@@ -7,7 +7,6 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
-  attr :group_path, :list, required: true
   attr :children, :any, required: true
   attr :pagination, :map, required: true
   attr :pending_join_request_counts, :map, required: true
@@ -57,7 +56,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         id="group-children-filters"
         phx-hook=".CollapsibleFilters"
         phx-mounted={JS.ignore_attributes(["data-collapsed"])}
-        class="group/filters absolute right-4 -top-[.06rem] z-45 mb-3 flex items-start gap-2"
+        class="group/filters relative z-45 flex shrink-0 items-start justify-end gap-2 px-2 pb-1"
       >
         <div
           id="group-children-filters-body"
@@ -65,7 +64,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         >
           <%!-- List or folder tree; direct conversations are always a list.
              Phones get one button that flips to the other view, so the
-             group path keeps its room. --%>
+             row keeps its room. --%>
           <button
             :if={@sub_groups_kind != "direct"}
             id="group-children-view-flip"
@@ -269,19 +268,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         </script>
       </div>
 
-      <Components.group_path
-        :if={!@group.is_root}
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shadow-md"
-      />
-      <%!-- The root has no group path for the filters to sit in, so the list
-           leaves them their row. --%>
-      <div class={[
-        "min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24",
-        @group.is_root && "pt-14"
-      ]}>
+      <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24">
         <p
           :if={@pagination.loaded_count == 0}
           id="group-children-empty"

@@ -8,8 +8,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
   attr :home_page_options, :list, required: true
   attr :value_parent_options, :list, required: true
   attr :group, :map, required: true
-  attr :current_profile, :map, default: nil
-  attr :group_path, :list, required: true
 
   attr :section, :string,
     default: "basics",
@@ -23,13 +21,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
   def panel(assigns) do
     ~H"""
     <div id="group-panel-create-group" class="flex min-h-0 flex-1 flex-col px-2">
-      <Components.group_path
-        :if={!@group.is_root}
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shadow-md"
-      />
       <Components.tab_body id="group-create-scroll">
         <.page_header id="group-create-header" icon="hero-folder-plus">
           {gettext("Create sub-group")}

@@ -124,7 +124,7 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
 
       {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}")
 
-      lv |> element("#group-tab-files") |> render_click()
+      lv |> element("#group-files-summary") |> render_click()
       assert_patch(lv, ~p"/groups/#{group.id}/files")
 
       assert has_element?(lv, "#group-files-list #file-#{own.id}", "own.pdf")

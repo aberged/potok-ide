@@ -18,7 +18,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
   attr :group, :map, required: true
   attr :current_profile, :map, required: true
-  attr :group_path, :list, required: true
   attr :access, :map, required: true
   attr :time_zone, :string, required: true
   attr :month, Date, required: true
@@ -52,14 +51,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
     ~H"""
     <div id="group-panel-calendar" class="card flex min-h-0 flex-1 flex-col px-2">
-      <Components.group_path
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shadow-md"
-      />
       <div data-tab-scroll class="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 pb-4">
-        <.page_header id="group-calendar-header" icon="hero-calendar-days" class="px-1">
+        <.page_header id="group-calendar-header" icon="hero-calendar-days" class="px-1" compact>
           {if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
           <:subtitle>{@scope_text}</:subtitle>
         </.page_header>

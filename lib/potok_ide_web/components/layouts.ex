@@ -76,7 +76,7 @@ defmodule PotokIdeWeb.Layouts do
           "relative z-100 shrink-0 keyboard-open:hidden",
           @collapse_nav && "cramped:hidden"
         ]}>
-          <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
+          <div class="mx-auto flex items-center justify-between gap-3 border-b border-base-300/70 bg-base-100/85 px-2 py-1.5 backdrop-blur sm:rounded-[2rem] sm:border sm:px-5 sm:py-3 sm:shadow-lg sm:shadow-primary/5">
             <label
               for="app-drawer-toggle"
               aria-label={gettext("Open menu")}
@@ -100,7 +100,7 @@ defmodule PotokIdeWeb.Layouts do
                 {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
               </span>
             </.link>
-            <div class="flex items-right gap-4 items-center ml-auto">
+            <div class="ml-auto flex min-w-0 items-center gap-4">
               <.link
                 id="nav-tags-link"
                 navigate={~p"/tags"}
@@ -154,7 +154,7 @@ defmodule PotokIdeWeb.Layouts do
                 navigate={~p"/profiles"}
                 class="flex min-w-0 items-center flex-row gap-3 self-start"
               >
-                <span class="min-w-0 text-right">
+                <span class="min-w-0 text-right max-sm:hidden">
                   <span class="block font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/55">
                     Potok
                   </span>

@@ -8,7 +8,6 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
-  attr :group_path, :list, required: true
   attr :group, :map, required: true
   attr :access, Access, required: true
   attr :join_requests, :list, default: []
@@ -27,20 +26,28 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
     ~H"""
     <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
-      <Components.group_path
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shadow-md"
-      />
       <Components.tab_body>
         <.page_header
           :if={!@group.is_direct}
           id="group-members-header"
           icon="hero-user-group"
+          compact
         >
           {gettext("Members")}
           <:subtitle>{gettext("Who is in the group, with their roles.")}</:subtitle>
+          <:actions :if={Access.can?(@access, :invite_members)}>
+            <.button
+              id="group-members-invite"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="invite_profile"
+              variant="soft"
+              size="sm"
+            >
+              <.icon name="hero-user-plus" class="size-4" />
+              {gettext("Invite")}
+            </.button>
+          </:actions>
         </.page_header>
 
         <div class=" flex flex-row">

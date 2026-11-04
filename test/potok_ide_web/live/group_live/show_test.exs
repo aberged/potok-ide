@@ -45,16 +45,10 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         |> log_in_account(account)
         |> live(~p"/groups/#{child_group.id}")
 
-      assert has_element?(
-               child_lv,
-               "a[href='/groups/#{root_group.id}/sub_groups']",
-               "❮"
-             )
-
       # The hook goes back in history; the href is where it goes without one.
       assert has_element?(
                child_lv,
-               "#group-back-link[phx-hook][href='/groups/#{root_group.id}/sub_groups']"
+               "#group-back-link[phx-hook][href='/groups/#{root_group.id}/sub_groups'] .hero-chevron-left"
              )
     end
 
@@ -97,7 +91,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-tab-create-value")
 
       lv
-      |> element("#group-tab-members")
+      |> element("#group-members-summary")
       |> render_click()
 
       assert_patch(lv, ~p"/groups/#{group.id}/members")
@@ -1104,11 +1098,11 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                lv,
-               "#group-panel-values #group-path a[href='#{~p"/groups/#{parent_group.id}/sub_groups"}']",
+               "#group-header #group-path a[href='#{~p"/groups/#{parent_group.id}/sub_groups"}']",
                "path-parent-group"
              )
 
-      assert has_element?(lv, "#group-panel-values #group-path span", "path-current-group")
+      assert has_element?(lv, "#group-header #group-path span", "path-current-group")
 
       # In the root group itself (its overview has no path), the house leads
       # to the overview of every group.
@@ -1121,6 +1115,96 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
              )
 
       refute has_element?(lv, "#group-path span", "/")
+    end
+
+    test "a direct conversation has no sub-groups to open", %{conn: conn} do
+      account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "tabsdir-mine",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other_profile} =
+        Social.create_profile_for_account(other_account, %{
+          username: "tabsdir-oth",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, direct_group} = Social.get_or_create_direct_group(profile, other_profile)
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} =
+        conn |> log_in_account(account) |> live(~p"/groups/#{direct_group.id}/values")
+
+      assert has_element?(lv, "#group-tabs #group-values-summary")
+      assert has_element?(lv, "#group-tabs #group-files-summary")
+      assert has_element?(lv, "#group-tabs #group-members-summary")
+      refute has_element?(lv, "#group-subgroups-summary")
+      refute has_element?(lv, "#group-tab-sub-groups")
+    end
+
+    test "the sections of a group lead to its tabs and the menu holds the rest", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "tabs-owner",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "tabs-group")
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(lv, ~s(#group-values-summary[aria-current="true"]))
+
+      for id <- ~w(values files calendar subgroups members) do
+        assert has_element?(lv, "#group-tabs #group-#{id}-summary")
+      end
+
+      # The bar and the menu do not repeat each other.
+      refute has_element?(lv, "#group-actions-menu-container #group-tab-files")
+      refute has_element?(lv, "#group-actions-menu-container #group-tab-members")
+      assert has_element?(lv, "#group-actions-menu-container #group-tab-group-home")
+      assert has_element?(lv, "#group-actions-menu-container #group-tab-edit-group", "Edit group")
+
+      lv |> element("#group-members-summary") |> render_click()
+      assert_patch(lv, ~p"/groups/#{group.id}/members")
+
+      lv |> element("#group-members-invite") |> render_click()
+      assert_patch(lv, ~p"/groups/#{group.id}/invite_profile")
+      assert has_element?(lv, "#group-panel-invite-profile")
+    end
+
+    test "the root keeps its shortcuts instead of the sections", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, _profile} =
+        Social.create_profile_for_account(account, %{
+          username: "tabs-root",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      account = Accounts.get_account!(account.id)
+      root_group = Social.get_root_group!()
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{root_group.id}")
+
+      refute has_element?(lv, "#group-tabs")
+      assert has_element?(lv, "#group-sub-groups-kind-tabs")
+      assert has_element?(lv, "#group-calendar-summary")
     end
 
     test "shows the other member username for direct groups in the current group path", %{

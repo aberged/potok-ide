@@ -5,8 +5,6 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   alias PotokIdeWeb.GroupLive.Show.Components
 
   attr :group, :map, required: true
-  attr :current_profile, :map, required: true
-  attr :group_path, :list, required: true
   attr :edit_group_form, :any, required: true
   attr :dirty, :boolean, default: false, doc: "whether the form has unsaved changes"
   attr :format_options, :list, required: true
@@ -43,12 +41,6 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   def panel(assigns) do
     ~H"""
     <div id="group-panel-edit-group" class="flex min-h-0 flex-1 flex-col px-2">
-      <Components.group_path
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shadow-md"
-      />
       <Components.tab_body id="group-edit-scroll">
         <.page_header id="group-edit-header" icon="hero-cog-6-tooth">
           {pgettext("page title", "Edit group")}

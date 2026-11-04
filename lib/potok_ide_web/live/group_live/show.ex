@@ -98,10 +98,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
         <%= Components.presence_css(@online_profile_ids) %>
       </style>
 
-      <%!-- Tighter on phones, so the shortcuts leave room for the group's name. --%>
-      <div class="relative z-50 shrink-0 justify-center rounded-4xl border border-base-300/70 bg-base-100/70 px-3 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-4">
-        <div class="flex items-center gap-1.5 sm:gap-3">
-          <div :if={!@group.is_root and @group.parent_id} class="pt-1">
+      <%!-- The back link, the name and the menu share a row; on narrower screens the sections
+           take a row of their own. On phones the header is flat and the sections are
+           equal columns, and neither they nor the path stay while typing. --%>
+      <div
+        id="group-header"
+        class="relative z-50 shrink-0 border-b border-base-300/70 bg-base-100/85 backdrop-blur sm:mt-1 sm:rounded-4xl sm:border sm:px-3 sm:py-1.5 sm:shadow-lg sm:shadow-primary/5"
+      >
+        <div class="flex flex-wrap items-center gap-x-1 px-1 sm:gap-x-2 sm:px-0">
+          <div :if={!@group.is_root and @group.parent_id} class="shrink-0">
             <%!-- Goes back like the browser does. With no page of this site
                  behind (opened from a notification, a link or a new tab) it
                  goes to the parent; a thread to the chat it was started from. --%>
@@ -114,9 +119,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   else: ~p"/groups/#{@group.parent_id}/sub_groups"
                 )
               }
-              class="link text-xl no-underline"
+              aria-label={gettext("Back")}
+              class="inline-flex size-11 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cramped:size-9"
             >
-              {"❮"}
+              <.icon name="hero-chevron-left" class="size-5" />
             </.link>
             <script :type={Phoenix.LiveView.ColocatedHook} name=".HistoryBack">
               const hasAppPageBehind = () => {
@@ -152,33 +158,38 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </script>
           </div>
 
-          <div class="min-w-0 flex-1">
+          <div class="min-w-0 flex-1 py-1 cramped:py-0.5">
             <div :if={!@group.is_root} class="flex items-center gap-3">
               <Components.group_identity
                 group={@group}
                 current_profile={@current_profile}
                 avatar_size="size-9 sm:size-10"
-                text_class="text-md"
+                text_class="text-sm sm:text-base"
                 pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
               >
-                <%!-- Phones leave the name only a sliver beside the shortcuts,
-                     so there the tags fold into a count. --%>
-                <:subtitle :if={@group_tags != []}>
-                  <TagComponents.tag_chips
-                    id="group-tag-list"
-                    tags={@group_tags}
-                    size={:sm}
-                    max={3}
-                    class="max-sm:hidden"
-                  />
-                  <TagComponents.tag_count
-                    id="group-tag-count"
-                    tags={@group_tags}
-                    kind={:group}
-                    item_id={@group.id}
-                    class="sm:hidden"
-                  />
+                <:subtitle>
+                  <div class="flex min-w-0 items-center gap-2 cramped:hidden">
+                    <Components.group_path
+                      path={@group_path}
+                      group={@group}
+                      current_profile={@current_profile}
+                    />
+                    <TagComponents.tag_chips
+                      id="group-tag-list"
+                      tags={@group_tags}
+                      size={:sm}
+                      max={3}
+                      class="max-sm:hidden"
+                    />
+                    <TagComponents.tag_count
+                      id="group-tag-count"
+                      tags={@group_tags}
+                      kind={:group}
+                      item_id={@group.id}
+                      class="shrink-0 sm:hidden"
+                    />
+                  </div>
                 </:subtitle>
               </Components.group_identity>
             </div>
@@ -258,39 +269,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </div>
 
+          <Components.group_tabs
+            tabs={
+              header_tabs(
+                @group,
+                @is_member,
+                @active_tab,
+                @calendar_tab?,
+                {@current_group_unread_count, @sub_groups_unread_count, @pending_join_requests_count}
+              )
+            }
+            class="max-[87.5rem]:order-last max-[87.5rem]:basis-full cramped:hidden"
+          />
+
           <button
-            :if={!@group.is_root and @is_member}
-            id="group-values-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="values"
-            aria-label={gettext("Open values tab")}
-            aria-current={@active_tab == "values" && "true"}
-            class={header_shortcut_class(@active_tab == "values")}
-          >
-            <.icon name="hero-chat-bubble-oval-left-ellipsis" class="size-6 shrink-0" />
-            <span
-              :if={@current_group_unread_count > 0}
-              id="group-values-unread-badge"
-              class="absolute right-0 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-            >
-              {unread_badge_label(@current_group_unread_count)}
-            </span>
-          </button>
-          <button
-            :if={@group.parent_id != nil and @is_member}
-            id="group-files-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="files"
-            aria-label={gettext("Open files tab")}
-            aria-current={@active_tab == "files" && "true"}
-            class={header_shortcut_class(@active_tab == "files")}
-          >
-            <.icon name="hero-paper-clip" class="size-6 shrink-0" />
-          </button>
-          <button
-            :if={@calendar_tab?}
+            :if={@calendar_tab? and @group.is_root}
             id="group-calendar-summary"
             type="button"
             phx-click="switch_tab"
@@ -302,7 +295,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <.icon name="hero-calendar-days" class="size-6 shrink-0" />
           </button>
           <button
-            :if={(!@group.is_root and @is_member) or @group.is_public}
+            :if={@group.is_root and @group.is_public}
             id="group-subgroups-summary"
             type="button"
             phx-click="switch_tab"
@@ -321,20 +314,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </span>
           </button>
           <button
-            :if={
-              @group.parent_id != nil && !@group.is_direct && Access.can?(@access, :invite_members)
-            }
-            id="group-invite-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="invite_profile"
-            aria-label={gettext("Open invite profile tab")}
-            aria-current={@active_tab == "invite_profile" && "true"}
-            class={header_shortcut_class(@active_tab == "invite_profile")}
-          >
-            <.icon name="hero-user-plus" class="size-6 shrink-0" />
-          </button>
-          <button
             :if={@group.parent_id == nil && @is_member}
             id="group-invite-account"
             type="button"
@@ -347,44 +326,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
               class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
             />
           </button>
-          <div class="relative">
-            <button
-              :if={@group.parent_id != nil && @is_member}
-              id="group-members-summary"
-              type="button"
-              phx-click="switch_tab"
-              phx-value-tab="members"
-              aria-label={gettext("Open members tab")}
-              aria-current={@active_tab == "members" && "true"}
-              class={[
-                "avatar-group relative -space-x-6 cursor-pointer rounded-full transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
-                @active_tab == "members" &&
-                  "ring-1 ring-base-content/30 ring-offset-2 ring-offset-base-100"
-              ]}
-            >
-              <div :for={m <- @first3_members} class="">
-                <Components.profile_identity
-                  profile={m}
-                  avatar_size="size-6"
-                  text_class="hidden"
-                  sharing_badge_text_class="hidden"
-                />
-              </div>
 
-              <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
-                <div class="bg-neutral text-neutral-content size-5 text-xs">
-                  <span>+{@members_count - length(@first3_members)}</span>
-                </div>
+          <%!-- Faces of the members where there is room for them; phones have the section. --%>
+          <button
+            :if={@group.parent_id != nil && @is_member}
+            id="group-members-stack"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="members"
+            aria-label={gettext("Members")}
+            class="avatar-group relative hidden -space-x-6 cursor-pointer rounded-full transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
+          >
+            <div :for={m <- @first3_members} class="">
+              <Components.profile_identity
+                profile={m}
+                avatar_size="size-6"
+                text_class="hidden"
+                sharing_badge_text_class="hidden"
+              />
+            </div>
+
+            <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
+              <div class="bg-neutral text-neutral-content size-5 text-xs">
+                <span>+{@members_count - length(@first3_members)}</span>
               </div>
-            </button>
-            <span
-              :if={@pending_join_requests_count > 0}
-              id="group-join-requests-badge"
-              class="absolute -right-1 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
-            >
-              {unread_badge_label(@pending_join_requests_count)}
-            </span>
-          </div>
+            </div>
+          </button>
 
           <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
             <div class="flex min-w-56 flex-col gap-2 z-100">
@@ -393,48 +360,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 id="group-tab-group-home"
                 tab="group_home"
                 active_tab={@active_tab}
-                label={@group.name}
-                icon="hero-home"
+                label={gettext("About the group")}
+                icon="hero-information-circle"
               />
+              <%!-- The root has no bar of sections. --%>
               <Components.group_tab_button
-                :if={@group.parent_id != nil and @is_member}
-                id="group-tab-values"
-                tab="values"
-                active_tab={@active_tab}
-                label={gettext("Values")}
-                icon="hero-chat-bubble-oval-left-ellipsis"
-              />
-              <Components.group_tab_button
-                :if={@group.parent_id != nil and @is_member}
-                id="group-tab-files"
-                tab="files"
-                active_tab={@active_tab}
-                label={gettext("Files")}
-                icon="hero-paper-clip"
-              />
-              <Components.group_tab_button
-                :if={@calendar_tab?}
+                :if={@group.is_root and @calendar_tab?}
                 id="group-tab-calendar"
                 tab="calendar"
                 active_tab={@active_tab}
-                label={if(@group.is_root, do: gettext("My calendar"), else: gettext("Calendar"))}
+                label={gettext("My calendar")}
                 icon="hero-calendar-days"
               />
               <Components.group_tab_button
-                :if={@group.is_root or @is_member or @group.is_public}
+                :if={@group.is_root}
                 id="group-tab-sub-groups"
                 tab="sub_groups"
                 active_tab={@active_tab}
                 label={gettext("Sub-groups")}
                 icon="hero-folder-open"
-              />
-              <Components.group_tab_button
-                :if={@group.parent_id != nil && @is_member}
-                id="group-tab-members"
-                tab="members"
-                active_tab={@active_tab}
-                label={members_tab_label(@pending_join_requests_count)}
-                icon="hero-user-group"
               />
               <button
                 :if={!@group.is_root}
@@ -484,20 +428,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("Invite profile")}
                 icon="hero-user-plus"
               />
-              <div class="flex flex-row justify-end gap-2">
-                <Components.group_tab_button
-                  :if={Access.can?(@access, :edit_group) and !@group.is_root}
-                  id="group-tab-edit-group"
-                  tab="edit_group"
-                  active_tab={@active_tab}
-                  label=""
-                  icon="hero-cog-6-tooth"
-                />
-              </div>
+              <Components.group_tab_button
+                :if={Access.can?(@access, :edit_group) and !@group.is_root}
+                id="group-tab-edit-group"
+                tab="edit_group"
+                active_tab={@active_tab}
+                label={gettext("Edit group")}
+                icon="hero-cog-6-tooth"
+              />
             </div>
           </Layouts.drop_down_menu>
         </div>
       </div>
+
+      <%!-- The root's own pages lead back to its overview from here. --%>
+      <Components.group_path
+        :if={@group.is_root and !needs_children?(@group, @active_tab)}
+        path={@group_path}
+        group={@group}
+        current_profile={@current_profile}
+        class="shrink-0 px-4 py-2 text-sm"
+      />
 
       <div class="flex min-h-0 flex-1 flex-col overflow-clip">
         <%!-- The first HTML only carries the header; the panel arrives once the socket connects. --%>
@@ -516,7 +467,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
             group={@group}
             current_profile={@current_profile}
-            group_path={@group_path}
             children={@streams.children}
             pagination={@children_pagination}
             pending_join_request_counts={@child_pending_join_request_counts}
@@ -539,7 +489,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             members={@streams.members}
             pagination={@members_pagination}
             current_profile={@current_profile}
-            group_path={@group_path}
             group={@group}
             access={@access}
             join_requests={@pending_join_requests}
@@ -552,7 +501,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             has_newer={@values_has_newer?}
             group={@group}
             current_profile={@current_profile}
-            group_path={@group_path}
             editing_value_id={@editing_value && @editing_value.id}
             editing_value={@editing_value}
             edit_value_form={@edit_value_form}
@@ -569,8 +517,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <FilesTab.panel
             :if={@active_tab == "files"}
             group={@group}
-            current_profile={@current_profile}
-            group_path={@group_path}
             files={@streams.files}
             files_view={@files_view}
             has_more={@files_has_more?}
@@ -581,7 +527,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={@active_tab == "calendar"}
             group={@group}
             current_profile={@current_profile}
-            group_path={@group_path}
             access={@access}
             time_zone={@calendar_time_zone}
             month={@calendar_month}
@@ -613,7 +558,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             }
             group={@group}
             current_profile={@current_profile}
-            group_path={@group_path}
             is_member={@is_member}
             viewer_roles={Enum.join(@access.role_keys, ",")}
             pending_join_request={@pending_join_request}
@@ -628,8 +572,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             home_page_options={@home_page_options}
             value_parent_options={@value_parent_options}
             group={@group}
-            current_profile={@current_profile}
-            group_path={@group_path}
           />
           <EditGroupTab.panel
             :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
@@ -642,8 +584,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
             format_options={@format_options}
             home_page_options={@home_page_options}
             group={@group}
-            current_profile={@current_profile}
-            group_path={@group_path}
             alt_descriptions={@alt_descriptions}
             alt_description_form={@alt_description_form}
             editing_alt_description={@editing_alt_description}
@@ -656,14 +596,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
             invite_form_version={@invite_form_version}
             invite_profile_suggestions={@invite_profile_suggestions}
             group={@group}
-            current_profile={@current_profile}
-            group_path={@group_path}
           />
           <RolesTab.panel
             :if={@is_member and !@group.is_direct and @active_tab == "roles"}
             group={@group}
-            current_profile={@current_profile}
-            group_path={@group_path}
             access={@access}
             manifest_owner={@manifest_owner}
             new_role_form={@new_role_form}
@@ -4192,12 +4128,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp default_active_tab(%Group{}), do: "group_home"
 
   # The count is only loaded for profiles that manage access requests.
-  defp members_tab_label(count) when count > 0 do
-    gettext("Members (%{count} requests)", count: count)
-  end
-
-  defp members_tab_label(_count), do: gettext("Members")
-
   defp group_tab_path(%Group{} = group, tab, opts) do
     base_path = ~p"/groups/#{group.id}/#{tab}"
 
@@ -4277,8 +4207,68 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp unread_badge_label(count) when count > 999, do: "999+"
   defp unread_badge_label(count), do: Integer.to_string(count)
 
-  # Header shortcuts: the active one gets a thin ring. `-m-1 p-1` makes room
-  # for it around the icon without taking more room in the header.
+  # The sections of a group, in the order of its bar. The root has none: its
+  # header switches between conversations and groups.
+  defp header_tabs(%Group{is_root: true}, _member?, _active_tab, _calendar?, _counts), do: []
+
+  defp header_tabs(group, member?, active_tab, calendar?, {unread, sub_groups_unread, requests}) do
+    member_of_group? = member? and group.parent_id != nil
+
+    [
+      member? &&
+        %{
+          id: "group-values-summary",
+          tab: "values",
+          icon: "hero-chat-bubble-oval-left-ellipsis",
+          label: gettext("Messages"),
+          active?: active_tab == "values",
+          badge: unread,
+          badge_id: "group-values-unread-badge"
+        },
+      member_of_group? &&
+        %{
+          id: "group-files-summary",
+          tab: "files",
+          icon: "hero-paper-clip",
+          label: gettext("Files"),
+          active?: active_tab == "files"
+        },
+      calendar? &&
+        %{
+          id: "group-calendar-summary",
+          tab: "calendar",
+          icon: "hero-calendar-days",
+          label: gettext("Calendar"),
+          active?: active_tab == "calendar"
+        },
+      # Threads are sub-groups, which direct conversations do not have.
+      ((member? or group.is_public) and not group.is_direct) &&
+        %{
+          id: "group-subgroups-summary",
+          tab: "sub_groups",
+          icon: "hero-folder-open",
+          label: gettext("Sub-groups"),
+          active?: needs_children?(group, active_tab),
+          badge: sub_groups_unread,
+          badge_id: "group-sub-groups-unread-badge"
+        },
+      member_of_group? &&
+        %{
+          id: "group-members-summary",
+          tab: "members",
+          icon: "hero-user-group",
+          label: gettext("Members"),
+          active?: active_tab == "members",
+          badge: requests,
+          badge_id: "group-join-requests-badge",
+          badge_tone: :attention
+        }
+    ]
+    |> Enum.filter(& &1)
+  end
+
+  # Header shortcuts of the root: the active one gets a thin ring. `-m-1 p-1`
+  # makes room for it around the icon without taking more room in the header.
   defp header_shortcut_class(active?) do
     [
       "relative -m-1 inline-flex cursor-pointer items-center justify-center rounded-full p-1 transition duration-150 hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",

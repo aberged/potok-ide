@@ -527,47 +527,134 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :id, :string, default: "group-path"
   attr :class, :any, default: nil
 
+  @doc """
+  Where the group sits, on one line. It stands under the group's name, so the
+  name itself is left to screen readers, and phones show only the closest
+  parent. A direct conversation sits nowhere. In the root, which has no name,
+  it is the house that leads to the overview of every group.
+  """
   def group_path(assigns) do
-    ~H"""
-    <div id={@id} class={["px-4 py-4 text-sm text-base-content/60 relative z-40", @class]}>
-      <nav
-        aria-label={gettext("Current group path")}
-        class="flex flex-wrap items-center align-center gap-x-1 gap-y-1"
-      >
-        <%= for {path_group, idx} <- Enum.with_index(@path) do %>
-          <%= if idx > 0 do %>
-            <span aria-hidden="true" class="text-base-content/35">/</span>
-          <% end %>
+    steps = group_path_steps(assigns.group, assigns.path)
 
-          <%= cond do %>
-            <% path_group.is_root -> %>
-              <%!-- The root's name is "/": a house leads to the overview of every group. --%>
-              <.link
-                navigate={~p"/groups/#{path_group.id}/sub_groups"}
-                aria-label={gettext("Groups")}
-                aria-current={path_group.id == @group.id && "page"}
-                class={[
-                  "inline-flex items-center transition-colors hover:text-base-content",
-                  path_group.id == @group.id && "text-base-content"
-                ]}
-              >
-                <.icon name="hero-home" class="size-4" />
-              </.link>
-            <% path_group.id == @group.id -> %>
-              <span class="font-medium text-base-content">
-                {group_identity_name(path_group, @current_profile)}
-              </span>
-            <% true -> %>
-              <.link
-                navigate={~p"/groups/#{path_group.id}/sub_groups"}
-                class="transition-colors hover:text-base-content"
-              >
-                {group_identity_name(path_group, @current_profile)}
-              </.link>
-          <% end %>
-        <% end %>
-      </nav>
-    </div>
+    assigns =
+      assigns
+      |> assign(:steps, steps)
+      |> assign(:folded?, Enum.count(steps, &(!&1.is_root)) > 1)
+
+    ~H"""
+    <nav
+      id={@id}
+      aria-label={gettext("Current group path")}
+      class={["flex min-w-0 items-center gap-x-1 text-xs leading-4 text-base-content/60", @class]}
+    >
+      <span :if={@folded?} aria-hidden="true" class="sm:hidden">…</span>
+      <%= for {step, idx} <- Enum.with_index(@steps) do %>
+        <span
+          :if={idx > 0}
+          aria-hidden="true"
+          class={[
+            "text-base-content/35",
+            (idx < length(@steps) - 1 or !@folded?) && "max-sm:hidden"
+          ]}
+        >
+          /
+        </span>
+        <%!-- The root's name is "/": a house leads to the overview of every group. --%>
+        <.link
+          :if={step.is_root}
+          navigate={~p"/groups/#{step.id}/sub_groups"}
+          aria-label={gettext("Groups")}
+          aria-current={step.id == @group.id && "page"}
+          class={[
+            "inline-flex shrink-0 items-center transition-colors hover:text-base-content",
+            step.id == @group.id && "text-base-content",
+            step.id != @group.id && "max-sm:hidden"
+          ]}
+        >
+          <.icon name="hero-home" class="size-4" />
+        </.link>
+        <.link
+          :if={!step.is_root}
+          navigate={~p"/groups/#{step.id}/sub_groups"}
+          class={[
+            "min-w-0 truncate transition-colors hover:text-base-content",
+            idx < length(@steps) - 1 && "max-sm:hidden"
+          ]}
+        >
+          {group_identity_name(step, @current_profile)}
+        </.link>
+      <% end %>
+      <span :if={!@group.is_root} class="sr-only">
+        {group_identity_name(@group, @current_profile)}
+      </span>
+    </nav>
+    """
+  end
+
+  defp group_path_steps(%{is_direct: true}, _path), do: []
+
+  defp group_path_steps(%{is_root: true} = group, path),
+    do: Enum.filter(path, &(&1.id == group.id))
+
+  defp group_path_steps(group, path), do: Enum.reject(path, &(&1.id == group.id))
+
+  attr :tabs, :list,
+    required: true,
+    doc: "`id`, `tab`, `icon`, `label`, `active?`, and maybe `badge`, `badge_id` and `badge_tone`"
+
+  attr :class, :any, default: nil
+
+  @doc """
+  The sections of a group. They are equal columns on phones, so all of them
+  show and every label fits, and a row of links on wider screens.
+  """
+  def group_tabs(assigns) do
+    ~H"""
+    <nav
+      :if={@tabs != []}
+      id="group-tabs"
+      aria-label={gettext("Group sections")}
+      class={["flex min-w-0", @class]}
+    >
+      <button
+        :for={tab <- @tabs}
+        id={tab.id}
+        type="button"
+        phx-click="switch_tab"
+        phx-value-tab={tab.tab}
+        aria-current={tab.active? && "true"}
+        class={[
+          "flex min-h-11 min-w-0 flex-1 cursor-pointer flex-col items-center justify-center gap-0.5 border-b-2 px-0.5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40 sm:min-h-9 sm:flex-none sm:flex-row sm:gap-1.5 sm:px-3",
+          if(tab.active?,
+            do: "border-primary text-base-content",
+            else: "border-transparent text-base-content/65 hover:text-base-content"
+          )
+        ]}
+      >
+        <span class="relative inline-flex">
+          <.icon name={tab.icon} class="size-5 shrink-0" />
+          <span
+            :if={Map.get(tab, :badge, 0) > 0}
+            id={tab.badge_id}
+            class={[
+              "absolute -top-1.5 left-3 inline-flex min-w-4.5 items-center justify-center rounded-full px-1 py-0.5 text-[10px] font-semibold leading-none shadow-sm",
+              if(Map.get(tab, :badge_tone) == :attention,
+                do: "bg-amber-500 text-amber-950",
+                else: "bg-red-600 text-white"
+              )
+            ]}
+          >
+            {unread_badge_label(tab.badge)}
+          </span>
+        </span>
+        <span class={[
+          "max-w-full truncate text-[11px] leading-3.5 sm:text-sm sm:leading-5",
+          tab.active? && "font-semibold"
+        ]}>
+          {tab.label}
+        </span>
+      </button>
+    </nav>
     """
   end
 
