@@ -97,6 +97,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <style id="group-presence-style">
         <%= Components.presence_css(@online_profile_ids) %>
       </style>
+      <%!-- Unread counts on the chat's thread links work the same way. --%>
+      <style id="group-thread-unread-style">
+        <%= Components.thread_unread_css(@thread_unread_counts) %>
+      </style>
 
       <%!-- The back link, the name and the menu share a row; on narrower screens the sections
            take a row of their own. On phones the header is flat and the sections are
@@ -113,12 +117,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <.link
               id="group-back-link"
               phx-hook=".HistoryBack"
-              navigate={
-                if(@group.parent_value_id,
-                  do: ~p"/groups/#{@group.parent_id}/values",
-                  else: ~p"/groups/#{@group.parent_id}/sub_groups"
-                )
-              }
+              navigate={back_path(@group, @group_path)}
               aria-label={gettext("Back")}
               class="inline-flex size-11 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cramped:size-9"
             >
@@ -467,6 +466,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             children_search_query={@children_search_query}
             show_thread_sub_groups={@show_thread_sub_groups}
             thread_sub_groups_count={@thread_sub_groups_count}
+            thread_sub_groups_unread_count={@thread_sub_groups_unread_count}
             show_public_sub_groups={@show_public_sub_groups}
             sub_groups_view={@sub_groups_view}
             tree={@sub_group_tree}
@@ -653,6 +653,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_unread_count, 0)
          |> assign(:direct_sub_groups_unread_count, 0)
          |> assign(:other_sub_groups_unread_count, 0)
+         |> assign(:thread_unread_counts, %{})
+         |> assign(:thread_sub_groups_unread_count, 0)
          |> assign(:children_search_query, "")
          |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
          |> assign(:show_public_sub_groups, connect_show_public_groups?(socket))
@@ -2297,34 +2299,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Values others posted since the last count, one more unread each. They are
   # added in memory; the sub-groups list is only read again when a value moves
   # a sub-group that is not loaded. A value in the chat on screen is already
-  # read (`insert_created_value/2` marked it). When a value falls below a
-  # sub-group whose visibility only a recount can tell, the page recounts.
+  # read (`insert_created_value/2` marked it).
   defp add_unread_values(%{assigns: %{unread_overview: nil}} = socket),
     do: refresh_unread_counts_or_retry(socket)
 
   defp add_unread_values(socket) do
-    %{unread_overview: overview, pending_unread_values: pending, group: group} = socket.assigns
-    visible_ids = page_group_ids(socket)
+    %{unread_overview: overview, pending_unread_values: pending} = socket.assigns
+    member_ids = ProfileAuth.unread_groups(socket)
     socket = assign(socket, :pending_unread_values, [])
 
     pending
     |> Enum.reverse()
     |> Enum.reject(&shown_chat_value?(socket, &1))
-    |> Enum.reduce_while({overview, []}, fn unread, {overview, added} ->
-      case Social.add_unread_value(overview, unread, visible_ids) do
-        :counted ->
-          {:cont, {overview, added}}
-
-        {:ok, overview} ->
-          if unknown_child?(overview, unread, group),
-            do: {:halt, :recount},
-            else: {:cont, {overview, [unread | added]}}
+    |> Enum.reduce({overview, []}, fn unread, {overview, added} ->
+      case Social.add_unread_value(overview, unread, member_ids) do
+        :counted -> {overview, added}
+        {:ok, overview} -> {overview, [unread | added]}
       end
     end)
     |> case do
-      :recount ->
-        refresh_unread_counts_or_retry(socket)
-
       {_overview, []} ->
         socket
 
@@ -2341,29 +2334,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp shown_chat_value?(%{assigns: %{group: group, active_tab: active_tab}}, unread),
     do: unread.group_id == group.id and needs_values?(group, active_tab)
 
-  # The groups the page shows, which the profile can therefore see.
-  defp page_group_ids(socket) do
-    tree_ids =
-      case socket.assigns.sub_group_tree do
-        %{ids: ids} -> ids
-        nil -> []
-      end
-
-    MapSet.new(
-      [socket.assigns.group.id | Enum.map(socket.assigns.loaded_children, & &1.id)] ++ tree_ids
-    )
-  end
-
-  defp unknown_child?(overview, unread, group) do
-    case page_child(unread, group) do
-      nil -> false
-      child -> overview.groups[child.id].visible? == nil
-    end
-  end
-
-  # The sub-group of the page's group that a value sits in or below, if any.
-  defp page_child(%{chain: chain}, %Group{id: group_id}),
-    do: Enum.find(chain, &(&1.parent_id == group_id))
+  # The sub-group of the page's group that a value counts in, if any: the
+  # overview knows where the lists show it.
+  defp page_child(%{chain: chain}, overview, %Group{id: group_id}),
+    do: Enum.find(chain, &(get_in(overview.groups, [&1.id, :parent_id]) == group_id))
 
   # A value only adds to a count, so it can only move a sub-group up the list
   # (unread first, then the newest). The list holds the first sub-groups in
@@ -2377,7 +2351,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       loaded = Map.new(loaded_children, &{&1.id, &1})
 
       {loaded, moved, unloaded?} =
-        Enum.reduce(unread_values, {loaded, MapSet.new(), false}, &track_child(socket, &1, &2))
+        Enum.reduce(
+          unread_values,
+          {loaded, MapSet.new(), false},
+          &track_child(socket, overview, &1, &2)
+        )
 
       # The loaded sub-groups keep their newest value either way, as the
       # in-memory order needs it.
@@ -2386,7 +2364,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       if unloaded? do
         refresh_children_order(socket, overview)
       else
-        children = Social.sort_child_groups(Map.values(loaded), page_overview(socket, overview))
+        children = Social.sort_child_groups(Map.values(loaded), overview)
         stream_moved_children(socket, children, moved)
       end
     else
@@ -2397,8 +2375,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Notes the page's sub-group a value counts in: a loaded one gets the
   # value's time when the value is its own, and one that is not loaded asks
   # for the database if the list could show it.
-  defp track_child(socket, unread, {loaded, moved, unloaded?}) do
-    case page_child(unread, socket.assigns.group) do
+  defp track_child(socket, overview, unread, {loaded, moved, unloaded?}) do
+    case page_child(unread, overview, socket.assigns.group) do
       nil ->
         {loaded, moved, unloaded?}
 
@@ -2453,7 +2431,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # it changed; otherwise just the rows whose count changed are re-sent.
   defp refresh_children_order(socket, overview) do
     %{group: group, active_tab: active_tab, loaded_children: loaded_children} = socket.assigns
-    overview = page_overview(socket, overview)
 
     if needs_children?(group, active_tab) and socket.assigns.sub_groups_view != "tree" do
       ids =
@@ -3561,7 +3538,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {entries, total_count} =
           list_children_page(socket,
             limit: reload_limit(pagination),
-            unread_overview: page_overview(socket, unread_overview)
+            unread_overview: unread_overview
           )
 
         entries = Tags.put_tags(entries, socket.assigns.current_profile, :group)
@@ -3969,17 +3946,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp unread_counts_for(socket, groups) do
     socket
-    |> page_overview(current_unread_overview(socket))
+    |> current_unread_overview()
     |> Social.unread_counts_for(Enum.map(groups, & &1.id))
   end
-
-  # With thread sub-groups hidden, their values leave the sub-groups' counts
-  # and order too, as the list leaves the threads out. The nav total keeps them.
-  defp page_overview(_socket, nil), do: nil
-  defp page_overview(%{assigns: %{show_thread_sub_groups: true}}, overview), do: overview
-
-  defp page_overview(socket, overview),
-    do: Social.without_threads_below(overview, socket.assigns.group.id)
 
   # The overview the page keeps up to date; only a page that has not loaded
   # its panel yet counts.
@@ -3987,9 +3956,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket.assigns.unread_overview || Social.unread_overview(socket.assigns.current_profile)
   end
 
+  # Every count holds the threads, hidden or not, so a value in one can be
+  # followed from the header's badge down to it: the rows lead to the group,
+  # and there the threads switch and the chat's thread links show it.
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket, overview) do
-    overview = page_overview(socket, overview)
-
     tree_ids =
       case Map.get(socket.assigns, :sub_group_tree) do
         %{ids: ids} -> ids
@@ -4008,7 +3978,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     %{direct: direct_sub_groups_unread_count, other: other_sub_groups_unread_count} =
       Social.child_unread_summary(overview, group.id)
 
+    thread_unread_counts = Social.thread_unread_counts(overview, [group.id | tree_ids])
+
     socket
+    |> assign(:thread_unread_counts, thread_unread_counts)
+    |> assign(:thread_sub_groups_unread_count, thread_unread_counts |> Map.values() |> Enum.sum())
     |> assign(:group_unread_counts, group_unread_counts)
     |> assign(:current_group_unread_count, current_group_unread_count)
     |> assign(:sub_groups_unread_count, sub_groups_unread_count)
@@ -4153,6 +4127,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp append_query_params(path, query_params) do
     path <> "?" <> URI.encode_query(query_params)
+  end
+
+  # A parent the profile cannot see would only turn it away: the root lists
+  # such a group instead (`Social.list_child_groups_for_profile/3`).
+  defp back_path(%Group{parent_id: parent_id, parent_value_id: value_id}, path) do
+    cond do
+      not Enum.any?(path, &(&1.id == parent_id)) -> ~p"/groups"
+      value_id -> ~p"/groups/#{parent_id}/values"
+      true -> ~p"/groups/#{parent_id}/sub_groups"
+    end
   end
 
   defp delete_group_redirect_path(nil), do: ~p"/groups"

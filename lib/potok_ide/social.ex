@@ -2729,6 +2729,9 @@ defmodule PotokIde.Social do
   `:search` on the name, `public: false` to leave out the public groups the
   profile is not in, but those with one of its memberships below them, and
   `:limit` / `:offset`.
+
+  The root also lists the groups no other list leads to, whose parent the
+  profile cannot see (`detached_group_ids/1`), even if they are threads.
   """
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     {groups, _rest} = child_group_rows(group, profile, opts, false)
@@ -2917,7 +2920,7 @@ defmodule PotokIde.Social do
     # come from the overview instead of a walk down every child's sub-tree.
     {unread_ids, unread_counts} =
       (opts[:unread_overview] || unread_overview(profile)).groups
-      |> Enum.filter(fn {_id, info} -> info.parent_id == group.id and info.visible? end)
+      |> Enum.filter(fn {_id, info} -> info.parent_id == group.id end)
       |> Enum.map(fn {id, info} -> {id, info.subtree} end)
       |> Enum.unzip()
 
@@ -2942,15 +2945,19 @@ defmodule PotokIde.Social do
   # profile $2 can see, its memberships plus the public ones, filtered by $3
   # (direct), $4 (name search) and $5 (thread). Without `public?`, only the
   # public ones on the way to a membership further down (`member_paths`).
+  # The root adds the detached groups, $6 (`detached_group_ids/1`, empty
+  # elsewhere), which $5 leaves alone as threads have no switch there. They
+  # come as ids so no page pays for finding them: the walk up to the root
+  # inside this statement would make Postgres JIT-compile it on every group page.
   # The memberships are read first, behind OFFSET 0: the cached generic plan
   # would otherwise walk every child of the group to probe them, and the root
   # is the parent of every direct conversation.
   defp visible_children_sql(public?) do
-    filters =
+    name_filters =
       "($3::boolean IS NULL OR g.is_direct = $3)" <>
-        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')" <>
-        " AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
+        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')"
 
+    filters = "#{name_filters} AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
     public_filter = if public?, do: "", else: " AND g.id IN (SELECT id FROM member_paths)"
 
     """
@@ -2970,6 +2977,13 @@ defmodule PotokIde.Social do
       WHERE g.parent_id = $1
         AND g.is_public = TRUE
         AND #{filters}#{public_filter}
+
+      UNION
+
+      SELECT g.id, g.inserted_at, g.last_value_at
+      FROM groups g
+      WHERE g.id = ANY($6::bigint[])
+        AND #{name_filters}
     )
     """
   end
@@ -2995,6 +3009,17 @@ defmodule PotokIde.Social do
     """
   end
 
+  # The groups no sub-groups list leads to although a membership of the
+  # profile is at or below them: ones it can see, whose parent it cannot. Being
+  # invited straight into a sub-group, or removed from a private parent, leaves
+  # such a group, and only the root can list it. They are the groups
+  # `hang_from_root/1` moves, so the lists and the unread counts agree.
+  defp detached_group_ids(%Profile{id: profile_id}) do
+    groups = member_group_chain(profile_id)
+
+    for {id, group} <- hang_from_root(groups), group.parent_id != groups[id].parent_id, do: id
+  end
+
   defp public_children?(opts), do: Keyword.get(opts, :public, true) != false
 
   defp visible_children_params(%Group{} = group, %Profile{} = profile, opts) do
@@ -3003,7 +3028,8 @@ defmodule PotokIde.Social do
       profile.id,
       normalize_boolean_filter(opts[:is_direct]),
       normalize_group_search_term(opts[:search]),
-      normalize_boolean_filter(opts[:is_thread])
+      normalize_boolean_filter(opts[:is_thread]),
+      if(group.is_root, do: detached_group_ids(profile), else: [])
     ]
   end
 
@@ -3030,7 +3056,7 @@ defmodule PotokIde.Social do
   defp ordered_child_group_ids_query(limit, offset, public?),
     do: ordered_child_groups_query("vc.id", limit, offset, public?)
 
-  # Unread counts arrive as $6 / $7; the newest chat value comes from
+  # Unread counts arrive as $7 / $8; the newest chat value comes from
   # `groups.last_value_at`, kept up to date by `create_value/4` and
   # `delete_value/2`. `sort_child_groups/2` sorts the same way in memory.
   defp ordered_child_groups_query(select, limit, offset, public?) do
@@ -3038,7 +3064,7 @@ defmodule PotokIde.Social do
     #{visible_children_sql(public?)}
     SELECT #{select}
     FROM visible_children vc
-    LEFT JOIN UNNEST($6::bigint[], $7::bigint[]) AS uc(group_id, unread_count)
+    LEFT JOIN UNNEST($7::bigint[], $8::bigint[]) AS uc(group_id, unread_count)
       ON uc.group_id = vc.id
     ORDER BY
       COALESCE(uc.unread_count, 0) DESC,
@@ -3055,16 +3081,16 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  # $1..$7 are the filters and unread counts of `ordered_child_group_ids_query/3`.
-  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $8"]
+  # $1..$8 are the filters and unread counts of `ordered_child_group_ids_query/3`.
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $9"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
   defp maybe_add_offset_sql(parts, limit, offset)
        when is_integer(limit) and is_integer(offset),
-       do: parts ++ [" OFFSET $9"]
+       do: parts ++ [" OFFSET $10"]
 
   defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
-    do: parts ++ [" OFFSET $8"]
+    do: parts ++ [" OFFSET $9"]
 
   defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
 
@@ -3359,6 +3385,15 @@ defmodule PotokIde.Social do
         FROM groups g
         WHERE g.parent_id = p.parent_id AND #{sub_group_public_sql("g")}
           AND #{sub_group_filter_sql("g")}
+
+        UNION
+
+        SELECT g.id, g.name, g.parent_value_id IS NOT NULL, g.is_public,
+          g.id IN (SELECT group_id FROM mine)
+        FROM groups g
+        WHERE g.id = ANY($8::bigint[])
+          AND g.is_direct = FALSE
+          AND p.parent_id = (SELECT r.id FROM groups r WHERE r.is_root)
       ) v
       WHERE p.after_id IS NULL OR (lower(v.name), v.id) > (lower(p.after_name), p.after_id)
       ORDER BY lower(v.name), v.id
@@ -3375,7 +3410,8 @@ defmodule PotokIde.Social do
       Enum.map(parents, fn {_parent_id, _limit, last} -> last && last.id end),
       profile && profile.id,
       Keyword.get(opts, :threads?, true),
-      Keyword.get(opts, :public?, true)
+      Keyword.get(opts, :public?, true),
+      detached_ids_below(profile, Enum.map(parents, &elem(&1, 0)))
     ]
 
     %{rows: rows} = Repo.query!(sql, params, cache_statement: "social_sub_group_folders")
@@ -3418,6 +3454,12 @@ defmodule PotokIde.Social do
 
       UNION ALL
 
+      SELECT g.id, $1::bigint, g.name, g.parent_value_id, g.is_public, ARRAY[g.id]
+      FROM groups g
+      WHERE g.id = ANY($8::bigint[]) AND g.is_direct = FALSE
+
+      UNION ALL
+
       SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, t.path || g.id
       FROM tree t
       JOIN groups g ON g.parent_id = t.id
@@ -3455,7 +3497,8 @@ defmodule PotokIde.Social do
       @sub_group_search_max_matches,
       profile && profile.id,
       Keyword.get(opts, :threads?, true),
-      Keyword.get(opts, :public?, true)
+      Keyword.get(opts, :public?, true),
+      detached_ids_below(profile, [group.id])
     ]
 
     %{rows: [[truncated? | _] | _] = rows} =
@@ -3472,7 +3515,7 @@ defmodule PotokIde.Social do
   # The folder queries take the profile as $5 (nil sees no memberships),
   # whether threads are shown as $6 and whether every public group is as $7.
   # `member_paths` are the groups above the memberships, needed only when $7 is
-  # false.
+  # false. The groups the root adds (`detached_ids_below/2`) are $8.
   defp sub_group_memberships_sql do
     """
     mine AS MATERIALIZED (SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $5),
@@ -3486,6 +3529,14 @@ defmodule PotokIde.Social do
       WHERE g.parent_id IS NOT NULL
     )
     """
+  end
+
+  defp detached_ids_below(nil, _parent_ids), do: []
+
+  defp detached_ids_below(%Profile{} = profile, parent_ids) do
+    if Repo.exists?(from(g in Group, where: g.id in ^parent_ids and g.is_root)),
+      do: detached_group_ids(profile),
+      else: []
   end
 
   defp sub_group_filter_sql(alias) do
@@ -3814,16 +3865,20 @@ defmodule PotokIde.Social do
   @doc """
   A profile's unread values for every group that has some at or below it, in
   one query: `%{total: n, as_of: id, groups: %{group_id => %{subtree: n,
-  own: n, parent_id: id, direct?: bool, visible?: bool, thread?: bool}}}`.
-  `own` counts the group's own values, `subtree` adds those of its
-  sub-groups, `visible?` says whether the profile can see the group (member,
-  or a public group) and `total` is the root group's count. `as_of` is the newest value id when the
-  count was taken: `add_unread_value/3` skips values up to it.
+  own: n, parent_id: id, direct?: bool, thread?: bool}}}`. `own` counts the
+  group's own values, `subtree` adds those of its sub-groups, threads
+  included, and `total` is the root group's count. `as_of` is the newest value
+  id when the count was taken: `add_unread_value/3` skips values up to it.
+
+  The counts follow the sub-groups lists, so every value can be found from
+  the root: groups the profile cannot see are left out, and `parent_id` of the
+  ones below them is the root, which lists them (see
+  `list_child_groups_for_profile/3`).
 
   Values only count in groups the profile is a member of, so the query starts
   from those memberships and walks up to the root, instead of walking down
   through every group below the one being looked at. Read the result with
-  `unread_counts_for/2` and `child_unread_summary/2`.
+  `unread_counts_for/2`, `thread_unread_counts/2` and `child_unread_summary/2`.
   """
   def unread_overview(nil), do: %{total: 0, as_of: 0, groups: %{}}
 
@@ -3833,7 +3888,7 @@ defmodule PotokIde.Social do
     groups =
       case Map.keys(own) do
         [] -> %{}
-        group_ids -> group_chain(profile_id, group_ids)
+        group_ids -> profile_id |> group_chain(group_ids) |> hang_from_root()
       end
 
     subtree =
@@ -3889,20 +3944,50 @@ defmodule PotokIde.Social do
   # `group_ids` and all their ancestors with what the overview needs about
   # them.
   defp group_chain(profile_id, group_ids) do
+    query_group_chain("g.id = ANY($2::bigint[])", [profile_id, group_ids], "social_group_chain")
+  end
+
+  # The same for all of the profile's memberships. As an array, like the ids
+  # above: the planner reads `IN (SELECT ...)` as a walk over a quarter million
+  # rows and JIT-compiles the statement, some 150 ms for any profile.
+  defp member_group_chain(profile_id) do
+    query_group_chain(
+      "g.id = ANY(ARRAY(SELECT m.group_id FROM group_memberships m WHERE m.profile_id = $1))",
+      [profile_id],
+      "social_member_group_chain"
+    )
+  end
+
+  defp query_group_chain(seed, params, statement) do
     sql = """
-    WITH RECURSIVE #{group_chain_cte("g.id = ANY($2::bigint[])")}
+    WITH RECURSIVE #{group_chain_cte(seed)}
     SELECT c.id, c.parent_id, c.is_direct, c.is_public OR gm.profile_id IS NOT NULL, c.is_thread
     FROM chain c
     LEFT JOIN group_memberships gm
       ON gm.group_id = c.id AND gm.profile_id = $1
     """
 
-    %{rows: rows} =
-      Repo.query!(sql, [profile_id, group_ids], cache_statement: "social_group_chain")
+    %{rows: rows} = Repo.query!(sql, params, cache_statement: statement)
 
     Map.new(rows, fn [group_id, parent_id, direct?, visible?, thread?] ->
       {group_id, %{parent_id: parent_id, direct?: direct?, visible?: visible?, thread?: thread?}}
     end)
+  end
+
+  # The chain as the sub-groups lists show it: groups the profile cannot see
+  # drop out, and the ones below them hang from the root.
+  defp hang_from_root(groups) do
+    root_id = Enum.find_value(groups, fn {id, group} -> is_nil(group.parent_id) && id end)
+    shown? = fn id -> id == root_id or groups[id].visible? end
+
+    for {id, group} <- groups, shown?.(id), into: %{} do
+      parent_id =
+        if is_nil(group.parent_id) or shown?.(group.parent_id),
+          do: group.parent_id,
+          else: root_id
+
+      {id, group |> Map.delete(:visible?) |> Map.put(:parent_id, parent_id)}
+    end
   end
 
   # A group and its ancestors up to the root (in no particular order), with
@@ -3954,32 +4039,32 @@ defmodule PotokIde.Social do
   `{:ok, overview}`, or `:counted` when the overview already holds the value
   (it is not newer than `as_of`).
 
-  Groups of the value's chain the overview did not have yet are added. Their
-  `visible?` is `true` for a public group, the value's own group (the profile
-  is a member) and the ids in `visible_ids` (groups the page shows), and `nil`
-  when only a recount can tell.
+  `member_ids` are the profile's memberships (`ProfileAuth.unread_groups/1`),
+  which with the value's chain tell what `unread_overview/1` asks the database:
+  which of the groups above the value the profile can see.
   """
-  def add_unread_value(%{as_of: as_of}, %{value_id: value_id}, _visible_ids)
+  def add_unread_value(%{as_of: as_of}, %{value_id: value_id}, _member_ids)
       when value_id <= as_of,
       do: :counted
 
-  def add_unread_value(overview, %{group_id: group_id, chain: chain}, visible_ids) do
-    groups =
-      Enum.reduce(chain, overview.groups, fn node, groups ->
-        entry =
-          Map.get_lazy(groups, node.id, fn ->
-            %{
-              parent_id: node.parent_id,
-              direct?: node.direct?,
-              visible?: (node.public? or node.id == group_id or node.id in visible_ids) || nil,
-              thread?: node.thread?,
-              subtree: 0,
-              own: 0
-            }
-          end)
+  def add_unread_value(overview, %{group_id: group_id, chain: chain}, member_ids) do
+    shown =
+      chain
+      |> Map.new(fn node ->
+        visible? = node.public? or node.id == group_id or node.id in member_ids
 
-        own = if node.id == group_id, do: entry.own + 1, else: entry.own
-        Map.put(groups, node.id, %{entry | subtree: entry.subtree + 1, own: own})
+        {node.id,
+         node |> Map.take([:parent_id, :direct?, :thread?]) |> Map.put(:visible?, visible?)}
+      end)
+      |> hang_from_root()
+
+    groups =
+      group_id
+      |> self_and_ancestor_ids(shown)
+      |> Enum.reduce(overview.groups, fn id, groups ->
+        entry = Map.get_lazy(groups, id, fn -> Map.merge(shown[id], %{subtree: 0, own: 0}) end)
+        own = if id == group_id, do: entry.own + 1, else: entry.own
+        Map.put(groups, id, %{entry | subtree: entry.subtree + 1, own: own})
       end)
 
     {:ok, %{overview | total: overview.total + 1, groups: groups}}
@@ -3995,46 +4080,6 @@ defmodule PotokIde.Social do
     end
   end
 
-  @doc """
-  The `unread_overview/1` result as a page that hides thread sub-groups counts
-  it: a thread other than the page's group (`page_group_id`) and everything
-  below it add nothing to the counts above it, nor to its own. The page's
-  group counts as usual even when it is a thread itself. `own` and `total`
-  stay as they are.
-  """
-  def without_threads_below(%{groups: groups} = overview, page_group_id) do
-    subtree =
-      Enum.reduce(groups, %{}, fn {group_id, entry}, acc ->
-        if entry.own > 0,
-          do: credit_outside_threads(group_id, entry.own, groups, page_group_id, acc),
-          else: acc
-      end)
-
-    %{
-      overview
-      | groups:
-          Map.new(groups, fn {group_id, entry} ->
-            {group_id, %{entry | subtree: Map.get(subtree, group_id, 0)}}
-          end)
-    }
-  end
-
-  # Adds `count` to the group and its ancestors, stopping at the first thread
-  # that is not the page's group.
-  defp credit_outside_threads(group_id, count, groups, page_group_id, acc) do
-    case groups do
-      %{^group_id => %{thread?: true}} when group_id != page_group_id ->
-        acc
-
-      %{^group_id => %{parent_id: parent_id}} ->
-        acc = Map.update(acc, group_id, count, &(&1 + count))
-        credit_outside_threads(parent_id, count, groups, page_group_id, acc)
-
-      _ ->
-        acc
-    end
-  end
-
   @doc "Unread values at or below each of `group_ids`, from `unread_overview/1`."
   def unread_counts_for(%{groups: groups}, group_ids) do
     Map.new(group_ids, fn group_id ->
@@ -4042,13 +4087,24 @@ defmodule PotokIde.Social do
     end)
   end
 
+  @doc """
+  The threads directly below `parent_ids` with something unread, as
+  `%{thread_id => n}`, from `unread_overview/1`.
+  """
+  def thread_unread_counts(%{groups: groups}, parent_ids) do
+    for {id, %{thread?: true, parent_id: parent_id, subtree: count}} <- groups,
+        parent_id in parent_ids,
+        into: %{},
+        do: {id, count}
+  end
+
   @doc "`child_group_unread_summary/2` from an `unread_overview/1` result."
   def child_unread_summary(%{groups: groups}, group_id) do
     Enum.reduce(groups, %{direct: 0, other: 0}, fn
-      {_id, %{parent_id: ^group_id, visible?: true, direct?: true, subtree: count}}, acc ->
+      {_id, %{parent_id: ^group_id, direct?: true, subtree: count}}, acc ->
         %{acc | direct: acc.direct + count}
 
-      {_id, %{parent_id: ^group_id, visible?: true, subtree: count}}, acc ->
+      {_id, %{parent_id: ^group_id, subtree: count}}, acc ->
         %{acc | other: acc.other + count}
 
       _group, acc ->

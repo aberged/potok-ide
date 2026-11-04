@@ -13,9 +13,10 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # for a query added on purpose. The chat page's 18th loads the events that
   # values announced, for their cards; its 19th and 20th the tags the viewer
   # sees on the values and on the group, and the root page's 9th those on the
-  # sub-groups.
+  # sub-groups. Its 10th finds the groups only the root lists, whose parent the
+  # viewer cannot see.
   @max_dead_render_queries 5
-  @max_root_page_queries 9
+  @max_root_page_queries 10
   @max_chat_page_queries 20
 
   setup %{conn: conn} do

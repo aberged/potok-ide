@@ -1031,6 +1031,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end)
   end
 
+  @doc """
+  CSS that shows the unread counts on the chat's thread links, for the same
+  reason as `presence_css/1`: a value in a thread re-renders this rule set
+  instead of re-reading and re-sending the value that started it. The rules
+  need quotes, which EEx would escape, so this is marked safe; it only holds
+  integers.
+  """
+  def thread_unread_css(thread_unread_counts) do
+    thread_unread_counts
+    |> Enum.map_join(fn {thread_id, count} ->
+      badge = "#value-thread-unread-#{thread_id}"
+      label = if count > 999, do: "999+", else: count
+      ~s(#{badge}{display:inline-flex}#{badge}::after{content:"#{label}"})
+    end)
+    |> Phoenix.HTML.raw()
+  end
+
   attr :id, :string, required: true
   attr :html, :string, required: true, doc: "the app's HTML (the group description)"
   attr :api, :boolean, default: true, doc: "false renders a preview whose API calls are refused"
@@ -1715,6 +1732,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         >
           <.icon name="hero-chat-bubble-left-right" class="size-4" />
           {gettext("Thread")}
+          <%!-- Shown and filled by `thread_unread_css/1`. --%>
+          <span
+            id={"value-thread-unread-#{@thread.id}"}
+            class="hidden min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] leading-none tabular-nums text-white shadow-sm"
+          >
+          </span>
           <.icon name="hero-chevron-right" class="size-3" />
         </button>
         <div

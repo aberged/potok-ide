@@ -2127,7 +2127,7 @@ defmodule PotokIde.SocialTest do
       assert overview.total == 3
       assert overview.groups[root_group.id].subtree == 3
 
-      assert %{own: 2, subtree: 3, parent_id: ^root_id, direct?: false, visible?: true} =
+      assert %{own: 2, subtree: 3, parent_id: ^root_id, direct?: false} =
                overview.groups[child_group.id]
 
       assert %{own: 1, subtree: 1} = overview.groups[grandchild_group.id]
@@ -2149,14 +2149,13 @@ defmodule PotokIde.SocialTest do
       assert %{own: 0, subtree: 1} = Social.unread_overview(owner_profile).groups[child_group.id]
     end
 
-    test "without_threads_below/2 leaves hidden threads out of the counts above them" do
+    test "threads count in the groups above them, and thread_unread_counts/2 names them" do
       [owner_profile, writer_profile] = unread_profiles(["nothread-owner", "nothread-writer"])
       parent = unread_group!(owner_profile, Social.get_root_group!(), "nothread-parent")
       child = unread_group!(owner_profile, parent, "nothread-child")
 
       for group <- [parent, child] do
-        {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
-        {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+        unread_member!(owner_profile, group, writer_profile)
       end
 
       {:ok, start} = Social.create_value(writer_profile, parent, %{"content" => "start"})
@@ -2171,17 +2170,141 @@ defmodule PotokIde.SocialTest do
       overview = Social.unread_overview(owner_profile)
       assert %{thread?: true, subtree: 2} = overview.groups[thread.id]
       assert %{thread?: false, own: 1, subtree: 4} = overview.groups[parent.id]
+      assert Social.child_unread_summary(overview, parent.id) == %{direct: 0, other: 3}
 
-      hidden = Social.without_threads_below(overview, parent.id)
+      assert Social.thread_unread_counts(overview, [parent.id]) == %{thread.id => 2}
+      assert Social.thread_unread_counts(overview, [child.id]) == %{}
+    end
 
-      assert hidden.total == overview.total
-      assert %{own: 1, subtree: 2} = hidden.groups[parent.id]
-      assert hidden.groups[child.id].subtree == 1
-      assert %{own: 2, subtree: 0} = hidden.groups[thread.id]
-      assert Social.child_unread_summary(hidden, parent.id) == %{direct: 0, other: 1}
+    test "a group below one the profile cannot see counts at the root, not further up" do
+      [owner, reader] = unread_profiles(["hang-owner", "hang-reader"])
+      root = Social.get_root_group!()
+      hidden = unread_group!(owner, root, "hang-hidden")
+      below = unread_group!(owner, hidden, "hang-below")
+      joined = unread_group!(owner, root, "hang-joined")
+      hidden_inside = unread_group!(owner, joined, "hang-hidden-inside")
+      below_inside = unread_group!(owner, hidden_inside, "hang-below-inside")
+      memberships = [below, joined, below_inside]
 
-      # A thread's own page counts its values.
-      assert Social.without_threads_below(overview, thread.id).groups[thread.id].subtree == 2
+      for group <- memberships, do: unread_member!(owner, group, reader)
+      for group <- [below, below_inside], do: unread_value!(owner, group)
+
+      overview = Social.unread_overview(reader)
+      root_id = root.id
+
+      assert overview.total == 2
+      assert overview.groups[root_id].subtree == 2
+      assert %{parent_id: ^root_id, own: 1, subtree: 1} = overview.groups[below.id]
+      assert %{parent_id: ^root_id, own: 1, subtree: 1} = overview.groups[below_inside.id]
+
+      for group <- [hidden, hidden_inside, joined] do
+        refute Map.has_key?(overview.groups, group.id)
+      end
+
+      assert Social.child_unread_summary(overview, root_id) == %{direct: 0, other: 2}
+      assert Social.child_unread_summary(overview, joined.id) == %{direct: 0, other: 0}
+
+      # Counted live, a value lands in the same places.
+      Social.subscribe_group_unread(below_inside.id)
+      unread_value!(owner, below_inside)
+      assert_receive {:group_value_unread, unread}
+
+      {:ok, added} =
+        Social.add_unread_value(overview, unread, MapSet.new(memberships, & &1.id))
+
+      counted = Social.unread_overview(reader)
+
+      assert added.total == counted.total
+      assert Map.new(added.groups, &unread_entry/1) == Map.new(counted.groups, &unread_entry/1)
+    end
+
+    test "the root lists the groups no other list leads to" do
+      [owner, reader] = unread_profiles(["detached-owner", "detached-reader"])
+      root = Social.get_root_group!()
+      hidden = unread_group!(owner, root, "detached-hidden")
+      below = unread_group!(owner, hidden, "detached-below")
+      deep = unread_group!(owner, below, "detached-deep")
+      joined = unread_group!(owner, root, "detached-joined")
+      hidden_inside = unread_group!(owner, joined, "detached-hidden-inside")
+      below_inside = unread_group!(owner, hidden_inside, "detached-below-inside")
+
+      {:ok, public_below} =
+        Social.create_group(owner, hidden, %{
+          "name" => "detached-public",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      inside_public = unread_group!(owner, public_below, "detached-inside-public")
+
+      for group <- [below, deep, joined, below_inside, inside_public] do
+        unread_member!(owner, group, reader)
+      end
+
+      listed = fn group, opts ->
+        group
+        |> Social.list_child_groups_for_profile(reader, opts)
+        |> Enum.map(& &1.id)
+        |> Enum.sort()
+      end
+
+      # The way down from the root reaches the rest: `deep` through `below`,
+      # `inside_public` through the public group above it.
+      everything = Enum.sort([below.id, joined.id, below_inside.id, public_below.id])
+
+      assert listed.(root, public: false) == everything
+      assert listed.(root, []) -- everything == []
+      assert listed.(root, public: false, is_thread: false) == everything
+      assert Social.count_child_groups_for_profile(root, reader, public: false) == 4
+      assert listed.(root, public: false, search: "below-inside") == [below_inside.id]
+      assert listed.(root, public: false, is_direct: true) == []
+
+      # Only the root: a group's own list stays what the profile can see in it.
+      assert listed.(joined, []) == []
+      assert listed.(below, []) == [deep.id]
+
+      root_id = root.id
+
+      assert %{^root_id => {folders, false}} =
+               Social.list_sub_group_folders(reader, [{root_id, 50, nil}], public?: false)
+
+      assert folders |> Enum.map(& &1.id) |> Enum.sort() == everything
+
+      assert {[%{id: id, parent_id: ^root_id}], false} =
+               Social.search_sub_group_folders(root, reader, "below-inside", public?: false)
+
+      assert id == below_inside.id
+    end
+
+    test "the root lists a thread left without its parent, though threads are hidden" do
+      [owner, reader] = unread_profiles(["orphan-owner", "orphan-reader"])
+      root = Social.get_root_group!()
+      hidden = unread_group!(owner, root, "orphan-hidden")
+      unread_member!(owner, hidden, reader)
+
+      {:ok, value} = Social.create_value(reader, hidden, %{"content" => "start"})
+
+      {:ok, thread} =
+        Social.get_or_create_value_thread(reader, hidden, value, %{"name" => "orphan-talk"})
+
+      assert {:ok, _removed} = Social.remove_group_member(owner, hidden, reader)
+      assert Social.member_of_group?(reader, thread)
+
+      assert [listed] =
+               Social.list_child_groups_for_profile(root, reader, public: false, is_thread: false)
+
+      assert listed.id == thread.id
+
+      root_id = root.id
+
+      assert %{^root_id => {[folder], false}} =
+               Social.list_sub_group_folders(reader, [{root_id, 50, nil}],
+                 public?: false,
+                 threads?: false
+               )
+
+      assert folder.id == thread.id
     end
 
     test "a new value reaches the other members as one more unread value, counted without a query" do
@@ -2216,20 +2339,14 @@ defmodule PotokIde.SocialTest do
       assert_receive {:forwarded, {:group_unread_counts_updated, ^writer_id, ^grandchild_id}}
       refute_received {:forwarded, {:group_value_unread, _unread}}
 
-      {:ok, added} = Social.add_unread_value(before, unread, MapSet.new())
+      member_ids = MapSet.new([child_group.id, grandchild_group.id])
+      {:ok, added} = Social.add_unread_value(before, unread, member_ids)
       counted = Social.unread_overview(owner_profile)
 
       assert added.total == counted.total
 
       assert Map.new(added.groups, &unread_entry/1) == Map.new(counted.groups, &unread_entry/1)
-      assert Social.add_unread_value(counted, unread, MapSet.new()) == :counted
-
-      # The value's own group is a membership; the others only the page can tell.
-      assert added.groups[grandchild_group.id].visible? == true
-      assert added.groups[child_group.id].visible? == nil
-
-      {:ok, shown} = Social.add_unread_value(before, unread, MapSet.new([child_group.id]))
-      assert shown.groups[child_group.id].visible? == true
+      assert Social.add_unread_value(counted, unread, member_ids) == :counted
     end
 
     test "root values reach no one, and a read is not echoed to the page that marked it" do
@@ -2461,6 +2578,16 @@ defmodule PotokIde.SocialTest do
       })
 
     group
+  end
+
+  defp unread_member!(owner, group, profile) do
+    {:ok, invitation} = Social.invite_profile_to_group(owner, group, profile)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+  end
+
+  defp unread_value!(profile, group) do
+    {:ok, value} = Social.create_value(profile, group, %{"content" => "news"})
+    value
   end
 
   defp unread_entry({group_id, entry}),

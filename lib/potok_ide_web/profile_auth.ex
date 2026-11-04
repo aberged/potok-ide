@@ -258,7 +258,8 @@ defmodule PotokIdeWeb.ProfileAuth do
     put_private(socket, :unread_group_ids, group_ids)
   end
 
-  defp unread_groups(socket), do: socket.private[:unread_group_ids] || MapSet.new()
+  @doc "The groups the socket's page follows: its profile's memberships, without the root."
+  def unread_groups(socket), do: socket.private[:unread_group_ids] || MapSet.new()
 
   # Not the profile's own value, nor one on its way from a group it just left.
   defp unread_value_counts?(%{creator_id: creator_id, group_id: group_id}, socket) do

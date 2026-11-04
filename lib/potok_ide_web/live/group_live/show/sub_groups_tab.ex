@@ -20,6 +20,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :show_thread_sub_groups, :boolean, default: false
   attr :thread_sub_groups_count, :integer, default: 0
 
+  attr :thread_sub_groups_unread_count, :integer,
+    default: 0,
+    doc: "unread values in the threads of the group, or of its folders"
+
   attr :show_public_sub_groups, :boolean,
     default: false,
     doc: "whether the root shows the public groups the viewer is not in"
@@ -38,6 +42,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       # Only a search narrows the list: hidden threads and public groups are
       # the default and the view shows the same sub-groups either way.
       |> assign(:filters_active?, String.trim(assigns.children_search_query) != "")
+      # The rows show what is unread once the threads are.
+      |> assign(
+        :hidden_threads_unread_count,
+        if(assigns.show_thread_sub_groups, do: 0, else: assigns.thread_sub_groups_unread_count)
+      )
       |> assign(
         :public_hidden?,
         assigns.group.is_root and assigns.sub_groups_kind != "direct" and
@@ -141,6 +150,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             ]}>
               {@thread_sub_groups_count}
             </span>
+            <.count_badge
+              :if={@hidden_threads_unread_count > 0}
+              id="group-children-threads-unread-badge"
+              count={@hidden_threads_unread_count}
+            />
           </button>
 
           <%!-- The root's public groups the viewer is not in, hidden until shown;
@@ -188,7 +202,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         </div>
 
         <%!-- Last, so a folded bar leaves only this button at the edge. The dot
-             tells a folded bar that the list is filtered. --%>
+             tells a folded bar that the list is filtered, the badge that the
+             hidden threads hold unread values. --%>
         <button
           id="group-children-filters-toggle"
           type="button"
@@ -209,6 +224,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             id="group-children-filters-active"
             class="absolute -right-0.5 -top-0.5 hidden size-2.5 rounded-full bg-primary ring-2 ring-base-100 group-data-collapsed/filters:block"
           >
+          </span>
+          <span
+            :if={@hidden_threads_unread_count > 0}
+            id="group-children-filters-threads-unread"
+            class="absolute -right-2 -top-2 hidden group-data-collapsed/filters:block"
+          >
+            <.count_badge count={@hidden_threads_unread_count} />
           </span>
         </button>
         <script :type={Phoenix.LiveView.ColocatedHook} name=".CollapsibleFilters">

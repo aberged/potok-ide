@@ -3365,7 +3365,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       }
     end
 
-    test "hidden threads leave the sub-groups' unread counts", %{
+    test "the way down to a hidden thread shows what is unread in it", %{
       conn: conn,
       account: account,
       member: member,
@@ -3374,25 +3374,67 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     } do
       {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
       {:ok, _value} = Social.create_value(member, thread, %{"content" => "in the thread"})
+      conn = log_in_account(conn, account)
 
-      {:ok, lv, _html} =
-        conn
-        |> log_in_account(account)
-        |> live(~p"/groups/#{group.id}/sub_groups")
+      {:ok, root_lv, _html} = live(conn, ~p"/groups/#{Social.get_root_group!().id}")
+      assert has_element?(root_lv, "#nav-root-group-unread-badge", "1")
+      assert has_element?(root_lv, "#group-sub-groups-kind-other-unread-badge", "1")
+      assert has_element?(root_lv, "#group-unread-badge-#{group.id}", "1")
 
-      refute has_element?(lv, "#group-sub-groups-unread-badge")
-
-      lv |> element("#group-children-threads-toggle") |> render_click()
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/sub_groups")
       assert has_element?(lv, "#group-sub-groups-unread-badge", "1")
-      assert has_element?(lv, "#group-unread-badge-#{thread.id}", "1")
 
-      # A new value in a hidden thread does not add to them either.
+      assert has_element?(
+               lv,
+               "#group-children-threads-toggle #group-children-threads-unread-badge",
+               "1"
+             )
+
+      assert has_element?(lv, "#group-children-filters-threads-unread", "1")
+      refute has_element?(lv, "#child-group-#{thread.id}")
+
+      # Once shown, the thread's own row carries it.
+      lv |> element("#group-children-threads-toggle") |> render_click()
+      assert has_element?(lv, "#group-unread-badge-#{thread.id}", "1")
+      refute has_element?(lv, "#group-children-threads-unread-badge")
+      refute has_element?(lv, "#group-children-filters-threads-unread")
+
+      # A new value in a hidden thread adds to it, without a reload.
       lv |> element("#group-children-threads-toggle") |> render_click()
       {:ok, _value} = Social.create_value(member, thread, %{"content" => "more"})
-      refute has_element?(lv, "#group-sub-groups-unread-badge")
-
-      lv |> element("#group-children-threads-toggle") |> render_click()
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 2})
       assert has_element?(lv, "#group-sub-groups-unread-badge", "2")
+      assert has_element?(lv, "#group-children-threads-unread-badge", "2")
+    end
+
+    test "a thread link in the chat shows what is unread in the thread", %{
+      lv: lv,
+      profile: profile,
+      member: member,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+
+      assert has_element?(
+               lv,
+               "#value-thread-link-#{value.id} #value-thread-unread-#{thread.id}"
+             )
+
+      refute thread_unread_shown?(lv, thread, 1)
+
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "one"})
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 1})
+      assert thread_unread_shown?(lv, thread, 1)
+
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "two"})
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 2})
+      assert thread_unread_shown?(lv, thread, 2)
+
+      # Read on another page, the count goes.
+      :ok = Social.mark_group_values_read(profile, thread)
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 0})
+      refute thread_unread_shown?(lv, thread, 2)
     end
 
     test "the group's tabs share the page header", %{conn: conn, account: account, group: group} do
@@ -4060,6 +4102,12 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     |> LazyHTML.from_fragment()
     |> LazyHTML.query("#group-values-list > [id^='value-']")
     |> Enum.count()
+  end
+
+  defp thread_unread_shown?(lv, thread, count) do
+    lv
+    |> element("#group-thread-unread-style")
+    |> render() =~ ~s(#value-thread-unread-#{thread.id}::after{content:"#{count}"})
   end
 
   defp shown_online?(lv, profile_id) do

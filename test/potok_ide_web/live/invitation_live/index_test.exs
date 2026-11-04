@@ -464,6 +464,61 @@ defmodule PotokIdeWeb.InvitationLive.IndexTest do
       refute has_element?(lv, "#invitations a", "Received Search Group")
     end
 
+    test "a new value in a sub-group counts for the group above it", %{conn: conn} do
+      viewer_account = account_fixture()
+      writer_account = account_fixture()
+      invitee_account = account_fixture()
+
+      profile = fn account, username ->
+        {:ok, profile} =
+          Social.create_profile_for_account(account, %{
+            username: username,
+            profile_picture_url: nil,
+            description: "",
+            description_format: :markdown,
+            sharing: :unique
+          })
+
+        profile
+      end
+
+      viewer = profile.(viewer_account, "unread-viewer")
+      writer = profile.(writer_account, "unread-writer")
+      invitee = profile.(invitee_account, "unread-invitee")
+
+      group = fn parent, name ->
+        {:ok, group} =
+          Social.create_group(viewer, parent, %{
+            "name" => name,
+            "description" => "",
+            "description_format" => :markdown,
+            "is_public" => false
+          })
+
+        group
+      end
+
+      parent = group.(Social.get_root_group!(), "Unread Parent")
+      child = group.(parent, "Unread Child")
+
+      {:ok, invitation} = Social.invite_profile_to_group(viewer, child, writer)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, writer)
+      {:ok, _invitation} = Social.invite_profile_to_group(viewer, parent, invitee)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(viewer_account.id))
+        |> live(~p"/invitations")
+
+      {:ok, _value} = Social.create_value(writer, child, %{"content" => "news"})
+      assert_push_event(lv, "root_group_unread_count_updated", %{count: 1})
+
+      # Picking the tab renders its rows from the page's count, not a new one.
+      pick_tab(lv, "sent")
+
+      assert has_element?(lv, "#group-unread-badge-#{parent.id}", "1")
+    end
+
     test "loads a tab's list with the current search when it is picked", %{conn: conn} do
       current_account = account_fixture()
       inviter_account = account_fixture()

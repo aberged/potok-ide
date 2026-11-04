@@ -469,7 +469,9 @@ defmodule PotokIdeWeb.InvitationLive.Index do
 
   # A value someone else posted is added to the counts without a query.
   def handle_info({:group_value_unread, unread}, socket) do
-    case Social.add_unread_value(socket.assigns.unread_overview, unread, MapSet.new()) do
+    member_ids = ProfileAuth.unread_groups(socket)
+
+    case Social.add_unread_value(socket.assigns.unread_overview, unread, member_ids) do
       :counted ->
         {:noreply, socket}
 
