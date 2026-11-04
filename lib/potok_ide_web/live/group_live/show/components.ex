@@ -651,19 +651,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       >
         <span class="relative inline-flex">
           <.icon name={tab.icon} class="size-5 shrink-0" />
-          <span
+          <.count_badge
             :if={Map.get(tab, :badge, 0) > 0}
             id={tab.badge_id}
-            class={[
-              "absolute -top-1.5 left-3 inline-flex min-w-4.5 items-center justify-center rounded-full px-1 py-0.5 text-[10px] font-semibold leading-none shadow-sm",
-              if(Map.get(tab, :badge_tone) == :attention,
-                do: "bg-amber-500 text-amber-950",
-                else: "bg-red-600 text-white"
-              )
-            ]}
-          >
-            {unread_badge_label(tab.badge)}
-          </span>
+            count={tab.badge}
+            tone={Map.get(tab, :badge_tone, :unread)}
+            class="absolute -top-1.5 left-3"
+          />
         </span>
         <span class={[
           "max-w-full truncate text-[11px] leading-3.5 sm:text-sm sm:leading-5",
@@ -697,6 +691,27 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div class="mt-3 overflow-auto"><.inspect_tree_node label={@label} value={@data} /></div>
       </details>
     </div>
+    """
+  end
+
+  attr :id, :string, default: nil
+  attr :icon, :string, required: true
+  attr :title, :string, default: nil
+  attr :class, :any, default: nil
+
+  @doc "A small mark on the corner of an avatar, for the kind of group or profile it is."
+  def avatar_mark(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      title={@title}
+      class={[
+        "absolute inline-flex size-4 items-center justify-center rounded-full bg-base-100 text-base-content/70 shadow-sm ring-1 ring-base-300",
+        @class
+      ]}
+    >
+      <.icon name={@icon} class="size-3" />
+    </span>
     """
   end
 
@@ -791,11 +806,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
         <% end %>
 
-        <div class={[@sharing_badge_text_class, "absolute", "bottom-0", "left-0", "-ml-1", "-mb-1"]}>
-          {if @profile.sharing == :shared,
-            do: "👨‍👨‍👦‍👦",
-            else: ""}
-        </div>
+        <.avatar_mark
+          :if={@profile.sharing == :shared and @sharing_badge_text_class != "hidden"}
+          icon="hero-users-micro"
+          title={gettext("Shared profile")}
+          class="bottom-0 left-0 -mb-1 -ml-1"
+        />
       </div>
 
       <div class="min-w-0">
@@ -882,38 +898,34 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
         <% end %>
 
-        <div
+        <.avatar_mark
           :if={!@group.is_direct && !@group.is_root}
-          class="absolute bottom-0 left-0 -ml-1 -mb-1 text-[0.8rem]"
-        >
-          {if @group.is_public,
-            do: "📢",
-            else: "🔐"}
-        </div>
+          icon={if(@group.is_public, do: "hero-megaphone-micro", else: "hero-lock-closed-micro")}
+          title={if(@group.is_public, do: gettext("Public group"), else: gettext("Private group"))}
+          class="bottom-0 left-0 -mb-1 -ml-1"
+        />
 
-        <div
+        <.avatar_mark
           :if={@group.uses_api && !@group.is_direct && !@group.is_root}
           id={"group-app-badge-#{@group.id}"}
+          icon="hero-puzzle-piece-micro"
           title={gettext("App")}
-          class="absolute bottom-0 right-0 -mr-1 -mb-1 text-[0.8rem]"
-        >
-          🧩
-        </div>
+          class="bottom-0 right-0 -mb-1 -mr-1"
+        />
 
-        <span
+        <.count_badge
           :if={!@group.is_root and @pending_join_requests_count > 0}
           id={"group-pending-join-requests-badge-#{@group.id}"}
-          class="absolute -left-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-amber-950 shadow-sm"
-        >
-          {unread_badge_label(@pending_join_requests_count)}
-        </span>
-        <span
+          count={@pending_join_requests_count}
+          tone={:attention}
+          class="absolute -left-2 -top-2"
+        />
+        <.count_badge
           :if={!@group.is_root and @unread_count > 0}
           id={"group-unread-badge-#{@group.id}"}
-          class="absolute -right-2 -top-2 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-        >
-          {unread_badge_label(@unread_count)}
-        </span>
+          count={@unread_count}
+          class="absolute -right-2 -top-2"
+        />
       </div>
 
       <.link
@@ -962,9 +974,6 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # A thread is the sub-group started from a chat value.
   defp thread_group?(%{parent_value_id: value_id}) when not is_nil(value_id), do: true
   defp thread_group?(_group), do: false
-
-  defp unread_badge_label(count) when count > 999, do: "999+"
-  defp unread_badge_label(count), do: Integer.to_string(count)
 
   attr :content, :string, default: ""
   attr :content_format, :any, default: :markdown
@@ -1381,9 +1390,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           ]}
           title={gettext("Online")}
         />
-        <div :if={@value.creator.sharing == :shared} class="absolute bottom-0 left-0 -ml-1 -mb-1">
-          👨‍👨‍👦‍👦
-        </div>
+        <.avatar_mark
+          :if={@value.creator.sharing == :shared}
+          icon="hero-users-micro"
+          title={gettext("Shared profile")}
+          class="bottom-0 left-0 -mb-1 -ml-1"
+        />
       </div>
 
       <div
@@ -1699,7 +1711,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           phx-value-id={@value.id}
           disabled={!@can_join_thread}
           title={@thread.name}
-          class="inline-flex h-7 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 text-xs font-semibold text-primary shadow-xs transition duration-150 ease-out enabled:hover:-translate-y-px enabled:hover:bg-primary/15 enabled:active:scale-95 disabled:cursor-default phx-click-loading:animate-pulse"
+          class="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/10 px-2.5 text-xs font-semibold text-primary shadow-xs sm:h-7 transition duration-150 ease-out enabled:hover:-translate-y-px enabled:hover:bg-primary/15 enabled:active:scale-95 disabled:cursor-default phx-click-loading:animate-pulse"
         >
           <.icon name="hero-chat-bubble-left-right" class="size-4" />
           {gettext("Thread")}
@@ -1724,7 +1736,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             title={Enum.join(reaction.names, ", ")}
             disabled={!@can_react}
             class={[
-              "inline-flex h-7 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out",
+              "inline-flex h-8 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out sm:h-7",
               "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
               if(reaction.mine?,
                 do: "border-primary/50 bg-primary/10 text-primary",

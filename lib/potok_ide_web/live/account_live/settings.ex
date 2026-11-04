@@ -53,8 +53,8 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               label={gettext("Email")}
               autocomplete="username"
               spellcheck="false"
-              required
-              class="disabled"
+              readonly
+              class="input w-full bg-base-200 text-base-content/70"
             />
             <%!-- <.button variant="primary" phx-disable-with={gettext("Changing...")}>
             {gettext("Change Email")}
@@ -160,12 +160,24 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           id="push-subscriptions-panel"
           class={settings_card_class()}
         >
-          <div class="space-y-4">
-            <.card_title
-              icon="hero-device-phone-mobile"
-              title={gettext("Stored Push Subscriptions")}
-              subtitle={gettext("All saved push subscription entities for this account.")}
-            />
+          <%!-- For working out why a device gets no notifications. --%>
+          <details
+            id="push-subscriptions-details"
+            phx-mounted={JS.ignore_attributes(["open"])}
+            class="group/details space-y-4"
+          >
+            <summary class="flex cursor-pointer list-none items-start gap-3 [&::-webkit-details-marker]:hidden">
+              <.card_title
+                icon="hero-device-phone-mobile"
+                title={gettext("Stored Push Subscriptions")}
+                subtitle={gettext("All saved push subscription entities for this account.")}
+                class="flex-1"
+              />
+              <.icon
+                name="hero-chevron-down"
+                class="mt-1 size-4 shrink-0 text-base-content/50 transition-transform duration-150 group-open/details:rotate-180"
+              />
+            </summary>
 
             <div
               :if={@push_subscriptions == []}
@@ -304,6 +316,22 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                 </dl>
               </article>
             </div>
+          </details>
+        </section>
+
+        <section id="settings-preferences" class={settings_card_class()}>
+          <.card_title
+            icon="hero-language"
+            title={gettext("Preferences")}
+            subtitle={gettext("The language and the look of the app.")}
+            class="mb-4"
+          />
+          <div class="flex flex-wrap items-center gap-3">
+            <Layouts.locale_switcher
+              current_locale={@current_locale}
+              available_locales={@available_locales}
+            />
+            <Layouts.theme_toggle />
           </div>
         </section>
       </.page_container>

@@ -8,6 +8,52 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
   alias PotokIde.Social
 
   describe "profiles page" do
+    test "a row uses the profile and its menu holds the rest", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, first} =
+        Social.create_profile_for_account(account, %{
+          username: "row-first",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, second} =
+        Social.create_profile_for_account(account, %{
+          username: "row-second",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/profiles")
+
+      # The last profile made is the current one.
+      assert has_element?(lv, "#use-profile-#{second.id}[disabled]")
+      refute has_element?(lv, "#use-profile-#{first.id}[disabled]")
+
+      assert has_element?(
+               lv,
+               "#profile-menu-#{first.id}-container #set-default-profile-#{first.id}"
+             )
+
+      assert has_element?(
+               lv,
+               "#profile-menu-#{first.id}-container a[href='/profiles/#{first.id}/edit']"
+             )
+
+      lv |> element("#use-profile-#{first.id}") |> render_click()
+
+      assert has_element?(lv, "#use-profile-#{first.id}[disabled]")
+      refute has_element?(lv, "#use-profile-#{second.id}[disabled]")
+    end
+
     test "names a profile's sharing in the language of the page", %{conn: conn} do
       account = account_fixture()
 

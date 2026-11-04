@@ -92,13 +92,12 @@ defmodule PotokIdeWeb.Layouts do
               class="relative"
             >
               <.icon name="hero-home" class="size-6" />
-              <span
+              <.count_badge
                 id="nav-root-group-unread-badge"
-                class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                count={@root_group_unread_count}
                 hidden={@root_group_unread_count <= 0}
-              >
-                {if(@root_group_unread_count > 999, do: "999+", else: @root_group_unread_count)}
-              </span>
+                class="absolute -right-1 -top-1"
+              />
             </.link>
             <div class="ml-auto flex min-w-0 items-center gap-4">
               <.link
@@ -119,16 +118,12 @@ defmodule PotokIdeWeb.Layouts do
                 hidden={is_nil(@current_profile)}
               >
                 <.icon name="hero-inbox-arrow-down" class="size-6" />
-                <span
+                <.count_badge
                   id="nav-invitations-count-badge"
-                  class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                  count={@pending_invitations_count}
                   hidden={@pending_invitations_count <= 0}
-                >
-                  {if(@pending_invitations_count > 999,
-                    do: "999+",
-                    else: @pending_invitations_count
-                  )}
-                </span>
+                  class="absolute -right-1 -top-1"
+                />
               </.link>
               <.link
                 id="nav-requests-link"
@@ -139,16 +134,12 @@ defmodule PotokIdeWeb.Layouts do
                 hidden={is_nil(@current_profile)}
               >
                 <.icon name="hero-hand-raised" class="size-6" />
-                <span
+                <.count_badge
                   id="nav-requests-count-badge"
-                  class="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-xs font-semibold text-white"
+                  count={@pending_group_join_requests_count}
                   hidden={@pending_group_join_requests_count <= 0}
-                >
-                  {if(@pending_group_join_requests_count > 999,
-                    do: "999+",
-                    else: @pending_group_join_requests_count
-                  )}
-                </span>
+                  class="absolute -right-1 -top-1"
+                />
               </.link>
               <.link
                 navigate={~p"/profiles"}
@@ -599,7 +590,9 @@ defmodule PotokIdeWeb.Layouts do
   def flash_group(assigns) do
     ~H"""
     <div id={@id} aria-live="polite">
-      <.flash kind={:info} flash={@flash} /> <.flash kind={:error} flash={@flash} />
+      <.flash kind={:info} flash={@flash} />
+      <%!-- An error stays long enough to be read on a phone, and until it is closed there. --%>
+      <.flash kind={:error} flash={@flash} dismiss_after_ms={8000} />
       <.flash
         id="client-error"
         kind={:info}
@@ -646,6 +639,8 @@ defmodule PotokIdeWeb.Layouts do
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
+        aria-label={gettext("System theme")}
+        title={gettext("System theme")}
       >
         <.icon name="hero-computer-desktop-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
@@ -653,6 +648,8 @@ defmodule PotokIdeWeb.Layouts do
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
+        aria-label={gettext("Light theme")}
+        title={gettext("Light theme")}
       >
         <.icon name="hero-sun-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>
@@ -660,6 +657,8 @@ defmodule PotokIdeWeb.Layouts do
         class="flex w-1/3 cursor-pointer justify-center p-2"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
+        aria-label={gettext("Dark theme")}
+        title={gettext("Dark theme")}
       >
         <.icon name="hero-moon-micro" class="size-4 opacity-75 hover:opacity-100" />
       </button>

@@ -197,51 +197,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <div
               :if={@group.is_root}
               id="group-sub-groups-kind-tabs"
-              class="relative flex w-fit items-center gap-2 p-1 border rounded-full bg-base-100 border-base-300"
+              class="inline-flex w-fit max-w-full items-center gap-0.5 rounded-full border border-base-300 bg-base-200/70 p-0.5"
             >
               <button
                 id="group-sub-groups-kind-direct"
                 type="button"
                 phx-click="switch_sub_groups_kind"
                 phx-value-kind="direct"
-                class={[
-                  "relative btn btn-sm rounded-full",
-                  if(@sub_groups_kind == "direct",
-                    do: "btn-primary text-white",
-                    else: "btn-ghost border border-base-300"
-                  )
-                ]}
+                aria-pressed={to_string(@sub_groups_kind == "direct")}
+                class={root_kind_class(@sub_groups_kind == "direct")}
               >
-                <.icon name="hero-users" class="size-4" />
-                <span
+                <.icon name="hero-users" class="size-4 shrink-0" />
+                {gettext("Conversations")}
+                <.count_badge
                   :if={@direct_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-direct-unread-badge"
-                  class="absolute -top-[.2rem] left-[1.2rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-                >
-                  {unread_badge_label(@direct_sub_groups_unread_count)}
-                </span>
+                  count={@direct_sub_groups_unread_count}
+                />
               </button>
               <button
                 id="group-sub-groups-kind-other"
                 type="button"
                 phx-click="switch_sub_groups_kind"
                 phx-value-kind="other"
-                class={[
-                  "relative btn btn-sm rounded-full",
-                  if(@sub_groups_kind == "other",
-                    do: "btn-primary text-white",
-                    else: "btn-ghost border border-base-300"
-                  )
-                ]}
+                aria-pressed={to_string(@sub_groups_kind == "other")}
+                class={root_kind_class(@sub_groups_kind == "other")}
               >
-                <.icon name="hero-user-group" class="size-4" />
-                <span
+                <.icon name="hero-user-group" class="size-4 shrink-0" />
+                {gettext("Groups")}
+                <.count_badge
                   :if={@other_sub_groups_unread_count > 0}
                   id="group-sub-groups-kind-other-unread-badge"
-                  class="absolute -top-[.2rem] -right-[.1rem] ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-                >
-                  {unread_badge_label(@other_sub_groups_unread_count)}
-                </span>
+                  count={@other_sub_groups_unread_count}
+                />
               </button>
             </div>
           </div>
@@ -305,13 +293,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
             class={header_shortcut_class(needs_children?(@group, @active_tab))}
           >
             <.icon name="hero-folder-open" class="size-6 shrink-0" />
-            <span
+            <.count_badge
               :if={@sub_groups_unread_count > 0}
               id="group-sub-groups-unread-badge"
-              class="absolute right-0 top-0 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-            >
-              {unread_badge_label(@sub_groups_unread_count)}
-            </span>
+              count={@sub_groups_unread_count}
+              class="absolute right-0 top-0"
+            />
           </button>
           <button
             :if={@group.parent_id == nil && @is_member}
@@ -563,6 +550,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pending_join_request={@pending_join_request}
             alt_descriptions={@visible_alt_descriptions}
             active_alt_description={@active_alt_description}
+            can_edit={Access.can?(@access, :edit_group) and !@group.is_root}
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -4206,8 +4194,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp tab_permission("invite_profile"), do: :invite_members
   defp tab_permission("edit_group"), do: :edit_group
 
-  defp unread_badge_label(count) when count > 999, do: "999+"
-  defp unread_badge_label(count), do: Integer.to_string(count)
+  defp root_kind_class(active?) do
+    [
+      "inline-flex h-9 min-w-0 cursor-pointer items-center gap-1.5 rounded-full px-3 text-sm font-semibold transition duration-150 ease-out active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+      if(active?,
+        do: "bg-base-100 text-base-content shadow-sm",
+        else: "text-base-content/65 hover:text-base-content"
+      )
+    ]
+  end
 
   # The sections of a group, in the order of its bar. The root has none: its
   # header switches between conversations and groups.

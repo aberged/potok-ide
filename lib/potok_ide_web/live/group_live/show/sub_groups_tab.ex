@@ -177,37 +177,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             id="group-children-search-form"
             phx-change="search_children"
           >
-            <div class="relative w-fit">
-              <button
-                :if={@children_search_query != ""}
-                id="group-children-search-reset"
-                type="button"
-                phx-click="clear_children_search"
-                aria-label={gettext("Clear search")}
-                class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
-              >
-                <.icon name="hero-x-mark" class="size-4" />
-              </button>
-              <.input
-                field={@children_search_form[:q]}
-                id="group-children-search-input"
-                type="text"
-                phx-debounce="300"
-                autocomplete="off"
-                class="bg-base-100/85 h-10 px-6 pr-10 rounded-full text-sm focus:outline-none border border-gray-500/50 transition-all duration-300 ease-in-out w-12 focus:w-64"
-                placeholder={gettext("Search by name")}
-              />
-              <div class="absolute right-0 top-0 mt-4 mr-4">
-                <svg
-                  class="h-4 w-4 fill-current"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                >
-                  <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
-                  </path>
-                </svg>
-              </div>
-            </div>
+            <.search_field
+              id="group-children-search-input"
+              field={@children_search_form[:q]}
+              reset_id="group-children-search-reset"
+              reset_event="clear_children_search"
+              placeholder={gettext("Search by name")}
+            />
           </.form>
         </div>
 
@@ -566,9 +542,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             class={["size-5", node_icon_color(@group)]}
           />
         <% end %>
-        <span class="absolute -bottom-1 -left-1 text-[0.6rem] leading-none" aria-hidden="true">
-          {if @group.public?, do: "📢", else: "🔐"}
-        </span>
+        <Components.avatar_mark
+          icon={if(@group.public?, do: "hero-megaphone-micro", else: "hero-lock-closed-micro")}
+          class="-bottom-1 -left-1 size-3.5 [&>span]:size-2.5"
+        />
       </span>
       <Components.highlighted_text
         text={@group.name}
@@ -584,13 +561,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       >
         {ngettext("1 sub-group", "%{count} sub-groups", @node.child_count)}
       </span>
-      <span
+      <.count_badge
         :if={@unread_count > 0}
         id={"sub-group-folder-unread-#{@group.id}"}
-        class="inline-flex min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-semibold leading-none text-white shadow-sm"
-      >
-        {if @unread_count > 999, do: "999+", else: @unread_count}
-      </span>
+        count={@unread_count}
+        class="shrink-0"
+      />
     </.link>
     """
   end

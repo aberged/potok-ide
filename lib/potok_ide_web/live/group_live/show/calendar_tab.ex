@@ -190,6 +190,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                 selected_date={@selected_date}
                 group={@group}
                 time_zone={@time_zone}
+                today={@today}
               />
             <% else %>
               <div id="calendar-list" phx-update="stream" class="flex flex-col gap-2">
@@ -264,7 +265,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       phx-click={@event}
       role="switch"
       aria-checked={to_string(@checked)}
-      class="inline-flex items-center gap-2 text-xs font-medium text-base-content/70 transition hover:text-base-content"
+      class="inline-flex min-h-8 items-center gap-2 text-xs font-medium text-base-content/70 transition hover:text-base-content sm:min-h-0"
     >
       <span class={[
         "relative inline-flex h-4 w-7 items-center rounded-full transition-colors duration-200",
@@ -285,6 +286,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :selected_date, Date, required: true
   attr :group, :map, required: true
   attr :time_zone, :string, required: true
+  attr :today, Date, required: true
 
   defp month_grid(assigns) do
     ~H"""
@@ -321,12 +323,19 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             day.date == @selected_date && "bg-primary/5 ring-1 ring-inset ring-primary/30"
           ]}
         >
-          <span class={[
-            "inline-flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
-            day.today? && "bg-primary text-primary-content shadow-sm"
-          ]}>
+          <%!-- The whole day takes clicks; the keyboard and screen readers come here. --%>
+          <button
+            type="button"
+            phx-click="calendar_select_day"
+            phx-value-date={day.date}
+            aria-label={Format.date(day.date, @today)}
+            class={[
+              "inline-flex size-6 cursor-pointer items-center justify-center rounded-full text-xs font-semibold tabular-nums focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+              day.today? && "bg-primary text-primary-content shadow-sm"
+            ]}
+          >
             {day.date.day}
-          </span>
+          </button>
           <%!-- Dots on phones, where the day's events are listed above the grid. --%>
           <div class="mt-1 flex flex-wrap gap-0.5 px-0.5 sm:hidden">
             <span

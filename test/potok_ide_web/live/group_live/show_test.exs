@@ -1117,6 +1117,48 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-path span", "/")
     end
 
+    test "an empty description leads those who may write it to its editor", %{conn: conn} do
+      account = account_fixture()
+      member_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "desc-owner",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, member} =
+        Social.create_profile_for_account(member_account, %{
+          username: "desc-member",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "desc-group")
+      {:ok, invitation} = Social.invite_profile_to_group(profile, group, member)
+      {:ok, _member} = Social.accept_group_invitation(invitation, member)
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/groups/#{group.id}/group_home")
+
+      lv |> element("#group-description-add") |> render_click()
+      assert_patch(lv, ~p"/groups/#{group.id}/edit_group")
+      assert has_element?(lv, ~s(#group-edit-tab-description[aria-selected="true"]))
+
+      {:ok, member_lv, _html} =
+        build_conn()
+        |> log_in_account(Accounts.get_account!(member_account.id))
+        |> live(~p"/groups/#{group.id}/group_home")
+
+      assert has_element?(member_lv, "#group-description-empty")
+      refute has_element?(member_lv, "#group-description-add")
+    end
+
     test "a direct conversation has no sub-groups to open", %{conn: conn} do
       account = account_fixture()
       other_account = account_fixture()

@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     doc: "the viewer's role keys; a change restarts the app"
 
   attr :pending_join_request, :map, default: nil
+  attr :can_edit, :boolean, default: false, doc: "may write the description"
 
   attr :alt_descriptions, :list,
     default: [],
@@ -68,6 +69,21 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
         >
           <p class="p-2">{gettext("This group has no description yet.")}</p>
+          <.button
+            :if={@can_edit}
+            id="group-description-add"
+            type="button"
+            phx-click={
+              JS.push("switch_tab", value: %{tab: "edit_group"})
+              |> JS.push("set_edit_group_section", value: %{section: "description"})
+            }
+            variant="soft"
+            size="sm"
+            class="mb-2"
+          >
+            <.icon name="hero-pencil-square" class="size-4" />
+            {gettext("Add a description")}
+          </.button>
 
           <div class="text-center opacity-85 overflow-hidden rounded-4xl">
             <img

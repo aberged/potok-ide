@@ -69,10 +69,6 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
             "Enter a username to invite an existing profile, or an email to invite an account."
           )}
         </div>
-
-        <div class="mt-2 text-xs text-base-content/60">
-          {gettext("Invitees accept invitations at")} <.link navigate={~p"/invitations"} class="link">/invitations</.link>.
-        </div>
       </Components.tab_body>
     </div>
     """

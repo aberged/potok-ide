@@ -50,37 +50,31 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </:actions>
         </.page_header>
 
-        <div class=" flex flex-row">
-          <.icon :if={@group.is_direct} name="hero-user" />
-          <.icon :if={@group.is_direct} name="hero-user" />
-        </div>
-
         <div
           :if={Access.can?(@access, :manage_join_requests) && !@group.is_direct}
           id="group-join-requests-panel"
-          class="mb-5 rounded-3xl border border-base-300/70 bg-base-50/70 p-4 shadow-sm"
+          class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/70 p-4 shadow-sm"
         >
           <div class="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h4 class="text-sm font-semibold text-base-950">{gettext("Access requests")}</h4>
+              <h4 class="text-sm font-semibold text-base-content">{gettext("Access requests")}</h4>
 
-              <p class="text-xs text-base-900/70">
+              <p class="text-xs text-base-content/70">
                 {gettext("Profiles waiting for approval to join this public group.")}
               </p>
             </div>
 
-            <span
+            <.count_badge
               id="group-join-requests-count"
-              class="inline-flex min-w-8 items-center justify-center rounded-full bg-amber-500 px-2 py-1 text-xs font-semibold text-base-950"
-            >
-              {@pending_join_requests_count}
-            </span>
+              count={@pending_join_requests_count}
+              tone={:attention}
+            />
           </div>
 
           <div
             :if={@join_requests == []}
             id="group-join-requests-empty"
-            class="rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3 text-sm text-base-950/70"
+            class="rounded-2xl border border-dashed border-amber-300/70 bg-base-100/50 px-4 py-3 text-sm text-base-content/70"
           >
             {gettext("No pending access requests.")}
           </div>
@@ -94,7 +88,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                     current_profile={@current_profile}
                     direct_group_link={true}
                   />
-                  <div class="mt-2 text-xs text-base-950/65">
+                  <div class="mt-2 text-xs text-base-content/65">
                     <Components.local_time
                       id={"group-join-request-inserted-at-#{request.id}"}
                       datetime={request.inserted_at}
@@ -203,7 +197,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 type="button"
                 phx-click={JS.toggle_class("hidden flex", to: "#member-#{member.id}-role-editor")}
                 aria-controls={"member-#{member.id}-role-editor"}
-                icon="hero-tag"
+                icon="hero-shield-check"
                 label={gettext("Roles of %{username}", username: member.username)}
               />
               <.icon_button

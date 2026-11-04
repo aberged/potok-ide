@@ -80,41 +80,59 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
         <div :if={@profiles == []} class="text-base-content/70">{gettext("No profiles yet.")}</div>
 
-        <ul :if={@profiles != []} class="space-y-2">
-          <li :for={profile <- @profiles} class="flex items-center justify-between gap-3">
-            <ProfileComponents.profile_identity
-              profile={profile}
-              subtitle={ProfileComponents.sharing_label(profile.sharing)}
-            />
-            <div class="flex shrink-0 items-center gap-2">
-              <.icon_button
-                icon="hero-check-badge"
-                label={gettext("Use this profile")}
-                variant="secondary"
-                size="md"
-                disabled={!(is_nil(@current_profile) or @current_profile.id != profile.id)}
-                phx-click="use"
-                phx-value-id={profile.id}
+        <%!-- A tap on a row uses the profile; the rest of what can be done with
+             it is in its menu. --%>
+        <ul :if={@profiles != []} class="space-y-1">
+          <li
+            :for={profile <- @profiles}
+            id={"profile-row-#{profile.id}"}
+            class="flex items-center gap-2"
+          >
+            <button
+              id={"use-profile-#{profile.id}"}
+              type="button"
+              phx-click="use"
+              phx-value-id={profile.id}
+              disabled={current?(profile, @current_profile)}
+              title={gettext("Use this profile")}
+              class="flex min-w-0 flex-1 cursor-pointer items-center gap-2 rounded-2xl px-2 py-1 text-left transition-colors duration-150 hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-default disabled:hover:bg-transparent"
+            >
+              <span class="min-w-0 flex-1">
+                <ProfileComponents.profile_identity
+                  profile={profile}
+                  subtitle={ProfileComponents.sharing_label(profile.sharing)}
+                />
+              </span>
+              <.icon
+                :if={current?(profile, @current_profile)}
+                name="hero-check-circle"
+                class="size-5 shrink-0 text-success"
               />
-              <.icon_button
-                icon="hero-globe-alt"
-                label={gettext("Make default")}
-                variant="secondary"
-                size="md"
-                disabled={!(is_nil(@default_profile) or @default_profile.id != profile.id)}
-                phx-click="set_default"
-                phx-value-id={profile.id}
-                id={"set-default-profile-#{profile.id}"}
-              />
-              <.icon_button
-                icon="hero-pencil"
-                label={gettext("Edit")}
-                variant="secondary"
-                size="md"
-                navigate={~p"/profiles/#{profile.id}/edit"}
-                class="ml-3"
-              />
-            </div>
+            </button>
+            <Layouts.drop_down_menu id={"profile-menu-#{profile.id}"}>
+              <div class="flex min-w-48 flex-col gap-2">
+                <button
+                  id={"set-default-profile-#{profile.id}"}
+                  type="button"
+                  data-dropdown-close
+                  phx-click="set_default"
+                  phx-value-id={profile.id}
+                  disabled={current?(profile, @default_profile)}
+                  class={profile_menu_item_class()}
+                >
+                  <.icon name="hero-globe-alt" class="size-4 shrink-0" />
+                  <span class="truncate">{gettext("Make default")}</span>
+                </button>
+                <.link
+                  id={"edit-profile-#{profile.id}"}
+                  navigate={~p"/profiles/#{profile.id}/edit"}
+                  class={profile_menu_item_class()}
+                >
+                  <.icon name="hero-pencil" class="size-4 shrink-0" />
+                  <span class="truncate">{gettext("Edit")}</span>
+                </.link>
+              </div>
+            </Layouts.drop_down_menu>
           </li>
         </ul>
 
@@ -282,6 +300,13 @@ defmodule PotokIdeWeb.ProfileLive.Index do
 
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
+
+  defp current?(profile, %{id: id}), do: profile.id == id
+  defp current?(_profile, nil), do: false
+
+  defp profile_menu_item_class do
+    "flex w-full items-center gap-2 rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content disabled:cursor-default disabled:opacity-50"
+  end
 
   defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 

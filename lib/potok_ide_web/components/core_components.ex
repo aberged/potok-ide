@@ -563,6 +563,73 @@ defmodule PotokIdeWeb.CoreComponents do
   end
 
   @doc """
+  A count on a button or a row: what is unread, or what waits for someone
+  (`:attention`). Stays in the page while `hidden`, for scripts that update it.
+  """
+  attr :id, :string, default: nil
+  attr :count, :integer, required: true
+  attr :tone, :atom, default: :unread, values: [:unread, :attention]
+  attr :class, :any, default: nil
+  attr :rest, :global, include: ~w(hidden)
+
+  def count_badge(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      class={[
+        "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums shadow-sm",
+        if(@tone == :attention, do: "bg-amber-500 text-amber-950", else: "bg-red-600 text-white"),
+        @class
+      ]}
+      {@rest}
+    >
+      {if(@count > 999, do: "999+", else: @count)}
+    </span>
+    """
+  end
+
+  @doc """
+  A search box that opens wide while it has the focus, and clears with its
+  button once there is a query. Goes inside a `<.form>`.
+  """
+  attr :id, :string, required: true
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :reset_id, :string, required: true
+  attr :reset_event, :string, required: true
+  attr :placeholder, :string, required: true
+
+  def search_field(assigns) do
+    ~H"""
+    <div class="relative w-fit">
+      <button
+        :if={@field.value not in [nil, ""]}
+        id={@reset_id}
+        type="button"
+        phx-click={@reset_event}
+        aria-label={gettext("Clear search")}
+        class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+      >
+        <.icon name="hero-x-mark" class="size-4" />
+      </button>
+      <.input
+        field={@field}
+        id={@id}
+        type="text"
+        phx-debounce="300"
+        autocomplete="off"
+        aria-label={@placeholder}
+        placeholder={@placeholder}
+        class="bg-base-100/85 h-10 w-12 rounded-full border border-gray-500/50 px-6 pr-10 text-sm transition-all duration-300 ease-in-out focus:w-64 focus:outline-none"
+      />
+      <.icon
+        name="hero-magnifying-glass"
+        class="pointer-events-none absolute right-0 top-0 mr-4 mt-4 size-4"
+      />
+    </div>
+    """
+  end
+
+  @doc """
   The title of a card on a settings-like page: an icon tile, the title and a
   line under it.
   """

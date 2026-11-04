@@ -120,7 +120,7 @@ defmodule PotokIdeWeb.TagComponents do
       aria-label={gettext("Tags")}
       title={gettext("Tags")}
       class={[
-        "inline-flex items-center gap-1 rounded-full p-1 text-base-content/60 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse",
+        "inline-flex items-center gap-1 rounded-full p-2 text-base-content/60 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse sm:p-1",
         @class
       ]}
       {@rest}

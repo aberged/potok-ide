@@ -62,33 +62,13 @@ defmodule PotokIdeWeb.InvitationLive.Index do
           phx-change="search_invitations"
           class="mb-3 flex flex-row justify-end"
         >
-          <div class="relative w-fit">
-            <button
-              :if={@invitations_search_query != ""}
-              id="invitation-search-reset"
-              type="button"
-              phx-click="clear_invitations_search"
-              aria-label={gettext("Clear search")}
-              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
-            >
-              <.icon name="hero-x-mark" class="size-4" />
-            </button>
-            <.input
-              field={@invitation_search_form[:q]}
-              id="invitation-search-input"
-              type="text"
-              placeholder={gettext("Search by group or profile")}
-              phx-debounce="300"
-              autocomplete="off"
-              class="bg-base-100/85 h-10 w-12 rounded-full border border-gray-500/50 px-6 pr-10 text-sm transition-all duration-300 ease-in-out focus:w-64 focus:outline-none"
-            />
-            <div class="absolute right-0 top-0 mr-4 mt-4">
-              <svg class="h-4 w-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                <path d="M12.9 14.32a8 8 0 1 1 1.41-1.41l5.35 5.33-1.42 1.42-5.33-5.34zM8 14A6 6 0 1 0 8 2a6 6 0 0 0 0 12z">
-                </path>
-              </svg>
-            </div>
-          </div>
+          <.search_field
+            id="invitation-search-input"
+            field={@invitation_search_form[:q]}
+            reset_id="invitation-search-reset"
+            reset_event="clear_invitations_search"
+            placeholder={gettext("Search by group or profile")}
+          />
         </.form>
 
         <%!-- A card off screen holds no list: picking its tab loads it. --%>
