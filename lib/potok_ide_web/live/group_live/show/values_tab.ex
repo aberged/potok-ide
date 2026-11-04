@@ -409,6 +409,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.loadingNewerValues = false
               this.nearLatest = true
               this.atBottom = true
+              this.lastScrollTop = 0
               this.hadNewer = this.hasNewer()
               this.anchor = null
               this.heldValue = null
@@ -611,8 +612,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
             },
 
+            // Content that grows moves no scroll position, and it can grow between
+            // a scroll and its event, a frame later: a picture, a font. So a feed
+            // resting on the newest value leaves it only by going up; the resize
+            // observer takes it back down.
             notePosition() {
-              const distance = this.distanceToBottom()
+              const stayed = this.atBottom && this.el.scrollTop >= this.lastScrollTop
+              const distance = stayed ? 0 : this.distanceToBottom()
+
+              this.lastScrollTop = this.el.scrollTop
               this.atBottom = distance <= AT_BOTTOM_PX
               this.setNearLatest(distance <= NEAR_LATEST_PX && !this.hasNewer())
             },
@@ -645,6 +653,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             scrollToLatest() {
               this.heldValue = null
               this.el.scrollTop = this.el.scrollHeight
+              this.lastScrollTop = this.el.scrollTop
               this.atBottom = true
               this.setNearLatest(!this.hasNewer())
             },
@@ -656,6 +665,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               // position is noted now, as the scroll event comes a frame after the
               // resize observer's first report.
               this.heldValue = target
+              this.atBottom = false
               this.notePosition()
 
               clearTimeout(this.highlightTimer)
