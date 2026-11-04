@@ -15,7 +15,7 @@ const loadPicker = () =>
   pickerModule || (pickerModule = import("emoji-picker-element"))
 
 const SHEET_MAX_WIDTH_PX = 640
-const VIEWPORT_GAP_PX = 8
+const EDGE_GAP_PX = 8
 const CLOSE_TRANSITION_MS = 150
 const CLOSED_CLASSES = ["opacity-0", "translate-y-1"]
 
@@ -194,7 +194,9 @@ export const ReactionPicker = {
   },
 
   // Bottom sheet on narrow screens; otherwise a popover under the button,
-  // flipped above it when there is no room below.
+  // flipped above it when there is no room below. It stays inside <main>: the
+  // page is a stacking context below the sidebar and the top bar, so outside
+  // that box it would slide under them.
   position() {
     const sheet = this.sheetMode()
 
@@ -212,18 +214,17 @@ export const ReactionPicker = {
     const rect = this.trigger.getBoundingClientRect()
     const width = this.el.offsetWidth
     const height = this.el.offsetHeight
-    const viewportWidth = document.documentElement.clientWidth
-    const viewportHeight = window.innerHeight
+    const page = this.el.closest("main").getBoundingClientRect()
 
-    let top = rect.bottom + VIEWPORT_GAP_PX
+    let top = rect.bottom + EDGE_GAP_PX
 
-    if (top + height > viewportHeight - VIEWPORT_GAP_PX) {
-      top = Math.max(VIEWPORT_GAP_PX, rect.top - VIEWPORT_GAP_PX - height)
+    if (top + height > page.bottom - EDGE_GAP_PX) {
+      top = Math.max(page.top + EDGE_GAP_PX, rect.top - EDGE_GAP_PX - height)
     }
 
     const left = Math.max(
-      VIEWPORT_GAP_PX,
-      Math.min(rect.right - width, viewportWidth - width - VIEWPORT_GAP_PX)
+      page.left + EDGE_GAP_PX,
+      Math.min(rect.right - width, page.right - width - EDGE_GAP_PX)
     )
 
     Object.assign(this.el.style, {
