@@ -396,6 +396,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           const AT_BOTTOM_PX = 4
           // One author's values this close in time read as one run.
           const RUN_GAP_MS = 5 * 60 * 1000
+          // The reader moving the feed, which ends holding a value in view.
+          const READER_MOVES = ["wheel", "touchstart", "pointerdown", "keydown"]
 
           // The feed may show a run of earlier values without the newest ones
           // (`data-has-newer`): after a jump to a quoted or linked value, or once
@@ -409,6 +411,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.atBottom = true
               this.hadNewer = this.hasNewer()
               this.anchor = null
+              this.heldValue = null
               this.jumpButton = document.getElementById("group-values-jump-latest")
               this.newValuesDot = this.jumpButton?.querySelector("[data-new-values]")
 
@@ -419,14 +422,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
               this.handleScroll = () => {
                 this.anchor = this.findAnchor()
-
-                const distance = this.distanceToBottom()
-                this.atBottom = distance <= AT_BOTTOM_PX
-                this.setNearLatest(distance <= NEAR_LATEST_PX && !this.hasNewer())
+                this.notePosition()
 
                 if (this.el.scrollTop <= 16) {
                   this.loadMoreValues()
-                } else if (distance <= NEAR_LATEST_PX && this.hasNewer()) {
+                } else if (this.distanceToBottom() <= NEAR_LATEST_PX && this.hasNewer()) {
                   this.loadNewerValues()
                 }
               }
@@ -443,6 +443,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 }
               }
 
+              this.releaseValue = () => {
+                this.heldValue = null
+              }
+
               this.handleJumpClick = () => {
                 if (this.hasNewer()) {
                   this.pushEvent("jump_to_latest_values", {})
@@ -454,6 +458,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.addEventListener("click", this.handleClick)
               this.el.addEventListener("scroll", this.handleScroll)
               this.el.addEventListener("potok:show-value", this.handleShowValue)
+              READER_MOVES.forEach(name => this.el.addEventListener(name, this.releaseValue, { passive: true }))
               this.jumpButton?.addEventListener("click", this.handleJumpClick)
 
               this.feedHeight = this.el.clientHeight
@@ -529,6 +534,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.removeEventListener("click", this.handleClick)
               this.el.removeEventListener("scroll", this.handleScroll)
               this.el.removeEventListener("potok:show-value", this.handleShowValue)
+              READER_MOVES.forEach(name => this.el.removeEventListener(name, this.releaseValue))
               this.jumpButton?.removeEventListener("click", this.handleJumpClick)
             },
 
@@ -581,12 +587,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             // feed sets `overflow-anchor: none`, so the browser does not help.
             // Values grow too, with a reaction or a picture that loads; that
             // only moves a feed resting on the newest value, so nobody reading
-            // earlier ones is pulled down.
+            // earlier ones is pulled down. A value jumped to stays where it is.
             keepViewOnResize() {
               const change = this.feedHeight - this.el.clientHeight
               this.feedHeight = this.el.clientHeight
 
-              if (change === 0) {
+              if (this.heldValue?.isConnected) {
+                this.heldValue.scrollIntoView({ block: "center", behavior: "instant" })
+              } else if (change === 0) {
                 if (this.atBottom && !this.hasNewer()) this.scrollToLatest()
               } else if (this.nearLatest) {
                 this.scrollToLatest()
@@ -601,6 +609,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             distanceToBottom() {
               return this.el.scrollHeight - this.el.scrollTop - this.el.clientHeight
+            },
+
+            notePosition() {
+              const distance = this.distanceToBottom()
+              this.atBottom = distance <= AT_BOTTOM_PX
+              this.setNearLatest(distance <= NEAR_LATEST_PX && !this.hasNewer())
             },
 
             // The first value showing at the top of the feed, found by binary
@@ -629,6 +643,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
 
             scrollToLatest() {
+              this.heldValue = null
               this.el.scrollTop = this.el.scrollHeight
               this.atBottom = true
               this.setNearLatest(!this.hasNewer())
@@ -636,6 +651,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             showValue(target, behavior) {
               target.scrollIntoView({ block: "center", behavior })
+              // Pictures above it get their height only after this and would push
+              // it out of view, so the feed holds it until the reader moves. The
+              // position is noted now, as the scroll event comes a frame after the
+              // resize observer's first report.
+              this.heldValue = target
+              this.notePosition()
 
               clearTimeout(this.highlightTimer)
               this.highlighted?.removeAttribute("data-highlighted")
