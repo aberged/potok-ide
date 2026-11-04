@@ -186,8 +186,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           hidden
           role="dialog"
           aria-label={gettext("Add reaction")}
-          data-locale={emoji_data_locale()}
-          data-data-source={emoji_data_source()}
+          data-locale="en"
+          data-data-source={~p"/emoji/en.json"}
           data-i18n={Jason.encode!(emoji_picker_i18n())}
           class="reaction-picker fixed z-50 overflow-hidden border border-base-300 bg-base-100 opacity-0 translate-y-1 shadow-2xl shadow-base-content/10 transition duration-150 ease-out"
         >
@@ -982,21 +982,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     do: gettext("The upload failed. Remove the file and try again.")
 
   defp upload_error_message(_error), do: gettext("This file cannot be attached.")
-
-  # Emojibase has no Serbian data, so `sr` searches with English keywords.
-  defp emoji_data_locale do
-    case Gettext.get_locale(PotokIdeWeb.Gettext) do
-      "pl" -> "pl"
-      _ -> "en"
-    end
-  end
-
-  defp emoji_data_source do
-    case emoji_data_locale() do
-      "pl" -> ~p"/emoji/pl.json"
-      _ -> ~p"/emoji/en.json"
-    end
-  end
 
   # Labels for emoji-picker-element; the shape follows its `i18n/en.js`.
   defp emoji_picker_i18n do

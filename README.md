@@ -668,10 +668,12 @@ Apps written before the sandbox ran inside the page and found the API on `docume
 The application currently ships with:
 
 * `en` for English
-* `pl` for Polish
-* `sr` for Serbian (the default locale)
+* `sr` for Serbian in the Latin script (the default locale)
+* `sr_Cyrl` for Serbian in the Cyrillic script
 
 Translations live under `priv/gettext/`. Locale switching is exposed through the UI and backed by `PotokIdeWeb.Locale` in both Plug and LiveView flows.
+
+`sr_Cyrl` is generated from `sr`, so don't edit its files by hand: change `sr` and run `mix potok.sr_cyrl`. A test fails when the two are out of step.
 
 ## Project Structure
 

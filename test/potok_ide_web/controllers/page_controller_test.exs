@@ -74,6 +74,13 @@ defmodule PotokIdeWeb.PageControllerTest do
       assert og(document, "locale") == "sr_RS"
     end
 
+    test "is in Serbian in Cyrillic too", %{conn: conn} do
+      document =
+        conn |> get(~p"/?locale=sr_Cyrl") |> html_response(200) |> LazyHTML.from_document()
+
+      assert og(document, "locale") == "sr_RS"
+    end
+
     test "has its picture", %{conn: conn} do
       conn = get(conn, ~p"/images/og.png")
 
@@ -114,13 +121,13 @@ defmodule PotokIdeWeb.PageControllerTest do
   end
 
   test "GET / shows guests the landing page in the selected locale", %{conn: conn} do
-    conn = get(conn, ~p"/?locale=pl")
+    conn = get(conn, ~p"/?locale=sr_Cyrl")
 
-    assert get_session(conn, :locale) == "pl"
+    assert get_session(conn, :locale) == "sr_Cyrl"
 
     document = conn |> html_response(200) |> LazyHTML.from_document()
 
-    assert Enum.count(LazyHTML.query(document, "html[lang=pl]")) == 1
+    assert Enum.count(LazyHTML.query(document, "html[lang='sr-Cyrl']")) == 1
     assert Enum.count(LazyHTML.query(document, "#landing-hero")) == 1
   end
 end

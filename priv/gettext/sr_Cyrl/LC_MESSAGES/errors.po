@@ -1,0 +1,115 @@
+msgid ""
+msgstr ""
+"Language: sr_Cyrl\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+
+msgid "can't be blank"
+msgstr "не може бити празно"
+
+msgid "has already been taken"
+msgstr "је већ заузето"
+
+msgid "is invalid"
+msgstr "је неисправно"
+
+msgid "must be accepted"
+msgstr "мора бити прихваћено"
+
+msgid "has invalid format"
+msgstr "има неисправан формат"
+
+msgid "has an invalid entry"
+msgstr "садржи неисправну вредност"
+
+msgid "is reserved"
+msgstr "је резервисано"
+
+msgid "does not match confirmation"
+msgstr "не поклапа се са потврдом"
+
+msgid "is still associated with this entry"
+msgstr "је и даље повезано са овим уносом"
+
+msgid "are still associated with this entry"
+msgstr "су и даље повезане са овим уносом"
+
+msgid "should have %{count} item(s)"
+msgid_plural "should have %{count} item(s)"
+msgstr[0] "треба да има %{count} ставку"
+msgstr[1] "треба да има %{count} ставке"
+msgstr[2] "треба да има %{count} ставки"
+
+msgid "should be %{count} character(s)"
+msgid_plural "should be %{count} character(s)"
+msgstr[0] "треба да има %{count} знак"
+msgstr[1] "треба да има %{count} знака"
+msgstr[2] "треба да има %{count} знакова"
+
+msgid "should be %{count} byte(s)"
+msgid_plural "should be %{count} byte(s)"
+msgstr[0] "треба да има %{count} бајт"
+msgstr[1] "треба да има %{count} бајта"
+msgstr[2] "треба да има %{count} бајтова"
+
+msgid "should have at least %{count} item(s)"
+msgid_plural "should have at least %{count} item(s)"
+msgstr[0] "треба да има најмање %{count} ставку"
+msgstr[1] "треба да има најмање %{count} ставке"
+msgstr[2] "треба да има најмање %{count} ставки"
+
+msgid "should be at least %{count} character(s)"
+msgid_plural "should be at least %{count} character(s)"
+msgstr[0] "треба да има најмање %{count} знак"
+msgstr[1] "треба да има најмање %{count} знака"
+msgstr[2] "треба да има најмање %{count} знакова"
+
+msgid "should be at least %{count} byte(s)"
+msgid_plural "should be at least %{count} byte(s)"
+msgstr[0] "треба да има најмање %{count} бајт"
+msgstr[1] "треба да има најмање %{count} бајта"
+msgstr[2] "треба да има најмање %{count} бајтова"
+
+msgid "should have at most %{count} item(s)"
+msgid_plural "should have at most %{count} item(s)"
+msgstr[0] "треба да има највише %{count} ставку"
+msgstr[1] "треба да има највише %{count} ставке"
+msgstr[2] "треба да има највише %{count} ставки"
+
+msgid "should be at most %{count} character(s)"
+msgid_plural "should be at most %{count} character(s)"
+msgstr[0] "треба да има највише %{count} знак"
+msgstr[1] "треба да има највише %{count} знака"
+msgstr[2] "треба да има највише %{count} знакова"
+
+msgid "should be at most %{count} byte(s)"
+msgid_plural "should be at most %{count} byte(s)"
+msgstr[0] "треба да има највише %{count} бајт"
+msgstr[1] "треба да има највише %{count} бајта"
+msgstr[2] "треба да има највише %{count} бајтова"
+
+msgid "must be less than %{number}"
+msgstr "мора бити мање од %{number}"
+
+msgid "must be greater than %{number}"
+msgstr "мора бити веће од %{number}"
+
+msgid "must be less than or equal to %{number}"
+msgstr "мора бити мање или једнако %{number}"
+
+msgid "must be greater than or equal to %{number}"
+msgstr "мора бити веће или једнако %{number}"
+
+msgid "must be equal to %{number}"
+msgstr "мора бити једнако %{number}"
+
+msgid "must not be before the start"
+msgstr "не може бити пре почетка"
+
+msgid "does not match the start date"
+msgstr "не одговара датуму почетка"
+
+msgid "must be at most %{count} days after the start"
+msgid_plural "must be at most %{count} days after the start"
+msgstr[0] "може бити највише %{count} дан после почетка"
+msgstr[1] "може бити највише %{count} дана после почетка"
+msgstr[2] "може бити највише %{count} дана после почетка"

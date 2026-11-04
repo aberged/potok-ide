@@ -3,8 +3,9 @@
 // never carry their own picker. The picker library is loaded on first use.
 //
 // Emoji data is self-hosted in priv/static/emoji (emoji-picker-element-data
-// 1.8.0: en/emojibase as en.json, pl/cldr as pl.json), so no CDN is contacted.
-// The picker caches it in IndexedDB.
+// 1.8.0: en/emojibase as en.json), so no CDN is contacted. Emojibase has no
+// Serbian data, so every language searches with English keywords. The picker
+// caches it in IndexedDB.
 //
 // LiveView keeps this container's non-data attributes (`hidden`, class,
 // style) as set here because the element is `phx-update="ignore"`.

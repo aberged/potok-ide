@@ -23,14 +23,14 @@ defmodule PotokIdeWeb.AccountLive.PasswordLoginTest do
       assert has_element?(lv, "#login-password-card-invitation-note a[href='/#landing-join']")
     end
 
-    test "renders password login page in polish when locale is stored in session", %{conn: conn} do
+    test "renders password login page in Cyrillic when locale is stored in session", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> init_test_session(%{locale: "pl"})
+        |> init_test_session(%{locale: "sr_Cyrl"})
         |> live(~p"/accounts/log-in")
 
-      assert html =~ ~s(<html lang="pl")
-      assert html =~ "Zaloguj się"
+      assert html =~ ~s(<html lang="sr-Cyrl")
+      assert html =~ "Пријави се"
     end
   end
 

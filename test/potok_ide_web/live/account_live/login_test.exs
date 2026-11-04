@@ -34,14 +34,14 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
       assert html =~ ~s(id="lp-action-sheet")
     end
 
-    test "renders login page in polish when locale is stored in session", %{conn: conn} do
+    test "renders login page in Cyrillic when locale is stored in session", %{conn: conn} do
       {:ok, _lv, html} =
         conn
-        |> init_test_session(%{locale: "pl"})
+        |> init_test_session(%{locale: "sr_Cyrl"})
         |> live(~p"/accounts/log-in/magic-link")
 
-      assert html =~ "Zaloguj się"
-      assert html =~ "Zaloguj się przez e-mail"
+      assert html =~ "Пријави се"
+      assert html =~ "Пријави се имејлом"
     end
   end
 

@@ -258,17 +258,18 @@ class ShareViewController: UIViewController {
     }
 
     private static func text(_ message: Message) -> String {
-        let language = String((Locale.preferredLanguages.first ?? "en").prefix(2))
+        let preferred = Locale.preferredLanguages.first ?? "en"
+        let language = preferred.hasPrefix("sr-Cyrl") ? "sr-Cyrl" : String(preferred.prefix(2))
 
         switch (message, language) {
         case (.opening, "sr"): return "Otvaram Potok…"
-        case (.opening, "pl"): return "Otwieram Potok…"
+        case (.opening, "sr-Cyrl"): return "Отварам Поток…"
         case (.opening, _): return "Opening Potok…"
         case (.openApp, "sr"): return "Otvori Potok da završiš deljenje."
-        case (.openApp, "pl"): return "Otwórz Potok, aby dokończyć udostępnianie."
+        case (.openApp, "sr-Cyrl"): return "Отвори Поток да завршиш дељење."
         case (.openApp, _): return "Open Potok to finish sharing."
         case (.failed, "sr"): return "Ovo nije moguće podeliti u Potok."
-        case (.failed, "pl"): return "Nie można tego udostępnić w Potoku."
+        case (.failed, "sr-Cyrl"): return "Ово није могуће поделити у Поток."
         case (.failed, _): return "This cannot be shared to Potok."
         }
     }

@@ -552,6 +552,16 @@ defmodule PotokIde.AccountsTest do
       assert email.text_body =~ "?app=1"
     end
 
+    test "marks an email in Cyrillic with its language tag" do
+      email =
+        Gettext.with_locale(PotokIdeWeb.Gettext, "sr_Cyrl", fn ->
+          PotokIdeWeb.AccountEmails.sign_in(%{to: "ana@example.com", url: "https://example.com"})
+        end)
+
+      assert email.subject == "Твој линк за пријаву на Поток"
+      assert email.html =~ ~s(<html lang="sr-Cyrl")
+    end
+
     test "invites an unconfirmed account in an HTML and a text body", %{account: account} do
       {:ok, email} =
         Accounts.deliver_login_instructions(account, &"https://example.com/accounts/log-in/#{&1}")

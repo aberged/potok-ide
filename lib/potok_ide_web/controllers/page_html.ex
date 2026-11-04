@@ -98,8 +98,8 @@ defmodule PotokIdeWeb.PageHTML do
       %{
         id: "languages",
         icon: "hero-globe-alt",
-        title: gettext("Three languages"),
-        text: gettext("Srpski, English and polski.")
+        title: gettext("Latin and Cyrillic"),
+        text: gettext("Serbian in both scripts, and English.")
       }
     ]
   end

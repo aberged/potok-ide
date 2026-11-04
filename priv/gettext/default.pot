@@ -623,7 +623,7 @@ msgstr ""
 msgid "the mailbox page"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:136
+#: lib/potok_ide_web/components/layouts/root.html.heex:138
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1027
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:170
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:554
@@ -1666,7 +1666,7 @@ msgstr ""
 msgid "https://example.com/group.png or data:image/..."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:67
+#: lib/potok_ide_web/components/layouts/root.html.heex:69
 #, elixir-autogen, elixir-format
 msgid "A new version of Potok is ready."
 msgstr ""
@@ -1716,7 +1716,7 @@ msgstr ""
 msgid "Open menu"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:69
+#: lib/potok_ide_web/components/layouts/root.html.heex:71
 #, elixir-autogen, elixir-format
 msgid "Refresh"
 msgstr ""
@@ -1748,169 +1748,169 @@ msgstr ""
 msgid "You must be a group member to react."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1038
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1023
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Activities"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1035
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1020
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Animals and nature"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1032
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1017
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Custom"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1041
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1026
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Flags"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1036
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1021
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Food and drink"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1039
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1024
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Objects"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1034
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1019
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "People and body"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1033
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1018
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Smileys and emoticons"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1040
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1025
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Symbols"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1037
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1022
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Travel and places"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1004
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:989
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Categories"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1021
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1006
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Choose a skin tone (currently {skinTone})"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1009
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:994
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Could not load emoji."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1010
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:995
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Emoji picker"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1007
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:992
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Favorites"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1008
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:993
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Loading…"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1016
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1001
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1017
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1002
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search results"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1022
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1007
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Skin tones"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1019
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1004
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When expanded, press up or down to select and enter to choose."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1012
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:997
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When search results are available, press up or down to select and enter to choose."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1006
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:991
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Your browser does not support color emoji."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1029
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1014
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Dark"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1024
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1009
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Default"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1025
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1010
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Light"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1027
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1012
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1028
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1013
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Dark"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1026
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1011
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Light"
@@ -2486,7 +2486,7 @@ msgstr ""
 msgid "Sub-groups of %{name}"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:109
+#: lib/potok_ide_web/components/layouts/root.html.heex:111
 #: lib/potok_ide_web/components/tag_components.ex:172
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:821
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
@@ -3766,27 +3766,27 @@ msgstr ""
 msgid "Public events of this group."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:120
+#: lib/potok_ide_web/components/layouts/root.html.heex:122
 #, elixir-autogen, elixir-format
 msgid "Copy link"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:99
+#: lib/potok_ide_web/components/layouts/root.html.heex:101
 #, elixir-autogen, elixir-format
 msgid "Link"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:119
+#: lib/potok_ide_web/components/layouts/root.html.heex:121
 #, elixir-autogen, elixir-format
 msgid "Open in browser"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:118
+#: lib/potok_ide_web/components/layouts/root.html.heex:120
 #, elixir-autogen, elixir-format
 msgid "Open link"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts/root.html.heex:121
+#: lib/potok_ide_web/components/layouts/root.html.heex:123
 #, elixir-autogen, elixir-format
 msgid "Share"
 msgstr ""
@@ -4238,16 +4238,6 @@ msgstr ""
 msgid "Society for society"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:102
-#, elixir-autogen, elixir-format
-msgid "Srpski, English and polski."
-msgstr ""
-
-#: lib/potok_ide_web/controllers/page_html.ex:101
-#, elixir-autogen, elixir-format
-msgid "Three languages"
-msgstr ""
-
 #: lib/potok_ide_web/controllers/page_html.ex:46
 #, elixir-autogen, elixir-format
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
@@ -4279,4 +4269,14 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:177
 #, elixir-autogen, elixir-format
 msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html.ex:101
+#, elixir-autogen, elixir-format
+msgid "Latin and Cyrillic"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html.ex:102
+#, elixir-autogen, elixir-format
+msgid "Serbian in both scripts, and English."
 msgstr ""

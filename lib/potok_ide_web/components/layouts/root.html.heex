@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html lang={assigns[:current_locale] || PotokIdeWeb.Locale.default_locale()}>
+<html lang={
+  PotokIdeWeb.Locale.html_lang(assigns[:current_locale] || PotokIdeWeb.Locale.default_locale())
+}>
   <head>
     <meta charset="utf-8" />
     <meta

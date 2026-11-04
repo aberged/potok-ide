@@ -27,7 +27,7 @@ defmodule PotokIde.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test]
+      preferred_envs: [precommit: :test, "potok.sr_cyrl": :test]
     ]
   end
 

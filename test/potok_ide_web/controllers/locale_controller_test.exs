@@ -5,9 +5,9 @@ defmodule PotokIdeWeb.LocaleControllerTest do
     conn =
       conn
       |> put_req_header("referer", "http://www.example.com/accounts/log-in")
-      |> get(~p"/locale/pl")
+      |> get(~p"/locale/sr_Cyrl")
 
-    assert get_session(conn, :locale) == "pl"
+    assert get_session(conn, :locale) == "sr_Cyrl"
     assert redirected_to(conn) == ~p"/accounts/log-in"
   end
 

@@ -340,7 +340,7 @@ defmodule PotokIdeWeb.Layouts do
     """
   end
 
-  @og_locales %{"en" => "en_US", "pl" => "pl_PL", "sr" => "sr_RS"}
+  @og_locales %{"en" => "en_US", "sr" => "sr_RS", "sr_Cyrl" => "sr_RS"}
 
   @doc """
   The tags other sites and apps read to show a link to this page as a card.
@@ -679,7 +679,7 @@ defmodule PotokIdeWeb.Layouts do
         <.link
           href={~p"/locale/#{locale}"}
           class={[
-            "min-w-[4.5rem] rounded-full px-3 py-1 text-center text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
+            "min-w-[4.5rem] rounded-full px-2 py-1 text-center text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
             if(locale == @current_locale,
               do: "bg-base-100 text-base-content shadow-sm",
               else: "text-base-content/60 hover:text-base-content"

@@ -41,7 +41,7 @@ defmodule PotokIdeWeb.EmailComponents do
   def layout(assigns) do
     assigns =
       assign(assigns,
-        lang: Gettext.get_locale(PotokIdeWeb.Gettext),
+        lang: PotokIdeWeb.Locale.html_lang(Gettext.get_locale(PotokIdeWeb.Gettext)),
         home_url: home_url(),
         mark_url: url(~p"/images/email/mark.png")
       )

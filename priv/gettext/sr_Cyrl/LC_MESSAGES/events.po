@@ -8,32 +8,32 @@
 ### to merge POT files into PO files.
 msgid ""
 msgstr ""
-"Language: pl\n"
-"Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+"Language: sr_Cyrl\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
 #: lib/potok_ide/events/format.ex:281
 #, elixir-autogen, elixir-format
 msgid "%{count} day before"
 msgid_plural "%{count} days before"
-msgstr[0] "%{count} dzień wcześniej"
-msgstr[1] "%{count} dni wcześniej"
-msgstr[2] "%{count} dni wcześniej"
+msgstr[0] "%{count} дан раније"
+msgstr[1] "%{count} дана раније"
+msgstr[2] "%{count} дана раније"
 
 #: lib/potok_ide/events/format.ex:285
 #, elixir-autogen, elixir-format
 msgid "%{count} hour before"
 msgid_plural "%{count} hours before"
-msgstr[0] "%{count} godzinę wcześniej"
-msgstr[1] "%{count} godziny wcześniej"
-msgstr[2] "%{count} godzin wcześniej"
+msgstr[0] "%{count} сат раније"
+msgstr[1] "%{count} сата раније"
+msgstr[2] "%{count} сати раније"
 
 #: lib/potok_ide/events/format.ex:288
 #, elixir-autogen, elixir-format
 msgid "%{count} minute before"
 msgid_plural "%{count} minutes before"
-msgstr[0] "%{count} minutę wcześniej"
-msgstr[1] "%{count} minuty wcześniej"
-msgstr[2] "%{count} minut wcześniej"
+msgstr[0] "%{count} минут раније"
+msgstr[1] "%{count} минута раније"
+msgstr[2] "%{count} минута раније"
 
 #: lib/potok_ide/events/format.ex:147
 #, elixir-autogen, elixir-format
@@ -48,22 +48,22 @@ msgstr "%{date} · %{time}"
 #: lib/potok_ide/events/format.ex:62
 #, elixir-autogen, elixir-format
 msgid "%{month} %{day}"
-msgstr "%{day} %{month}"
+msgstr "%{day}. %{month}"
 
 #: lib/potok_ide/events/format.ex:57
 #, elixir-autogen, elixir-format
 msgid "%{month} %{year}"
-msgstr "%{month} %{year}"
+msgstr "%{month} %{year}."
 
 #: lib/potok_ide/events/notifications.ex:20
 #, elixir-autogen, elixir-format
 msgid "%{name} added an event in %{group}"
-msgstr "%{name}: nowe wydarzenie w grupie %{group}"
+msgstr "%{name}: нови догађај у групи %{group}"
 
 #: lib/potok_ide/events/format.ex:172
 #, elixir-autogen, elixir-format
 msgid "%{rule}, until %{date}"
-msgstr "%{rule}, do %{date}"
+msgstr "%{rule}, до %{date}"
 
 #: lib/potok_ide/events/format.ex:124
 #: lib/potok_ide/events/format.ex:154
@@ -74,17 +74,17 @@ msgstr "%{start} – %{end}"
 #: lib/potok_ide/events/format.ex:68
 #, elixir-autogen, elixir-format
 msgid "%{weekday}, %{month} %{day}"
-msgstr "%{weekday}, %{day} %{month}"
+msgstr "%{weekday}, %{day}. %{month}"
 
 #: lib/potok_ide/events/format.ex:74
 #, elixir-autogen, elixir-format
 msgid "%{weekday}, %{month} %{day}, %{year}"
-msgstr "%{weekday}, %{day} %{month} %{year}"
+msgstr "%{weekday}, %{day}. %{month} %{year}."
 
 #: lib/potok_ide/events/format.ex:280
 #, elixir-autogen, elixir-format
 msgid "1 week before"
-msgstr "Tydzień wcześniej"
+msgstr "Недељу дана раније"
 
 #: lib/potok_ide/events/format.ex:258
 #, elixir-autogen, elixir-format
@@ -109,309 +109,309 @@ msgstr "4."
 #: lib/potok_ide/events/format.ex:29
 #, elixir-autogen, elixir-format
 msgid "Apr"
-msgstr "kwi"
+msgstr "апр"
 
 #: lib/potok_ide/events/format.ex:16
 #, elixir-autogen, elixir-format
 msgid "April"
-msgstr "kwiecień"
+msgstr "април"
 
 #: lib/potok_ide/events/format.ex:273
 #, elixir-autogen, elixir-format
 msgid "At 09:00 on the day"
-msgstr "W dniu wydarzenia o 09:00"
+msgstr "Истог дана у 09:00"
 
 #: lib/potok_ide/events/format.ex:33
 #, elixir-autogen, elixir-format
 msgid "Aug"
-msgstr "sie"
+msgstr "авг"
 
 #: lib/potok_ide/events/format.ex:20
 #, elixir-autogen, elixir-format
 msgid "August"
-msgstr "sierpień"
+msgstr "август"
 
 #: lib/potok_ide/events/notifications.ex:59
 #, elixir-autogen, elixir-format
 msgid "Cancelled: %{title}"
-msgstr "Odwołane: %{title}"
+msgstr "Отказано: %{title}"
 
 #: lib/potok_ide/events/format.ex:37
 #, elixir-autogen, elixir-format
 msgid "Dec"
-msgstr "gru"
+msgstr "дец"
 
 #: lib/potok_ide/events/format.ex:24
 #, elixir-autogen, elixir-format
 msgid "December"
-msgstr "grudzień"
+msgstr "децембар"
 
 #: lib/potok_ide/events/notifications.ex:47
 #, elixir-autogen, elixir-format
 msgid "Event cancelled: %{title}"
-msgstr "Odwołane wydarzenie: %{title}"
+msgstr "Отказан догађај: %{title}"
 
 #: lib/potok_ide/events/notifications.ex:35
 #, elixir-autogen, elixir-format
 msgid "Event changed: %{title}"
-msgstr "Zmiana wydarzenia: %{title}"
+msgstr "Измењен догађај: %{title}"
 
 #: lib/potok_ide/events/format.ex:183
 #, elixir-autogen, elixir-format
 msgid "Every %{count} day"
 msgid_plural "Every %{count} days"
-msgstr[0] "Co %{count} dzień"
-msgstr[1] "Co %{count} dni"
-msgstr[2] "Co %{count} dni"
+msgstr[0] "Сваких %{count} дан"
+msgstr[1] "Свака %{count} дана"
+msgstr[2] "Сваких %{count} дана"
 
 #: lib/potok_ide/events/format.ex:216
 #, elixir-autogen, elixir-format
 msgid "Every %{count} month on %{day}"
 msgid_plural "Every %{count} months on %{day}"
-msgstr[0] "Co %{count} miesiąc: %{day}"
-msgstr[1] "Co %{count} miesiące: %{day}"
-msgstr[2] "Co %{count} miesięcy: %{day}"
+msgstr[0] "Сваких %{count} месец: %{day}"
+msgstr[1] "Свака %{count} месеца: %{day}"
+msgstr[2] "Сваких %{count} месеци: %{day}"
 
 #: lib/potok_ide/events/format.ex:198
 #, elixir-autogen, elixir-format
 msgid "Every %{count} week on %{days}"
 msgid_plural "Every %{count} weeks on %{days}"
-msgstr[0] "Co %{count} tydzień: %{days}"
-msgstr[1] "Co %{count} tygodnie: %{days}"
-msgstr[2] "Co %{count} tygodni: %{days}"
+msgstr[0] "Сваких %{count} недељу: %{days}"
+msgstr[1] "Сваке %{count} недеље: %{days}"
+msgstr[2] "Сваких %{count} недеља: %{days}"
 
 #: lib/potok_ide/events/format.ex:232
 #, elixir-autogen, elixir-format
 msgid "Every %{count} year on %{date}"
 msgid_plural "Every %{count} years on %{date}"
-msgstr[0] "Co %{count} rok: %{date}"
-msgstr[1] "Co %{count} lata: %{date}"
-msgstr[2] "Co %{count} lat: %{date}"
+msgstr[0] "Сваких %{count} годину: %{date}"
+msgstr[1] "Сваке %{count} године: %{date}"
+msgstr[2] "Сваких %{count} година: %{date}"
 
 #: lib/potok_ide/events/format.ex:180
 #, elixir-autogen, elixir-format
 msgid "Every day"
-msgstr "Codziennie"
+msgstr "Сваког дана"
 
 #: lib/potok_ide/events/format.ex:213
 #, elixir-autogen, elixir-format
 msgid "Every month on %{day}"
-msgstr "Co miesiąc: %{day}"
+msgstr "Сваког месеца: %{day}"
 
 #: lib/potok_ide/events/format.ex:195
 #, elixir-autogen, elixir-format
 msgid "Every week on %{days}"
-msgstr "Co tydzień: %{days}"
+msgstr "Сваке недеље: %{days}"
 
 #: lib/potok_ide/events/format.ex:229
 #, elixir-autogen, elixir-format
 msgid "Every year on %{date}"
-msgstr "Co roku: %{date}"
+msgstr "Сваке године: %{date}"
 
 #: lib/potok_ide/events/format.ex:27
 #, elixir-autogen, elixir-format
 msgid "Feb"
-msgstr "lut"
+msgstr "феб"
 
 #: lib/potok_ide/events/format.ex:14
 #, elixir-autogen, elixir-format
 msgid "February"
-msgstr "luty"
+msgstr "фебруар"
 
 #: lib/potok_ide/events/format.ex:51
 #, elixir-autogen, elixir-format
 msgid "Fri"
-msgstr "pt."
+msgstr "пет"
 
 #: lib/potok_ide/events/format.ex:43
 #, elixir-autogen, elixir-format
 msgid "Friday"
-msgstr "piątek"
+msgstr "петак"
 
 #: lib/potok_ide/events/notifications.ex:88
 #: lib/potok_ide/events/notifications.ex:99
 #, elixir-autogen, elixir-format
 msgid "In %{count} day"
 msgid_plural "In %{count} days"
-msgstr[0] "Za %{count} dzień"
-msgstr[1] "Za %{count} dni"
-msgstr[2] "Za %{count} dni"
+msgstr[0] "За %{count} дан"
+msgstr[1] "За %{count} дана"
+msgstr[2] "За %{count} дана"
 
 #: lib/potok_ide/events/notifications.ex:96
 #, elixir-autogen, elixir-format
 msgid "In %{count} hour"
 msgid_plural "In %{count} hours"
-msgstr[0] "Za %{count} godzinę"
-msgstr[1] "Za %{count} godziny"
-msgstr[2] "Za %{count} godzin"
+msgstr[0] "За %{count} сат"
+msgstr[1] "За %{count} сата"
+msgstr[2] "За %{count} сати"
 
 #: lib/potok_ide/events/notifications.ex:93
 #, elixir-autogen, elixir-format
 msgid "In %{count} minute"
 msgid_plural "In %{count} minutes"
-msgstr[0] "Za %{count} minutę"
-msgstr[1] "Za %{count} minuty"
-msgstr[2] "Za %{count} minut"
+msgstr[0] "За %{count} минут"
+msgstr[1] "За %{count} минута"
+msgstr[2] "За %{count} минута"
 
 #: lib/potok_ide/events/format.ex:26
 #, elixir-autogen, elixir-format
 msgid "Jan"
-msgstr "sty"
+msgstr "јан"
 
 #: lib/potok_ide/events/format.ex:13
 #, elixir-autogen, elixir-format
 msgid "January"
-msgstr "styczeń"
+msgstr "јануар"
 
 #: lib/potok_ide/events/format.ex:32
 #, elixir-autogen, elixir-format
 msgid "Jul"
-msgstr "lip"
+msgstr "јул"
 
 #: lib/potok_ide/events/format.ex:19
 #, elixir-autogen, elixir-format
 msgid "July"
-msgstr "lipiec"
+msgstr "јул"
 
 #: lib/potok_ide/events/format.ex:31
 #, elixir-autogen, elixir-format
 msgid "Jun"
-msgstr "cze"
+msgstr "јун"
 
 #: lib/potok_ide/events/format.ex:18
 #, elixir-autogen, elixir-format
 msgid "June"
-msgstr "czerwiec"
+msgstr "јун"
 
 #: lib/potok_ide/events/format.ex:28
 #, elixir-autogen, elixir-format
 msgid "Mar"
-msgstr "mar"
+msgstr "мар"
 
 #: lib/potok_ide/events/format.ex:15
 #, elixir-autogen, elixir-format
 msgid "March"
-msgstr "marzec"
+msgstr "март"
 
 #: lib/potok_ide/events/format.ex:17
 #, elixir-autogen, elixir-format
 msgid "May"
-msgstr "maj"
+msgstr "мај"
 
 #: lib/potok_ide/events/format.ex:47
 #, elixir-autogen, elixir-format
 msgid "Mon"
-msgstr "pon."
+msgstr "пон"
 
 #: lib/potok_ide/events/format.ex:39
 #, elixir-autogen, elixir-format
 msgid "Monday"
-msgstr "poniedziałek"
+msgstr "понедељак"
 
 #: lib/potok_ide/events/format.ex:36
 #, elixir-autogen, elixir-format
 msgid "Nov"
-msgstr "lis"
+msgstr "нов"
 
 #: lib/potok_ide/events/format.ex:23
 #, elixir-autogen, elixir-format
 msgid "November"
-msgstr "listopad"
+msgstr "новембар"
 
 #: lib/potok_ide/events/format.ex:35
 #, elixir-autogen, elixir-format
 msgid "Oct"
-msgstr "paź"
+msgstr "окт"
 
 #: lib/potok_ide/events/format.ex:22
 #, elixir-autogen, elixir-format
 msgid "October"
-msgstr "październik"
+msgstr "октобар"
 
 #: lib/potok_ide/events/format.ex:52
 #, elixir-autogen, elixir-format
 msgid "Sat"
-msgstr "sob."
+msgstr "суб"
 
 #: lib/potok_ide/events/format.ex:44
 #, elixir-autogen, elixir-format
 msgid "Saturday"
-msgstr "sobota"
+msgstr "субота"
 
 #: lib/potok_ide/events/format.ex:34
 #, elixir-autogen, elixir-format
 msgid "Sep"
-msgstr "wrz"
+msgstr "сеп"
 
 #: lib/potok_ide/events/format.ex:21
 #, elixir-autogen, elixir-format
 msgid "September"
-msgstr "wrzesień"
+msgstr "септембар"
 
 #: lib/potok_ide/events/notifications.ex:90
 #, elixir-autogen, elixir-format
 msgid "Starting now"
-msgstr "Zaczyna się teraz"
+msgstr "Почиње сада"
 
 #: lib/potok_ide/events/format.ex:53
 #, elixir-autogen, elixir-format
 msgid "Sun"
-msgstr "niedz."
+msgstr "нед"
 
 #: lib/potok_ide/events/format.ex:45
 #, elixir-autogen, elixir-format
 msgid "Sunday"
-msgstr "niedziela"
+msgstr "недеља"
 
 #: lib/potok_ide/events/format.ex:50
 #, elixir-autogen, elixir-format
 msgid "Thu"
-msgstr "czw."
+msgstr "чет"
 
 #: lib/potok_ide/events/format.ex:42
 #, elixir-autogen, elixir-format
 msgid "Thursday"
-msgstr "czwartek"
+msgstr "четвртак"
 
 #: lib/potok_ide/events/notifications.ex:84
 #, elixir-autogen, elixir-format
 msgid "Today"
-msgstr "Dziś"
+msgstr "Данас"
 
 #: lib/potok_ide/events/notifications.ex:85
 #, elixir-autogen, elixir-format
 msgid "Tomorrow"
-msgstr "Jutro"
+msgstr "Сутра"
 
 #: lib/potok_ide/events/format.ex:48
 #, elixir-autogen, elixir-format
 msgid "Tue"
-msgstr "wt."
+msgstr "уто"
 
 #: lib/potok_ide/events/format.ex:40
 #, elixir-autogen, elixir-format
 msgid "Tuesday"
-msgstr "wtorek"
+msgstr "уторак"
 
 #: lib/potok_ide/events/format.ex:49
 #, elixir-autogen, elixir-format
 msgid "Wed"
-msgstr "śr."
+msgstr "сре"
 
 #: lib/potok_ide/events/format.ex:41
 #, elixir-autogen, elixir-format
 msgid "Wednesday"
-msgstr "środa"
+msgstr "среда"
 
 #: lib/potok_ide/events/format.ex:274
 #, elixir-autogen, elixir-format
 msgid "When it starts"
-msgstr "Na początku"
+msgstr "На почетку"
 
 #: lib/potok_ide/events/format.ex:247
 #, elixir-autogen, elixir-format
 msgid "day %{day}"
-msgstr "%{day}. dzień"
+msgstr "%{day}. дан"
 
 #: lib/potok_ide/events/format.ex:250
 #, elixir-autogen, elixir-format
@@ -421,50 +421,50 @@ msgstr "%{ordinal} %{weekday}"
 #: lib/potok_ide/events/format.ex:268
 #, elixir-autogen, elixir-format
 msgid "the last Friday"
-msgstr "ostatni piątek"
+msgstr "последњи петак"
 
 #: lib/potok_ide/events/format.ex:264
 #, elixir-autogen, elixir-format
 msgid "the last Monday"
-msgstr "ostatni poniedziałek"
+msgstr "последњи понедељак"
 
 #: lib/potok_ide/events/format.ex:269
 #, elixir-autogen, elixir-format
 msgid "the last Saturday"
-msgstr "ostatnia sobota"
+msgstr "последња субота"
 
 #: lib/potok_ide/events/format.ex:270
 #, elixir-autogen, elixir-format
 msgid "the last Sunday"
-msgstr "ostatnia niedziela"
+msgstr "последња недеља"
 
 #: lib/potok_ide/events/format.ex:267
 #, elixir-autogen, elixir-format
 msgid "the last Thursday"
-msgstr "ostatni czwartek"
+msgstr "последњи четвртак"
 
 #: lib/potok_ide/events/format.ex:265
 #, elixir-autogen, elixir-format
 msgid "the last Tuesday"
-msgstr "ostatni wtorek"
+msgstr "последњи уторак"
 
 #: lib/potok_ide/events/format.ex:266
 #, elixir-autogen, elixir-format
 msgid "the last Wednesday"
-msgstr "ostatnia środa"
+msgstr "последња среда"
 
 #: lib/potok_ide/events/format.ex:30
 #, elixir-autogen, elixir-format
 msgctxt "short month"
 msgid "May"
-msgstr "maj"
+msgstr "мај"
 
 #: lib/potok_ide/events/format.ex:108
 #, elixir-autogen, elixir-format
 msgid "%{month} %{day}, %{year}"
-msgstr "%{day} %{month} %{year}"
+msgstr "%{day}. %{month} %{year}."
 
 #: lib/potok_ide/events/format.ex:100
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
-msgstr "Wczoraj"
+msgstr "Јуче"

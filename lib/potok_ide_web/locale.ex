@@ -5,14 +5,14 @@ defmodule PotokIdeWeb.Locale do
   import Phoenix.Component, only: [assign: 3]
 
   @default_locale "sr"
-  @supported_locales ~w(en pl sr)
+  @supported_locales ~w(en sr sr_Cyrl)
   # Nearly every browser lists English somewhere in Accept-Language, so it says
   # little about the visitor; only the other languages override the default.
   @browser_locales @supported_locales -- ["en"]
   @locale_names %{
     "en" => "English",
-    "pl" => "Polski",
-    "sr" => "Srpski"
+    "sr" => "Srpski",
+    "sr_Cyrl" => "Српски"
   }
 
   def default_locale, do: @default_locale
@@ -20,6 +20,9 @@ defmodule PotokIdeWeb.Locale do
   def supported_locales, do: @supported_locales
 
   def locale_name(locale), do: Map.get(@locale_names, locale, locale)
+
+  @doc "The BCP 47 tag of a Gettext locale, for `lang` attributes."
+  def html_lang(locale), do: String.replace(locale, "_", "-")
 
   def init(opts), do: opts
 
@@ -52,10 +55,10 @@ defmodule PotokIdeWeb.Locale do
     locale
     |> String.downcase()
     |> String.replace("_", "-")
-    |> String.split("-", parts: 2)
-    |> List.first()
+    |> String.split("-", parts: 3)
     |> case do
-      locale when locale in @supported_locales -> locale
+      ["sr", "cyrl" | _] -> "sr_Cyrl"
+      [locale | _] when locale in @supported_locales -> locale
       _ -> nil
     end
   end

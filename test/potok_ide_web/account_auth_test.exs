@@ -82,10 +82,10 @@ defmodule PotokIdeWeb.AccountAuthTest do
     test "preserves locale during session renewal", %{conn: conn, account: account} do
       conn =
         conn
-        |> put_session(:locale, "pl")
+        |> put_session(:locale, "sr_Cyrl")
         |> AccountAuth.log_in_account(account)
 
-      assert get_session(conn, :locale) == "pl"
+      assert get_session(conn, :locale) == "sr_Cyrl"
     end
 
     test "redirects to settings when account is already logged in", %{

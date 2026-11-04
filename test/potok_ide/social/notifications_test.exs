@@ -19,9 +19,10 @@ defmodule PotokIde.Social.NotificationsTest do
       assert payload_for.("en").title == "ana added a new value"
       assert payload_for.("en").body == "New value in Hall: Bring chairs"
       assert payload_for.("sr").title == "ana: nova vrednost"
-      assert payload_for.("pl").body == "Nowa wartość w grupie Hall: Bring chairs"
+      assert payload_for.("sr_Cyrl").body == "Нова вредност у групи Hall: Bring chairs"
       assert payload_for.(nil) == payload_for.("sr")
       assert payload_for.("de") == payload_for.("sr")
+      assert payload_for.("pl") == payload_for.("sr")
       assert payload_for.("en").url == "/groups/2/values"
     end
 
@@ -46,7 +47,7 @@ defmodule PotokIde.Social.NotificationsTest do
         assert payload_for.("en").title =~ "ana"
         assert payload_for.("sr").title =~ "ana"
         refute payload_for.("sr").title == payload_for.("en").title
-        refute payload_for.("pl").title == payload_for.("en").title
+        refute payload_for.("sr_Cyrl").title == payload_for.("en").title
       end
 
       assert Notifications.value_reaction(@ana, @group, @value, "👍").("en").title ==
@@ -70,12 +71,16 @@ defmodule PotokIde.Social.NotificationsTest do
       add_member!(author, group, member)
 
       device!(member_account, "en")
-      device!(member_account, "pl")
+      device!(member_account, "sr_Cyrl")
 
       assert {:ok, _value} = Social.create_value(author, group, %{"content" => "Bring chairs"})
 
       titles = sent_titles(2)
-      assert Enum.sort(titles) == ["notif-author added a new value", "notif-author: nowa wartość"]
+
+      assert Enum.sort(titles) == [
+               "notif-author added a new value",
+               "notif-author: нова вредност"
+             ]
     end
 
     test "the test notification follows the device's language" do
