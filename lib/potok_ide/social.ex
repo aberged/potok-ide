@@ -298,6 +298,7 @@ defmodule PotokIde.Social do
 
       profile ->
         profile
+        |> load_picture()
         |> Profile.changeset(attrs)
         |> Repo.update()
         |> case do
@@ -546,6 +547,7 @@ defmodule PotokIde.Social do
     else
       changeset =
         group
+        |> load_picture()
         |> Group.update_changeset(Map.new(attrs))
         |> validate_home_alt_description(group)
         |> validate_inheritance_parent(group.parent_id)

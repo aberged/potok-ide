@@ -2599,6 +2599,70 @@ defmodule PotokIde.SocialTest do
     end
   end
 
+  # The structs here come from regular queries, without their pictures, like
+  # the ones the pages save from.
+  describe "clearing a picture" do
+    setup do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "pic-clearer",
+          profile_picture_url: "https://example.com/pic.png",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, group} =
+        Social.create_group(profile, Social.get_root_group!(), %{
+          "name" => "pic-clear-group",
+          "group_picture_url" => "https://example.com/group.png",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      %{account: account, profile: Social.get_profile!(profile.id), group: group.id}
+    end
+
+    defp profile_picture(id), do: Social.load_picture(Social.get_profile!(id)).profile_picture_url
+    defp group_picture(id), do: Social.load_picture(Social.get_group!(id)).group_picture_url
+
+    test "an empty value removes a profile's picture", ctx do
+      assert {:ok, _profile} =
+               Social.update_profile_for_account(ctx.account, ctx.profile.id, %{
+                 "profile_picture_url" => ""
+               })
+
+      assert profile_picture(ctx.profile.id) == nil
+    end
+
+    test "an empty value removes a group's picture", ctx do
+      group = Social.get_group!(ctx.group)
+
+      assert {:ok, _group} =
+               Social.update_group(ctx.profile, group, %{"group_picture_url" => ""})
+
+      assert group_picture(group.id) == nil
+    end
+
+    test "a save that leaves the picture out keeps it", ctx do
+      assert {:ok, _profile} =
+               Social.update_profile_for_account(ctx.account, ctx.profile.id, %{
+                 "description" => "changed"
+               })
+
+      assert {:ok, _group} =
+               Social.update_group(ctx.profile, Social.get_group!(ctx.group), %{
+                 "name" => "renamed"
+               })
+
+      assert profile_picture(ctx.profile.id) == "https://example.com/pic.png"
+      assert group_picture(ctx.group) == "https://example.com/group.png"
+    end
+  end
+
   describe "app data values" do
     setup do
       account = account_fixture()

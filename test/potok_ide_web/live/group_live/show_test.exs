@@ -1690,6 +1690,42 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#alt-description-#{alt.id} #alt-description-form")
     end
 
+    test "a cleared picture stays cleared after saving", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "edit-pic-owner",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "edit-picture-group")
+
+      {:ok, group} =
+        Social.update_group(profile, group, %{
+          "group_picture_url" => "data:image/png;base64,QUJD"
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/groups/#{group.id}/edit_group")
+
+      assert has_element?(lv, "#group_group_picture_url[value='data:image/png;base64,QUJD']")
+
+      lv |> form("#group-edit-form", group: %{group_picture_url: ""}) |> render_change()
+      assert has_element?(lv, "#group-edit-save-bar")
+
+      lv |> form("#group-edit-form", group: %{group_picture_url: ""}) |> render_submit()
+
+      assert Social.load_picture(Social.get_group!(group.id)).group_picture_url == nil
+      refute has_element?(lv, "#group-edit-save-bar")
+      refute has_element?(lv, "#group_group_picture_url[value]:not([value=''])")
+    end
+
     test "shows edit group only to members and persists edits", %{conn: conn} do
       owner_account = account_fixture()
       viewer_account = account_fixture()

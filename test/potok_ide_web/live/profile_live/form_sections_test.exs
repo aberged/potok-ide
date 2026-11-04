@@ -102,6 +102,28 @@ defmodule PotokIdeWeb.ProfileLive.FormSectionsTest do
       refute has_element?(lv, "#profile_description", "changed")
     end
 
+    test "a cleared picture stays cleared after saving", %{conn: conn} = ctx do
+      {:ok, _profile} =
+        Social.update_profile_for_account(ctx.account, ctx.profile.id, %{
+          "profile_picture_url" => "data:image/png;base64,QUJD"
+        })
+
+      {:ok, lv, _html} = live_as(conn, ctx.account, ~p"/profiles/#{ctx.profile.id}/edit")
+
+      lv
+      |> form("#edit-profile-form", profile: %{profile_picture_url: ""})
+      |> render_change()
+
+      assert has_element?(lv, "#profile-edit-save-bar")
+
+      lv
+      |> form("#edit-profile-form", profile: %{profile_picture_url: ""})
+      |> render_submit()
+
+      assert_redirect(lv, ~p"/profiles")
+      assert Social.load_picture(Social.get_profile!(ctx.profile.id)).profile_picture_url == nil
+    end
+
     test "a cleared name counts as unsaved, and saving it opens its card", %{conn: conn} = ctx do
       {:ok, lv, _html} = live_as(conn, ctx.account, ~p"/profiles/#{ctx.profile.id}/edit")
 
