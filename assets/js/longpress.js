@@ -14,6 +14,13 @@ const isNavigableLink = el => {
   return link
 }
 
+// A value in the chat, unless the press is on something of its own inside it.
+const pressableValue = el => {
+  const bubble = el?.closest?.("[data-value-press]")
+  if (!bubble || el.closest("a, button, input, audio, video")) return null
+  return bubble
+}
+
 const toAbsoluteUrl = href => {
   try {
     return new URL(href, window.location.origin)
@@ -67,12 +74,14 @@ const installLinkActionSheet = () => {
 // right after it the WebView starts dragging the link and cancels the
 // pointer, which used to stop the timer before it fired, so no menu opened.
 // Touch drags of links are blocked for the same reason. A mouse keeps the
-// browser's own right-click menu.
+// browser's own right-click menu. A touch held on a chat value anywhere else
+// is passed on as `potok:value-press` (`value_sheet.js`).
 export const installLongPressLinkMenu = () => {
   let timer = null
   let startX = 0
   let startY = 0
   let activeLink = null
+  let activeValue = null
   let fired = false
   let pointerType = null
 
@@ -86,6 +95,7 @@ export const installLongPressLinkMenu = () => {
       timer = null
     }
     activeLink = null
+    activeValue = null
   }
 
   const openMenu = link => {
@@ -99,25 +109,34 @@ export const installLongPressLinkMenu = () => {
     showLinkActionSheet(url.toString(), isExternal)
   }
 
+  const pressValue = bubble => {
+    fired = true
+    bubble.dispatchEvent(new CustomEvent("potok:value-press", { bubbles: true }))
+  }
+
   document.addEventListener("pointerdown", event => {
     fired = false
     pointerType = event.pointerType
     const link = isNavigableLink(event.target)
-    if (!link) return
+    const value = !link && isTouch() ? pressableValue(event.target) : null
+    if (!link && !value) return
 
     activeLink = link
+    activeValue = value
     startX = event.clientX
     startY = event.clientY
 
     timer = setTimeout(() => {
       if (activeLink) {
         openMenu(activeLink)
+      } else if (activeValue) {
+        pressValue(activeValue)
       }
     }, LONG_PRESS_MS)
   }, { passive: true })
 
   document.addEventListener("pointermove", event => {
-    if (!activeLink) return
+    if (!activeLink && !activeValue) return
     const dx = Math.abs(event.clientX - startX)
     const dy = Math.abs(event.clientY - startY)
     if (dx > MOVE_TOLERANCE || dy > MOVE_TOLERANCE) {
@@ -146,10 +165,18 @@ export const installLongPressLinkMenu = () => {
   }, true)
 
   document.addEventListener("contextmenu", event => {
+    if (!isTouch()) return
+
     const link = isNavigableLink(event.target)
-    if (!link || !isTouch()) return
+    const value = link ? null : pressableValue(event.target)
+    if (!link && !value) return
+
     event.preventDefault()
-    if (!fired) openMenu(link)
+
+    if (!fired) {
+      link ? openMenu(link) : pressValue(value)
+    }
+
     clear()
   })
 }

@@ -86,6 +86,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             phx-hook=".ValuesFeed"
             data-focus-value-id={@focus_value_id}
             data-has-newer={to_string(@has_newer)}
+            data-today-label={gettext("Today")}
+            data-yesterday-label={dgettext("events", "Yesterday")}
             class={[
               "relative flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-2 py-2 [overflow-anchor:none] sm:px-6 sm:py-5"
             ]}
@@ -101,7 +103,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               </.button>
             </div>
 
-            <div id="group-values-list" class="flex flex-col gap-2" phx-update="stream">
+            <div id="group-values-list" class="flex flex-col" phx-update="stream">
               <div
                 id="group-values-empty"
                 class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
@@ -185,6 +187,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           class="reaction-picker fixed z-50 overflow-hidden border border-base-300 bg-base-100 opacity-0 translate-y-1 shadow-2xl shadow-base-content/10 transition duration-150 ease-out"
         >
         </div>
+
+        <.value_sheet :if={@is_member} />
 
         <div
           :if={@is_member and (@can_post or @editing_value)}
@@ -388,6 +392,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
           // The feed counts as showing the newest values this close to its bottom.
           const NEAR_LATEST_PX = 200
+          // The feed counts as resting on the newest value this close to its bottom.
+          const AT_BOTTOM_PX = 4
+          // One author's values this close in time read as one run.
+          const RUN_GAP_MS = 5 * 60 * 1000
 
           // The feed may show a run of earlier values without the newest ones
           // (`data-has-newer`): after a jump to a quoted or linked value, or once
@@ -398,6 +406,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.loadingMoreValues = false
               this.loadingNewerValues = false
               this.nearLatest = true
+              this.atBottom = true
               this.hadNewer = this.hasNewer()
               this.anchor = null
               this.jumpButton = document.getElementById("group-values-jump-latest")
@@ -412,6 +421,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 this.anchor = this.findAnchor()
 
                 const distance = this.distanceToBottom()
+                this.atBottom = distance <= AT_BOTTOM_PX
                 this.setNearLatest(distance <= NEAR_LATEST_PX && !this.hasNewer())
 
                 if (this.el.scrollTop <= 16) {
@@ -449,6 +459,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.feedHeight = this.el.clientHeight
               this.resizeObserver = new ResizeObserver(() => this.keepViewOnResize())
               this.resizeObserver.observe(this.el)
+              this.resizeObserver.observe(this.el.querySelector("#group-values-list"))
+              this.markRuns()
 
               // A link to a value (`?value=`) opens the feed at it instead of the newest.
               requestAnimationFrame(() => {
@@ -480,6 +492,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
 
             updated() {
+              this.markRuns()
+
               // Values that came or went above the view (an earlier page, values
               // dropped to keep the feed short, a reload) would move what is on
               // screen; scrolling by as much keeps the value at the top in place.
@@ -518,18 +532,63 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.jumpButton?.removeEventListener("click", this.handleJumpClick)
             },
 
+            // Streamed values do not know their neighbours, which change as pages
+            // load and values go, so what depends on them is worked out here.
+            markRuns() {
+              const items = this.el.querySelectorAll("#group-values-list > [data-creator-id]")
+              let previous = null
+
+              items.forEach(item => {
+                const at = new Date(item.dataset.at)
+                const newDay = !previous || at.toDateString() !== previous.at.toDateString()
+                const continued =
+                  !newDay &&
+                  item.dataset.creatorId === previous.creator &&
+                  at - previous.at <= RUN_GAP_MS
+
+                item.toggleAttribute("data-continued", continued)
+
+                const label = newDay ? this.dayLabel(at) : null
+                if (label !== item.getAttribute("data-day-label")) {
+                  label ? item.setAttribute("data-day-label", label) : item.removeAttribute("data-day-label")
+                }
+
+                previous = { at, creator: item.dataset.creatorId }
+              })
+            },
+
+            dayLabel(date) {
+              const today = new Date()
+              const yesterday = new Date(today)
+              yesterday.setDate(today.getDate() - 1)
+
+              if (date.toDateString() === today.toDateString()) return this.el.dataset.todayLabel
+              if (date.toDateString() === yesterday.toDateString()) return this.el.dataset.yesterdayLabel
+
+              // Intl writes a bare `sr` in Cyrillic, while the app's `sr` is Latin.
+              const language = document.documentElement.lang
+
+              return new Intl.DateTimeFormat(language === "sr" ? "sr-Latn" : language, {
+                weekday: "long",
+                day: "numeric",
+                month: "long",
+                year: date.getFullYear() === today.getFullYear() ? undefined : "numeric",
+              }).format(date)
+            },
+
             // The feed loses height to the keyboard, a reply or a longer text, and
             // it would lose it at the bottom, where the newest values are. The
             // feed sets `overflow-anchor: none`, so the browser does not help.
+            // Values grow too, with a reaction or a picture that loads; that
+            // only moves a feed resting on the newest value, so nobody reading
+            // earlier ones is pulled down.
             keepViewOnResize() {
               const change = this.feedHeight - this.el.clientHeight
               this.feedHeight = this.el.clientHeight
 
               if (change === 0) {
-                return
-              }
-
-              if (this.nearLatest) {
+                if (this.atBottom && !this.hasNewer()) this.scrollToLatest()
+              } else if (this.nearLatest) {
                 this.scrollToLatest()
               } else {
                 this.el.scrollTop += change
@@ -571,6 +630,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             scrollToLatest() {
               this.el.scrollTop = this.el.scrollHeight
+              this.atBottom = true
               this.setNearLatest(!this.hasNewer())
             },
 
@@ -937,6 +997,97 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         </script>
       </div>
     </div>
+    """
+  end
+
+  # The menu of a value on touch screens, opened by a long press and filled by
+  # the `ValueSheet` hook (`assets/js/value_sheet.js`), which owns its content.
+  defp value_sheet(assigns) do
+    ~H"""
+    <dialog
+      id="value-sheet"
+      phx-hook="ValueSheet"
+      phx-update="ignore"
+      aria-labelledby="value-sheet-title"
+      class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-transparent"
+    >
+      <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
+        <div
+          class="absolute inset-0 bg-base-content/30 backdrop-blur-[2px]"
+          data-sheet-close
+          aria-hidden="true"
+        >
+        </div>
+        <section
+          tabindex="-1"
+          autofocus
+          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 pb-[calc(0.5rem+var(--app-safe-area-bottom))] text-base-content shadow-2xl shadow-base-content/10 outline-none sm:max-w-md sm:rounded-3xl sm:border-b sm:pb-2"
+        >
+          <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-4 pb-3">
+            <div class="min-w-0 flex-1">
+              <p class="flex items-baseline gap-2">
+                <span
+                  id="value-sheet-title"
+                  data-sheet-title
+                  class="truncate text-sm font-semibold"
+                >
+                </span>
+                <span data-sheet-time class="shrink-0 text-xs text-base-content/60"></span>
+              </p>
+              <p
+                data-sheet-text
+                class="mt-0.5 line-clamp-2 text-sm text-base-content/70 wrap-break-word"
+              >
+              </p>
+            </div>
+            <.icon_button
+              id="value-sheet-close"
+              type="button"
+              data-sheet-close
+              icon="hero-x-mark"
+              label={gettext("Close")}
+              class="-mr-1"
+            />
+          </header>
+
+          <div
+            id="value-sheet-reactions"
+            data-sheet-reactions
+            class="flex items-center justify-between gap-1 border-b border-base-300/60 px-3 py-1.5"
+          >
+            <button
+              :for={emoji <- ~w(👍 ❤️ 😂 😮 😢 🙏)}
+              type="button"
+              data-sheet-reaction={emoji}
+              class="inline-flex size-11 items-center justify-center rounded-full text-2xl leading-none transition duration-150 hover:bg-base-200 active:scale-90"
+            >
+              {emoji}
+            </button>
+            <button
+              type="button"
+              data-sheet-more
+              aria-label={gettext("Add reaction")}
+              class="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-base-content/60 transition duration-150 hover:bg-base-200 active:scale-90"
+            >
+              <.icon name="hero-plus" class="size-5" />
+            </button>
+          </div>
+
+          <div class="min-h-0 flex-1 overflow-y-auto px-3 pt-2">
+            <button
+              id="value-sheet-copy"
+              type="button"
+              data-sheet-copy
+              class="flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left text-sm font-medium transition duration-150 hover:bg-base-200 active:scale-[0.99]"
+            >
+              <.icon name="hero-clipboard-document" class="size-5 shrink-0 opacity-60" />
+              {gettext("Copy")}
+            </button>
+            <div data-sheet-actions></div>
+          </div>
+        </section>
+      </div>
+    </dialog>
     """
   end
 

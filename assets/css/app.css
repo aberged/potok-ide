@@ -204,6 +204,38 @@
    `#group-presence-style` rules, so presence changes never re-render items. */
 .presence-dot { display: none; }
 
+/* A long press on a value opens its menu (`value_sheet.js`), so touch screens
+   neither select its text nor show their own callout. Copying is in the menu.
+   The menus open under a finger that is still down, and the press would go on
+   to select whatever they put there. */
+@media (hover: none) {
+  [data-value-press],
+  #value-sheet,
+  #lp-action-sheet {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/* The first value of a day starts with the date (`.ValuesFeed` sets the label).
+   The value is a grid of its own, so the date sits above it, not in it. */
+[data-day-label]::before {
+  background: var(--color-base-200);
+  border-radius: 9999px;
+  color: color-mix(in oklab, var(--color-base-content) 70%, transparent);
+  content: attr(data-day-label);
+  font-size: 0.75rem;
+  font-weight: 600;
+  left: 50%;
+  line-height: 1.25rem;
+  padding: 0 0.625rem;
+  position: absolute;
+  top: -1.75rem;
+  translate: -50% 0;
+  white-space: nowrap;
+}
+
 /* Seek bar of the audio player in values: the played part (`--progress`,
    set by the `.AudioPlayer` hook) takes the text color, the rest is a faint
    track of the same color. */

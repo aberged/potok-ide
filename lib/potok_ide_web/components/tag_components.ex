@@ -106,6 +106,7 @@ defmodule PotokIdeWeb.TagComponents do
   attr :item_id, :integer, required: true
   attr :class, :any, default: nil
   attr :label, :string, default: nil
+  attr :rest, :global
 
   def tag_button(assigns) do
     ~H"""
@@ -122,6 +123,7 @@ defmodule PotokIdeWeb.TagComponents do
         "inline-flex items-center gap-1 rounded-full p-1 text-base-content/60 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse",
         @class
       ]}
+      {@rest}
     >
       <.icon name="hero-hashtag" class="size-4" />
       <span :if={@label} class="pr-1 text-xs font-semibold">{@label}</span>

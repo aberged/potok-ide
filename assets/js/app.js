@@ -36,6 +36,7 @@ import {
   openPendingNativeShare,
 } from "./share_inbox"
 import { Uploaders } from "./uploaders"
+import { ValueSheet } from "./value_sheet"
 
 const HeaderDrawer = {
   mounted() {
@@ -1592,6 +1593,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
   }),
   hooks: {
     HeaderDrawer,
+    ValueSheet,
     DropdownMenu,
     AutoDismissFlash,
     PushNotifications,

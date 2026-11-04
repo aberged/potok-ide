@@ -17,6 +17,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :datetime, :any, required: true
   attr :class, :any, default: nil
 
+  attr :format, :string,
+    default: "datetime",
+    values: ~w(datetime time),
+    doc: "`time` shows only the hour, with the date as its tooltip"
+
   def local_time(assigns) do
     assigns = assign(assigns, :iso8601, datetime_to_iso8601(assigns.datetime))
 
@@ -26,18 +31,24 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       phx-hook=".LocalTime"
       datetime={@iso8601}
       data-utc={@iso8601}
+      data-format={@format}
       class={@class}
     >
-      {Calendar.strftime(datetime_to_utc_datetime(@datetime), "%Y-%m-%d %H:%M UTC")}
+      {Calendar.strftime(
+        datetime_to_utc_datetime(@datetime),
+        if(@format == "time", do: "%H:%M", else: "%Y-%m-%d %H:%M UTC")
+      )}
     </time>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".LocalTime">
       // Intl writes a bare `sr` in Cyrillic, while the app's `sr` is Latin.
       const language = document.documentElement.lang
-      const formatter = new Intl.DateTimeFormat(language === "sr" ? "sr-Latn" : language, {
+      const locale = language === "sr" ? "sr-Latn" : language
+      const formatter = new Intl.DateTimeFormat(locale, {
         dateStyle: "medium",
         timeStyle: "short",
         hour12: false,
       })
+      const clock = new Intl.DateTimeFormat(locale, {timeStyle: "short", hour12: false})
 
       const renderLocalTime = (el) => {
         const utcValue = el.dataset.utc
@@ -46,7 +57,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         const date = new Date(utcValue)
         if (Number.isNaN(date.getTime())) return
 
-        el.textContent = formatter.format(date).replace(",", "")
+        const full = formatter.format(date).replace(",", "")
+
+        if (el.dataset.format === "time") {
+          el.textContent = clock.format(date)
+          el.title = full
+        } else {
+          el.textContent = full
+        }
       }
 
       export default {
@@ -1306,11 +1324,34 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:event, value_event(assigns.value))
       |> assign_value_attachments(assigns.value)
 
+    # A short text keeps the time on its last line; anything else ends with it.
+    assigns =
+      assign(
+        assigns,
+        :time_beside_text?,
+        assigns.has_text? and is_nil(assigns.event) and not assigns.expandable? and
+          is_nil(assigns.link_preview) and
+          assigns.media == [] and assigns.audios == [] and assigns.files == []
+      )
+
     ~H"""
+    <%!-- `.ValuesFeed` marks a value that goes on from the one before it
+         (`data-continued`) and the first value of a day (`data-day-label`). --%>
     <div
       id={@dom_id}
+      data-value-id={@value.id}
+      data-creator-id={@value.creator_id}
+      data-author={@value.creator.username}
+      data-at={datetime_to_iso8601(@value.inserted_at)}
       data-mentions-me={@mentions_me? && "true"}
-      class={["chat group/value", (@mine? && "chat-end") || "chat-start"]}
+      phx-mounted={JS.ignore_attributes(["data-continued", "data-day-label"])}
+      class={[
+        "chat group/value relative mt-2.5 py-0 hover:z-10 focus-within:z-10 data-continued:mt-0.5 data-day-label:mt-10",
+        if(@mine?,
+          do: "chat-end grid-cols-[minmax(0,1fr)_auto]",
+          else: "chat-start grid-cols-[auto_minmax(0,1fr)]"
+        )
+      ]}
     >
       <.inspect_tree
         :if={false}
@@ -1319,63 +1360,75 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         label={"value#{@value.id}"}
         class="mb-3 w-full"
       />
-      <%= if @avatar_url do %>
-        <div class="chat-image avatar">
-          <div class="relative size-10 rounded-full border border-base-300 shadow-sm">
-            <img src={@avatar_url} alt={@value.creator.username} class="object-cover" />
-          </div>
-
-          <span
-            id={"value-creator-presence-#{@value.id}"}
-            class={[
-              "presence-dot absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500",
-              "presence-p#{@value.creator_id}"
-            ]}
-            title={gettext("Online")}
+      <div :if={!@mine?} class="chat-image avatar group-data-continued/value:invisible">
+        <div class={[
+          "relative flex size-8 items-center justify-center rounded-full border border-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm sm:size-10",
+          !@avatar_url && "bg-base-300"
+        ]}>
+          <img
+            :if={@avatar_url}
+            src={@avatar_url}
+            alt={@value.creator.username}
+            class="object-cover"
           />
-          <%!-- <span
-            :if={@value.creator.sharing == :shared}
-            class="absolute left-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500"
-          >👨‍👨‍👦‍👦</span> --%>
-          <div class="absolute bottom-0 left-0 -ml-1 -mb-1">
-            {if @value.creator.sharing == :shared,
-              do: "👨‍👨‍👦‍👦",
-              else: ""}
-          </div>
+          <span :if={!@avatar_url}>{profile_initials(@value.creator.username)}</span>
         </div>
-      <% else %>
-        <div class="chat-image">
-          <div class="relative flex size-10 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm">
-            {profile_initials(@value.creator.username)}
-            <span
-              id={"value-creator-presence-#{@value.id}"}
-              class={[
-                "presence-dot absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500",
-                "presence-p#{@value.creator_id}"
-              ]}
-              title={gettext("Online")}
-            />
-          </div>
+        <span
+          id={"value-creator-presence-#{@value.id}"}
+          class={[
+            "presence-dot absolute right-0 bottom-0 size-3 rounded-full border-2 border-base-100 bg-emerald-500",
+            "presence-p#{@value.creator_id}"
+          ]}
+          title={gettext("Online")}
+        />
+        <div :if={@value.creator.sharing == :shared} class="absolute bottom-0 left-0 -ml-1 -mb-1">
+          👨‍👨‍👦‍👦
         </div>
-      <% end %>
+      </div>
 
-      <div class="chat-header mb-1 flex items-center gap-2 text-xs text-base-content/65">
-        <span class="font-semibold text-base-content">{@value.creator.username}</span>
-        <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} />
+      <div
+        :if={!@mine? or @mentions_me?}
+        class="chat-header mb-0.5 flex max-w-full items-center gap-2 text-xs text-base-content/65 group-data-continued/value:hidden"
+      >
+        <span :if={!@mine?} class="min-w-0 truncate font-semibold text-base-content">
+          {@value.creator.username}
+        </span>
         <span
           :if={@mentions_me?}
           id={"value-mentions-me-#{@value.id}"}
-          class="inline-flex items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700"
+          class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700"
         >
           <.icon name="hero-at-symbol" class="size-3" />
           {gettext("Mentioned you")}
         </span>
+      </div>
+
+      <%!-- `data-highlighted` is set by the `.ValuesFeed` hook after jumping here from a reply quote or a link. --%>
+      <div
+        data-value-press
+        class={[
+          "chat-bubble min-h-0 max-w-full rounded-2xl px-3 py-1.5 shadow-sm ring-warning/60 transition-shadow duration-500 sm:max-w-[42rem]",
+          "group-data-continued/value:rounded-2xl group-data-continued/value:before:hidden",
+          "group-data-highlighted/value:ring-4",
+          @mentions_me? && "ring-2 ring-amber-400/70",
+          @mine? && "chat-bubble-primary",
+          !@mine? && "border border-base-300 bg-base-100 text-base-content"
+        ]}
+      >
+        <%!-- The value's actions: under the mouse or the keyboard's focus. Touch
+             screens never show them, and a long press lists them in the
+             `ValueSheet`, which clicks these same buttons. --%>
         <div
           :if={
             @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or
               (@mine? and !@editing?)
           }
-          class="ml-auto flex items-center gap-1"
+          id={"value-actions-#{@value.id}"}
+          class={[
+            "pointer-events-none absolute -top-4 z-10 flex w-max items-center gap-0.5 rounded-full border border-base-300 bg-base-100 p-0.5 text-base-content opacity-0 shadow-md transition-opacity duration-100",
+            "group-hover/value:pointer-events-auto group-hover/value:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100",
+            if(@mine?, do: "right-1", else: "left-1")
+          ]}
         >
           <.icon_button
             :if={@can_reply and !@editing?}
@@ -1383,6 +1436,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             type="button"
             phx-click="start_reply_value"
             phx-value-id={@value.id}
+            data-value-action="reply"
             icon="hero-arrow-uturn-left"
             label={gettext("Reply")}
             size="xs"
@@ -1394,6 +1448,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             type="button"
             phx-click="open_value_thread"
             phx-value-id={@value.id}
+            data-value-action="thread"
             icon="hero-chat-bubble-left-right"
             label={gettext("Reply in thread")}
             size="xs"
@@ -1406,6 +1461,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             type="button"
             data-reaction-trigger
             data-value-id={@value.id}
+            data-value-action="react"
             aria-haspopup="dialog"
             icon="hero-face-smile"
             label={gettext("Add reaction")}
@@ -1416,6 +1472,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             id={"value-tags-#{@value.id}"}
             kind={:value}
             item_id={@value.id}
+            data-value-action="tags"
           />
           <%!-- An event's card is changed in the calendar. --%>
           <.icon_button
@@ -1424,6 +1481,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             type="button"
             phx-click="start_edit_value"
             phx-value-id={@value.id}
+            data-value-action="edit"
             icon="hero-pencil-square"
             label={gettext("Edit value")}
             size="xs"
@@ -1434,6 +1492,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             type="button"
             phx-click="delete_value"
             phx-value-id={@value.id}
+            data-value-action="delete"
             data-confirm={gettext("Are you sure you want to delete this value?")}
             icon="hero-trash"
             label={gettext("Delete value")}
@@ -1441,16 +1500,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             size="xs"
           />
         </div>
-      </div>
 
-      <%!-- `data-highlighted` is set by the `.ValuesFeed` hook after jumping here from a reply quote or a link. --%>
-      <div class={[
-        "chat-bubble max-w-full rounded-3xl shadow-sm ring-warning/60 transition-shadow duration-500 sm:max-w-[42rem]",
-        "group-data-highlighted/value:ring-4",
-        @mentions_me? && "ring-2 ring-amber-400/70",
-        @mine? && "chat-bubble-primary",
-        !@mine? && "border border-base-300 bg-base-100 text-base-content"
-      ]}>
         <%!-- `.ValuesFeed` jumps to the replied-to value, or asks the server to load the chat around it. --%>
         <button
           :if={@reply_parent}
@@ -1485,8 +1535,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </button>
         <EventCard.card :if={@event} value_id={@value.id} event={@event} mine={@mine?} />
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
-        <div :if={@has_text? and is_nil(@event)} class="relative">
+        <div
+          :if={@has_text? and is_nil(@event)}
+          class={["relative", @time_beside_text? && "flex flex-wrap items-end justify-end gap-x-2"]}
+        >
           <div class={[
+            "min-w-0",
             @expandable? &&
               "max-h-[7.5rem] overflow-hidden group-data-expanded/value:max-h-none group-data-expanded/value:overflow-visible"
           ]}>
@@ -1497,6 +1551,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               mentions={@value.mentions}
             />
           </div>
+
+          <.value_time :if={@time_beside_text?} value={@value} />
 
           <div
             :if={@expandable?}
@@ -1622,6 +1678,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             />
           </a>
         </div>
+
+        <.value_time :if={!@time_beside_text?} value={@value} class="mt-0.5 block text-end" />
       </div>
 
       <div
@@ -1686,6 +1744,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         />
       </div>
     </div>
+    """
+  end
+
+  attr :value, :map, required: true
+  attr :class, :any, default: nil
+
+  defp value_time(assigns) do
+    ~H"""
+    <.local_time
+      id={"value-inserted-at-#{@value.id}"}
+      datetime={@value.inserted_at}
+      format="time"
+      class={["text-[11px] leading-4 tabular-nums opacity-65", @class]}
+    />
     """
   end
 

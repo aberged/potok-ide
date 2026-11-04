@@ -2876,6 +2876,58 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#group-value-attach")
     end
 
+    test "a value carries what the feed and the menu of a value need", %{conn: conn} do
+      account = account_fixture()
+      other_account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "marks-mine",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, other} =
+        Social.create_profile_for_account(other_account, %{
+          username: "marks-other",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "marks-group")
+      {:ok, invitation} = Social.invite_profile_to_group(profile, group, other)
+      {:ok, _member} = Social.accept_group_invitation(invitation, other)
+      {:ok, mine} = Social.create_value(profile, group, %{"content" => "from me"})
+      {:ok, theirs} = Social.create_value(other, group, %{"content" => "from them"})
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      for value <- [mine, theirs] do
+        assert has_element?(
+                 lv,
+                 "#value-#{value.id}[data-value-id='#{value.id}'][data-creator-id='#{value.creator_id}'][data-at]"
+               )
+
+        assert has_element?(lv, ~s(#value-#{value.id} time[data-format="time"]))
+      end
+
+      # One's own values need neither a face nor a name.
+      refute has_element?(lv, "#value-#{mine.id} .chat-image")
+      refute has_element?(lv, "#value-#{mine.id} .chat-header")
+      assert has_element?(lv, "#value-#{theirs.id} .chat-image")
+      assert has_element?(lv, "#value-#{theirs.id} .chat-header", "marks-other")
+
+      # The menu of a value lists its buttons, so they decide what it offers.
+      assert has_element?(lv, "#value-sheet[phx-hook=ValueSheet]")
+      assert has_element?(lv, ~s(#value-#{mine.id} [data-value-action="edit"]))
+      assert has_element?(lv, ~s(#value-#{mine.id} [data-value-action="delete"]))
+      assert has_element?(lv, ~s(#value-#{theirs.id} [data-value-action="reply"]))
+      refute has_element?(lv, ~s(#value-#{theirs.id} [data-value-action="edit"]))
+    end
+
     test "shows the new value composer again after cancelling an edit", %{conn: conn} do
       account = account_fixture()
 
