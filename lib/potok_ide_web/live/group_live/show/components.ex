@@ -857,6 +857,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :text_class, :string, default: "text-sm"
   attr :pending_join_requests_count, :integer, default: 0
   attr :unread_count, :integer, default: 0
+  attr :badge_top, :string, default: "-top-2", doc: "how far the counts stand over the avatar"
   attr :current_profile, :map, default: nil
   attr :highlight_query, :string, default: ""
   attr :navigate, :string, default: nil, doc: "where the row leads instead of the group's page"
@@ -918,13 +919,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           id={"group-pending-join-requests-badge-#{@group.id}"}
           count={@pending_join_requests_count}
           tone={:attention}
-          class="absolute -left-2 -top-2"
+          class={["absolute -left-2", @badge_top]}
         />
         <.count_badge
           :if={!@group.is_root and @unread_count > 0}
           id={"group-unread-badge-#{@group.id}"}
           count={@unread_count}
-          class="absolute -right-2 -top-2"
+          class={["absolute -right-2", @badge_top]}
         />
       </div>
 

@@ -104,7 +104,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       <%!-- The back link, the name and the menu share a row; on narrower screens the sections
            take a row of their own. On phones the header is flat and the sections are
-           equal columns, and neither they nor the path stay while typing. --%>
+           equal columns, and neither they nor the path stay while typing. A flat header
+           starts at the top of <main>, which cuts what stands above it, so the counts on
+           the avatar stay inside the row. --%>
       <div
         id="group-header"
         class="relative z-50 shrink-0 border-b border-base-300/70 bg-base-100/85 backdrop-blur sm:mt-1 sm:rounded-4xl sm:border sm:px-3 sm:py-1.5 sm:shadow-lg sm:shadow-primary/5"
@@ -163,6 +165,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 current_profile={@current_profile}
                 avatar_size="size-9 sm:size-10"
+                badge_top="-top-1 sm:-top-2 cramped:-top-0.5"
                 text_class="text-sm sm:text-base"
                 pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
