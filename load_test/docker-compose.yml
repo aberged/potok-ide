@@ -2,6 +2,40 @@
 # Dockerfile) and the load generator. Driven by run.sh; see README.md.
 name: potok_load
 
+x-app-env: &app-env
+  DATABASE_URL: ecto://postgres:postgres@db/${DB_NAME:-potok_load_1k}
+  # Local-only value; production uses its own secret.
+  SECRET_KEY_BASE: k9kt77mW0zmtN3no1Qhi2JfDkkEhrGjT9eJiy7/LRkbtSXUdcj61lbCyEu2B1EVv
+  PHX_HOST: localhost
+  PORT: "8080"
+  POOL_SIZE: ${POOL_SIZE:-10}
+  MAILER_FROM_EMAIL: load@potok.test
+  MAILGUN_API_KEY: load-test
+  MAILGUN_DOMAIN: potok.test
+  # The nodes find each other like on Fly: every node's address behind one name.
+  DNS_CLUSTER_QUERY: appcluster
+
+x-app: &app
+  image: potok_load_app
+  depends_on:
+    db:
+      condition: service_healthy
+  # Fly machine size by default (fly.toml: 1 CPU, 512 MB); run.sh overrides it.
+  deploy:
+    resources:
+      limits:
+        cpus: "${APP_CPUS:-1}"
+        memory: ${APP_MEM:-512M}
+  # No swap, like a Fly machine: hitting the limit means an OOM kill.
+  memswap_limit: ${APP_MEM:-512M}
+  ulimits:
+    nofile:
+      soft: 65536
+      hard: 65536
+  volumes:
+    - ./:/load_test
+  restart: "no"
+
 services:
   db:
     image: postgres:16
@@ -28,43 +62,37 @@ services:
       retries: 30
 
   app:
+    <<: *app
     build:
       context: ..
       dockerfile: Dockerfile
-    image: potok_load_app
-    depends_on:
-      db:
-        condition: service_healthy
     command: ["sh", "-c", "/app/bin/migrate && exec /app/bin/server"]
     environment:
-      DATABASE_URL: ecto://postgres:postgres@db/${DB_NAME:-potok_load_1k}
-      # Local-only value; production uses its own secret.
-      SECRET_KEY_BASE: k9kt77mW0zmtN3no1Qhi2JfDkkEhrGjT9eJiy7/LRkbtSXUdcj61lbCyEu2B1EVv
-      PHX_HOST: localhost
-      PORT: "8080"
-      POOL_SIZE: ${POOL_SIZE:-10}
-      MAILER_FROM_EMAIL: load@potok.test
-      MAILGUN_API_KEY: load-test
-      MAILGUN_DOMAIN: potok.test
-      # rel/env.sh.eex uses long node names; the container hostname is not one.
-      RELEASE_NODE: potok_ide@127.0.0.1
-    # Fly machine size by default (fly.toml: 1 CPU, 512 MB); run.sh overrides it.
-    deploy:
-      resources:
-        limits:
-          cpus: "${APP_CPUS:-1}"
-          memory: ${APP_MEM:-512M}
-    # No swap, like a Fly machine: hitting the limit means an OOM kill.
-    memswap_limit: ${APP_MEM:-512M}
-    ulimits:
-      nofile:
-        soft: 65536
-        hard: 65536
-    volumes:
-      - ./:/load_test
+      <<: *app-env
+      # rel/env.sh.eex uses long node names, and DNSCluster dials <name>@<ip>.
+      RELEASE_NODE: potok_ide@172.30.0.11
+    networks:
+      default:
+        ipv4_address: 172.30.0.11
+        aliases: [appcluster]
     ports:
       - "127.0.0.1:4020:8080"
-    restart: "no"
+
+  # The second node of `--profile cluster`; run.sh starts it once `app` has
+  # migrated the database.
+  app2:
+    <<: *app
+    profiles: ["cluster"]
+    command: ["/app/bin/server"]
+    environment:
+      <<: *app-env
+      RELEASE_NODE: potok_ide@172.30.0.12
+    networks:
+      default:
+        ipv4_address: 172.30.0.12
+        aliases: [appcluster]
+    ports:
+      - "127.0.0.1:4021:8080"
 
   loadgen:
     image: hexpm/elixir:1.18.2-erlang-27.3.4-debian-trixie-20260223-slim
@@ -91,6 +119,12 @@ services:
       - mixhome:/root/.mix
       - hexhome:/root/.hex
       - mixcache:/root/.cache
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
 
 volumes:
   pgdata:

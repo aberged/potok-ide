@@ -12,7 +12,9 @@
 # It also writes where the schedulers spend their time (`msacc`: emulator, gc,
 # port, check_io, sleep... as % of the online schedulers' time) and memory as
 # the OS sees it (`rss_mb`) next to each allocator's blocks and carriers
-# (`alloc`, MB), which shows how much sits in allocator overhead.
+# (`alloc`, MB), which shows how much sits in allocator overhead. On a cluster
+# `dist` is the traffic with each other node since the last sample, in bytes
+# and messages, read from the distribution sockets.
 defmodule LoadTest.Sampler do
   @interval 5_000
   @handler "load-test-sampler"
@@ -73,7 +75,8 @@ defmodule LoadTest.Sampler do
       path: Path.join(out_dir, "server.jsonl"),
       presence_topic: PotokIde.Social.group_presence_topic(root),
       sched: :scheduler.sample_all(),
-      reductions: %{}
+      reductions: %{},
+      dist: %{}
     }
 
     send(caller, {:sampler_started, self()})
@@ -156,6 +159,7 @@ defmodule LoadTest.Sampler do
     utilization = normal_utilization(state.sched, sched)
     procs = process_stats(state.reductions)
     msacc = msacc_shares()
+    {dist, dist_totals} = dist_stats(state.dist)
 
     line = %{
       t: System.system_time(:millisecond),
@@ -163,6 +167,7 @@ defmodule LoadTest.Sampler do
       msacc: msacc,
       rss_mb: rss_mb(),
       alloc: allocator_sizes(),
+      dist: dist,
       presence_root: presence_size(state.presence_topic),
       hist: histograms(rows),
       db_sources: db_sources(rows),
@@ -175,7 +180,7 @@ defmodule LoadTest.Sampler do
     }
 
     File.write!(state.path, [Jason.encode!(line), "\n"], [:append])
-    %{state | sched: sched, reductions: procs.reductions}
+    %{state | sched: sched, reductions: procs.reductions, dist: dist_totals}
   rescue
     error ->
       File.write!(
@@ -188,6 +193,26 @@ defmodule LoadTest.Sampler do
       )
 
       state
+  end
+
+  # One packet is one distribution message, or a fragment of a big one.
+  defp dist_stats(previous) do
+    totals =
+      for {node, port} <- :erlang.system_info(:dist_ctrl),
+          node in Node.list(),
+          is_port(port),
+          {:ok, stats} <- [:inet.getstat(port, [:send_oct, :send_cnt, :recv_oct, :recv_cnt])],
+          into: %{} do
+        {node, Map.new(stats)}
+      end
+
+    deltas =
+      Map.new(totals, fn {node, stats} ->
+        before = Map.get(previous, node, %{})
+        {node, Map.new(stats, fn {key, total} -> {key, total - Map.get(before, key, 0)} end)}
+      end)
+
+    {deltas, totals}
   end
 
   # Average over normal schedulers only: the `:total` entry also counts the

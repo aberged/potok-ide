@@ -235,7 +235,9 @@ defmodule LoadGen.User do
   @reply_timeout_us 30_000_000
   @backoff_ms [1_000, 2_000, 5_000, 10_000, 20_000, 30_000]
 
+  # --host a,b spreads the users evenly over several nodes.
   def start(id, user, cfg) do
+    cfg = %{cfg | host: Enum.at(cfg.hosts, rem(id, length(cfg.hosts)))}
     Process.spawn(fn -> init(id, user, cfg) end, [:monitor, fullsweep_after: 10])
   end
 
@@ -1173,7 +1175,8 @@ defmodule LoadGen.Main do
       hold: Keyword.get(opts, :hold, 120),
       scenario: scenario,
       out: Keyword.fetch!(opts, :out),
-      host: Keyword.get(opts, :host, "app"),
+      hosts: opts |> Keyword.get(:host, "app") |> String.split(","),
+      host: nil,
       port: Keyword.get(opts, :port, 8080),
       host_header: "localhost",
       origin: "https://potok.rs",

@@ -6,14 +6,15 @@ Production is never touched.
 
 | File | What it does |
 |---|---|
-| `docker-compose.yml` | `db` (Postgres 16 + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `loadgen` |
+| `docker-compose.yml` | `db` (Postgres 16 + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `loadgen` |
 | `seed.exs` | Bulk-inserts N users, groups (one with everyone, Zipf-sized others, nesting), direct groups, threads, messages and read markers; writes `results/users_<N>.csv` with signed remember-me cookies |
-| `sampler.exs` | Injected into the running app over `rpc`; writes `server.jsonl` every 5 s (BEAM memory, run queue, scheduler use, busiest mailboxes, LiveViews per view, Repo queue/query time, per-table DB time, LiveView mount/event times) |
+| `sampler.exs` | Injected into the running app over `rpc`; writes `server.jsonl` every 5 s (BEAM memory, run queue, scheduler use, busiest mailboxes, LiveViews per view, Repo queue/query time, per-table DB time, LiveView mount/event times, traffic with the other node) |
 | `loadgen.exs` | One Erlang process per virtual user: page load with cookie, avatars, websocket, `phx_join`, heartbeats, live navigation, posts, reactions; writes `loadgen.jsonl` every 10 s and `summary.json` |
 | `run.sh` | Starts the stack with a profile, seeds if needed, starts the samplers, runs loadgen and collects everything into `results/<run>/` |
 | `inspect_lv.exs` | Over `rpc` during a run: what a `GroupLive.Show` process holds, assign by assign |
 | `inspect_ws.exs` | Over `rpc` during a run: memory of the websocket transport (Bandit handler) and LiveView processes, before and after a garbage collection of a sample |
 | `profile_requests.exs` | Over `rpc` during a run: samples the stacks of running processes for `PROFILE_SECONDS` and prints the hottest frames (the release has no `:tools`, so no tprof) |
+| `dist_probe.exs` | `--scenario probe`: posts values on a quiet two-node cluster and prints the messages and bytes each one costs between the nodes, by group size |
 
 ## Running
 
@@ -32,7 +33,7 @@ docker compose build app        # after app code changes
 
 The run options:
 
-- **Profiles.** `fly` is 1 CPU / 512 MB, like `fly.toml`. `big` is 6 CPU / 3 GB.
+- **Profiles.** `fly` is 1 CPU / 512 MB, like `fly.toml`. `big` is 6 CPU / 3 GB. `cluster` is two nodes of 3 CPU / 1.2 GB, connected by DNSCluster like on Fly, with the users split evenly between them.
 - **Scales.** `1k` and `10k` use separate databases. Each is seeded on first use. `--reseed` starts over.
 - **Loadgen options.** Anything else is passed to `loadgen.exs`: `--think-min`, `--think-max`, `--poster-share`, `--post-min`, `--post-max`, `--big-post-share`, `--big-post-rate`, `--storm-window`.
 
@@ -47,6 +48,7 @@ Scenarios:
   10% of users post every 30–90 s, 5% of those posts in the group that has everyone. Readers react now and then.
 - **`storm`.** `mix`, then every websocket drops and reconnects within 5 s, as after a deploy.
 - **`biggroup`.** Everyone sits in the group that has everyone (or on root). Posts go there at `--big-post-rate` per second.
+- **`probe`.** No users: see `dist_probe.exs`. Needs `--profile cluster`.
 - **`smoke`.** A short `mix` with probes for two known crashes:
   - VUs 1–3 sit on `/profiles` while others post. `ProfileLive.Index` used to crash on `:group_unread_counts_updated`.
   - VU 0 edits the profile of VU 4's user while VU 4 sits in a group. `GroupLive.Show` has no `:profile_updated` clause.
@@ -64,6 +66,8 @@ Each `results/<run>/` holds:
 | `pg_activity.csv` | Postgres connections by state and wait type |
 | `pg_top.txt` | Top 30 statements by total time |
 | `app.log`, `errors.txt` | The app log and its errors, grouped |
+| `app2/` | The second node's `server.jsonl` and `app.log` (`--profile cluster`) |
+| `dist_probe.txt` | The output of `--scenario probe` |
 | `app_state.txt` | Whether the app was OOM-killed or exited |
 
 The metrics:

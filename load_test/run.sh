@@ -3,10 +3,12 @@
 #
 #   ./run.sh --profile fly --scale 1k --scenario mix --users 1000 --ramp 120 --hold 300
 #
-#   --profile fly|big   app container limits: fly = 1 CPU / 512 MB (fly.toml), big = 6 CPU / 3 GB
+#   --profile fly|big|cluster   app container limits: fly = 1 CPU / 512 MB (fly.toml), big = 6 CPU / 3 GB,
+#                       cluster = two connected nodes of 3 CPU / 1.2 GB with the users split between them
 #   --scale 1k|10k      which seeded database to use (potok_load_1k / potok_load_10k)
 #   --pool N            POOL_SIZE (default 10, as in production)
 #   --reseed            drop and re-seed the scale's database first
+#   --scenario probe    no loadgen: what one value costs between the nodes (needs --profile cluster)
 #   anything else is passed to loadgen.exs (--think-min, --big-post-rate, ...)
 #
 # Output goes to results/<timestamp>-<profile>-<scale>-<scenario>-<users>/.
@@ -14,6 +16,8 @@ set -euo pipefail
 cd "$(dirname "$0")"
 # Git Bash would rewrite /app/... arguments into Windows paths.
 export MSYS_NO_PATHCONV=1
+# Lets every compose command see app2.
+export COMPOSE_PROFILES=cluster
 
 profile=fly scale=1k scenario=mix users=1000 ramp=120 hold=300 pool=10 reseed=0
 extra=()
@@ -32,9 +36,11 @@ while [ $# -gt 0 ]; do
   esac
 done
 
+nodes=1
 case "$profile" in
   fly) cpus=1 mem=512M ;;
   big) cpus=6 mem=3G ;;
+  cluster) cpus=3 mem=1200M nodes=2 ;;
   *) echo "unknown profile $profile" >&2; exit 1 ;;
 esac
 
@@ -52,21 +58,39 @@ log() { echo "[run $(date +%H:%M:%S)] $*" | tee -a "$out/run.log"; }
 
 psql_db() { docker compose exec -T db psql -U postgres -d "$db" -At "$@"; }
 
-start_app() {
-  APP_CPUS="$1" APP_MEM="$2" docker compose up -d --force-recreate --no-deps app >/dev/null
+start_node() {
+  APP_CPUS="$1" APP_MEM="$2" docker compose up -d --force-recreate --no-deps "$3" >/dev/null
   for _ in $(seq 1 90); do
-    code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' http://127.0.0.1:4020/accounts/log-in || true)
+    code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' "http://127.0.0.1:$4/accounts/log-in" || true)
     [ "$code" = "200" ] && return 0
     sleep 2
   done
-  echo "app did not come up" >&2
-  docker compose logs --tail 50 app >&2
+  echo "$3 did not come up" >&2
+  docker compose logs --tail 50 "$3" >&2
   exit 1
 }
 
-rpc() { docker compose exec -T app /app/bin/potok_ide rpc "$1"; }
+start_app() { start_node "$1" "$2" app 4020; }
 
-log "profile=$profile (cpus=$cpus mem=$mem pool=$pool) db=$db scenario=$scenario users=$users ramp=${ramp}s hold=${hold}s"
+rpc_on() { docker compose exec -T "$1" /app/bin/potok_ide rpc "$2"; }
+rpc() { rpc_on app "$1"; }
+
+# A plain `docker compose stop` does not reach this node, so no run leaves it up.
+stop_second_node() { docker compose rm -sf app2 >/dev/null 2>&1 || true; }
+
+start_second_node() {
+  start_node "$cpus" "$mem" app2 4021
+  # DNSCluster looks for peers every 5 s.
+  for _ in $(seq 1 30); do
+    [ "$(rpc 'IO.puts(length(Node.list()))')" = "1" ] && return 0
+    sleep 2
+  done
+  echo "the nodes did not connect" >&2
+  exit 1
+}
+
+log "profile=$profile (nodes=$nodes cpus=$cpus mem=$mem pool=$pool) db=$db scenario=$scenario users=$users ramp=${ramp}s hold=${hold}s"
+stop_second_node
 docker compose up -d --wait db >/dev/null
 
 if [ "$reseed" = 1 ]; then
@@ -88,8 +112,23 @@ fi
 
 log "starting app with limits"
 start_app "$cpus" "$mem"
+[ "$nodes" = 2 ] && start_second_node
+
+if [ "$scenario" = probe ]; then
+  rpc 'Code.eval_file("/load_test/dist_probe.exs"); LoadTest.DistProbe.run()' | tee "$out/dist_probe.txt"
+  stop_second_node
+  log "done: $out"
+  exit 0
+fi
+
 psql_db -c "SELECT pg_stat_statements_reset()" >/dev/null
 rpc "Code.eval_file(\"/load_test/sampler.exs\"); LoadTest.Sampler.start(\"/load_test/$out\")" >/dev/null
+hosts=app
+if [ "$nodes" = 2 ]; then
+  hosts=app,app2
+  mkdir -p "$out/app2"
+  rpc_on app2 "Code.eval_file(\"/load_test/sampler.exs\"); LoadTest.Sampler.start(\"/load_test/$out/app2\")" >/dev/null
+fi
 started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Container CPU/memory every ~3 s and Postgres connection states every 5 s.
@@ -115,7 +154,7 @@ trap 'kill $stats_pid $pg_pid 2>/dev/null || true' EXIT
 log "loadgen starting"
 set +e
 docker compose run --rm -T loadgen \
-  --users "$users" --ramp "$ramp" --hold "$hold" --scenario "$scenario" \
+  --users "$users" --ramp "$ramp" --hold "$hold" --scenario "$scenario" --host "$hosts" \
   --data "results/users_${seed_n}" --out "$out" "${extra[@]}" 2>&1 | tee "$out/loadgen.log"
 set -e
 kill $stats_pid $pg_pid 2>/dev/null || true
@@ -126,6 +165,10 @@ docker inspect -f 'status={{.State.Status}} oom_killed={{.State.OOMKilled}} exit
   tee "$out/app_state.txt" | tee -a "$out/run.log"
 docker compose logs --no-color --since "$started_at" app > "$out/app.log" 2>&1 || true
 rpc "LoadTest.Sampler.stop()" >/dev/null 2>&1 || true
+if [ "$nodes" = 2 ]; then
+  docker compose logs --no-color --since "$started_at" app2 > "$out/app2/app.log" 2>&1 || true
+  stop_second_node
+fi
 
 psql_db -F' | ' -c "
   SELECT round(total_exec_time)::bigint AS total_ms, calls, round(mean_exec_time::numeric, 2) AS mean_ms,
