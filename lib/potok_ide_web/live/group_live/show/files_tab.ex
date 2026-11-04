@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
           <:subtitle>
             {if @files_view == "tree",
               do: gettext("Files of this group and its sub-groups, folder by folder."),
-              else: gettext("Files attached to values in this group, newest first.")}
+              else: gettext("Files attached to messages in this group, newest first.")}
           </:subtitle>
           <:actions>
             <div
@@ -74,7 +74,9 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         <% else %>
           <ul id="group-files-list" class="space-y-2" phx-update="stream">
             <li id="group-files-empty" class="hidden only:block">
-              <.empty_state text={gettext("No files yet. Attach one to a value with the paper clip.")} />
+              <.empty_state text={
+                gettext("No files yet. Attach one to a message with the paper clip.")
+              } />
             </li>
             <li
               :for={{dom_id, file} <- @files}

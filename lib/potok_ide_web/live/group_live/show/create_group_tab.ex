@@ -140,7 +140,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
           <.input
             :if={false}
             field={@new_group_form[:parent_value_id]}
-            label={gettext("Reply to value (optional)")}
+            label={gettext("Reply to message (optional)")}
             type="select"
             prompt={gettext("(none)")}
             options={@value_parent_options}

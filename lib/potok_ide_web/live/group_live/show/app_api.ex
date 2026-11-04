@@ -46,7 +46,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run("insert_value", params, socket) do
-    with :ok <- require_member(socket, gettext("You must be a group member to post values.")),
+    with :ok <-
+           require_member(
+             socket,
+             gettext("You must be a group member to access group data values.")
+           ),
          {:ok, socket} <- take_write_token(socket) do
       attrs = %{
         "content" => "data:",
@@ -64,7 +68,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
           {%{ok: true, value: Show.value_payload(value)}, socket}
 
         {:error, _reason} ->
-          {error("invalid_value", gettext("Could not create value.")), socket}
+          {error("invalid_value", gettext("Could not save the data value.")), socket}
       end
     else
       {:error, reply} -> {reply, socket}

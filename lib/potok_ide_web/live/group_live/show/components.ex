@@ -1483,7 +1483,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             phx-value-id={@value.id}
             data-value-action="edit"
             icon="hero-pencil-square"
-            label={gettext("Edit value")}
+            label={gettext("Edit message")}
             size="xs"
           />
           <.icon_button
@@ -1493,9 +1493,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             phx-click="delete_value"
             phx-value-id={@value.id}
             data-value-action="delete"
-            data-confirm={gettext("Are you sure you want to delete this value?")}
+            data-confirm={gettext("Are you sure you want to delete this message?")}
             icon="hero-trash"
-            label={gettext("Delete value")}
+            label={gettext("Delete message")}
             variant="danger"
             size="xs"
           />
@@ -1512,7 +1512,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               detail: %{id: @reply_parent.id}
             )
           }
-          title={gettext("Show original value")}
+          title={gettext("Show original message")}
           class={[
             "mb-2 block w-full min-w-0 rounded-xl border-l-4 px-3 py-1.5 text-left text-sm transition-colors",
             @mine? &&

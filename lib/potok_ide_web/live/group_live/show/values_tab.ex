@@ -76,7 +76,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             id="group-thread-origin-link"
             navigate={~p"/groups/#{@thread_origin.group_id}/values?#{[value: @thread_origin.id]}"}
             icon="hero-arrow-up-right"
-            label={gettext("Show original value")}
+            label={gettext("Show original message")}
           />
         </div>
 
@@ -99,7 +99,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 phx-click="load_more_values"
                 size="sm"
               >
-                {gettext("Load earlier values")}
+                {gettext("Load earlier messages")}
               </.button>
             </div>
 
@@ -108,7 +108,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 id="group-values-empty"
                 class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
               >
-                {gettext("No values yet. Start the conversation below.")}
+                {gettext("No messages yet. Start the conversation below.")}
               </div>
 
               <.inspect_tree
@@ -141,7 +141,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 phx-click="load_newer_values"
                 size="sm"
               >
-                {gettext("Load newer values")}
+                {gettext("Load newer messages")}
               </.button>
             </div>
           </div>
@@ -157,8 +157,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               id="group-values-jump-latest"
               type="button"
               inert
-              aria-label={gettext("Jump to latest values")}
-              title={gettext("Jump to latest values")}
+              aria-label={gettext("Jump to latest messages")}
+              title={gettext("Jump to latest messages")}
               class="relative inline-flex size-10 translate-y-2 items-center justify-center rounded-full border border-base-300 bg-base-100/95 text-base-content/70 opacity-0 shadow-lg shadow-base-content/10 backdrop-blur transition duration-200 ease-out hover:bg-base-200 hover:text-base-content active:scale-95 data-visible:pointer-events-auto data-visible:translate-y-0 data-visible:opacity-100"
             >
               <.icon name="hero-arrow-down" class="size-5" />
@@ -351,7 +351,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   input_id="group-value-content"
                   submit_id="group-value-submit"
                   submit_icon="hero-paper-airplane"
-                  submit_label={gettext("Post value")}
+                  submit_label={gettext("Send message")}
                   has_attachments={@can_attach and Enum.any?(@attachments.entries, & &1.valid?)}
                 >
                   <label
@@ -379,14 +379,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           class="relative z-10 flex shrink-0 items-center gap-2 border-t border-base-300/70 bg-base-100/95 px-4 py-4 text-sm text-base-content/65 backdrop-blur sm:px-6"
         >
           <.icon name="hero-no-symbol" class="size-4 shrink-0" />
-          {gettext("Your roles in this group do not allow posting values.")}
+          {gettext("Your roles in this group do not allow posting messages.")}
         </div>
 
         <div
           :if={!@is_member}
           class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
         >
-          {gettext("Join this group to reply and post new values.")}
+          {gettext("Join this group to reply and post new messages.")}
         </div>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
@@ -1149,11 +1149,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
       <.input
         field={@field}
         id={@input_id}
-        aria-label={gettext("Value")}
+        aria-label={gettext("Message")}
         aria-autocomplete="list"
         aria-controls="group-value-mention-menu"
         class="m-0 block max-h-[min(9rem,30dvh)] w-full flex-auto resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-        placeholder={gettext("Write a value...")}
+        placeholder={gettext("Write a message...")}
         rows="1"
         type="textarea"
         phx-debounce="400"

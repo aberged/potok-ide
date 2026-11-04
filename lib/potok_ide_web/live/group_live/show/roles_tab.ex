@@ -357,7 +357,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def role_label(%GroupRole{key: "everyone"}), do: gettext("Everyone")
   def role_label(%GroupRole{name: name}), do: name
 
-  def permission_label(:post_values), do: gettext("Post values")
+  def permission_label(:post_values), do: gettext("Post messages")
   def permission_label(:attach_files), do: gettext("Attach files")
   def permission_label(:react), do: gettext("React")
   def permission_label(:open_threads), do: gettext("Open threads")
@@ -366,17 +366,17 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:mention_roles), do: gettext("Mention roles")
   def permission_label(:manage_join_requests), do: gettext("Manage access requests")
   def permission_label(:remove_members), do: gettext("Remove members")
-  def permission_label(:delete_values), do: gettext("Delete values")
+  def permission_label(:delete_values), do: gettext("Delete messages")
   def permission_label(:create_events), do: gettext("Add events")
   def permission_label(:manage_events), do: gettext("Manage events")
   def permission_label(:publish_events), do: gettext("Publish events")
   def permission_label(:manage_tags), do: gettext("Manage tags")
   def permission_label(:edit_group), do: gettext("Edit group")
 
-  defp permission_description(:post_values), do: gettext("Write values and replies in the chat.")
-  defp permission_description(:attach_files), do: gettext("Attach files to values.")
-  defp permission_description(:react), do: gettext("Add emoji reactions to values.")
-  defp permission_description(:open_threads), do: gettext("Start a thread from a value.")
+  defp permission_description(:post_values), do: gettext("Write messages and replies.")
+  defp permission_description(:attach_files), do: gettext("Attach files to messages.")
+  defp permission_description(:react), do: gettext("Add emoji reactions to messages.")
+  defp permission_description(:open_threads), do: gettext("Start a thread from a message.")
   defp permission_description(:create_subgroups), do: gettext("Create groups inside this group.")
   defp permission_description(:invite_members), do: gettext("Invite profiles to this group.")
 
@@ -387,7 +387,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
     do: gettext("Accept or reject requests to join.")
 
   defp permission_description(:remove_members), do: gettext("Remove members who are not admins.")
-  defp permission_description(:delete_values), do: gettext("Delete values written by others.")
+  defp permission_description(:delete_values), do: gettext("Delete messages written by others.")
 
   defp permission_description(:create_events), do: gettext("Add events to the calendar.")
 
@@ -398,7 +398,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
     do: gettext("Make events public, so every user sees them in their calendar.")
 
   defp permission_description(:manage_tags),
-    do: gettext("Put public tags on values, files, events and this group.")
+    do: gettext("Put public tags on messages, files, events and this group.")
 
   defp permission_description(:edit_group),
     do: gettext("Change the group's settings, description and app data.")

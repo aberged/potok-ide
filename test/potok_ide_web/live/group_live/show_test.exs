@@ -2788,7 +2788,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(
                lv,
-               "#value-delete-#{value.id}[data-confirm='Are you sure you want to delete this value?']"
+               "#value-delete-#{value.id}[data-confirm='Are you sure you want to delete this message?']"
              )
 
       lv
@@ -2796,7 +2796,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       |> render_click()
 
       refute has_element?(lv, "#value-#{value.id}")
-      assert render(lv) =~ "No values yet. Start the conversation below."
+      assert render(lv) =~ "No messages yet. Start the conversation below."
     end
 
     test "allows the creator profile to edit a value", %{conn: conn} do
@@ -3690,7 +3690,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       render_hook(lv, "show_value", %{"id" => value.id + 1_000_000})
 
       refute_push_event(lv, "show_value", %{})
-      assert render(lv) =~ "The original value is no longer available."
+      assert render(lv) =~ "The original message is no longer available."
     end
 
     test "a feed showing earlier values waits for others' values but not the viewer's", %{

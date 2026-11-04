@@ -808,7 +808,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     group = socket.assigns.group
 
     if not socket.assigns.is_member do
-      {:noreply, put_flash(socket, :error, gettext("You must be a group member to post values."))}
+      {:noreply,
+       put_flash(socket, :error, gettext("You must be a group member to post messages."))}
     else
       # The chat composer only posts chat values; app data goes through `app_api`.
       # The replied-to value comes from the server-side reply state, never the form.
@@ -847,7 +848,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply, put_flash(socket, :error, message)}
 
         {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not create value."))}
+          {:noreply, put_flash(socket, :error, gettext("Could not create message."))}
       end
     end
   end
@@ -871,7 +872,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             names: too_large
           ),
         too_many != "" &&
-          gettext("Only %{count} files fit in a value: %{names} left out.",
+          gettext("Only %{count} files fit in a message: %{names} left out.",
             count: Storage.max_files(),
             names: too_many
           ),
@@ -924,10 +925,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     case loaded_value(socket, id) do
       nil ->
-        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
 
       value when value.creator_id != current_profile.id ->
-        {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
+        {:noreply, put_flash(socket, :error, gettext("You can only edit your own messages."))}
 
       value ->
         # Re-insert both items so their edit buttons reflect the new editing state.
@@ -961,27 +962,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     case socket.assigns.editing_value do
       nil ->
-        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
 
       value ->
         case Social.update_value(current_profile, value, attrs) do
           {:ok, updated_value} ->
             {:noreply,
              socket
-             |> put_flash(:info, gettext("Value updated."))
+             |> put_flash(:info, gettext("Message updated."))
              |> assign(:editing_value, nil)
              |> assign(:edit_value_form, nil)
              |> apply_value_updated(updated_value)}
 
           {:error, :not_value_creator} ->
-            {:noreply, put_flash(socket, :error, gettext("You can only edit your own values."))}
+            {:noreply, put_flash(socket, :error, gettext("You can only edit your own messages."))}
 
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
              assign(socket, :edit_value_form, to_form(Map.put(changeset, :action, :validate)))}
 
           {:error, _reason} ->
-            {:noreply, put_flash(socket, :error, gettext("Could not update value."))}
+            {:noreply, put_flash(socket, :error, gettext("Could not update message."))}
         end
     end
   end
@@ -995,7 +996,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     cond do
       not socket.assigns.is_member ->
         {:noreply,
-         put_flash(socket, :error, gettext("You must be a group member to post values."))}
+         put_flash(socket, :error, gettext("You must be a group member to post messages."))}
 
       not Access.can?(socket.assigns.access, :post_values) ->
         {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
@@ -1008,7 +1009,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> push_event("value_composer_focus", %{})}
 
       true ->
-        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
     end
   end
 
@@ -1038,21 +1039,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     case loaded_value(socket, id) do
       nil ->
-        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
 
       value ->
         case Social.delete_value(current_profile, value) do
           {:ok, _deleted_value} ->
             {:noreply,
              socket
-             |> put_flash(:info, gettext("Value deleted."))
+             |> put_flash(:info, gettext("Message deleted."))
              |> remove_value(value.id)}
 
           {:error, :not_value_creator} ->
-            {:noreply, put_flash(socket, :error, gettext("You can only delete your own values."))}
+            {:noreply,
+             put_flash(socket, :error, gettext("You can only delete your own messages."))}
 
           {:error, _reason} ->
-            {:noreply, put_flash(socket, :error, gettext("Could not delete value."))}
+            {:noreply, put_flash(socket, :error, gettext("Could not delete message."))}
         end
     end
   end
@@ -1064,7 +1066,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       case loaded_value(socket, id) do
         nil ->
-          {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+          {:noreply, put_flash(socket, :error, gettext("Message not found."))}
 
         value ->
           case Social.toggle_value_reaction(
@@ -1086,7 +1088,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("dismiss_link_preview", %{"id" => id}, socket) do
     case loaded_value(socket, id) do
       nil ->
-        {:noreply, put_flash(socket, :error, gettext("Value not found."))}
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
 
       value ->
         case Social.dismiss_value_link_preview(socket.assigns.current_profile, value) do
@@ -1355,7 +1357,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
           :error ->
             {:noreply,
-             put_flash(socket, :error, gettext("The original value is no longer available."))}
+             put_flash(socket, :error, gettext("The original message is no longer available."))}
         end
       end
     else
@@ -4093,7 +4095,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp home_page_options do
     [
       {gettext("Description"), :description},
-      {gettext("Chat"), :chat},
+      {gettext("Messages"), :chat},
       {gettext("Sub-groups"), :subgroups}
     ]
   end

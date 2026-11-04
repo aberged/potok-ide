@@ -261,7 +261,7 @@ defmodule PotokIdeWeb.TagLive.Index do
           class="px-1 text-sm text-base-content/55"
         >
           {gettext(
-            "No private tags yet. Add one from the # button on a value, file, event, group or member."
+            "No private tags yet. Add one from the # button on a message, file, event, group or member."
           )}
         </p>
         <ul
@@ -781,7 +781,7 @@ defmodule PotokIdeWeb.TagLive.Index do
   defp length_shown(shown, kind), do: Map.get(shown, kind, 0)
 
   defp kind_label(:group), do: pgettext("tag kind", "Groups")
-  defp kind_label(:value), do: pgettext("tag kind", "Values")
+  defp kind_label(:value), do: pgettext("tag kind", "Messages")
   defp kind_label(:attachment), do: pgettext("tag kind", "Files")
   defp kind_label(:event), do: pgettext("tag kind", "Events")
   defp kind_label(:profile), do: pgettext("tag kind", "Profiles")

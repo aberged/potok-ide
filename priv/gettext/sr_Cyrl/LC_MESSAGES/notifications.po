@@ -23,8 +23,8 @@ msgstr "%{name}: твоја позивница за дељени профил ј
 
 #: lib/potok_ide/social/notifications.ex:136
 #, elixir-autogen, elixir-format
-msgid "%{name} added a new value"
-msgstr "%{name}: нова вредност"
+msgid "%{name} sent a new message"
+msgstr "%{name}: нова порука"
 
 #: lib/potok_ide/social/notifications.ex:58
 #, elixir-autogen, elixir-format
@@ -48,8 +48,8 @@ msgstr "%{name} сада има приступ профилу %{profile}."
 
 #: lib/potok_ide/social/notifications.ex:42
 #, elixir-autogen, elixir-format
-msgid "%{name} reacted %{emoji} to your value"
-msgstr "%{name}: %{emoji} на твоју вредност"
+msgid "%{name} reacted %{emoji} to your message"
+msgstr "%{name}: %{emoji} на твоју поруку"
 
 #: lib/potok_ide/social/notifications.ex:91
 #, elixir-autogen, elixir-format
@@ -58,13 +58,13 @@ msgstr "%{name} дели профил %{profile} с тобом"
 
 #: lib/potok_ide/social/notifications.ex:126
 #, elixir-autogen, elixir-format
-msgid "New value in %{group}"
-msgstr "Нова вредност у групи %{group}"
+msgid "New message in %{group}"
+msgstr "Нова порука у групи %{group}"
 
 #: lib/potok_ide/social/notifications.ex:129
 #, elixir-autogen, elixir-format
-msgid "New value in %{group}: %{excerpt}"
-msgstr "Нова вредност у групи %{group}: %{excerpt}"
+msgid "New message in %{group}: %{excerpt}"
+msgstr "Нова порука у групи %{group}: %{excerpt}"
 
 #: lib/potok_ide/social/notifications.ex:62
 #, elixir-autogen, elixir-format

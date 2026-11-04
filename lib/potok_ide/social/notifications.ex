@@ -39,7 +39,7 @@ defmodule PotokIde.Social.Notifications do
     localized(fn ->
       %{
         title:
-          dgettext("notifications", "%{name} reacted %{emoji} to your value",
+          dgettext("notifications", "%{name} reacted %{emoji} to your message",
             name: reactor.username,
             emoji: emoji
           ),
@@ -123,17 +123,17 @@ defmodule PotokIde.Social.Notifications do
     body =
       case excerpt(value) do
         nil ->
-          dgettext("notifications", "New value in %{group}", group: group.name)
+          dgettext("notifications", "New message in %{group}", group: group.name)
 
         snippet ->
-          dgettext("notifications", "New value in %{group}: %{excerpt}",
+          dgettext("notifications", "New message in %{group}: %{excerpt}",
             group: group.name,
             excerpt: snippet
           )
       end
 
     %{
-      title: dgettext("notifications", "%{name} added a new value", name: creator.username),
+      title: dgettext("notifications", "%{name} sent a new message", name: creator.username),
       body: body,
       tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",

@@ -23,7 +23,7 @@ msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:136
 #, elixir-autogen, elixir-format
-msgid "%{name} added a new value"
+msgid "%{name} sent a new message"
 msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:58
@@ -48,7 +48,7 @@ msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:42
 #, elixir-autogen, elixir-format
-msgid "%{name} reacted %{emoji} to your value"
+msgid "%{name} reacted %{emoji} to your message"
 msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:91
@@ -58,12 +58,12 @@ msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:126
 #, elixir-autogen, elixir-format
-msgid "New value in %{group}"
+msgid "New message in %{group}"
 msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:129
 #, elixir-autogen, elixir-format
-msgid "New value in %{group}: %{excerpt}"
+msgid "New message in %{group}: %{excerpt}"
 msgstr ""
 
 #: lib/potok_ide/social/notifications.ex:62

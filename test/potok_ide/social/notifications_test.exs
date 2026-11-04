@@ -16,10 +16,10 @@ defmodule PotokIde.Social.NotificationsTest do
     test "are written in the language of each device" do
       payload_for = Notifications.value_created(@ana, @group, @value)
 
-      assert payload_for.("en").title == "ana added a new value"
-      assert payload_for.("en").body == "New value in Hall: Bring chairs"
-      assert payload_for.("sr").title == "ana: nova vrednost"
-      assert payload_for.("sr_Cyrl").body == "Нова вредност у групи Hall: Bring chairs"
+      assert payload_for.("en").title == "ana sent a new message"
+      assert payload_for.("en").body == "New message in Hall: Bring chairs"
+      assert payload_for.("sr").title == "ana: nova poruka"
+      assert payload_for.("sr_Cyrl").body == "Нова порука у групи Hall: Bring chairs"
       assert payload_for.(nil) == payload_for.("sr")
       assert payload_for.("de") == payload_for.("sr")
       assert payload_for.("pl") == payload_for.("sr")
@@ -51,7 +51,7 @@ defmodule PotokIde.Social.NotificationsTest do
       end
 
       assert Notifications.value_reaction(@ana, @group, @value, "👍").("en").title ==
-               "ana reacted 👍 to your value"
+               "ana reacted 👍 to your message"
     end
   end
 
@@ -78,8 +78,8 @@ defmodule PotokIde.Social.NotificationsTest do
       titles = sent_titles(2)
 
       assert Enum.sort(titles) == [
-               "notif-author added a new value",
-               "notif-author: нова вредност"
+               "notif-author sent a new message",
+               "notif-author: нова порука"
              ]
     end
 

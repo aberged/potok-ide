@@ -409,7 +409,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 <p class="font-medium">{gettext("Delete the group")}</p>
                 <p class="text-sm text-base-content/60">
                   {gettext(
-                    "Deletes the group with its values and files. A group with sub-groups cannot be deleted."
+                    "Deletes the group with its messages and files. A group with sub-groups cannot be deleted."
                   )}
                 </p>
               </div>
