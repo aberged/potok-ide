@@ -44,6 +44,7 @@ defmodule PotokIdeWeb.GroupLive.DetachedGroupsTest do
     assert has_element?(lv, "#child-group-#{ctx.group.id}")
 
     post!(ctx.owner, ctx.group)
+    render(lv)
     assert_push_event(lv, "root_group_unread_count_updated", %{count: 1})
 
     assert has_element?(lv, "#group-sub-groups-kind-other-unread-badge", "1")

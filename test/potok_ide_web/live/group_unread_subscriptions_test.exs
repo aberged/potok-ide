@@ -150,10 +150,17 @@ defmodule PotokIdeWeb.GroupUnreadSubscriptionsTest do
     pages = Enum.map(paths, &open(conn, reader_account, &1))
 
     value = post!(author, group)
-    for page <- pages, do: assert_push_event(page, "root_group_unread_count_updated", %{count: 1})
+    for page <- pages, do: assert_count(page, 1)
 
     {:ok, _deleted} = Social.delete_value(author, value)
-    for page <- pages, do: assert_push_event(page, "root_group_unread_count_updated", %{count: 0})
+    for page <- pages, do: assert_count(page, 0)
+  end
+
+  # `render/1` returns once the page has handled what reached it before, so a
+  # page still busy with its first load cannot outlast the push's timeout.
+  defp assert_count(page, count) do
+    render(page)
+    assert_push_event(page, "root_group_unread_count_updated", %{count: ^count})
   end
 
   defp open(conn, account, path \\ ~p"/profiles") do
