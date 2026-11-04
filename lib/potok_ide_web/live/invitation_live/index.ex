@@ -475,20 +475,17 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   def handle_info({:group_unread_counts_updated, profile_id, _group_id}, socket)
       when not is_nil(socket.assigns.current_profile) and
              socket.assigns.current_profile.id == profile_id do
-    {:noreply,
-     socket
-     |> assign_unread_overview()
-     |> maybe_push_root_group_unread_count()
-     |> assign_group_unread_counts()}
+    {:noreply, recount_unread(socket)}
   end
 
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
 
+  def handle_info({:group_members_unread_changed, _group_id}, socket),
+    do: {:noreply, recount_unread(socket)}
+
   # A value someone else posted is added to the counts without a query.
-  def handle_info({:group_value_unread, profile_id, unread}, socket)
-      when not is_nil(socket.assigns.current_profile) and
-             socket.assigns.current_profile.id == profile_id do
+  def handle_info({:group_value_unread, unread}, socket) do
     case Social.add_unread_value(socket.assigns.unread_overview, unread, MapSet.new()) do
       :counted ->
         {:noreply, socket}
@@ -501,8 +498,6 @@ defmodule PotokIdeWeb.InvitationLive.Index do
          |> assign_group_unread_counts()}
     end
   end
-
-  def handle_info({:group_value_unread, _profile_id, _unread}, socket), do: {:noreply, socket}
 
   @impl true
   def handle_info({:account_profiles_updated, account_id}, socket)
@@ -609,6 +604,13 @@ defmodule PotokIdeWeb.InvitationLive.Index do
     else
       assign(socket, :sent_invitations_pagination, pagination)
     end
+  end
+
+  defp recount_unread(socket) do
+    socket
+    |> assign_unread_overview()
+    |> maybe_push_root_group_unread_count()
+    |> assign_group_unread_counts()
   end
 
   # One overview gives the header badge (its total) and the counts of the

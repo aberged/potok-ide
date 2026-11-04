@@ -118,9 +118,20 @@ defmodule PotokIdeWeb.ProfileAuth do
              |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
              |> push_pending_group_join_requests_count_updated(count)}
 
+          # Halted here, as no view knows it: a page follows its profile's groups.
+          {:group_membership_changed, _profile_id, group_id, change} = message, socket ->
+            if current_profile_message?(message, socket),
+              do: {:halt, change_unread_group(socket, group_id, change)},
+              else: {:halt, socket}
+
           # Reads, memberships and deleted values: the badge is recounted once
           # per burst. Only views that show unread counts themselves
           # (`counts_unread_itself?/1`) see these messages.
+          {:group_members_unread_changed, _group_id}, socket ->
+            if counts_unread_itself?(socket),
+              do: {:cont, socket},
+              else: {:halt, schedule_unread_recount(socket)}
+
           {:group_unread_counts_updated, _profile_id, _group_id} = message, socket ->
             cond do
               counts_unread_itself?(socket) ->
@@ -134,16 +145,16 @@ defmodule PotokIdeWeb.ProfileAuth do
             end
 
           # A value someone else posted: one more unread, no query needed.
-          {:group_value_unread, _profile_id, unread} = message, socket ->
+          {:group_value_unread, unread}, socket ->
             cond do
+              not unread_value_counts?(unread, socket) ->
+                {:halt, socket}
+
               counts_unread_itself?(socket) ->
                 {:cont, socket}
 
-              current_profile_message?(message, socket) ->
-                {:halt, add_unread_value(socket, unread)}
-
               true ->
-                {:halt, socket}
+                {:halt, add_unread_value(socket, unread)}
             end
 
           :recount_root_group_unread, socket ->
@@ -175,9 +186,10 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   @doc """
   Whether the socket's LiveView counts unread values itself, the header
-  badge included. Such a view gets `{:group_unread_counts_updated, ...}` and
-  `{:group_value_unread, ...}` passed on instead of them being handled here,
-  and its header badges are loaded without the unread count.
+  badge included. Such a view gets `{:group_unread_counts_updated, ...}`,
+  `{:group_members_unread_changed, ...}` and `{:group_value_unread, ...}` passed
+  on instead of them being handled here, and its header badges are loaded
+  without the unread count.
   """
   def counts_unread_itself?(socket), do: socket.view in @unread_counting_views
 
@@ -205,12 +217,53 @@ defmodule PotokIdeWeb.ProfileAuth do
           Social.subscribe_profile(current_profile)
         end
 
-        socket
+        sync_unread_groups(socket, subscribed_profile_id)
       else
         socket
       end
 
     put_private(socket, :subscribed_profile_id, current_profile && current_profile.id)
+  end
+
+  defp sync_unread_groups(socket, subscribed_profile_id) do
+    case socket.assigns[:current_profile] do
+      %{id: ^subscribed_profile_id} ->
+        socket
+
+      nil ->
+        put_unread_groups(socket, MapSet.new())
+
+      current_profile ->
+        group_ids = socket.private[:member_group_ids] || Social.member_group_ids(current_profile)
+
+        socket
+        |> put_private(:member_group_ids, nil)
+        |> put_unread_groups(MapSet.new(group_ids))
+    end
+  end
+
+  defp change_unread_group(socket, group_id, :added),
+    do: put_unread_groups(socket, MapSet.put(unread_groups(socket), group_id))
+
+  defp change_unread_group(socket, group_id, :removed),
+    do: put_unread_groups(socket, MapSet.delete(unread_groups(socket), group_id))
+
+  # Each group once: a second subscription would count every value twice.
+  defp put_unread_groups(socket, group_ids) do
+    subscribed = unread_groups(socket)
+
+    subscribed |> MapSet.difference(group_ids) |> Enum.each(&Social.unsubscribe_group_unread/1)
+    group_ids |> MapSet.difference(subscribed) |> Enum.each(&Social.subscribe_group_unread/1)
+
+    put_private(socket, :unread_group_ids, group_ids)
+  end
+
+  defp unread_groups(socket), do: socket.private[:unread_group_ids] || MapSet.new()
+
+  # Not the profile's own value, nor one on its way from a group it just left.
+  defp unread_value_counts?(%{creator_id: creator_id, group_id: group_id}, socket) do
+    not match?(%{id: ^creator_id}, socket.assigns[:current_profile]) and
+      MapSet.member?(unread_groups(socket), group_id)
   end
 
   # Rendering a page passes its whole first render through the websocket's
@@ -244,7 +297,8 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp transport_gc_delay_ms, do: @transport_gc_delay_ms
 
-  defp current_profile_message?({_event, profile_id, _group_id}, socket) do
+  defp current_profile_message?(message, socket) do
+    profile_id = elem(message, 1)
     match?(%{id: ^profile_id}, socket.assigns[:current_profile])
   end
 

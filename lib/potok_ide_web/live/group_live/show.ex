@@ -2156,18 +2156,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:group_unread_counts_updated, _profile_id, _group_id}, socket),
     do: {:noreply, socket}
 
-  def handle_info(
-        {:group_value_unread, profile_id, unread},
-        %{assigns: %{current_profile: %{id: current_profile_id}}} = socket
-      )
-      when profile_id == current_profile_id do
+  def handle_info({:group_members_unread_changed, _group_id}, socket),
+    do: {:noreply, schedule_refresh(socket, :unread)}
+
+  def handle_info({:group_value_unread, unread}, socket) do
     {:noreply,
      socket
      |> update(:pending_unread_values, &[unread | &1])
      |> schedule_refresh(:unread_values)}
   end
-
-  def handle_info({:group_value_unread, _profile_id, _unread}, socket), do: {:noreply, socket}
 
   def handle_info({:account_profiles_updated, account_id}, socket)
       when socket.assigns.current_scope.account.id == account_id do

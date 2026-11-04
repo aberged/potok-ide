@@ -60,6 +60,21 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  Subscribes the caller to what changes the unread values of a group's members:
+  `{:group_value_unread, unread}` and `{:group_members_unread_changed, group_id}`.
+  Pages subscribe to their profile's groups (`member_group_ids/1`), so a value
+  takes one broadcast however many members the group has, and reaches only
+  those who have a page open.
+  """
+  def subscribe_group_unread(group_id) when is_integer(group_id) do
+    Phoenix.PubSub.subscribe(PotokIde.PubSub, group_unread_topic(group_id))
+  end
+
+  def unsubscribe_group_unread(group_id) when is_integer(group_id) do
+    Phoenix.PubSub.unsubscribe(PotokIde.PubSub, group_unread_topic(group_id))
+  end
+
+  @doc """
   Subscribes the caller to `{:presence_changed, topic, key, online?}` for one
   profile in `group` and returns whether that profile is online there now.
   """
@@ -254,10 +269,7 @@ defmodule PotokIde.Social do
          update_account_profiles: updated_account,
          initial_direct_group: initial_direct_group
        }} ->
-        if match?(%Group{}, initial_direct_group) do
-          broadcast_group_updated(root_group)
-        end
-
+        broadcast_initial_direct_group(initial_direct_group, root_group, account)
         broadcast_account_profiles_updated(updated_account)
         materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
@@ -268,10 +280,7 @@ defmodule PotokIde.Social do
          profile: profile,
          initial_direct_group: initial_direct_group
        }} ->
-        if match?(%Group{}, initial_direct_group) do
-          broadcast_group_updated(root_group)
-        end
-
+        broadcast_initial_direct_group(initial_direct_group, root_group, account)
         broadcast_account_profiles_updated(account)
         materialize_pending_group_account_invitations(account, profile, already_has_profiles)
         {:ok, profile}
@@ -468,6 +477,7 @@ defmodule PotokIde.Social do
     |> case do
       {:ok, %{group: group, inheritance: changes}} ->
         broadcast_group_updated(parent)
+        broadcast_group_membership_changed(creator.id, group.id, :added)
         broadcast_inheritance_changes(changes)
         {:ok, group}
 
@@ -520,6 +530,8 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, %{group: group}} ->
             broadcast_group_updated(root_group)
+            broadcast_group_membership_changed(current_profile.id, group.id, :added)
+            broadcast_group_membership_changed(other_profile.id, group.id, :added)
             {:ok, group}
 
           {:error, _step, reason, _changes} ->
@@ -1073,7 +1085,7 @@ defmodule PotokIde.Social do
           broadcast_profile_invitations_updated(invitation.inviter)
           broadcast_group_join_request_updates_for_group(invitation.group)
           broadcast_group_updated(inv.group_id)
-          broadcast_profile_group_unread_counts_updated(invitee, inv.group_id)
+          broadcast_group_membership_changed(invitee.id, inv.group_id, :added)
           broadcast_inheritance_changes(changes)
           notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
           {:ok, inv}
@@ -1167,7 +1179,7 @@ defmodule PotokIde.Social do
           {:ok, %{inheritance: changes}} ->
             broadcast_group_updated(group)
             broadcast_group_unread_counts_updated(group)
-            broadcast_profile_group_unread_counts_updated(member, group.id)
+            broadcast_group_membership_changed(member.id, group.id, :removed)
             broadcast_inheritance_changes(changes)
             {:ok, member}
 
@@ -1289,7 +1301,8 @@ defmodule PotokIde.Social do
       pending_invitations: 0,
       pending_group_join_requests: 0,
       root_unread: 0,
-      root_unread_as_of: nil
+      root_unread_as_of: nil,
+      member_group_ids: nil
     }
 
   def nav_counts(%Profile{id: profile_id} = profile, opts) do
@@ -1329,11 +1342,17 @@ defmodule PotokIde.Social do
           GROUP BY jr.group_id
         ) r
       ),
+      (
+        SELECT COALESCE(array_agg(gm.group_id), '{}')
+        FROM group_memberships gm
+        WHERE gm.profile_id = $1
+          AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+      ),
       #{unread_sql}
     """
 
     case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_#{unread?}") do
-      {:ok, %{rows: [[invitations, join_request_counts, unread, unread_as_of]]}} ->
+      {:ok, %{rows: [[invitations, join_request_counts, member_group_ids, unread, unread_as_of]]}} ->
         %{
           pending_invitations: invitations,
           pending_group_join_requests:
@@ -1341,12 +1360,26 @@ defmodule PotokIde.Social do
             |> Enum.map(fn [group_id, count] -> {group_id, count} end)
             |> approvable_join_request_total(profile),
           root_unread: unread,
-          root_unread_as_of: unread_as_of
+          root_unread_as_of: unread_as_of,
+          member_group_ids: member_group_ids
         }
 
       {:error, _reason} ->
         nav_counts(nil, opts)
     end
+  end
+
+  @doc """
+  The groups whose values count as unread for the profile: its memberships,
+  without the root. `nav_counts/2` has them too, for a page that loads those.
+  """
+  def member_group_ids(%Profile{id: profile_id}) do
+    from(gm in GroupMembership,
+      join: g in assoc(gm, :group),
+      where: gm.profile_id == ^profile_id and not g.is_root,
+      select: gm.group_id
+    )
+    |> Repo.all()
   end
 
   defp approvable_group_ids(groups, %Profile{} = approver) do
@@ -1481,7 +1514,7 @@ defmodule PotokIde.Social do
           broadcast_profile_invitations_updated(requester)
           broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
-          broadcast_profile_group_unread_counts_updated(requester, group.id)
+          broadcast_group_membership_changed(requester.id, group.id, :added)
           broadcast_inheritance_changes(changes)
           {:ok, requester}
 
@@ -3914,7 +3947,7 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  Counts a value from a `{:group_value_unread, profile_id, unread}` broadcast
+  Counts a value from a `{:group_value_unread, unread}` broadcast
   into an `unread_overview/1` result, without a query. Returns
   `{:ok, overview}`, or `:counted` when the overview already holds the value
   (it is not newer than `as_of`).
@@ -4924,6 +4957,7 @@ defmodule PotokIde.Social do
   defp account_topic(account_id), do: "accounts:#{account_id}"
   defp profile_topic(profile_id), do: "profiles:#{profile_id}"
   defp group_topic(group_id), do: "groups:#{group_id}"
+  defp group_unread_topic(group_id), do: "groups:#{group_id}:unread"
 
   def group_presence_topic(%Group{id: group_id}), do: group_presence_topic(group_id)
   def group_presence_topic(group_id) when is_integer(group_id), do: "groups:#{group_id}:presence"
@@ -4987,15 +5021,33 @@ defmodule PotokIde.Social do
   end
 
   defp broadcast_group_unread_counts_updated(group_id) when is_integer(group_id) do
-    group_id
-    |> group_member_profile_ids()
-    |> Enum.each(fn profile_id ->
-      Phoenix.PubSub.broadcast(
-        PotokIde.PubSub,
-        profile_topic(profile_id),
-        {:group_unread_counts_updated, profile_id, group_id}
-      )
-    end)
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_unread_topic(group_id),
+      {:group_members_unread_changed, group_id}
+    )
+  end
+
+  # The profile's open pages first change what they subscribe to (see
+  # `subscribe_group_unread/1`), then count again, which covers a value posted
+  # before they subscribed.
+  defp broadcast_group_membership_changed(profile_id, group_id, change)
+       when is_integer(profile_id) and is_integer(group_id) and change in [:added, :removed] do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:group_membership_changed, profile_id, group_id, change}
+    )
+
+    broadcast_profile_group_unread_counts_updated(%Profile{id: profile_id}, group_id)
+  end
+
+  # The inviter may have pages open; the new profile has none yet.
+  defp broadcast_initial_direct_group(nil, _root_group, _account), do: :ok
+
+  defp broadcast_initial_direct_group(%Group{} = group, root_group, %Account{} = account) do
+    broadcast_group_updated(root_group)
+    broadcast_group_membership_changed(account.invited_by_id, group.id, :added)
   end
 
   # Skips the calling process, which already knows (see `mark_group_values_read/3`).
@@ -5009,42 +5061,30 @@ defmodule PotokIde.Social do
   end
 
   # A new chat value is one more unread value for every member but its
-  # creator. It goes out with the group's chain up to the root, worked out
-  # once here, so each member's pages add it to their counts without a query
-  # (`add_unread_value/3`) instead of all counting again at once. The creator's
-  # read marker moved past it, which may have read older values too, so the
-  # creator's other pages count again. The root group's values never count.
+  # creator, whose pages skip it by `creator_id`. It goes out with the group's
+  # chain up to the root, worked out once here, so each member's pages add it
+  # to their counts without a query (`add_unread_value/3`) instead of all
+  # counting again at once. The creator's read marker moved past it, which may
+  # have read older values too, so the creator's other pages count again. The
+  # root group's values never count.
   defp broadcast_group_value_unread(_creator, %Group{is_root: true}, _value), do: :ok
 
   defp broadcast_group_value_unread(%Profile{} = creator, %Group{id: group_id}, %Value{} = value) do
     unread = %{
+      creator_id: creator.id,
       group_id: group_id,
       value_id: value.id,
       inserted_at: value.inserted_at,
       chain: group_ancestry(group_id)
     }
 
-    group_id
-    |> group_member_profile_ids()
-    |> Enum.reject(&(&1 == creator.id))
-    |> Enum.each(fn profile_id ->
-      Phoenix.PubSub.broadcast(
-        PotokIde.PubSub,
-        profile_topic(profile_id),
-        {:group_value_unread, profile_id, unread}
-      )
-    end)
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_unread_topic(group_id),
+      {:group_value_unread, unread}
+    )
 
     broadcast_from_profile_group_unread_counts_updated(creator, group_id)
-  end
-
-  defp group_member_profile_ids(group_id) do
-    from(gm in GroupMembership,
-      where: gm.group_id == ^group_id,
-      select: gm.profile_id,
-      distinct: true
-    )
-    |> Repo.all()
   end
 
   defp broadcast_profile_updated(%Profile{id: profile_id}) do
@@ -5074,11 +5114,8 @@ defmodule PotokIde.Social do
   defp broadcast_inheritance_changes(changes) do
     Enum.each(changes, fn %{group_id: group_id, added: added, removed: removed} ->
       broadcast_group_updated(group_id)
-
-      Enum.each(
-        added ++ removed,
-        &broadcast_profile_group_unread_counts_updated(%Profile{id: &1}, group_id)
-      )
+      Enum.each(added, &broadcast_group_membership_changed(&1, group_id, :added))
+      Enum.each(removed, &broadcast_group_membership_changed(&1, group_id, :removed))
     end)
 
     case for(%{roles_changed?: true, group_id: group_id} <- changes, do: group_id) do

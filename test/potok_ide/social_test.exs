@@ -2196,18 +2196,17 @@ defmodule PotokIde.SocialTest do
       end
 
       before = Social.unread_overview(owner_profile)
-      Social.subscribe_profile(owner_profile)
+      Social.subscribe_group_unread(grandchild_group.id)
       forward_profile_messages(writer_profile)
 
       {:ok, value} =
         Social.create_value(writer_profile, grandchild_group, %{"content" => "news"})
 
-      owner_id = owner_profile.id
       writer_id = writer_profile.id
       grandchild_id = grandchild_group.id
-      assert_receive {:group_value_unread, ^owner_id, unread}
+      assert_receive {:group_value_unread, unread}
 
-      assert %{group_id: ^grandchild_id} = unread
+      assert %{group_id: ^grandchild_id, creator_id: ^writer_id} = unread
       assert unread.value_id == value.id
 
       assert MapSet.new(unread.chain, & &1.id) ==
@@ -2215,7 +2214,7 @@ defmodule PotokIde.SocialTest do
 
       # The writer read it by posting it; the writer's other pages recount.
       assert_receive {:forwarded, {:group_unread_counts_updated, ^writer_id, ^grandchild_id}}
-      refute_received {:forwarded, {:group_value_unread, _profile_id, _unread}}
+      refute_received {:forwarded, {:group_value_unread, _unread}}
 
       {:ok, added} = Social.add_unread_value(before, unread, MapSet.new())
       counted = Social.unread_overview(owner_profile)
@@ -2242,16 +2241,124 @@ defmodule PotokIde.SocialTest do
       {:ok, _value} = Social.create_value(writer_profile, group, %{"content" => "unread"})
 
       Social.subscribe_profile(owner_profile)
+      Social.subscribe_group_unread(root_group.id)
       forward_profile_messages(owner_profile)
 
       {:ok, _root_value} = Social.create_value(writer_profile, root_group, %{"content" => "root"})
-      refute_receive {:group_value_unread, _profile_id, _unread}
+      refute_receive {:group_value_unread, _unread}
 
       owner_id = owner_profile.id
       group_id = group.id
       assert :ok = Social.mark_group_values_read(owner_profile, group)
       assert_receive {:forwarded, {:group_unread_counts_updated, ^owner_id, ^group_id}}
       refute_received {:group_unread_counts_updated, _profile_id, _group_id}
+    end
+
+    test "a deleted value makes the group's members count again" do
+      [owner_profile, writer_profile] = unread_profiles(["del-owner", "del-writer"])
+      group = unread_group!(owner_profile, Social.get_root_group!(), "del-group")
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, writer_profile)
+      {:ok, value} = Social.create_value(writer_profile, group, %{"content" => "gone"})
+
+      Social.subscribe_group_unread(group.id)
+      {:ok, _deleted} = Social.delete_value(writer_profile, value)
+
+      group_id = group.id
+      assert_receive {:group_members_unread_changed, ^group_id}
+    end
+
+    test "member_group_ids/1 and nav_counts/2 give the profile's groups without the root" do
+      [profile] = unread_profiles(["member-ids"])
+      group = unread_group!(profile, Social.get_root_group!(), "member-ids-group")
+
+      assert Social.member_group_ids(profile) == [group.id]
+      assert Social.nav_counts(profile).member_group_ids == [group.id]
+      assert Social.nav_counts(profile, unread: false).member_group_ids == [group.id]
+    end
+
+    test "joining and leaving a group reach the profile's pages" do
+      [owner_profile, member_profile] = unread_profiles(["join-owner", "join-member"])
+      group = unread_group!(owner_profile, Social.get_root_group!(), "join-group")
+      member_id = member_profile.id
+      group_id = group.id
+      Social.subscribe_profile(member_profile)
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, member_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member_profile)
+      assert_receive {:group_membership_changed, ^member_id, ^group_id, :added}
+      assert_receive {:group_unread_counts_updated, ^member_id, ^group_id}
+
+      {:ok, _removed} = Social.remove_group_member(owner_profile, group, member_profile)
+      assert_receive {:group_membership_changed, ^member_id, ^group_id, :removed}
+      assert_receive {:group_unread_counts_updated, ^member_id, ^group_id}
+    end
+
+    test "inherited membership reaches the profile's pages" do
+      [owner_profile, member_profile] = unread_profiles(["inh-owner", "inh-member"])
+      parent = unread_group!(owner_profile, Social.get_root_group!(), "inh-parent")
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, parent, member_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member_profile)
+      member_id = member_profile.id
+      Social.subscribe_profile(member_profile)
+
+      {:ok, child} =
+        Social.create_group(owner_profile, parent, %{
+          "name" => "inh-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false,
+          "inherits_members" => "true"
+        })
+
+      child_id = child.id
+      assert_receive {:group_membership_changed, ^member_id, ^child_id, :added}
+    end
+
+    test "a new group reaches its creator's other pages" do
+      [owner_profile] = unread_profiles(["new-owner"])
+      owner_id = owner_profile.id
+      Social.subscribe_profile(owner_profile)
+
+      group = unread_group!(owner_profile, Social.get_root_group!(), "new-group")
+
+      group_id = group.id
+      assert_receive {:group_membership_changed, ^owner_id, ^group_id, :added}
+    end
+
+    test "a new direct group reaches the pages of both profiles" do
+      [first_profile, second_profile] = unread_profiles(["direct-one", "direct-two"])
+      first_id = first_profile.id
+      second_id = second_profile.id
+      Social.subscribe_profile(first_profile)
+      Social.subscribe_profile(second_profile)
+
+      {:ok, group} = Social.get_or_create_direct_group(first_profile, second_profile)
+
+      group_id = group.id
+      assert_receive {:group_membership_changed, ^first_id, ^group_id, :added}
+      assert_receive {:group_membership_changed, ^second_id, ^group_id, :added}
+    end
+
+    test "an invited account's first profile reaches the inviter's pages" do
+      [inviter_profile] = unread_profiles(["inviter"])
+      inviter_id = inviter_profile.id
+      Social.subscribe_profile(inviter_profile)
+
+      {:ok, invited_account} =
+        Accounts.register_account(valid_account_attributes(), inviter_profile)
+
+      {:ok, invited_profile} =
+        Social.create_profile_for_account(invited_account, %{
+          username: "invited",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      assert [group_id] = Social.member_group_ids(invited_profile)
+      assert_receive {:group_membership_changed, ^inviter_id, ^group_id, :added}
     end
 
     test "sort_child_groups/2 orders sub-groups like the database" do

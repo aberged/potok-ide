@@ -318,8 +318,9 @@ defmodule PotokIdeWeb.AccountAuth do
   (`Social.nav_counts/2`), made once the socket is connected: the first HTML
   shows them empty, as the rest of the page arrives after the connect too.
   The unread count's `as_of` goes to the socket's private
-  `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values; a
-  view that counts unread values itself
+  `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values, and
+  the profile's groups to `:member_group_ids`, for it to subscribe to; a view
+  that counts unread values itself
   (`PotokIdeWeb.ProfileAuth.counts_unread_itself?/1`) gets no unread count.
   """
   def mount_nav_counts(socket) do
@@ -346,6 +347,7 @@ defmodule PotokIdeWeb.AccountAuth do
     if counts do
       socket
       |> put_root_unread_as_of(counts)
+      |> Phoenix.LiveView.put_private(:member_group_ids, counts.member_group_ids)
       |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
         counts.pending_invitations
       end)

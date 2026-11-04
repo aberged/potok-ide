@@ -101,6 +101,32 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
     assert has_element?(lv, "#group-unread-badge-#{group.id}", "1")
   end
 
+  test "a value reads no more rows in a bigger group", %{group: group, profile: profile} do
+    {:ok, _value} = Social.create_value(profile, group, %{"content" => "warm up"})
+
+    {_value, few} =
+      read_rows(fn -> Social.create_value(profile, group, %{"content" => "few members"}) end)
+
+    for number <- 1..5 do
+      {:ok, member} =
+        Social.create_profile_for_account(account_fixture(), %{
+          username: "qc-member-#{number}",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(profile, group, member)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
+    end
+
+    {_value, many} =
+      read_rows(fn -> Social.create_value(profile, group, %{"content" => "more members"}) end)
+
+    assert many == few
+  end
+
   # `live/2` renders the first HTML again before it connects; the connected
   # mount's share is the difference.
   defp page_queries(conn, path) do
@@ -128,6 +154,42 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
       {result, drain(ref, 0)}
     after
       :telemetry.detach(handler_id)
+    end
+  end
+
+  defp read_rows(fun) do
+    ref = make_ref()
+    handler_id = {__MODULE__, ref}
+
+    :ok =
+      :telemetry.attach(
+        handler_id,
+        [:potok_ide, :repo, :query],
+        &__MODULE__.handle_rows/4,
+        {self(), ref}
+      )
+
+    try do
+      result = fun.()
+      {result, drain_rows(ref, 0)}
+    after
+      :telemetry.detach(handler_id)
+    end
+  end
+
+  # `BEGIN` and `COMMIT` have no row count.
+  def handle_rows(_event, _measurements, %{result: {:ok, %{num_rows: rows}}}, {test_pid, ref})
+      when is_integer(rows) do
+    send(test_pid, {:rows, ref, rows})
+  end
+
+  def handle_rows(_event, _measurements, _metadata, _config), do: :ok
+
+  defp drain_rows(ref, total) do
+    receive do
+      {:rows, ^ref, rows} -> drain_rows(ref, total + rows)
+    after
+      0 -> total
     end
   end
 
