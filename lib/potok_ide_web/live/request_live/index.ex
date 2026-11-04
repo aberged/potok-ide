@@ -127,7 +127,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                 direct_group_link={true}
               />
               <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-                <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700">
+                <span class="inline-flex items-center rounded-full bg-sky-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-sky-700 dark:text-sky-300">
                   {gettext("Pending")}
                 </span>
                 <span>{gettext("Review this access request for the selected group.")}</span>
@@ -215,7 +215,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     direct_group_link={true}
                   />
                   <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-base-content/70">
-                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">
+                    <span class="inline-flex items-center rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700 dark:text-emerald-300">
                       {gettext("Approved")}
                     </span>
                     <span>{gettext("Approved on")}</span>
@@ -292,7 +292,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                     <span class={[
                       "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
                       if(request.status == :approved,
-                        do: "bg-sky-500/10 text-sky-700",
+                        do: "bg-sky-500/10 text-sky-700 dark:text-sky-300",
                         else: "bg-amber-500/10 text-amber-800 dark:text-amber-200"
                       )
                     ]}>

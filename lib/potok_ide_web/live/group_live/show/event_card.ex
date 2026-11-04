@@ -37,7 +37,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
         "flex w-13 shrink-0 flex-col items-center justify-center rounded-xl bg-base-100 py-1.5 leading-none text-base-content shadow-xs",
         @cancelled? && "opacity-50"
       ]}>
-        <span class="text-[10px] font-bold uppercase tracking-wide text-rose-500">
+        <span class="text-[10px] font-bold uppercase tracking-wide text-rose-600 dark:text-rose-300">
           {Format.month_short(@start.month)}
         </span>
         <span class="text-xl font-bold tabular-nums">{@start.day}</span>

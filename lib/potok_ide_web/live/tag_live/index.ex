@@ -165,7 +165,7 @@ defmodule PotokIdeWeb.TagLive.Index do
               class={kind_tab_class(is_nil(@kind))}
             >
               {pgettext("tag kind", "All")}
-              <span class="tabular-nums opacity-70">{@counts |> Map.values() |> Enum.sum()}</span>
+              <span class="tabular-nums opacity-85">{@counts |> Map.values() |> Enum.sum()}</span>
             </.link>
             <.link
               :for={{param, kind, _stream} <- kinds()}
@@ -175,7 +175,7 @@ defmodule PotokIdeWeb.TagLive.Index do
             >
               <.icon name={kind_icon(kind)} class="size-4" />
               {kind_label(kind)}
-              <span class="tabular-nums opacity-70">{Map.get(@counts, kind, 0)}</span>
+              <span class="tabular-nums opacity-85">{Map.get(@counts, kind, 0)}</span>
             </.link>
           </nav>
 

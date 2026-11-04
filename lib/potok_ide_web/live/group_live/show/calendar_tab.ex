@@ -628,7 +628,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           >
             <.icon name={rsvp_icon(status)} class="size-5" />
             <span>{rsvp_label(status)}</span>
-            <span id={"calendar-rsvp-#{status}-count"} class="tabular-nums opacity-70">
+            <span id={"calendar-rsvp-#{status}-count"} class="tabular-nums opacity-85">
               {@summary.counts[status]}
             </span>
           </button>

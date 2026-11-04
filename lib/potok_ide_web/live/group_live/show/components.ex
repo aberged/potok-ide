@@ -502,7 +502,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp settings_tab_class(false, false),
     do: "text-base-content/70 hover:bg-base-200 hover:text-base-content"
 
-  defp settings_tab_class(false, true), do: "text-error/80 hover:bg-error/10 hover:text-error"
+  defp settings_tab_class(false, true), do: "text-error hover:bg-error/10 hover:text-error"
 
   attr :id, :string, required: true
   attr :tab_id, :string, required: true, doc: "the id of the tab that shows the card"
@@ -836,7 +836,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           :if={@online? or @presence_profile_id}
           id={@presence_badge_id}
           class={[
-            "mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700",
+            "mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-500/12 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300",
             @presence_profile_id && "presence-dot presence-p#{@presence_profile_id}"
           ]}
         >
@@ -1855,7 +1855,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div class={["px-3 py-2.5", @can_dismiss && "pr-10"]}>
           <p
             :if={@preview["site_name"]}
-            class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-80"
+            class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-90"
           >
             {@preview["site_name"]}
           </p>

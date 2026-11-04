@@ -1013,7 +1013,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     >
       <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
         <div
-          class="absolute inset-0 bg-base-content/30 backdrop-blur-[2px]"
+          class="absolute inset-0 bg-black/30 backdrop-blur-[2px] dark:bg-black/60"
           data-sheet-close
           aria-hidden="true"
         >

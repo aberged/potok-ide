@@ -21,6 +21,10 @@
   curl -sLO https://github.com/saadeghi/daisyui/releases/latest/download/daisyui-theme.js
   We ship with two themes, a light one inspired on Phoenix colors and a dark one inspired
   on Elixir colors. Build your own at: https://daisyui.com/theme-generator/ */
+
+/* On the dark page the colors are light with dark text on them, so that each
+   reads both as text and as a surface. Primary is the sky blue of the mark.
+   One's own values keep the deep blue (`.chat-bubble-primary` further down). */
 @plugin "../vendor/daisyui-theme" {
   name: "dark";
   default: false;
@@ -30,22 +34,22 @@
   --color-base-200: oklch(25.26% 0.014 253.1);
   --color-base-300: oklch(20.15% 0.012 254.09);
   --color-base-content: oklch(97.807% 0.029 256.847);
-  --color-primary: oklch(58% 0.233 277.117);
-  --color-primary-content: oklch(96% 0.018 272.314);
-  --color-secondary: oklch(58% 0.233 277.117);
-  --color-secondary-content: oklch(96% 0.018 272.314);
-  --color-accent: oklch(60% 0.25 292.717);
-  --color-accent-content: oklch(96% 0.016 293.756);
+  --color-primary: oklch(82.433% 0.096 228.438);
+  --color-primary-content: oklch(24% 0.06 245);
+  --color-secondary: oklch(82.433% 0.096 228.438);
+  --color-secondary-content: oklch(24% 0.06 245);
+  --color-accent: oklch(82.433% 0.096 228.438);
+  --color-accent-content: oklch(24% 0.06 245);
   --color-neutral: oklch(37% 0.044 257.287);
   --color-neutral-content: oklch(98% 0.003 247.858);
-  --color-info: oklch(58% 0.158 241.966);
-  --color-info-content: oklch(97% 0.013 236.62);
-  --color-success: oklch(60% 0.118 184.704);
-  --color-success-content: oklch(98% 0.014 180.72);
-  --color-warning: oklch(66% 0.179 58.318);
-  --color-warning-content: oklch(98% 0.022 95.277);
-  --color-error: oklch(58% 0.253 17.585);
-  --color-error-content: oklch(96% 0.015 12.422);
+  --color-info: oklch(80% 0.1 232);
+  --color-info-content: oklch(24% 0.05 232);
+  --color-success: oklch(80% 0.12 178);
+  --color-success-content: oklch(24% 0.05 178);
+  --color-warning: oklch(83% 0.14 80);
+  --color-warning-content: oklch(24% 0.05 80);
+  --color-error: oklch(77% 0.14 22);
+  --color-error-content: oklch(22% 0.05 22);
   --radius-selector: 0.25rem;
   --radius-field: 0.25rem;
   --radius-box: 0.5rem;
@@ -79,8 +83,8 @@
   --color-success-content: oklch(89.389% 0.032 321.406);
   --color-warning: oklch(71.236% 0.159 52.023);
   --color-warning-content: oklch(14.247% 0.031 52.023);
-  --color-error: oklch(62.013% 0.208 28.717);
-  --color-error-content: oklch(12.402% 0.041 28.717);
+  --color-error: oklch(51% 0.2 27);
+  --color-error-content: oklch(100% 0 0);
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
   --radius-box: 1rem;
@@ -114,8 +118,8 @@
   --color-success-content: oklch(89.389% 0.032 321.406);
   --color-warning: oklch(71.236% 0.159 52.023);
   --color-warning-content: oklch(14.247% 0.031 52.023);
-  --color-error: oklch(62.013% 0.208 28.717);
-  --color-error-content: oklch(12.402% 0.041 28.717);
+  --color-error: oklch(51% 0.2 27);
+  --color-error-content: oklch(100% 0 0);
   --radius-selector: 1rem;
   --radius-field: 0.5rem;
   --radius-box: 1rem;
@@ -155,8 +159,18 @@
 @custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
 @custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
 
-/* Use the data attribute for dark mode  */
-@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+/* The Dark theme, and the System theme on a dark device, which has no attribute. */
+@custom-variant dark {
+  &:where([data-theme=dark], [data-theme=dark] *) {
+    @slot;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme]), :root:not([data-theme]) *) {
+      @slot;
+    }
+  }
+}
 
 /* While the on-screen keyboard is open (`data-keyboard-open`, set in app.js)
    pages give its height back to the content. `cramped:` adds screens too short
@@ -413,6 +427,16 @@
   text-decoration-thickness: 2px;
 }
 
+/* A bubble is a large surface, which the light primary of the dark theme would
+   make glare. Everything in it takes its colors from these two, so its quotes,
+   files and mentions follow. */
+.chat-bubble-primary {
+  @variant dark {
+    --color-primary: oklch(49.307% 0.179 258.418);
+    --color-primary-content: oklch(100% 0 0);
+  }
+}
+
 .chat-bubble-primary .rich-content :where(a) {
   color: inherit;
 }
@@ -580,7 +604,7 @@
 }
 
 .chat-bubble-primary .rich-content .mention {
-  background: color-mix(in oklab, var(--color-primary-content) 22%, transparent);
+  background: color-mix(in oklab, var(--color-primary-content) 12%, transparent);
   color: var(--color-primary-content);
 }
 

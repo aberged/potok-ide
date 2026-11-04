@@ -199,7 +199,7 @@ defmodule PotokIdeWeb.Layouts do
         <label
           for="app-drawer-toggle"
           aria-label={gettext("close")}
-          class="drawer-overlay bg-base-content/25 backdrop-blur-[2px]"
+          class="drawer-overlay bg-black/25 backdrop-blur-[2px] dark:bg-black/60"
         />
         <aside
           id="app-sidebar"

@@ -316,7 +316,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   end
 
   defp state_class(:allow, _active?),
-    do: "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700"
+    do: "border border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
 
   defp state_class(:deny, _active?), do: "border border-error/40 bg-error/10 text-error"
 
