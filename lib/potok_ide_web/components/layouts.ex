@@ -47,6 +47,10 @@ defmodule PotokIdeWeb.Layouts do
     doc:
       "lets the page's scroll area span the whole width, so its scrollbar sits at the window's edge"
 
+  attr :collapse_nav, :boolean,
+    default: false,
+    doc: "drops the top bar on short screens, for pages with a header of their own to go back by"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -66,8 +70,12 @@ defmodule PotokIdeWeb.Layouts do
     >
       <%!-- Ignored by patches, otherwise every re-render would reset `checked` and close the drawer. --%>
       <input id="app-drawer-toggle" type="checkbox" class="drawer-toggle" phx-update="ignore" />
-      <div class="drawer-content flex h-dvh min-w-0 flex-col overflow-hidden pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
-        <nav class="relative z-100 shrink-0">
+      <%!-- `--app-visual-height` is set where the keyboard does not shorten the page (app.js). --%>
+      <div class="drawer-content flex h-[var(--app-visual-height,100dvh)] min-w-0 flex-col overflow-hidden pt-(--app-safe-area-top) pb-(--app-safe-area-bottom) keyboard-open:pb-0">
+        <nav class={[
+          "relative z-100 shrink-0 keyboard-open:hidden",
+          @collapse_nav && "cramped:hidden"
+        ]}>
           <div class="mx-auto flex items-center justify-between gap-3 rounded-[2rem] border border-base-300/70 bg-base-100/85 px-4 py-3 shadow-lg shadow-primary/5 backdrop-blur sm:px-5">
             <label
               for="app-drawer-toggle"

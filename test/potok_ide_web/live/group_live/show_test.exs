@@ -2760,6 +2760,38 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute render(lv) =~ "original liveview value"
     end
 
+    test "edits a value in the composer, with its text and without new files", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "edit-composer",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "edit-composer-group")
+      {:ok, value} = Social.create_value(profile, group, %{"content" => "the words so far"})
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      lv |> element("#value-edit-#{value.id}") |> render_click()
+
+      assert has_element?(lv, "#group-value-mentions #edit-value-form-#{value.id}")
+      assert has_element?(lv, "#group-value-edit-bar", "the words so far")
+
+      assert has_element?(
+               lv,
+               ~s(textarea#edit-value-content-#{value.id}[data-focus-on-mount="true"]),
+               "the words so far"
+             )
+
+      assert has_element?(lv, "#edit-value-submit-#{value.id}[data-has-attachments=false]")
+      refute has_element?(lv, "#group-value-attach")
+    end
+
     test "shows the new value composer again after cancelling an edit", %{conn: conn} do
       account = account_fixture()
 

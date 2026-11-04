@@ -91,6 +91,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      collapse_nav
     >
       <%!-- Online indicators are toggled by this rule set instead of re-rendering streamed items. --%>
       <style id="group-presence-style">

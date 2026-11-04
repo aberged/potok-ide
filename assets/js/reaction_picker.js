@@ -132,7 +132,7 @@ export const ReactionPicker = {
     })
 
     // Touch keyboards would cover the sheet, so search is focused on desktop only.
-    if (window.matchMedia("(pointer: fine)").matches) {
+    if (window.matchMedia("(hover: hover)").matches) {
       picker.shadowRoot?.querySelector("input[type='search']")?.focus({preventScroll: true})
     }
   },

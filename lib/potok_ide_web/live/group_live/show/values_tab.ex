@@ -57,25 +57,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           path={@group_path}
           group={@group}
           current_profile={@current_profile}
-          class="mx-2 shadow-md"
+          class="mx-2 shadow-md cramped:hidden"
         />
         <div
           :if={@thread_origin}
           id="group-thread-origin"
-          class="relative z-10 flex shrink-0 items-start gap-3 border-b border-base-300/70 bg-base-100/95 px-4 py-3 backdrop-blur sm:px-6"
+          class="relative z-10 flex shrink-0 items-start gap-3 border-b border-base-300/70 bg-base-100/95 px-4 py-3 backdrop-blur cramped:items-center cramped:py-1 sm:px-6"
         >
-          <span class="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <span class="mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary cramped:hidden">
             <.icon name="hero-chat-bubble-left-right" class="size-4" />
           </span>
           <div class="min-w-0 flex-1">
-            <p class="flex items-center gap-1.5 text-xs text-base-content/55">
+            <p class="flex items-center gap-1.5 text-xs text-base-content/55 cramped:hidden">
               <span class="font-semibold uppercase tracking-[0.14em]">{gettext("Thread")}</span>
               <span aria-hidden="true">·</span>
               <span class="truncate font-semibold text-base-content">
                 {@thread_origin.creator.username}
               </span>
             </p>
-            <p class="mt-0.5 line-clamp-2 text-sm text-base-content/75 wrap-break-word">
+            <p class="mt-0.5 line-clamp-2 text-sm text-base-content/75 wrap-break-word cramped:mt-0 cramped:line-clamp-1">
               {Value.excerpt(@thread_origin, 240)}
             </p>
           </div>
@@ -94,7 +94,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             data-focus-value-id={@focus_value_id}
             data-has-newer={to_string(@has_newer)}
             class={[
-              "relative flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-4 py-5 [overflow-anchor:none] sm:px-6"
+              "relative flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col gap-4 px-2 py-2 [overflow-anchor:none] sm:px-6 sm:py-5"
             ]}
           >
             <div :if={@has_more} class="flex justify-center">
@@ -195,116 +195,75 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <div
           :if={@is_member and (@can_post or @editing_value)}
-          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
+          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-2 py-1.5 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6 sm:py-4"
         >
-          <%= if @editing_value do %>
-            <.form
-              for={@edit_value_form}
-              id={"edit-value-form-#{@editing_value.id}"}
-              class="space-y-3 rounded-[1.75rem] border border-base-300 bg-base-100 p-3 h-[18rem] shadow-sm"
-              phx-change="validate_edit_value"
-              phx-submit="save_edit_value"
-            >
-              <div
-                id={"edit-value-editor-#{@editing_value.id}"}
-                phx-hook="MarkdownEditor"
-                class="space-y-2"
-                data-placeholder={gettext("Write your value in Markdown")}
-              >
-                <div
-                  id={"edit-value-editor-shell-#{@editing_value.id}"}
-                  class="markdown-editor flex flex-col-reverse"
-                  phx-update="ignore"
-                >
-                  <div
-                    id={"edit-value-editor-surface-#{@editing_value.id}"}
-                    data-markdown-target="editor"
-                    phx-update="ignore"
-                    class="!h-[10rem]"
-                  >
-                  </div>
-                </div>
-                <textarea
-                  id={"edit-value-content-#{@editing_value.id}"}
-                  name={@edit_value_form[:content].name}
-                  data-markdown-target="input"
-                  class="sr-only"
-                  aria-label={gettext("Value")}
-                >{Phoenix.HTML.Form.normalize_value("textarea", @edit_value_form[:content].value)}</textarea>
-                <p
-                  :for={error <- @edit_value_form[:content].errors}
-                  class="mt-1.5 flex items-center gap-2 text-sm text-error"
-                >
-                  <.icon name="hero-exclamation-circle" class="size-5" /> {translate_error(error)}
-                </p>
-              </div>
-
-              <div class="flex justify-end gap-2">
-                <.button type="submit" variant="primary">{gettext("Save changes")}</.button>
-                <.button type="button" phx-click="cancel_edit_value" variant="ghost">
-                  {gettext("Cancel")}
-                </.button>
-              </div>
-            </.form>
-          <% else %>
+          <.composer_context
+            :if={@replying_to_value && !@editing_value}
+            id="group-value-reply-preview"
+            icon="hero-arrow-uturn-left"
+            title={gettext("Replying to %{username}", username: @replying_to_value.creator.username)}
+            text={Value.excerpt(@replying_to_value, 160)}
+            cancel_id="group-value-reply-cancel"
+            cancel_event="cancel_reply_value"
+            cancel_label={gettext("Cancel reply")}
+          />
+          <%!-- Fills the composer with what was shared from another app (`assets/js/share_inbox.js`). --%>
+          <div
+            :if={@share_id && !@editing_value}
+            id="group-value-share"
+            phx-hook="ShareComposer"
+            data-share-id={@share_id}
+            data-can-attach={to_string(@can_attach)}
+            data-max-files={Storage.max_files()}
+            data-max-file-size={Storage.max_file_size()}
+            hidden
+          >
+          </div>
+          <%!-- `.MentionComposer` suggests `@` mentions; it handles keys before `.SubmitOnEnter`. --%>
+          <div id="group-value-mentions" phx-hook=".MentionComposer" class="relative">
             <div
-              :if={@replying_to_value}
-              id="group-value-reply-preview"
-              phx-mounted={
-                JS.transition(
-                  {"transition ease-out duration-150", "opacity-0 translate-y-1",
-                   "opacity-100 translate-y-0"}
-                )
-              }
-              class="mb-2 flex items-center gap-3 rounded-2xl border-l-4 border-primary bg-base-200/70 py-2 pr-2 pl-3"
-            >
-              <.icon name="hero-arrow-uturn-left" class="size-4 shrink-0 text-primary" />
-              <div class="min-w-0 flex-1">
-                <p class="truncate text-xs font-semibold text-primary">
-                  {gettext("Replying to %{username}",
-                    username: @replying_to_value.creator.username
-                  )}
-                </p>
-                <p class="truncate text-sm text-base-content/70">
-                  {Value.excerpt(@replying_to_value, 160)}
-                </p>
-              </div>
-              <.icon_button
-                id="group-value-reply-cancel"
-                type="button"
-                phx-click="cancel_reply_value"
-                icon="hero-x-mark"
-                label={gettext("Cancel reply")}
-              />
-            </div>
-            <%!-- Fills the composer with what was shared from another app (`assets/js/share_inbox.js`). --%>
-            <div
-              :if={@share_id}
-              id="group-value-share"
-              phx-hook="ShareComposer"
-              data-share-id={@share_id}
-              data-can-attach={to_string(@can_attach)}
-              data-max-files={Storage.max_files()}
-              data-max-file-size={Storage.max_file_size()}
+              id="group-value-mention-menu"
+              phx-update="ignore"
               hidden
+              role="listbox"
+              aria-label={gettext("Mention suggestions")}
+              class="absolute inset-x-0 bottom-full z-30 mb-2 max-h-[min(18rem,40dvh)] overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-xl shadow-base-content/10"
             >
             </div>
-            <%!-- `.MentionComposer` suggests `@` mentions; it handles keys before `.SubmitOnEnter`. --%>
-            <div id="group-value-mentions" phx-hook=".MentionComposer" class="relative">
-              <div
-                id="group-value-mention-menu"
-                phx-update="ignore"
-                hidden
-                role="listbox"
-                aria-label={gettext("Mention suggestions")}
-                class="absolute inset-x-0 bottom-full z-30 mb-2 max-h-72 overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-xl shadow-base-content/10"
+            <%= if @editing_value do %>
+              <%!-- Files stay as they are, so a value with files may lose its text. --%>
+              <.form
+                for={@edit_value_form}
+                id={"edit-value-form-#{@editing_value.id}"}
+                class={composer_form_class()}
+                phx-change="validate_edit_value"
+                phx-submit="save_edit_value"
               >
-              </div>
+                <.composer_context
+                  id="group-value-edit-bar"
+                  icon="hero-pencil-square"
+                  title={gettext("Editing message")}
+                  text={Value.excerpt(@editing_value, 160)}
+                  cancel_id="group-value-edit-cancel"
+                  cancel_event="cancel_edit_value"
+                  cancel_label={gettext("Cancel")}
+                />
+                <.composer_row
+                  field={@edit_value_form[:content]}
+                  input_id={"edit-value-content-#{@editing_value.id}"}
+                  submit_id={"edit-value-submit-#{@editing_value.id}"}
+                  submit_icon="hero-check"
+                  submit_label={gettext("Save changes")}
+                  has_attachments={attachments?(@editing_value)}
+                  focus_on_mount
+                />
+              </.form>
+            <% else %>
               <%!-- Files can be dropped anywhere on the form; LiveView marks it `phx-drop-target-active` meanwhile. --%>
               <.form
                 for={@new_value_form}
                 id="group-value-form"
-                class="rounded-[1.75rem] flex flex-col border border-base-300 bg-base-100 p-3 shadow-sm transition-colors duration-150 [&.phx-drop-target-active]:border-primary [&.phx-drop-target-active]:bg-primary/5"
+                class={composer_form_class()}
                 phx-change="validate_value"
                 phx-submit="create_value"
                 phx-drop-target={@can_attach && @attachments.ref}
@@ -312,7 +271,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 <div
                   :if={@can_attach and @attachments.entries != []}
                   id="group-value-attachments"
-                  class="mb-2 flex flex-col gap-1.5"
+                  class="mb-2 flex max-h-28 flex-col gap-1.5 overflow-y-auto sm:max-h-56"
                 >
                   <div
                     :for={entry <- @attachments.entries}
@@ -324,7 +283,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                       )
                     }
                     class={[
-                      "flex items-center gap-3 rounded-2xl border py-2 pr-2 pl-2.5",
+                      "flex shrink-0 items-center gap-3 rounded-2xl border py-2 pr-2 pl-2.5",
                       if(entry.valid?,
                         do: "border-base-300 bg-base-200/60",
                         else: "border-error/40 bg-error/5"
@@ -389,7 +348,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   <.icon name="hero-exclamation-circle" class="size-4 shrink-0" />
                   {upload_error_message(error)}
                 </p>
-                <div class="flex items-end gap-1.5">
+                <%!-- `.ComposerSubmit` re-checks the button when files come and go; typing is handled by `.SubmitOnEnter`. --%>
+                <.composer_row
+                  field={@new_value_form[:content]}
+                  input_id="group-value-content"
+                  submit_id="group-value-submit"
+                  submit_icon="hero-paper-airplane"
+                  submit_label={gettext("Post value")}
+                  has_attachments={@can_attach and Enum.any?(@attachments.entries, & &1.valid?)}
+                >
                   <label
                     :if={@can_attach}
                     id="group-value-attach"
@@ -403,36 +370,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     <span class="sr-only">{gettext("Add files")}</span>
                     <.live_file_input upload={@attachments} class="sr-only" />
                   </label>
-                  <.input
-                    field={@new_value_form[:content]}
-                    id="group-value-content"
-                    aria-label={gettext("Value")}
-                    aria-autocomplete="list"
-                    aria-controls="group-value-mention-menu"
-                    class="m-0 w-full flex-auto overflow-hidden border-0 bg-transparent px-1 py-1 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
-                    placeholder={gettext("Write a value...")}
-                    rows="1"
-                    type="textarea"
-                    phx-debounce="400"
-                    phx-hook=".SubmitOnEnter"
-                  />
-                  <%!-- `.ComposerSubmit` re-checks the button when files come and go; typing is handled by `.SubmitOnEnter`. --%>
-                  <.icon_button
-                    id="group-value-submit"
-                    type="submit"
-                    phx-hook=".ComposerSubmit"
-                    data-has-attachments={
-                      to_string(@can_attach and Enum.any?(@attachments.entries, & &1.valid?))
-                    }
-                    icon="hero-paper-airplane"
-                    label={gettext("Post value")}
-                    variant="primary"
-                    size="md"
-                  />
-                </div>
+                </.composer_row>
               </.form>
-            </div>
-          <% end %>
+            <% end %>
+          </div>
         </div>
 
         <div
@@ -512,6 +453,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.addEventListener("potok:show-value", this.handleShowValue)
               this.jumpButton?.addEventListener("click", this.handleJumpClick)
 
+              this.feedHeight = this.el.clientHeight
+              this.resizeObserver = new ResizeObserver(() => this.keepViewOnResize())
+              this.resizeObserver.observe(this.el)
+
               // A link to a value (`?value=`) opens the feed at it instead of the newest.
               requestAnimationFrame(() => {
                 const focusValueId = this.el.dataset.focusValueId
@@ -573,10 +518,29 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
             destroyed() {
               clearTimeout(this.highlightTimer)
+              this.resizeObserver.disconnect()
               this.el.removeEventListener("click", this.handleClick)
               this.el.removeEventListener("scroll", this.handleScroll)
               this.el.removeEventListener("potok:show-value", this.handleShowValue)
               this.jumpButton?.removeEventListener("click", this.handleJumpClick)
+            },
+
+            // The feed loses height to the keyboard, a reply or a longer text, and
+            // it would lose it at the bottom, where the newest values are. The
+            // feed sets `overflow-anchor: none`, so the browser does not help.
+            keepViewOnResize() {
+              const change = this.feedHeight - this.el.clientHeight
+              this.feedHeight = this.el.clientHeight
+
+              if (change === 0) {
+                return
+              }
+
+              if (this.nearLatest) {
+                this.scrollToLatest()
+              } else {
+                this.el.scrollTop += change
+              }
             },
 
             hasNewer() {
@@ -691,11 +655,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.requestId = 0
 
               this.handleInput = (event) => {
-                if (event.target.id === "group-value-content") this.scheduleLookup(event.target)
+                if (event.target.matches("textarea")) this.scheduleLookup(event.target)
               }
 
               this.handleKeydown = (event) => {
-                if (event.target.id !== "group-value-content" || !this.isOpen()) return
+                if (!event.target.matches("textarea") || !this.isOpen()) return
 
                 if (event.key === "ArrowDown" || event.key === "ArrowUp") {
                   const step = event.key === "ArrowDown" ? 1 : -1
@@ -739,7 +703,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
 
             textarea() {
-              return this.el.querySelector("#group-value-content")
+              return this.el.querySelector("textarea")
             },
 
             isOpen() {
@@ -883,7 +847,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             mounted() {
               // Typing is debounced on the server, so the send button and the
               // post-submit reset are handled here instead of waiting for diffs.
-              this.submitButton = this.el.form?.querySelector("#group-value-submit")
+              this.submitButton = this.el.form?.querySelector("button[type=submit]")
               this.handleInput = () => {
                 this.autoResize()
                 this.syncSubmitButton()
@@ -897,14 +861,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.handleEvent("value_composer_focus", () => {
                 this.el.focus()
               })
-              // Enter sends on devices with a fine pointer (desktop web); touch
-              // keyboards keep Enter as a newline. Shift+Enter is always a newline.
-              this.sendOnEnter = window.matchMedia("(pointer: fine)").matches
+              // Enter sends on devices with a mouse (desktop web); touch keyboards
+              // keep Enter as a newline, also on phones with a stylus, which report
+              // a fine pointer. Shift+Enter is always a newline.
+              this.sendOnEnter = window.matchMedia("(hover: hover)").matches
               this.handleKeydown = (event) => {
-                if (event.key === "Escape" && document.getElementById("group-value-reply-preview")) {
-                  event.preventDefault()
-                  this.pushEvent("cancel_reply_value", {})
-                  return
+                if (event.key === "Escape") {
+                  const editing = document.getElementById("group-value-edit-bar")
+
+                  if (editing || document.getElementById("group-value-reply-preview")) {
+                    event.preventDefault()
+                    this.pushEvent(editing ? "cancel_edit_value" : "cancel_reply_value", {})
+                    return
+                  }
                 }
 
                 if (!this.sendOnEnter || event.key !== "Enter" || event.shiftKey || event.isComposing) {
@@ -919,6 +888,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.el.addEventListener("keydown", this.handleKeydown)
               this.autoResize()
               this.syncSubmitButton()
+
+              // An edit starts with the caret after the text.
+              if (this.el.dataset.focusOnMount === "true") {
+                this.el.focus()
+                this.el.setSelectionRange(this.el.value.length, this.el.value.length)
+                this.el.scrollTop = this.el.scrollHeight
+              }
             },
 
             updated() {
@@ -949,6 +925,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ComposerSubmit">
           export default {
             mounted() {
+              // A tap that moved the focus here would close the keyboard.
+              this.el.addEventListener("mousedown", event => event.preventDefault())
               this.sync()
             },
 
@@ -957,7 +935,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             },
 
             sync() {
-              const textarea = this.el.form?.querySelector("#group-value-content")
+              const textarea = this.el.form?.querySelector("textarea")
               const empty = !textarea || textarea.value.trim() === ""
 
               this.el.disabled = empty && this.el.dataset.hasAttachments !== "true"
@@ -968,6 +946,92 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     </div>
     """
   end
+
+  defp composer_form_class do
+    "flex flex-col rounded-[1.75rem] border border-base-300 bg-base-100 px-1 py-0.5 shadow-sm transition-colors duration-150 sm:p-3 [&.phx-drop-target-active]:border-primary [&.phx-drop-target-active]:bg-primary/5"
+  end
+
+  attr :id, :string, required: true
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  attr :text, :string, required: true
+  attr :cancel_id, :string, required: true
+  attr :cancel_event, :string, required: true
+  attr :cancel_label, :string, required: true
+
+  # What the composer is working on: the value replied to or edited.
+  defp composer_context(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      phx-mounted={
+        JS.transition(
+          {"transition ease-out duration-150", "opacity-0 translate-y-1", "opacity-100 translate-y-0"}
+        )
+      }
+      class="mb-1.5 flex items-center gap-3 rounded-2xl border-l-4 border-primary bg-base-200/70 py-1 pr-1 pl-3 sm:mb-2 sm:py-2 sm:pr-2"
+    >
+      <.icon name={@icon} class="size-4 shrink-0 text-primary" />
+      <div class="min-w-0 flex-1">
+        <p class="truncate text-xs font-semibold text-primary">{@title}</p>
+        <p class="truncate text-sm text-base-content/70">{@text}</p>
+      </div>
+      <.icon_button
+        id={@cancel_id}
+        type="button"
+        phx-click={@cancel_event}
+        icon="hero-x-mark"
+        label={@cancel_label}
+      />
+    </div>
+    """
+  end
+
+  attr :field, Phoenix.HTML.FormField, required: true
+  attr :input_id, :string, required: true
+  attr :submit_id, :string, required: true
+  attr :submit_icon, :string, required: true
+  attr :submit_label, :string, required: true
+  attr :has_attachments, :boolean, default: false
+  attr :focus_on_mount, :boolean, default: false
+  slot :inner_block, doc: "what goes before the text, such as the button for files"
+
+  # The text and its submit button, the same for a new value and an edit. Past
+  # the height limit the text scrolls, so the button never leaves the screen.
+  defp composer_row(assigns) do
+    ~H"""
+    <div class="flex items-end gap-1 sm:gap-1.5 [&_.fieldset]:p-0">
+      {render_slot(@inner_block)}
+      <.input
+        field={@field}
+        id={@input_id}
+        aria-label={gettext("Value")}
+        aria-autocomplete="list"
+        aria-controls="group-value-mention-menu"
+        class="m-0 block max-h-[min(9rem,30dvh)] w-full flex-auto resize-none overflow-y-auto border-0 bg-transparent px-1 py-2 text-base leading-6 text-base-content placeholder:text-base-content/40 focus:outline-none"
+        placeholder={gettext("Write a value...")}
+        rows="1"
+        type="textarea"
+        phx-debounce="400"
+        phx-hook=".SubmitOnEnter"
+        data-focus-on-mount={to_string(@focus_on_mount)}
+      />
+      <.icon_button
+        id={@submit_id}
+        type="submit"
+        phx-hook=".ComposerSubmit"
+        data-has-attachments={to_string(@has_attachments)}
+        icon={@submit_icon}
+        label={@submit_label}
+        variant="primary"
+        size="md"
+      />
+    </div>
+    """
+  end
+
+  defp attachments?(%Value{attachments: [_ | _]}), do: true
+  defp attachments?(_value), do: false
 
   defp upload_error_message(:too_large),
     do:

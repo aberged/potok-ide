@@ -993,93 +993,6 @@ const registerServiceWorker = async () => {
   }
 }
 
-const normalizeMarkdown = markdown => markdown.replace(/\r\n/g, "\n").trimEnd()
-
-// The editor libraries (Quill, marked, turndown) are loaded on first use so
-// pages without an editor do not pay for them.
-let markdownEditorModule = null
-const loadMarkdownEditor = () =>
-  markdownEditorModule || (markdownEditorModule = import("./markdown_editor"))
-
-const MarkdownEditor = {
-  mounted() {
-    this.hiddenInput = this.el.querySelector("[data-markdown-target='input']")
-    this.editorSurface = this.el.querySelector("[data-markdown-target='editor']")
-    this.form = this.el.closest("form")
-    this.destroyedBeforeLoad = false
-
-    if (!this.hiddenInput || !this.editorSurface) {
-      return
-    }
-
-    loadMarkdownEditor().then(editor => {
-      if (this.destroyedBeforeLoad) {
-        return
-      }
-
-      this.editor = editor
-      this.quill = editor.createQuill(this.editorSurface, this.el.dataset.placeholder)
-
-      editor.renderMarkdownInQuill(this.quill, this.hiddenInput.value)
-      this.lastSyncedValue = normalizeMarkdown(this.hiddenInput.value || "")
-
-      this.handleTextChange = () => {
-        const markdown = editor.serializeQuillToMarkdown(this.quill)
-
-        if (markdown === this.lastSyncedValue) {
-          return
-        }
-
-        this.hiddenInput.value = markdown
-        this.lastSyncedValue = markdown
-        this.hiddenInput.dispatchEvent(new Event("input", {bubbles: true}))
-        this.hiddenInput.dispatchEvent(new Event("change", {bubbles: true}))
-      }
-
-      this.handleSubmit = () => {
-        const markdown = editor.serializeQuillToMarkdown(this.quill)
-
-        this.hiddenInput.value = markdown
-        this.lastSyncedValue = markdown
-      }
-
-      this.quill.on("text-change", this.handleTextChange)
-      this.form?.addEventListener("submit", this.handleSubmit)
-
-      // Apply any server value that arrived while the module was loading.
-      this.updated()
-    }).catch(error => {
-      console.error("Markdown editor failed to load", error)
-    })
-  },
-
-  updated() {
-    if (!this.quill || !this.hiddenInput || !this.editor) {
-      return
-    }
-
-    const serverValue = normalizeMarkdown(this.hiddenInput.value || "")
-
-    if (serverValue === this.lastSyncedValue) {
-      return
-    }
-
-    const selection = this.quill.getSelection()
-
-    this.editor.renderMarkdownInQuill(this.quill, serverValue)
-    this.lastSyncedValue = serverValue
-
-    if (selection) {
-      this.quill.setSelection(selection.index, selection.length, "silent")
-    }
-  },
-
-  destroyed() {
-    this.destroyedBeforeLoad = true
-    this.form?.removeEventListener("submit", this.handleSubmit)
-  },
-}
-
 const APP_LINK_HOST = "potok.rs"
 const APP_LINK_PATH_PATTERN = /^\/accounts\/log-in\/([^/]+)\/?$/
 const CAPACITOR_LAST_ROUTE_KEY = "potok:last-route"
@@ -1087,8 +1000,8 @@ const CAPACITOR_LAST_MAGIC_LINK_TOKEN_KEY = "potok:last-magic-link-token"
 const CAPACITOR_ROUTE_RESTORE_DELAY_MS = 500
 const CAPACITOR_URL_DEDUPE_WINDOW_MS = 1500
 const CAPACITOR_MAGIC_LINK_TOKEN_TTL_MS = 10 * 60 * 1000
-const IOS_NATIVE_KEYBOARD_OPEN_DELTA_PX = 120
-const IOS_NATIVE_KEYBOARD_CLOSE_DELTA_PX = 80
+const KEYBOARD_OPEN_DELTA_PX = 120
+const KEYBOARD_CLOSE_DELTA_PX = 80
 
 let pendingCapacitorRouteRestore = null
 let lastHandledCapacitorUrl = null
@@ -1101,7 +1014,7 @@ const readRootCssPixelValue = name => {
   return Number.isFinite(value) ? value : 0
 }
 
-const nativeIosEditableElementFocused = () => {
+const editableElementFocused = () => {
   const activeElement = document.activeElement
 
   if (!(activeElement instanceof HTMLElement)) {
@@ -1113,51 +1026,69 @@ const nativeIosEditableElementFocused = () => {
   )
 }
 
-const registerNativeIosKeyboardSafeAreaFix = () => {
-  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== "ios") {
+// Nothing tells a page that the on-screen keyboard opened, but it takes a big
+// part of the visible height while a field has the focus. `data-keyboard-open`
+// on <html> lets the page give that height back to its content (the
+// `keyboard-open:` and `cramped:` variants in app.css).
+const registerKeyboardWatcher = () => {
+  // Not `pointer: coarse`: a phone with a stylus reports a fine pointer.
+  if (!window.matchMedia("(hover: none)").matches) {
     return
   }
 
   const root = document.documentElement
   const viewport = window.visualViewport
+  const nativeIos = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios"
+
+  // Scaled back, so zooming in does not read as a keyboard.
+  const visibleHeight = () => (viewport ? viewport.height * viewport.scale : window.innerHeight)
 
   let keyboardOpen = false
-  let stableViewportHeight = viewport?.height || window.innerHeight
+  let stableViewportHeight = visibleHeight()
   let stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
 
   const applyTopInset = value => {
     root.style.setProperty("--app-effective-safe-area-top", `${Math.max(0, value)}px`)
-    root.dataset.iosKeyboardOpen = keyboardOpen ? "true" : "false"
   }
 
-  const refreshStableTopInset = () => {
-    stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
+  // iOS browsers keep the page's height under the keyboard and slide the page
+  // up instead, so there the shell is sized to what stays visible.
+  const fitShell = viewportHeight => {
+    if (keyboardOpen && window.innerHeight - viewportHeight >= KEYBOARD_CLOSE_DELTA_PX) {
+      root.style.setProperty("--app-visual-height", `${viewportHeight}px`)
+      window.scrollTo(0, 0)
+    } else {
+      root.style.removeProperty("--app-visual-height")
+    }
   }
 
   const syncKeyboardState = () => {
-    const viewportHeight = viewport?.height || window.innerHeight
-    const editableElementFocused = nativeIosEditableElementFocused()
+    const viewportHeight = visibleHeight()
+    const editableFocused = editableElementFocused()
 
-    if (!keyboardOpen && !editableElementFocused) {
+    // Only a height seen with no field in focus is the full one: with a focus,
+    // a keyboard on its way in may already have taken a part of it.
+    if (!keyboardOpen && !editableFocused) {
       stableViewportHeight = viewportHeight
-      refreshStableTopInset()
     }
 
     const viewportDelta = Math.max(0, stableViewportHeight - viewportHeight)
-    const openThreshold = keyboardOpen
-      ? IOS_NATIVE_KEYBOARD_CLOSE_DELTA_PX
-      : IOS_NATIVE_KEYBOARD_OPEN_DELTA_PX
-    const nextKeyboardOpen = editableElementFocused && viewportDelta >= openThreshold
+    const threshold = keyboardOpen ? KEYBOARD_CLOSE_DELTA_PX : KEYBOARD_OPEN_DELTA_PX
 
-    keyboardOpen = nextKeyboardOpen
+    keyboardOpen = editableFocused && viewportDelta >= threshold
+    root.dataset.keyboardOpen = keyboardOpen ? "true" : "false"
+    fitShell(viewportHeight)
+
+    if (!nativeIos) {
+      return
+    }
 
     if (keyboardOpen) {
       applyTopInset(0)
       return
     }
 
-    stableViewportHeight = viewportHeight
-    refreshStableTopInset()
+    stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
     applyTopInset(stableTopInset)
   }
 
@@ -1165,9 +1096,12 @@ const registerNativeIosKeyboardSafeAreaFix = () => {
     window.requestAnimationFrame(syncKeyboardState)
   }
 
-  applyTopInset(stableTopInset)
+  if (nativeIos) {
+    applyTopInset(stableTopInset)
+  }
 
   viewport?.addEventListener("resize", scheduleSyncKeyboardState)
+  viewport?.addEventListener("scroll", scheduleSyncKeyboardState)
   window.addEventListener("resize", scheduleSyncKeyboardState)
   window.addEventListener("orientationchange", scheduleSyncKeyboardState)
   window.addEventListener("focusin", scheduleSyncKeyboardState)
@@ -1662,7 +1596,6 @@ const liveSocket = new LiveSocket("/live", Socket, {
     AutoDismissFlash,
     PushNotifications,
     GroupAppFrame,
-    MarkdownEditor,
     ReactionPicker,
     ShareComposer,
     SharePreview,
@@ -1859,7 +1792,7 @@ registerCapacitorMagicLinks()
 registerCapacitorBackButton()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
-registerNativeIosKeyboardSafeAreaFix()
+registerKeyboardWatcher()
 
 window.addEventListener("DOMContentLoaded", () => {
   installLongPressLinkMenu()
