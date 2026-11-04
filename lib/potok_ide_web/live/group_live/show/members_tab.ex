@@ -158,7 +158,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   :if={inherited?}
                   id={"member-#{member.id}-inherited"}
                   title={gettext("Member of the parent group")}
-                  class="inline-flex h-6 items-center gap-1 rounded-full bg-base-200 px-2 text-[11px] font-semibold text-base-content/60"
+                  class="inline-flex h-6 items-center gap-1 rounded-full bg-base-200 px-2 text-[11px] font-semibold text-base-content/65"
                 >
                   <.icon name="hero-arrow-turn-down-right" class="size-3" />
                   {gettext("Inherited")}
@@ -174,7 +174,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                     class={[
                       "inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-semibold",
                       if(role.key == GroupRole.admin_key(),
-                        do: "bg-amber-500/15 text-amber-700",
+                        do: "bg-amber-500/15 text-amber-800 dark:text-amber-200",
                         else: "bg-primary/10 text-primary"
                       )
                     ]}

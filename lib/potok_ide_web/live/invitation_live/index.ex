@@ -215,7 +215,7 @@ defmodule PotokIdeWeb.InvitationLive.Index do
                       <span class={[
                         "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
                         if(is_nil(inv.accepted_at),
-                          do: "bg-amber-500/10 text-amber-700",
+                          do: "bg-amber-500/10 text-amber-800 dark:text-amber-200",
                           else: "bg-emerald-500/10 text-emerald-700"
                         )
                       ]}>

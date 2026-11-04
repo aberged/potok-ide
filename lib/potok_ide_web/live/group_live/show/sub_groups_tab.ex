@@ -121,7 +121,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
               if(@show_thread_sub_groups,
                 do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
-                else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
+                else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
               )
             ]}
           >
@@ -161,7 +161,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
               if(@show_public_sub_groups,
                 do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
-                else: "border-gray-500/50 bg-base-100 text-base-content/55 hover:text-base-content"
+                else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
               )
             ]}
           >
@@ -265,7 +265,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         <div
           :if={@pagination.loaded_count == 0 and @public_hidden?}
           id="group-children-public-hidden"
-          class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/60"
+          class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/65"
         >
           <span>{gettext("Public groups you are not in are hidden.")}</span>
           <.button
@@ -297,7 +297,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <p
             :if={@tree && @tree.truncated?}
             id="group-children-tree-truncated"
-            class="mt-3 flex items-center gap-2 px-1 text-xs text-base-content/60"
+            class="mt-3 flex items-center gap-2 px-1 text-xs text-base-content/65"
           >
             <.icon name="hero-information-circle" class="size-4 shrink-0" />
             {gettext(
@@ -376,7 +376,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     ~H"""
     <div
       id={"child-group-details-#{@group.id}"}
-      class="flex min-w-0 items-center gap-2 text-[11px] leading-4 text-base-content/55"
+      class="flex min-w-0 items-center gap-2 text-[11px] leading-4 text-base-content/65"
     >
       <time
         :if={@group.last_value_at}
@@ -453,7 +453,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             phx-click="toggle_sub_group_folder"
             phx-value-id={@node.group.id}
             aria-label={gettext("Sub-groups of %{name}", name: @node.group.name)}
-            class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-base-content/45 transition-colors hover:text-base-content"
+            class="inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-base-content/65 transition-colors hover:text-base-content"
           >
             <.icon
               name="hero-chevron-right"
@@ -552,12 +552,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         query={@search_query}
         class={[
           "min-w-0 flex-1 truncate text-sm transition-colors group-hover/node:text-base-content",
-          if(@group.member?, do: "font-medium text-base-content", else: "text-base-content/60")
+          if(@group.member?, do: "font-medium text-base-content", else: "text-base-content/65")
         ]}
       />
       <span
         :if={@node.child_count > 0}
-        class="shrink-0 text-xs tabular-nums text-base-content/50"
+        class="shrink-0 text-xs tabular-nums text-base-content/65"
       >
         {ngettext("1 sub-group", "%{count} sub-groups", @node.child_count)}
       </span>

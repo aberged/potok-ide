@@ -56,14 +56,14 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
             <%= cond do %>
               <% @group.is_root -> %>
                 <p class="text-sm font-semibold">{gettext("Default manifest")}</p>
-                <p class="text-xs text-base-content/60">
+                <p class="text-xs text-base-content/65">
                   {gettext(
                     "Groups without their own manifest use these roles. They cannot be changed."
                   )}
                 </p>
               <% @own? -> %>
                 <p class="text-sm font-semibold">{gettext("This group has its own manifest")}</p>
-                <p class="text-xs text-base-content/60">
+                <p class="text-xs text-base-content/65">
                   {gettext("Sub-groups without their own manifest use these roles too.")}
                 </p>
               <% true -> %>
@@ -78,7 +78,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
                     {manifest_owner_name(@manifest_owner)}
                   </.link>
                 </p>
-                <p class="text-xs text-base-content/60">
+                <p class="text-xs text-base-content/65">
                   {gettext(
                     "Roles are assigned in each group separately. Create an own manifest to change the roles themselves."
                   )}
@@ -152,9 +152,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               <div class="min-w-0 flex-1">
                 <p class="flex flex-wrap items-baseline gap-x-2 font-semibold">
                   <span id={"role-#{role.key}-label"}>{role_label(role)}</span>
-                  <span class="text-xs font-normal text-base-content/50">@{role.name}</span>
+                  <span class="text-xs font-normal text-base-content/65">@{role.name}</span>
                 </p>
-                <p class="text-xs text-base-content/60">{role_summary(role)}</p>
+                <p class="text-xs text-base-content/65">{role_summary(role)}</p>
               </div>
               <span
                 :if={!@group.is_root}
@@ -224,7 +224,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
               >
                 <div class="min-w-0 flex-1">
                   <p class="text-sm font-medium">{permission_label(permission)}</p>
-                  <p class="text-xs text-base-content/55">{permission_description(permission)}</p>
+                  <p class="text-xs text-base-content/65">{permission_description(permission)}</p>
                 </div>
                 <.permission_control
                   role={role}
@@ -296,7 +296,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
           if(state == @state,
             do: ["shadow-sm", state_class(state, true)],
             else:
-              "border border-transparent text-base-content/55 hover:bg-base-100 hover:text-base-content"
+              "border border-transparent text-base-content/65 hover:bg-base-100 hover:text-base-content"
           )
         ]}
       >
@@ -343,7 +343,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   defp role_summary(%GroupRole{key: "everyone"}), do: gettext("Every member of the group.")
   defp role_summary(%GroupRole{}), do: gettext("Assigned to members by an admin.")
 
-  defp role_badge_class(%GroupRole{key: "admin"}), do: "bg-amber-500/15 text-amber-700"
+  defp role_badge_class(%GroupRole{key: "admin"}),
+    do: "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+
   defp role_badge_class(%GroupRole{key: "everyone"}), do: "bg-base-300/70 text-base-content/70"
   defp role_badge_class(%GroupRole{}), do: "bg-primary/10 text-primary"
 

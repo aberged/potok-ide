@@ -72,7 +72,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
               type="button"
               phx-click="clear_requests_search"
               aria-label={gettext("Clear search")}
-              class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+              class="absolute left-2 pt-[0.7rem] text-base-content/65 hover:text-base-content"
             >
               <.icon name="hero-x-mark" class="size-4" />
             </button>
@@ -293,7 +293,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
                       "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-[0.12em]",
                       if(request.status == :approved,
                         do: "bg-sky-500/10 text-sky-700",
-                        else: "bg-amber-500/10 text-amber-700"
+                        else: "bg-amber-500/10 text-amber-800 dark:text-amber-200"
                       )
                     ]}>
                       {if(request.status == :approved,

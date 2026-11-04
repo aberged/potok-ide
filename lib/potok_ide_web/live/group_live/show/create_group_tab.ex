@@ -70,7 +70,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
               label={gettext("Public group")}
               type="checkbox"
             />
-            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+            <p class="-mt-1 mb-3 text-xs text-base-content/65">
               {gettext("Everyone can see the group and ask to join it.")}
               {gettext(
                 "Its name, picture and description also show outside Potok, to anyone with the link."
@@ -84,7 +84,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
                 label={gettext("Inherit members")}
                 type="checkbox"
               />
-              <p class="-mt-1 mb-1 text-xs text-base-content/60">
+              <p class="-mt-1 mb-1 text-xs text-base-content/65">
                 {gettext(
                   "Every member of this group is also a member of the sub-group, with the same roles."
                 )}
@@ -121,7 +121,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
               label={gettext("The description is an app (API)")}
               type="checkbox"
             />
-            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+            <p class="-mt-1 mb-3 text-xs text-base-content/65">
               {gettext("The app runs on the group's home page and can keep its own data.")}
               {gettext(
                 "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."

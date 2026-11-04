@@ -66,7 +66,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
           <p
             :if={@tree_truncated}
             id="group-files-tree-truncated"
-            class="mt-3 flex items-center gap-2 px-1 text-xs text-base-content/60"
+            class="mt-3 flex items-center gap-2 px-1 text-xs text-base-content/65"
           >
             <.icon name="hero-information-circle" class="size-4 shrink-0" />
             {gettext("Only the newest files are shown. Open a sub-group to see all of its files.")}
@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
       <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-base-200 [&::-webkit-details-marker]:hidden">
         <.icon
           name="hero-chevron-right"
-          class="size-3.5 shrink-0 text-base-content/45 transition-transform duration-150 [details[open]>summary>&]:rotate-90"
+          class="size-3.5 shrink-0 text-base-content/65 transition-transform duration-150 [details[open]>summary>&]:rotate-90"
         />
         <.icon
           name={folder_icon(@node.group)}
@@ -166,7 +166,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         >
           {@node.group.name}
         </span>
-        <span class="shrink-0 text-xs tabular-nums text-base-content/50">
+        <span class="shrink-0 text-xs tabular-nums text-base-content/65">
           {ngettext("1 file", "%{count} files", @node.file_count)} · {Components.format_bytes(
             @node.byte_size
           )}
@@ -242,7 +242,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
       <span
         :if={!@image? or @compact}
         class={[
-          "inline-flex shrink-0 items-center justify-center rounded-xl bg-base-200 text-base-content/60",
+          "inline-flex shrink-0 items-center justify-center rounded-xl bg-base-200 text-base-content/65",
           if(@compact, do: "size-7", else: "size-10")
         ]}
       >
@@ -252,14 +252,14 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         <span class="block truncate text-sm font-medium text-base-content">{@file.filename}</span>
         <span
           :if={@details != [] and !@compact}
-          class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55"
+          class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/65"
         >
           {render_slot(@details)}
         </span>
       </span>
       <span
         :if={@details != [] and @compact}
-        class="shrink-0 text-xs text-base-content/50"
+        class="shrink-0 text-xs text-base-content/65"
       >
         {render_slot(@details)}
       </span>
@@ -282,7 +282,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
     ~H"""
     <div
       id={@id}
-      class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+      class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65"
     >
       <.icon name="hero-paper-clip" class="size-6 text-base-content/35" />
       {@text}

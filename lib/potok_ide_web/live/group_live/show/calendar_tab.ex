@@ -171,7 +171,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                   <p
                     :if={Map.get(@by_day, @selected_date, []) == []}
                     id="calendar-day-empty"
-                    class="text-base-content/55"
+                    class="text-base-content/65"
                   >
                     {gettext("No events on this day.")}
                   </p>
@@ -207,7 +207,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
               <div
                 :if={@occurrences_empty}
                 id="calendar-list-empty"
-                class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+                class="flex min-h-48 flex-col items-center justify-center gap-2 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65"
               >
                 <.icon name="hero-calendar" class="size-6 text-base-content/35" />
                 {if @group.is_root and !@show_groups and !@show_public,
@@ -276,7 +276,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           if(@checked, do: "translate-x-3.5", else: "translate-x-0.5")
         ]} />
       </span>
-      <.icon :if={@icon} name={@icon} class="size-4 text-base-content/50" />
+      <.icon :if={@icon} name={@icon} class="size-4 text-base-content/65" />
       {@label}
     </button>
     """
@@ -298,7 +298,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
     >
       <div
         role="row"
-        class="grid grid-cols-7 border-b border-base-300/70 bg-base-200/60 text-center text-[11px] font-semibold uppercase tracking-wide text-base-content/55"
+        class="grid grid-cols-7 border-b border-base-300/70 bg-base-200/60 text-center text-[11px] font-semibold uppercase tracking-wide text-base-content/65"
       >
         <div :for={weekday <- 1..7} role="columnheader" class="py-2">
           {Format.weekday_short(weekday)}
@@ -319,7 +319,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           class={[
             "relative min-h-16 min-w-0 cursor-pointer p-1 transition-colors duration-150 sm:min-h-26",
             "hover:bg-base-200/60",
-            !day.in_month? && "bg-base-200/30 text-base-content/40",
+            !day.in_month? && "bg-base-200/30 text-base-content/65",
             day.date == @selected_date && "bg-primary/5 ring-1 ring-inset ring-primary/30"
           ]}
         >
@@ -369,7 +369,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             </button>
             <span
               :if={length(day.occurrences) > 3}
-              class="px-1 text-[11px] font-medium text-base-content/55"
+              class="px-1 text-[11px] font-medium text-base-content/65"
             >
               {gettext("+%{count} more", count: length(day.occurrences) - 3)}
             </span>
@@ -421,7 +421,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         :if={@show_date}
         class="flex w-11 shrink-0 flex-col items-center rounded-xl bg-base-200/70 py-1 leading-none"
       >
-        <span class="text-[10px] font-semibold uppercase text-base-content/55">
+        <span class="text-[10px] font-semibold uppercase text-base-content/65">
           {Format.weekday_short(Date.day_of_week(@occurrence.date))}
         </span>
         <span class="text-lg font-bold tabular-nums">{@occurrence.date.day}</span>
@@ -433,10 +433,10 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           <.icon
             :if={@event.is_public}
             name="hero-globe-alt"
-            class="size-3.5 shrink-0 text-base-content/45"
+            class="size-3.5 shrink-0 text-base-content/65"
           />
         </p>
-        <p class="truncate text-xs text-base-content/60">
+        <p class="truncate text-xs text-base-content/65">
           <span class="tabular-nums">{time_range(@occurrence, @time_zone)}</span>
           <span :if={@event.location != ""}>{" · " <> @event.location}</span>
           <span :if={@event.group_id != @group.id}>{" · " <> @event.group.name}</span>
@@ -497,7 +497,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         <div class="min-w-0 flex-1 pt-0.5">
           <p
             :if={@event.group_id != @group.id}
-            class="truncate text-xs font-semibold text-base-content/55"
+            class="truncate text-xs font-semibold text-base-content/65"
           >
             {@event.group.name}
           </p>
@@ -548,7 +548,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
       <dl class="mt-4 space-y-2.5 text-sm">
         <div class="flex gap-3">
-          <dt class="pt-0.5 text-base-content/45">
+          <dt class="pt-0.5 text-base-content/65">
             <.icon name="hero-clock" class="size-4" /><span class="sr-only">{gettext("When")}</span>
           </dt>
           <dd id="calendar-event-when" class="first-letter:uppercase">
@@ -556,7 +556,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           </dd>
         </div>
         <div :if={Format.recurrence(@event)} class="flex gap-3">
-          <dt class="pt-0.5 text-base-content/45">
+          <dt class="pt-0.5 text-base-content/65">
             <.icon name="hero-arrow-path" class="size-4" />
             <span class="sr-only">
               {gettext("Repeats")}
@@ -565,7 +565,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           <dd id="calendar-event-recurrence">{Format.recurrence(@event)}</dd>
         </div>
         <div :if={!@event.all_day and @event.time_zone != @time_zone} class="flex gap-3">
-          <dt class="pt-0.5 text-base-content/45">
+          <dt class="pt-0.5 text-base-content/65">
             <.icon name="hero-globe-europe-africa" class="size-4" />
             <span class="sr-only">{gettext("Time zone")}</span>
           </dt>
@@ -574,7 +574,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           </dd>
         </div>
         <div :if={@event.location != ""} class="flex gap-3">
-          <dt class="pt-0.5 text-base-content/45">
+          <dt class="pt-0.5 text-base-content/65">
             <.icon name="hero-map-pin" class="size-4" />
             <span class="sr-only">
               {gettext("Location")}
@@ -583,7 +583,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           <dd id="calendar-event-location" class="wrap-break-word">{@event.location}</dd>
         </div>
         <div :if={@event.creator} class="flex items-center gap-3">
-          <dt class="text-base-content/45">
+          <dt class="text-base-content/65">
             <.icon name="hero-user" class="size-4" />
             <span class="sr-only">
               {gettext("Organizer")}
@@ -609,7 +609,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       </div>
 
       <div :if={@summary} class="mt-5">
-        <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+        <h4 class="mb-2 text-xs font-semibold uppercase tracking-wide text-base-content/65">
           {gettext("Are you coming?")}
         </h4>
         <div id="calendar-rsvp" class="grid grid-cols-3 gap-2">
@@ -639,7 +639,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           id={"calendar-rsvp-#{status}-profiles"}
           class="mt-3 flex items-center gap-2"
         >
-          <span class="w-16 shrink-0 text-xs text-base-content/55">{rsvp_group_label(status)}</span>
+          <span class="w-16 shrink-0 text-xs text-base-content/65">{rsvp_group_label(status)}</span>
           <div class="flex flex-wrap items-center gap-1">
             <span
               :for={profile <- @summary.profiles[status]}
@@ -655,7 +655,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             </span>
             <span
               :if={@summary.counts[status] > length(@summary.profiles[status])}
-              class="text-xs font-semibold text-base-content/55"
+              class="text-xs font-semibold text-base-content/65"
             >
               +{@summary.counts[status] - length(@summary.profiles[status])}
             </span>
@@ -755,10 +755,10 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
       phx-submit="calendar_save_reminders"
       class="mt-5"
     >
-      <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+      <h4 class="mb-1 text-xs font-semibold uppercase tracking-wide text-base-content/65">
         {gettext("My reminders")}
       </h4>
-      <p id="calendar-my-reminders-source" class="mb-2 text-xs text-base-content/60">
+      <p id="calendar-my-reminders-source" class="mb-2 text-xs text-base-content/65">
         {if @own?,
           do: gettext("You chose your own reminders for this event."),
           else: gettext("You get the organizer's reminders.")}
@@ -866,7 +866,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
         <p
           :if={!@values.new? and !@values.all_day? and @values.time_zone != @time_zone}
           id="calendar-form-zone"
-          class="mb-2 flex items-center gap-1.5 text-xs text-base-content/60"
+          class="mb-2 flex items-center gap-1.5 text-xs text-base-content/65"
         >
           <.icon name="hero-globe-europe-africa" class="size-4" />
           {gettext("Times are in %{zone}, the event's time zone.", zone: @values.time_zone)}
@@ -961,7 +961,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           class="mb-2 rounded-2xl border border-base-300/70 bg-base-200/40 px-3 pt-2 pb-1"
         >
           <.input field={@form[:is_public]} type="checkbox" label={gettext("Public event")} />
-          <p class="-mt-1 mb-1 text-xs text-base-content/60">
+          <p class="-mt-1 mb-1 text-xs text-base-content/65">
             {gettext("Every user sees it in their calendar and can answer it.")}
             {gettext(
               "Its title, time, place and description also show outside Potok, to anyone with the link."
@@ -987,7 +987,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
               </span>
             </label>
           </div>
-          <p class="mt-1 text-xs text-base-content/55">
+          <p class="mt-1 text-xs text-base-content/65">
             {gettext("Members can choose their own reminders.")}
           </p>
         </div>

@@ -148,7 +148,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               </.button>
             </div>
 
-            <p class="text-xs text-base-content/55">
+            <p class="text-xs text-base-content/65">
               {gettext(
                 "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
               )}
@@ -175,7 +175,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               />
               <.icon
                 name="hero-chevron-down"
-                class="mt-1 size-4 shrink-0 text-base-content/50 transition-transform duration-150 group-open/details:rotate-180"
+                class="mt-1 size-4 shrink-0 text-base-content/65 transition-transform duration-150 group-open/details:rotate-180"
               />
             </summary>
 
@@ -208,7 +208,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                     </p>
                   </div>
 
-                  <div class="text-right text-xs text-base-content/55">
+                  <div class="text-right text-xs text-base-content/65">
                     <p>{gettext("Updated")}: {format_push_datetime(subscription.updated_at)}</p>
 
                     <p>{gettext("Inserted")}: {format_push_datetime(subscription.inserted_at)}</p>
@@ -217,7 +217,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
                 <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2">
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("ID")}
                     </dt>
 
@@ -225,7 +225,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Last Success")}
                     </dt>
 
@@ -235,7 +235,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div class="sm:col-span-2">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Endpoint")}
                     </dt>
 
@@ -245,7 +245,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div class="sm:col-span-2">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Device Token")}
                     </dt>
 
@@ -255,7 +255,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Auth")}
                     </dt>
 
@@ -265,7 +265,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("P256DH")}
                     </dt>
 
@@ -275,7 +275,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Expires At")}
                     </dt>
 
@@ -285,7 +285,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div>
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Last Failure")}
                     </dt>
 
@@ -295,7 +295,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div class="sm:col-span-2">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("Failure Reason")}
                     </dt>
 
@@ -305,7 +305,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
                   </div>
 
                   <div class="sm:col-span-2">
-                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/45">
+                    <dt class="text-xs font-medium uppercase tracking-wide text-base-content/65">
                       {gettext("User Agent")}
                     </dt>
 

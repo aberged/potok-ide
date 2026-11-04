@@ -59,7 +59,7 @@ defmodule PotokIdeWeb.ProfileLive.Components do
         maxlength="16"
         required
       />
-      <p class="mb-4 text-sm text-base-content/60">
+      <p class="mb-4 text-sm text-base-content/65">
         {gettext("Use 2 to 16 letters or numbers. You can also include _, ., and -.")}
       </p>
       <.profile_picture_field field={@form[:profile_picture_url]} />

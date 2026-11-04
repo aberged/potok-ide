@@ -66,7 +66,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         <div
           :if={blank_description?(@source.description)}
           id="group-description-empty"
-          class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60"
+          class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65"
         >
           <p class="p-2">{gettext("This group has no description yet.")}</p>
           <.button

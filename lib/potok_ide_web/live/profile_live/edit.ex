@@ -114,7 +114,7 @@ defmodule PotokIdeWeb.ProfileLive.Edit do
           <p
             :if={@profile_tags == []}
             id="profile-tags-empty"
-            class="text-sm text-base-content/55"
+            class="text-sm text-base-content/65"
           >
             {gettext("No public tags yet.")}
           </p>

@@ -97,7 +97,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               label={gettext("Public group")}
               type="checkbox"
             />
-            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+            <p class="-mt-1 mb-3 text-xs text-base-content/65">
               {gettext("Everyone can see the group and ask to join it.")}
               {gettext(
                 "Its name, picture and description also show outside Potok, to anyone with the link."
@@ -111,7 +111,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 type="checkbox"
                 disabled={!is_nil(@group.parent_value_id)}
               />
-              <p class="-mt-1 mb-1 text-xs text-base-content/60">
+              <p class="-mt-1 mb-1 text-xs text-base-content/65">
                 {if(@group.parent_value_id,
                   do: gettext("Threads always inherit the members of their group."),
                   else:
@@ -164,7 +164,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               label={gettext("The description is an app (API)")}
               type="checkbox"
             />
-            <p class="-mt-1 mb-3 text-xs text-base-content/60">
+            <p class="-mt-1 mb-3 text-xs text-base-content/65">
               {gettext("The app runs on the group's home page and can keep its own data.")}
               {gettext(
                 "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
@@ -247,7 +247,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               <div class="flex min-w-0 flex-1 flex-col gap-1">
                 <div class="flex min-w-0 items-center gap-2">
                   <span class="truncate font-medium text-base-content">{alt.name}</span>
-                  <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/60">
+                  <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/65">
                     {kind_label(alt)}
                   </span>
                 </div>
@@ -360,7 +360,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             </span>
             <div class="min-w-0">
               <h2 class="font-semibold leading-tight text-error">{gettext("Danger zone")}</h2>
-              <p class="mt-0.5 text-sm text-base-content/60">
+              <p class="mt-0.5 text-sm text-base-content/65">
                 {gettext("None of this can be undone.")}
               </p>
             </div>
@@ -370,7 +370,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             <div class="flex flex-wrap items-center justify-between gap-3 py-3">
               <div class="min-w-0 flex-1 basis-60">
                 <p class="font-medium">{gettext("Delete the app's data")}</p>
-                <p class="text-sm text-base-content/60">
+                <p class="text-sm text-base-content/65">
                   {if(@alt_descriptions == [],
                     do: gettext("Deletes every data value the group's app saved."),
                     else:
@@ -407,7 +407,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             >
               <div class="min-w-0 flex-1 basis-60">
                 <p class="font-medium">{gettext("Delete the group")}</p>
-                <p class="text-sm text-base-content/60">
+                <p class="text-sm text-base-content/65">
                   {gettext(
                     "Deletes the group with its messages and files. A group with sub-groups cannot be deleted."
                   )}
@@ -495,7 +495,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
       <fieldset id="alt-description-roles" class="fieldset mt-2">
         <legend class="fieldset-legend">{gettext("Visible to")}</legend>
-        <p class="text-xs text-base-content/60">
+        <p class="text-xs text-base-content/65">
           {gettext(
             "Without a role it is visible to everyone who sees the group's description. Editors always see it."
           )}

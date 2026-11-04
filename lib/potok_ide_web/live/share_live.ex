@@ -48,7 +48,7 @@ defmodule PotokIdeWeb.ShareLive do
           <div
             :if={@share_state == :loading}
             id="share-loading"
-            class="flex items-center gap-3 rounded-3xl border border-base-300/70 bg-base-100/80 p-5 text-sm text-base-content/60 shadow-sm"
+            class="flex items-center gap-3 rounded-3xl border border-base-300/70 bg-base-100/80 p-5 text-sm text-base-content/65 shadow-sm"
           >
             <span class="loading loading-spinner loading-sm text-primary"></span>
             {gettext("Getting what you shared…")}
@@ -59,11 +59,11 @@ defmodule PotokIdeWeb.ShareLive do
             id="share-missing"
             class="flex flex-col items-center gap-3 rounded-3xl border border-dashed border-base-300 bg-base-100/60 px-6 py-10 text-center"
           >
-            <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-base-200 text-base-content/50">
+            <span class="inline-flex size-12 items-center justify-center rounded-2xl bg-base-200 text-base-content/65">
               <.icon name="hero-inbox" class="size-6" />
             </span>
             <p class="font-semibold">{gettext("Nothing to share")}</p>
-            <p class="max-w-sm text-sm text-base-content/60">
+            <p class="max-w-sm text-sm text-base-content/65">
               {gettext("Share a link, text or files from another app and pick Potok.")}
             </p>
             <.button
@@ -108,11 +108,11 @@ defmodule PotokIdeWeb.ShareLive do
                 id={"share-preview-file-#{index}"}
                 class="flex items-center gap-3 rounded-2xl bg-base-200/60 py-2 pr-3 pl-2.5"
               >
-                <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-base-100 text-base-content/60">
+                <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-base-100 text-base-content/65">
                   <.icon name={Components.file_icon(file.type)} class="size-5" />
                 </span>
                 <p class="min-w-0 flex-1 truncate text-sm font-medium">{file.name}</p>
-                <span class="shrink-0 text-xs tabular-nums text-base-content/50">
+                <span class="shrink-0 text-xs tabular-nums text-base-content/65">
                   {Components.format_bytes(file.size)}
                 </span>
               </li>
@@ -142,7 +142,7 @@ defmodule PotokIdeWeb.ShareLive do
             <ul id="share-groups" phx-update="stream" class="flex flex-col gap-1">
               <li
                 id="share-groups-empty"
-                class="hidden rounded-3xl border border-dashed border-base-300 px-6 py-8 text-center text-sm text-base-content/60 only:block"
+                class="hidden rounded-3xl border border-dashed border-base-300 px-6 py-8 text-center text-sm text-base-content/65 only:block"
               >
                 {gettext("No groups where you can post.")}
               </li>
@@ -154,7 +154,7 @@ defmodule PotokIdeWeb.ShareLive do
                   navigate={~p"/groups/#{group.id}/values?#{[share: @share.id]}"}
                 >
                   <:subtitle :if={group_subtitle(group)}>
-                    <span class="truncate text-xs text-base-content/55">
+                    <span class="truncate text-xs text-base-content/65">
                       {group_subtitle(group)}
                     </span>
                   </:subtitle>

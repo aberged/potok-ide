@@ -132,7 +132,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         "inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold transition duration-150 ease-out phx-click-loading:opacity-70",
         if(@active,
           do: "bg-base-100 text-base-content shadow-sm",
-          else: "text-base-content/60 hover:text-base-content"
+          else: "text-base-content/65 hover:text-base-content"
         )
       ]}
     >
@@ -563,7 +563,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     <nav
       id={@id}
       aria-label={gettext("Current group path")}
-      class={["flex min-w-0 items-center gap-x-1 text-xs leading-4 text-base-content/60", @class]}
+      class={["flex min-w-0 items-center gap-x-1 text-xs leading-4 text-base-content/65", @class]}
     >
       <span :if={@folded?} aria-hidden="true" class="sm:hidden">…</span>
       <%= for {step, idx} <- Enum.with_index(@steps) do %>
@@ -817,7 +817,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <div class="min-w-0">
         <div
           :if={@title}
-          class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/45"
+          class="text-xs font-semibold uppercase tracking-[0.16em] text-base-content/65"
         >
           {@title}
         </div>
@@ -830,7 +830,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           {@profile.username}
         </div>
 
-        <div :if={@subtitle} class="truncate text-xs text-base-content/60">{@subtitle}</div>
+        <div :if={@subtitle} class="truncate text-xs text-base-content/65">{@subtitle}</div>
 
         <div
           :if={@online? or @presence_profile_id}
@@ -1236,13 +1236,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
 
           <div class="group-description-pane group-description-pane-preview rounded-2xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm">
-            <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/55">
+            <div class="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-base-content/65">
               {gettext("Live preview")}
             </div>
 
             <div
               :if={blank_text?(@description_field.value)}
-              class="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-base-300 bg-base-200/50 px-6 text-center text-sm text-base-content/60"
+              class="flex min-h-48 items-center justify-center rounded-2xl border border-dashed border-base-300 bg-base-200/50 px-6 text-center text-sm text-base-content/65"
             >
               {gettext("Start typing to preview the description.")}
             </div>
@@ -1408,7 +1408,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <span
           :if={@mentions_me?}
           id={"value-mentions-me-#{@value.id}"}
-          class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700"
+          class="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200"
         >
           <.icon name="hero-at-symbol" class="size-3" />
           {gettext("Mentioned you")}
@@ -1540,7 +1540,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </span>
           <span class={[
             "line-clamp-2 wrap-break-word",
-            if(@mine?, do: "text-primary-content/80", else: "text-base-content/70")
+            if(@mine?, do: "text-primary-content/90", else: "text-base-content/70")
           ]}>
             {Value.excerpt(@reply_parent, 160)}
           </span>
@@ -1671,7 +1671,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           >
             <span class={[
               "inline-flex size-9 shrink-0 items-center justify-center rounded-xl",
-              if(@mine?, do: "bg-primary-content/15", else: "bg-base-100 text-base-content/60")
+              if(@mine?, do: "bg-primary-content/15", else: "bg-base-100 text-base-content/65")
             ]}>
               <.icon name={file_icon(file.content_type)} class="size-5" />
             </span>
@@ -1679,7 +1679,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               <span class="block truncate text-sm font-medium">{file.filename}</span>
               <span class={[
                 "block text-xs tabular-nums",
-                if(@mine?, do: "text-primary-content/70", else: "text-base-content/55")
+                if(@mine?, do: "text-primary-content/90", else: "text-base-content/65")
               ]}>
                 {format_bytes(file.byte_size)}
               </span>
@@ -1768,7 +1768,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       id={"value-inserted-at-#{@value.id}"}
       datetime={@value.inserted_at}
       format="time"
-      class={["text-[11px] leading-4 tabular-nums opacity-65", @class]}
+      class={["text-[11px] leading-4 tabular-nums opacity-80", @class]}
     />
     """
   end
@@ -1855,7 +1855,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <div class={["px-3 py-2.5", @can_dismiss && "pr-10"]}>
           <p
             :if={@preview["site_name"]}
-            class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-60"
+            class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-80"
           >
             {@preview["site_name"]}
           </p>
@@ -1864,7 +1864,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </p>
           <p
             :if={@preview["description"]}
-            class="mt-0.5 line-clamp-2 text-sm leading-snug opacity-75"
+            class="mt-0.5 line-clamp-2 text-sm leading-snug opacity-90"
           >
             {@preview["description"]}
           </p>
@@ -1966,7 +1966,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             data-audio-time
             class={[
               "shrink-0 text-xs tabular-nums",
-              if(@mine, do: "text-primary-content/70", else: "text-base-content/55")
+              if(@mine, do: "text-primary-content/90", else: "text-base-content/65")
             ]}
           >
             {format_bytes(@file.byte_size)}
@@ -2368,7 +2368,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         <details open class="tree-node">
           <summary class="cursor-pointer select-none leading-5">
             <span class="font-semibold text-primary/80">{format_tree_label(@label)}</span>
-            <span class="ml-2 text-base-content/55">{@kind}</span>
+            <span class="ml-2 text-base-content/65">{@kind}</span>
           </summary>
 
           <ul class="ml-3 mt-2 border-l border-base-300/70 pl-3">

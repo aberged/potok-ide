@@ -45,7 +45,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
       <div class="min-w-0 flex-1 py-1">
         <p class={[
           "flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide",
-          if(@mine, do: "text-primary-content/70", else: "text-base-content/55")
+          if(@mine, do: "text-primary-content/90", else: "text-base-content/65")
         ]}>
           <.icon
             name={if(@event.is_public, do: "hero-globe-alt", else: "hero-calendar-days")}
@@ -61,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
         </p>
         <p class={[
           "truncate text-xs",
-          if(@mine, do: "text-primary-content/80", else: "text-base-content/70")
+          if(@mine, do: "text-primary-content/90", else: "text-base-content/70")
         ]}>
           <%= if @event.all_day do %>
             {gettext("All day")}
@@ -77,7 +77,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EventCard do
           :if={@recurrence}
           class={[
             "mt-0.5 flex items-center gap-1 truncate text-xs",
-            if(@mine, do: "text-primary-content/70", else: "text-base-content/55")
+            if(@mine, do: "text-primary-content/90", else: "text-base-content/65")
           ]}
         >
           <.icon name="hero-arrow-path" class="size-3.5 shrink-0" />

@@ -272,10 +272,10 @@ defmodule PotokIdeWeb.CoreComponents do
 
   defp icon_button_variant("ghost"),
     do:
-      "text-base-content/60 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
+      "text-base-content/65 not-disabled:hover:bg-base-content/10 not-disabled:hover:text-base-content"
 
   defp icon_button_variant("danger"),
-    do: "text-base-content/60 not-disabled:hover:bg-error/10 not-disabled:hover:text-error"
+    do: "text-base-content/65 not-disabled:hover:bg-error/10 not-disabled:hover:text-error"
 
   defp icon_button_variant("secondary"),
     do:
@@ -607,7 +607,7 @@ defmodule PotokIdeWeb.CoreComponents do
         type="button"
         phx-click={@reset_event}
         aria-label={gettext("Clear search")}
-        class="absolute left-2 pt-[0.7rem] text-base-content/60 hover:text-base-content"
+        class="absolute left-2 pt-[0.7rem] text-base-content/65 hover:text-base-content"
       >
         <.icon name="hero-x-mark" class="size-4" />
       </button>
@@ -646,7 +646,7 @@ defmodule PotokIdeWeb.CoreComponents do
       </span>
       <div class="min-w-0">
         <h2 class="font-semibold leading-tight">{@title}</h2>
-        <p class="mt-0.5 text-sm text-base-content/60">{@subtitle}</p>
+        <p class="mt-0.5 text-sm text-base-content/65">{@subtitle}</p>
       </div>
     </div>
     """
@@ -711,7 +711,7 @@ defmodule PotokIdeWeb.CoreComponents do
       </span>
       <div class={["min-w-0 flex-1 basis-48", @compact && "max-sm:hidden"]}>
         <h1 class="text-xl font-semibold leading-tight">{render_slot(@inner_block)}</h1>
-        <p :if={@subtitle != []} class="mt-0.5 text-sm text-base-content/60">
+        <p :if={@subtitle != []} class="mt-0.5 text-sm text-base-content/65">
           {render_slot(@subtitle)}
         </p>
       </div>

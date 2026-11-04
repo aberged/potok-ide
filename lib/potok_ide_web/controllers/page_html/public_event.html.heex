@@ -12,11 +12,11 @@
       class="mb-6 flex flex-col gap-2.5 text-sm leading-6 text-base-content/70"
     >
       <p :if={@recurrence} id="public-event-recurrence" class="flex gap-2.5">
-        <.icon name="hero-arrow-path" class="mt-0.5 size-5 shrink-0 text-base-content/45" />
+        <.icon name="hero-arrow-path" class="mt-0.5 size-5 shrink-0 text-base-content/65" />
         <span class="min-w-0 wrap-break-word">{@recurrence}</span>
       </p>
       <p :if={@location != ""} id="public-event-location" class="flex gap-2.5">
-        <.icon name="hero-map-pin" class="mt-0.5 size-5 shrink-0 text-base-content/45" />
+        <.icon name="hero-map-pin" class="mt-0.5 size-5 shrink-0 text-base-content/65" />
         <span class="min-w-0 wrap-break-word">{@location}</span>
       </p>
       <p :if={@description} id="public-event-description" class="wrap-break-word">

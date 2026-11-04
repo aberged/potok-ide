@@ -61,7 +61,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             <.icon name="hero-chat-bubble-left-right" class="size-4" />
           </span>
           <div class="min-w-0 flex-1">
-            <p class="flex items-center gap-1.5 text-xs text-base-content/55 cramped:hidden">
+            <p class="flex items-center gap-1.5 text-xs text-base-content/65 cramped:hidden">
               <span class="font-semibold uppercase tracking-[0.14em]">{gettext("Thread")}</span>
               <span aria-hidden="true">·</span>
               <span class="truncate font-semibold text-base-content">
@@ -106,7 +106,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             <div id="group-values-list" class="flex flex-col" phx-update="stream">
               <div
                 id="group-values-empty"
-                class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/60 only:flex"
+                class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65 only:flex"
               >
                 {gettext("No messages yet. Start the conversation below.")}
               </div>
@@ -290,7 +290,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     <span class={[
                       "inline-flex size-9 shrink-0 items-center justify-center rounded-xl",
                       if(entry.valid?,
-                        do: "bg-base-100 text-base-content/60",
+                        do: "bg-base-100 text-base-content/65",
                         else: "bg-error/10 text-error"
                       )
                     ]}>
@@ -301,7 +301,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                         <p class="truncate text-sm font-medium text-base-content">
                           {entry.client_name}
                         </p>
-                        <span class="shrink-0 text-xs tabular-nums text-base-content/50">
+                        <span class="shrink-0 text-xs tabular-nums text-base-content/65">
                           {Components.format_bytes(entry.client_size)}
                         </span>
                       </div>
@@ -857,7 +857,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
               if (item.hint) {
                 const hint = document.createElement("span")
-                hint.className = "truncate text-xs text-base-content/55"
+                hint.className = "truncate text-xs text-base-content/65"
                 hint.textContent = item.hint
                 text.append(hint)
               }
@@ -1032,7 +1032,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   class="truncate text-sm font-semibold"
                 >
                 </span>
-                <span data-sheet-time class="shrink-0 text-xs text-base-content/60"></span>
+                <span data-sheet-time class="shrink-0 text-xs text-base-content/65"></span>
               </p>
               <p
                 data-sheet-text
@@ -1067,7 +1067,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               type="button"
               data-sheet-more
               aria-label={gettext("Add reaction")}
-              class="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-base-content/60 transition duration-150 hover:bg-base-200 active:scale-90"
+              class="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-base-content/65 transition duration-150 hover:bg-base-200 active:scale-90"
             >
               <.icon name="hero-plus" class="size-5" />
             </button>

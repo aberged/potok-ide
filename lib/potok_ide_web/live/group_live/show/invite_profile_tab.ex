@@ -64,7 +64,7 @@ defmodule PotokIdeWeb.GroupLive.Show.InviteProfileTab do
           </.button>
         </.form>
 
-        <div class="mt-2 text-xs text-base-content/60">
+        <div class="mt-2 text-xs text-base-content/65">
           {gettext(
             "Enter a username to invite an existing profile, or an email to invite an account."
           )}

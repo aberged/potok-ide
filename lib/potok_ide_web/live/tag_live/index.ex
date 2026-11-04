@@ -182,7 +182,7 @@ defmodule PotokIdeWeb.TagLive.Index do
           <div
             :if={@counts |> Map.values() |> Enum.sum() == 0}
             id="tags-no-results"
-            class="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-base-300 px-6 py-12 text-center text-sm text-base-content/60"
+            class="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-base-300 px-6 py-12 text-center text-sm text-base-content/65"
           >
             <.icon name="hero-magnifying-glass" class="size-7 text-base-content/35" />
             {gettext("Nothing you can open carries these tags.")}
@@ -194,7 +194,7 @@ defmodule PotokIdeWeb.TagLive.Index do
             id={"tags-section-#{param}"}
             class="mb-6"
           >
-            <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+            <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/65">
               <.icon name={kind_icon(kind)} class="size-4" />
               {kind_label(kind)}
               <span class="tabular-nums">{Map.get(@counts, kind, 0)}</span>
@@ -202,7 +202,7 @@ defmodule PotokIdeWeb.TagLive.Index do
             <ul id={"tags-results-#{param}"} phx-update="stream" class="space-y-2">
               <li
                 id={"tags-results-#{param}-empty"}
-                class="hidden only:block px-1 text-sm text-base-content/55"
+                class="hidden only:block px-1 text-sm text-base-content/65"
               >
                 {gettext("Nothing here.")}
               </li>
@@ -251,14 +251,14 @@ defmodule PotokIdeWeb.TagLive.Index do
     ~H"""
     <div id="tags-directory" class="space-y-6">
       <section id="tags-directory-mine">
-        <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+        <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/65">
           <.icon name="hero-lock-closed" class="size-4" />
           {gettext("My private tags")}
         </h2>
         <p
           :if={@directory.mine == []}
           id="tags-directory-mine-empty"
-          class="px-1 text-sm text-base-content/55"
+          class="px-1 text-sm text-base-content/65"
         >
           {gettext(
             "No private tags yet. Add one from the # button on a message, file, event, group or member."
@@ -318,7 +318,7 @@ defmodule PotokIdeWeb.TagLive.Index do
                 patch={tags_url(@assigns_for_urls, t: [tag.id])}
                 class="flex min-w-0 flex-1 items-center gap-2 rounded-full py-1 text-sm font-medium transition hover:text-primary"
               >
-                <.icon name="hero-lock-closed" class="size-4 shrink-0 text-base-content/45" />
+                <.icon name="hero-lock-closed" class="size-4 shrink-0 text-base-content/65" />
                 <span class="truncate">{tag.name}</span>
               </.link>
               <.icon_button
@@ -349,14 +349,14 @@ defmodule PotokIdeWeb.TagLive.Index do
       </section>
 
       <section id="tags-directory-public">
-        <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+        <h2 class="mb-2 flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/65">
           <.icon name="hero-hashtag" class="size-4" />
           {gettext("Public tags")}
         </h2>
         <p
           :if={@directory.public == []}
           id="tags-directory-public-empty"
-          class="px-1 text-sm text-base-content/55"
+          class="px-1 text-sm text-base-content/65"
         >
           {gettext("No public tags yet.")}
         </p>
@@ -426,7 +426,7 @@ defmodule PotokIdeWeb.TagLive.Index do
       navigate={~p"/groups/#{@item.group_id}/values?value=#{@item.id}"}
       class="block rounded-2xl px-3 py-2.5"
     >
-      <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55">
+      <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/65">
         <span class="font-semibold text-base-content/80">@{@item.creator.username}</span>
         <span aria-hidden="true">·</span>
         <span class="truncate">{@item.group.name}</span>
@@ -453,12 +453,12 @@ defmodule PotokIdeWeb.TagLive.Index do
       rel="noopener"
       class="flex items-center gap-3 rounded-2xl px-3 py-2.5"
     >
-      <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-base-200 text-base-content/60">
+      <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-base-200 text-base-content/65">
         <.icon name={Components.file_icon(@item.content_type)} class="size-4" />
       </span>
       <span class="min-w-0 flex-1">
         <span class="block truncate text-sm font-medium">{@item.filename}</span>
-        <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55">
+        <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/65">
           <span>{@item.profile.username}</span>
           <span aria-hidden="true">·</span>
           <span class="truncate">{@item.group.name}</span>
@@ -486,7 +486,7 @@ defmodule PotokIdeWeb.TagLive.Index do
       </span>
       <span class="min-w-0 flex-1">
         <span class="block truncate text-sm font-medium">{@item.title}</span>
-        <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55">
+        <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/65">
           <span class="truncate">{@item.group.name}</span>
           <span aria-hidden="true">·</span>
           <Components.local_time id={"tagged-event-time-#{@item.id}"} datetime={@item.starts_at} />

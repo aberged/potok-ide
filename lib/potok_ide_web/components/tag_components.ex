@@ -61,7 +61,7 @@ defmodule PotokIdeWeb.TagComponents do
         :if={@hidden != []}
         id={"#{@id}-more"}
         class={[
-          "inline-flex shrink-0 items-center rounded-full border border-base-300 bg-base-100 font-semibold leading-none tabular-nums text-base-content/60",
+          "inline-flex shrink-0 items-center rounded-full border border-base-300 bg-base-100 font-semibold leading-none tabular-nums text-base-content/65",
           if(@size == :sm, do: "h-5 px-1.5 text-[11px]", else: "h-6 px-2 text-xs")
         ]}
       >
@@ -120,7 +120,7 @@ defmodule PotokIdeWeb.TagComponents do
       aria-label={gettext("Tags")}
       title={gettext("Tags")}
       class={[
-        "inline-flex items-center gap-1 rounded-full p-2 text-base-content/60 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse sm:p-1",
+        "inline-flex items-center gap-1 rounded-full p-2 text-base-content/65 transition duration-150 ease-out hover:bg-base-content/10 hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 phx-click-loading:animate-pulse sm:p-1",
         @class
       ]}
       {@rest}
@@ -162,7 +162,7 @@ defmodule PotokIdeWeb.TagComponents do
               <h2 id="tag-editor-title" class="text-base font-semibold leading-tight">
                 {gettext("Tags")}
               </h2>
-              <p id="tag-editor-item" class="mt-0.5 truncate text-sm text-base-content/60">
+              <p id="tag-editor-item" class="mt-0.5 truncate text-sm text-base-content/65">
                 {@editor.title}
               </p>
             </div>
@@ -181,7 +181,7 @@ defmodule PotokIdeWeb.TagComponents do
               <li
                 :if={@editor.tags == []}
                 id="tag-editor-empty"
-                class="text-sm text-base-content/55"
+                class="text-sm text-base-content/65"
               >
                 {gettext("No tags yet.")}
               </li>
@@ -231,7 +231,7 @@ defmodule PotokIdeWeb.TagComponents do
                     "flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition",
                     if(@editor.form[:visibility].value == visibility,
                       do: "bg-base-100 text-base-content shadow-sm",
-                      else: "text-base-content/60 hover:text-base-content"
+                      else: "text-base-content/65 hover:text-base-content"
                     )
                   ]}
                 >
@@ -249,7 +249,7 @@ defmodule PotokIdeWeb.TagComponents do
               <p
                 :if={@editor.public_only?}
                 id="tag-editor-public-note"
-                class="mb-3 text-xs text-base-content/60"
+                class="mb-3 text-xs text-base-content/65"
               >
                 {gettext("Everyone sees these tags on your profile.")}
               </p>
@@ -290,7 +290,7 @@ defmodule PotokIdeWeb.TagComponents do
             </.form>
 
             <div :if={@editor.suggestions != []} class="mt-1">
-              <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/50">
+              <p class="mb-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/65">
                 {gettext("Suggestions")}
               </p>
               <ul id="tag-editor-suggestions" class="flex flex-wrap gap-1.5">
@@ -318,7 +318,7 @@ defmodule PotokIdeWeb.TagComponents do
 
           <%!-- On phones the sheet reaches the bottom edge, outside the layout's
                safe-area padding: the footer keeps its links above the home bar. --%>
-          <footer class="flex items-center justify-between gap-3 border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] text-xs text-base-content/60 sm:pb-3">
+          <footer class="flex items-center justify-between gap-3 border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] text-xs text-base-content/65 sm:pb-3">
             <span class="inline-flex items-center gap-1">
               <.icon name="hero-lock-closed" class="size-3.5" />
               {gettext("Private tags are seen only by you.")}

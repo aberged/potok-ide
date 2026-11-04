@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.Layouts do
                 class="flex min-w-0 items-center flex-row gap-3 self-start"
               >
                 <span class="min-w-0 text-right max-sm:hidden">
-                  <span class="block font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/55">
+                  <span class="block font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/65">
                     Potok
                   </span>
                   <span
@@ -206,7 +206,7 @@ defmodule PotokIdeWeb.Layouts do
           class="flex h-full w-[min(18rem,calc(100vw-1.25rem))] flex-col border-r border-base-300/70 bg-base-100/95 p-4 pt-[calc(var(--app-safe-area-top)+1rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] shadow-2xl shadow-primary/10 backdrop-blur sm:w-80 lg:w-72 lg:shadow-none"
         >
           <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
-            <div class="font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/50">
+            <div class="font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/65">
               Potok
             </div>
 
@@ -227,7 +227,7 @@ defmodule PotokIdeWeb.Layouts do
             <% end %>
 
             <div class="mb-4">
-              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
                 {gettext("Navigation")}
               </div>
 
@@ -296,7 +296,7 @@ defmodule PotokIdeWeb.Layouts do
 
             <%= if @current_scope do %>
               <div class="mb-4 border-t border-base-300/70 pt-4">
-                <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+                <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
                   {gettext("Account")}
                 </div>
 
@@ -320,7 +320,7 @@ defmodule PotokIdeWeb.Layouts do
             <% end %>
 
             <div class="border-t border-base-300/70 pt-4">
-              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/45">
+              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
                 {gettext("Preferences")}
               </div>
 
@@ -462,10 +462,10 @@ defmodule PotokIdeWeb.Layouts do
                 <.mark id="guest-footer-mark" class="size-6" />
                 <span class="font-brand font-bold">potok</span>
               </div>
-              <p class="mt-2 text-sm text-base-content/55">
+              <p class="mt-2 text-sm text-base-content/65">
                 {gettext("A social application platform")}
               </p>
-              <p class="mt-1 text-xs text-base-content/45 hidden">
+              <p class="mt-1 text-xs text-base-content/65 hidden">
                 {gettext(
                   "No ads, no tracking. The only cookie here is the one that keeps you logged in."
                 )}
@@ -482,7 +482,7 @@ defmodule PotokIdeWeb.Layouts do
               <.link
                 id="guest-privacy-link"
                 href={~p"/privacy-policy"}
-                class="text-sm text-base-content/60 underline-offset-4 transition hover:text-base-content hover:underline"
+                class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
               >
                 {gettext("Privacy policy")}
               </.link>
@@ -536,7 +536,7 @@ defmodule PotokIdeWeb.Layouts do
       <p
         :if={@invitation_note}
         id={"#{@id}-invitation-note"}
-        class="lp-rise mt-6 text-center text-sm leading-6 text-pretty text-base-content/60"
+        class="lp-rise mt-6 text-center text-sm leading-6 text-pretty text-base-content/65"
       >
         {gettext("No account yet?")}
         <.link href={~p"/" <> "#landing-join"} class="lp-link">
@@ -689,7 +689,7 @@ defmodule PotokIdeWeb.Layouts do
             "min-w-[4.5rem] rounded-full px-2 py-1 text-center text-xs font-semibold tracking-[0.18em] uppercase transition-colors",
             if(locale == @current_locale,
               do: "bg-base-100 text-base-content shadow-sm",
-              else: "text-base-content/60 hover:text-base-content"
+              else: "text-base-content/65 hover:text-base-content"
             )
           ]}
           aria-current={locale == @current_locale && "true"}
