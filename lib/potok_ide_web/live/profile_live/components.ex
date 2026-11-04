@@ -381,10 +381,13 @@ defmodule PotokIdeWeb.ProfileLive.Components do
 
   def sharing_options do
     [
-      {gettext("Unique"), :unique},
-      {gettext("Shared"), :shared}
+      {sharing_label(:unique), :unique},
+      {sharing_label(:shared), :shared}
     ]
   end
+
+  def sharing_label(:unique), do: gettext("Unique")
+  def sharing_label(:shared), do: gettext("Shared")
 
   def profile_picture_url(url) when is_binary(url) do
     case String.trim(url) do

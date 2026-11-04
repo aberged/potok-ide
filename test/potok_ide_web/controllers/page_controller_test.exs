@@ -120,6 +120,22 @@ defmodule PotokIdeWeb.PageControllerTest do
     assert redirected_to(conn) == ~p"/groups"
   end
 
+  test "GET /privacy-policy shows the policy in the selected locale", %{conn: conn} do
+    heading = fn locale ->
+      conn
+      |> get(~p"/privacy-policy?#{[locale: locale]}")
+      |> html_response(200)
+      |> LazyHTML.from_document()
+      |> LazyHTML.query(".privacy-policy h1")
+      |> LazyHTML.text()
+      |> String.trim()
+    end
+
+    assert heading.("en") == "Privacy Policy for Potok"
+    assert heading.("sr") == "Politika privatnosti za Potok"
+    assert heading.("sr_Cyrl") == "Политика приватности за Поток"
+  end
+
   test "GET / shows guests the landing page in the selected locale", %{conn: conn} do
     conn = get(conn, ~p"/?locale=sr_Cyrl")
 

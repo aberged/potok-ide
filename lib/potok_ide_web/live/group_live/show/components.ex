@@ -31,7 +31,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       {Calendar.strftime(datetime_to_utc_datetime(@datetime), "%Y-%m-%d %H:%M UTC")}
     </time>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".LocalTime">
-      const formatter = new Intl.DateTimeFormat(undefined, {
+      // Intl writes a bare `sr` in Cyrillic, while the app's `sr` is Latin.
+      const language = document.documentElement.lang
+      const formatter = new Intl.DateTimeFormat(language === "sr" ? "sr-Latn" : language, {
         dateStyle: "medium",
         timeStyle: "short",
         hour12: false,

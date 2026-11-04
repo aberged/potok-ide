@@ -33,7 +33,10 @@ defmodule Mix.Tasks.Potok.SrCyrlTest do
     test "leaves role names, technical names and brands in Latin" do
       assert SrCyrl.transliterate("Uloge admin i @everyone") == "Улоге admin и @everyone"
       assert SrCyrl.transliterate("Vrednost u Markdown-u") == "Вредност у Markdown-у"
-      assert SrCyrl.transliterate("Google i Outlook") == "Google и Outlook"
+      assert SrCyrl.transliterate("Google Play i Outlook") == "Google Play и Outlook"
+
+      assert SrCyrl.transliterate("Na iPhone-u, pišite na `ABER.GED@GMAIL.COM`") ==
+               "На iPhone-у, пишите на `ABER.GED@GMAIL.COM`"
     end
 
     test "respells foreign words" do
@@ -46,10 +49,12 @@ defmodule Mix.Tasks.Potok.SrCyrlTest do
     test "are what `mix potok.sr_cyrl` writes from sr" do
       files = SrCyrl.generate()
 
-      assert Enum.map(files, &elem(&1, 0)) ==
-               Path.wildcard("priv/gettext/sr_Cyrl/LC_MESSAGES/*.po")
+      paths = Enum.map(files, &elem(&1, 0))
 
-      assert files != []
+      assert "priv/static/PRIVACY_POLICY.sr_Cyrl.md" in paths
+
+      assert Enum.filter(paths, &String.ends_with?(&1, ".po")) ==
+               Path.wildcard("priv/gettext/sr_Cyrl/LC_MESSAGES/*.po")
 
       for {path, contents} <- files do
         assert File.read!(path) == contents, "#{path} is stale, run `mix potok.sr_cyrl`"
@@ -68,9 +73,9 @@ defmodule Mix.Tasks.Potok.SrCyrlTest do
 
     test "have no word that mixes the scripts" do
       mixed =
-        for {_path, contents} <- SrCyrl.generate(),
+        for {path, contents} <- SrCyrl.generate(),
             line <- String.split(contents, "\n"),
-            String.starts_with?(line, "msgstr"),
+            Path.extname(path) == ".md" or String.starts_with?(line, "msgstr"),
             [word] <- Regex.scan(~r/\p{L}+/u, line),
             word =~ ~r/\p{Latin}/u and word =~ ~r/\p{Cyrillic}/u,
             do: word

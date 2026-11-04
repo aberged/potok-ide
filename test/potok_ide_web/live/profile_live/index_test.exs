@@ -8,6 +8,28 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
   alias PotokIde.Social
 
   describe "profiles page" do
+    test "names a profile's sharing in the language of the page", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, _profile} =
+        Social.create_profile_for_account(account, %{
+          username: "sharing-prof",
+          profile_picture_url: nil,
+          description: "",
+          description_format: :markdown,
+          sharing: :shared
+        })
+
+      {:ok, lv, _html} =
+        conn
+        |> init_test_session(%{locale: "sr_Cyrl"})
+        |> log_in_account(Accounts.get_account!(account.id))
+        |> live(~p"/profiles")
+
+      assert has_element?(lv, "li", "Дељени")
+      refute has_element?(lv, "li", "shared")
+    end
+
     test "shows dedicated create and edit page links instead of inline forms", %{conn: conn} do
       account = account_fixture()
 

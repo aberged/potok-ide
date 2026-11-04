@@ -16,7 +16,7 @@ defmodule PotokIdeWeb.PushSubscriptionController do
       {:error, :invalid_subscription} ->
         conn
         |> put_status(:bad_request)
-        |> json(%{error: "Invalid push subscription payload."})
+        |> json(%{error: gettext("Invalid push subscription payload.")})
 
       {:error, %Ecto.Changeset{} = changeset} ->
         conn
@@ -28,7 +28,7 @@ defmodule PotokIdeWeb.PushSubscriptionController do
   def create(conn, _params) do
     conn
     |> put_status(:bad_request)
-    |> json(%{error: "Missing push subscription payload."})
+    |> json(%{error: gettext("Missing push subscription payload.")})
   end
 
   def delete(conn, %{"endpoint" => endpoint}) when is_binary(endpoint) and endpoint != "" do
@@ -41,7 +41,7 @@ defmodule PotokIdeWeb.PushSubscriptionController do
       nil ->
         conn
         |> put_status(:bad_request)
-        |> json(%{error: "Missing push subscription identifier."})
+        |> json(%{error: gettext("Missing push subscription identifier.")})
 
       identifier ->
         :ok = Accounts.delete_push_subscription(conn.assigns.current_scope.account, identifier)
@@ -60,17 +60,17 @@ defmodule PotokIdeWeb.PushSubscriptionController do
       {:error, :not_found} ->
         conn
         |> put_status(:not_found)
-        |> json(%{error: "No saved push subscription was found for this account."})
+        |> json(%{error: gettext("No saved push subscription was found for this account.")})
 
       {:error, :expired} ->
         conn
         |> put_status(:gone)
-        |> json(%{error: "The saved push subscription expired and has been removed."})
+        |> json(%{error: gettext("The saved push subscription expired and has been removed.")})
 
       {:error, :not_configured} ->
         conn
         |> put_status(:service_unavailable)
-        |> json(%{error: "Push notifications are not configured on this server."})
+        |> json(%{error: gettext("Push notifications are not configured on this server.")})
 
       {:error, reason} ->
         conn

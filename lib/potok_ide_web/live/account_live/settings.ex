@@ -114,6 +114,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           data-vapid-public-key={@push_vapid_public_key || ""}
           data-subscribe-url={~p"/accounts/push-subscriptions"}
           data-test-url={~p"/accounts/push-subscriptions/test"}
+          data-i18n={Jason.encode!(push_i18n())}
           class={settings_card_class()}
         >
           <div class="space-y-4">
@@ -460,4 +461,55 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   end
 
   defp list_push_subscriptions(account), do: Accounts.list_push_subscriptions(account)
+
+  # The messages of the `PushNotifications` hook in app.js.
+  defp push_i18n do
+    %{
+      browserPermissionBlocked: gettext("Browser permission for notifications is blocked."),
+      browserUnavailable: gettext("Push notifications are unavailable in this browser session."),
+      devicePermissionBlocked: gettext("Device notification permission is blocked."),
+      disabledForBrowser: gettext("Push notifications are disabled for this browser."),
+      disabledForDevice: gettext("Push notifications are disabled for this device."),
+      enableBeforeTest: gettext("Enable notifications before sending a test push."),
+      enableFailed: gettext("Unable to enable push notifications."),
+      enabled: gettext("Push notifications are enabled."),
+      fcmUnavailable:
+        gettext(
+          "FCM is unavailable on this device right now. Ensure Google Play services are installed and updated, verify network access to Google services, then try again."
+        ),
+      finishingIphone: gettext("Finishing iPhone notification registration..."),
+      nativeUnavailable:
+        gettext("Native push notifications are unavailable in this app session."),
+      notConfigured: gettext("Push notifications are not configured on this server yet."),
+      permissionNotGranted: gettext("Notification permission was not granted."),
+      playServicesMissing:
+        gettext(
+          "Google Play services are missing or outdated on this device, so push registration cannot complete."
+        ),
+      refreshingToken: gettext("Refreshing device notification token..."),
+      registerFailed: gettext("Unable to register this device for push notifications."),
+      removeFailed: gettext("Unable to remove the push subscription."),
+      removingSubscription: gettext("Removing push subscription..."),
+      removingToken: gettext("Removing device notification token..."),
+      requestFailed: gettext("Push notification request failed."),
+      requestingDevicePermission: gettext("Requesting device notification permission..."),
+      requestingPermission: gettext("Requesting notification permission..."),
+      requiresHttps: gettext("Push notifications require HTTPS or localhost."),
+      saveFailed:
+        gettext(
+          "Push notifications are active on this device but Potok could not save the token."
+        ),
+      sendingTest: gettext("Sending test notification..."),
+      testFailed: gettext("Unable to send the test notification."),
+      testSentNative:
+        gettext(
+          "Test notification sent. Background the app if Android suppresses foreground banners."
+        ),
+      testSentWeb:
+        gettext(
+          "Test notification sent. Minimize the app if the browser suppresses foreground notifications."
+        ),
+      webPushUnsupported: gettext("This browser does not support Web Push notifications.")
+    }
+  end
 end

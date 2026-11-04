@@ -84,7 +84,7 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           <li :for={profile <- @profiles} class="flex items-center justify-between gap-3">
             <ProfileComponents.profile_identity
               profile={profile}
-              subtitle={Atom.to_string(profile.sharing)}
+              subtitle={ProfileComponents.sharing_label(profile.sharing)}
             />
             <div class="flex shrink-0 items-center gap-2">
               <.icon_button

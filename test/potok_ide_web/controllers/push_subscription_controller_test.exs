@@ -45,6 +45,16 @@ defmodule PotokIdeWeb.PushSubscriptionControllerTest do
       assert [%PushSubscription{locale: "sr_Cyrl"}] = Accounts.list_push_subscriptions(account)
     end
 
+    test "explains an error in the language of the session", %{conn: conn} do
+      response =
+        conn
+        |> json_conn()
+        |> post(~p"/accounts/push-subscriptions?locale=sr_Cyrl", %{})
+        |> json_response(400)
+
+      assert response["error"] == "Недостају подаци пуш претплате."
+    end
+
     test "stores a native push token for the current account", %{conn: conn, account: account} do
       params = valid_native_subscription_params()
 

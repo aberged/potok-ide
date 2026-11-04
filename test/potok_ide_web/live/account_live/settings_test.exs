@@ -47,7 +47,7 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
       assert html =~ "Stored Push Subscriptions"
       assert has_element?(lv, "#email_form")
       assert has_element?(lv, "#password_form")
-      assert has_element?(lv, "#push-notifications-panel")
+      assert has_element?(lv, "#push-notifications-panel[data-i18n]")
       assert has_element?(lv, "#push-subscriptions-panel")
 
       # The page header and cards of the other top-level pages.

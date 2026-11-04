@@ -1,6 +1,7 @@
 defmodule Mix.Tasks.Potok.SrCyrl do
   @moduledoc """
-  Generates the Cyrillic Serbian translations (`sr_Cyrl`) from the Latin ones (`sr`).
+  Generates the Cyrillic Serbian translations (`sr_Cyrl`) and privacy policy
+  from the Latin ones (`sr`).
 
   `sr` is the reference: edit it, then run this task. The `sr_Cyrl` files are
   output, so changes made to them by hand are lost. A test fails when they are
@@ -15,6 +16,8 @@ defmodule Mix.Tasks.Potok.SrCyrl do
 
   @source "priv/gettext/sr/LC_MESSAGES"
   @target "priv/gettext/sr_Cyrl/LC_MESSAGES"
+  @policy_source "priv/static/PRIVACY_POLICY.sr.md"
+  @policy_target "priv/static/PRIVACY_POLICY.sr_Cyrl.md"
 
   @letters ~w(a b c č ć d dž đ e f g h i j k l lj m n nj o p r s š t u v z ž)
            |> Enum.zip(~w(а б ц ч ћ д џ ђ е ф г х и ј к л љ м н њ о п р с ш т у в з ж))
@@ -32,9 +35,9 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   # What stays in Latin: interpolations, markup and addresses, the role names
   # (users see and type them as they are), technical names and brands.
   @kept ~r/
-    %?\{[^}]*\} | <[^>]*> | \b(?:https?|data):\S* | @?\b(?:admin|everyone)\b |
-    \b(?:API|Apple|Auth|Endpoint|English|Firebase\ Cloud\ Messaging|Google|HTML|HTTPS|localhost|
-    Markdown|Outlook|P256DH|service\ worker|URL|User\ Agent)\b
+    %?\{[^}]*\} | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* | @?\b(?:admin|everyone)\b |
+    \b(?:API|Apple|Auth|Endpoint|English|FCM|Firebase\ Cloud\ Messaging|Firebase|Google\ Play|
+    Google|HTML|HTTPS|iPhone|localhost|Markdown|Outlook|P256DH|service\ worker|URL|User\ Agent)\b
   /ux
 
   # Foreign words that the Latin text keeps in their own spelling.
@@ -52,12 +55,15 @@ defmodule Mix.Tasks.Potok.SrCyrl do
 
   @doc "Every `sr_Cyrl` file as `{path, contents}`, from the current `sr` files."
   def generate do
-    for source <- Path.wildcard("#{@source}/*.po") do
-      messages = source |> PO.parse_file!() |> to_cyrillic()
+    translations =
+      for source <- Path.wildcard("#{@source}/*.po") do
+        messages = source |> PO.parse_file!() |> to_cyrillic()
 
-      {Path.join(@target, Path.basename(source)),
-       messages |> PO.compose() |> IO.iodata_to_binary()}
-    end
+        {Path.join(@target, Path.basename(source)),
+         messages |> PO.compose() |> IO.iodata_to_binary()}
+      end
+
+    [{@policy_target, @policy_source |> File.read!() |> transliterate()} | translations]
   end
 
   @doc "Latin Serbian text in Cyrillic, without what has to stay in Latin."

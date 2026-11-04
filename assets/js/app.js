@@ -318,6 +318,7 @@ const PushNotifications = {
     this.vapidPublicKey = this.el.dataset.vapidPublicKey || ""
     this.subscribeUrl = this.el.dataset.subscribeUrl
     this.testUrl = this.el.dataset.testUrl
+    this.i18n = JSON.parse(this.el.dataset.i18n)
     this.csrfToken = document.querySelector("meta[name='csrf-token']")?.getAttribute("content") || ""
     this.nativePendingMessage = null
 
@@ -325,7 +326,7 @@ const PushNotifications = {
       switch (event.type) {
       case "registration":
         if (this.nativePlatform === "ios" && event.provider !== "fcm") {
-          this.setPendingState("Finishing iPhone notification registration...")
+          this.setPendingState(this.i18n.finishingIphone)
           break
         }
 
@@ -387,14 +388,14 @@ const PushNotifications = {
       const permissions = await NativePushManager.checkPermissions()
 
       if (permissions.receive === "denied") {
-        this.renderDenied("Device notification permission is blocked.")
+        this.renderDenied(this.i18n.devicePermissionBlocked)
         return
       }
 
       const storedToken = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
 
       if (permissions.receive !== "granted") {
-        this.renderIdle(message || "Push notifications are disabled for this device.")
+        this.renderIdle(message || this.i18n.disabledForDevice)
         return
       }
 
@@ -402,33 +403,33 @@ const PushNotifications = {
         await this.saveNativeToken(storedToken)
       }
 
-      this.nativePendingMessage = message || "Push notifications are enabled."
-      this.setPendingState("Refreshing device notification token...")
+      this.nativePendingMessage = message || this.i18n.enabled
+      this.setPendingState(this.i18n.refreshingToken)
       await NativePushManager.register()
     } catch (error) {
       console.error("Unable to inspect native push state", error)
-      this.renderUnsupported(error.message || "Native push notifications are unavailable in this app session.")
+      this.renderUnsupported(error.message || this.i18n.nativeUnavailable)
     }
   },
 
   async syncWebState(message) {
     if (!window.isSecureContext) {
-      this.renderUnsupported("Push notifications require HTTPS or localhost.")
+      this.renderUnsupported(this.i18n.requiresHttps)
       return
     }
 
     if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
-      this.renderUnsupported("This browser does not support Web Push notifications.")
+      this.renderUnsupported(this.i18n.webPushUnsupported)
       return
     }
 
     if (!this.vapidPublicKey) {
-      this.renderUnsupported("Push notifications are not configured on this server yet.")
+      this.renderUnsupported(this.i18n.notConfigured)
       return
     }
 
     if (Notification.permission === "denied") {
-      this.renderDenied("Browser permission for notifications is blocked.")
+      this.renderDenied(this.i18n.browserPermissionBlocked)
       return
     }
 
@@ -438,14 +439,14 @@ const PushNotifications = {
 
       if (subscription) {
         await this.saveSubscription(subscription)
-        this.renderEnabled(message || "Push notifications are enabled.")
+        this.renderEnabled(message || this.i18n.enabled)
         return
       }
 
-      this.renderIdle(message || "Push notifications are disabled for this browser.")
+      this.renderIdle(message || this.i18n.disabledForBrowser)
     } catch (error) {
       console.error("Unable to inspect push notification state", error)
-      this.renderUnsupported("Push notifications are unavailable in this browser session.")
+      this.renderUnsupported(this.i18n.browserUnavailable)
     }
   },
 
@@ -459,7 +460,7 @@ const PushNotifications = {
   },
 
   async enableNativeNotifications() {
-    this.setPendingState("Requesting device notification permission...")
+    this.setPendingState(this.i18n.requestingDevicePermission)
 
     try {
       let permissions = await NativePushManager.checkPermissions()
@@ -470,33 +471,33 @@ const PushNotifications = {
 
       if (permissions.receive !== "granted") {
         if (permissions.receive === "denied") {
-          this.renderDenied("Device notification permission is blocked.")
+          this.renderDenied(this.i18n.devicePermissionBlocked)
         } else {
-          this.renderIdle("Notification permission was not granted.")
+          this.renderIdle(this.i18n.permissionNotGranted)
         }
 
         return
       }
 
-      this.nativePendingMessage = "Push notifications are enabled."
+      this.nativePendingMessage = this.i18n.enabled
       await NativePushManager.register()
     } catch (error) {
       console.error("Unable to enable native push notifications", error)
-      this.renderIdle(error.message || "Unable to enable push notifications.")
+      this.renderIdle(error.message || this.i18n.enableFailed)
     }
   },
 
   async enableWebNotifications() {
-    this.setPendingState("Requesting notification permission...")
+    this.setPendingState(this.i18n.requestingPermission)
 
     try {
       const permission = await Notification.requestPermission()
 
       if (permission !== "granted") {
         if (permission === "denied") {
-          this.renderDenied("Browser permission for notifications is blocked.")
+          this.renderDenied(this.i18n.browserPermissionBlocked)
         } else {
-          this.renderIdle("Notification permission was not granted.")
+          this.renderIdle(this.i18n.permissionNotGranted)
         }
 
         return
@@ -513,10 +514,10 @@ const PushNotifications = {
       }
 
       await this.saveSubscription(subscription)
-      this.renderEnabled("Push notifications are enabled.")
+      this.renderEnabled(this.i18n.enabled)
     } catch (error) {
       console.error("Unable to enable push notifications", error)
-      this.renderIdle(error.message || "Unable to enable push notifications.")
+      this.renderIdle(error.message || this.i18n.enableFailed)
     }
   },
 
@@ -530,7 +531,7 @@ const PushNotifications = {
   },
 
   async disableNativeNotifications() {
-    this.setPendingState("Removing device notification token...")
+    this.setPendingState(this.i18n.removingToken)
 
     try {
       const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
@@ -545,15 +546,15 @@ const PushNotifications = {
       await NativePushManager.unregister()
       window.localStorage.removeItem(POTOK_PUSH_TOKEN_KEY)
       await this.refreshPushSubscriptions()
-      this.renderIdle("Push notifications are disabled for this device.")
+      this.renderIdle(this.i18n.disabledForDevice)
     } catch (error) {
       console.error("Unable to disable native push notifications", error)
-      this.renderEnabled(error.message || "Unable to remove the push subscription.")
+      this.renderEnabled(error.message || this.i18n.removeFailed)
     }
   },
 
   async disableWebNotifications() {
-    this.setPendingState("Removing push subscription...")
+    this.setPendingState(this.i18n.removingSubscription)
 
     try {
       const registration = await navigator.serviceWorker.ready
@@ -569,10 +570,10 @@ const PushNotifications = {
       }
 
       await this.refreshPushSubscriptions()
-      this.renderIdle("Push notifications are disabled for this browser.")
+      this.renderIdle(this.i18n.disabledForBrowser)
     } catch (error) {
       console.error("Unable to disable push notifications", error)
-      this.renderEnabled(error.message || "Unable to remove the push subscription.")
+      this.renderEnabled(error.message || this.i18n.removeFailed)
     }
   },
 
@@ -586,13 +587,13 @@ const PushNotifications = {
   },
 
   async sendNativeTestNotification() {
-    this.setPendingState("Sending test notification...")
+    this.setPendingState(this.i18n.sendingTest)
 
     try {
       const token = window.localStorage.getItem(POTOK_PUSH_TOKEN_KEY)
 
       if (!token) {
-        this.renderIdle("Enable notifications before sending a test push.")
+        this.renderIdle(this.i18n.enableBeforeTest)
         return
       }
 
@@ -603,23 +604,23 @@ const PushNotifications = {
       })
 
       await this.refreshPushSubscriptions()
-      this.renderEnabled("Test notification sent. Background the app if Android suppresses foreground banners.")
+      this.renderEnabled(this.i18n.testSentNative)
     } catch (error) {
       console.error("Unable to send native test push notification", error)
       await this.refreshPushSubscriptions()
-      this.renderEnabled(error.message || "Unable to send the test notification.")
+      this.renderEnabled(error.message || this.i18n.testFailed)
     }
   },
 
   async sendWebTestNotification() {
-    this.setPendingState("Sending test notification...")
+    this.setPendingState(this.i18n.sendingTest)
 
     try {
       const registration = await navigator.serviceWorker.ready
       const subscription = await registration.pushManager.getSubscription()
 
       if (!subscription) {
-        this.renderIdle("Enable notifications before sending a test push.")
+        this.renderIdle(this.i18n.enableBeforeTest)
         return
       }
 
@@ -630,21 +631,21 @@ const PushNotifications = {
       })
 
       await this.refreshPushSubscriptions()
-      this.renderEnabled("Test notification sent. Minimize the app if the browser suppresses foreground notifications.")
+      this.renderEnabled(this.i18n.testSentWeb)
     } catch (error) {
       console.error("Unable to send test push notification", error)
       await this.refreshPushSubscriptions()
-      this.renderEnabled(error.message || "Unable to send the test notification.")
+      this.renderEnabled(error.message || this.i18n.testFailed)
     }
   },
 
   async handleNativeRegistration(token) {
     try {
       await this.saveNativeToken(token)
-      this.renderEnabled(this.nativePendingMessage || "Push notifications are enabled.")
+      this.renderEnabled(this.nativePendingMessage || this.i18n.enabled)
     } catch (error) {
       console.error("Unable to store native push token", error)
-      this.renderEnabled(error.message || "Push notifications are active on this device but Potok could not save the token.")
+      this.renderEnabled(error.message || this.i18n.saveFailed)
     } finally {
       this.nativePendingMessage = null
     }
@@ -660,14 +661,14 @@ const PushNotifications = {
     const rawError = error?.error || error?.message || ""
 
     if (rawError.includes("SERVICE_NOT_AVAILABLE")) {
-      return "FCM is unavailable on this device right now. Ensure Google Play services are installed and updated, verify network access to Google services, then try again."
+      return this.i18n.fcmUnavailable
     }
 
     if (rawError.includes("MISSING_INSTANCEID_SERVICE")) {
-      return "Google Play services are missing or outdated on this device, so push registration cannot complete."
+      return this.i18n.playServicesMissing
     }
 
-    return rawError || "Unable to register this device for push notifications."
+    return rawError || this.i18n.registerFailed
   },
 
   async saveSubscription(subscription) {
@@ -728,7 +729,7 @@ const PushNotifications = {
     const payload = await response.json().catch(() => ({}))
 
     if (!response.ok) {
-      throw new Error(payload.error || "Push notification request failed.")
+      throw new Error(payload.error || this.i18n.requestFailed)
     }
 
     return payload

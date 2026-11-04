@@ -5,13 +5,24 @@ defmodule PotokIdeWeb.PageController do
 
   plug :assign_nav_counts when action in [:privacy]
 
-  @privacy_policy_path Path.expand("../../../priv/static/PRIVACY_POLICY.md", __DIR__)
-  @external_resource @privacy_policy_path
-  @privacy_policy_html @privacy_policy_path
-                       |> File.read!()
-                       |> String.trim()
-                       |> Earmark.as_html!(breaks: true)
-                       |> HtmlSanitizeEx.html5()
+  # `mix potok.sr_cyrl` writes the Cyrillic policy from the Latin one.
+  for {locale, file} <- %{
+        "en" => "PRIVACY_POLICY.md",
+        "sr" => "PRIVACY_POLICY.sr.md",
+        "sr_Cyrl" => "PRIVACY_POLICY.sr_Cyrl.md"
+      } do
+    path = Path.expand("../../../priv/static/#{file}", __DIR__)
+    @external_resource path
+
+    html =
+      path
+      |> File.read!()
+      |> String.trim()
+      |> Earmark.as_html!(breaks: true)
+      |> HtmlSanitizeEx.html5()
+
+    defp privacy_policy_html(unquote(locale)), do: unquote(html)
+  end
 
   def home(conn, _params) do
     current_account =
@@ -33,6 +44,6 @@ defmodule PotokIdeWeb.PageController do
   end
 
   def privacy(conn, _params) do
-    render(conn, :privacy, privacy_policy_html: @privacy_policy_html)
+    render(conn, :privacy, privacy_policy_html: privacy_policy_html(conn.assigns.current_locale))
   end
 end

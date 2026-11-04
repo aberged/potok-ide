@@ -536,7 +536,7 @@ Public routes:
 
 * `GET /` redirects based on account and profile state
 * `GET /locale/:locale` updates the active locale
-* `GET /privacy-policy` renders `priv/static/PRIVACY_POLICY.md`
+* `GET /privacy-policy` renders `priv/static/PRIVACY_POLICY.md`, or its `.sr.md` and `.sr_Cyrl.md` translations
 * `GET /avatar/profile/:id` and `GET /avatar/group/:id` serve avatar images (no session)
 * `GET /.well-known/assetlinks.json` for Android App Links
 * `GET /.well-known/apple-app-site-association` and `GET /apple-app-site-association` for iOS Universal Links

@@ -21,17 +21,19 @@
             </p>
 
             <h1 class="mt-2 text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              Privacy Policy
+              {gettext("Privacy policy")}
             </h1>
           </div>
 
           <.button navigate={~p"/accounts/log-in"}>
-            <.icon name="hero-arrow-left" class="size-4" /> Back to Potok
+            <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to Potok")}
           </.button>
         </div>
 
         <p class="max-w-3xl text-sm leading-6 text-base-content/65 sm:text-base">
-          This page is the public privacy policy for the Potok Android app and related web service.
+          {gettext(
+            "This page is the public privacy policy for the Potok Android app and related web service."
+          )}
         </p>
       </div>
 
