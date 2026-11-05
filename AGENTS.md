@@ -5,6 +5,25 @@ This is a web application written using the Phoenix web framework.
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues
 - Use the already included and available `:req` (`Req`) library for HTTP requests, **avoid** `:httpoison`, `:tesla`, and `:httpc`. Req is included by default and is the preferred HTTP client for Phoenix apps
 
+### Landing page and domain map
+
+`/` (the landing page, for guests) and `/domain` (the map of the domain) describe the app to people who have not seen it. They are part of every change that makes them wrong or incomplete.
+
+- **Planning:** every plan has a short "Landing / domain" section: what changes on which page, or "not affected" and why.
+- **Changing:** update them in the same change, in every language (`sr` is the reference, then `mix potok.sr_cyrl`). The user edits the landing copy themselves: keep their wording and write new sentences in the same voice ("ti" in Serbian).
+- **Finishing:** `mix precommit` ends with `mix potok.sync_reminder`, which names a page that the changed code left untouched. It only reminds and never fails. The final message says what was updated, or that a page needs nothing.
+
+| What changed | Where to look |
+|---|---|
+| A feature users see: new, removed or working differently | `features/0` and `perks/0` in `page_html.ex`, `home.html.heex` |
+| A number on the landing (permissions, file limits) | same place; a test fails until they agree |
+| A schema, column, check or key | `DomainMap`, `DomainCopy`; tests fail until done. A new entity also needs a place in `assets/js/domain_map.js` |
+| A rule: who may do what, what deleting does, how threads, inheritance or unread counts work | `DomainCopy.mechanisms/0`. No test sees these |
+| What apps can do: the app API, `potok_app_sdk.js` | `DomainCopy.apps/0` |
+| The core words: group, value, thread | `DomainCopy.core_labels/0`, `#landing-domain` |
+
+Usually not affected: fixes that restore what the pages already say, styling, refactors, tests, operations. `docs/potok-landing.html` is the user's own page and the app does not read it: leave it.
+
 ### Phoenix v1.8 guidelines
 
 - **Always** begin your LiveView templates with `<Layouts.app flash={@flash} ...>` which wraps all inner content

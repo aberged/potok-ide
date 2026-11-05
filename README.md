@@ -232,7 +232,7 @@ The seed script currently only contains the default template comments, so a fres
 * `mix run priv/repo/seeds.exs` runs the seed script manually.
 * `mix assets.setup` installs the pinned Tailwind and esbuild binaries used by the project.
 * `mix assets.build` rebuilds Tailwind and esbuild assets.
-* `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test.
+* `mix precommit` runs the main verification alias: compile with warnings as errors, unlock unused deps, format, and test. It ends with `mix potok.sync_reminder`, which never fails and names the landing page or the domain map when changed app code left them untouched.
 
 ### Capacitor wrapper
 
@@ -928,4 +928,4 @@ For exact PowerShell and macOS secret commands plus a checked Apple Developer an
 
 ## Maintenance Notes
 
-Use `mix precommit` as the final verification step for code changes. If you change the domain model, routes, or deployment assumptions, update this README at the same time so it stays aligned with the application.
+Use `mix precommit` as the final verification step for code changes. If you change the domain model, routes, or deployment assumptions, update this README at the same time so it stays aligned with the application. The landing page and the domain map at `/domain` follow the same rule: see "Landing page and domain map" in `AGENTS.md`.

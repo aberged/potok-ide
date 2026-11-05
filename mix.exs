@@ -27,7 +27,7 @@ defmodule PotokIde.MixProject do
 
   def cli do
     [
-      preferred_envs: [precommit: :test, "potok.sr_cyrl": :test]
+      preferred_envs: [precommit: :test, "potok.sr_cyrl": :test, "potok.sync_reminder": :test]
     ]
   end
 
@@ -103,7 +103,13 @@ defmodule PotokIde.MixProject do
         "esbuild potok_app_sdk --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "test",
+        "potok.sync_reminder"
+      ]
     ]
   end
 end
