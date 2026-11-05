@@ -305,7 +305,7 @@ msgstr "Избор језика"
 
 #: lib/potok_ide_web/components/layouts.ex:289
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:12
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:122
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:110
 #: lib/potok_ide_web/controllers/page_html/public_event.html.heex:31
 #: lib/potok_ide_web/controllers/page_html/public_group.html.heex:20
 #: lib/potok_ide_web/live/account_live/confirmation.ex:80
@@ -1286,7 +1286,7 @@ msgid "Browser push requires an active service worker and HTTPS outside localhos
 msgstr "Пуш обавештења у прегледачу захтевају активан service worker и HTTPS ван localhost-а. Инсталирана Поток апликација користи дозволе уређаја и Firebase Cloud Messaging."
 
 #: lib/potok_ide_web/controllers/page_html.ex:154
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:28
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:29
 #, elixir-autogen, elixir-format
 msgid "Chat"
 msgstr "Чет"
@@ -2172,7 +2172,7 @@ msgstr[0] "Улога · %{count} члан"
 msgstr[1] "Улога · %{count} члана"
 msgstr[2] "Улога · %{count} чланова"
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:28
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:32
 #: lib/potok_ide_web/live/group_live/show.ex:398
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:37
 #, elixir-autogen, elixir-format
@@ -2302,7 +2302,7 @@ msgid "Attach files to messages."
 msgstr "Качење фајлова уз поруке."
 
 #: lib/potok_ide_web/controllers/page_html.ex:172
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:28
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:31
 #: lib/potok_ide_web/live/group_live/show.ex:4221
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:20
 #, elixir-autogen, elixir-format
@@ -2782,7 +2782,7 @@ msgid "Back to the calendar"
 msgstr "Назад на календар"
 
 #: lib/potok_ide_web/controllers/page_html.ex:163
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:28
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:30
 #: lib/potok_ide_web/live/group_live/show.ex:4229
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:56
 #, elixir-autogen, elixir-format
@@ -4101,7 +4101,7 @@ msgstr "Опис групе не мора да буде само текст. М�
 msgid "Administrator, All members and roles you make yourself, with 15 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
 msgstr "Администратор, Сви и улоге које сам направиш, са 15 дозвола: од писања и слања фајлова до прављења догађаја и уређивања групе. Подгрупа преузима улоге родитеља или има своје."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:84
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:94
 #, elixir-autogen, elixir-format
 msgid "Always with you"
 msgstr "Увек уз тебе"
@@ -4121,13 +4121,7 @@ msgstr "Апликације у групи"
 msgid "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree."
 msgstr "Гранај групе колико год треба. Свака је јавна или приватна, подгрупа може да наследи чланове и улоге, а број непрочитаних порука сабира се кроз цело стабло."
 
-#: lib/potok_ide_web/components/layouts.ex:363
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:22
-#, elixir-autogen, elixir-format
-msgid "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
-msgstr "Разговори, догађаји, фајлови и улоге, сложени у групе и подгрупе. На рачунару и на телефону."
-
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:119
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:107
 #, elixir-autogen, elixir-format
 msgid "For now, Potok is by invitation only."
 msgstr "Поток је за сада само уз позивницу."
@@ -4137,7 +4131,7 @@ msgstr "Поток је за сада само уз позивницу."
 msgid "Groups and sub-groups"
 msgstr "Групе и подгрупе"
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:120
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:108
 #, elixir-autogen, elixir-format
 msgid "Know someone who could use it? Send them an invitation by email."
 msgstr "Знаш некога коме би добро дошао? Пошаљи му позивницу на имејл."
@@ -4161,11 +4155,6 @@ msgstr "На телефону"
 #, elixir-autogen, elixir-format
 msgid "On your phone and in the browser, for messages, mentions and events."
 msgstr "На телефону и у прегледачу, за поруке, помињања и догађаје."
-
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:68
-#, elixir-autogen, elixir-format
-msgid "One place instead of five apps."
-msgstr "Једно место уместо пет апликација."
 
 #: lib/potok_ide_web/controllers/page_html.ex:165
 #, elixir-autogen, elixir-format
@@ -4208,7 +4197,7 @@ msgstr "Друштво друштву"
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
 msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Слике, видео и звук отварају се одмах у разговору, све остаје у картици Фајлови, а преузимају их само чланови."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:67
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:73
 #, elixir-autogen, elixir-format
 msgid "What Potok can do"
 msgstr "Шта Поток уме"
@@ -4511,22 +4500,38 @@ msgstr "Системска тема"
 msgid "The language and the look of the app."
 msgstr "Језик и изглед апликације."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:102
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:124
 #, elixir-autogen, elixir-format
 msgid "Profiles, groups, values, roles, reactions, threads, events, descriptions and apps are all entities of the domain model of the social application network that Potok implements."
 msgstr "Профили, групе, вредности, улоге, реакције, нити, догађаји, описи и апликације, све су то ентитети домен модела апликативне друштвене мреже коју Поток имплементира."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:107
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:129
 #, elixir-autogen, elixir-format
 msgid "See the domain map"
 msgstr "Погледај мапу домена"
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:100
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:122
 #, elixir-autogen, elixir-format
 msgid "Simple, but not shallow."
 msgstr "Једноставно, али не и плитко."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:97
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:119
 #, elixir-autogen, elixir-format
 msgid "Under the surface"
 msgstr "Испод површине"
+
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:75
+#, elixir-autogen, elixir-format
+msgid "Potok can think of values as arising in groups, and of groups as arising from values."
+msgstr "Поток уме да мисли да вредности настају у групама и да групе настају из вредности."
+
+#: lib/potok_ide_web/components/layouts.ex:363
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:22
+#, elixir-autogen, elixir-format
+msgid "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
+msgstr "Разговори, догађаји, фајлови, улоге, нотификације, групе, подгрупе и апликације. На рачунару и на телефону."
+
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:33
+#, elixir-autogen, elixir-format
+msgid "Apps"
+msgstr "Апликације"

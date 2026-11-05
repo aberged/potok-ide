@@ -754,7 +754,8 @@
     font-weight: 600;
   }
 
-  .lp-section + .lp-section {
+  .lp-section + .lp-section,
+  .lp-cta + .lp-section {
     margin-top: clamp(36px, 7vw, 56px);
   }
 

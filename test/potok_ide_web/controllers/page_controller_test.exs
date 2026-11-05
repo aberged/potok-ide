@@ -23,6 +23,7 @@ defmodule PotokIdeWeb.PageControllerTest do
           "#landing-domain",
           "#landing-domain-link[href='/domain']",
           "#landing-join",
+          "#landing-join ~ #landing-domain",
           "#landing-login-link[href='/accounts/log-in']",
           "#landing-join-login[href='/accounts/log-in']",
           "#guest-header #landing-login-link",
@@ -186,7 +187,7 @@ defmodule PotokIdeWeb.PageControllerTest do
         assert og(document, "site_name") == "Potok"
         assert og(document, "type") == "website"
         assert og(document, "title") == "Potok · Society for society"
-        assert og(document, "description") =~ "Conversations, events, files and roles"
+        assert og(document, "description") =~ "Conversations, events, files, roles"
         assert og(document, "url") == PotokIdeWeb.Endpoint.url() <> path
         assert og(document, "image") == url(~p"/images/og.png")
         assert og(document, "image:width") == "1200"

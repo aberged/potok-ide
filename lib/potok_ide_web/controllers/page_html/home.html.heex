@@ -20,12 +20,18 @@
         <h1>{gettext("Society for society")}</h1>
         <p class="lp-lead">
           {gettext(
-            "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
+            "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
           )}
         </p>
         <ul class="lp-pills">
           <li :for={
-            pill <- [gettext("Chat"), gettext("Calendar"), gettext("Files"), gettext("Roles")]
+            pill <- [
+              gettext("Chat"),
+              gettext("Calendar"),
+              gettext("Files"),
+              gettext("Roles"),
+              gettext("Apps")
+            ]
           }>
             {pill}
           </li>
@@ -65,7 +71,11 @@
   <div class="mx-auto max-w-5xl px-5 pb-16 sm:px-8 sm:pb-24">
     <section id="landing-features" class="lp-section">
       <p class="lp-kicker">{gettext("What Potok can do")}</p>
-      <h2>{gettext("One place instead of five apps.")}</h2>
+      <h2>
+        {gettext(
+          "Potok can think of values as arising in groups, and of groups as arising from values."
+        )}
+      </h2>
 
       <div class="lp-grid">
         <article
@@ -93,6 +103,18 @@
       </ul>
     </section>
 
+    <section id="landing-join" class="lp-cta scroll-mt-6">
+      <h2>{gettext("For now, Potok is by invitation only.")}</h2>
+      <p>{gettext("Know someone who could use it? Send them an invitation by email.")}</p>
+      <.link id="landing-join-login" href={~p"/accounts/log-in"} class="lp-button group mt-6">
+        {gettext("Log in")}
+        <.icon
+          name="hero-arrow-right"
+          class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+        />
+      </.link>
+    </section>
+
     <section id="landing-domain" class="lp-section">
       <p class="lp-kicker">{gettext("Under the surface")}</p>
       <div class="lp-domain">
@@ -113,18 +135,6 @@
         </div>
         <.domain_loop />
       </div>
-    </section>
-
-    <section id="landing-join" class="lp-cta scroll-mt-6">
-      <h2>{gettext("For now, Potok is by invitation only.")}</h2>
-      <p>{gettext("Know someone who could use it? Send them an invitation by email.")}</p>
-      <.link id="landing-join-login" href={~p"/accounts/log-in"} class="lp-button group mt-6">
-        {gettext("Log in")}
-        <.icon
-          name="hero-arrow-right"
-          class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
-        />
-      </.link>
     </section>
   </div>
 </Layouts.guest>

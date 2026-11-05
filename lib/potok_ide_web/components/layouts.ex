@@ -361,7 +361,7 @@ defmodule PotokIdeWeb.Layouts do
         :description,
         assigns.description ||
           gettext(
-            "Conversations, events, files and roles, arranged in groups and sub-groups. On your computer and on your phone."
+            "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
           )
       )
       |> assign(:og_locale, @og_locales[assigns.locale])
