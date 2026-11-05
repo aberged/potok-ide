@@ -415,12 +415,9 @@ defmodule PotokIde.Social do
   a public one, but never the root, a direct chat or a thread.
   """
   def get_public_group(id) when is_integer(id) do
-    from(g in Group,
-      where:
-        g.id == ^id and g.is_public and not g.is_root and not g.is_direct and
-          is_nil(g.parent_value_id)
-    )
-    |> Repo.one()
+    group = Repo.get(Group, id)
+
+    if group && Group.guest_preview?(group), do: group
   end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do

@@ -352,6 +352,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("About the group")}
                 icon="hero-information-circle"
               />
+              <button
+                :if={Group.guest_preview?(@group)}
+                id="group-share-button"
+                type="button"
+                data-dropdown-close
+                data-share-link={url(~p"/groups/#{@group.id}")}
+                class={menu_item_class()}
+              >
+                <.icon name="hero-share" class="size-4" />
+                <span class="ml-2 truncate">{gettext("Share")}</span>
+              </button>
               <%!-- The root has no bar of sections. --%>
               <Components.group_tab_button
                 :if={@group.is_root and @calendar_tab?}

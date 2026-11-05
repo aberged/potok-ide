@@ -134,6 +134,17 @@ defmodule PotokIde.Social.Group do
     |> foreign_key_constraint(:home_alt_description_id)
   end
 
+  @doc "Whether guests get a preview of the group at its link (`PotokIdeWeb.PublicPreview`)."
+  def guest_preview?(%__MODULE__{
+        is_public: true,
+        is_root: false,
+        is_direct: false,
+        parent_value_id: nil
+      }),
+      do: true
+
+  def guest_preview?(%__MODULE__{}), do: false
+
   @doc "Whether only the members added to the group itself can see it."
   def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true
   def closed?(%__MODULE__{}), do: false

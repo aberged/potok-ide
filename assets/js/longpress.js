@@ -66,6 +66,13 @@ export const shareLink = url => {
 }
 
 const installLinkActionSheet = () => {
+  // A button that shares the link of what it stands for, with no trip to the
+  // server: iOS Safari only lets the click itself copy or share.
+  document.addEventListener("click", event => {
+    const button = event.target.closest?.("[data-share-link]")
+    if (button) shareLink(button.dataset.shareLink)
+  })
+
   const dialog = document.getElementById(ACTION_SHEET_ID)
   if (!dialog) return
 

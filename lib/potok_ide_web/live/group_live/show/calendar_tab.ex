@@ -672,6 +672,16 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
       <div class="mt-5 flex flex-wrap items-center gap-2 border-t border-base-300/60 pt-4">
         <.button
+          :if={@event.is_public and !Event.cancelled?(@event)}
+          id="calendar-share"
+          type="button"
+          data-share-link={url(~p"/groups/#{@event.group_id}/calendar?#{[event: @event.id]}")}
+          size="sm"
+        >
+          <.icon name="hero-share" class="size-4" />
+          {gettext("Share")}
+        </.button>
+        <.button
           :if={!Event.cancelled?(@event)}
           id="calendar-ics"
           href={~p"/events/#{@event.id}/event.ics"}
