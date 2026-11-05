@@ -104,5 +104,27 @@
         <section id="domain-detail" class="dm-sheet" aria-live="polite" hidden></section>
       </aside>
     </div>
+
+    <section id="domain-stack" class="dm-stack">
+      <.link id="domain-stack-link" href={~p"/stack"} class="group">
+        <div>
+          <h2 class="font-brand">{StackCopy.title()}</h2>
+          <p>{StackCopy.teaser()}</p>
+          <span class="dm-stack-more">
+            {StackCopy.more()}
+            <.icon
+              name="hero-arrow-right"
+              class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </span>
+        </div>
+        <ul id="domain-stack-tools" class="st-tools">
+          <li :for={tool <- StackCopy.tools()}>
+            <.stack_logo tool={tool.id} />
+            {tool.name}
+          </li>
+        </ul>
+      </.link>
+    </section>
   </div>
 </Layouts.guest>

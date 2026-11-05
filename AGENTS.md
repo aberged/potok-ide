@@ -21,6 +21,7 @@ This is a web application written using the Phoenix web framework.
 | A rule: who may do what, what deleting does, how threads, inheritance or unread counts work | `DomainCopy.mechanisms/0`. No test sees these |
 | What apps can do: the app API, `potok_app_sdk.js` | `DomainCopy.apps/0` |
 | The core words: group, value, thread | `DomainCopy.core_labels/0`, `#landing-domain` |
+| How the app is built: a dependency, a process of its own, a daisyUI part taken up or dropped | `StackCopy.tools/0` (the page `/stack`). Tests see only a few of these; the reminder does not name this page |
 
 Usually not affected: fixes that restore what the pages already say, styling, refactors, tests, operations. `docs/potok-landing.html` is the user's own page and the app does not read it: leave it.
 

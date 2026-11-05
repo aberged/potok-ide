@@ -1285,7 +1285,7 @@ msgstr "Auth"
 msgid "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
 msgstr "Push obaveštenja u pregledaču zahtevaju aktivan service worker i HTTPS van localhost-a. Instalirana Potok aplikacija koristi dozvole uređaja i Firebase Cloud Messaging."
 
-#: lib/potok_ide_web/controllers/page_html.ex:154
+#: lib/potok_ide_web/controllers/page_html.ex:155
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:29
 #, elixir-autogen, elixir-format
 msgid "Chat"
@@ -2301,7 +2301,7 @@ msgstr "Kačenje fajlova"
 msgid "Attach files to messages."
 msgstr "Kačenje fajlova uz poruke."
 
-#: lib/potok_ide_web/controllers/page_html.ex:172
+#: lib/potok_ide_web/controllers/page_html.ex:173
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:31
 #: lib/potok_ide_web/live/group_live/show.ex:4221
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:20
@@ -2781,7 +2781,7 @@ msgstr "Vreme"
 msgid "Back to the calendar"
 msgstr "Nazad na kalendar"
 
-#: lib/potok_ide_web/controllers/page_html.ex:163
+#: lib/potok_ide_web/controllers/page_html.ex:164
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:30
 #: lib/potok_ide_web/live/group_live/show.ex:4229
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:56
@@ -4091,12 +4091,12 @@ msgstr "Šta drugi čitaju o ovom profilu."
 msgid "Whether one account uses the profile, or several."
 msgstr "Da li profil koristi jedan nalog ili više njih."
 
-#: lib/potok_ide_web/controllers/page_html.ex:192
+#: lib/potok_ide_web/controllers/page_html.ex:193
 #, elixir-autogen, elixir-format
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list."
 msgstr "Opis grupe ne mora da bude samo tekst. Može da bude i mala aplikacija, na primer anketa ili spisak zaduženja."
 
-#: lib/potok_ide_web/controllers/page_html.ex:183
+#: lib/potok_ide_web/controllers/page_html.ex:184
 #, elixir-autogen, elixir-format
 msgid "Administrator, All members and roles you make yourself, with 15 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
 msgstr "Administrator, Svi i uloge koje sam napraviš, sa 15 dozvola: od pisanja i slanja fajlova do pravljenja događaja i uređivanja grupe. Podgrupa preuzima uloge roditelja ili ima svoje."
@@ -4106,17 +4106,17 @@ msgstr "Administrator, Svi i uloge koje sam napraviš, sa 15 dozvola: od pisanja
 msgid "Always with you"
 msgstr "Uvek uz tebe"
 
-#: lib/potok_ide_web/controllers/page_html.ex:212
+#: lib/potok_ide_web/controllers/page_html.ex:213
 #, elixir-autogen, elixir-format
 msgid "An app for your phone, or an install straight from the browser."
 msgstr "Aplikacija za telefon ili instalacija pravo iz pregledača."
 
-#: lib/potok_ide_web/controllers/page_html.ex:190
+#: lib/potok_ide_web/controllers/page_html.ex:191
 #, elixir-autogen, elixir-format
 msgid "Apps in a group"
 msgstr "Aplikacije u grupi"
 
-#: lib/potok_ide_web/controllers/page_html.ex:147
+#: lib/potok_ide_web/controllers/page_html.ex:148
 #, elixir-autogen, elixir-format
 msgid "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree."
 msgstr "Granaj grupe koliko god treba. Svaka je javna ili privatna, podgrupa može da nasledi članove i uloge, a broj nepročitanih poruka sabira se kroz celo stablo."
@@ -4126,7 +4126,7 @@ msgstr "Granaj grupe koliko god treba. Svaka je javna ili privatna, podgrupa mo�
 msgid "For now, Potok is by invitation only."
 msgstr "Potok je za sada samo uz pozivnicu."
 
-#: lib/potok_ide_web/controllers/page_html.ex:145
+#: lib/potok_ide_web/controllers/page_html.ex:146
 #, elixir-autogen, elixir-format
 msgid "Groups and sub-groups"
 msgstr "Grupe i podgrupe"
@@ -4136,52 +4136,52 @@ msgstr "Grupe i podgrupe"
 msgid "Know someone who could use it? Send them an invitation by email."
 msgstr "Znaš nekoga kome bi dobro došao? Pošalji mu pozivnicu na imejl."
 
-#: lib/potok_ide_web/controllers/page_html.ex:223
+#: lib/potok_ide_web/controllers/page_html.ex:224
 #, elixir-autogen, elixir-format
 msgid "Light and dark theme"
 msgstr "Svetla i tamna tema"
 
-#: lib/potok_ide_web/controllers/page_html.ex:205
+#: lib/potok_ide_web/controllers/page_html.ex:206
 #, elixir-autogen, elixir-format
 msgid "Notifications"
 msgstr "Obaveštenja"
 
-#: lib/potok_ide_web/controllers/page_html.ex:211
+#: lib/potok_ide_web/controllers/page_html.ex:212
 #, elixir-autogen, elixir-format
 msgid "On your phone"
 msgstr "Na telefonu"
 
-#: lib/potok_ide_web/controllers/page_html.ex:206
+#: lib/potok_ide_web/controllers/page_html.ex:207
 #, elixir-autogen, elixir-format
 msgid "On your phone and in the browser, for messages, mentions and events."
 msgstr "Na telefonu i u pregledaču, za poruke, pominjanja i događaje."
 
-#: lib/potok_ide_web/controllers/page_html.ex:165
+#: lib/potok_ide_web/controllers/page_html.ex:166
 #, elixir-autogen, elixir-format
 msgid "One-off, all-day and repeating events, the answers Going, Maybe or Not going, and reminders. My calendar gathers the events of all your groups, and you can export them to Google, Apple or Outlook."
 msgstr "Jednokratni, celodnevni i ponavljajući događaji, odgovori Dolazim, Možda ili Ne dolazim i podsetnici. Moj kalendar skuplja događaje iz svih tvojih grupa, a možeš ih izvesti u Google, Apple ili Outlook."
 
-#: lib/potok_ide_web/controllers/page_html.ex:224
+#: lib/potok_ide_web/controllers/page_html.ex:225
 #, elixir-autogen, elixir-format
 msgid "Or the way your system is set."
 msgstr "Ili kako je podešen sistem."
 
-#: lib/potok_ide_web/controllers/page_html.ex:218
+#: lib/potok_ide_web/controllers/page_html.ex:219
 #, elixir-autogen, elixir-format
 msgid "Personal and shared, say for a family or an association."
 msgstr "Lični i deljeni, na primer za porodicu ili udruženje."
 
-#: lib/potok_ide_web/controllers/page_html.ex:156
+#: lib/potok_ide_web/controllers/page_html.ex:157
 #, elixir-autogen, elixir-format
 msgid "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too."
 msgstr "Odgovori sa citatom, niti za duže razgovore, reakcije i @pominjanje ljudi ili celih uloga. Linkovi dobijaju pregled, a poruku možeš i da izmeniš."
 
-#: lib/potok_ide_web/controllers/page_html.ex:181
+#: lib/potok_ide_web/controllers/page_html.ex:182
 #, elixir-autogen, elixir-format
 msgid "Roles and permissions"
 msgstr "Uloge i dozvole"
 
-#: lib/potok_ide_web/controllers/page_html.ex:217
+#: lib/potok_ide_web/controllers/page_html.ex:218
 #, elixir-autogen, elixir-format
 msgid "Several profiles"
 msgstr "Više profila"
@@ -4192,7 +4192,7 @@ msgstr "Više profila"
 msgid "Society for society"
 msgstr "Društvo društvu"
 
-#: lib/potok_ide_web/controllers/page_html.ex:174
+#: lib/potok_ide_web/controllers/page_html.ex:175
 #, elixir-autogen, elixir-format
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
 msgstr "Do 10 fajlova po poruci, do 100 MB svaki. Slike, video i zvuk otvaraju se odmah u razgovoru, sve ostaje u kartici Fajlovi, a preuzimaju ih samo članovi."
@@ -4225,12 +4225,12 @@ msgstr "Naslov, vreme, mesto i opis vide se i van Potoka, svakome ko ima link."
 msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
 msgstr "Za deljene linkove može da se opiše tagom <meta name=\"description\" content=\"...\">."
 
-#: lib/potok_ide_web/controllers/page_html.ex:229
+#: lib/potok_ide_web/controllers/page_html.ex:230
 #, elixir-autogen, elixir-format
 msgid "Latin and Cyrillic"
 msgstr "Latinica i ćirilica"
 
-#: lib/potok_ide_web/controllers/page_html.ex:230
+#: lib/potok_ide_web/controllers/page_html.ex:231
 #, elixir-autogen, elixir-format
 msgid "Serbian in both scripts, and English."
 msgstr "Srpski na oba pisma, i English."

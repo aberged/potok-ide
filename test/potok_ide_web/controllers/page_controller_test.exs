@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.PageControllerTest do
   alias PotokIde.Social
   alias PotokIde.Social.GroupRole
   alias PotokIde.Storage
+  alias PotokIdeWeb.StackCopy
 
   test "GET / shows guests the landing page", %{conn: conn} do
     document =
@@ -169,6 +170,64 @@ defmodule PotokIdeWeb.PageControllerTest do
 
       assert document |> LazyHTML.query("h1") |> LazyHTML.text() =~ "Domen Model Potoka"
       assert map_data(document)["entities"]["Value"]["name"] == "Vrednost"
+    end
+  end
+
+  describe "the page on what Potok is made of" do
+    defp stack_page(conn) do
+      conn |> get(~p"/stack") |> html_response(200) |> LazyHTML.from_document()
+    end
+
+    defp count(document, selector) do
+      document |> LazyHTML.query(selector) |> Enum.count()
+    end
+
+    test "the domain map ends in a section that leads to it", %{conn: conn} do
+      document = domain_page(conn)
+
+      assert count(document, "#domain-map > .dm-layout + #domain-stack") == 1
+      assert count(document, "#domain-stack > a#domain-stack-link[href='/stack']") == 1
+      assert count(document, "#domain-stack-tools li svg") == 5
+
+      tools = document |> LazyHTML.query("#domain-stack-tools") |> LazyHTML.text()
+
+      for %{name: name} <- StackCopy.tools() do
+        assert tools =~ name
+      end
+    end
+
+    test "has every tool with its logo, what it solves and how", %{conn: conn} do
+      document = stack_page(conn)
+
+      assert count(document, "#stack-domain-link[href='/domain']") == 1
+
+      for tool <- StackCopy.tools() do
+        section = "#stack-#{tool.id}"
+
+        assert count(document, "#stack-tools a[href='#{section}'] svg") == 1
+        assert count(document, "#{section} h2") == 1
+        assert count(document, "#{section} svg") == 1
+        assert count(document, "#{section} .st-part") == 1
+        assert count(document, "#{section} .st-points article") == length(tool.points)
+      end
+    end
+
+    test "is open to guests and accounts alike", %{conn: conn} do
+      assert conn |> log_in_account(account_fixture()) |> get(~p"/stack") |> html_response(200)
+    end
+
+    test "keeps the tools' names in Latin in the Cyrillic version", %{conn: conn} do
+      conn = conn |> init_test_session(%{locale: "sr_Cyrl"}) |> get(~p"/stack")
+      document = conn |> html_response(200) |> LazyHTML.from_document()
+      text = document |> LazyHTML.query("#stack") |> LazyHTML.text()
+
+      assert document |> LazyHTML.query("h1") |> LazyHTML.text() =~ "Поток"
+
+      for name <- ~w(BEAM Elixir Phoenix LiveView PubSub Presence Tailwind daisyUI) do
+        assert text =~ name
+      end
+
+      refute text =~ ~r/\p{Cyrillic}[a-zA-Z]|[a-zA-Z]\p{Cyrillic}/u
     end
   end
 

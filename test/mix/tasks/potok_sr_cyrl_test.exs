@@ -35,6 +35,9 @@ defmodule Mix.Tasks.Potok.SrCyrlTest do
       assert SrCyrl.transliterate("Vrednost u Markdown-u") == "Вредност у Markdown-у"
       assert SrCyrl.transliterate("Google Play i Outlook") == "Google Play и Outlook"
 
+      assert SrCyrl.transliterate("Phoenix na BEAM-u, stilovi u Tailwind-u") ==
+               "Phoenix на BEAM-у, стилови у Tailwind-у"
+
       assert SrCyrl.transliterate("Na iPhone-u, pišite na `ABER.GED@GMAIL.COM`") ==
                "На iPhone-у, пишите на `ABER.GED@GMAIL.COM`"
     end

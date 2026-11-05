@@ -1,0 +1,397 @@
+## This file is a PO Template file.
+##
+## "msgid"s here are often extracted from source code.
+## Add new messages manually only if they're dynamic
+## messages that can't be statically extracted.
+##
+## Run "mix gettext.extract" to bring this file up to
+## date. Leave "msgstr"s empty as changing them here has no
+## effect: edit them in PO (.po) files instead.
+#
+msgid ""
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:93
+#, elixir-autogen, elixir-format
+msgid "A cache inside the machine"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:189
+#, elixir-autogen, elixir-format
+msgid "A conversation is a stream"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:61
+#, elixir-autogen, elixir-format
+msgid "A crash stays in its process"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:123
+#, elixir-autogen, elixir-format
+msgid "A function takes a value and returns a new one, and the old one stays as it was, so nothing can change it while something else reads it. Data is easy to follow: steps come one after another, and the shape of the data picks the branch that runs."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:53
+#, elixir-autogen, elixir-format
+msgid "A process for every open page"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:110
+#, elixir-autogen, elixir-format
+msgid "All the rules of the app: who may do what, how threads and inheritance work, what is unread, how events repeat."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:223
+#, elixir-autogen, elixir-format
+msgid "An app from a group's description runs in an isolated frame, with no access to the page around it. It talks to Potok through messages that reach the page's process, and there every permission is checked again."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:335
+#, elixir-autogen, elixir-format
+msgid "An app in a group loads the same CSS as Potok, so its author can use the same components and colors, and the app follows the theme."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:333
+#, elixir-autogen, elixir-format
+msgid "Apps get the same classes"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:221
+#, elixir-autogen, elixir-format
+msgid "Apps in a group"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:251
+#, elixir-autogen, elixir-format
+msgid "At build time Tailwind goes through the templates and the JavaScript and makes one CSS file, with only the classes that appear there. A class removed from a template leaves the file by itself."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:47
+#, elixir-autogen, elixir-format
+msgid "BEAM is the virtual machine of Erlang, a language born for telephone exchanges, where thousands of calls run at once and none may bring the others down. Conversations in Potok ask for the same. The logo here is Erlang's, as BEAM has none of its own."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:77
+#, elixir-autogen, elixir-format
+msgid "Background work is ordinary processes"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:145
+#, elixir-autogen, elixir-format
+msgid "Code that reads itself"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:319
+#, elixir-autogen, elixir-format
+msgid "Colors are named by role, like `base-100`, `primary` or `error`, and a theme gives them their values. Potok has its own light and dark theme, with the blue of its mark, and switches between them with one attribute on the page."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:317
+#, elixir-autogen, elixir-format
+msgid "Colors by role"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:296
+#, elixir-autogen, elixir-format
+msgid "Components and themes"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:309
+#, elixir-autogen, elixir-format
+msgid "Components as classes"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:121
+#, elixir-autogen, elixir-format
+msgid "Data never changes in place"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:28
+#, elixir-autogen, elixir-format
+msgid "Domain map"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:95
+#, elixir-autogen, elixir-format
+msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the access token for notifications."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:71
+#, elixir-autogen, elixir-format
+msgid "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, and both the connection and the page are swept once more two seconds after loading. That is how a small server holds many open pages."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:131
+#, elixir-autogen, elixir-format
+msgid "Ecto describes every table in code, and changes pass their checks before they reach PostgreSQL. Changes that belong together form one transaction: all of them are written, or none."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:129
+#, elixir-autogen, elixir-format
+msgid "Ecto guards the database"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:283
+#, elixir-autogen, elixir-format
+msgid "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:115
+#, elixir-autogen, elixir-format
+msgid "Elixir is a language that runs on BEAM. It gets everything above from it and adds readable code and good tools. All of Potok's server code is written in it, with every rule from the domain map."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:55
+#, elixir-autogen, elixir-format
+msgid "Every open page has a light process of its own on the server, with its own memory. Processes share no memory and send each other messages, and BEAM keeps switching between them, so slow work on one page does not hold up the others."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:183
+#, elixir-autogen, elixir-format
+msgid "Every page after log-in is LiveView. The view is worked out on the server, and over a WebSocket connection the browser gets only what changed. JavaScript stays for what only a browser can do, like scrolling or uploading files. The phone apps show the same pages from the same server, so a new feature reaches every device at once."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:170
+#, elixir-autogen, elixir-format
+msgid "Everything between the browser and the rules: pages, the live connection, log-in, addresses, files."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:42
+#, elixir-autogen, elixir-format
+msgid "Everything that happens at once: open pages, notifications, reminders and the links between servers."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:20
+#, elixir-autogen, elixir-format
+msgid "Five tools, from the virtual machine to the message bubble. Each one solves its own part of the app, and this page says which part and how."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:325
+#, elixir-autogen, elixir-format
+msgid "Forms"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:31
+#, elixir-autogen, elixir-format
+msgid "How"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:238
+#, elixir-autogen, elixir-format
+msgid "How every element looks: spacing, type, colors, and the layout on a phone and on a big screen."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:273
+#, elixir-autogen, elixir-format
+msgid "Icons without images"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:181
+#, elixir-autogen, elixir-format
+msgid "LiveView: pages live on the server"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:69
+#, elixir-autogen, elixir-format
+msgid "Memory is cleaned per process"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:79
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. None of this needs a separate job queue."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:249
+#, elixir-autogen, elixir-format
+msgid "Only what is used"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:175
+#, elixir-autogen, elixir-format
+msgid "Phoenix is a web framework written in Elixir. It takes every request, checks the session and the language, leads it to the right page and keeps the connection to the browser open."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:257
+#, elixir-autogen, elixir-format
+msgid "Phone first"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:259
+#, elixir-autogen, elixir-format
+msgid "Plain classes hold for a narrow screen, and `sm:` and `lg:` add what changes on a wider one. Potok added variants of its own: `keyboard-open:` while the phone's keyboard is open, and `cramped:` for screens too short for the bars around a conversation."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:343
+#, elixir-autogen, elixir-format
+msgid "Potok does not use everything daisyUI offers. Buttons are written with Tailwind, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:26
+#, elixir-autogen, elixir-format
+msgid "Potok uses BEAM, Elixir, Phoenix, Tailwind and daisyUI."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:207
+#, elixir-autogen, elixir-format
+msgid "Presence tracks which profile has a group open and keeps that in step between servers, without the database. A page listens only to the profiles it cares about, so one member coming in does not wake a whole big group."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:205
+#, elixir-autogen, elixir-format
+msgid "Presence: who is here"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:108
+#, elixir-autogen, elixir-format
+msgid "Programming language"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:197
+#, elixir-autogen, elixir-format
+msgid "PubSub: a new value reaches everyone"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:298
+#, elixir-autogen, elixir-format
+msgid "Ready-made parts of the screen and their colors: message bubbles, fields, menus, the light and the dark theme."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:27
+#, elixir-autogen, elixir-format
+msgid "See what each of them solves and how"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:87
+#, elixir-autogen, elixir-format
+msgid "Servers find each other through DNS and join a cluster. A message sent on one reaches a process on another, with no broker such as Redis in between."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:85
+#, elixir-autogen, elixir-format
+msgid "Several servers, one system"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:265
+#, elixir-autogen, elixir-format
+msgid "States and the theme"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:236
+#, elixir-autogen, elixir-format
+msgid "Styling"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:243
+#, elixir-autogen, elixir-format
+msgid "Tailwind is a set of small CSS classes written right in the template. Instead of a separate style for each part of the screen, an element carries its look with it."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:139
+#, elixir-autogen, elixir-format
+msgid "Templates and addresses are checked while the code is built. A link to a page that does not exist is a warning, and a warning stops the change. The compiler also splits a template into fixed and changing parts, which is why LiveView sends only the differences."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:155
+#, elixir-autogen, elixir-format
+msgid "Tests (ExUnit) and helper tasks are written in Elixir too. One command before every change builds the code with no warnings, formats it and runs the tests, and the Cyrillic version of this page is generated from the Latin one."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:327
+#, elixir-autogen, elixir-format
+msgid "Text fields, selects and checkboxes come from daisyUI, and one component in the code, `input`, shows them all the same way, with the same error messages."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:137
+#, elixir-autogen, elixir-format
+msgid "The compiler does part of the checking"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:147
+#, elixir-autogen, elixir-format
+msgid "The fields and keys on the domain map are not copied by hand: fields come from the Ecto schemas and keys from the database catalog, so they cannot fall behind the code. When a table shows up without a description, a test fails."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:275
+#, elixir-autogen, elixir-format
+msgid "The icons are Heroicons, included as a plugin for Tailwind: the class `hero-bell` is a bell written into the CSS itself, so there is no image to load, and it takes its color from the text."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:191
+#, elixir-autogen, elixir-format
+msgid "The messages of a conversation are a LiveView stream: the server keeps them out of the page's memory and sends the browser only the new, edited or deleted one. The browser holds the rest, so a long conversation does not weigh on the server."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:213
+#, elixir-autogen, elixir-format
+msgid "The router and access checks"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:215
+#, elixir-autogen, elixir-format
+msgid "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, files and avatars, stays a plain response to a request, so a reader holds no process open."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:267
+#, elixir-autogen, elixir-format
+msgid "The variants `phx-click-loading:` and `phx-submit-loading:` change the look while the server handles a click, so a button reacts at once. `dark:` follows the chosen theme, or the device's."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:29
+#, elixir-autogen, elixir-format
+msgid "Tools"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:153
+#, elixir-autogen, elixir-format
+msgid "Tools in the same language"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:40
+#, elixir-autogen, elixir-format
+msgid "Virtual machine"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:168
+#, elixir-autogen, elixir-format
+msgid "Web framework"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:17
+#, elixir-autogen, elixir-format
+msgid "What Potok is made of"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:341
+#, elixir-autogen, elixir-format
+msgid "What Potok leaves out"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:30
+#, elixir-autogen, elixir-format
+msgid "What it solves"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:199
+#, elixir-autogen, elixir-format
+msgid "When someone saves a value, Phoenix PubSub publishes it on the group's topic, and every page process listening there gets it and shows it. Unread counts have a topic of their own, so one value is one publication, however many members the group has."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:63
+#, elixir-autogen, elixir-format
+msgid "When something goes wrong, only that process falls. Its page reconnects on its own and nobody else notices. A supervisor starts the permanent parts of the app and brings them back if they stop."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:281
+#, elixir-autogen, elixir-format
+msgid "Where Tailwind stops"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:311
+#, elixir-autogen, elixir-format
+msgid "`chat-bubble` is a message bubble, `drawer` the side menu, `dropdown` a drop-down menu, `toast` a note at the bottom of the screen. It is all plain CSS, so it does not get in the way of LiveView, which updates the page by itself."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:303
+#, elixir-autogen, elixir-format
+msgid "daisyUI is a plugin for Tailwind. It gives the common parts of an interface as named classes and adds no JavaScript."
+msgstr ""

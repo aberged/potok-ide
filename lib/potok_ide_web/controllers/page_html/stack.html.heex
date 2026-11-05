@@ -1,0 +1,52 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+>
+  <div id="stack" class="dm mx-auto w-full max-w-5xl px-5 pb-16 sm:px-8">
+    <header class="st-top">
+      <.link id="stack-domain-link" href={~p"/domain"} class="st-back group">
+        <.icon
+          name="hero-arrow-left"
+          class="size-4 transition-transform duration-200 group-hover:-translate-x-0.5"
+        />
+        {StackCopy.back()}
+      </.link>
+      <h1 class="font-brand">{StackCopy.title()}</h1>
+      <p>{StackCopy.lead()}</p>
+      <nav aria-label={StackCopy.tools_label()}>
+        <ul id="stack-tools" class="st-tools">
+          <li :for={tool <- @tools}>
+            <a href={"#stack-#{tool.id}"} class="st-tool-link">
+              <.stack_logo tool={tool.id} />
+              {tool.name}
+            </a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <section :for={tool <- @tools} id={"stack-#{tool.id}"} class="st-layer">
+      <div class="st-layer-name">
+        <.stack_logo tool={tool.id} />
+        <div>
+          <h2 class="font-brand">{tool.name}</h2>
+          <p>{tool.kind}</p>
+        </div>
+      </div>
+      <div>
+        <h3>{StackCopy.solves()}</h3>
+        <p class="st-part">{tool.part}</p>
+        <p class="st-text">{tool.text}</p>
+        <h3>{StackCopy.how()}</h3>
+        <div class="st-points">
+          <article :for={point <- tool.points}>
+            <h4>{point.title}</h4>
+            <p><.domain_text text={point.text} /></p>
+          </article>
+        </div>
+      </div>
+    </section>
+  </div>
+</Layouts.guest>

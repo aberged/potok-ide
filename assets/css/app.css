@@ -1106,6 +1106,11 @@
     --dm-calendar: #a0640c;
     --dm-tags: #ad3a76;
     --dm-joining: #4a8128;
+    --st-beam: #a90533;
+    --st-elixir: #5b3080;
+    --st-phoenix: #e64800;
+    --st-tailwind: #0891b2;
+    --st-daisyui: #0e9478;
     --dm-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
 
@@ -1118,6 +1123,11 @@
     --dm-calendar: #e8b65e;
     --dm-tags: #f09ac7;
     --dm-joining: #a3da7c;
+    --st-beam: #ff8fa3;
+    --st-elixir: #c9a6ef;
+    --st-phoenix: #ff9466;
+    --st-tailwind: #5fd3ee;
+    --st-daisyui: #4fdcb9;
   }
 
   @media (prefers-color-scheme: dark) {
@@ -1130,6 +1140,11 @@
       --dm-calendar: #e8b65e;
       --dm-tags: #f09ac7;
       --dm-joining: #a3da7c;
+      --st-beam: #ff8fa3;
+      --st-elixir: #c9a6ef;
+      --st-phoenix: #ff9466;
+      --st-tailwind: #5fd3ee;
+      --st-daisyui: #4fdcb9;
     }
   }
 
@@ -1953,6 +1968,243 @@
   @media (prefers-reduced-motion: reduce) {
     .dm * {
       transition: none;
+    }
+  }
+
+  /* The tools under Potok: the section at the end of the map, and `/stack`,
+     which takes the map's tokens from `.dm`. Each tool has its logo's hue. */
+  .st-logo {
+    display: grid;
+    flex: none;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: color-mix(in oklab, var(--tc) 12%, var(--dm-surface));
+    color: var(--tc);
+  }
+
+  .st-logo svg {
+    width: 21px;
+    height: 21px;
+    fill: currentColor;
+  }
+
+  .st-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+  }
+
+  .st-tools li,
+  .st-tool-link {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+
+  .st-tool-link {
+    border-radius: 12px;
+    transition: color 0.2s;
+  }
+
+  .st-tool-link:hover {
+    color: var(--dm-accent);
+  }
+
+  .st-tool-link:focus-visible,
+  .st-back:focus-visible,
+  .dm-stack a:focus-visible {
+    outline: 2px solid var(--dm-accent);
+    outline-offset: 3px;
+  }
+
+  .dm-stack {
+    margin-top: 14px;
+  }
+
+  .dm-stack a {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 18px 40px;
+    padding: 20px 24px;
+    border: 1px solid var(--dm-line);
+    border-radius: 12px;
+    background: var(--dm-surface);
+    transition: border-color 0.2s;
+  }
+
+  .dm-stack a:hover {
+    border-color: var(--dm-accent);
+  }
+
+  .dm-stack h2 {
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+
+  .dm-stack p {
+    margin-top: 4px;
+    color: var(--dm-muted);
+  }
+
+  .dm-stack-more {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    color: var(--dm-accent);
+    font-size: 14.5px;
+    font-weight: 600;
+  }
+
+  .st-top {
+    display: grid;
+    justify-items: start;
+    gap: 10px;
+    padding-block: 10px 30px;
+  }
+
+  .st-top h1 {
+    font-size: clamp(27px, 4.4vw, 38px);
+    font-weight: 700;
+    line-height: 1.15;
+    text-wrap: balance;
+  }
+
+  .st-top > p {
+    max-width: 58ch;
+    color: var(--dm-muted);
+    font-size: 17px;
+    line-height: 1.5;
+  }
+
+  .st-top nav {
+    margin-top: 12px;
+  }
+
+  .st-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border-radius: 6px;
+    color: var(--dm-muted);
+    font-size: 14px;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .st-back:hover {
+    color: var(--dm-fg);
+  }
+
+  .st-layer {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr);
+    gap: 14px 36px;
+    padding-block: 32px;
+    border-top: 1px solid var(--dm-line);
+    scroll-margin-top: 8px;
+  }
+
+  .st-layer-name {
+    position: sticky;
+    top: 22px;
+    display: grid;
+    align-self: start;
+    gap: 10px;
+  }
+
+  .st-layer-name .st-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 16px;
+  }
+
+  .st-layer-name svg {
+    width: 32px;
+    height: 32px;
+  }
+
+  .st-layer-name h2 {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .st-layer-name p {
+    margin-top: 2px;
+    color: var(--dm-muted);
+    font-size: 14px;
+    line-height: 1.3;
+  }
+
+  .st-layer h3 {
+    color: var(--dm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .st-part {
+    max-width: 58ch;
+    margin-top: 4px;
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.35;
+    text-wrap: pretty;
+  }
+
+  .st-text {
+    max-width: 68ch;
+    margin-block: 10px 24px;
+    line-height: 1.55;
+  }
+
+  .st-points {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+    gap: 18px 30px;
+    margin-top: 8px;
+  }
+
+  .st-points article {
+    min-width: 0;
+  }
+
+  .st-points h4 {
+    font-size: 15.5px;
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .st-points p {
+    margin-top: 4px;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  @media (max-width: 960px) {
+    .dm-stack a {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  @media (max-width: 760px) {
+    .st-layer {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .st-layer-name {
+      position: static;
+      display: flex;
+      align-items: center;
+      gap: 12px;
     }
   }
 

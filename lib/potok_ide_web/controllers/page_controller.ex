@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.PageController do
 
   alias PotokIde.DomainMap
   alias PotokIdeWeb.DomainCopy
+  alias PotokIdeWeb.StackCopy
 
   plug :assign_nav_counts when action in [:privacy]
 
@@ -51,6 +52,13 @@ defmodule PotokIdeWeb.PageController do
     |> assign(:page_title, DomainCopy.title())
     |> assign(:page_description, DomainCopy.lead())
     |> render(:domain, map: DomainCopy.map(DomainMap.graph()))
+  end
+
+  def stack(conn, _params) do
+    conn
+    |> assign(:page_title, StackCopy.title())
+    |> assign(:page_description, StackCopy.lead())
+    |> render(:stack, tools: StackCopy.tools())
   end
 
   def privacy(conn, _params) do

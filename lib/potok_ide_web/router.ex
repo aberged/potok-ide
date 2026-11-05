@@ -78,6 +78,7 @@ defmodule PotokIdeWeb.Router do
     get "/", PageController, :home
     get "/privacy-policy", PageController, :privacy
     get "/domain", PageController, :domain
+    get "/stack", PageController, :stack
   end
 
   # The service worker takes these posts (`priv/static/sw.js`); this is for
