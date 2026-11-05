@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   alias PotokIdeWeb.GroupLive.Show.{EventCard, MediaViewer}
   alias PotokIdeWeb.TagComponents
 
+  alias PotokIde.LinkPreviews
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
 
@@ -1909,7 +1910,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <a
         id={"value-link-preview-link-#{@value_id}"}
         href={@preview["url"]}
-        target="_blank"
+        target={!LinkPreviews.own_url?(@preview["url"]) && "_blank"}
         rel="noopener noreferrer nofollow"
         class={[
           "block overflow-hidden rounded-2xl border border-l-4 transition duration-150 ease-out hover:-translate-y-px hover:shadow-md",

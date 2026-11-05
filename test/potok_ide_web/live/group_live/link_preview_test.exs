@@ -37,6 +37,25 @@ defmodule PotokIdeWeb.GroupLive.LinkPreviewTest do
     %{conn: log_in_account(conn, account), profile: profile, group: group}
   end
 
+  test "opens a card of Potok where the reader is", ctx do
+    {:ok, linked} =
+      Social.create_group(ctx.profile, Social.get_root_group!(), %{
+        "name" => "Komšije",
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => true
+      })
+
+    url = PotokIdeWeb.Endpoint.url() <> ~p"/groups/#{linked.id}"
+
+    {:ok, value} = Social.create_value(ctx.profile, ctx.group, %{"content" => url})
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/values")
+
+    assert has_element?(lv, "#value-link-preview-#{value.id}", "Komšije")
+    assert has_element?(lv, ~s(#value-link-preview-link-#{value.id}[href="#{url}"]))
+    refute has_element?(lv, "#value-link-preview-link-#{value.id}[target]")
+  end
+
   test "shows the card of a value's link", %{conn: conn, profile: profile, group: group} do
     {:ok, value} =
       Social.create_value(profile, group, %{"content" => "read https://example.com/article"})

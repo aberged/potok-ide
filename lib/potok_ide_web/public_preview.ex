@@ -26,6 +26,7 @@ defmodule PotokIdeWeb.PublicPreview do
   alias PotokIde.PlainText
   alias PotokIde.Social
   alias PotokIde.Social.Group
+  alias PotokIdeWeb.Locale
 
   @description_length 200
   # The largest id Postgres takes; asking for a larger one would raise.
@@ -48,6 +49,31 @@ defmodule PotokIdeWeb.PublicPreview do
   end
 
   def call(conn, _opts), do: conn
+
+  @doc """
+  What a guest would see at `url`, a link to Potok, as a link preview for a chat
+  (`PotokIde.LinkPreviews`): `{:ok, preview}`, or `:error` where a guest is sent
+  to log in. In the default language, as everybody in the chat reads the same one.
+  """
+  def link_preview(url) when is_binary(url) do
+    %URI{path: path, query: query} = URI.parse(url)
+
+    Gettext.with_locale(PotokIdeWeb.Gettext, Locale.default_locale(), fn ->
+      with ["groups" | rest] <- String.split(path || "", "/", trim: true),
+           {_template, assigns} <- preview(rest, URI.decode_query(query || "")) do
+        {:ok,
+         %{
+           "url" => url,
+           "title" => assigns[:page_title],
+           "description" => assigns[:page_description],
+           "site_name" => "Potok",
+           "image_url" => assigns[:page_image]
+         }}
+      else
+        _ -> :error
+      end
+    end)
+  end
 
   defp guest?(%{assigns: %{current_scope: %{account: %{}}}}), do: false
   defp guest?(_conn), do: true

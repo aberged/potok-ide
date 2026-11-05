@@ -3,6 +3,7 @@ defmodule PotokIde.Social.LinkPreviewsTest do
 
   import PotokIde.AccountsFixtures
 
+  alias PotokIde.EventsFixtures
   alias PotokIde.LinkPreviews
   alias PotokIde.Social
   alias PotokIde.Social.Value
@@ -89,6 +90,112 @@ defmodule PotokIde.Social.LinkPreviewsTest do
 
       refute_received {:fetched, _path}
       assert Repo.get!(Value, value.id).link_preview == nil
+    end
+  end
+
+  describe "a link to Potok" do
+    setup do
+      owner = profile!("lp-own-owner")
+      %{owner: owner, group: group!(owner, "lp-own-group")}
+    end
+
+    defp own_url(path), do: PotokIdeWeb.Endpoint.url() <> path
+
+    defp create_public_group!(owner, attrs) do
+      {:ok, group} =
+        Social.create_group(
+          owner,
+          Social.get_root_group!(),
+          Map.merge(
+            %{
+              "description" => "Dogovaramo akcije.",
+              "description_format" => :markdown,
+              "is_public" => true
+            },
+            attrs
+          )
+        )
+
+      group
+    end
+
+    test "to a public group shows the card a guest gets, with no request", ctx do
+      linked = create_public_group!(ctx.owner, %{"name" => "Komšije"})
+      url = own_url("/groups/#{linked.id}/values")
+
+      assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => "vidi #{url}"})
+
+      assert %{
+               "url" => ^url,
+               "title" => "Komšije",
+               "description" => "Dogovaramo akcije.",
+               "site_name" => "Potok",
+               "image_url" => image_url
+             } = Repo.get!(Value, value.id).link_preview
+
+      assert image_url =~ "/cards/group/#{linked.id}.jpg?v="
+      refute_received {:fetched, _path}
+    end
+
+    test "to an event shows its card", ctx do
+      linked = create_public_group!(ctx.owner, %{"name" => "Komšije"})
+
+      event =
+        EventsFixtures.create_event!(
+          ctx.owner,
+          linked,
+          EventsFixtures.event_attrs(Date.add(EventsFixtures.today(), 3), %{
+            "title" => "Čišćenje obale",
+            "is_public" => "true"
+          })
+        )
+
+      url = own_url("/groups/#{linked.id}/calendar?event=#{event.id}")
+
+      assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => url})
+
+      assert %{"title" => "Čišćenje obale", "image_url" => image_url} =
+               Repo.get!(Value, value.id).link_preview
+
+      assert image_url =~ "/cards/event/#{event.id}.jpg?v="
+    end
+
+    test "to a private group shows nothing of it", ctx do
+      url = own_url("/groups/#{ctx.group.id}")
+
+      assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => url})
+
+      assert Repo.get!(Value, value.id).link_preview == nil
+    end
+
+    test "that has no card leaves its turn to the next link", ctx do
+      url = own_url("/groups/#{ctx.group.id}")
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{
+                 "content" => "#{url} https://example.com/one"
+               })
+
+      assert %{"title" => "Page /one"} = Repo.get!(Value, value.id).link_preview
+    end
+
+    test "that is not a group is passed over", ctx do
+      for path <- ["/", "/accounts/log-in", "/groups", "/files/1", "/groups/1/2/3"] do
+        assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => own_url(path)})
+
+        assert Repo.get!(Value, value.id).link_preview == nil
+      end
+    end
+
+    test "reads the same for everybody in the chat", ctx do
+      linked = create_public_group!(ctx.owner, %{"name" => "Komšije", "description" => ""})
+      url = own_url("/groups/#{linked.id}")
+
+      Gettext.with_locale(PotokIdeWeb.Gettext, "en", fn ->
+        assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => url})
+
+        assert Repo.get!(Value, value.id).link_preview["description"] == "Grupa na Potoku."
+      end)
     end
   end
 

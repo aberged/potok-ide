@@ -7,10 +7,14 @@ defmodule PotokIde.LinkPreviews do
 
   Results are cached per URL, failures too, so a link posted again is not
   fetched again for a while.
+
+  A link to Potok itself gets the card a guest would get, read from the
+  database, so a private group stays as unnamed as it does outside Potok.
   """
 
   alias PotokIde.LinkPreviews.HTTP
   alias PotokIde.UTF8
+  alias PotokIdeWeb.PublicPreview
 
   @cache_ttl :timer.hours(6)
   @max_title_length 200
@@ -26,18 +30,30 @@ defmodule PotokIde.LinkPreviews do
   @doc """
   The first http(s) link of a value's content, or nil. Links in code blocks
   and inline code do not count, trailing punctuation (and a closing bracket
-  without its opening one) is not part of the link, and links to Potok itself
-  are skipped.
+  without its opening one) is not part of the link, and a link to Potok itself
+  only counts where guests get a card.
   """
   def first_url(content) when is_binary(content) do
     content
     |> String.replace(~r/```.*?(?:```|\z)/su, " ")
     |> String.replace(~r/`[^`\n]*`/u, " ")
     |> then(&Regex.scan(@url_pattern, &1))
-    |> Enum.find_value(fn [candidate] -> clean_url(candidate) end)
+    |> Enum.flat_map(fn [candidate] -> List.wrap(clean_url(candidate)) end)
+    |> Enum.find(&(not own_url?(&1) or match?({:ok, _}, PublicPreview.link_preview(&1))))
   end
 
   def first_url(_content), do: nil
+
+  @doc "True for a link to Potok itself."
+  def own_url?(url) when is_binary(url) do
+    case URI.new(url) do
+      {:ok, %URI{host: host}} when is_binary(host) ->
+        String.downcase(host) == PotokIdeWeb.Endpoint.host()
+
+      _ ->
+        false
+    end
+  end
 
   defp clean_url(candidate) do
     url =
@@ -48,7 +64,7 @@ defmodule PotokIde.LinkPreviews do
     case URI.new(url) do
       {:ok, %URI{host: host}}
       when is_binary(host) and host != "" and byte_size(url) <= @max_url_length ->
-        if String.downcase(host) == PotokIdeWeb.Endpoint.host(), do: nil, else: url
+        url
 
       _ ->
         nil
@@ -79,10 +95,17 @@ defmodule PotokIde.LinkPreviews do
   otherwise. Never raises: previews are best effort.
   """
   def fetch(url) when is_binary(url) do
-    case config(:cache_ttl, @cache_ttl) do
-      0 -> fetch_uncached(url)
-      ttl -> PotokIde.Cache.fetch({:link_preview, url}, ttl, fn -> fetch_uncached(url) end)
+    cond do
+      own_url?(url) -> PublicPreview.link_preview(url)
+      config(:cache_ttl, @cache_ttl) == 0 -> fetch_uncached(url)
+      true -> fetch_cached(url)
     end
+  end
+
+  defp fetch_cached(url) do
+    PotokIde.Cache.fetch({:link_preview, url}, config(:cache_ttl, @cache_ttl), fn ->
+      fetch_uncached(url)
+    end)
   end
 
   defp fetch_uncached(url) do

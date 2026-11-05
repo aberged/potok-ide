@@ -43,11 +43,12 @@ defmodule PotokIde.LinkPreviewsTest do
       assert LinkPreviews.first_url(content) == "https://example.com/real"
     end
 
-    test "skips links to Potok itself" do
+    test "knows a link to Potok itself" do
       host = PotokIdeWeb.Endpoint.host()
 
-      assert LinkPreviews.first_url("http://#{host}:4000/groups/1 https://example.com") ==
-               "https://example.com"
+      assert LinkPreviews.own_url?("https://#{host}/groups/1")
+      assert LinkPreviews.own_url?("http://#{host}:4000/groups/1")
+      refute LinkPreviews.own_url?("https://example.com/groups/1")
     end
 
     test "reads links in HTML content" do
