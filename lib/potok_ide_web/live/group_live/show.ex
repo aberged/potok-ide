@@ -2724,6 +2724,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Only the app frame listens for data values, so they are pushed only while
   # the group description is on screen, and only those of apps the viewer
   # can open. The SDK hands an app its own values unless it asked for all.
+  # Members only, like the list of values in `AppApi`: a public group lets
+  # anyone open the app, but its data stays with the members.
+  defp announce_new_data_value(%{assigns: %{is_member: false}} = socket, _value), do: socket
+
   defp announce_new_data_value(socket, %Value{} = value) do
     if description_visible?(socket.assigns) and data_value_visible?(socket.assigns, value) do
       push_event(socket, "new_data_value", value_payload(value))
