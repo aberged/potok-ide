@@ -92,6 +92,10 @@ Povuci je poseban poziv jer obično isključivanje nasleđivanja nikog ne izbacu
 
 **Red u feed-u.** Grupe idu od najnovije, a zatvorena grupa se računa od trenutka kad se otvorila (`published_at`). Nacrt napisan u ponedeljak i objavljen u petak izlazi na vrh, a ne iza svega što je objavljeno tog dana. Isto važi kad se povučena objava ponovo objavi.
 
+**Link na objavu.** Dok čitalac ide kroz Feed, adresa strane prati objavu na ekranu: `/groups/<id>/group_home?at=<id objave>`. Takav link otvara Feed baš na toj objavi, ma koliko duboko u listi stajala, a iznad nje stoji do 20 novijih. Ako ih ima još, na vrhu se pojavi dugme **Novije vesti**. Ovu adresu deli i dugme za deljenje. Gost dobija karticu i pregled te objave, a posle prijave stiže u Feed na istoj objavi. Link na objavu koju gledalac ne vidi otvara Feed od najnovije.
+
+**Filter po datumu.** Dugme sa datumom na objavi otvara izbor perioda, po istom vremenu po kome ide i red. Feed računa dane u zoni gledaoca i šalje ih kao trenutke, a server ih samo poredi. Nacrt ulazi u period po danu kad je napravljen. Filter traje dok se ne poništi: preživi odlazak u chat i povratak, a novo otvaranje aplikacije kreće od svih vesti.
+
 ## Lanac članstva
 
 Članovi teku odozgo nadole, ali samo kroz grupe koje nasleđuju:
@@ -152,11 +156,12 @@ Iz toga slede tri pravila za šablone:
 
 | Poziv | Ko ga zove | Čemu služi |
 |---|---|---|
-| `listSubgroups(".feed", {limit, beforeId})` | Feed | vesti, stranu po stranu |
+| `listSubgroups(".feed", {limit, beforeId, from, to, aroundId})` | Feed | vesti, stranu po stranu, sve ili iz izabranog perioda, ili oko jedne vesti |
 | `openGroup(id, {tab})` | oba | chat, strana aplikacije, podešavanja, roditelj |
 | `toggleGroupReaction(id, emoji)` | Feed | reakcija na objavu |
 | `pickEmoji()` | Feed | svi emodžiji, u Potokovom biraču |
-| `shareGroup(id)` | Feed | deljenje linka objave |
+| `shareGroup(id, {inApp: true})` | Feed | deljenje linka na Feed otvoren na toj objavi |
+| `linkGroup(id)`, `getLinkedGroup()` | Feed | objava na ekranu u adresi strane |
 | `getGroup()` | FeedCreator | sme li gledalac da piše i da li je grupa dobro podešena |
 | `listChildren({limit, beforeId})` | FeedCreator | lista objava |
 | `getChild(id)` | FeedCreator | izvor objave za uređivanje |

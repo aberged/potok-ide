@@ -277,6 +277,115 @@ defmodule PotokIdeWeb.PublicPreviewTest do
     end
   end
 
+  describe "a link into an app" do
+    setup %{owner: owner} do
+      app =
+        public_group!(owner, %{
+          "name" => "Vesti",
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "uses_api" => true
+        })
+
+      %{app: app}
+    end
+
+    defp story!(owner, app, attrs) do
+      {:ok, feed} =
+        Social.create_group(owner, app, %{
+          "name" => ".feed",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      {:ok, story} =
+        Social.create_group(
+          owner,
+          feed,
+          Map.merge(
+            %{
+              "name" => "Most",
+              "description" => "Most je otvoren.",
+              "description_format" => :markdown
+            },
+            attrs
+          )
+        )
+
+      story
+    end
+
+    test "shows a guest the group it opens on", %{conn: conn, owner: owner, app: app} do
+      story = story!(owner, app, %{"is_public" => true})
+      path = ~p"/groups/#{app.id}/group_home?#{[at: story.id]}"
+
+      document = conn |> get(path) |> document()
+
+      assert og(document, "title") == "Most"
+      assert og(document, "description") == "Most je otvoren."
+      assert og(document, "url") == PotokIdeWeb.Endpoint.url() <> path
+    end
+
+    test "keeps the alternative description in the address of the card", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+      path = ~p"/groups/#{ctx.app.id}/group_home?#{[at: story.id, d: 5]}"
+
+      document = ctx.conn |> get(path) |> document()
+
+      assert og(document, "title") == "Most"
+      assert og(document, "url") == PotokIdeWeb.Endpoint.url() <> path
+    end
+
+    test "a guest comes back to the same link after logging in", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+      path = ~p"/groups/#{ctx.app.id}/group_home?#{[at: story.id]}"
+
+      assert ctx.conn |> get(path) |> get_session(:account_return_to) == path
+    end
+
+    test "says nothing about a private group, and shows the app", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => false})
+
+      document =
+        ctx.conn
+        |> get(~p"/groups/#{ctx.app.id}/group_home?#{[at: story.id]}")
+        |> document()
+
+      assert og(document, "title") == "Vesti"
+      assert og(document, "url") == url(~p"/groups/#{ctx.app.id}")
+      refute document |> LazyHTML.to_html() |> String.contains?("Most")
+    end
+
+    test "shows the app for what is no group", %{conn: conn, app: app} do
+      for at <- ["nope", "0", @huge_id] do
+        document = conn |> get(~p"/groups/#{app.id}/group_home?#{[at: at]}") |> document()
+
+        assert og(document, "title") == "Vesti"
+      end
+    end
+
+    test "counts on the tab of the description only", %{conn: conn, owner: owner, app: app} do
+      story = story!(owner, app, %{"is_public" => true})
+
+      document = conn |> get(~p"/groups/#{app.id}/values?#{[at: story.id]}") |> document()
+
+      assert og(document, "title") == "Vesti"
+    end
+
+    test "leaves signed-in accounts to the app", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+
+      document =
+        ctx.conn
+        |> log_in_account(ctx.account)
+        |> get(~p"/groups/#{ctx.app.id}/group_home?#{[at: story.id]}")
+        |> document()
+
+      refute found?(document, "#public-group-login")
+    end
+  end
+
   describe "other groups" do
     test "send guests to log in without a word about them", %{conn: conn, owner: owner} do
       private = group_with_members!(owner, [], %{"name" => "Tajna grupa"})

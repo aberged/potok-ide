@@ -825,7 +825,36 @@ const APP_FRAME_METHODS = new Set([
   "toggle_group_reaction",
   "share_group",
   "pick_emoji",
+  "linked_group",
+  "link_group",
 ])
+
+// A link into an app: `?at=<group id>` on the group's page. It stays in the
+// browser, as the page has nothing to do with it and an app moves on it often.
+const APP_LINK_PARAM = "at"
+
+const positiveId = value => (Number.isSafeInteger(value) && value > 0 ? value : null)
+
+const linkedGroupId = () =>
+  positiveId(Number(new URLSearchParams(window.location.search).get(APP_LINK_PARAM)))
+
+// `history.state` is LiveView's, for the way back to this entry.
+const linkGroup = id => {
+  if (positiveId(id) === null) {
+    return {ok: false, error: "invalid_group"}
+  }
+
+  const url = new URL(window.location.href)
+  url.searchParams.set(APP_LINK_PARAM, id)
+
+  try {
+    window.history.replaceState(window.history.state, "", url)
+    return {ok: true}
+  } catch (_error) {
+    // Safari refuses too many of these in a row.
+    return {ok: false, error: "rate_limited"}
+  }
+}
 
 // The app's `localStorage` lives in one key of the page's storage per app
 // (`data-storage-key`), capped so an app cannot fill the page's quota.
@@ -929,6 +958,16 @@ const GroupAppFrame = {
 
     if (method === "pick_emoji") {
       this.post({potok: 1, id, ...(await this.pickEmoji())})
+      return
+    }
+
+    if (method === "linked_group") {
+      this.post({potok: 1, id, ok: true, group_id: linkedGroupId()})
+      return
+    }
+
+    if (method === "link_group") {
+      this.post({potok: 1, id, ...linkGroup(params?.id)})
       return
     }
 

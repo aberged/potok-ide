@@ -179,15 +179,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{group: group, current_profile: profile} = socket.assigns
 
     with name when is_binary(name) <- params["name"],
-         %Group{} = parent <- Social.get_visible_child_group_by_name(group, profile, name) do
-      {groups, has_more?} =
-        Social.list_visible_child_groups_newest_first(parent, profile,
-          limit: subgroup_limit(params["limit"]),
-          before_id: non_negative_integer(params["before_id"])
-        )
-
-      {%{ok: true, groups: subgroup_payloads(groups, profile), has_more: has_more?}, socket}
+         %Group{} = parent <- Social.get_visible_child_group_by_name(group, profile, name),
+         {:ok, reply} <- subgroups_reply(parent, profile, params) do
+      {reply, socket}
     else
+      {:error, reply} -> {reply, socket}
       _not_found -> {error("not_found", nil), socket}
     end
   end
@@ -232,9 +228,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run("share_group", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
+    in_app? = params["in_app"] == true
+
     with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = target <- reachable_group(group, profile, id) do
-      {%{ok: true}, push_event(socket, "app_share_link", %{url: url(~p"/groups/#{target.id}")})}
+         %Group{} = target <- share_target(group, profile, id, in_app?) do
+      {%{ok: true},
+       push_event(socket, "app_share_link", %{url: shared_url(socket, target, in_app?)})}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -247,18 +246,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run("list_children", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
-    case require_child_manager(socket) do
-      :ok ->
-        {groups, has_more?} =
-          Social.list_visible_child_groups_newest_first(group, profile,
-            limit: subgroup_limit(params["limit"]),
-            before_id: non_negative_integer(params["before_id"])
-          )
-
-        {%{ok: true, groups: subgroup_payloads(groups, profile), has_more: has_more?}, socket}
-
-      {:error, reply} ->
-        {reply, socket}
+    with :ok <- require_child_manager(socket),
+         {:ok, reply} <- subgroups_reply(group, profile, params) do
+      {reply, socket}
+    else
+      {:error, reply} -> {reply, socket}
     end
   end
 
@@ -329,6 +321,19 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
   end
+
+  defp share_target(group, profile, id, true), do: group_below(group, profile, id)
+  defp share_target(group, profile, id, false), do: reachable_group(group, profile, id)
+
+  # The app itself, open on that group (`linkGroup`). Guests get the card of the
+  # group from `PublicPreview` all the same.
+  defp shared_url(%{assigns: %{group: group, active_alt_description: alt}}, target, true) do
+    query = if alt, do: [d: alt.id, at: target.id], else: [at: target.id]
+
+    url(~p"/groups/#{group.id}/group_home?#{query}")
+  end
+
+  defp shared_url(_socket, target, false), do: url(~p"/groups/#{target.id}")
 
   defp reachable_group(%Group{parent_id: id}, profile, id),
     do: Social.get_visible_group(profile, id)
@@ -591,6 +596,56 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp clamp_limit(nil), do: nil
   defp clamp_limit(limit), do: min(limit, @max_list_limit)
+
+  # `around_id` starts from a group that can lie any number of pages down.
+  defp subgroups_reply(parent, profile, params) do
+    with {:ok, page} <- subgroup_page(params) do
+      {groups, has_more?, has_newer?} =
+        case non_negative_integer(params["around_id"]) do
+          nil ->
+            {groups, has_more?} =
+              Social.list_visible_child_groups_newest_first(parent, profile, page)
+
+            {groups, has_more?, false}
+
+          id ->
+            Social.list_visible_child_groups_around(parent, profile, id, page)
+        end
+
+      {:ok,
+       %{
+         ok: true,
+         groups: subgroup_payloads(groups, profile),
+         has_more: has_more?,
+         has_newer: has_newer?
+       }}
+    end
+  end
+
+  # A period comes as moments, not days: only the app knows its viewer's zone.
+  defp subgroup_page(params) do
+    with {:ok, from} <- moment(params["from"]),
+         {:ok, to} <- moment(params["to"]) do
+      {:ok,
+       [
+         limit: subgroup_limit(params["limit"]),
+         before_id: non_negative_integer(params["before_id"]),
+         from: from,
+         to: to
+       ]}
+    end
+  end
+
+  defp moment(nil), do: {:ok, nil}
+
+  defp moment(value) when is_binary(value) do
+    case DateTime.from_iso8601(value) do
+      {:ok, moment, _offset} -> {:ok, moment}
+      {:error, _reason} -> {:error, error("invalid_date", nil)}
+    end
+  end
+
+  defp moment(_value), do: {:error, error("invalid_date", nil)}
 
   defp subgroup_limit(limit) do
     min(non_negative_integer(limit) || @default_subgroup_limit, @max_subgroup_limit)

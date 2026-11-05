@@ -1000,7 +1000,7 @@ msgid "Could not update access request."
 msgstr "Није могуће ажурирати захтев за приступ."
 
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:154
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:404
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:408
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Није могуће ажурирати опис групе."
@@ -1688,7 +1688,7 @@ msgstr "Освежи"
 msgid "Show password"
 msgstr "Прикажи лозинку"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:453
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:457
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Превише измена за кратко време. Покушајте поново ускоро."
@@ -2272,10 +2272,10 @@ msgstr "Ваше улоге у овој групи не дозвољавају �
 #: lib/potok_ide_web/live/group_live/show.ex:3923
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:133
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:172
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:219
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:347
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:370
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:396
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:215
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:351
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:374
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:400
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr "Ваше улоге у овој групи то не дозвољавају."
@@ -4210,8 +4210,8 @@ msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Сл
 msgid "What Potok can do"
 msgstr "Шта Поток уме"
 
-#: lib/potok_ide_web/public_preview.ex:81
-#: lib/potok_ide_web/public_preview.ex:85
+#: lib/potok_ide_web/public_preview.ex:98
+#: lib/potok_ide_web/public_preview.ex:102
 #, elixir-autogen, elixir-format
 msgid "A group on Potok."
 msgstr "Група на Потоку."
@@ -4544,7 +4544,7 @@ msgstr "Разговори, догађаји, фајлови, улоге, нот
 msgid "Apps"
 msgstr "Апликације"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:392
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:396
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr "Није могуће сачувати групу."

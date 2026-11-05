@@ -57,6 +57,10 @@ defmodule PotokIdeWeb.PublicPreview do
   defp preview([group_id, "calendar"], %{"event" => event_id}),
     do: event_preview(event_id) || group_preview(group_id)
 
+  # A link into an app stands for the group it opens on (`shareGroup`).
+  defp preview([group_id, "group_home"], %{"at" => linked_id} = query),
+    do: linked_preview(group_id, linked_id, query) || group_preview(group_id)
+
   defp preview([group_id], _query), do: group_preview(group_id)
   defp preview([group_id, _tab], _query), do: group_preview(group_id)
   defp preview(_path, _query), do: nil
@@ -70,6 +74,19 @@ defmodule PotokIdeWeb.PublicPreview do
        page_description: group_description(group),
        page_image: group_image(group),
        page_url: url(~p"/groups/#{group.id}")}
+    else
+      _ -> nil
+    end
+  end
+
+  # With its query, as on an event's card, or a site that reads the address
+  # again would show the card of the app.
+  defp linked_preview(group_id, linked_id, query) do
+    with {:public_group, assigns} <- group_preview(linked_id),
+         id when is_integer(id) <- parse_id(group_id) do
+      page_url = url(~p"/groups/#{id}/group_home?#{Map.take(query, ["d", "at"])}")
+
+      {:public_group, Keyword.put(assigns, :page_url, page_url)}
     else
       _ -> nil
     end

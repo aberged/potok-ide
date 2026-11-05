@@ -2972,21 +2972,96 @@ defmodule PotokIde.Social do
 
   This order moves only when a group opens up, which paging through it needs:
   `list_child_groups_for_profile/3` sorts by unread values and activity, so its
-  order changes while someone reads. Options: `:limit` and `:before_id`, the id
-  of the last group of the previous page.
+  order changes while someone reads. Options: `:limit`, `:before_id`, the id of
+  the last group of the previous page, and `:from` and `:to`, the moments
+  between which a group took its place: `:from` counts in, `:to` does not.
   """
   def list_visible_child_groups_newest_first(%Group{} = group, %Profile{} = profile, opts) do
     limit = Keyword.fetch!(opts, :limit)
 
     rows =
-      visible_plain_groups(profile)
-      |> where([g], g.parent_id == ^group.id)
+      feed_groups(group, profile, opts)
       |> order_by([g], desc: feed_time(g), desc: g.id)
       |> limit(^(limit + 1))
       |> before_group(opts[:before_id])
       |> Repo.all()
 
     {Enum.take(rows, limit), length(rows) > limit}
+  end
+
+  @doc """
+  The part of `list_visible_child_groups_newest_first/3` around the group `id`,
+  which can lie any number of pages down: up to `:limit` newer groups, that
+  group and up to `:limit` older ones, as `{groups, has_more?, has_newer?}`. A
+  group the list does not hold gives its first page. Takes `:from` and `:to` too.
+  """
+  def list_visible_child_groups_around(%Group{} = group, %Profile{} = profile, id, opts)
+      when is_integer(id) do
+    limit = Keyword.fetch!(opts, :limit)
+    groups = feed_groups(group, profile, opts)
+
+    case groups |> where([g], g.id == ^id) |> Repo.one() do
+      nil ->
+        {rows, has_more?} = list_visible_child_groups_newest_first(group, profile, opts)
+        {rows, has_more?, false}
+
+      %Group{} = target ->
+        older =
+          groups
+          |> order_by([g], desc: feed_time(g), desc: g.id)
+          |> limit(^(limit + 1))
+          |> before_group(target.id)
+          |> Repo.all()
+
+        newer =
+          groups
+          |> order_by([g], asc: feed_time(g), asc: g.id)
+          |> limit(^(limit + 1))
+          |> after_group(target)
+          |> Repo.all()
+
+        {Enum.reverse(Enum.take(newer, limit)) ++ [target | Enum.take(older, limit)],
+         length(older) > limit, length(newer) > limit}
+    end
+  end
+
+  defp feed_groups(group, profile, opts) do
+    visible_plain_groups(profile)
+    |> where([g], g.parent_id == ^group.id)
+    |> placed_from(opts[:from])
+    |> placed_before(opts[:to])
+  end
+
+  defp after_group(query, %Group{id: id} = target) do
+    time = feed_moment(target.published_at || target.inserted_at)
+
+    where(
+      query,
+      [g],
+      fragment(
+        "(?, ?) > (?, ?)",
+        feed_time(g),
+        g.id,
+        type(^time, :naive_datetime),
+        type(^id, :integer)
+      )
+    )
+  end
+
+  defp placed_from(query, nil), do: query
+
+  defp placed_from(query, %DateTime{} = from) do
+    where(query, [g], feed_time(g) >= type(^feed_moment(from), :naive_datetime))
+  end
+
+  defp placed_before(query, nil), do: query
+
+  defp placed_before(query, %DateTime{} = to) do
+    where(query, [g], feed_time(g) < type(^feed_moment(to), :naive_datetime))
+  end
+
+  defp feed_moment(%DateTime{} = moment) do
+    moment |> DateTime.truncate(:second) |> DateTime.to_naive()
   end
 
   defp before_group(query, nil), do: query

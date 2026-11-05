@@ -812,7 +812,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It can list the <Group>groups</Group> under one of its sub-groups, show their descriptions and take the viewer to their chat or their page. That is how a group becomes a news feed, with one story in each group."
+              "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group."
             )
         },
         %{

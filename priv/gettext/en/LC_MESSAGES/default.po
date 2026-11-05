@@ -1008,7 +1008,7 @@ msgid "Could not update access request."
 msgstr "Could not update value."
 
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:154
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:404
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:408
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Could not update group description."
 msgstr "Could not update value."
@@ -1695,7 +1695,7 @@ msgstr ""
 msgid "Show password"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:453
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:457
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr ""
@@ -2278,10 +2278,10 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show.ex:3923
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:133
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:172
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:219
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:347
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:370
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:396
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:215
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:351
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:374
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:400
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr ""
@@ -4211,8 +4211,8 @@ msgstr ""
 msgid "What Potok can do"
 msgstr ""
 
-#: lib/potok_ide_web/public_preview.ex:81
-#: lib/potok_ide_web/public_preview.ex:85
+#: lib/potok_ide_web/public_preview.ex:98
+#: lib/potok_ide_web/public_preview.ex:102
 #, elixir-autogen, elixir-format
 msgid "A group on Potok."
 msgstr ""
@@ -4545,7 +4545,7 @@ msgstr ""
 msgid "Apps"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:392
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:396
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr ""

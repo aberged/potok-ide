@@ -1607,8 +1607,8 @@ msgstr "Ispod svoje grupe vidi samo ono što vidi i gledalac, i to najviše jeda
 
 #: lib/potok_ide_web/domain_copy.ex:813
 #, elixir-autogen, elixir-format
-msgid "It can list the <Group>groups</Group> under one of its sub-groups, show their descriptions and take the viewer to their chat or their page. That is how a group becomes a news feed, with one story in each group."
-msgstr "Može da izlista <Group>grupe</Group> ispod neke svoje podgrupe, prikaže njihove opise i odvede gledaoca u njihov chat ili na njihovu stranu. Tako grupa postaje feed vesti, a svaka vest je jedna grupa."
+msgid "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group."
+msgstr "Može da izlista <Group>grupe</Group> ispod neke svoje podgrupe, sve ili one iz izabranog perioda, prikaže njihove opise i odvede gledaoca u njihov chat ili na njihovu stranu. Link može da je otvori baš na jednoj od tih grupa. Tako grupa postaje feed vesti, a svaka vest je jedna grupa."
 
 #: lib/potok_ide_web/domain_copy.ex:811
 #, elixir-autogen, elixir-format

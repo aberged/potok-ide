@@ -113,6 +113,14 @@ const applyTheme = theme => {
   }
 }
 
+const subgroupPage = options => ({
+  limit: options.limit ?? null,
+  before_id: options.beforeId ?? options.before_id ?? null,
+  from: options.from ?? null,
+  to: options.to ?? null,
+  around_id: options.aroundId ?? null,
+})
+
 // `waits`: the answer depends on the viewer, who can take as long as they like.
 const call = (method, params = {}, {waits = false} = {}) =>
   new Promise((resolve, reject) => {
@@ -232,13 +240,12 @@ const potok = {
   },
 
   // The groups under this group's direct sub-group called `name`, newest
-  // first, up to 50 per call (default 20); page with `beforeId`.
-  listSubgroups: (name, options = {}) =>
-    call("list_subgroups", {
-      name,
-      limit: options.limit ?? null,
-      before_id: options.beforeId ?? options.before_id ?? null,
-    }),
+  // first, up to 50 per call (default 20); page with `beforeId`. `from` and `to`
+  // (ISO 8601 with a zone) keep those published in that period: `from` counts
+  // in, `to` does not. `aroundId` gives the groups around that one instead of
+  // the first page, however far down it lies, and `has_newer` says there is more
+  // above them.
+  listSubgroups: (name, options = {}) => call("list_subgroups", {name, ...subgroupPage(options)}),
 
   // Takes the viewer to this group's parent, a sub-group of it or a group
   // `listSubgroups` can return: to its chat, with `tab: "description"` to its
@@ -260,8 +267,17 @@ const potok = {
   pickEmoji: () => call("pick_emoji", {}, {waits: true}),
 
   // Opens the page's way of sharing with the link of a group `openGroup` can
-  // reach. A frame has neither Web Share nor the clipboard.
-  shareGroup: id => call("share_group", {id}),
+  // reach. A frame has neither Web Share nor the clipboard. With `{inApp: true}`
+  // the link is to this app open on that group, which must lie below it.
+  shareGroup: (id, options = {}) => call("share_group", {id, in_app: options.inApp === true}),
+
+  // Puts a group in the page's address, so that the address opens this app on
+  // it: what a feed does with the story on screen. The app itself finds the
+  // group again, with `getLinkedGroup`.
+  linkGroup: id => call("link_group", {id}),
+
+  // Resolves to `{ok: true, group_id}`: the group in the address, or null.
+  getLinkedGroup: () => call("linked_group"),
 
   // This group, its parent and what the viewer may do here.
   getGroup: () => call("get_group"),
@@ -270,11 +286,7 @@ const potok = {
   // viewer's name, so they need a viewer who may edit this group
   // (`can_manage_children` in `getGroup`). Up to 50 per call (default 20),
   // the newest publication first; page with `beforeId`.
-  listChildren: (options = {}) =>
-    call("list_children", {
-      limit: options.limit ?? null,
-      before_id: options.beforeId ?? options.before_id ?? null,
-    }),
+  listChildren: (options = {}) => call("list_children", subgroupPage(options)),
 
   getChild: id => call("get_child", {id}),
 

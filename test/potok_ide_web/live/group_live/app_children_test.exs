@@ -639,6 +639,20 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
                Social.list_visible_child_groups_newest_first(ctx.feed, ctx.member, limit: 5)
     end
 
+    test "list_children takes a period like list_subgroups, and refuses a bad one", ctx do
+      child!(ctx.owner, ctx.feed, "story")
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "list_children", %{"to" => "2020-01-01T00:00:00Z"})
+      assert_reply(view, %{ok: true, groups: []})
+
+      call(view, "list_children", %{"from" => "2020-01-01T00:00:00Z"})
+      assert_reply(view, %{ok: true, groups: [%{name: "story"}]})
+
+      call(view, "list_children", %{"from" => "yesterday"})
+      assert_reply(view, %{ok: false, error: "invalid_date"})
+    end
+
     test "publishing again lets them back in", ctx do
       story = child!(ctx.owner, ctx.feed, "story", %{"inherits_members" => true})
       view = open_app(ctx.conn, ctx.owner_account, ctx.feed)

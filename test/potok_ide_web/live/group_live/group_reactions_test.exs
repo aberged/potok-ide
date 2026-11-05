@@ -271,6 +271,58 @@ defmodule PotokIdeWeb.GroupLive.GroupReactionsTest do
       assert_push_event(view, "app_share_link", %{url: ^url})
     end
 
+    test "share_group links into the app when asked to", ctx do
+      view = open(ctx.conn, ctx.visitor_account, ctx.app_group)
+
+      api(view, "share_group", %{"id" => ctx.story.id, "in_app" => true})
+      assert_reply(view, %{ok: true})
+
+      url = url(~p"/groups/#{ctx.app_group.id}/group_home?#{[at: ctx.story.id]}")
+      assert_push_event(view, "app_share_link", %{url: ^url})
+    end
+
+    test "a link into the app keeps the alternative description it runs in", ctx do
+      {:ok, alt} =
+        Social.create_alt_description(ctx.owner, ctx.app_group, %{
+          "name" => "Druga",
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "uses_api" => true
+        })
+
+      {:ok, view, _html} =
+        ctx.conn
+        |> log_in_account(ctx.visitor_account)
+        |> live(~p"/groups/#{ctx.app_group.id}/group_home?#{[d: alt.id]}")
+
+      render_hook(view, "app_api", %{
+        "method" => "share_group",
+        "params" => %{"id" => ctx.story.id, "in_app" => true},
+        "app_id" => to_string(alt.id)
+      })
+
+      assert_reply(view, %{ok: true})
+
+      url = url(~p"/groups/#{ctx.app_group.id}/group_home?#{[d: alt.id, at: ctx.story.id]}")
+      assert_push_event(view, "app_share_link", %{url: ^url})
+    end
+
+    test "a link into the app takes no group above it", ctx do
+      {:ok, nested_app} =
+        Social.create_group(ctx.owner, ctx.app_group, %{
+          "name" => "nested-app",
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "is_public" => true,
+          "uses_api" => true
+        })
+
+      view = open(ctx.conn, ctx.visitor_account, nested_app)
+
+      api(view, "share_group", %{"id" => ctx.app_group.id, "in_app" => true})
+      assert_reply(view, %{ok: false, error: "not_found"})
+    end
+
     test "share_group refuses a group out of reach", ctx do
       unrelated = text_group!(ctx.owner, Social.get_root_group!(), "group-react-far")
       view = open(ctx.conn, ctx.visitor_account, ctx.app_group)

@@ -1602,7 +1602,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:813
 #, elixir-autogen, elixir-format
-msgid "It can list the <Group>groups</Group> under one of its sub-groups, show their descriptions and take the viewer to their chat or their page. That is how a group becomes a news feed, with one story in each group."
+msgid "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:811
