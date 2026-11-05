@@ -31,8 +31,8 @@ msgid "Account confirmed successfully."
 msgstr "Налог је успешно потврђен."
 
 #: lib/potok_ide_web/components/core_components.ex:762
-#: lib/potok_ide_web/components/layouts.ex:723
-#: lib/potok_ide_web/components/layouts.ex:726
+#: lib/potok_ide_web/components/layouts.ex:725
+#: lib/potok_ide_web/components/layouts.ex:728
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr "Радње"
@@ -42,8 +42,8 @@ msgstr "Радње"
 msgid "An invitation is already pending."
 msgstr "Позивница је већ на чекању."
 
-#: lib/potok_ide_web/components/layouts.ex:607
-#: lib/potok_ide_web/components/layouts.ex:622
+#: lib/potok_ide_web/components/layouts.ex:609
+#: lib/potok_ide_web/components/layouts.ex:624
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr "Покушавам поновно повезивање"
@@ -298,7 +298,7 @@ msgstr "Слање позивнице..."
 msgid "Keep me logged in on this device"
 msgstr "Остави ме пријављеним на овом уређају"
 
-#: lib/potok_ide_web/components/layouts.ex:682
+#: lib/potok_ide_web/components/layouts.ex:684
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr "Избор језика"
@@ -1000,7 +1000,7 @@ msgid "Could not update access request."
 msgstr "Није могуће ажурирати захтев за приступ."
 
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:154
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:408
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:409
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Није могуће ажурирати опис групе."
@@ -1129,8 +1129,8 @@ msgstr "Профили који чекају одобрење да се прид
 msgid "Public group"
 msgstr "Јавна група"
 
-#: lib/potok_ide_web/components/layouts.ex:599
-#: lib/potok_ide_web/components/layouts.ex:614
+#: lib/potok_ide_web/components/layouts.ex:601
+#: lib/potok_ide_web/components/layouts.ex:616
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr "Поновно повезивање"
@@ -1688,7 +1688,7 @@ msgstr "Освежи"
 msgid "Show password"
 msgstr "Прикажи лозинку"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:457
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:458
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Превише измена за кратко време. Покушајте поново ускоро."
@@ -2273,9 +2273,9 @@ msgstr "Ваше улоге у овој групи не дозвољавају �
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:133
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:172
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:215
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:351
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:374
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:400
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:352
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:375
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:401
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr "Ваше улоге у овој групи то не дозвољавају."
@@ -3832,12 +3832,12 @@ msgstr "Подели у Поток"
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr "У овој групи не можеш закачити фајлове, изостављено: %{names}."
 
-#: lib/potok_ide_web/components/layouts.ex:469
+#: lib/potok_ide_web/components/layouts.ex:471
 #, elixir-autogen, elixir-format
 msgid "No ads, no tracking. The only cookie here is the one that keeps you logged in."
 msgstr "Без реклама и без праћења. Једини колачић овде је онај који памти пријаву."
 
-#: lib/potok_ide_web/components/layouts.ex:487
+#: lib/potok_ide_web/components/layouts.ex:489
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:24
 #, elixir-autogen, elixir-format
 msgid "Privacy policy"
@@ -3848,17 +3848,17 @@ msgstr "Политика приватности"
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr "Поток је место где групе разговарају, размењују вредности, одлучују и памте шта су одлучили."
 
-#: lib/potok_ide_web/components/layouts.ex:541
+#: lib/potok_ide_web/components/layouts.ex:543
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr "Још немаш налог?"
 
-#: lib/potok_ide_web/components/layouts.ex:543
+#: lib/potok_ide_web/components/layouts.ex:545
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr "За сада се у Поток улази уз позивницу."
 
-#: lib/potok_ide_web/components/layouts.ex:447
+#: lib/potok_ide_web/components/layouts.ex:449
 #, elixir-autogen, elixir-format
 msgid "What is Potok?"
 msgstr "Шта је Поток?"
@@ -4067,7 +4067,7 @@ msgstr "Прикажи јавне групе у којима ниси члан"
 msgid "You are not in any group yet."
 msgstr "Још ниси члан ниједне групе."
 
-#: lib/potok_ide_web/components/layouts.ex:466
+#: lib/potok_ide_web/components/layouts.ex:468
 #: lib/potok_ide_web/emails/email_components.ex:24
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
@@ -4194,7 +4194,7 @@ msgstr "Улоге и дозволе"
 msgid "Several profiles"
 msgstr "Више профила"
 
-#: lib/potok_ide_web/components/layouts.ex:359
+#: lib/potok_ide_web/components/layouts.ex:360
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Society for society"
@@ -4210,8 +4210,7 @@ msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Сл
 msgid "What Potok can do"
 msgstr "Шта Поток уме"
 
-#: lib/potok_ide_web/public_preview.ex:98
-#: lib/potok_ide_web/public_preview.ex:102
+#: lib/potok_ide_web/public_preview.ex:113
 #, elixir-autogen, elixir-format
 msgid "A group on Potok."
 msgstr "Група на Потоку."
@@ -4474,14 +4473,14 @@ msgstr "Додај опис"
 msgid "Conversations"
 msgstr "Разговори"
 
-#: lib/potok_ide_web/components/layouts.ex:660
-#: lib/potok_ide_web/components/layouts.ex:661
+#: lib/potok_ide_web/components/layouts.ex:662
+#: lib/potok_ide_web/components/layouts.ex:663
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr "Тамна тема"
 
-#: lib/potok_ide_web/components/layouts.ex:651
-#: lib/potok_ide_web/components/layouts.ex:652
+#: lib/potok_ide_web/components/layouts.ex:653
+#: lib/potok_ide_web/components/layouts.ex:654
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr "Светла тема"
@@ -4497,8 +4496,8 @@ msgstr "Приватна група"
 msgid "Shared profile"
 msgstr "Дељени профил"
 
-#: lib/potok_ide_web/components/layouts.ex:642
-#: lib/potok_ide_web/components/layouts.ex:643
+#: lib/potok_ide_web/components/layouts.ex:644
+#: lib/potok_ide_web/components/layouts.ex:645
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr "Системска тема"
@@ -4533,7 +4532,7 @@ msgstr "Испод површине"
 msgid "Potok can think of values as arising in groups, and of groups as arising from values."
 msgstr "Поток уме да мисли да вредности настају у групама и да групе настају из вредности."
 
-#: lib/potok_ide_web/components/layouts.ex:363
+#: lib/potok_ide_web/components/layouts.ex:364
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
@@ -4544,7 +4543,12 @@ msgstr "Разговори, догађаји, фајлови, улоге, нот
 msgid "Apps"
 msgstr "Апликације"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:396
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:397
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr "Није могуће сачувати групу."
+
+#: lib/potok_ide_web/public_preview.ex:99
+#, elixir-autogen, elixir-format
+msgid "An app on Potok."
+msgstr "Апликација на Потоку."

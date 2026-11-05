@@ -94,16 +94,27 @@ defmodule PotokIdeWeb.PublicPreview do
 
   # The description of a group with the API on is the code of an app, so its
   # card only says what the app says about itself, in the meta tags of any page.
+  # HTML of any group can do that too, when its first lines are not a summary.
   defp group_description(%Group{uses_api: true} = group),
-    do: app_description(group) || gettext("A group on Potok.")
+    do: own_description(group) || gettext("An app on Potok.")
 
-  defp group_description(%Group{} = group) do
-    PlainText.excerpt(group.description || "", group.description_format, @description_length) ||
-      gettext("A group on Potok.")
+  defp group_description(%Group{description_format: :html} = group),
+    do: own_description(group) || description_excerpt(group)
+
+  defp group_description(%Group{} = group), do: description_excerpt(group)
+
+  # The card shows the name above this text.
+  defp description_excerpt(%Group{} = group) do
+    PlainText.excerpt(
+      group.description || "",
+      group.description_format,
+      @description_length,
+      without_heading: group.name
+    ) || gettext("A group on Potok.")
   end
 
-  @doc "What an app says about itself in its meta tags, as plain text. Its scripts never run."
-  def app_description(%Group{} = group) do
+  @doc "What a description says about itself in its meta tags, as plain text. Scripts never run."
+  def own_description(%Group{} = group) do
     case LinkPreviews.parse(group.description || "", url(~p"/groups/#{group.id}")) do
       {:ok, %{"description" => description}} when is_binary(description) ->
         PlainText.truncate(description, @description_length)

@@ -521,7 +521,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       id: group.id,
       name: group.name,
       description_html: Components.description_html(group),
-      app_description: if(group.uses_api, do: PublicPreview.app_description(group)),
+      app_description: if(group.uses_api, do: PublicPreview.own_description(group)),
       uses_api: group.uses_api,
       picture_url: Avatars.group_avatar_url(group),
       is_public: group.is_public,

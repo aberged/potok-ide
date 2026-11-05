@@ -36,6 +36,38 @@ defmodule PotokIde.PlainTextTest do
       assert excerpt("<h1>Samo naslov</h1><p> </p>", :html) == "Samo naslov"
     end
 
+    test "keeps apart the words of neighbouring blocks" do
+      for tag <- ~w(figcaption figure article section header footer aside td th ul ol pre) do
+        assert excerpt("<#{tag}>prvi</#{tag}><p>drugi</p>", :html) == "prvi drugi"
+      end
+
+      assert excerpt("prvi<hr>drugi", :html) == "prvi drugi"
+    end
+
+    test "leaves out a heading that only says the name" do
+      opts = [without_heading: "Desilo se čudo"]
+
+      assert PlainText.excerpt("# Desilo se čudo\nZmaj u Dunavu", :markdown, 100, opts) ==
+               "Zmaj u Dunavu"
+
+      assert PlainText.excerpt("<p>iz kraja</p><h1>Desilo se čudo</h1><p>Zmaj</p>", :html, 100, opts) ==
+               "iz kraja Zmaj"
+    end
+
+    test "keeps a heading that says more, and the name in the text" do
+      opts = [without_heading: "Desilo se"]
+
+      assert PlainText.excerpt("# Desilo se čudo\nTekst", :markdown, 100, opts) ==
+               "Desilo se čudo. Tekst"
+
+      assert PlainText.excerpt("Desilo se nešto", :markdown, 100, opts) == "Desilo se nešto"
+    end
+
+    test "takes any name as plain text" do
+      assert PlainText.excerpt("# A (b) [c]\nTekst", :markdown, 100, without_heading: "A (b) [c]") ==
+               "Tekst"
+    end
+
     test "ends every heading of a row" do
       assert excerpt("# Prvi\n## Drugi\nTekst", :markdown) == "Prvi. Drugi. Tekst"
     end

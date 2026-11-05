@@ -127,7 +127,7 @@ defmodule PotokIdeWeb.PublicPreviewTest do
 
       body = conn |> get(~p"/groups/#{group.id}") |> html_response(200)
 
-      assert body |> LazyHTML.from_document() |> og("description") == "A group on Potok."
+      assert body |> LazyHTML.from_document() |> og("description") == "An app on Potok."
       refute body =~ "tajna aplikacija"
       refute body =~ "potok.init"
     end
@@ -180,7 +180,7 @@ defmodule PotokIdeWeb.PublicPreviewTest do
         group = public_group!(owner, %{"description" => description, "uses_api" => true})
 
         assert conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") ==
-                 "A group on Potok."
+                 "An app on Potok."
       end
     end
 
@@ -200,8 +200,44 @@ defmodule PotokIdeWeb.PublicPreviewTest do
 
       body = conn |> get(~p"/groups/#{group.id}") |> html_response(200)
 
-      assert body |> LazyHTML.from_document() |> og("description") == "A group on Potok."
+      assert body |> LazyHTML.from_document() |> og("description") == "An app on Potok."
       refute body =~ "Samo za upravu"
+    end
+
+    test "takes what an html description says of itself over its first lines", %{
+      conn: conn,
+      owner: owner
+    } do
+      group =
+        public_group!(owner, %{
+          "description" => """
+          <meta name="description" content="Zmaj je izronio iz Dunava.">
+          <p>iz kraja</p><h1>Vest</h1>
+          """,
+          "description_format" => :html
+        })
+
+      assert conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") ==
+               "Zmaj je izronio iz Dunava."
+    end
+
+    test "does not repeat its name under its name", %{conn: conn, owner: owner} do
+      group =
+        public_group!(owner, %{
+          "name" => "Desilo se čudo",
+          "description" => "<h1>Desilo se čudo</h1><p>Zmaj je izronio.</p>",
+          "description_format" => :html
+        })
+
+      assert conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") ==
+               "Zmaj je izronio."
+    end
+
+    test "a meta tag in markdown is only text", %{conn: conn, owner: owner} do
+      group =
+        public_group!(owner, %{"description" => ~s(<meta name="description" content="skriveno">)})
+
+      refute conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") == "skriveno"
     end
 
     test "has a card of its own, with or without a picture", %{conn: conn, owner: owner} do
