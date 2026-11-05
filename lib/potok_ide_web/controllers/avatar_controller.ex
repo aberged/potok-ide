@@ -8,8 +8,10 @@ defmodule PotokIdeWeb.AvatarController do
   @cache_control "public, max-age=86400"
   # Generated initials PNGs are cached in memory so ImageMagick runs once per name.
   @initials_cache_ttl :timer.hours(24)
-  # The SVG is only ever shown as an image: nothing in it may run or load.
-  @svg_csp "default-src 'none'; style-src 'unsafe-inline'"
+  # A picture is only ever shown as an image: opened on its own, on Potok's
+  # address, nothing in it may run or load. SVG is the one that could.
+  @image_csp "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+  @image_type ~r/\Aimage\/[a-z0-9.+-]+\z/
 
   def profile(conn, %{"id" => id}) do
     id
@@ -65,15 +67,12 @@ defmodule PotokIdeWeb.AvatarController do
     send_image(conn, image_data, content_type)
   end
 
-  defp send_initials(conn, name) do
-    conn
-    |> put_resp_header("content-security-policy", @svg_csp)
-    |> send_image(initials_svg(name), "image/svg+xml")
-  end
+  defp send_initials(conn, name), do: send_image(conn, initials_svg(name), "image/svg+xml")
 
   defp send_image(conn, image_data, mime_type) do
     conn
     |> put_resp_header("content-type", mime_type)
+    |> put_resp_header("content-security-policy", @image_csp)
     |> put_resp_header("cache-control", @cache_control)
     |> send_resp(200, image_data)
   end
@@ -89,14 +88,15 @@ defmodule PotokIdeWeb.AvatarController do
 
   defp parse_id(_), do: :error
 
+  # The address is whatever someone typed into the picture field, so it says
+  # what the response will be sent as: only images are let through.
   defp parse_data_url(data_url) do
-    case String.split(data_url, ",", parts: 2) do
-      [_header, base64_part] ->
-        mime_type = extract_mime_type(data_url)
-        decode_base64_part(base64_part, mime_type)
-
-      _ ->
-        :error
+    with [_header, base64_part] <- String.split(data_url, ",", parts: 2),
+         mime_type = data_url |> extract_mime_type() |> String.downcase(),
+         true <- Regex.match?(@image_type, mime_type) do
+      decode_base64_part(base64_part, mime_type)
+    else
+      _ -> :error
     end
   end
 

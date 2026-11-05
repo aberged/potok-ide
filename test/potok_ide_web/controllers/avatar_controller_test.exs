@@ -103,6 +103,65 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert get_resp_header(conn, "content-type") == ["image/gif"]
     end
 
+    test "never sends a picture that is not an image", %{conn: conn, profile: profile} do
+      script = Base.encode64("<script>alert(1)</script>")
+
+      for data_url <- [
+            "data:text/html;base64,#{script}",
+            "data:TEXT/HTML;base64,#{script}",
+            "data:text/html;charset=utf-8;base64,#{script}",
+            "data:application/xhtml+xml;base64,#{script}",
+            "data:text/html,<script>alert(1)</script>",
+            "data:image/png/../html;base64,#{script}"
+          ] do
+        {:ok, profile} =
+          profile
+          |> Social.Profile.changeset(%{profile_picture_url: data_url})
+          |> Repo.update()
+
+        conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+
+        assert response(conn, 200) =~ "<svg"
+        refute conn.resp_body =~ "alert"
+        assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
+      end
+    end
+
+    test "an image's type may be written in any case", %{conn: conn, profile: profile} do
+      for {written, sent} <- [{"IMAGE/PNG", "image/png"}, {"image/jpg", "image/jpg"}] do
+        data_url = "data:#{written};base64," <> Base.encode64("picture")
+
+        {:ok, profile} =
+          profile
+          |> Social.Profile.changeset(%{profile_picture_url: data_url})
+          |> Repo.update()
+
+        conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+
+        assert response(conn, 200) == "picture"
+        assert get_resp_header(conn, "content-type") == [sent]
+      end
+    end
+
+    test "nothing in a stored SVG runs when it is opened", %{conn: conn, profile: profile} do
+      svg = ~s|<svg xmlns="http://www.w3.org/2000/svg"><script>alert(1)</script></svg>|
+
+      {:ok, profile} =
+        profile
+        |> Social.Profile.changeset(%{
+          profile_picture_url: "data:image/svg+xml;base64," <> Base.encode64(svg)
+        })
+        |> Repo.update()
+
+      conn = get(conn, ~p"/avatar/profile/#{profile.id}")
+
+      assert response(conn, 200) == svg
+      assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
+      assert [csp] = get_resp_header(conn, "content-security-policy")
+      assert csp =~ "default-src 'none'"
+      assert csp =~ "sandbox"
+    end
+
     test "returns initials avatar for invalid base64 data", %{conn: conn, profile: profile} do
       invalid_data_url = "data:image/jpeg;base64,invalid!!!base64data"
 
@@ -187,6 +246,19 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert response(conn, 200)
       assert get_resp_header(conn, "content-type") == ["image/png"]
       assert conn.resp_body == "fake-png"
+    end
+
+    test "never sends a picture that is not an image", %{conn: conn, group: group} do
+      data_url = "data:text/html;base64," <> Base.encode64("<script>alert(1)</script>")
+
+      {:ok, group} =
+        group |> Ecto.Changeset.change(group_picture_url: data_url) |> Repo.update()
+
+      conn = get(conn, ~p"/avatar/group/#{group.id}")
+
+      assert response(conn, 200) =~ "<svg"
+      refute conn.resp_body =~ "alert"
+      assert get_resp_header(conn, "content-type") == ["image/svg+xml"]
     end
   end
 end
