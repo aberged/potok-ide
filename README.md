@@ -623,9 +623,25 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `updateDescription(description, options)` resolves to `{ok: true, group}`. It changes the app's own description (the default or an alternative one). `options.descriptionFormat` sets the format. It needs the `edit_group` permission and is rate limited. A new description is new app HTML, so the app restarts.
 * `getDescription()` resolves to `{ok: true, group}` for the app's own description.
 * `getCurrentProfile()` resolves to the profile, or `null`.
-* `listSubgroups(name, options)` resolves to `{ok: true, groups, has_more}`: the groups under this group's direct sub-group called exactly `name`, newest first. It sees what the viewer sees: threads, direct conversations and private groups the viewer is not in are left out, and the sub-group itself must be visible too, or the reply is `not_found`. Names are not unique, so of several sub-groups with one name the oldest counts. Options: `limit` (at most 50, default 20) and `beforeId` (the id of the last group of the previous page).
-* `openGroup(id, options)` takes the viewer to a group `listSubgroups` can return, on the same page: to its chat, or with `options.tab` set to `"description"` to its description, where a group that is an app runs. Any other group is refused with `not_found`. The app's frame goes away with the page, after saving its `localStorage`, and starts again when the viewer comes back.
+* `listSubgroups(name, options)` resolves to `{ok: true, groups, has_more}`: the groups under this group's direct sub-group called exactly `name`, newest first. A group that stayed closed (private, not inheriting) counts from when it opened up. It sees what the viewer sees: threads, direct conversations and private groups the viewer is not in are left out, and the sub-group itself must be visible too, or the reply is `not_found`. Names are not unique, so of several sub-groups with one name the oldest counts. Options: `limit` (at most 50, default 20) and `beforeId` (the id of the last group of the previous page).
+* `openGroup(id, options)` takes the viewer, on the same page, to this group's parent, one of its direct sub-groups or a group `listSubgroups` can return, as far as the viewer can see them: to its chat, with `options.tab` set to `"description"` to its description, where a group that is an app runs, or with `"settings"` to its settings. Any other group is refused with `not_found`. The app's frame goes away with the page, after saving its `localStorage`, and starts again when the viewer comes back.
+* `getGroup()` resolves to `{ok: true, group}`: this group, its parent and what the viewer may do here.
 * `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
+
+An app can also keep the groups right under its own. These calls act in the viewer's name, so all of them need a viewer with the `edit_group` permission in the app's group, who could rewrite the app anyway; by default that is only an admin. Anyone else gets `forbidden`, and `can_manage_children` in `getGroup` says so in advance. They reach direct sub-groups only, as far as the viewer can see them, without threads and direct conversations. Any other group is `not_found`. See [docs/feed-i-feedcreator.md](docs/feed-i-feedcreator.md) for two apps built on them.
+
+* `listChildren(options)` resolves to `{ok: true, groups, has_more}`, in the order and with the options of `listSubgroups`.
+* `getChild(id)` resolves to `{ok: true, group}` with the group's source. `description` is `null` for a group the viewer cannot edit and for a group that is an app: an app never gets another app's code.
+* `createChild(attrs)` resolves to `{ok: true, group}`. It also needs `create_subgroups`. The viewer becomes the group's admin. `attrs`:
+  * `name` (required, at most 120 characters)
+  * `description`, `descriptionFormat`: `"markdown"` (default) or `"html"`
+  * `isPublic`, `inheritsMembers`: both off by default, which leaves a closed group that only the viewer sees
+  * `picture`: an image URL or a `data:` URL, at most 1,000,000 characters. It is served at `picture_url`, which needs no session, also for a private group
+* `updateChild(id, attrs)` resolves to `{ok: true, group}`. It takes the same `attrs` and changes only the ones it gets. It also needs `edit_group` in that group, and a group that is an app is refused with `forbidden`. A closed group that opens up moves to the top of the order above.
+* `withdrawChild(id)` resolves to `{ok: true, group}` and closes a group again, with the checks of `updateChild`: it turns private, stops inheriting and the inherited members leave with their roles. Setting `inheritsMembers: false` is not the same: then nobody leaves. Direct members stay, and so does the viewer, as a direct member. Chat and files stay too.
+* `previewDescription(description, options)` resolves to `{ok: true, html}`: what `description_html` will be for that text, with `options.descriptionFormat`. `html` is `null` for an empty text. It counts as a write for the rate limit, so call it with a pause.
+
+An app cannot set `uses_api` or anything else outside `attrs`, and there is no call that deletes a group: `openGroup(id, {tab: "settings"})` leads to the group's own page for that.
 
 Reply shapes:
 
@@ -636,11 +652,22 @@ Reply shapes:
 // group (updateDescription, getDescription); description_id is null for the default description
 {id, description_id, name, description, description_format}
 
-// sub-group (listSubgroups); description_html is sanitized, so it is safe in the app's page.
+// sub-group (listSubgroups, listChildren); description_html is sanitized, so it is safe in the app's page.
 // It is null for a group without a description and for an app, whose description is its source code.
 // Wrap it in a `rich-content` element to get the styles of the group page.
 // app_description is what an app says about itself in its meta tags, as plain text, and null otherwise.
-{id, name, description_html, app_description, uses_api, picture_url, inserted_at, last_value_at}
+// published_at is when a closed group last opened up, and null for a group that never was closed.
+{id, name, description_html, app_description, uses_api, picture_url, is_public, inherits_members,
+ creator_id, inserted_at, published_at, last_value_at}
+
+// child (getChild, createChild, updateChild, withdrawChild): a sub-group, and
+{description, description_format, can_edit, member_count, updated_at}
+
+// own group (getGroup); parent is null for a viewer who cannot see that group.
+// can_create_children adds create_subgroups to can_manage_children.
+// everyone_creates_subgroups: any member can add a group here by hand, past the app.
+{id, name, is_public, inherits_members, parent: {id, name, is_public, uses_api},
+ can_manage_children, can_create_children, everyone_creates_subgroups}
 
 // profile; roles are the names of the roles the profile holds in the group
 {id, username, profile_picture_url, description, description_format, sharing, inserted_at, updated_at, admin, roles}
@@ -648,7 +675,7 @@ Reply shapes:
 
 Error codes (`error`):
 
-* From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
+* From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
 * From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `unknown_method`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`.
 
@@ -696,7 +723,7 @@ High-level layout:
 |  |- vendor/              # Bundled frontend vendor files
 |  |- android/, ios/       # Capacitor native projects
 |- config/                 # Environment-specific configuration
-|- docs/                   # iOS secrets and checklist
+|- docs/                   # iOS secrets and checklist, the Feed apps as an App API example
 |- lib/
 |  |- potok_ide/           # Domain contexts, schemas, repo, mailer, release helpers
 |  |  |- accounts/         # Account schema and auth-related domain code

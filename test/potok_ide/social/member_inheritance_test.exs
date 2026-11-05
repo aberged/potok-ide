@@ -1,10 +1,11 @@
 defmodule PotokIde.Social.MemberInheritanceTest do
   use PotokIde.DataCase
 
+  import Ecto.Query, only: [from: 2]
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, GroupMembership}
+  alias PotokIde.Social.{Access, GroupMembership, GroupValueRead}
 
   setup do
     owner = profile!("inh-owner")
@@ -202,6 +203,121 @@ defmodule PotokIde.Social.MemberInheritanceTest do
       assert Access.inherited_by_profile(child, [member.id]) == %{}
 
       {:ok, _} = Social.remove_group_member(owner, parent, member.id)
+      assert Social.member_of_group?(member, child)
+    end
+  end
+
+  describe "withdrawing a group" do
+    setup %{owner: owner, parent: parent} do
+      %{child: child!(owner, parent, "inh-post", %{"inherits_members" => "true"})}
+    end
+
+    test "inherited members leave with their read markers, direct ones stay", %{
+      owner: owner,
+      member: member,
+      child: child
+    } do
+      guest = profile!("inh-guest")
+      add_member!(owner, child, guest)
+      {:ok, _value} = Social.create_value(owner, child, %{"content" => "read me"})
+      Social.mark_group_values_read(member, child)
+
+      assert {:ok, child} = Social.withdraw_group(owner, child)
+
+      refute child.is_public
+      refute child.inherits_members
+      assert member_ids(child) == Enum.sort([owner.id, guest.id])
+
+      refute Repo.exists?(
+               from r in GroupValueRead,
+                 where: r.group_id == ^child.id and r.profile_id == ^member.id
+             )
+    end
+
+    test "unlike stopping to inherit, where nobody leaves", %{
+      owner: owner,
+      member: member,
+      child: child
+    } do
+      {:ok, child} = Social.update_group(owner, child, %{"inherits_members" => "false"})
+
+      assert Social.member_of_group?(member, child)
+    end
+
+    test "the one who withdraws stays, with the role they held", %{
+      owner: owner,
+      parent: parent,
+      member: member,
+      child: child
+    } do
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, "admin")
+      assert inherited_membership?(child, member)
+      assert Access.for_profile(member, child).admin?
+
+      {:ok, child} = Social.withdraw_group(member, child)
+
+      assert member_ids(child) == Enum.sort([owner.id, member.id])
+      refute inherited_membership?(child, member)
+      assert Access.for_profile(member, child).admin?
+    end
+
+    test "a direct member stays, without the role that came through the parent", %{
+      owner: owner,
+      parent: parent,
+      child: child
+    } do
+      guest = profile!("inh-helper")
+      add_member!(owner, child, guest)
+      add_member!(owner, parent, guest)
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, parent)
+      helpers = role!(owner, parent, "helpers")
+      {:ok, _} = Social.assign_group_member_role(owner, parent, guest.id, helpers.key)
+      assert helpers.key in role_keys(child, guest)
+
+      {:ok, _} = Social.withdraw_group(owner, child)
+
+      assert Social.member_of_group?(guest, child)
+      assert role_keys(child, guest) == []
+    end
+
+    test "threads of the group follow it", %{owner: owner, member: member, child: child} do
+      {:ok, value} = Social.create_value(owner, child, %{"content" => "thread me"})
+      {:ok, thread} = Social.get_or_create_value_thread(owner, child, value, %{"name" => "t"})
+      assert Social.member_of_group?(member, thread)
+
+      {:ok, _} = Social.withdraw_group(owner, child)
+
+      refute Social.member_of_group?(member, thread)
+    end
+
+    test "tells the pages of those who left", %{owner: owner, member: member, child: child} do
+      child_id = child.id
+      member_id = member.id
+      Social.subscribe_profile(member)
+      Social.subscribe_group(child)
+
+      {:ok, _} = Social.withdraw_group(owner, child)
+
+      assert_received {:group_updated, ^child_id}
+      assert_received {:group_membership_changed, ^member_id, ^child_id, :removed}
+    end
+
+    test "publishing again brings the members back and counts from then", %{
+      owner: owner,
+      member: member,
+      child: child
+    } do
+      {:ok, child} = Social.withdraw_group(owner, child)
+      assert child.published_at == nil
+
+      {:ok, child} = Social.update_group(owner, child, %{"inherits_members" => "true"})
+
+      assert child.published_at
+      assert Social.member_of_group?(member, child)
+    end
+
+    test "needs the permission to edit the group", %{member: member, child: child} do
+      assert {:error, :not_permitted} = Social.withdraw_group(member, child)
       assert Social.member_of_group?(member, child)
     end
   end

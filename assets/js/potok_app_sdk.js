@@ -191,6 +191,19 @@ const listParams = (options = {}) => ({
   scope: options.scope ?? null,
 })
 
+// What an app may set on a group below it. A field left out stays as it is.
+const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, picture} = {}) =>
+  Object.fromEntries(
+    Object.entries({
+      name,
+      description,
+      description_format: descriptionFormat,
+      is_public: isPublic,
+      inherits_members: inheritsMembers,
+      picture,
+    }).filter(([_field, value]) => value !== undefined)
+  )
+
 const potok = {
   insertValue: (data, options = {}) =>
     call("insert_value", {
@@ -224,14 +237,44 @@ const potok = {
       before_id: options.beforeId ?? options.before_id ?? null,
     }),
 
-  // Takes the viewer to a group `listSubgroups` can return: to its chat, or
-  // with `tab: "description"` to its description, where a group that is an app
-  // runs. The frame goes away with the page, so a pending `localStorage` save
-  // goes first.
+  // Takes the viewer to this group's parent, a sub-group of it or a group
+  // `listSubgroups` can return: to its chat, with `tab: "description"` to its
+  // description, where a group that is an app runs, or with `tab: "settings"`
+  // to its settings. The frame goes away with the page, so a pending
+  // `localStorage` save goes first.
   openGroup: (id, options = {}) => {
     if (storageSaveTimer) saveLocalStorage()
     return call("open_group", {id, tab: options.tab ?? null})
   },
+
+  // This group, its parent and what the viewer may do here.
+  getGroup: () => call("get_group"),
+
+  // The calls below keep the groups right under this one. They act in the
+  // viewer's name, so they need a viewer who may edit this group
+  // (`can_manage_children` in `getGroup`). Up to 50 per call (default 20),
+  // the newest publication first; page with `beforeId`.
+  listChildren: (options = {}) =>
+    call("list_children", {
+      limit: options.limit ?? null,
+      before_id: options.beforeId ?? options.before_id ?? null,
+    }),
+
+  getChild: id => call("get_child", {id}),
+
+  createChild: attrs => call("create_child", childParams(attrs)),
+
+  updateChild: (id, attrs) => call("update_child", {...childParams(attrs), id}),
+
+  // Closes the group again, and its inherited members leave.
+  withdrawChild: id => call("withdraw_child", {id}),
+
+  // The description as it will be shown, sanitized on the server.
+  previewDescription: (description, options = {}) =>
+    call("preview_description", {
+      description: typeof description === "string" ? description : "",
+      description_format: options.descriptionFormat || options.description_format || null,
+    }),
 
   // `{scope: "group"}` also passes on the values of the group's other apps.
   onNewValue(listener, options = {}) {

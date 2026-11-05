@@ -551,6 +551,7 @@ defmodule PotokIde.Social do
         |> Group.update_changeset(Map.new(attrs))
         |> validate_home_alt_description(group)
         |> validate_inheritance_parent(group.parent_id)
+        |> mark_published(group)
 
       Multi.new()
       |> Multi.update(:group, changeset)
@@ -568,6 +569,60 @@ defmodule PotokIde.Social do
 
           broadcast_inheritance_changes(changes)
           {:ok, updated_group}
+
+        {:error, _step, reason, _changes} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  # A closed group that opens up reaches its readers now, however long it waited.
+  defp mark_published(changeset, %Group{} = group) do
+    opens? =
+      Group.closed?(group) and
+        (Ecto.Changeset.get_field(changeset, :is_public) or
+           Ecto.Changeset.get_field(changeset, :inherits_members))
+
+    if opens?,
+      do: Ecto.Changeset.put_change(changeset, :published_at, DateTime.utc_now(:second)),
+      else: changeset
+  end
+
+  @doc """
+  Closes a group again: it turns private, stops inheriting and the inherited
+  members leave with their roles. Switching inheritance off in `update_group/3`
+  is the other way, where nobody falls out. Direct members stay, and so does
+  `editor`, who keeps the group they closed.
+  """
+  def withdraw_group(%Profile{} = editor, %Group{} = group) do
+    if not Access.can?(editor, group, :edit_group) do
+      {:error, :not_permitted}
+    else
+      changeset =
+        group
+        |> Group.update_changeset(%{
+          is_public: false,
+          is_root_public: false,
+          inherits_members: false
+        })
+        |> Ecto.Changeset.put_change(:published_at, nil)
+
+      Multi.new()
+      |> Multi.update(:group, changeset)
+      |> Multi.run(:inheritance, fn repo, %{group: withdrawn} ->
+        {:ok, MemberInheritance.drop_inherited(repo, withdrawn.id, editor.id)}
+      end)
+      |> Repo.transaction()
+      |> case do
+        {:ok, %{group: withdrawn, inheritance: changes}} ->
+          broadcast_group_updated(withdrawn)
+
+          if withdrawn.parent_id do
+            broadcast_group_updated(withdrawn.parent_id)
+          end
+
+          broadcast_inheritance_changes(changes)
+          {:ok, withdrawn}
 
         {:error, _step, reason, _changes} ->
           {:error, reason}
@@ -2798,10 +2853,28 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  A page of the sub-groups of `group` the profile can see, newest first, as
-  `{groups, has_more?}`, without threads and direct conversations.
+  The direct sub-group `id` of `group`, when the profile can see it. Threads
+  and direct conversations do not count.
+  """
+  def get_visible_child_group(%Group{} = group, %Profile{} = profile, id) when is_integer(id) do
+    visible_plain_groups(profile)
+    |> where([g], g.id == ^id and g.parent_id == ^group.id)
+    |> Repo.one()
+  end
 
-  This order never moves, which paging through it needs:
+  # A group's place in a feed: when it opened up, or was made already open.
+  defmacrop feed_time(group) do
+    quote do
+      fragment("COALESCE(?, ?)", unquote(group).published_at, unquote(group).inserted_at)
+    end
+  end
+
+  @doc """
+  A page of the sub-groups of `group` the profile can see, newest first, as
+  `{groups, has_more?}`, without threads and direct conversations. A group that
+  stayed closed for a while counts from when it opened up.
+
+  This order moves only when a group opens up, which paging through it needs:
   `list_child_groups_for_profile/3` sorts by unread values and activity, so its
   order changes while someone reads. Options: `:limit` and `:before_id`, the id
   of the last group of the previous page.
@@ -2809,20 +2882,40 @@ defmodule PotokIde.Social do
   def list_visible_child_groups_newest_first(%Group{} = group, %Profile{} = profile, opts) do
     limit = Keyword.fetch!(opts, :limit)
 
-    query =
+    rows =
       visible_plain_groups(profile)
       |> where([g], g.parent_id == ^group.id)
-      |> order_by([g], desc: g.id)
+      |> order_by([g], desc: feed_time(g), desc: g.id)
       |> limit(^(limit + 1))
+      |> before_group(opts[:before_id])
+      |> Repo.all()
 
-    query =
-      case opts[:before_id] do
-        nil -> query
-        before_id -> where(query, [g], g.id < ^before_id)
-      end
-
-    rows = Repo.all(query)
     {Enum.take(rows, limit), length(rows) > limit}
+  end
+
+  defp before_group(query, nil), do: query
+
+  # A group deleted since the last page has no place left, and its id comes closest.
+  defp before_group(query, before_id) do
+    from(g in Group, where: g.id == ^before_id, select: feed_time(g))
+    |> Repo.one()
+    |> case do
+      nil ->
+        where(query, [g], g.id < ^before_id)
+
+      time ->
+        where(
+          query,
+          [g],
+          fragment(
+            "(?, ?) < (?, ?)",
+            feed_time(g),
+            g.id,
+            type(^time, :naive_datetime),
+            type(^before_id, :integer)
+          )
+        )
+    end
   end
 
   @doc """

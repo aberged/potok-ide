@@ -815,6 +815,13 @@ const APP_FRAME_METHODS = new Set([
   "current_profile",
   "list_subgroups",
   "open_group",
+  "get_group",
+  "list_children",
+  "get_child",
+  "create_child",
+  "update_child",
+  "withdraw_child",
+  "preview_description",
 ])
 
 // The app's `localStorage` lives in one key of the page's storage per app

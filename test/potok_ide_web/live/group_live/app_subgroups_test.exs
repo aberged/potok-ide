@@ -315,7 +315,7 @@ defmodule PotokIdeWeb.GroupLive.AppSubgroupsTest do
       assert_redirect(view, ~p"/groups/#{story.id}/values")
     end
 
-    test "refuses what the app could not list", ctx do
+    test "refuses what is outside the app's reach", ctx do
       {:ok, outside} =
         Social.create_group(ctx.owner, Social.get_root_group!(), %{
           "name" => "app-sub-outside",
@@ -333,7 +333,7 @@ defmodule PotokIdeWeb.GroupLive.AppSubgroupsTest do
 
       view = open_app(ctx.conn, ctx.owner_account, ctx.app_group)
 
-      for id <- [outside.id, ctx.feed.id, ctx.app_group.id, deep.id, thread.id, "nope"],
+      for id <- [outside.id, ctx.app_group.id, deep.id, thread.id, "nope"],
           tab <- ["chat", "description"] do
         open_group(view, id, %{"tab" => tab})
 

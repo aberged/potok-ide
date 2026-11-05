@@ -999,7 +999,8 @@ msgstr "Није могуће послати захтев за приступ."
 msgid "Could not update access request."
 msgstr "Није могуће ажурирати захтев за приступ."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:134
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:149
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:362
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Није могуће ажурирати опис групе."
@@ -1226,8 +1227,8 @@ msgstr "Већ имате позивницу за ову групу на чек�
 msgid "You are already a group member."
 msgstr "Већ сте члан групе."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:59
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:88
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:74
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:103
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to access group data values."
 msgstr "Морате бити члан групе да бисте приступили вредностима података групе."
@@ -1687,7 +1688,7 @@ msgstr "Освежи"
 msgid "Show password"
 msgstr "Прикажи лозинку"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:237
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:411
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Превише измена за кратко време. Покушајте поново ускоро."
@@ -2267,8 +2268,11 @@ msgid "Your roles in this group do not allow posting messages."
 msgstr "Ваше улоге у овој групи не дозвољавају писање порука."
 
 #: lib/potok_ide_web/live/group_live/show.ex:3870
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:113
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:152
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:128
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:167
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:305
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:328
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:354
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr "Ваше улоге у овој групи то не дозвољавају."
@@ -4452,7 +4456,7 @@ msgstr "Поруке"
 msgid "Copy"
 msgstr "Копирај"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:78
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:93
 #, elixir-autogen, elixir-format
 msgid "Could not save the data value."
 msgstr "Није могуће сачувати вредност података."
@@ -4536,3 +4540,8 @@ msgstr "Разговори, догађаји, фајлови, улоге, нот
 #, elixir-autogen, elixir-format
 msgid "Apps"
 msgstr "Апликације"
+
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:350
+#, elixir-autogen, elixir-format
+msgid "Could not save the group."
+msgstr "Није могуће сачувати групу."

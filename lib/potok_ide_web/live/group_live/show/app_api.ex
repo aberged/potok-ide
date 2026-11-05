@@ -11,6 +11,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   each alternative description with `uses_api`. Calls act on the description
   on screen (`active_alt_description`) and name the app they come from, so a
   call that was on its way while the viewer switched apps is refused.
+
+  An app also keeps the groups right under its own (`list_children`,
+  `create_child` and the rest), and that acts in the viewer's name, so it works
+  only for a viewer who may edit the app's group. They are the ones who could
+  rewrite the app anyway, and by default only admins hold that permission.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
@@ -19,7 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   import Phoenix.LiveView, only: [push_navigate: 2]
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group}
+  alias PotokIde.Social.{Access, Group, GroupRole}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
   alias PotokIdeWeb.GroupLive.Show.Components
@@ -34,6 +39,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # Sub-groups carry their rendered descriptions, so their pages stay short.
   @default_subgroup_limit 20
   @max_subgroup_limit 50
+
+  @signed_in_methods ~w(
+    list_subgroups open_group get_group list_children get_child
+    create_child update_child withdraw_child preview_description
+  )
+
+  # All an app may set on a group. Never `uses_api`: an app that made another
+  # app would run its code for every viewer of that group.
+  @child_fields ~w(name description description_format is_public inherits_members)
 
   def new_bucket do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
@@ -149,7 +163,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
-       when method in ["list_subgroups", "open_group"] do
+       when method in @signed_in_methods do
     {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
   end
 
@@ -173,20 +187,179 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  # Only what `list_subgroups` could return: an app cannot send its viewer anywhere else.
+  # An app sends its viewer no further than its parent and the two levels below
+  # it, and only to what that viewer can see.
   defp run("open_group", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
     with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = target <- Social.get_visible_grandchild_group(group, profile, id) do
+         %Group{} = target <- reachable_group(group, profile, id) do
       {%{ok: true}, push_navigate(socket, to: group_tab_path(target, params["tab"]))}
     else
       _not_found -> {error("not_found", nil), socket}
     end
   end
 
+  defp run("get_group", _params, socket) do
+    {%{ok: true, group: group_payload(socket.assigns)}, socket}
+  end
+
+  defp run("list_children", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    case require_child_manager(socket) do
+      :ok ->
+        {groups, has_more?} =
+          Social.list_visible_child_groups_newest_first(group, profile,
+            limit: subgroup_limit(params["limit"]),
+            before_id: non_negative_integer(params["before_id"])
+          )
+
+        {%{ok: true, groups: Enum.map(groups, &subgroup_payload/1), has_more: has_more?}, socket}
+
+      {:error, reply} ->
+        {reply, socket}
+    end
+  end
+
+  defp run("get_child", params, socket) do
+    with :ok <- require_child_manager(socket),
+         {:ok, child} <- fetch_child(params, socket) do
+      {%{ok: true, group: child_payload(child, socket.assigns.current_profile)}, socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("create_child", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with :ok <- require_child_manager(socket),
+         {:ok, socket} <- take_write_token(socket) do
+      Social.create_group(profile, group, child_attrs(params))
+      |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("update_child", params, socket) do
+    profile = socket.assigns.current_profile
+
+    with :ok <- require_child_manager(socket),
+         {:ok, child} <- fetch_editable_child(params, socket),
+         {:ok, socket} <- take_write_token(socket) do
+      Social.update_group(profile, child, child_attrs(params))
+      |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("withdraw_child", params, socket) do
+    profile = socket.assigns.current_profile
+
+    with :ok <- require_child_manager(socket),
+         {:ok, child} <- fetch_editable_child(params, socket),
+         {:ok, socket} <- take_write_token(socket) do
+      Social.withdraw_group(profile, child)
+      |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # What a feed will show, by the same road as `description_html` in a sub-group.
+  defp run("preview_description", params, socket) do
+    with :ok <- require_child_manager(socket),
+         {:ok, format} <- description_format(params["description_format"]),
+         {:ok, socket} <- take_write_token(socket) do
+      html =
+        Components.description_html(%Group{
+          description: string_param(params["description"], ""),
+          description_format: format
+        })
+
+      {%{ok: true, html: html}, socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
+  end
+
+  defp reachable_group(%Group{parent_id: id}, profile, id),
+    do: Social.get_visible_group(profile, id)
+
+  defp reachable_group(group, profile, id) do
+    Social.get_visible_child_group(group, profile, id) ||
+      Social.get_visible_grandchild_group(group, profile, id)
+  end
+
+  defp require_child_manager(socket) do
+    if manages_children?(socket.assigns.access) do
+      :ok
+    else
+      {:error, error("forbidden", gettext("Your roles in this group do not allow that."))}
+    end
+  end
+
+  defp manages_children?(access), do: Access.can?(access, :edit_group)
+
+  defp fetch_child(params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = child <- Social.get_visible_child_group(group, profile, id) do
+      {:ok, child}
+    else
+      _not_found -> {:error, error("not_found", nil)}
+    end
+  end
+
+  # A group that is an app keeps its code away from other apps.
+  defp fetch_editable_child(params, socket) do
+    with {:ok, child} <- fetch_child(params, socket) do
+      if editable_child?(child, socket.assigns.current_profile) do
+        {:ok, child}
+      else
+        {:error, error("forbidden", gettext("Your roles in this group do not allow that."))}
+      end
+    end
+  end
+
+  defp editable_child?(%Group{uses_api: true}, _profile), do: false
+  defp editable_child?(child, profile), do: Access.can?(profile, child, :edit_group)
+
+  defp child_attrs(params) do
+    attrs = Map.take(params, @child_fields)
+
+    case params["picture"] do
+      picture when is_binary(picture) -> Map.put(attrs, "group_picture_url", picture)
+      _none -> attrs
+    end
+  end
+
+  defp child_reply({:ok, %Group{} = child}, socket) do
+    {%{ok: true, group: child_payload(child, socket.assigns.current_profile)}, socket}
+  end
+
+  defp child_reply({:error, %Ecto.Changeset{}}, socket) do
+    {error("invalid_group", gettext("Could not save the group.")), socket}
+  end
+
+  defp child_reply({:error, _not_allowed}, socket) do
+    {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+  end
+
+  defp description_format(nil), do: {:ok, :markdown}
+  defp description_format("markdown"), do: {:ok, :markdown}
+  defp description_format("html"), do: {:ok, :html}
+
+  defp description_format(_format) do
+    {:error, error("invalid_description", gettext("Could not update group description."))}
   end
 
   defp update_description(%{assigns: %{active_alt_description: nil}} = socket, attrs) do
@@ -257,7 +430,50 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   # A group that is an app runs on its description tab.
   defp group_tab_path(group, "description"), do: ~p"/groups/#{group.id}/group_home"
+  defp group_tab_path(group, "settings"), do: ~p"/groups/#{group.id}/edit_group"
   defp group_tab_path(group, _chat), do: ~p"/groups/#{group.id}/values"
+
+  # What an app needs to know about the place it stands in. `parent` is nil for
+  # a viewer who cannot see that group.
+  defp group_payload(%{group: group, access: access, current_profile: profile}) do
+    %{
+      id: group.id,
+      name: group.name,
+      is_public: group.is_public,
+      inherits_members: group.inherits_members,
+      parent: parent_payload(group, profile),
+      can_manage_children: manages_children?(access),
+      can_create_children: manages_children?(access) and Access.can?(access, :create_subgroups),
+      everyone_creates_subgroups: everyone_creates_subgroups?(access)
+    }
+  end
+
+  defp parent_payload(%Group{parent_id: nil}, _profile), do: nil
+
+  defp parent_payload(%Group{parent_id: parent_id}, profile) do
+    case Social.get_visible_group(profile, parent_id) do
+      %Group{} = parent ->
+        %{
+          id: parent.id,
+          name: parent.name,
+          is_public: parent.is_public,
+          uses_api: parent.uses_api
+        }
+
+      nil ->
+        nil
+    end
+  end
+
+  # Then any member can put a group here by hand, past the app.
+  defp everyone_creates_subgroups?(%Access{manifest: nil}), do: false
+
+  defp everyone_creates_subgroups?(%Access{manifest: manifest}) do
+    Enum.any?(
+      manifest.roles,
+      &(&1.key == GroupRole.everyone_key() and :create_subgroups in &1.allowed)
+    )
+  end
 
   # `description_html` is sanitized, so an app can put it in its page. The raw
   # description would run there with the viewer's rights. An app in a sub-group
@@ -270,9 +486,30 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       app_description: if(group.uses_api, do: PublicPreview.app_description(group)),
       uses_api: group.uses_api,
       picture_url: Avatars.group_avatar_url(group),
+      is_public: group.is_public,
+      inherits_members: group.inherits_members,
+      creator_id: group.creator_id,
       inserted_at: group.inserted_at,
+      published_at: group.published_at,
       last_value_at: group.last_value_at
     }
+  end
+
+  # The source goes only to who may change it, and never for a group that is an
+  # app. `member_count` tells a closed group that still holds people from one
+  # that holds only its author.
+  defp child_payload(%Group{} = child, profile) do
+    can_edit? = editable_child?(child, profile)
+
+    child
+    |> subgroup_payload()
+    |> Map.merge(%{
+      description: if(can_edit?, do: child.description || ""),
+      description_format: to_string(child.description_format),
+      can_edit: can_edit?,
+      member_count: Social.count_group_members(child),
+      updated_at: child.updated_at
+    })
   end
 
   defp profile_payload(nil, _access), do: nil

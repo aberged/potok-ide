@@ -182,6 +182,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "is_root_public"), do: dgettext("domain_map", "public from the root")
   defp own_field("Group", "inherits_members"), do: dgettext("domain_map", "inherits members")
   defp own_field("Group", "last_value_at"), do: dgettext("domain_map", "newest value at")
+  defp own_field("Group", "published_at"), do: dgettext("domain_map", "published at")
   defp own_field("Group", "parent_id"), do: dgettext("domain_map", "parent group")
   defp own_field("Group", "parent_value_id"), do: dgettext("domain_map", "value of the thread")
 
@@ -806,6 +807,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-folder-plus",
+          title: dgettext("domain_map", "Keeps the groups below it"),
+          text:
+            dgettext(
+              "domain_map",
+              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back. That is how one app writes what another shows, and a feed gets its editors' desk."
+            )
+        },
+        %{
           icon: "hero-identification",
           title: dgettext("domain_map", "Knows who is looking"),
           text:
@@ -864,7 +874,11 @@ defmodule PotokIdeWeb.DomainCopy do
         ),
         dgettext(
           "domain_map",
-          "Below its group it sees only what the viewer sees, and only one level under a direct sub-group."
+          "Below its group it sees only what the viewer sees, and no further than one level under a direct sub-group."
+        ),
+        dgettext(
+          "domain_map",
+          "It writes to groups only for a viewer who may edit its own group, only right under it, and it neither deletes a group nor makes one an app."
         ),
         dgettext(
           "domain_map",
@@ -911,7 +925,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out."
+            "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out. The exception is an app withdrawing a group: the inherited members then leave and the direct ones stay."
           )
       },
       %{

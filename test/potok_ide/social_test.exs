@@ -3620,4 +3620,57 @@ defmodule PotokIde.SocialTest do
     {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
     :ok
   end
+
+  describe "opening a closed group" do
+    setup do
+      {_account, owner} = EventsFixtures.account_with_profile!("publish-owner")
+
+      {:ok, parent} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "publish-parent",
+          "description" => "",
+          "description_format" => :markdown
+        })
+
+      {:ok, group} =
+        Social.create_group(owner, parent, %{
+          "name" => "publish-group",
+          "description" => "",
+          "description_format" => :markdown
+        })
+
+      %{owner: owner, group: group}
+    end
+
+    test "a closed group has not been published", %{group: group} do
+      assert Group.closed?(group)
+      assert group.published_at == nil
+    end
+
+    test "counts from when it opens up, by either switch", %{owner: owner, group: group} do
+      {:ok, public} = Social.update_group(owner, group, %{"is_public" => "true"})
+      assert public.published_at
+
+      {:ok, inheriting} = Social.update_group(owner, group, %{"inherits_members" => "true"})
+      assert inheriting.published_at
+    end
+
+    test "any other change leaves the time alone", %{owner: owner, group: group} do
+      {:ok, renamed} = Social.update_group(owner, group, %{"name" => "still closed"})
+      assert renamed.published_at == nil
+
+      {:ok, opened} = Social.update_group(owner, group, %{"is_public" => "true"})
+      stamped = DateTime.add(opened.published_at, -1, :day)
+
+      Repo.update_all(
+        from(g in Group, where: g.id == ^group.id),
+        set: [published_at: stamped]
+      )
+
+      {:ok, again} =
+        Social.update_group(owner, Repo.get!(Group, group.id), %{"inherits_members" => "true"})
+
+      assert again.published_at == stamped
+    end
+  end
 end

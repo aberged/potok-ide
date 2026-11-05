@@ -49,6 +49,34 @@ defmodule PotokIde.Social.MemberInheritance do
     :ok
   end
 
+  @doc """
+  Sends the group's inherited members away, when it stops inheriting and they
+  are meant to leave, unlike in `release/2`. Direct members stay, and
+  `keep_profile_id` turns into one. Inheriting groups below follow.
+
+  Returns the groups that changed, like `sync/3`.
+  """
+  def drop_inherited(repo, group_id, keep_profile_id)
+      when is_integer(group_id) and is_integer(keep_profile_id) do
+    repo.query!(
+      "UPDATE group_memberships SET inherited = FALSE WHERE group_id = $1 AND profile_id = $2 AND inherited",
+      [group_id, keep_profile_id]
+    )
+
+    repo.query!(
+      "UPDATE group_member_roles SET inherited = FALSE WHERE group_id = $1 AND profile_id = $2 AND inherited",
+      [group_id, keep_profile_id]
+    )
+
+    removed = profile_ids(repo, drop_members_sql(), [group_id])
+    repo.query!("DELETE FROM group_member_roles WHERE group_id = $1 AND inherited", [group_id])
+
+    [
+      %{group_id: group_id, added: [], removed: removed, roles_changed?: true}
+      | sync(repo, group_id)
+    ]
+  end
+
   # The group itself when it inherits, then its inheriting descendants
   # reached through inheriting groups only, as `[id, parent_id]` by depth.
   defp inheriting_chain(repo, group_id) do
@@ -105,6 +133,23 @@ defmodule PotokIde.Social.MemberInheritance do
           SELECT 1 FROM group_memberships pm
           WHERE pm.group_id = $2 AND pm.profile_id = gm.profile_id
         )
+      RETURNING gm.profile_id
+    ),
+    reads AS (
+      DELETE FROM group_value_reads gvr
+      USING removed
+      WHERE gvr.group_id = $1 AND gvr.profile_id = removed.profile_id
+    )
+    SELECT profile_id FROM removed
+    """
+  end
+
+  # Like `remove_members_sql/0`, for every inherited member, whatever the parent holds.
+  defp drop_members_sql do
+    """
+    WITH removed AS (
+      DELETE FROM group_memberships gm
+      WHERE gm.group_id = $1 AND gm.inherited
       RETURNING gm.profile_id
     ),
     reads AS (

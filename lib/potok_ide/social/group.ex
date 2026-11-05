@@ -28,6 +28,9 @@ defmodule PotokIde.Social.Group do
     field :inherits_members, :boolean, default: false
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
+    # When a closed group (see `closed?/1`) last opened up, which is its place
+    # in a feed; nil keeps the place from `inserted_at`. Kept by Social, never cast.
+    field :published_at, :utc_datetime
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
@@ -129,6 +132,10 @@ defmodule PotokIde.Social.Group do
     |> add_check_constraints()
     |> foreign_key_constraint(:home_alt_description_id)
   end
+
+  @doc "Whether only the members added to the group itself can see it."
+  def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true
+  def closed?(%__MODULE__{}), do: false
 
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value

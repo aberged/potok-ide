@@ -5,6 +5,15 @@ defmodule PotokIde.PlainTextTest do
 
   defp excerpt(text, format), do: PlainText.excerpt(text, format, 200)
 
+  describe "excerpt/3 with a comment" do
+    test "leaves it out, so what an app keeps there does not reach a shared link" do
+      html = ~s(<!--potok-post {"v":1,"fields":{"title":"skriveno"}}-->
+<h1>Naslov</h1><p>Tekst</p>)
+
+      assert excerpt(html, :html) == "Naslov. Tekst"
+    end
+  end
+
   describe "excerpt/3 with a heading" do
     test "ends a markdown heading before the text after it" do
       assert excerpt("# Dobro došli\n\nDogovaramo akcije", :markdown) ==
