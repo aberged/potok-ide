@@ -221,6 +221,21 @@ defmodule PotokIdeWeb.PublicPreviewTest do
                "Zmaj je izronio iz Dunava."
     end
 
+    test "takes the text FeedCreator writes for a card", %{conn: conn, owner: owner} do
+      group =
+        public_group!(owner, %{
+          "name" => "Desilo se čudo",
+          "description" => """
+          <!--potok-post {"v":1,"template":"article","fields":{},"hash":"1a2b3c4d"}-->
+          <meta name="description" content="Dunavom plivaju zmajevi."><article><p>iz kraja</p><h1>Desilo se čudo</h1><figure><figcaption>chatgpt</figcaption></figure><p>Tekst.</p></article>
+          """,
+          "description_format" => :html
+        })
+
+      assert conn |> get(~p"/groups/#{group.id}") |> document() |> og("description") ==
+               "Dunavom plivaju zmajevi."
+    end
+
     test "does not repeat its name under its name", %{conn: conn, owner: owner} do
       group =
         public_group!(owner, %{

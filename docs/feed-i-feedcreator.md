@@ -126,12 +126,13 @@ Opis objave mora sam da stoji, jer ga Feed prikazuje onakvog kakav stiže sa ser
 
 ```html
 <!--potok-post {"v":1,"template":"quote","fields":{"quote":"..."},"hash":"1a2b3c4d"}-->
-<blockquote style="background-color: #1e3a8a; color: #ffffff; ...">...</blockquote>
+<meta name="description" content="..."><blockquote style="background-color: #1e3a8a; color: #ffffff; ...">...</blockquote>
 ```
 
 - Grupa čuva komentar u izvoru, a sanitizer ga briše iz svega što gledalac dobija, pa i iz teksta za deljeni link. Izvor dobija samo onaj ko sme da ga menja.
 - `hash` je otisak HTML-a ispod komentara. Ako se ne slaže, neko je tekst promenio ručno, pa FeedCreator otvara objavu kao slobodan tekst i nudi povratak na šablon. Forma sa poljima bi inače pregazila tu izmenu.
 - Grupa bez komentara otvara se kao slobodan tekst, sa svojim formatom.
+- `<meta name="description">` je tekst kartice deljenog linka: uvod vesti, vreme i mesto događaja, autor citata. Potok ga čita umesto prvih redova opisa, koji bi spojili nadnaslov, potpis uz sliku i tekst, a sanitizer ga briše iz onoga što gledalac dobija. Slobodan tekst ga nema, a objava sačuvana pre njega dobija ga kad se ponovo sačuva.
 - Pregled ide preko `previewDescription`, kroz isti sanitizer, pa autor vidi tačno ono što će Feed dobiti.
 
 Sanitizer određuje kako šablon sme da izgleda:
