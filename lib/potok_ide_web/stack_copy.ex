@@ -78,7 +78,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. None of this needs a separate job queue."
+              "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
             )
         },
         %{
@@ -94,7 +94,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the access token for notifications."
+              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the pictures on link cards, the access token for notifications."
             )
         }
       ]

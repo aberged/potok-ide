@@ -50,7 +50,12 @@ defmodule PotokIde.PlainTextTest do
       assert PlainText.excerpt("# Desilo se čudo\nZmaj u Dunavu", :markdown, 100, opts) ==
                "Zmaj u Dunavu"
 
-      assert PlainText.excerpt("<p>iz kraja</p><h1>Desilo se čudo</h1><p>Zmaj</p>", :html, 100, opts) ==
+      assert PlainText.excerpt(
+               "<p>iz kraja</p><h1>Desilo se čudo</h1><p>Zmaj</p>",
+               :html,
+               100,
+               opts
+             ) ==
                "iz kraja Zmaj"
     end
 

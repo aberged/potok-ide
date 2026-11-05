@@ -118,16 +118,23 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
+  defp group_description(%Group{} = group), do: group_text(group) || default_description(group)
+
+  defp default_description(%Group{uses_api: true}), do: gettext("An app on Potok.")
+  defp default_description(%Group{}), do: gettext("A group on Potok.")
+
+  @doc "Whether the card of `group` says something of its own, not only what it is."
+  def describes_itself?(%Group{} = group), do: group_text(group) != nil
+
   # The description of a group with the API on is the code of an app, so its
   # card only says what the app says about itself, in the meta tags of any page.
   # HTML of any group can do that too, when its first lines are not a summary.
-  defp group_description(%Group{uses_api: true} = group),
-    do: own_description(group) || gettext("An app on Potok.")
+  defp group_text(%Group{uses_api: true} = group), do: own_description(group)
 
-  defp group_description(%Group{description_format: :html} = group),
+  defp group_text(%Group{description_format: :html} = group),
     do: own_description(group) || description_excerpt(group)
 
-  defp group_description(%Group{} = group), do: description_excerpt(group)
+  defp group_text(%Group{} = group), do: description_excerpt(group)
 
   # The card shows the name above this text.
   defp description_excerpt(%Group{} = group) do
@@ -136,7 +143,7 @@ defmodule PotokIdeWeb.PublicPreview do
       group.description_format,
       @description_length,
       without_heading: group.name
-    ) || gettext("A group on Potok.")
+    )
   end
 
   @doc "What a description says about itself in its meta tags, as plain text. Scripts never run."

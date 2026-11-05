@@ -39,6 +39,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.ProfileAuth
+  alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.{TagComponents, TagEditor}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
 
@@ -580,6 +581,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <EditGroupTab.panel
             :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
+            link_card={@link_card}
             dirty={edit_group_dirty?(@edit_group_form)}
             section={@edit_group_section}
             inherits_members_option={@inherits_members_option?}
@@ -708,6 +710,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:new_value_form, empty_new_value_form())
          |> assign(:new_group_form, empty_new_group_form())
          |> assign(:edit_group_form, edit_group_form(group, active_tab))
+         |> assign(:link_card, link_card(group, active_tab))
          |> assign(:edit_group_section, "basics")
          |> assign(:create_group_section, "basics")
          |> assign(
@@ -1501,6 +1504,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
            socket
            |> assign(:group, updated_group)
            |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
+           |> assign(:link_card, link_card(updated_group, "edit_group"))
            |> put_flash(:info, gettext("Group updated."))
            |> refresh_group_data()}
 
@@ -3024,6 +3028,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp edit_group_form(group, _active_tab), do: to_form(Group.update_changeset(group, %{}))
 
+  # What a link to the group shows outside Potok, for its settings: as it is
+  # saved, so it costs nothing while the form is being typed in.
+  defp link_card(%Group{} = group, "edit_group") do
+    with true <- Group.guest_preview?(group),
+         {:ok, preview} <- PublicPreview.link_preview(url(~p"/groups/#{group.id}")) do
+      %{
+        preview: preview,
+        app: group.uses_api,
+        describes_itself: PublicPreview.describes_itself?(group)
+      }
+    else
+      _ -> nil
+    end
+  end
+
+  defp link_card(_group, _active_tab), do: nil
+
   # Whether the edit form holds something not saved yet (its save bar shows).
   # A field that fails validation, like a cleared name, is dropped from the
   # changes, so errors count too: the bar's save then shows what is wrong.
@@ -3042,6 +3063,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       socket
       |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+      |> assign(:link_card, link_card(group, "edit_group"))
       |> assign(:edit_group_section, "basics")
       |> assign(:inherits_members_option?, Social.inherits_members_option?(group))
     end

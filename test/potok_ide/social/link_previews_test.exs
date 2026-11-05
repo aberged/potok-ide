@@ -123,7 +123,8 @@ defmodule PotokIde.Social.LinkPreviewsTest do
       linked = create_public_group!(ctx.owner, %{"name" => "Komšije"})
       url = own_url("/groups/#{linked.id}/values")
 
-      assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => "vidi #{url}"})
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => "vidi #{url}"})
 
       assert %{
                "url" => ^url,
@@ -181,9 +182,21 @@ defmodule PotokIde.Social.LinkPreviewsTest do
 
     test "that is not a group is passed over", ctx do
       for path <- ["/", "/accounts/log-in", "/groups", "/files/1", "/groups/1/2/3"] do
-        assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => own_url(path)})
+        assert {:ok, value} =
+                 Social.create_value(ctx.owner, ctx.group, %{"content" => own_url(path)})
 
         assert Repo.get!(Value, value.id).link_preview == nil
+      end
+    end
+
+    test "with a query that cannot be decoded does not stop the message", ctx do
+      linked = create_public_group!(ctx.owner, %{"name" => "Komšije"})
+
+      for query <- ["x=%zz", "event=%ff", "at=%", "d=%ff&at=1"] do
+        content = own_url("/groups/#{linked.id}/group_home?#{query}")
+
+        assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => content})
+        assert %{"title" => "Komšije"} = Repo.get!(Value, value.id).link_preview
       end
     end
 

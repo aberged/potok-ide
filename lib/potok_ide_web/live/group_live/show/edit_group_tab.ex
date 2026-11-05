@@ -4,8 +4,66 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   alias PotokIde.Social.GroupRole
   alias PotokIdeWeb.GroupLive.Show.Components
 
+  attr :card, :map, required: true
+
+  # Drawn like the card of a link in a chat, as sites and apps show about the
+  # same. The picture is lazy, so a section that stays hidden does not ask for it.
+  defp link_card(assigns) do
+    ~H"""
+    <div id="group-edit-link-card" class="mb-4">
+      <p class="text-sm font-semibold text-base-content">
+        {gettext("How a link to the group looks outside Potok")}
+      </p>
+      <p class="mb-2 text-xs text-base-content/65">{gettext("As saved so far.")}</p>
+
+      <div class="max-w-sm overflow-hidden rounded-2xl border border-l-4 border-base-300 border-l-primary bg-base-200/60">
+        <img
+          id="group-edit-link-card-image"
+          src={@card.preview["image_url"]}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          class="block aspect-[1.91/1] w-full bg-base-300/40 object-cover"
+        />
+        <div class="px-3 py-2.5">
+          <p class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-90">
+            {@card.preview["site_name"]}
+          </p>
+          <p class="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug">
+            {@card.preview["title"]}
+          </p>
+          <p
+            id="group-edit-link-card-description"
+            class="mt-0.5 line-clamp-2 text-sm leading-snug opacity-90"
+          >
+            {@card.preview["description"]}
+          </p>
+        </div>
+      </div>
+
+      <p
+        :if={!@card.describes_itself and !@card.app}
+        id="group-edit-link-card-add-description"
+        class="mt-2 text-xs text-base-content/65"
+      >
+        {gettext("Add a description, so the card says what the group is about.")}
+      </p>
+      <p
+        :if={!@card.describes_itself and @card.app}
+        id="group-edit-link-card-add-meta"
+        class="mt-2 text-xs text-base-content/65"
+      >
+        {gettext(
+          "An app says what it is with a <meta name=\"description\" content=\"...\"> tag in its HTML."
+        )}
+      </p>
+    </div>
+    """
+  end
+
   attr :group, :map, required: true
   attr :edit_group_form, :any, required: true
+  attr :link_card, :map, default: nil, doc: "what a link to the group shows, if guests see it"
   attr :dirty, :boolean, default: false, doc: "whether the form has unsaved changes"
   attr :format_options, :list, required: true
   attr :home_page_options, :list, required: true
@@ -103,6 +161,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 "Its name, picture and description also show outside Potok, to anyone with the link."
               )}
             </p>
+
+            <.link_card :if={@link_card} card={@link_card} />
 
             <div :if={@inherits_members_option} id="group-edit-inherits-members">
               <.input

@@ -113,8 +113,8 @@ msgstr "Mapa domena"
 
 #: lib/potok_ide_web/stack_copy.ex:95
 #, elixir-autogen, elixir-format
-msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the access token for notifications."
-msgstr "ETS je tabela u memoriji koju čitaju svi procesi. U njoj Potok drži ono što je skupo izračunati, a retko se menja: obrađen Markdown, napravljene avatare, pristupni token za obaveštenja."
+msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the pictures on link cards, the access token for notifications."
+msgstr "ETS je tabela u memoriji koju čitaju svi procesi. U njoj Potok drži ono što je skupo izračunati, a retko se menja: obrađen Markdown, napravljene avatare, slike kartica linkova, pristupni token za obaveštenja."
 
 #: lib/potok_ide_web/stack_copy.ex:71
 #, elixir-autogen, elixir-format
@@ -198,8 +198,8 @@ msgstr "Memorija se čisti po procesu"
 
 #: lib/potok_ide_web/stack_copy.ex:79
 #, elixir-autogen, elixir-format
-msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. None of this needs a separate job queue."
-msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta. Ništa od toga ne traži poseban sistem za redove poslova."
+msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
+msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta. Slike kartica linkova crtaju se jedna po jedna, svaka u svom procesu. Ništa od toga ne traži poseban sistem za redove poslova."
 
 #: lib/potok_ide_web/stack_copy.ex:249
 #, elixir-autogen, elixir-format
