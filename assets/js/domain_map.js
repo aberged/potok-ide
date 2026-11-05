@@ -50,7 +50,7 @@ const CORE = {
 const COLUMN = [26, 228, 430, 632, 834]
 const TABLES = {
   width: 1032,
-  height: 522,
+  height: 594,
   nodeWidth: 172,
   nodeHeight: 46,
   nodes: {
@@ -78,17 +78,18 @@ const TABLES = {
     Event: [COLUMN[3], 380],
     Response: [COLUMN[4], 380],
     MemberSetting: [COLUMN[4], 452],
-    Tag: [COLUMN[1], 452],
-    Tagging: [COLUMN[2], 452],
+    GroupReaction: [COLUMN[1], 428],
+    Tag: [COLUMN[1], 524],
+    Tagging: [COLUMN[2], 524],
   },
   clusters: {
     account: [16, 14, 192, 302],
     profiles: [218, 14, 192, 158],
     joining: [420, 14, 596, 158],
-    group: [218, 182, 394, 230],
+    group: [218, 182, 394, 302],
     content: [622, 182, 394, 158],
     calendar: [622, 350, 394, 158],
-    tags: [218, 422, 394, 86],
+    tags: [218, 494, 394, 86],
   },
 }
 
@@ -102,7 +103,9 @@ const ROUTES = {
   "Tagging>Group": {from: "r", to: "r", bulge: 22},
   "Tag>Profile": {from: "l", to: "l", bulge: 24},
   "GroupMembership>Profile": {from: "l", to: "l", bulge: 24},
-  "Tagging>ValueAttachment": {d: "M602 462C618 440 612 345 652 345H790C812 345 818 330 818 300V262C818 252 824 248 834 247"},
+  "GroupReaction>Profile": {from: "l", to: "l", bulge: 24},
+  "GroupReaction>Group": {from: "r", to: "l"},
+  "Tagging>ValueAttachment": {d: "M602 534C618 512 612 345 652 345H790C812 345 818 330 818 300V262C818 252 824 248 834 247"},
 }
 
 const element = (tag, attributes, parent, text) => {

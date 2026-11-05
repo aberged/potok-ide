@@ -56,6 +56,7 @@ defmodule PotokIde.Social.Group do
       join_keys: [group_id: :id, profile_id: :id]
 
     has_many :values, PotokIde.Social.Value
+    has_many :reactions, PotokIde.Social.GroupReaction
 
     timestamps(type: :utc_datetime)
   end

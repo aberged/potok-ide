@@ -377,7 +377,13 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
   defp permission_description(:post_values), do: gettext("Write messages and replies.")
   defp permission_description(:attach_files), do: gettext("Attach files to messages.")
-  defp permission_description(:react), do: gettext("Add emoji reactions to messages.")
+
+  defp permission_description(:react) do
+    gettext(
+      "Add emoji reactions to messages and to the group. Held by the Everyone role, it also lets signed-in visitors of a public group react to the group."
+    )
+  end
+
   defp permission_description(:open_threads), do: gettext("Start a thread from a message.")
   defp permission_description(:create_subgroups), do: gettext("Create groups inside this group.")
   defp permission_description(:invite_members), do: gettext("Invite profiles to this group.")

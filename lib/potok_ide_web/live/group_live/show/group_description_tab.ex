@@ -22,6 +22,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     default: nil,
     doc: "the alternative description on screen; nil shows the default one"
 
+  attr :reactions, :list, default: [], doc: "the group's reactions"
+  attr :can_react, :boolean, default: false, doc: "may react to the group"
+
   def panel(assigns) do
     source = assigns.active_alt_description || assigns.group
 
@@ -122,7 +125,31 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
             content_format={@source.description_format}
           />
         </div>
+
+        <%!-- An app has the whole panel, so its reactions are for a feed to show. --%>
+        <Components.reaction_pills
+          :if={!@source.uses_api and (@reactions != [] or @can_react)}
+          id="group-reactions"
+          pill_id_prefix="group-reaction"
+          reactions={@reactions}
+          can_react={@can_react}
+          click="toggle_group_reaction"
+          class="shrink-0 pt-4"
+        >
+          <.icon_button
+            :if={@can_react}
+            id="group-react"
+            type="button"
+            data-reaction-trigger
+            data-group-reaction
+            aria-haspopup="dialog"
+            icon="hero-face-smile"
+            label={gettext("Add reaction")}
+            size="xs"
+          />
+        </Components.reaction_pills>
       </div>
+      <Components.reaction_picker :if={@can_react or (@current_profile && @source.uses_api)} />
     </div>
     """
   end

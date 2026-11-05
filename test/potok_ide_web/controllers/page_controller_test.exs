@@ -84,8 +84,8 @@ defmodule PotokIdeWeb.PageControllerTest do
 
       assert Enum.count(LazyHTML.query(document, "#domain-chips [data-domain]")) == 7
       assert Enum.count(LazyHTML.query(document, "#domain-mechanisms article")) == 8
-      assert Enum.count(LazyHTML.query(document, "#domain-apps-capabilities article")) == 10
-      assert Enum.count(LazyHTML.query(document, "#domain-apps-limits li")) == 6
+      assert Enum.count(LazyHTML.query(document, "#domain-apps-capabilities article")) == 11
+      assert Enum.count(LazyHTML.query(document, "#domain-apps-limits li")) == 7
       assert Enum.count(LazyHTML.query(document, "#domain-caption [data-caption]")) == 3
 
       assert Enum.count(LazyHTML.query(document, "#domain-caption [data-caption]:not([hidden])")) ==
@@ -99,7 +99,7 @@ defmodule PotokIdeWeb.PageControllerTest do
     test "hands the diagram its data", %{conn: conn} do
       data = conn |> domain_page() |> map_data()
 
-      assert map_size(data["entities"]) == 26
+      assert map_size(data["entities"]) == 27
       assert data["counts"]["keys"] == Enum.count(data["edges"], &(&1["kind"] == "key"))
       assert data["counts"]["soft"] == 4
 

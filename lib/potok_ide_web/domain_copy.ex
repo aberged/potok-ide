@@ -246,6 +246,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueAttachment", "profile_id"), do: dgettext("domain_map", "who added it")
 
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
+  defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
 
   defp own_field("Event", "title"), do: dgettext("domain_map", "title")
   defp own_field("Event", "location"), do: dgettext("domain_map", "location")
@@ -363,6 +364,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("Value"), do: dgettext("domain_map", "Value")
   def entity_name("ValueAttachment"), do: dgettext("domain_map", "File")
   def entity_name("ValueReaction"), do: dgettext("domain_map", "Reaction")
+  def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
@@ -482,6 +484,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "An emoji of one profile on a value. A profile cannot use the same emoji twice on the same value."
+    )
+  end
+
+  defp entity_description("GroupReaction", _edges) do
+    dgettext(
+      "domain_map",
+      "An emoji of one profile on a group, as on a story in a news feed. A profile cannot use the same emoji twice on the same group."
     )
   end
 
@@ -807,6 +816,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-face-smile",
+          title: dgettext("domain_map", "Gathers reactions and comments"),
+          text:
+            dgettext(
+              "domain_map",
+              "For each <Group>group</Group> below it, it gets the number of messages in its chat and its <GroupReaction>reactions</GroupReaction>. It can add the viewer's reaction and open the sharing of the group's link. That is how a story in a feed gets comments, reactions and a share button."
+            )
+        },
+        %{
           icon: "hero-folder-plus",
           title: dgettext("domain_map", "Keeps the groups below it"),
           text:
@@ -882,6 +900,10 @@ defmodule PotokIdeWeb.DomainCopy do
         ),
         dgettext(
           "domain_map",
+          "A reaction is the exception: an app adds it for any viewer who may react, only to a group below it, and the viewer can take it back."
+        ),
+        dgettext(
+          "domain_map",
           "The data of an app goes with its description, and it can be deleted from the group's settings."
         )
       ]
@@ -917,7 +939,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow."
+            "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow. A <GroupReaction>reaction to a group</GroupReaction> also reaches past the members: while `everyone` may react, so may a signed-in profile that is not a member of a public group."
           )
       },
       %{

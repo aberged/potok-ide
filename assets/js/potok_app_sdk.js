@@ -113,14 +113,17 @@ const applyTheme = theme => {
   }
 }
 
-const call = (method, params = {}) =>
+// `waits`: the answer depends on the viewer, who can take as long as they like.
+const call = (method, params = {}, {waits = false} = {}) =>
   new Promise((resolve, reject) => {
     const id = nextCallId++
 
-    const timer = setTimeout(() => {
-      pendingCalls.delete(id)
-      reject(new Error(`potok.${method} timed out`))
-    }, CALL_TIMEOUT_MS)
+    const timer = waits
+      ? null
+      : setTimeout(() => {
+          pendingCalls.delete(id)
+          reject(new Error(`potok.${method} timed out`))
+        }, CALL_TIMEOUT_MS)
 
     pendingCalls.set(id, {resolve, timer})
     void parentReady.then(() => window.parent.postMessage({potok: 1, id, method, params}, "*"))
@@ -246,6 +249,19 @@ const potok = {
     if (storageSaveTimer) saveLocalStorage()
     return call("open_group", {id, tab: options.tab ?? null})
   },
+
+  // Adds the viewer's reaction to a group below this one, or takes it back, as a
+  // click on a reaction does. Works for any viewer with `can_react` on that
+  // group and counts as a write. Resolves to `{ok: true, reactions}`.
+  toggleGroupReaction: (id, emoji) => call("toggle_group_reaction", {id, emoji}),
+
+  // Lets the viewer choose any emoji in Potok's own picker. Resolves to
+  // `{ok: true, emoji}`, or `{ok: false, error: "cancelled"}` when they close it.
+  pickEmoji: () => call("pick_emoji", {}, {waits: true}),
+
+  // Opens the page's way of sharing with the link of a group `openGroup` can
+  // reach. A frame has neither Web Share nor the clipboard.
+  shareGroup: id => call("share_group", {id}),
 
   // This group, its parent and what the viewer may do here.
   getGroup: () => call("get_group"),

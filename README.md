@@ -625,6 +625,9 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `getCurrentProfile()` resolves to the profile, or `null`.
 * `listSubgroups(name, options)` resolves to `{ok: true, groups, has_more}`: the groups under this group's direct sub-group called exactly `name`, newest first. A group that stayed closed (private, not inheriting) counts from when it opened up. It sees what the viewer sees: threads, direct conversations and private groups the viewer is not in are left out, and the sub-group itself must be visible too, or the reply is `not_found`. Names are not unique, so of several sub-groups with one name the oldest counts. Options: `limit` (at most 50, default 20) and `beforeId` (the id of the last group of the previous page).
 * `openGroup(id, options)` takes the viewer, on the same page, to this group's parent, one of its direct sub-groups or a group `listSubgroups` can return, as far as the viewer can see them: to its chat, with `options.tab` set to `"description"` to its description, where a group that is an app runs, or with `"settings"` to its settings. Any other group is refused with `not_found`. The app's frame goes away with the page, after saving its `localStorage`, and starts again when the viewer comes back.
+* `toggleGroupReaction(id, emoji)` resolves to `{ok: true, reactions}`. It adds the viewer's reaction to a direct sub-group or a group `listSubgroups` can return, or takes it back, as a click on a reaction does. It is the one write that does not need `edit_group`: a reader leaves a reaction, so any viewer with `can_react` on that group may, and it counts as a write for the rate limit. The price is that an app can add a reaction in its viewer's name unasked, on a group below it, where the viewer sees it and can take it back. Any other group is refused with `not_found`, a viewer who may not react with `forbidden`, and what is not one emoji with `invalid_emoji`.
+* `pickEmoji()` lets the viewer choose any emoji in Potok's own picker, and resolves to `{ok: true, emoji}` or, when they close it, to `{ok: false, error: "cancelled"}`. It waits for as long as they take. Where the page has no picker, for a viewer without a profile, the reply is `forbidden`.
+* `shareGroup(id)` resolves to `{ok: true}` and opens the page's way of sharing with the link of a group `openGroup` can reach: the phone's share sheet in the mobile app, and Potok's link sheet on the web. A frame cannot do this itself, as the sandbox keeps it from Web Share and the clipboard.
 * `getGroup()` resolves to `{ok: true, group}`: this group, its parent and what the viewer may do here.
 * `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
 
@@ -657,8 +660,13 @@ Reply shapes:
 // Wrap it in a `rich-content` element to get the styles of the group page.
 // app_description is what an app says about itself in its meta tags, as plain text, and null otherwise.
 // published_at is when a closed group last opened up, and null for a group that never was closed.
+// comment_count is the messages in its chat. A thread is a group of its own and does not count.
+// reactions come in the order each emoji was first used, and mine says the viewer is among them.
+// can_react: a member with the react permission, or anyone signed in, in a public group,
+// while the Everyone role holds that permission. Not on threads and direct conversations.
 {id, name, description_html, app_description, uses_api, picture_url, is_public, inherits_members,
- creator_id, inserted_at, published_at, last_value_at}
+ creator_id, inserted_at, published_at, last_value_at, comment_count,
+ reactions: [{emoji, count, mine}], can_react}
 
 // child (getChild, createChild, updateChild, withdrawChild): a sub-group, and
 {description, description_format, can_edit, member_count, updated_at}
@@ -676,8 +684,8 @@ Reply shapes:
 Error codes (`error`):
 
 * From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
-* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `unknown_method`.
-* From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`.
+* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `invalid_emoji`, `unknown_method`.
+* From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`, `cancelled` (the viewer closed the picker of `pickEmoji`), `forbidden` (the page has no picker).
 
 The frame environment:
 

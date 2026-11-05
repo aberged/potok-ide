@@ -194,6 +194,62 @@ defmodule PotokIde.Social.Access do
   def can?(profile, %Group{} = group, permission) when is_atom(permission),
     do: profile |> for_profile(group) |> can?(permission)
 
+  @doc "The profile's access to each of `groups`, in one query for the memberships."
+  def for_profile_in_groups(_profile, []), do: %{}
+
+  def for_profile_in_groups(nil, groups) do
+    Map.new(groups, &{&1.id, for_profile(nil, &1)})
+  end
+
+  def for_profile_in_groups(%Profile{id: profile_id}, groups) do
+    assigned =
+      from(gm in GroupMembership,
+        left_join: r in GroupMemberRole,
+        on: r.group_id == gm.group_id and r.profile_id == gm.profile_id,
+        where: gm.group_id in ^Enum.map(groups, & &1.id) and gm.profile_id == ^profile_id,
+        select: {gm.group_id, r.role_key}
+      )
+      |> Repo.all()
+      |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+
+    Map.new(groups, fn %Group{id: id} = group ->
+      manifest = effective_manifest(group)
+
+      access =
+        case assigned do
+          %{^id => keys} -> build(manifest, Enum.reject(keys, &is_nil/1))
+          %{} -> %__MODULE__{manifest: manifest}
+        end
+
+      {id, access}
+    end)
+  end
+
+  @doc "Whether the \"everyone\" role of the access's manifest allows `permission`."
+  def everyone_can?(%__MODULE__{manifest: nil}, _permission), do: false
+
+  def everyone_can?(%__MODULE__{manifest: manifest}, permission) when is_atom(permission) do
+    Enum.any?(
+      manifest.roles,
+      &(&1.key == GroupRole.everyone_key() and permission in &1.allowed)
+    )
+  end
+
+  @doc """
+  Whether `profile`, with `access` to `group`, may react to the group. Unlike the
+  rest of a group this reaches past its members: in a public group, a profile
+  that is not one may react while "everyone" may. Direct conversations, threads
+  and the root hold no reactions.
+  """
+  def can_react_to_group?(profile, %__MODULE__{} = access, %Group{} = group) do
+    cond do
+      is_nil(profile) or group.is_root or group.is_direct -> false
+      not is_nil(group.parent_value_id) -> false
+      access.member? -> can?(access, :react)
+      true -> group.is_public and everyone_can?(access, :react)
+    end
+  end
+
   def admin?(%Profile{} = profile, %Group{} = group), do: for_profile(profile, group).admin?
 
   @doc """

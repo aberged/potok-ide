@@ -28,7 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
-import { installLongPressLinkMenu } from "./longpress"
+import { installLongPressLinkMenu, shareLink } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
 import {
   ShareComposer,
@@ -822,6 +822,9 @@ const APP_FRAME_METHODS = new Set([
   "update_child",
   "withdraw_child",
   "preview_description",
+  "toggle_group_reaction",
+  "share_group",
+  "pick_emoji",
 ])
 
 // The app's `localStorage` lives in one key of the page's storage per app
@@ -865,6 +868,8 @@ const GroupAppFrame = {
     this.handleEvent("new_data_value", value => {
       this.post({potok: 1, event: "new_value", value})
     })
+
+    this.handleEvent("app_share_link", ({url}) => shareLink(url))
   },
 
   reconnected() {
@@ -922,6 +927,11 @@ const GroupAppFrame = {
       return
     }
 
+    if (method === "pick_emoji") {
+      this.post({potok: 1, id, ...(await this.pickEmoji())})
+      return
+    }
+
     try {
       // The server refuses calls whose app is no longer the one on screen.
       const reply = await this.pushEvent("app_api", {
@@ -934,6 +944,27 @@ const GroupAppFrame = {
     } catch (_error) {
       this.post({potok: 1, id, ok: false, error: "disconnected"})
     }
+  },
+
+  // The page's own picker, as the frame has neither its code nor its data. Taps
+  // on the frame have to reach the page for the picker to close on them.
+  pickEmoji() {
+    const picker = document.getElementById("reaction-picker")
+
+    if (!picker) {
+      return Promise.resolve({ok: false, error: "forbidden"})
+    }
+
+    return new Promise(resolve => {
+      this.iframe.style.pointerEvents = "none"
+
+      const done = emoji => {
+        this.iframe.style.pointerEvents = ""
+        resolve(emoji ? {ok: true, emoji} : {ok: false, error: "cancelled"})
+      }
+
+      picker.dispatchEvent(new CustomEvent("potok:pick-emoji", {detail: {anchor: this.iframe, done}}))
+    })
   },
 
   post(message) {

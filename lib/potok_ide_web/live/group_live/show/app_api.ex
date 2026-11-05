@@ -16,15 +16,19 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   `create_child` and the rest), and that acts in the viewer's name, so it works
   only for a viewer who may edit the app's group. They are the ones who could
   rewrite the app anyway, and by default only admins hold that permission.
+  A reaction is the one exception (`toggle_group_reaction`): it needs a reader,
+  not an editor, so it asks only what the same reaction asks on the group's
+  page. The price is that an app can add one in its viewer's name unasked, to a
+  group below it, where the viewer sees it and can take it back.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
 
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [push_navigate: 2]
+  import Phoenix.LiveView, only: [push_event: 3, push_navigate: 2]
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group, GroupRole}
+  alias PotokIde.Social.{Access, Group}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
   alias PotokIdeWeb.GroupLive.Show.Components
@@ -43,6 +47,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @signed_in_methods ~w(
     list_subgroups open_group get_group list_children get_child
     create_child update_child withdraw_child preview_description
+    toggle_group_reaction share_group
   )
 
   # All an app may set on a group. Never `uses_api`: an app that made another
@@ -181,7 +186,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
           before_id: non_negative_integer(params["before_id"])
         )
 
-      {%{ok: true, groups: Enum.map(groups, &subgroup_payload/1), has_more: has_more?}, socket}
+      {%{ok: true, groups: subgroup_payloads(groups, profile), has_more: has_more?}, socket}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -195,6 +200,41 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with id when is_integer(id) <- non_negative_integer(params["id"]),
          %Group{} = target <- reachable_group(group, profile, id) do
       {%{ok: true}, push_navigate(socket, to: group_tab_path(target, params["tab"]))}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  defp run("toggle_group_reaction", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = target <- group_below(group, profile, id),
+         {:ok, socket} <- take_write_token(socket) do
+      case Social.toggle_group_reaction(profile, target, params["emoji"]) do
+        {:ok, reactions} ->
+          {%{ok: true, reactions: Enum.map(reactions, &reaction_payload/1)}, socket}
+
+        {:error, :not_permitted} ->
+          {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+
+        {:error, _invalid} ->
+          {error("invalid_emoji", nil), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  # The frame can share nothing itself: the sandbox keeps it from Web Share, the
+  # clipboard and the mobile app, so the page does it (`shareLink` in longpress.js).
+  defp run("share_group", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = target <- reachable_group(group, profile, id) do
+      {%{ok: true}, push_event(socket, "app_share_link", %{url: url(~p"/groups/#{target.id}")})}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -215,7 +255,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
             before_id: non_negative_integer(params["before_id"])
           )
 
-        {%{ok: true, groups: Enum.map(groups, &subgroup_payload/1), has_more: has_more?}, socket}
+        {%{ok: true, groups: subgroup_payloads(groups, profile), has_more: has_more?}, socket}
 
       {:error, reply} ->
         {reply, socket}
@@ -293,7 +333,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp reachable_group(%Group{parent_id: id}, profile, id),
     do: Social.get_visible_group(profile, id)
 
-  defp reachable_group(group, profile, id) do
+  defp reachable_group(group, profile, id), do: group_below(group, profile, id)
+
+  defp group_below(group, profile, id) do
     Social.get_visible_child_group(group, profile, id) ||
       Social.get_visible_grandchild_group(group, profile, id)
   end
@@ -444,7 +486,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       parent: parent_payload(group, profile),
       can_manage_children: manages_children?(access),
       can_create_children: manages_children?(access) and Access.can?(access, :create_subgroups),
-      everyone_creates_subgroups: everyone_creates_subgroups?(access)
+      # Then any member can put a group here by hand, past the app.
+      everyone_creates_subgroups: Access.everyone_can?(access, :create_subgroups)
     }
   end
 
@@ -465,20 +508,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  # Then any member can put a group here by hand, past the app.
-  defp everyone_creates_subgroups?(%Access{manifest: nil}), do: false
-
-  defp everyone_creates_subgroups?(%Access{manifest: manifest}) do
-    Enum.any?(
-      manifest.roles,
-      &(&1.key == GroupRole.everyone_key() and :create_subgroups in &1.allowed)
-    )
-  end
-
   # `description_html` is sanitized, so an app can put it in its page. The raw
   # description would run there with the viewer's rights. An app in a sub-group
   # has no text to show, only what it says about itself.
-  defp subgroup_payload(%Group{} = group) do
+  defp subgroup_payload(%Group{} = group, stats) do
     %{
       id: group.id,
       name: group.name,
@@ -491,8 +524,31 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       creator_id: group.creator_id,
       inserted_at: group.inserted_at,
       published_at: group.published_at,
-      last_value_at: group.last_value_at
+      last_value_at: group.last_value_at,
+      comment_count: Map.get(stats.comments, group.id, 0),
+      reactions: stats.reactions |> Map.get(group.id, []) |> Enum.map(&reaction_payload/1),
+      can_react:
+        Access.can_react_to_group?(stats.profile, Map.fetch!(stats.access, group.id), group)
     }
+  end
+
+  # What is read per group goes in one query for the page. The names of who
+  # reacted stay on the group's page: an app needs only how many.
+  defp subgroup_payloads(groups, profile) do
+    ids = Enum.map(groups, & &1.id)
+
+    stats = %{
+      profile: profile,
+      comments: Social.group_comment_counts(ids),
+      reactions: Social.group_reaction_summaries(ids, profile),
+      access: Access.for_profile_in_groups(profile, groups)
+    }
+
+    Enum.map(groups, &subgroup_payload(&1, stats))
+  end
+
+  defp reaction_payload(reaction) do
+    %{emoji: reaction.emoji, count: reaction.count, mine: reaction.mine?}
   end
 
   # The source goes only to who may change it, and never for a group that is an
@@ -501,8 +557,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp child_payload(%Group{} = child, profile) do
     can_edit? = editable_child?(child, profile)
 
-    child
-    |> subgroup_payload()
+    [child]
+    |> subgroup_payloads(profile)
+    |> hd()
     |> Map.merge(%{
       description: if(can_edit?, do: child.description || ""),
       description_format: to_string(child.description_format),

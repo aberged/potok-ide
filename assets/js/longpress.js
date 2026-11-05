@@ -37,7 +37,8 @@ const linkActions = {
   open: url => window.location.assign(url),
   browser: url => void Browser.open({ url }),
   copy: url => void navigator.clipboard?.writeText(url),
-  share: url => void Share.share({ url }),
+  // On the web it is Web Share, and a closed share sheet comes back as a failure.
+  share: url => void Share.share({ url }).catch(() => {}),
 }
 
 const showLinkActionSheet = (urlString, isExternal) => {
@@ -47,9 +48,21 @@ const showLinkActionSheet = (urlString, isExternal) => {
   dialog.dataset.url = urlString
   dialog.querySelector(`#${ACTION_SHEET_ID}-url`).textContent = urlString
   dialog.querySelector('[data-lp-action="browser"]').hidden = !isExternal
-  dialog.querySelector('[data-lp-action="share"]').hidden = !Capacitor.isNativePlatform()
+  dialog.querySelector('[data-lp-action="share"]').hidden =
+    !Capacitor.isNativePlatform() && !navigator.share
 
   if (!dialog.open) dialog.showModal()
+}
+
+// For a link that comes from an app in the page. The web gets the sheet, so the
+// copying and sharing start with a click on the page itself: iOS Safari does not
+// count the click in the frame, which came before a trip to the server.
+export const shareLink = url => {
+  if (Capacitor.isNativePlatform()) {
+    linkActions.share(url)
+  } else {
+    showLinkActionSheet(url, false)
+  }
 }
 
 const installLinkActionSheet = () => {

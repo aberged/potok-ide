@@ -554,6 +554,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             alt_descriptions={@visible_alt_descriptions}
             active_alt_description={@active_alt_description}
             can_edit={Access.can?(@access, :edit_group) and !@group.is_root}
+            reactions={@group_reactions}
+            can_react={@can_react_to_group}
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -709,6 +711,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:pending_join_requests, [])
          |> assign(:pending_join_requests_count, 0)
          |> assign(:group_tags, [])
+         |> assign(:group_reactions, [])
+         |> assign(:can_react_to_group, false)
          |> TagEditor.init()
          |> CalendarState.init(params)
          |> load_group_data(group, active_tab)
@@ -1075,6 +1079,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
               {:noreply, put_flash(socket, :error, gettext("Could not update reaction."))}
           end
       end
+    end
+  end
+
+  # Sent by the reaction pills under a description and by the emoji picker hook.
+  def handle_event("toggle_group_reaction", %{"emoji" => emoji}, socket) do
+    %{current_profile: profile, group: group} = socket.assigns
+
+    case profile && Social.toggle_group_reaction(profile, group, emoji) do
+      {:ok, reactions} ->
+        {:noreply, assign(socket, :group_reactions, reactions)}
+
+      _refused ->
+        {:noreply, put_flash(socket, :error, gettext("Could not update reaction."))}
     end
   end
 
@@ -1966,6 +1983,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  def handle_info({:group_reactions_updated, group_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, schedule_refresh(socket, :group_reactions)}
+  end
+
+  def handle_info({:group_reactions_updated, _group_id}, socket), do: {:noreply, socket}
+
   # A manifest or role assignment changed: permissions are recomputed with the
   # group reload, which also re-renders streamed values and members.
   def handle_info(
@@ -2175,6 +2199,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
     |> assign_group_tags(group)
+    |> assign_group_reactions()
     |> assign(:root_group_unread_count, overview.total)
     |> assign_group_unread_counts(overview)
     |> maybe_push_root_group_unread_count()
@@ -2245,6 +2270,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:pending_refresh, MapSet.new())
       |> assign(:refresh_due_at, nil)
 
+    # On its own, as `cond` takes one branch and any kind can come with this one.
+    socket =
+      if MapSet.member?(pending, :group_reactions) and not MapSet.member?(pending, :group),
+        do: refresh_group_reactions_or_retry(socket),
+        else: socket
+
     cond do
       MapSet.member?(pending, :group) -> reload_current_group(socket)
       MapSet.member?(pending, :unread) -> refresh_unread_counts_or_retry(socket)
@@ -2260,6 +2291,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     refresh_unread_counts(socket)
   rescue
     DBConnection.ConnectionError -> schedule_refresh(socket, :unread)
+  end
+
+  defp refresh_group_reactions_or_retry(socket) do
+    assign_group_reactions(socket)
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :group_reactions)
   end
 
   defp reload_current_group(socket) do
@@ -2670,6 +2707,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp apply_tags_changed(socket, :event, event_id),
     do: CalendarState.refresh_event_tags(socket, event_id)
+
+  # Read only for the panel that shows them: a reaction reaches every page open
+  # on the group, whatever its tab.
+  defp assign_group_reactions(socket) do
+    %{group: group, current_profile: profile, access: access} = socket.assigns
+
+    if description_visible?(socket.assigns) do
+      reactions = Social.group_reaction_summaries([group.id], profile)
+
+      socket
+      |> assign(:group_reactions, Map.get(reactions, group.id, []))
+      |> assign(:can_react_to_group, Access.can_react_to_group?(profile, access, group))
+    else
+      socket
+    end
+  end
 
   defp assign_group_tags(socket, %Group{is_root: true}), do: assign(socket, :group_tags, [])
 

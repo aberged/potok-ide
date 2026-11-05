@@ -1065,6 +1065,70 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   attr :id, :string, required: true
+  attr :pill_id_prefix, :string, required: true
+  attr :reactions, :list, required: true, doc: "as `Social.group_reaction_summaries/2` gives them"
+  attr :can_react, :boolean, default: false
+  attr :click, :string, required: true, doc: "the event of a click on a pill, with `:emoji`"
+  attr :value_id, :any, default: nil, doc: "sent with that event as `id`"
+  attr :class, :any, default: nil
+  slot :inner_block, doc: "what follows the pills in their row"
+
+  @doc "One pill per emoji: a click adds the viewer's reaction or takes it back."
+  def reaction_pills(assigns) do
+    ~H"""
+    <div id={@id} class={["flex flex-wrap items-center gap-1", @class]}>
+      <button
+        :for={reaction <- @reactions}
+        id={"#{@pill_id_prefix}-#{reaction.key}"}
+        type="button"
+        phx-click={@click}
+        phx-value-id={@value_id}
+        phx-value-emoji={reaction.emoji}
+        aria-pressed={to_string(reaction.mine?)}
+        title={Enum.join(reaction.names, ", ")}
+        disabled={!@can_react}
+        class={[
+          "inline-flex h-8 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out sm:h-7",
+          "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
+          if(reaction.mine?,
+            do: "border-primary/50 bg-primary/10 text-primary",
+            else:
+              "border-base-300 bg-base-100 text-base-content/70 enabled:hover:border-base-content/25 enabled:hover:bg-base-200"
+          )
+        ]}
+      >
+        <span class="text-base leading-none">{reaction.emoji}</span>
+        <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
+      </button>
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  @doc """
+  The page's one emoji picker: the `ReactionPicker` hook opens it from any
+  `[data-reaction-trigger]`, and for an app that asks (`pickEmoji`). The chat and
+  the description take turns on the page, so each of them holds it.
+  """
+  def reaction_picker(assigns) do
+    ~H"""
+    <div
+      id="reaction-picker"
+      phx-hook="ReactionPicker"
+      phx-update="ignore"
+      hidden
+      role="dialog"
+      aria-label={gettext("Add reaction")}
+      data-locale="en"
+      data-data-source={~p"/emoji/en.json"}
+      data-i18n={Jason.encode!(emoji_picker_i18n())}
+      class="reaction-picker fixed z-50 overflow-hidden border border-base-300 bg-base-100 opacity-0 translate-y-1 shadow-2xl shadow-base-content/10 transition duration-150 ease-out"
+    >
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
   attr :html, :string, required: true, doc: "the app's HTML (the group description)"
   attr :api, :boolean, default: true, doc: "false renders a preview whose API calls are refused"
 
@@ -1756,38 +1820,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </span>
           <.icon name="hero-chevron-right" class="size-3" />
         </button>
-        <div
+        <.reaction_pills
           :if={@reactions != []}
           id={"value-reactions-#{@value.id}"}
-          class={[
-            "flex flex-wrap items-center gap-1",
-            @mine? && "justify-end"
-          ]}
-        >
-          <button
-            :for={reaction <- @reactions}
-            id={"value-reaction-#{@value.id}-#{reaction.key}"}
-            type="button"
-            phx-click="toggle_reaction"
-            phx-value-id={@value.id}
-            phx-value-emoji={reaction.emoji}
-            aria-pressed={to_string(reaction.mine?)}
-            title={Enum.join(reaction.names, ", ")}
-            disabled={!@can_react}
-            class={[
-              "inline-flex h-8 items-center gap-1 rounded-full border px-2 leading-none shadow-xs transition duration-150 ease-out sm:h-7",
-              "enabled:hover:-translate-y-px enabled:active:scale-95 disabled:cursor-default",
-              if(reaction.mine?,
-                do: "border-primary/50 bg-primary/10 text-primary",
-                else:
-                  "border-base-300 bg-base-100 text-base-content/70 enabled:hover:border-base-content/25 enabled:hover:bg-base-200"
-              )
-            ]}
-          >
-            <span class="text-base leading-none">{reaction.emoji}</span>
-            <span class="text-xs font-semibold tabular-nums">{reaction.count}</span>
-          </button>
-        </div>
+          pill_id_prefix={"value-reaction-#{@value.id}"}
+          reactions={@reactions}
+          can_react={@can_react}
+          click="toggle_reaction"
+          value_id={@value.id}
+          class={@mine? && "justify-end"}
+        />
         <TagComponents.tag_chips
           id={"value-tag-list-#{@value.id}"}
           tags={@value.tags}
@@ -2211,6 +2253,51 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp reaction_summary(_reactions, _current_profile), do: []
+
+  # Labels for emoji-picker-element; the shape follows its `i18n/en.js`.
+  defp emoji_picker_i18n do
+    %{
+      categoriesLabel: pgettext("emoji picker", "Categories"),
+      emojiUnsupportedMessage:
+        pgettext("emoji picker", "Your browser does not support color emoji."),
+      favoritesLabel: pgettext("emoji picker", "Favorites"),
+      loadingMessage: pgettext("emoji picker", "Loading…"),
+      networkErrorMessage: pgettext("emoji picker", "Could not load emoji."),
+      regionLabel: pgettext("emoji picker", "Emoji picker"),
+      searchDescription:
+        pgettext(
+          "emoji picker",
+          "When search results are available, press up or down to select and enter to choose."
+        ),
+      searchLabel: pgettext("emoji picker", "Search"),
+      searchResultsLabel: pgettext("emoji picker", "Search results"),
+      skinToneDescription:
+        pgettext("emoji picker", "When expanded, press up or down to select and enter to choose."),
+      # `{skinTone}` is filled in by the picker, not by Gettext.
+      skinToneLabel: pgettext("emoji picker", "Choose a skin tone (currently {skinTone})"),
+      skinTonesLabel: pgettext("emoji picker", "Skin tones"),
+      skinTones: [
+        pgettext("emoji skin tone", "Default"),
+        pgettext("emoji skin tone", "Light"),
+        pgettext("emoji skin tone", "Medium-Light"),
+        pgettext("emoji skin tone", "Medium"),
+        pgettext("emoji skin tone", "Medium-Dark"),
+        pgettext("emoji skin tone", "Dark")
+      ],
+      categories: %{
+        "custom" => pgettext("emoji category", "Custom"),
+        "smileys-emotion" => pgettext("emoji category", "Smileys and emoticons"),
+        "people-body" => pgettext("emoji category", "People and body"),
+        "animals-nature" => pgettext("emoji category", "Animals and nature"),
+        "food-drink" => pgettext("emoji category", "Food and drink"),
+        "travel-places" => pgettext("emoji category", "Travel and places"),
+        "activities" => pgettext("emoji category", "Activities"),
+        "objects" => pgettext("emoji category", "Objects"),
+        "symbols" => pgettext("emoji category", "Symbols"),
+        "flags" => pgettext("emoji category", "Flags")
+      }
+    }
+  end
 
   # App groups get the richer html5 allow-list for chat values; their scripts
   # only ever run inside the sandboxed `app_frame/1`.

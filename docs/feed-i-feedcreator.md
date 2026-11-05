@@ -13,6 +13,7 @@ Potok nema pojam objave, ali ima grupu, a grupa već ima sve što objavi treba:
 | tekst | opis |
 | naslov i sličica | ime i sliku |
 | razgovor | chat |
+| reakcije | reakcije na grupu |
 | publika | članove i prekidač „Javna grupa“ |
 | ko sme da menja | uloge |
 
@@ -30,7 +31,7 @@ Vesti                     roditeljska grupa; njen opis je Feed
 | Stoji u | opisu roditeljske grupe | opisu `.feed` |
 | Radi za | svakog ko otvori grupu | onog ko sme da menja `.feed` |
 | Čita | grupe ispod `.feed` | direktne podgrupe svoje grupe |
-| Piše | ništa | objave |
+| Piše | reakcije gledaoca | objave |
 
 Aplikacije ne razgovaraju jedna sa drugom i ne znaju jedna za drugu. Ceo ugovor između njih je ime `.feed` i to da je opis grupe tekst objave. Zato Feed prikazuje i vesti napravljene ručno, a FeedCreator uređuje i njih.
 
@@ -56,6 +57,8 @@ Aplikacija radi za svakog ko je otvori, sa pravima tog gledaoca. Zato API ima je
 > Aplikacija čita izvor i piše u podgrupe samo za gledaoca koji sme da menja grupu u kojoj aplikacija stoji (dozvola `edit_group`).
 
 To su oni koji mogu i da prepišu kod aplikacije, pa im aplikacija ne može ništa novo. Podrazumevano su to samo admini. Bez ovog pravila bi svaka aplikacija u svakoj grupi mogla tiho da pravi grupe u ime običnog člana koji je otvori, jer članovi podrazumevano smeju da prave podgrupe.
+
+**Izuzetak je reakcija.** Reakciju ostavlja čitalac, a ne urednik, pa `toggleGroupReaction` traži samo ono što ista reakcija traži na strani grupe. Cena je jasna: kod aplikacije može tiho da doda reakciju u ime gledaoca, ali samo na grupe ispod sebe, uz limit upisa. Gledalac tu reakciju vidi kao svoju i može da je skloni.
 
 Još ograničenja, koja važe i za onog ko prođe to pravilo:
 
@@ -109,7 +112,9 @@ Vidljivost ide posebnim putem. Feed čita kroz `.feed`, pa gledalac mora da vidi
 | `.feed` javna, objava privatna | objavu vide samo njeni članovi, a to je način za objave samo za članove |
 | `.feed` privatna, objava javna | u Feed-u je vide samo članovi `.feed`, ali svako sa linkom je vidi van Potoka |
 
-Chat vide samo članovi grupe, bez izuzetka. Nečlan koji klikne Chat vidi opis objave i dugme za pristup. Polje `has_public_chat` postoji u šemi, ali ga ništa ne čita. Ko želi da razgovara o svim objavama, treba da uđe u roditeljsku grupu, a ne u pojedinačnu objavu.
+Chat vide samo članovi grupe, bez izuzetka. Nečlan koji klikne Komentari vidi broj komentara, opis objave i dugme za pristup, ali ne i same komentare. Polje `has_public_chat` postoji u šemi, ali ga ništa ne čita. Ko želi da razgovara o svim objavama, treba da uđe u roditeljsku grupu, a ne u pojedinačnu objavu.
+
+Reakcije idu šire od chata: prijavljen nečlan javne objave sme da reaguje dok uloga **Svi** ima dozvolu za reakcije. Admin ne može da ukloni reakciju pojedinca. Može samo da isključi reakcije svima tako što toj ulozi skine dozvolu.
 
 ## Format opisa
 
@@ -149,6 +154,9 @@ Iz toga slede tri pravila za šablone:
 |---|---|---|
 | `listSubgroups(".feed", {limit, beforeId})` | Feed | vesti, stranu po stranu |
 | `openGroup(id, {tab})` | oba | chat, strana aplikacije, podešavanja, roditelj |
+| `toggleGroupReaction(id, emoji)` | Feed | reakcija na objavu |
+| `pickEmoji()` | Feed | svi emodžiji, u Potokovom biraču |
+| `shareGroup(id)` | Feed | deljenje linka objave |
 | `getGroup()` | FeedCreator | sme li gledalac da piše i da li je grupa dobro podešena |
 | `listChildren({limit, beforeId})` | FeedCreator | lista objava |
 | `getChild(id)` | FeedCreator | izvor objave za uređivanje |
@@ -162,7 +170,10 @@ Iz toga slede tri pravila za šablone:
 - **Slike.** Opis ne sme da sadrži `data:` sliku, a API nema slanje fajlova. Slika sa uređaja zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike.
 - **Cena nasleđivanja.** Svaki član je red u članstvu svake objave: 100 članova i 500 objava je 50.000 redova, a svaki novi član dodaje 500. Svaka poruka u chatu objave ide kao push svim njenim članovima, a opcije za utišavanje grupe nema. Za veliku publiku i živ chat bolja je javna objava bez nasleđivanja, uz manje udobnosti pri ulasku u chat.
 - **Objava ne šalje obaveštenje.** Pravljenje grupe nikog ne obaveštava. Članovi vide novu objavu kad otvore Feed.
-- **Feed se ne osvežava uživo.** Vesti se učitavaju kad se aplikacija otvori.
+- **Feed se ne osvežava uživo.** Vesti, broj komentara i reakcije učitavaju se kad se aplikacija otvori i posle povratka iz chata. Na strani grupe reakcije stižu uživo.
+- **Komentari ne broje niti.** Broj je ono što čitalac vidi u chatu objave. Nit je sopstvena grupa.
+- **Reakcija ne šalje obaveštenje.** Popularna objava bi autoru slala obaveštenja bez prestanka, a broj se ionako vidi na objavi.
+- **Objava koja je aplikacija** nema red reakcija na svojoj strani, jer je tu ceo prostor njen. Reakcije dobija preko Feed-a.
 - **Poslednji upis pobeđuje.** Ako dvoje istovremeno menja istu objavu, ostaje ono što je sačuvano poslednje.
 - **Nacrt je lični.** Drugi urednik ga ne vidi dok ga autor ne pozove u grupu.
 - **Bez zakazivanja.** Objava izlazi kad se klikne.

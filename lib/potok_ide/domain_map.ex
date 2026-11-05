@@ -36,7 +36,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupRole,
        PotokIde.Social.GroupMembership,
        PotokIde.Social.GroupMemberRole,
-       PotokIde.Social.GroupAltDescription
+       PotokIde.Social.GroupAltDescription,
+       PotokIde.Social.GroupReaction
      ]},
     {"content",
      [

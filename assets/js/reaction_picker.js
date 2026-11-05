@@ -1,6 +1,7 @@
-// One emoji picker per page for message reactions. Every value renders a
-// `[data-reaction-trigger]` button; clicks are delegated here, so stream items
-// never carry their own picker. The picker library is loaded on first use.
+// One emoji picker per page for reactions. Every value renders a
+// `[data-reaction-trigger]` button, as does a description; clicks are delegated
+// here, so stream items never carry their own picker. An app in the page asks
+// for it with `potok:pick-emoji`. The picker library is loaded on first use.
 //
 // Emoji data is self-hosted in priv/static/emoji (emoji-picker-element-data
 // 1.8.0: en/emojibase as en.json), so no CDN is contacted. Emojibase has no
@@ -18,6 +19,17 @@ const SHEET_MAX_WIDTH_PX = 640
 const EDGE_GAP_PX = 8
 const CLOSE_TRANSITION_MS = 150
 const CLOSED_CLASSES = ["opacity-0", "translate-y-1"]
+
+// Stands in for a button when an app asks: the picker sits at the bottom of its
+// frame, over the app's own button, and `done` gets the emoji or null.
+const appTrigger = (frame, done) => ({
+  dataset: {},
+  done,
+  getBoundingClientRect() {
+    const {bottom, right} = frame.getBoundingClientRect()
+    return {top: bottom, bottom, left: right, right}
+  },
+})
 
 export const ReactionPicker = {
   mounted() {
@@ -57,7 +69,7 @@ export const ReactionPicker = {
       if (event.key === "Escape" && this.isOpen()) {
         const trigger = this.trigger
         this.close()
-        trigger?.focus()
+        trigger?.focus?.()
       }
     }
 
@@ -75,8 +87,14 @@ export const ReactionPicker = {
       }
     }
 
+    this.handlePickRequest = ({detail: {anchor, done}}) => {
+      this.close()
+      void this.open(appTrigger(anchor, done))
+    }
+
     this.feed = document.getElementById("group-values-feed")
 
+    this.el.addEventListener("potok:pick-emoji", this.handlePickRequest)
     document.addEventListener("click", this.handleDocumentClick)
     document.addEventListener("pointerover", this.handleWarmUp, {passive: true})
     document.addEventListener("pointerdown", this.handleWarmUp, {passive: true})
@@ -112,7 +130,7 @@ export const ReactionPicker = {
       picker = await this.ensurePicker()
     } catch (error) {
       console.error("Emoji picker failed to load", error)
-      this.trigger = null
+      this.close()
       return
     }
 
@@ -138,6 +156,7 @@ export const ReactionPicker = {
   },
 
   close() {
+    this.trigger?.done?.(null)
     this.trigger = null
     this.el.classList.add(...CLOSED_CLASSES)
 
@@ -179,10 +198,9 @@ export const ReactionPicker = {
 
     this.picker.addEventListener("emoji-click", event => {
       const emoji = event.detail?.unicode
-      const valueId = this.trigger?.dataset.valueId
 
-      if (emoji && valueId) {
-        this.pushEvent("toggle_reaction", {id: valueId, emoji})
+      if (emoji && this.trigger) {
+        this.choose(this.trigger, emoji)
       }
 
       this.close()
@@ -191,6 +209,17 @@ export const ReactionPicker = {
     this.el.appendChild(this.picker)
 
     return this.picker
+  },
+
+  choose(trigger, emoji) {
+    if (trigger.done) {
+      trigger.done(emoji)
+      trigger.done = null
+    } else if ("groupReaction" in trigger.dataset) {
+      this.pushEvent("toggle_group_reaction", {emoji})
+    } else if (trigger.dataset.valueId) {
+      this.pushEvent("toggle_reaction", {id: trigger.dataset.valueId, emoji})
+    }
   },
 
   // Bottom sheet on narrow screens; otherwise a popover under the button,

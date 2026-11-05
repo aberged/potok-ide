@@ -31,6 +31,7 @@ defmodule PotokIde.Social do
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
+    GroupReaction,
     GroupRole,
     GroupValueRead,
     MemberInheritance,
@@ -2191,6 +2192,101 @@ defmodule PotokIde.Social do
             {:ok, updated_value}
         end
     end
+  end
+
+  @doc """
+  Adds the profile's `emoji` reaction to a group, or removes it when the
+  profile already reacted with that emoji. Who may is
+  `Access.can_react_to_group?/3`. Returns `{:ok, reactions}`, the group's entry
+  of `group_reaction_summaries/2`, and tells the group's pages.
+
+  Nobody gets a push: a post read by many people would send its author one
+  after another, and the number is on the post anyway.
+  """
+  def toggle_group_reaction(%Profile{} = profile, %Group{} = group, emoji) do
+    access = Access.for_profile(profile, group)
+
+    cond do
+      not is_binary(emoji) ->
+        {:error, :invalid_emoji}
+
+      not Access.can_react_to_group?(profile, access, group) ->
+        {:error, :not_permitted}
+
+      true ->
+        existing =
+          from(r in GroupReaction,
+            where: r.group_id == ^group.id and r.profile_id == ^profile.id and r.emoji == ^emoji
+          )
+
+        result =
+          if Repo.exists?(existing) do
+            Repo.delete_all(existing)
+            :ok
+          else
+            %GroupReaction{group_id: group.id, profile_id: profile.id}
+            |> GroupReaction.changeset(%{emoji: emoji})
+            # A double click races the existence check; the unique index settles it.
+            |> Repo.insert(on_conflict: :nothing)
+          end
+
+        case result do
+          {:error, %Ecto.Changeset{}} = error ->
+            error
+
+          _changed ->
+            broadcast_group_reactions_updated(group)
+            {:ok, Map.get(group_reaction_summaries([group.id], profile), group.id, [])}
+        end
+    end
+  end
+
+  @doc """
+  The reactions of each of `group_ids` as `%{group_id => [reaction]}`, a group
+  without any left out. One entry per emoji, in the order the emoji was first
+  used on the group: `:emoji`, `:key` (safe in a DOM id), `:count`, `:mine?` and
+  `:names`, the first 20 who used it. `profile` may be nil.
+  """
+  def group_reaction_summaries(group_ids, profile) when is_list(group_ids) do
+    profile_id = profile && profile.id
+
+    from(r in GroupReaction,
+      join: p in assoc(r, :profile),
+      where: r.group_id in ^group_ids,
+      group_by: [r.group_id, r.emoji],
+      order_by: [asc: min(r.id)],
+      select:
+        {r.group_id,
+         %{
+           emoji: r.emoji,
+           count: count(r.id),
+           mine?:
+             fragment("COALESCE(bool_or(? = ?), false)", r.profile_id, type(^profile_id, :id)),
+           names: fragment("(array_agg(? ORDER BY ?))[1:20]", p.username, r.id)
+         }}
+    )
+    |> Repo.all()
+    |> Enum.group_by(
+      fn {group_id, _reaction} -> group_id end,
+      fn {_group_id, reaction} ->
+        Map.put(reaction, :key, Base.encode16(reaction.emoji, case: :lower))
+      end
+    )
+  end
+
+  @doc """
+  The chat values of each of `group_ids` as `%{group_id => count}`, a group
+  without any left out. A thread is a group of its own, so what is said in one
+  does not count.
+  """
+  def group_comment_counts(group_ids) when is_list(group_ids) do
+    from(v in Value,
+      where: v.group_id in ^group_ids and v.is_data == false,
+      group_by: v.group_id,
+      select: {v.group_id, count(v.id)}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   @doc """
@@ -5388,6 +5484,14 @@ defmodule PotokIde.Social do
       PotokIde.PubSub,
       group_topic(group_id),
       {:data_value_created, group_id, value}
+    )
+  end
+
+  defp broadcast_group_reactions_updated(%Group{id: group_id}) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:group_reactions_updated, group_id}
     )
   end
 
