@@ -85,7 +85,8 @@ defmodule PotokIdeWeb.PublicPreview do
       gettext("A group on Potok.")
   end
 
-  defp app_description(%Group{} = group) do
+  @doc "What an app says about itself in its meta tags, as plain text. Its scripts never run."
+  def app_description(%Group{} = group) do
     case LinkPreviews.parse(group.description || "", url(~p"/groups/#{group.id}")) do
       {:ok, %{"description" => description}} when is_binary(description) ->
         PlainText.truncate(description, @description_length)

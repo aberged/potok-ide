@@ -797,6 +797,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-newspaper",
+          title: dgettext("domain_map", "Reads the groups below it"),
+          text:
+            dgettext(
+              "domain_map",
+              "It can list the <Group>groups</Group> under one of its sub-groups, show their descriptions and take the viewer to their chat or their page. That is how a group becomes a news feed, with one story in each group."
+            )
+        },
+        %{
           icon: "hero-identification",
           title: dgettext("domain_map", "Knows who is looking"),
           text:
@@ -852,6 +861,10 @@ defmodule PotokIdeWeb.DomainCopy do
         dgettext(
           "domain_map",
           "Only members of the group read and save values, and the number of saves is limited."
+        ),
+        dgettext(
+          "domain_map",
+          "Below its group it sees only what the viewer sees, and only one level under a direct sub-group."
         ),
         dgettext(
           "domain_map",

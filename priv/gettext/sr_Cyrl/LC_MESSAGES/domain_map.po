@@ -24,22 +24,22 @@ msgstr[2] "%{count} кључева"
 msgid "%{field}, in any letter case"
 msgstr "%{field}, без обзира на величину слова"
 
-#: lib/potok_ide_web/domain_copy.ex:875
+#: lib/potok_ide_web/domain_copy.ex:888
 #, elixir-autogen, elixir-format
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr "<Account>Налог</Account> је идентитет: имејл и лозинка. Све у групама ради <Profile>профил</Profile>. Један налог може да има више профила, рецимо пословни, приватни и клупски. Код их не разликује по намени, него само јединствене од дељених. Дељени профил користе сви налози који прихвате <ProfileInvitation>позивницу за профил</ProfileInvitation>."
 
-#: lib/potok_ide_web/domain_copy.ex:915
+#: lib/potok_ide_web/domain_copy.ex:928
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Таговање</Tagging> спаја <Tag>таг</Tag> са тачно једном групом, профилом, догађајем, вредношћу или фајлом, и то проверава база. Таг без власника је јаван. Таг са власником види само тај профил."
 
-#: lib/potok_ide_web/domain_copy.ex:883
+#: lib/potok_ide_web/domain_copy.ex:896
 #, elixir-autogen, elixir-format
 msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
 msgstr "<Group>Група</Group> отворена из <Value>вредности</Value> је нит. Једна вредност има највише једну нит, а нит увек наслеђује чланове. Корен је један, без родитеља и без аутора. Све остале групе имају обоје, па и директни разговори, који стоје одмах испод корена."
 
-#: lib/potok_ide_web/domain_copy.ex:923
+#: lib/potok_ide_web/domain_copy.ex:936
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
 msgstr "<GroupInvitation>Позивница у групу</GroupInvitation> иде од профила до профила. Ако позвани налог још нема профил, чува се <GroupAccountInvitation>позивница за налог</GroupAccountInvitation>, која постаје обична позивница чим налог добије први профил. <GroupJoinRequest>Захтев за улазак</GroupJoinRequest> иде у другом смеру. Кад се прихвати, брише се, а остаје <GroupJoinRequestApproval>одобрен захтев</GroupJoinRequestApproval> са именом онога ко је примио члана."
@@ -49,7 +49,7 @@ msgstr "<GroupInvitation>Позивница у групу</GroupInvitation> ид
 msgid "A file attached to a value. The bytes are in storage, and the row keeps what the browser reported about the file."
 msgstr "Фајл уз вредност. Бајтови су у складишту, а ред чува оно што је прегледач пријавио о фајлу."
 
-#: lib/potok_ide_web/domain_copy.ex:899
+#: lib/potok_ide_web/domain_copy.ex:912
 #, elixir-autogen, elixir-format
 msgid "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out."
 msgstr "Група може да наслеђује чланове: тада држи све чланове родитеља и њихове улоге. Ти редови у <GroupMembership>чланству</GroupMembership> и <GroupMemberRole>улогама члана</GroupMemberRole> означени су као наслеђени и одлазе заједно са чланством у родитељу. Чланови додати у самој групи остају. Кад група престане да наслеђује, наслеђени редови постају њени и нико не испада."
@@ -64,7 +64,7 @@ msgstr "Група садржи вредности, а вредност отва
 msgid "A group public from the root must be public."
 msgstr "Група јавна из корена мора бити јавна."
 
-#: lib/potok_ide_web/domain_copy.ex:905
+#: lib/potok_ide_web/domain_copy.ex:918
 #, elixir-autogen, elixir-format
 msgid "A group's description can be an app"
 msgstr "Опис групе може бити апликација"
@@ -149,7 +149,7 @@ msgstr "Техничка табела без веза са остатком до
 msgid "A thread always inherits members."
 msgstr "Нит увек наслеђује чланове."
 
-#: lib/potok_ide_web/domain_copy.ex:881
+#: lib/potok_ide_web/domain_copy.ex:894
 #, elixir-autogen, elixir-format
 msgid "A thread is an ordinary group"
 msgstr "Нит је обична група"
@@ -204,12 +204,12 @@ msgstr "Све табеле домена по целинама, са спољн�
 msgid "Alt. description"
 msgstr "Алтернативни опис"
 
-#: lib/potok_ide_web/domain_copy.ex:931
+#: lib/potok_ide_web/domain_copy.ex:944
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr "<Event>Догађај</Event> чува правило понављања. Појединачно појављивање се именује локалним датумом почетка, па <Response>одговор на догађај</Response> носи тај датум, а отказана појављивања су записана на догађају."
 
-#: lib/potok_ide_web/domain_copy.ex:821
+#: lib/potok_ide_web/domain_copy.ex:830
 #, elixir-autogen, elixir-format
 msgid "An <GroupAltDescription>alternative description</GroupAltDescription> can be limited to certain <GroupRole>roles</GroupRole>, and it can be the page a group opens on."
 msgstr "<GroupAltDescription>Алтернативни опис</GroupAltDescription> може да се ограничи на одређене <GroupRole>улоге</GroupRole> и може да буде страница на којој се група отвара."
@@ -224,17 +224,17 @@ msgstr "Лице налога у групама: корисничко име, с
 msgid "An additional description of a group next to the default one. Like it, it can be text or an app with its own data. It can be limited to certain roles, and without a limit everyone who sees the group's description sees it."
 msgstr "Додатни опис групе поред подразумеваног. Као и он, може бити текст или апликација са сопственим подацима. Може да се ограничи на одређене улоге, а без ограничења га виде сви који виде опис групе."
 
-#: lib/potok_ide_web/domain_copy.ex:812
+#: lib/potok_ide_web/domain_copy.ex:821
 #, elixir-autogen, elixir-format
 msgid "An app can rewrite its own description, when the viewer may edit the group."
 msgstr "Апликација може да препише сопствени опис, ако гледалац сме да мења групу."
 
-#: lib/potok_ide_web/domain_copy.ex:839
+#: lib/potok_ide_web/domain_copy.ex:848
 #, elixir-autogen, elixir-format
 msgid "An app in the default description decides what the card of a shared link says about the group."
 msgstr "Апликација у подразумеваном опису сама пише шта картица дељеног линка каже о групи."
 
-#: lib/potok_ide_web/domain_copy.ex:847
+#: lib/potok_ide_web/domain_copy.ex:856
 #, elixir-autogen, elixir-format
 msgid "An app runs apart from Potok's page, so it gets only what Potok hands it."
 msgstr "Апликација ради одвојено од странице Потока, па добија само оно што јој Поток преда."
@@ -254,7 +254,7 @@ msgstr "Реакција једног профила на вредност. Ис
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event."
 msgstr "Догађај у календару групе, једном или са понављањем. Почетак и крај важе за прво појављивање, а понављања чувају локално време временске зоне догађаја. Догађај може да најави вредност."
 
-#: lib/potok_ide_web/domain_copy.ex:929
+#: lib/potok_ide_web/domain_copy.ex:942
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr "Појављивање догађаја нема свој ред"
@@ -289,7 +289,7 @@ msgstr "Блокира га:"
 msgid "Calendar"
 msgstr "Календар"
 
-#: lib/potok_ide_web/domain_copy.ex:810
+#: lib/potok_ide_web/domain_copy.ex:819
 #, elixir-autogen, elixir-format
 msgid "Changes itself"
 msgstr "Мења саму себе"
@@ -354,7 +354,7 @@ msgstr "Поља"
 msgid "File"
 msgstr "Фајл"
 
-#: lib/potok_ide_web/domain_copy.ex:828
+#: lib/potok_ide_web/domain_copy.ex:837
 #, elixir-autogen, elixir-format
 msgid "Fits in"
 msgstr "Уклапа се"
@@ -384,12 +384,12 @@ msgstr "Позивница у групу"
 msgid "How far a profile has read a group. Everything newer than the last read value is unread. That value is kept as a plain number, with no foreign key."
 msgstr "Докле је профил прочитао групу. Непрочитано је све новије од последње прочитане вредности. Та вредност је записана као обичан број, без спољног кључа."
 
-#: lib/potok_ide_web/domain_copy.ex:889
+#: lib/potok_ide_web/domain_copy.ex:902
 #, elixir-autogen, elixir-format
 msgid "How permissions come about"
 msgstr "Како настају дозволе"
 
-#: lib/potok_ide_web/domain_copy.ex:921
+#: lib/potok_ide_web/domain_copy.ex:934
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr "Како се улази у групу"
@@ -399,12 +399,12 @@ msgstr "Како се улази у групу"
 msgid "It can also read the values of the group's other apps, and it writes only to its own."
 msgstr "Може да чита и вредности осталих апликација у групи, а уписује само у своје."
 
-#: lib/potok_ide_web/domain_copy.ex:830
+#: lib/potok_ide_web/domain_copy.ex:839
 #, elixir-autogen, elixir-format
 msgid "It follows the light or dark theme, and keeps each viewer's settings in their browser."
 msgstr "Прати светлу или тамну тему, а подешавања гледаоца чува у његовом прегледачу."
 
-#: lib/potok_ide_web/domain_copy.ex:803
+#: lib/potok_ide_web/domain_copy.ex:812
 #, elixir-autogen, elixir-format
 msgid "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members."
 msgstr "Добија <Profile>профил</Profile> гледаоца и његове <GroupRole>улоге</GroupRole> у групи, па различитим члановима може да покаже различите ствари."
@@ -434,7 +434,7 @@ msgstr "Кључеви ове табеле"
 msgid "Keys that block deleting"
 msgstr "Кључеви који блокирају брисање"
 
-#: lib/potok_ide_web/domain_copy.ex:801
+#: lib/potok_ide_web/domain_copy.ex:810
 #, elixir-autogen, elixir-format
 msgid "Knows who is looking"
 msgstr "Зна ко је гледа"
@@ -449,7 +449,7 @@ msgstr "Манифест"
 msgid "Member role"
 msgstr "Улога члана"
 
-#: lib/potok_ide_web/domain_copy.ex:897
+#: lib/potok_ide_web/domain_copy.ex:910
 #, elixir-autogen, elixir-format
 msgid "Members are inherited down the tree"
 msgstr "Чланови се наслеђују низ дрво"
@@ -484,12 +484,12 @@ msgstr "Један уређај или прегледач који прима о
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr "Један таг на једној ставци. Попуњена је тачно једна од пет колона са метом, што проверава база."
 
-#: lib/potok_ide_web/domain_copy.ex:913
+#: lib/potok_ide_web/domain_copy.ex:926
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr "Један таг, пет врста ставки"
 
-#: lib/potok_ide_web/domain_copy.ex:852
+#: lib/potok_ide_web/domain_copy.ex:861
 #, elixir-autogen, elixir-format
 msgid "Only members of the group read and save values, and the number of saves is limited."
 msgstr "Вредности читају и уписују само чланови групе, а број уписа је ограничен."
@@ -544,7 +544,7 @@ msgstr "Профили"
 msgid "Push subscription"
 msgstr "Пуш претплата"
 
-#: lib/potok_ide_web/domain_copy.ex:819
+#: lib/potok_ide_web/domain_copy.ex:828
 #, elixir-autogen, elixir-format
 msgid "Reaches those it is meant for"
 msgstr "Виде је они којима је намењена"
@@ -589,7 +589,7 @@ msgstr "Меке везе"
 msgid "Source"
 msgstr "Извор"
 
-#: lib/potok_ide_web/domain_copy.ex:837
+#: lib/potok_ide_web/domain_copy.ex:846
 #, elixir-autogen, elixir-format
 msgid "Speaks for itself"
 msgstr "Представља се сама"
@@ -619,7 +619,7 @@ msgstr "Повлачи са собом:"
 msgid "The Potok domain model"
 msgstr "Домен Модел Потока"
 
-#: lib/potok_ide_web/domain_copy.ex:870
+#: lib/potok_ide_web/domain_copy.ex:883
 #, elixir-autogen, elixir-format
 msgid "The account is the identity, the profile is the face in a group"
 msgstr "Налог је идентитет, профил је лице у групи"
@@ -644,12 +644,12 @@ msgstr "Садржај групе. У разговору је то порука,
 msgid "The core of the domain: an account uses profiles, a profile is a member of groups, a group contains values, and a value opens a thread, which is a group again."
 msgstr "Језгро домена: налог користи профиле, профил је члан група, група садржи вредности, а вредност отвара нит која је опет група."
 
-#: lib/potok_ide_web/domain_copy.ex:856
+#: lib/potok_ide_web/domain_copy.ex:869
 #, elixir-autogen, elixir-format
 msgid "The data of an app goes with its description, and it can be deleted from the group's settings."
 msgstr "Подаци апликације нестају са њеним описом, а могу да се обришу и из подешавања групе."
 
-#: lib/potok_ide_web/domain_copy.ex:907
+#: lib/potok_ide_web/domain_copy.ex:920
 #, elixir-autogen, elixir-format
 msgid "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
 msgstr "Подразумевани опис и сваки <GroupAltDescription>алтернативни опис</GroupAltDescription> могу да буду апликација. Њени подаци су <Value>вредности</Value> означене као подаци, а свака зна којој апликацији припада. Сложени кључ их држи у истој групи, а брисање алтернативног описа брише и његове податке."
@@ -664,7 +664,7 @@ msgstr "Дијаграм се помера лево и десно."
 msgid "The end is not before the start."
 msgstr "Крај није пре почетка."
 
-#: lib/potok_ide_web/domain_copy.ex:891
+#: lib/potok_ide_web/domain_copy.ex:904
 #, elixir-autogen, elixir-format
 msgid "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow."
 msgstr "Важи <GroupManifest>манифест</GroupManifest> групе или, ако га нема, манифест најближег претка. Сваки члан има `everyone`, па се та <GroupRole>улога</GroupRole> не уписује, а `admin` има све. Код осталих улога дозвола важи кад је бар једна дозволи и ниједна не забрани. `everyone` може само да дозволи."
@@ -704,7 +704,7 @@ msgstr "Корен нема родитеља, а свака друга груп�
 msgid "The root is not public."
 msgstr "Корен није јаван."
 
-#: lib/potok_ide_web/domain_copy.ex:851
+#: lib/potok_ide_web/domain_copy.ex:860
 #, elixir-autogen, elixir-format
 msgid "The server checks every call again, whatever the app asks for."
 msgstr "Сервер поново проверава сваки позив, шта год апликација тражила."
@@ -764,12 +764,12 @@ msgstr "Виртуелна поља, нема их у бази"
 msgid "What a description can do as an app"
 msgstr "Шта опис може као апликација"
 
-#: lib/potok_ide_web/domain_copy.ex:864
+#: lib/potok_ide_web/domain_copy.ex:877
 #, elixir-autogen, elixir-format
 msgid "What holds the domain together"
 msgstr "Шта држи домен заједно"
 
-#: lib/potok_ide_web/domain_copy.ex:845
+#: lib/potok_ide_web/domain_copy.ex:854
 #, elixir-autogen, elixir-format
 msgid "Where it stops"
 msgstr "Где су границе"
@@ -1598,3 +1598,18 @@ msgstr "ко је позван"
 #, elixir-autogen, elixir-format
 msgid "writes"
 msgstr "пише"
+
+#: lib/potok_ide_web/domain_copy.ex:865
+#, elixir-autogen, elixir-format
+msgid "Below its group it sees only what the viewer sees, and only one level under a direct sub-group."
+msgstr "Испод своје групе види само оно што види и гледалац, и то само један ниво испод директне подгрупе."
+
+#: lib/potok_ide_web/domain_copy.ex:803
+#, elixir-autogen, elixir-format
+msgid "It can list the <Group>groups</Group> under one of its sub-groups, show their descriptions and take the viewer to their chat or their page. That is how a group becomes a news feed, with one story in each group."
+msgstr "Може да излиста <Group>групе</Group> испод неке своје подгрупе, прикаже њихове описе и одведе гледаоца у њихов чет или на њихову страну. Тако група постаје фид вести, а свака вест је једна група."
+
+#: lib/potok_ide_web/domain_copy.ex:801
+#, elixir-autogen, elixir-format
+msgid "Reads the groups below it"
+msgstr "Чита групе испод себе"

@@ -623,6 +623,8 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `updateDescription(description, options)` resolves to `{ok: true, group}`. It changes the app's own description (the default or an alternative one). `options.descriptionFormat` sets the format. It needs the `edit_group` permission and is rate limited. A new description is new app HTML, so the app restarts.
 * `getDescription()` resolves to `{ok: true, group}` for the app's own description.
 * `getCurrentProfile()` resolves to the profile, or `null`.
+* `listSubgroups(name, options)` resolves to `{ok: true, groups, has_more}`: the groups under this group's direct sub-group called exactly `name`, newest first. It sees what the viewer sees: threads, direct conversations and private groups the viewer is not in are left out, and the sub-group itself must be visible too, or the reply is `not_found`. Names are not unique, so of several sub-groups with one name the oldest counts. Options: `limit` (at most 50, default 20) and `beforeId` (the id of the last group of the previous page).
+* `openGroup(id, options)` takes the viewer to a group `listSubgroups` can return, on the same page: to its chat, or with `options.tab` set to `"description"` to its description, where a group that is an app runs. Any other group is refused with `not_found`. The app's frame goes away with the page, after saving its `localStorage`, and starts again when the viewer comes back.
 * `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
 
 Reply shapes:
@@ -634,6 +636,12 @@ Reply shapes:
 // group (updateDescription, getDescription); description_id is null for the default description
 {id, description_id, name, description, description_format}
 
+// sub-group (listSubgroups); description_html is sanitized, so it is safe in the app's page.
+// It is null for a group without a description and for an app, whose description is its source code.
+// Wrap it in a `rich-content` element to get the styles of the group page.
+// app_description is what an app says about itself in its meta tags, as plain text, and null otherwise.
+{id, name, description_html, app_description, uses_api, picture_url, inserted_at, last_value_at}
+
 // profile; roles are the names of the roles the profile holds in the group
 {id, username, profile_picture_url, description, description_format, sharing, inserted_at, updated_at, admin, roles}
 ```
@@ -641,7 +649,7 @@ Reply shapes:
 Error codes (`error`):
 
 * From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
-* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `unknown_method`.
+* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `unknown_method`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`.
 
 The frame environment:

@@ -215,6 +215,24 @@ const potok = {
     return reply.ok ? reply.profile : null
   },
 
+  // The groups under this group's direct sub-group called `name`, newest
+  // first, up to 50 per call (default 20); page with `beforeId`.
+  listSubgroups: (name, options = {}) =>
+    call("list_subgroups", {
+      name,
+      limit: options.limit ?? null,
+      before_id: options.beforeId ?? options.before_id ?? null,
+    }),
+
+  // Takes the viewer to a group `listSubgroups` can return: to its chat, or
+  // with `tab: "description"` to its description, where a group that is an app
+  // runs. The frame goes away with the page, so a pending `localStorage` save
+  // goes first.
+  openGroup: (id, options = {}) => {
+    if (storageSaveTimer) saveLocalStorage()
+    return call("open_group", {id, tab: options.tab ?? null})
+  },
+
   // `{scope: "group"}` also passes on the values of the group's other apps.
   onNewValue(listener, options = {}) {
     if (typeof listener !== "function") return () => {}

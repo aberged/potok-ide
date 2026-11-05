@@ -813,6 +813,8 @@ const APP_FRAME_METHODS = new Set([
   "update_description",
   "get_description",
   "current_profile",
+  "list_subgroups",
+  "open_group",
 ])
 
 // The app's `localStorage` lives in one key of the page's storage per app
@@ -920,7 +922,8 @@ const GroupAppFrame = {
         params: params || {},
         app_id: this.el.dataset.appId || "",
       })
-      this.post({potok: 1, id, ...reply})
+      // A call that navigates (`open_group`) gets no reply: the page is leaving.
+      this.post({potok: 1, id, ...(reply ?? {ok: true})})
     } catch (_error) {
       this.post({potok: 1, id, ok: false, error: "disconnected"})
     }

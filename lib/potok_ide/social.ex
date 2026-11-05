@@ -2784,6 +2784,81 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  The direct sub-group of `group` called exactly `name` that the profile can
+  see. Names are not unique, so the oldest such group wins. Threads and direct
+  conversations do not count.
+  """
+  def get_visible_child_group_by_name(%Group{} = group, %Profile{} = profile, name)
+      when is_binary(name) do
+    visible_plain_groups(profile)
+    |> where([g], g.parent_id == ^group.id and g.name == ^name)
+    |> order_by([g], asc: g.id)
+    |> limit(1)
+    |> Repo.one()
+  end
+
+  @doc """
+  A page of the sub-groups of `group` the profile can see, newest first, as
+  `{groups, has_more?}`, without threads and direct conversations.
+
+  This order never moves, which paging through it needs:
+  `list_child_groups_for_profile/3` sorts by unread values and activity, so its
+  order changes while someone reads. Options: `:limit` and `:before_id`, the id
+  of the last group of the previous page.
+  """
+  def list_visible_child_groups_newest_first(%Group{} = group, %Profile{} = profile, opts) do
+    limit = Keyword.fetch!(opts, :limit)
+
+    query =
+      visible_plain_groups(profile)
+      |> where([g], g.parent_id == ^group.id)
+      |> order_by([g], desc: g.id)
+      |> limit(^(limit + 1))
+
+    query =
+      case opts[:before_id] do
+        nil -> query
+        before_id -> where(query, [g], g.id < ^before_id)
+      end
+
+    rows = Repo.all(query)
+    {Enum.take(rows, limit), length(rows) > limit}
+  end
+
+  @doc """
+  The group `id`, when it sits under a direct sub-group of `group` and the
+  profile can see both: what `list_visible_child_groups_newest_first/3` can
+  list under what `get_visible_child_group_by_name/3` finds.
+  """
+  def get_visible_grandchild_group(%Group{} = group, %Profile{} = profile, id)
+      when is_integer(id) do
+    parents =
+      visible_plain_groups(profile)
+      |> where([g], g.parent_id == ^group.id)
+      |> select([g], g.id)
+
+    visible_plain_groups(profile)
+    |> where([g], g.id == ^id and g.parent_id in subquery(parents))
+    |> Repo.one()
+  end
+
+  # Groups the profile can see, the rule of `visible_children_sql/1`, without
+  # threads and direct conversations.
+  defp visible_plain_groups(%Profile{id: profile_id}) do
+    from(g in Group,
+      as: :group,
+      where: is_nil(g.parent_value_id) and g.is_direct == false,
+      where:
+        g.is_public or
+          exists(
+            from(m in GroupMembership,
+              where: m.group_id == parent_as(:group).id and m.profile_id == ^profile_id
+            )
+          )
+    )
+  end
+
+  @doc """
   The groups content shared from another app can go to, most recently active
   first: the profile's memberships that have a chat (not the root, no
   threads) and let it post values. Options: `:search` on the name, or on the

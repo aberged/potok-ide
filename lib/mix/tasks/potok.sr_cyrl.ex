@@ -43,7 +43,14 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   /ux
 
   # Foreign words that the Latin text keeps in their own spelling.
-  @words %{"Chat" => "Чет", "Push" => "Пуш", "push" => "пуш", "emoji" => "емоџи"}
+  @words %{
+    "Chat" => "Чет",
+    "chat" => "чет",
+    "feed" => "фид",
+    "Push" => "Пуш",
+    "push" => "пуш",
+    "emoji" => "емоџи"
+  }
 
   @impl Mix.Task
   def run(_args) do

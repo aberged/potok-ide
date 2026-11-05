@@ -13,19 +13,27 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   call that was on its way while the viewer switched apps is refused.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
+  use PotokIdeWeb, :verified_routes
 
   import Phoenix.Component, only: [assign: 3]
+  import Phoenix.LiveView, only: [push_navigate: 2]
 
   alias PotokIde.Social
-  alias PotokIde.Social.Access
+  alias PotokIde.Social.{Access, Group}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
+  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.PublicPreview
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
   @write_burst 30
   @write_window_ms 10_000
 
   @max_list_limit 200
+
+  # Sub-groups carry their rendered descriptions, so their pages stay short.
+  @default_subgroup_limit 20
+  @max_subgroup_limit 50
 
   def new_bucket do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
@@ -140,6 +148,43 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
      socket}
   end
 
+  defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
+       when method in ["list_subgroups", "open_group"] do
+    {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+  end
+
+  # An app runs for every viewer and with the viewer's sight, so it reaches
+  # below its group only through what that viewer can see, one level under a
+  # direct sub-group.
+  defp run("list_subgroups", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with name when is_binary(name) <- params["name"],
+         %Group{} = parent <- Social.get_visible_child_group_by_name(group, profile, name) do
+      {groups, has_more?} =
+        Social.list_visible_child_groups_newest_first(parent, profile,
+          limit: subgroup_limit(params["limit"]),
+          before_id: non_negative_integer(params["before_id"])
+        )
+
+      {%{ok: true, groups: Enum.map(groups, &subgroup_payload/1), has_more: has_more?}, socket}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  # Only what `list_subgroups` could return: an app cannot send its viewer anywhere else.
+  defp run("open_group", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = target <- Social.get_visible_grandchild_group(group, profile, id) do
+      {%{ok: true}, push_navigate(socket, to: group_tab_path(target, params["tab"]))}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
   end
@@ -210,6 +255,26 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     }
   end
 
+  # A group that is an app runs on its description tab.
+  defp group_tab_path(group, "description"), do: ~p"/groups/#{group.id}/group_home"
+  defp group_tab_path(group, _chat), do: ~p"/groups/#{group.id}/values"
+
+  # `description_html` is sanitized, so an app can put it in its page. The raw
+  # description would run there with the viewer's rights. An app in a sub-group
+  # has no text to show, only what it says about itself.
+  defp subgroup_payload(%Group{} = group) do
+    %{
+      id: group.id,
+      name: group.name,
+      description_html: Components.description_html(group),
+      app_description: if(group.uses_api, do: PublicPreview.app_description(group)),
+      uses_api: group.uses_api,
+      picture_url: Avatars.group_avatar_url(group),
+      inserted_at: group.inserted_at,
+      last_value_at: group.last_value_at
+    }
+  end
+
   defp profile_payload(nil, _access), do: nil
 
   # `roles` are the role names (handles) the profile holds in the group.
@@ -232,6 +297,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp clamp_limit(nil), do: nil
   defp clamp_limit(limit), do: min(limit, @max_list_limit)
+
+  defp subgroup_limit(limit) do
+    min(non_negative_integer(limit) || @default_subgroup_limit, @max_subgroup_limit)
+  end
 
   defp non_negative_integer(value) when is_integer(value) and value >= 0, do: value
 

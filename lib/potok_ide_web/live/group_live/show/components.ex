@@ -1021,6 +1021,21 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   @doc """
+  The sanitized HTML of a group's default description, as `formatted_content/1`
+  shows it (the `rich-content` wrapper is up to the caller). Nil when there is
+  no text to show: empty, or an app, whose description is its source code.
+  """
+  def description_html(%Group{uses_api: true}), do: nil
+
+  def description_html(%Group{description: description, description_format: format}) do
+    if is_binary(description) and String.trim(description) != "" do
+      description
+      |> cached_formatted_content(format, false, %{})
+      |> Phoenix.HTML.safe_to_string()
+    end
+  end
+
+  @doc """
   CSS that reveals the `presence-dot` markers of online profiles. Rendered
   once per page outside of streams, so presence changes never re-render
   streamed values or members. Selectors stay unquoted because EEx escapes
