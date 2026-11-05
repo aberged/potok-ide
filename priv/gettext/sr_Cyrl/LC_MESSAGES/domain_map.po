@@ -1,0 +1,1600 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: sr_Cyrl\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+
+#: lib/potok_ide_web/domain_copy.ex:678
+#, elixir-autogen, elixir-format
+msgid "%{count} key"
+msgid_plural "%{count} keys"
+msgstr[0] "%{count} кључ"
+msgstr[1] "%{count} кључа"
+msgstr[2] "%{count} кључева"
+
+#: lib/potok_ide_web/domain_copy.ex:89
+#, elixir-autogen, elixir-format
+msgid "%{field}, in any letter case"
+msgstr "%{field}, без обзира на величину слова"
+
+#: lib/potok_ide_web/domain_copy.ex:875
+#, elixir-autogen, elixir-format
+msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
+msgstr "<Account>Налог</Account> је идентитет: имејл и лозинка. Све у групама ради <Profile>профил</Profile>. Један налог може да има више профила, рецимо пословни, приватни и клупски. Код их не разликује по намени, него само јединствене од дељених. Дељени профил користе сви налози који прихвате <ProfileInvitation>позивницу за профил</ProfileInvitation>."
+
+#: lib/potok_ide_web/domain_copy.ex:915
+#, elixir-autogen, elixir-format
+msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
+msgstr "<Tagging>Таговање</Tagging> спаја <Tag>таг</Tag> са тачно једном групом, профилом, догађајем, вредношћу или фајлом, и то проверава база. Таг без власника је јаван. Таг са власником види само тај профил."
+
+#: lib/potok_ide_web/domain_copy.ex:883
+#, elixir-autogen, elixir-format
+msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
+msgstr "<Group>Група</Group> отворена из <Value>вредности</Value> је нит. Једна вредност има највише једну нит, а нит увек наслеђује чланове. Корен је један, без родитеља и без аутора. Све остале групе имају обоје, па и директни разговори, који стоје одмах испод корена."
+
+#: lib/potok_ide_web/domain_copy.ex:923
+#, elixir-autogen, elixir-format
+msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
+msgstr "<GroupInvitation>Позивница у групу</GroupInvitation> иде од профила до профила. Ако позвани налог још нема профил, чува се <GroupAccountInvitation>позивница за налог</GroupAccountInvitation>, која постаје обична позивница чим налог добије први профил. <GroupJoinRequest>Захтев за улазак</GroupJoinRequest> иде у другом смеру. Кад се прихвати, брише се, а остаје <GroupJoinRequestApproval>одобрен захтев</GroupJoinRequestApproval> са именом онога ко је примио члана."
+
+#: lib/potok_ide_web/domain_copy.ex:474
+#, elixir-autogen, elixir-format
+msgid "A file attached to a value. The bytes are in storage, and the row keeps what the browser reported about the file."
+msgstr "Фајл уз вредност. Бајтови су у складишту, а ред чува оно што је прегледач пријавио о фајлу."
+
+#: lib/potok_ide_web/domain_copy.ex:899
+#, elixir-autogen, elixir-format
+msgid "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out."
+msgstr "Група може да наслеђује чланове: тада држи све чланове родитеља и њихове улоге. Ти редови у <GroupMembership>чланству</GroupMembership> и <GroupMemberRole>улогама члана</GroupMemberRole> означени су као наслеђени и одлазе заједно са чланством у родитељу. Чланови додати у самој групи остају. Кад група престане да наслеђује, наслеђени редови постају њени и нико не испада."
+
+#: lib/potok_ide_web/domain_copy.ex:691
+#, elixir-autogen, elixir-format
+msgid "A group contains values, and a value opens a thread, which is a group again. That is why sub-groups and threads share one model. The arrows read as sentences, from subject to object. These are the main entities, and all of them are under All tables."
+msgstr "Група садржи вредности, а вредност отвара нит, која је опет група. Зато подгрупе и нити користе исти модел. Стрелице се читају као реченице, од субјекта ка објекту. Ово су главни ентитети, а сви су под Све табеле."
+
+#: lib/potok_ide_web/domain_copy.ex:577
+#, elixir-autogen, elixir-format
+msgid "A group public from the root must be public."
+msgstr "Група јавна из корена мора бити јавна."
+
+#: lib/potok_ide_web/domain_copy.ex:905
+#, elixir-autogen, elixir-format
+msgid "A group's description can be an app"
+msgstr "Опис групе може бити апликација"
+
+#: lib/potok_ide_web/domain_copy.ex:761
+#, elixir-autogen, elixir-format
+msgid "A group's description does not have to be text. The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app: a program written by members who may edit the group, which runs on the group's page, in a frame of its own, for everyone who opens it."
+msgstr "Опис групе не мора да буде текст. Подразумевани опис и сваки <GroupAltDescription>алтернативни опис</GroupAltDescription> могу да буду апликација: програм који пишу чланови са дозволом да мењају групу и који ради на страници групе, у свом оквиру, за свакога ко га отвори."
+
+#: lib/potok_ide_web/domain_copy.ex:417
+#, elixir-autogen, elixir-format
+msgid "A join table: which account may use which profile. A unique profile allows only one account. The code checks that, the database does not know about it."
+msgstr "Спојна табела: који налог сме да користи који профил. Јединствени профил дозвољава само један налог. То проверава код, база то не зна."
+
+#: lib/potok_ide_web/domain_copy.ex:749
+#, elixir-autogen, elixir-format
+msgid "A key over two columns holds both rows in the same group. The schema in the code does not show that."
+msgstr "Кључ преко две колоне држи оба реда у истој групи. Шема у коду то не показује."
+
+#: lib/potok_ide_web/domain_copy.ex:558
+#, elixir-autogen, elixir-format
+msgid "A lasting record of who admitted whom to a group and when. It is created in the same transaction that deletes the request and creates the membership."
+msgstr "Трајан запис о томе ко је кога примио у групу и када. Настаје у истој трансакцији у којој се захтев брише и прави чланство."
+
+#: lib/potok_ide_web/domain_copy.ex:502
+#, elixir-autogen, elixir-format
+msgid "A member's answer for one occurrence, named by its local start date. Whoever declined gets no reminders for that occurrence."
+msgstr "Одговор члана за једно појављивање, именовано локалним датумом почетка. Ко је одбио не добија подсетнике за то појављивање."
+
+#: lib/potok_ide_web/domain_copy.ex:509
+#, elixir-autogen, elixir-format
+msgid "A member's own reminders for every occurrence, in place of the organizer's. An empty list turns them off, and without a row the member gets the event's reminders."
+msgstr "Чланови подсетници за сва појављивања, уместо организаторових. Празна листа их гаси, а без реда члан добија подсетнике догађаја."
+
+#: lib/potok_ide_web/domain_copy.ex:785
+#, elixir-autogen, elixir-format
+msgid "A new value reaches every member who has the app open right away, with no refresh."
+msgstr "Нова вредност одмах стиже сваком члану који има отворену апликацију, без освежавања."
+
+#: lib/potok_ide_web/domain_copy.ex:378
+#, elixir-autogen, elixir-format
+msgid "A person's identity: the email and password they log in with. It takes no part in groups, where a profile acts. An account remembers which profile it is using now, which profile gets the invitations sent to the account, and which profile invited it."
+msgstr "Идентитет човека: имејл и лозинка којима се пријављује. У групама не учествује, тамо ради профил. Налог памти који профил тренутно користи, који профил прима позивнице послате налогу и који га је профил позвао."
+
+#: lib/potok_ide_web/domain_copy.ex:551
+#, elixir-autogen, elixir-format
+msgid "A profile asks to join a group. An accepted request is deleted, and an approval stays in its place."
+msgstr "Профил тражи улазак у групу. Прихваћен захтев се брише, а уместо њега остаје одобрење."
+
+#: lib/potok_ide_web/domain_copy.ex:530
+#, elixir-autogen, elixir-format
+msgid "A profile invites another profile to a group. Accepting it creates the membership."
+msgstr "Профил позива други профил у групу. Прихватање прави чланство."
+
+#: lib/potok_ide_web/domain_copy.ex:446
+#, elixir-autogen, elixir-format
+msgid "A profile is a member of a group. An inherited membership exists only through the parent group and leaves with the membership there."
+msgstr "Профил је члан групе. Наслеђено чланство постоји само преко родитељске групе и одлази заједно са чланством у њој."
+
+#: lib/potok_ide_web/domain_copy.ex:453
+#, elixir-autogen, elixir-format
+msgid "A role given to a member in one group. In the database it points at the membership, so it cannot exist without one, although the schema in the code says it points at a profile. The role is kept as text, by its key, as it can come from an ancestor's manifest. `everyone` is never written here."
+msgstr "Улога додељена члану у једној групи. У бази показује на чланство, па не може да постоји без њега, иако шема у коду каже да показује на профил. Улога је записана као текст, својим кључем, јер може да дође из манифеста претка. `everyone` се никад не уписује."
+
+#: lib/potok_ide_web/domain_copy.ex:438
+#, elixir-autogen, elixir-format
+msgid "A role of a manifest. For each of the %{count} permissions it says allowed, denied or nothing, and a denial wins. The built-in ones are `admin`, which has everything, and `everyone`, which every member has."
+msgstr "Улога из манифеста. За сваку од %{count} дозвола каже дозвољено, забрањено или ништа, а забрана побеђује. Уграђене су `admin`, која има све, и `everyone`, коју има сваки члан."
+
+#: lib/potok_ide_web/domain_copy.ex:516
+#, elixir-autogen, elixir-format
+msgid "A tag without an owner is public and part of one vocabulary for the whole app. A tag with an owner is private and only that profile sees it."
+msgstr "Таг без власника је јаван и део једног речника за целу апликацију. Таг са власником је приватан и види га само тај профил."
+
+#: lib/potok_ide_web/domain_copy.ex:399
+#, elixir-autogen, elixir-format
+msgid "A technical table with no links to the rest of the domain: the `OAuth` refresh token the app uses to send email through `Gmail`."
+msgstr "Техничка табела без веза са остатком домена: `OAuth refresh token` којим апликација шаље имејл преко `Gmail`-а."
+
+#: lib/potok_ide_web/domain_copy.ex:585
+#, elixir-autogen, elixir-format
+msgid "A thread always inherits members."
+msgstr "Нит увек наслеђује чланове."
+
+#: lib/potok_ide_web/domain_copy.ex:881
+#, elixir-autogen, elixir-format
+msgid "A thread is an ordinary group"
+msgstr "Нит је обична група"
+
+#: lib/potok_ide_web/domain_copy.ex:350
+#, elixir-autogen, elixir-format
+msgid "Account"
+msgstr "Налог"
+
+#: lib/potok_ide_web/domain_copy.ex:342
+#, elixir-autogen, elixir-format
+msgid "Account and identity"
+msgstr "Налог и идентитет"
+
+#: lib/potok_ide_web/domain_copy.ex:372
+#, elixir-autogen, elixir-format
+msgid "Account invitation"
+msgstr "Позивница за налог"
+
+#: lib/potok_ide_web/domain_copy.ex:351
+#, elixir-autogen, elixir-format
+msgid "Account token"
+msgstr "Токен налога"
+
+#: lib/potok_ide_web/domain_copy.ex:355
+#, elixir-autogen, elixir-format
+msgid "Account–profile link"
+msgstr "Веза налог–профил"
+
+#: lib/potok_ide_web/domain_copy.ex:723
+#, elixir-autogen, elixir-format
+msgid "All links (%{count})"
+msgstr "Све везе (%{count})"
+
+#: lib/potok_ide_web/domain_copy.ex:717
+#, elixir-autogen, elixir-format
+msgid "All tables"
+msgstr "Све табеле"
+
+#: lib/potok_ide_web/domain_copy.ex:336
+#, elixir-autogen, elixir-format
+msgid "All the entities and the links between them, as they stand in the code and in the database schema."
+msgstr "Сви ентитети и везе међу њима, онако како стоје у коду и у шеми базе."
+
+#: lib/potok_ide_web/domain_copy.ex:670
+#, elixir-autogen, elixir-format
+msgid "All the tables of the domain by area, with their foreign keys and soft links."
+msgstr "Све табеле домена по целинама, са спољним кључевима и меким везама."
+
+#: lib/potok_ide_web/domain_copy.ex:361
+#, elixir-autogen, elixir-format
+msgid "Alt. description"
+msgstr "Алтернативни опис"
+
+#: lib/potok_ide_web/domain_copy.ex:931
+#, elixir-autogen, elixir-format
+msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
+msgstr "<Event>Догађај</Event> чува правило понављања. Појединачно појављивање се именује локалним датумом почетка, па <Response>одговор на догађај</Response> носи тај датум, а отказана појављивања су записана на догађају."
+
+#: lib/potok_ide_web/domain_copy.ex:821
+#, elixir-autogen, elixir-format
+msgid "An <GroupAltDescription>alternative description</GroupAltDescription> can be limited to certain <GroupRole>roles</GroupRole>, and it can be the page a group opens on."
+msgstr "<GroupAltDescription>Алтернативни опис</GroupAltDescription> може да се ограничи на одређене <GroupRole>улоге</GroupRole> и може да буде страница на којој се група отвара."
+
+#: lib/potok_ide_web/domain_copy.ex:408
+#, elixir-autogen, elixir-format
+msgid "An account's face in groups: username, picture and description. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it."
+msgstr "Лице налога у групама: корисничко име, слика и опис. Намене као пословни, приватни или клупски код не разликује. Све што се дешава у групи потписује профил, па на ову табелу показује %{count} од %{total} спољних кључева. Профил припада једном налогу или га дели више налога."
+
+#: lib/potok_ide_web/domain_copy.ex:460
+#, elixir-autogen, elixir-format
+msgid "An additional description of a group next to the default one. Like it, it can be text or an app with its own data. It can be limited to certain roles, and without a limit everyone who sees the group's description sees it."
+msgstr "Додатни опис групе поред подразумеваног. Као и он, може бити текст или апликација са сопственим подацима. Може да се ограничи на одређене улоге, а без ограничења га виде сви који виде опис групе."
+
+#: lib/potok_ide_web/domain_copy.ex:812
+#, elixir-autogen, elixir-format
+msgid "An app can rewrite its own description, when the viewer may edit the group."
+msgstr "Апликација може да препише сопствени опис, ако гледалац сме да мења групу."
+
+#: lib/potok_ide_web/domain_copy.ex:839
+#, elixir-autogen, elixir-format
+msgid "An app in the default description decides what the card of a shared link says about the group."
+msgstr "Апликација у подразумеваном опису сама пише шта картица дељеног линка каже о групи."
+
+#: lib/potok_ide_web/domain_copy.ex:847
+#, elixir-autogen, elixir-format
+msgid "An app runs apart from Potok's page, so it gets only what Potok hands it."
+msgstr "Апликација ради одвојено од странице Потока, па добија само оно што јој Поток преда."
+
+#: lib/potok_ide_web/domain_copy.ex:698
+#, elixir-autogen, elixir-format
+msgid "An arrow goes from the table holding the key to the table the key points at. %{count} of the %{total} keys go to Profile and Group, so they are hidden behind the marks P and G. Select an entity to see all its links. Its neighbours then show the column that joins them."
+msgstr "Стрелица иде од табеле која држи кључ ка табели на коју кључ показује. На Профил и Групу иде %{count} од %{total} кључева, па су скривени иза ознака П и Г. Изабери ентитет да видиш све његове везе. Суседи тада показују колону која их спаја."
+
+#: lib/potok_ide_web/domain_copy.ex:481
+#, elixir-autogen, elixir-format
+msgid "An emoji of one profile on a value. A profile cannot use the same emoji twice on the same value."
+msgstr "Реакција једног профила на вредност. Исти профил не може двапут истим емоџијем на исту вредност."
+
+#: lib/potok_ide_web/domain_copy.ex:495
+#, elixir-autogen, elixir-format
+msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event."
+msgstr "Догађај у календару групе, једном или са понављањем. Почетак и крај важе за прво појављивање, а понављања чувају локално време временске зоне догађаја. Догађај може да најави вредност."
+
+#: lib/potok_ide_web/domain_copy.ex:929
+#, elixir-autogen, elixir-format
+msgid "An event's occurrence has no row of its own"
+msgstr "Појављивање догађаја нема свој ред"
+
+#: lib/potok_ide_web/domain_copy.ex:544
+#, elixir-autogen, elixir-format
+msgid "An invitation for one more account to connect to a shared profile. Accepting it adds a row to the account–profile link."
+msgstr "Позив да се још један налог повеже са дељеним профилом. Прихватање додаје ред у везу налог–профил."
+
+#: lib/potok_ide_web/domain_copy.ex:537
+#, elixir-autogen, elixir-format
+msgid "An invitation to a group for an account that has no profile yet. When the account gets its first profile, it becomes an ordinary group invitation and this row is deleted."
+msgstr "Позив у групу за налог који још нема профил. Кад налог добије први профил, позив постаје обична позивница у групу, а овај ред се брише."
+
+#: lib/potok_ide_web/domain_copy.ex:375
+#, elixir-autogen, elixir-format
+msgid "Approved request"
+msgstr "Одобрен захтев"
+
+#: lib/potok_ide_web/domain_copy.ex:714
+#, elixir-autogen, elixir-format
+msgid "Areas"
+msgstr "Целине"
+
+#: lib/potok_ide_web/domain_copy.ex:642
+#, elixir-autogen, elixir-format
+msgid "Blocked by:"
+msgstr "Блокира га:"
+
+#: lib/potok_ide_web/domain_copy.ex:346
+#, elixir-autogen, elixir-format
+msgid "Calendar"
+msgstr "Календар"
+
+#: lib/potok_ide_web/domain_copy.ex:810
+#, elixir-autogen, elixir-format
+msgid "Changes itself"
+msgstr "Мења саму себе"
+
+#: lib/potok_ide_web/domain_copy.ex:644
+#, elixir-autogen, elixir-format
+msgid "Clears the fields:"
+msgstr "Празни поља:"
+
+#: lib/potok_ide_web/domain_copy.ex:636
+#, elixir-autogen, elixir-format
+msgid "Close"
+msgstr "Затвори"
+
+#: lib/potok_ide_web/domain_copy.ex:747
+#, elixir-autogen, elixir-format
+msgid "Composite keys"
+msgstr "Сложени кључеви"
+
+#: lib/potok_ide_web/domain_copy.ex:345
+#, elixir-autogen, elixir-format
+msgid "Content"
+msgstr "Садржај"
+
+#: lib/potok_ide_web/domain_copy.ex:716
+#, elixir-autogen, elixir-format
+msgid "Core"
+msgstr "Језгро"
+
+#: lib/potok_ide_web/domain_copy.ex:641
+#, elixir-autogen, elixir-format
+msgid "Deleting a row in the database"
+msgstr "Брисање реда у бази"
+
+#: lib/potok_ide_web/domain_copy.ex:776
+#, elixir-autogen, elixir-format
+msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them and read them page by page."
+msgstr "Свака апликација има своје <Value>вредности</Value>, одвојене од осталих апликација у групи. Може да их претражује, сортира и чита по страницама."
+
+#: lib/potok_ide_web/domain_copy.ex:366
+#, elixir-autogen, elixir-format
+msgid "Event"
+msgstr "Догађај"
+
+#: lib/potok_ide_web/domain_copy.ex:367
+#, elixir-autogen, elixir-format
+msgid "Event response"
+msgstr "Одговор на догађај"
+
+#: lib/potok_ide_web/domain_copy.ex:592
+#, elixir-autogen, elixir-format
+msgid "Exactly one target."
+msgstr "Тачно једна мета."
+
+#: lib/potok_ide_web/domain_copy.ex:646
+#, elixir-autogen, elixir-format
+msgid "Fields"
+msgstr "Поља"
+
+#: lib/potok_ide_web/domain_copy.ex:363
+#, elixir-autogen, elixir-format
+msgid "File"
+msgstr "Фајл"
+
+#: lib/potok_ide_web/domain_copy.ex:828
+#, elixir-autogen, elixir-format
+msgid "Fits in"
+msgstr "Уклапа се"
+
+#: lib/potok_ide_web/domain_copy.ex:353
+#, elixir-autogen, elixir-format
+msgid "Gmail token"
+msgstr "Gmail токен"
+
+#: lib/potok_ide_web/domain_copy.ex:356
+#, elixir-autogen, elixir-format
+msgid "Group"
+msgstr "Група"
+
+#: lib/potok_ide_web/domain_copy.ex:344
+#, elixir-autogen, elixir-format
+msgid "Group and roles"
+msgstr "Група и улоге"
+
+#: lib/potok_ide_web/domain_copy.ex:371
+#, elixir-autogen, elixir-format
+msgid "Group invitation"
+msgstr "Позивница у групу"
+
+#: lib/potok_ide_web/domain_copy.ex:488
+#, elixir-autogen, elixir-format
+msgid "How far a profile has read a group. Everything newer than the last read value is unread. That value is kept as a plain number, with no foreign key."
+msgstr "Докле је профил прочитао групу. Непрочитано је све новије од последње прочитане вредности. Та вредност је записана као обичан број, без спољног кључа."
+
+#: lib/potok_ide_web/domain_copy.ex:889
+#, elixir-autogen, elixir-format
+msgid "How permissions come about"
+msgstr "Како настају дозволе"
+
+#: lib/potok_ide_web/domain_copy.ex:921
+#, elixir-autogen, elixir-format
+msgid "How to get into a group"
+msgstr "Како се улази у групу"
+
+#: lib/potok_ide_web/domain_copy.ex:794
+#, elixir-autogen, elixir-format
+msgid "It can also read the values of the group's other apps, and it writes only to its own."
+msgstr "Може да чита и вредности осталих апликација у групи, а уписује само у своје."
+
+#: lib/potok_ide_web/domain_copy.ex:830
+#, elixir-autogen, elixir-format
+msgid "It follows the light or dark theme, and keeps each viewer's settings in their browser."
+msgstr "Прати светлу или тамну тему, а подешавања гледаоца чува у његовом прегледачу."
+
+#: lib/potok_ide_web/domain_copy.ex:803
+#, elixir-autogen, elixir-format
+msgid "It gets the viewer's <Profile>profile</Profile> and their <GroupRole>roles</GroupRole> in the group, so it can show different things to different members."
+msgstr "Добија <Profile>профил</Profile> гледаоца и његове <GroupRole>улоге</GroupRole> у групи, па различитим члановима може да покаже различите ствари."
+
+#: lib/potok_ide_web/domain_copy.ex:374
+#, elixir-autogen, elixir-format
+msgid "Join request"
+msgstr "Захтев за улазак"
+
+#: lib/potok_ide_web/domain_copy.ex:348
+#, elixir-autogen, elixir-format
+msgid "Joining a group"
+msgstr "Улазак у групу"
+
+#: lib/potok_ide_web/domain_copy.ex:774
+#, elixir-autogen, elixir-format
+msgid "Keeps its own data"
+msgstr "Чува своје податке"
+
+#: lib/potok_ide_web/domain_copy.ex:637
+#, elixir-autogen, elixir-format
+msgid "Keys of this table"
+msgstr "Кључеви ове табеле"
+
+#: lib/potok_ide_web/domain_copy.ex:735
+#, elixir-autogen, elixir-format
+msgid "Keys that block deleting"
+msgstr "Кључеви који блокирају брисање"
+
+#: lib/potok_ide_web/domain_copy.ex:801
+#, elixir-autogen, elixir-format
+msgid "Knows who is looking"
+msgstr "Зна ко је гледа"
+
+#: lib/potok_ide_web/domain_copy.ex:357
+#, elixir-autogen, elixir-format
+msgid "Manifest"
+msgstr "Манифест"
+
+#: lib/potok_ide_web/domain_copy.ex:360
+#, elixir-autogen, elixir-format
+msgid "Member role"
+msgstr "Улога члана"
+
+#: lib/potok_ide_web/domain_copy.ex:897
+#, elixir-autogen, elixir-format
+msgid "Members are inherited down the tree"
+msgstr "Чланови се наслеђују низ дрво"
+
+#: lib/potok_ide_web/domain_copy.ex:769
+#, elixir-autogen, elixir-format
+msgid "Members who have it open"
+msgstr "Чланови који је гледају"
+
+#: lib/potok_ide_web/domain_copy.ex:359
+#, elixir-autogen, elixir-format
+msgid "Membership"
+msgstr "Чланство"
+
+#: lib/potok_ide_web/domain_copy.ex:645
+#, elixir-autogen, elixir-format
+msgid "Nothing else changes."
+msgstr "Ништа друго се не мења."
+
+#: lib/potok_ide_web/domain_copy.ex:640
+#, elixir-autogen, elixir-format
+msgid "Nothing."
+msgstr "Нико."
+
+#: lib/potok_ide_web/domain_copy.ex:392
+#, elixir-autogen, elixir-format
+msgid "One device or browser that receives notifications, through web push or FCM. It remembers the last successful send and the last error."
+msgstr "Један уређај или прегледач који прима обавештења, преко веб пуша или FCM-а. Памти и последњи успех и последњу грешку слања."
+
+#: lib/potok_ide_web/domain_copy.ex:523
+#, elixir-autogen, elixir-format
+msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
+msgstr "Један таг на једној ставци. Попуњена је тачно једна од пет колона са метом, што проверава база."
+
+#: lib/potok_ide_web/domain_copy.ex:913
+#, elixir-autogen, elixir-format
+msgid "One tag, five kinds of items"
+msgstr "Један таг, пет врста ставки"
+
+#: lib/potok_ide_web/domain_copy.ex:852
+#, elixir-autogen, elixir-format
+msgid "Only members of the group read and save values, and the number of saves is limited."
+msgstr "Вредности читају и уписују само чланови групе, а број уписа је ограничен."
+
+#: lib/potok_ide_web/domain_copy.ex:720
+#, elixir-autogen, elixir-format
+msgid "Only soft links (%{count})"
+msgstr "Само меке везе (%{count})"
+
+#: lib/potok_ide_web/domain_copy.ex:707
+#, elixir-autogen, elixir-format
+msgid "Only soft links are shown. They point at another table with text, a number or a list. The database does not check them, so whether they are right depends on the code."
+msgstr "Приказане су само меке везе. Показују на другу табелу текстом, бројем или низом. База их не проверава, па њихова исправност зависи од кода."
+
+#: lib/potok_ide_web/domain_copy.ex:729
+#, elixir-autogen, elixir-format
+msgid "Overview"
+msgstr "Преглед"
+
+#: lib/potok_ide_web/domain_copy.ex:368
+#, elixir-autogen, elixir-format
+msgid "Personal reminders"
+msgstr "Лични подсетници"
+
+#: lib/potok_ide_web/domain_copy.ex:639
+#, elixir-autogen, elixir-format
+msgid "Pointing here"
+msgstr "Ко показује овде"
+
+#: lib/potok_ide_web/domain_copy.ex:767
+#, elixir-autogen, elixir-format
+msgid "Potok checks the permissions"
+msgstr "Поток проверава дозволе"
+
+#: lib/potok_ide_web/domain_copy.ex:354
+#, elixir-autogen, elixir-format
+msgid "Profile"
+msgstr "Профил"
+
+#: lib/potok_ide_web/domain_copy.ex:373
+#, elixir-autogen, elixir-format
+msgid "Profile invitation"
+msgstr "Позивница за профил"
+
+#: lib/potok_ide_web/domain_copy.ex:343
+#, elixir-autogen, elixir-format
+msgid "Profiles"
+msgstr "Профили"
+
+#: lib/potok_ide_web/domain_copy.ex:352
+#, elixir-autogen, elixir-format
+msgid "Push subscription"
+msgstr "Пуш претплата"
+
+#: lib/potok_ide_web/domain_copy.ex:819
+#, elixir-autogen, elixir-format
+msgid "Reaches those it is meant for"
+msgstr "Виде је они којима је намењена"
+
+#: lib/potok_ide_web/domain_copy.ex:364
+#, elixir-autogen, elixir-format
+msgid "Reaction"
+msgstr "Реакција"
+
+#: lib/potok_ide_web/domain_copy.ex:365
+#, elixir-autogen, elixir-format
+msgid "Read marker"
+msgstr "Маркер читања"
+
+#: lib/potok_ide_web/domain_copy.ex:358
+#, elixir-autogen, elixir-format
+msgid "Role"
+msgstr "Улога"
+
+#: lib/potok_ide_web/domain_copy.ex:648
+#, elixir-autogen, elixir-format
+msgid "Rules in the database"
+msgstr "Правила у бази"
+
+#: lib/potok_ide_web/domain_copy.ex:792
+#, elixir-autogen, elixir-format
+msgid "Sees the other apps"
+msgstr "Види остале апликације"
+
+#: lib/potok_ide_web/domain_copy.ex:731
+#, elixir-autogen, elixir-format
+msgid "Select an entity on the diagram and its fields, links and rules appear here."
+msgstr "Изабери ентитет на дијаграму и овде ће се појавити његова поља, везе и правила."
+
+#: lib/potok_ide_web/domain_copy.ex:741
+#, elixir-autogen, elixir-format
+msgid "Soft links"
+msgstr "Меке везе"
+
+#: lib/potok_ide_web/domain_copy.ex:650
+#, elixir-autogen, elixir-format
+msgid "Source"
+msgstr "Извор"
+
+#: lib/potok_ide_web/domain_copy.ex:837
+#, elixir-autogen, elixir-format
+msgid "Speaks for itself"
+msgstr "Представља се сама"
+
+#: lib/potok_ide_web/domain_copy.ex:369
+#, elixir-autogen, elixir-format
+msgid "Tag"
+msgstr "Таг"
+
+#: lib/potok_ide_web/domain_copy.ex:370
+#, elixir-autogen, elixir-format
+msgid "Tagging"
+msgstr "Таговање"
+
+#: lib/potok_ide_web/domain_copy.ex:347
+#, elixir-autogen, elixir-format
+msgid "Tags"
+msgstr "Тагови"
+
+#: lib/potok_ide_web/domain_copy.ex:643
+#, elixir-autogen, elixir-format
+msgid "Takes with it:"
+msgstr "Повлачи са собом:"
+
+#: lib/potok_ide_web/domain_copy.ex:333
+#, elixir-autogen, elixir-format
+msgid "The Potok domain model"
+msgstr "Домен Модел Потока"
+
+#: lib/potok_ide_web/domain_copy.ex:870
+#, elixir-autogen, elixir-format
+msgid "The account is the identity, the profile is the face in a group"
+msgstr "Налог је идентитет, профил је лице у групи"
+
+#: lib/potok_ide_web/domain_copy.ex:766
+#, elixir-autogen, elixir-format
+msgid "The app"
+msgstr "Апликација"
+
+#: lib/potok_ide_web/domain_copy.ex:424
+#, elixir-autogen, elixir-format
+msgid "The basic unit of Potok. One model covers the root, ordinary groups and sub-groups, direct conversations and threads. Exactly one group is the root, and every other has a parent and a creator."
+msgstr "Основна јединица Потока. Исти модел покрива корен, обичне групе и подгрупе, директне разговоре и нити. Тачно једна група је корен, а свака друга има родитеља и аутора."
+
+#: lib/potok_ide_web/domain_copy.ex:467
+#, elixir-autogen, elixir-format
+msgid "The content of a group. In a conversation it is a message, and as data of an app it does not appear in the conversation. A value can reply to another value, and a thread opened from a value is a group that points back at it."
+msgstr "Садржај групе. У разговору је то порука, а као податак апликације не појављује се у разговору. Вредност може да буде одговор на другу вредност, а нит отворена из вредности је група која показује назад на њу."
+
+#: lib/potok_ide_web/domain_copy.ex:665
+#, elixir-autogen, elixir-format
+msgid "The core of the domain: an account uses profiles, a profile is a member of groups, a group contains values, and a value opens a thread, which is a group again."
+msgstr "Језгро домена: налог користи профиле, профил је члан група, група садржи вредности, а вредност отвара нит која је опет група."
+
+#: lib/potok_ide_web/domain_copy.ex:856
+#, elixir-autogen, elixir-format
+msgid "The data of an app goes with its description, and it can be deleted from the group's settings."
+msgstr "Подаци апликације нестају са њеним описом, а могу да се обришу и из подешавања групе."
+
+#: lib/potok_ide_web/domain_copy.ex:907
+#, elixir-autogen, elixir-format
+msgid "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
+msgstr "Подразумевани опис и сваки <GroupAltDescription>алтернативни опис</GroupAltDescription> могу да буду апликација. Њени подаци су <Value>вредности</Value> означене као подаци, а свака зна којој апликацији припада. Сложени кључ их држи у истој групи, а брисање алтернативног описа брише и његове податке."
+
+#: lib/potok_ide_web/domain_copy.ex:725
+#, elixir-autogen, elixir-format
+msgid "The diagram scrolls left and right."
+msgstr "Дијаграм се помера лево и десно."
+
+#: lib/potok_ide_web/domain_copy.ex:595
+#, elixir-autogen, elixir-format
+msgid "The end is not before the start."
+msgstr "Крај није пре почетка."
+
+#: lib/potok_ide_web/domain_copy.ex:891
+#, elixir-autogen, elixir-format
+msgid "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow."
+msgstr "Важи <GroupManifest>манифест</GroupManifest> групе или, ако га нема, манифест најближег претка. Сваки члан има `everyone`, па се та <GroupRole>улога</GroupRole> не уписује, а `admin` има све. Код осталих улога дозвола важи кад је бар једна дозволи и ниједна не забрани. `everyone` може само да дозволи."
+
+#: lib/potok_ide_web/domain_copy.ex:768
+#, elixir-autogen, elixir-format
+msgid "The group's values"
+msgstr "Вредности групе"
+
+#: lib/potok_ide_web/domain_copy.ex:599
+#, elixir-autogen, elixir-format
+msgid "The repeat interval is from 1 to 99."
+msgstr "Интервал понављања је од 1 до 99."
+
+#: lib/potok_ide_web/domain_copy.ex:589
+#, elixir-autogen, elixir-format
+msgid "The role `everyone` is not written here."
+msgstr "Улога `everyone` се не уписује."
+
+#: lib/potok_ide_web/domain_copy.ex:581
+#, elixir-autogen, elixir-format
+msgid "The root and direct groups do not inherit members."
+msgstr "Корен и директне групе не наслеђују чланове."
+
+#: lib/potok_ide_web/domain_copy.ex:573
+#, elixir-autogen, elixir-format
+msgid "The root has no creator, every other group does."
+msgstr "Корен нема аутора, а свака друга група има."
+
+#: lib/potok_ide_web/domain_copy.ex:569
+#, elixir-autogen, elixir-format
+msgid "The root has no parent, every other group does."
+msgstr "Корен нема родитеља, а свака друга група има."
+
+#: lib/potok_ide_web/domain_copy.ex:566
+#, elixir-autogen, elixir-format
+msgid "The root is not public."
+msgstr "Корен није јаван."
+
+#: lib/potok_ide_web/domain_copy.ex:851
+#, elixir-autogen, elixir-format
+msgid "The server checks every call again, whatever the app asks for."
+msgstr "Сервер поново проверава сваки позив, шта год апликација тражила."
+
+#: lib/potok_ide_web/domain_copy.ex:431
+#, elixir-autogen, elixir-format
+msgid "The set of roles of a group. A group without its own manifest uses that of its nearest ancestor that has one. The root always has one."
+msgstr "Скуп улога једне групе. Група без свог манифеста користи манифест најближег претка који га има. Корен га увек има."
+
+#: lib/potok_ide_web/domain_copy.ex:603
+#, elixir-autogen, elixir-format
+msgid "The size is not negative."
+msgstr "Величина није негативна."
+
+#: lib/potok_ide_web/domain_copy.ex:737
+#, elixir-autogen, elixir-format
+msgid "These keys do not let a row be deleted while something uses it. The others delete the dependent rows or clear the field."
+msgstr "Ови кључеви не дају да се ред обрише док га нешто користи. Остали бришу зависне редове или празне поље."
+
+#: lib/potok_ide_web/domain_copy.ex:743
+#, elixir-autogen, elixir-format
+msgid "They point at another table, but the database does not check them."
+msgstr "Показују на другу табелу, али их база не проверава."
+
+#: lib/potok_ide_web/domain_copy.ex:638
+#, elixir-autogen, elixir-format
+msgid "This table points at nothing."
+msgstr "Табела не показује ни на шта."
+
+#: lib/potok_ide_web/domain_copy.ex:385
+#, elixir-autogen, elixir-format
+msgid "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for."
+msgstr "Токени сесија и линкова из имејлова, као што су пријава, позивница и промена имејла. Сваки токен каже чему служи."
+
+#: lib/potok_ide_web/domain_copy.ex:649
+#, elixir-autogen, elixir-format
+msgid "Unique"
+msgstr "Јединствено"
+
+#: lib/potok_ide_web/domain_copy.ex:362
+#, elixir-autogen, elixir-format
+msgid "Value"
+msgstr "Вредност"
+
+#: lib/potok_ide_web/domain_copy.ex:713
+#, elixir-autogen, elixir-format
+msgid "View"
+msgstr "Приказ"
+
+#: lib/potok_ide_web/domain_copy.ex:647
+#, elixir-autogen, elixir-format
+msgid "Virtual fields, not in the database"
+msgstr "Виртуелна поља, нема их у бази"
+
+#: lib/potok_ide_web/domain_copy.ex:759
+#, elixir-autogen, elixir-format
+msgid "What a description can do as an app"
+msgstr "Шта опис може као апликација"
+
+#: lib/potok_ide_web/domain_copy.ex:864
+#, elixir-autogen, elixir-format
+msgid "What holds the domain together"
+msgstr "Шта држи домен заједно"
+
+#: lib/potok_ide_web/domain_copy.ex:845
+#, elixir-autogen, elixir-format
+msgid "Where it stops"
+msgstr "Где су границе"
+
+#: lib/potok_ide_web/domain_copy.ex:783
+#, elixir-autogen, elixir-format
+msgid "Works live"
+msgstr "Ради уживо"
+
+#: lib/potok_ide_web/domain_copy.ex:301
+#, elixir-autogen, elixir-format
+msgid "accepted at"
+msgstr "време прихватања"
+
+#: lib/potok_ide_web/domain_copy.ex:292
+#, elixir-autogen, elixir-format
+msgid "account"
+msgstr "налог"
+
+#: lib/potok_ide_web/domain_copy.ex:251
+#, elixir-autogen, elixir-format
+msgid "all day"
+msgstr "цео дан"
+
+#: lib/potok_ide_web/domain_copy.ex:213
+#, elixir-autogen, elixir-format
+msgid "allowed permissions"
+msgstr "дозвољено"
+
+#: lib/potok_ide_web/domain_copy.ex:270
+#, elixir-autogen, elixir-format
+msgid "announcing value"
+msgstr "вредност најаве"
+
+#: lib/potok_ide_web/domain_copy.ex:277
+#, elixir-autogen, elixir-format
+msgid "answer"
+msgstr "одговор"
+
+#: lib/potok_ide_web/domain_copy.ex:225
+#: lib/potok_ide_web/domain_copy.ex:621
+#, elixir-autogen, elixir-format
+msgid "app data"
+msgstr "подаци апликације"
+
+#: lib/potok_ide_web/domain_copy.ex:238
+#, elixir-autogen, elixir-format
+msgid "app description"
+msgstr "опис апликације"
+
+#: lib/potok_ide_web/domain_copy.ex:204
+#, elixir-autogen, elixir-format
+msgid "approved at"
+msgstr "време одобрења"
+
+#: lib/potok_ide_web/domain_copy.ex:684
+#, elixir-autogen, elixir-format
+msgid "area"
+msgid_plural "areas"
+msgstr[0] "целина"
+msgstr[1] "целине"
+msgstr[2] "целина"
+
+#: lib/potok_ide_web/domain_copy.ex:766
+#, elixir-autogen, elixir-format
+msgid "asks"
+msgstr "тражи"
+
+#: lib/potok_ide_web/domain_copy.ex:148
+#, elixir-autogen, elixir-format
+msgid "authentication secret"
+msgstr "тајна за аутентификацију"
+
+#: lib/potok_ide_web/domain_copy.ex:656
+#, elixir-autogen, elixir-format
+msgid "blocks"
+msgstr "блокира"
+
+#: lib/potok_ide_web/domain_copy.ex:660
+#, elixir-autogen, elixir-format
+msgid "blocks deleting"
+msgstr "блокира брисање"
+
+#: lib/potok_ide_web/domain_copy.ex:150
+#, elixir-autogen, elixir-format
+msgid "browser"
+msgstr "прегледач"
+
+#: lib/potok_ide_web/domain_copy.ex:617
+#, elixir-autogen, elixir-format
+msgid "by key"
+msgstr "по кључу"
+
+#: lib/potok_ide_web/domain_copy.ex:622
+#, elixir-autogen, elixir-format
+msgid "calendar"
+msgstr "календар"
+
+#: lib/potok_ide_web/domain_copy.ex:268
+#, elixir-autogen, elixir-format
+msgid "cancelled at"
+msgstr "време отказивања"
+
+#: lib/potok_ide_web/domain_copy.ex:260
+#, elixir-autogen, elixir-format
+msgid "cancelled occurrences"
+msgstr "отказана појављивања"
+
+#: lib/potok_ide_web/domain_copy.ex:613
+#, elixir-autogen, elixir-format
+msgid "carries"
+msgstr "носи"
+
+#: lib/potok_ide_web/domain_copy.ex:654
+#, elixir-autogen, elixir-format
+msgid "cascades"
+msgstr "каскадно"
+
+#: lib/potok_ide_web/domain_copy.ex:655
+#: lib/potok_ide_web/domain_copy.ex:659
+#, elixir-autogen, elixir-format
+msgid "clears the field"
+msgstr "празни поље"
+
+#: lib/potok_ide_web/domain_copy.ex:618
+#, elixir-autogen, elixir-format
+msgid "contains"
+msgstr "садржи"
+
+#: lib/potok_ide_web/domain_copy.ex:223
+#, elixir-autogen, elixir-format
+msgid "content"
+msgstr "садржај"
+
+#: lib/potok_ide_web/domain_copy.ex:224
+#, elixir-autogen, elixir-format
+msgid "content format"
+msgstr "формат садржаја"
+
+#: lib/potok_ide_web/domain_copy.ex:290
+#, elixir-autogen, elixir-format
+msgid "created at"
+msgstr "време настанка"
+
+#: lib/potok_ide_web/domain_copy.ex:297
+#, elixir-autogen, elixir-format
+msgid "creator"
+msgstr "аутор"
+
+#: lib/potok_ide_web/domain_copy.ex:128
+#, elixir-autogen, elixir-format
+msgid "current profile"
+msgstr "тренутни профил"
+
+#: lib/potok_ide_web/domain_copy.ex:129
+#, elixir-autogen, elixir-format
+msgid "default profile"
+msgstr "подразумевани профил"
+
+#: lib/potok_ide_web/domain_copy.ex:624
+#, elixir-autogen, elixir-format
+msgid "defines"
+msgstr "дефинише"
+
+#: lib/potok_ide_web/domain_copy.ex:658
+#, elixir-autogen, elixir-format
+msgid "deletes with it"
+msgstr "каскадно брисање"
+
+#: lib/potok_ide_web/domain_copy.ex:146
+#, elixir-autogen, elixir-format
+msgid "delivery address"
+msgstr "адреса за слање"
+
+#: lib/potok_ide_web/domain_copy.ex:137
+#, elixir-autogen, elixir-format
+msgid "delivery type"
+msgstr "врста слања"
+
+#: lib/potok_ide_web/domain_copy.ex:214
+#, elixir-autogen, elixir-format
+msgid "denied permissions"
+msgstr "забрањено"
+
+#: lib/potok_ide_web/domain_copy.ex:303
+#, elixir-autogen, elixir-format
+msgid "description"
+msgstr "опис"
+
+#: lib/potok_ide_web/domain_copy.ex:304
+#, elixir-autogen, elixir-format
+msgid "description format"
+msgstr "формат описа"
+
+#: lib/potok_ide_web/domain_copy.ex:620
+#, elixir-autogen, elixir-format
+msgid "descriptions"
+msgstr "описи"
+
+#: lib/potok_ide_web/domain_copy.ex:161
+#, elixir-autogen, elixir-format
+msgid "device language"
+msgstr "језик уређаја"
+
+#: lib/potok_ide_web/domain_copy.ex:143
+#, elixir-autogen, elixir-format
+msgid "device platform"
+msgstr "платформа уређаја"
+
+#: lib/potok_ide_web/domain_copy.ex:140
+#, elixir-autogen, elixir-format
+msgid "device token"
+msgstr "токен уређаја"
+
+#: lib/potok_ide_web/domain_copy.ex:180
+#, elixir-autogen, elixir-format
+msgid "direct conversation"
+msgstr "директан разговор"
+
+#: lib/potok_ide_web/domain_copy.ex:119
+#, elixir-autogen, elixir-format
+msgid "email address"
+msgstr "имејл адреса"
+
+#: lib/potok_ide_web/domain_copy.ex:122
+#, elixir-autogen, elixir-format
+msgid "email confirmed at"
+msgstr "време потврде имејла"
+
+#: lib/potok_ide_web/domain_copy.ex:247
+#, elixir-autogen, elixir-format
+msgid "emoji"
+msgstr "емоџи"
+
+#: lib/potok_ide_web/domain_copy.ex:147
+#, elixir-autogen, elixir-format
+msgid "encryption key"
+msgstr "кључ за шифровање"
+
+#: lib/potok_ide_web/domain_copy.ex:253
+#, elixir-autogen, elixir-format
+msgid "end"
+msgstr "крај"
+
+#: lib/potok_ide_web/domain_copy.ex:273
+#, elixir-autogen, elixir-format
+msgid "end date"
+msgstr "датум краја"
+
+#: lib/potok_ide_web/domain_copy.ex:274
+#, elixir-autogen, elixir-format
+msgid "end time"
+msgstr "време краја"
+
+#: lib/potok_ide_web/domain_copy.ex:683
+#, elixir-autogen, elixir-format
+msgid "entity"
+msgid_plural "entities"
+msgstr[0] "ентитет"
+msgstr[1] "ентитета"
+msgstr[2] "ентитета"
+
+#: lib/potok_ide_web/domain_copy.ex:295
+#, elixir-autogen, elixir-format
+msgid "event"
+msgstr "догађај"
+
+#: lib/potok_ide_web/domain_copy.ex:149
+#, elixir-autogen, elixir-format
+msgid "expires at"
+msgstr "време истека"
+
+#: lib/potok_ide_web/domain_copy.ex:159
+#, elixir-autogen, elixir-format
+msgid "failure reason"
+msgstr "разлог грешке"
+
+#: lib/potok_ide_web/domain_copy.ex:285
+#, elixir-autogen, elixir-format
+msgid "file"
+msgstr "фајл"
+
+#: lib/potok_ide_web/domain_copy.ex:242
+#, elixir-autogen, elixir-format
+msgid "file name"
+msgstr "назив фајла"
+
+#: lib/potok_ide_web/domain_copy.ex:243
+#, elixir-autogen, elixir-format
+msgid "file type"
+msgstr "врста фајла"
+
+#: lib/potok_ide_web/domain_copy.ex:685
+#, elixir-autogen, elixir-format
+msgid "foreign key"
+msgid_plural "foreign keys"
+msgstr[0] "спољни кључ"
+msgstr[1] "спољна кључа"
+msgstr[2] "спољних кључева"
+
+#: lib/potok_ide_web/domain_copy.ex:663
+#, elixir-autogen, elixir-format
+msgid "goes on everything marked #"
+msgstr "иде на све што носи #"
+
+#: lib/potok_ide_web/domain_copy.ex:294
+#, elixir-autogen, elixir-format
+msgid "group"
+msgstr "група"
+
+#: lib/potok_ide_web/domain_copy.ex:172
+#, elixir-autogen, elixir-format
+msgid "group picture"
+msgstr "слика групе"
+
+#: lib/potok_ide_web/domain_copy.ex:623
+#, elixir-autogen, elixir-format
+msgid "has a manifest"
+msgstr "има манифест"
+
+#: lib/potok_ide_web/domain_copy.ex:616
+#, elixir-autogen, elixir-format
+msgid "holds roles"
+msgstr "носи улоге"
+
+#: lib/potok_ide_web/domain_copy.ex:189
+#, elixir-autogen, elixir-format
+msgid "home description"
+msgstr "почетни опис"
+
+#: lib/potok_ide_web/domain_copy.ex:178
+#, elixir-autogen, elixir-format
+msgid "home page"
+msgstr "почетна страница"
+
+#: lib/potok_ide_web/domain_copy.ex:289
+#, elixir-autogen, elixir-format
+msgid "identifier"
+msgstr "идентификатор"
+
+#: lib/potok_ide_web/domain_copy.ex:615
+#, elixir-autogen, elixir-format
+msgid "in a group"
+msgstr "у групи"
+
+#: lib/potok_ide_web/domain_copy.ex:308
+#, elixir-autogen, elixir-format
+msgid "inherited"
+msgstr "наслеђено"
+
+#: lib/potok_ide_web/domain_copy.ex:183
+#, elixir-autogen, elixir-format
+msgid "inherits members"
+msgstr "наслеђује чланове"
+
+#: lib/potok_ide_web/domain_copy.ex:196
+#, elixir-autogen, elixir-format
+msgid "invited account"
+msgstr "позвани налог"
+
+#: lib/potok_ide_web/domain_copy.ex:614
+#, elixir-autogen, elixir-format
+msgid "is a member"
+msgstr "је члан"
+
+#: lib/potok_ide_web/domain_copy.ex:305
+#, elixir-autogen, elixir-format
+msgid "is an app"
+msgstr "апликација"
+
+#: lib/potok_ide_web/domain_copy.ex:653
+#, elixir-autogen, elixir-format
+msgid "key"
+msgstr "кључ"
+
+#: lib/potok_ide_web/domain_copy.ex:662
+#, elixir-autogen, elixir-format
+msgid "key to Profile, Group"
+msgstr "кључ ка Профилу, Групи"
+
+#: lib/potok_ide_web/domain_copy.ex:291
+#, elixir-autogen, elixir-format
+msgid "last changed at"
+msgstr "време последње измене"
+
+#: lib/potok_ide_web/domain_copy.ex:156
+#, elixir-autogen, elixir-format
+msgid "last failure"
+msgstr "последња грешка"
+
+#: lib/potok_ide_web/domain_copy.ex:123
+#, elixir-autogen, elixir-format
+msgid "last log-in"
+msgstr "последња пријава"
+
+#: lib/potok_ide_web/domain_copy.ex:218
+#, elixir-autogen, elixir-format
+msgid "last read value"
+msgstr "последња прочитана"
+
+#: lib/potok_ide_web/domain_copy.ex:153
+#, elixir-autogen, elixir-format
+msgid "last success"
+msgstr "последњи успех"
+
+#: lib/potok_ide_web/domain_copy.ex:232
+#, elixir-autogen, elixir-format
+msgid "link preview"
+msgstr "преглед линка"
+
+#: lib/potok_ide_web/domain_copy.ex:235
+#, elixir-autogen, elixir-format
+msgid "link preview dismissed"
+msgstr "преглед линка уклоњен"
+
+#: lib/potok_ide_web/domain_copy.ex:768
+#, elixir-autogen, elixir-format
+msgid "live"
+msgstr "уживо"
+
+#: lib/potok_ide_web/domain_copy.ex:250
+#, elixir-autogen, elixir-format
+msgid "location"
+msgstr "место"
+
+#: lib/potok_ide_web/domain_copy.ex:134
+#, elixir-autogen, elixir-format
+msgid "logged in at"
+msgstr "време пријаве"
+
+#: lib/potok_ide_web/domain_copy.ex:215
+#, elixir-autogen, elixir-format
+msgid "manifest"
+msgstr "манифест"
+
+#: lib/potok_ide_web/domain_copy.ex:209
+#, elixir-autogen, elixir-format
+msgid "member"
+msgstr "члан"
+
+#: lib/potok_ide_web/domain_copy.ex:191
+#, elixir-autogen, elixir-format
+msgid "member count"
+msgstr "број чланова"
+
+#: lib/potok_ide_web/domain_copy.ex:230
+#, elixir-autogen, elixir-format
+msgid "mentioned profiles"
+msgstr "поменути профили"
+
+#: lib/potok_ide_web/domain_copy.ex:227
+#, elixir-autogen, elixir-format
+msgid "mentions"
+msgstr "помињања"
+
+#: lib/potok_ide_web/domain_copy.ex:258
+#, elixir-autogen, elixir-format
+msgid "monthly repeat mode"
+msgstr "начин месечног понављања"
+
+#: lib/potok_ide_web/domain_copy.ex:302
+#, elixir-autogen, elixir-format
+msgid "name"
+msgstr "назив"
+
+#: lib/potok_ide_web/domain_copy.ex:175
+#, elixir-autogen, elixir-format
+msgid "name of the default description"
+msgstr "назив подразумеваног описа"
+
+#: lib/potok_ide_web/domain_copy.ex:184
+#, elixir-autogen, elixir-format
+msgid "newest value at"
+msgstr "време последње вредности"
+
+#: lib/potok_ide_web/domain_copy.ex:267
+#, elixir-autogen, elixir-format
+msgid "next reminder"
+msgstr "следећи подсетник"
+
+#: lib/potok_ide_web/domain_copy.ex:276
+#, elixir-autogen, elixir-format
+msgid "occurrence date"
+msgstr "датум појављивања"
+
+#: lib/potok_ide_web/domain_copy.ex:626
+#, elixir-autogen, elixir-format
+msgid "of a group"
+msgstr "у групи"
+
+#: lib/potok_ide_web/domain_copy.ex:619
+#, elixir-autogen, elixir-format
+msgid "opens a thread"
+msgstr "отвара нит"
+
+#: lib/potok_ide_web/domain_copy.ex:306
+#, elixir-autogen, elixir-format
+msgid "order"
+msgstr "редослед"
+
+#: lib/potok_ide_web/domain_copy.ex:261
+#, elixir-autogen, elixir-format
+msgid "organizer's reminders"
+msgstr "подсетници организатора"
+
+#: lib/potok_ide_web/domain_copy.ex:113
+#, elixir-autogen, elixir-format
+msgid "other field"
+msgstr "друго поље"
+
+#: lib/potok_ide_web/domain_copy.ex:279
+#, elixir-autogen, elixir-format
+msgid "own reminders"
+msgstr "лични подсетници"
+
+#: lib/potok_ide_web/domain_copy.ex:281
+#, elixir-autogen, elixir-format
+msgid "owner"
+msgstr "власник"
+
+#: lib/potok_ide_web/domain_copy.ex:185
+#, elixir-autogen, elixir-format
+msgid "parent group"
+msgstr "родитељска група"
+
+#: lib/potok_ide_web/domain_copy.ex:121
+#, elixir-autogen, elixir-format
+msgid "password as typed"
+msgstr "лозинка при уносу"
+
+#: lib/potok_ide_web/domain_copy.ex:120
+#, elixir-autogen, elixir-format
+msgid "password hash"
+msgstr "хеш лозинке"
+
+#: lib/potok_ide_web/domain_copy.ex:241
+#, elixir-autogen, elixir-format
+msgid "place in storage"
+msgstr "место у складишту"
+
+#: lib/potok_ide_web/domain_copy.ex:652
+#, elixir-autogen, elixir-format
+msgid "primary"
+msgstr "примарни"
+
+#: lib/potok_ide_web/domain_copy.ex:293
+#, elixir-autogen, elixir-format
+msgid "profile"
+msgstr "профил"
+
+#: lib/potok_ide_web/domain_copy.ex:169
+#, elixir-autogen, elixir-format
+msgid "profile picture"
+msgstr "слика профила"
+
+#: lib/potok_ide_web/domain_copy.ex:126
+#, elixir-autogen, elixir-format
+msgid "profile that invited it"
+msgstr "профил који је позвао"
+
+#: lib/potok_ide_web/domain_copy.ex:163
+#, elixir-autogen, elixir-format
+msgid "provider"
+msgstr "добављач"
+
+#: lib/potok_ide_web/domain_copy.ex:307
+#, elixir-autogen, elixir-format
+msgid "public"
+msgstr "јавно"
+
+#: lib/potok_ide_web/domain_copy.ex:179
+#, elixir-autogen, elixir-format
+msgid "public chat"
+msgstr "јавни разговор"
+
+#: lib/potok_ide_web/domain_copy.ex:182
+#, elixir-autogen, elixir-format
+msgid "public from the root"
+msgstr "јавна из корена"
+
+#: lib/potok_ide_web/domain_copy.ex:132
+#, elixir-autogen, elixir-format
+msgid "purpose"
+msgstr "намена"
+
+#: lib/potok_ide_web/domain_copy.ex:166
+#, elixir-autogen, elixir-format
+msgid "refresh token"
+msgstr "токен за освежавање"
+
+#: lib/potok_ide_web/domain_copy.ex:264
+#, elixir-autogen, elixir-format
+msgid "reminders handled until"
+msgstr "подсетници обрађени до"
+
+#: lib/potok_ide_web/domain_copy.ex:256
+#, elixir-autogen, elixir-format
+msgid "repeat interval"
+msgstr "размак понављања"
+
+#: lib/potok_ide_web/domain_copy.ex:257
+#, elixir-autogen, elixir-format
+msgid "repeat weekdays"
+msgstr "дани понављања"
+
+#: lib/potok_ide_web/domain_copy.ex:255
+#, elixir-autogen, elixir-format
+msgid "repeats"
+msgstr "понављање"
+
+#: lib/potok_ide_web/domain_copy.ex:259
+#, elixir-autogen, elixir-format
+msgid "repeats until"
+msgstr "понавља се до"
+
+#: lib/potok_ide_web/domain_copy.ex:239
+#, elixir-autogen, elixir-format
+msgid "replies to"
+msgstr "одговор на"
+
+#: lib/potok_ide_web/domain_copy.ex:627
+#, elixir-autogen, elixir-format
+msgid "reply"
+msgstr "одговор"
+
+#: lib/potok_ide_web/domain_copy.ex:210
+#, elixir-autogen, elixir-format
+msgid "role"
+msgstr "улога"
+
+#: lib/potok_ide_web/domain_copy.ex:212
+#, elixir-autogen, elixir-format
+msgid "role key"
+msgstr "кључ улоге"
+
+#: lib/potok_ide_web/domain_copy.ex:200
+#, elixir-autogen, elixir-format
+msgid "roles that see it"
+msgstr "улоге које га виде"
+
+#: lib/potok_ide_web/domain_copy.ex:181
+#, elixir-autogen, elixir-format
+msgid "root"
+msgstr "корен"
+
+#: lib/potok_ide_web/domain_copy.ex:767
+#, elixir-autogen, elixir-format
+msgid "saves"
+msgstr "уписује"
+
+#: lib/potok_ide_web/domain_copy.ex:269
+#, elixir-autogen, elixir-format
+msgid "schedule version"
+msgstr "верзија распореда"
+
+#: lib/potok_ide_web/domain_copy.ex:133
+#, elixir-autogen, elixir-format
+msgid "sent to"
+msgstr "послато на"
+
+#: lib/potok_ide_web/domain_copy.ex:221
+#, elixir-autogen, elixir-format
+msgid "shared profile"
+msgstr "дељени профил"
+
+#: lib/potok_ide_web/domain_copy.ex:170
+#, elixir-autogen, elixir-format
+msgid "sharing"
+msgstr "дељење"
+
+#: lib/potok_ide_web/domain_copy.ex:244
+#, elixir-autogen, elixir-format
+msgid "size"
+msgstr "величина"
+
+#: lib/potok_ide_web/domain_copy.ex:657
+#, elixir-autogen, elixir-format
+msgid "soft"
+msgstr "мека веза"
+
+#: lib/potok_ide_web/domain_copy.ex:686
+#, elixir-autogen, elixir-format
+msgid "soft link"
+msgid_plural "soft links"
+msgstr[0] "мека веза"
+msgstr[1] "меке везе"
+msgstr[2] "меких веза"
+
+#: lib/potok_ide_web/domain_copy.ex:661
+#, elixir-autogen, elixir-format
+msgid "soft link, no key"
+msgstr "мека веза, није кључ"
+
+#: lib/potok_ide_web/domain_copy.ex:252
+#, elixir-autogen, elixir-format
+msgid "start"
+msgstr "почетак"
+
+#: lib/potok_ide_web/domain_copy.ex:271
+#, elixir-autogen, elixir-format
+msgid "start date"
+msgstr "датум почетка"
+
+#: lib/potok_ide_web/domain_copy.ex:272
+#, elixir-autogen, elixir-format
+msgid "start time"
+msgstr "време почетка"
+
+#: lib/potok_ide_web/domain_copy.ex:226
+#, elixir-autogen, elixir-format
+msgid "stored data"
+msgstr "записани подаци"
+
+#: lib/potok_ide_web/domain_copy.ex:625
+#, elixir-autogen, elixir-format
+msgid "sub-group"
+msgstr "подгрупа"
+
+#: lib/potok_ide_web/domain_copy.ex:192
+#, elixir-autogen, elixir-format
+msgid "sub-group count"
+msgstr "број подгрупа"
+
+#: lib/potok_ide_web/domain_copy.ex:651
+#, elixir-autogen, elixir-format
+msgid "table"
+msgstr "табела"
+
+#: lib/potok_ide_web/domain_copy.ex:283
+#, elixir-autogen, elixir-format
+msgid "tag"
+msgstr "таг"
+
+#: lib/potok_ide_web/domain_copy.ex:309
+#, elixir-autogen, elixir-format
+msgid "tags the viewer sees"
+msgstr "тагови које гледалац види"
+
+#: lib/potok_ide_web/domain_copy.ex:254
+#, elixir-autogen, elixir-format
+msgid "time zone"
+msgstr "временска зона"
+
+#: lib/potok_ide_web/domain_copy.ex:249
+#, elixir-autogen, elixir-format
+msgid "title"
+msgstr "наслов"
+
+#: lib/potok_ide_web/domain_copy.ex:628
+#, elixir-autogen, elixir-format
+msgid "to a value"
+msgstr "на вредност"
+
+#: lib/potok_ide_web/domain_copy.ex:131
+#, elixir-autogen, elixir-format
+msgid "token"
+msgstr "токен"
+
+#: lib/potok_ide_web/domain_copy.ex:168
+#, elixir-autogen, elixir-format
+msgid "username"
+msgstr "корисничко име"
+
+#: lib/potok_ide_web/domain_copy.ex:611
+#, elixir-autogen, elixir-format
+msgid "uses"
+msgstr "користи"
+
+#: lib/potok_ide_web/domain_copy.ex:296
+#, elixir-autogen, elixir-format
+msgid "value"
+msgstr "вредност"
+
+#: lib/potok_ide_web/domain_copy.ex:186
+#, elixir-autogen, elixir-format
+msgid "value of the thread"
+msgstr "вредност нити"
+
+#: lib/potok_ide_web/domain_copy.ex:193
+#, elixir-autogen, elixir-format
+msgid "viewer is a member"
+msgstr "гледалац је члан"
+
+#: lib/potok_ide_web/domain_copy.ex:105
+#, elixir-autogen, elixir-format
+msgid "when this holds: %{field}"
+msgstr "кад важи: %{field}"
+
+#: lib/potok_ide_web/domain_copy.ex:102
+#, elixir-autogen, elixir-format
+msgid "when this is set: %{field}"
+msgstr "кад је попуњено: %{field}"
+
+#: lib/potok_ide_web/domain_copy.ex:99
+#, elixir-autogen, elixir-format
+msgid "while this is empty: %{field}"
+msgstr "док је празно: %{field}"
+
+#: lib/potok_ide_web/domain_copy.ex:245
+#: lib/potok_ide_web/domain_copy.ex:284
+#, elixir-autogen, elixir-format
+msgid "who added it"
+msgstr "ко је додао"
+
+#: lib/potok_ide_web/domain_copy.ex:207
+#, elixir-autogen, elixir-format
+msgid "who approved"
+msgstr "ко је одобрио"
+
+#: lib/potok_ide_web/domain_copy.ex:300
+#, elixir-autogen, elixir-format
+msgid "who asks to join"
+msgstr "ко тражи улазак"
+
+#: lib/potok_ide_web/domain_copy.ex:298
+#, elixir-autogen, elixir-format
+msgid "who invited"
+msgstr "ко позива"
+
+#: lib/potok_ide_web/domain_copy.ex:299
+#, elixir-autogen, elixir-format
+msgid "who is invited"
+msgstr "ко је позван"
+
+#: lib/potok_ide_web/domain_copy.ex:612
+#, elixir-autogen, elixir-format
+msgid "writes"
+msgstr "пише"

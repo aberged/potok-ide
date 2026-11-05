@@ -36,7 +36,7 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   # (users see and type them as they are), technical names and brands.
   @kept ~r/
     %?\{[^}]*\} | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* | @?\b(?:admin|everyone)\b |
-    \b(?:API|Apple|Auth|Endpoint|English|FCM|Firebase\ Cloud\ Messaging|Firebase|Google\ Play|
+    \b(?:API|Apple|Auth|Endpoint|English|FCM|Firebase\ Cloud\ Messaging|Firebase|Gmail|Google\ Play|
     Google|HTML|HTTPS|iPhone|localhost|Markdown|Outlook|P256DH|service\ worker|URL|User\ Agent)\b
   /ux
 

@@ -77,6 +77,7 @@ defmodule PotokIdeWeb.Router do
     get "/locale/:locale", LocaleController, :update
     get "/", PageController, :home
     get "/privacy-policy", PageController, :privacy
+    get "/domain", PageController, :domain
   end
 
   # The service worker takes these posts (`priv/static/sw.js`); this is for

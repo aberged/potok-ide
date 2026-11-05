@@ -93,6 +93,28 @@
       </ul>
     </section>
 
+    <section id="landing-domain" class="lp-section">
+      <p class="lp-kicker">{gettext("Under the surface")}</p>
+      <div class="lp-domain">
+        <div>
+          <h2>{gettext("Simple, but not shallow.")}</h2>
+          <p>
+            {gettext(
+              "Profiles, groups, values, roles, reactions, threads, events, descriptions and apps are all entities of the domain model of the social application network that Potok implements."
+            )}
+          </p>
+          <.link id="landing-domain-link" href={~p"/domain"} class="lp-domain-link group">
+            {gettext("See the domain map")}
+            <.icon
+              name="hero-arrow-right"
+              class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </.link>
+        </div>
+        <.domain_loop />
+      </div>
+    </section>
+
     <section id="landing-join" class="lp-cta scroll-mt-6">
       <h2>{gettext("For now, Potok is by invitation only.")}</h2>
       <p>{gettext("Know someone who could use it? Send them an invitation by email.")}</p>

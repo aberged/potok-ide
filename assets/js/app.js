@@ -27,6 +27,7 @@ import {Socket} from "phoenix"
 import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
+import { installDomainMap } from "./domain_map"
 import { installLongPressLinkMenu } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
 import {
@@ -1643,6 +1644,7 @@ const updateDrawerActiveLinks = () => {
   })
 }
 
+window.addEventListener("DOMContentLoaded", installDomainMap)
 window.addEventListener("DOMContentLoaded", updateDrawerActiveLinks)
 window.addEventListener("phx:page-loading-stop", updateDrawerActiveLinks)
 window.addEventListener("DOMContentLoaded", () => {

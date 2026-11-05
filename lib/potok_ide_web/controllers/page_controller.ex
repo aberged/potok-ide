@@ -3,6 +3,9 @@ defmodule PotokIdeWeb.PageController do
 
   import PotokIdeWeb.AccountAuth, only: [assign_nav_counts: 2]
 
+  alias PotokIde.DomainMap
+  alias PotokIdeWeb.DomainCopy
+
   plug :assign_nav_counts when action in [:privacy]
 
   # `mix potok.sr_cyrl` writes the Cyrillic policy from the Latin one.
@@ -41,6 +44,13 @@ defmodule PotokIdeWeb.PageController do
       true ->
         render(conn, :home)
     end
+  end
+
+  def domain(conn, _params) do
+    conn
+    |> assign(:page_title, DomainCopy.title())
+    |> assign(:page_description, DomainCopy.lead())
+    |> render(:domain, map: DomainCopy.map(DomainMap.graph()))
   end
 
   def privacy(conn, _params) do

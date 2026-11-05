@@ -1,0 +1,108 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+>
+  <div
+    id="domain-map"
+    class="dm mx-auto grid w-full max-w-[89rem] gap-3.5 px-5 pb-16 sm:px-8"
+    data-map={Jason.encode!(@map)}
+  >
+    <header class="dm-top">
+      <h1 class="font-brand">{DomainCopy.title()}</h1>
+      <p>{DomainCopy.lead()}</p>
+      <ul id="domain-stats">
+        <li :for={{count, noun} <- DomainCopy.stats(@map.counts)}><b>{count}</b> {noun}</li>
+      </ul>
+    </header>
+
+    <div class="dm-controls">
+      <div class="dm-views" role="group" aria-label={DomainCopy.views_label()}>
+        <button type="button" id="domain-view-core" aria-pressed="true">
+          {DomainCopy.view_name(:core)}
+        </button>
+        <button type="button" id="domain-view-tables" aria-pressed="false">
+          {DomainCopy.view_name(:tables)}
+        </button>
+      </div>
+      <div id="domain-chips" class="dm-chips" role="group" aria-label={DomainCopy.areas_label()}>
+        <button
+          :for={domain <- @map.domains}
+          type="button"
+          class="dm-chip"
+          aria-pressed="false"
+          data-domain={domain.id}
+          style={"--dc:var(--dm-#{domain.id})"}
+        >
+          {domain.name}
+        </button>
+      </div>
+      <button
+        type="button"
+        id="domain-soft-only"
+        class="dm-chip dm-chip-soft"
+        aria-pressed="false"
+      >
+        {DomainCopy.only_soft_links(@map.counts.soft)}
+      </button>
+      <label id="domain-all-links-wrap" class="dm-toggle" hidden>
+        <input type="checkbox" id="domain-all-links" />
+        <span>{DomainCopy.all_links(@map.counts.keys + @map.counts.soft)}</span>
+      </label>
+    </div>
+
+    <div class="dm-layout">
+      <div class="dm-main">
+        <figure class="dm-figure">
+          <div class="dm-scroll">
+            <svg id="domain-diagram" class="dm-svg" role="img" aria-label={DomainCopy.title()}>
+            </svg>
+          </div>
+          <figcaption id="domain-caption">
+            <p
+              :for={view <- [:core, :tables, :soft]}
+              data-caption={view}
+              hidden={view != :core}
+            >
+              {DomainCopy.caption(view, @map.counts)}
+              <span class="dm-swipe">{DomainCopy.swipe_hint()}</span>
+            </p>
+          </figcaption>
+        </figure>
+
+        <section id="domain-mechanisms" class="dm-mechanisms">
+          <h2 class="font-brand">{DomainCopy.mechanisms_title()}</h2>
+          <div>
+            <article :for={mechanism <- DomainCopy.mechanisms()}>
+              <h3>{mechanism.title}</h3>
+              <p><.domain_text text={mechanism.text} /></p>
+            </article>
+          </div>
+        </section>
+
+        <.domain_apps />
+      </div>
+
+      <aside class="dm-side">
+        <section id="domain-overview" class="dm-sheet">
+          <h2 class="font-brand">{DomainCopy.overview().title}</h2>
+          <p class="dm-hint">{DomainCopy.overview().hint}</p>
+
+          <h3>{DomainCopy.overview().blocking}</h3>
+          <p class="dm-hint">{DomainCopy.overview().blocking_hint}</p>
+          <.domain_links edges={blocking_keys(@map.edges)} entities={@map.entities} />
+
+          <h3>{DomainCopy.overview().soft}</h3>
+          <p class="dm-hint">{DomainCopy.overview().soft_hint}</p>
+          <.domain_links edges={soft_links(@map.edges)} entities={@map.entities} />
+
+          <h3>{DomainCopy.overview().composite}</h3>
+          <p class="dm-hint">{DomainCopy.overview().composite_hint}</p>
+          <.domain_links edges={composite_keys(@map.edges)} entities={@map.entities} />
+        </section>
+        <section id="domain-detail" class="dm-sheet" aria-live="polite" hidden></section>
+      </aside>
+    </div>
+  </div>
+</Layouts.guest>
