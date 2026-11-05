@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.AvatarController do
 
   require Logger
 
+  alias PotokIde.ImageMagick
   alias PotokIde.Social
 
   @cache_control "public, max-age=86400"
@@ -192,7 +193,7 @@ defmodule PotokIdeWeb.AvatarController do
 
     try do
       with :ok <- File.write(svg_path, svg),
-           {:ok, _output} <- run_imagemagick_convert(svg_path, png_path),
+           {:ok, _output} <- convert_svg(svg_path, png_path),
            {:ok, png_binary} <- File.read(png_path) do
         {:ok, png_binary}
       else
@@ -209,64 +210,18 @@ defmodule PotokIdeWeb.AvatarController do
     end
   end
 
-  defp run_imagemagick_convert(svg_path, png_path) do
-    case find_imagemagick() do
-      {imagemagick, :magick} ->
-        run_command(imagemagick, [
-          "convert",
-          "-background",
-          "none",
-          "-gravity",
-          "center",
-          "-extent",
-          "192x192",
-          "-resize",
-          "192x192",
-          svg_path,
-          png_path
-        ])
-
-      {imagemagick, :convert} ->
-        run_command(imagemagick, [
-          "-background",
-          "none",
-          "-gravity",
-          "center",
-          "-extent",
-          "192x192",
-          "-resize",
-          "192x192",
-          svg_path,
-          png_path
-        ])
-
-      nil ->
-        {:error, :imagemagick_not_found}
-    end
-  end
-
-  defp run_command(executable, args) do
-    case System.cmd(executable, args, stderr_to_stdout: true) do
-      {output, 0} -> {:ok, output}
-      {output, status} -> {:error, {:command_failed, status, output}}
-    end
-  end
-
-  defp find_imagemagick do
-    # Prefer `magick` because Windows has a built-in `convert.exe` disk utility.
-    case :os.type() do
-      {:win32, _} ->
-        case System.find_executable("magick") || System.find_executable("magick.exe") do
-          nil -> nil
-          path -> {path, :magick}
-        end
-
-      _ ->
-        cond do
-          magick = System.find_executable("magick") -> {magick, :magick}
-          convert = System.find_executable("convert") -> {convert, :convert}
-          true -> nil
-        end
-    end
+  defp convert_svg(svg_path, png_path) do
+    ImageMagick.convert([
+      "-background",
+      "none",
+      "-gravity",
+      "center",
+      "-extent",
+      "192x192",
+      "-resize",
+      "192x192",
+      svg_path,
+      png_path
+    ])
   end
 end

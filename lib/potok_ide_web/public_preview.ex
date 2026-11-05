@@ -21,11 +21,11 @@ defmodule PotokIdeWeb.PublicPreview do
 
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Format, Recurrence}
+  alias PotokIde.LinkCards
   alias PotokIde.LinkPreviews
   alias PotokIde.PlainText
   alias PotokIde.Social
   alias PotokIde.Social.Group
-  alias PotokIdeWeb.Avatars
 
   @description_length 200
   # The largest id Postgres takes; asking for a larger one would raise.
@@ -113,11 +113,16 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
-  # A group's initials are an SVG, so a group without a picture a card can show
-  # keeps Potok's.
   defp group_image(%Group{} = group) do
-    if Social.group_has_card_picture?(group.id),
-      do: PotokIdeWeb.Endpoint.url() <> Avatars.group_avatar_url(group)
+    version = group |> LinkCards.group_card() |> LinkCards.version()
+
+    url(~p"/cards/group/#{"#{group.id}.jpg"}?#{[v: version]}")
+  end
+
+  defp event_image(%Event{} = event) do
+    version = event |> LinkCards.event_card() |> LinkCards.version()
+
+    url(~p"/cards/event/#{"#{event.id}.jpg"}?#{[v: version]}")
   end
 
   defp event_preview(id) do
@@ -142,6 +147,7 @@ defmodule PotokIdeWeb.PublicPreview do
           [time, recurrence, location, description]
           |> Enum.reject(&(&1 in [nil, ""]))
           |> Enum.join(" · "),
+        page_image: event_image(event),
         page_url: url(~p"/groups/#{event.group_id}/calendar?#{[event: event.id]}")
       }
     else
@@ -154,23 +160,20 @@ defmodule PotokIdeWeb.PublicPreview do
   defp event_time(%Event{} = event) do
     now = DateTime.utc_now(:second)
 
-    occurrence =
-      Recurrence.next_occurrence_after(event, now) ||
-        Recurrence.build(event, Recurrence.start_date(event))
-
     Format.occurrence(
-      occurrence,
+      Recurrence.next_or_first(event, now),
       event.time_zone,
       Recurrence.local_date(now, event.time_zone)
     )
   end
 
-  defp parse_id(id) when is_binary(id) do
+  @doc "The id of a group or event in a link, nil for what cannot be one."
+  def parse_id(id) when is_binary(id) do
     case Integer.parse(id) do
       {id, ""} when id in 1..@max_id -> id
       _ -> nil
     end
   end
 
-  defp parse_id(_id), do: nil
+  def parse_id(_id), do: nil
 end

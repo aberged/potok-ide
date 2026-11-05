@@ -146,6 +146,11 @@ defmodule PotokIde.Events.Recurrence do
     find(event, from, &(DateTime.compare(&1.starts_at, instant) == :gt))
   end
 
+  @doc "The first occurrence after `instant`, or the first of a series that is over."
+  def next_or_first(%Event{} = event, %DateTime{} = instant) do
+    next_occurrence_after(event, instant) || build(event, start_date(event))
+  end
+
   @doc "The occurrence on a local date the caller knows is part of the series."
   def build(%Event{} = event, %Date{} = date) do
     first = start_date(event)

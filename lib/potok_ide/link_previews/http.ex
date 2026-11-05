@@ -1,6 +1,7 @@
 defmodule PotokIde.LinkPreviews.HTTP do
   @moduledoc """
-  Fetches the HTML of a page that a member linked, for its link preview.
+  Fetches the HTML of a page that a member linked, for its link preview, and
+  the picture of a public group, for the card of its link.
 
   The URLs come from members, so every request, redirects included, must go
   to a public address on port 80 or 443. The host is resolved first and
@@ -10,9 +11,9 @@ defmodule PotokIde.LinkPreviews.HTTP do
   Req's own adapter cannot pin the address without starting a Finch pool
   per host.
 
-  Reading stops at `</head>`, where the tags a preview needs end, or at
+  Reading a page stops at `</head>`, where the tags a preview needs end, or at
   1 MB (YouTube's come after about 800 kB of scripts). Only `200` HTML
-  responses count.
+  responses count. A picture must be whole: past 5 MB it is refused.
 
   Tests plug in `Req.Test` through the `:req_options` config (it replaces the
   adapter) and a `:resolver` that needs no network.
@@ -22,18 +23,27 @@ defmodule PotokIde.LinkPreviews.HTTP do
 
   @max_redirects 3
   @max_body_bytes 1_000_000
+  @max_image_bytes 5_000_000
   @connect_timeout 3_000
   @receive_timeout 5_000
   @html_types ~w(text/html application/xhtml+xml)
 
   @doc "`{:ok, html, final_url}` for a public HTML page, `:error` otherwise."
-  def get_html(url) when is_binary(url), do: get_html(url, @max_redirects)
+  def get_html(url) when is_binary(url), do: get(url, :html, @max_redirects)
 
-  defp get_html(url, redirects_left) do
+  @doc "`{:ok, bytes}` for a file at a public address, whatever it holds, `:error` otherwise."
+  def get_image(url) when is_binary(url) do
+    case get(url, :image, @max_redirects) do
+      {:ok, bytes, _final_url} -> {:ok, bytes}
+      :error -> :error
+    end
+  end
+
+  defp get(url, kind, redirects_left) do
     with {:ok, uri} <- parse_url(url),
          {:ok, address} <- resolve_public(uri.host),
-         {:ok, response} <- request(uri, address) do
-      handle_response(response, uri, redirects_left)
+         {:ok, response} <- request(uri, address, kind) do
+      handle_response(response, uri, kind, redirects_left)
     else
       _ -> :error
     end
@@ -114,11 +124,11 @@ defmodule PotokIde.LinkPreviews.HTTP do
 
   # This module is the adapter (`run/1`); the checked address travels in the
   # request's private data.
-  defp request(uri, address) do
+  defp request(uri, address, kind) do
     [
       method: :get,
       url: uri,
-      headers: request_headers(),
+      headers: request_headers(kind),
       redirect: false,
       retry: false,
       compressed: false,
@@ -127,31 +137,35 @@ defmodule PotokIde.LinkPreviews.HTTP do
     ]
     |> Req.new()
     |> Req.Request.put_private(:link_preview_address, address)
+    |> Req.Request.put_private(:link_preview_kind, kind)
     |> Req.merge(config(:req_options, []))
     |> Req.request()
   end
 
-  defp request_headers do
+  defp request_headers(kind) do
     [
       {"user-agent", "Mozilla/5.0 (compatible; PotokBot/1.0; +#{PotokIdeWeb.Endpoint.url()})"},
-      {"accept", "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"},
+      {"accept", accept(kind)},
       {"accept-language", "#{PotokIdeWeb.Locale.default_locale()},en;q=0.8"},
       {"accept-encoding", "identity"}
     ]
   end
 
-  defp handle_response(%Req.Response{status: status} = response, uri, redirects_left)
+  defp accept(:html), do: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.1"
+  defp accept(:image), do: "image/*,*/*;q=0.1"
+
+  defp handle_response(%Req.Response{status: status} = response, uri, kind, redirects_left)
        when status in [301, 302, 303, 307, 308] do
     case Req.Response.get_header(response, "location") do
       [location | _] when redirects_left > 0 ->
-        uri |> URI.merge(location) |> URI.to_string() |> get_html(redirects_left - 1)
+        uri |> URI.merge(location) |> URI.to_string() |> get(kind, redirects_left - 1)
 
       _ ->
         :error
     end
   end
 
-  defp handle_response(%Req.Response{status: 200, body: body} = response, uri, _redirects_left)
+  defp handle_response(%Req.Response{status: 200, body: body} = response, uri, :html, _redirects)
        when is_binary(body) do
     if html?(response) do
       {:ok, binary_part(body, 0, min(byte_size(body), @max_body_bytes)), URI.to_string(uri)}
@@ -160,7 +174,11 @@ defmodule PotokIde.LinkPreviews.HTTP do
     end
   end
 
-  defp handle_response(_response, _uri, _redirects_left), do: :error
+  defp handle_response(%Req.Response{status: 200, body: body}, uri, :image, _redirects_left)
+       when is_binary(body) and byte_size(body) <= @max_image_bytes,
+       do: {:ok, body, URI.to_string(uri)}
+
+  defp handle_response(_response, _uri, _kind, _redirects_left), do: :error
 
   defp html?(response) do
     case Req.Response.get_header(response, "content-type") do
@@ -179,6 +197,7 @@ defmodule PotokIde.LinkPreviews.HTTP do
   @doc false
   def run(%Req.Request{url: uri} = request) do
     address = Req.Request.get_private(request, :link_preview_address)
+    kind = Req.Request.get_private(request, :link_preview_kind)
     scheme = if uri.scheme == "https", do: :https, else: :http
     target = (uri.path || "/") <> if(uri.query, do: "?" <> uri.query, else: "")
     headers = for {name, values} <- request.headers, value <- values, do: {name, value}
@@ -192,8 +211,8 @@ defmodule PotokIde.LinkPreviews.HTTP do
              transport_opts: [timeout: @connect_timeout]
            ),
          {:ok, conn, ref} <- request_on(conn, target, headers) do
-      result =
-        receive_response(conn, ref, deadline, %{status: nil, headers: [], body: [], size: 0})
+      acc = %{kind: kind, status: nil, headers: [], body: [], size: 0}
+      result = receive_response(conn, ref, deadline, acc)
 
       Mint.HTTP.close(conn)
 
@@ -242,14 +261,19 @@ defmodule PotokIde.LinkPreviews.HTTP do
   defp collect({:data, ref, data}, {:cont, acc}, ref) do
     acc = %{acc | body: [acc.body, data], size: acc.size + byte_size(data)}
 
-    if acc.size >= @max_body_bytes or :binary.match(data, ["</head>", "</HEAD>"]) != :nomatch,
-      do: {:halt, {:done, acc}},
-      else: {:cont, {:cont, acc}}
+    if read_enough?(acc, data), do: {:halt, {:done, acc}}, else: {:cont, {:cont, acc}}
   end
 
   defp collect({:done, ref}, {:cont, acc}, ref), do: {:halt, {:done, acc}}
   defp collect({:error, ref, error}, _result, ref), do: {:halt, {:error, error}}
   defp collect(_response, result, _ref), do: {:cont, result}
+
+  defp read_enough?(%{kind: :html, size: size}, data) do
+    size >= @max_body_bytes or :binary.match(data, ["</head>", "</HEAD>"]) != :nomatch
+  end
+
+  # Over the limit, so `handle_response/4` refuses it rather than a cut picture.
+  defp read_enough?(%{kind: :image, size: size}, _data), do: size > @max_image_bytes
 
   defp to_response(acc) do
     Req.Response.new(

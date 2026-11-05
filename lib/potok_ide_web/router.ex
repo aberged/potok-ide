@@ -96,6 +96,15 @@ defmodule PotokIdeWeb.Router do
     get "/group/:id", AvatarController, :group
   end
 
+  # What sites and apps fetch for the card of a shared link (`13.jpg`): only for
+  # what guests can see, and with no session, as with avatars.
+  scope "/cards", PotokIdeWeb do
+    pipe_through :avatars
+
+    get "/group/:file", CardController, :group
+    get "/event/:file", CardController, :event
+  end
+
   # Other scopes may use custom stacks.
   # scope "/api", PotokIdeWeb do
   #   pipe_through :api

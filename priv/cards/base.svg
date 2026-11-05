@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+<defs>
+<linearGradient id="g" gradientUnits="userSpaceOnUse" x1="285" y1="-105" x2="915" y2="735"><stop offset="0" stop-color="#0a47a3"/><stop offset=".55" stop-color="#1565c6"/><stop offset="1" stop-color="#2e8fde"/></linearGradient>
+<radialGradient id="r" gradientUnits="userSpaceOnUse" cx="1200" cy="0" r="620"><stop offset="0" stop-color="#69cbf5" stop-opacity=".55"/><stop offset="1" stop-color="#69cbf5" stop-opacity="0"/></radialGradient>
+</defs>
+<rect width="1200" height="630" fill="url(#g)"/><rect width="1200" height="630" fill="url(#r)"/>
+<svg x="-20" y="470" width="1240" height="130" viewBox="0 0 1200 100" preserveAspectRatio="none"><path d="M0 50 C200 85 400 15 600 50 C800 85 1000 15 1200 50" fill="none" stroke="#ffffff" stroke-opacity="0.5" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke" /><path d="M0 60 C150 30 450 90 600 60 C750 30 1050 90 1200 60" fill="none" stroke="#69cbf5" stroke-opacity="0.8" stroke-width="2" stroke-linecap="round" vector-effect="non-scaling-stroke" /><path d="M0 45 C250 70 350 20 600 45 C850 70 950 20 1200 45" fill="none" stroke="#ffffff" stroke-opacity="0.55" stroke-width="2.5" stroke-linecap="round" vector-effect="non-scaling-stroke" stroke-dasharray="3 14"/></svg>
+</svg>

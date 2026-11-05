@@ -343,12 +343,13 @@ defmodule PotokIdeWeb.Layouts do
 
   @doc """
   The tags other sites and apps read to show a link to this page as a card.
-  Without a title, description or image of its own, a page shows Potok's card:
-  a wide picture, as opposed to a group's square `image`.
+  Without a title, description or image of its own, a page shows Potok's card.
+  Every picture is 1200x630: with its size in the tags Facebook shows it on the
+  first share too, and without one that fits, WhatsApp shows none.
   """
   attr :title, :string, default: nil
   attr :description, :string, default: nil
-  attr :image, :string, default: nil, doc: "the absolute URL of a square picture"
+  attr :image, :string, default: nil, doc: "the absolute URL of a card from `LinkCards`"
   attr :url, :string, required: true, doc: "the absolute URL the card stands for"
   attr :locale, :string, required: true
   attr :noindex, :boolean, default: false, doc: "keeps the page out of search engines"
@@ -377,15 +378,16 @@ defmodule PotokIdeWeb.Layouts do
     <meta property="og:locale" content={@og_locale} />
     <%= if @image do %>
       <meta property="og:image" content={@image} />
-      <meta name="twitter:card" content="summary" />
+      <meta property="og:image:type" content="image/jpeg" />
+      <meta property="og:image:alt" content={@title} />
     <% else %>
       <meta property="og:image" content={url(~p"/images/og.png")} />
       <meta property="og:image:type" content="image/png" />
-      <meta property="og:image:width" content="1200" />
-      <meta property="og:image:height" content="630" />
       <meta property="og:image:alt" content="Potok" />
-      <meta name="twitter:card" content="summary_large_image" />
     <% end %>
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
     """
   end
 

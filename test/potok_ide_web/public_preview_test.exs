@@ -204,25 +204,41 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       refute body =~ "Samo za upravu"
     end
 
-    test "shows its picture when it has one, and Potok's otherwise", %{conn: conn, owner: owner} do
-      plain = conn |> get(~p"/groups/#{public_group!(owner).id}") |> document()
+    test "has a card of its own, with or without a picture", %{conn: conn, owner: owner} do
+      plain = public_group!(owner, %{"name" => "Komšije"})
 
-      assert og(plain, "image") == url(~p"/images/og.png")
-      assert og(plain, "image:width") == "1200"
-      assert meta(plain, ~s(meta[name="twitter:card"])) == "summary_large_image"
+      pictured =
+        public_group!(owner, %{
+          "name" => "Čamci",
+          "group_picture_url" => "https://example.com/grupa.png"
+        })
 
-      group = public_group!(owner, %{"group_picture_url" => "https://example.com/grupa.png"})
-      pictured = conn |> get(~p"/groups/#{group.id}") |> document()
+      for {group, name} <- [{plain, "Komšije"}, {pictured, "Čamci"}] do
+        document = conn |> get(~p"/groups/#{group.id}") |> document()
 
-      assert og(pictured, "image") =~ url(~p"/avatar/group/#{group.id}")
-      assert og(pictured, "image:width") == nil
-      assert meta(pictured, ~s(meta[name="twitter:card"])) == "summary"
+        assert og(document, "image") =~ "/cards/group/#{group.id}.jpg?v="
+        assert og(document, "image:type") == "image/jpeg"
+        assert og(document, "image:width") == "1200"
+        assert og(document, "image:height") == "630"
+        assert og(document, "image:alt") == name
+        assert meta(document, ~s(meta[name="twitter:card"])) == "summary_large_image"
+      end
     end
 
-    test "keeps Potok's picture on the card when the group's is an SVG", %{
-      conn: conn,
-      owner: owner
-    } do
+    test "gives its card a new address when the card changes", %{conn: conn, owner: owner} do
+      group = public_group!(owner)
+      image = fn -> conn |> get(~p"/groups/#{group.id}") |> document() |> og("image") end
+      first = image.()
+
+      assert image.() == first
+
+      {:ok, _group} =
+        Social.update_group(owner, group, %{"group_picture_url" => "https://example.com/a.png"})
+
+      assert image.() != first
+    end
+
+    test "shows on its page an SVG that its card cannot", %{conn: conn, owner: owner} do
       for picture <- [
             "https://deoba.example/favicon.svg",
             "https://deoba.example/FAVICON.SVG?v=2",
@@ -231,8 +247,7 @@ defmodule PotokIdeWeb.PublicPreviewTest do
         group = public_group!(owner, %{"group_picture_url" => picture})
         document = conn |> get(~p"/groups/#{group.id}") |> document()
 
-        assert og(document, "image") == url(~p"/images/og.png")
-        assert meta(document, ~s(meta[name="twitter:card"])) == "summary_large_image"
+        assert og(document, "image") =~ "/cards/group/#{group.id}.jpg?v="
 
         # Browsers read it, so the page itself shows it.
         assert found?(document, "#public-group-image[src^='/avatar/group/#{group.id}']")
@@ -452,7 +467,8 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       assert og(document, "description") =~ "18:00–19:30"
       assert og(document, "description") =~ "Ada"
       assert og(document, "description") =~ "Skupljamo se kod mosta."
-      assert og(document, "image") == url(~p"/images/og.png")
+      assert og(document, "image") =~ "/cards/event/#{event.id}.jpg?v="
+      assert og(document, "image:alt") == "Čišćenje obale"
 
       assert og(document, "url") ==
                url(~p"/groups/#{group.id}/calendar?#{[event: event.id]}")

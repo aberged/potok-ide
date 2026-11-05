@@ -173,19 +173,13 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  @svg_picture "^data:image/svg|\\.svg([?#]|$)"
-
-  @doc """
-  Whether the card of a shared link can show the group's picture: any but an
-  SVG, which sites that show cards do not read. Does not load the picture.
-  """
-  def group_has_card_picture?(id) when is_integer(id) do
+  @doc "A hash of the group's picture, nil without one. Does not load the picture."
+  def group_picture_hash(id) when is_integer(id) do
     from(g in Group,
-      where:
-        g.id == ^id and g.group_picture_url != "" and
-          fragment("? !~* ?", g.group_picture_url, ^@svg_picture)
+      where: g.id == ^id and g.group_picture_url != "",
+      select: fragment("md5(?)", g.group_picture_url)
     )
-    |> Repo.exists?()
+    |> Repo.one()
   end
 
   def create_profile(attrs) do

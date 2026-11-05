@@ -15,6 +15,7 @@ defmodule PotokIde.Application do
       PotokIdeWeb.Telemetry,
       PotokIde.Cache,
       {Task.Supervisor, name: PotokIde.TaskSupervisor},
+      {Task.Supervisor, name: PotokIde.LinkCards.Renderers, max_children: 1},
       PotokIde.Repo,
       {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PotokIde.PubSub},
@@ -32,17 +33,9 @@ defmodule PotokIde.Application do
   end
 
   defp maybe_warn_missing_imagemagick do
-    has_magick = System.find_executable("magick")
-
-    has_convert =
-      case :os.type() do
-        {:win32, _} -> false
-        _ -> System.find_executable("convert")
-      end
-
-    if is_nil(has_magick) and is_nil(has_convert) do
+    if is_nil(PotokIde.ImageMagick.find()) do
       Logger.warning(
-        "ImageMagick executable not found. Avatar initials cannot be rasterized to PNG; Potok will fall back to the default avatar image. Install ImageMagick so `magick` is available in PATH."
+        "ImageMagick executable not found. Avatar initials cannot be rasterized to PNG and shared links get Potok's own picture. Install ImageMagick so `magick` is available in PATH."
       )
     end
   end

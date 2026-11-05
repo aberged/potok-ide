@@ -220,6 +220,48 @@ defmodule PotokIde.LinkPreviewsTest do
     end
   end
 
+  describe "HTTP.get_image/1" do
+    test "takes any file, after a redirect" do
+      Req.Test.stub(LinkPreviews, fn
+        %{request_path: "/moved"} = conn -> redirect(conn, "/a.png")
+        conn -> Plug.Conn.send_resp(conn, 200, "picture")
+      end)
+
+      assert HTTP.get_image("https://example.com/moved") == {:ok, "picture"}
+    end
+
+    test "refuses a file over the limit rather than cut it" do
+      Req.Test.stub(LinkPreviews, fn conn ->
+        Plug.Conn.send_resp(conn, 200, :binary.copy("x", 5_000_001))
+      end)
+
+      assert HTTP.get_image("https://example.com/huge.png") == :error
+    end
+
+    test "refuses what is not there" do
+      Req.Test.stub(LinkPreviews, fn conn -> Plug.Conn.send_resp(conn, 404, "picture") end)
+
+      assert HTTP.get_image("https://example.com/gone.png") == :error
+    end
+
+    test "never asks a private address" do
+      test_pid = self()
+
+      Req.Test.stub(LinkPreviews, fn
+        %{host: "example.com"} = conn ->
+          redirect(conn, "http://169.254.169.254/")
+
+        conn ->
+          send(test_pid, {:requested, conn.host})
+          Plug.Conn.send_resp(conn, 200, "picture")
+      end)
+
+      assert HTTP.get_image("https://db.internal.test/a.png") == :error
+      assert HTTP.get_image("https://example.com/a.png") == :error
+      refute_received {:requested, _host}
+    end
+  end
+
   describe "HTTP.public_address?/1" do
     test "refuses private, local and reserved addresses" do
       for address <- [
