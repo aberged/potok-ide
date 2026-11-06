@@ -29,7 +29,7 @@ msgstr "%{field}, bez obzira na veličinu slova"
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr "<Account>Nalog</Account> je identitet: imejl i lozinka. Sve u grupama radi <Profile>profil</Profile>. Jedan nalog može da ima više profila, recimo poslovni, privatni i klupski. Kod ih ne razlikuje po nameni, nego samo jedinstvene od deljenih. Deljeni profil koriste svi nalozi koji prihvate <ProfileInvitation>pozivnicu za profil</ProfileInvitation>."
 
-#: lib/potok_ide_web/domain_copy.ex:972
+#: lib/potok_ide_web/domain_copy.ex:980
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupom, profilom, događajem, vrednošću ili fajlom, i to proverava baza. Tag bez vlasnika je javan. Tag sa vlasnikom vidi samo taj profil."
@@ -39,7 +39,7 @@ msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupo
 msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
 msgstr "<Group>Grupa</Group> otvorena iz <Value>vrednosti</Value> je nit. Jedna vrednost ima najviše jednu nit, a nit uvek nasleđuje članove. Koren je jedan, bez roditelja i bez autora. Sve ostale grupe imaju oboje, pa i direktni razgovori, koji stoje odmah ispod korena."
 
-#: lib/potok_ide_web/domain_copy.ex:980
+#: lib/potok_ide_web/domain_copy.ex:988
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
 msgstr "<GroupInvitation>Pozivnica u grupu</GroupInvitation> ide od profila do profila. Ako pozvani nalog još nema profil, čuva se <GroupAccountInvitation>pozivnica za nalog</GroupAccountInvitation>, koja postaje obična pozivnica čim nalog dobije prvi profil. <GroupJoinRequest>Zahtev za ulazak</GroupJoinRequest> ide u drugom smeru. Kad se prihvati, briše se, a ostaje <GroupJoinRequestApproval>odobren zahtev</GroupJoinRequestApproval> sa imenom onoga ko je primio člana."
@@ -64,7 +64,7 @@ msgstr "Grupa sadrži vrednosti, a vrednost otvara nit, koja je opet grupa. Zato
 msgid "A group public from the root must be public."
 msgstr "Grupa javna iz korena mora biti javna."
 
-#: lib/potok_ide_web/domain_copy.ex:954
+#: lib/potok_ide_web/domain_copy.ex:962
 #, elixir-autogen, elixir-format
 msgid "A group's description can be an app"
 msgstr "Opis grupe može biti aplikacija"
@@ -204,7 +204,7 @@ msgstr "Sve tabele domena po celinama, sa spoljnim ključevima i mekim vezama."
 msgid "Alt. description"
 msgstr "Alternativni opis"
 
-#: lib/potok_ide_web/domain_copy.ex:988
+#: lib/potok_ide_web/domain_copy.ex:996
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr "<Event>Događaj</Event> čuva pravilo ponavljanja. Pojedinačno pojavljivanje se imenuje lokalnim datumom početka, pa <Response>odgovor na događaj</Response> nosi taj datum, a otkazana pojavljivanja su zapisana na događaju."
@@ -254,7 +254,7 @@ msgstr "Reakcija jednog profila na vrednost. Isti profil ne može dvaput istim e
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event."
 msgstr "Događaj u kalendaru grupe, jednom ili sa ponavljanjem. Početak i kraj važe za prvo pojavljivanje, a ponavljanja čuvaju lokalno vreme vremenske zone događaja. Događaj može da najavi vrednost."
 
-#: lib/potok_ide_web/domain_copy.ex:986
+#: lib/potok_ide_web/domain_copy.ex:994
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr "Pojavljivanje događaja nema svoj red"
@@ -389,7 +389,7 @@ msgstr "Dokle je profil pročitao grupu. Nepročitano je sve novije od poslednje
 msgid "How permissions come about"
 msgstr "Kako nastaju dozvole"
 
-#: lib/potok_ide_web/domain_copy.ex:978
+#: lib/potok_ide_web/domain_copy.ex:986
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr "Kako se ulazi u grupu"
@@ -484,7 +484,7 @@ msgstr "Jedan uređaj ili pregledač koji prima obaveštenja, preko veb pusha il
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr "Jedan tag na jednoj stavci. Popunjena je tačno jedna od pet kolona sa metom, što proverava baza."
 
-#: lib/potok_ide_web/domain_copy.ex:970
+#: lib/potok_ide_web/domain_copy.ex:978
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr "Jedan tag, pet vrsta stavki"
@@ -649,7 +649,7 @@ msgstr "Jezgro domena: nalog koristi profile, profil je član grupa, grupa sadr�
 msgid "The data of an app goes with its description, and it can be deleted from the group's settings."
 msgstr "Podaci aplikacije nestaju sa njenim opisom, a mogu da se obrišu i iz podešavanja grupe."
 
-#: lib/potok_ide_web/domain_copy.ex:956
+#: lib/potok_ide_web/domain_copy.ex:964
 #, elixir-autogen, elixir-format
 msgid "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
 msgstr "Podrazumevani opis i svaki <GroupAltDescription>alternativni opis</GroupAltDescription> mogu da budu aplikacija. Njeni podaci su <Value>vrednosti</Value> označene kao podaci, a svaka zna kojoj aplikaciji pripada. Složeni ključ ih drži u istoj grupi, a brisanje alternativnog opisa briše i njegove podatke."
@@ -1660,12 +1660,22 @@ msgstr "Skuplja reakcije i komentare"
 msgid "Group reaction"
 msgstr "Reakcija na grupu"
 
-#: lib/potok_ide_web/domain_copy.ex:964
+#: lib/potok_ide_web/domain_copy.ex:972
 #, elixir-autogen, elixir-format
 msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description."
 msgstr "Sliku koju šablon opisa uzme sa uređaja čuva <Value>vrednost</Value> u chatu grupe, sa svojim <ValueAttachment>fajlom</ValueAttachment>, pa slika ostaje među fajlovima grupe. Opis vidi više ljudi nego chat, zato je adresa slike potpisana i ne traži prijavu. Brisanje te vrednosti uklanja sliku i iz opisa."
 
-#: lib/potok_ide_web/domain_copy.ex:962
+#: lib/potok_ide_web/domain_copy.ex:970
 #, elixir-autogen, elixir-format
 msgid "A picture in a description is a file in the chat"
 msgstr "Slika u opisu je fajl u chatu"
+
+#: lib/potok_ide_web/domain_copy.ex:956
+#, elixir-autogen, elixir-format
+msgid "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it."
+msgstr "Nova <Group>grupa</Group> može da krene od preseta: chat, folder, obaveštenja, feed ili stranica. Preset podešava ono što svaka grupa može da ima i ništa ga ne pamti, pa se sve može kasnije promeniti. Obaveštenja dobijaju i sopstveni <GroupManifest>manifest</GroupManifest>, u kom `everyone` više ne piše. Feed su dve grupe, jedna sa aplikacijom Feed i jedna ispod nje sa FeedCreator-om, i svaka čuva svoju kopiju aplikacije, pa nova verzija stiže samo u feed-ove napravljene posle nje."
+
+#: lib/potok_ide_web/domain_copy.ex:954
+#, elixir-autogen, elixir-format
+msgid "A preset only fills in a new group"
+msgstr "Preset samo popunjava novu grupu"

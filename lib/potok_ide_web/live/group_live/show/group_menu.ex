@@ -108,7 +108,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         id={"#{@id_prefix}-tags-button"}
         type="button"
         data-dropdown-close
-        phx-click={open_tags(@group, @row?)}
+        phx-click={open_dialog("tag_editor_open", %{kind: "group", id: @group.id}, @row?)}
         class={item_class()}
       >
         <.icon name="hero-hashtag" class="size-4" />
@@ -131,15 +131,17 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         label={gettext("Roles")}
         icon="hero-shield-check"
       />
-      <.tab_item
+      <button
         :if={Access.can?(@access, :create_subgroups)}
         id={"#{@id_prefix}-tab-create-sub-group"}
-        group={@group}
-        tab="create_group"
-        active_tab={@active_tab}
-        label={gettext("Create sub-group")}
-        icon="hero-folder-plus"
-      />
+        type="button"
+        data-dropdown-close
+        phx-click={open_dialog("group_create_menu_open", %{id: @group.id}, @row?)}
+        class={item_class()}
+      >
+        <.icon name="hero-folder-plus" class="size-4" />
+        <span class="ml-2 truncate">{gettext("Create sub-group")}</span>
+      </button>
       <.tab_item
         :if={
           @group.parent_id != nil && !@group.is_direct &&
@@ -194,11 +196,11 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     """
   end
 
-  # A row's menu steps aside, as the tag editor is a dialog of its own.
-  defp open_tags(group, row?) do
+  # A row's menu steps aside for what is a dialog of its own.
+  defp open_dialog(event, value, row?) do
     js = if row?, do: JS.push("group_row_menu_close"), else: %JS{}
 
-    JS.push(js, "tag_editor_open", value: %{kind: "group", id: group.id})
+    JS.push(js, event, value: value)
   end
 
   defp item_class do

@@ -37,6 +37,12 @@ Aplikacije ne razgovaraju jedna sa drugom i ne znaju jedna za drugu. Ceo ugovor 
 
 ## Postavljanje
 
+Najkraći put je preset: **Kreiraj podgrupu** pa **Feed**. On napravi obe grupe sa aplikacijama i sve što je navedeno niže, a tebe odvede u FeedCreator.
+
+Preset uzima kopije iz `priv/apps`, koje `mix potok.sync_apps` osvežava iz build-ova oba projekta. Svaka grupa čuva kopiju sa kojom je napravljena, kao i kod lepljenja, pa nova verzija stiže samo u feed-ove napravljene posle nje.
+
+Ručno, na primer u postojećoj grupi:
+
 1. U oba projekta pokreni `npm run build`. Svaki pravi jedan fajl, `dist/potok-build.html`.
 2. Napravi roditeljsku grupu, ili otvori postojeću. U **Uredi grupu** uključi **Opis je aplikacija (API)** i u opis nalepi build Feed-a.
 3. U toj grupi napravi podgrupu tačnog imena `.feed`:

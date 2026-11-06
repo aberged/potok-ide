@@ -43,7 +43,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.{TagComponents, TagEditor}
-  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
+  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components, CreateMenu}
 
   @children_page_size 20
   @members_page_size 20
@@ -552,6 +552,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       <MediaViewer.viewer />
       <TagComponents.tag_editor editor={@tag_editor} />
+      <CreateMenu.menu menu={@group_create_menu} />
     </Layouts.app>
     """
   end
@@ -649,7 +650,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:new_group_form, empty_new_group_form())
          |> assign(:edit_group_form, edit_group_form(group, active_tab))
          |> assign(:link_card, link_card(group, active_tab))
-         |> assign(:edit_group_section, "basics")
+         |> assign(:edit_group_section, opening_edit_section(params))
          |> assign(:create_group_section, "basics")
          |> assign(
            :inherits_members_option?,
@@ -666,6 +667,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:group_reactions, [])
          |> assign(:can_react_to_group, false)
          |> TagEditor.init()
+         |> CreateMenu.init()
          |> CalendarState.init(params)
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
@@ -734,6 +736,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("tag_editor_" <> _ = event, params, socket),
     do: TagEditor.handle_event(event, params, socket)
+
+  def handle_event("group_create_menu_" <> _ = event, params, socket),
+    do: CreateMenu.handle_event(event, params, socket)
 
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
@@ -3102,6 +3107,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp maybe_reload_edit_group_form(socket, _active_tab), do: socket
+
+  # A link can open the edit tab on one of its cards.
+  defp opening_edit_section(%{"section" => section}) when section in @edit_group_sections,
+    do: section
+
+  defp opening_edit_section(_params), do: "basics"
 
   # Opening the create tab starts on its first card.
   defp assign_new_tab_section(socket, "create_group"),

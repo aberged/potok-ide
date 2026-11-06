@@ -100,6 +100,7 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Each row of the sub-groups tab has a menu with the sections and the options of that group (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
+* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed and page. The full form stays a link away. The feed preset reads its two apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed` and `potok-feed-creator`.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
 Tags:

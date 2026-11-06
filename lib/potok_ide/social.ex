@@ -31,6 +31,7 @@ defmodule PotokIde.Social do
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
+    GroupPresets,
     GroupReaction,
     GroupRole,
     GroupValueRead,
@@ -421,8 +422,86 @@ defmodule PotokIde.Social do
   end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
-    attrs = Map.new(attrs)
+    with {:ok, attrs} <- checked_group_attrs(creator, parent, Map.new(attrs)) do
+      insert_group_with_creator(creator, parent, attrs)
+    end
+  end
 
+  @doc """
+  Creates a group from a preset of `GroupPresets` with all that goes with it,
+  or nothing at all. `choices` are what the viewer picked. Returns the group
+  and, for a feed, the `.feed` below it, which is where its author writes.
+
+  Nobody hears of a group before it all stands, so the news goes out last.
+  """
+  def create_group_from_preset(%Profile{} = creator, %Group{} = parent, preset, choices) do
+    Repo.transaction(fn ->
+      with {:ok, group, created} <-
+             insert_preset_group(
+               creator,
+               parent,
+               GroupPresets.attrs(preset, choices),
+               GroupPresets.taken_from_everyone(preset)
+             ),
+           {:ok, feed, feed_created} <- insert_preset_feed(creator, group, preset) do
+        {group, feed, created ++ feed_created}
+      else
+        {:error, reason} -> Repo.rollback(reason)
+      end
+    end)
+    |> case do
+      {:ok, {group, feed, created}} ->
+        Enum.each(created, fn {parent, group, changes} ->
+          broadcast_group_created(creator, parent, group, changes)
+        end)
+
+        {:ok, %{group: group, feed: feed}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp insert_preset_feed(%Profile{} = creator, %Group{} = group, "feed") do
+    insert_preset_group(
+      creator,
+      group,
+      GroupPresets.feed_attrs(group),
+      GroupPresets.taken_from_everyone_in_feed()
+    )
+  end
+
+  defp insert_preset_feed(_creator, _group, _preset), do: {:ok, nil, []}
+
+  defp insert_preset_group(%Profile{} = creator, %Group{} = parent, attrs, taken) do
+    with {:ok, attrs} <- checked_group_attrs(creator, parent, attrs),
+         {:ok, group, changes} <- insert_group_quietly(creator, parent, attrs),
+         :ok <- take_from_everyone(creator, group, taken) do
+      {:ok, group, [{parent, group, changes}]}
+    end
+  end
+
+  # In a manifest of the group's own, as the one it inherits is shared.
+  defp take_from_everyone(_creator, _group, []), do: :ok
+
+  defp take_from_everyone(%Profile{} = creator, %Group{} = group, permissions) do
+    with {:ok, _manifest} <- create_own_group_manifest(creator, group) do
+      Enum.reduce_while(permissions, :ok, fn permission, :ok ->
+        case set_group_role_permission(
+               creator,
+               group,
+               GroupRole.everyone_key(),
+               permission,
+               :neutral
+             ) do
+          {:ok, _role} -> {:cont, :ok}
+          {:error, _reason} = error -> {:halt, error}
+        end
+      end)
+    end
+  end
+
+  defp checked_group_attrs(%Profile{} = creator, %Group{} = parent, attrs) do
     cond do
       not member_of_group?(creator, parent) ->
         {:error, :not_a_member_of_parent_group}
@@ -435,20 +514,31 @@ defmodule PotokIde.Social do
         {:error, :invalid_parent_value}
 
       true ->
-        attrs =
-          attrs
-          |> Map.put("creator_id", creator.id)
-          |> Map.put("parent_id", parent.id)
-          |> Map.put_new("is_direct", false)
-          |> Map.put_new("is_root", false)
-
-        insert_group_with_creator(creator, parent, attrs)
+        {:ok,
+         attrs
+         |> Map.put("creator_id", creator.id)
+         |> Map.put("parent_id", parent.id)
+         |> Map.put_new("is_direct", false)
+         |> Map.put_new("is_root", false)}
     end
   end
 
-  # The creator is a direct member and admin; an inheriting group then gets
-  # the parent's members.
   defp insert_group_with_creator(%Profile{} = creator, %Group{} = parent, attrs) do
+    with {:ok, group, changes} <- insert_group_quietly(creator, parent, attrs) do
+      broadcast_group_created(creator, parent, group, changes)
+      {:ok, group}
+    end
+  end
+
+  defp broadcast_group_created(%Profile{} = creator, %Group{} = parent, group, changes) do
+    broadcast_group_updated(parent)
+    broadcast_group_membership_changed(creator.id, group.id, :added)
+    broadcast_inheritance_changes(changes)
+  end
+
+  # The creator is a direct member and admin; an inheriting group then gets
+  # the parent's members. It tells nobody: `broadcast_group_created/4` follows.
+  defp insert_group_quietly(%Profile{} = creator, %Group{} = parent, attrs) do
     changeset =
       %Group{}
       |> Group.changeset(attrs)
@@ -469,10 +559,7 @@ defmodule PotokIde.Social do
     |> Repo.transaction()
     |> case do
       {:ok, %{group: group, inheritance: changes}} ->
-        broadcast_group_updated(parent)
-        broadcast_group_membership_changed(creator.id, group.id, :added)
-        broadcast_inheritance_changes(changes)
-        {:ok, group}
+        {:ok, group, changes}
 
       {:error, _step, reason, _changes} ->
         {:error, reason}

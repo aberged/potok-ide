@@ -380,8 +380,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         :if={@can_create_subgroups}
         id="group-sub-groups-create-fab"
         type="button"
-        phx-click="switch_tab"
-        phx-value-tab="create_group"
+        phx-click="group_create_menu_open"
+        phx-value-id={@group.id}
         icon="hero-plus"
         label={gettext("Create sub-group")}
         variant="primary"

@@ -951,6 +951,14 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "A preset only fills in a new group"),
+        text:
+          dgettext(
+            "domain_map",
+            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it."
+          )
+      },
+      %{
         title: dgettext("domain_map", "A group's description can be an app"),
         text:
           dgettext(

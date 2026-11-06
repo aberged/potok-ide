@@ -108,7 +108,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 id="group-values-empty"
                 class="hidden min-h-56 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65 only:flex"
               >
-                {gettext("No messages yet. Start the conversation below.")}
+                {if(@can_post,
+                  do: gettext("No messages yet. Start the conversation below."),
+                  else: gettext("No messages yet.")
+                )}
               </div>
 
               <.inspect_tree
