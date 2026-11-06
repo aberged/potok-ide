@@ -99,6 +99,7 @@ Files:
 Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
+* Each row of the sub-groups tab has a menu with the options of the group's own menu (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
 Tags:

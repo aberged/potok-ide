@@ -29,6 +29,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     EditGroupTab,
     FilesTab,
     GroupDescriptionTab,
+    GroupMenu,
     InviteProfileTab,
     MediaViewer,
     MembersTab,
@@ -348,26 +349,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </button>
 
           <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
-            <div class="flex min-w-56 flex-col gap-2 z-100">
-              <Components.group_tab_button
-                :if={!@group.is_root}
-                id="group-tab-group-home"
-                tab="group_home"
-                active_tab={@active_tab}
-                label={gettext("About the group")}
-                icon="hero-information-circle"
-              />
-              <button
-                :if={Group.guest_preview?(@group)}
-                id="group-share-button"
-                type="button"
-                data-dropdown-close
-                data-share-link={url(~p"/groups/#{@group.id}")}
-                class={menu_item_class()}
-              >
-                <.icon name="hero-share" class="size-4" />
-                <span class="ml-2 truncate">{gettext("Share")}</span>
-              </button>
+            <GroupMenu.items group={@group} access={@access} active_tab={@active_tab}>
               <%!-- The root has no bar of sections. --%>
               <Components.group_tab_button
                 :if={@group.is_root and @calendar_tab?}
@@ -385,63 +367,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 label={gettext("Sub-groups")}
                 icon="hero-folder-open"
               />
-              <button
-                :if={!@group.is_root}
-                id="group-tags-button"
-                type="button"
-                data-dropdown-close
-                phx-click="tag_editor_open"
-                phx-value-kind="group"
-                phx-value-id={@group.id}
-                class={menu_item_class()}
-              >
-                <.icon name="hero-hashtag" class="size-4" />
-                <span class="ml-2 truncate">{gettext("Tags of this group")}</span>
-              </button>
-              <.link
-                id="group-tags-browse"
-                navigate={TagComponents.tags_path([], if(@group.is_root, do: nil, else: @group.id))}
-                class={menu_item_class()}
-              >
-                <.icon name="hero-squares-2x2" class="size-4" />
-                <span class="ml-2 truncate">{gettext("Browse by tags")}</span>
-              </.link>
-              <Components.group_tab_button
-                :if={@is_member and !@group.is_direct}
-                id="group-tab-roles"
-                tab="roles"
-                active_tab={@active_tab}
-                label={gettext("Roles")}
-                icon="hero-shield-check"
-              />
-              <Components.group_tab_button
-                :if={Access.can?(@access, :create_subgroups)}
-                id="group-tab-create-sub-group"
-                tab="create_group"
-                active_tab={@active_tab}
-                label={gettext("Create sub-group")}
-                icon="hero-folder-plus"
-              />
-              <Components.group_tab_button
-                :if={
-                  @group.parent_id != nil && !@group.is_direct &&
-                    Access.can?(@access, :invite_members)
-                }
-                id="group-tab-invite-profile"
-                tab="invite_profile"
-                active_tab={@active_tab}
-                label={gettext("Invite profile")}
-                icon="hero-user-plus"
-              />
-              <Components.group_tab_button
-                :if={Access.can?(@access, :edit_group) and !@group.is_root}
-                id="group-tab-edit-group"
-                tab="edit_group"
-                active_tab={@active_tab}
-                label={gettext("Edit group")}
-                icon="hero-cog-6-tooth"
-              />
-            </div>
+            </GroupMenu.items>
           </Layouts.drop_down_menu>
         </div>
       </div>
@@ -489,6 +415,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             show_public_sub_groups={@show_public_sub_groups}
             sub_groups_view={@sub_groups_view}
             tree={@sub_group_tree}
+            row_menu={@group_row_menu}
           />
           <MembersTab.panel
             :if={@active_tab == "members"}
@@ -669,6 +596,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> allow_attachments_upload()
          |> allow_description_picture_upload()
          |> assign(:template_list, nil)
+         |> assign(:group_row_menu, nil)
          |> assign(:loaded_children, [])
          |> assign(:pending_refresh, MapSet.new())
          |> assign(:refresh_due_at, nil)
@@ -1514,6 +1442,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
       assign(socket, :edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
     end)
   end
+
+  # Rights differ from group to group, so a row's menu is worked out when it
+  # is opened. The id comes from the page, so the group has to be one the
+  # viewer can see.
+  def handle_event("group_row_menu_open", %{"id" => id}, socket) do
+    profile = socket.assigns.current_profile
+
+    with %Profile{} <- profile,
+         {group_id, ""} <- Integer.parse(to_string(id)),
+         %Group{} = group <- Social.get_visible_group(profile, group_id) do
+      access = Social.get_group_access(profile, group)
+      {:noreply, assign(socket, :group_row_menu, %{group: group, access: access})}
+    else
+      _invisible -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("group_row_menu_close", _params, socket),
+    do: {:noreply, assign(socket, :group_row_menu, nil)}
 
   def handle_event("toggle_template_list", %{"workspace" => workspace}, socket) do
     open = if socket.assigns.template_list != workspace, do: workspace
@@ -2758,10 +2705,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     tags = Tags.tags_for(socket.assigns.current_profile, :group, [group_id])
     assign(socket, :group_tags, Map.get(tags, group_id, []))
   end
-
-  defp menu_item_class,
-    do:
-      "flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
 
   defp apply_value_deleted(socket, value_id) do
     socket =

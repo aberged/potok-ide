@@ -2,7 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Events.Format
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, GroupMenu}
   alias PotokIdeWeb.TagComponents
 
   attr :group, :map, required: true
@@ -31,6 +31,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
   attr :time_zone, :string, required: true, doc: "the viewer's, for when sub-groups were active"
+  attr :row_menu, :map, default: nil, doc: "the open menu of a row (`GroupMenu.row_menu/1`)"
 
   def panel(assigns) do
     assigns =
@@ -313,6 +314,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               :key={node.group.id}
               node={node}
               search_query={@children_search_query}
+              menu={@current_profile != nil}
             />
             <.tree_more_button :if={@tree.more?} id="group-children-tree-more" />
           </div>
@@ -349,7 +351,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                   id={"child-group-tags-#{group.id}"}
                   kind={:group}
                   item_id={group.id}
-                  class="shrink-0 opacity-60 transition-opacity group-hover/child:opacity-100 focus-visible:opacity-100"
+                  class={row_button_class()}
+                />
+                <GroupMenu.row_button
+                  :if={@current_profile}
+                  group_id={group.id}
+                  name={group.name}
+                  class={row_button_class()}
                 />
               </div>
             </li>
@@ -380,8 +388,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         size="lg"
         class="absolute bottom-[1.5rem] right-0 mr-6"
       />
+
+      <GroupMenu.row_menu :if={@row_menu} menu={@row_menu} />
     </div>
     """
+  end
+
+  defp row_button_class do
+    "shrink-0 opacity-60 transition-opacity group-hover/child:opacity-100 focus-visible:opacity-100"
   end
 
   # Direct conversations load no counts, so they show the time alone.
@@ -449,6 +463,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :node, :map, required: true, doc: "a `SubGroupTree` node"
   attr :search_query, :string, default: ""
+  attr :menu, :boolean, default: false, doc: "whether the rows offer `GroupMenu`"
 
   # The chevron opens and closes a folder; the name opens the group. The
   # server keeps which folders are open, so a reload keeps them as they were,
@@ -467,7 +482,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       role="treeitem"
       aria-expanded={@folder? && to_string(@node.open?)}
     >
-      <div class="flex items-center rounded-xl pr-2 transition-colors hover:bg-base-200">
+      <div class="group/child flex items-center rounded-xl pr-1 transition-colors hover:bg-base-200">
         <%= if @folder? do %>
           <button
             id={"sub-group-folder-toggle-#{@node.group.id}"}
@@ -492,6 +507,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <span class="size-8 shrink-0" aria-hidden="true"></span>
         <% end %>
         <.tree_node_link node={@node} search_query={@search_query} />
+        <GroupMenu.row_button
+          :if={@menu}
+          group_id={@node.group.id}
+          name={@node.group.name}
+          class={["ml-1", row_button_class()]}
+        />
       </div>
       <div
         :if={@node.open? and @node.children not in [nil, []]}
@@ -503,6 +524,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           :key={child.group.id}
           node={child}
           search_query={@search_query}
+          menu={@menu}
         />
         <.tree_more_button
           :if={@node.more?}
