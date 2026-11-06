@@ -1453,7 +1453,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
          {group_id, ""} <- Integer.parse(to_string(id)),
          %Group{} = group <- Social.get_visible_group(profile, group_id) do
       access = Social.get_group_access(profile, group)
-      {:noreply, assign(socket, :group_row_menu, %{group: group, access: access})}
+      sections = GroupMenu.sections(group, access.member?, calendar_tab?(group, access))
+      menu = %{group: group, access: access, sections: sections}
+
+      {:noreply, assign(socket, :group_row_menu, menu)}
     else
       _invisible -> {:noreply, socket}
     end
@@ -4399,65 +4402,33 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ]
   end
 
-  # The sections of a group, in the order of its bar. The root has none: its
-  # header switches between conversations and groups.
-  defp header_tabs(%Group{is_root: true}, _member?, _active_tab, _calendar?, _counts), do: []
-
   defp header_tabs(group, member?, active_tab, calendar?, {unread, sub_groups_unread, requests}) do
-    member_of_group? = member? and group.parent_id != nil
+    badges = %{
+      "values" => %{badge: unread, badge_id: "group-values-unread-badge"},
+      "sub_groups" => %{badge: sub_groups_unread, badge_id: "group-sub-groups-unread-badge"},
+      "members" => %{
+        badge: requests,
+        badge_id: "group-join-requests-badge",
+        badge_tone: :attention
+      }
+    }
 
-    [
-      member? &&
-        %{
-          id: "group-values-summary",
-          tab: "values",
-          icon: "hero-chat-bubble-oval-left-ellipsis",
-          label: gettext("Messages"),
-          active?: active_tab == "values",
-          badge: unread,
-          badge_id: "group-values-unread-badge"
-        },
-      member_of_group? &&
-        %{
-          id: "group-files-summary",
-          tab: "files",
-          icon: "hero-paper-clip",
-          label: gettext("Files"),
-          active?: active_tab == "files"
-        },
-      calendar? &&
-        %{
-          id: "group-calendar-summary",
-          tab: "calendar",
-          icon: "hero-calendar-days",
-          label: gettext("Calendar"),
-          active?: active_tab == "calendar"
-        },
-      # Threads are sub-groups, which direct conversations do not have.
-      ((member? or group.is_public) and not group.is_direct) &&
-        %{
-          id: "group-subgroups-summary",
-          tab: "sub_groups",
-          icon: "hero-folder-open",
-          label: gettext("Sub-groups"),
-          active?: needs_children?(group, active_tab),
-          badge: sub_groups_unread,
-          badge_id: "group-sub-groups-unread-badge"
-        },
-      member_of_group? &&
-        %{
-          id: "group-members-summary",
-          tab: "members",
-          icon: "hero-user-group",
-          label: gettext("Members"),
-          active?: active_tab == "members",
-          badge: requests,
-          badge_id: "group-join-requests-badge",
-          badge_tone: :attention
-        }
-    ]
-    |> Enum.filter(& &1)
+    group
+    |> GroupMenu.sections(member?, calendar?)
+    |> Enum.map(fn section ->
+      section
+      |> Map.merge(%{
+        id: "group-#{section.key}-summary",
+        active?: section_active?(section, group, active_tab)
+      })
+      |> Map.merge(Map.get(badges, section.tab, %{}))
+    end)
   end
+
+  defp section_active?(%{tab: "sub_groups"}, group, active_tab),
+    do: needs_children?(group, active_tab)
+
+  defp section_active?(section, _group, active_tab), do: section.tab == active_tab
 
   # Header shortcuts of the root: the active one gets a thin ring. `-m-1 p-1`
   # makes room for it around the icon without taking more room in the header.

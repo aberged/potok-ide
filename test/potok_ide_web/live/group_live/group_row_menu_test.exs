@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.EventsFixtures
   alias PotokIde.Social
 
   setup do
@@ -56,6 +57,30 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     |> Enum.map(&String.replace_prefix(&1, prefix, ""))
   end
 
+  defp attributes(lv, selector, name) do
+    lv
+    |> render()
+    |> LazyHTML.from_fragment()
+    |> LazyHTML.query(selector)
+    |> Enum.map(&(&1 |> LazyHTML.attribute(name) |> hd()))
+  end
+
+  # The bar of the open group against the top of a row's menu. What follows
+  # the sections in the menu is the group's own page.
+  defp assert_sections_match_bar(ctx, account, group, lv) do
+    bar =
+      ctx
+      |> open(account, ~p"/groups/#{group.id}/group_home")
+      |> attributes("#group-tabs button", "phx-value-tab")
+
+    links = attributes(lv, "#group-row-menu a[id]", "href")
+
+    assert Enum.map(links, &(&1 |> URI.parse() |> Map.fetch!(:path) |> Path.basename()))
+           |> Enum.take(length(bar) + 1) == bar ++ ["group_home"]
+
+    bar
+  end
+
   test "every row has the button, after its tags button", ctx do
     lv = sub_groups(ctx)
 
@@ -83,6 +108,8 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
              lv,
              ~s|#group-row-tab-edit-group[href="/groups/#{grandchild.id}/edit_group"]|
            )
+
+    assert has_element?(lv, ~s|#group-row-tab-files[href="/groups/#{grandchild.id}/files"]|)
   end
 
   test "the menu leads to the pages of that group", ctx do
@@ -111,8 +138,28 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     own_page = open(ctx, ctx.owner_account, ~p"/groups/#{ctx.child.id}/group_home")
     own = menu_ids(own_page, "#group-actions-menu-container", "group-")
 
-    assert row != []
-    assert row == own -- ["actions-menu"]
+    sections = ~w(tab-values tab-files tab-calendar tab-subgroups tab-members)
+
+    assert own != ["actions-menu"]
+    assert row -- sections == own -- ["actions-menu"]
+  end
+
+  test "it leads to the sections of the group's bar", ctx do
+    lv = ctx |> sub_groups() |> open_menu(ctx.child)
+
+    assert assert_sections_match_bar(ctx, ctx.owner_account, ctx.child, lv) ==
+             ~w(values files calendar sub_groups members)
+
+    assert has_element?(lv, ~s|#group-row-tab-values[href="/groups/#{ctx.child.id}/values"]|)
+    assert has_element?(lv, ~s|#group-row-tab-files[href="/groups/#{ctx.child.id}/files"]|)
+    assert has_element?(lv, ~s|#group-row-tab-calendar[href="/groups/#{ctx.child.id}/calendar"]|)
+
+    assert has_element?(
+             lv,
+             ~s|#group-row-tab-subgroups[href="/groups/#{ctx.child.id}/sub_groups"]|
+           )
+
+    assert has_element?(lv, ~s|#group-row-tab-members[href="/groups/#{ctx.child.id}/members"]|)
   end
 
   test "the rights are those of that group, not of the list it stands in", ctx do
@@ -142,6 +189,22 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     refute has_element?(lv, "#group-row-tab-create-sub-group")
     refute has_element?(lv, "#group-row-tab-invite-profile")
     refute has_element?(lv, "#group-row-tab-edit-group")
+
+    assert assert_sections_match_bar(ctx, ctx.other_account, ctx.child, lv) == ["sub_groups"]
+    refute has_element?(lv, "#group-row-tab-calendar")
+  end
+
+  test "someone outside it gets the calendar once there are public events", ctx do
+    EventsFixtures.create_event!(
+      ctx.owner,
+      ctx.child,
+      EventsFixtures.event_attrs(EventsFixtures.today(), %{"is_public" => "true"})
+    )
+
+    lv = sub_groups(ctx, ctx.other_account) |> open_menu(ctx.child)
+
+    assert assert_sections_match_bar(ctx, ctx.other_account, ctx.child, lv) ==
+             ~w(calendar sub_groups)
   end
 
   test "a direct conversation offers no roles and no invitations", ctx do
@@ -159,6 +222,8 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     open_menu(lv, direct)
 
     assert has_element?(lv, "#group-row-tab-group-home")
+    assert has_element?(lv, "#group-row-tab-values")
+    refute has_element?(lv, "#group-row-tab-subgroups")
     refute has_element?(lv, "#group-row-tab-roles")
     refute has_element?(lv, "#group-row-tab-invite-profile")
     refute has_element?(lv, "#group-row-share-button")

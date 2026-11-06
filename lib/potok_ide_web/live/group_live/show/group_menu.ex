@@ -4,6 +4,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
   the open group, and the one on each row of the sub-groups tab. Both draw
   `items/1`, so an option added there reaches both.
 
+  A row also leads to the sections of its group, which the open group has in
+  its bar. `sections/3` is that list, for both of them.
+
   The rows do not carry their menus. What a viewer may do depends on the group,
   so a row only has a button, and the page loads that group and draws its menu
   once, when the button is pressed.
@@ -17,6 +20,52 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   @row_prefix "group-row"
 
+  @doc """
+  The sections of a group, in the order of its bar. The root has none: its
+  header switches between conversations and groups. `calendar?` is passed in,
+  as for someone outside a public group it takes a query.
+  """
+  def sections(%Group{is_root: true}, _member?, _calendar?), do: []
+
+  def sections(%Group{} = group, member?, calendar?) do
+    member_of_group? = member? and group.parent_id != nil
+
+    [
+      member? &&
+        %{
+          key: "values",
+          tab: "values",
+          icon: "hero-chat-bubble-oval-left-ellipsis",
+          label: gettext("Messages")
+        },
+      member_of_group? &&
+        %{key: "files", tab: "files", icon: "hero-paper-clip", label: gettext("Files")},
+      calendar? &&
+        %{
+          key: "calendar",
+          tab: "calendar",
+          icon: "hero-calendar-days",
+          label: gettext("Calendar")
+        },
+      # Threads are sub-groups, which direct conversations do not have.
+      ((member? or group.is_public) and not group.is_direct) &&
+        %{
+          key: "subgroups",
+          tab: "sub_groups",
+          icon: "hero-folder-open",
+          label: gettext("Sub-groups")
+        },
+      member_of_group? &&
+        %{
+          key: "members",
+          tab: "members",
+          icon: "hero-user-group",
+          label: gettext("Members")
+        }
+    ]
+    |> Enum.filter(& &1)
+  end
+
   attr :group, :map, required: true
   attr :access, :any, required: true, doc: "the viewer's access to `group`"
   attr :id_prefix, :string, default: "group"
@@ -25,7 +74,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     default: nil,
     doc: "the tab on screen when `group` is the open group; without it the items lead there"
 
-  slot :inner_block, doc: "what only this page offers, before the rest"
+  slot :inner_block, doc: "what only this menu offers, before the rest"
 
   def items(assigns) do
     assigns = assign(assigns, :row?, is_nil(assigns.active_tab))
@@ -182,7 +231,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   defp row_button_prefix, do: "#{@row_prefix}-menu-button-"
 
-  attr :menu, :map, required: true, doc: "`%{group: group, access: access}`"
+  attr :menu, :map, required: true, doc: "`%{group: group, access: access, sections: sections/3}`"
 
   @doc """
   The menu of a row. The list scrolls and `<main>` is its own stacking context,
@@ -217,7 +266,18 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         autofocus
         class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
       >
-        <.items group={@menu.group} access={@menu.access} id_prefix={@prefix} />
+        <.items group={@menu.group} access={@menu.access} id_prefix={@prefix}>
+          <.tab_item
+            :for={section <- @menu.sections}
+            id={"#{@prefix}-tab-#{section.key}"}
+            group={@menu.group}
+            tab={section.tab}
+            label={section.label}
+            icon={section.icon}
+          />
+          <div :if={@menu.sections != []} class="border-t border-base-300/70" aria-hidden="true">
+          </div>
+        </.items>
       </div>
     </dialog>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".GroupRowMenu">
@@ -225,7 +285,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
       const EDGE = 8
 
       // Under the button, its right edges in line, or over it where there is no
-      // room below. A button gone from the list leaves the card in its corner.
+      // room below. A menu too tall for both stands beside the button, which
+      // stays in sight with its row. A button gone from the list leaves the card
+      // in its corner.
       const place = dialog => {
         const button = document.getElementById(dialog.dataset.anchor)
         const card = dialog.lastElementChild
@@ -234,13 +296,18 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
         const anchor = button.getBoundingClientRect()
         const {width, height} = card.getBoundingClientRect()
-        const right = Math.min(anchor.right, window.innerWidth - EDGE)
+        const lowest = window.innerHeight - EDGE - height
         const below = anchor.bottom + GAP
-        const fitsBelow = below + height <= window.innerHeight - EDGE
+        const above = anchor.top - GAP - height
+        const beside = below > lowest && above < EDGE
+        const right = beside ? anchor.left - GAP : Math.min(anchor.right, window.innerWidth - EDGE)
+        const top = beside
+          ? Math.max(EDGE, Math.min(anchor.top, lowest))
+          : below <= lowest ? below : above
 
         card.style.right = "auto"
         card.style.left = `${Math.max(EDGE, right - width)}px`
-        card.style.top = `${fitsBelow ? below : Math.max(EDGE, anchor.top - GAP - height)}px`
+        card.style.top = `${top}px`
       }
 
       export default {
