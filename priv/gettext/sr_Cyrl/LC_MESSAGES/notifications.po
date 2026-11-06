@@ -11,27 +11,27 @@ msgstr ""
 "Language: sr_Cyrl\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide/social/notifications.ex:74
+#: lib/potok_ide/social/notifications.ex:88
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your invitation"
 msgstr "%{name}: твоја позивница је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:107
+#: lib/potok_ide/social/notifications.ex:121
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr "%{name}: твоја позивница за дељени профил је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:136
+#: lib/potok_ide/social/notifications.ex:150
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr "%{name}: нова порука"
 
-#: lib/potok_ide/social/notifications.ex:58
+#: lib/potok_ide/social/notifications.ex:72
 #, elixir-autogen, elixir-format
 msgid "%{name} invited you to %{group}"
 msgstr "%{name} те позива у групу %{group}"
 
-#: lib/potok_ide/social/notifications.ex:76
+#: lib/potok_ide/social/notifications.ex:90
 #, elixir-autogen, elixir-format
 msgid "%{name} joined %{group}."
 msgstr "%{name} је сада у групи %{group}."
@@ -41,37 +41,37 @@ msgstr "%{name} је сада у групи %{group}."
 msgid "%{name} mentioned you in %{group}"
 msgstr "%{name} те помиње у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:111
+#: lib/potok_ide/social/notifications.ex:125
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr "%{name} сада има приступ профилу %{profile}."
 
-#: lib/potok_ide/social/notifications.ex:42
+#: lib/potok_ide/social/notifications.ex:56
 #, elixir-autogen, elixir-format
 msgid "%{name} reacted %{emoji} to your message"
 msgstr "%{name}: %{emoji} на твоју поруку"
 
-#: lib/potok_ide/social/notifications.ex:91
+#: lib/potok_ide/social/notifications.ex:105
 #, elixir-autogen, elixir-format
 msgid "%{name} shared %{profile}"
 msgstr "%{name} дели профил %{profile} с тобом"
 
-#: lib/potok_ide/social/notifications.ex:126
+#: lib/potok_ide/social/notifications.ex:140
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr "Нова порука у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:129
+#: lib/potok_ide/social/notifications.ex:143
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr "Нова порука у групи %{group}: %{excerpt}"
 
-#: lib/potok_ide/social/notifications.ex:62
+#: lib/potok_ide/social/notifications.ex:76
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this group invitation."
 msgstr "Отвори Поток и погледај позивницу."
 
-#: lib/potok_ide/social/notifications.ex:95
+#: lib/potok_ide/social/notifications.ex:109
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr "Отвори Поток и погледај позивницу за дељени профил."
@@ -85,3 +85,8 @@ msgstr "Поток обавештења су укључена"
 #, elixir-autogen, elixir-format
 msgid "Push notifications are enabled for your account."
 msgstr "Пуш обавештења су укључена за твој налог."
+
+#: lib/potok_ide/social/notifications.ex:36
+#, elixir-autogen, elixir-format
+msgid "%{name} replied to you in %{group}"
+msgstr "%{name} ти одговара у групи %{group}"

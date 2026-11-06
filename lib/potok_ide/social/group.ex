@@ -145,6 +145,24 @@ defmodule PotokIde.Social.Group do
 
   def guest_preview?(%__MODULE__{}), do: false
 
+  @doc """
+  Whether the group's chat reaches past its members: any signed-in profile reads
+  it, and `Access` says who writes. Threads stay with the members, as opening one
+  makes a group of its own. A group that stops being public closes its chat but
+  remembers the choice, so that withdrawing a story and publishing it again
+  leaves its comments as they were.
+  """
+  def open_chat?(%__MODULE__{
+        has_public_chat: true,
+        is_public: true,
+        is_root: false,
+        is_direct: false,
+        parent_value_id: nil
+      }),
+      do: true
+
+  def open_chat?(%__MODULE__{}), do: false
+
   @doc "Whether only the members added to the group itself can see it."
   def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true
   def closed?(%__MODULE__{}), do: false

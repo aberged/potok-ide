@@ -268,7 +268,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     with :ok <- require_child_manager(socket),
          {:ok, socket} <- take_write_token(socket) do
-      Social.create_group(profile, group, child_attrs(params))
+      # A story keeps the comments of its feed: apps need not know of open chats.
+      attrs = Map.put(child_attrs(params), "has_public_chat", group.has_public_chat)
+
+      Social.create_group(profile, group, attrs)
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}

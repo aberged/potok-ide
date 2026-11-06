@@ -28,6 +28,20 @@ defmodule PotokIde.Social.Notifications do
     end)
   end
 
+  def value_reply(%Profile{} = creator, %Group{} = group, %Value{} = value) do
+    localized(fn ->
+      %{
+        value_payload(creator, group, value)
+        | title:
+            dgettext("notifications", "%{name} replied to you in %{group}",
+              name: creator.username,
+              group: group.name
+            ),
+          url: "/groups/#{group.id}/values?value=#{value.id}"
+      }
+    end)
+  end
+
   # One tag per value, so later reactions replace the earlier notification.
   def value_reaction(%Profile{} = reactor, %Group{} = group, %Value{} = value, emoji) do
     body =

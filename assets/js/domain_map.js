@@ -79,6 +79,7 @@ const TABLES = {
     Response: [COLUMN[4], 380],
     MemberSetting: [COLUMN[4], 452],
     GroupReaction: [COLUMN[1], 428],
+    GroupBlock: [COLUMN[2], 428],
     Tag: [COLUMN[1], 524],
     Tagging: [COLUMN[2], 524],
   },
@@ -105,6 +106,8 @@ const ROUTES = {
   "GroupMembership>Profile": {from: "l", to: "l", bulge: 24},
   "GroupReaction>Profile": {from: "l", to: "l", bulge: 24},
   "GroupReaction>Group": {from: "r", to: "l"},
+  "GroupBlock>Group": {from: "r", to: "r", bulge: 34},
+  "GroupBlock>Profile": {from: "l", to: "l", bulge: 40},
   "Tagging>ValueAttachment": {d: "M602 534C618 512 612 345 652 345H790C812 345 818 330 818 300V262C818 252 824 248 834 247"},
 }
 

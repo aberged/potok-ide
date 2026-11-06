@@ -375,12 +375,17 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:manage_tags), do: gettext("Manage tags")
   def permission_label(:edit_group), do: gettext("Edit group")
 
-  defp permission_description(:post_values), do: gettext("Write messages and replies.")
+  defp permission_description(:post_values) do
+    gettext(
+      "Write messages and replies. Held by the Everyone role, it also lets signed-in visitors write in an open chat."
+    )
+  end
+
   defp permission_description(:attach_files), do: gettext("Attach files to messages.")
 
   defp permission_description(:react) do
     gettext(
-      "Add emoji reactions to messages and to the group. Held by the Everyone role, it also lets signed-in visitors of a public group react to the group."
+      "Add emoji reactions to messages and to the group. Held by the Everyone role, it also lets signed-in visitors of a public group react to the group, and to messages in an open chat."
     )
   end
 

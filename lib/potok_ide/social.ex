@@ -25,6 +25,7 @@ defmodule PotokIde.Social do
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
+    GroupBlock,
     GroupInvitation,
     GroupJoinRequestApproval,
     GroupJoinRequest,
@@ -1120,6 +1121,9 @@ defmodule PotokIde.Social do
       inviter.id == invitee.id ->
         {:error, :cannot_invite_self}
 
+      Access.blocked_in_group?(invitee.id, group.id) ->
+        {:error, :blocked}
+
       true ->
         Multi.new()
         |> Multi.insert(
@@ -1325,6 +1329,96 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Blocks `profile` in the group, for those who may remove members: it can no
+  longer write or react in an open chat, ask to join or be invited, and what it
+  has asked or been invited to goes. A member is removed first, under the rules
+  of `remove_group_member/3`, as membership comes before a block. Its values stay.
+  """
+  def block_from_group(%Profile{} = actor, %Group{} = group, %Profile{} = profile) do
+    cond do
+      group.is_root or group.is_direct ->
+        {:error, :not_permitted}
+
+      actor.id == profile.id ->
+        {:error, :cannot_block_self}
+
+      not Access.can?(actor, group, :remove_members) ->
+        {:error, :not_permitted}
+
+      true ->
+        with :ok <- remove_blocked_member(actor, group, profile) do
+          insert_group_block(actor, group, profile)
+        end
+    end
+  end
+
+  defp remove_blocked_member(%Profile{} = actor, %Group{} = group, %Profile{} = profile) do
+    if member_of_group?(profile, group) do
+      with {:ok, _member} <- remove_group_member(actor, group, profile), do: :ok
+    else
+      :ok
+    end
+  end
+
+  defp insert_group_block(%Profile{} = actor, %Group{} = group, %Profile{} = profile) do
+    block = %GroupBlock{group_id: group.id, profile_id: profile.id, blocked_by_id: actor.id}
+
+    Multi.new()
+    |> Multi.insert(:block, block,
+      on_conflict: :nothing,
+      conflict_target: [:group_id, :profile_id]
+    )
+    |> Multi.delete_all(
+      :join_requests,
+      from(r in GroupJoinRequest,
+        where: r.group_id == ^group.id and r.requester_id == ^profile.id
+      )
+    )
+    |> Multi.delete_all(
+      :invitations,
+      from(i in GroupInvitation,
+        where: i.group_id == ^group.id and i.invitee_id == ^profile.id and is_nil(i.accepted_at)
+      )
+    )
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{block: block}} ->
+        broadcast_group_updated(group)
+        broadcast_profile_invitations_updated(profile)
+        broadcast_profile_group_join_requests_updated(profile)
+        broadcast_group_join_request_updates_for_group(group)
+        {:ok, block}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Lifts the block on the profile, for those who may remove members."
+  def unblock_from_group(%Profile{} = actor, %Group{} = group, profile_id)
+      when is_integer(profile_id) do
+    if Access.can?(actor, group, :remove_members) do
+      from(b in GroupBlock, where: b.group_id == ^group.id and b.profile_id == ^profile_id)
+      |> Repo.delete_all()
+
+      broadcast_group_updated(group)
+      :ok
+    else
+      {:error, :not_permitted}
+    end
+  end
+
+  @doc "The group's blocks with their profiles, the newest first."
+  def list_group_blocks(%Group{id: group_id}) do
+    from(b in GroupBlock,
+      where: b.group_id == ^group_id,
+      order_by: [desc: b.inserted_at, desc: b.id],
+      preload: :profile
+    )
+    |> Repo.all()
+  end
+
   def request_group_access(%Profile{} = requester, %Group{} = group) do
     cond do
       not group.is_public ->
@@ -1335,6 +1429,9 @@ defmodule PotokIde.Social do
 
       pending_group_invitation_for_profile?(group, requester) ->
         {:error, :already_invited}
+
+      Access.blocked_in_group?(requester.id, group.id) ->
+        {:error, :blocked}
 
       true ->
         %GroupJoinRequest{}
@@ -1712,12 +1809,18 @@ defmodule PotokIde.Social do
       :thread,
       :event,
       attachments: attachments_in_order(),
-      parent: [:creator, attachments: attachments_in_order()],
+      parent: [:creator, :event, attachments: attachments_in_order()],
       reactions: {reactions, :profile}
     ]
   end
 
   defp attachments_in_order, do: from(a in ValueAttachment, order_by: [asc: a.id])
+
+  # What someone outside the group may do in an open chat, which is not much to
+  # hold back a person and enough to hold back a loop. See also `Value`.
+  @outsider_values_per_minute 10
+  @outsider_edit_interval_seconds 10
+  @outsider_mention_pushes 5
 
   @doc """
   Posts a chat value. `attachments` are files already in `PotokIde.Storage`,
@@ -1735,13 +1838,22 @@ defmodule PotokIde.Social do
       data_value_attrs?(attrs) ->
         {:error, :invalid_attachments}
 
-      not member_of_group?(creator, group) ->
+      true ->
+        create_chat_value(creator, group, attrs, attachments)
+    end
+  end
+
+  defp create_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments) do
+    access = Access.for_profile(creator, group)
+
+    cond do
+      not Access.can_read_chat?(access, group) ->
         {:error, :not_a_member_of_group}
 
-      not Access.can?(creator, group, :post_values) ->
+      not Access.can_post_in_chat?(creator, access, group) ->
         {:error, :not_permitted}
 
-      attachments != [] and not Access.can?(creator, group, :attach_files) ->
+      attachments != [] and not Access.can?(access, :attach_files) ->
         {:error, :not_permitted}
 
       length(attachments) > Storage.max_files() ->
@@ -1752,6 +1864,9 @@ defmodule PotokIde.Social do
       not chat_value_in_group?(Map.get(attrs, "parent_id"), group.id) ->
         {:error, :invalid_parent}
 
+      not access.member? and outsider_at_limit?(creator, group) ->
+        {:error, :too_many_values}
+
       true ->
         attrs =
           attrs
@@ -1761,6 +1876,7 @@ defmodule PotokIde.Social do
         changeset =
           %Value{}
           |> Value.changeset(attrs, attachments?: attachments != [])
+          |> limit_outsider(access)
           |> put_mentions(creator, group)
 
         Multi.new()
@@ -1780,7 +1896,7 @@ defmodule PotokIde.Social do
             value = Repo.preload(value, value_display_preloads())
             broadcast_value_created(group, value)
             broadcast_group_value_unread(creator, group, value)
-            notify_group_members_of_new_value(creator, group, value)
+            notify_group_members_of_new_value(creator, group, value, access)
             schedule_link_preview(value)
             {:ok, value}
 
@@ -1788,6 +1904,35 @@ defmodule PotokIde.Social do
             {:error, reason}
         end
     end
+  end
+
+  defp limit_outsider(changeset, %Access{member?: true}), do: changeset
+  defp limit_outsider(changeset, %Access{}), do: Value.outsider_changeset(changeset)
+
+  # Counted in the database, so the limit holds over a reconnect and across nodes.
+  defp outsider_at_limit?(%Profile{id: profile_id}, %Group{id: group_id}) do
+    since = DateTime.add(DateTime.utc_now(), -60, :second)
+
+    from(v in Value,
+      where:
+        v.group_id == ^group_id and v.is_data == false and v.creator_id == ^profile_id and
+          v.inserted_at >= ^since,
+      select: count()
+    )
+    |> Repo.one() >= @outsider_values_per_minute
+  end
+
+  # An edit reaches everyone on the page as a new value does, and fetches links
+  # again. Link previews are written past `updated_at`, so it only moves on an
+  # edit and the first correction of a new value always goes through.
+  defp edited_just_now?(%Value{id: value_id}) do
+    since = DateTime.add(DateTime.utc_now(), -@outsider_edit_interval_seconds, :second)
+
+    Repo.exists?(
+      from(v in Value,
+        where: v.id == ^value_id and v.updated_at > v.inserted_at and v.updated_at > ^since
+      )
+    )
   end
 
   @doc """
@@ -1926,6 +2071,8 @@ defmodule PotokIde.Social do
   Updates the content of the profile's own value. Only `content` and
   `content_format` can change, so an edit never moves a value or changes what
   it replies to. Replies are re-broadcast so their quotes show the new text.
+  An author outside the group edits under the rules it wrote by: only while it
+  may write, and within the limits of an open chat.
   """
   def update_value(%Profile{} = profile, %Value{} = value, attrs) do
     cond do
@@ -1937,18 +2084,27 @@ defmodule PotokIde.Social do
         {:error, :announcement}
 
       true ->
-        do_update_value(profile, value, attrs)
+        group = Repo.get!(Group, value.group_id)
+        access = Access.for_profile(profile, group)
+
+        cond do
+          access.member? -> do_update_value(profile, group, access, value, attrs)
+          not Access.can_post_in_chat?(profile, access, group) -> {:error, :not_permitted}
+          edited_just_now?(value) -> {:error, :too_many_values}
+          true -> do_update_value(profile, group, access, value, attrs)
+        end
     end
   end
 
-  defp do_update_value(profile, value, attrs) do
+  defp do_update_value(profile, group, access, value, attrs) do
     attrs = Map.take(Map.new(attrs), ["content", "content_format", :content, :content_format])
 
     # Mentions follow the new text, but an edit notifies nobody. A value
     # with files may lose its text.
     value
     |> Value.changeset(attrs, attachments?: value_has_attachments?(value))
-    |> put_mentions(profile, Repo.get!(Group, value.group_id))
+    |> limit_outsider(access)
+    |> put_mentions(profile, group)
     |> reset_link_preview(value)
     |> Repo.update()
     |> case do
@@ -2227,6 +2383,8 @@ defmodule PotokIde.Social do
   and broadcasts it as a `:value_updated` so every viewer re-renders it.
   """
   def toggle_value_reaction(%Profile{} = profile, %Group{} = group, %Value{} = value, emoji) do
+    access = Access.for_profile(profile, group)
+
     cond do
       value.group_id != group.id or value.is_data ->
         {:error, :value_not_found}
@@ -2234,10 +2392,10 @@ defmodule PotokIde.Social do
       not is_binary(emoji) ->
         {:error, :invalid_emoji}
 
-      not member_of_group?(profile, group) ->
+      not Access.can_read_chat?(access, group) ->
         {:error, :not_a_member_of_group}
 
-      not Access.can?(profile, group, :react) ->
+      not Access.can_react_in_chat?(profile, access, group) ->
         {:error, :not_permitted}
 
       true ->
@@ -2266,7 +2424,10 @@ defmodule PotokIde.Social do
 
           {_result, %Value{} = updated_value} ->
             broadcast_value_updated(updated_value)
-            notify_value_creator_of_reaction(result, profile, group, updated_value)
+            # As with a reaction to a group, someone outside it pushes nobody.
+            if access.member?,
+              do: notify_value_creator_of_reaction(result, profile, group, updated_value)
+
             {:ok, updated_value}
         end
     end
@@ -2729,7 +2890,7 @@ defmodule PotokIde.Social do
     access = Access.for_profile(profile, group)
     query = query |> String.trim() |> String.downcase() |> String.slice(0, 32)
 
-    if Access.can?(access, :post_values) do
+    if Access.can_post_in_chat?(profile, access, group) do
       roles = mention_role_candidates(access, group, query)
       profiles = mention_profile_candidates(profile, group, query, 8 - length(roles))
       roles ++ profiles
@@ -3673,17 +3834,22 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  The attachment when the profile is a member of the group it was posted in
-  (only members read a group's values); nil otherwise.
+  The attachment when the profile reads the chat it was posted in: a member of
+  the group, or anyone in an open chat, where it is on the page. nil otherwise.
   """
-  def get_attachment_for_download(%Profile{id: profile_id}, attachment_id)
+  def get_attachment_for_download(%Profile{} = profile, attachment_id)
       when is_integer(attachment_id) do
-    from(a in ValueAttachment,
-      join: gm in GroupMembership,
-      on: gm.group_id == a.group_id and gm.profile_id == ^profile_id,
-      where: a.id == ^attachment_id
-    )
-    |> Repo.one()
+    attachment =
+      from(a in ValueAttachment,
+        join: g in assoc(a, :group),
+        where: a.id == ^attachment_id,
+        preload: [group: g]
+      )
+      |> Repo.one()
+
+    if attachment &&
+         (Group.open_chat?(attachment.group) or member_of_group?(profile, attachment.group)),
+       do: attachment
   end
 
   def get_attachment_for_download(_profile, _attachment_id), do: nil
@@ -5225,30 +5391,91 @@ defmodule PotokIde.Social do
   defp notify_group_members_of_new_value(
          %Profile{} = _creator,
          %Group{} = _group,
-         %Value{is_data: true}
+         %Value{is_data: true},
+         %Access{}
        ),
        do: :ok
 
   # Accounts of mentioned members get the mention payload instead of the
-  # generic one, so nobody is notified twice about the same value.
-  defp notify_group_members_of_new_value(%Profile{} = creator, %Group{} = group, %Value{} = value) do
+  # generic one, so nobody is notified twice about the same value. Someone
+  # outside the group reaches only those it speaks to: anyone signed in could
+  # otherwise push to every member, who has no way to mute a group. An author
+  # outside the group hears of a reply here, as no other push reaches them.
+  defp notify_group_members_of_new_value(
+         %Profile{} = creator,
+         %Group{} = group,
+         %Value{} = value,
+         %Access{member?: member?}
+       ) do
     payload_for = Notifications.value_created(creator, group, value)
     mention_payload_for = Notifications.value_mention(creator, group, value)
+    reply_payload_for = Notifications.value_reply(creator, group, value)
 
     run_notification(fn ->
       mentioned_account_ids =
-        value.mentioned_profile_ids
+        value
+        |> mentioned_profile_ids_to_push(member?)
+        |> recipient_account_ids_for_profiles()
+        |> MapSet.new()
+
+      replied_account_ids =
+        value
+        |> replied_profile_ids_to_push(group, creator, member?)
         |> recipient_account_ids_for_profiles()
         |> MapSet.new()
 
       group
-      |> push_subscriptions_for_group_value(creator)
+      |> value_push_account_ids(creator, member?, mentioned_account_ids, replied_account_ids)
+      |> Dispatch.subscriptions_by_account()
       |> Dispatch.deliver_each(group.id, fn [%PushSubscription{account_id: account_id} | _] ->
-        if MapSet.member?(mentioned_account_ids, account_id),
-          do: {mention_payload_for, "group mention"},
-          else: {payload_for, "group value"}
+        cond do
+          MapSet.member?(mentioned_account_ids, account_id) ->
+            {mention_payload_for, "group mention"}
+
+          MapSet.member?(replied_account_ids, account_id) ->
+            {reply_payload_for, "group reply"}
+
+          true ->
+            {payload_for, "group value"}
+        end
       end)
     end)
+  end
+
+  defp mentioned_profile_ids_to_push(%Value{mentioned_profile_ids: ids}, true = _member?), do: ids
+
+  defp mentioned_profile_ids_to_push(%Value{mentioned_profile_ids: ids}, false = _member?),
+    do: Enum.take(ids, @outsider_mention_pushes)
+
+  # The author of the value this one answers, when the push to the members would
+  # pass them by: they are outside the group, or the new value's author is.
+  defp replied_profile_ids_to_push(
+         %Value{parent: %Value{creator_id: author_id}},
+         %Group{} = group,
+         %Profile{id: creator_id},
+         member?
+       )
+       when is_integer(author_id) and author_id != creator_id do
+    if member? and member_of_group?(%Profile{id: author_id}, group),
+      do: [],
+      else: [author_id]
+  end
+
+  defp replied_profile_ids_to_push(_value, _group, _creator, _member?), do: []
+
+  defp value_push_account_ids(group, creator, true = _member?, _mentioned, replied) do
+    if MapSet.size(replied) == 0,
+      do: group_value_account_ids(group, creator),
+      else: union(group_value_account_ids(group, creator), ^accounts_query(replied))
+  end
+
+  defp value_push_account_ids(_group, _creator, false = _member?, mentioned, replied) do
+    accounts_query(MapSet.union(mentioned, replied))
+  end
+
+  defp accounts_query(%MapSet{} = account_ids) do
+    account_ids = MapSet.to_list(account_ids)
+    from(ap in AccountProfile, where: ap.account_id in ^account_ids, select: ap.account_id)
   end
 
   # Only a reaction that was added notifies (a racing duplicate comes back
@@ -5362,13 +5589,18 @@ defmodule PotokIde.Social do
   # one query. Members without a subscribed device cost nothing, where loading
   # every member's account and then its subscriptions took a query per member.
   defp push_subscriptions_for_group_value(%Group{} = group, %Profile{} = creator) do
+    group
+    |> group_value_account_ids(creator)
+    |> Dispatch.subscriptions_by_account()
+  end
+
+  defp group_value_account_ids(%Group{} = group, %Profile{} = creator) do
     from(ap in AccountProfile,
       join: gm in GroupMembership,
       on: gm.profile_id == ap.profile_id,
       where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
       select: ap.account_id
     )
-    |> Dispatch.subscriptions_by_account()
   end
 
   defp recipient_accounts_for_profile_notification(

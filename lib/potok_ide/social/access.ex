@@ -9,6 +9,9 @@ defmodule PotokIde.Social.Access do
   - "admin" holds every permission. For the other roles a permission is granted
     when one of them allows it and none of them denies it. "everyone" can only
     allow.
+  - A profile that is not a member holds nothing. Only reacting to a public group
+    and an open chat (`Group.open_chat?/1`, `can_post_in_chat?/3`) reach past the
+    members, while "everyone" allows it and the profile is not blocked.
 
   Pure reads: changes and broadcasts live in `PotokIde.Social`.
   """
@@ -21,6 +24,7 @@ defmodule PotokIde.Social.Access do
   alias PotokIde.Social.{
     Group,
     GroupAltDescription,
+    GroupBlock,
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
@@ -35,14 +39,16 @@ defmodule PotokIde.Social.Access do
             admin?: false,
             role_keys: [],
             permissions: MapSet.new(),
-            manifest: nil
+            manifest: nil,
+            blocked?: false
 
   @type t :: %__MODULE__{
           member?: boolean(),
           admin?: boolean(),
           role_keys: [String.t()],
           permissions: MapSet.t(atom()),
-          manifest: %GroupManifest{} | nil
+          manifest: %GroupManifest{} | nil,
+          blocked?: boolean()
         }
 
   @doc """
@@ -145,8 +151,15 @@ defmodule PotokIde.Social.Access do
       |> Repo.all()
 
     case assigned do
-      [] -> %__MODULE__{manifest: manifest}
-      keys -> build(manifest, Enum.reject(keys, &is_nil/1))
+      # A block only says something where a non-member can do anything at all.
+      [] ->
+        %__MODULE__{
+          manifest: manifest,
+          blocked?: group.is_public and blocked_in_group?(profile_id, group_id)
+        }
+
+      keys ->
+        build(manifest, Enum.reject(keys, &is_nil/1))
     end
   end
 
@@ -212,17 +225,40 @@ defmodule PotokIde.Social.Access do
       |> Repo.all()
       |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
 
+    blocked_ids =
+      groups
+      |> Enum.filter(&(&1.is_public and not is_map_key(assigned, &1.id)))
+      |> blocked_group_ids(profile_id)
+
     Map.new(groups, fn %Group{id: id} = group ->
       manifest = effective_manifest(group)
 
       access =
         case assigned do
           %{^id => keys} -> build(manifest, Enum.reject(keys, &is_nil/1))
-          %{} -> %__MODULE__{manifest: manifest}
+          %{} -> %__MODULE__{manifest: manifest, blocked?: MapSet.member?(blocked_ids, id)}
         end
 
       {id, access}
     end)
+  end
+
+  defp blocked_group_ids([], _profile_id), do: MapSet.new()
+
+  defp blocked_group_ids(groups, profile_id) do
+    from(b in GroupBlock,
+      where: b.profile_id == ^profile_id and b.group_id in ^Enum.map(groups, & &1.id),
+      select: b.group_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  @doc "Whether the profile is blocked in the group, member or not (see `GroupBlock`)."
+  def blocked_in_group?(profile_id, group_id) do
+    Repo.exists?(
+      from(b in GroupBlock, where: b.group_id == ^group_id and b.profile_id == ^profile_id)
+    )
   end
 
   @doc "Whether the \"everyone\" role of the access's manifest allows `permission`."
@@ -236,9 +272,9 @@ defmodule PotokIde.Social.Access do
   end
 
   @doc """
-  Whether `profile`, with `access` to `group`, may react to the group. Unlike the
-  rest of a group this reaches past its members: in a public group, a profile
-  that is not one may react while "everyone" may. Direct conversations, threads
+  Whether `profile`, with `access` to `group`, may react to the group. This
+  reaches past its members: in a public group, a profile that is not one may
+  react while "everyone" may and it is not blocked. Direct conversations, threads
   and the root hold no reactions.
   """
   def can_react_to_group?(profile, %__MODULE__{} = access, %Group{} = group) do
@@ -246,7 +282,32 @@ defmodule PotokIde.Social.Access do
       is_nil(profile) or group.is_root or group.is_direct -> false
       not is_nil(group.parent_value_id) -> false
       access.member? -> can?(access, :react)
-      true -> group.is_public and everyone_can?(access, :react)
+      true -> group.is_public and not access.blocked? and everyone_can?(access, :react)
+    end
+  end
+
+  @doc "Whether the holder of `access` reads the chat of `group`: its members, and anyone in an open one."
+  def can_read_chat?(%__MODULE__{member?: member?}, %Group{} = group),
+    do: member? or Group.open_chat?(group)
+
+  @doc """
+  Whether `profile`, with `access` to `group`, may write in its chat. A member
+  answers to their roles. Past the members it takes an open chat, "everyone"
+  allowing it, and no block, so that a read-only group stays read-only for all.
+  """
+  def can_post_in_chat?(profile, %__MODULE__{} = access, %Group{} = group),
+    do: can_in_chat?(profile, access, group, :post_values)
+
+  @doc "As `can_post_in_chat?/3`, for reacting to a message in the chat."
+  def can_react_in_chat?(profile, %__MODULE__{} = access, %Group{} = group),
+    do: can_in_chat?(profile, access, group, :react)
+
+  defp can_in_chat?(profile, access, group, permission) do
+    cond do
+      is_nil(profile) -> false
+      access.member? -> can?(access, permission)
+      access.blocked? -> false
+      true -> Group.open_chat?(group) and everyone_can?(access, permission)
     end
   end
 

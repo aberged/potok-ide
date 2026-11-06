@@ -155,7 +155,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Chat"),
         text:
           gettext(
-            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too."
+            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. You can open the chat of a public group, so that those who are not members write there too."
           )
       },
       %{
@@ -173,7 +173,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Files"),
         text:
           gettext(
-            "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description."
+            "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description and the files of an open chat."
           )
       },
       %{

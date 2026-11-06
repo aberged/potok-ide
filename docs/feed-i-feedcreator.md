@@ -90,6 +90,8 @@ Potok ne zna šta je nacrt. Stanje objave je samo ono što daju dva prekidača n
 | Javno | da | da | svi prijavljeni | članovi `.feed` |
 | Javno, bez članova | da | ne | svi prijavljeni | samo oni koji dobiju pristup |
 
+U javnoj objavi sa otvorenim razgovorom u chatu su i svi prijavljeni, bez članstva. Vidi [Lanac članstva](#lanac-članstva).
+
 - **Sačuvaj** pravi zatvorenu grupu. Vidi je samo autor, i u svom Feed-u je vidi sa oznakom **Nacrt**.
 - **Objavi** uključuje prekidače. Podrazumevana publika prati `.feed`: javna ako je `.feed` javna, inače članovi. Nasleđivanje je podrazumevano uključeno.
 - **Povuci** vraća objavu u nacrt, a nasleđeni članovi izlaze iz grupe. Direktni članovi i chat ostaju. Onaj ko povlači ostaje kao direktan član, pa grupa ne ostane bez nikog.
@@ -122,7 +124,9 @@ Vidljivost ide posebnim putem. Feed čita kroz `.feed`, pa gledalac mora da vidi
 | `.feed` javna, objava privatna | objavu vide samo njeni članovi, a to je način za objave samo za članove |
 | `.feed` privatna, objava javna | u Feed-u je vide samo članovi `.feed`, ali svako sa linkom je vidi van Potoka |
 
-Chat vide samo članovi grupe, bez izuzetka. Nečlan koji klikne Komentari vidi broj komentara, opis objave i dugme za pristup, ali ne i same komentare. Polje `has_public_chat` postoji u šemi, ali ga ništa ne čita. Ko želi da razgovara o svim objavama, treba da uđe u roditeljsku grupu, a ne u pojedinačnu objavu.
+Chat podrazumevano vide samo članovi grupe. Nečlan koji klikne Komentari vidi broj komentara, opis objave i dugme za pristup, ali ne i same komentare. Ko želi da razgovara o svim objavama, treba da uđe u roditeljsku grupu, a ne u pojedinačnu objavu.
+
+Izuzetak je otvoren razgovor. Kad je u **Uredi grupu** uključeno **Nečlanovi mogu da pišu**, prijavljen nečlan javne grupe čita poruke i slike, piše i reaguje, bez učlanjenja. Fajlove ne šalje, a niti ostaju samo za članove. Nova objava preuzima prekidač od `.feed` u trenutku kad nastane, pa se za otvorene komentare pali na `.feed`. Postojeće objave ostaju kakve jesu dok im se prekidač ne promeni ručno. Povlačenje zatvara razgovor, ali prekidač ostaje, pa ponovno objavljivanje vraća otvorene komentare.
 
 Reakcije idu šire od chata: prijavljen nečlan javne objave sme da reaguje dok uloga **Svi** ima dozvolu za reakcije. Admin ne može da ukloni reakciju pojedinca. Može samo da isključi reakcije svima tako što toj ulozi skine dozvolu.
 
@@ -186,7 +190,7 @@ Iz toga slede tri pravila za šablone:
 ## Ograničenja
 
 - **Slike.** Opis ne sme da sadrži `data:` sliku, a API nema slanje fajlova. Slika sa uređaja zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike. Na stranici Uredi grupu slika sa uređaja ide drugim putem: postaje poruka sa fajlom u chatu grupe, pa ostaje među fajlovima grupe, a opis je prikazuje preko potpisane adrese koja ne traži prijavu. Avatar se ne dira, a grupa može da ima više takvih slika. Ako se ta poruka obriše, slika nestaje i iz opisa.
-- **Cena nasleđivanja.** Svaki član je red u članstvu svake objave: 100 članova i 500 objava je 50.000 redova, a svaki novi član dodaje 500. Svaka poruka u chatu objave ide kao push svim njenim članovima, a opcije za utišavanje grupe nema. Za veliku publiku i živ chat bolja je javna objava bez nasleđivanja, uz manje udobnosti pri ulasku u chat.
+- **Cena nasleđivanja.** Svaki član je red u članstvu svake objave: 100 članova i 500 objava je 50.000 redova, a svaki novi član dodaje 500. Svaka poruka člana u chatu objave ide kao push svim njenim članovima, a opcije za utišavanje grupe nema. Poruka nečlana ide samo onima koje pominje i autoru poruke na koju odgovara. Za veliku publiku i živ chat bolja je javna objava bez nasleđivanja, uz manje udobnosti pri ulasku u chat.
 - **Objava ne šalje obaveštenje.** Pravljenje grupe nikog ne obaveštava. Članovi vide novu objavu kad otvore Feed.
 - **Feed se ne osvežava uživo.** Vesti, broj komentara i reakcije učitavaju se kad se aplikacija otvori i posle povratka iz chata. Na strani grupe reakcije stižu uživo.
 - **Komentari ne broje niti.** Broj je ono što čitalac vidi u chatu objave. Nit je sopstvena grupa.

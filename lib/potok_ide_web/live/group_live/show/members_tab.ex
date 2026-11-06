@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   attr :access, Access, required: true
   attr :join_requests, :list, default: []
   attr :pending_join_requests_count, :integer, default: 0
+  attr :blocks, :list, default: [], doc: "the group's blocks, for those who may lift them"
 
   def panel(assigns) do
     roles = if assigns.access.manifest, do: assigns.access.manifest.roles, else: []
@@ -118,6 +119,47 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   </.button>
                 </div>
               </div>
+            </li>
+          </ul>
+        </div>
+
+        <div
+          :if={@blocks != []}
+          id="group-blocks-panel"
+          class="mb-5 rounded-3xl border border-base-300/70 bg-base-100/70 p-4 shadow-sm"
+        >
+          <div class="mb-3">
+            <h4 class="text-sm font-semibold text-base-content">{gettext("Blocked")}</h4>
+
+            <p class="text-xs text-base-content/70">
+              {gettext("They cannot write or react here, ask to join or be invited.")}
+            </p>
+          </div>
+
+          <ul id="group-blocks-list" class="space-y-3">
+            <li
+              :for={block <- @blocks}
+              id={"group-block-#{block.profile_id}"}
+              class="flex items-center justify-between gap-3 rounded-2xl border border-base-300/70 bg-base-100/50 px-4 py-3"
+            >
+              <div class="min-w-0 flex-1">
+                <Components.profile_identity
+                  profile={block.profile}
+                  current_profile={@current_profile}
+                  direct_group_link={true}
+                />
+              </div>
+
+              <.button
+                :if={@can_remove?}
+                id={"group-unblock-#{block.profile_id}"}
+                type="button"
+                phx-click="unblock_profile"
+                phx-value-id={block.profile_id}
+                size="sm"
+              >
+                {gettext("Unblock")}
+              </.button>
             </li>
           </ul>
         </div>

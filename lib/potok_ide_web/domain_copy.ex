@@ -247,6 +247,7 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
+  defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
 
   defp own_field("Event", "title"), do: dgettext("domain_map", "title")
   defp own_field("Event", "location"), do: dgettext("domain_map", "location")
@@ -365,6 +366,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ValueAttachment"), do: dgettext("domain_map", "File")
   def entity_name("ValueReaction"), do: dgettext("domain_map", "Reaction")
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
+  def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
@@ -491,6 +493,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "An emoji of one profile on a group, as on a story in a news feed. A profile cannot use the same emoji twice on the same group."
+    )
+  end
+
+  defp entity_description("GroupBlock", _edges) do
+    dgettext(
+      "domain_map",
+      "A profile a group has blocked. Until the block is lifted it does not write or react in the group's open chat, and cannot ask to join or be invited. Membership comes first: a member answers to their roles."
     )
   end
 
@@ -830,7 +839,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back. That is how one app writes what another shows, and a feed gets its editors' desk."
+              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back. A new one opens its chat if the app's group has. That is how one app writes what another shows, and a feed gets its editors' desk."
             )
         },
         %{
@@ -939,7 +948,15 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow. A <GroupReaction>reaction to a group</GroupReaction> also reaches past the members: while `everyone` may react, so may a signed-in profile that is not a member of a public group."
+            "The group's <GroupManifest>manifest</GroupManifest> applies or, if it has none, that of its nearest ancestor. Every member has `everyone`, so that <GroupRole>role</GroupRole> is not stored, and `admin` has everything. With the other roles a permission holds when at least one allows it and none denies it. `everyone` can only allow. A <GroupReaction>reaction to a group</GroupReaction> also reaches past the members: while `everyone` may react, so may a signed-in profile that is not a member of a public group, unless it is <GroupBlock>blocked</GroupBlock> there."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A public group can open its chat"),
+        text:
+          dgettext(
+            "domain_map",
+            "While a <Group>group</Group> is public, its chat can reach past the members. A signed-in profile that is not a member then reads its <Value>values</Value> and files, and writes and reacts as far as `everyone` may. It sends no files, opens no threads and has a limit on how much it writes. Its message pushes only to those it mentions or answers, and a reply reaches it the same way. A <GroupBlock>block</GroupBlock> stops one profile from writing and reacting there, asking to join or being invited. A member answers to their roles, so blocking one also removes them from the group."
           )
       },
       %{

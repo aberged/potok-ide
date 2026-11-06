@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.GroupRole
+  alias PotokIde.Social.{Group, GroupRole}
   alias PotokIdeWeb.GroupLive.Show.Components
 
   attr :card, :map, required: true
@@ -61,6 +61,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     """
   end
 
+  # Follows the form, so the choice comes up as soon as "Public group" is ticked.
+  # A form that changed holds the string "false", which `if` would take for true.
+  defp open_chat_option?(%Group{} = group, form) do
+    not group.is_root and not group.is_direct and is_nil(group.parent_value_id) and
+      Phoenix.HTML.Form.normalize_value("checkbox", form[:is_public].value)
+  end
+
   attr :group, :map, required: true
   attr :edit_group_form, :any, required: true
   attr :link_card, :map, default: nil, doc: "what a link to the group shows, if guests see it"
@@ -96,6 +103,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     default: "basics",
     doc: "the card on screen, picked in the section bar (see `sections/0`)"
 
+  attr :everyone_can_post, :boolean,
+    default: true,
+    doc: "whether the \"everyone\" role may post, which an open chat also needs"
+
   # Cards picked one at a time from the section bar: the group form's
   # sections, the alternative descriptions (their own form) and the danger
   # zone. The other cards are only hidden, so the group form still sends
@@ -105,6 +116,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # `novalidate`, as a required field in a hidden card would silently stop the
   # browser from submitting; the server opens the card with the error instead.
   def panel(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :open_chat_option,
+        open_chat_option?(assigns.group, assigns.edit_group_form)
+      )
+
     ~H"""
     <div id="group-panel-edit-group" class="flex min-h-0 flex-1 flex-col px-2">
       <Components.tab_body id="group-edit-scroll">
@@ -169,6 +187,24 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 "Its name, picture and description also show outside Potok, to anyone with the link."
               )}
             </p>
+
+            <div :if={@open_chat_option} id="group-edit-open-chat">
+              <.input
+                field={@edit_group_form[:has_public_chat]}
+                label={gettext("Non-members can write")}
+                type="checkbox"
+              />
+              <p class="-mt-1 mb-3 text-xs text-base-content/65">
+                {gettext(
+                  "Everyone signed in sees all messages and pictures in the chat, earlier ones too, and can write without joining. They send no files and open no threads."
+                )}
+                <span :if={!@everyone_can_post} id="group-edit-open-chat-read-only">
+                  {gettext(
+                    "The everyone role cannot post here, so those outside the group only read."
+                  )}
+                </span>
+              </p>
+            </div>
 
             <.link_card :if={@link_card} card={@link_card} />
 

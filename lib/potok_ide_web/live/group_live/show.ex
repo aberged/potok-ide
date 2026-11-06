@@ -243,7 +243,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           </div>
 
           <div
-            :if={!@group.is_root and !@is_member}
+            :if={!@group.is_root and !@is_member and !@access.blocked?}
             id="group-join-request-callout"
             class="flex shrink-0 items-center"
           >
@@ -426,9 +426,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
             access={@access}
             join_requests={@pending_join_requests}
             pending_join_requests_count={@pending_join_requests_count}
+            blocks={@group_blocks}
           />
           <ValuesTab.panel
-            :if={@active_tab == "values" and @group.parent_id != nil and @is_member}
+            :if={
+              @active_tab == "values" and @group.parent_id != nil and
+                Access.can_read_chat?(@access, @group)
+            }
             values={@streams.values}
             has_more={@values_has_more?}
             has_newer={@values_has_newer?}
@@ -487,7 +491,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <GroupDescriptionTab.panel
             :if={
               @active_tab == "group_home" or
-                (@active_tab == "values" and @group.parent_id != nil and !@is_member)
+                (@active_tab == "values" and @group.parent_id != nil and
+                   !Access.can_read_chat?(@access, @group))
             }
             group={@group}
             current_profile={@current_profile}
@@ -530,6 +535,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             picture_upload={
               if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
             }
+            everyone_can_post={Access.everyone_can?(@access, :post_values)}
           />
           <InviteProfileTab.panel
             :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -761,7 +767,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not socket.assigns.is_member do
+    if not Access.can_read_chat?(socket.assigns.access, group) do
       {:noreply,
        put_flash(socket, :error, gettext("You must be a group member to post messages."))}
     else
@@ -797,6 +803,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
              :error,
              gettext("Attach at most %{count} files.", count: Storage.max_files())
            )}
+
+        {:error, :too_many_values} ->
+          {:noreply, put_flash(socket, :error, too_many_values_message())}
 
         {:error, message} when is_binary(message) ->
           {:noreply, put_flash(socket, :error, message)}
@@ -938,6 +947,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:error, :not_value_creator} ->
             {:noreply, put_flash(socket, :error, gettext("You can only edit your own messages."))}
 
+          {:error, :too_many_values} ->
+            {:noreply, put_flash(socket, :error, too_many_values_message())}
+
           {:error, %Ecto.Changeset{} = changeset} ->
             {:noreply,
              assign(socket, :edit_value_form, to_form(Map.put(changeset, :action, :validate)))}
@@ -954,15 +966,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Inline reply: the composer shows the value and the next post quotes it.
   def handle_event("start_reply_value", %{"id" => id}, socket) do
+    %{access: access, group: group, current_profile: current_profile} = socket.assigns
+
     cond do
-      not socket.assigns.is_member ->
+      not Access.can_read_chat?(access, group) ->
         {:noreply,
          put_flash(socket, :error, gettext("You must be a group member to post messages."))}
 
-      not Access.can?(socket.assigns.access, :post_values) ->
+      not Access.can_post_in_chat?(current_profile, access, group) ->
         {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
-      value = loaded_value(socket, id) ->
+      value = replyable_value(socket, id) ->
         {:noreply,
          socket
          |> clear_edit_value()
@@ -1022,7 +1036,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Sent by the reaction pills (`phx-click`) and by the emoji picker hook.
   def handle_event("toggle_reaction", %{"id" => id, "emoji" => emoji}, socket) do
-    if not socket.assigns.is_member do
+    if not Access.can_read_chat?(socket.assigns.access, socket.assigns.group) do
       {:noreply, put_flash(socket, :error, gettext("You must be a group member to react."))}
     else
       case loaded_value(socket, id) do
@@ -1245,11 +1259,53 @@ defmodule PotokIdeWeb.GroupLive.Show do
            gettext("You already have a pending invitation to this group.")
          )}
 
+      {:error, :blocked} ->
+        {:noreply, put_flash(socket, :error, gettext("You are blocked in this group."))}
+
       {:error, %Ecto.Changeset{}} ->
         {:noreply, put_flash(socket, :error, gettext("Access request already pending."))}
 
       {:error, _reason} ->
         {:noreply, put_flash(socket, :error, gettext("Could not send access request."))}
+    end
+  end
+
+  # The author of a value in an open chat: a member goes with the block.
+  def handle_event("block_value_author", %{"id" => id}, socket) do
+    %{current_profile: current_profile, group: group} = socket.assigns
+
+    case loaded_value(socket, id) do
+      nil ->
+        {:noreply, put_flash(socket, :error, gettext("Message not found."))}
+
+      value ->
+        case Social.block_from_group(current_profile, group, value.creator) do
+          {:ok, _block} ->
+            {:noreply,
+             socket
+             |> put_flash(:info, gettext("Blocked in this group."))
+             |> refresh_group_data()}
+
+          {:error, reason} when reason in [:not_permitted, :last_admin, :inherited_member] ->
+            {:noreply, put_flash(socket, :error, access_error_message(reason))}
+
+          {:error, _reason} ->
+            {:noreply, put_flash(socket, :error, gettext("Could not block."))}
+        end
+    end
+  end
+
+  def handle_event("unblock_profile", %{"id" => id}, socket) do
+    %{current_profile: current_profile, group: group} = socket.assigns
+
+    with {profile_id, ""} <- Integer.parse(id),
+         :ok <- Social.unblock_from_group(current_profile, group, profile_id) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("Block removed."))
+       |> refresh_group_data()}
+    else
+      _ -> {:noreply, put_flash(socket, :error, gettext("Could not remove the block."))}
     end
   end
 
@@ -1790,6 +1846,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         {:error, :cannot_invite_self} ->
           {:noreply, put_flash(socket, :error, gettext("You cannot invite yourself."))}
+
+        {:error, :blocked} ->
+          {:noreply, put_flash(socket, :error, gettext("That profile is blocked in this group."))}
 
         {:error, reason} when reason in [:not_permitted, :direct_group] ->
           {:noreply, put_flash(socket, :error, access_error_message(reason))}
@@ -2773,9 +2832,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp data_value_visible?(assigns, %Value{alt_description_id: id}),
     do: Enum.any?(assigns.visible_alt_descriptions, &(&1.id == id))
 
-  defp description_visible?(%{active_tab: active_tab, group: group, is_member: is_member}) do
+  defp description_visible?(%{active_tab: active_tab, group: group, access: access}) do
     active_tab == "group_home" or
-      (active_tab == "values" and group.parent_id != nil and not is_member)
+      (active_tab == "values" and group.parent_id != nil and
+         not Access.can_read_chat?(access, group))
   end
 
   @doc false
@@ -2808,6 +2868,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       _ -> nil
     end
+  end
+
+  # A reply shows what it answers in the composer, and an event for members is
+  # not on the page of someone outside the group.
+  defp replyable_value(socket, id) do
+    value = loaded_value(socket, id)
+    if value && !Components.event_hidden?(value, !socket.assigns.is_member), do: value
   end
 
   defp can_attach?(%Access{} = access),
@@ -3137,7 +3204,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
            description_visible?(%{
              active_tab: active_tab,
              group: group,
-             is_member: socket.assigns.is_member
+             access: socket.assigns.access
            }),
          do: Social.list_alt_descriptions(group),
          else: []
@@ -3741,10 +3808,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
         0
       end
 
+    group_blocks =
+      if needs_members?(group, active_tab) and
+           Access.can?(socket.assigns.access, :remove_members) do
+        Social.list_group_blocks(group)
+      else
+        []
+      end
+
     socket
     |> assign(:pending_join_request, pending_join_request)
     |> assign(:pending_join_requests, pending_join_requests)
     |> assign(:pending_join_requests_count, pending_join_requests_count)
+    |> assign(:group_blocks, group_blocks)
   end
 
   defp maybe_load_children(socket, group, active_tab, unread_overview) do
@@ -4084,6 +4160,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp parse_permission_state("neutral"), do: :neutral
   defp parse_permission_state(_state), do: nil
 
+  defp too_many_values_message, do: gettext("Too many messages at once. Try again in a moment.")
+
   defp access_error_message(:not_permitted),
     do: gettext("Your roles in this group do not allow that.")
 
@@ -4144,7 +4222,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # A value that just arrived is the newest one the viewer has seen, so its id
-  # is the read marker; no need to look up the group's latest value.
+  # is the read marker; no need to look up the group's latest value. Only members
+  # have unread counts, and in an open chat everyone on the page would write it.
+  defp mark_value_read(%{assigns: %{is_member: false}} = socket, %Value{}), do: socket
+
   defp mark_value_read(socket, %Value{} = value) do
     _ =
       Social.mark_group_values_read(

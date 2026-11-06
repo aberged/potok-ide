@@ -7,6 +7,7 @@ defmodule PotokIde.Social.Value do
   alias PotokIde.UTF8
 
   @content_formats [:markdown, :html]
+  @outsider_max_content_length 4_000
 
   schema "values" do
     field :content, :string
@@ -87,6 +88,16 @@ defmodule PotokIde.Social.Value do
     ])
     |> validate_required([:content_format, :creator_id, :group_id])
     |> check_constraint(:content_format, name: :values_content_format_check)
+  end
+
+  @doc """
+  What a value from someone outside the group may hold, in an open chat: never
+  html, which reaches the page itself in an app group, and not much of it.
+  """
+  def outsider_changeset(%Ecto.Changeset{} = changeset) do
+    changeset
+    |> put_change(:content_format, :markdown)
+    |> validate_length(:content, max: @outsider_max_content_length)
   end
 
   @doc """

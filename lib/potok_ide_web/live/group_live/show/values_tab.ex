@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.{Access, Value}
+  alias PotokIde.Social.{Access, Group, Value}
   alias PotokIde.Storage
   alias PotokIdeWeb.GroupLive.Show.Components
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
@@ -35,18 +35,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     default: nil,
     doc: "content shared from another app (`?share=`) for the composer to take"
 
-  def panel(assigns) do
-    access = assigns.access
-
+  def panel(%{access: access, group: group, current_profile: profile} = assigns) do
     assigns =
       assigns
-      |> assign(:can_post, Access.can?(access, :post_values))
-      |> assign(:can_react, Access.can?(access, :react))
+      |> assign(:can_post, Access.can_post_in_chat?(profile, access, group))
+      |> assign(:can_react, Access.can_react_in_chat?(profile, access, group))
       |> assign(:can_delete_any, Access.can?(access, :delete_values))
+      |> assign(:can_block, Access.can?(access, :remove_members) and Group.open_chat?(group))
       # Threads are sub-groups, which direct conversations do not have.
       |> assign(
         :can_thread,
-        Access.can?(access, :open_threads) and not assigns.group.is_direct
+        Access.can?(access, :open_threads) and not group.is_direct
       )
 
     ~H"""
@@ -133,7 +132,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 can_thread={@can_thread}
                 can_join_thread={@is_member}
                 can_delete_any={@can_delete_any}
+                can_block={@can_block}
                 can_tag={@is_member}
+                outsider={!@is_member}
               />
             </div>
 
@@ -177,10 +178,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
         <Components.reaction_picker :if={@can_react} />
 
-        <.value_sheet :if={@is_member} />
+        <.value_sheet />
 
         <div
-          :if={@is_member and (@can_post or @editing_value)}
+          :if={@can_post or @editing_value}
           class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-2 py-1.5 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6 sm:py-4"
         >
           <.composer_context
@@ -363,19 +364,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
         </div>
 
         <div
-          :if={@is_member and !@can_post and !@editing_value}
+          :if={!@can_post and !@editing_value}
           id="group-value-composer-disabled"
           class="relative z-10 flex shrink-0 items-center gap-2 border-t border-base-300/70 bg-base-100/95 px-4 py-4 text-sm text-base-content/65 backdrop-blur sm:px-6"
         >
           <.icon name="hero-no-symbol" class="size-4 shrink-0" />
-          {gettext("Your roles in this group do not allow posting messages.")}
-        </div>
-
-        <div
-          :if={!@is_member}
-          class="relative z-10 shrink-0 border-t border-base-300/70 bg-base-100/95 px-4 py-4 shadow-[0_-12px_24px_rgba(0,0,0,0.08)] backdrop-blur sm:px-6"
-        >
-          {gettext("Join this group to reply and post new messages.")}
+          {if(@is_member,
+            do: gettext("Your roles in this group do not allow posting messages."),
+            else: gettext("You cannot write in this group.")
+          )}
         </div>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">

@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.Router do
   end
 
   # Logged-out visitors go to the login page and come back here afterwards;
-  # the controller then checks membership in the file's group.
+  # the controller then checks that they read the chat the file was posted in.
   scope "/files", PotokIdeWeb do
     pipe_through [:files, :require_authenticated_account]
 

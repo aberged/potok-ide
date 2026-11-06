@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     member_of_group? = member? and group.parent_id != nil
 
     [
-      member? &&
+      (member? or Group.open_chat?(group)) &&
         %{
           key: "values",
           tab: "values",

@@ -1457,9 +1457,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :can_thread, :boolean, default: false, doc: "may open a new thread on the value"
   attr :can_join_thread, :boolean, default: false, doc: "may open the value's existing thread"
   attr :can_delete_any, :boolean, default: false, doc: "may delete other members' values"
+  attr :can_block, :boolean, default: false, doc: "may block the value's author in the group"
   attr :can_tag, :boolean, default: false, doc: "may open the value's tags (members)"
+  attr :outsider, :boolean, default: false, doc: "the viewer is not a member of the group"
 
   def value_message(assigns) do
+    assigns = hide_members_events(assigns)
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
     editing? = assigns.editing_value_id == assigns.value.id
 
@@ -1468,6 +1471,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:mine?, mine?)
       |> assign(:editing?, editing?)
       |> assign(:can_delete?, (mine? or assigns.can_delete_any) and not editing?)
+      |> assign(:can_block?, assigns.can_block and not mine?)
       |> assign(:mentions_me?, mentions_profile?(assigns.value, assigns.current_profile))
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
@@ -1578,7 +1582,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
              `ValueSheet`, which clicks these same buttons. --%>
         <div
           :if={
-            @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or
+            @can_react or @can_reply or @can_thread or @can_tag or @can_delete? or @can_block? or
               (@mine? and !@editing?)
           }
           id={"value-actions-#{@value.id}"}
@@ -1645,6 +1649,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             size="xs"
           />
           <.icon_button
+            :if={@can_block?}
+            id={"value-block-#{@value.id}"}
+            type="button"
+            phx-click="block_value_author"
+            phx-value-id={@value.id}
+            data-value-action="block"
+            data-confirm={
+              gettext("Block %{username} in this group? A member is also removed from it.",
+                username: @value.creator.username
+              )
+            }
+            icon="hero-no-symbol"
+            label={gettext("Block in this group")}
+            variant="danger"
+            size="xs"
+          />
+          <.icon_button
             :if={@can_delete?}
             id={"value-delete-#{@value.id}"}
             type="button"
@@ -1691,6 +1712,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             {Value.excerpt(@reply_parent, 160)}
           </span>
         </button>
+        <p
+          :if={@event_hidden?}
+          id={"value-event-hidden-#{@value.id}"}
+          class="flex items-center gap-2 text-sm text-base-content/65"
+        >
+          <.icon name="hero-lock-closed" class="size-4 shrink-0" />
+          {gettext("Event for members only")}
+        </p>
         <EventCard.card :if={@event} value_id={@value.id} event={@event} mine={@mine?} />
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
         <div
@@ -2354,6 +2383,36 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # The event the value announced, when it was loaded with it.
   defp value_event(%Value{event: %PotokIde.Events.Event{} = event}), do: event
   defp value_event(_value), do: nil
+
+  @doc """
+  Whether `value` announces an event only members see, and the viewer is outside
+  the group. Its text holds the event's title, time and place.
+  """
+  def event_hidden?(%Value{event: %PotokIde.Events.Event{is_public: false}}, true = _outsider?),
+    do: true
+
+  def event_hidden?(%Value{}, _outsider?), do: false
+
+  defp hide_members_events(%{outsider: false} = assigns),
+    do: assign(assigns, :event_hidden?, false)
+
+  defp hide_members_events(%{value: value, can_reply: can_reply} = assigns) do
+    hidden? = event_hidden?(value, true)
+    value = if hidden?, do: %{value | content: "", event: nil, link_preview: nil}, else: value
+
+    assigns
+    |> assign(:value, hide_quoted_event(value))
+    |> assign(:event_hidden?, hidden?)
+    |> assign(:can_reply, can_reply and not hidden?)
+  end
+
+  defp hide_quoted_event(%Value{parent: %Value{} = parent} = value) do
+    if event_hidden?(parent, true),
+      do: %{value | parent: %{parent | content: gettext("Event for members only"), event: nil}},
+      else: value
+  end
+
+  defp hide_quoted_event(%Value{} = value), do: value
 
   defp render_formatted_content(
          %{content: content, content_format: :html, uses_api: true} = params
