@@ -79,4 +79,31 @@ defmodule PotokIdeWeb.GroupLive.DirectUploadTest do
     assert {[_, _, _] = attachments, false} = Social.list_group_attachments(group)
     assert attachments |> Enum.sort_by(& &1.id) |> Enum.map(& &1.filename) == names
   end
+
+  test "a template's picture goes straight to the bucket and to the chat", %{
+    conn: conn,
+    group: group
+  } do
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/edit_group")
+    Req.Test.allow(S3, self(), lv.pid)
+
+    lv
+    |> form("#group-edit-form")
+    |> render_change(%{"description_template" => %{"pick" => "article"}})
+
+    assert has_element?(lv, "#group-description-template-field-image-device")
+
+    upload =
+      file_input(lv, "#description-picture-form", :description_picture, [
+        %{name: "most.jpg", content: "hello", type: "image/jpeg"}
+      ])
+
+    render_upload(upload, "most.jpg")
+
+    assert_push_event(lv, "description_picture_ready", %{url: _url})
+
+    assert {[attachment], false} = Social.list_group_attachments(group)
+    assert attachment.filename == "most.jpg"
+    assert attachment.content_type == "image/jpeg"
+  end
 end

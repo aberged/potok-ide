@@ -173,7 +173,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Files"),
         text:
           gettext(
-            "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
+            "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description."
           )
       },
       %{
@@ -191,7 +191,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Apps in a group"),
         text:
           gettext(
-            "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list."
+            "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
           )
       }
     ]

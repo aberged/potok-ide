@@ -135,6 +135,11 @@ Opis objave mora sam da stoji, jer ga Feed prikazuje onakvog kakav stiže sa ser
 - `<meta name="description">` je tekst kartice deljenog linka: uvod vesti, vreme i mesto događaja, autor citata. Potok ga čita umesto prvih redova opisa, koji bi spojili nadnaslov, potpis uz sliku i tekst, a sanitizer ga briše iz onoga što gledalac dobija. Slobodan tekst ga nema, a objava sačuvana pre njega dobija ga kad se ponovo sačuva.
 - Pregled ide preko `previewDescription`, kroz isti sanitizer, pa autor vidi tačno ono što će Feed dobiti.
 
+Isti format čita i piše **Uredi grupu**, za glavni i za alternativne opise. Objava napravljena u FeedCreatoru tamo se otvara u svojoj formi, i obrnuto. Dve razlike:
+
+- Naslov iz forme na stranici Uredi grupu ne menja ime grupe. Ime grupe se tamo menja posebno, a FeedCreator ga pri sledećem čuvanju opet uzme iz naslova.
+- Šabloni postoje na dva mesta: `src/templates.ts` u FeedCreatoru i `PotokIdeWeb.PostTemplates` u Potoku. Izmena u jednom traži izmenu u drugom, inače se ista polja različito pretvaraju u HTML. `test/support/fixtures/feed_creator_posts.ts` pravi od šablona FeedCreatora primere, a `post_test.exs` proverava da Potok od istih polja pravi isti HTML. Posle izmene šablona skripta se pokreće ponovo.
+
 Sanitizer određuje kako šablon sme da izgleda:
 
 | Prolazi | Ne prolazi |
@@ -151,7 +156,7 @@ Iz toga slede tri pravila za šablone:
 - Tema stranice ne stiže do boje upisane u `style`. Površina u boji zato uvek postavlja i pozadinu i tekst, a par boja mora da radi i u svetloj i u tamnoj temi.
 - Boja linka dolazi iz teme, pa na površini u boji nema linkova.
 
-`src/sanitizer.test.ts` u projektu FeedCreator drži kopiju ovih pravila i proverava svaki šablon.
+`src/sanitizer.test.ts` u projektu FeedCreator drži kopiju ovih pravila i proverava svaki šablon. Potok iste šablone proverava kroz pravi sanitizer.
 
 ## Pozivi koje par koristi
 
@@ -173,7 +178,7 @@ Iz toga slede tri pravila za šablone:
 
 ## Ograničenja
 
-- **Slike.** Opis ne sme da sadrži `data:` sliku, a API nema slanje fajlova. Slika sa uređaja zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike.
+- **Slike.** Opis ne sme da sadrži `data:` sliku, a API nema slanje fajlova. Slika sa uređaja zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike. Na stranici Uredi grupu slika sa uređaja ide drugim putem: postaje poruka sa fajlom u chatu grupe, pa ostaje među fajlovima grupe, a opis je prikazuje preko potpisane adrese koja ne traži prijavu. Avatar se ne dira, a grupa može da ima više takvih slika. Ako se ta poruka obriše, slika nestaje i iz opisa.
 - **Cena nasleđivanja.** Svaki član je red u članstvu svake objave: 100 članova i 500 objava je 50.000 redova, a svaki novi član dodaje 500. Svaka poruka u chatu objave ide kao push svim njenim članovima, a opcije za utišavanje grupe nema. Za veliku publiku i živ chat bolja je javna objava bez nasleđivanja, uz manje udobnosti pri ulasku u chat.
 - **Objava ne šalje obaveštenje.** Pravljenje grupe nikog ne obaveštava. Članovi vide novu objavu kad otvore Feed.
 - **Feed se ne osvežava uživo.** Vesti, broj komentara i reakcije učitavaju se kad se aplikacija otvori i posle povratka iz chata. Na strani grupe reakcije stižu uživo.

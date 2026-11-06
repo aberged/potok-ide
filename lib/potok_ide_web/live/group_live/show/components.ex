@@ -2,7 +2,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.Avatars
-  alias PotokIdeWeb.GroupLive.Show.{EventCard, MediaViewer}
+  alias PotokIdeWeb.GroupLive.Show.{DescriptionTemplateForm, EventCard, MediaViewer}
+  alias PotokIdeWeb.PostTemplates.Post
   alias PotokIdeWeb.TagComponents
 
   alias PotokIde.LinkPreviews
@@ -1231,17 +1232,52 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :uses_api, :any, required: true, doc: "the form's `uses_api` value"
   attr :format_options, :list, required: true
 
+  attr :templates, :boolean,
+    default: false,
+    doc: "whether the description can be written through a template"
+
+  attr :template_list_open, :boolean, default: false
+
+  attr :picture_upload, :any,
+    default: nil,
+    doc: "the upload of a template's picture, when its author may add a file"
+
   @doc """
   Writes a description (the default one or an alternative): editor,
   side-by-side or preview layout with a live preview, which runs apps with
   their API refused, and the format choice. The layout is remembered for
-  the browser session.
+  the browser session. With `templates` the editor can be a template's form
+  instead (`DescriptionTemplateForm`); an app has none.
   """
   def description_workspace(assigns) do
-    assigns = assign(assigns, :app?, assigns.uses_api in [true, "true"])
+    app? = assigns.uses_api in [true, "true"]
+    templates? = assigns.templates and not app?
+    decoded = if templates?, do: Post.decode(assigns.description_field.value), else: :free
+
+    assigns =
+      assigns
+      |> assign(:app?, app?)
+      |> assign(:templates?, templates?)
+      |> assign(:decoded, decoded)
+      |> assign(:post, with({:post, post} <- decoded, do: post, else: (_other -> nil)))
 
     ~H"""
     <div>
+      <DescriptionTemplateForm.chooser
+        :if={@templates?}
+        id_prefix={@id_prefix}
+        decoded={@decoded}
+        open={@template_list_open}
+        replaces_text={!@post and !blank_text?(@description_field.value)}
+      />
+      <p
+        :if={@templates and @app?}
+        id={"#{@id_prefix}-template-app"}
+        class="mt-4 text-sm text-base-content/65"
+      >
+        {gettext("Templates are for written descriptions. This description is an app.")}
+      </p>
+
       <div class="group-description-workspace mt-4">
         <div
           id={"#{@id_prefix}-layout-selector"}
@@ -1330,7 +1366,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <div class="grid group-description-layout min-h-112 gap-4 grid-cols-2 card-body p-0">
           <div class="group-description-pane group-description-pane-editor rounded-2xl border border-base-300/80 bg-base-100/80 p-3 shadow-sm">
-            <.input field={@description_field} type="textarea" rows="16" phx-debounce="500" />
+            <DescriptionTemplateForm.fields
+              :if={@post}
+              id_prefix={@id_prefix}
+              post={@post}
+              picture_upload={@picture_upload}
+            />
+            <.input
+              :if={!@post}
+              field={@description_field}
+              type="textarea"
+              rows="16"
+              phx-debounce="500"
+            />
           </div>
 
           <div class="group-description-pane group-description-pane-preview rounded-2xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm">
@@ -1362,7 +1410,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </div>
       </div>
 
-      <div class="mt-3 flex items-start gap-4 h-3/4 overflow-auto">
+      <div :if={!@post} class="mt-3 flex items-start gap-4 h-3/4 overflow-auto">
         <fieldset class="fieldset">
           <div class="flex flex-wrap gap-3">
             <label :for={{label, value} <- @format_options} class="inline-flex items-center gap-2">

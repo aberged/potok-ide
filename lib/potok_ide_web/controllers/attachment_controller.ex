@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.AttachmentController do
   alias PotokIde.Social
   alias PotokIde.Social.ValueAttachment
   alias PotokIde.Storage
+  alias PotokIdeWeb.PostTemplates.Picture
 
   # A stored file never changes, so the browser may keep it for a while; it
   # is private to the account that asked for it.
@@ -16,6 +17,18 @@ defmodule PotokIdeWeb.AttachmentController do
          %ValueAttachment{} = attachment <-
            profile && Social.get_attachment_for_download(profile, attachment_id) do
       serve(conn, attachment, disposition(attachment, params))
+    else
+      _ -> send_resp(conn, 404, "")
+    end
+  end
+
+  # A picture used in a description. Holding its signed address is the whole
+  # check, and it only ever opens a picture.
+  def picture(conn, %{"token" => token}) do
+    with {:ok, id} <- Picture.verify(token),
+         %ValueAttachment{} = attachment <- Social.get_attachment(id),
+         true <- ValueAttachment.image?(attachment) do
+      serve(conn, attachment, :inline)
     else
       _ -> send_resp(conn, 404, "")
     end

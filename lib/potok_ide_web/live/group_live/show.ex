@@ -38,6 +38,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ValuesTab
   }
 
+  alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.{TagComponents, TagEditor}
@@ -54,6 +55,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # The feed holds at most this many values: a page loaded at one end drops
   # as many from the other, which load again when scrolled back to.
   @values_max_loaded 200
+
+  # What the browser sends is already shrunk (see `description_picture_picker`).
+  @max_description_picture_size 5 * 1024 * 1024
 
   # The cards of the edit and create tabs (`sections/0` of each), and the
   # form fields of each card, so a save that fails opens the card with the
@@ -595,6 +599,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
             editing_alt_description={@editing_alt_description}
             roles={if(@access.manifest, do: @access.manifest.roles, else: [])}
             max_alt_descriptions={Social.max_alt_descriptions()}
+            template_list={@template_list}
+            picture_upload={
+              if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
+            }
           />
           <InviteProfileTab.panel
             :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -659,6 +667,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:file_tree, nil)
          |> assign(:file_tree_truncated?, false)
          |> allow_attachments_upload()
+         |> allow_description_picture_upload()
+         |> assign(:template_list, nil)
          |> assign(:loaded_children, [])
          |> assign(:pending_refresh, MapSet.new())
          |> assign(:refresh_due_at, nil)
@@ -862,6 +872,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply, put_flash(socket, :error, gettext("Could not create message."))}
       end
     end
+  end
+
+  # A picture for a template's field starts uploading as soon as it is picked.
+  def handle_event("validate_description_picture", _params, socket), do: {:noreply, socket}
+
+  def handle_event("description_picture_invalid", _params, socket) do
+    {:noreply, put_flash(socket, :error, gettext("Choose a valid image file."))}
   end
 
   def handle_event("cancel_attachment", %{"ref" => ref}, socket) do
@@ -1460,14 +1477,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Changes are taken against the group the form was built from, which has
   # its picture loaded, so an untouched picture is no change and the save
   # bar only shows for real edits.
-  def handle_event("validate_edit_group", %{"group" => attrs}, socket) do
+  def handle_event("validate_edit_group", %{"group" => attrs} = params, socket) do
     if Access.can?(socket.assigns.access, :edit_group) do
+      group = socket.assigns.edit_group_form.source.data
+      template = params["description_template"]
+      {attrs, _missing} = PostTemplates.Form.prepare(attrs, template, group.description)
+
       changeset =
-        socket.assigns.edit_group_form.source.data
+        group
         |> Group.update_changeset(attrs)
         |> Map.put(:action, :validate)
 
-      {:noreply, assign(socket, :edit_group_form, to_form(changeset))}
+      {:noreply,
+       socket
+       |> assign(:edit_group_form, to_form(changeset))
+       |> close_template_list(template)}
     else
       {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
     end
@@ -1491,38 +1515,31 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
-  def handle_event("save_edit_group", %{"group" => attrs}, socket) do
+  def handle_event("toggle_template_list", %{"workspace" => workspace}, socket) do
+    open = if socket.assigns.template_list != workspace, do: workspace
+    {:noreply, assign(socket, :template_list, open)}
+  end
+
+  def handle_event("save_edit_group", %{"group" => attrs} = params, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
 
-    if not Access.can?(socket.assigns.access, :edit_group) do
-      {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
-    else
-      case Social.update_group(current_profile, group, attrs) do
-        {:ok, updated_group} ->
-          {:noreply,
-           socket
-           |> assign(:group, updated_group)
-           |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
-           |> assign(:link_card, link_card(updated_group, "edit_group"))
-           |> put_flash(:info, gettext("Group updated."))
-           |> refresh_group_data()}
+    {attrs, missing} =
+      PostTemplates.Form.prepare(
+        attrs,
+        params["description_template"],
+        socket.assigns.edit_group_form.source.data.description
+      )
 
-        {:error, :not_permitted} ->
-          {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
+    cond do
+      not Access.can?(socket.assigns.access, :edit_group) ->
+        {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
 
-        {:error, %Ecto.Changeset{} = changeset} ->
-          {:noreply,
-           socket
-           |> assign(:edit_group_form, to_form(Map.put(changeset, :action, :validate)))
-           |> assign(
-             :edit_group_section,
-             group_form_error_section(changeset) || socket.assigns.edit_group_section
-           )}
+      missing != [] ->
+        {:noreply, refuse_edit_group(socket, attrs, missing)}
 
-        {:error, _reason} ->
-          {:noreply, put_flash(socket, :error, gettext("Could not update group."))}
-      end
+      true ->
+        save_edit_group(socket, current_profile, group, attrs)
     end
   end
 
@@ -1613,51 +1630,47 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, close_alt_description_form(socket)}
   end
 
-  def handle_event("validate_alt_description", %{"group_alt_description" => attrs}, socket) do
+  def handle_event(
+        "validate_alt_description",
+        %{"group_alt_description" => attrs} = params,
+        socket
+      ) do
     case socket.assigns.editing_alt_description do
       %GroupAltDescription{} = editing ->
+        template = params["description_template"]
+        {attrs, _missing} = PostTemplates.Form.prepare(attrs, template, editing.description)
+
         changeset =
           editing
           |> Social.change_alt_description(attrs)
           |> Map.put(:action, :validate)
 
-        {:noreply, assign(socket, :alt_description_form, to_form(changeset))}
+        {:noreply,
+         socket
+         |> assign(:alt_description_form, to_form(changeset))
+         |> close_template_list(template)}
 
       nil ->
         {:noreply, socket}
     end
   end
 
-  def handle_event("save_alt_description", %{"group_alt_description" => attrs}, socket) do
-    current_profile = socket.assigns.current_profile
-    group = socket.assigns.group
+  def handle_event("save_alt_description", %{"group_alt_description" => attrs} = params, socket) do
+    editing = socket.assigns.editing_alt_description
+    saved = editing && editing.description
 
-    result =
-      case socket.assigns.editing_alt_description do
-        %GroupAltDescription{id: nil} ->
-          Social.create_alt_description(current_profile, group, attrs)
+    case PostTemplates.Form.prepare(attrs, params["description_template"], saved) do
+      {attrs, missing} when missing == [] or is_nil(editing) ->
+        save_alt_description(socket, editing, attrs)
 
-        %GroupAltDescription{} = editing ->
-          Social.update_alt_description(current_profile, group, editing, attrs)
+      {attrs, missing} ->
+        changeset =
+          editing
+          |> Social.change_alt_description(attrs)
+          |> add_template_error(missing)
+          |> Map.put(:action, :validate)
 
-        nil ->
-          {:error, :not_found}
-      end
-
-    case result do
-      {:ok, _alt_description} ->
-        {:noreply,
-         socket
-         |> close_alt_description_form()
-         |> reload_alt_descriptions()
-         |> put_flash(:info, gettext("Description saved."))}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         assign(socket, :alt_description_form, to_form(Map.put(changeset, :action, :validate)))}
-
-      {:error, reason} ->
-        {:noreply, put_flash(socket, :error, alt_description_error_message(reason))}
+        {:noreply, assign(socket, :alt_description_form, to_form(changeset))}
     end
   end
 
@@ -2849,6 +2862,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp can_attach?(%Access{} = access),
     do: Storage.enabled?() and access.member? and Access.can?(access, :attach_files)
 
+  # A picture from the device is a message with a file, in the group's chat, so
+  # it takes what such a message takes. It also takes editing the group, as the
+  # address it gives opens with no session. The root has no chat, though its
+  # settings can be reached by address.
+  defp can_post_description_picture?(%Group{} = group, %Access{} = access) do
+    not group.is_root and Access.can?(access, :edit_group) and can_attach?(access) and
+      Access.can?(access, :post_values)
+  end
+
   # Browsers upload through the LiveView channel, or straight to the bucket
   # when the storage hands out presigned URLs.
   defp allow_attachments_upload(socket) do
@@ -2864,6 +2886,70 @@ defmodule PotokIdeWeb.GroupLive.Show do
         else: opts
 
     allow_upload(socket, :attachments, opts)
+  end
+
+  defp allow_description_picture_upload(socket) do
+    opts = [
+      accept: ~w(image/jpeg),
+      max_entries: 1,
+      max_file_size: @max_description_picture_size,
+      auto_upload: true,
+      progress: &description_picture_progress/3
+    ]
+
+    opts =
+      if Storage.direct_upload?(),
+        do: Keyword.put(opts, :external, &presign_description_picture/2),
+        else: opts
+
+    allow_upload(socket, :description_picture, opts)
+  end
+
+  defp presign_description_picture(entry, socket) do
+    if can_post_description_picture?(socket.assigns.group, socket.assigns.access),
+      do: presign_attachment(entry, socket),
+      else: {:error, %{reason: "not_permitted"}, socket}
+  end
+
+  # Also called when an upload to the bucket fails, with the entry not done.
+  defp description_picture_progress(:description_picture, %{done?: true} = entry, socket) do
+    if can_post_description_picture?(socket.assigns.group, socket.assigns.access),
+      do: {:noreply, post_description_picture(socket, entry)},
+      else: {:noreply, cancel_upload(socket, :description_picture, entry.ref)}
+  end
+
+  defp description_picture_progress(:description_picture, entry, socket) do
+    if upload_errors(socket.assigns.uploads.description_picture, entry) == [] do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> cancel_upload(:description_picture, entry.ref)
+       |> put_flash(:error, gettext("The picture could not be sent."))}
+    end
+  end
+
+  # The file goes where every file of the group goes, as a message with it, and
+  # the field gets its address. The author's own message moves their read
+  # marker, which the broadcast of the unread count skips on their own page.
+  defp post_description_picture(socket, entry) do
+    %{current_profile: profile, group: group} = socket.assigns
+    content = gettext("Picture for the group's description")
+
+    stored =
+      consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)})
+
+    with {:ok, attachment} <- stored,
+         {:ok, value} <-
+           create_value_or_drop_files(profile, group, %{"content" => content}, [attachment]) do
+      socket
+      |> schedule_refresh(:unread)
+      |> push_event("description_picture_ready", %{
+        url: PostTemplates.Picture.address(hd(value.attachments))
+      })
+    else
+      _error -> put_flash(socket, :error, gettext("The picture could not be sent."))
+    end
   end
 
   defp presign_attachment(entry, socket) do
@@ -3175,6 +3261,95 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket
     |> assign(:editing_alt_description, nil)
     |> assign(:alt_description_form, nil)
+    |> assign(:template_list, nil)
+  end
+
+  defp save_edit_group(socket, current_profile, group, attrs) do
+    case Social.update_group(current_profile, group, attrs) do
+      {:ok, updated_group} ->
+        {:noreply,
+         socket
+         |> assign(:group, updated_group)
+         |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
+         |> assign(:link_card, link_card(updated_group, "edit_group"))
+         |> put_flash(:info, gettext("Group updated."))
+         |> refresh_group_data()}
+
+      {:error, :not_permitted} ->
+        {:noreply, put_flash(socket, :error, access_error_message(:not_permitted))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         socket
+         |> assign(:edit_group_form, to_form(Map.put(changeset, :action, :validate)))
+         |> assign(
+           :edit_group_section,
+           group_form_error_section(changeset) || socket.assigns.edit_group_section
+         )}
+
+      {:error, _reason} ->
+        {:noreply, put_flash(socket, :error, gettext("Could not update group."))}
+    end
+  end
+
+  defp save_alt_description(socket, editing, attrs) do
+    current_profile = socket.assigns.current_profile
+    group = socket.assigns.group
+
+    result =
+      case editing do
+        %GroupAltDescription{id: nil} ->
+          Social.create_alt_description(current_profile, group, attrs)
+
+        %GroupAltDescription{} = editing ->
+          Social.update_alt_description(current_profile, group, editing, attrs)
+
+        nil ->
+          {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _alt_description} ->
+        {:noreply,
+         socket
+         |> close_alt_description_form()
+         |> reload_alt_descriptions()
+         |> put_flash(:info, gettext("Description saved."))}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         assign(socket, :alt_description_form, to_form(Map.put(changeset, :action, :validate)))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, alt_description_error_message(reason))}
+    end
+  end
+
+  # The list closes with the choice made in it.
+  defp close_template_list(socket, %{"pick" => _id}), do: assign(socket, :template_list, nil)
+  defp close_template_list(socket, _template), do: socket
+
+  defp add_template_error(changeset, missing) do
+    Ecto.Changeset.add_error(
+      changeset,
+      :description,
+      gettext("Still needed: %{fields}", fields: Enum.join(missing, ", "))
+    )
+  end
+
+  # A template's form with empty required fields. The form says which ones,
+  # so the save only has to bring it into view.
+  defp refuse_edit_group(socket, attrs, missing) do
+    changeset =
+      socket.assigns.edit_group_form.source.data
+      |> Group.update_changeset(attrs)
+      |> add_template_error(missing)
+      |> Map.put(:action, :validate)
+
+    socket
+    |> assign(:edit_group_form, to_form(changeset))
+    |> assign(:edit_group_section, "description")
+    |> assign(:description_details_open, true)
   end
 
   defp maybe_close_alt_description_form(socket, %GroupAltDescription{id: id}) do

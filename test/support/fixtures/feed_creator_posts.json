@@ -1,0 +1,541 @@
+{
+  "posts": [
+    {
+      "template": "article",
+      "fields": {
+        "kicker": "Iz kraja",
+        "title": "Most na potoku ponovo otvoren",
+        "lead": "Posle dva meseca radova kraj je radovima.",
+        "image": "https://potok.invalid/picture-on-its-way",
+        "body": "Radovi su završeni pre roka."
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"article\",\"fields\":{\"kicker\":\"Iz kraja\",\"title\":\"Most na potoku ponovo otvoren\",\"lead\":\"Posle dva meseca radova kraj je radovima.\",\"image\":\"https://potok.invalid/picture-on-its-way\",\"body\":\"Radovi su završeni pre roka.\"},\"hash\":\"38f4b63b\"}-->\n<meta name=\"description\" content=\"Posle dva meseca radova kraj je radovima.\"><article><p style=\"margin: 0 0 10px;\"><span style=\"background-color: #1e3a8a; color: #ffffff; font-size: 13px; font-weight: bold; padding: 3px 10px; border-radius: 99px;\">Iz kraja</span></p><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Most na potoku ponovo otvoren</h1><p style=\"font-size: 19px; line-height: 1.45; font-weight: bold; margin: 12px 0 0;\">Posle dva meseca radova kraj je radovima.</p><figure style=\"margin: 16px 0 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Most na potoku ponovo otvoren\"></figure><p style=\"margin: 14px 0 0;\">Radovi su završeni pre roka.</p></article>",
+      "html": "<meta name=\"description\" content=\"Posle dva meseca radova kraj je radovima.\"><article><p style=\"margin: 0 0 10px;\"><span style=\"background-color: #1e3a8a; color: #ffffff; font-size: 13px; font-weight: bold; padding: 3px 10px; border-radius: 99px;\">Iz kraja</span></p><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Most na potoku ponovo otvoren</h1><p style=\"font-size: 19px; line-height: 1.45; font-weight: bold; margin: 12px 0 0;\">Posle dva meseca radova kraj je radovima.</p><figure style=\"margin: 16px 0 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Most na potoku ponovo otvoren\"></figure><p style=\"margin: 14px 0 0;\">Radovi su završeni pre roka.</p></article>",
+      "hash": "38f4b63b"
+    },
+    {
+      "template": "photo",
+      "fields": {
+        "image": "https://potok.invalid/picture-on-its-way",
+        "title": "Jutro na obali",
+        "about": "Snimljeno pre izlaska sunca."
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"photo\",\"fields\":{\"image\":\"https://potok.invalid/picture-on-its-way\",\"title\":\"Jutro na obali\",\"about\":\"Snimljeno pre izlaska sunca.\"},\"hash\":\"506da541\"}-->\n<meta name=\"description\" content=\"Snimljeno pre izlaska sunca.\"><figure style=\"margin: 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Jutro na obali\"></figure><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 12px 0 0;\">Jutro na obali</h2><p style=\"font-size: 17px; margin: 6px 0 0;\">Snimljeno pre izlaska sunca.</p>",
+      "html": "<meta name=\"description\" content=\"Snimljeno pre izlaska sunca.\"><figure style=\"margin: 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Jutro na obali\"></figure><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 12px 0 0;\">Jutro na obali</h2><p style=\"font-size: 17px; margin: 6px 0 0;\">Snimljeno pre izlaska sunca.</p>",
+      "hash": "506da541"
+    },
+    {
+      "template": "quote",
+      "fields": {
+        "quote": "Reka nosi sve što joj se da.",
+        "author": "Stara izreka"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"quote\",\"fields\":{\"quote\":\"Reka nosi sve što joj se da.\",\"author\":\"Stara izreka\"},\"hash\":\"226de5a6\"}-->\n<meta name=\"description\" content=\"Stara izreka\"><blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Reka nosi sve što joj se da.</p><p style=\"color: #bfdbfe; font-size: 16px; margin: 16px 0 0;\">Stara izreka</p></blockquote>",
+      "html": "<meta name=\"description\" content=\"Stara izreka\"><blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Reka nosi sve što joj se da.</p><p style=\"color: #bfdbfe; font-size: 16px; margin: 16px 0 0;\">Stara izreka</p></blockquote>",
+      "hash": "226de5a6"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Čišćenje obale",
+        "date": "2026-11-14",
+        "time": "10:00",
+        "place": "Kod starog mosta"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Čišćenje obale\",\"date\":\"2026-11-14\",\"time\":\"10:00\",\"place\":\"Kod starog mosta\"},\"hash\":\"873da488\"}-->\n<meta name=\"description\" content=\"subota, 14. novembar 2026. u 10:00 · Kod starog mosta\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">14</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Čišćenje obale</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 14. novembar 2026. u 10:00</p><p style=\"margin: 2px 0 0;\">Kod starog mosta</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"subota, 14. novembar 2026. u 10:00 · Kod starog mosta\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">14</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Čišćenje obale</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 14. novembar 2026. u 10:00</p><p style=\"margin: 2px 0 0;\">Kod starog mosta</p></td></tr></tbody></table>",
+      "hash": "873da488"
+    },
+    {
+      "template": "list",
+      "fields": {
+        "title": "Tri stvari za vikend",
+        "items": [
+          "Prošetaj uz potok",
+          "Poseti pijacu",
+          "Javi se komšiji"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"list\",\"fields\":{\"title\":\"Tri stvari za vikend\",\"items\":[\"Prošetaj uz potok\",\"Poseti pijacu\",\"Javi se komšiji\"]},\"hash\":\"444f3549\"}-->\n<meta name=\"description\" content=\"Prošetaj uz potok, Poseti pijacu, Javi se komšiji\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Tri stvari za vikend</h1><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Prošetaj uz potok</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Poseti pijacu</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">3</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Javi se komšiji</td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"Prošetaj uz potok, Poseti pijacu, Javi se komšiji\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Tri stvari za vikend</h1><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Prošetaj uz potok</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Poseti pijacu</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">3</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">Javi se komšiji</td></tr></tbody></table>",
+      "hash": "444f3549"
+    },
+    {
+      "template": "link",
+      "fields": {
+        "address": "https://example.com/clanak",
+        "title": "Vredi pročitati",
+        "about": "Kratak tekst o našem kraju."
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"link\",\"fields\":{\"address\":\"https://example.com/clanak\",\"title\":\"Vredi pročitati\",\"about\":\"Kratak tekst o našem kraju.\"},\"hash\":\"92a5aa59\"}-->\n<meta name=\"description\" content=\"Kratak tekst o našem kraju.\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Vredi pročitati</h2><p style=\"margin: 8px 0 0;\">Kratak tekst o našem kraju.</p><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://example.com/clanak\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "html": "<meta name=\"description\" content=\"Kratak tekst o našem kraju.\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Vredi pročitati</h2><p style=\"margin: 8px 0 0;\">Kratak tekst o našem kraju.</p><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://example.com/clanak\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "hash": "92a5aa59"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "level": "important",
+        "title": "Nema vode u utorak",
+        "body": "Od 8 do 12 časova."
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"level\":\"important\",\"title\":\"Nema vode u utorak\",\"body\":\"Od 8 do 12 časova.\"},\"hash\":\"da7b5738\"}-->\n<meta name=\"description\" content=\"Važno: Od 8 do 12 časova.\"><section style=\"background-color: #fef3c7; color: #78350f; border-left: 6px solid #f59e0b; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Važno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Nema vode u utorak</h1><p style=\"margin: 10px 0 0;\">Od 8 do 12 časova.</p></section>",
+      "html": "<meta name=\"description\" content=\"Važno: Od 8 do 12 časova.\"><section style=\"background-color: #fef3c7; color: #78350f; border-left: 6px solid #f59e0b; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Važno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Nema vode u utorak</h1><p style=\"margin: 10px 0 0;\">Od 8 do 12 časova.</p></section>",
+      "hash": "da7b5738"
+    },
+    {
+      "template": "question",
+      "fields": {
+        "question": "Šta bi promenio u našem kraju?",
+        "about": "Javi nam se."
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"question\",\"fields\":{\"question\":\"Šta bi promenio u našem kraju?\",\"about\":\"Javi nam se.\"},\"hash\":\"3761c385\"}-->\n<meta name=\"description\" content=\"Javi nam se.\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Šta bi promenio u našem kraju?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Javi nam se.</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
+      "html": "<meta name=\"description\" content=\"Javi nam se.\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Šta bi promenio u našem kraju?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Javi nam se.</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
+      "hash": "3761c385"
+    },
+    {
+      "template": "article",
+      "fields": {
+        "kicker": "D'Artanjan & <drugovi>",
+        "title": "Naslov \"pod navodnicima\" -- i --> crtice",
+        "lead": "Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. ",
+        "image": "HTTPS://example.com/a.png?x=1&y=2",
+        "caption": "Foto: **Ana** i *Pera*",
+        "body": "**jako** i *malo*\n\n[link](https://a.rs) pa https://b.rs/c. Kraj\nnovi red\n\n   \n\n[loš](javascript:alert) <b>tag</b>"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"article\",\"fields\":{\"kicker\":\"D'Artanjan & \\u003cdrugovi\\u003e\",\"title\":\"Naslov \\\"pod navodnicima\\\" -\\u002d i -\\u002d\\u003e crtice\",\"lead\":\"Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. \",\"image\":\"HTTPS://example.com/a.png?x=1&y=2\",\"caption\":\"Foto: **Ana** i *Pera*\",\"body\":\"**jako** i *malo*\\n\\n[link](https://a.rs) pa https://b.rs/c. Kraj\\nnovi red\\n\\n   \\n\\n[loš](javascript:alert) \\u003cb\\u003etag\\u003c/b\\u003e\"},\"hash\":\"7634006b\"}-->\n<meta name=\"description\" content=\"Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu…\"><article><p style=\"margin: 0 0 10px;\"><span style=\"background-color: #1e3a8a; color: #ffffff; font-size: 13px; font-weight: bold; padding: 3px 10px; border-radius: 99px;\">D'Artanjan &amp; &lt;drugovi&gt;</span></p><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Naslov &quot;pod navodnicima&quot; -- i --&gt; crtice</h1><p style=\"font-size: 19px; line-height: 1.45; font-weight: bold; margin: 12px 0 0;\">Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka.</p><figure style=\"margin: 16px 0 0;\"><img src=\"https://example.com/a.png?x=1&amp;y=2\" alt=\"Naslov &quot;pod navodnicima&quot; -- i --&gt; crtice\"><figcaption>Foto: <strong>Ana</strong> i <em>Pera</em></figcaption></figure><p style=\"margin: 14px 0 0;\"><strong>jako</strong> i <em>malo</em></p><p style=\"margin: 14px 0 0;\"><a href=\"https://a.rs\" target=\"_blank\" rel=\"noopener\">link</a> pa <a href=\"https://b.rs/c\" target=\"_blank\" rel=\"noopener\">https://b.rs/c</a>. Kraj<br>novi red</p><p style=\"margin: 14px 0 0;\">[loš](javascript:alert) &lt;b&gt;tag&lt;/b&gt;</p></article>",
+      "html": "<meta name=\"description\" content=\"Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu…\"><article><p style=\"margin: 0 0 10px;\"><span style=\"background-color: #1e3a8a; color: #ffffff; font-size: 13px; font-weight: bold; padding: 3px 10px; border-radius: 99px;\">D'Artanjan &amp; &lt;drugovi&gt;</span></p><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Naslov &quot;pod navodnicima&quot; -- i --&gt; crtice</h1><p style=\"font-size: 19px; line-height: 1.45; font-weight: bold; margin: 12px 0 0;\">Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka. Reč po reč, i tekst koji nikako da stane u jednu karticu deljenog linka.</p><figure style=\"margin: 16px 0 0;\"><img src=\"https://example.com/a.png?x=1&amp;y=2\" alt=\"Naslov &quot;pod navodnicima&quot; -- i --&gt; crtice\"><figcaption>Foto: <strong>Ana</strong> i <em>Pera</em></figcaption></figure><p style=\"margin: 14px 0 0;\"><strong>jako</strong> i <em>malo</em></p><p style=\"margin: 14px 0 0;\"><a href=\"https://a.rs\" target=\"_blank\" rel=\"noopener\">link</a> pa <a href=\"https://b.rs/c\" target=\"_blank\" rel=\"noopener\">https://b.rs/c</a>. Kraj<br>novi red</p><p style=\"margin: 14px 0 0;\">[loš](javascript:alert) &lt;b&gt;tag&lt;/b&gt;</p></article>",
+      "hash": "7634006b"
+    },
+    {
+      "template": "article",
+      "fields": {
+        "title": "Samo naslov"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"article\",\"fields\":{\"title\":\"Samo naslov\"},\"hash\":\"c5004fbb\"}-->\n<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Samo naslov</h1></article>",
+      "html": "<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Samo naslov</h1></article>",
+      "hash": "c5004fbb"
+    },
+    {
+      "template": "article",
+      "fields": {
+        "title": "Slika",
+        "image": "/avatar/group/12?p=170"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"article\",\"fields\":{\"title\":\"Slika\",\"image\":\"/avatar/group/12?p=170\"},\"hash\":\"081f71bf\"}-->\n<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Slika</h1><figure style=\"margin: 16px 0 0;\"><img src=\"/avatar/group/12?p=170\" alt=\"Slika\"></figure></article>",
+      "html": "<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Slika</h1><figure style=\"margin: 16px 0 0;\"><img src=\"/avatar/group/12?p=170\" alt=\"Slika\"></figure></article>",
+      "hash": "081f71bf"
+    },
+    {
+      "template": "article",
+      "fields": {
+        "title": "Loša slika",
+        "image": "data:image/png;base64,AAAA"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"article\",\"fields\":{\"title\":\"Loša slika\",\"image\":\"data:image/png;base64,AAAA\"},\"hash\":\"e84dd663\"}-->\n<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Loša slika</h1></article>",
+      "html": "<article><h1 style=\"border: none; padding: 0; font-size: 32px; line-height: 1.15; margin: 0;\">Loša slika</h1></article>",
+      "hash": "e84dd663"
+    },
+    {
+      "template": "photo",
+      "fields": {
+        "image": "https://potok.invalid/picture-on-its-way",
+        "title": "Naslov",
+        "about": "Opis\n\nDrugi pasus"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"photo\",\"fields\":{\"image\":\"https://potok.invalid/picture-on-its-way\",\"title\":\"Naslov\",\"about\":\"Opis\\n\\nDrugi pasus\"},\"hash\":\"1b6cdf49\"}-->\n<meta name=\"description\" content=\"Opis Drugi pasus\"><figure style=\"margin: 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Naslov\"></figure><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 12px 0 0;\">Naslov</h2><p style=\"font-size: 17px; margin: 6px 0 0;\">Opis</p><p style=\"font-size: 17px; margin: 6px 0 0;\">Drugi pasus</p>",
+      "html": "<meta name=\"description\" content=\"Opis Drugi pasus\"><figure style=\"margin: 0;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Naslov\"></figure><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 12px 0 0;\">Naslov</h2><p style=\"font-size: 17px; margin: 6px 0 0;\">Opis</p><p style=\"font-size: 17px; margin: 6px 0 0;\">Drugi pasus</p>",
+      "hash": "1b6cdf49"
+    },
+    {
+      "template": "quote",
+      "fields": {
+        "quote": "Prvi red\ndrugi [link](https://a.rs) red",
+        "author": "Ana",
+        "source": "Pisma"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"quote\",\"fields\":{\"quote\":\"Prvi red\\ndrugi [link](https://a.rs) red\",\"author\":\"Ana\",\"source\":\"Pisma\"},\"hash\":\"13a87132\"}-->\n<meta name=\"description\" content=\"Ana, Pisma\"><blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Prvi red<br>drugi link red</p><p style=\"color: #bfdbfe; font-size: 16px; margin: 16px 0 0;\">Ana, Pisma</p></blockquote>",
+      "html": "<meta name=\"description\" content=\"Ana, Pisma\"><blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Prvi red<br>drugi link red</p><p style=\"color: #bfdbfe; font-size: 16px; margin: 16px 0 0;\">Ana, Pisma</p></blockquote>",
+      "hash": "13a87132"
+    },
+    {
+      "template": "quote",
+      "fields": {
+        "quote": "Samo citat"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"quote\",\"fields\":{\"quote\":\"Samo citat\"},\"hash\":\"b4b43e10\"}-->\n<blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Samo citat</p></blockquote>",
+      "html": "<blockquote style=\"background-color: #1e3a8a; color: #ffffff; border: none; border-radius: 20px; padding: 28px 24px; margin: 0;\"><p style=\"color: #93c5fd; font-size: 60px; font-weight: bold; line-height: 0.8; margin: 0;\">“</p><p style=\"font-size: 25px; font-weight: bold; line-height: 1.3; margin: 0 0 10px;\">Samo citat</p></blockquote>",
+      "hash": "b4b43e10"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Naziv",
+        "date": "2026-11-14",
+        "time": "10:00",
+        "place": "Most",
+        "about": "Opis",
+        "more": "a.rs/program?x=1"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Naziv\",\"date\":\"2026-11-14\",\"time\":\"10:00\",\"place\":\"Most\",\"about\":\"Opis\",\"more\":\"a.rs/program?x=1\"},\"hash\":\"35ea3ffc\"}-->\n<meta name=\"description\" content=\"subota, 14. novembar 2026. u 10:00 · Most · Opis\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">14</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Naziv</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 14. novembar 2026. u 10:00</p><p style=\"margin: 2px 0 0;\">Most</p></td></tr></tbody></table><p style=\"margin: 16px 0 0;\">Opis</p><p style=\"margin: 14px 0 0;\"><a href=\"https://a.rs/program?x=1\" target=\"_blank\" rel=\"noopener\">Više o događaju</a></p>",
+      "html": "<meta name=\"description\" content=\"subota, 14. novembar 2026. u 10:00 · Most · Opis\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">14</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Naziv</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 14. novembar 2026. u 10:00</p><p style=\"margin: 2px 0 0;\">Most</p></td></tr></tbody></table><p style=\"margin: 16px 0 0;\">Opis</p><p style=\"margin: 14px 0 0;\"><a href=\"https://a.rs/program?x=1\" target=\"_blank\" rel=\"noopener\">Više o događaju</a></p>",
+      "hash": "35ea3ffc"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Bez dana",
+        "time": "10:00"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Bez dana\",\"time\":\"10:00\"},\"hash\":\"42984bb0\"}-->\n<meta name=\"description\" content=\"u 10:00\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Bez dana</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">u 10:00</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"u 10:00\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Bez dana</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">u 10:00</p></td></tr></tbody></table>",
+      "hash": "42984bb0"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Nedelja",
+        "date": "2026-11-15"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Nedelja\",\"date\":\"2026-11-15\"},\"hash\":\"d156d71b\"}-->\n<meta name=\"description\" content=\"nedelja, 15. novembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">15</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nedelja</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">nedelja, 15. novembar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"nedelja, 15. novembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">15</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nedelja</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">nedelja, 15. novembar 2026.</p></td></tr></tbody></table>",
+      "hash": "d156d71b"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Nema tog dana",
+        "date": "2026-02-30",
+        "place": "Most"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Nema tog dana\",\"date\":\"2026-02-30\",\"place\":\"Most\"},\"hash\":\"70233e22\"}-->\n<meta name=\"description\" content=\"Most\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nema tog dana</h1><p style=\"margin: 2px 0 0;\">Most</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"Most\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nema tog dana</h1><p style=\"margin: 2px 0 0;\">Most</p></td></tr></tbody></table>",
+      "hash": "70233e22"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Nije datum",
+        "date": "14.11.2026.",
+        "more": "nije link"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Nije datum\",\"date\":\"14.11.2026.\",\"more\":\"nije link\"},\"hash\":\"f4e0a8ff\"}-->\n<table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nije datum</h1></td></tr></tbody></table>",
+      "html": "<table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0 0 0 0px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Nije datum</h1></td></tr></tbody></table>",
+      "hash": "f4e0a8ff"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-01-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-01-07\"},\"hash\":\"6c039d12\"}-->\n<meta name=\"description\" content=\"sreda, 7. januar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jan</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">sreda, 7. januar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"sreda, 7. januar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jan</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">sreda, 7. januar 2026.</p></td></tr></tbody></table>",
+      "hash": "6c039d12"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-02-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-02-07\"},\"hash\":\"448fb53e\"}-->\n<meta name=\"description\" content=\"subota, 7. februar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">feb</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. februar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"subota, 7. februar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">feb</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. februar 2026.</p></td></tr></tbody></table>",
+      "hash": "448fb53e"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-03-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-03-07\"},\"hash\":\"6db62945\"}-->\n<meta name=\"description\" content=\"subota, 7. mart 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">mar</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. mart 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"subota, 7. mart 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">mar</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. mart 2026.</p></td></tr></tbody></table>",
+      "hash": "6db62945"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-04-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-04-07\"},\"hash\":\"1d0ea61e\"}-->\n<meta name=\"description\" content=\"utorak, 7. april 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">apr</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">utorak, 7. april 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"utorak, 7. april 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">apr</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">utorak, 7. april 2026.</p></td></tr></tbody></table>",
+      "hash": "1d0ea61e"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-05-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-05-07\"},\"hash\":\"8a4a5523\"}-->\n<meta name=\"description\" content=\"četvrtak, 7. maj 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">maj</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">četvrtak, 7. maj 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"četvrtak, 7. maj 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">maj</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">četvrtak, 7. maj 2026.</p></td></tr></tbody></table>",
+      "hash": "8a4a5523"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-06-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-06-07\"},\"hash\":\"74d5aaaa\"}-->\n<meta name=\"description\" content=\"nedelja, 7. jun 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jun</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">nedelja, 7. jun 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"nedelja, 7. jun 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jun</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">nedelja, 7. jun 2026.</p></td></tr></tbody></table>",
+      "hash": "74d5aaaa"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-07-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-07-07\"},\"hash\":\"813a7db0\"}-->\n<meta name=\"description\" content=\"utorak, 7. jul 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jul</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">utorak, 7. jul 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"utorak, 7. jul 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">jul</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">utorak, 7. jul 2026.</p></td></tr></tbody></table>",
+      "hash": "813a7db0"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-08-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-08-07\"},\"hash\":\"b6e9536f\"}-->\n<meta name=\"description\" content=\"petak, 7. avgust 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">avg</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">petak, 7. avgust 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"petak, 7. avgust 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">avg</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">petak, 7. avgust 2026.</p></td></tr></tbody></table>",
+      "hash": "b6e9536f"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-09-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-09-07\"},\"hash\":\"c42b563b\"}-->\n<meta name=\"description\" content=\"ponedeljak, 7. septembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">sep</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">ponedeljak, 7. septembar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"ponedeljak, 7. septembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">sep</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">ponedeljak, 7. septembar 2026.</p></td></tr></tbody></table>",
+      "hash": "c42b563b"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-10-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-10-07\"},\"hash\":\"76734a6d\"}-->\n<meta name=\"description\" content=\"sreda, 7. oktobar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">okt</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">sreda, 7. oktobar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"sreda, 7. oktobar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">okt</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">sreda, 7. oktobar 2026.</p></td></tr></tbody></table>",
+      "hash": "76734a6d"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-11-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-11-07\"},\"hash\":\"869706c8\"}-->\n<meta name=\"description\" content=\"subota, 7. novembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. novembar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"subota, 7. novembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">nov</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">subota, 7. novembar 2026.</p></td></tr></tbody></table>",
+      "hash": "869706c8"
+    },
+    {
+      "template": "event",
+      "fields": {
+        "title": "Mesec",
+        "date": "2026-12-07"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"event\",\"fields\":{\"title\":\"Mesec\",\"date\":\"2026-12-07\"},\"hash\":\"2a5032a5\"}-->\n<meta name=\"description\" content=\"ponedeljak, 7. decembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">dec</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">ponedeljak, 7. decembar 2026.</p></td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"ponedeljak, 7. decembar 2026.\"><table style=\"display: block; margin: 0; width: 100%;\"><tbody><tr><td style=\"border: none; padding: 0; vertical-align: middle; width: 76px;\"><div style=\"background-color: #1e3a8a; color: #ffffff; border-radius: 16px; padding: 12px 8px; text-align: center;\"><span style=\"display: block; font-size: 32px; font-weight: bold; line-height: 1;\">7</span><span style=\"display: block; font-size: 14px; margin-top: 4px;\">dec</span></div></td><td style=\"border: none; padding: 0 0 0 16px; vertical-align: middle;\"><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 0;\">Mesec</h1><p style=\"font-weight: bold; margin: 6px 0 0;\">ponedeljak, 7. decembar 2026.</p></td></tr></tbody></table>",
+      "hash": "2a5032a5"
+    },
+    {
+      "template": "list",
+      "fields": {
+        "title": "Naslov",
+        "intro": "Uvod",
+        "items": [
+          "prva",
+          "",
+          "  ",
+          "druga **jaka**",
+          "još 0",
+          "još 1",
+          "još 2",
+          "još 3",
+          "još 4",
+          "još 5",
+          "još 6",
+          "još 7",
+          "još 8",
+          "još 9",
+          "još 10",
+          "još 11"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"list\",\"fields\":{\"title\":\"Naslov\",\"intro\":\"Uvod\",\"items\":[\"prva\",\"\",\"  \",\"druga **jaka**\",\"još 0\",\"još 1\",\"još 2\",\"još 3\",\"još 4\",\"još 5\",\"još 6\",\"još 7\",\"još 8\",\"još 9\",\"još 10\",\"još 11\"]},\"hash\":\"7cbda5d8\"}-->\n<meta name=\"description\" content=\"Uvod\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Uvod</p><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">prva</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">druga <strong>jaka</strong></td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">3</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 0</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">4</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 1</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">5</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 2</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">6</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 3</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">7</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 4</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">8</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 5</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">9</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 6</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">10</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 7</td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"Uvod\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Uvod</p><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">prva</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">druga <strong>jaka</strong></td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">3</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 0</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">4</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 1</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">5</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 2</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">6</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 3</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">7</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 4</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">8</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 5</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">9</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 6</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">10</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">još 7</td></tr></tbody></table>",
+      "hash": "7cbda5d8"
+    },
+    {
+      "template": "list",
+      "fields": {
+        "title": "Bez uvoda",
+        "items": [
+          "a, b; c",
+          "d"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"list\",\"fields\":{\"title\":\"Bez uvoda\",\"items\":[\"a, b; c\",\"d\"]},\"hash\":\"ca23791b\"}-->\n<meta name=\"description\" content=\"a, b; c, d\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Bez uvoda</h1><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">a, b; c</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">d</td></tr></tbody></table>",
+      "html": "<meta name=\"description\" content=\"a, b; c, d\"><h1 style=\"border: none; padding: 0; font-size: 28px; line-height: 1.2; margin: 0;\">Bez uvoda</h1><table style=\"display: block; margin: 10px 0 0; width: 100%;\"><tbody><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">1</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">a, b; c</td></tr><tr><td style=\"background-color: transparent; border: none; color: #3b82f6; font-size: 30px; font-weight: bold; line-height: 1.1; padding: 8px 14px 8px 0; text-align: right; vertical-align: top; width: 44px;\">2</td><td style=\"background-color: transparent; border: none; font-size: 18px; line-height: 1.4; padding: 10px 0; vertical-align: top;\">d</td></tr></tbody></table>",
+      "hash": "ca23791b"
+    },
+    {
+      "template": "link",
+      "fields": {
+        "address": "https://www.Example.com/b",
+        "title": "Naslov",
+        "about": "Opis",
+        "image": "https://potok.invalid/picture-on-its-way"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"link\",\"fields\":{\"address\":\"https://www.Example.com/b\",\"title\":\"Naslov\",\"about\":\"Opis\",\"image\":\"https://potok.invalid/picture-on-its-way\"},\"hash\":\"8b3ec07d\"}-->\n<meta name=\"description\" content=\"Opis\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"margin: 0 0 12px;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Naslov\"></p><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Naslov</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://www.Example.com/b\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "html": "<meta name=\"description\" content=\"Opis\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"margin: 0 0 12px;\"><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Naslov\"></p><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Naslov</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://www.Example.com/b\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "hash": "8b3ec07d"
+    },
+    {
+      "template": "link",
+      "fields": {
+        "address": "example.com",
+        "title": "Bez opisa"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"link\",\"fields\":{\"address\":\"example.com\",\"title\":\"Bez opisa\"},\"hash\":\"ba138ae1\"}-->\n<meta name=\"description\" content=\"example.com\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Bez opisa</h2><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://example.com\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "html": "<meta name=\"description\" content=\"example.com\"><div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0 0 4px;\">example.com</p><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Bez opisa</h2><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"https://example.com\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "hash": "ba138ae1"
+    },
+    {
+      "template": "link",
+      "fields": {
+        "address": "mailto:ana@a.rs",
+        "title": "Pošta"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"link\",\"fields\":{\"address\":\"mailto:ana@a.rs\",\"title\":\"Pošta\"},\"hash\":\"7da5dd0d\"}-->\n<div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Pošta</h2><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"mailto:ana@a.rs\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "html": "<div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Pošta</h2><p style=\"font-weight: bold; margin: 12px 0 0;\"><a href=\"mailto:ana@a.rs\" target=\"_blank\" rel=\"noopener\">Pročitaj više</a></p></div>",
+      "hash": "7da5dd0d"
+    },
+    {
+      "template": "link",
+      "fields": {
+        "address": "nije adresa",
+        "title": "Loša adresa"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"link\",\"fields\":{\"address\":\"nije adresa\",\"title\":\"Loša adresa\"},\"hash\":\"5c9bbb75\"}-->\n<div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Loša adresa</h2></div>",
+      "html": "<div style=\"border: 1px solid #9ca3af; border-radius: 18px; padding: 16px;\"><h2 style=\"border: none; padding: 0; font-size: 24px; line-height: 1.2; margin: 0;\">Loša adresa</h2></div>",
+      "hash": "5c9bbb75"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "title": "Bez nivoa",
+        "body": "Tekst sa [linkom](https://a.rs)"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"title\":\"Bez nivoa\",\"body\":\"Tekst sa [linkom](https://a.rs)\"},\"hash\":\"0e71f52d\"}-->\n<meta name=\"description\" content=\"Obaveštenje: Tekst sa linkom\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Bez nivoa</h1><p style=\"margin: 10px 0 0;\">Tekst sa linkom</p></section>",
+      "html": "<meta name=\"description\" content=\"Obaveštenje: Tekst sa linkom\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Bez nivoa</h1><p style=\"margin: 10px 0 0;\">Tekst sa linkom</p></section>",
+      "hash": "0e71f52d"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "level": "info",
+        "title": "Naslov"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"level\":\"info\",\"title\":\"Naslov\"},\"hash\":\"fc436ed7\"}-->\n<meta name=\"description\" content=\"Obaveštenje\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1></section>",
+      "html": "<meta name=\"description\" content=\"Obaveštenje\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1></section>",
+      "hash": "fc436ed7"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "level": "important",
+        "title": "Naslov",
+        "body": "Tekst"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"level\":\"important\",\"title\":\"Naslov\",\"body\":\"Tekst\"},\"hash\":\"bf7747b1\"}-->\n<meta name=\"description\" content=\"Važno: Tekst\"><section style=\"background-color: #fef3c7; color: #78350f; border-left: 6px solid #f59e0b; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Važno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Tekst</p></section>",
+      "html": "<meta name=\"description\" content=\"Važno: Tekst\"><section style=\"background-color: #fef3c7; color: #78350f; border-left: 6px solid #f59e0b; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Važno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Tekst</p></section>",
+      "hash": "bf7747b1"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "level": "urgent",
+        "title": "Naslov",
+        "body": "Tekst\n\nDrugi"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"level\":\"urgent\",\"title\":\"Naslov\",\"body\":\"Tekst\\n\\nDrugi\"},\"hash\":\"7b247ac9\"}-->\n<meta name=\"description\" content=\"Hitno: Tekst Drugi\"><section style=\"background-color: #fee2e2; color: #7f1d1d; border-left: 6px solid #dc2626; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Hitno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Tekst</p><p style=\"margin: 10px 0 0;\">Drugi</p></section>",
+      "html": "<meta name=\"description\" content=\"Hitno: Tekst Drugi\"><section style=\"background-color: #fee2e2; color: #7f1d1d; border-left: 6px solid #dc2626; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Hitno</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1><p style=\"margin: 10px 0 0;\">Tekst</p><p style=\"margin: 10px 0 0;\">Drugi</p></section>",
+      "hash": "7b247ac9"
+    },
+    {
+      "template": "notice",
+      "fields": {
+        "level": "nepoznat",
+        "title": "Naslov"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"notice\",\"fields\":{\"level\":\"nepoznat\",\"title\":\"Naslov\"},\"hash\":\"fc436ed7\"}-->\n<meta name=\"description\" content=\"Obaveštenje\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1></section>",
+      "html": "<meta name=\"description\" content=\"Obaveštenje\"><section style=\"background-color: #dbeafe; color: #1e3a8a; border-left: 6px solid #2563eb; border-radius: 14px; padding: 20px;\"><p style=\"font-size: 14px; font-weight: bold; margin: 0;\">Obaveštenje</p><h1 style=\"border: none; padding: 0; font-size: 25px; line-height: 1.2; margin: 4px 0 0;\">Naslov</h1></section>",
+      "hash": "fc436ed7"
+    },
+    {
+      "template": "question",
+      "fields": {
+        "question": "Zašto?",
+        "about": "Dodatak"
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"question\",\"fields\":{\"question\":\"Zašto?\",\"about\":\"Dodatak\"},\"hash\":\"e66ab8d7\"}-->\n<meta name=\"description\" content=\"Dodatak\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Zašto?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Dodatak</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
+      "html": "<meta name=\"description\" content=\"Dodatak\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Zašto?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Dodatak</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
+      "hash": "e66ab8d7"
+    }
+  ],
+  "samples": {
+    "article": {
+      "kicker": "Iz kraja",
+      "title": "Most na potoku ponovo otvoren",
+      "lead": "Posle dva meseca radova kraj je radovima.",
+      "image": "https://potok.invalid/picture-on-its-way",
+      "body": "Radovi su završeni pre roka."
+    },
+    "photo": {
+      "image": "https://potok.invalid/picture-on-its-way",
+      "title": "Jutro na obali",
+      "about": "Snimljeno pre izlaska sunca."
+    },
+    "quote": {
+      "quote": "Reka nosi sve što joj se da.",
+      "author": "Stara izreka"
+    },
+    "event": {
+      "title": "Čišćenje obale",
+      "date": "2026-11-14",
+      "time": "10:00",
+      "place": "Kod starog mosta"
+    },
+    "list": {
+      "title": "Tri stvari za vikend",
+      "items": [
+        "Prošetaj uz potok",
+        "Poseti pijacu",
+        "Javi se komšiji"
+      ]
+    },
+    "link": {
+      "address": "https://example.com/clanak",
+      "title": "Vredi pročitati",
+      "about": "Kratak tekst o našem kraju."
+    },
+    "notice": {
+      "level": "important",
+      "title": "Nema vode u utorak",
+      "body": "Od 8 do 12 časova."
+    },
+    "question": {
+      "question": "Šta bi promenio u našem kraju?",
+      "about": "Javi nam se."
+    },
+    "text": {
+      "title": "Slobodan tekst",
+      "source": "Pišeš kako želiš."
+    }
+  }
+}

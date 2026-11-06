@@ -37,7 +37,7 @@ msgstr "Налог је успешно потврђен."
 msgid "Actions"
 msgstr "Радње"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1830
+#: lib/potok_ide_web/live/group_live/show.ex:1843
 #, elixir-autogen, elixir-format
 msgid "An invitation is already pending."
 msgstr "Позивница је већ на чекању."
@@ -74,17 +74,17 @@ msgstr "Потврђивање..."
 msgid "Could not accept invitation."
 msgstr "Није могуће прихватити позивницу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1455
+#: lib/potok_ide_web/live/group_live/show.ex:1472
 #, elixir-autogen, elixir-format
 msgid "Could not create group."
 msgstr "Није могуће направити групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:862
+#: lib/potok_ide_web/live/group_live/show.ex:872
 #, elixir-autogen, elixir-format
 msgid "Could not create message."
 msgstr "Није могуће послати поруку."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1833
+#: lib/potok_ide_web/live/group_live/show.ex:1846
 #, elixir-autogen, elixir-format
 msgid "Could not send invitation."
 msgstr "Није могуће послати позивницу."
@@ -100,7 +100,7 @@ msgstr "Креирај"
 msgid "Create profile"
 msgstr "Креирај профил"
 
-#: lib/potok_ide_web/live/group_live/show.ex:418
+#: lib/potok_ide_web/live/group_live/show.ex:422
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:26
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:378
 #, elixir-autogen, elixir-format
@@ -118,15 +118,15 @@ msgstr "Креирање..."
 msgid "Current profile:"
 msgstr "Тренутни профил:"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1704
-#: lib/potok_ide_web/live/group_live/show.ex:4152
+#: lib/potok_ide_web/live/group_live/show.ex:1717
+#: lib/potok_ide_web/live/group_live/show.ex:4327
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:963
-#: lib/potok_ide_web/live/group_live/show/components.ex:1223
+#: lib/potok_ide_web/live/group_live/show/components.ex:1224
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:116
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:185
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:214
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:220
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:629
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:222
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:228
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:756
 #: lib/potok_ide_web/live/profile_live/components.ex:73
 #: lib/potok_ide_web/live/profile_live/components.ex:87
 #: lib/potok_ide_web/live/profile_live/components.ex:361
@@ -163,7 +163,7 @@ msgstr "Имејл адреса је успешно промењена."
 msgid "Enter your email and we'll send you a sign-in link."
 msgstr "Унесите свој имејл и послаћемо вам линк за пријаву."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1439
+#: lib/potok_ide_web/live/group_live/show.ex:1456
 #, elixir-autogen, elixir-format
 msgid "Group created."
 msgstr "Група је креирана."
@@ -171,15 +171,15 @@ msgstr "Група је креирана."
 #: lib/potok_ide_web/components/layouts.ex:90
 #: lib/potok_ide_web/components/layouts.ex:91
 #: lib/potok_ide_web/components/layouts.ex:252
-#: lib/potok_ide_web/live/group_live/show.ex:230
-#: lib/potok_ide_web/live/group_live/show/components.ex:585
+#: lib/potok_ide_web/live/group_live/show.ex:234
+#: lib/potok_ide_web/live/group_live/show/components.ex:586
 #: lib/potok_ide_web/live/profile_live/index.ex:142
 #, elixir-autogen, elixir-format
 msgid "Groups"
 msgstr "Групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:707
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:649
+#: lib/potok_ide_web/live/group_live/show.ex:717
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:776
 #: lib/potok_ide_web/live/profile_live/components.ex:378
 #, elixir-autogen, elixir-format
 msgid "HTML"
@@ -215,9 +215,9 @@ msgstr "Позивница није пронађена или је већ при
 msgid "Invitation not found."
 msgstr "Позивница није пронађена."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3275
-#: lib/potok_ide_web/live/group_live/show.ex:3301
-#: lib/potok_ide_web/live/group_live/show.ex:3312
+#: lib/potok_ide_web/live/group_live/show.ex:3450
+#: lib/potok_ide_web/live/group_live/show.ex:3476
+#: lib/potok_ide_web/live/group_live/show.ex:3487
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr "Позивница је послата."
@@ -262,7 +262,7 @@ msgstr "Позивнице које је ваш тренутни профил п
 msgid "Invite"
 msgstr "Позови"
 
-#: lib/potok_ide_web/live/group_live/show.ex:429
+#: lib/potok_ide_web/live/group_live/show.ex:433
 #, elixir-autogen, elixir-format
 msgid "Invite profile"
 msgstr "Позови профил"
@@ -353,23 +353,23 @@ msgstr "Магични линк је неважећи или је истекао
 msgid "Manage your account email address and password settings"
 msgstr "Управљајте подешавањима имејл адресе и лозинке налога"
 
-#: lib/potok_ide_web/live/group_live/show.ex:707
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:650
+#: lib/potok_ide_web/live/group_live/show.ex:717
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:777
 #: lib/potok_ide_web/live/profile_live/components.ex:377
 #, elixir-autogen, elixir-format
 msgid "Markdown"
 msgstr "Markdown"
 
-#: lib/potok_ide_web/live/group_live/show.ex:327
-#: lib/potok_ide_web/live/group_live/show.ex:4334
+#: lib/potok_ide_web/live/group_live/show.ex:331
+#: lib/potok_ide_web/live/group_live/show.ex:4509
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:36
 #, elixir-autogen, elixir-format
 msgid "Members"
 msgstr "Чланови"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:53
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:134
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:549
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:142
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:568
 #, elixir-autogen, elixir-format
 msgid "Name"
 msgstr "Назив"
@@ -404,7 +404,7 @@ msgstr "Овај профил још није послао ниједну поз
 msgid "No sent invitations match your search."
 msgstr "Ниједна послата позивница не одговара твојој претрази."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1818
+#: lib/potok_ide_web/live/group_live/show.ex:1831
 #, elixir-autogen, elixir-format
 msgid "No profile found with that username."
 msgstr "Није пронађен профил са тим корисничким именом."
@@ -462,8 +462,8 @@ msgid "Save Password"
 msgstr "Сачувај лозинку"
 
 #: lib/potok_ide_web/live/account_live/settings.ex:104
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:515
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:610
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:530
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:632
 #: lib/potok_ide_web/live/profile_live/edit.ex:152
 #, elixir-autogen, elixir-format
 msgid "Saving..."
@@ -486,9 +486,9 @@ msgstr "Дељени"
 msgid "Sharing"
 msgstr "Дељење"
 
-#: lib/potok_ide_web/live/group_live/show.ex:381
-#: lib/potok_ide_web/live/group_live/show.ex:4154
-#: lib/potok_ide_web/live/group_live/show.ex:4324
+#: lib/potok_ide_web/live/group_live/show.ex:385
+#: lib/potok_ide_web/live/group_live/show.ex:4329
+#: lib/potok_ide_web/live/group_live/show.ex:4499
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
 msgstr "Подгрупе"
@@ -544,31 +544,31 @@ msgstr "Добродошли!"
 msgid "You are running the local mail adapter."
 msgstr "Користите локални мејл адаптер."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1824
+#: lib/potok_ide_web/live/group_live/show.ex:1837
 #, elixir-autogen, elixir-format
 msgid "You cannot invite yourself."
 msgstr "Не можете позвати сами себе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:738
-#: lib/potok_ide_web/live/group_live/show.ex:2157
-#: lib/potok_ide_web/live/group_live/show.ex:2330
+#: lib/potok_ide_web/live/group_live/show.ex:748
+#: lib/potok_ide_web/live/group_live/show.ex:2170
+#: lib/potok_ide_web/live/group_live/show.ex:2343
 #, elixir-autogen, elixir-format
 msgid "You do not have access to that group."
 msgstr "Немате приступ тој групи."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1428
+#: lib/potok_ide_web/live/group_live/show.ex:1445
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to create sub-groups."
 msgstr "Морате бити члан групе да бисте креирали подгрупе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:823
-#: lib/potok_ide_web/live/group_live/show.ex:1010
+#: lib/potok_ide_web/live/group_live/show.ex:833
+#: lib/potok_ide_web/live/group_live/show.ex:1027
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to post messages."
 msgstr "Морате бити члан групе да бисте слали поруке."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1790
-#: lib/potok_ide_web/live/group_live/show.ex:1821
+#: lib/potok_ide_web/live/group_live/show.ex:1803
+#: lib/potok_ide_web/live/group_live/show.ex:1834
 #, elixir-autogen, elixir-format
 msgid "You must be a member to invite."
 msgstr "Морате бити члан да бисте позивали."
@@ -610,7 +610,7 @@ msgstr "страницу поштанског сандучета"
 #: lib/potok_ide_web/components/layouts/root.html.heex:138
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1039
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:161
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:606
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:628
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:232
 #: lib/potok_ide_web/live/profile_live/new.ex:69
 #: lib/potok_ide_web/live/share_live.ex:43
@@ -639,19 +639,19 @@ msgstr "Пошаљи поруку"
 msgid "Profile updated."
 msgstr "Профил је ажуриран."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:518
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:533
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:239
 #: lib/potok_ide_web/live/profile_live/edit.ex:155
 #, elixir-autogen, elixir-format
 msgid "Save changes"
 msgstr "Сачувај измене"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1689
+#: lib/potok_ide_web/live/group_live/show/components.ex:1737
 #, elixir-autogen, elixir-format
 msgid "See less"
 msgstr "Прикажи мање"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1688
+#: lib/potok_ide_web/live/group_live/show/components.ex:1736
 #, elixir-autogen, elixir-format
 msgid "See more"
 msgstr "Прикажи више"
@@ -666,7 +666,7 @@ msgstr "Порука"
 msgid "Write a message..."
 msgstr "Напиши поруку..."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:158
+#: lib/potok_ide_web/live/group_live/show/components.ex:159
 #, elixir-autogen, elixir-format
 msgid "Group picture URL"
 msgstr "URL слике групе"
@@ -687,63 +687,63 @@ msgstr "Навигација"
 msgid "Preferences"
 msgstr "Подешавања"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1606
+#: lib/potok_ide_web/live/group_live/show/components.ex:1654
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this message?"
 msgstr "Да ли сте сигурни да желите да обришете ову поруку?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1068
+#: lib/potok_ide_web/live/group_live/show.ex:1085
 #, elixir-autogen, elixir-format
 msgid "Could not delete message."
 msgstr "Није могуће обрисати поруку."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1608
+#: lib/potok_ide_web/live/group_live/show/components.ex:1656
 #, elixir-autogen, elixir-format
 msgid "Delete message"
 msgstr "Обриши поруку"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1060
+#: lib/potok_ide_web/live/group_live/show.ex:1077
 #, elixir-autogen, elixir-format
 msgid "Message deleted."
 msgstr "Порука је обрисана."
 
-#: lib/potok_ide_web/live/group_live/show.ex:939
-#: lib/potok_ide_web/live/group_live/show.ex:976
-#: lib/potok_ide_web/live/group_live/show.ex:1023
-#: lib/potok_ide_web/live/group_live/show.ex:1053
-#: lib/potok_ide_web/live/group_live/show.ex:1080
-#: lib/potok_ide_web/live/group_live/show.ex:1115
+#: lib/potok_ide_web/live/group_live/show.ex:956
+#: lib/potok_ide_web/live/group_live/show.ex:993
+#: lib/potok_ide_web/live/group_live/show.ex:1040
+#: lib/potok_ide_web/live/group_live/show.ex:1070
+#: lib/potok_ide_web/live/group_live/show.ex:1097
+#: lib/potok_ide_web/live/group_live/show.ex:1132
 #, elixir-autogen, elixir-format
 msgid "Message not found."
 msgstr "Порука није пронађена."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1065
+#: lib/potok_ide_web/live/group_live/show.ex:1082
 #, elixir-autogen, elixir-format
 msgid "You can only delete your own messages."
 msgstr "Можете брисати само сопствене поруке."
 
-#: lib/potok_ide_web/live/group_live/show.ex:996
+#: lib/potok_ide_web/live/group_live/show.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Could not update message."
 msgstr "Није могуће изменити поруку."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1596
+#: lib/potok_ide_web/live/group_live/show/components.ex:1644
 #, elixir-autogen, elixir-format
 msgid "Edit message"
 msgstr "Измени поруку"
 
-#: lib/potok_ide_web/live/group_live/show.ex:294
+#: lib/potok_ide_web/live/group_live/show.ex:298
 #, elixir-autogen, elixir-format
 msgid "Open sub-groups tab"
 msgstr "Отвори картицу подгрупа"
 
-#: lib/potok_ide_web/live/group_live/show.ex:983
+#: lib/potok_ide_web/live/group_live/show.ex:1000
 #, elixir-autogen, elixir-format
 msgid "Message updated."
 msgstr "Порука је измењена."
 
-#: lib/potok_ide_web/live/group_live/show.ex:942
-#: lib/potok_ide_web/live/group_live/show.ex:989
+#: lib/potok_ide_web/live/group_live/show.ex:959
+#: lib/potok_ide_web/live/group_live/show.ex:1006
 #, elixir-autogen, elixir-format
 msgid "You can only edit your own messages."
 msgstr "Можете мењати само сопствене поруке."
@@ -835,8 +835,8 @@ msgstr "Учитај још подгрупа"
 msgid "No profile exists for that username."
 msgstr "Не постоји профил са тим корисничким именом."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:844
-#: lib/potok_ide_web/live/group_live/show/components.ex:1489
+#: lib/potok_ide_web/live/group_live/show/components.ex:845
+#: lib/potok_ide_web/live/group_live/show/components.ex:1537
 #, elixir-autogen, elixir-format
 msgid "Online"
 msgstr "На мрежи"
@@ -926,19 +926,19 @@ msgstr "Позивнице за дељене профиле"
 msgid "You cannot invite your own profile."
 msgstr "Не можете позвати сопствени профил."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1347
+#: lib/potok_ide_web/live/group_live/show.ex:1364
 #: lib/potok_ide_web/live/request_live/index.ex:465
 #, elixir-autogen, elixir-format
 msgid "Access request accepted."
 msgstr "Захтев за приступ је прихваћен."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1299
+#: lib/potok_ide_web/live/group_live/show.ex:1316
 #, elixir-autogen, elixir-format
 msgid "Access request already pending."
 msgstr "Захтев за приступ је већ на чекању."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4377
-#: lib/potok_ide_web/live/group_live/show.ex:4387
+#: lib/potok_ide_web/live/group_live/show.ex:4552
+#: lib/potok_ide_web/live/group_live/show.ex:4562
 #: lib/potok_ide_web/live/request_live/index.ex:727
 #: lib/potok_ide_web/live/request_live/index.ex:738
 #: lib/potok_ide_web/live/request_live/index.ex:754
@@ -946,18 +946,18 @@ msgstr "Захтев за приступ је већ на чекању."
 msgid "Access request not found."
 msgstr "Захтев за приступ није пронађен."
 
-#: lib/potok_ide_web/live/group_live/show.ex:259
+#: lib/potok_ide_web/live/group_live/show.ex:263
 #, elixir-autogen, elixir-format
 msgid "Access request pending"
 msgstr "Захтев за приступ је на чекању"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1356
+#: lib/potok_ide_web/live/group_live/show.ex:1373
 #: lib/potok_ide_web/live/request_live/index.ex:474
 #, elixir-autogen, elixir-format
 msgid "Access request rejected."
 msgstr "Захтев за приступ је одбијен."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1280
+#: lib/potok_ide_web/live/group_live/show.ex:1297
 #, elixir-autogen, elixir-format
 msgid "Access request sent."
 msgstr "Захтев за приступ је послат."
@@ -967,7 +967,7 @@ msgstr "Захтев за приступ је послат."
 msgid "Access requests"
 msgstr "Захтеви за приступ"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:480
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:495
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete this group?"
 msgstr "Да ли сте сигурни да желите да обришете ову групу?"
@@ -977,23 +977,23 @@ msgstr "Да ли сте сигурни да желите да обришете 
 msgid "Choose another profile to open a direct group."
 msgstr "Изаберите други профил да отворите директну групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1597
+#: lib/potok_ide_web/live/group_live/show.ex:1614
 #, elixir-autogen, elixir-format
 msgid "Could not delete group."
 msgstr "Није могуће обрисати групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1334
+#: lib/potok_ide_web/live/group_live/show.ex:1351
 #, elixir-autogen, elixir-format
 msgid "Could not remove member."
 msgstr "Није могуће уклонити члана."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1302
+#: lib/potok_ide_web/live/group_live/show.ex:1319
 #, elixir-autogen, elixir-format
 msgid "Could not send access request."
 msgstr "Није могуће послати захтев за приступ."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4380
-#: lib/potok_ide_web/live/group_live/show.ex:4383
+#: lib/potok_ide_web/live/group_live/show.ex:4555
+#: lib/potok_ide_web/live/group_live/show.ex:4558
 #: lib/potok_ide_web/live/request_live/index.ex:749
 #, elixir-autogen, elixir-format
 msgid "Could not update access request."
@@ -1005,12 +1005,12 @@ msgstr "Није могуће ажурирати захтев за присту�
 msgid "Could not update group description."
 msgstr "Није могуће ажурирати опис групе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1524
+#: lib/potok_ide_web/live/group_live/show.ex:3291
 #, elixir-autogen, elixir-format
 msgid "Could not update group."
 msgstr "Није могуће ажурирати групу."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:566
+#: lib/potok_ide_web/live/group_live/show/components.ex:567
 #, elixir-autogen, elixir-format
 msgid "Current group path"
 msgstr "Путања тренутне групе"
@@ -1025,44 +1025,44 @@ msgstr "Подразумевани профил је ажуриран."
 msgid "Default profile:"
 msgstr "Подразумевани профил:"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:485
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:500
 #, elixir-autogen, elixir-format
 msgid "Delete group"
 msgstr "Обриши групу"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1593
+#: lib/potok_ide_web/live/group_live/show.ex:1610
 #, elixir-autogen, elixir-format
 msgid "Delete this group's sub-groups before deleting the group."
 msgstr "Обришите подгрупе ове групе пре него што обришете групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:437
+#: lib/potok_ide_web/live/group_live/show.ex:441
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:376
 #, elixir-autogen, elixir-format
 msgid "Edit group"
 msgstr "Уређивање групе"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1267
+#: lib/potok_ide_web/live/group_live/show/components.ex:1303
 #, elixir-autogen, elixir-format
 msgid "Editor"
 msgstr "Уређивач"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1575
-#: lib/potok_ide_web/live/group_live/show.ex:2088
+#: lib/potok_ide_web/live/group_live/show.ex:1592
+#: lib/potok_ide_web/live/group_live/show.ex:2101
 #, elixir-autogen, elixir-format
 msgid "Group deleted."
 msgstr "Група је обрисана."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1508
+#: lib/potok_ide_web/live/group_live/show.ex:3275
 #, elixir-autogen, elixir-format
 msgid "Group updated."
 msgstr "Група је ажурирана."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1338
+#: lib/potok_ide_web/live/group_live/show/components.ex:1386
 #, elixir-autogen, elixir-format
 msgid "Live preview"
 msgstr "Преглед уживо"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1316
+#: lib/potok_ide_web/live/group_live/show.ex:1333
 #, elixir-autogen, elixir-format
 msgid "Member removed."
 msgstr "Члан је уклоњен."
@@ -1077,12 +1077,12 @@ msgstr "Нема захтева за приступ на чекању."
 msgid "No pending approval requests."
 msgstr "Нема захтева за одобрење на чекању."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1285
+#: lib/potok_ide_web/live/group_live/show.ex:1302
 #, elixir-autogen, elixir-format
 msgid "Only public groups accept access requests."
 msgstr "Само јавне групе прихватају захтеве за приступ."
 
-#: lib/potok_ide_web/live/group_live/show.ex:311
+#: lib/potok_ide_web/live/group_live/show.ex:315
 #, elixir-autogen, elixir-format
 msgid "Open invite account tab"
 msgstr "Отвори картицу за позивање налога"
@@ -1104,14 +1104,14 @@ msgstr "На чекању"
 msgid "Pending group access requests that your current profile can approve."
 msgstr "Захтеви за приступ групи на чекању које ваш тренутни профил може да одобри."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1281
+#: lib/potok_ide_web/live/group_live/show/components.ex:1317
 #, elixir-autogen, elixir-format
 msgid "Preview"
 msgstr "Преглед"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1327
-#: lib/potok_ide_web/live/group_live/show.ex:1338
-#: lib/potok_ide_web/live/group_live/show.ex:1972
+#: lib/potok_ide_web/live/group_live/show.ex:1344
+#: lib/potok_ide_web/live/group_live/show.ex:1355
+#: lib/potok_ide_web/live/group_live/show.ex:1985
 #: lib/potok_ide_web/live/profile_live/direct.ex:34
 #, elixir-autogen, elixir-format
 msgid "Profile not found."
@@ -1122,9 +1122,9 @@ msgstr "Профил није пронађен."
 msgid "Profiles waiting for approval to join this public group."
 msgstr "Профили који чекају одобрење да се придруже овој јавној групи."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:906
+#: lib/potok_ide_web/live/group_live/show/components.ex:907
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:70
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:155
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:163
 #, elixir-autogen, elixir-format
 msgid "Public group"
 msgstr "Јавна група"
@@ -1151,7 +1151,7 @@ msgstr "Уклони %{username}"
 msgid "Remove %{username} from this group?"
 msgstr "Уклонити %{username} из ове групе?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:252
+#: lib/potok_ide_web/live/group_live/show.ex:256
 #, elixir-autogen, elixir-format
 msgid "Request access"
 msgstr "Затражи приступ"
@@ -1181,28 +1181,28 @@ msgstr "Захтеви"
 msgid "Review this access request for the selected group."
 msgstr "Прегледајте овај захтев за приступ за изабрану групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1331
+#: lib/potok_ide_web/live/group_live/show.ex:1348
 #, elixir-autogen, elixir-format
 msgid "Root group members cannot be removed."
 msgstr "Чланови коренске групе не могу да се уклоне."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1274
+#: lib/potok_ide_web/live/group_live/show/components.ex:1310
 #, elixir-autogen, elixir-format
 msgid "Split"
 msgstr "Подели"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1345
+#: lib/potok_ide_web/live/group_live/show/components.ex:1393
 #, elixir-autogen, elixir-format
 msgid "Start typing to preview the description."
 msgstr "Почните да куцате да бисте прегледали опис."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1324
-#: lib/potok_ide_web/live/group_live/show.ex:3984
+#: lib/potok_ide_web/live/group_live/show.ex:1341
+#: lib/potok_ide_web/live/group_live/show.ex:4159
 #, elixir-autogen, elixir-format
 msgid "That profile is not a group member."
 msgstr "Тај профил није члан групе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1579
+#: lib/potok_ide_web/live/group_live/show.ex:1596
 #, elixir-autogen, elixir-format
 msgid "The root group cannot be deleted."
 msgstr "Коренска група не може да се обрише."
@@ -1217,12 +1217,12 @@ msgstr "Ова група још нема опис."
 msgid "Unable to open a direct group right now."
 msgstr "Тренутно није могуће отворити директну групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1295
+#: lib/potok_ide_web/live/group_live/show.ex:1312
 #, elixir-autogen, elixir-format
 msgid "You already have a pending invitation to this group."
 msgstr "Већ имате позивницу за ову групу на чекању."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1288
+#: lib/potok_ide_web/live/group_live/show.ex:1305
 #, elixir-autogen, elixir-format
 msgid "You are already a group member."
 msgstr "Већ сте члан групе."
@@ -1233,13 +1233,13 @@ msgstr "Већ сте члан групе."
 msgid "You must be a group member to access group data values."
 msgstr "Морате бити члан групе да бисте приступили вредностима података групе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1569
-#: lib/potok_ide_web/live/group_live/show.ex:1583
+#: lib/potok_ide_web/live/group_live/show.ex:1586
+#: lib/potok_ide_web/live/group_live/show.ex:1600
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to delete this group."
 msgstr "Морате бити члан групе да бисте обрисали ову групу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3298
+#: lib/potok_ide_web/live/group_live/show.ex:3473
 #, elixir-autogen, elixir-format
 msgid "Account invitation email sent."
 msgstr "Имејл са позивницом за налог је послат."
@@ -1271,7 +1271,7 @@ msgstr "Одобрено"
 msgid "Approved requests"
 msgstr "Одобрени захтеви"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:449
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:464
 #, elixir-autogen, elixir-format
 msgid "Are you sure you want to delete all data values in this group?"
 msgstr "Да ли сте сигурни да желите да обришете све вредности података у овој групи?"
@@ -1292,25 +1292,26 @@ msgstr "Пуш обавештења у прегледачу захтевају �
 msgid "Chat"
 msgstr "Чет"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:170
+#: lib/potok_ide_web/live/group_live/show.ex:881
+#: lib/potok_ide_web/live/group_live/show/components.ex:171
 #: lib/potok_ide_web/live/profile_live/components.ex:135
 #, elixir-autogen, elixir-format
 msgid "Choose a valid image file."
 msgstr "Изаберите исправну слику."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:169
+#: lib/potok_ide_web/live/group_live/show/components.ex:170
 #: lib/potok_ide_web/live/profile_live/components.ex:134
 #, elixir-autogen, elixir-format
 msgid "Choose an image smaller than 5 MB."
 msgstr "Изаберите слику мању од 5 МБ."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:188
+#: lib/potok_ide_web/live/group_live/show/components.ex:189
 #: lib/potok_ide_web/live/profile_live/components.ex:153
 #, elixir-autogen, elixir-format
 msgid "Choose image"
 msgstr "Изабери слику"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:195
+#: lib/potok_ide_web/live/group_live/show/components.ex:196
 #: lib/potok_ide_web/live/profile_live/components.ex:160
 #, elixir-autogen, elixir-format
 msgid "Clear image"
@@ -1322,25 +1323,25 @@ msgstr "Уклони слику"
 msgid "Clear search"
 msgstr "Обриши претрагу"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1558
+#: lib/potok_ide_web/live/group_live/show.ex:1575
 #, elixir-autogen, elixir-format
 msgid "Could not delete data values."
 msgstr "Није могуће обрисати вредности података."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:171
+#: lib/potok_ide_web/live/group_live/show/components.ex:172
 #: lib/potok_ide_web/live/profile_live/components.ex:136
 #, elixir-autogen, elixir-format
 msgid "Could not process that image."
 msgstr "Није могуће обрадити ту слику."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:460
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:597
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:475
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:619
 #, elixir-autogen, elixir-format
 msgid "Delete Data Values"
 msgstr "Обриши вредности података"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1546
-#: lib/potok_ide_web/live/group_live/show.ex:1734
+#: lib/potok_ide_web/live/group_live/show.ex:1563
+#: lib/potok_ide_web/live/group_live/show.ex:1747
 #, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
@@ -1368,7 +1369,7 @@ msgstr "Endpoint"
 msgid "Enter a username to invite an existing profile, or an email to invite an account."
 msgstr "Унесите корисничко име да позовете постојећи профил или имејл да позовете налог."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1815
+#: lib/potok_ide_web/live/group_live/show.ex:1828
 #, elixir-autogen, elixir-format
 msgid "Enter a valid email address."
 msgstr "Унесите исправну имејл адресу."
@@ -1388,7 +1389,7 @@ msgstr "Истиче"
 msgid "Failure Reason"
 msgstr "Разлог грешке"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:222
+#: lib/potok_ide_web/live/group_live/show/components.ex:223
 #, elixir-autogen, elixir-format
 msgid "Group picture preview"
 msgstr "Преглед слике групе"
@@ -1399,7 +1400,7 @@ msgid "History of access requests your current profile created and that were app
 msgstr "Историја захтева за приступ које је креирао ваш тренутни профил и који су одобрени."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:105
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:196
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:204
 #, elixir-autogen, elixir-format
 msgid "Home page"
 msgstr "Почетна страница"
@@ -1409,7 +1410,7 @@ msgstr "Почетна страница"
 msgid "ID"
 msgstr "ИД"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:179
+#: lib/potok_ide_web/live/group_live/show/components.ex:180
 #: lib/potok_ide_web/live/profile_live/components.ex:144
 #, elixir-autogen, elixir-format
 msgid "Images are resized to fit within 200 x 200 and files over 5 MB are rejected."
@@ -1420,7 +1421,7 @@ msgstr "Слике се смањују на највише 200 x 200, а фај�
 msgid "Inserted"
 msgstr "Додато"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3315
+#: lib/potok_ide_web/live/group_live/show.ex:3490
 #, elixir-autogen, elixir-format
 msgid "Invitation will be sent when they create their first profile."
 msgstr "Позивница ће бити послата када особа направи свој први профил."
@@ -1475,8 +1476,8 @@ msgstr "Овај профил још нема одобрених креиран�
 msgid "No approved requests yet."
 msgstr "Још нема одобрених захтева."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1538
-#: lib/potok_ide_web/live/group_live/show.ex:1728
+#: lib/potok_ide_web/live/group_live/show.ex:1555
+#: lib/potok_ide_web/live/group_live/show.ex:1741
 #, elixir-autogen, elixir-format
 msgid "No data values to delete."
 msgstr "Нема вредности података за брисање."
@@ -1524,7 +1525,7 @@ msgstr "P256DH"
 msgid "Password"
 msgstr "Лозинка"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:228
+#: lib/potok_ide_web/live/group_live/show/components.ex:229
 #, elixir-autogen, elixir-format
 msgid "Preview of the current group picture value."
 msgstr "Преглед тренутне слике групе."
@@ -1580,7 +1581,7 @@ msgstr "Непознато"
 msgid "Updated"
 msgstr "Ажурирано"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:176
+#: lib/potok_ide_web/live/group_live/show/components.ex:177
 #: lib/potok_ide_web/live/profile_live/components.ex:141
 #, elixir-autogen, elixir-format
 msgid "Upload from your device"
@@ -1606,7 +1607,7 @@ msgstr "Уместо тога користи имејл и лозинку"
 msgid "User Agent"
 msgstr "User Agent"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1812
+#: lib/potok_ide_web/live/group_live/show.ex:1825
 #, elixir-autogen, elixir-format
 msgid "Username or email is required."
 msgstr "Потребно је корисничко име или имејл."
@@ -1622,7 +1623,7 @@ msgstr "Већ сте пријављени. Одјавите се прво ак�
 msgid "https://example.com/avatar.png or data:image/..."
 msgstr "https://example.com/avatar.png или data:image/..."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:160
+#: lib/potok_ide_web/live/group_live/show/components.ex:161
 #, elixir-autogen, elixir-format
 msgid "https://example.com/group.png or data:image/..."
 msgstr "https://example.com/group.png или data:image/..."
@@ -1647,7 +1648,7 @@ msgstr "Завршавање пријаве..."
 msgid "Confirming your account and signing you in..."
 msgstr "Потврђивање налога и пријављивање..."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1177
+#: lib/potok_ide_web/live/group_live/show/components.ex:1178
 #, elixir-autogen, elixir-format
 msgid "Group app"
 msgstr "Апликација групе"
@@ -1693,188 +1694,188 @@ msgstr "Прикажи лозинку"
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Превише измена за кратко време. Покушајте поново ускоро."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1122
-#: lib/potok_ide_web/live/group_live/show/components.ex:1577
+#: lib/potok_ide_web/live/group_live/show/components.ex:1123
+#: lib/potok_ide_web/live/group_live/show/components.ex:1625
 #: lib/potok_ide_web/live/group_live/show/group_description_tab.ex:147
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1086
 #, elixir-autogen, elixir-format
 msgid "Add reaction"
 msgstr "Додај реакцију"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1093
-#: lib/potok_ide_web/live/group_live/show.ex:1108
+#: lib/potok_ide_web/live/group_live/show.ex:1110
+#: lib/potok_ide_web/live/group_live/show.ex:1125
 #, elixir-autogen, elixir-format
 msgid "Could not update reaction."
 msgstr "Није могуће ажурирати реакцију."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1076
+#: lib/potok_ide_web/live/group_live/show.ex:1093
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to react."
 msgstr "Морате бити члан групе да бисте реаговали."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2295
+#: lib/potok_ide_web/live/group_live/show/components.ex:2343
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Activities"
 msgstr "Активности"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2292
+#: lib/potok_ide_web/live/group_live/show/components.ex:2340
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Animals and nature"
 msgstr "Животиње и природа"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2289
+#: lib/potok_ide_web/live/group_live/show/components.ex:2337
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Custom"
 msgstr "Прилагођени"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2298
+#: lib/potok_ide_web/live/group_live/show/components.ex:2346
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Flags"
 msgstr "Заставе"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2293
+#: lib/potok_ide_web/live/group_live/show/components.ex:2341
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Food and drink"
 msgstr "Храна и пиће"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2296
+#: lib/potok_ide_web/live/group_live/show/components.ex:2344
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Objects"
 msgstr "Предмети"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2291
+#: lib/potok_ide_web/live/group_live/show/components.ex:2339
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "People and body"
 msgstr "Људи и тело"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2290
+#: lib/potok_ide_web/live/group_live/show/components.ex:2338
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Smileys and emoticons"
 msgstr "Смајлији и емотикони"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2297
+#: lib/potok_ide_web/live/group_live/show/components.ex:2345
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Symbols"
 msgstr "Симболи"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2294
+#: lib/potok_ide_web/live/group_live/show/components.ex:2342
 #, elixir-autogen, elixir-format
 msgctxt "emoji category"
 msgid "Travel and places"
 msgstr "Путовања и места"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2261
+#: lib/potok_ide_web/live/group_live/show/components.ex:2309
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Categories"
 msgstr "Категорије"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2278
+#: lib/potok_ide_web/live/group_live/show/components.ex:2326
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Choose a skin tone (currently {skinTone})"
 msgstr "Изаберите боју коже (тренутно {skinTone})"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2266
+#: lib/potok_ide_web/live/group_live/show/components.ex:2314
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Could not load emoji."
 msgstr "Није могуће учитати емоџије."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2267
+#: lib/potok_ide_web/live/group_live/show/components.ex:2315
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Emoji picker"
 msgstr "Избор емоџија"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2264
+#: lib/potok_ide_web/live/group_live/show/components.ex:2312
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Favorites"
 msgstr "Омиљени"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2265
+#: lib/potok_ide_web/live/group_live/show/components.ex:2313
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Loading…"
 msgstr "Учитавање…"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2273
+#: lib/potok_ide_web/live/group_live/show/components.ex:2321
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search"
 msgstr "Претрага"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2274
+#: lib/potok_ide_web/live/group_live/show/components.ex:2322
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Search results"
 msgstr "Резултати претраге"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2279
+#: lib/potok_ide_web/live/group_live/show/components.ex:2327
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Skin tones"
 msgstr "Боје коже"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2276
+#: lib/potok_ide_web/live/group_live/show/components.ex:2324
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When expanded, press up or down to select and enter to choose."
 msgstr "Када је отворено, притисните стрелицу горе или доле за избор и Ентер за потврду."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2269
+#: lib/potok_ide_web/live/group_live/show/components.ex:2317
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "When search results are available, press up or down to select and enter to choose."
 msgstr "Када резултати претраге буду доступни, притисните стрелицу горе или доле за избор и Ентер за потврду."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2263
+#: lib/potok_ide_web/live/group_live/show/components.ex:2311
 #, elixir-autogen, elixir-format
 msgctxt "emoji picker"
 msgid "Your browser does not support color emoji."
 msgstr "Ваш прегледач не подржава емоџије у боји."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2286
+#: lib/potok_ide_web/live/group_live/show/components.ex:2334
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Dark"
 msgstr "Тамна"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2281
+#: lib/potok_ide_web/live/group_live/show/components.ex:2329
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Default"
 msgstr "Подразумевана"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2282
+#: lib/potok_ide_web/live/group_live/show/components.ex:2330
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Light"
 msgstr "Светла"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2284
+#: lib/potok_ide_web/live/group_live/show/components.ex:2332
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium"
 msgstr "Средња"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2285
+#: lib/potok_ide_web/live/group_live/show/components.ex:2333
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Dark"
 msgstr "Средње тамна"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2283
+#: lib/potok_ide_web/live/group_live/show/components.ex:2331
 #, elixir-autogen, elixir-format
 msgctxt "emoji skin tone"
 msgid "Medium-Light"
@@ -1885,17 +1886,17 @@ msgstr "Средње светла"
 msgid "Cancel reply"
 msgstr "Откажи одговор"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1044
+#: lib/potok_ide_web/live/group_live/show.ex:1061
 #, elixir-autogen, elixir-format
 msgid "Could not open thread."
 msgstr "Није могуће отворити нит."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1551
+#: lib/potok_ide_web/live/group_live/show/components.ex:1599
 #, elixir-autogen, elixir-format
 msgid "Reply"
 msgstr "Одговори"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1563
+#: lib/potok_ide_web/live/group_live/show/components.ex:1611
 #, elixir-autogen, elixir-format
 msgid "Reply in thread"
 msgstr "Одговори у нити"
@@ -1905,16 +1906,16 @@ msgstr "Одговори у нити"
 msgid "Replying to %{username}"
 msgstr "Одговор за %{username}"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1625
+#: lib/potok_ide_web/live/group_live/show/components.ex:1673
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:79
 #, elixir-autogen, elixir-format
 msgid "Show original message"
 msgstr "Прикажи оригиналну поруку"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1040
-#: lib/potok_ide_web/live/group_live/show/components.ex:956
-#: lib/potok_ide_web/live/group_live/show/components.ex:960
-#: lib/potok_ide_web/live/group_live/show/components.ex:1815
+#: lib/potok_ide_web/live/group_live/show.ex:1057
+#: lib/potok_ide_web/live/group_live/show/components.ex:957
+#: lib/potok_ide_web/live/group_live/show/components.ex:961
+#: lib/potok_ide_web/live/group_live/show/components.ex:1863
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:65
 #, elixir-autogen, elixir-format
 msgid "Thread"
@@ -1940,7 +1941,7 @@ msgstr "Прикажи нити"
 msgid "Threads"
 msgstr "Нити"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3958
+#: lib/potok_ide_web/live/group_live/show.ex:4133
 #, elixir-autogen, elixir-format
 msgid "A group must keep at least one admin."
 msgstr "Група мора имати бар једног администратора."
@@ -1980,8 +1981,8 @@ msgstr "Члановима је додељује администратор."
 msgid "Change the group's settings, description and app data."
 msgstr "Измена подешавања, описа и података апликације групе."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3986
-#: lib/potok_ide_web/live/group_live/show.ex:3992
+#: lib/potok_ide_web/live/group_live/show.ex:4161
+#: lib/potok_ide_web/live/group_live/show.ex:4167
 #, elixir-autogen, elixir-format
 msgid "Could not update roles."
 msgstr "Улоге нису ажуриране."
@@ -2031,7 +2032,7 @@ msgstr "Брисање порука које су написали други."
 msgid "Deny"
 msgstr "Забрани"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3961
+#: lib/potok_ide_web/live/group_live/show.ex:4136
 #, elixir-autogen, elixir-format
 msgid "Direct conversations do not have roles or invitations."
 msgstr "Директни разговори немају улоге ни позивнице."
@@ -2101,7 +2102,7 @@ msgstr "Помињање улога и @everyone ради обавештавањ
 msgid "Mention suggestions"
 msgstr "Предлози за помињање"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1512
+#: lib/potok_ide_web/live/group_live/show/components.ex:1560
 #, elixir-autogen, elixir-format
 msgid "Mentioned you"
 msgstr "Помиње вас"
@@ -2141,12 +2142,12 @@ msgstr "Уклањање чланова који нису администрат
 msgid "Rename role"
 msgstr "Преименуј улогу"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1870
+#: lib/potok_ide_web/live/group_live/show.ex:1883
 #, elixir-autogen, elixir-format
 msgid "Role %{name} added."
 msgstr "Улога %{name} је додата."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1904
+#: lib/potok_ide_web/live/group_live/show.ex:1917
 #, elixir-autogen, elixir-format
 msgid "Role %{name} deleted."
 msgstr "Улога %{name} је обрисана."
@@ -2157,17 +2158,17 @@ msgstr "Улога %{name} је обрисана."
 msgid "Role name"
 msgstr "Назив улоге"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3975
+#: lib/potok_ide_web/live/group_live/show.ex:4150
 #, elixir-autogen, elixir-format
 msgid "Role not found."
 msgstr "Улога није пронађена."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1889
+#: lib/potok_ide_web/live/group_live/show.ex:1902
 #, elixir-autogen, elixir-format
 msgid "Role renamed."
 msgstr "Улога је преименована."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3932
+#: lib/potok_ide_web/live/group_live/show.ex:4107
 #, elixir-autogen, elixir-format
 msgid "Role · %{count} member"
 msgid_plural "Role · %{count} members"
@@ -2176,7 +2177,7 @@ msgstr[1] "Улога · %{count} члана"
 msgstr[2] "Улога · %{count} чланова"
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:32
-#: lib/potok_ide_web/live/group_live/show.ex:410
+#: lib/potok_ide_web/live/group_live/show.ex:414
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:37
 #, elixir-autogen, elixir-format
 msgid "Roles"
@@ -2214,17 +2215,17 @@ msgstr "Отварање нити из поруке."
 msgid "Sub-groups without their own manifest use these roles too."
 msgstr "Подгрупе без сопственог манифеста такође користе ове улоге."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3973
+#: lib/potok_ide_web/live/group_live/show.ex:4148
 #, elixir-autogen, elixir-format
 msgid "The admin and everyone roles cannot be renamed or deleted."
 msgstr "Улоге admin и everyone не могу се преименовати ни обрисати."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3967
+#: lib/potok_ide_web/live/group_live/show.ex:4142
 #, elixir-autogen, elixir-format
 msgid "The default manifest cannot be changed."
 msgstr "Подразумевани манифест се не може мењати."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3970
+#: lib/potok_ide_web/live/group_live/show.ex:4145
 #, elixir-autogen, elixir-format
 msgid "This group already has its own manifest."
 msgstr "Ова група већ има сопствени манифест."
@@ -2234,17 +2235,17 @@ msgstr "Ова група већ има сопствени манифест."
 msgid "This group has its own manifest"
 msgstr "Ова група има сопствени манифест"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3964
+#: lib/potok_ide_web/live/group_live/show.ex:4139
 #, elixir-autogen, elixir-format
 msgid "This group inherits its roles. Create its own manifest to change them."
 msgstr "Ова група наслеђује улоге. Направите сопствени манифест да бисте их мењали."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1939
+#: lib/potok_ide_web/live/group_live/show.ex:1952
 #, elixir-autogen, elixir-format
 msgid "This group now has its own manifest."
 msgstr "Ова група сада има сопствени манифест."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1955
+#: lib/potok_ide_web/live/group_live/show.ex:1968
 #, elixir-autogen, elixir-format
 msgid "This group uses its parent's roles again."
 msgstr "Ова група поново користи улоге родитељске групе."
@@ -2269,7 +2270,7 @@ msgstr "Ваше улоге у овој групи не дозвољавају �
 msgid "Your roles in this group do not allow posting messages."
 msgstr "Ваше улоге у овој групи не дозвољавају писање порука."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3956
+#: lib/potok_ide_web/live/group_live/show.ex:4131
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:133
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:172
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:215
@@ -2293,7 +2294,7 @@ msgstr[0] "%{count} фајл"
 msgstr[1] "%{count} фајла"
 msgstr[2] "%{count} фајлова"
 
-#: lib/potok_ide_web/live/group_live/show.ex:855
+#: lib/potok_ide_web/live/group_live/show.ex:865
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1204
 #, elixir-autogen, elixir-format
 msgid "Attach at most %{count} files."
@@ -2311,7 +2312,7 @@ msgstr "Качење фајлова уз поруке."
 
 #: lib/potok_ide_web/controllers/page_html.ex:173
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:31
-#: lib/potok_ide_web/live/group_live/show.ex:4307
+#: lib/potok_ide_web/live/group_live/show.ex:4482
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:20
 #, elixir-autogen, elixir-format
 msgid "Files"
@@ -2372,7 +2373,7 @@ msgstr "Отвори групу"
 msgid "Remove file"
 msgstr "Уклони фајл"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2895
+#: lib/potok_ide_web/live/group_live/show.ex:2981
 #, elixir-autogen, elixir-format
 msgid "Remove the files that cannot be attached."
 msgstr "Уклони фајлове који не могу да се закаче."
@@ -2382,7 +2383,7 @@ msgstr "Уклони фајлове који не могу да се закач�
 msgid "Show files as"
 msgstr "Прикажи фајлове као"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2921
+#: lib/potok_ide_web/live/group_live/show.ex:3007
 #, elixir-autogen, elixir-format
 msgid "Some files could not be uploaded. Please try again."
 msgstr "Неки фајлови нису отпремљени. Покушај поново."
@@ -2407,7 +2408,7 @@ msgstr "Фајл је већи од %{size}."
 msgid "Upload progress"
 msgstr "Напредак отпремања"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2898
+#: lib/potok_ide_web/live/group_live/show.ex:2984
 #, elixir-autogen, elixir-format
 msgid "Wait until the files finish uploading."
 msgstr "Сачекај да се фајлови отпреме."
@@ -2438,7 +2439,7 @@ msgstr[2] "%{count} подгрупа"
 msgid "Show sub-groups as"
 msgstr "Прикажи подгрупе као"
 
-#: lib/potok_ide_web/live/group_live/show.ex:462
+#: lib/potok_ide_web/live/group_live/show.ex:466
 #, elixir-autogen, elixir-format
 msgid "Loading…"
 msgstr "Учитавање…"
@@ -2463,8 +2464,8 @@ msgstr "Подгрупе групе %{name}"
 msgid "Close"
 msgstr "Затвори"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2073
-#: lib/potok_ide_web/live/group_live/show/components.ex:2074
+#: lib/potok_ide_web/live/group_live/show/components.ex:2121
+#: lib/potok_ide_web/live/group_live/show/components.ex:2122
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:54
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:55
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:98
@@ -2483,18 +2484,18 @@ msgstr "Преглед фајла"
 msgid "Next"
 msgstr "Следећи"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2027
+#: lib/potok_ide_web/live/group_live/show/components.ex:2075
 #, elixir-autogen, elixir-format
 msgid "Pause"
 msgstr "Пауза"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2025
-#: lib/potok_ide_web/live/group_live/show/components.ex:2026
+#: lib/potok_ide_web/live/group_live/show/components.ex:2073
+#: lib/potok_ide_web/live/group_live/show/components.ex:2074
 #, elixir-autogen, elixir-format
 msgid "Play"
 msgstr "Пусти"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:2064
+#: lib/potok_ide_web/live/group_live/show/components.ex:2112
 #, elixir-autogen, elixir-format
 msgid "Playback position"
 msgstr "Позиција репродукције"
@@ -2510,61 +2511,61 @@ msgstr "Претходни"
 msgid "This file cannot be previewed in the browser."
 msgstr "Овај фајл не може да се прикаже у прегледачу."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3204
+#: lib/potok_ide_web/live/group_live/show.ex:3379
 #, elixir-autogen, elixir-format
 msgid "A group can have at most %{count} alternative descriptions."
 msgstr "Група може имати највише %{count} алтернативних описа."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:658
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:785
 #, elixir-autogen, elixir-format
 msgid "All members"
 msgstr "Сви чланови"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:270
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:630
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:281
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:757
 #, elixir-autogen, elixir-format
 msgid "Alternative descriptions"
 msgstr "Алтернативни описи"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3216
+#: lib/potok_ide_web/live/group_live/show.ex:3391
 #, elixir-autogen, elixir-format
 msgid "Another description already uses the name of the current default."
 msgstr "Други опис већ користи име тренутног подразумеваног описа."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:914
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:648
+#: lib/potok_ide_web/live/group_live/show/components.ex:915
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:775
 #, elixir-autogen, elixir-format
 msgid "App"
 msgstr "Апликација"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3217
-#: lib/potok_ide_web/live/group_live/show.ex:3220
+#: lib/potok_ide_web/live/group_live/show.ex:3392
+#: lib/potok_ide_web/live/group_live/show.ex:3395
 #, elixir-autogen, elixir-format
 msgid "Could not save the description."
 msgstr "Није могуће сачувати опис."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:378
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:389
 #: lib/potok_ide_web/live/invitation_live/index.ex:153
 #, elixir-autogen, elixir-format
 msgid "Delete"
 msgstr "Обриши"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:593
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:615
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of this description's app?"
 msgstr "Обрисати све вредности података апликације овог описа?"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:381
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:392
 #, elixir-autogen, elixir-format
 msgid "Delete this description? The data values of its app are deleted too."
 msgstr "Обрисати овај опис? Бришу се и вредности података његове апликације."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1675
+#: lib/potok_ide_web/live/group_live/show.ex:1688
 #, elixir-autogen, elixir-format
 msgid "Description deleted."
 msgstr "Опис је обрисан."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1653
+#: lib/potok_ide_web/live/group_live/show.ex:3317
 #, elixir-autogen, elixir-format
 msgid "Description saved."
 msgstr "Опис је сачуван."
@@ -2575,111 +2576,111 @@ msgid "Descriptions"
 msgstr "Описи"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:713
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:351
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:362
 #: lib/potok_ide_web/live/profile_live/index.ex:132
 #, elixir-autogen, elixir-format
 msgid "Edit"
 msgstr "Измени"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:545
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:564
 #, elixir-autogen, elixir-format
 msgid "Edit description"
 msgstr "Измени опис"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:272
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:283
 #, elixir-autogen, elixir-format
 msgid "Extra descriptions or apps, shown as tabs next to the default description. Each app keeps its own data."
 msgstr "Додатни описи или апликације, приказани као картице поред подразумеваног описа. Свака апликација чува своје податке."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:203
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:211
 #, elixir-autogen, elixir-format
 msgid "Home description"
 msgstr "Почетни опис"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:362
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:373
 #: lib/potok_ide_web/live/profile_live/index.ex:124
 #, elixir-autogen, elixir-format
 msgid "Make default"
 msgstr "Постави као подразумевани"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:367
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:378
 #, elixir-autogen, elixir-format
 msgid "Make this the default description? The current default takes its place in the list."
 msgstr "Поставити овај опис као подразумевани? Тренутни подразумевани опис заузима његово место на листи."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:343
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:354
 #, elixir-autogen, elixir-format
 msgid "Move down"
 msgstr "Помери доле"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:333
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:344
 #, elixir-autogen, elixir-format
 msgid "Move up"
 msgstr "Помери горе"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:219
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:227
 #, elixir-autogen, elixir-format
 msgid "Name next to the alternative descriptions"
 msgstr "Име поред алтернативних описа"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:287
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:544
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:298
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:563
 #, elixir-autogen, elixir-format
 msgid "New description"
 msgstr "Нови опис"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:363
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:374
 #, elixir-autogen, elixir-format
 msgid "Remove the role limit to make it the default"
 msgstr "Уклони ограничење по улогама да би постао подразумевани"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3209
+#: lib/potok_ide_web/live/group_live/show.ex:3384
 #, elixir-autogen, elixir-format
 msgid "Remove the role limit to make it the default."
 msgstr "Уклони ограничење по улогама да би постао подразумевани."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:613
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:635
 #, elixir-autogen, elixir-format
 msgid "Save description"
 msgstr "Сачувај опис"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3212
+#: lib/potok_ide_web/live/group_live/show.ex:3387
 #, elixir-autogen, elixir-format
 msgid "That description no longer exists."
 msgstr "Тај опис више не постоји."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1712
+#: lib/potok_ide_web/live/group_live/show.ex:1725
 #, elixir-autogen, elixir-format
 msgid "The description is now the default."
 msgstr "Опис је сада подразумевани."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:557
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:576
 #, elixir-autogen, elixir-format
 msgid "Visible to"
 msgstr "Видљиво за"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:559
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:578
 #, elixir-autogen, elixir-format
 msgid "Without a role it is visible to everyone who sees the group's description. Editors always see it."
 msgstr "Без улоге га види свако ко види опис групе. Уредници га увек виде."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:451
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:466
 #, elixir-autogen, elixir-format
 msgid "Delete every data value of the default description's app? The other apps keep theirs."
 msgstr "Обрисати све вредности података апликације подразумеваног описа? Остале апликације задржавају своје."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1123
+#: lib/potok_ide_web/live/group_live/show.ex:1140
 #, elixir-autogen, elixir-format
 msgid "Could not remove the preview."
 msgstr "Није могуће уклонити преглед."
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1962
-#: lib/potok_ide_web/live/group_live/show/components.ex:1963
+#: lib/potok_ide_web/live/group_live/show/components.ex:2010
+#: lib/potok_ide_web/live/group_live/show/components.ex:2011
 #, elixir-autogen, elixir-format
 msgid "Remove preview"
 msgstr "Уклони преглед"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:178
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:186
 #, elixir-autogen, elixir-format
 msgid "Every member of the parent group is also a member here, with the same roles."
 msgstr "Сваки члан родитељске групе је и члан ове групе, са истим улогама."
@@ -2690,7 +2691,7 @@ msgid "Every member of this group is also a member of the sub-group, with the sa
 msgstr "Сваки члан ове групе је и члан подгрупе, са истим улогама."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:84
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:170
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:178
 #, elixir-autogen, elixir-format
 msgid "Inherit members"
 msgstr "Наслеђује чланове"
@@ -2710,17 +2711,17 @@ msgstr "Наслеђено из родитељске групе"
 msgid "Member of the parent group"
 msgstr "Члан родитељске групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3978
+#: lib/potok_ide_web/live/group_live/show.ex:4153
 #, elixir-autogen, elixir-format
 msgid "This member comes from the parent group. Remove them there."
 msgstr "Овај члан долази из родитељске групе. Уклоните га тамо."
 
-#: lib/potok_ide_web/live/group_live/show.ex:3981
+#: lib/potok_ide_web/live/group_live/show.ex:4156
 #, elixir-autogen, elixir-format
 msgid "This role comes from the parent group. Change it there."
 msgstr "Ова улога долази из родитељске групе. Промените је тамо."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:176
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:184
 #, elixir-autogen, elixir-format
 msgid "Threads always inherit the members of their group."
 msgstr "Нити увек наслеђују чланове своје групе."
@@ -2736,7 +2737,7 @@ msgstr "Премотај на најновије поруке"
 msgid "Load newer messages"
 msgstr "Учитај новије поруке"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1384
+#: lib/potok_ide_web/live/group_live/show.ex:1401
 #, elixir-autogen, elixir-format
 msgid "The original message is no longer available."
 msgstr "Оригинална порука више није доступна."
@@ -2791,7 +2792,7 @@ msgstr "Назад на календар"
 
 #: lib/potok_ide_web/controllers/page_html.ex:164
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:30
-#: lib/potok_ide_web/live/group_live/show.ex:4315
+#: lib/potok_ide_web/live/group_live/show.ex:4490
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:56
 #, elixir-autogen, elixir-format
 msgid "Calendar"
@@ -2939,7 +2940,7 @@ msgstr "Месец"
 msgid "Monthly"
 msgstr "Сваког месеца"
 
-#: lib/potok_ide_web/live/group_live/show.ex:373
+#: lib/potok_ide_web/live/group_live/show.ex:377
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:56
 #, elixir-autogen, elixir-format
 msgid "My calendar"
@@ -2975,7 +2976,7 @@ msgstr "Нема догађаја овог месеца."
 msgid "Not going"
 msgstr "Не долазим"
 
-#: lib/potok_ide_web/live/group_live/show.ex:282
+#: lib/potok_ide_web/live/group_live/show.ex:286
 #, elixir-autogen, elixir-format
 msgid "Open calendar tab"
 msgstr "Отвори картицу календара"
@@ -3181,7 +3182,7 @@ msgstr "Додајте таг да сузите избор"
 msgid "All tags"
 msgstr "Сви тагови"
 
-#: lib/potok_ide_web/live/group_live/show.ex:403
+#: lib/potok_ide_web/live/group_live/show.ex:407
 #, elixir-autogen, elixir-format
 msgid "Browse by tags"
 msgstr "Претражи по таговима"
@@ -3359,7 +3360,7 @@ msgstr "Назив тага"
 msgid "Tags"
 msgstr "Тагови"
 
-#: lib/potok_ide_web/live/group_live/show.ex:395
+#: lib/potok_ide_web/live/group_live/show.ex:399
 #, elixir-autogen, elixir-format
 msgid "Tags of this group"
 msgstr "Тагови ове групе"
@@ -3445,147 +3446,147 @@ msgstr "Ставка може имати највише %{count} јавних т
 msgid "Filters"
 msgstr "Филтери"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:106
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:114
 #, elixir-autogen, elixir-format
 msgid "Name, picture, visibility, description and apps of the group."
 msgstr "Назив, слика, видљивост, опис и апликације групе."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:104
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:112
 #, elixir-autogen, elixir-format
 msgctxt "page title"
 msgid "Edit group"
 msgstr "Уреди групу"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:183
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:627
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:754
 #, elixir-autogen, elixir-format
 msgid "Access"
 msgstr "Приступ"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:62
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:143
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:151
 #, elixir-autogen, elixir-format
 msgid "Access and members"
 msgstr "Приступ и чланство"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:50
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:182
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:131
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:626
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:139
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:753
 #: lib/potok_ide_web/live/profile_live/components.ex:52
 #: lib/potok_ide_web/live/profile_live/components.ex:360
 #, elixir-autogen, elixir-format
 msgid "Basics"
 msgstr "Основно"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:244
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:252
 #, elixir-autogen, elixir-format
 msgid "Content"
 msgstr "Садржај"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:422
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:631
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:437
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:758
 #, elixir-autogen, elixir-format
 msgid "Danger zone"
 msgstr "Опасна зона"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:432
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:447
 #, elixir-autogen, elixir-format
 msgid "Delete the app's data"
 msgstr "Брисање података апликације"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:469
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:484
 #, elixir-autogen, elixir-format
 msgid "Delete the group"
 msgstr "Брисање групе"
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:435
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:450
 #, elixir-autogen, elixir-format
 msgid "Deletes every data value the group's app saved."
 msgstr "Брише све податке које је апликација групе сачувала."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:437
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:452
 #, elixir-autogen, elixir-format
 msgid "Deletes the data values of the default description's app. The other apps keep theirs."
 msgstr "Брише податке апликације подразумеваног описа. Остале апликације задржавају своје."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:471
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:486
 #, elixir-autogen, elixir-format
 msgid "Deletes the group with its messages and files. A group with sub-groups cannot be deleted."
 msgstr "Брише групу са њеним порукама и фајловима. Група која има подгрупе не може да се обрише."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:509
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:524
 #: lib/potok_ide_web/live/profile_live/edit.ex:146
 #, elixir-autogen, elixir-format
 msgid "Discard"
 msgstr "Одбаци"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:74
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:159
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:167
 #, elixir-autogen, elixir-format
 msgid "Everyone can see the group and ask to join it."
 msgstr "Сви виде групу и могу да траже приступ."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:424
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:439
 #, elixir-autogen, elixir-format
 msgid "None of this can be undone."
 msgstr "Ништа од овога не може да се поништи."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:184
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:628
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:755
 #, elixir-autogen, elixir-format
 msgid "Opens first"
 msgstr "Отвара се прво"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:456
+#: lib/potok_ide_web/live/group_live/show/components.ex:457
 #, elixir-autogen, elixir-format
 msgid "Sections"
 msgstr "Одељци"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:125
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:228
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:236
 #, elixir-autogen, elixir-format
 msgid "The app runs on the group's home page and can keep its own data."
 msgstr "Апликација ради на почетној страни групе и може да чува своје податке."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:121
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:224
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:552
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:232
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:571
 #, elixir-autogen, elixir-format
 msgid "The description is an app (API)"
 msgstr "Опис је апликација (API)"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:51
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:132
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:140
 #, elixir-autogen, elixir-format
 msgid "The name and picture members see."
 msgstr "Назив и слика које чланови виде."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:101
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:192
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:200
 #, elixir-autogen, elixir-format
 msgid "The panel and the description a member sees on opening the group."
 msgstr "Панел и опис које члан види кад отвори групу."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:117
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:215
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:223
 #, elixir-autogen, elixir-format
 msgid "The text or app on the group's home page."
 msgstr "Текст или апликација на почетној страни групе."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:100
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:191
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:199
 #, elixir-autogen, elixir-format
 msgid "What opens first"
 msgstr "Шта се отвара прво"
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:63
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:144
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:152
 #, elixir-autogen, elixir-format
 msgid "Who sees the group and who is a member."
 msgstr "Ко види групу и ко је члан."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:500
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:515
 #: lib/potok_ide_web/live/profile_live/edit.ex:142
 #, elixir-autogen, elixir-format
 msgid "You have unsaved changes."
@@ -3757,18 +3758,18 @@ msgid "Open link"
 msgstr "Отвори линк"
 
 #: lib/potok_ide_web/components/layouts/root.html.heex:123
-#: lib/potok_ide_web/live/group_live/show.ex:365
+#: lib/potok_ide_web/live/group_live/show.ex:369
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:682
 #, elixir-autogen, elixir-format
 msgid "Share"
 msgstr "Подели"
 
-#: lib/potok_ide_web/live/group_live/show.ex:3806
+#: lib/potok_ide_web/live/group_live/show.ex:3981
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
 msgstr "%{names} и још %{count}"
 
-#: lib/potok_ide_web/live/group_live/show.ex:894
+#: lib/potok_ide_web/live/group_live/show.ex:911
 #, elixir-autogen, elixir-format
 msgid "Could not read %{names}."
 msgstr "Није могуће прочитати: %{names}."
@@ -3788,7 +3789,7 @@ msgstr "Учитавање дељеног садржаја…"
 msgid "Go to groups"
 msgstr "Иди на групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:881
+#: lib/potok_ide_web/live/group_live/show.ex:898
 #, elixir-autogen, elixir-format
 msgid "Larger than %{size}: %{names}."
 msgstr "Веће од %{size}: %{names}."
@@ -3803,7 +3804,7 @@ msgstr "Нема група у којима можеш да објављујеш
 msgid "Nothing to share"
 msgstr "Нема ничега за дељење"
 
-#: lib/potok_ide_web/live/group_live/show.ex:886
+#: lib/potok_ide_web/live/group_live/show.ex:903
 #, elixir-autogen, elixir-format
 msgid "Only %{count} files fit in a message: %{names} left out."
 msgstr "Порука прима највише %{count} фајлова, изостављено: %{names}."
@@ -3829,7 +3830,7 @@ msgstr "Подели линк, текст или фајлове из друге 
 msgid "Share to Potok"
 msgstr "Подели у Поток"
 
-#: lib/potok_ide_web/live/group_live/show.ex:891
+#: lib/potok_ide_web/live/group_live/show.ex:908
 #, elixir-autogen, elixir-format
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr "У овој групи не можеш закачити фајлове, изостављено: %{names}."
@@ -4103,8 +4104,8 @@ msgstr "Да ли профил користи један налог или ви�
 
 #: lib/potok_ide_web/controllers/page_html.ex:193
 #, elixir-autogen, elixir-format
-msgid "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list."
-msgstr "Опис групе не мора да буде само текст. Може да буде и мала апликација, на пример анкета или списак задужења."
+msgid "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
+msgstr "Опис групе не мора да буде само текст. Може да буде и мала апликација, на пример анкета или списак задужења. Или изабери шаблон, на пример вест или догађај, и попуни поља."
 
 #: lib/potok_ide_web/controllers/page_html.ex:184
 #, elixir-autogen, elixir-format
@@ -4204,8 +4205,8 @@ msgstr "Друштво друштву"
 
 #: lib/potok_ide_web/controllers/page_html.ex:175
 #, elixir-autogen, elixir-format
-msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them."
-msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Слике, видео и звук отварају се одмах у разговору, све остаје у картици Фајлови, а преузимају их само чланови."
+msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description."
+msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Слике, видео и звук отварају се одмах у разговору, све остаје у картици Фајлови, а преузимају их само чланови, осим слика које ставиш у опис групе."
 
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:73
 #, elixir-autogen, elixir-format
@@ -4218,7 +4219,7 @@ msgid "A group on Potok."
 msgstr "Група на Потоку."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:75
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:160
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:168
 #, elixir-autogen, elixir-format
 msgid "Its name, picture and description also show outside Potok, to anyone with the link."
 msgstr "Назив, слика и опис виде се и ван Потока, свакоме ко има линк."
@@ -4229,7 +4230,7 @@ msgid "Its title, time, place and description also show outside Potok, to anyone
 msgstr "Наслов, време, место и опис виде се и ван Потока, свакоме ко има линк."
 
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:126
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:229
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:237
 #, elixir-autogen, elixir-format
 msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
 msgstr "За дељене линкове може да се опише тагом <meta name=\"description\" content=\"...\">."
@@ -4434,23 +4435,23 @@ msgstr "Слање пробног обавештења није успело."
 msgid "Editing message"
 msgstr "Измена поруке"
 
-#: lib/potok_ide_web/live/group_live/show.ex:353
+#: lib/potok_ide_web/live/group_live/show.ex:357
 #, elixir-autogen, elixir-format
 msgid "About the group"
 msgstr "О групи"
 
-#: lib/potok_ide_web/live/group_live/show.ex:124
+#: lib/potok_ide_web/live/group_live/show.ex:128
 #, elixir-autogen, elixir-format
 msgid "Back"
 msgstr "Назад"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:635
+#: lib/potok_ide_web/live/group_live/show/components.ex:636
 #, elixir-autogen, elixir-format
 msgid "Group sections"
 msgstr "Делови групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:4153
-#: lib/potok_ide_web/live/group_live/show.ex:4297
+#: lib/potok_ide_web/live/group_live/show.ex:4328
+#: lib/potok_ide_web/live/group_live/show.ex:4472
 #, elixir-autogen, elixir-format
 msgid "Messages"
 msgstr "Поруке"
@@ -4470,7 +4471,7 @@ msgstr "Није могуће сачувати вредност података
 msgid "Add a description"
 msgstr "Додај опис"
 
-#: lib/potok_ide_web/live/group_live/show.ex:214
+#: lib/potok_ide_web/live/group_live/show.ex:218
 #, elixir-autogen, elixir-format
 msgid "Conversations"
 msgstr "Разговори"
@@ -4487,13 +4488,13 @@ msgstr "Тамна тема"
 msgid "Light theme"
 msgstr "Светла тема"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:906
+#: lib/potok_ide_web/live/group_live/show/components.ex:907
 #, elixir-autogen, elixir-format
 msgid "Private group"
 msgstr "Приватна група"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:813
-#: lib/potok_ide_web/live/group_live/show/components.ex:1494
+#: lib/potok_ide_web/live/group_live/show/components.ex:814
+#: lib/potok_ide_web/live/group_live/show/components.ex:1542
 #, elixir-autogen, elixir-format
 msgid "Shared profile"
 msgstr "Дељени профил"
@@ -4555,22 +4556,110 @@ msgstr "Није могуће сачувати групу."
 msgid "An app on Potok."
 msgstr "Апликација на Потоку."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:76
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:49
 #, elixir-autogen, elixir-format
 msgid "Add a description, so the card says what the group is about."
 msgstr "Додај опис, да картица каже о чему се ради."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:83
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:56
 #, elixir-autogen, elixir-format
 msgid "An app says what it is with a <meta name=\"description\" content=\"...\"> tag in its HTML."
 msgstr "Апликација се описује тагом <meta name=\"description\" content=\"...\"> у свом HTML-у."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:44
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:17
 #, elixir-autogen, elixir-format
 msgid "As saved so far."
 msgstr "Овако је сада сачувано."
 
-#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:42
+#: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:15
 #, elixir-autogen, elixir-format
 msgid "How a link to the group looks outside Potok"
 msgstr "Како линк ка групи изгледа ван Потока"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:198
+#, elixir-autogen, elixir-format
+msgid "Add an item"
+msgstr "Додај ставку"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:110
+#, elixir-autogen, elixir-format
+msgid "Back to the template %{name}"
+msgstr "Врати на шаблон %{name}"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:42
+#, elixir-autogen, elixir-format
+msgid "Change template"
+msgstr "Промени шаблон"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:42
+#, elixir-autogen, elixir-format
+msgid "Close the list"
+msgstr "Затвори листу"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:238
+#, elixir-autogen, elixir-format
+msgid "From the device"
+msgstr "Са уређаја"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:107
+#, elixir-autogen, elixir-format
+msgid "Going back to the template drops the change made by hand. Continue?"
+msgstr "Повратак на шаблон брише ручну измену. Настављаш?"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:260
+#, elixir-autogen, elixir-format
+msgid "It goes to the chat as a message with the file. Deleting that message removes the picture from the description."
+msgstr "Иде у чет као порука са фајлом. Ако се та порука обрише, слика нестаје и из описа."
+
+#: lib/potok_ide_web/live/group_live/show.ex:2937
+#, elixir-autogen, elixir-format
+msgid "Picture for the group's description"
+msgstr "Слика за опис групе"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:182
+#, elixir-autogen, elixir-format
+msgid "Remove item %{number}"
+msgstr "Уклони ставку %{number}"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:250
+#, elixir-autogen, elixir-format
+msgid "Remove the picture"
+msgstr "Уклони слику"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:253
+#, elixir-autogen, elixir-format
+msgid "Sending the picture..."
+msgstr "Шаљем слику..."
+
+#: lib/potok_ide_web/live/group_live/show.ex:3336
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:143
+#, elixir-autogen, elixir-format
+msgid "Still needed: %{fields}"
+msgstr "Још треба: %{fields}"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:30
+#, elixir-autogen, elixir-format
+msgid "Template:"
+msgstr "Шаблон:"
+
+#: lib/potok_ide_web/live/group_live/show.ex:2928
+#: lib/potok_ide_web/live/group_live/show.ex:2951
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:256
+#, elixir-autogen, elixir-format
+msgid "The picture could not be sent."
+msgstr "Слика није послата."
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:62
+#, elixir-autogen, elixir-format
+msgid "The template replaces the text now in the description. Continue?"
+msgstr "Шаблон замењује текст који је сад у опису. Настављаш?"
+
+#: lib/potok_ide_web/live/group_live/show/description_template_form.ex:96
+#, elixir-autogen, elixir-format
+msgid "This description was changed by hand, so it opens as text. The form would undo that change."
+msgstr "Овај опис је мењан ручно, па се отвара као текст. Форма би поништила ту измену."
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:1278
+#, elixir-autogen, elixir-format
+msgid "Templates are for written descriptions. This description is an app."
+msgstr "Шаблони су за писане описе. Овај опис је апликација."

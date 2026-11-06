@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.AttachmentControllerTest do
   alias PotokIde.Social
   alias PotokIde.Social.Value
   alias PotokIde.Storage
+  alias PotokIdeWeb.PostTemplates.Picture
 
   setup do
     {owner_account, owner} = account_with_profile!("dl-owner")
@@ -168,6 +169,45 @@ defmodule PotokIdeWeb.AttachmentControllerTest do
       })
 
     {Accounts.get_account!(account.id), profile}
+  end
+
+  describe "a picture in a description" do
+    defp path(attachment), do: URI.parse(Picture.address(attachment)).path
+
+    test "opens without a session, in place", %{conn: conn, image: image} do
+      conn = get(conn, path(image))
+
+      assert response(conn, 200) == "png-bytes"
+      assert response_content_type(conn, :png)
+      assert [disposition] = get_resp_header(conn, "content-disposition")
+      assert disposition =~ "inline"
+      assert get_resp_header(conn, "x-content-type-options") == ["nosniff"]
+    end
+
+    test "has a full address, which FeedCreator keeps", %{image: image} do
+      assert "http" <> _rest = Picture.address(image)
+    end
+
+    test "needs the address as it was signed", %{conn: conn, image: image} do
+      assert conn |> get(path(image) <> "x") |> response(404)
+      assert conn |> get(~p"/pictures/#{image.id}") |> response(404)
+    end
+
+    test "is no way to any other file", %{conn: conn, document: document, video: video} do
+      assert conn |> get(path(document)) |> response(404)
+      assert conn |> get(path(video)) |> response(404)
+    end
+
+    test "is gone with its message", %{conn: conn, image: image} do
+      picture = path(image)
+      value = Social.get_value_for_display(image.value_id)
+
+      assert conn |> get(picture) |> response(200)
+
+      {:ok, _deleted} = Social.delete_value(value.creator, value)
+
+      assert conn |> get(picture) |> response(404)
+    end
   end
 
   defp stored_file!(group, name, content_type, content) do

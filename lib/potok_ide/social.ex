@@ -3601,6 +3601,9 @@ defmodule PotokIde.Social do
 
   def get_attachment_for_download(_profile, _attachment_id), do: nil
 
+  @doc "A file by id, for a caller that has settled access already."
+  def get_attachment(attachment_id), do: Repo.get(ValueAttachment, attachment_id)
+
   @group_tree_max_depth 10
   @group_tree_max_groups 500
   @attachment_tree_max_files 1000

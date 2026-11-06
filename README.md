@@ -54,6 +54,7 @@ Group access and direct-group behavior:
 * Besides its default description, a group can have up to 20 alternative descriptions (`GroupAltDescription`), managed in the edit-group panel. Each one is markdown, HTML or an app (`uses_api`). When a group has any, the description panel shows them as tabs after the default one, and `?d=<id>` (or `?d=default`) opens one directly.
 * An alternative description with `visible_role_keys` is shown only to members holding one of those roles (`everyone` = every member) and to those who can edit the group. Without roles it is shown to everyone who sees the description.
 * `home_alt_description_id` makes an alternative description open first instead of the default one. A viewer who cannot see it gets the default.
+* In the edit-group panel the default description and the alternative ones can be written through a template (`PotokIdeWeb.PostTemplates`): a form that produces HTML, with the fields kept in a comment on the description's first line. FeedCreator writes the same format, so each opens what the other saved. See `docs/feed-i-feedcreator.md`.
 * "Make default" swaps an alternative description with the default one: their contents, names and app data values trade places. Descriptions limited to roles cannot be made the default.
 * Direct groups are derived conversation groups, not a separate invitation flow. Opening `/profiles/:id/direct` finds or creates a private non-root group under the root group for exactly two profiles and then navigates to that group's values tab.
 * Direct private groups ignore `home_page` and always open on the values panel.
@@ -90,6 +91,7 @@ Files:
 * Members with `attach_files` can attach up to 10 files of up to 100 MB each to a value (limits from `ATTACHMENT_MAX_FILES` and `ATTACHMENT_MAX_FILE_SIZE_MB`). A value may carry only files.
 * Images, video and audio are shown in place; other files are download rows.
 * `GET /files/:id` serves a file only to members of its group, either by redirecting to a short-lived signed URL or by sending it with a sandboxing CSP.
+* A picture a description's template takes from the device is posted to the group's chat as a value with the file. `GET /pictures/:token` serves it with no session, as non-members and sandboxed apps see descriptions too. The token is signed with `SECRET_KEY_BASE` and opens that one picture, until its value is deleted.
 * The Files tab lists a group's files newest first, or shows the group and its visible sub-groups as folders.
 * `PotokIde.Storage.Local` keeps files in `./uploads` in dev and test. `PotokIde.Storage.S3` keeps them in an S3-compatible bucket (Tigris on Fly, R2, S3) when `BUCKET_NAME` is set; browsers upload to it directly with presigned URLs. Without an adapter attachments are off.
 * Deleting a value or a group deletes its stored files.
@@ -561,6 +563,7 @@ Authenticated routes:
 * `DELETE /accounts/push-subscriptions`
 * `POST /accounts/push-subscriptions/test`
 * `GET /files/:id` serves an attached file to members of its group (logged-out visitors go to the login page and come back)
+* `GET /pictures/:token` serves a picture used in a description, by its signed address (no session)
 * `GET /events/:id/event.ics` serves an event as an iCalendar file to members of its group (logged-out visitors go to the login page and come back)
 
 Authenticated routes that require a current profile:
@@ -832,7 +835,7 @@ Production configuration is loaded from runtime environment variables.
 Required in all production setups:
 
 * `DATABASE_URL`
-* `SECRET_KEY_BASE`
+* `SECRET_KEY_BASE` (changing it breaks the address of every picture stored in a description, see `GET /pictures/:token`)
 * `MAILER_FROM_EMAIL`
 
 Required when using Mailgun (`MAILER_ADAPTER=mailgun`, default):

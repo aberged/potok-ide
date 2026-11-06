@@ -29,7 +29,7 @@ msgstr "%{field}, без обзира на величину слова"
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr "<Account>Налог</Account> је идентитет: имејл и лозинка. Све у групама ради <Profile>профил</Profile>. Један налог може да има више профила, рецимо пословни, приватни и клупски. Код их не разликује по намени, него само јединствене од дељених. Дељени профил користе сви налози који прихвате <ProfileInvitation>позивницу за профил</ProfileInvitation>."
 
-#: lib/potok_ide_web/domain_copy.ex:964
+#: lib/potok_ide_web/domain_copy.ex:972
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Таговање</Tagging> спаја <Tag>таг</Tag> са тачно једном групом, профилом, догађајем, вредношћу или фајлом, и то проверава база. Таг без власника је јаван. Таг са власником види само тај профил."
@@ -39,7 +39,7 @@ msgstr "<Tagging>Таговање</Tagging> спаја <Tag>таг</Tag> са т
 msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
 msgstr "<Group>Група</Group> отворена из <Value>вредности</Value> је нит. Једна вредност има највише једну нит, а нит увек наслеђује чланове. Корен је један, без родитеља и без аутора. Све остале групе имају обоје, па и директни разговори, који стоје одмах испод корена."
 
-#: lib/potok_ide_web/domain_copy.ex:972
+#: lib/potok_ide_web/domain_copy.ex:980
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
 msgstr "<GroupInvitation>Позивница у групу</GroupInvitation> иде од профила до профила. Ако позвани налог још нема профил, чува се <GroupAccountInvitation>позивница за налог</GroupAccountInvitation>, која постаје обична позивница чим налог добије први профил. <GroupJoinRequest>Захтев за улазак</GroupJoinRequest> иде у другом смеру. Кад се прихвати, брише се, а остаје <GroupJoinRequestApproval>одобрен захтев</GroupJoinRequestApproval> са именом онога ко је примио члана."
@@ -204,7 +204,7 @@ msgstr "Све табеле домена по целинама, са спољн�
 msgid "Alt. description"
 msgstr "Алтернативни опис"
 
-#: lib/potok_ide_web/domain_copy.ex:980
+#: lib/potok_ide_web/domain_copy.ex:988
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr "<Event>Догађај</Event> чува правило понављања. Појединачно појављивање се именује локалним датумом почетка, па <Response>одговор на догађај</Response> носи тај датум, а отказана појављивања су записана на догађају."
@@ -254,7 +254,7 @@ msgstr "Реакција једног профила на вредност. Ис
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event."
 msgstr "Догађај у календару групе, једном или са понављањем. Почетак и крај важе за прво појављивање, а понављања чувају локално време временске зоне догађаја. Догађај може да најави вредност."
 
-#: lib/potok_ide_web/domain_copy.ex:978
+#: lib/potok_ide_web/domain_copy.ex:986
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr "Појављивање догађаја нема свој ред"
@@ -389,7 +389,7 @@ msgstr "Докле је профил прочитао групу. Непрочи
 msgid "How permissions come about"
 msgstr "Како настају дозволе"
 
-#: lib/potok_ide_web/domain_copy.ex:970
+#: lib/potok_ide_web/domain_copy.ex:978
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr "Како се улази у групу"
@@ -484,7 +484,7 @@ msgstr "Један уређај или прегледач који прима о
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr "Један таг на једној ставци. Попуњена је тачно једна од пет колона са метом, што проверава база."
 
-#: lib/potok_ide_web/domain_copy.ex:962
+#: lib/potok_ide_web/domain_copy.ex:970
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr "Један таг, пет врста ставки"
@@ -1659,3 +1659,13 @@ msgstr "Скупља реакције и коментаре"
 #, elixir-autogen, elixir-format
 msgid "Group reaction"
 msgstr "Реакција на групу"
+
+#: lib/potok_ide_web/domain_copy.ex:964
+#, elixir-autogen, elixir-format
+msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description."
+msgstr "Слику коју шаблон описа узме са уређаја чува <Value>вредност</Value> у чету групе, са својим <ValueAttachment>фајлом</ValueAttachment>, па слика остаје међу фајловима групе. Опис види више људи него чет, зато је адреса слике потписана и не тражи пријаву. Брисање те вредности уклања слику и из описа."
+
+#: lib/potok_ide_web/domain_copy.ex:962
+#, elixir-autogen, elixir-format
+msgid "A picture in a description is a file in the chat"
+msgstr "Слика у опису је фајл у чету"

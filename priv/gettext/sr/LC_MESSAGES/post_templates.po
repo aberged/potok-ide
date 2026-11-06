@@ -1,0 +1,356 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: sr\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+
+#: lib/potok_ide_web/post_templates.ex:469
+#, elixir-autogen, elixir-format
+msgid "%{weekday}, %{month} %{day}, %{year}"
+msgstr "%{weekday}, %{day}. %{month} %{year}."
+
+#: lib/potok_ide_web/post_templates.ex:80
+#, elixir-autogen, elixir-format
+msgid "A big picture and a few words."
+msgstr "Velika slika i nekoliko reči."
+
+#: lib/potok_ide_web/post_templates.ex:165
+#, elixir-autogen, elixir-format
+msgid "A colored band, from plain to urgent."
+msgstr "Traka u boji, od običnog do hitnog."
+
+#: lib/potok_ide_web/post_templates.ex:146
+#, elixir-autogen, elixir-format
+msgid "A recommendation with a short description."
+msgstr "Preporuka sa kratkim opisom."
+
+#: lib/potok_ide_web/post_templates.ex:102
+#, elixir-autogen, elixir-format
+msgid "A river carries all it is given."
+msgstr "Reka nosi sve što joj se da."
+
+#: lib/potok_ide_web/post_templates.ex:95
+#, elixir-autogen, elixir-format
+msgid "A sentence that fills the screen."
+msgstr "Rečenica koja staje na ceo ekran."
+
+#: lib/potok_ide_web/post_templates.ex:159
+#, elixir-autogen, elixir-format
+msgid "A short text about our area."
+msgstr "Kratak tekst o našem kraju."
+
+#: lib/potok_ide_web/post_templates.ex:183
+#, elixir-autogen, elixir-format
+msgid "Addition"
+msgstr "Dodatak"
+
+#: lib/potok_ide_web/post_templates.ex:148
+#, elixir-autogen, elixir-format
+msgid "Address"
+msgstr "Adresa"
+
+#: lib/potok_ide_web/post_templates.ex:72
+#, elixir-autogen, elixir-format
+msgid "After two months the works are over."
+msgstr "Posle dva meseca radova kraj je radovima."
+
+#: lib/potok_ide_web/post_templates.ex:66
+#, elixir-autogen, elixir-format
+msgid "An empty line starts a new paragraph."
+msgstr "Prazan red počinje novi pasus."
+
+#: lib/potok_ide_web/post_templates.ex:193
+#, elixir-autogen, elixir-format
+msgid "Anything else, in Markdown or HTML."
+msgstr "Sve ostalo, kao Markdown ili HTML."
+
+#: lib/potok_ide_web/post_templates.ex:57
+#: lib/potok_ide_web/post_templates.ex:70
+#, elixir-autogen, elixir-format
+msgid "Around here"
+msgstr "Iz kraja"
+
+#: lib/potok_ide_web/post_templates.ex:98
+#, elixir-autogen, elixir-format
+msgid "Author"
+msgstr "Autor"
+
+#: lib/potok_ide_web/post_templates.ex:122
+#, elixir-autogen, elixir-format
+msgid "By the old bridge"
+msgstr "Kod starog mosta"
+
+#: lib/potok_ide_web/post_templates.ex:139
+#, elixir-autogen, elixir-format
+msgid "Call on a neighbor"
+msgstr "Javi se komšiji"
+
+#: lib/potok_ide_web/post_templates.ex:64
+#, elixir-autogen, elixir-format
+msgid "Caption"
+msgstr "Potpis uz sliku"
+
+#: lib/potok_ide_web/post_templates.ex:119
+#, elixir-autogen, elixir-format
+msgid "Cleaning the shore"
+msgstr "Čišćenje obale"
+
+#: lib/potok_ide_web/post_templates.ex:112
+#, elixir-autogen, elixir-format
+msgid "Date"
+msgstr "Datum"
+
+#: lib/potok_ide_web/post_templates.ex:84
+#: lib/potok_ide_web/post_templates.ex:115
+#: lib/potok_ide_web/post_templates.ex:153
+#, elixir-autogen, elixir-format
+msgid "Description"
+msgstr "Opis"
+
+#: lib/potok_ide_web/post_templates.ex:108
+#, elixir-autogen, elixir-format
+msgid "Event"
+msgstr "Događaj"
+
+#: lib/potok_ide_web/post_templates.ex:192
+#, elixir-autogen, elixir-format
+msgid "Free text"
+msgstr "Slobodan tekst"
+
+#: lib/potok_ide_web/post_templates.ex:174
+#, elixir-autogen, elixir-format
+msgid "From 8 to 12."
+msgstr "Od 8 do 12 časova."
+
+#: lib/potok_ide_web/post_templates.ex:59
+#: lib/potok_ide_web/post_templates.ex:83
+#: lib/potok_ide_web/post_templates.ex:130
+#: lib/potok_ide_web/post_templates.ex:152
+#: lib/potok_ide_web/post_templates.ex:168
+#, elixir-autogen, elixir-format
+msgid "Headline"
+msgstr "Naslov"
+
+#: lib/potok_ide_web/post_templates.ex:54
+#, elixir-autogen, elixir-format
+msgid "Headline, intro, picture and text."
+msgstr "Naslov, uvod, slika i tekst."
+
+#: lib/potok_ide_web/post_templates.ex:167
+#, elixir-autogen, elixir-format
+msgid "Importance"
+msgstr "Važnost"
+
+#: lib/potok_ide_web/post_templates.ex:221
+#, elixir-autogen, elixir-format
+msgid "Important"
+msgstr "Važno"
+
+#: lib/potok_ide_web/post_templates.ex:60
+#: lib/potok_ide_web/post_templates.ex:131
+#, elixir-autogen, elixir-format
+msgid "Intro"
+msgstr "Uvod"
+
+#: lib/potok_ide_web/post_templates.ex:180
+#, elixir-autogen, elixir-format
+msgid "Invite the members to talk."
+msgstr "Pozovi članove na razgovor."
+
+#: lib/potok_ide_web/post_templates.ex:132
+#, elixir-autogen, elixir-format
+msgid "Items"
+msgstr "Stavke"
+
+#: lib/potok_ide_web/post_templates.ex:56
+#, elixir-autogen, elixir-format
+msgid "Kicker"
+msgstr "Nadnaslov"
+
+#: lib/potok_ide_web/post_templates.ex:187
+#, elixir-autogen, elixir-format
+msgid "Let us know."
+msgstr "Javi nam se."
+
+#: lib/potok_ide_web/post_templates.ex:145
+#, elixir-autogen, elixir-format
+msgid "Link"
+msgstr "Link"
+
+#: lib/potok_ide_web/post_templates.ex:116
+#, elixir-autogen, elixir-format
+msgid "Link for more"
+msgstr "Link za više"
+
+#: lib/potok_ide_web/post_templates.ex:127
+#, elixir-autogen, elixir-format
+msgid "List"
+msgstr "Lista"
+
+#: lib/potok_ide_web/post_templates.ex:378
+#, elixir-autogen, elixir-format
+msgid "More about the event"
+msgstr "Više o događaju"
+
+#: lib/potok_ide_web/post_templates.ex:88
+#, elixir-autogen, elixir-format
+msgid "Morning on the shore"
+msgstr "Jutro na obali"
+
+#: lib/potok_ide_web/post_templates.ex:111
+#, elixir-autogen, elixir-format
+msgid "Name"
+msgstr "Naziv"
+
+#: lib/potok_ide_web/post_templates.ex:53
+#, elixir-autogen, elixir-format
+msgid "News"
+msgstr "Vest"
+
+#: lib/potok_ide_web/post_templates.ex:173
+#, elixir-autogen, elixir-format
+msgid "No water on Tuesday"
+msgstr "Nema vode u utorak"
+
+#: lib/potok_ide_web/post_templates.ex:164
+#: lib/potok_ide_web/post_templates.ex:239
+#, elixir-autogen, elixir-format
+msgid "Notice"
+msgstr "Obaveštenje"
+
+#: lib/potok_ide_web/post_templates.ex:128
+#, elixir-autogen, elixir-format
+msgid "Numbered items, up to ten."
+msgstr "Stavke sa brojevima, do deset."
+
+#: lib/potok_ide_web/post_templates.ex:103
+#, elixir-autogen, elixir-format
+msgid "Old saying"
+msgstr "Stara izreka"
+
+#: lib/potok_ide_web/post_templates.ex:61
+#, elixir-autogen, elixir-format
+msgid "One or two sentences that get read first."
+msgstr "Jedna ili dve rečenice koje se prve čitaju."
+
+#: lib/potok_ide_web/post_templates.ex:79
+#, elixir-autogen, elixir-format
+msgid "Photo"
+msgstr "Slika"
+
+#: lib/potok_ide_web/post_templates.ex:63
+#: lib/potok_ide_web/post_templates.ex:82
+#: lib/potok_ide_web/post_templates.ex:154
+#, elixir-autogen, elixir-format
+msgid "Picture"
+msgstr "Slika"
+
+#: lib/potok_ide_web/post_templates.ex:114
+#, elixir-autogen, elixir-format
+msgid "Place"
+msgstr "Mesto"
+
+#: lib/potok_ide_web/post_templates.ex:179
+#: lib/potok_ide_web/post_templates.ex:182
+#, elixir-autogen, elixir-format
+msgid "Question"
+msgstr "Pitanje"
+
+#: lib/potok_ide_web/post_templates.ex:94
+#: lib/potok_ide_web/post_templates.ex:97
+#, elixir-autogen, elixir-format
+msgid "Quote"
+msgstr "Citat"
+
+#: lib/potok_ide_web/post_templates.ex:413
+#, elixir-autogen, elixir-format
+msgid "Read more"
+msgstr "Pročitaj više"
+
+#: lib/potok_ide_web/post_templates.ex:439
+#, elixir-autogen, elixir-format
+msgid "Reply in the chat"
+msgstr "Odgovori u chatu"
+
+#: lib/potok_ide_web/post_templates.ex:99
+#, elixir-autogen, elixir-format
+msgid "Source"
+msgstr "Izvor"
+
+#: lib/potok_ide_web/post_templates.ex:89
+#, elixir-autogen, elixir-format
+msgid "Taken before sunrise."
+msgstr "Snimljeno pre izlaska sunca."
+
+#: lib/potok_ide_web/post_templates.ex:65
+#: lib/potok_ide_web/post_templates.ex:169
+#, elixir-autogen, elixir-format
+msgid "Text"
+msgstr "Tekst"
+
+#: lib/potok_ide_web/post_templates.ex:71
+#, elixir-autogen, elixir-format
+msgid "The bridge over the stream has reopened"
+msgstr "Most na potoku ponovo otvoren"
+
+#: lib/potok_ide_web/post_templates.ex:74
+#, elixir-autogen, elixir-format
+msgid "The works finished ahead of schedule."
+msgstr "Radovi su završeni pre roka."
+
+#: lib/potok_ide_web/post_templates.ex:135
+#, elixir-autogen, elixir-format
+msgid "Three things for the weekend"
+msgstr "Tri stvari za vikend"
+
+#: lib/potok_ide_web/post_templates.ex:113
+#, elixir-autogen, elixir-format
+msgid "Time"
+msgstr "Vreme"
+
+#: lib/potok_ide_web/post_templates.ex:230
+#, elixir-autogen, elixir-format
+msgid "Urgent"
+msgstr "Hitno"
+
+#: lib/potok_ide_web/post_templates.ex:138
+#, elixir-autogen, elixir-format
+msgid "Visit the market"
+msgstr "Poseti pijacu"
+
+#: lib/potok_ide_web/post_templates.ex:137
+#, elixir-autogen, elixir-format
+msgid "Walk along the stream"
+msgstr "Prošetaj uz potok"
+
+#: lib/potok_ide_web/post_templates.ex:186
+#, elixir-autogen, elixir-format
+msgid "What would you change around here?"
+msgstr "Šta bi promenio u našem kraju?"
+
+#: lib/potok_ide_web/post_templates.ex:109
+#, elixir-autogen, elixir-format
+msgid "What, when and where."
+msgstr "Šta, kada i gde."
+
+#: lib/potok_ide_web/post_templates.ex:158
+#, elixir-autogen, elixir-format
+msgid "Worth reading"
+msgstr "Vredi pročitati"
+
+#: lib/potok_ide_web/post_templates.ex:195
+#, elixir-autogen, elixir-format
+msgid "Write as you like."
+msgstr "Pišeš kako želiš."
+
+#: lib/potok_ide_web/post_templates.ex:477
+#, elixir-autogen, elixir-format
+msgid "at %{time}"
+msgstr "u %{time}"

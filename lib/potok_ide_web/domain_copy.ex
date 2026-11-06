@@ -959,6 +959,14 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "A picture in a description is a file in the chat"),
+        text:
+          dgettext(
+            "domain_map",
+            "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description."
+          )
+      },
+      %{
         title: dgettext("domain_map", "One tag, five kinds of items"),
         text:
           dgettext(

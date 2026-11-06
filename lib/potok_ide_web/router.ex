@@ -137,6 +137,14 @@ defmodule PotokIdeWeb.Router do
     post "/accounts/push-subscriptions/test", PushSubscriptionController, :test
   end
 
+  # A picture in a description, by its signed address: non-members and an app's
+  # sandboxed frame see descriptions too, and have no session to show here.
+  scope "/pictures", PotokIdeWeb do
+    pipe_through :avatars
+
+    get "/:token", AttachmentController, :picture
+  end
+
   # Logged-out visitors go to the login page and come back here afterwards;
   # the controller then checks membership in the file's group.
   scope "/files", PotokIdeWeb do

@@ -84,6 +84,14 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :roles, :list, default: [], doc: "roles of the group's manifest"
   attr :max_alt_descriptions, :integer, required: true
 
+  attr :template_list, :string,
+    default: nil,
+    doc: "the description workspace whose list of templates is open"
+
+  attr :picture_upload, :any,
+    default: nil,
+    doc: "the upload of a template's picture, when the viewer may post one to the chat"
+
   attr :section, :string,
     default: "basics",
     doc: "the card on screen, picked in the section bar (see `sections/0`)"
@@ -250,6 +258,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 format_field={@edit_group_form[:description_format]}
                 uses_api={@edit_group_form[:uses_api].value}
                 format_options={@format_options}
+                templates
+                template_list_open={@template_list == "group-description"}
+                picture_upload={@picture_upload}
               />
             </details>
           </Components.settings_card>
@@ -390,6 +401,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 editing={@editing_alt_description}
                 roles={@roles}
                 format_options={@format_options}
+                template_list_open={@template_list == "alt-description"}
+                picture_upload={@picture_upload}
                 class="basis-full"
               />
             </li>
@@ -401,6 +414,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             editing={@editing_alt_description}
             roles={@roles}
             format_options={@format_options}
+            template_list_open={@template_list == "alt-description"}
+            picture_upload={@picture_upload}
             class="mt-4"
           />
         </section>
@@ -519,6 +534,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             </.button>
           </div>
         </div>
+
+        <.description_picture_picker :if={@picture_upload} upload={@picture_upload} />
       </Components.tab_body>
     </div>
     """
@@ -528,6 +545,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :editing, :any, required: true
   attr :roles, :list, required: true
   attr :format_options, :list, required: true
+  attr :template_list_open, :boolean, default: false
+  attr :picture_upload, :any, default: nil
   attr :class, :any, default: nil
 
   defp alt_description_form(assigns) do
@@ -581,6 +600,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         format_field={@form[:description_format]}
         uses_api={@form[:uses_api].value}
         format_options={@format_options}
+        templates
+        template_list_open={@template_list_open}
+        picture_upload={@picture_upload}
       />
 
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -615,6 +637,111 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         </div>
       </div>
     </.form>
+    """
+  end
+
+  attr :upload, :any, required: true
+
+  # A picture from the device for a template, wherever the form with it stands:
+  # the buttons in the forms send `potok:pick-picture` here with the input that
+  # gets the address. It sits outside those forms, as a form holds no form and
+  # a file input only uploads from one of its own. The picture goes out small,
+  # as a phone's photo would be read by everyone who opens the description.
+  defp description_picture_picker(assigns) do
+    ~H"""
+    <div id="description-picture" phx-hook=".DescriptionPicture" data-max-dimension="1080">
+      <input
+        type="file"
+        accept="image/*"
+        tabindex="-1"
+        aria-hidden="true"
+        class="sr-only"
+        data-description-picture-file
+      />
+      <form id="description-picture-form" phx-change="validate_description_picture" class="hidden">
+        <.live_file_input upload={@upload} tabindex="-1" />
+      </form>
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".DescriptionPicture">
+      const loadImage = file =>
+        new Promise((resolve, reject) => {
+          const address = URL.createObjectURL(file)
+          const image = new Image()
+
+          image.onload = () => {
+            URL.revokeObjectURL(address)
+            resolve(image)
+          }
+
+          image.onerror = () => {
+            URL.revokeObjectURL(address)
+            reject(new Error("invalid-image"))
+          }
+
+          image.src = address
+        })
+
+      const shrink = (image, maxDimension) =>
+        new Promise((resolve, reject) => {
+          const longest = Math.max(image.naturalWidth, image.naturalHeight)
+          const scale = Math.min(maxDimension / longest, 1)
+          const canvas = document.createElement("canvas")
+
+          canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+          canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+
+          const context = canvas.getContext("2d")
+
+          // JPEG has no transparency, which it would turn black.
+          context.fillStyle = "#ffffff"
+          context.fillRect(0, 0, canvas.width, canvas.height)
+          context.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+          canvas.toBlob(
+            blob => (blob ? resolve(blob) : reject(new Error("no-image"))),
+            "image/jpeg",
+            0.82
+          )
+        })
+
+      export default {
+        mounted() {
+          this.fileInput = this.el.querySelector("[data-description-picture-file]")
+
+          this.el.addEventListener("potok:pick-picture", event => {
+            this.target = event.detail.target
+            this.fileInput.click()
+          })
+
+          this.fileInput.addEventListener("change", async () => {
+            const file = this.fileInput.files?.[0]
+            this.fileInput.value = ""
+
+            if (!file) return
+
+            try {
+              const image = await loadImage(file)
+              const blob = await shrink(image, Number(this.el.dataset.maxDimension))
+              const name = `${file.name.replace(/\.[^.]*$/, "") || "picture"}.jpg`
+
+              this.upload("description_picture", [new File([blob], name, {type: "image/jpeg"})])
+            } catch (error) {
+              console.error("Unable to process the picked picture", error)
+              this.pushEvent("description_picture_invalid", {})
+            }
+          })
+
+          // The form with the field may be gone by now, and then so is the need.
+          this.handleEvent("description_picture_ready", ({url}) => {
+            const input = document.getElementById(this.target)
+            if (!input) return
+
+            input.value = url
+            input.dispatchEvent(new Event("input", {bubbles: true}))
+          })
+        },
+      }
+    </script>
     """
   end
 
