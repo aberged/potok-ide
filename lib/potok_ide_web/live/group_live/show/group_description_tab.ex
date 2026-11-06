@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
+  alias PotokIdeWeb.PostTemplates.Post
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
@@ -31,6 +32,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     assigns =
       assigns
       |> assign(:source, source)
+      |> assign(:column, description_column(source))
       |> assign(:empty_description_image_src, empty_description_image_src(assigns.group))
 
     ~H"""
@@ -119,6 +121,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         <div
           :if={!blank_description?(@source.description) and !@source.uses_api}
           id="group-panel-description"
+          class={@column}
         >
           <Components.formatted_content
             content={@source.description}
@@ -134,7 +137,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           reactions={@reactions}
           can_react={@can_react}
           click="toggle_group_reaction"
-          class="shrink-0 pt-4"
+          class={["shrink-0 pt-4", @column]}
         >
           <.icon_button
             :if={@can_react}
@@ -152,6 +155,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       <Components.reaction_picker :if={@can_react or (@current_profile && @source.uses_api)} />
     </div>
     """
+  end
+
+  # A template is made for the width it has in Feed, which is this column
+  # there, so it does not spread over a wide screen here. Anything else takes
+  # the whole panel, as an author may have written a wide table.
+  defp description_column(%{uses_api: true}), do: nil
+
+  defp description_column(source) do
+    if Post.decode(source.description) != :free, do: "mx-auto w-full max-w-2xl sm:px-5"
   end
 
   defp active?(%{id: id}, %{id: id}), do: true

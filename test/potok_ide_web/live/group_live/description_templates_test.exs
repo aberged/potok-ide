@@ -318,6 +318,55 @@ defmodule PotokIdeWeb.GroupLive.DescriptionTemplatesTest do
     end
   end
 
+  describe "on the group's page" do
+    defp page(ctx, group, query \\ "") do
+      {:ok, lv, _html} =
+        ctx.conn
+        |> log_in_account(Accounts.get_account!(ctx.account.id))
+        |> live("/groups/#{group.id}/group_home#{query}")
+
+      lv
+    end
+
+    test "a description from a template is as wide as in Feed, with its reactions", ctx do
+      description = Post.encode("quote", %{"quote" => "Reka"})
+      group = group!(ctx.owner, "tpl-wide", %{"description" => description})
+      lv = page(ctx, group)
+
+      assert has_element?(lv, "#group-panel-description.max-w-2xl blockquote")
+      assert has_element?(lv, "#group-reactions.max-w-2xl")
+    end
+
+    test "so is one changed by hand since", ctx do
+      description = Post.encode("quote", %{"quote" => "Reka"}) <> "<p>rukom</p>"
+      group = group!(ctx.owner, "tpl-wide-hand", %{"description" => description})
+
+      assert has_element?(page(ctx, group), "#group-panel-description.max-w-2xl")
+    end
+
+    test "so is an alternative description from a template", ctx do
+      {:ok, alt} =
+        Social.create_alt_description(ctx.owner, ctx.group, %{
+          "name" => "Citat",
+          "description" => Post.encode("quote", %{"quote" => "Reka"}),
+          "description_format" => :html
+        })
+
+      lv = page(ctx, ctx.group, "?d=#{alt.id}")
+
+      assert has_element?(lv, "#group-panel-description.max-w-2xl blockquote")
+    end
+
+    test "other text keeps the whole panel", ctx do
+      group = group!(ctx.owner, "tpl-plain", %{"description" => "Moj **tekst**"})
+      lv = page(ctx, group)
+
+      assert has_element?(lv, "#group-panel-description")
+      refute has_element?(lv, "#group-panel-description.max-w-2xl")
+      refute has_element?(lv, "#group-reactions.max-w-2xl")
+    end
+  end
+
   test "the create tab keeps its plain editor", ctx do
     {:ok, lv, _html} =
       ctx.conn

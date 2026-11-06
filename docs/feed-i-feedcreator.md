@@ -135,9 +135,10 @@ Opis objave mora sam da stoji, jer ga Feed prikazuje onakvog kakav stiže sa ser
 - `<meta name="description">` je tekst kartice deljenog linka: uvod vesti, vreme i mesto događaja, autor citata. Potok ga čita umesto prvih redova opisa, koji bi spojili nadnaslov, potpis uz sliku i tekst, a sanitizer ga briše iz onoga što gledalac dobija. Slobodan tekst ga nema, a objava sačuvana pre njega dobija ga kad se ponovo sačuva.
 - Pregled ide preko `previewDescription`, kroz isti sanitizer, pa autor vidi tačno ono što će Feed dobiti.
 
-Isti format čita i piše **Uredi grupu**, za glavni i za alternativne opise. Objava napravljena u FeedCreatoru tamo se otvara u svojoj formi, i obrnuto. Dve razlike:
+Isti format čita i piše **Uredi grupu**, za glavni i za alternativne opise. Objava napravljena u FeedCreatoru tamo se otvara u svojoj formi, i obrnuto. Tri razlike:
 
 - Naslov iz forme na stranici Uredi grupu ne menja ime grupe. Ime grupe se tamo menja posebno, a FeedCreator ga pri sledećem čuvanju opet uzme iz naslova.
+- Na strani grupe opis iz šablona stoji u koloni iste širine kao u Feed-u (`max-w-2xl`), a ostali opisi zauzimaju celu širinu. Promena širine u Feed-u traži istu promenu u `GroupDescriptionTab`.
 - Šabloni postoje na dva mesta: `src/templates.ts` u FeedCreatoru i `PotokIdeWeb.PostTemplates` u Potoku. Izmena u jednom traži izmenu u drugom, inače se ista polja različito pretvaraju u HTML. `test/support/fixtures/feed_creator_posts.ts` pravi od šablona FeedCreatora primere, a `post_test.exs` proverava da Potok od istih polja pravi isti HTML. Posle izmene šablona skripta se pokreće ponovo.
 
 Sanitizer određuje kako šablon sme da izgleda:
