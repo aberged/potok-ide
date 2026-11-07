@@ -161,6 +161,14 @@ defmodule PotokIdeWeb.Router do
     get "/:id/event.ics", EventIcsController, :show
   end
 
+  # The results of a poll as a file, like `/files`: logged-out visitors log in
+  # and come back, and the controller asks the poll's rules for this profile.
+  scope "/polls", PotokIdeWeb do
+    pipe_through [:files, :require_authenticated_account]
+
+    get "/:id/results.csv", PollExportController, :show
+  end
+
   scope "/", PotokIdeWeb do
     pipe_through [:browser, :public_preview, :require_authenticated_account]
 

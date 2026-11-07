@@ -372,6 +372,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:create_events), do: gettext("Add events")
   def permission_label(:manage_events), do: gettext("Manage events")
   def permission_label(:publish_events), do: gettext("Publish events")
+  def permission_label(:create_polls), do: dgettext("polls", "Start polls")
+  def permission_label(:vote_polls), do: dgettext("polls", "Vote")
+  def permission_label(:manage_polls), do: dgettext("polls", "Manage polls")
+  def permission_label(:publish_polls), do: dgettext("polls", "Open polls to non-members")
   def permission_label(:manage_tags), do: gettext("Manage tags")
   def permission_label(:edit_group), do: gettext("Edit group")
 
@@ -409,6 +413,26 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
   defp permission_description(:publish_events),
     do: gettext("Make events public, so every user sees them in their calendar.")
+
+  defp permission_description(:create_polls), do: dgettext("polls", "Start polls in this group.")
+
+  defp permission_description(:vote_polls) do
+    dgettext(
+      "polls",
+      "Vote where the poll's own rules allow it. Held by the Everyone role, it also lets signed-in visitors vote in a public poll."
+    )
+  end
+
+  defp permission_description(:manage_polls) do
+    dgettext(
+      "polls",
+      "End, change and delete polls started by others, and always see their results and details."
+    )
+  end
+
+  defp permission_description(:publish_polls) do
+    dgettext("polls", "Let signed-in visitors of a public group vote too.")
+  end
 
   defp permission_description(:manage_tags),
     do: gettext("Put public tags on messages, files, events and this group.")

@@ -20,6 +20,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   not an editor, so it asks only what the same reaction asks on the group's
   page. The price is that an app can add one in its viewer's name unasked, to a
   group below it, where the viewer sees it and can take it back.
+
+  A vote is not like that: it can be final. So the app only reads polls, and the
+  voting and the form open on the page itself, over the app (`open_poll`,
+  `open_poll_form`).
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
@@ -27,11 +31,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   import Phoenix.Component, only: [assign: 3]
   import Phoenix.LiveView, only: [push_event: 3, push_navigate: 2]
 
+  alias PotokIde.Polls
+  alias PotokIde.Polls.{Poll, Rules, View}
   alias PotokIde.Social
   alias PotokIde.Social.{Access, Group}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm, PollsState}
   alias PotokIdeWeb.PublicPreview
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
@@ -47,7 +53,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @signed_in_methods ~w(
     list_subgroups open_group get_group list_children get_child
     create_child update_child withdraw_child preview_description
-    toggle_group_reaction share_group
+    toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
   )
 
   # All an app may set on a group. Never `uses_api`: an app that made another
@@ -56,6 +62,38 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   def new_bucket do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
+  end
+
+  defp poll_status("closed"), do: :closed
+  defp poll_status("waiting"), do: :waiting
+  defp poll_status(_open), do: :open
+
+  defp poll_payload(%View{} = view) do
+    %{
+      id: view.poll_id,
+      question: view.question,
+      description: view.description,
+      kind: view.kind,
+      max_choices: view.max_choices,
+      closes_at: view.closes_at,
+      closed_at: view.closed_at,
+      open: view.open?,
+      secret: view.secret?,
+      public: view.public?,
+      can_vote: view.can_vote?,
+      voted: view.voted?,
+      can_see_results: view.results?,
+      can_see_details: view.details?,
+      can_manage: view.manage?,
+      voters_count: view.voters_count,
+      outcome: view.outcome,
+      winner_option_id: view.winner_option_id,
+      options:
+        Enum.map(
+          view.options,
+          &%{id: &1.id, text: &1.text, votes_count: &1.votes_count, mine: &1.mine?}
+        )
+    }
   end
 
   @doc "The id an app frame sends with its calls: \"\" for the default description."
@@ -236,6 +274,52 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
        push_event(socket, "app_share_link", %{url: shared_url(socket, target, in_app?)})}
     else
       _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  # What the rules show this viewer of the polls of this group, and no more.
+  defp run("list_polls", params, socket) do
+    %{group: group, access: access, current_profile: profile, current_scope: scope} =
+      socket.assigns
+
+    poll_scope = if access.member?, do: {:groups, [group.id]}, else: {:public_of, group.id}
+
+    page =
+      Polls.overview(profile, scope.account, poll_scope,
+        status: poll_status(params["status"]),
+        before_id: non_negative_integer(params["before_id"])
+      )
+
+    {%{ok: true, polls: Enum.map(page.rows, &poll_payload(&1.view)), has_more: page.more?},
+     socket}
+  end
+
+  defp run("get_poll", params, socket) do
+    %{current_profile: profile, current_scope: scope} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Poll{} = poll <- Polls.get_poll(id),
+         true <- poll.group_id == socket.assigns.group.id,
+         %{scope: :full} = view <- Polls.view_of(poll, profile, scope.account) do
+      {%{ok: true, poll: poll_payload(view)}, socket}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  defp run("open_poll", params, socket) do
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         {:ok, socket} <- PollsState.open_dialog(socket, id) do
+      {%{ok: true}, socket}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
+  end
+
+  defp run("open_poll_form", _params, socket) do
+    case PollForm.open_new(socket) do
+      %{assigns: %{poll_form: nil}} = socket -> {error("forbidden", nil), socket}
+      socket -> {%{ok: true}, socket}
     end
   end
 
@@ -495,7 +579,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       can_manage_children: manages_children?(access),
       can_create_children: manages_children?(access) and Access.can?(access, :create_subgroups),
       # Then any member can put a group here by hand, past the app.
-      everyone_creates_subgroups: Access.everyone_can?(access, :create_subgroups)
+      everyone_creates_subgroups: Access.everyone_can?(access, :create_subgroups),
+      can_start_polls: Rules.can_create?(access, group)
     }
   end
 

@@ -2,11 +2,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.Avatars
-  alias PotokIdeWeb.GroupLive.Show.{DescriptionTemplateForm, EventCard, MediaViewer}
+  alias PotokIdeWeb.Locale
+  alias PotokIdeWeb.GroupLive.Show.{DescriptionTemplateForm, EventCard, MediaViewer, PollCard}
   alias PotokIdeWeb.PostTemplates.Post
   alias PotokIdeWeb.TagComponents
 
   alias PotokIde.LinkPreviews
+  alias PotokIde.Polls.Poll
   alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
 
@@ -672,6 +674,31 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  @doc """
+  CSS that shows the numbers of polls, for the same reason as
+  `thread_unread_css/1`: a vote re-renders this rule set and no message. It holds
+  what the viewer may see and nothing else, and only integers, so it is marked
+  safe.
+  """
+  def poll_tally_css(poll_tallies) do
+    poll_tallies
+    |> Enum.map_join(fn {poll_id, %{voters: voters, options: options}} ->
+      ~s(.poll-voters-#{poll_id}::after{content:"#{voters}"}) <> poll_option_css(options, voters)
+    end)
+    |> Phoenix.HTML.raw()
+  end
+
+  defp poll_option_css(nil, _voters), do: ""
+
+  defp poll_option_css(options, voters) do
+    Enum.map_join(options, fn {option_id, count} ->
+      percent = if voters > 0, do: round(count * 100 / voters), else: 0
+
+      ~s(.poll-count-#{option_id}::after{content:"#{count} · #{percent}%"}) <>
+        ".poll-bar-#{option_id}{width:#{min(percent, 100)}%}"
+    end)
+  end
+
   attr :id, :string, required: true
   attr :data, :any, required: true
   attr :label, :string, default: "assigns"
@@ -1202,8 +1229,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     app_meta = ~s(<meta name="potok-app" content="#{escape_attr(app_id || "")}">)
 
+    # An app reads its language off the page, as nothing else tells it.
+    lang = Locale.html_lang(Gettext.get_locale(PotokIdeWeb.Gettext))
+
     """
-    <!doctype html><html><head><meta charset="utf-8">\
+    <!doctype html><html lang="#{escape_attr(lang)}"><head><meta charset="utf-8">\
     <meta name="viewport" content="width=device-width, initial-scale=1">#{viewer_meta}#{app_meta}\
     <base target="_blank"><link rel="stylesheet" href="#{css_url}">\
     <style>html,body{height:100%}</style>\
@@ -1481,6 +1511,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
       |> assign(:link_preview, value_link_preview(assigns.value))
       |> assign(:event, value_event(assigns.value))
+      |> assign(:poll?, match?(%Value{poll: %Poll{}}, assigns.value))
       |> assign_value_attachments(assigns.value)
 
     # A short text keeps the time on its last line; anything else ends with it.
@@ -1488,8 +1519,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       assign(
         assigns,
         :time_beside_text?,
-        assigns.has_text? and is_nil(assigns.event) and not assigns.expandable? and
-          is_nil(assigns.link_preview) and
+        assigns.has_text? and is_nil(assigns.event) and not assigns.poll? and
+          not assigns.expandable? and is_nil(assigns.link_preview) and
           assigns.media == [] and assigns.audios == [] and assigns.files == []
       )
 
@@ -1636,9 +1667,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             item_id={@value.id}
             data-value-action="tags"
           />
-          <%!-- An event's card is changed in the calendar. --%>
+          <%!-- An event's or a poll's card is changed where it lives. --%>
           <.icon_button
-            :if={@mine? and !@editing? and is_nil(@event)}
+            :if={@mine? and !@editing? and is_nil(@event) and !@poll?}
             id={"value-edit-#{@value.id}"}
             type="button"
             phx-click="start_edit_value"
@@ -1672,7 +1703,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             phx-click="delete_value"
             phx-value-id={@value.id}
             data-value-action="delete"
-            data-confirm={gettext("Are you sure you want to delete this message?")}
+            data-confirm={
+              if(@poll?,
+                do:
+                  dgettext("polls", "Delete this message? The poll goes with it, with all its votes."),
+                else: gettext("Are you sure you want to delete this message?")
+              )
+            }
             icon="hero-trash"
             label={gettext("Delete message")}
             variant="danger"
@@ -1721,9 +1758,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           {gettext("Event for members only")}
         </p>
         <EventCard.card :if={@event} value_id={@value.id} event={@event} mine={@mine?} />
+        <PollCard.card
+          :if={@poll?}
+          id={"value-poll-card-#{@value.id}"}
+          view={@value.poll_view}
+          mine={@mine?}
+          details_path={@value.poll_view && PollCard.details_path(@value.poll_view)}
+        />
         <%!-- Expansion is a client-side attribute toggle: no round trip and no re-render of the stream item. --%>
         <div
-          :if={@has_text? and is_nil(@event)}
+          :if={@has_text? and is_nil(@event) and !@poll?}
           class={["relative", @time_beside_text? && "flex flex-wrap items-end justify-end gap-x-2"]}
         >
           <div class={[

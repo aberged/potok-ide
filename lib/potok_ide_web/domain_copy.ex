@@ -279,6 +279,52 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Response", "occurs_on"), do: dgettext("domain_map", "occurrence date")
   defp own_field("Response", "status"), do: dgettext("domain_map", "answer")
 
+  defp own_field("Poll", "question"), do: dgettext("domain_map", "question")
+  defp own_field("Poll", "kind"), do: dgettext("domain_map", "one answer or several")
+  defp own_field("Poll", "max_choices"), do: dgettext("domain_map", "most answers on a ballot")
+  defp own_field("Poll", "allow_change"), do: dgettext("domain_map", "vote can change")
+  defp own_field("Poll", "secret"), do: dgettext("domain_map", "secret")
+
+  defp own_field("Poll", "allow_member_options") do
+    dgettext("domain_map", "members can add answers")
+  end
+
+  defp own_field("Poll", "closes_at"), do: dgettext("domain_map", "deadline")
+  defp own_field("Poll", "closed_at"), do: dgettext("domain_map", "ended at")
+
+  defp own_field("Poll", "reminder_minutes"),
+    do: dgettext("domain_map", "reminder before the end")
+
+  defp own_field("Poll", "remind_at"), do: dgettext("domain_map", "reminder is due at")
+  defp own_field("Poll", "last_nudged_at"), do: dgettext("domain_map", "last reminder by hand")
+  defp own_field("Poll", "voter_role_keys"), do: dgettext("domain_map", "roles that vote")
+
+  defp own_field("Poll", "results_role_keys"),
+    do: dgettext("domain_map", "roles that see results")
+
+  defp own_field("Poll", "details_role_keys"),
+    do: dgettext("domain_map", "roles that see details")
+
+  defp own_field("Poll", "results_when"), do: dgettext("domain_map", "results show from")
+  defp own_field("Poll", "details_when"), do: dgettext("domain_map", "details show from")
+  defp own_field("Poll", "quorum_percent"), do: dgettext("domain_map", "quorum")
+  defp own_field("Poll", "majority"), do: dgettext("domain_map", "majority asked for")
+  defp own_field("Poll", "eligible_count"), do: dgettext("domain_map", "how many could vote")
+  defp own_field("Poll", "outcome"), do: dgettext("domain_map", "decision")
+  defp own_field("Poll", "voters_count"), do: dgettext("domain_map", "how many voted")
+  defp own_field("Poll", "winner_option_id"), do: dgettext("domain_map", "winning answer")
+  defp own_field("Poll", "value_id"), do: dgettext("domain_map", "carrying value")
+  defp own_field("Poll", "closes_local"), do: dgettext("domain_map", "deadline in local time")
+
+  defp own_field("Value", "poll_view"),
+    do: dgettext("domain_map", "what the viewer sees of its poll")
+
+  defp own_field("PollOption", "text"), do: dgettext("domain_map", "text")
+  defp own_field("PollOption", "votes_count"), do: dgettext("domain_map", "votes")
+
+  defp own_field("PollBallot", "option_ids"), do: dgettext("domain_map", "chosen answers")
+  defp own_field("PollBallot", "changed_at"), do: dgettext("domain_map", "vote changed at")
+
   defp own_field("MemberSetting", "reminder_minutes"), do: dgettext("domain_map", "own reminders")
 
   defp own_field("Tag", "owner_id"), do: dgettext("domain_map", "owner")
@@ -296,6 +342,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp common_field("profile_id"), do: dgettext("domain_map", "profile")
   defp common_field("group_id"), do: dgettext("domain_map", "group")
   defp common_field("event_id"), do: dgettext("domain_map", "event")
+  defp common_field("poll_id"), do: dgettext("domain_map", "poll")
   defp common_field("value_id"), do: dgettext("domain_map", "value")
   defp common_field("creator_id"), do: dgettext("domain_map", "creator")
   defp common_field("inviter_id"), do: dgettext("domain_map", "who invited")
@@ -347,6 +394,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def domain_name("group"), do: dgettext("domain_map", "Group and roles")
   def domain_name("content"), do: dgettext("domain_map", "Content")
   def domain_name("calendar"), do: dgettext("domain_map", "Calendar")
+  def domain_name("polls"), do: dgettext("domain_map", "Polls")
   def domain_name("tags"), do: dgettext("domain_map", "Tags")
   def domain_name("joining"), do: dgettext("domain_map", "Joining a group")
 
@@ -371,6 +419,9 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
+  def entity_name("Poll"), do: dgettext("domain_map", "Poll")
+  def entity_name("PollOption"), do: dgettext("domain_map", "Answer")
+  def entity_name("PollBallot"), do: dgettext("domain_map", "Ballot")
   def entity_name("Tag"), do: dgettext("domain_map", "Tag")
   def entity_name("Tagging"), do: dgettext("domain_map", "Tagging")
   def entity_name("GroupInvitation"), do: dgettext("domain_map", "Group invitation")
@@ -524,6 +575,27 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  defp entity_description("Poll", _edges) do
+    dgettext(
+      "domain_map",
+      "A question put to a vote in a group, with the rules of who votes, who sees the results and who sees the details. A value can carry a poll, and the two go together. When it ends it writes down how many could vote and what was decided, so that a later change of members leaves that as it was."
+    )
+  end
+
+  defp entity_description("PollOption", _edges) do
+    dgettext(
+      "domain_map",
+      "An answer of a poll, with its count of votes. In a secret poll that count is the only record of the votes. It has no timestamps, as the time of the last change would show what the last voter chose."
+    )
+  end
+
+  defp entity_description("PollBallot", _edges) do
+    dgettext(
+      "domain_map",
+      "That a profile voted, and for what. In a secret poll it holds no answers, so nothing ties a voter to one. Both profile and account stay empty when their rows are deleted, so a vote that was given stays counted."
+    )
+  end
+
   defp entity_description("MemberSetting", _edges) do
     dgettext(
       "domain_map",
@@ -616,6 +688,27 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("group_events_recurrence_interval_check") do
     dgettext("domain_map", "The repeat interval is from 1 to 99.")
+  end
+
+  def check_text("polls_max_choices_check"), do: dgettext("domain_map", "At least one answer.")
+
+  def check_text("polls_quorum_percent_check") do
+    dgettext("domain_map", "A quorum is between 1 and 100 percent.")
+  end
+
+  def check_text("polls_voters_count_check") do
+    dgettext("domain_map", "The number of voters is never negative.")
+  end
+
+  def check_text("polls_secret_check") do
+    dgettext(
+      "domain_map",
+      "A secret poll takes no change of a vote and no answers from members, and shows results only at the end."
+    )
+  end
+
+  def check_text("poll_options_votes_count_check") do
+    dgettext("domain_map", "The number of votes is never negative.")
   end
 
   def check_text("value_attachments_byte_size_check") do
@@ -879,6 +972,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-chart-bar",
+          title: dgettext("domain_map", "Shows the group's polls"),
+          text:
+            dgettext(
+              "domain_map",
+              "It reads the <Poll>polls</Poll> of its group as far as their rules show them to the viewer, hears when one changes, and opens Potok's own form and voting over itself."
+            )
+        },
+        %{
           icon: "hero-share",
           title: dgettext("domain_map", "Speaks for itself"),
           text:
@@ -910,6 +1012,10 @@ defmodule PotokIdeWeb.DomainCopy do
         dgettext(
           "domain_map",
           "A reaction is the exception: an app adds it for any viewer who may react, only to a group below it, and the viewer can take it back."
+        ),
+        dgettext(
+          "domain_map",
+          "It does not vote and does not change a poll: a vote can be final, so that takes place on Potok's own page."
         ),
         dgettext(
           "domain_map",
@@ -952,6 +1058,14 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
+        title: dgettext("domain_map", "A poll carries its own rules"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline. One account gives one vote, whichever of its profiles it uses, and a profile several accounts share votes on its own. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
+          )
+      },
+      %{
         title: dgettext("domain_map", "A public group can open its chat"),
         text:
           dgettext(
@@ -972,7 +1086,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it."
+            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls keeps a copy of its app the same way."
           )
       },
       %{

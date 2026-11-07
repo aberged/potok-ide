@@ -114,6 +114,15 @@ msgstr ""
 msgid "must not be before the start"
 msgstr ""
 
+msgid "must be in the future"
+msgstr ""
+
+msgid "has the same answer twice"
+msgstr ""
+
+msgid "pick who votes"
+msgstr ""
+
 msgid "does not match the start date"
 msgstr ""
 

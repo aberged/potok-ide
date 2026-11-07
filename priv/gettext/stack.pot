@@ -196,11 +196,6 @@ msgstr ""
 msgid "Memory is cleaned per process"
 msgstr ""
 
-#: lib/potok_ide_web/stack_copy.ex:79
-#, elixir-autogen, elixir-format
-msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
-msgstr ""
-
 #: lib/potok_ide_web/stack_copy.ex:249
 #, elixir-autogen, elixir-format
 msgid "Only what is used"
@@ -394,4 +389,9 @@ msgstr ""
 #: lib/potok_ide_web/stack_copy.ex:303
 #, elixir-autogen, elixir-format
 msgid "daisyUI is a plugin for Tailwind. It gives the common parts of an interface as named classes and adds no JavaScript."
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:79
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
 msgstr ""

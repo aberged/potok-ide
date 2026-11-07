@@ -89,7 +89,8 @@ export const ValueSheet = {
     const text = this.messageText()
 
     this.title.textContent = value.dataset.author
-    this.time.textContent = value.querySelector("time")?.title || ""
+    // The value's own time: a card in it can hold others, like a poll's deadline.
+    this.time.textContent = value.querySelector("time[id^=value-inserted-at-]")?.title || ""
     this.text.textContent = text
     this.text.hidden = text === ""
     this.copy.hidden = text === ""

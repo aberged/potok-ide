@@ -1,0 +1,928 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: en\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: lib/potok_ide/polls/notifications.ex:26
+#, elixir-autogen, elixir-format
+msgid "%{name} started a poll in %{group}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:536
+#, elixir-autogen, elixir-format
+msgid "%{voted} of %{members} voted"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:542
+#, elixir-autogen, elixir-format
+msgid "%{voted} of %{members}: %{summary}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:483
+#, elixir-autogen, elixir-format
+msgid "1 day"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:482
+#, elixir-autogen, elixir-format
+msgid "1 hour"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:484
+#, elixir-autogen, elixir-format
+msgid "3 days"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:485
+#, elixir-autogen, elixir-format
+msgid "7 days"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:491
+#, elixir-autogen, elixir-format
+msgid "A day before the end"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:467
+#, elixir-autogen, elixir-format
+msgid "A poll needs at least two answers."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
+#, elixir-autogen, elixir-format
+msgid "A reminder went out less than an hour ago."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
+#, elixir-autogen, elixir-format
+msgid "A secret poll cannot be opened again."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:252
+#, elixir-autogen, elixir-format
+msgid "A vote cannot be changed."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:205
+#, elixir-autogen, elixir-format
+msgid "Abstain"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:411
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:412
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:409
+#, elixir-autogen, elixir-format
+msgid "Add answer"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:594
+#, elixir-autogen, elixir-format
+msgid "After voting, and everyone at the end"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:205
+#, elixir-autogen, elixir-format
+msgid "Against"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:239
+#, elixir-autogen, elixir-format
+msgid "All polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:490
+#, elixir-autogen, elixir-format
+msgid "An hour before the end"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:470
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:455
+#, elixir-autogen, elixir-format
+msgid "Another profile of yours has already voted."
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:25
+#, elixir-autogen, elixir-format
+msgid "Answer"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:375
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:376
+#, elixir-autogen, elixir-format
+msgid "Answer %{number}"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:46
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:202
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:227
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:339
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:368
+#, elixir-autogen, elixir-format
+msgid "Answers"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:566
+#, elixir-autogen, elixir-format
+msgid "Anyone signed in can vote and the poll shows among public polls, so its result is a mood, not a count of people."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:492
+#, elixir-autogen, elixir-format
+msgid "Anyone signed in can vote, so this shows a mood, not a count of people."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:531
+#, elixir-autogen, elixir-format
+msgid "At most (optional)"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:413
+#, elixir-autogen, elixir-format
+msgid "By role"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:307
+#, elixir-autogen, elixir-format
+msgid "Cancel"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:265
+#, elixir-autogen, elixir-format
+msgid "Cast vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:337
+#, elixir-autogen, elixir-format
+msgid "Change deadline"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:245
+#, elixir-autogen, elixir-format
+msgid "Change poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:447
+#, elixir-autogen, elixir-format
+msgid "Change vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:136
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:254
+#, elixir-autogen, elixir-format
+msgid "Close"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:147
+#, elixir-autogen, elixir-format
+msgid "Could not save the poll."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:586
+#, elixir-autogen, elixir-format
+msgid "Counts without names. The organizer always sees them."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:569
+#, elixir-autogen, elixir-format
+msgid "Course of the voting"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:442
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:467
+#, elixir-autogen, elixir-format
+msgid "Deadline"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:374
+#, elixir-autogen, elixir-format
+msgid "Decided"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:373
+#, elixir-autogen, elixir-format
+msgid "Decided: %{answer}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:621
+#, elixir-autogen, elixir-format
+msgid "Decision"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:374
+#, elixir-autogen, elixir-format
+msgid "Delete"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/components.ex:1709
+#, elixir-autogen, elixir-format
+msgid "Delete this message? The poll goes with it, with all its votes."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:369
+#, elixir-autogen, elixir-format
+msgid "Delete this poll with all its votes and its message?"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:72
+#, elixir-autogen, elixir-format
+msgid "Deleted profile"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:519
+#, elixir-autogen, elixir-format
+msgid "Details"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:338
+#, elixir-autogen, elixir-format
+msgid "Edit"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:351
+#, elixir-autogen, elixir-format
+msgid "End the poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:347
+#, elixir-autogen, elixir-format
+msgid "End this poll now?"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:427
+#, elixir-autogen, elixir-format
+msgid "End, change and delete polls started by others, and always see their results and details."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:503
+#, elixir-autogen, elixir-format
+msgid "Every member can see who voted for what."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:138
+#, elixir-autogen, elixir-format
+msgid "Finished"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:205
+#, elixir-autogen, elixir-format
+msgid "For"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:427
+#, elixir-autogen, elixir-format
+msgid "For / Against / Abstain"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:164
+#, elixir-autogen, elixir-format
+msgid "From all your groups"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:595
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:612
+#, elixir-autogen, elixir-format
+msgid "From the start"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:592
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:610
+#, elixir-autogen, elixir-format
+msgid "From when"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:441
+#, elixir-autogen, elixir-format
+msgid "Have not voted"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:519
+#, elixir-autogen, elixir-format
+msgid "How many answers can one vote hold"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:215
+#, elixir-autogen, elixir-format
+msgid "In progress"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:94
+#, elixir-autogen, elixir-format
+msgid "Include sub-groups"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:434
+#, elixir-autogen, elixir-format
+msgid "Let signed-in visitors of a public group vote too."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:120
+#, elixir-autogen, elixir-format
+msgid "Load earlier polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:377
+#, elixir-autogen, elixir-format
+msgid "Manage polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:556
+#, elixir-autogen, elixir-format
+msgid "Members can add answers"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:89
+#, elixir-autogen, elixir-format
+msgid "Members of the group vote here."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:362
+#, elixir-autogen, elixir-format
+msgid "More about it (optional)"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:508
+#, elixir-autogen, elixir-format
+msgid "More settings"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:625
+#, elixir-autogen, elixir-format
+msgid "More than half of the votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:627
+#, elixir-autogen, elixir-format
+msgid "More than half of those who may vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:80
+#, elixir-autogen, elixir-format
+msgid "My groups"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show.ex:379
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
+#, elixir-autogen, elixir-format
+msgid "My polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:497
+#, elixir-autogen, elixir-format
+msgid "Neither the group's admins nor the app can see who voted for what."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:244
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:44
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:366
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:370
+#, elixir-autogen, elixir-format
+msgid "New poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:202
+#, elixir-autogen, elixir-format
+msgid "No"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:461
+#, elixir-autogen, elixir-format
+msgid "No deadline"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:161
+#, elixir-autogen, elixir-format
+msgid "No finished polls."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:160
+#, elixir-autogen, elixir-format
+msgid "No poll is waiting for you."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:162
+#, elixir-autogen, elixir-format
+msgid "No polls in progress."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:378
+#, elixir-autogen, elixir-format
+msgid "No quorum"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:489
+#, elixir-autogen, elixir-format
+msgid "No reminder"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:397
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:445
+#, elixir-autogen, elixir-format
+msgid "Nobody"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:478
+#, elixir-autogen, elixir-format
+msgid "Nobody can vote any more."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:408
+#, elixir-autogen, elixir-format
+msgid "Nobody yet"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:430
+#, elixir-autogen, elixir-format
+msgid "Non-members"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:623
+#, elixir-autogen, elixir-format
+msgid "None, just the results"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:377
+#, elixir-autogen, elixir-format
+msgid "Not decided"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:540
+#, elixir-autogen, elixir-format
+msgid "Nothing keeps who voted for what, so not even the group's admins can see it. A vote cannot be changed, the counts show only at the end, and a finished poll cannot be opened again."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:521
+#, elixir-autogen, elixir-format
+msgid "One"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:596
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:613
+#, elixir-autogen, elixir-format
+msgid "Only at the end"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:481
+#, elixir-autogen, elixir-format
+msgid "Only these vote: %{roles}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:136
+#, elixir-autogen, elixir-format
+msgid "Open"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:362
+#, elixir-autogen, elixir-format
+msgid "Open again"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:247
+#, elixir-autogen, elixir-format
+msgid "Open in %{group}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:378
+#, elixir-autogen, elixir-format
+msgid "Open polls to non-members"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:27
+#, elixir-autogen, elixir-format
+msgid "Percent"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:330
+#, elixir-autogen, elixir-format
+msgid "Pick an answer first."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:83
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:193
+#, elixir-autogen, elixir-format
+msgid "Poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show.ex:380
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:176
+#: lib/potok_ide_web/live/group_live/show/group_menu.ex:51
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
+#, elixir-autogen, elixir-format
+msgid "Polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:290
+#, elixir-autogen, elixir-format
+msgid "Post it in the chat"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:45
+#, elixir-autogen, elixir-format
+msgid "Profile"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:192
+#, elixir-autogen, elixir-format
+msgid "Public poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:87
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:165
+#, elixir-autogen, elixir-format
+msgid "Public polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:563
+#, elixir-autogen, elixir-format
+msgid "Public: non-members can vote too"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:352
+#, elixir-autogen, elixir-format
+msgid "Question"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:636
+#, elixir-autogen, elixir-format
+msgid "Quorum: percent of those who may vote (optional)"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:457
+#, elixir-autogen, elixir-format
+msgid "Remind them"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:475
+#, elixir-autogen, elixir-format
+msgid "Remind those who have not voted"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:388
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:389
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:287
+#, elixir-autogen, elixir-format
+msgid "Remove answer"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:303
+#, elixir-autogen, elixir-format
+msgid "Results"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:314
+#, elixir-autogen, elixir-format
+msgid "Results (CSV)"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:45
+#, elixir-autogen, elixir-format
+msgid "Roles"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:318
+#, elixir-autogen, elixir-format
+msgid "Save"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:313
+#, elixir-autogen, elixir-format
+msgid "Saving..."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:191
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:537
+#, elixir-autogen, elixir-format
+msgid "Secret poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:522
+#, elixir-autogen, elixir-format
+msgid "Several"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:519
+#, elixir-autogen, elixir-format
+msgid "Show all (%{count})"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:56
+#, elixir-autogen, elixir-format
+msgid "Show polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:375
+#, elixir-autogen, elixir-format
+msgid "Start polls"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:417
+#, elixir-autogen, elixir-format
+msgid "Start polls in this group."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:317
+#, elixir-autogen, elixir-format
+msgid "Start the poll"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:466
+#, elixir-autogen, elixir-format
+msgid "That answer has votes."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:465
+#, elixir-autogen, elixir-format
+msgid "That answer is already there."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:457
+#, elixir-autogen, elixir-format
+msgid "That is not a valid choice."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:624
+#, elixir-autogen, elixir-format
+msgid "The most votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:506
+#, elixir-autogen, elixir-format
+msgid "The organizer and those who manage polls can see who voted for what."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:509
+#, elixir-autogen, elixir-format
+msgid "The organizer, those who manage polls and these roles can see who voted for what: %{roles}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:355
+#, elixir-autogen, elixir-format
+msgid "The poll has ended."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:142
+#, elixir-autogen, elixir-format
+msgid "The poll has started."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:143
+#, elixir-autogen, elixir-format
+msgid "The poll is changed."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:375
+#, elixir-autogen, elixir-format
+msgid "The poll is deleted."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:364
+#, elixir-autogen, elixir-format
+msgid "The poll is open again."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:387
+#, elixir-autogen, elixir-format
+msgid "The reminder is on its way."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:145
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:451
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:470
+#, elixir-autogen, elixir-format
+msgid "This poll has ended."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:379
+#, elixir-autogen, elixir-format
+msgid "Tied"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:470
+#, elixir-autogen, elixir-format
+msgid "Times are in %{zone}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:460
+#, elixir-autogen, elixir-format
+msgid "Too many votes at once. Try in a minute."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:481
+#, elixir-autogen, elixir-format
+msgid "Turnout"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:645
+#, elixir-autogen, elixir-format
+msgid "Turnout and who took part. The organizer always sees them."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:626
+#, elixir-autogen, elixir-format
+msgid "Two thirds of the votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:437
+#, elixir-autogen, elixir-format
+msgid "Until"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:249
+#, elixir-autogen, elixir-format
+msgid "Up to %{count} answers."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:376
+#, elixir-autogen, elixir-format
+msgid "Vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/roles_tab.ex:420
+#, elixir-autogen, elixir-format
+msgid "Vote where the poll's own rules allow it. Held by the Everyone role, it also lets signed-in visitors vote in a public poll."
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:47
+#, elixir-autogen, elixir-format
+msgid "Voted at (UTC)"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:433
+#, elixir-autogen, elixir-format
+msgid "Voted:"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:324
+#, elixir-autogen, elixir-format
+msgid "Voters (CSV)"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:550
+#, elixir-autogen, elixir-format
+msgid "Voters can change their vote"
+msgstr ""
+
+#: lib/potok_ide/polls/export.ex:26
+#, elixir-autogen, elixir-format
+msgid "Votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:269
+#, elixir-autogen, elixir-format
+msgid "Votes are in, so only the deadline can change. Voters saw the rest."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:190
+#, elixir-autogen, elixir-format
+msgid "Voting ended"
+msgstr ""
+
+#: lib/potok_ide/polls/notifications.ex:53
+#, elixir-autogen, elixir-format
+msgid "Voting ended: %{question}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:137
+#, elixir-autogen, elixir-format
+msgid "Waiting for my vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:214
+#, elixir-autogen, elixir-format
+msgid "Waiting for your vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:604
+#, elixir-autogen, elixir-format
+msgid "Who sees the details"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:585
+#, elixir-autogen, elixir-format
+msgid "Who sees the results"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:404
+#, elixir-autogen, elixir-format
+msgid "Who took part"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:390
+#, elixir-autogen, elixir-format
+msgid "Who voted for what"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:649
+#, elixir-autogen, elixir-format
+msgid "Who voted for what, with statistics. The organizer always sees them."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:578
+#, elixir-autogen, elixir-format
+msgid "Who votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:202
+#, elixir-autogen, elixir-format
+msgid "Yes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:418
+#, elixir-autogen, elixir-format
+msgid "Yes / No"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:488
+#, elixir-autogen, elixir-format
+msgid "You cannot vote in this group."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:452
+#, elixir-autogen, elixir-format
+msgid "You have already voted."
+msgstr ""
+
+#: lib/potok_ide/polls/notifications.ex:42
+#, elixir-autogen, elixir-format
+msgid "You have not voted yet · %{group}"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_form.ex:146
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:468
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:476
+#, elixir-autogen, elixir-format
+msgid "You may not do that."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:463
+#, elixir-autogen, elixir-format
+msgid "You may not vote here."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:213
+#, elixir-autogen, elixir-format
+msgid "You voted"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:398
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:399
+#, elixir-autogen, elixir-format
+msgid "Your answer"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:485
+#, elixir-autogen, elixir-format
+msgid "Your roles do not allow voting."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:473
+#, elixir-autogen, elixir-format
+msgid "Your vote is recorded."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:462
+#, elixir-autogen, elixir-format
+msgid "Your vote was not recorded. Try again."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:485
+#, elixir-autogen, elixir-format
+msgid "of %{count} who may vote"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:179
+#, elixir-autogen, elixir-format
+msgid "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:177
+#, elixir-autogen, elixir-format
+msgid "Votes and decisions, in one place."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:212
+#, elixir-autogen, elixir-format
+msgid "Ended"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/poll_card.ex:520
+#, elixir-autogen, elixir-format
+msgid "View"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:275
+#, elixir-autogen, elixir-format
+msgid "Answers without votes"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/polls_tab.ex:285
+#, elixir-autogen, elixir-format
+msgid "Remove this answer?"
+msgstr ""

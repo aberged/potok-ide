@@ -18,6 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ValueAttachment
   }
 
+  alias PotokIde.Polls
   alias PotokIde.Storage
   alias PotokIde.Tags
 
@@ -33,6 +34,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     InviteProfileTab,
     MediaViewer,
     MembersTab,
+    PollCard,
+    PollForm,
+    PollsState,
+    PollsTab,
     RolesTab,
     SubGroupsTab,
     SubGroupTree,
@@ -106,6 +111,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <%!-- Unread counts on the chat's thread links work the same way. --%>
       <style id="group-thread-unread-style">
         <%= Components.thread_unread_css(@thread_unread_counts) %>
+      </style>
+      <%!-- So do the numbers of polls: a vote changes these rules and no message. --%>
+      <style id="group-poll-tally-style">
+        <%= Components.poll_tally_css(@poll_tallies) %>
       </style>
 
       <%!-- The back link, the name and the menu share a row; on narrower screens the sections
@@ -271,7 +280,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 @group,
                 @is_member,
                 @active_tab,
-                @calendar_tab?,
+                %{calendar?: @calendar_tab?, polls?: @polls_section?},
                 {@current_group_unread_count, @sub_groups_unread_count, @pending_join_requests_count}
               )
             }
@@ -358,6 +367,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 active_tab={@active_tab}
                 label={gettext("My calendar")}
                 icon="hero-calendar-days"
+              />
+              <%!-- Sections come with a group's first poll; this leads to starting one. --%>
+              <Components.group_tab_button
+                :if={@is_member and !@group.is_direct}
+                id="group-tab-polls"
+                tab="polls"
+                active_tab={@active_tab}
+                label={
+                  if(@group.is_root,
+                    do: dgettext("polls", "My polls"),
+                    else: dgettext("polls", "Polls")
+                  )
+                }
+                icon="hero-chart-bar"
               />
               <Components.group_tab_button
                 :if={@group.is_root}
@@ -488,6 +511,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
             announce={@calendar_announce?}
             notify={@calendar_notify?}
           />
+          <PollsTab.panel
+            :if={@active_tab == "polls"}
+            group={@group}
+            access={@access}
+            status={@polls_status}
+            rows={@streams.polls}
+            empty={@polls_empty?}
+            more={@polls_more?}
+            detail={@polls_detail}
+            include_subgroups={@polls_include_subgroups?}
+            show_groups={@polls_show_groups?}
+            show_public={@polls_show_public?}
+          />
           <GroupDescriptionTab.panel
             :if={
               @active_tab == "group_home" or
@@ -559,6 +595,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <MediaViewer.viewer />
       <TagComponents.tag_editor editor={@tag_editor} />
       <CreateMenu.menu menu={@group_create_menu} />
+      <PollForm.dialog state={@poll_form} />
+      <PollCard.dialog view={@poll_dialog} />
     </Layouts.app>
     """
   end
@@ -675,6 +713,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> TagEditor.init()
          |> CreateMenu.init()
          |> CalendarState.init(params)
+         |> PollForm.init()
+         |> PollsState.init(params)
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
 
@@ -713,10 +753,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> maybe_reload_edit_group_form(active_tab)
          |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
+         |> PollsState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
 
       active_tab == "calendar" and CalendarState.params_changed?(socket, params) ->
         {:noreply, CalendarState.handle_params(socket, params)}
+
+      active_tab == "polls" and PollsState.params_changed?(socket, params) ->
+        {:noreply, PollsState.handle_params(socket, params)}
 
       sub_groups_view != socket.assigns.sub_groups_view ->
         {:noreply,
@@ -739,6 +783,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @impl true
   def handle_event("calendar_" <> _ = event, params, socket),
     do: CalendarState.handle_event(event, params, socket)
+
+  def handle_event("poll_form_" <> _ = event, params, socket),
+    do: PollForm.handle_event(event, params, socket)
+
+  def handle_event("poll" <> _ = event, params, socket),
+    do: PollsState.handle_event(event, params, socket)
 
   def handle_event("tag_editor_" <> _ = event, params, socket),
     do: TagEditor.handle_event(event, params, socket)
@@ -1514,7 +1564,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
          {group_id, ""} <- Integer.parse(to_string(id)),
          %Group{} = group <- Social.get_visible_group(profile, group_id) do
       access = Social.get_group_access(profile, group)
-      sections = GroupMenu.sections(group, access.member?, calendar_tab?(group, access))
+
+      sections =
+        GroupMenu.sections(group, access.member?, %{
+          calendar?: calendar_tab?(group, access),
+          polls?: polls_section?(group, access)
+        })
+
       menu = %{group: group, access: access, sections: sections}
 
       {:noreply, assign(socket, :group_row_menu, menu)}
@@ -2072,6 +2128,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:calendar, message}, socket), do: CalendarState.handle_info(message, socket)
 
+  def handle_info({:polls, message}, socket) do
+    {:noreply, socket} = PollsState.handle_info(message, socket)
+    {:noreply, refresh_polls_section(socket, message)}
+  end
+
   # From the tag editor, or a public tag changed by another member.
   def handle_info({:tags_changed, kind, item_id}, socket) do
     {:noreply,
@@ -2209,6 +2270,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:group, group)
       |> assign(:active_tab, active_tab)
       |> assign(:calendar_tab?, calendar_tab?(group, socket.assigns.access))
+      |> assign(:polls_section?, polls_section?(group, socket.assigns.access))
       |> assign(:sub_groups_kind, sub_groups_kind)
 
     # The first, disconnected render shows only the header. The panel and
@@ -2237,6 +2299,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_values(group, active_tab)
     |> maybe_load_files(group, active_tab)
     |> CalendarState.maybe_load(group, active_tab)
+    |> PollsState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
@@ -2636,6 +2699,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp apply_value_created(socket, %Value{is_data: true}), do: socket
 
   defp apply_value_created(socket, %Value{} = value) do
+    {socket, value} = PollsState.with_views(socket, value)
+
     socket
     |> insert_created_value(value)
     |> maybe_reload_files(value)
@@ -2690,8 +2755,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
         _ -> socket
       end
 
-    # Broadcasts carry the value without tags, which depend on the viewer.
+    # Broadcasts carry the value without tags or a poll's view, which depend on
+    # the viewer.
     if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
+      {socket, value} = PollsState.with_views(socket, value)
+
       stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
     else
       socket
@@ -2832,7 +2900,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp data_value_visible?(assigns, %Value{alt_description_id: id}),
     do: Enum.any?(assigns.visible_alt_descriptions, &(&1.id == id))
 
-  defp description_visible?(%{active_tab: active_tab, group: group, access: access}) do
+  @doc false
+  def description_visible?(%{active_tab: active_tab, group: group, access: access}) do
     active_tab == "group_home" or
       (active_tab == "values" and group.parent_id != nil and
          not Access.can_read_chat?(access, group))
@@ -3095,12 +3164,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> stream_delete_by_dom_id(:values, "value-#{value_id}")
   end
 
+  @doc false
   # Re-reads the row so a stale struct never overwrites newer content.
-  defp restream_value(socket, nil), do: socket
+  def restream_value(socket, nil), do: socket
 
-  defp restream_value(socket, %Value{id: value_id}) do
+  def restream_value(socket, %Value{id: value_id}) do
     with true <- MapSet.member?(socket.assigns.loaded_value_ids, value_id),
          %Value{} = value <- Social.get_value_for_display(value_id) do
+      {socket, value} = PollsState.with_views(socket, value)
+
       stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
     else
       _ -> socket
@@ -3692,6 +3764,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         )
 
       older_values = Tags.put_tags(older_values, socket.assigns.current_profile, :value)
+      {socket, older_values} = PollsState.with_views(socket, older_values)
 
       socket
       |> update(:loaded_value_ids, fn ids -> Enum.into(older_values, ids, & &1.id) end)
@@ -3715,6 +3788,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         )
 
       newer_values = Tags.put_tags(newer_values, socket.assigns.current_profile, :value)
+      {socket, newer_values} = PollsState.with_views(socket, newer_values)
 
       socket
       |> update(:loaded_value_ids, fn ids -> Enum.into(newer_values, ids, & &1.id) end)
@@ -3977,6 +4051,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # Replaces the feed with `values`, a contiguous run oldest first.
   defp put_values(socket, values, has_more?, has_newer?) do
     values = Tags.put_tags(values, socket.assigns.current_profile, :value)
+    {socket, values} = PollsState.with_views(socket, values)
 
     socket
     |> assign(:loaded_value_ids, MapSet.new(values, & &1.id))
@@ -4460,6 +4535,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if calendar_tab?(group, access), do: "calendar", else: default_active_tab(group)
   end
 
+  defp normalize_active_tab("polls", group, %Access{} = access) do
+    if polls_tab?(group, access), do: "polls", else: default_active_tab(group)
+  end
+
   defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})
        when not is_nil(parent_id),
        do: "files"
@@ -4480,6 +4559,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp calendar_tab?(_group, _access), do: false
 
+  # Members have the overview, in the root of all their groups; those who are not
+  # see the public polls of a public group in it, when it has some. Direct
+  # conversations have no roles to give a poll its rules.
+  defp polls_tab?(%Group{is_direct: true}, _access), do: false
+  defp polls_tab?(_group, %Access{member?: true}), do: true
+  defp polls_tab?(%Group{} = group, _access), do: Polls.public_polls?(group)
+
+  # A sixth section does not fit every phone, so a group has it once it has a
+  # poll. Until then the group's menu leads there. The root has no bar.
+  defp polls_section?(%Group{is_root: true}, _access), do: false
+  defp polls_section?(%Group{is_direct: true}, _access), do: false
+  defp polls_section?(group, %Access{member?: true}), do: Polls.any?(group)
+  defp polls_section?(group, _access), do: Polls.public_polls?(group)
+
+  defp refresh_polls_section(socket, {kind, _poll_id}) when kind in [:changed, :deleted] do
+    assign(socket, :polls_section?, polls_section?(socket.assigns.group, socket.assigns.access))
+  end
+
+  defp refresh_polls_section(socket, _message), do: socket
+
   defp tab_permission("create_group"), do: :create_subgroups
   defp tab_permission("invite_profile"), do: :invite_members
   defp tab_permission("edit_group"), do: :edit_group
@@ -4494,7 +4593,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ]
   end
 
-  defp header_tabs(group, member?, active_tab, calendar?, {unread, sub_groups_unread, requests}) do
+  defp header_tabs(group, member?, active_tab, flags, {unread, sub_groups_unread, requests}) do
     badges = %{
       "values" => %{badge: unread, badge_id: "group-values-unread-badge"},
       "sub_groups" => %{badge: sub_groups_unread, badge_id: "group-sub-groups-unread-badge"},
@@ -4506,7 +4605,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     }
 
     group
-    |> GroupMenu.sections(member?, calendar?)
+    |> GroupMenu.sections(member?, flags)
     |> Enum.map(fn section ->
       section
       |> Map.merge(%{

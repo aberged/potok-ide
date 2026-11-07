@@ -21,6 +21,7 @@ defmodule PotokIde.Application do
       {Phoenix.PubSub, name: PotokIde.PubSub},
       PotokIde.Presence,
       PotokIde.Events.ReminderScheduler,
+      PotokIde.Polls.Scheduler,
       # Start to serve requests, typically the last entry
       PotokIdeWeb.Endpoint,
       PotokIde.AccountBootstrap

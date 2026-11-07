@@ -34,6 +34,7 @@ defmodule PotokIde.Events do
     Response
   }
 
+  alias PotokIde.PlainText
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Social
@@ -119,29 +120,7 @@ defmodule PotokIde.Events do
   """
   def calendar_group_ids(%Profile{} = profile, %Group{} = group, include_subgroups?) do
     if include_subgroups? or group.is_root do
-      # Up from each of the profile's groups until `group` is reached.
-      %Postgrex.Result{rows: rows} =
-        Repo.query!(
-          """
-          WITH RECURSIVE chain(member_group_id, id, parent_id) AS (
-            SELECT g.id, g.id, g.parent_id
-            FROM group_memberships gm
-            JOIN groups g ON g.id = gm.group_id
-            WHERE gm.profile_id = $1
-
-            UNION ALL
-
-            SELECT c.member_group_id, p.id, p.parent_id
-            FROM chain c
-            JOIN groups p ON p.id = c.parent_id
-            WHERE c.id <> $2
-          )
-          SELECT DISTINCT member_group_id FROM chain WHERE id = $2
-          """,
-          [profile.id, group.id]
-        )
-
-      List.flatten(rows)
+      Social.member_group_ids_under(profile, group)
     else
       if Social.member_of_group?(profile, group), do: [group.id], else: []
     end
@@ -283,12 +262,13 @@ defmodule PotokIde.Events do
       {:ok, count}
     end
 
-    case Social.post_event_announcement(
+    case Social.post_announcement(
            creator,
            group,
            announcement_content(event, first),
            link,
-           Notifications.created(creator, group, first)
+           Notifications.created(creator, group, first),
+           "group event"
          ) do
       {:ok, value} -> %{event | value_id: value.id}
       {:error, _reason} -> event
@@ -302,16 +282,14 @@ defmodule PotokIde.Events do
     today = Recurrence.local_date(DateTime.utc_now(), event.time_zone)
 
     [
-      "📅 **#{escape_markdown(event.title)}**",
+      "📅 **#{PlainText.escape_markdown(event.title)}**",
       Format.occurrence(first, event.time_zone, today),
       Format.recurrence(event),
-      event.location != "" && escape_markdown(event.location)
+      event.location != "" && PlainText.escape_markdown(event.location)
     ]
     |> Enum.filter(&is_binary/1)
     |> Enum.join("  \n")
   end
-
-  defp escape_markdown(text), do: String.replace(text, ~r/([\\`*_\[\]#<>|~])/u, "\\\\\\1")
 
   @doc """
   Changes an event. The form's times are read in the event's own zone. With

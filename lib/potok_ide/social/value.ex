@@ -27,6 +27,8 @@ defmodule PotokIde.Social.Value do
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
+    # What the viewing profile sees of the value's poll (`Polls.put_views/5`).
+    field :poll_view, :any, virtual: true
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group
@@ -40,8 +42,10 @@ defmodule PotokIde.Social.Value do
     has_many :attachments, PotokIde.Social.ValueAttachment
     # The sub-group started from this value (`Social.get_or_create_value_thread/4`).
     has_one :thread, PotokIde.Social.Group, foreign_key: :parent_value_id
-    # The calendar event this value announced (`Social.post_event_announcement/5`).
+    # The calendar event this value announced (`Social.post_announcement/6`).
     has_one :event, PotokIde.Events.Event, foreign_key: :value_id
+    # The poll this value carries, gone with it.
+    has_one :poll, PotokIde.Polls.Poll, foreign_key: :value_id
 
     timestamps(type: :utc_datetime)
   end

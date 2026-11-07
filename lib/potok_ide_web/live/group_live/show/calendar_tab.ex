@@ -257,7 +257,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :label, :string, required: true
   attr :icon, :string, default: nil
 
-  defp switch(assigns) do
+  def switch(assigns) do
     ~H"""
     <button
       id={@id}

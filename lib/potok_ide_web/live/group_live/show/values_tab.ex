@@ -3,7 +3,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   alias PotokIde.Social.{Access, Group, Value}
   alias PotokIde.Storage
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm}
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
 
   attr :values, :any, required: true
@@ -42,6 +42,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
       |> assign(:can_react, Access.can_react_in_chat?(profile, access, group))
       |> assign(:can_delete_any, Access.can?(access, :delete_values))
       |> assign(:can_block, Access.can?(access, :remove_members) and Group.open_chat?(group))
+      |> assign(:can_start_poll, PollForm.chat_entry?(group, access))
       # Threads are sub-groups, which direct conversations do not have.
       |> assign(
         :can_thread,
@@ -357,6 +358,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                     <span class="sr-only">{gettext("Add files")}</span>
                     <.live_file_input upload={@attachments} class="sr-only" />
                   </label>
+                  <button
+                    :if={@can_start_poll}
+                    id="group-value-poll"
+                    type="button"
+                    phx-click="poll_form_open"
+                    title={dgettext("polls", "New poll")}
+                    class={icon_button_class("ghost", "md")}
+                  >
+                    <.icon name="hero-chart-bar" class="size-5" />
+                    <span class="sr-only">{dgettext("polls", "New poll")}</span>
+                  </button>
                 </.composer_row>
               </.form>
             <% end %>

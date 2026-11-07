@@ -18,6 +18,7 @@ let nextCallId = 1
 const pendingCalls = new Map()
 // listener -> whether it gets the values of every app in the group.
 const newValueListeners = new Map()
+const pollListeners = new Set()
 
 // A group has one app per description: "" for the default description, an
 // alternative description's id otherwise. Values carry it as `description_id`.
@@ -158,6 +159,17 @@ window.addEventListener("message", event => {
   // their data once, so the app starts again (the old hook re-ran its scripts).
   if (message.event === "reconnected") {
     window.location.reload()
+    return
+  }
+
+  if (message.event === "poll_changed") {
+    pollListeners.forEach(listener => {
+      try {
+        listener(message.id)
+      } catch (error) {
+        console.error(error)
+      }
+    })
     return
   }
 
@@ -303,6 +315,34 @@ const potok = {
       description: typeof description === "string" ? description : "",
       description_format: options.descriptionFormat || options.description_format || null,
     }),
+
+  // The polls of this group, the newest first, 30 per call; page with `beforeId`.
+  // `status` is "open" (the default), "closed" or "waiting", those the viewer can
+  // still vote in. A poll holds only what its rules show this viewer, so
+  // `votes_count` of an answer may be null. An app cannot vote or change a poll:
+  // `openPoll` and `openPollForm` do that on Potok's own page.
+  listPolls: (options = {}) =>
+    call("list_polls", {
+      status: options.status ?? null,
+      before_id: options.beforeId ?? null,
+    }),
+
+  getPoll: id => call("get_poll", {id}),
+
+  // Opens the poll in a dialog of Potok's, over the app, where the viewer votes.
+  openPoll: id => call("open_poll", {id}),
+
+  // Opens Potok's form for a new poll in this group, over the app.
+  openPollForm: () => call("open_poll_form"),
+
+  // Calls `listener` with the id of a poll that changed, or got a vote or was
+  // deleted. Read it again with `getPoll`; a deleted one is `not_found`.
+  onPollChange(listener) {
+    if (typeof listener !== "function") return () => {}
+
+    pollListeners.add(listener)
+    return () => pollListeners.delete(listener)
+  },
 
   // `{scope: "group"}` also passes on the values of the group's other apps.
   onNewValue(listener, options = {}) {

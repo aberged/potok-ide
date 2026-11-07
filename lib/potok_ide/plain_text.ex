@@ -32,6 +32,9 @@ defmodule PotokIde.PlainText do
     |> truncate(max_length)
   end
 
+  @doc "`text` that markdown shows as it is, for a user's words inside a value's markdown."
+  def escape_markdown(text), do: String.replace(text, ~r/([\\`*_\[\]#<>|~])/u, "\\\\\\1")
+
   @doc "`text` cut to `max_length` characters, the last one an ellipsis; nil for an empty text."
   def truncate("", _max_length), do: nil
 

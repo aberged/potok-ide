@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Groups and sub-groups"),
         text:
           gettext(
-            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed or page."
+            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls or page."
           )
       },
       %{
@@ -155,7 +155,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Chat"),
         text:
           gettext(
-            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. You can open the chat of a public group, so that those who are not members write there too."
+            "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there."
           )
       },
       %{
@@ -182,7 +182,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Roles and permissions"),
         text:
           gettext(
-            "Administrator, All members and roles you make yourself, with 15 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
+            "Administrator, All members and roles you make yourself, with 19 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
           )
       },
       %{
@@ -204,7 +204,8 @@ defmodule PotokIdeWeb.PageHTML do
         id: "notifications",
         icon: "hero-bell",
         title: gettext("Notifications"),
-        text: gettext("On your phone and in the browser, for messages, mentions and events.")
+        text:
+          gettext("On your phone and in the browser, for messages, mentions, events and polls.")
       },
       %{
         id: "phone",

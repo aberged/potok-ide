@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.Polls
   alias PotokIde.Social
 
   # Every page view runs these on the database (they were 9 for the first
@@ -14,10 +15,12 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # values announced, for their cards; its 19th and 20th the tags the viewer
   # sees on the values and on the group, and the root page's 9th those on the
   # sub-groups. Its 10th finds the groups only the root lists, whose parent the
-  # viewer cannot see.
-  @max_dead_render_queries 5
+  # viewer cannot see. The chat page's 21st loads the polls that values carry,
+  # and its 22nd, like the first HTML's 6th, asks whether the group has a poll,
+  # for the bar of sections.
+  @max_dead_render_queries 6
   @max_root_page_queries 10
-  @max_chat_page_queries 20
+  @max_chat_page_queries 22
 
   setup %{conn: conn} do
     account = account_fixture()
@@ -100,6 +103,53 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
     assert count == 0
     assert has_element?(lv, "#group-unread-badge-#{group.id}", "1")
+  end
+
+  test "a vote updates an open chat without a query", %{
+    conn: conn,
+    group: group,
+    profile: profile
+  } do
+    voter_account = account_fixture()
+
+    {:ok, voter} =
+      Social.create_profile_for_account(voter_account, %{
+        username: "qc-voter",
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    {:ok, invitation} = Social.invite_profile_to_group(profile, group, voter)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, voter)
+
+    {:ok, poll} =
+      Polls.create_poll(
+        profile,
+        group,
+        %{
+          "question" => "Where to?",
+          "results_when" => "always",
+          "options" => %{"0" => %{"text" => "Sea"}, "1" => %{"text" => "Hills"}}
+        },
+        "Etc/UTC"
+      )
+
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+    [option | _rest] = Polls.get_poll(poll.id).options
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _poll} = Polls.vote(voter, voter_account, poll, [option.id])
+          render(lv)
+        end,
+        lv.pid
+      )
+
+    assert count == 0
+    assert lv |> element("#group-poll-tally-style") |> render() =~ "poll-count-#{option.id}"
   end
 
   test "a value reads no more rows in a bigger group", %{group: group, profile: profile} do

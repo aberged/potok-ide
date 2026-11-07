@@ -5,23 +5,23 @@ defmodule PotokIde.Social.GroupPresets do
   group's settings and roles. `Social.create_group/3` stays the way to set
   everything by hand.
 
-  The apps of a feed are files in `priv/apps`, copied by `mix potok.sync_apps`.
-  Each feed keeps its own copy in its descriptions, as with a pasted app, so a
-  new build reaches only the feeds made after it.
+  The apps of a feed and of a group for polls are files in `priv/apps`, copied by
+  `mix potok.sync_apps`. Each group keeps its own copy in its description, as with
+  a pasted app, so a new build reaches only the groups made after it.
 
   `Social.create_group_from_preset/4` puts a preset to work.
   """
 
   alias PotokIde.Social.Group
 
-  @keys ~w(chat folder announcements feed page)
+  @keys ~w(chat folder announcements feed polls page)
 
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
 
-  # What a member keeps here is reading and reacting. Threads go too: a member
-  # could open one and not write in it, as it would inherit these rights.
-  @read_only ~w(post_values attach_files open_threads create_subgroups)a
+  # What a member keeps here is reading, reacting and voting. Threads go too: a
+  # member could open one and not write in it, as it would inherit these rights.
+  @read_only ~w(post_values attach_files open_threads create_subgroups create_polls)a
 
   @chosen_by_viewer ~w(name is_public inherits_members)
 
@@ -73,6 +73,15 @@ defmodule PotokIde.Social.GroupPresets do
   defp preset_attrs("feed") do
     %{
       "description" => app("feed.html"),
+      "description_format" => :html,
+      "uses_api" => true,
+      "home_page" => :description
+    }
+  end
+
+  defp preset_attrs("polls") do
+    %{
+      "description" => app("glasanje.html"),
       "description_format" => :html,
       "uses_api" => true,
       "home_page" => :description

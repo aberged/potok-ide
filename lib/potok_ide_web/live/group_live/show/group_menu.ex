@@ -22,12 +22,12 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   @doc """
   The sections of a group, in the order of its bar. The root has none: its
-  header switches between conversations and groups. `calendar?` is passed in,
-  as for someone outside a public group it takes a query.
+  header switches between conversations and groups. `flags` says whether it has
+  a calendar (`:calendar?`) and polls (`:polls?`), as these take a query.
   """
-  def sections(%Group{is_root: true}, _member?, _calendar?), do: []
+  def sections(%Group{is_root: true}, _member?, _flags), do: []
 
-  def sections(%Group{} = group, member?, calendar?) do
+  def sections(%Group{} = group, member?, %{calendar?: calendar?, polls?: polls?}) do
     member_of_group? = member? and group.parent_id != nil
 
     [
@@ -47,6 +47,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
           icon: "hero-calendar-days",
           label: gettext("Calendar")
         },
+      polls? &&
+        %{key: "polls", tab: "polls", icon: "hero-chart-bar", label: dgettext("polls", "Polls")},
       # Threads are sub-groups, which direct conversations do not have.
       ((member? or group.is_public) and not group.is_direct) &&
         %{

@@ -18,7 +18,7 @@ defmodule PotokIde.DomainMap do
   alias PotokIde.Cache
   alias PotokIde.Repo
 
-  @domains ~w(account profiles group content calendar tags joining)
+  @domains ~w(account profiles group content calendar polls tags joining)
 
   @entities [
     {"account",
@@ -49,6 +49,7 @@ defmodule PotokIde.DomainMap do
      ]},
     {"calendar",
      [PotokIde.Events.Event, PotokIde.Events.Response, PotokIde.Events.MemberSetting]},
+    {"polls", [PotokIde.Polls.Poll, PotokIde.Polls.PollOption, PotokIde.Polls.PollBallot]},
     {"tags", [PotokIde.Tags.Tag, PotokIde.Tags.Tagging]},
     {"joining",
      [
@@ -66,7 +67,11 @@ defmodule PotokIde.DomainMap do
     {"GroupMemberRole", "role_key", "GroupRole", "key"},
     {"GroupAltDescription", "visible_role_keys", "GroupRole", "key"},
     {"GroupValueRead", "last_read_value_id", "Value", "id"},
-    {"Value", "mentioned_profile_ids", "Profile", "id"}
+    {"Value", "mentioned_profile_ids", "Profile", "id"},
+    {"Poll", "voter_role_keys", "GroupRole", "key"},
+    {"Poll", "results_role_keys", "GroupRole", "key"},
+    {"Poll", "details_role_keys", "GroupRole", "key"},
+    {"PollBallot", "option_ids", "PollOption", "id"}
   ]
 
   def domains, do: @domains

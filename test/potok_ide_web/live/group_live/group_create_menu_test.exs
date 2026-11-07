@@ -67,7 +67,7 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
 
       assert has_element?(lv, "dialog#group-create-menu")
 
-      for preset <- ~w(chat folder announcements feed page) do
+      for preset <- ~w(chat folder announcements feed polls page) do
         assert has_element?(lv, "#group-create-preset-#{preset}")
       end
 

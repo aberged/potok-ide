@@ -196,11 +196,6 @@ msgstr "LiveView: stranice žive na serveru"
 msgid "Memory is cleaned per process"
 msgstr "Memorija se čisti po procesu"
 
-#: lib/potok_ide_web/stack_copy.ex:79
-#, elixir-autogen, elixir-format
-msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
-msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta. Slike kartica linkova crtaju se jedna po jedna, svaka u svom procesu. Ništa od toga ne traži poseban sistem za redove poslova."
-
 #: lib/potok_ide_web/stack_copy.ex:249
 #, elixir-autogen, elixir-format
 msgid "Only what is used"
@@ -395,3 +390,8 @@ msgstr "`chat-bubble` je oblačić poruke, `drawer` bočni meni, `dropdown` pada
 #, elixir-autogen, elixir-format
 msgid "daisyUI is a plugin for Tailwind. It gives the common parts of an interface as named classes and adds no JavaScript."
 msgstr "daisyUI je dodatak za Tailwind. Česte delove interfejsa daje kao klase sa imenom i ne dodaje JavaScript."
+
+#: lib/potok_ide_web/stack_copy.ex:79
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
+msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta, a tako rade i rokovi glasanja. Slike kartica linkova crtaju se jedna po jedna, svaka u svom procesu. Ništa od toga ne traži poseban sistem za redove poslova."

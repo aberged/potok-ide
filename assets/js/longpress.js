@@ -17,7 +17,7 @@ const isNavigableLink = el => {
 // A value in the chat, unless the press is on something of its own inside it.
 const pressableValue = el => {
   const bubble = el?.closest?.("[data-value-press]")
-  if (!bubble || el.closest("a, button, input, audio, video")) return null
+  if (!bubble || el.closest("a, button, input, label, audio, video")) return null
   return bubble
 }
 

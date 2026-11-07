@@ -32,6 +32,7 @@ The main concepts in the system are:
 * `ProfileInvitation`: an invitation to share a `shared` profile with another profile's account. Accepting it links the profile to that account.
 * `AccountProfile`: the join entity between accounts and profiles.
 * `PushSubscription`: a Web Push subscription or native push token of an account, with the language of the session that saved it.
+* `Poll`: a question put to a vote in a group, with the rules of who votes, who sees the results and who sees the details, its deadline and, once it ended, its decision. `PollOption` is an answer with its count, and `PollBallot` that a profile voted and, unless the poll is secret, for what.
 * `Event`: an event in a group's calendar, once or repeating, kept in its IANA time zone, with the organizer's reminders and the chat value that announced it.
 * `Events.Response`: a member's answer (going, maybe, not going) for one occurrence of an event, named by its local start date.
 * `Events.MemberSetting`: a member's own reminders for an event, in place of the organizer's.
@@ -64,8 +65,8 @@ Group access and direct-group behavior:
 Roles and permissions:
 
 * Every group uses a manifest: its own, or the one of its nearest ancestor that has one. The root group always has one, and its default manifest is fixed.
-* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events`, `manage_tags` and `edit_group`.
-* The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles` and `create_events`.
+* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events`, `publish_events`, `create_polls`, `vote_polls`, `manage_polls`, `publish_polls`, `manage_tags` and `edit_group`.
+* The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `create_events`, `create_polls` and `vote_polls`.
 * For other roles a permission is granted when one of the member's roles allows it and none denies it. `everyone` can only allow.
 * Creators become admins of their groups. Admins create roles, give a group its own manifest (a copy of the inherited one) or revert it to the inherited one, and assign roles per group in the members tab.
 
@@ -100,7 +101,7 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Each row of the sub-groups tab has a menu with the sections and the options of that group (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
-* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed and page. The full form stays a link away. The feed preset reads its two apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed` and `potok-feed-creator`.
+* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed, polls and page. The full form stays a link away. The feed and polls presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator` and `potok-glasanje`.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
 Tags:
@@ -125,6 +126,22 @@ Calendar:
 * `PotokIde.Events.ReminderScheduler` runs on every node and sends due reminders every 30 seconds. It takes events with `FOR UPDATE SKIP LOCKED`, so no reminder is sent twice, and drops reminders found more than 10 minutes late (say, after a deploy).
 * Push notifications about events are written in the language each device saved its push subscription with; the browser saves it again when the language changes.
 * `GET /events/:id/event.ics` downloads an event for Google, Apple or Outlook calendars.
+
+Polls:
+
+* A poll lives on the server (`PotokIde.Polls`), so its card in the chat, the polls tab and an app all read one record, and none of them can show more than `PotokIde.Polls.Rules` allows. A viewer gets a `PotokIde.Polls.View`, in which what they may not see is nil.
+* Members with `create_polls` start polls, except at the root and in direct conversations. A poll in the chat also needs `post_values`. The organizer, while a member, and those with `manage_polls` end, change, reopen and delete a poll. A poll's message and the poll go together: deleting either deletes both, with the votes.
+* Each poll lists the roles that vote, that see the results and that see the details. `"everyone"` is every member, and an empty list leaves a thing to the organizer and those with `manage_polls`, who always see the results and details. Results show always, after voting or at the end; details always or at the end.
+* Once a ballot is in, only the deadline and the reminder can change, as voters saw the rest.
+* One account gives one vote, whichever of its profiles it uses (`poll_ballots.account_id`). A profile that several accounts share votes on its own. Lists go by profile, as the account is what would tie two profiles together.
+* A secret poll keeps no answers on its ballots, only the count on each answer. A vote cannot change, no counts show to anyone before the end, nothing reopens it, and it takes no answers from members. A check in the database holds this too. A crash report would print the event being handled, so `poll_vote` catches errors and logs only their kind, and `option_ids` is among `:filter_parameters`.
+* A public poll, which takes `publish_polls` and a public group (`Group.guest_preview?/1`), also takes the votes of signed-in non-members, at most 10 a minute per profile and group. It has no quorum or decision, as anyone may vote. Others outside see the question of a poll for members in an open chat, and no more.
+* A poll with one answer per vote can have a decision: the most votes, a majority of the votes, two thirds of them, or a majority of those who may vote, with a quorum. It is worked out in whole numbers as the poll closes and written down, with how many could vote, so that a later change of members leaves it as it was.
+* A poll can let members add answers, up to 30 in all. Those who manage it remove answers without votes.
+* Votes reach open pages over `group_polls:<id>` with the counts in the message, into a style sheet of the page (`Components.poll_tally_css/1`), so a vote costs an open page no query and sends no message again. Only polls the viewer may see the counts of take them. What else changes a card goes through `Social.refresh_value/1`.
+* The polls tab (`/groups/:id/polls`) lists open, waiting and finished polls (`?status=`), and an open poll beside them (`poll=12`), with statistics for those who see the details: turnout, who voted for what, by role, the course of the voting, who has not voted and a reminder for them, at most once an hour. The section shows once a group has a poll, and the group's menu leads there before that. The root's tab ("My polls") gathers the viewer's groups and public polls, with two switches the browser keeps.
+* `PotokIde.Polls.Scheduler` runs on every node and every 30 seconds closes polls past their deadline and sends reminders, with `FOR UPDATE SKIP LOCKED`. A vote checks the time itself, so a deadline holds to the second.
+* `GET /polls/:id/results.csv?part=results|voters` downloads a poll for those its rules show that part to.
 
 Relationship summary:
 
@@ -566,6 +583,7 @@ Authenticated routes:
 * `POST /accounts/push-subscriptions/test`
 * `GET /files/:id` serves an attached file to members of its group (logged-out visitors go to the login page and come back)
 * `GET /pictures/:token` serves a picture used in a description, by its signed address (no session)
+* `GET /polls/:id/results.csv?part=results|voters` serves the results or the voters of a poll to those its rules show them to (logged-out visitors go to the login page and come back).
 * `GET /events/:id/event.ics` serves an event as an iCalendar file to members of its group (logged-out visitors go to the login page and come back)
 
 Authenticated routes that require a current profile:
@@ -601,6 +619,7 @@ The frame loads `assets/js/potok_app_sdk.js` first. The SDK talks to the `GroupA
 The frame document looks like this:
 
 ```html
+<html lang="sr">  <!-- the page's language: an app reads it from here -->
 <head>
   <link rel="stylesheet" href="/assets/css/app.css">  <!-- the page's daisyUI styles -->
   <meta name="potok-app" content="">  <!-- "" for the default description, else the alternative description's id -->
@@ -635,6 +654,11 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `shareGroup(id, options)` resolves to `{ok: true}` and opens the page's way of sharing with the link of a group `openGroup` can reach: the phone's share sheet in the mobile app, and Potok's link sheet on the web. A frame cannot do this itself, as the sandbox keeps it from Web Share and the clipboard. With `{inApp: true}` the link is to this app open on that group, which must lie below it. A guest who opens such a link gets the card of that group, when it is public, and returns to the app after logging in.
 * `linkGroup(id)` resolves to `{ok: true}` and writes the group into the page's address as `?at=<id>`, without a new history entry, so that the address opens the app there. Only the app reads it back, so it should send the group it has on screen. `getLinkedGroup()` resolves to `{ok: true, group_id}`, the group in the address or `null`. The page does not check it: `listSubgroups` with `aroundId` does, by what the viewer can see.
 * `getGroup()` resolves to `{ok: true, group}`: this group, its parent and what the viewer may do here.
+* `listPolls(options)` resolves to `{ok: true, polls, has_more}`: the polls of this group, the newest first, 30 per call, as far as their rules show them to this viewer, also to a non-member of a public group. `options.status` is `"open"` (the default), `"closed"` or `"waiting"`, those the viewer can still vote in. `options.beforeId` is the id of the last poll of the previous page. A count the viewer may not see is `null`.
+* `getPoll(id)` resolves to `{ok: true, poll}`, or `not_found` for a poll of another group or one the viewer does not see.
+* `openPoll(id)` opens the poll in a dialog on Potok's page, over the app, where the viewer votes. An app reads polls and nothing more: it runs for every viewer and a vote can be final, so there is no call that votes, ends or changes one.
+* `openPollForm()` opens Potok's form for a new poll in this group, over the app. It needs `can_start_polls` from `getGroup`, and is refused with `forbidden` otherwise.
+* `onPollChange(listener)` calls `listener(id)` when a poll of this group changes, gets a vote or is deleted, and returns a function that removes the listener. Read it again with `getPoll`. Changes are pushed only while a description is on screen.
 * `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
 
 An app can also keep the groups right under its own. These calls act in the viewer's name, so all of them need a viewer with the `edit_group` permission in the app's group, who could rewrite the app anyway; by default that is only an admin. Anyone else gets `forbidden`, and `can_manage_children` in `getGroup` says so in advance. They reach direct sub-groups only, as far as the viewer can see them, without threads and direct conversations. Any other group is `not_found`. See [docs/feed-i-feedcreator.md](docs/feed-i-feedcreator.md) for two apps built on them.
@@ -743,12 +767,14 @@ High-level layout:
 |  |  |- accounts/         # Account schema and auth-related domain code
 |  |  |- social/           # Profile, group, value, role, attachment schemas, access and inheritance
 |  |  |- events/           # Calendar events, repeat rules, reminders and iCalendar export
+|  |  |- polls/            # Polls: schemas, rules, decisions, statistics, deadlines, export
 |  |  |- storage/          # Local and S3 storage adapters for attachments
 |  |  |- link_previews/    # HTTP fetcher for Open Graph previews
 |  |  |- push_notifications/ # Web Push and FCM senders
 |  |  |- accounts.ex       # Account context
 |  |  |- social.ex         # Social context
 |  |  |- events.ex         # Calendar context
+|  |  |- polls.ex          # Polls context
 |  |- potok_ide_web/       # Web interface, routing, LiveViews, components
 |  |  |- components/       # Shared UI components and layouts
 |  |  |- controllers/      # Controller endpoints and session actions

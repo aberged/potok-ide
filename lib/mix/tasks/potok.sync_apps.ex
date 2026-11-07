@@ -1,23 +1,25 @@
 defmodule Mix.Tasks.Potok.SyncApps do
   @moduledoc """
-  Copies the builds of the apps a Feed group comes with into `priv/apps`.
+  Copies the builds of the apps that presets come with into `priv/apps`: those
+  of a Feed group and of a group for polls.
 
   `PotokIde.Social.GroupPresets` reads them from there. The apps are projects
   of their own, next to this one, and the deploy does not reach them, so their
-  builds are committed here. First run `npm run build` in both:
+  builds are committed here. First run `npm run build` in each:
 
       mix potok.sync_apps
 
-  A copy changes only the feeds made after it: each feed keeps the apps it
+  A copy changes only the groups made after it: each group keeps the apps it
   was made with.
   """
   use Mix.Task
 
-  @shortdoc "Copies the builds of Feed and FeedCreator into priv/apps"
+  @shortdoc "Copies the builds of the presets' apps into priv/apps"
 
   @apps [
     {"../potok-feed/dist/potok-build.html", "priv/apps/feed.html"},
-    {"../potok-feed-creator/dist/potok-build.html", "priv/apps/feed_creator.html"}
+    {"../potok-feed-creator/dist/potok-build.html", "priv/apps/feed_creator.html"},
+    {"../potok-glasanje/dist/potok-build.html", "priv/apps/glasanje.html"}
   ]
 
   @impl Mix.Task

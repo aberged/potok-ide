@@ -24,6 +24,9 @@ config :potok_ide, PotokIde.LinkPreviews,
 # Tests send event reminders by calling `Events.send_due_reminders/1`.
 config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 
+# Tests close polls and send their reminders by calling `Polls.Deadlines`.
+config :potok_ide, PotokIde.Polls.Scheduler, enabled: false
+
 # Attached files on disk, deleted inline so tests can assert they are gone.
 config :potok_ide, async_storage_cleanup: false
 

@@ -171,6 +171,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
           )
       },
       %{
+        key: "polls",
+        icon: "hero-chart-bar",
+        title: dgettext("polls", "Polls"),
+        hint: dgettext("polls", "Votes and decisions, in one place."),
+        summary:
+          dgettext(
+            "polls",
+            "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
+          )
+      },
+      %{
         key: "page",
         icon: "hero-document-text",
         title: gettext("Page"),

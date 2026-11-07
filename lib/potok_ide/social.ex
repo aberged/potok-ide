@@ -11,6 +11,8 @@ defmodule PotokIde.Social do
   alias Ecto.Multi
   alias PotokIde.LinkPreviews
   alias PotokIde.Presence
+  alias PotokIde.Polls
+  alias PotokIde.Polls.Poll
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Storage
@@ -1800,7 +1802,9 @@ defmodule PotokIde.Social do
 
   # Everything `Components.value_message/1` renders for a chat value: the
   # replied-to value with its author for the quote (or its files when it has
-  # no text), the value's files, its thread and the event it announced.
+  # no text), the value's files, its thread and the event or poll it announced.
+  # A poll comes without its answers and counts: broadcasts carry these values,
+  # and `Polls.put_views/5` reads what each viewer sees.
   defp value_display_preloads do
     reactions = from(r in ValueReaction, order_by: [asc: r.id])
 
@@ -1808,6 +1812,7 @@ defmodule PotokIde.Social do
       :creator,
       :thread,
       :event,
+      :poll,
       attachments: attachments_in_order(),
       parent: [:creator, :event, attachments: attachments_in_order()],
       reactions: {reactions, :profile}
@@ -1936,13 +1941,20 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  Posts the chat value that announces a calendar event. It counts as unread
-  like any chat value, but takes no @mentions or link preview, and members
-  get `payload_for`'s push (it gets a device's locale) instead of the
+  Posts the chat value that announces a calendar event or a poll. It counts as
+  unread like any chat value, but takes no @mentions or link preview, and
+  members get `payload_for`'s push (it gets a device's locale) instead of the
   generic one. `link` gets the repo and the value inside the transaction and
-  points the event at it.
+  points the event or poll at it. `push_context` names it in the logs.
   """
-  def post_event_announcement(%Profile{} = creator, %Group{} = group, content, link, payload_for)
+  def post_announcement(
+        %Profile{} = creator,
+        %Group{} = group,
+        content,
+        link,
+        payload_for,
+        push_context
+      )
       when is_function(link, 2) and is_function(payload_for, 1) do
     if Access.can?(creator, group, :post_values) do
       changeset =
@@ -1973,7 +1985,7 @@ defmodule PotokIde.Social do
           run_notification(fn ->
             group
             |> push_subscriptions_for_group_value(creator)
-            |> Dispatch.deliver_localized("group event", group.id, payload_for)
+            |> Dispatch.deliver_localized(push_context, group.id, payload_for)
           end)
 
           {:ok, value}
@@ -2079,8 +2091,8 @@ defmodule PotokIde.Social do
       value.creator_id != profile.id ->
         {:error, :not_value_creator}
 
-      # Its card shows the event, which is changed in the calendar.
-      Repo.exists?(from(e in PotokIde.Events.Event, where: e.value_id == ^value.id)) ->
+      # Its card shows the event or poll, which is changed where it lives.
+      announcement?(value) ->
         {:error, :announcement}
 
       true ->
@@ -2094,6 +2106,11 @@ defmodule PotokIde.Social do
           true -> do_update_value(profile, group, access, value, attrs)
         end
     end
+  end
+
+  defp announcement?(%Value{id: value_id}) do
+    Repo.exists?(from(e in PotokIde.Events.Event, where: e.value_id == ^value_id)) or
+      Repo.exists?(from(p in Poll, where: p.value_id == ^value_id))
   end
 
   defp do_update_value(profile, group, access, value, attrs) do
@@ -2130,37 +2147,48 @@ defmodule PotokIde.Social do
          not Access.can?(profile, Repo.get!(Group, value.group_id), :delete_values) do
       {:error, :not_value_creator}
     else
-      # Read before the delete: `values.parent_id` is nilified with it.
-      reply_ids = reply_ids(value)
+      remove_value(value)
+    end
+  end
 
-      Multi.new()
-      |> Multi.delete_all(
-        :attachments,
-        from(a in ValueAttachment, where: a.value_id == ^value.id, select: a.storage_key)
-      )
-      |> Multi.delete(:value, value)
-      |> Multi.run(:group_last_value_at, fn repo, _changes ->
-        latest =
-          from(v in Value,
-            where: v.group_id == ^value.group_id and v.is_data == false,
-            select: max(v.inserted_at)
-          )
-          |> repo.one()
+  @doc """
+  Deletes a value for whoever already may: `delete_value/2`, or a poll deleted
+  with its message. A poll the value carries goes with it.
+  """
+  def remove_value(%Value{} = value) do
+    # Read before the delete: `values.parent_id` is nilified with it, and the
+    # poll is deleted with it.
+    reply_ids = reply_ids(value)
+    poll = Repo.one(from(p in Poll, where: p.value_id == ^value.id))
 
-        {:ok, set_group_last_value_at(repo, value.group_id, latest)}
-      end)
-      |> Repo.transaction()
-      |> case do
-        {:ok, %{value: deleted_value, attachments: {_count, storage_keys}}} ->
-          Storage.delete_later(storage_keys)
-          broadcast_value_deleted(deleted_value)
-          broadcast_group_unread_counts_updated(deleted_value.group_id)
-          broadcast_values_updated(reply_ids)
-          {:ok, deleted_value}
+    Multi.new()
+    |> Multi.delete_all(
+      :attachments,
+      from(a in ValueAttachment, where: a.value_id == ^value.id, select: a.storage_key)
+    )
+    |> Multi.delete(:value, value)
+    |> Multi.run(:group_last_value_at, fn repo, _changes ->
+      latest =
+        from(v in Value,
+          where: v.group_id == ^value.group_id and v.is_data == false,
+          select: max(v.inserted_at)
+        )
+        |> repo.one()
 
-        {:error, _step, reason, _changes} ->
-          {:error, reason}
-      end
+      {:ok, set_group_last_value_at(repo, value.group_id, latest)}
+    end)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{value: deleted_value, attachments: {_count, storage_keys}}} ->
+        Storage.delete_later(storage_keys)
+        broadcast_value_deleted(deleted_value)
+        broadcast_group_unread_counts_updated(deleted_value.group_id)
+        broadcast_values_updated(reply_ids)
+        if poll, do: Polls.broadcast_deleted(poll)
+        {:ok, deleted_value}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -4919,6 +4947,36 @@ defmodule PotokIde.Social do
 
   def member_of_group?(%Profile{} = profile, %Group{} = group),
     do: member_of_group_private?(profile, group)
+
+  @doc """
+  The groups at or below `group` that `profile` is a member of, for the views
+  that gather a tree: the root's reaches all of its groups.
+  """
+  def member_group_ids_under(%Profile{} = profile, %Group{} = group) do
+    # Up from each of the profile's groups until `group` is reached.
+    %Postgrex.Result{rows: rows} =
+      Repo.query!(
+        """
+        WITH RECURSIVE chain(member_group_id, id, parent_id) AS (
+          SELECT g.id, g.id, g.parent_id
+          FROM group_memberships gm
+          JOIN groups g ON g.id = gm.group_id
+          WHERE gm.profile_id = $1
+
+          UNION ALL
+
+          SELECT c.member_group_id, p.id, p.parent_id
+          FROM chain c
+          JOIN groups p ON p.id = c.parent_id
+          WHERE c.id <> $2
+        )
+        SELECT DISTINCT member_group_id FROM chain WHERE id = $2
+        """,
+        [profile.id, group.id]
+      )
+
+    List.flatten(rows)
+  end
 
   defp ensure_permission(%Profile{} = actor, %Group{} = group, permission) do
     if Access.can?(actor, group, permission), do: :ok, else: {:error, :not_permitted}

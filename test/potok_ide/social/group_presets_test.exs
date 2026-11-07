@@ -10,6 +10,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
 
   @feed_build "priv/apps/feed.html"
   @feed_creator_build "priv/apps/feed_creator.html"
+  @polls_build "priv/apps/glasanje.html"
 
   setup do
     {_account, owner} = account_with_profile!("preset-owner")
@@ -77,6 +78,27 @@ defmodule PotokIde.Social.GroupPresetsTest do
       end
 
       assert Access.can?(ctx.member, ctx.parent, :post_values)
+    end
+
+    test "announcements keep the vote and leave starting polls to administrators", ctx do
+      assert {:ok, %{group: group}} = create(ctx, "announcements")
+
+      assert Access.can?(ctx.member, group, :vote_polls)
+      refute Access.can?(ctx.member, group, :create_polls)
+      assert Access.can?(ctx.owner, group, :create_polls)
+    end
+
+    test "polls open on the app, for members who start polls in it", ctx do
+      assert {:ok, %{group: group} = created} = create(ctx, "polls")
+
+      assert group.uses_api
+      assert group.home_page == :description
+      assert group.description_format == :html
+      assert group.description == File.read!(@polls_build)
+      refute group.is_public
+      refute Map.has_key?(created, :feed) and created.feed
+
+      assert Access.can?(ctx.member, group, :create_polls)
     end
 
     test "takes from the viewer only what is theirs to pick", ctx do

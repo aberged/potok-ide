@@ -107,6 +107,9 @@ config :logger, :default_formatter,
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
 
+# A vote's answers stay out of the logs, with what the default keeps out.
+config :phoenix, :filter_parameters, ["password", "option_ids"]
+
 config :potok_ide, PotokIde.PushNotifications, ttl: 60
 
 # Event times are kept in the IANA zone of the event, so recurring events keep

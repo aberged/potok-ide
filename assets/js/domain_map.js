@@ -50,7 +50,7 @@ const CORE = {
 const COLUMN = [26, 228, 430, 632, 834]
 const TABLES = {
   width: 1032,
-  height: 594,
+  height: 690,
   nodeWidth: 172,
   nodeHeight: 46,
   nodes: {
@@ -78,6 +78,9 @@ const TABLES = {
     Event: [COLUMN[3], 380],
     Response: [COLUMN[4], 380],
     MemberSetting: [COLUMN[4], 452],
+    Poll: [COLUMN[3], 548],
+    PollOption: [COLUMN[4], 548],
+    PollBallot: [COLUMN[4], 620],
     GroupReaction: [COLUMN[1], 428],
     GroupBlock: [COLUMN[2], 428],
     Tag: [COLUMN[1], 524],
@@ -90,6 +93,7 @@ const TABLES = {
     group: [218, 182, 394, 302],
     content: [622, 182, 394, 158],
     calendar: [622, 350, 394, 158],
+    polls: [622, 518, 394, 158],
     tags: [218, 494, 394, 86],
   },
 }

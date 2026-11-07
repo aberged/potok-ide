@@ -1161,6 +1161,7 @@
     --dm-group: #0b8275;
     --dm-content: #7247b8;
     --dm-calendar: #a0640c;
+    --dm-polls: #0a84b8;
     --dm-tags: #ad3a76;
     --dm-joining: #4a8128;
     --st-beam: #a90533;
@@ -1178,6 +1179,7 @@
     --dm-group: #62d4c4;
     --dm-content: #bda2f2;
     --dm-calendar: #e8b65e;
+    --dm-polls: #55c6e6;
     --dm-tags: #f09ac7;
     --dm-joining: #a3da7c;
     --st-beam: #ff8fa3;
@@ -1195,6 +1197,7 @@
       --dm-group: #62d4c4;
       --dm-content: #bda2f2;
       --dm-calendar: #e8b65e;
+      --dm-polls: #55c6e6;
       --dm-tags: #f09ac7;
       --dm-joining: #a3da7c;
       --st-beam: #ff8fa3;

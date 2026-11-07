@@ -105,6 +105,15 @@ msgstr "mora biti jednako %{number}"
 msgid "must not be before the start"
 msgstr "ne može biti pre početka"
 
+msgid "must be in the future"
+msgstr "mora biti u budućnosti"
+
+msgid "has the same answer twice"
+msgstr "ima isti odgovor dva puta"
+
+msgid "pick who votes"
+msgstr "izaberi ko glasa"
+
 msgid "does not match the start date"
 msgstr "ne odgovara datumu početka"
 

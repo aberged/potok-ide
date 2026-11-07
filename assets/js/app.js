@@ -827,6 +827,10 @@ const APP_FRAME_METHODS = new Set([
   "pick_emoji",
   "linked_group",
   "link_group",
+  "list_polls",
+  "get_poll",
+  "open_poll",
+  "open_poll_form",
 ])
 
 // A link into an app: `?at=<group id>` on the group's page. It stays in the
@@ -896,6 +900,10 @@ const GroupAppFrame = {
 
     this.handleEvent("new_data_value", value => {
       this.post({potok: 1, event: "new_value", value})
+    })
+
+    this.handleEvent("poll_changed", ({id}) => {
+      this.post({potok: 1, event: "poll_changed", id})
     })
 
     this.handleEvent("app_share_link", ({url}) => shareLink(url))
@@ -1652,6 +1660,27 @@ function storedCalendarFilters() {
   }
 }
 
+// The same for the root overview of polls.
+const POLLS_FILTERS_KEY = "potok:polls-filters"
+
+function storedPollsFilters() {
+  try {
+    const stored = JSON.parse(window.localStorage.getItem(POLLS_FILTERS_KEY) || "{}")
+    return {groups: stored?.groups !== false, public: stored?.public !== false}
+  } catch (_error) {
+    return {groups: true, public: true}
+  }
+}
+
+window.addEventListener("phx:polls_filters", ({detail}) => {
+  try {
+    window.localStorage.setItem(
+      POLLS_FILTERS_KEY,
+      JSON.stringify({groups: detail.groups === true, public: detail.public === true})
+    )
+  } catch (_error) {}
+})
+
 window.addEventListener("phx:calendar_filters", ({detail}) => {
   try {
     window.localStorage.setItem(
@@ -1671,6 +1700,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     show_threads: storedShowThreads(),
     show_public_groups: storedShowPublicGroups(),
     calendar_filters: storedCalendarFilters(),
+    polls_filters: storedPollsFilters(),
   }),
   hooks: {
     HeaderDrawer,
