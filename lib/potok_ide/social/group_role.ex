@@ -32,6 +32,11 @@ defmodule PotokIde.Social.GroupRole do
     :edit_group
   ]
 
+  # Known to the database ahead of the code that offers them. A migration writes
+  # these while the release before it still serves pages, and `Ecto.Enum` raises
+  # on a value it does not know, which would take down every group page.
+  @stored_permissions @permissions ++ [:create_polls, :vote_polls, :manage_polls, :publish_polls]
+
   # What "everyone" holds by default: what every member could do before roles
   # existed, attaching files and adding events. The rest was creator-only.
   @default_everyone_permissions [
@@ -51,8 +56,8 @@ defmodule PotokIde.Social.GroupRole do
   schema "group_roles" do
     field :key, :string
     field :name, :string
-    field :allowed, {:array, Ecto.Enum}, values: @permissions, default: []
-    field :denied, {:array, Ecto.Enum}, values: @permissions, default: []
+    field :allowed, {:array, Ecto.Enum}, values: @stored_permissions, default: []
+    field :denied, {:array, Ecto.Enum}, values: @stored_permissions, default: []
     field :position, :integer, default: 0
 
     belongs_to :manifest, PotokIde.Social.GroupManifest
