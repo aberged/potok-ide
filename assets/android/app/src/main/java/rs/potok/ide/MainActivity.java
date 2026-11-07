@@ -11,6 +11,7 @@ public class MainActivity extends BridgeActivity {
 	public void onCreate(Bundle savedInstanceState) {
 		SplashScreen.installSplashScreen(this);
 		registerPlugin(ShareInboxPlugin.class);
+		registerPlugin(KeyboardContentPlugin.class);
 		super.onCreate(savedInstanceState);
 	}
 }

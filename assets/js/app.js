@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
+import { KeyboardMedia } from "./keyboard_media"
 import { installLongPressLinkMenu, shareLink } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
 import {
@@ -1710,6 +1711,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     PushNotifications,
     GroupAppFrame,
     ReactionPicker,
+    KeyboardMedia,
     ShareComposer,
     SharePreview,
     ...colocatedHooks,

@@ -472,6 +472,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
             access={@access}
             attachments={@uploads.attachments}
             can_attach={can_attach?(@access)}
+            keyboard_media={
+              if(can_send_keyboard_media?(@current_profile, @group, @access),
+                do: @uploads.keyboard_media
+              )
+            }
             share_id={@share_id}
           />
           <FilesTab.panel
@@ -640,6 +645,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:file_tree_truncated?, false)
          |> allow_attachments_upload()
          |> allow_description_picture_upload()
+         |> allow_keyboard_media_upload()
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
          |> assign(:loaded_children, [])
@@ -871,6 +877,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("description_picture_invalid", _params, socket) do
     {:noreply, put_flash(socket, :error, gettext("Choose a valid image file."))}
+  end
+
+  # What the keyboard sends uploads by itself; all that is left here is a file
+  # the upload would not take.
+  def handle_event("validate_keyboard_media", _params, socket) do
+    rejected = Enum.reject(socket.assigns.uploads.keyboard_media.entries, & &1.valid?)
+    socket = Enum.reduce(rejected, socket, &cancel_upload(&2, :keyboard_media, &1.ref))
+
+    {:noreply, if(rejected == [], do: socket, else: put_keyboard_media_error(socket))}
+  end
+
+  def handle_event("keyboard_media_failed", _params, socket),
+    do: {:noreply, put_keyboard_media_error(socket)}
+
+  def handle_event("keyboard_media_refused", _params, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    message =
+      if can_send_keyboard_media?(profile, group, access),
+        do: gettext("Pictures from the keyboard go out from the message field."),
+        else: gettext("You cannot send pictures in this group.")
+
+    {:noreply, put_flash(socket, :error, message)}
   end
 
   def handle_event("cancel_attachment", %{"ref" => ref}, socket) do
@@ -2958,6 +2987,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       Access.can?(access, :post_values)
   end
 
+  # What the keyboard sends is a file in a message of its own, so it takes what
+  # both of those take.
+  defp can_send_keyboard_media?(profile, %Group{} = group, %Access{} = access),
+    do: can_attach?(access) and Access.can_post_in_chat?(profile, access, group)
+
   # Browsers upload through the LiveView channel, or straight to the bucket
   # when the storage hands out presigned URLs.
   defp allow_attachments_upload(socket) do
@@ -3038,6 +3072,75 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _error -> put_flash(socket, :error, gettext("The picture could not be sent."))
     end
   end
+
+  # Two quick taps on the keyboard are two uploads at once.
+  defp allow_keyboard_media_upload(socket) do
+    opts = [
+      accept: ~w(image/gif image/png image/jpeg image/webp image/avif),
+      max_entries: 5,
+      max_file_size: Storage.max_file_size(),
+      auto_upload: true,
+      progress: &keyboard_media_progress/3
+    ]
+
+    opts =
+      if Storage.direct_upload?(),
+        do: Keyword.put(opts, :external, &presign_keyboard_media/2),
+        else: opts
+
+    allow_upload(socket, :keyboard_media, opts)
+  end
+
+  defp presign_keyboard_media(entry, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    if can_send_keyboard_media?(profile, group, access),
+      do: presign_attachment(entry, socket),
+      else: {:error, %{reason: "not_permitted"}, socket}
+  end
+
+  # Also called when an upload to the bucket fails, with the entry not done.
+  defp keyboard_media_progress(:keyboard_media, %{done?: true} = entry, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    if can_send_keyboard_media?(profile, group, access),
+      do: {:noreply, post_keyboard_media(socket, entry)},
+      else: {:noreply, cancel_upload(socket, :keyboard_media, entry.ref)}
+  end
+
+  defp keyboard_media_progress(:keyboard_media, entry, socket) do
+    if upload_errors(socket.assigns.uploads.keyboard_media, entry) == [] do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> cancel_upload(:keyboard_media, entry.ref)
+       |> put_keyboard_media_error()}
+    end
+  end
+
+  # The message holds only the file, so what is typed stays in the composer. A
+  # reply being written goes out with the file.
+  defp post_keyboard_media(socket, entry) do
+    %{current_profile: profile, group: group, replying_to_value: replying_to} = socket.assigns
+    attrs = maybe_put_reply_parent(%{"content" => ""}, replying_to)
+
+    stored =
+      consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)})
+
+    with {:ok, attachment} <- stored,
+         {:ok, value} <- create_value_or_drop_files(profile, group, attrs, [attachment]) do
+      socket
+      |> assign(:replying_to_value, nil)
+      |> apply_value_created(value)
+    else
+      {:error, :too_many_values} -> put_flash(socket, :error, too_many_values_message())
+      _error -> put_keyboard_media_error(socket)
+    end
+  end
+
+  defp put_keyboard_media_error(socket),
+    do: put_flash(socket, :error, gettext("The picture could not be sent."))
 
   defp presign_attachment(entry, socket) do
     key = Storage.new_key(socket.assigns.group.id)

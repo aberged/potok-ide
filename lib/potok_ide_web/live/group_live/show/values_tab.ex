@@ -31,6 +31,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   attr :attachments, Phoenix.LiveView.UploadConfig, required: true
   attr :can_attach, :boolean, default: false
 
+  attr :keyboard_media, Phoenix.LiveView.UploadConfig,
+    default: nil,
+    doc: "the upload of what the keyboard sends, for a profile that may send it"
+
   attr :share_id, :string,
     default: nil,
     doc: "content shared from another app (`?share=`) for the composer to take"
@@ -206,6 +210,31 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             data-max-file-size={Storage.max_file_size()}
             hidden
           >
+          </div>
+          <%!-- Sends what comes from the keyboard in the Android app (`assets/js/keyboard_media.js`). --%>
+          <div
+            id="group-value-keyboard-media"
+            phx-hook="KeyboardMedia"
+            data-can-send={to_string(@keyboard_media != nil)}
+          >
+            <form
+              :if={@keyboard_media}
+              id="group-value-keyboard-media-form"
+              phx-change="validate_keyboard_media"
+              class="hidden"
+            >
+              <.live_file_input upload={@keyboard_media} tabindex="-1" />
+            </form>
+            <p
+              :if={@keyboard_media && @keyboard_media.entries != []}
+              id="group-value-keyboard-media-progress"
+              role="status"
+              class="mb-1.5 flex items-center gap-2 px-1 text-sm text-base-content/65"
+            >
+              <span class="size-3.5 shrink-0 animate-spin rounded-full border-2 border-current border-t-transparent">
+              </span>
+              {gettext("Sending the picture...")}
+            </p>
           </div>
           <%!-- `.MentionComposer` suggests `@` mentions; it handles keys before `.SubmitOnEnter`. --%>
           <div id="group-value-mentions" phx-hook=".MentionComposer" class="relative">

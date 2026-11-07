@@ -381,8 +381,8 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:244
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:44
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:366
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:395
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:399
 #, elixir-autogen, elixir-format
 msgid "New poll"
 msgstr ""

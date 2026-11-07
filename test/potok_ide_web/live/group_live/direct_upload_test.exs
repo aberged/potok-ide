@@ -106,4 +106,23 @@ defmodule PotokIdeWeb.GroupLive.DirectUploadTest do
     assert attachment.filename == "most.jpg"
     assert attachment.content_type == "image/jpeg"
   end
+
+  test "a GIF from the keyboard goes straight to the bucket and to the chat", %{
+    conn: conn,
+    group: group
+  } do
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+    Req.Test.allow(S3, self(), lv.pid)
+
+    upload =
+      file_input(lv, "#group-value-keyboard-media-form", :keyboard_media, [
+        %{name: "keyboard-1.gif", content: "hello", type: "image/gif"}
+      ])
+
+    render_upload(upload, "keyboard-1.gif")
+
+    assert {[attachment], false} = Social.list_group_attachments(group)
+    assert attachment.filename == "keyboard-1.gif"
+    assert attachment.content_type == "image/gif"
+  end
 end

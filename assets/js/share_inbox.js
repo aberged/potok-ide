@@ -188,7 +188,7 @@ export const shareText = share => {
   return parts.join("\n\n")
 }
 
-const base64ToBytes = data => {
+export const base64ToBytes = data => {
   const binary = atob(data)
   const bytes = new Uint8Array(binary.length)
 
