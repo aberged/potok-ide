@@ -1,6 +1,6 @@
 # Forma: forma za unos na podacima aplikacije
 
-Forma je aplikacija u stilu Google Forms-a: urednik piše pitanja, ispitanici popunjavaju, a oni kojima je dozvoljeno vide odgovore, rezime i tabelu. Kod je u projektu `potok-forme`, napravljenom po šablonu `potok-vite`. Referenca API-ja je u [README-u](../README.md#collections-and-rules), a ovde je opisano kako se ti pozivi slažu u formu.
+Forma radi kao Google Forms, a izgleda kao ostatak Potoka: urednik piše pitanja, ispitanici popunjavaju, a oni kojima je dozvoljeno vide odgovore, rezime i tabelu. Kod je u projektu `potok-forme`, napravljenom po šablonu `potok-vite`. Referenca API-ja je u [README-u](../README.md#collections-and-rules), a ovde je opisano kako se ti pozivi slažu u formu.
 
 ## Ideja
 
@@ -8,7 +8,7 @@ Sve što forma ima su vrednosti grupe:
 
 | Forma ima | Gde to stoji |
 |---|---|
-| pitanja, temu, podešavanja | konfiguracija aplikacije: jedna vrednost kolekcije `config`, menja se u mestu |
+| pitanja, sliku zaglavlja, podešavanja | konfiguracija aplikacije: jedna vrednost kolekcije `config`, menja se u mestu |
 | ko popunjava, ko vidi odgovore, jedan odgovor po osobi, rok… | `rules` u konfiguraciji, koje Potok sprovodi pri svakom pozivu |
 | tačne odgovore kviza | `secret` u konfiguraciji, koji čitaju samo urednici |
 | odgovore | vrednosti kolekcije `responses`, po jedna za svaki poslat odgovor |
@@ -29,6 +29,7 @@ Ručno: u `potok-forme` pokreni `npm run build`, u **Uredi grupu** uključi **Op
 
 - **Urednici forme** su oni koji smeju da uređuju grupu, podrazumevano admini. Oni pišu konfiguraciju i uvek vide sve odgovore, jer pravila ionako mogu da promene.
 - **Ko popunjava** i **ko vidi odgovore** su uloge grupe, koje urednik bira u podešavanjima i pri objavi. Ostali vide samo svoje odgovore.
+- **Urednik popunjava** formu dugmetom **Popuni**: vidi je kao ispitanici, a njegov odgovor se računa kao svaki drugi. Pravila važe i za njega: dok forma nije objavljena, ne prima odgovore ili njegove uloge ne popunjavaju, to je samo pregled, a traka kaže zašto.
 - **Javna forma**: u javnoj grupi popunjavaju i prijavljeni nečlanovi, osim blokiranih. Svaki vidi samo svoj odgovor.
 - **Ispitanici vide rezime**: one koji popunjavaju Potok pušta samo do zbirnih brojeva, ne do pojedinačnih odgovora.
 
