@@ -133,6 +133,34 @@ defmodule PotokIde.Social.Notifications do
     end)
   end
 
+  @doc """
+  A new value in a collection of an app, for those of its readers who asked to
+  hear of them: a response to a form. `author` is nil for an anonymous one.
+  One tag per app, so a busy form keeps one notification on the phone.
+  """
+  def app_value_created(%Group{} = group, alt, author) do
+    query = if alt, do: "?d=#{alt.id}", else: ""
+
+    localized(fn ->
+      %{
+        title: dgettext("notifications", "New response in %{group}", group: group.name),
+        body:
+          case author do
+            %Profile{username: name} ->
+              dgettext("notifications", "%{name} sent a response.", name: name)
+
+            nil ->
+              dgettext("notifications", "Someone sent a response.")
+          end,
+        tag: "group-#{group.id}-app-#{if(alt, do: alt.id, else: 0)}-values",
+        url: "/groups/#{group.id}/group_home#{query}"
+      }
+      |> then(fn payload ->
+        if author, do: Map.put(payload, :badge, avatar_url(author)), else: payload
+      end)
+    end)
+  end
+
   defp value_payload(%Profile{} = creator, %Group{} = group, %Value{} = value) do
     body =
       case excerpt(value) do

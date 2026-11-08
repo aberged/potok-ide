@@ -27,6 +27,11 @@ config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 # Tests close polls and send their reminders by calling `Polls.Deadlines`.
 config :potok_ide, PotokIde.Polls.Scheduler, enabled: false
 
+# Apps' unclaimed files are swept by hand in tests, and scores computed
+# again inline, so tests can assert on them.
+config :potok_ide, PotokIde.Social.AppFileSweeper, enabled: false
+config :potok_ide, async_app_data: false
+
 # Attached files on disk, deleted inline so tests can assert they are gone.
 config :potok_ide, async_storage_cleanup: false
 

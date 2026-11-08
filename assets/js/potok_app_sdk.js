@@ -19,6 +19,10 @@ const pendingCalls = new Map()
 // listener -> whether it gets the values of every app in the group.
 const newValueListeners = new Map()
 const pollListeners = new Set()
+// listener -> the collection it follows (null: all of them).
+const collectionListeners = new Map()
+// call id -> progress callback of a file on its way.
+const uploadProgress = new Map()
 
 // A group has one app per description: "" for the default description, an
 // alternative description's id otherwise. Values carry it as `description_id`.
@@ -122,8 +126,9 @@ const subgroupPage = options => ({
   around_id: options.aroundId ?? null,
 })
 
-// `waits`: the answer depends on the viewer, who can take as long as they like.
-const call = (method, params = {}, {waits = false} = {}) =>
+// `waits`: the answer depends on the viewer, who can take as long as they like,
+// or on a file on its way. `file` goes along with the call (`uploadFile`).
+const call = (method, params = {}, {waits = false, file = null, onProgress = null} = {}) =>
   new Promise((resolve, reject) => {
     const id = nextCallId++
 
@@ -135,7 +140,10 @@ const call = (method, params = {}, {waits = false} = {}) =>
         }, CALL_TIMEOUT_MS)
 
     pendingCalls.set(id, {resolve, timer})
-    void parentReady.then(() => window.parent.postMessage({potok: 1, id, method, params}, "*"))
+    if (typeof onProgress === "function") uploadProgress.set(id, onProgress)
+
+    const message = file ? {potok: 1, id, method, params, file} : {potok: 1, id, method, params}
+    void parentReady.then(() => window.parent.postMessage(message, "*"))
   })
 
 window.addEventListener("message", event => {
@@ -173,7 +181,36 @@ window.addEventListener("message", event => {
     return
   }
 
+  if (message.event === "app_value") {
+    const change = message.change || {}
+
+    collectionListeners.forEach((collection, listener) => {
+      if (collection !== null && collection !== change.collection) return
+
+      try {
+        listener(change)
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    return
+  }
+
+  if (message.event === "upload_progress") {
+    const listener = uploadProgress.get(message.id)
+
+    try {
+      listener?.(message.progress)
+    } catch (error) {
+      console.error(error)
+    }
+    return
+  }
+
   if (message.event === "new_value") {
+    // Values in a collection come as `app_value`, to those the rules allow.
+    if (message.value?.collection != null) return
+
     const own = ownValue(message.value)
 
     newValueListeners.forEach((allApps, listener) => {
@@ -194,6 +231,7 @@ window.addEventListener("message", event => {
   if (!pending) return
 
   pendingCalls.delete(message.id)
+  uploadProgress.delete(message.id)
   clearTimeout(pending.timer)
 
   const {potok: _version, id: _id, ...reply} = message
@@ -212,6 +250,10 @@ const listParams = (options = {}) => ({
   order_by: options.orderBy ?? options.order_by ?? null,
   order_dir: options.orderDir ?? options.order_dir ?? null,
   scope: options.scope ?? null,
+  collection: options.collection ?? null,
+  mine: options.mine === true,
+  total: options.total === true,
+  match: options.match ?? null,
 })
 
 // What an app may set on a group below it. A field left out stays as it is.
@@ -228,15 +270,90 @@ const childParams = ({name, description, descriptionFormat, isPublic, inheritsMe
   )
 
 const potok = {
+  // With `{collection}` the value goes into that collection, as its rule in the
+  // app's config allows (`getConfig`), and it resolves to `{ok: true, value}`.
   insertValue: (data, options = {}) =>
     call("insert_value", {
       data: toData(data),
       content_format: options.contentFormat || options.content_format || "markdown",
+      collection: options.collection ?? null,
     }),
 
   // Up to 200 values per call; page with `afterId` / `beforeId` or `offset`.
   // `scope: "group"` also lists the values of the group's other apps.
+  // With `{collection}`: up to 100, by id, `orderDir: "desc"` for the newest
+  // first; every value for those who read the collection, otherwise only the
+  // viewer's own (`mine: true` asks for those anyway). `total: true` adds the
+  // count, and `match` keeps the values whose data contains it.
   listValues: (options = {}) => call("list_values", listParams(options)),
+
+  // The app's config (its `secret` part only for its editors), its `revision`,
+  // and per collection with a rule what the viewer may do there (`caps`).
+  getConfig: () => call("get_config"),
+
+  // Saves the config, for the app's editors. Pass the revision you started
+  // from (0 for the first); someone else's save in between gives
+  // `{ok: false, error: "conflict", current}`. `rules` is what Potok holds to.
+  saveConfig: (data, options = {}) =>
+    call("save_config", {data: toData(data), revision: options.revision ?? null}),
+
+  // Changes the viewer's own value in a collection whose rule allows it.
+  updateValue: (id, data, options = {}) =>
+    call("update_value", {id, data: toData(data), revision: options.revision ?? null}),
+
+  // For the app's editors: one value of a collection, or all of one.
+  deleteValue: id => call("delete_value", {id}),
+  deleteValues: collection => call("delete_values", {collection}),
+
+  // Counts over the answers under `under` (a path in each value), for `keys`
+  // only: one bucket per choice, per element of a list, per row of a map.
+  // `score: true` adds a quiz's scores, for those who read everything.
+  summarizeValues: (collection, options = {}) =>
+    call("summarize_values", {
+      collection,
+      under: options.under ?? null,
+      keys: options.keys ?? [],
+      score: options.score === true,
+    }),
+
+  // An editor's points and words for the answers of one value of a quiz.
+  gradeValue: (id, items) => call("grade_value", {id, items}),
+
+  // The group's roles, to pick from: `{key, name, builtin}`.
+  listRoles: () => call("list_roles"),
+
+  // Whether the viewer gets a push for each new value of the collection.
+  setNotifications: (collection, on) => call("set_notifications", {collection, on: on === true}),
+
+  // For the app's editors: makes the sub-groups that keep its files.
+  ensureFileGroups: () => call("ensure_file_groups"),
+
+  // An address the frame can show a file by, valid for ten minutes.
+  fileUrl: id => call("file_url", {id}),
+
+  // Sends a file for `slot` of `collection`, as its rule allows. Resolves to
+  // `{ok: true, file: {file, name, size, type}}`; put `{file}` in the value.
+  uploadFile: (file, options = {}) =>
+    call(
+      "upload_file",
+      {collection: options.collection ?? null, slot: options.slot ?? null},
+      {waits: true, file, onProgress: options.onProgress}
+    ),
+
+  // A picture of the app itself, for its editors. Resolves with `file.url`,
+  // an address anyone who sees the app can open.
+  uploadImage: (file, options = {}) =>
+    call("upload_image", {}, {waits: true, file, onProgress: options.onProgress}),
+
+  // Calls `listener` with each change in the app's collections the viewer may
+  // see: `{event, collection, value?, id?, revision?}`, where `event` is
+  // "created", "updated", "deleted", "cleared", "regraded" or "config".
+  onValues(listener, options = {}) {
+    if (typeof listener !== "function") return () => {}
+
+    collectionListeners.set(listener, options.collection ?? null)
+    return () => collectionListeners.delete(listener)
+  },
 
   updateDescription: (description, options = {}) =>
     call("update_description", {

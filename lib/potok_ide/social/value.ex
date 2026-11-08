@@ -14,6 +14,15 @@ defmodule PotokIde.Social.Value do
     field :content_format, Ecto.Enum, values: @content_formats, default: :markdown
     field :is_data, :boolean, default: false
     field :data, :map
+    # The collection of an app's data value and what goes with it, all set by
+    # `PotokIde.Social.AppData`, never cast: nil for chat values and for app
+    # values written without one. `anonymous` is fixed when the value is
+    # written, `lock_version` counts in-place updates and `managed` holds
+    # what the server and the app's editors add (a quiz score, grades).
+    field :collection, :string
+    field :anonymous, :boolean, default: false
+    field :lock_version, :integer, default: 0
+    field :managed, :map
     # Set from the content by `Social.Mentions`, never cast: the handles that
     # resolved (`%{"profiles" => [...], "roles" => [...]}`, lowercased) and the
     # members they reached.

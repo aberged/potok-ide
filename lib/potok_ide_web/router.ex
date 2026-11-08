@@ -145,6 +145,14 @@ defmodule PotokIdeWeb.Router do
     get "/:token", AttachmentController, :picture
   end
 
+  # A file an app shows in its sandboxed frame, which sends no session, by an
+  # address that lives ten minutes (`PotokIdeWeb.AppFileToken`).
+  scope "/app_files", PotokIdeWeb do
+    pipe_through :avatars
+
+    get "/:token", AttachmentController, :app_file
+  end
+
   # Logged-out visitors go to the login page and come back here afterwards;
   # the controller then checks that they read the chat the file was posted in.
   scope "/files", PotokIdeWeb do

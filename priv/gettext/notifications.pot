@@ -21,7 +21,7 @@ msgstr ""
 msgid "%{name} accepted your shared profile invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:150
+#: lib/potok_ide/social/notifications.ex:178
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr ""
@@ -56,12 +56,12 @@ msgstr ""
 msgid "%{name} shared %{profile}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:140
+#: lib/potok_ide/social/notifications.ex:168
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:143
+#: lib/potok_ide/social/notifications.ex:171
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr ""
@@ -89,4 +89,19 @@ msgstr ""
 #: lib/potok_ide/social/notifications.ex:36
 #, elixir-autogen, elixir-format
 msgid "%{name} replied to you in %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:150
+#, elixir-autogen, elixir-format
+msgid "%{name} sent a response."
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:146
+#, elixir-autogen, elixir-format
+msgid "New response in %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:153
+#, elixir-autogen, elixir-format
+msgid "Someone sent a response."
 msgstr ""

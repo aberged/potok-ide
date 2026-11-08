@@ -25,7 +25,7 @@ defmodule PotokIde.Polls do
   alias PotokIde.Polls.{Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, Profile, Value}
+  alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, Value}
 
   # What someone outside the group may do, enough to hold back a loop.
   @outsider_votes_per_minute 10
@@ -523,16 +523,9 @@ defmodule PotokIde.Polls do
   end
 
   # The account a ballot counts against: none for a profile that several accounts
-  # really share, which votes for all of them. Asks for more than the setting, as
-  # one account alone could turn it on to vote twice.
-  defp ballot_account_id(%Profile{sharing: :shared, id: profile_id}, %Account{id: account_id}) do
-    holders =
-      Repo.aggregate(from(ap in AccountProfile, where: ap.profile_id == ^profile_id), :count)
-
-    if holders > 1, do: nil, else: account_id
-  end
-
-  defp ballot_account_id(%Profile{}, %Account{id: account_id}), do: account_id
+  # really share, which votes for all of them. Forms answer by the same rule.
+  defp ballot_account_id(%Profile{} = profile, %Account{} = account),
+    do: Identity.counted_account_id(profile, account)
 
   @doc """
   Adds an answer of a member to an open poll that allows it. It takes the next

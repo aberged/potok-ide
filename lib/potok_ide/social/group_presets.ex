@@ -5,16 +5,18 @@ defmodule PotokIde.Social.GroupPresets do
   group's settings and roles. `Social.create_group/3` stays the way to set
   everything by hand.
 
-  The apps of a feed and of a group for polls are files in `priv/apps`, copied by
-  `mix potok.sync_apps`. Each group keeps its own copy in its description, as with
-  a pasted app, so a new build reaches only the groups made after it.
+  The apps of a feed, of a group for polls and of a form are files in
+  `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
+  its description, as with a pasted app, so a new build reaches only the groups
+  made after it.
 
   `Social.create_group_from_preset/4` puts a preset to work.
   """
 
   alias PotokIde.Social.Group
 
-  @keys ~w(chat folder announcements feed polls page)
+  # The form's key is not "form", whose element id the menu's own form has.
+  @keys ~w(chat folder announcements feed polls questionnaire page)
 
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
@@ -82,6 +84,18 @@ defmodule PotokIde.Social.GroupPresets do
   defp preset_attrs("polls") do
     %{
       "description" => app("glasanje.html"),
+      "description_format" => :html,
+      "uses_api" => true,
+      "home_page" => :description
+    }
+  end
+
+  # The Form app keeps its questions and answers in the group's app data, under
+  # rules its editors set there (`PotokIde.Social.AppData`). Its file groups come
+  # when it first needs them, not with every form.
+  defp preset_attrs("questionnaire") do
+    %{
+      "description" => app("forme.html"),
       "description_format" => :html,
       "uses_api" => true,
       "home_page" => :description

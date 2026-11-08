@@ -123,6 +123,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   defp created_message("feed"),
     do: gettext("The feed is ready. This is where you write its posts.")
 
+  defp created_message("questionnaire"),
+    do: gettext("The form is ready. Write its questions, then publish it.")
+
   defp created_message(_preset), do: gettext("Group created.")
 
   # Where the work goes on. An empty feed has nowhere to write from.
@@ -179,6 +182,16 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
           dgettext(
             "polls",
             "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
+          )
+      },
+      %{
+        key: "questionnaire",
+        icon: "hero-clipboard-document-list",
+        title: gettext("Form"),
+        hint: gettext("Questions, answers and a summary of them."),
+        summary:
+          gettext(
+            "It opens on the Form app: you write the questions and choose who fills it in and who sees the answers."
           )
       },
       %{

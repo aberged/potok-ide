@@ -8,6 +8,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Social.{
     Access,
+    AppData,
+    AppFiles,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -48,7 +50,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.{TagComponents, TagEditor}
-  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components, CreateMenu}
+  alias PotokIdeWeb.GroupLive.Show.{AppApi, AppValues, Components, CreateMenu}
 
   @children_page_size 20
   @members_page_size 20
@@ -545,6 +547,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             can_edit={Access.can?(@access, :edit_group) and !@group.is_root}
             reactions={@group_reactions}
             can_react={@can_react_to_group}
+            app_upload={if(@current_profile, do: @uploads.app_file)}
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -621,7 +624,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:ok, push_navigate(socket, to: path)}
 
       can_view_group?(group, is_member) ->
-        if connected?(socket), do: Social.subscribe_group(group)
+        if connected?(socket) do
+          Social.subscribe_group(group)
+          AppData.subscribe(group)
+        end
 
         {:ok,
          socket
@@ -646,6 +652,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> allow_attachments_upload()
          |> allow_description_picture_upload()
          |> allow_keyboard_media_upload()
+         |> allow_app_file_upload()
+         |> assign(:app_upload, nil)
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
          |> assign(:loaded_children, [])
@@ -874,6 +882,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # A picture for a template's field starts uploading as soon as it is picked.
   def handle_event("validate_description_picture", _params, socket), do: {:noreply, socket}
+
+  # A file the app's frame sends goes up on its own (`auto_upload`); a file the
+  # upload refuses outright (too big, too many) is told to the frame at once.
+  def handle_event("validate_app_file", _params, socket) do
+    case Enum.reject(socket.assigns.uploads.app_file.entries, & &1.valid?) do
+      [] ->
+        {:noreply, socket}
+
+      rejected ->
+        socket =
+          Enum.reduce(rejected, socket, &cancel_upload(&2, :app_file, &1.ref))
+
+        {:noreply, app_upload_done(socket, %{ok: false, error: "invalid_files"})}
+    end
+  end
 
   def handle_event("description_picture_invalid", _params, socket) do
     {:noreply, put_flash(socket, :error, gettext("Choose a valid image file."))}
@@ -2184,6 +2207,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:data_value_created, _group_id, _value}, socket), do: {:noreply, socket}
 
+  def handle_info({:app_value, group_id, event, payload}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, AppValues.announce(socket, event, payload)}
+  end
+
+  def handle_info({:app_value, _group_id, _event, _payload}, socket), do: {:noreply, socket}
+
   def handle_info({:value_updated, group_id, %Value{} = value}, socket)
       when socket.assigns.group.id == group_id do
     {:noreply, apply_value_updated(socket, value)}
@@ -2948,7 +2978,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
       parent_id: value.parent_id,
       creator_id: value.creator_id,
       creator_username: value_creator_username(value),
-      description_id: value.alt_description_id
+      description_id: value.alt_description_id,
+      collection: value.collection,
+      anonymous: value.anonymous,
+      revision: value.lock_version,
+      managed: value.managed,
+      inserted_at: value.inserted_at,
+      updated_at: value.updated_at
     }
   end
 
@@ -3072,6 +3108,116 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _error -> put_flash(socket, :error, gettext("The picture could not be sent."))
     end
   end
+
+  # A file the app's frame sends for a value or a picture of the app, after the
+  # app asked (`AppApi` `prepare_upload` keeps `:app_upload`). Only the file it
+  # announced is taken, and into the group `AppFiles` chose for it.
+  defp allow_app_file_upload(socket) do
+    opts = [
+      accept: :any,
+      max_entries: 1,
+      max_file_size: Storage.max_file_size(),
+      auto_upload: true,
+      progress: &app_file_progress/3
+    ]
+
+    opts =
+      if Storage.direct_upload?(),
+        do: Keyword.put(opts, :external, &presign_app_file/2),
+        else: opts
+
+    allow_upload(socket, :app_file, opts)
+  end
+
+  defp announced_app_file?(%{app_upload: %{} = upload}, entry),
+    do:
+      entry.client_name == upload.name and entry.client_size == upload.size and
+        entry.client_size <= upload.max_bytes
+
+  defp announced_app_file?(_assigns, _entry), do: false
+
+  defp presign_app_file(entry, socket) do
+    upload = socket.assigns.app_upload
+    key = upload && Storage.new_key(upload.file_group_id)
+    content_type = ValueAttachment.clean_content_type(entry.client_type)
+
+    with true <- announced_app_file?(socket.assigns, entry),
+         {:ok, url} <- Storage.presign_put(key, content_type, entry.client_size) do
+      {:ok, %{uploader: "S3", key: key, url: url, content_type: content_type}, socket}
+    else
+      _ -> {:error, %{reason: "not_permitted"}, socket}
+    end
+  end
+
+  # Also called when an upload to the bucket fails, with the entry not done.
+  defp app_file_progress(:app_file, %{done?: true} = entry, socket) do
+    if announced_app_file?(socket.assigns, entry) do
+      {:noreply, store_app_file(socket, entry)}
+    else
+      {:noreply,
+       socket
+       |> cancel_upload(:app_file, entry.ref)
+       |> app_upload_done(%{ok: false, error: "invalid_files"})}
+    end
+  end
+
+  defp app_file_progress(:app_file, entry, socket) do
+    if upload_errors(socket.assigns.uploads.app_file, entry) == [] do
+      {:noreply, app_upload_progress(socket, entry.progress)}
+    else
+      {:noreply,
+       socket
+       |> cancel_upload(:app_file, entry.ref)
+       |> app_upload_done(%{ok: false, error: "invalid_files"})}
+    end
+  end
+
+  defp store_app_file(socket, entry) do
+    upload = socket.assigns.app_upload
+    profile = socket.assigns.current_profile
+
+    stored =
+      consume_uploaded_entry(
+        socket,
+        entry,
+        &{:ok, store_attachment(%Group{id: upload.file_group_id}, &1, entry)}
+      )
+
+    with {:ok, attrs} <- stored,
+         {:ok, attachment} <- AppFiles.store(profile, upload, attrs) do
+      app_upload_done(socket, %{ok: true, file: app_file_payload(attachment, upload)})
+    else
+      _error -> app_upload_done(socket, %{ok: false, error: "invalid_files"})
+    end
+  end
+
+  # A picture of the app has an address anyone who sees the app can open; a
+  # file of a value is opened through `file_url`, by who may.
+  defp app_file_payload(attachment, upload) do
+    payload = %{
+      file: attachment.id,
+      name: attachment.filename,
+      size: attachment.byte_size,
+      type: attachment.content_type
+    }
+
+    if upload.collection,
+      do: payload,
+      else: Map.put(payload, :url, PostTemplates.Picture.address(attachment))
+  end
+
+  defp app_upload_done(%{assigns: %{app_upload: %{ref: ref}}} = socket, result) do
+    socket
+    |> assign(:app_upload, nil)
+    |> push_event("app_upload_done", Map.put(result, :ref, ref))
+  end
+
+  defp app_upload_done(socket, _result), do: socket
+
+  defp app_upload_progress(%{assigns: %{app_upload: %{ref: ref}}} = socket, progress),
+    do: push_event(socket, "app_upload_progress", %{ref: ref, progress: progress})
+
+  defp app_upload_progress(socket, _progress), do: socket
 
   # Two quick taps on the keyboard are two uploads at once.
   defp allow_keyboard_media_upload(socket) do

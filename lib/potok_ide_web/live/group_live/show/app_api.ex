@@ -24,6 +24,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   A vote is not like that: it can be final. So the app only reads polls, and the
   voting and the form open on the page itself, over the app (`open_poll`,
   `open_poll_form`).
+
+  Values in a collection (`collection` on `insert_value` and `list_values`, and
+  the calls after them) go through `PotokIde.Social.AppData`, under the rules
+  the app's editors keep in its config: who writes, who reads all and who only
+  their own, and what a value may carry. A non-member of a public group gets
+  there too when a rule is public.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
@@ -34,10 +40,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   alias PotokIde.Polls
   alias PotokIde.Polls.{Poll, Rules, View}
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group}
+  alias PotokIde.Social.{Access, AppData, AppFiles, Group, ValueAttachment, ValueRules}
+  alias PotokIdeWeb.AppFileToken
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
-  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm, PollsState}
+  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm, PollsState, RolesTab}
   alias PotokIdeWeb.PublicPreview
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
@@ -54,7 +61,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     list_subgroups open_group get_group list_children get_child
     create_child update_child withdraw_child preview_description
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
+    save_config update_value delete_value delete_values grade_value list_roles
+    set_notifications ensure_file_groups file_url prepare_upload
   )
+
+  # A filter of a page of values, as JSON: kept small, as it is matched in SQL.
+  @max_match_bytes 4_096
 
   # All an app may set on a group. Never `uses_api`: an app that made another
   # app would run its code for every viewer of that group.
@@ -107,6 +119,110 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       run(method, params, socket)
     else
       {error("stale_app", nil), socket}
+    end
+  end
+
+  defp run("insert_value", %{"collection" => collection} = params, socket)
+       when is_binary(collection) do
+    %{group: group, active_alt_description: alt, current_scope: scope} = socket.assigns
+
+    with {:ok, profile} <- signed_in(socket),
+         {:ok, socket} <- take_write_token(socket) do
+      case AppData.insert(profile, scope.account, group, alt, collection, params["data"]) do
+        {:ok, value, _rule} -> {%{ok: true, value: present_value(value, socket)}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("list_values", %{"collection" => collection} = params, socket)
+       when is_binary(collection) do
+    %{current_profile: profile, group: group, active_alt_description: alt, access: access} =
+      socket.assigns
+
+    case AppData.list(profile, group, alt, access, collection,
+           limit: non_negative_integer(params["limit"]),
+           offset: non_negative_integer(params["offset"]),
+           before_id: non_negative_integer(params["before_id"]),
+           after_id: non_negative_integer(params["after_id"]),
+           order_dir: optional_string(params["order_dir"]),
+           mine: params["mine"] == true,
+           match: match_param(params["match"]),
+           total: params["total"] == true
+         ) do
+      {:ok, rows, more?, total} ->
+        values = Enum.map(rows, &Map.update!(&1, :content_format, fn f -> to_string(f) end))
+        {%{ok: true, values: values, has_more: more?, total: total}, socket}
+
+      {:error, reason} ->
+        {data_error(reason), socket}
+    end
+  end
+
+  # The app's config and what the viewer may do in each collection it rules.
+  # Members get it, and anyone where a rule is public, as the form must show.
+  defp run("get_config", _params, socket) do
+    %{
+      current_profile: profile,
+      group: group,
+      active_alt_description: alt,
+      access: access,
+      current_scope: scope
+    } = socket.assigns
+
+    config = AppData.get_config(group, alt)
+    rules = AppData.rules(config)
+
+    public? =
+      Enum.any?(rules, fn {c, _rule} -> ValueRules.public?(AppData.rule(config, c), group) end)
+
+    if access.member? or public? do
+      now = DateTime.utc_now(:second)
+      account = scope && scope.account
+
+      caps =
+        Map.new(rules, fn {collection, _rule} ->
+          {collection,
+           ValueRules.caps(AppData.rule(config, collection), group, access, profile, now,
+             written?: AppData.answered?(profile, account, group, alt, collection),
+             notify?: AppData.notifications?(profile, group, alt, collection)
+           )}
+        end)
+
+      {%{
+         ok: true,
+         config: AppData.config_payload(config, access),
+         caps: caps,
+         manage: ValueRules.manage?(access),
+         can_create_groups: ValueRules.manage?(access) and Access.can?(access, :create_subgroups),
+         files: files_status(config, group, access),
+         visible_role_keys: (alt && alt.visible_role_keys) || [],
+         viewer: %{
+           signed_in: not is_nil(profile),
+           member: access.member?,
+           profile_id: profile && profile.id,
+           username: profile && profile.username
+         }
+       }, socket}
+    else
+      {error("not_a_member", gettext("You must be a group member to access group data values.")),
+       socket}
+    end
+  end
+
+  # Counts over a collection's answers, for those its rule lets see them.
+  defp run("summarize_values", params, socket) do
+    %{group: group, active_alt_description: alt, access: access} = socket.assigns
+
+    case AppData.summarize(group, alt, access, params["collection"],
+           under: string_list(params["under"]),
+           keys: string_list(params["keys"]) || [],
+           score: params["score"] == true
+         ) do
+      {:ok, summary} -> {%{ok: true, summary: summary_payload(summary)}, socket}
+      {:error, reason} -> {data_error(reason), socket}
     end
   end
 
@@ -208,6 +324,205 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
        when method in @signed_in_methods do
     {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+  end
+
+  defp run("save_config", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt, access: access} =
+      socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppData.save_config(
+             profile,
+             group,
+             alt,
+             params["data"],
+             non_negative_integer(params["revision"])
+           ) do
+        {:ok, config} ->
+          {%{ok: true, config: AppData.config_payload(config, access)}, socket}
+
+        {:error, {:conflict, current}} ->
+          {%{ok: false, error: "conflict", current: AppData.config_payload(current, access)},
+           socket}
+
+        {:error, reason} ->
+          {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("update_value", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, id} <- id_param(params),
+         {:ok, socket} <- take_write_token(socket) do
+      case AppData.update(
+             profile,
+             group,
+             alt,
+             id,
+             params["data"],
+             non_negative_integer(params["revision"])
+           ) do
+        {:ok, value, _rule} ->
+          {%{ok: true, value: present_value(value, socket)}, socket}
+
+        {:error, {:conflict, current}} ->
+          {%{ok: false, error: "conflict", current: present_value(current, socket)}, socket}
+
+        {:error, reason} ->
+          {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("delete_value", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, id} <- id_param(params),
+         {:ok, socket} <- take_write_token(socket) do
+      case AppData.delete(profile, group, alt, id) do
+        {:ok, value} -> {%{ok: true, id: value.id}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("delete_values", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppData.delete_collection(profile, group, alt, params["collection"]) do
+        {:ok, count} -> {%{ok: true, count: count}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("grade_value", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, id} <- id_param(params),
+         {:ok, socket} <- take_write_token(socket) do
+      case AppData.grade(profile, group, alt, id, params["items"]) do
+        {:ok, value, _rule} -> {%{ok: true, value: present_value(value, socket)}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # The roles a form can name, as the group's Roles tab shows them.
+  defp run("list_roles", _params, socket) do
+    case require_member(
+           socket,
+           gettext("You must be a group member to access group data values.")
+         ) do
+      :ok ->
+        roles =
+          if socket.assigns.access.manifest, do: socket.assigns.access.manifest.roles, else: []
+
+        {%{
+           ok: true,
+           roles:
+             Enum.map(roles, fn role ->
+               %{
+                 key: role.key,
+                 name: RolesTab.role_label(role),
+                 builtin: role.key in ["admin", "everyone"]
+               }
+             end)
+         }, socket}
+
+      {:error, reply} ->
+        {reply, socket}
+    end
+  end
+
+  defp run("set_notifications", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppData.set_notifications(
+             profile,
+             group,
+             alt,
+             params["collection"],
+             params["on"] == true
+           ) do
+        {:ok, on?} -> {%{ok: true, on: on?}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("ensure_file_groups", _params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppFiles.ensure_groups(profile, group, alt) do
+        {:ok, files} -> {%{ok: true, files: files}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # An address the frame can show a file by, for a viewer who may open it.
+  defp run("file_url", params, socket) do
+    with {:ok, id} <- id_param(params),
+         %ValueAttachment{} = attachment <-
+           Social.get_attachment_for_download(socket.assigns.current_profile, id) do
+      {%{
+         ok: true,
+         url: AppFileToken.address(attachment),
+         name: attachment.filename,
+         type: attachment.content_type,
+         size: attachment.byte_size
+       }, socket}
+    else
+      {:error, reply} -> {reply, socket}
+      _not_theirs -> {error("not_found", nil), socket}
+    end
+  end
+
+  # The page's hook asks before it sends a file of the frame's, and the file
+  # then arrives through the page's upload (`Show`, `:app_file`).
+  defp run("prepare_upload", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, file} <- upload_params(params),
+         {:ok, socket} <- take_write_token(socket) do
+      prepared =
+        if params["image"] == true do
+          AppFiles.prepare_image(profile, group, alt, file)
+        else
+          prepare_value_upload(profile, group, alt, params, file)
+        end
+
+      case prepared do
+        {:ok, upload} ->
+          ref = Integer.to_string(System.unique_integer([:positive]))
+          {%{ok: true, ref: ref}, assign(socket, :app_upload, Map.put(upload, :ref, ref))}
+
+        {:error, reason} ->
+          {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
   end
 
   # An app runs for every viewer and with the viewer's sight, so it reaches
@@ -407,6 +722,163 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
+  end
+
+  defp prepare_value_upload(profile, group, alt, params, file) do
+    collection = params["collection"]
+    slot = params["slot"]
+
+    if ValueRules.app_collection?(collection) and is_binary(slot),
+      do: AppFiles.prepare(profile, group, alt, collection, slot, file),
+      else: {:error, :invalid_files}
+  end
+
+  defp upload_params(%{"name" => name, "size" => size, "type" => type})
+       when is_binary(name) and is_integer(size) and size > 0 and is_binary(type) do
+    {:ok,
+     %{
+       name: ValueAttachment.clean_filename(name),
+       size: size,
+       type: ValueAttachment.clean_content_type(type)
+     }}
+  end
+
+  defp upload_params(_params), do: {:error, error("invalid_files", nil)}
+
+  defp signed_in(%{assigns: %{current_profile: nil}}),
+    do: {:error, error("forbidden", gettext("Your roles in this group do not allow that."))}
+
+  defp signed_in(%{assigns: %{current_profile: profile}}), do: {:ok, profile}
+
+  defp id_param(params) do
+    case non_negative_integer(params["id"]) do
+      nil -> {:error, error("not_found", nil)}
+      id -> {:ok, id}
+    end
+  end
+
+  defp string_list(list) when is_list(list) do
+    if Enum.all?(list, &is_binary/1), do: list
+  end
+
+  defp string_list(_list), do: nil
+
+  defp match_param(match) when is_map(match) and map_size(match) > 0 do
+    if byte_size(Jason.encode!(match)) <= @max_match_bytes, do: match
+  end
+
+  defp match_param(_match), do: nil
+
+  # A value of a collection as the viewer may see it, by the rules of now.
+  defp present_value(value, socket) do
+    %{group: group, active_alt_description: alt, access: access, current_profile: profile} =
+      socket.assigns
+
+    config = AppData.get_config(group, alt)
+
+    value
+    |> Show.value_payload()
+    |> ValueRules.present(
+      AppData.rule(config, value.collection),
+      profile && profile.id,
+      access,
+      AppData.key(config, value.collection)
+    )
+  end
+
+  # Whether the groups that keep the app's files stand, for its editors to fix.
+  defp files_status(config, group, access) do
+    if ValueRules.manage?(access) do
+      files = AppFiles.groups(config)
+
+      Map.new(["public", "private"], fn target ->
+        status =
+          case AppFiles.file_group(files, group, target) do
+            {:ok, _group} -> "ok"
+            {:error, :files_exposed} -> "exposed"
+            {:error, _missing} -> "missing"
+          end
+
+        {target, status}
+      end)
+    end
+  end
+
+  defp summary_payload(summary) do
+    %{
+      total: summary.total,
+      keys:
+        Map.new(summary.keys, fn {key, entry} ->
+          {key,
+           %{
+             answered: entry.answered,
+             rows:
+               Enum.map(entry.rows, fn {row, row_entry} ->
+                 %{
+                   row: row,
+                   answered: row_entry.answered,
+                   other: row_entry.other,
+                   buckets:
+                     Enum.map(row_entry.buckets, fn {value, n} -> %{value: value, count: n} end)
+                 }
+               end)
+           }}
+        end),
+      score: summary.score
+    }
+  end
+
+  # What went wrong with a value or the config, as an app can tell its viewer.
+  defp data_error(reason) do
+    case reason do
+      reason when reason in [:not_permitted, :role, :blocked] ->
+        error("forbidden", gettext("Your roles in this group do not allow that."))
+
+      reason when reason in [:members_only, :not_a_member] ->
+        error("not_a_member", gettext("You must be a group member to access group data values."))
+
+      :closed ->
+        error("closed", gettext("This no longer takes answers."))
+
+      :already_answered ->
+        error("already_answered", gettext("You have already answered."))
+
+      :released ->
+        error("released", gettext("The scores are out, so the answer can no longer change."))
+
+      :rate_limited ->
+        error("rate_limited", gettext("Too many changes in a short time. Try again shortly."))
+
+      :too_large ->
+        error("too_large", gettext("That is too much to save."))
+
+      :invalid_collection ->
+        error("invalid_collection", nil)
+
+      reason
+      when reason in [
+             :invalid_rules,
+             :anonymous_uploads,
+             :immediate_release_edit,
+             :under_required
+           ] ->
+        %{ok: false, error: "invalid_rules", reason: Atom.to_string(reason)}
+
+      :invalid_files ->
+        error("invalid_files", gettext("A file is missing or does not fit."))
+
+      :files_missing ->
+        error("files_missing", gettext("The group that keeps the files is gone."))
+
+      :files_exposed ->
+        error("files_exposed", gettext("The group for private files is no longer closed."))
+
+      reason when reason in [:not_found, :no_config, :not_scored, :invalid_summary] ->
+        error(Atom.to_string(reason), nil)
+
+      _other ->
+        error("invalid_value", gettext("Could not save the data value."))
+    end
   end
 
   defp share_target(group, profile, id, true), do: group_below(group, profile, id)

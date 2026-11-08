@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.AttachmentController do
   alias PotokIde.Social
   alias PotokIde.Social.ValueAttachment
   alias PotokIde.Storage
+  alias PotokIdeWeb.AppFileToken
   alias PotokIdeWeb.PostTemplates.Picture
 
   # A stored file never changes, so the browser may keep it for a while; it
@@ -29,6 +30,17 @@ defmodule PotokIdeWeb.AttachmentController do
          %ValueAttachment{} = attachment <- Social.get_attachment(id),
          true <- ValueAttachment.image?(attachment) do
       serve(conn, attachment, :inline)
+    else
+      _ -> send_resp(conn, 404, "")
+    end
+  end
+
+  # A file shown in an app's frame. The token was handed only to a viewer who
+  # may open the file, and it is fresh for ten minutes.
+  def app_file(conn, %{"token" => token} = params) do
+    with {:ok, id} <- AppFileToken.verify(token),
+         %ValueAttachment{} = attachment <- Social.get_attachment(id) do
+      serve(conn, attachment, disposition(attachment, params))
     else
       _ -> send_resp(conn, 404, "")
     end

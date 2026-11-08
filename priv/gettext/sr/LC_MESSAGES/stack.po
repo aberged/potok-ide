@@ -366,11 +366,6 @@ msgstr "Šta Potok ne koristi"
 msgid "What it solves"
 msgstr "Šta rešava"
 
-#: lib/potok_ide_web/stack_copy.ex:199
-#, elixir-autogen, elixir-format
-msgid "When someone saves a value, Phoenix PubSub publishes it on the group's topic, and every page process listening there gets it and shows it. Unread counts have a topic of their own, so one value is one publication, however many members the group has."
-msgstr "Kad neko sačuva vrednost, Phoenix PubSub je objavi na kanalu grupe, a svaki proces stranice koji ga sluša dobije je i prikaže. Nepročitano ima svoj kanal, pa je jedna vrednost jedna objava, koliko god članova grupa imala."
-
 #: lib/potok_ide_web/stack_copy.ex:63
 #, elixir-autogen, elixir-format
 msgid "When something goes wrong, only that process falls. Its page reconnects on its own and nobody else notices. A supervisor starts the permanent parts of the app and brings them back if they stop."
@@ -393,5 +388,10 @@ msgstr "daisyUI je dodatak za Tailwind. Česte delove interfejsa daje kao klase 
 
 #: lib/potok_ide_web/stack_copy.ex:79
 #, elixir-autogen, elixir-format
-msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
-msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta, a tako rade i rokovi glasanja. Slike kartica linkova crtaju se jedna po jedna, svaka u svom procesu. Ništa od toga ne traži poseban sistem za redove poslova."
+msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
+msgstr "Obaveštenja se šalju iz posebnog procesa, pa stranica ne čeka servise za dostavu. Podsetnici za događaje su proces koji se budi na svakih pola minuta, a tako rade i rokovi glasanja. Jednom na sat drugi proces briše fajlove koje su aplikacije primile, a nijedan odgovor ih nije uzeo. Slike kartica linkova crtaju se jedna po jedna, svaka u svom procesu. Ništa od toga ne traži poseban sistem za redove poslova."
+
+#: lib/potok_ide_web/stack_copy.ex:199
+#, elixir-autogen, elixir-format
+msgid "When someone saves a value, Phoenix PubSub publishes it on the group's topic, and every page process listening there gets it and shows it. Unread counts have a topic of their own, so one value is one publication, however many members the group has. So do the values apps keep under rules, and each page decides by those rules whether its reader may see one."
+msgstr "Kad neko sačuva vrednost, Phoenix PubSub je objavi na kanalu grupe, a svaki proces stranice koji ga sluša dobije je i prikaže. Nepročitano ima svoj kanal, pa je jedna vrednost jedna objava, koliko god članova grupa imala. Svoj kanal imaju i vrednosti koje aplikacije čuvaju po pravilima, a svaka stranica po tim pravilima odlučuje da li njen čitalac sme da vidi vrednost."

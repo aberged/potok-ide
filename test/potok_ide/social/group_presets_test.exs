@@ -11,6 +11,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
   @feed_build "priv/apps/feed.html"
   @feed_creator_build "priv/apps/feed_creator.html"
   @polls_build "priv/apps/glasanje.html"
+  @forms_build "priv/apps/forme.html"
 
   setup do
     {_account, owner} = account_with_profile!("preset-owner")
@@ -99,6 +100,17 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute Map.has_key?(created, :feed) and created.feed
 
       assert Access.can?(ctx.member, group, :create_polls)
+    end
+
+    test "a form opens on its app, closed, with no file groups until it needs them", ctx do
+      assert {:ok, %{group: group}} = create(ctx, "questionnaire")
+
+      assert group.uses_api
+      assert group.home_page == :description
+      assert group.description_format == :html
+      assert group.description == File.read!(@forms_build)
+      refute group.is_public
+      assert Social.list_child_groups(group) == []
     end
 
     test "takes from the viewer only what is theirs to pick", ctx do

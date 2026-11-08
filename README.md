@@ -101,7 +101,7 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Each row of the sub-groups tab has a menu with the sections and the options of that group (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
-* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed, polls and page. The full form stays a link away. The feed and polls presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator` and `potok-glasanje`.
+* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed, polls, form and page. The full form stays a link away. The feed, polls and form presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator`, `potok-glasanje` and `potok-forme`.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
 Tags:
@@ -659,7 +659,47 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `openPoll(id)` opens the poll in a dialog on Potok's page, over the app, where the viewer votes. An app reads polls and nothing more: it runs for every viewer and a vote can be final, so there is no call that votes, ends or changes one.
 * `openPollForm()` opens Potok's form for a new poll in this group, over the app. It needs `can_start_polls` from `getGroup`, and is refused with `forbidden` otherwise.
 * `onPollChange(listener)` calls `listener(id)` when a poll of this group changes, gets a vote or is deleted, and returns a function that removes the listener. Read it again with `getPoll`. Changes are pushed only while a description is on screen.
-* `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen.
+* `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen. Values in a collection never come here: see below.
+
+#### Collections and rules
+
+Values without a collection are what the calls above describe: every member reads them all. An app that needs more keeps its values in collections (`PotokIde.Social.AppData`), under rules its editors write into the app's config. Potok normalizes the rules and holds to them on every call. The Forma app (`potok-forme`, the "Form" preset) is built on them; see [docs/forma.md](docs/forma.md).
+
+The config is one value of the reserved collection `config`, changed in place:
+
+```js
+{rules: {responses: {write: ["everyone"], read: ["<role uuid>"], summary: [], once: true, edit_own: false,
+                     anonymous: false, public: false, open: true, closes_at: null, under: ["a"],
+                     uploads: {q9: {target: "private", max_files: 5, max_bytes: 10485760, types: ["pdf"]}},
+                     score: {release: "manual", released: false, show: {missed: true, correct: true, points: true}}}},
+ secret: {score: {responses: {q1: {points: 2, eq: "o3"}}}},   // only editors read it
+ files: {public: 512, private: 513},                          // written by Potok only
+ ...anything else the app keeps}
+```
+
+* A rule names role keys (`everyone`, `admin` or a custom role's UUID; `listRoles` gives them). `write`: who adds values. `read`: who reads every value; everyone else reads only their own. Those who may edit the group (`edit_group`) always read everything, as they could change the rules. `summary`: who sees only counts.
+* A collection without a rule is closed: members write, and only the author and the editors read.
+* `once`: one value per person: one account once, whichever of its profiles, and a profile several accounts really share on its own (the rule of polls). `edit_own`: authors may change their value. `open: false` or a past `closes_at` takes no more. `public`: signed-in non-members of a public group write too, unless blocked, and read their own; it makes `write` `["everyone"]`.
+* `anonymous`: a value written then never shows its author to anyone but the author, also after the rule changes. Its id and time still show, and an anonymous collection takes no files, as a file keeps its sender.
+* `under` is the path to the map of answers in each value, which `uploads`, `score` and summaries read.
+* `uploads` are the slots that take files: `target` is the app's private or public file group, `types` any of `document`, `presentation`, `spreadsheet`, `drawing`, `pdf`, `image`, `video`, `audio` (empty: any). A value names its files under its slot as `[{file: <id>, ...}]`; each must be the sender's own, sent for that slot, and belong to no other value.
+* `score` makes it a quiz: Potok scores each value by the key in `secret` and writes `managed` (`score`, `max`, `pending`, per answer `ok` and `points`). Checks: `eq` (one choice), `set` (exactly those), `text` (any of those texts, ignoring case and spaces; `others_wrong` marks the rest wrong, otherwise they wait for an editor), `rows` and `row_sets` (grids, points per right row), `manual`. A new key scores everything again, keeping editors' grades. Authors see their `managed` once released (`release: "immediate"`, or `released: true`), as `show` allows. `immediate` cannot go with `edit_own`, and nobody changes a value after release.
+* Limits: a value is at most 64 KB as JSON, the config 512 KB, a page 100 values. Non-members write at most 10 values a minute and send 20 files an hour; an app's files take at most 1 GB.
+
+Calls:
+
+* `getConfig()` resolves to `{ok: true, config: {id, revision, data} | null, caps, manage, can_create_groups, files, visible_role_keys, viewer}`. `caps` has, per ruled collection, what the viewer may do: `{write, write_block, read: "all" | "own", summary, edit_own, manage, open, once, anonymous, public, released, written, notify}`. `files` (editors only) says per file group `"ok"`, `"missing"` or `"exposed"`. Members get it, and anyone where a rule is public.
+* `saveConfig(data, {revision})` resolves to `{ok: true, config}`, for editors. Pass the revision you started from (0 for the first save); someone else's save in between gives `{ok: false, error: "conflict", current}`. Invalid rules give `{error: "invalid_rules", reason}`.
+* `insertValue(data, {collection})` and `listValues({collection, mine, total, match, orderDir, limit, offset, beforeId, afterId})` work on a collection. A list goes by id, `orderDir: "desc"` gives the newest first, `total: true` adds `total`, `mine: true` keeps the viewer's own, and `match` (an object, full readers only) keeps values whose data contains it.
+* `updateValue(id, data, {revision})` changes the viewer's own value; `deleteValue(id)` and `deleteValues(collection)` are for editors and take the files along.
+* `summarizeValues(collection, {under, keys, score})` resolves to `{ok: true, summary: {total, keys, score}}`: per key in `keys`, how many answered, and per row (`null` for a plain answer) the 50 biggest buckets as `{value, count}` and `other`. A string, number or boolean is one bucket, a list one per element, a map one set per entry. `score: true` adds, for full readers, `{count, average, median, min, max, distribution, items}`.
+* `gradeValue(id, items)`: an editor's `{question: {points, feedback}}`; `points: null` gives the answer back to the key.
+* `listRoles()` resolves to `{ok: true, roles: [{key, name, builtin}]}`, for members.
+* `setNotifications(collection, on)`: a full reader's push for each new value of the collection (not for changes, never to the author, without a name when anonymous).
+* `ensureFileGroups()`: for editors who may make sub-groups, makes the app's two file groups that are missing, "Private files" (closed, not inheriting: only its members open its files, at first the editor who made it) and "Files" (inherits the app group's members), and records them in `files`.
+* `uploadFile(file, {collection, slot, onProgress})` sends a file for a slot and resolves to `{ok: true, file: {file, name, size, type}}`. It goes through the page's upload, straight to the bucket where there is one, and waits for as long as that takes. `uploadImage(file)` sends a picture of the app itself (editors, images up to 10 MB, into the public group) and its `file.url` is a signed address anyone who sees the app opens. Files nobody's value claimed are deleted after a day.
+* `fileUrl(id)` resolves to `{ok: true, url, name, type, size}`: an address valid for ten minutes, for a viewer who may open the file (a member of the group that keeps it, or whoever sent it).
+* `onValues(listener, {collection})` calls `listener(change)` for what changes in the app's collections and the viewer may see: `{event: "created" | "updated", collection, value}`, `{event: "deleted", collection, id}`, `{event: "cleared", collection}` (`null`: all of the app's data), `{event: "regraded", collection}` and `{event: "config", id, revision}`, after which the app reads the config again.
 
 An app can also keep the groups right under its own. These calls act in the viewer's name, so all of them need a viewer with the `edit_group` permission in the app's group, who could rewrite the app anyway; by default that is only an admin. Anyone else gets `forbidden`, and `can_manage_children` in `getGroup` says so in advance. They reach direct sub-groups only, as far as the viewer can see them, without threads and direct conversations. Any other group is `not_found`. See [docs/feed-i-feedcreator.md](docs/feed-i-feedcreator.md) for two apps built on them.
 
@@ -679,8 +719,10 @@ An app cannot set `uses_api` or anything else outside `attrs`, and there is no c
 Reply shapes:
 
 ```js
-// value (insertValue, onNewValue); listed values also have inserted_at and updated_at
-{id, content: "data:", data: {...}, content_format, is_data: true, group_id, parent_id, creator_id, creator_username, description_id}
+// value (insertValue, onNewValue, listValues, onValues). creator_id and creator_username are null on
+// someone else's anonymous value; managed is a quiz's score as the viewer may see it.
+{id, content: "data:", data: {...}, content_format, is_data: true, group_id, parent_id, creator_id, creator_username,
+ description_id, collection, anonymous, revision, managed, inserted_at, updated_at}
 
 // group (updateDescription, getDescription); description_id is null for the default description
 {id, description_id, name, description, description_format}
@@ -715,6 +757,7 @@ Error codes (`error`):
 
 * From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
 * From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `invalid_emoji`, `invalid_date`, `unknown_method`.
+* For collections: `closed`, `already_answered`, `released`, `too_large`, `invalid_files`, `files_missing`, `files_exposed` (with a `message`), and `conflict` (with `current`), `invalid_rules` (with `reason`), `invalid_collection`, `no_config`, `not_scored`, `invalid_summary`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`, `cancelled` (the viewer closed the picker of `pickEmoji`), `forbidden` (the page has no picker).
 
 The frame environment:

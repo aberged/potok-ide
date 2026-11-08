@@ -26,6 +26,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   attr :reactions, :list, default: [], doc: "the group's reactions"
   attr :can_react, :boolean, default: false, doc: "may react to the group"
 
+  attr :app_upload, :any,
+    default: nil,
+    doc: "the page's upload for files an app sends (`:app_file`); nil for a guest"
+
   def panel(assigns) do
     source = assigns.active_alt_description || assigns.group
 
@@ -116,6 +120,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
             storage_key={storage_key(@group, @active_alt_description)}
             viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}:#{@viewer_roles}"}
           />
+          <%!-- The frame cannot upload: its hook sends the file through here. --%>
+          <form
+            :if={@app_upload}
+            id="group-app-upload-form"
+            phx-change="validate_app_file"
+            class="hidden"
+          >
+            <.live_file_input upload={@app_upload} tabindex="-1" />
+          </form>
         </div>
 
         <div

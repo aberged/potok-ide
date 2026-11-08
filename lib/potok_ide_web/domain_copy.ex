@@ -237,6 +237,10 @@ defmodule PotokIdeWeb.DomainCopy do
   end
 
   defp own_field("Value", "alt_description_id"), do: dgettext("domain_map", "app description")
+  defp own_field("Value", "collection"), do: dgettext("domain_map", "collection of app data")
+  defp own_field("Value", "anonymous"), do: dgettext("domain_map", "anonymous when written")
+  defp own_field("Value", "lock_version"), do: dgettext("domain_map", "revision")
+  defp own_field("Value", "managed"), do: dgettext("domain_map", "score and grades")
   defp own_field("Value", "parent_id"), do: dgettext("domain_map", "replies to")
 
   defp own_field("ValueAttachment", "storage_key"), do: dgettext("domain_map", "place in storage")
@@ -715,6 +719,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "The size is not negative.")
   end
 
+  def check_text("values_collection_check") do
+    dgettext(
+      "domain_map",
+      "Only app data has a collection, named with small letters, digits, - and _."
+    )
+  end
+
   def check_text(_name), do: nil
 
   @doc "The short names on the arrows of the core view."
@@ -887,7 +898,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them and read them page by page."
+              "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them and read them page by page, the newest first if it likes."
             )
         },
         %{
@@ -896,7 +907,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "A new value reaches every member who has the app open right away, with no refresh."
+              "A new value reaches right away, with no refresh, everyone who has the app open and may see it."
             )
         },
         %{
@@ -905,7 +916,16 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It can also read the values of the group's other apps, and it writes only to its own."
+              "It can also read the values of the group's other apps, except those kept under rules, and it writes only to its own."
+            )
+        },
+        %{
+          icon: "hero-clipboard-document-check",
+          title: dgettext("domain_map", "Collects answers by its own rules"),
+          text:
+            dgettext(
+              "domain_map",
+              "An app can keep its <Value>values</Value> under rules its editors set: which <GroupRole>roles</GroupRole> write and which read everything, one answer per person, changing one's own answer, a deadline, anonymous answers and, in a public group, answers from signed-in non-members. Potok also scores a quiz by a key only the editors see, counts the answers for a summary, keeps the files sent with them in two sub-groups of the app's group, and sends a push about each new answer to whoever asks for it. That is how a group becomes a form."
             )
         },
         %{
@@ -999,7 +1019,11 @@ defmodule PotokIdeWeb.DomainCopy do
         dgettext("domain_map", "The server checks every call again, whatever the app asks for."),
         dgettext(
           "domain_map",
-          "Only members of the group read and save values, and the number of saves is limited."
+          "Members read and save values, and so do signed-in non-members where an app's rules open that to them in a public group. Rules can narrow it further, and the number of saves is limited."
+        ),
+        dgettext(
+          "domain_map",
+          "Potok checks who answers, when, how many times and how much, not what an answer says."
         ),
         dgettext(
           "domain_map",
@@ -1086,7 +1110,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls keeps a copy of its app the same way."
+            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls and a form keep a copy of their app the same way, and a form gets its two groups for files only once it needs them."
           )
       },
       %{
@@ -1094,7 +1118,15 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
+            "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to and which of the app's collections holds it. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "An app's data carry their own rules"),
+        text:
+          dgettext(
+            "domain_map",
+            "An app's settings are one <Value>value</Value> of its own: the app's data, a secret part only its editors read, and the rules of its other collections, which Potok holds to on every call. A rule names the <GroupRole>roles</GroupRole> that write and those that read everything; everyone else reads only what they wrote, and those who may edit the group always read all. A collection without a rule is closed the same way. One answer per person counts one account once, as a poll does. An answer written while its collection was anonymous never shows its author to anyone but the author, though its time shows, and whoever rewrites the app's code could still get around it. Files sent with answers are values with a <ValueAttachment>file</ValueAttachment> in two sub-groups of the app's group: a closed one, whose members alone open them, and one that inherits the members. Whoever sent a file can always open it."
           )
       },
       %{

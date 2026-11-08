@@ -21,7 +21,7 @@ msgstr "%{name}: твоја позивница је прихваћена"
 msgid "%{name} accepted your shared profile invitation"
 msgstr "%{name}: твоја позивница за дељени профил је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:150
+#: lib/potok_ide/social/notifications.ex:178
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr "%{name}: нова порука"
@@ -56,12 +56,12 @@ msgstr "%{name}: %{emoji} на твоју поруку"
 msgid "%{name} shared %{profile}"
 msgstr "%{name} дели профил %{profile} с тобом"
 
-#: lib/potok_ide/social/notifications.ex:140
+#: lib/potok_ide/social/notifications.ex:168
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr "Нова порука у групи %{group}"
 
-#: lib/potok_ide/social/notifications.ex:143
+#: lib/potok_ide/social/notifications.ex:171
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr "Нова порука у групи %{group}: %{excerpt}"
@@ -90,3 +90,18 @@ msgstr "Пуш обавештења су укључена за твој нало
 #, elixir-autogen, elixir-format
 msgid "%{name} replied to you in %{group}"
 msgstr "%{name} ти одговара у групи %{group}"
+
+#: lib/potok_ide/social/notifications.ex:150
+#, elixir-autogen, elixir-format
+msgid "%{name} sent a response."
+msgstr "%{name}: нов одговор"
+
+#: lib/potok_ide/social/notifications.ex:146
+#, elixir-autogen, elixir-format
+msgid "New response in %{group}"
+msgstr "Нов одговор у групи %{group}"
+
+#: lib/potok_ide/social/notifications.ex:153
+#, elixir-autogen, elixir-format
+msgid "Someone sent a response."
+msgstr "Стигао је нов одговор."

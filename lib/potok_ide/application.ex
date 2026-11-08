@@ -22,6 +22,7 @@ defmodule PotokIde.Application do
       PotokIde.Presence,
       PotokIde.Events.ReminderScheduler,
       PotokIde.Polls.Scheduler,
+      PotokIde.Social.AppFileSweeper,
       # Start to serve requests, typically the last entry
       PotokIdeWeb.Endpoint,
       PotokIde.AccountBootstrap

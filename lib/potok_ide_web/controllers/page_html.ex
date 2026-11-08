@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Groups and sub-groups"),
         text:
           gettext(
-            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls or page."
+            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form or page."
           )
       },
       %{
@@ -191,7 +191,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Apps in a group"),
         text:
           gettext(
-            "A group's description doesn't have to be just text. It can also be a small app, say a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
+            "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
           )
       }
     ]
@@ -205,7 +205,9 @@ defmodule PotokIdeWeb.PageHTML do
         icon: "hero-bell",
         title: gettext("Notifications"),
         text:
-          gettext("On your phone and in the browser, for messages, mentions, events and polls.")
+          gettext(
+            "On your phone and in the browser, for messages, mentions, events, polls and form responses."
+          )
       },
       %{
         id: "phone",

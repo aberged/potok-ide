@@ -465,6 +465,38 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Makes groups under `parent` the way a preset does, with `taken` permissions
+  taken from `everyone` in a manifest of each one's own, and runs `fun` with
+  them in the same transaction: what an app needs to keep its files
+  (`PotokIde.Social.AppFiles`). Returns `{:ok, fun's result}`.
+  """
+  def create_groups_quietly(%Profile{} = creator, %Group{} = parent, attrs_list, taken, fun)
+      when is_list(attrs_list) and is_function(fun, 1) do
+    Repo.transaction(fn ->
+      made =
+        Enum.map(attrs_list, fn attrs ->
+          case insert_preset_group(creator, parent, attrs, taken) do
+            {:ok, group, created} -> {group, created}
+            {:error, reason} -> Repo.rollback(reason)
+          end
+        end)
+
+      {fun.(Enum.map(made, &elem(&1, 0))), Enum.flat_map(made, &elem(&1, 1))}
+    end)
+    |> case do
+      {:ok, {result, created}} ->
+        Enum.each(created, fn {parent, group, changes} ->
+          broadcast_group_created(creator, parent, group, changes)
+        end)
+
+        {:ok, result}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
   defp insert_preset_feed(%Profile{} = creator, %Group{} = group, "feed") do
     insert_preset_group(
       creator,
@@ -2572,6 +2604,11 @@ defmodule PotokIde.Social do
 
       if deleted_count > 0 do
         broadcast_group_updated(group)
+        # An app open meanwhile starts over: its config may be gone with the rest.
+        PotokIde.Social.AppData.broadcast(group, :cleared, %{
+          alt_id: alt_description && alt_description.id,
+          collection: nil
+        })
       end
 
       {:ok, deleted_count}
@@ -3863,7 +3900,9 @@ defmodule PotokIde.Social do
 
   @doc """
   The attachment when the profile reads the chat it was posted in: a member of
-  the group, or anyone in an open chat, where it is on the page. nil otherwise.
+  the group, or anyone in an open chat, where it is on the page. A file sent
+  to an app (`AppFiles`) also opens for whoever sent it, who need not be a
+  member of the group that keeps it. nil otherwise.
   """
   def get_attachment_for_download(%Profile{} = profile, attachment_id)
       when is_integer(attachment_id) do
@@ -3876,11 +3915,23 @@ defmodule PotokIde.Social do
       |> Repo.one()
 
     if attachment &&
-         (Group.open_chat?(attachment.group) or member_of_group?(profile, attachment.group)),
+         (Group.open_chat?(attachment.group) or member_of_group?(profile, attachment.group) or
+            own_app_file?(profile, attachment)),
        do: attachment
   end
 
   def get_attachment_for_download(_profile, _attachment_id), do: nil
+
+  defp own_app_file?(
+         %Profile{id: profile_id},
+         %ValueAttachment{profile_id: profile_id} = attachment
+       ) do
+    Repo.exists?(
+      from(v in Value, where: v.id == ^attachment.value_id and v.collection == "files")
+    )
+  end
+
+  defp own_app_file?(_profile, _attachment), do: false
 
   @doc "A file by id, for a caller that has settled access already."
   def get_attachment(attachment_id), do: Repo.get(ValueAttachment, attachment_id)
@@ -4291,39 +4342,105 @@ defmodule PotokIde.Social do
   `scope` picks the apps whose values are read: `{:app, nil}` (the default
   description's, also when omitted), `{:app, alt_description_id}` or
   `{:group, alt_description_ids}` (the default's and those alternatives').
+
+  `collection` picks one collection (`PotokIde.Social.AppData`); without it
+  only values outside collections are read, so apps that use none never see
+  what the rules of a collection keep from them. A collection is ordered by id,
+  `order_dir: "desc"` giving the newest first. `creator_id` keeps one author's
+  values and `match` those whose data contains it (`@>`).
+
+  The creators' names are read after the page, in a query of their own: joined
+  in the same query, a filter that matches many rows can make Postgres loop
+  over every profile for each of them.
   """
   def list_group_data_value_rows(%Group{} = group, opts \\ []) do
     limit = opts[:limit] |> Kernel.||(50) |> min(200) |> max(1)
 
     rows =
-      from(v in Value,
-        join: c in assoc(v, :creator),
-        where: v.group_id == ^group.id and v.is_data == true,
-        limit: ^(limit + 1),
-        select: %{
-          id: v.id,
-          content: v.content,
-          data: v.data,
-          content_format: v.content_format,
-          is_data: v.is_data,
-          group_id: v.group_id,
-          parent_id: v.parent_id,
-          creator_id: v.creator_id,
-          creator_username: c.username,
-          description_id: v.alt_description_id,
-          inserted_at: v.inserted_at,
-          updated_at: v.updated_at
-        }
-      )
-      |> filter_data_value_scope(opts[:scope])
+      group
+      |> data_value_rows_query(opts)
       |> maybe_after_id(opts[:after_id])
       |> maybe_before_id(opts[:before_id])
-      |> maybe_filter_data_value_field(opts[:search_field], opts[:search_value])
-      |> maybe_order_data_value_field(opts[:order_by], opts[:order_dir])
+      |> order_data_value_rows(opts)
       |> maybe_offset(opts[:offset])
+      |> limit(^(limit + 1))
+      |> select([v], %{
+        id: v.id,
+        content: v.content,
+        data: v.data,
+        content_format: v.content_format,
+        is_data: v.is_data,
+        group_id: v.group_id,
+        parent_id: v.parent_id,
+        creator_id: v.creator_id,
+        description_id: v.alt_description_id,
+        collection: v.collection,
+        anonymous: v.anonymous,
+        revision: v.lock_version,
+        managed: v.managed,
+        inserted_at: v.inserted_at,
+        updated_at: v.updated_at
+      })
       |> Repo.all()
 
-    {Enum.take(rows, limit), length(rows) > limit}
+    {rows |> Enum.take(limit) |> put_creator_usernames(), length(rows) > limit}
+  end
+
+  @doc "How many values `list_group_data_value_rows/2` would page through with these filters."
+  def count_group_data_value_rows(%Group{} = group, opts \\ []) do
+    group
+    |> data_value_rows_query(opts)
+    |> select([v], count(v.id))
+    |> Repo.one()
+  end
+
+  defp data_value_rows_query(%Group{id: group_id}, opts) do
+    from(v in Value, where: v.group_id == ^group_id and v.is_data == true)
+    |> filter_data_value_scope(opts[:scope])
+    |> filter_data_value_collection(opts[:collection])
+    |> maybe_filter_data_value_creator(opts[:creator_id])
+    |> maybe_match_data_value(opts[:match])
+    |> maybe_filter_data_value_field(opts[:search_field], opts[:search_value])
+  end
+
+  defp filter_data_value_collection(query, collection) when is_binary(collection),
+    do: from(v in query, where: v.collection == ^collection)
+
+  defp filter_data_value_collection(query, _none),
+    do: from(v in query, where: is_nil(v.collection))
+
+  defp maybe_filter_data_value_creator(query, creator_id) when is_integer(creator_id),
+    do: from(v in query, where: v.creator_id == ^creator_id)
+
+  defp maybe_filter_data_value_creator(query, _creator_id), do: query
+
+  defp maybe_match_data_value(query, match) when is_map(match) and map_size(match) > 0,
+    do: from(v in query, where: fragment("? @> ?", v.data, type(^match, :map)))
+
+  defp maybe_match_data_value(query, _match), do: query
+
+  defp order_data_value_rows(query, opts) do
+    if is_binary(opts[:collection]) and is_nil(opts[:order_by]) do
+      case normalize_data_value_order_dir(opts[:order_dir]) do
+        :desc -> from(v in query, order_by: [desc: v.id])
+        :asc -> from(v in query, order_by: [asc: v.id])
+      end
+    else
+      maybe_order_data_value_field(query, opts[:order_by], opts[:order_dir])
+    end
+  end
+
+  defp put_creator_usernames([]), do: []
+
+  defp put_creator_usernames(rows) do
+    ids = rows |> Enum.map(& &1.creator_id) |> Enum.uniq()
+
+    names =
+      from(p in Profile, where: p.id in ^ids, select: {p.id, p.username})
+      |> Repo.all()
+      |> Map.new()
+
+    Enum.map(rows, &Map.put(&1, :creator_username, Map.get(names, &1.creator_id)))
   end
 
   defp filter_data_value_scope(query, {:app, alt_description_id})

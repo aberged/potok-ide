@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.AttachmentControllerTest do
   alias PotokIde.Social
   alias PotokIde.Social.Value
   alias PotokIde.Storage
+  alias PotokIdeWeb.AppFileToken
   alias PotokIdeWeb.PostTemplates.Picture
 
   setup do
@@ -207,6 +208,29 @@ defmodule PotokIdeWeb.AttachmentControllerTest do
       {:ok, _deleted} = Social.delete_value(value.creator, value)
 
       assert conn |> get(picture) |> response(404)
+    end
+  end
+
+  describe "a file shown in an app's frame" do
+    defp app_path(attachment), do: URI.parse(AppFileToken.address(attachment)).path
+
+    test "opens by its fresh address, with no session", %{
+      conn: conn,
+      image: image,
+      document: document
+    } do
+      assert conn |> get(app_path(image)) |> response(200) == "png-bytes"
+
+      # Anything that could run as a page downloads instead.
+      conn = get(build_conn(), app_path(document))
+      assert response(conn, 200)
+      assert [disposition] = get_resp_header(conn, "content-disposition")
+      assert disposition =~ "attachment"
+    end
+
+    test "needs the address as it was signed", %{conn: conn, image: image} do
+      assert conn |> get(app_path(image) <> "x") |> response(404)
+      assert conn |> get(~p"/app_files/#{image.id}") |> response(404)
     end
   end
 

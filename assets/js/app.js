@@ -832,7 +832,23 @@ const APP_FRAME_METHODS = new Set([
   "get_poll",
   "open_poll",
   "open_poll_form",
+  "get_config",
+  "save_config",
+  "update_value",
+  "delete_value",
+  "delete_values",
+  "summarize_values",
+  "grade_value",
+  "list_roles",
+  "set_notifications",
+  "ensure_file_groups",
+  "file_url",
+  "upload_file",
+  "upload_image",
 ])
+
+// Calls that carry a file of the frame's, sent through the page's upload.
+const APP_FRAME_UPLOADS = new Set(["upload_file", "upload_image"])
 
 // A link into an app: `?at=<group id>` on the group's page. It stays in the
 // browser, as the page has nothing to do with it and an app moves on it often.
@@ -868,6 +884,9 @@ const APP_FRAME_STORAGE_MAX_CHARS = 256 * 1024
 const GroupAppFrame = {
   mounted() {
     this.iframe = this.el.querySelector("iframe")
+    // ref of a file on its way -> {resolve, callId}
+    this.pendingUploads = new Map()
+    this.uploadQueue = Promise.resolve()
 
     this.handleMessage = event => {
       const message = event.data
@@ -907,6 +926,24 @@ const GroupAppFrame = {
       this.post({potok: 1, event: "poll_changed", id})
     })
 
+    // What changed in the app's collections, already cut to what this viewer sees.
+    this.handleEvent("app_value", change => {
+      this.post({potok: 1, event: "app_value", change})
+    })
+
+    this.handleEvent("app_upload_progress", ({ref, progress}) => {
+      const pending = this.pendingUploads.get(ref)
+      if (pending) this.post({potok: 1, event: "upload_progress", id: pending.callId, progress})
+    })
+
+    this.handleEvent("app_upload_done", ({ref, ...result}) => {
+      const pending = this.pendingUploads.get(ref)
+      if (!pending) return
+
+      this.pendingUploads.delete(ref)
+      pending.resolve(result)
+    })
+
     this.handleEvent("app_share_link", ({url}) => shareLink(url))
   },
 
@@ -917,6 +954,8 @@ const GroupAppFrame = {
   destroyed() {
     window.removeEventListener("message", this.handleMessage)
     this.themeObserver?.disconnect()
+    this.pendingUploads.forEach(({resolve}) => resolve({ok: false, error: "disconnected"}))
+    this.pendingUploads.clear()
   },
 
   postReady() {
@@ -954,7 +993,7 @@ const GroupAppFrame = {
     }
   },
 
-  async handleCall({id, method, params}) {
+  async handleCall({id, method, params, file}) {
     if (this.el.dataset.api !== "true") {
       this.post({potok: 1, id, ok: false, error: "preview"})
       return
@@ -962,6 +1001,14 @@ const GroupAppFrame = {
 
     if (!APP_FRAME_METHODS.has(method)) {
       this.post({potok: 1, id, ok: false, error: "unknown_method"})
+      return
+    }
+
+    if (APP_FRAME_UPLOADS.has(method)) {
+      // One file at a time: the page keeps one upload for the frame.
+      const run = this.uploadQueue.then(() => this.sendFile(id, method, params, file))
+      this.uploadQueue = run.catch(() => {})
+      await run
       return
     }
 
@@ -992,6 +1039,48 @@ const GroupAppFrame = {
     } catch (_error) {
       this.post({potok: 1, id, ok: false, error: "disconnected"})
     }
+  },
+
+  // The server first says whether the file may go and where; the file then goes
+  // through the page's own upload (`:app_file`), straight to the bucket when it
+  // can, and the answer comes back as `app_upload_done`.
+  async sendFile(id, method, params, file) {
+    if (!(file instanceof Blob)) {
+      this.post({potok: 1, id, ok: false, error: "invalid_files"})
+      return
+    }
+
+    const named = file instanceof File ? file : new File([file], "file", {type: file.type})
+    let prepared
+
+    try {
+      prepared = await this.pushEvent("app_api", {
+        method: "prepare_upload",
+        params: {
+          ...(params || {}),
+          image: method === "upload_image",
+          name: named.name || "file",
+          size: named.size,
+          type: named.type || "",
+        },
+        app_id: this.el.dataset.appId || "",
+      })
+    } catch (_error) {
+      this.post({potok: 1, id, ok: false, error: "disconnected"})
+      return
+    }
+
+    if (!prepared?.ok) {
+      this.post({potok: 1, id, ...(prepared ?? {ok: false, error: "invalid_files"})})
+      return
+    }
+
+    const result = await new Promise(resolve => {
+      this.pendingUploads.set(prepared.ref, {resolve, callId: id})
+      this.upload("app_file", [named])
+    })
+
+    this.post({potok: 1, id, ...result})
   },
 
   // The page's own picker, as the frame has neither its code nor its data. Taps
