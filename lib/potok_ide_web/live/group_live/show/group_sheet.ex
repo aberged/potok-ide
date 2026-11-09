@@ -1,7 +1,8 @@
 defmodule PotokIdeWeb.GroupLive.Show.GroupSheet do
   @moduledoc """
   A sub-group's description over the app that asked for it, such as a map's
-  pin (`AppApi` `show_group`): a top-layer dialog of the page, as the poll's,
+  pin (`AppApi` `show_group`), or over the root's map (`RootMapState`), which
+  opens groups at any depth: a top-layer dialog of the page, as the poll's,
   with `GroupLive.Sheet` inside.
 
   The sheet is a LiveView of its own, bound to the sub-group, so the apps in

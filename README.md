@@ -101,8 +101,15 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Each row of the sub-groups tab has a menu with the sections and the options of that group (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
-* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed, polls, form and page. The full form stays a link away. The feed, polls and form presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator`, `potok-glasanje` and `potok-forme`.
+* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, announcements, feed, polls, form, map and page. The root offers no map, as it has a map of its own (`GroupPresets.keys_for/1`; `Social.create_group_from_preset/5` refuses it too). The full form stays a link away. The feed, polls, form and map presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator`, `potok-glasanje`, `potok-forme` and `potok-mapa`.
 * Thread groups are marked, and a threads toggle hides or shows them.
+
+Map:
+
+* A group can have a place (`Group.latitude`, `longitude`, `pin_icon`): both coordinates or neither, set on its Location card by whoever may edit it, with a pin from `PotokIde.Social.GroupPins` or its kind's.
+* The root's map tab (`/groups/:root/map`, `RootMapState`) shows every group with a place the profile sees, at any depth, threads and direct conversations aside: its memberships, and public groups under the root's "Public groups" switch, the same switch as in the sub-groups tab. It narrows by membership or authorship, kind, name and a time frame: the last 24 hours, 7 or 30 days, 12 months, any time, or dates in the viewer's zone, counted from when a group appeared (`COALESCE(published_at, inserted_at)`) or from its newest message (`last_value_at`). It opens on the groups of the last 30 days; only the switch is remembered.
+* The browser draws the map (`root_map.js`, Leaflet) and asks for its view as it moves. `Social.list_map_cells/4` gathers the groups on a Web Mercator grid of cells about 64 pixels wide, so a reply holds a few hundred pins and clusters however many groups there are. The map's queries run under a 4-second statement timeout, without JIT. A tap on a pin opens the group's sheet (`GroupLive.Sheet`, which under the root takes any group the viewer sees); a cluster that cannot spread any further lists its groups.
+* A Map app (`potok-mapa`, the "Map" preset) shows the places of the groups right under its own; see [docs/mapa.md](docs/mapa.md).
 
 Tags:
 

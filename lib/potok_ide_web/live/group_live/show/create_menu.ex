@@ -46,13 +46,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       when preset in @preset_keys do
     menu = socket.assigns.group_create_menu
 
-    {:noreply,
-     assign(socket, :group_create_menu, %{
-       menu
-       | preset: preset,
-         form: form(socket, preset, %{}),
-         error: nil
-     })}
+    if GroupPresets.allowed?(preset, menu.parent) do
+      {:noreply,
+       assign(socket, :group_create_menu, %{
+         menu
+         | preset: preset,
+           form: form(socket, preset, %{}),
+           error: nil
+       })}
+    else
+      {:noreply, socket}
+    end
   end
 
   def handle_event("group_create_menu_pick", _params, socket), do: {:noreply, socket}
@@ -230,6 +234,13 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
 
   defp preset(key), do: Enum.find(presets(), &(&1.key == key))
 
+  # What the menu offers under `parent`: the root has a map of its own.
+  defp presets_for(parent) do
+    keys = GroupPresets.keys_for(parent)
+
+    Enum.filter(presets(), &(&1.key in keys))
+  end
+
   @doc """
   The presets as kinds of group, in the order of this menu, for the kind
   filter of the sub-groups tab: `%{key, icon, title}`.
@@ -323,7 +334,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
     </.menu_header>
 
     <ul id="group-create-presets" class="min-h-0 flex-1 overflow-y-auto p-2">
-      <li :for={preset <- presets()}>
+      <li :for={preset <- presets_for(@parent)}>
         <button
           id={"group-create-preset-#{preset.key}"}
           type="button"

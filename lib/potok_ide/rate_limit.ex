@@ -33,6 +33,9 @@ defmodule PotokIde.RateLimit do
     app_heavy_read: {120, :timer.minutes(1)},
     # Places an app adds on a map (`createPlace`), per profile: each is a group.
     app_create_place: {20, :timer.hours(1)},
+    # Views of the root's map, per profile on all its pages: the map asks once
+    # it stops moving, so even a busy minute asks a few dozen times.
+    root_map_view: {300, :timer.minutes(1)},
     # Map tiles one IP asks Potok for, kept or not: a fast pan over a big
     # screen asks for a few hundred a minute.
     tile_ip: {1200, :timer.minutes(1)},
@@ -49,6 +52,7 @@ defmodule PotokIde.RateLimit do
           | :email_change
           | :app_heavy_read
           | :app_create_place
+          | :root_map_view
           | :tile_ip
           | :tile_upstream
 

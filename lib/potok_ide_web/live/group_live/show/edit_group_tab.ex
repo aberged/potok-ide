@@ -315,7 +315,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           >
             <p class="mb-3 text-xs text-base-content/65">
               {gettext(
-                "A Map app in the group above shows this group as a pin. Tap the map to put it, or drag it."
+                "The map of groups shows this group as a pin to everyone who sees it, and so does a Map app in the group above. Tap the map to put it, or drag it."
               )}
             </p>
             <div id="group-location-map-wrap" phx-update="ignore">

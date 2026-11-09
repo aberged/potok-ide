@@ -1,0 +1,428 @@
+defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
+  @moduledoc """
+  The root's map (`RootMapState`): a bar of filters over a map of every group
+  with a place the viewer sees. The map is the browser's (`root_map.js`,
+  ignored by patches); what stands over it, the count, the empty state and the
+  list of a crowded spot, is rendered here.
+  """
+  use PotokIdeWeb, :html
+
+  alias PotokIde.Events.Format
+  alias PotokIde.MapTiles
+  alias PotokIde.Social.GroupPins
+  alias PotokIdeWeb.Avatars
+  alias PotokIdeWeb.GroupLive.Show.{ChoiceMenus, RootMapState}
+  alias PotokIdeWeb.PinIcons
+
+  attr :filters, :map, required: true, doc: "`@root_map_filters`"
+  attr :show_public, :boolean, required: true, doc: "the root's public groups switch"
+  attr :extent, :map, default: nil, doc: "`Social.map_extent/2`, nil until loaded"
+  attr :total, :integer, default: nil, doc: "the groups in the map's view"
+  attr :spot, :map, default: nil, doc: "the groups of a crowded spot"
+  attr :error, :boolean, default: false
+  attr :range_form, :any, required: true
+
+  def panel(assigns) do
+    filters = assigns.filters
+
+    assigns =
+      assigns
+      |> assign(:search_form, to_form(%{"q" => filters.search}, as: :root_map_search))
+      |> assign(:empty_reason, RootMapState.empty_reason(filters))
+
+    ~H"""
+    <div id="group-panel-map" class="card relative flex min-h-0 flex-1 flex-col px-2 pb-2">
+      <div
+        id="root-map-filters"
+        class="group/filters relative z-45 flex shrink-0 flex-wrap items-start justify-end gap-2 px-2 pb-2"
+      >
+        <button
+          id="root-map-public-toggle"
+          type="button"
+          phx-click="root_map_toggle_public"
+          aria-pressed={to_string(@show_public)}
+          title={
+            if(@show_public,
+              do: gettext("Hide public groups you are not in"),
+              else: gettext("Show public groups you are not in")
+            )
+          }
+          class={[
+            "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+            if(@show_public,
+              do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
+              else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
+            )
+          ]}
+        >
+          <.icon name={if(@show_public, do: "hero-globe-alt", else: "hero-eye-slash")} class="size-4" />
+          <span class="hidden sm:inline">{gettext("Public groups")}</span>
+        </button>
+
+        <ChoiceMenus.choice_toggle
+          id="root-map-relation"
+          choices={ChoiceMenus.relation_choices()}
+          selected={@filters.relation}
+          idle_label={gettext("All groups")}
+          title={gettext("Show the groups you are in or created")}
+          label={gettext("Membership and authorship")}
+        />
+        <ChoiceMenus.choice_toggle
+          id="root-map-preset"
+          choices={ChoiceMenus.kind_choices()}
+          selected={@filters.preset}
+          idle_label={gettext("Kind")}
+          title={gettext("Show one kind of groups")}
+          label={gettext("Kind of groups")}
+        />
+        <ChoiceMenus.choice_toggle
+          id="root-map-time"
+          choices={period_choices()}
+          selected={@filters.period}
+          idle_label={gettext("Any time")}
+          title={gettext("Show the groups of a time frame")}
+          label={gettext("Time frame")}
+          text={time_text(@filters)}
+          icon={time_icon(@filters)}
+          active={@filters.period != "any"}
+        />
+
+        <.form for={@search_form} id="root-map-search-form" phx-change="root_map_search">
+          <.search_field
+            id="root-map-search-input"
+            field={@search_form[:q]}
+            reset_id="root-map-search-reset"
+            reset_event="root_map_clear_search"
+            placeholder={gettext("Search by name")}
+          />
+        </.form>
+      </div>
+
+      <%!-- Leaflet stacks its panes up to z-index 1000: `isolate` keeps them
+           under the page's header and menus. --%>
+      <div class="relative isolate min-h-0 flex-1 overflow-hidden rounded-3xl border border-base-300/70 bg-base-200">
+        <div id="root-map-wrap" phx-update="ignore" class="absolute inset-0">
+          <div
+            id="root-map"
+            phx-hook="RootMap"
+            class="potok-map size-full"
+            data-tiles={MapTiles.url_template("/tiles")}
+            data-attribution={MapTiles.attribution()}
+            data-max-zoom={MapTiles.max_zoom()}
+            data-default-bounds={Jason.encode!(MapTiles.default_bounds())}
+            data-pins={Jason.encode!(PinIcons.catalogue())}
+            data-cluster-label={gettext("Groups here: %{count}. Tap to see them.", count: "%{count}")}
+            data-load-error={gettext("The map could not load.")}
+          >
+          </div>
+        </div>
+
+        <div class="pointer-events-none absolute inset-x-2 top-2 z-[1100] flex items-start justify-between gap-2">
+          <p
+            :if={@total && @extent && @extent.count > 0}
+            id="root-map-total"
+            class="pointer-events-auto rounded-full border border-base-300/70 bg-base-100/90 px-3 py-1.5 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur"
+          >
+            {if(@total == 0,
+              do: gettext("No groups in this part of the map"),
+              else:
+                ngettext(
+                  "%{count} group in this part of the map",
+                  "%{count} groups in this part of the map",
+                  @total
+                )
+            )}
+          </p>
+          <span :if={!(@total && @extent && @extent.count > 0)}></span>
+          <button
+            :if={@extent && @extent.count > 0}
+            id="root-map-fit"
+            type="button"
+            phx-click="root_map_fit"
+            class="pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-base-300/70 bg-base-100/90 px-3 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur transition duration-150 ease-out hover:-translate-y-px hover:text-base-content active:scale-95"
+          >
+            <.icon name="hero-arrows-pointing-out" class="size-4" />
+            {pgettext("map", "Show all")}
+          </button>
+        </div>
+
+        <div
+          :if={@extent && @extent.count == 0}
+          id="root-map-empty"
+          class="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center p-6"
+        >
+          <div class="pointer-events-auto max-w-sm rounded-3xl border border-base-300/70 bg-base-100/95 p-5 text-center shadow-xl backdrop-blur">
+            <span class="mx-auto mb-3 inline-flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <.icon name="hero-map" class="size-6" />
+            </span>
+            <p class="text-sm font-semibold">
+              <%= case @empty_reason do %>
+                <% :filters -> %>
+                  {gettext("No group with a place fits these filters.")}
+                <% :time -> %>
+                  {gettext("No group with a place appeared in the last 30 days.")}
+                <% :none -> %>
+                  {gettext("None of your groups has a place on the map yet.")}
+              <% end %>
+            </p>
+            <p class="mt-1 text-xs text-base-content/65">
+              {gettext("A group gets its place in its settings, on the Location card.")}
+            </p>
+            <.button
+              :if={@empty_reason == :filters}
+              id="root-map-clear-filters"
+              type="button"
+              phx-click="root_map_clear_filters"
+              variant="soft"
+              size="sm"
+              class="mt-3"
+            >
+              {gettext("Clear filters")}
+            </.button>
+            <.button
+              :if={@empty_reason == :time}
+              id="root-map-any-time"
+              type="button"
+              phx-click="root_map_period"
+              phx-value-period="any"
+              variant="soft"
+              size="sm"
+              class="mt-3"
+            >
+              {gettext("Show them from any time")}
+            </.button>
+          </div>
+        </div>
+
+        <p
+          :if={@error}
+          id="root-map-error"
+          role="alert"
+          class="absolute inset-x-2 bottom-2 z-[1100] flex items-start gap-1.5 rounded-2xl border border-error/30 bg-base-100/95 px-3 py-2 text-xs text-error shadow-lg"
+        >
+          <.icon name="hero-exclamation-triangle" class="mt-0.5 size-4 shrink-0" />
+          {gettext("The map took too long to load. Narrow the filters or zoom in.")}
+        </p>
+
+        <section
+          :if={@spot}
+          id="root-map-spot"
+          aria-labelledby="root-map-spot-title"
+          class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
+        >
+          <header class="flex items-center gap-2 border-b border-base-300/60 px-4 py-2.5">
+            <h3 id="root-map-spot-title" class="min-w-0 flex-1 truncate text-sm font-semibold">
+              {gettext("Groups in this place")}
+            </h3>
+            <.icon_button
+              id="root-map-spot-close"
+              type="button"
+              phx-click="root_map_spot_close"
+              icon="hero-x-mark"
+              label={gettext("Close")}
+            />
+          </header>
+          <ul class="min-h-0 flex-1 overflow-y-auto p-1.5">
+            <li :for={group <- @spot.groups}>
+              <button
+                id={"root-map-spot-group-#{group.id}"}
+                type="button"
+                phx-click="root_map_open"
+                phx-value-id={group.id}
+                class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none"
+              >
+                <PinIcons.pin
+                  id={"root-map-spot-pin-#{group.id}"}
+                  color={PinIcons.look(group).color}
+                  paths={PinIcons.look(group).paths}
+                  picture_url={PinIcons.look(group).picture && Avatars.group_avatar_url(group)}
+                  class="h-8 w-[1.6rem] shrink-0 drop-shadow-sm"
+                />
+                <span class="min-w-0 flex-1">
+                  <span class="block truncate text-sm font-semibold">{group.name}</span>
+                  <span class="flex items-center gap-1 text-xs text-base-content/60">
+                    <.icon
+                      name={
+                        if(group.is_public,
+                          do: "hero-globe-alt-micro",
+                          else: "hero-lock-closed-micro"
+                        )
+                      }
+                      class="size-3.5"
+                    />
+                    <span class="truncate">{PinIcons.kind_label(GroupPins.kind(group))}</span>
+                  </span>
+                </span>
+              </button>
+            </li>
+          </ul>
+          <p
+            :if={@spot.more?}
+            class="border-t border-base-300/60 px-4 py-2 text-xs text-base-content/65"
+          >
+            {gettext("More groups stand here. Search by name to find one.")}
+          </p>
+        </section>
+      </div>
+
+      <ChoiceMenus.choice_menu
+        id="root-map-relation"
+        choices={ChoiceMenus.relation_choices()}
+        selected={@filters.relation}
+        event="root_map_relation"
+        param="relation"
+        label={gettext("Membership and authorship")}
+      />
+      <ChoiceMenus.choice_menu
+        id="root-map-preset"
+        choices={ChoiceMenus.kind_choices()}
+        selected={@filters.preset}
+        event="root_map_preset"
+        param="preset"
+        label={gettext("Kind of groups")}
+      />
+      <ChoiceMenus.choice_menu
+        id="root-map-time"
+        choices={period_choices()}
+        selected={@filters.period}
+        event="root_map_period"
+        param="period"
+        label={gettext("Time frame")}
+      >
+        <:top>
+          <div
+            id="root-map-time-measure"
+            role="group"
+            aria-label={gettext("What the time frame counts")}
+            class="mb-1.5 grid grid-cols-2 gap-1 rounded-xl bg-base-200 p-1"
+          >
+            <button
+              :for={
+                {key, label} <- [
+                  {:created, gettext("Created")},
+                  {:active, gettext("Last message")}
+                ]
+              }
+              id={"root-map-time-#{key}"}
+              type="button"
+              phx-click="root_map_time"
+              phx-value-time={key}
+              aria-pressed={to_string(@filters.time == key)}
+              class={[
+                "cursor-pointer rounded-lg px-2 py-1.5 text-xs font-semibold transition duration-150 ease-out",
+                if(@filters.time == key,
+                  do: "bg-base-100 text-base-content shadow-sm",
+                  else: "text-base-content/65 hover:text-base-content"
+                )
+              ]}
+            >
+              {label}
+            </button>
+          </div>
+        </:top>
+        <:bottom>
+          <div class="mx-2 my-1 border-t border-base-300/70" aria-hidden="true"></div>
+          <.form
+            for={@range_form}
+            id="root-map-range-form"
+            phx-submit={
+              JS.push("root_map_range")
+              |> ChoiceMenus.close_choice_menu("root-map-time")
+            }
+            class="px-2 pb-1.5 pt-1"
+          >
+            <p class={[
+              "mb-1.5 flex items-center gap-1.5 text-xs font-semibold",
+              if(@filters.period == "custom", do: "text-primary", else: "text-base-content/70")
+            ]}>
+              <.icon name="hero-calendar-date-range" class="size-4" />
+              {gettext("From date to date")}
+            </p>
+            <div class="grid grid-cols-1">
+              <.input
+                field={@range_form[:from]}
+                id="root-map-range-from"
+                type="date"
+                label={gettext("From")}
+              />
+              <.input
+                field={@range_form[:to]}
+                id="root-map-range-to"
+                type="date"
+                label={gettext("To")}
+              />
+            </div>
+            <.button
+              id="root-map-range-submit"
+              type="submit"
+              variant="soft"
+              size="sm"
+              class="w-full"
+            >
+              {gettext("Show")}
+            </.button>
+          </.form>
+        </:bottom>
+      </ChoiceMenus.choice_menu>
+    </div>
+    """
+  end
+
+  defp period_choices do
+    [
+      %{
+        key: "24h",
+        icon: "hero-clock",
+        title: gettext("Last 24 hours"),
+        short: gettext("24 hours")
+      },
+      %{
+        key: "7d",
+        icon: "hero-calendar-days",
+        title: gettext("Last 7 days"),
+        short: gettext("7 days")
+      },
+      %{
+        key: "30d",
+        icon: "hero-calendar-days",
+        title: gettext("Last 30 days"),
+        short: gettext("30 days")
+      },
+      %{
+        key: "12m",
+        icon: "hero-calendar",
+        title: gettext("Last 12 months"),
+        short: gettext("12 months")
+      },
+      %{key: "any", icon: "hero-squares-2x2", title: gettext("Any time"), divider: true}
+    ]
+  end
+
+  # The button says the time frame, and that it counts messages when it does.
+  defp time_text(%{period: "any"}), do: gettext("Any time")
+
+  defp time_text(%{period: period, time: time} = filters) do
+    frame =
+      case period do
+        "custom" -> range_text(filters)
+        key -> Enum.find(period_choices(), &(&1.key == key)).short
+      end
+
+    if time == :active, do: gettext("Active · %{frame}", frame: frame), else: frame
+  end
+
+  defp range_text(%{from: %Date{} = from, to: %Date{} = to}) when from == to,
+    do: Format.day_month(from)
+
+  defp range_text(%{from: %Date{} = from, to: %Date{} = to}),
+    do: gettext("%{from} – %{to}", from: Format.day_month(from), to: Format.day_month(to))
+
+  defp range_text(%{from: %Date{} = from}),
+    do: gettext("from %{date}", date: Format.day_month(from))
+
+  defp range_text(%{to: %Date{} = to}), do: gettext("until %{date}", date: Format.day_month(to))
+
+  defp time_icon(%{time: :active}), do: "hero-chat-bubble-left-ellipsis"
+  defp time_icon(%{period: "any"}), do: "hero-squares-2x2"
+  defp time_icon(_filters), do: "hero-clock"
+end

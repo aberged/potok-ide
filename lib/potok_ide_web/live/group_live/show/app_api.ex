@@ -735,7 +735,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # What a map needs before its first pin: where tiles come from, where it
   # opens, how every pin looks and what the viewer may do on it.
   defp run("map_config", _params, socket) do
-    %{access: access} = socket.assigns
+    %{access: access, group: group} = socket.assigns
 
     {%{
        ok: true,
@@ -746,7 +746,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
        },
        default_bounds: MapTiles.default_bounds(),
        pins: PinIcons.catalogue(),
-       place_kinds: Enum.map(GroupPresets.keys(), &%{key: &1, title: PinIcons.kind_label(&1)}),
+       place_kinds:
+         Enum.map(GroupPresets.keys_for(group), &%{key: &1, title: PinIcons.kind_label(&1)}),
        can_create_places: places_maker?(access),
        can_edit_view: manages_children?(access)
      }, socket}
@@ -1132,7 +1133,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # and its defaults, standing where the map was tapped.
   defp place_params(params, group) do
     with preset when is_binary(preset) <- params["kind"],
-         true <- preset in GroupPresets.keys(),
+         true <- GroupPresets.allowed?(preset, group),
          name when is_binary(name) <- optional_string(params["name"]),
          {:ok, lat} <- coordinate(params["lat"], 90),
          {:ok, lng} <- coordinate(params["lng"], 180),
@@ -1166,9 +1167,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp place_pin(_pin), do: :error
 
-  # A pin: where it stands, and what it shows (`GroupPins`), which a map draws
-  # from `map_config`. `pin` is nil for the kind's own.
-  defp place_payload(%Group{} = group) do
+  @doc """
+  A pin: where it stands, and what it shows (`GroupPins`), which a map draws
+  from `map_config`, or the root's map from `PinIcons.catalogue/0`. `pin` is
+  nil for the kind's own.
+  """
+  def place_payload(%Group{} = group) do
     %{
       id: group.id,
       name: group.name,

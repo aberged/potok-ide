@@ -2401,6 +2401,58 @@
   filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.35));
 }
 
+/* The root's map (`root_map.js`): pins grow under the pointer and while their
+   group's sheet is open; clusters are a count on a disc in the mark's blue. */
+.potok-map-pin svg {
+  display: block;
+  overflow: visible;
+  transform-origin: 50% 100%;
+  transition: transform 150ms ease-out;
+}
+
+.potok-map-pin:hover svg,
+.potok-map-pin:focus-visible svg {
+  transform: scale(1.1);
+}
+
+.potok-map-pin.is-selected svg {
+  transform: scale(1.25);
+}
+
+.potok-cluster-icon {
+  background: none;
+  border: 0;
+}
+
+.potok-cluster {
+  display: grid;
+  place-items: center;
+  width: var(--cluster-size);
+  height: var(--cluster-size);
+  border-radius: 9999px;
+  background: color-mix(in oklab, #0a5bc4 85%, transparent);
+  box-shadow:
+    0 0 0 4px color-mix(in oklab, #0a5bc4 25%, transparent),
+    0 2px 6px rgb(0 0 0 / 0.3);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  transition: transform 150ms ease-out;
+}
+
+.potok-cluster-icon:hover .potok-cluster,
+.potok-cluster-icon:focus-visible .potok-cluster {
+  transform: scale(1.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .potok-map-pin svg,
+  .potok-cluster {
+    transition: none;
+  }
+}
+
 :where([data-theme=dark]) .potok-map .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
 }

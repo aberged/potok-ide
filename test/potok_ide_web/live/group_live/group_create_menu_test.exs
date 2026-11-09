@@ -75,6 +75,18 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       refute has_element?(lv, "#group-panel-create-group")
     end
 
+    test "the root offers no map, as it has a map of its own", ctx do
+      lv = open(ctx, ctx.owner_account, ~p"/groups/#{ctx.root.id}/sub_groups")
+
+      render_click(lv, "group_create_menu_open", %{"id" => ctx.root.id})
+
+      assert has_element?(lv, "#group-create-preset-chat")
+      refute has_element?(lv, "#group-create-preset-map")
+
+      render_click(lv, "group_create_menu_pick", %{"preset" => "map"})
+      refute has_element?(lv, "#group-create-preset-form")
+    end
+
     test "so does the menu of the open group", ctx do
       lv = sub_groups(ctx)
 

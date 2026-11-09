@@ -42,6 +42,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     PollsState,
     PollsTab,
     RolesTab,
+    RootMapState,
+    RootMapTab,
     SubGroupsTab,
     SubGroupTree,
     ValuesTab
@@ -319,6 +321,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
             <.icon name="hero-calendar-days" class="size-6 shrink-0" />
           </button>
           <button
+            :if={@group.is_root}
+            id="group-map-summary"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="map"
+            aria-label={gettext("Open the map of groups")}
+            aria-current={@active_tab == "map" && "true"}
+            class={header_shortcut_class(@active_tab == "map")}
+          >
+            <.icon name="hero-map" class="size-6 shrink-0" />
+          </button>
+          <button
             :if={@group.is_root and @group.is_public}
             id="group-subgroups-summary"
             type="button"
@@ -386,6 +400,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 active_tab={@active_tab}
                 label={gettext("My calendar")}
                 icon="hero-calendar-days"
+              />
+              <Components.group_tab_button
+                :if={@group.is_root}
+                id="group-tab-map"
+                tab="map"
+                active_tab={@active_tab}
+                label={gettext("Map of groups")}
+                icon="hero-map"
               />
               <%!-- Sections come with a group's first poll; this leads to starting one. --%>
               <Components.group_tab_button
@@ -508,6 +530,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
             has_more={@files_has_more?}
             tree={@file_tree}
             tree_truncated={@file_tree_truncated?}
+          />
+          <RootMapTab.panel
+            :if={@active_tab == "map"}
+            filters={@root_map_filters}
+            show_public={@show_public_sub_groups}
+            extent={@root_map_extent}
+            total={@root_map_total}
+            spot={@root_map_spot}
+            error={@root_map_error?}
+            range_form={@root_map_range_form}
           />
           <CalendarTab.panel
             :if={@active_tab == "calendar"}
@@ -755,6 +787,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> TagEditor.init()
          |> CreateMenu.init()
          |> CalendarState.init(params)
+         |> RootMapState.init()
          |> PollForm.init()
          |> PollsState.init(params)
          |> GroupSheet.init()
@@ -830,6 +863,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("poll_form_" <> _ = event, params, socket),
     do: PollForm.handle_event(event, params, socket)
+
+  def handle_event("root_map_" <> _ = event, params, socket),
+    do: RootMapState.handle_event(event, params, socket)
 
   def handle_event("group_sheet_close", _params, socket),
     do: {:noreply, GroupSheet.close(socket)}
@@ -2461,6 +2497,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_values(group, active_tab)
     |> maybe_load_files(group, active_tab)
     |> CalendarState.maybe_load(group, active_tab)
+    |> RootMapState.maybe_load(group, active_tab)
     |> PollsState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
@@ -4906,6 +4943,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp normalize_active_tab("calendar", group, %Access{} = access) do
     if calendar_tab?(group, access), do: "calendar", else: default_active_tab(group)
   end
+
+  # In the root group, every group with a place the profile sees.
+  defp normalize_active_tab("map", %Group{is_root: true}, _access), do: "map"
 
   defp normalize_active_tab("polls", group, %Access{} = access) do
     if polls_tab?(group, access), do: "polls", else: default_active_tab(group)

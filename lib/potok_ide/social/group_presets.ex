@@ -35,6 +35,17 @@ defmodule PotokIde.Social.GroupPresets do
 
   def keys, do: @keys
 
+  @doc """
+  The presets a new group under `parent` can start from. The root has its own
+  map of every group with a place, so a Map app right under it would show only
+  part of that.
+  """
+  def keys_for(%Group{is_root: true}), do: @keys -- ["map"]
+  def keys_for(%Group{}), do: @keys
+
+  @doc "Whether a new group under `parent` can start from `preset`."
+  def allowed?(preset, %Group{} = parent), do: preset in keys_for(parent)
+
   @doc "The presets whose group opens on an app, as strings."
   def app_keys, do: Enum.map(@apps, &Atom.to_string/1)
 

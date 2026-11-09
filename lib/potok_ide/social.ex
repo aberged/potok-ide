@@ -440,6 +440,9 @@ defmodule PotokIde.Social do
 
   `place` puts the group on a map at once (`"latitude"`, `"longitude"` and
   `"pin_icon"`), as a map app does when someone adds a place there.
+
+  A preset `parent` does not offer (`GroupPresets.allowed?/2`) gives
+  `{:error, :preset_not_allowed}`.
   """
   def create_group_from_preset(
         %Profile{} = creator,
@@ -448,6 +451,12 @@ defmodule PotokIde.Social do
         choices,
         place \\ %{}
       ) do
+    if GroupPresets.allowed?(preset, parent),
+      do: insert_from_preset(creator, parent, preset, choices, place),
+      else: {:error, :preset_not_allowed}
+  end
+
+  defp insert_from_preset(creator, parent, preset, choices, place) do
     attrs =
       preset
       |> GroupPresets.attrs(choices)
@@ -3331,6 +3340,230 @@ defmodule PotokIde.Social do
     {Enum.take(rows, limit), length(rows) > limit}
   end
 
+  @doc """
+  The group `id` the sheet of `parent`'s page may open, when the profile can
+  see it: under the root any group, as the root's map shows them all, under
+  any other group one of its direct sub-groups (`get_visible_child_group/3`).
+  Threads, direct conversations and the root itself do not count.
+  """
+  def get_visible_group_below(%Group{is_root: true}, %Profile{} = profile, id)
+      when is_integer(id) do
+    visible_plain_groups(profile)
+    |> where([g], g.id == ^id and not g.is_root)
+    |> Repo.one()
+  end
+
+  def get_visible_group_below(%Group{} = parent, %Profile{} = profile, id) when is_integer(id),
+    do: get_visible_child_group(parent, profile, id)
+
+  # The root's map: every group with a place the profile sees, at any depth.
+  # A statement that runs out of time gives up rather than hold a connection.
+  @map_timeout_ms 4_000
+  @map_max_cells 2_000
+  # Web Mercator ends here; a place nearer a pole is drawn on that edge.
+  @mercator_max_lat 85.0511287798
+
+  @doc """
+  The places of the root's map in the box `[west, south, east, north]` seen at
+  `zoom`, gathered on a grid of cells about 64 pixels wide: a cell holding one
+  group gives that group (with the fields of `list_visible_placed_children/3`),
+  any other a cluster `%{count, lat, lng, bounds: [[south, west], [north, east]]}`.
+  Returns `{:ok, %{places, clusters, total, truncated}}`, where `total` counts
+  the groups in the box, or `{:error, :timeout}`.
+
+  The groups are every group with a place the profile sees anywhere below the
+  root, threads and direct conversations aside: its memberships, and the public
+  groups, all of them with `public?: true`, otherwise those on the way to one
+  of its memberships, as in the root's sub-groups. `filters` narrow them:
+  `:search` on the name, `:preset` and `:relation` as in
+  `list_child_groups_for_profile/3`, and `:from` (counts in) and `:to` (does
+  not) on `:time`, `:created` (when the group took its place in a feed, as in
+  `list_visible_child_groups_newest_first/3`) or `:active` (its newest value;
+  a group never written in then stays out).
+  """
+  def list_map_cells(%Profile{} = profile, filters, bbox, zoom) when is_integer(zoom) do
+    cells_per_axis = 4.0 * Integer.pow(2, zoom |> max(0) |> min(24))
+    lat = "LEAST(GREATEST(p.latitude, -#{@mercator_max_lat}), #{@mercator_max_lat})"
+
+    sql =
+      map_placed_sql(map_time(filters), true) <>
+        """
+        SELECT count(*), avg(p.latitude), avg(p.longitude),
+          min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id)
+        FROM placed p
+        GROUP BY floor((p.longitude + 180.0) / 360.0 * $14::float8),
+          floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
+            * $14::float8)
+        ORDER BY count(*) DESC
+        LIMIT #{@map_max_cells + 1}
+        """
+
+    params = map_filter_params(profile, filters) ++ map_bbox_params(bbox) ++ [cells_per_axis]
+
+    with {:ok, rows} <- map_query(sql, params, "social_map_cells_#{map_time(filters)}") do
+      cells = Enum.take(rows, @map_max_cells)
+      single_ids = for [1 | rest] <- cells, do: List.last(rest)
+
+      clusters =
+        for [count, lat, lng, south, north, west, east, _id] <- cells, count > 1 do
+          %{count: count, lat: lat, lng: lng, bounds: [[south, west], [north, east]]}
+        end
+
+      {:ok,
+       %{
+         places: placed_groups(single_ids),
+         clusters: clusters,
+         total: Enum.reduce(cells, 0, fn [count | _], sum -> sum + count end),
+         truncated: length(rows) > @map_max_cells
+       }}
+    end
+  end
+
+  @doc """
+  How many groups the root's map holds under `filters` (as in
+  `list_map_cells/4`), wherever they stand, and the box around them, nil for
+  none: `{:ok, %{count, bounds}}` or `{:error, :timeout}`.
+  """
+  def map_extent(%Profile{} = profile, filters) do
+    sql =
+      map_placed_sql(map_time(filters), false) <>
+        "SELECT count(*), min(latitude), max(latitude), min(longitude), max(longitude) FROM placed"
+
+    params = map_filter_params(profile, filters)
+
+    with {:ok, [[count, south, north, west, east]]} <-
+           map_query(sql, params, "social_map_extent_#{map_time(filters)}") do
+      {:ok, %{count: count, bounds: if(count > 0, do: [[south, west], [north, east]])}}
+    end
+  end
+
+  @doc """
+  The groups of the root's map under `filters` inside `bounds`
+  (`[[south, west], [north, east]]`, edges included), by name: what a cluster
+  that cannot spread any further holds. `{:ok, {groups, more?}}` with at most
+  `limit` groups, or `{:error, :timeout}`.
+  """
+  def list_map_spot(%Profile{} = profile, filters, [[south, west], [north, east]], limit)
+      when is_integer(limit) and limit > 0 do
+    sql =
+      map_placed_sql(map_time(filters), true) <>
+        """
+        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $14::integer
+        """
+
+    params =
+      map_filter_params(profile, filters) ++
+        Enum.map([south, north, west, east], &to_float/1) ++ [nil, nil, limit + 1]
+
+    with {:ok, rows} <- map_query(sql, params, "social_map_spot_#{map_time(filters)}") do
+      ids = rows |> Enum.map(&hd/1) |> Enum.take(limit)
+      by_id = Map.new(placed_groups(ids), &{&1.id, &1})
+
+      {:ok, {Enum.flat_map(ids, &List.wrap(by_id[&1])), length(rows) > limit}}
+    end
+  end
+
+  defp placed_groups([]), do: []
+
+  defp placed_groups(ids) do
+    from(g in Group, where: g.id in ^ids, select: struct(g, ^@placed_fields))
+    |> Repo.all()
+  end
+
+  defp map_query(sql, params, name) do
+    Repo.with_statement_timeout(
+      @map_timeout_ms,
+      fn -> Repo.query!(sql, params, cache_statement: name).rows end,
+      jit: false
+    )
+  end
+
+  defp map_time(filters) do
+    if Map.get(filters, :time) == :active, do: :active, else: :created
+  end
+
+  # $1 profile, $2 every public group, $3 name, $4 kind, $5 member or creator,
+  # $6 and $7 the moments, then the box: $8 south, $9 north, one or (across the
+  # antimeridian) two ranges of longitude, $10-$11 and $12-$13.
+  defp map_placed_sql(time, bbox?) do
+    moment =
+      case time do
+        :active -> "g.last_value_at"
+        :created -> "COALESCE(g.published_at, g.inserted_at)"
+      end
+
+    box =
+      if bbox? do
+        """
+          AND g.latitude BETWEEN $8::float8 AND $9::float8
+          AND (g.longitude BETWEEN $10::float8 AND $11::float8
+            OR ($12::float8 IS NOT NULL AND g.longitude BETWEEN $12::float8 AND $13::float8))
+        """
+      else
+        ""
+      end
+
+    """
+    WITH RECURSIVE #{sub_group_memberships_sql("$1")},
+    placed AS (
+      SELECT g.id, g.name, g.latitude, g.longitude
+      FROM groups g
+      WHERE g.latitude IS NOT NULL
+        AND g.parent_id IS NOT NULL
+        AND g.parent_value_id IS NULL
+        AND g.is_direct = FALSE
+        AND (g.id IN (SELECT group_id FROM mine)
+          OR (g.is_public AND ($2::boolean OR g.id IN (SELECT id FROM member_paths))))
+        AND ($3::text IS NULL OR g.name ILIKE '%' || $3::text || '%')
+        AND ($4::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $4::text)
+        AND ($5::text IS NULL OR ($5::text = 'creator' AND g.creator_id = $1)
+          OR ($5::text = 'member' AND g.id IN (SELECT group_id FROM mine)))
+        AND ($6::timestamp IS NULL OR #{moment} >= $6::timestamp)
+        AND ($7::timestamp IS NULL OR #{moment} < $7::timestamp)
+    #{box})
+    """
+  end
+
+  defp map_filter_params(%Profile{id: profile_id}, filters) do
+    [
+      profile_id,
+      Map.get(filters, :public?) == true,
+      normalize_group_search_term(Map.get(filters, :search)),
+      normalize_preset_filter(Map.get(filters, :preset)),
+      normalize_relation_filter(Map.get(filters, :relation)),
+      map_moment(Map.get(filters, :from)),
+      map_moment(Map.get(filters, :to))
+    ]
+  end
+
+  defp map_moment(%DateTime{} = moment),
+    do: moment |> DateTime.shift_zone!("Etc/UTC") |> DateTime.to_naive()
+
+  defp map_moment(_none), do: nil
+
+  # The box as the map sees it, where a view across the antimeridian or wider
+  # than the world has longitudes past 180: south, north and one or two ranges.
+  defp map_bbox_params([west, south, east, north]) do
+    [west, south, east, north] = Enum.map([west, south, east, north], &to_float/1)
+    {south, north} = {south |> max(-90.0) |> min(90.0), north |> max(-90.0) |> min(90.0)}
+    {south, north} = {min(south, north), max(south, north)}
+
+    if east - west >= 360.0 do
+      [south, north, -180.0, 180.0, nil, nil]
+    else
+      {west, east} = {wrap_longitude(west), wrap_longitude(east)}
+
+      if west <= east,
+        do: [south, north, west, east, nil, nil],
+        else: [south, north, west, 180.0, -180.0, east]
+    end
+  end
+
+  defp wrap_longitude(lng), do: lng - 360.0 * Float.floor((lng + 180.0) / 360.0)
+
+  defp to_float(number) when is_integer(number), do: number * 1.0
+  defp to_float(number) when is_float(number), do: number
+
   # A group's place in a feed: when it opened up, or was made already open.
   defmacrop feed_time(group) do
     quote do
@@ -4296,9 +4529,11 @@ defmodule PotokIde.Social do
   # whether threads are shown as $6 and whether every public group is as $7.
   # `member_paths` are the groups above the memberships, needed only when $7 is
   # false. The groups the root adds (`detached_ids_below/2`) are $8.
-  defp sub_group_memberships_sql do
+  defp sub_group_memberships_sql(profile_param \\ "$5") do
     """
-    mine AS MATERIALIZED (SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $5),
+    mine AS MATERIALIZED (
+      SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = #{profile_param}
+    ),
     member_paths(id) AS (
       SELECT g.parent_id FROM mine JOIN groups g ON g.id = mine.group_id
       WHERE g.parent_id IS NOT NULL

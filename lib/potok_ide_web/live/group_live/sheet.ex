@@ -1,8 +1,10 @@
 defmodule PotokIdeWeb.GroupLive.Sheet do
   @moduledoc """
   A sub-group's description over the app of its parent, which asked for it
-  (`AppApi` `show_group`): the body of `Show.GroupSheet`, a LiveView of its own
-  inside the page's, bound to the sub-group.
+  (`AppApi` `show_group`), or over the root's map, which opens any group the
+  viewer sees (`Social.get_visible_group_below/3`): the body of
+  `Show.GroupSheet`, a LiveView of its own inside the page's, bound to that
+  group.
 
   An app's calls act on the group of the LiveView that runs it, so here the
   apps in the sub-group's description (a form, a board of polls, a feed) work
@@ -74,7 +76,7 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
          parent_id when is_integer(parent_id) <- session["parent_id"],
          group_id when is_integer(group_id) <- session["group_id"],
          %Group{} = parent <- Social.get_visible_group(profile, parent_id),
-         %Group{} = group <- Social.get_visible_child_group(parent, profile, group_id) do
+         %Group{} = group <- Social.get_visible_group_below(parent, profile, group_id) do
       if connected?(socket) do
         Social.subscribe_group(group)
         AppData.subscribe(group)
@@ -161,7 +163,7 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
     %{current_profile: profile, parent_id: parent_id, group: group} = socket.assigns
 
     with %Group{} = parent <- Social.get_visible_group(profile, parent_id),
-         %Group{} = group <- Social.get_visible_child_group(parent, profile, group.id) do
+         %Group{} = group <- Social.get_visible_group_below(parent, profile, group.id) do
       socket
       |> assign(:group, group)
       |> assign_access(Social.get_group_access(profile, group))

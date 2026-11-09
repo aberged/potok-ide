@@ -1907,7 +1907,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:1131
 #, elixir-autogen, elixir-format
-msgid "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form, map or page. A preset sets what any group can have, so all of it can be changed later. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form and a map keep a copy of their app the same way, and a form gets its two groups for files only once it needs them."
+msgid "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form, map or page. A preset sets what any group can have, so all of it can be changed later. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form and a map keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:919
@@ -1992,7 +1992,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:1139
 #, elixir-autogen, elixir-format
-msgid "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking."
+msgid "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking. The root has no map app but a map of its own: the places of every group the viewer sees, at any depth, which the server gathers into numbered circles where they stand close, narrowed by the filters of the sub-groups and by when a group appeared or was last written in."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:1137
@@ -2007,7 +2007,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:964
 #, elixir-autogen, elixir-format
-msgid "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. That is how a group becomes a map."
+msgid "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. That is how a group becomes a map. The root needs no such app: it has a map of its own."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:962

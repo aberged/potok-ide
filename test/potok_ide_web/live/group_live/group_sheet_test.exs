@@ -149,4 +149,36 @@ defmodule PotokIdeWeb.GroupLive.GroupSheetTest do
     assert id == ctx.page.id
     refute has_element?(view, "#group-sheet")
   end
+
+  # The sheet itself, as a page's `GroupSheet.dialog/1` mounts it.
+  defp mount_sheet(ctx, parent, group) do
+    {:ok, sheet, _html} =
+      live_isolated(build_conn(), PotokIdeWeb.GroupLive.Sheet,
+        session: %{
+          "account_id" => ctx.member_account.id,
+          "profile_id" => ctx.member.id,
+          "parent_id" => parent.id,
+          "group_id" => group.id,
+          "locale" => "sr",
+          "time_zone" => zone()
+        }
+      )
+
+    sheet
+  end
+
+  test "under a group only its sub-groups open, under the root's map any group", ctx do
+    deep =
+      group!(ctx.owner, ctx.page, %{
+        "description" => "Duboko **dole**.",
+        "description_format" => :markdown,
+        "is_public" => true
+      })
+
+    assert has_element?(mount_sheet(ctx, ctx.map, deep), "#group-sheet-unavailable")
+
+    sheet = mount_sheet(ctx, Social.get_root_group!(), deep)
+    refute has_element?(sheet, "#group-sheet-unavailable")
+    assert has_element?(sheet, "#sheet-panel-description strong", "dole")
+  end
 end

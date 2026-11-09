@@ -302,6 +302,16 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group_named?("Tuđ feed")
     end
 
+    test "no map in the root, which has a map of its own", ctx do
+      refute "map" in GroupPresets.keys_for(ctx.root)
+      assert "map" in GroupPresets.keys_for(ctx.parent)
+
+      assert {:error, :preset_not_allowed} = create(ctx, "map", %{"name" => "Mapa"}, ctx.root)
+      refute group_named?("Mapa")
+
+      assert {:ok, %{group: %Group{preset: :map}}} = create(ctx, "map", %{"name" => "Mapa"})
+    end
+
     test "nor those who lost the right to", ctx do
       {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.parent)
 

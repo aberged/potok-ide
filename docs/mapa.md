@@ -14,11 +14,11 @@ Mapa ne čuva mesta. Svako mesto je obična grupa:
 | početni prikaz | konfiguracija aplikacije (`saveConfig`): `{view: {bounds: [[jug, zapad], [sever, istok]]}}` |
 | pločice mape | Potok ih šalje dalje sa OpenStreetMap-a, preko `/tiles` (`PotokIde.MapTiles`), i čuva ih nedelju dana |
 
-Zato mapa vidi tačno ono što gledalac vidi: zatvorena grupa u kojoj nije član nije ni na mapi. Dublje grupe nisu na mapi, samo one neposredno ispod.
+Zato mapa vidi tačno ono što gledalac vidi: zatvorena grupa u kojoj nije član nije ni na mapi. Dublje grupe nisu na mapi, samo one neposredno ispod. Sve grupe sa mestom, na bilo kojoj dubini, pokazuje mapa korena (vidi dole).
 
 ## Postavljanje
 
-Najkraći put je preset: **Kreiraj podgrupu** pa **Mapa**. Grupa počinje zatvorena, sa aplikacijom u opisu. Preset uzima kopiju iz `priv/apps/mapa.html`, koju `mix potok.sync_apps` osvežava iz build-a projekta. Svaka mapa čuva kopiju sa kojom je napravljena.
+Najkraći put je preset: **Kreiraj podgrupu** pa **Mapa**. Koren ga ne nudi, jer ima svoju mapu. Grupa počinje zatvorena, sa aplikacijom u opisu. Preset uzima kopiju iz `priv/apps/mapa.html`, koju `mix potok.sync_apps` osvežava iz build-a projekta. Svaka mapa čuva kopiju sa kojom je napravljena.
 
 Ručno: u `potok-mapa` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)** i u opis nalepi `dist/potok-build.html`.
 
@@ -40,3 +40,13 @@ Mesta koja su na ekranu bliže od 60 piksela skupljaju se u krug sa brojem. Obod
 ## Kad se nešto promeni
 
 Kad se podgrupa napravi, promeni ili obriše, stranica javi aplikaciji `onSubgroupsChange` bez ikakvih podataka, jer bi id mogao da oda grupu koju gledalac ne vidi. Mapa onda ponovo pita `listPlaces`, svaki gledalac u svom nasumičnom trenutku do dve sekunde.
+
+## Mapa korena
+
+Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:root/map`, `RootMapState` i `RootMapTab` u Potoku, kuka `root_map.js`), na kom su sve grupe sa mestom koje gledalac vidi, na bilo kojoj dubini: grupe u kojima je član i javne grupe, uz isti prekidač **Javne grupe** kao u podgrupama korena. Threadovi i direktni razgovori nisu na njoj.
+
+Filteri su isti kao u podgrupama korena (član ili autor, vrsta, ime), uz filter po vremenu: poslednja 24 sata, 7 ili 30 dana, 12 meseci, bilo kada, ili od datuma do datuma. Vreme se računa po nastanku grupe (kad je nastala ili postala javna, kao u Feed-u) ili po poslednjoj poruci. Mapa se otvara na grupama iz poslednjih 30 dana.
+
+Grupa može biti jako mnogo, pa ih broji server, a ne telefon: dok se mapa pomera, pregledač pita samo za ono što vidi (`root_map_view`), a `Social.list_map_cells/4` skuplja grupe u ćelije od oko 64 piksela. Ćelija sa jednom grupom vraća pin, svaka druga krug sa brojem, pa odgovor ima najviše nekoliko stotina oznaka. Dodir na krug približava mapu dok se krug ne raspadne, a grupe na istom mestu otvara kao listu. Dodir na pin otvara opis grupe u istom dijalogu kao kod aplikacije Mapa.
+
+Mapa korena se ne osvežava sama: novo stanje stiže kad se mapa pomeri, kad se promeni filter ili kad se tab ponovo otvori.

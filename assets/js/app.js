@@ -30,6 +30,7 @@ import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
 import { KeyboardMedia } from "./keyboard_media"
 import { LocationPicker } from "./location_picker"
+import { RootMap } from "./root_map"
 import { installLongPressLinkMenu, shareLink } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
 import {
@@ -1840,6 +1841,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     GroupAppFrame,
     ReactionPicker,
     LocationPicker,
+    RootMap,
     KeyboardMedia,
     ShareComposer,
     SharePreview,
