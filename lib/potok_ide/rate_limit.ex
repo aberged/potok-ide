@@ -2,7 +2,8 @@ defmodule PotokIde.RateLimit do
   @moduledoc """
   Counts attempts in fixed windows, for what anyone can repeat without being
   a member of anything: password log-ins, sign-in links and the emails sent to
-  an address someone types.
+  an address someone types. Also for what an app can repeat in its viewer's
+  name and that scans every value it keeps: counts and sums.
 
   The counters live in `PotokIde.Cache`'s ETS table, so each machine counts for
   itself: with N machines a limit lets through up to N times as much.
@@ -25,7 +26,11 @@ defmodule PotokIde.RateLimit do
     # Invitation emails one account sends to new addresses.
     invitation_email: {50, :timer.hours(1)},
     # Emails to confirm a new address, per account.
-    email_change: {10, :timer.hours(1)}
+    email_change: {10, :timer.hours(1)},
+    # App counts and sums (`summarizeValues`, `aggregateValues`), per profile
+    # on all its pages, or per page for a guest. Forma refreshes a summary at
+    # most every two seconds, so four pages of it fit.
+    app_heavy_read: {120, :timer.minutes(1)}
   }
 
   @type name ::
@@ -35,6 +40,7 @@ defmodule PotokIde.RateLimit do
           | :magic_link_ip
           | :invitation_email
           | :email_change
+          | :app_heavy_read
 
   @type result :: :ok | {:error, :rate_limited, pos_integer()}
 

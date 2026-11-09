@@ -1937,7 +1937,7 @@ msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:899
 #, elixir-autogen, elixir-format
-msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them and read them page by page, the newest first if it likes."
+msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them, add them up and read them page by page, the newest first if it likes."
 msgstr ""
 
 #: lib/potok_ide_web/domain_copy.ex:917

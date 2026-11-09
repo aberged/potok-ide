@@ -2900,6 +2900,152 @@ defmodule PotokIde.SocialTest do
       assert {rows, false} = Social.list_group_data_value_rows(group, limit: 10_000)
       assert length(rows) == 3
     end
+
+    test "list_group_data_value_rows/2 pages next to the cursor in either order", %{
+      owner: owner,
+      group: group
+    } do
+      [v1, v2, v3, v4, v5] =
+        for n <- 1..5 do
+          {:ok, value} =
+            Social.create_data_value(owner, group, %{"content" => "data:", "data" => %{"n" => n}})
+
+          value
+        end
+
+      ids = fn opts ->
+        {rows, more?} = Social.list_group_data_value_rows(group, opts)
+        {Enum.map(rows, & &1.id), more?}
+      end
+
+      assert ids.([]) == {[v1.id, v2.id, v3.id, v4.id, v5.id], false}
+
+      assert ids.(before_id: v5.id, limit: 2) == {[v3.id, v4.id], true}
+      assert ids.(before_id: v3.id, limit: 2) == {[v1.id, v2.id], false}
+      assert ids.(before_id: v5.id, offset: 1, limit: 2) == {[v2.id, v3.id], true}
+      assert ids.(after_id: v1.id, before_id: v5.id, limit: 2) == {[v2.id, v3.id], true}
+
+      assert ids.(order_dir: "desc", limit: 2) == {[v5.id, v4.id], true}
+      assert ids.(order_dir: "desc", before_id: v4.id, limit: 2) == {[v3.id, v2.id], true}
+      assert ids.(order_dir: "desc", after_id: v2.id, limit: 2) == {[v4.id, v3.id], true}
+      assert ids.(order_dir: "desc", after_id: v3.id, limit: 2) == {[v5.id, v4.id], false}
+
+      # Ordered by a key of the data, the cursor only narrows.
+      assert ids.(order_by: "n", order_dir: "desc", before_id: v4.id) ==
+               {[v3.id, v2.id, v1.id], false}
+    end
+
+    test "list_group_data_value_rows/2 combines match and search", %{
+      owner: owner,
+      group: group
+    } do
+      for {status, title} <- [{"open", "Roof"}, {"open", "Door"}, {"done", "Roof window"}] do
+        {:ok, _} =
+          Social.create_data_value(owner, group, %{
+            "content" => "data:",
+            "data" => %{"status" => status, "title" => title}
+          })
+      end
+
+      filters = [match: %{"status" => "open"}, search_field: "title", search_value: "roof"]
+
+      assert {[row], false} = Social.list_group_data_value_rows(group, filters)
+      assert row.data == %{"status" => "open", "title" => "Roof"}
+      assert Social.count_group_data_value_rows(group, filters) == 1
+      assert Social.count_group_data_value_rows(group, match: %{"status" => "open"}) == 2
+    end
+
+    test "aggregate_group_data_values/2 adds up numbers, in all and per group", %{
+      owner: owner,
+      group: group
+    } do
+      for data <- [
+            %{"status" => "open", "amount" => 10},
+            %{"status" => "open", "amount" => "2.5"},
+            %{"status" => "done", "amount" => "abc"},
+            %{"status" => "done", "amount" => "1,5"},
+            %{"status" => true, "amount" => -4},
+            %{"amount" => 7}
+          ] do
+        {:ok, _} = Social.create_data_value(owner, group, %{"content" => "data:", "data" => data})
+      end
+
+      assert {:ok, all} = Social.aggregate_group_data_values(group, fields: ["amount"])
+      assert %{total: 6, buckets: nil, other: nil} = all
+      assert all.fields["amount"] == %{count: 4, sum: 15.5, avg: 3.875, min: -4.0, max: 10.0}
+
+      assert {:ok, grouped} =
+               Social.aggregate_group_data_values(group, group_by: "status", fields: ["amount"])
+
+      assert grouped.total == 6
+      assert grouped.fields == all.fields
+
+      assert Enum.map(grouped.buckets, &{&1.value, &1.count}) ==
+               [{"done", 2}, {"open", 2}, {"true", 1}, {nil, 1}]
+
+      [done, open | _] = grouped.buckets
+      assert open.fields["amount"] == %{count: 2, sum: 12.5, avg: 6.25, min: 2.5, max: 10.0}
+      assert done.fields["amount"] == %{count: 0, sum: 0.0, avg: nil, min: nil, max: nil}
+
+      assert {:ok, %{total: 2, fields: %{"amount" => %{sum: 12.5}}}} =
+               Social.aggregate_group_data_values(group,
+                 match: %{"status" => "open"},
+                 fields: ["amount"]
+               )
+
+      assert {:ok, %{total: 0, fields: %{"amount" => %{count: 0, avg: nil}}, buckets: []}} =
+               Social.aggregate_group_data_values(group,
+                 search_field: "status",
+                 search_value: "nothing",
+                 group_by: "status",
+                 fields: ["amount"]
+               )
+    end
+
+    test "aggregate_group_data_values/2 reads under a path and sums up past 50 groups", %{
+      owner: owner,
+      group: group
+    } do
+      for n <- 1..52 do
+        {:ok, _} =
+          Social.create_data_value(owner, group, %{
+            "content" => "data:",
+            "data" => %{"a" => %{"q" => "o#{n}", "n" => n}}
+          })
+      end
+
+      assert {:ok, result} =
+               Social.aggregate_group_data_values(group,
+                 under: ["a"],
+                 group_by: "q",
+                 fields: ["n"]
+               )
+
+      assert result.total == 52
+      assert length(result.buckets) == 50
+      assert result.other == %{buckets: 2, count: 2}
+      assert result.fields["n"] == %{count: 52, sum: 1378.0, avg: 26.5, min: 1.0, max: 52.0}
+
+      # Without a path the numbers are not at the top.
+      assert {:ok, %{fields: %{"n" => %{count: 0}}}} =
+               Social.aggregate_group_data_values(group, fields: ["n"])
+    end
+
+    test "aggregate_group_data_values/2 refuses what it cannot add up", %{group: group} do
+      too_long = String.duplicate("k", 65)
+
+      for opts <- [
+            [fields: ~w(a b c d e f)],
+            [fields: "amount"],
+            [fields: [too_long]],
+            [group_by: 5],
+            [group_by: ""],
+            [under: ~w(a b c d)],
+            [under: "a"]
+          ] do
+        assert {:error, :invalid_aggregate} = Social.aggregate_group_data_values(group, opts)
+      end
+    end
   end
 
   describe "list_group_values_page/2" do

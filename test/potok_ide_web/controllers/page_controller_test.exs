@@ -138,7 +138,8 @@ defmodule PotokIdeWeb.PageControllerTest do
     test "gives an overview of apps without teaching their API", %{conn: conn} do
       body = conn |> get(~p"/domain") |> html_response(200)
 
-      for name <- ~w(insertValue listValues onNewValue updateDescription getDescription) do
+      for name <-
+            ~w(insertValue listValues onNewValue updateDescription getDescription summarizeValues aggregateValues) do
         refute body =~ name
       end
     end

@@ -30,6 +30,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   the app's editors keep in its config: who writes, who reads all and who only
   their own, and what a value may carry. A non-member of a public group gets
   there too when a rule is public.
+
+  Reads are free, but counts and sums (`summarize_values`, `aggregate_values`)
+  scan every value the app keeps and hold the page for up to five seconds, so
+  they are limited per viewer (`PotokIde.RateLimit`, `:app_heavy_read`).
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
@@ -39,6 +43,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   alias PotokIde.Polls
   alias PotokIde.Polls.{Poll, Rules, View}
+  alias PotokIde.RateLimit
   alias PotokIde.Social
   alias PotokIde.Social.{Access, AppData, AppFiles, Group, ValueAttachment, ValueRules}
   alias PotokIdeWeb.AppFileToken
@@ -142,22 +147,23 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{current_profile: profile, group: group, active_alt_description: alt, access: access} =
       socket.assigns
 
-    case AppData.list(profile, group, alt, access, collection,
-           limit: non_negative_integer(params["limit"]),
-           offset: non_negative_integer(params["offset"]),
-           before_id: non_negative_integer(params["before_id"]),
-           after_id: non_negative_integer(params["after_id"]),
-           order_dir: optional_string(params["order_dir"]),
-           mine: params["mine"] == true,
-           match: match_param(params["match"]),
-           total: params["total"] == true
-         ) do
-      {:ok, rows, more?, total} ->
-        values = Enum.map(rows, &Map.update!(&1, :content_format, fn f -> to_string(f) end))
-        {%{ok: true, values: values, has_more: more?, total: total}, socket}
-
-      {:error, reason} ->
-        {data_error(reason), socket}
+    with {:ok, match} <- match_option(params["match"]),
+         {:ok, rows, more?, total} <-
+           AppData.list(profile, group, alt, access, collection,
+             limit: non_negative_integer(params["limit"]),
+             offset: non_negative_integer(params["offset"]),
+             before_id: non_negative_integer(params["before_id"]),
+             after_id: non_negative_integer(params["after_id"]),
+             order_dir: optional_string(params["order_dir"]),
+             mine: params["mine"] == true,
+             match: match,
+             total: params["total"] == true
+           ) do
+      values = Enum.map(rows, &Map.update!(&1, :content_format, fn f -> to_string(f) end))
+      {%{ok: true, values: values, has_more: more?, total: total}, socket}
+    else
+      {:error, %{ok: false} = reply} -> {reply, socket}
+      {:error, reason} -> {data_error(reason), socket}
     end
   end
 
@@ -216,12 +222,60 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run("summarize_values", params, socket) do
     %{group: group, active_alt_description: alt, access: access} = socket.assigns
 
-    case AppData.summarize(group, alt, access, params["collection"],
-           under: string_list(params["under"]),
-           keys: string_list(params["keys"]) || [],
-           score: params["score"] == true
-         ) do
-      {:ok, summary} -> {%{ok: true, summary: summary_payload(summary)}, socket}
+    with :ok <- heavy_read(socket),
+         {:ok, summary} <-
+           AppData.summarize(group, alt, access, params["collection"],
+             under: string_list(params["under"]),
+             keys: string_list(params["keys"]) || [],
+             score: params["score"] == true
+           ) do
+      {%{ok: true, summary: summary_payload(summary)}, socket}
+    else
+      {:error, %{ok: false} = reply} -> {reply, socket}
+      {:error, reason} -> {data_error(reason), socket}
+    end
+  end
+
+  # Sums over the numbers in a collection, for its full readers.
+  defp run("aggregate_values", %{"collection" => collection} = params, socket)
+       when is_binary(collection) do
+    %{group: group, active_alt_description: alt, access: access} = socket.assigns
+
+    with :ok <- heavy_read(socket),
+         {:ok, match} <- match_option(params["match"]),
+         {:ok, result} <-
+           AppData.aggregate(group, alt, access, collection,
+             match: match,
+             group_by: params["group_by"],
+             fields: params["fields"],
+             under: params["under"]
+           ) do
+      {Map.put(result, :ok, true), socket}
+    else
+      {:error, %{ok: false} = reply} -> {reply, socket}
+      {:error, reason} -> {data_error(reason), socket}
+    end
+  end
+
+  # Sums over the numbers in values outside collections, for members, with the
+  # filters of `list_values`.
+  defp run("aggregate_values", params, socket) do
+    with :ok <-
+           require_member(
+             socket,
+             gettext("You must be a group member to access group data values.")
+           ),
+         :ok <- heavy_read(socket),
+         {:ok, filters} <- value_filters(params, socket),
+         {:ok, result} <-
+           Social.aggregate_group_data_values(
+             socket.assigns.group,
+             filters ++
+               [group_by: params["group_by"], fields: params["fields"], under: params["under"]]
+           ) do
+      {Map.put(result, :ok, true), socket}
+    else
+      {:error, %{ok: false} = reply} -> {reply, socket}
       {:error, reason} -> {data_error(reason), socket}
     end
   end
@@ -257,29 +311,33 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run("list_values", params, socket) do
-    case require_member(
-           socket,
-           gettext("You must be a group member to access group data values.")
-         ) do
-      :ok ->
-        {rows, has_more?} =
-          Social.list_group_data_value_rows(socket.assigns.group,
-            scope: list_scope(params["scope"], socket.assigns),
-            limit: non_negative_integer(params["limit"]) |> clamp_limit(),
-            offset: non_negative_integer(params["offset"]),
-            after_id: non_negative_integer(params["after_id"]),
-            before_id: non_negative_integer(params["before_id"]),
-            search_field: optional_string(params["search_field"]),
-            search_value: optional_string(params["search_value"]),
-            order_by: optional_string(params["order_by"]),
-            order_dir: optional_string(params["order_dir"])
-          )
+    with :ok <-
+           require_member(
+             socket,
+             gettext("You must be a group member to access group data values.")
+           ),
+         {:ok, filters} <- value_filters(params, socket) do
+      group = socket.assigns.group
 
-        values = Enum.map(rows, &Map.update!(&1, :content_format, fn f -> to_string(f) end))
-        {%{ok: true, values: values, has_more: has_more?}, socket}
+      {rows, has_more?} =
+        Social.list_group_data_value_rows(
+          group,
+          filters ++
+            [
+              limit: non_negative_integer(params["limit"]) |> clamp_limit(),
+              offset: non_negative_integer(params["offset"]),
+              after_id: non_negative_integer(params["after_id"]),
+              before_id: non_negative_integer(params["before_id"]),
+              order_by: optional_string(params["order_by"]),
+              order_dir: optional_string(params["order_dir"])
+            ]
+        )
 
-      {:error, reply} ->
-        {reply, socket}
+      total = if params["total"] == true, do: Social.count_group_data_value_rows(group, filters)
+      values = Enum.map(rows, &Map.update!(&1, :content_format, fn f -> to_string(f) end))
+      {%{ok: true, values: values, has_more: has_more?, total: total}, socket}
+    else
+      {:error, reply} -> {reply, socket}
     end
   end
 
@@ -763,11 +821,32 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp string_list(_list), do: nil
 
-  defp match_param(match) when is_map(match) and map_size(match) > 0 do
-    if byte_size(Jason.encode!(match)) <= @max_match_bytes, do: match
+  # A filter of values by what their data contains: none when absent or empty.
+  # Anything else that is not a small object is refused, so a broken filter
+  # never reads as "everything".
+  defp match_option(nil), do: {:ok, nil}
+  defp match_option(match) when is_map(match) and map_size(match) == 0, do: {:ok, nil}
+
+  defp match_option(match) when is_map(match) do
+    if byte_size(Jason.encode!(match)) <= @max_match_bytes,
+      do: {:ok, match},
+      else: {:error, error("invalid_match", nil)}
   end
 
-  defp match_param(_match), do: nil
+  defp match_option(_match), do: {:error, error("invalid_match", nil)}
+
+  # Which values outside collections a list or a sum reads.
+  defp value_filters(params, socket) do
+    with {:ok, match} <- match_option(params["match"]) do
+      {:ok,
+       [
+         scope: list_scope(params["scope"], socket.assigns),
+         match: match,
+         search_field: optional_string(params["search_field"]),
+         search_value: optional_string(params["search_value"])
+       ]}
+    end
+  end
 
   # A value of a collection as the viewer may see it, by the rules of now.
   defp present_value(value, socket) do
@@ -873,8 +952,19 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       :files_exposed ->
         error("files_exposed", gettext("The group for private files is no longer closed."))
 
-      reason when reason in [:not_found, :no_config, :not_scored, :invalid_summary] ->
+      reason
+      when reason in [
+             :not_found,
+             :no_config,
+             :not_scored,
+             :invalid_summary,
+             :invalid_aggregate,
+             :invalid_match
+           ] ->
         error(Atom.to_string(reason), nil)
+
+      :timeout ->
+        error("timeout", gettext("Counting took too long. Try narrowing it down."))
 
       _other ->
         error("invalid_value", gettext("Could not save the data value."))
@@ -1015,6 +1105,25 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     else
       {:error,
        error("rate_limited", gettext("Too many changes in a short time. Try again shortly."))}
+    end
+  end
+
+  # Counts and sums scan every value the app keeps and hold the page while they
+  # run, so a viewer gets only so many a minute, on all their pages together.
+  defp heavy_read(socket) do
+    key =
+      case socket.assigns.current_profile do
+        nil -> {:page, self()}
+        profile -> profile.id
+      end
+
+    case RateLimit.hit(:app_heavy_read, key) do
+      :ok ->
+        :ok
+
+      {:error, :rate_limited, _retry_after} ->
+        {:error,
+         error("rate_limited", gettext("Too many requests in a short time. Try again shortly."))}
     end
   end
 

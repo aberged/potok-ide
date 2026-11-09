@@ -279,12 +279,16 @@ const potok = {
       collection: options.collection ?? null,
     }),
 
-  // Up to 200 values per call; page with `afterId` / `beforeId` or `offset`.
-  // `scope: "group"` also lists the values of the group's other apps.
-  // With `{collection}`: up to 100, by id, `orderDir: "desc"` for the newest
-  // first; every value for those who read the collection, otherwise only the
-  // viewer's own (`mine: true` asks for those anyway). `total: true` adds the
-  // count, and `match` keeps the values whose data contains it.
+  // Up to 200 values per call, oldest first; `orderDir: "desc"` for the newest
+  // first. A page lies right next to its cursor: `beforeId` gives the values
+  // just before it, `afterId` those just after it, and `has_more` tells
+  // whether more lie beyond, away from the cursor. `offset` counts on from it.
+  // `total: true` adds the count, `match` keeps the values whose data contains
+  // it (`{status: "open"}`), and `scope: "group"` also lists the values of the
+  // group's other apps. With `orderBy` the cursors only narrow by id.
+  // With `{collection}`: up to 100, every value for those who read the
+  // collection, otherwise only the viewer's own (`mine: true` asks for those
+  // anyway).
   listValues: (options = {}) => call("list_values", listParams(options)),
 
   // The app's config (its `secret` part only for its editors), its `revision`,
@@ -314,6 +318,24 @@ const potok = {
       under: options.under ?? null,
       keys: options.keys ?? [],
       score: options.score === true,
+    }),
+
+  // Sums over the numbers in the values `listValues` would page through with
+  // the same `match`, `searchField` / `searchValue` and `scope`: for each of
+  // up to 5 `fields`, how many hold a number and their sum, average, lowest
+  // and highest, read at `under` (a path, the top by default). With
+  // `groupBy` the same per value of that field, 50 biggest groups first.
+  // `{collection}` works for those who read all of it.
+  aggregateValues: (options = {}) =>
+    call("aggregate_values", {
+      collection: options.collection ?? null,
+      scope: options.scope ?? null,
+      match: options.match ?? null,
+      search_field: options.searchField ?? options.search_field ?? null,
+      search_value: options.searchValue ?? options.search_value ?? null,
+      under: options.under ?? null,
+      group_by: options.groupBy ?? options.group_by ?? null,
+      fields: options.fields ?? null,
     }),
 
   // An editor's points and words for the answers of one value of a quiz.

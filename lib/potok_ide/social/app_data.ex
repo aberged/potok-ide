@@ -455,6 +455,40 @@ defmodule PotokIde.Social.AppData do
     end
   end
 
+  @doc """
+  Sums over the numbers in `collection` (`PotokIde.Social.ValueAggregate`),
+  read at the rule's `under` unless the app names a path: for its full readers
+  only, as a sum or a lowest value over a narrow `match` can tell one answer,
+  which a summary reader must not see.
+  """
+  def aggregate(%Group{} = group, alt, %Access{} = access, collection, opts) do
+    config = get_config(group, alt)
+    rule = rule(config, collection)
+    full? = ValueRules.full_reader?(rule, access)
+
+    cond do
+      not ValueRules.app_collection?(collection) ->
+        {:error, :invalid_collection}
+
+      not full? and not access.member? ->
+        {:error, :not_a_member}
+
+      not full? ->
+        {:error, :not_permitted}
+
+      true ->
+        PotokIde.Social.aggregate_group_data_values(group,
+          scope: {:app, alt_id(alt)},
+          collection: collection,
+          match: opts[:match],
+          group_by: opts[:group_by],
+          fields: opts[:fields],
+          under: opts[:under],
+          default_under: rule.under || []
+        )
+    end
+  end
+
   defp valid_path?(path),
     do: is_list(path) and path != [] and length(path) <= 3 and Enum.all?(path, &short_key?/1)
 

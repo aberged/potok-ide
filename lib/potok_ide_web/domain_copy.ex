@@ -898,7 +898,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them and read them page by page, the newest first if it likes."
+              "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them, add them up and read them page by page, the newest first if it likes."
             )
         },
         %{

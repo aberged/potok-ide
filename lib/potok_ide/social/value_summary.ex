@@ -28,9 +28,7 @@ defmodule PotokIde.Social.ValueSummary do
   `score:` (`score_stats/3`).
   """
   def summarize(group_id, alt_id, collection, under, keys, opts \\ []) do
-    Repo.transaction(fn ->
-      Repo.query!("SET LOCAL statement_timeout = #{@timeout_ms}")
-
+    Repo.with_statement_timeout(@timeout_ms, fn ->
       %{
         total: total(group_id, alt_id, collection),
         keys: if(keys == [], do: %{}, else: buckets(group_id, alt_id, collection, under, keys)),

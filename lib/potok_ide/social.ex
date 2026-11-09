@@ -44,6 +44,7 @@ defmodule PotokIde.Social do
     Profile,
     ProfileInvitation,
     Value,
+    ValueAggregate,
     ValueAttachment,
     ValueReaction
   }
@@ -4352,9 +4353,16 @@ defmodule PotokIde.Social do
 
   `collection` picks one collection (`PotokIde.Social.AppData`); without it
   only values outside collections are read, so apps that use none never see
-  what the rules of a collection keep from them. A collection is ordered by id,
-  `order_dir: "desc"` giving the newest first. `creator_id` keeps one author's
-  values and `match` those whose data contains it (`@>`).
+  what the rules of a collection keep from them. `creator_id` keeps one
+  author's values and `match` those whose data contains it (`@>`).
+
+  Without `order_by`, a collection is ordered by id and other values by when
+  they were written; `order_dir: "desc"` gives the newest first. A page always
+  lies right next to its cursor: `before_id` alone gives the values just
+  before it, `after_id` alone those just after it, in the asked order either
+  way, and `offset` counts on from the cursor. `has_more?` tells whether more
+  lie beyond the page, away from the cursor. With `order_by` (a key of the
+  data) the cursors only narrow by id.
 
   The creators' names are read after the page, in a query of their own: joined
   in the same query, a filter that matches many rows can make Postgres loop
@@ -4362,13 +4370,14 @@ defmodule PotokIde.Social do
   """
   def list_group_data_value_rows(%Group{} = group, opts \\ []) do
     limit = opts[:limit] |> Kernel.||(50) |> min(200) |> max(1)
+    {scan, reverse?} = data_value_scan(opts)
 
     rows =
       group
       |> data_value_rows_query(opts)
       |> maybe_after_id(opts[:after_id])
       |> maybe_before_id(opts[:before_id])
-      |> order_data_value_rows(opts)
+      |> order_data_value_rows(opts, scan)
       |> maybe_offset(opts[:offset])
       |> limit(^(limit + 1))
       |> select([v], %{
@@ -4390,7 +4399,10 @@ defmodule PotokIde.Social do
       })
       |> Repo.all()
 
-    {rows |> Enum.take(limit) |> put_creator_usernames(), length(rows) > limit}
+    page = Enum.take(rows, limit)
+    page = if reverse?, do: Enum.reverse(page), else: page
+
+    {put_creator_usernames(page), length(rows) > limit}
   end
 
   @doc "How many values `list_group_data_value_rows/2` would page through with these filters."
@@ -4399,6 +4411,28 @@ defmodule PotokIde.Social do
     |> data_value_rows_query(opts)
     |> select([v], count(v.id))
     |> Repo.one()
+  end
+
+  @doc """
+  Sums over the numbers in the values `list_group_data_value_rows/2` would page
+  through with the same filters (`PotokIde.Social.ValueAggregate`). `group_by`,
+  `fields` and `under` are taken as the app sent them; `default_under` is where
+  the numbers are read when `under` is not given.
+
+  Returns `{:ok, result}` or `{:error, :invalid_aggregate | :timeout}`.
+  """
+  def aggregate_group_data_values(%Group{} = group, opts) do
+    with {:ok, spec} <-
+           ValueAggregate.spec(
+             opts[:group_by],
+             opts[:fields],
+             opts[:under],
+             opts[:default_under] || []
+           ) do
+      group
+      |> data_value_rows_query(opts)
+      |> ValueAggregate.run(spec)
+    end
   end
 
   defp data_value_rows_query(%Group{id: group_id}, opts) do
@@ -4426,14 +4460,33 @@ defmodule PotokIde.Social do
 
   defp maybe_match_data_value(query, _match), do: query
 
-  defp order_data_value_rows(query, opts) do
-    if is_binary(opts[:collection]) and is_nil(opts[:order_by]) do
-      case normalize_data_value_order_dir(opts[:order_dir]) do
-        :desc -> from(v in query, order_by: [desc: v.id])
-        :asc -> from(v in query, order_by: [asc: v.id])
-      end
-    else
-      maybe_order_data_value_field(query, opts[:order_by], opts[:order_dir])
+  # Which way the query walks, and whether its page is turned around after:
+  # a lone cursor is walked away from, so the page lies right next to it in
+  # either order. Ordered by a key of the data, the page keeps that order.
+  defp data_value_scan(opts) do
+    dir = normalize_data_value_order_dir(opts[:order_dir])
+    before? = is_integer(opts[:before_id])
+    after? = is_integer(opts[:after_id])
+
+    cond do
+      normalize_data_value_jsonb_field(opts[:order_by]) -> {dir, false}
+      dir == :asc and before? and not after? -> {:desc, true}
+      dir == :desc and after? and not before? -> {:asc, true}
+      true -> {dir, false}
+    end
+  end
+
+  # Values outside collections walk `values_group_data_order_index` either way.
+  defp order_data_value_rows(query, opts, scan) do
+    cond do
+      normalize_data_value_jsonb_field(opts[:order_by]) ->
+        maybe_order_data_value_field(query, opts[:order_by], opts[:order_dir])
+
+      is_binary(opts[:collection]) ->
+        from(v in query, order_by: [{^scan, v.id}])
+
+      true ->
+        from(v in query, order_by: [{^scan, v.inserted_at}, {^scan, v.id}])
     end
   end
 

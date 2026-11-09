@@ -652,14 +652,22 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
   * `data` is an object or a JSON object string; anything else is refused with `invalid_value`.
   * `options.contentFormat`: `"markdown"` (default) or `"html"`.
   * Members only; rate limited.
-* `listValues(options)` resolves to `{ok: true, values, has_more}`. Members only. Options:
+* `listValues(options)` resolves to `{ok: true, values, has_more, total}`. Members only. Options:
   * `scope`: without it, only this app's values; `"group"` adds the values of the group's other apps that the viewer can open (each carries its `description_id`)
   * `limit` (at most 200, default 50), `offset`
-  * `afterId` / `beforeId`: only values with a greater / smaller id
-  * `searchField` + `searchValue`: case-insensitive substring match on `data[searchField]`
-  * `orderBy`: a key in `data` (`"number"` sorts numerically first); without it values come in insertion order
-  * `orderDir`: `"asc"` (default) or `"desc"`
+  * `orderDir`: `"asc"` (default, the oldest first) or `"desc"` (the newest first)
+  * `afterId` / `beforeId`: a page right next to that id, in the order asked: `beforeId` gives the values just before it, `afterId` those just after it, and both give those in between. `has_more` says whether more lie beyond the page, away from the cursor: with `beforeId` alone, older ones. `offset` counts on from the cursor.
+  * `match`: an object; keeps the values whose data contains it. It compares whole values, case and JSON type included: `{n: 5}` does not find `"5"`, and `{tags: ["a"]}` finds every list that holds `"a"`. Anything but an object (at most 4 KB as JSON) is refused with `invalid_match`; `{}` keeps everything.
+  * `searchField` + `searchValue`: case-insensitive substring match on `data[searchField]`; it narrows together with `match`
+  * `total: true` adds `total`, how many values the filters keep, over every page (`null` otherwise)
+  * `orderBy`: a key in `data` (`"number"` sorts numerically first), in the direction of `orderDir`. Then the cursors only narrow by id, and pages go by `offset`.
   * snake_case names (`after_id`, `order_by`, ...) work too.
+* `aggregateValues(options)` adds up numbers in the values `listValues` would page through with the same `scope`, `match` and `searchField` / `searchValue`, and resolves to `{ok: true, total, fields, buckets, other}`. Members only. Options:
+  * `fields`: up to 5 keys. For each, `fields[key]` is `{count, sum, avg, min, max}` over the values that hold a number there: a JSON number, or a string that is a plain decimal (`"12"`, `"-3.5"`; not `"1,5"` or `"1e3"`), of at most 61 characters. `count` says how many did; with none, `sum` is 0 and the rest `null`.
+  * `under`: a path of up to 3 keys to the object the keys are read in (`["a"]`); the top of `data` by default
+  * `groupBy`: a key. `buckets` is then `[{value, count, fields}]` per value of that key, the 50 biggest first, and `other` is `{buckets, count}` for the rest, or `null`. A string, number or boolean is a group, as text cut to 200 characters; values without one are the `null` group. Without `groupBy`, `buckets` and `other` are `null`.
+  * Keys are 1 to 64 bytes; anything else is refused with `invalid_aggregate`.
+  * One call takes at most 5 seconds (`timeout` past that) and, with `summarizeValues`, counts toward a limit of 120 a minute per viewer (`rate_limited`), as each reads every value the filters keep.
 * `updateDescription(description, options)` resolves to `{ok: true, group}`. It changes the app's own description (the default or an alternative one). `options.descriptionFormat` sets the format. It needs the `edit_group` permission and is rate limited. A new description is new app HTML, so the app restarts.
 * `getDescription()` resolves to `{ok: true, group}` for the app's own description.
 * `getCurrentProfile()` resolves to the profile, or `null`.
@@ -706,7 +714,8 @@ Calls:
 
 * `getConfig()` resolves to `{ok: true, config: {id, revision, data} | null, caps, manage, can_create_groups, files, visible_role_keys, viewer}`. `caps` has, per ruled collection, what the viewer may do: `{write, write_block, read: "all" | "own", summary, edit_own, manage, open, once, anonymous, public, released, written, notify}`. `files` (editors only) says per file group `"ok"`, `"missing"` or `"exposed"`. Members get it, and anyone where a rule is public.
 * `saveConfig(data, {revision})` resolves to `{ok: true, config}`, for editors. Pass the revision you started from (0 for the first save); someone else's save in between gives `{ok: false, error: "conflict", current}`. Invalid rules give `{error: "invalid_rules", reason}`.
-* `insertValue(data, {collection})` and `listValues({collection, mine, total, match, orderDir, limit, offset, beforeId, afterId})` work on a collection. A list goes by id, `orderDir: "desc"` gives the newest first, `total: true` adds `total`, `mine: true` keeps the viewer's own, and `match` (an object, full readers only) keeps values whose data contains it.
+* `insertValue(data, {collection})` and `listValues({collection, mine, total, match, orderDir, limit, offset, beforeId, afterId})` work on a collection. A list goes by id and pages as above: `orderDir: "desc"` gives the newest first, a cursor gives the page right next to it, `total: true` adds `total`, `mine: true` keeps the viewer's own, and `match` (an object, full readers only) keeps values whose data contains it.
+* `aggregateValues({collection, match, under, groupBy, fields})` adds up numbers in a collection as above, reading at the rule's `under` unless `under` is given. Only for full readers: a sum or a lowest value over a narrow `match` can tell a single answer, so the roles in `summary` get `forbidden` and keep to `summarizeValues`.
 * `updateValue(id, data, {revision})` changes the viewer's own value; `deleteValue(id)` and `deleteValues(collection)` are for editors and take the files along.
 * `summarizeValues(collection, {under, keys, score})` resolves to `{ok: true, summary: {total, keys, score}}`: per key in `keys`, how many answered, and per row (`null` for a plain answer) the 50 biggest buckets as `{value, count}` and `other`. A string, number or boolean is one bucket, a list one per element, a map one set per entry. `score: true` adds, for full readers, `{count, average, median, min, max, distribution, items}`.
 * `gradeValue(id, items)`: an editor's `{question: {points, feedback}}`; `points: null` gives the answer back to the key.
@@ -771,8 +780,8 @@ Reply shapes:
 
 Error codes (`error`):
 
-* From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds).
-* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `invalid_emoji`, `invalid_date`, `unknown_method`.
+* From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group`, `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds; `summarizeValues` and `aggregateValues` together 120 a minute per viewer), `timeout` (a count or sum took over 5 seconds).
+* From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `invalid_emoji`, `invalid_date`, `invalid_match`, `invalid_aggregate`, `unknown_method`.
 * For collections: `closed`, `already_answered`, `released`, `too_large`, `invalid_files`, `files_missing`, `files_exposed` (with a `message`), and `conflict` (with `current`), `invalid_rules` (with `reason`), `invalid_collection`, `no_config`, `not_scored`, `invalid_summary`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`, `cancelled` (the viewer closed the picker of `pickEmoji`), `forbidden` (the page has no picker).
 
@@ -791,7 +800,7 @@ Apps written before the sandbox ran inside the page and found the API on `docume
 * `insertGroupValue(content, options)`: `insertValue`, where `content` must be a string (a JSON object)
 * `updateGroupDescription(description, options)`: `updateDescription`
 * `getGroupDescription()`: resolves to `{description, descriptionFormat}` (format defaults to `"html"`)
-* `getGroupDataValues(options)`: without `options.limit`, resolves to every value as `{ok: true, values}` (fetched in pages of 200, at most 5,000); with it, to one `listValues` page
+* `getGroupDataValues(options)`: without `options.limit`, resolves to every value as `{ok: true, values}` (fetched in pages of 200 in the order of `options`, at most 5,000); with it, to one `listValues` page
 * `getCurrentProfile()`
 * `setNewValueCallback(fn)`: a single callback (a new one replaces it) that receives a `phx:new_data_value` `CustomEvent` with the value as `detail`
 

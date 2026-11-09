@@ -1942,8 +1942,8 @@ msgstr "Скупља одговоре по својим правилима"
 
 #: lib/potok_ide_web/domain_copy.ex:899
 #, elixir-autogen, elixir-format
-msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them and read them page by page, the newest first if it likes."
-msgstr "Свака апликација има своје <Value>вредности</Value>, одвојене од осталих апликација у групи. Може да их претражује, сортира, броји и чита по страницама, ако хоће и од најновијих."
+msgid "Each app has its own <Value>values</Value>, apart from the other apps of the group. It can search them, sort them, count them, add them up and read them page by page, the newest first if it likes."
+msgstr "Свака апликација има своје <Value>вредности</Value>, одвојене од осталих апликација у групи. Може да их претражује, сортира, броји, сабира и чита по страницама, ако хоће и од најновијих."
 
 #: lib/potok_ide_web/domain_copy.ex:917
 #, elixir-autogen, elixir-format

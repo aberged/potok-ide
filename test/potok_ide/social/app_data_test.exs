@@ -275,6 +275,44 @@ defmodule PotokIde.Social.AppDataTest do
       assert {[], 0} = list!(ctx.reader, ctx.group, mine: true, total: true)
     end
 
+    test "a page lies right next to its cursor, oldest first too", ctx do
+      third = answer!(ctx.reader, ctx.reader_account, ctx.group, %{"q1" => "o3"})
+
+      assert {:ok, [%{id: id}], true, nil} =
+               AppData.list(
+                 ctx.reader,
+                 ctx.group,
+                 nil,
+                 access(ctx.reader, ctx.group),
+                 "responses",
+                 before_id: third.id,
+                 limit: 1
+               )
+
+      assert id == ctx.second.id
+    end
+
+    test "a full reader adds up a collection; others may not", ctx do
+      assert {:ok, %{total: 2, buckets: buckets}} =
+               AppData.aggregate(ctx.group, nil, access(ctx.reader, ctx.group), "responses",
+                 under: ["a"],
+                 group_by: "q1"
+               )
+
+      assert Enum.map(buckets, &{&1.value, &1.count}) == [{"o1", 1}, {"o2", 1}]
+
+      assert {:error, :not_permitted} =
+               AppData.aggregate(ctx.group, nil, access(ctx.member, ctx.group), "responses", [])
+
+      {_outsider_account, outsider} = account_with_profile!("ad#{unique()}")
+
+      assert {:error, :not_a_member} =
+               AppData.aggregate(ctx.group, nil, access(outsider, ctx.group), "responses", [])
+
+      assert {:error, :invalid_collection} =
+               AppData.aggregate(ctx.group, nil, access(ctx.owner, ctx.group), "config", [])
+    end
+
     test "a member's match is ignored, as it could find others' values", ctx do
       assert {[%{id: id}], _} = list!(ctx.member, ctx.group, match: %{"a" => %{"q1" => "o2"}})
       assert id == ctx.first.id

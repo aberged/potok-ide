@@ -838,6 +838,7 @@ const APP_FRAME_METHODS = new Set([
   "delete_value",
   "delete_values",
   "summarize_values",
+  "aggregate_values",
   "grade_value",
   "list_roles",
   "set_notifications",

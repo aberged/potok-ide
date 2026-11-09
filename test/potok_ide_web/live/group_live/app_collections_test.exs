@@ -92,6 +92,35 @@ defmodule PotokIdeWeb.GroupLive.AppCollectionsTest do
              call(member, "save_config", %{data: Jason.encode!(%{}), revision: 0})
   end
 
+  test "a full reader adds up a collection through the API, a member may not", ctx do
+    {:ok, _config} =
+      AppData.save_config(ctx.owner, ctx.group, nil, %{"rules" => form_rules(ctx)}, 0)
+
+    for {account, q1} <- [{ctx.member_account, "o1"}, {ctx.reader_account, "o2"}] do
+      assert %{ok: true} =
+               call(open_app(account, ctx.group), "insert_value", %{
+                 collection: "responses",
+                 data: Jason.encode!(%{"a" => %{"q1" => q1}})
+               })
+    end
+
+    reader = open_app(ctx.reader_account, ctx.group)
+
+    assert %{ok: true, total: 2, buckets: [%{value: "o1", count: 1}, %{value: "o2", count: 1}]} =
+             call(reader, "aggregate_values", %{collection: "responses", group_by: "q1"})
+
+    assert %{ok: true, total: 1} =
+             call(reader, "aggregate_values", %{
+               collection: "responses",
+               match: %{a: %{q1: "o2"}}
+             })
+
+    member = open_app(ctx.member_account, ctx.group)
+
+    assert %{ok: false, error: "forbidden"} =
+             call(member, "aggregate_values", %{collection: "responses"})
+  end
+
   test "answers go in through the API and each viewer lists what the rule allows", ctx do
     {:ok, _config} =
       AppData.save_config(ctx.owner, ctx.group, nil, %{"rules" => form_rules(ctx)}, 0)
