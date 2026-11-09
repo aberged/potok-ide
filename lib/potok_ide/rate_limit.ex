@@ -30,7 +30,14 @@ defmodule PotokIde.RateLimit do
     # App counts and sums (`summarizeValues`, `aggregateValues`), per profile
     # on all its pages, or per page for a guest. Forma refreshes a summary at
     # most every two seconds, so four pages of it fit.
-    app_heavy_read: {120, :timer.minutes(1)}
+    app_heavy_read: {120, :timer.minutes(1)},
+    # Places an app adds on a map (`createPlace`), per profile: each is a group.
+    app_create_place: {20, :timer.hours(1)},
+    # Map tiles one IP asks Potok for, kept or not: a fast pan over a big
+    # screen asks for a few hundred a minute.
+    tile_ip: {1200, :timer.minutes(1)},
+    # Tiles all of Potok fetches from OpenStreetMap, whose policy forbids heavy use.
+    tile_upstream: {600, :timer.minutes(1)}
   }
 
   @type name ::
@@ -41,6 +48,9 @@ defmodule PotokIde.RateLimit do
           | :invitation_email
           | :email_change
           | :app_heavy_read
+          | :app_create_place
+          | :tile_ip
+          | :tile_upstream
 
   @type result :: :ok | {:error, :rate_limited, pos_integer()}
 

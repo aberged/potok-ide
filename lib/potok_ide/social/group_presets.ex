@@ -22,6 +22,11 @@ defmodule PotokIde.Social.GroupPresets do
   # The presets whose group opens on an app.
   @apps ~w(feed polls questionnaire)a
 
+  # What the column takes: every key, and "map" a deploy before the menu
+  # offers it, so that no machine meets a value it cannot load.
+  @stored_keys @keys ++ ["map"]
+  @key_atoms Enum.map(@keys, &String.to_atom/1)
+
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
 
@@ -32,6 +37,9 @@ defmodule PotokIde.Social.GroupPresets do
   @chosen_by_viewer ~w(name is_public inherits_members)
 
   def keys, do: @keys
+
+  @doc "Every value `Group.preset` takes, a step ahead of `keys/0`."
+  def stored_keys, do: @stored_keys
 
   @doc "The presets whose group opens on an app, as strings."
   def app_keys, do: Enum.map(@apps, &Atom.to_string/1)
@@ -54,7 +62,7 @@ defmodule PotokIde.Social.GroupPresets do
     preset = Map.get(group, :preset)
     app? = Map.get(group, :uses_api) == true
 
-    if preset && preset in @apps == app?, do: preset
+    if preset in @key_atoms and preset in @apps == app?, do: preset
   end
 
   @doc """

@@ -38,7 +38,7 @@ export const ReactionPicker = {
     this.closeTimer = null
 
     this.handleDocumentClick = event => {
-      const trigger = event.target.closest("[data-reaction-trigger]")
+      const trigger = this.ownTrigger(event.target)
 
       if (trigger) {
         event.preventDefault()
@@ -60,7 +60,7 @@ export const ReactionPicker = {
     // The first load fetches and indexes the emoji data (about a second), so
     // it starts as soon as a pointer reaches a trigger instead of on click.
     this.handleWarmUp = event => {
-      if (!this.picker && event.target.closest?.("[data-reaction-trigger]")) {
+      if (!this.picker && this.ownTrigger(event.target)) {
         this.ensurePicker().catch(() => {})
       }
     }
@@ -115,6 +115,16 @@ export const ReactionPicker = {
 
   isOpen() {
     return this.trigger !== null
+  },
+
+  // A sheet over a map is a LiveView inside the page's, with a picker of its
+  // own: each picker answers the buttons of its own LiveView, which gets the reaction.
+  ownTrigger(target) {
+    const trigger = target?.closest?.("[data-reaction-trigger]")
+    if (!trigger) return null
+
+    const view = "[data-phx-session]"
+    return trigger.closest(view) === this.el.closest(view) ? trigger : null
   },
 
   sheetMode() {

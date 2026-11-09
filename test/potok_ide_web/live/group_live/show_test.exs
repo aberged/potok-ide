@@ -1838,6 +1838,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
         home: "group-edit-home",
         description: "group-edit-description",
         alt_descriptions: "group-alt-descriptions",
+        location: "group-edit-location",
         danger: "group-edit-danger"
       ]
 

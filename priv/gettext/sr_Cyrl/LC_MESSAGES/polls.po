@@ -51,17 +51,17 @@ msgstr "7 дана"
 msgid "A day before the end"
 msgstr "Дан пре краја"
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:467
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:486
 #, elixir-autogen, elixir-format
 msgid "A poll needs at least two answers."
 msgstr "Гласање мора да има бар два одговора."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:493
 #, elixir-autogen, elixir-format
 msgid "A reminder went out less than an hour ago."
 msgstr "Подсетник је послат пре мање од сат времена."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:490
 #, elixir-autogen, elixir-format
 msgid "A secret poll cannot be opened again."
 msgstr "Тајно гласање не може поново да се отвори."
@@ -104,7 +104,7 @@ msgid "An hour before the end"
 msgstr "Сат пре краја"
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:470
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:455
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
 #, elixir-autogen, elixir-format
 msgid "Another profile of yours has already voted."
 msgstr "Други твој профил је већ гласао."
@@ -221,7 +221,7 @@ msgstr "Одлука"
 msgid "Delete"
 msgstr "Обриши"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1739
+#: lib/potok_ide_web/live/group_live/show/components.ex:1749
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr "Обрисати ову поруку? Брише се и гласање, са свим гласовима."
@@ -381,8 +381,7 @@ msgstr "Ни админи групе ни апликација не виде к�
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:244
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:44
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:395
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:399
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1278
 #, elixir-autogen, elixir-format
 msgid "New poll"
 msgstr "Ново гласање"
@@ -499,7 +498,7 @@ msgstr "Отварање гласања нечлановима"
 msgid "Percent"
 msgstr "Проценат"
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:330
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:349
 #, elixir-autogen, elixir-format
 msgid "Pick an answer first."
 msgstr "Прво изабери одговор."
@@ -632,17 +631,17 @@ msgstr "Покреће гласања у овој групи."
 msgid "Start the poll"
 msgstr "Покрени гласање"
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:466
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:485
 #, elixir-autogen, elixir-format
 msgid "That answer has votes."
 msgstr "Тај одговор има гласове."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:465
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:484
 #, elixir-autogen, elixir-format
 msgid "That answer is already there."
 msgstr "Тај одговор већ постоји."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:457
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:476
 #, elixir-autogen, elixir-format
 msgid "That is not a valid choice."
 msgstr "Тај избор није исправан."
@@ -662,7 +661,7 @@ msgstr "Ко је за шта гласао виде организатор и о
 msgid "The organizer, those who manage polls and these roles can see who voted for what: %{roles}."
 msgstr "Ко је за шта гласао виде организатор, они који управљају гласањима и ове улоге: %{roles}."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:355
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:374
 #, elixir-autogen, elixir-format
 msgid "The poll has ended."
 msgstr "Гласање је завршено."
@@ -677,24 +676,24 @@ msgstr "Гласање је покренуто."
 msgid "The poll is changed."
 msgstr "Гласање је измењено."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:375
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:394
 #, elixir-autogen, elixir-format
 msgid "The poll is deleted."
 msgstr "Гласање је обрисано."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:364
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:383
 #, elixir-autogen, elixir-format
 msgid "The poll is open again."
 msgstr "Гласање је поново отворено."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:387
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:406
 #, elixir-autogen, elixir-format
 msgid "The reminder is on its way."
 msgstr "Подсетник је послат."
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:145
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:451
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:470
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:489
 #, elixir-autogen, elixir-format
 msgid "This poll has ended."
 msgstr "Ово гласање је завршено."
@@ -709,7 +708,7 @@ msgstr "Нерешено"
 msgid "Times are in %{zone}."
 msgstr "Времена су у зони %{zone}."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:460
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:479
 #, elixir-autogen, elixir-format
 msgid "Too many votes at once. Try in a minute."
 msgstr "Превише гласова одједном. Покушај за минут."
@@ -844,7 +843,7 @@ msgstr "Да / Не"
 msgid "You cannot vote in this group."
 msgstr "У овој групи не можеш да гласаш."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:452
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
 #, elixir-autogen, elixir-format
 msgid "You have already voted."
 msgstr "Твој глас је већ забележен."
@@ -855,13 +854,13 @@ msgid "You have not voted yet · %{group}"
 msgstr "Још нема твог гласа · %{group}"
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:146
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:468
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:476
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:487
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:495
 #, elixir-autogen, elixir-format
 msgid "You may not do that."
 msgstr "За то немаш дозволу."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:463
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:482
 #, elixir-autogen, elixir-format
 msgid "You may not vote here."
 msgstr "Овде не можеш да гласаш."
@@ -887,7 +886,7 @@ msgstr "Твоје улоге не дозвољавају гласање."
 msgid "Your vote is recorded."
 msgstr "Твој глас је забележен."
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:462
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:481
 #, elixir-autogen, elixir-format
 msgid "Your vote was not recorded. Try again."
 msgstr "Глас није забележен. Покушај поново."

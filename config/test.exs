@@ -27,6 +27,11 @@ config :potok_ide, PotokIde.LinkPreviews,
 # Drawn pictures stay in memory in tests, not in a shared folder on disk.
 config :potok_ide, PotokIde.RenderCache, dir: false
 
+# Map tiles come from a `Req.Test` stub and stay in memory.
+config :potok_ide, PotokIde.MapTiles,
+  cache_dir: false,
+  req_options: [plug: {Req.Test, PotokIde.MapTiles}]
+
 # Tests send event reminders by calling `Events.send_due_reminders/1`.
 config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 

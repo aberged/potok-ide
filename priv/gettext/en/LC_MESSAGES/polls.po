@@ -51,17 +51,17 @@ msgstr ""
 msgid "A day before the end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:467
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:486
 #, elixir-autogen, elixir-format
 msgid "A poll needs at least two answers."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:493
 #, elixir-autogen, elixir-format
 msgid "A reminder went out less than an hour ago."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:490
 #, elixir-autogen, elixir-format
 msgid "A secret poll cannot be opened again."
 msgstr ""
@@ -104,7 +104,7 @@ msgid "An hour before the end"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_card.ex:470
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:455
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:474
 #, elixir-autogen, elixir-format
 msgid "Another profile of yours has already voted."
 msgstr ""
@@ -221,7 +221,7 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1739
+#: lib/potok_ide_web/live/group_live/show/components.ex:1749
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr ""
@@ -381,8 +381,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:244
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:44
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:395
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:399
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:1278
 #, elixir-autogen, elixir-format
 msgid "New poll"
 msgstr ""
@@ -499,7 +498,7 @@ msgstr ""
 msgid "Percent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:330
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:349
 #, elixir-autogen, elixir-format
 msgid "Pick an answer first."
 msgstr ""
@@ -632,17 +631,17 @@ msgstr ""
 msgid "Start the poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:466
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:485
 #, elixir-autogen, elixir-format
 msgid "That answer has votes."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:465
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:484
 #, elixir-autogen, elixir-format
 msgid "That answer is already there."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:457
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:476
 #, elixir-autogen, elixir-format
 msgid "That is not a valid choice."
 msgstr ""
@@ -662,7 +661,7 @@ msgstr ""
 msgid "The organizer, those who manage polls and these roles can see who voted for what: %{roles}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:355
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:374
 #, elixir-autogen, elixir-format
 msgid "The poll has ended."
 msgstr ""
@@ -677,24 +676,24 @@ msgstr ""
 msgid "The poll is changed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:375
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:394
 #, elixir-autogen, elixir-format
 msgid "The poll is deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:364
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:383
 #, elixir-autogen, elixir-format
 msgid "The poll is open again."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:387
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:406
 #, elixir-autogen, elixir-format
 msgid "The reminder is on its way."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:145
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:451
 #: lib/potok_ide_web/live/group_live/show/polls_state.ex:470
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:489
 #, elixir-autogen, elixir-format
 msgid "This poll has ended."
 msgstr ""
@@ -709,7 +708,7 @@ msgstr ""
 msgid "Times are in %{zone}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:460
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:479
 #, elixir-autogen, elixir-format
 msgid "Too many votes at once. Try in a minute."
 msgstr ""
@@ -844,7 +843,7 @@ msgstr ""
 msgid "You cannot vote in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:452
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:471
 #, elixir-autogen, elixir-format
 msgid "You have already voted."
 msgstr ""
@@ -855,13 +854,13 @@ msgid "You have not voted yet · %{group}"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/poll_form.ex:146
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:468
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:476
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:487
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:495
 #, elixir-autogen, elixir-format
 msgid "You may not do that."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:463
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:482
 #, elixir-autogen, elixir-format
 msgid "You may not vote here."
 msgstr ""
@@ -887,7 +886,7 @@ msgstr ""
 msgid "Your vote is recorded."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/polls_state.ex:462
+#: lib/potok_ide_web/live/group_live/show/polls_state.ex:481
 #, elixir-autogen, elixir-format
 msgid "Your vote was not recorded. Try again."
 msgstr ""

@@ -184,6 +184,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "last_value_at"), do: dgettext("domain_map", "newest value at")
   defp own_field("Group", "published_at"), do: dgettext("domain_map", "published at")
   defp own_field("Group", "preset"), do: dgettext("domain_map", "ready setup")
+  defp own_field("Group", "latitude"), do: dgettext("domain_map", "latitude on a map")
+  defp own_field("Group", "longitude"), do: dgettext("domain_map", "longitude on a map")
+  defp own_field("Group", "pin_icon"), do: dgettext("domain_map", "pin on a map")
   defp own_field("Group", "parent_id"), do: dgettext("domain_map", "parent group")
   defp own_field("Group", "parent_value_id"), do: dgettext("domain_map", "value of the thread")
 
@@ -681,6 +684,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "A thread always inherits members.")
   end
 
+  def check_text("groups_location_check") do
+    dgettext(
+      "domain_map",
+      "A place on a map has both coordinates, each within its range, or neither."
+    )
+  end
+
   def check_text("group_member_roles_role_key_check") do
     dgettext("domain_map", "The role `everyone` is not written here.")
   end
@@ -948,6 +958,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-map",
+          title: dgettext("domain_map", "Shows its groups on a map"),
+          text:
+            dgettext(
+              "domain_map",
+              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. That is how a group becomes a map."
+            )
+        },
+        %{
           icon: "hero-folder-plus",
           title: dgettext("domain_map", "Keeps the groups below it"),
           text:
@@ -1112,6 +1131,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form or page. A preset sets what any group can have, so all of it can be changed later. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls and a form keep a copy of their app the same way, and a form gets its two groups for files only once it needs them."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A group can stand on a map"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking."
           )
       },
       %{

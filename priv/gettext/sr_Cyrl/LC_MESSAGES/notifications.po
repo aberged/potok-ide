@@ -76,12 +76,12 @@ msgstr "Отвори Поток и погледај позивницу."
 msgid "Open Potok to review this shared profile invitation."
 msgstr "Отвори Поток и погледај позивницу за дељени профил."
 
-#: lib/potok_ide/accounts.ex:266
+#: lib/potok_ide/accounts.ex:269
 #, elixir-autogen, elixir-format
 msgid "Potok notifications are active"
 msgstr "Поток обавештења су укључена"
 
-#: lib/potok_ide/accounts.ex:267
+#: lib/potok_ide/accounts.ex:270
 #, elixir-autogen, elixir-format
 msgid "Push notifications are enabled for your account."
 msgstr "Пуш обавештења су укључена за твој налог."

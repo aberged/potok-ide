@@ -9,7 +9,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Social.{
     Access,
     AppData,
-    AppFiles,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -53,7 +52,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.PublicPreview
   alias PotokIdeWeb.RateLimited
   alias PotokIdeWeb.{TagComponents, TagEditor}
-  alias PotokIdeWeb.GroupLive.Show.{AppApi, AppValues, Components, CreateMenu}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    AppApi,
+    AppHost,
+    AppValues,
+    Components,
+    CreateMenu,
+    GroupSheet
+  }
 
   @children_page_size 20
   @members_page_size 20
@@ -76,13 +83,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # The cards of the edit and create tabs (`sections/0` of each), and the
   # form fields of each card, so a save that fails opens the card with the
   # error.
-  @edit_group_sections ~w(basics access home description alt_descriptions danger)
+  @edit_group_sections ~w(basics access home description alt_descriptions location danger)
   @create_group_sections ~w(basics access home description)
   @group_form_section_fields [
     {"basics", [:name, :group_picture_url]},
     {"access", [:is_public, :is_root_public, :inherits_members]},
     {"home", [:home_page, :home_alt_description_id]},
-    {"description", [:description_name, :description, :description_format, :uses_api]}
+    {"description", [:description_name, :description, :description_format, :uses_api]},
+    {"location", [:latitude, :longitude, :pin_icon]}
   ]
 
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
@@ -559,6 +567,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             reactions={@group_reactions}
             can_react={@can_react_to_group}
             app_upload={if(@current_profile, do: @uploads.app_file)}
+            host="page"
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -616,6 +625,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <CreateMenu.menu menu={@group_create_menu} />
       <PollForm.dialog state={@poll_form} />
       <PollCard.dialog view={@poll_dialog} />
+      <GroupSheet.dialog
+        :if={@group_sheet}
+        sheet={@group_sheet}
+        socket={@socket}
+        session={group_sheet_session(assigns)}
+      />
     </Layouts.app>
     """
   end
@@ -663,8 +678,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> allow_attachments_upload()
          |> allow_description_picture_upload()
          |> allow_keyboard_media_upload()
-         |> allow_app_file_upload()
-         |> assign(:app_upload, nil)
+         |> AppHost.allow("page")
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
          |> assign(:loaded_children, [])
@@ -743,6 +757,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> CalendarState.init(params)
          |> PollForm.init()
          |> PollsState.init(params)
+         |> GroupSheet.init()
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
 
@@ -815,6 +830,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("poll_form_" <> _ = event, params, socket),
     do: PollForm.handle_event(event, params, socket)
+
+  def handle_event("group_sheet_close", _params, socket),
+    do: {:noreply, GroupSheet.close(socket)}
 
   def handle_event("poll" <> _ = event, params, socket),
     do: PollsState.handle_event(event, params, socket)
@@ -898,20 +916,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # A picture for a template's field starts uploading as soon as it is picked.
   def handle_event("validate_description_picture", _params, socket), do: {:noreply, socket}
 
-  # A file the app's frame sends goes up on its own (`auto_upload`); a file the
-  # upload refuses outright (too big, too many) is told to the frame at once.
-  def handle_event("validate_app_file", _params, socket) do
-    case Enum.reject(socket.assigns.uploads.app_file.entries, & &1.valid?) do
-      [] ->
-        {:noreply, socket}
-
-      rejected ->
-        socket =
-          Enum.reduce(rejected, socket, &cancel_upload(&2, :app_file, &1.ref))
-
-        {:noreply, app_upload_done(socket, %{ok: false, error: "invalid_files"})}
-    end
-  end
+  # A file the app's frame sends goes up on its own (`AppHost`).
+  def handle_event("validate_app_file", _params, socket),
+    do: {:noreply, AppHost.validate_file(socket)}
 
   def handle_event("description_picture_invalid", _params, socket) do
     {:noreply, put_flash(socket, :error, gettext("Choose a valid image file."))}
@@ -2204,12 +2211,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # could now, is read again.
   def handle_info({:child_group_changed, group_id, child}, socket)
       when socket.assigns.group.id == group_id and not is_nil(socket.assigns.current_profile) do
+    socket = tell_app_children_changed(socket)
+
     if child_on_list?(socket, child),
       do: {:noreply, schedule_refresh(socket, :children)},
       else: {:noreply, socket}
   end
 
   def handle_info({:child_group_changed, _group_id, _child}, socket), do: {:noreply, socket}
+
+  # The sheet over the app lost its group: deleted, or no longer the viewer's to see.
+  def handle_info({:group_sheet_gone, group_id}, socket),
+    do: {:noreply, GroupSheet.gone(socket, group_id)}
 
   def handle_info({:group_reactions_updated, group_id}, socket)
       when socket.assigns.group.id == group_id do
@@ -2284,7 +2297,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:data_value_created, group_id, %Value{} = value}, socket)
       when socket.assigns.group.id == group_id do
-    {:noreply, announce_new_data_value(socket, value)}
+    {:noreply, AppHost.announce_new_data_value(socket, value)}
   end
 
   def handle_info({:data_value_created, _group_id, _value}, socket), do: {:noreply, socket}
@@ -3041,25 +3054,27 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_reload_files(socket, _value), do: socket
 
-  # Only the app frame listens for data values, so they are pushed only while
-  # the group description is on screen, and only those of apps the viewer
-  # can open. The SDK hands an app its own values unless it asked for all.
-  # Members only, like the list of values in `AppApi`: a public group lets
-  # anyone open the app, but its data stays with the members.
-  defp announce_new_data_value(%{assigns: %{is_member: false}} = socket, _value), do: socket
+  # An app that shows sub-groups (a map's pins) reads them again. It hears
+  # only that something changed: which group would tell it of one it may not see.
+  defp tell_app_children_changed(socket) do
+    source = socket.assigns.active_alt_description || socket.assigns.group
 
-  defp announce_new_data_value(socket, %Value{} = value) do
-    if description_visible?(socket.assigns) and data_value_visible?(socket.assigns, value) do
-      push_event(socket, "new_data_value", value_payload(value))
-    else
-      socket
-    end
+    if source.uses_api and description_visible?(socket.assigns),
+      do: AppHost.push(socket, "app_children_changed", %{}),
+      else: socket
   end
 
-  defp data_value_visible?(_assigns, %Value{alt_description_id: nil}), do: true
-
-  defp data_value_visible?(assigns, %Value{alt_description_id: id}),
-    do: Enum.any?(assigns.visible_alt_descriptions, &(&1.id == id))
+  # Who looks at the sheet over the app, signed into its LiveView's session:
+  # opened after the page, it gets nothing from the page's assigns.
+  defp group_sheet_session(assigns) do
+    %{
+      "account_id" => assigns.current_scope.account.id,
+      "profile_id" => assigns.current_profile.id,
+      "parent_id" => assigns.group.id,
+      "locale" => assigns[:current_locale],
+      "time_zone" => assigns[:calendar_time_zone]
+    }
+  end
 
   @doc false
   def description_visible?(%{active_tab: active_tab, group: group, access: access}) do
@@ -3211,116 +3226,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  # A file the app's frame sends for a value or a picture of the app, after the
-  # app asked (`AppApi` `prepare_upload` keeps `:app_upload`). Only the file it
-  # announced is taken, and into the group `AppFiles` chose for it.
-  defp allow_app_file_upload(socket) do
-    opts = [
-      accept: :any,
-      max_entries: 1,
-      max_file_size: Storage.max_file_size(),
-      auto_upload: true,
-      progress: &app_file_progress/3
-    ]
-
-    opts =
-      if Storage.direct_upload?(),
-        do: Keyword.put(opts, :external, &presign_app_file/2),
-        else: opts
-
-    allow_upload(socket, :app_file, opts)
-  end
-
-  defp announced_app_file?(%{app_upload: %{} = upload}, entry),
-    do:
-      entry.client_name == upload.name and entry.client_size == upload.size and
-        entry.client_size <= upload.max_bytes
-
-  defp announced_app_file?(_assigns, _entry), do: false
-
-  defp presign_app_file(entry, socket) do
-    upload = socket.assigns.app_upload
-    key = upload && Storage.new_key(upload.file_group_id)
-    content_type = ValueAttachment.clean_content_type(entry.client_type)
-
-    with true <- announced_app_file?(socket.assigns, entry),
-         {:ok, url} <- Storage.presign_put(key, content_type, entry.client_size) do
-      {:ok, %{uploader: "S3", key: key, url: url, content_type: content_type}, socket}
-    else
-      _ -> {:error, %{reason: "not_permitted"}, socket}
-    end
-  end
-
-  # Also called when an upload to the bucket fails, with the entry not done.
-  defp app_file_progress(:app_file, %{done?: true} = entry, socket) do
-    if announced_app_file?(socket.assigns, entry) do
-      {:noreply, store_app_file(socket, entry)}
-    else
-      {:noreply,
-       socket
-       |> cancel_upload(:app_file, entry.ref)
-       |> app_upload_done(%{ok: false, error: "invalid_files"})}
-    end
-  end
-
-  defp app_file_progress(:app_file, entry, socket) do
-    if upload_errors(socket.assigns.uploads.app_file, entry) == [] do
-      {:noreply, app_upload_progress(socket, entry.progress)}
-    else
-      {:noreply,
-       socket
-       |> cancel_upload(:app_file, entry.ref)
-       |> app_upload_done(%{ok: false, error: "invalid_files"})}
-    end
-  end
-
-  defp store_app_file(socket, entry) do
-    upload = socket.assigns.app_upload
-    profile = socket.assigns.current_profile
-
-    stored =
-      consume_uploaded_entry(
-        socket,
-        entry,
-        &{:ok, store_attachment(%Group{id: upload.file_group_id}, &1, entry)}
-      )
-
-    with {:ok, attrs} <- stored,
-         {:ok, attachment} <- AppFiles.store(profile, upload, attrs) do
-      app_upload_done(socket, %{ok: true, file: app_file_payload(attachment, upload)})
-    else
-      _error -> app_upload_done(socket, %{ok: false, error: "invalid_files"})
-    end
-  end
-
-  # A picture of the app has an address anyone who sees the app can open; a
-  # file of a value is opened through `file_url`, by who may.
-  defp app_file_payload(attachment, upload) do
-    payload = %{
-      file: attachment.id,
-      name: attachment.filename,
-      size: attachment.byte_size,
-      type: attachment.content_type
-    }
-
-    if upload.collection,
-      do: payload,
-      else: Map.put(payload, :url, PostTemplates.Picture.address(attachment))
-  end
-
-  defp app_upload_done(%{assigns: %{app_upload: %{ref: ref}}} = socket, result) do
-    socket
-    |> assign(:app_upload, nil)
-    |> push_event("app_upload_done", Map.put(result, :ref, ref))
-  end
-
-  defp app_upload_done(socket, _result), do: socket
-
-  defp app_upload_progress(%{assigns: %{app_upload: %{ref: ref}}} = socket, progress),
-    do: push_event(socket, "app_upload_progress", %{ref: ref, progress: progress})
-
-  defp app_upload_progress(socket, _progress), do: socket
-
   # Two quick taps on the keyboard are two uploads at once.
   defp allow_keyboard_media_upload(socket) do
     opts = [
@@ -3450,7 +3355,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # A channel upload is a temporary file that moves into storage. A direct
   # upload is already in the bucket, but its size came from the browser, so
   # the stored object is checked against it.
-  defp store_attachment(group, %{path: path}, entry) do
+  @doc false
+  def store_attachment(group, %{path: path}, entry) do
     key = Storage.new_key(group.id)
 
     with :ok <- Storage.put_file(key, path),
@@ -3463,7 +3369,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp store_attachment(_group, %{key: key}, entry) do
+  def store_attachment(_group, %{key: key}, entry) do
     case Storage.stat(key) do
       {:ok, byte_size} when byte_size == entry.client_size ->
         {:ok, attachment_attrs(key, entry, byte_size)}

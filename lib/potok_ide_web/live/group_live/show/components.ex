@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   alias PotokIdeWeb.Locale
 
   alias PotokIdeWeb.GroupLive.Show.{
+    AppHost,
     CreateMenu,
     DescriptionTemplateForm,
     EventCard,
@@ -1169,10 +1170,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   `[data-reaction-trigger]`, and for an app that asks (`pickEmoji`). The chat and
   the description take turns on the page, so each of them holds it.
   """
+  attr :id, :string, default: "reaction-picker"
+
   def reaction_picker(assigns) do
     ~H"""
     <div
-      id="reaction-picker"
+      id={@id}
       phx-hook="ReactionPicker"
       phx-update="ignore"
       hidden
@@ -1203,6 +1206,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: "",
     doc: "which of the group's apps this is (`AppApi.app_id/1`); sent with every API call"
 
+  attr :host, :string,
+    default: "page",
+    doc: "who runs the app (`AppHost`): its pushes, upload and emoji picker"
+
   attr :class, :any, default: nil
 
   @doc """
@@ -1228,6 +1235,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       data-api={to_string(@api)}
       data-app-id={@app_id}
       data-storage-key={@storage_key}
+      data-host={@host}
+      data-upload={AppHost.upload_name(@host)}
+      data-picker={AppHost.picker_id(@host)}
       class={["flex min-h-0 flex-1 flex-col", @class]}
     >
       <iframe

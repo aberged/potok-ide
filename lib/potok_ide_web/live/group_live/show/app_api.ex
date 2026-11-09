@@ -31,6 +31,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   their own, and what a value may carry. A non-member of a public group gets
   there too when a rule is public.
 
+  A map (`map_config`, `list_places`) shows the direct sub-groups the viewer
+  sees that have a place (`Group.latitude`), and `create_place` adds one there:
+  a group from a preset, asked of whoever may make a sub-group by hand, as the
+  page's own menu asks. `show_group` opens a sub-group's description on the
+  page, over the app (`GroupSheet`), where its own apps run with that group's
+  rights: an app never runs another app's code.
+
   Reads are free, but counts and sums (`summarize_values`, `aggregate_values`)
   scan every value the app keeps and hold the page for up to five seconds, so
   they are limited per viewer (`PotokIde.RateLimit`, `:app_heavy_read`).
@@ -39,17 +46,38 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   use PotokIdeWeb, :verified_routes
 
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [push_event: 3, push_navigate: 2]
+  import Phoenix.LiveView, only: [push_navigate: 2]
 
   alias PotokIde.Polls
   alias PotokIde.Polls.{Poll, Rules, View}
-  alias PotokIde.RateLimit
+  alias PotokIde.{MapTiles, RateLimit}
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AppData, AppFiles, Group, ValueAttachment, ValueRules}
+
+  alias PotokIde.Social.{
+    Access,
+    AppData,
+    AppFiles,
+    Group,
+    GroupPins,
+    GroupPresets,
+    ValueAttachment,
+    ValueRules
+  }
+
   alias PotokIdeWeb.AppFileToken
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show
-  alias PotokIdeWeb.GroupLive.Show.{Components, PollForm, PollsState, RolesTab}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    AppHost,
+    Components,
+    GroupSheet,
+    PollForm,
+    PollsState,
+    RolesTab
+  }
+
+  alias PotokIdeWeb.PinIcons
   alias PotokIdeWeb.PublicPreview
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
@@ -68,7 +96,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
     set_notifications ensure_file_groups file_url prepare_upload
+    map_config list_places create_place show_group
   )
+
+  # Every pin a map gets in one call; the rest waits for a map that reads by area.
+  @max_places 2_000
 
   # A filter of a page of values, as JSON: kept small, as it is matched in SQL.
   @max_match_bytes 4_096
@@ -644,7 +676,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with id when is_integer(id) <- non_negative_integer(params["id"]),
          %Group{} = target <- share_target(group, profile, id, in_app?) do
       {%{ok: true},
-       push_event(socket, "app_share_link", %{url: shared_url(socket, target, in_app?)})}
+       AppHost.push(socket, "app_share_link", %{url: shared_url(socket, target, in_app?)})}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -698,6 +730,76 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp run("get_group", _params, socket) do
     {%{ok: true, group: group_payload(socket.assigns)}, socket}
+  end
+
+  # What a map needs before its first pin: where tiles come from, where it
+  # opens, how every pin looks and what the viewer may do on it.
+  defp run("map_config", _params, socket) do
+    %{access: access} = socket.assigns
+
+    {%{
+       ok: true,
+       tiles: %{
+         url: MapTiles.url_template(PotokIdeWeb.Endpoint.url() <> "/tiles"),
+         attribution: MapTiles.attribution(),
+         max_zoom: MapTiles.max_zoom()
+       },
+       default_bounds: MapTiles.default_bounds(),
+       pins: PinIcons.catalogue(),
+       place_kinds: Enum.map(GroupPresets.keys(), &%{key: &1, title: PinIcons.kind_label(&1)}),
+       can_create_places: places_maker?(access),
+       can_edit_view: manages_children?(access)
+     }, socket}
+  end
+
+  defp run("list_places", _params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with :ok <- heavy_read(socket) do
+      {places, truncated?} = Social.list_visible_placed_children(group, profile, @max_places)
+
+      {%{ok: true, places: Enum.map(places, &place_payload/1), truncated: truncated?}, socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("create_place", params, socket) do
+    %{group: group, current_profile: profile, access: access} = socket.assigns
+
+    with :ok <- require_places_maker(access),
+         {:ok, preset, choices, place} <- place_params(params, group),
+         :ok <- place_turn(profile),
+         {:ok, socket} <- take_write_token(socket) do
+      case Social.create_group_from_preset(profile, group, preset, choices, place) do
+        {:ok, %{group: created}} ->
+          {%{ok: true, place: place_payload(created)}, socket}
+
+        {:error, %Ecto.Changeset{}} ->
+          {error("invalid_place", gettext("Could not save the group.")), socket}
+
+        {:error, _not_allowed} ->
+          {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # A sheet opens no sheet of its own: one over the other would lose the way back.
+  defp run("show_group", _params, %{assigns: %{in_group_sheet: true}} = socket) do
+    {error("unavailable", nil), socket}
+  end
+
+  defp run("show_group", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = child <- Social.get_visible_child_group(group, profile, id) do
+      {%{ok: true}, GroupSheet.open(socket, child)}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
   end
 
   defp run("list_children", params, socket) do
@@ -1003,6 +1105,81 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp manages_children?(access), do: Access.can?(access, :edit_group)
+
+  # Who may make a sub-group by hand on the page (`Social.create_group/3`).
+  defp places_maker?(access), do: access.member? and Access.can?(access, :create_subgroups)
+
+  defp require_places_maker(access) do
+    if places_maker?(access) do
+      :ok
+    else
+      {:error, error("forbidden", gettext("Your roles in this group do not allow that."))}
+    end
+  end
+
+  defp place_turn(profile) do
+    case RateLimit.hit(:app_create_place, profile.id) do
+      :ok ->
+        :ok
+
+      {:error, :rate_limited, _retry_after} ->
+        {:error,
+         error("rate_limited", gettext("Too many changes in a short time. Try again shortly."))}
+    end
+  end
+
+  # A place is a group from a preset, with what the page's menu lets one pick
+  # and its defaults, standing where the map was tapped.
+  defp place_params(params, group) do
+    with preset when is_binary(preset) <- params["kind"],
+         true <- preset in GroupPresets.keys(),
+         name when is_binary(name) <- optional_string(params["name"]),
+         {:ok, lat} <- coordinate(params["lat"], 90),
+         {:ok, lng} <- coordinate(params["lng"], 180),
+         {:ok, pin} <- place_pin(params["pin"]) do
+      choices =
+        preset
+        |> GroupPresets.defaults(group)
+        |> Map.put("name", name)
+        |> put_place_audience(params["is_public"])
+
+      {:ok, preset, choices, %{"latitude" => lat, "longitude" => lng, "pin_icon" => pin}}
+    else
+      _invalid -> {:error, error("invalid_place", gettext("Could not save the group."))}
+    end
+  end
+
+  defp put_place_audience(choices, is_public) when is_boolean(is_public),
+    do: Map.put(choices, "is_public", is_public)
+
+  defp put_place_audience(choices, _default), do: choices
+
+  defp coordinate(value, bound) when is_number(value) and value >= -bound and value <= bound,
+    do: {:ok, value / 1}
+
+  defp coordinate(_value, _bound), do: :error
+
+  defp place_pin(nil), do: {:ok, nil}
+
+  defp place_pin(pin) when is_binary(pin),
+    do: if(pin in GroupPins.keys(), do: {:ok, pin}, else: :error)
+
+  defp place_pin(_pin), do: :error
+
+  # A pin: where it stands, and what it shows (`GroupPins`), which a map draws
+  # from `map_config`. `pin` is nil for the kind's own.
+  defp place_payload(%Group{} = group) do
+    %{
+      id: group.id,
+      name: group.name,
+      lat: group.latitude,
+      lng: group.longitude,
+      kind: GroupPins.kind(group),
+      pin: GroupPins.pin(group),
+      picture_url: Avatars.group_avatar_url(group),
+      is_public: group.is_public
+    }
+  end
 
   defp fetch_child(params, socket) do
     %{group: group, current_profile: profile} = socket.assigns

@@ -19,6 +19,8 @@ const pendingCalls = new Map()
 // listener -> whether it gets the values of every app in the group.
 const newValueListeners = new Map()
 const pollListeners = new Set()
+const subgroupListeners = new Set()
+const sheetListeners = new Set()
 // listener -> the collection it follows (null: all of them).
 const collectionListeners = new Map()
 // call id -> progress callback of a file on its way.
@@ -167,6 +169,28 @@ window.addEventListener("message", event => {
   // their data once, so the app starts again (the old hook re-ran its scripts).
   if (message.event === "reconnected") {
     window.location.reload()
+    return
+  }
+
+  if (message.event === "children_changed") {
+    subgroupListeners.forEach(listener => {
+      try {
+        listener()
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    return
+  }
+
+  if (message.event === "group_sheet_closed") {
+    sheetListeners.forEach(listener => {
+      try {
+        listener(message.id)
+      } catch (error) {
+        console.error(error)
+      }
+    })
     return
   }
 
@@ -489,6 +513,57 @@ const potok = {
 
     newValueListeners.set(listener, options.scope === "group")
     return () => newValueListeners.delete(listener)
+  },
+
+  // What a map needs before its first pin: `tiles` (`url` with {z}, {x} and
+  // {y}, `attribution` as HTML, `max_zoom`), `default_bounds` ([[south, west],
+  // [north, east]], where a map opens until its editors save a view),
+  // `pins` (how every pin is drawn: `drop`, `glyph_transform`, `tones`,
+  // `kinds` and `icons` with SVG `paths` and names in the viewer's language),
+  // `place_kinds` for `createPlace`, `can_create_places` and `can_edit_view`.
+  getMapConfig: () => call("map_config"),
+
+  // The sub-groups right under this group that the viewer sees and that have a
+  // place: `{ok: true, places: [{id, name, lat, lng, kind, pin, picture_url,
+  // is_public}], truncated}`, up to 2000. `pin` is the group's own choice (a
+  // key of `pins.icons`, or "picture" for its picture), null for its kind's.
+  listPlaces: () => call("list_places"),
+
+  // Makes a sub-group standing at `lat`, `lng`, as the page's "Create
+  // sub-group" menu does: `kind` is one of `place_kinds`, `isPublic` and `pin`
+  // may be left out. Needs `can_create_places`. Resolves to `{ok: true, place}`.
+  createPlace: ({name, kind, lat, lng, isPublic, pin} = {}) =>
+    call("create_place", {
+      name,
+      kind,
+      lat,
+      lng,
+      ...(isPublic === undefined ? {} : {is_public: isPublic}),
+      ...(pin === undefined ? {} : {pin}),
+    }),
+
+  // Opens a sub-group's description on Potok's page, over the app, with a
+  // link to the group: where its own app, a form or a poll, runs with that
+  // group's rights. Only for a sub-group right under this group.
+  showGroup: id => call("show_group", {id}),
+
+  // Calls `listener` with the group's id when the viewer closes what
+  // `showGroup` opened.
+  onGroupSheetClose(listener) {
+    if (typeof listener !== "function") return () => {}
+
+    sheetListeners.add(listener)
+    return () => sheetListeners.delete(listener)
+  },
+
+  // Calls `listener` when a sub-group of this group was made, changed or
+  // deleted. It says no more, as the group could be one the viewer does not
+  // see: read again what the app shows (`listPlaces`, `listChildren`).
+  onSubgroupsChange(listener) {
+    if (typeof listener !== "function") return () => {}
+
+    subgroupListeners.add(listener)
+    return () => subgroupListeners.delete(listener)
   },
 }
 

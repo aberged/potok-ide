@@ -11,16 +11,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppValues do
   saves it every few seconds, so the app reads it again when it needs it.
   """
 
-  import Phoenix.LiveView, only: [push_event: 3]
-
   alias PotokIde.Social.ValueRules
   alias PotokIdeWeb.GroupLive.Show
+  alias PotokIdeWeb.GroupLive.Show.AppHost
 
   def announce(socket, event, payload) do
     with true <- Show.description_visible?(socket.assigns),
          true <- own_app?(socket.assigns, payload.alt_id),
          %{} = message <- message(event, payload, socket.assigns) do
-      push_event(socket, "app_value", message)
+      AppHost.push(socket, "app_value", message)
     else
       _not_for_this_frame -> socket
     end

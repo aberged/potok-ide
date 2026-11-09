@@ -2,6 +2,8 @@
    https://tailwindcss.com/docs/configuration */
 
 @import "tailwindcss" source(none);
+/* The map of the location card in a group's settings (`location_picker.js`). */
+@import "../vendor/leaflet.css";
 @source "../css";
 @source "../js";
 @source "../../lib/potok_ide_web";
@@ -2348,5 +2350,63 @@
     .lp-domain-loop {
       max-width: 21rem;
     }
+  }
+}
+
+/* Maps (`location_picker.js`): Leaflet's container in the theme's colours,
+   and the light OpenStreetMap tiles turned dark in the dark theme. */
+.potok-map.leaflet-container {
+  background: var(--color-base-200);
+  font: inherit;
+}
+
+.potok-map .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+/* Leaflet's zoom buttons and attribution in the theme's colours. */
+.potok-map .leaflet-bar {
+  border: 1px solid color-mix(in oklab, var(--color-base-300) 80%, transparent);
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 0.15);
+}
+
+.potok-map .leaflet-bar a {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-color: var(--color-base-300);
+  background: var(--color-base-100);
+  color: var(--color-base-content);
+  line-height: 2.25rem;
+}
+
+.potok-map .leaflet-bar a:hover {
+  background: var(--color-base-200);
+}
+
+.potok-map .leaflet-control-attribution {
+  background: color-mix(in oklab, var(--color-base-100) 85%, transparent);
+  color: color-mix(in oklab, var(--color-base-content) 75%, transparent);
+}
+
+.potok-map .leaflet-control-attribution a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.potok-pin {
+  background: none;
+  border: 0;
+  filter: drop-shadow(0 1px 1.5px rgb(0 0 0 / 0.35));
+}
+
+:where([data-theme=dark]) .potok-map .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .potok-map .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
   }
 }

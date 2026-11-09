@@ -1,8 +1,11 @@
 defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.{Group, GroupRole}
+  alias PotokIde.MapTiles
+  alias PotokIde.Social.{Group, GroupPins, GroupRole}
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.PinIcons
 
   attr :card, :map, required: true
 
@@ -135,7 +138,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
         <Components.settings_tabs
           id="group-edit-sections"
-          tabs={sections()}
+          tabs={sections(@group)}
           current={@section}
           event="set_edit_group_section"
           tab_id_prefix="group-edit-tab"
@@ -299,6 +302,123 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 picture_upload={@picture_upload}
               />
             </details>
+          </Components.settings_card>
+
+          <Components.settings_card
+            :if={!@group.is_root}
+            id="group-edit-location"
+            tab_id="group-edit-tab-location"
+            active={@section == "location"}
+            icon="hero-map-pin"
+            title={pgettext("map", "Location")}
+            subtitle={gettext("Where the group stands on a map, and the pin it shows there.")}
+          >
+            <p class="mb-3 text-xs text-base-content/65">
+              {gettext(
+                "A Map app in the group above shows this group as a pin. Tap the map to put it, or drag it."
+              )}
+            </p>
+            <div id="group-location-map-wrap" phx-update="ignore">
+              <div
+                id="group-location-map"
+                phx-hook="LocationPicker"
+                class="potok-map h-64 w-full overflow-hidden rounded-2xl border border-base-300 bg-base-200 sm:h-80"
+                data-tiles={MapTiles.url_template("/tiles")}
+                data-attribution={MapTiles.attribution()}
+                data-max-zoom={MapTiles.max_zoom()}
+                data-default-bounds={Jason.encode!(MapTiles.default_bounds())}
+                data-lat-input="group-edit-latitude"
+                data-lng-input="group-edit-longitude"
+                data-pin-name={@edit_group_form[:pin_icon].name}
+                data-clear-button="group-location-clear"
+                data-locate-button="group-location-locate"
+                data-error-target="group-location-error"
+                data-locate-error={gettext("Your location is not available.")}
+                data-load-error={gettext("The map could not load. Type the coordinates instead.")}
+              >
+              </div>
+              <p id="group-location-error" class="mt-2 text-xs text-error" hidden></p>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-3">
+              <.input
+                field={@edit_group_form[:latitude]}
+                id="group-edit-latitude"
+                type="number"
+                step="any"
+                min="-90"
+                max="90"
+                inputmode="decimal"
+                label={gettext("Latitude")}
+              />
+              <.input
+                field={@edit_group_form[:longitude]}
+                id="group-edit-longitude"
+                type="number"
+                step="any"
+                min="-180"
+                max="180"
+                inputmode="decimal"
+                label={gettext("Longitude")}
+              />
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <.button
+                id="group-location-locate"
+                type="button"
+                variant="soft"
+                size="sm"
+                hidden
+                phx-mounted={JS.ignore_attributes(["hidden"])}
+              >
+                <.icon name="hero-map-pin" class="size-4" />
+                {gettext("My location")}
+              </.button>
+              <.button id="group-location-clear" type="button" variant="ghost" size="sm">
+                <.icon name="hero-x-mark" class="size-4" />
+                {gettext("Remove location")}
+              </.button>
+            </div>
+
+            <fieldset id="group-edit-pins" class="mt-6">
+              <legend class="text-sm font-semibold text-base-content">
+                {gettext("Pin on the map")}
+              </legend>
+              <p class="text-xs text-base-content/65">
+                {gettext(
+                  "Unless you pick another, the pin shows the kind of group, like the mark on its picture."
+                )}
+              </p>
+              <%= for section <- pin_sections(@group) do %>
+                <p class="mt-4 mb-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+                  {section.title}
+                </p>
+                <div class="grid grid-cols-3 gap-2 min-[420px]:grid-cols-4 sm:grid-cols-6">
+                  <label
+                    :for={pin <- section.pins}
+                    id={"group-edit-pin-#{pin.key}"}
+                    class="relative flex cursor-pointer flex-col items-center gap-1 rounded-2xl border border-base-300 bg-base-100 px-1 py-2 text-center text-[11px] leading-tight text-base-content/75 transition duration-150 ease-out hover:-translate-y-px hover:border-base-content/30 active:scale-95 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-base-content has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40"
+                  >
+                    <input
+                      type="radio"
+                      name={@edit_group_form[:pin_icon].name}
+                      value={pin.value}
+                      checked={pin_checked?(@edit_group_form, pin.value)}
+                      class="sr-only"
+                    />
+                    <span data-pin-svg>
+                      <PinIcons.pin
+                        id={"group-edit-pin-svg-#{pin.key}"}
+                        color={pin.look.color}
+                        paths={pin.look.paths}
+                        picture_url={pin.picture_url}
+                        class="h-10 w-8 drop-shadow-sm"
+                      />
+                    </span>
+                    <span class="line-clamp-2">{pin.label}</span>
+                  </label>
+                </div>
+              <% end %>
+            </fieldset>
           </Components.settings_card>
         </.form>
 
@@ -784,16 +904,70 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # The cards of the section bar, in order: `{key, panel id, label, danger?}`.
   # The keys are the ones `GroupLive.Show` accepts for `set_edit_group_section`.
   # The danger zone is always there, for the app's data.
-  defp sections do
+  # The root stands nowhere on a map: nothing is above it to show it.
+  defp sections(group) do
     [
       {"basics", "group-edit-basics", gettext("Basics"), false},
       {"access", "group-edit-access", gettext("Access"), false},
       {"home", "group-edit-home", gettext("Opens first"), false},
       {"description", "group-edit-description", gettext("Description"), false},
       {"alt_descriptions", "group-alt-descriptions", gettext("Alternative descriptions"), false},
+      !group.is_root && {"location", "group-edit-location", pgettext("map", "Location"), false},
       {"danger", "group-edit-danger", gettext("Danger zone"), true}
     ]
+    |> Enum.filter(& &1)
   end
+
+  # The pins a group can show, under the headings of `GroupPins`: its kind's,
+  # its picture, then the icons. `value` is what the form sends ("" for the kind's).
+  defp pin_sections(group) do
+    kind = GroupPins.kind(group)
+
+    own = [
+      %{
+        key: "kind",
+        value: "",
+        label: gettext("By kind: %{kind}", kind: PinIcons.kind_label(kind)),
+        look: PinIcons.kind_look(kind),
+        picture_url: nil
+      },
+      %{
+        key: "picture",
+        value: GroupPins.picture(),
+        label: gettext("Group picture"),
+        look: PinIcons.kind_look(kind),
+        picture_url: Avatars.group_avatar_url(group)
+      }
+    ]
+
+    icons =
+      GroupPins.icons()
+      |> Enum.chunk_by(fn {_key, _icon, tone} -> pin_heading(tone) end)
+      |> Enum.map(fn [{_key, _icon, tone} | _] = chunk ->
+        %{
+          title: pin_heading(tone),
+          pins:
+            Enum.map(chunk, fn {key, _icon, _tone} ->
+              %{
+                key: key,
+                value: key,
+                label: PinIcons.label(key),
+                look: PinIcons.icon_look(key),
+                picture_url: nil
+              }
+            end)
+        }
+      end)
+
+    [%{title: gettext("This group"), pins: own} | icons]
+  end
+
+  defp pin_heading(:places), do: gettext("Places and services")
+  defp pin_heading(:community), do: gettext("Community and events")
+  defp pin_heading(:nature), do: gettext("Nature and sights")
+  defp pin_heading(_reports), do: gettext("Reports and safety")
+
+  defp pin_checked?(form, value), do: to_string(form[:pin_icon].value || "") == value
 
   defp home_description_options(group, alt_descriptions) do
     [

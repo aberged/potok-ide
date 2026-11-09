@@ -8,8 +8,11 @@ defmodule PotokIde.Social.Group do
   @description_formats [:markdown, :html]
   @home_pages [:chat, :description, :subgroups]
   # The keys of `PotokIde.Social.GroupPresets`, written out: that module matches
-  # on this struct, so reading them from it would compile in a circle.
-  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :page]
+  # on this struct, so reading them from it would compile in a circle. `:map`
+  # is stored a deploy before the menu offers it (`GroupPresets.stored_keys/0`).
+  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :page, :map]
+
+  @location_fields [:latitude, :longitude, :pin_icon]
 
   schema "groups" do
     field :name, :string
@@ -38,6 +41,12 @@ defmodule PotokIde.Social.Group do
     # When a closed group (see `closed?/1`) last opened up, which is its place
     # in a feed; nil keeps the place from `inserted_at`. Kept by Social, never cast.
     field :published_at, :utc_datetime
+    # Where the group stands on a map, both or neither; a map shows the placed
+    # children of its group (`Social.list_visible_placed_children/3`).
+    field :latitude, :float
+    field :longitude, :float
+    # The pin it shows there (`GroupPins`); nil shows its kind.
+    field :pin_icon, :string
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
@@ -86,7 +95,9 @@ defmodule PotokIde.Social.Group do
       :creator_id,
       :parent_id,
       :parent_value_id
+      | @location_fields
     ])
+    |> validate_location()
     |> validate_required([
       :name,
       :description_format,
@@ -121,7 +132,9 @@ defmodule PotokIde.Social.Group do
       :is_root_public,
       :uses_api,
       :inherits_members
+      | @location_fields
     ])
+    |> validate_location()
     |> update_change(:description_name, &trim/1)
     |> validate_required([
       :name,
@@ -174,8 +187,42 @@ defmodule PotokIde.Social.Group do
   def closed?(%__MODULE__{is_public: false, inherits_members: false}), do: true
   def closed?(%__MODULE__{}), do: false
 
+  @doc "Whether the group has a place on a map."
+  def placed?(%__MODULE__{latitude: lat, longitude: lng}), do: is_number(lat) and is_number(lng)
+
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value
+
+  # Both coordinates or neither, each within its range, to six decimals (about
+  # 10 cm, finer than any finger on a map). An empty pin is the kind's.
+  defp validate_location(changeset) do
+    changeset
+    |> update_change(:latitude, &round_coordinate/1)
+    |> update_change(:longitude, &round_coordinate/1)
+    |> update_change(:pin_icon, &blank_to_nil/1)
+    |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
+    |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
+    |> validate_both_coordinates()
+    |> validate_inclusion(:pin_icon, PotokIde.Social.GroupPins.keys())
+  end
+
+  defp validate_both_coordinates(changeset) do
+    case {get_field(changeset, :latitude), get_field(changeset, :longitude)} do
+      {nil, nil} -> changeset
+      {lat, lng} when is_number(lat) and is_number(lng) -> changeset
+      {nil, _lng} -> add_error(changeset, :latitude, "can't be blank", validation: :required)
+      {_lat, nil} -> add_error(changeset, :longitude, "can't be blank", validation: :required)
+    end
+  end
+
+  defp round_coordinate(value) when is_float(value), do: Float.round(value, 6)
+  defp round_coordinate(value), do: value
+
+  defp blank_to_nil(value) when is_binary(value) do
+    if String.trim(value) == "", do: nil, else: String.trim(value)
+  end
+
+  defp blank_to_nil(value), do: value
 
   defp maybe_force_public_from_root_public(changeset) do
     if get_field(changeset, :is_root_public) do
@@ -207,6 +254,7 @@ defmodule PotokIde.Social.Group do
     |> check_constraint(:description_format, name: :groups_description_format_check)
     |> check_constraint(:home_page, name: :groups_home_page_check)
     |> check_constraint(:preset, name: :groups_preset_check)
+    |> check_constraint(:latitude, name: :groups_location_check)
     |> check_constraint(:is_public, name: :groups_root_private_check)
     |> check_constraint(:parent_id, name: :groups_root_parent_check)
     |> check_constraint(:creator_id, name: :groups_root_creator_check)

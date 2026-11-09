@@ -29,6 +29,7 @@ import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
 import { KeyboardMedia } from "./keyboard_media"
+import { LocationPicker } from "./location_picker"
 import { installLongPressLinkMenu, shareLink } from "./longpress"
 import { ReactionPicker } from "./reaction_picker"
 import {
@@ -846,6 +847,10 @@ const APP_FRAME_METHODS = new Set([
   "file_url",
   "upload_file",
   "upload_image",
+  "map_config",
+  "list_places",
+  "create_place",
+  "show_group",
 ])
 
 // Calls that carry a file of the frame's, sent through the page's upload.
@@ -919,33 +924,53 @@ const GroupAppFrame = {
     })
     this.themeObserver.observe(document.documentElement, {attributeFilter: ["data-theme"]})
 
-    this.handleEvent("new_data_value", value => {
-      this.post({potok: 1, event: "new_value", value})
-    })
+    // A pushed event reaches every hook of the page, and a sheet over a map
+    // runs a second frame (`AppHost`): each frame takes only its host's.
+    const own = handler => ({host, ...payload}) => {
+      if ((host || "page") === this.host()) handler(payload)
+    }
 
-    this.handleEvent("poll_changed", ({id}) => {
+    this.handleEvent("new_data_value", own(value => {
+      this.post({potok: 1, event: "new_value", value})
+    }))
+
+    this.handleEvent("poll_changed", own(({id}) => {
       this.post({potok: 1, event: "poll_changed", id})
-    })
+    }))
 
     // What changed in the app's collections, already cut to what this viewer sees.
-    this.handleEvent("app_value", change => {
+    this.handleEvent("app_value", own(change => {
       this.post({potok: 1, event: "app_value", change})
-    })
+    }))
 
-    this.handleEvent("app_upload_progress", ({ref, progress}) => {
+    this.handleEvent("app_upload_progress", own(({ref, progress}) => {
       const pending = this.pendingUploads.get(ref)
       if (pending) this.post({potok: 1, event: "upload_progress", id: pending.callId, progress})
-    })
+    }))
 
-    this.handleEvent("app_upload_done", ({ref, ...result}) => {
+    this.handleEvent("app_upload_done", own(({ref, ...result}) => {
       const pending = this.pendingUploads.get(ref)
       if (!pending) return
 
       this.pendingUploads.delete(ref)
       pending.resolve(result)
-    })
+    }))
 
-    this.handleEvent("app_share_link", ({url}) => shareLink(url))
+    this.handleEvent("app_share_link", own(({url}) => shareLink(url)))
+
+    // Something changed among the group's sub-groups; the app reads them again.
+    this.handleEvent("app_children_changed", own(() => {
+      this.post({potok: 1, event: "children_changed"})
+    }))
+
+    // The sheet the app opened (`showGroup`) closed.
+    this.handleEvent("group_sheet_closed", own(({id}) => {
+      this.post({potok: 1, event: "group_sheet_closed", id})
+    }))
+  },
+
+  host() {
+    return this.el.dataset.host || "page"
   },
 
   reconnected() {
@@ -1018,13 +1043,16 @@ const GroupAppFrame = {
       return
     }
 
+    // The page's address belongs to the app under the sheet, not to the one in it.
     if (method === "linked_group") {
-      this.post({potok: 1, id, ok: true, group_id: linkedGroupId()})
+      const groupId = this.host() === "page" ? linkedGroupId() : null
+      this.post({potok: 1, id, ok: true, group_id: groupId})
       return
     }
 
     if (method === "link_group") {
-      this.post({potok: 1, id, ...linkGroup(params?.id)})
+      const result = this.host() === "page" ? linkGroup(params?.id) : {ok: false, error: "unavailable"}
+      this.post({potok: 1, id, ...result})
       return
     }
 
@@ -1078,7 +1106,7 @@ const GroupAppFrame = {
 
     const result = await new Promise(resolve => {
       this.pendingUploads.set(prepared.ref, {resolve, callId: id})
-      this.upload("app_file", [named])
+      this.upload(this.el.dataset.upload || "app_file", [named])
     })
 
     this.post({potok: 1, id, ...result})
@@ -1087,7 +1115,7 @@ const GroupAppFrame = {
   // The page's own picker, as the frame has neither its code nor its data. Taps
   // on the frame have to reach the page for the picker to close on them.
   pickEmoji() {
-    const picker = document.getElementById("reaction-picker")
+    const picker = document.getElementById(this.el.dataset.picker || "reaction-picker")
 
     if (!picker) {
       return Promise.resolve({ok: false, error: "forbidden"})
@@ -1811,6 +1839,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     PushNotifications,
     GroupAppFrame,
     ReactionPicker,
+    LocationPicker,
     KeyboardMedia,
     ShareComposer,
     SharePreview,

@@ -629,6 +629,21 @@ defmodule PotokIdeWeb.Layouts do
   end
 
   @doc """
+  The flash of `GroupLive.Sheet`. It sits in a top-layer dialog over a map,
+  which the page's own flash stays under.
+  """
+  attr :flash, :map, required: true
+
+  def sheet_flash(assigns) do
+    ~H"""
+    <div id="group-sheet-flash" aria-live="polite">
+      <.flash id="group-sheet-flash-info" kind={:info} flash={@flash} />
+      <.flash id="group-sheet-flash-error" kind={:error} flash={@flash} dismiss_after_ms={8000} />
+    </div>
+    """
+  end
+
+  @doc """
   Provides dark vs light theme toggle based on themes defined in app.css.
 
   See <head> in root.html.heex which applies the theme before page load.

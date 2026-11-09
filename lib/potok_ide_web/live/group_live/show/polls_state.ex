@@ -39,6 +39,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
   alias PotokIde.Social
   alias PotokIde.Social.{Group, Value}
   alias PotokIdeWeb.GroupLive.Show
+  alias PotokIdeWeb.GroupLive.Show.AppHost
 
   @statuses ~w(open waiting closed)
 
@@ -70,6 +71,24 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
     |> stream_configure(:polls, dom_id: &"poll-row-#{&1.id}")
     |> stream(:polls, [], reset: true)
     |> assign_params(params)
+  end
+
+  @doc """
+  What a LiveView needs that shows only the dialog an app opens and follows its
+  group's polls (`GroupLive.Sheet`): no overview, and no connect params, which
+  a nested LiveView may not read. `maybe_load/3` then follows the group.
+  """
+  def init_dialog(socket) do
+    assign(socket,
+      poll_tallies: %{},
+      poll_pending: new_pending(),
+      poll_flush_scheduled?: false,
+      poll_subscribed: MapSet.new(),
+      poll_dialog: nil,
+      polls_detail: nil,
+      polls_status: "open",
+      polls_poll_id: nil
+    )
   end
 
   defp new_pending, do: %{tallies: %{}, list?: false, ids: MapSet.new()}
@@ -627,7 +646,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
       |> Map.keys()
       |> MapSet.new()
       |> MapSet.union(ids)
-      |> Enum.reduce(socket, &push_event(&2, "poll_changed", %{id: &1}))
+      |> Enum.reduce(socket, &AppHost.push(&2, "poll_changed", %{id: &1}))
     else
       socket
     end

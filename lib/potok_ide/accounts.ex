@@ -64,6 +64,9 @@ defmodule PotokIde.Accounts do
   """
   def get_account!(id), do: Repo.get!(Account, id)
 
+  @doc "Gets a single account, or nil."
+  def get_account(id), do: Repo.get(Account, id)
+
   ## Account registration
 
   @doc """

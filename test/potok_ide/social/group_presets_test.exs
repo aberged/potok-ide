@@ -174,7 +174,15 @@ defmodule PotokIde.Social.GroupPresetsTest do
     end
 
     test "is one the column takes" do
-      assert GroupPresets.keys() == Enum.map(Ecto.Enum.values(Group, :preset), &Atom.to_string/1)
+      assert GroupPresets.stored_keys() ==
+               Enum.map(Ecto.Enum.values(Group, :preset), &Atom.to_string/1)
+
+      assert GroupPresets.keys() -- GroupPresets.stored_keys() == []
+    end
+
+    test "shows only a kind the menu offers" do
+      assert GroupPresets.shown(%Group{preset: :map, uses_api: true}) == nil
+      assert GroupPresets.shown(%Group{preset: :map, uses_api: false}) == nil
     end
   end
 

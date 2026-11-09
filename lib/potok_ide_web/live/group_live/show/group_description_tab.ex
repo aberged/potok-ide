@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   use PotokIdeWeb, :html
 
-  alias PotokIdeWeb.GroupLive.Show.{AppApi, Components}
+  alias PotokIdeWeb.GroupLive.Show.{AppApi, AppHost, Components}
   alias PotokIdeWeb.PostTemplates.Post
 
   attr :group, :map, required: true
@@ -28,13 +28,20 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   attr :app_upload, :any,
     default: nil,
-    doc: "the page's upload for files an app sends (`:app_file`); nil for a guest"
+    doc: "the page's upload for files an app sends (`AppHost`); nil for a guest"
+
+  attr :host, :string,
+    default: "page",
+    doc: ~s{who runs the app (`AppHost`): "page", or "sheet" over a map, whose ids start "sheet"}
+
+  attr :switcher, :boolean, default: true, doc: "shows the chips of the alternative descriptions"
 
   def panel(assigns) do
     source = assigns.active_alt_description || assigns.group
 
     assigns =
       assigns
+      |> assign(:prefix, if(assigns.host == "sheet", do: "sheet", else: "group"))
       |> assign(:source, source)
       |> assign(:column, description_column(source))
       |> assign(:empty_description_image_src, empty_description_image_src(assigns.group))
@@ -42,7 +49,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     ~H"""
     <div class="flex min-h-0 flex-1 flex-col px-2">
       <nav
-        :if={@alt_descriptions != []}
+        :if={@switcher and @alt_descriptions != []}
         id="group-description-switcher"
         aria-label={gettext("Descriptions")}
         class="-mx-2 flex shrink-0 gap-2 overflow-x-auto px-2 pt-1 pb-2 [scrollbar-width:none]"
@@ -74,13 +81,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       <div class="flex min-h-0 flex-1 overflow-y-auto overscroll-contain flex-col pb-4">
         <div
           :if={blank_description?(@source.description)}
-          id="group-description-empty"
+          id={"#{@prefix}-description-empty"}
           class="flex flex-col min-h-48 items-center justify-center rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65"
         >
           <p class="p-2">{gettext("This group has no description yet.")}</p>
           <.button
             :if={@can_edit}
-            id="group-description-add"
+            id={"#{@prefix}-description-add"}
             type="button"
             phx-click={
               JS.push("switch_tab", value: %{tab: "edit_group"})
@@ -110,20 +117,21 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         with that app's storage instead of reusing the previous one. --%>
         <div
           :if={!blank_description?(@source.description) and @source.uses_api}
-          id="group-panel-description"
+          id={"#{@prefix}-panel-description"}
           class="flex min-h-0 flex-1 flex-col"
         >
           <Components.app_frame
-            id={app_frame_id(@active_alt_description)}
+            id={app_frame_id(@prefix, @active_alt_description)}
             html={@source.description}
             app_id={AppApi.app_id(@active_alt_description)}
             storage_key={storage_key(@group, @active_alt_description)}
             viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}:#{@viewer_roles}"}
+            host={@host}
           />
           <%!-- The frame cannot upload: its hook sends the file through here. --%>
           <form
             :if={@app_upload}
-            id="group-app-upload-form"
+            id={"#{@prefix}-app-upload-form"}
             phx-change="validate_app_file"
             class="hidden"
           >
@@ -133,7 +141,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
         <div
           :if={!blank_description?(@source.description) and !@source.uses_api}
-          id="group-panel-description"
+          id={"#{@prefix}-panel-description"}
           class={@column}
         >
           <Components.formatted_content
@@ -145,8 +153,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         <%!-- An app has the whole panel, so its reactions are for a feed to show. --%>
         <Components.reaction_pills
           :if={!@source.uses_api and (@reactions != [] or @can_react)}
-          id="group-reactions"
-          pill_id_prefix="group-reaction"
+          id={"#{@prefix}-reactions"}
+          pill_id_prefix={"#{@prefix}-reaction"}
           reactions={@reactions}
           can_react={@can_react}
           click="toggle_group_reaction"
@@ -154,7 +162,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         >
           <.icon_button
             :if={@can_react}
-            id="group-react"
+            id={"#{@prefix}-react"}
             type="button"
             data-reaction-trigger
             data-group-reaction
@@ -165,7 +173,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           />
         </Components.reaction_pills>
       </div>
-      <Components.reaction_picker :if={@can_react or (@current_profile && @source.uses_api)} />
+      <Components.reaction_picker
+        :if={@can_react or (@current_profile && @source.uses_api)}
+        id={AppHost.picker_id(@host)}
+      />
     </div>
     """
   end
@@ -182,8 +193,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   defp active?(%{id: id}, %{id: id}), do: true
   defp active?(_active, _alt), do: false
 
-  defp app_frame_id(nil), do: "group-app-frame"
-  defp app_frame_id(%{id: id}), do: "group-app-frame-alt-#{id}"
+  defp app_frame_id(prefix, nil), do: "#{prefix}-app-frame"
+  defp app_frame_id(prefix, %{id: id}), do: "#{prefix}-app-frame-alt-#{id}"
 
   defp storage_key(group, nil), do: "potok-app:#{group.id}"
   defp storage_key(group, %{id: id}), do: "potok-app:#{group.id}:alt-#{id}"

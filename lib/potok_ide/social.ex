@@ -437,14 +437,28 @@ defmodule PotokIde.Social do
   and, for a feed, the `.feed` below it, which is where its author writes.
 
   Nobody hears of a group before it all stands, so the news goes out last.
+
+  `place` puts the group on a map at once (`"latitude"`, `"longitude"` and
+  `"pin_icon"`), as a map app does when someone adds a place there.
   """
-  def create_group_from_preset(%Profile{} = creator, %Group{} = parent, preset, choices) do
+  def create_group_from_preset(
+        %Profile{} = creator,
+        %Group{} = parent,
+        preset,
+        choices,
+        place \\ %{}
+      ) do
+    attrs =
+      preset
+      |> GroupPresets.attrs(choices)
+      |> Map.merge(Map.take(place, ["latitude", "longitude", "pin_icon"]))
+
     Repo.transaction(fn ->
       with {:ok, group, created} <-
              insert_preset_group(
                creator,
                parent,
-               GroupPresets.attrs(preset, choices),
+               attrs,
                GroupPresets.taken_from_everyone(preset),
                GroupPresets.preset(preset)
              ),
@@ -3282,6 +3296,39 @@ defmodule PotokIde.Social do
     visible_plain_groups(profile)
     |> where([g], g.id == ^id and g.parent_id == ^group.id)
     |> Repo.one()
+  end
+
+  # What a pin on a map needs (`GroupPins`), and the picture's version.
+  @placed_fields [
+    :id,
+    :parent_id,
+    :name,
+    :latitude,
+    :longitude,
+    :pin_icon,
+    :preset,
+    :uses_api,
+    :is_public,
+    :inherits_members,
+    :updated_at
+  ]
+
+  @doc """
+  The direct sub-groups of `group` the profile can see that have a place on a
+  map, oldest first, as `{groups, truncated?}`: what a map shows. Threads and
+  direct conversations do not count. Only what a pin needs is loaded.
+  """
+  def list_visible_placed_children(%Group{} = group, %Profile{} = profile, limit)
+      when is_integer(limit) and limit > 0 do
+    rows =
+      visible_plain_groups(profile)
+      |> where([g], g.parent_id == ^group.id and not is_nil(g.latitude))
+      |> order_by([g], asc: g.id)
+      |> limit(^(limit + 1))
+      |> select([g], struct(g, ^@placed_fields))
+      |> Repo.all()
+
+    {Enum.take(rows, limit), length(rows) > limit}
   end
 
   # A group's place in a feed: when it opened up, or was made already open.
