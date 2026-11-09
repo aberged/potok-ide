@@ -17,28 +17,25 @@ defmodule PotokIde.LinkCards do
 
   require Logger
 
-  alias PotokIde.Cache
   alias PotokIde.Events.{Event, Format, Recurrence}
   alias PotokIde.ImageMagick
   alias PotokIde.LinkPreviews.HTTP
   alias PotokIde.PlainText
+  alias PotokIde.{RenderCache, Renderers}
   alias PotokIde.Social
   alias PotokIde.Social.Group
   alias PotokIdeWeb.Locale
 
   @design 1
 
-  # For every outcome. A story is a public group too, so a crawl of all of them
-  # must not stay in memory for long.
+  # A whole card is kept on disk (`PotokIde.RenderCache`) as long as its
+  # version stands; a partial one or a failure is remembered in memory, for a
+  # short time, as the picture may be back soon.
+  @disk_max_age :timer.hours(24 * 7)
   @cache_ttl :timer.minutes(15)
   # Each step of a download has its own limits, and with redirects those add up
   # to half a minute.
   @download_timeout 6_000
-  # The address is public and a drawing takes up to 150 MB of a machine with
-  # 512, so they go one at a time (`PotokIde.LinkCards.Renderers`).
-  @turn_timeout 8_000
-  @turn_poll 50
-  @draw_timeout 15_000
 
   @limits ~w(-limit memory 128MiB -limit map 256MiB -limit disk 256MiB) ++
             ~w(-limit area 64MP -limit width 12000 -limit height 12000 -limit time 15)
@@ -111,7 +108,22 @@ defmodule PotokIde.LinkCards do
   for a card that cannot be drawn. Never raises: a link is shown without it.
   """
   def image(card) do
-    Cache.fetch({:link_card, card.kind, card.id, version(card)}, @cache_ttl, fn -> draw(card) end)
+    {:link_card, card.kind, card.id, version(card)}
+    |> RenderCache.fetch(@disk_max_age, fn -> draw_kept(card) end, memory_ttl: @cache_ttl)
+    |> case do
+      {:ok, jpeg} -> {:ok, jpeg, :whole}
+      {:partial, jpeg} -> {:ok, jpeg, :partial}
+      :error -> :error
+    end
+  end
+
+  # Only a whole card is a picture to keep.
+  defp draw_kept(card) do
+    case draw(card) do
+      {:ok, jpeg, :whole} -> {:ok, jpeg}
+      {:ok, jpeg, :partial} -> {:partial, jpeg}
+      _error -> :error
+    end
   end
 
   @doc false
@@ -131,7 +143,7 @@ defmodule PotokIde.LinkCards do
       |> Application.get_env(__MODULE__, [])
       |> Keyword.get(:paint, &paint/2)
 
-    in_turn(fn -> paint.(card, picture) end)
+    Renderers.run(fn -> paint.(card, picture) end)
   rescue
     exception ->
       Logger.warning("Could not draw a link card: #{Exception.message(exception)}")
@@ -140,44 +152,6 @@ defmodule PotokIde.LinkCards do
     :exit, reason ->
       Logger.warning("Could not draw a link card: #{inspect(reason)}")
       :error
-  end
-
-  defp in_turn(fun), do: in_turn(fun, System.monotonic_time(:millisecond) + @turn_timeout)
-
-  defp in_turn(fun, deadline) do
-    caller = self()
-    ref = make_ref()
-
-    case Task.Supervisor.start_child(__MODULE__.Renderers, fn -> send(caller, {ref, fun.()}) end) do
-      {:ok, pid} ->
-        await(pid, ref)
-
-      {:error, :max_children} ->
-        if System.monotonic_time(:millisecond) < deadline do
-          Process.sleep(@turn_poll)
-          in_turn(fun, deadline)
-        else
-          :error
-        end
-    end
-  end
-
-  defp await(pid, ref) do
-    monitor = Process.monitor(pid)
-
-    receive do
-      {^ref, result} ->
-        Process.demonitor(monitor, [:flush])
-        result
-
-      {:DOWN, ^monitor, :process, ^pid, _reason} ->
-        :error
-    after
-      @draw_timeout ->
-        Process.demonitor(monitor, [:flush])
-        Task.Supervisor.terminate_child(__MODULE__.Renderers, pid)
-        :error
-    end
   end
 
   # nil for a group without a picture a card can show, `:unreadable` for one that

@@ -244,6 +244,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
 
       refute group_named?("Pola feeda")
       refute_received {:group_updated, _group_id}
+      refute_received {:child_group_changed, _group_id, _child}
     end
   end
 
@@ -311,9 +312,10 @@ defmodule PotokIde.Social.GroupPresetsTest do
     Social.subscribe_group(ctx.parent)
     parent_id = ctx.parent.id
 
-    assert {:ok, _created} = create(ctx, "chat")
+    assert {:ok, %{group: created}} = create(ctx, "chat")
+    created_id = created.id
 
-    assert_received {:group_updated, ^parent_id}
+    assert_received {:child_group_changed, ^parent_id, %{id: ^created_id, change: :created}}
   end
 
   test "the builds of both apps are in place" do

@@ -4,11 +4,14 @@ defmodule PotokIdeWeb.AvatarController do
   require Logger
 
   alias PotokIde.ImageMagick
+  alias PotokIde.{RenderCache, Renderers}
   alias PotokIde.Social
 
   @cache_control "public, max-age=86400"
-  # Generated initials PNGs are cached in memory so ImageMagick runs once per name.
-  @initials_cache_ttl :timer.hours(24)
+  # Initials PNGs are drawn once per name and kept on disk (PotokIde.RenderCache).
+  @initials_max_age :timer.hours(24 * 7)
+  # A small drawing: ImageMagick stops it rather than let it grow.
+  @png_limits ~w(-limit memory 32MiB -limit map 64MiB -limit disk 64MiB -limit time 10)
   # A picture is only ever shown as an image: opened on its own, on Potok's
   # address, nothing in it may run or load. SVG is the one that could.
   @image_csp "default-src 'none'; style-src 'unsafe-inline'; sandbox"
@@ -58,12 +61,18 @@ defmodule PotokIdeWeb.AvatarController do
 
   # Initials are drawn as an SVG, which costs nothing to make. Push
   # notifications cannot show SVG, so their URLs ask for `?format=png`, which
-  # ImageMagick renders (about 0.2 s of CPU) once per name.
+  # ImageMagick renders (60–125 ms of CPU) once per name, one drawing at a
+  # time with the link cards (PotokIde.Renderers): the address is public, and
+  # a page of new names must not start an ImageMagick process for each.
   defp send_initials(%{params: %{"format" => "png"}} = conn, name) do
     {image_data, content_type} =
-      PotokIde.Cache.fetch({:initials_avatar, name}, @initials_cache_ttl, fn ->
-        generate_initials_png(name)
-      end)
+      case RenderCache.fetch({:initials_avatar, name}, @initials_max_age, fn ->
+             svg = initials_svg(name)
+             Renderers.run(fn -> svg_to_png(svg) end)
+           end) do
+        {:ok, png_data} -> {png_data, "image/png"}
+        _error -> fallback_png(name)
+      end
 
     send_image(conn, image_data, content_type)
   end
@@ -130,18 +139,11 @@ defmodule PotokIdeWeb.AvatarController do
     {"#ea580c", "#ffedd5"}
   ]
 
-  defp generate_initials_png(username) do
-    svg = initials_svg(username)
-
-    case svg_to_png(svg) do
-      {:ok, png_data} ->
-        {png_data, "image/png"}
-
-      :error ->
-        case default_avatar_png() do
-          {:ok, png_data} -> {png_data, "image/png"}
-          :error -> {svg, "image/svg+xml"}
-        end
+  # When no PNG could be drawn: Potok's icon, which every push service shows.
+  defp fallback_png(username) do
+    case default_avatar_png() do
+      {:ok, png_data} -> {png_data, "image/png"}
+      :error -> {initials_svg(username), "image/svg+xml"}
     end
   end
 
@@ -211,17 +213,20 @@ defmodule PotokIdeWeb.AvatarController do
   end
 
   defp convert_svg(svg_path, png_path) do
-    ImageMagick.convert([
-      "-background",
-      "none",
-      "-gravity",
-      "center",
-      "-extent",
-      "192x192",
-      "-resize",
-      "192x192",
-      svg_path,
-      png_path
-    ])
+    ImageMagick.convert(
+      @png_limits ++
+        [
+          "-background",
+          "none",
+          "-gravity",
+          "center",
+          "-extent",
+          "192x192",
+          "-resize",
+          "192x192",
+          svg_path,
+          png_path
+        ]
+    )
   end
 end

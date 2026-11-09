@@ -70,7 +70,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, and both the connection and the page are swept once more two seconds after loading. That is how a small server holds many open pages."
+              "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, both are swept once more two seconds after loading, and after that the page looks at its connection every 20 seconds and has it swept if it has grown. A page that receives nothing for two seconds shrinks to what it really holds. That is how a small server holds many open pages."
             )
         },
         %{
@@ -78,7 +78,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
+              "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. None of this needs a separate job queue."
             )
         },
         %{
@@ -94,7 +94,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the pictures on link cards, the access token for notifications. It also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
+              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown and the access token for notifications. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
             )
         }
       ]

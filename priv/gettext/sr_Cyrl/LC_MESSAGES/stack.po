@@ -111,16 +111,6 @@ msgstr "Подаци се не мењају у месту"
 msgid "Domain map"
 msgstr "Мапа домена"
 
-#: lib/potok_ide_web/stack_copy.ex:95
-#, elixir-autogen, elixir-format
-msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown, generated avatars, the pictures on link cards, the access token for notifications. It also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
-msgstr "ETS је табела у меморији коју читају сви процеси. У њој Поток држи оно што је скупо израчунати, а ретко се мења: обрађен Markdown, направљене аватаре, слике картица линкова, приступни токен за обавештења. У њој броји и покушаје пријаве и мејлове које неко тражи да се пошаљу, па нико не може да их понавља без краја."
-
-#: lib/potok_ide_web/stack_copy.ex:71
-#, elixir-autogen, elixir-format
-msgid "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, and both the connection and the page are swept once more two seconds after loading. That is how a small server holds many open pages."
-msgstr "Сваки процес сам чисти своју меморију, па чишћење никад не зауставља цео сервер. Поток то користи: веза странице сваки пут чисти потпуно, а и она и страница се још једном почисте две секунде после учитавања. Тако и мали сервер држи много отворених страница."
-
 #: lib/potok_ide_web/stack_copy.ex:131
 #, elixir-autogen, elixir-format
 msgid "Ecto describes every table in code, and changes pass their checks before they reach PostgreSQL. Changes that belong together form one transaction: all of them are written, or none."
@@ -386,12 +376,22 @@ msgstr "`chat-bubble` је облачић поруке, `drawer` бочни ме
 msgid "daisyUI is a plugin for Tailwind. It gives the common parts of an interface as named classes and adds no JavaScript."
 msgstr "daisyUI је додатак за Tailwind. Честе делове интерфејса даје као класе са именом и не додаје JavaScript."
 
-#: lib/potok_ide_web/stack_copy.ex:79
-#, elixir-autogen, elixir-format
-msgid "Notifications go out from a process of their own, so a page does not wait for the delivery services. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures on link cards are drawn one at a time, each in a process of its own. None of this needs a separate job queue."
-msgstr "Обавештења се шаљу из посебног процеса, па страница не чека сервисе за доставу. Подсетници за догађаје су процес који се буди на сваких пола минута, а тако раде и рокови гласања. Једном на сат други процес брише фајлове које су апликације примиле, а ниједан одговор их није узео. Слике картица линкова цртају се једна по једна, свака у свом процесу. Ништа од тога не тражи посебан систем за редове послова."
-
 #: lib/potok_ide_web/stack_copy.ex:199
 #, elixir-autogen, elixir-format
 msgid "When someone saves a value, Phoenix PubSub publishes it on the group's topic, and every page process listening there gets it and shows it. Unread counts have a topic of their own, so one value is one publication, however many members the group has. So do the values apps keep under rules, and each page decides by those rules whether its reader may see one."
 msgstr "Кад неко сачува вредност, Phoenix PubSub је објави на каналу групе, а сваки процес странице који га слуша добије је и прикаже. Непрочитано има свој канал, па је једна вредност једна објава, колико год чланова група имала. Свој канал имају и вредности које апликације чувају по правилима, а свака страница по тим правилима одлучује да ли њен читалац сме да види вредност."
+
+#: lib/potok_ide_web/stack_copy.ex:95
+#, elixir-autogen, elixir-format
+msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown and the access token for notifications. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
+msgstr "ETS је табела у меморији коју читају сви процеси. У њој Поток држи оно што је скупо израчунати, а ретко се мења: обрађен Markdown и приступни токен за обавештења. Слике које црта, картице линкова и аватаре, чува у фајловима на диску, па не заузимају меморију. ETS броји и покушаје пријаве и мејлове које неко тражи да се пошаљу, па нико не може да их понавља без краја."
+
+#: lib/potok_ide_web/stack_copy.ex:71
+#, elixir-autogen, elixir-format
+msgid "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, both are swept once more two seconds after loading, and after that the page looks at its connection every 20 seconds and has it swept if it has grown. A page that receives nothing for two seconds shrinks to what it really holds. That is how a small server holds many open pages."
+msgstr "Сваки процес сам чисти своју меморију, па чишћење никад не зауставља цео сервер. Поток то користи: веза странице сваки пут чисти потпуно, обе се још једном почисте две секунде после учитавања, а после тога страница на сваких 20 секунди погледа своју везу и почисти је ако је нарасла. Страница којој две секунде ништа не стигне скупи се на оно што заиста држи. Тако и мали сервер држи много отворених страница."
+
+#: lib/potok_ide_web/stack_copy.ex:79
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. None of this needs a separate job queue."
+msgstr "Обавештења се шаљу из посебних процеса, па страница не чека сервисе за доставу. Чекају у једном реду и иду по два одједном, па низ објава не покрене стотине слања у истом тренутку. Подсетници за догађаје су процес који се буди на сваких пола минута, а тако раде и рокови гласања. Једном на сат други процес брише фајлове које су апликације примиле, а ниједан одговор их није узео. Слике за картице линкова и за аватаре у обавештењима цртају се једна по једна, свака у свом процесу, а највише три прегледа линкова преузимају се одједном. Ништа од тога не тражи посебан систем за редове послова."

@@ -368,7 +368,7 @@ msgstr ""
 msgid "My groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:384
+#: lib/potok_ide_web/live/group_live/show.ex:390
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -510,7 +510,7 @@ msgstr ""
 msgid "Poll"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:385
+#: lib/potok_ide_web/live/group_live/show.ex:391
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:184
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:51
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32

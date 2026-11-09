@@ -10,11 +10,17 @@ config :potok_ide, PotokIdeWeb.Endpoint, cache_static_manifest: "priv/static/cac
 # Force using SSL in production. This also sets the "strict-security-transport" header,
 # known as HSTS. If you have a health check endpoint, you may want to exclude it below.
 # Note `:force_ssl` is required to be set at compile-time.
+#
+# `exclude` belongs inside `force_ssl` (Plug.SSL's option); next to it, as the
+# generator put it, Phoenix never read it. Fly's health check (fly.toml)
+# comes over plain HTTP from inside the machine's network.
 config :potok_ide, PotokIdeWeb.Endpoint,
-  force_ssl: [rewrite_on: [:x_forwarded_proto]],
-  exclude: [
-    # paths: ["/health"],
-    hosts: ["localhost", "0.0.0.0"]
+  force_ssl: [
+    rewrite_on: [:x_forwarded_proto],
+    exclude: [
+      paths: ["/health"],
+      hosts: ["localhost", "127.0.0.1", "0.0.0.0"]
+    ]
   ]
 
 # Configure Swoosh API Client

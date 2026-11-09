@@ -66,6 +66,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # The feed holds at most this many values: a page loaded at one end drops
   # as many from the other, which load again when scrolled back to.
   @values_max_loaded 200
+  # How long a page collects the values it shows before it writes the read
+  # marker once (see `mark_value_read/2`); 0 (the test config) writes at once.
+  @read_marker_delay_ms Application.compile_env(:potok_ide, :read_marker_delay_ms, 5_000)
 
   # What the browser sends is already shrunk (see `description_picture_picker`).
   @max_description_picture_size 5 * 1024 * 1024
@@ -94,6 +97,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # few seconds, instead of one per post from every member online at once.
   # The chat on screen does not wait: its values come as `:value_created`.
   @unread_values_spread_ms 5_000
+  # A sub-group that changed reloads the list on every page showing it: on
+  # the root that can be every user's, so they spread over a second too.
+  @children_refresh_spread_ms 1_000
 
   @impl true
   def render(assigns) do
@@ -702,7 +708,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:group, group)
          |> assign(:active_tab, active_tab)
          |> assign(:manifest_owner, nil)
-         |> assign(:new_role_form, empty_new_role_form())
+         |> assign(:new_role_form, nil)
          |> assign(:role_member_counts, %{})
          |> assign(:editing_value, nil)
          |> assign(:edit_value_form, nil)
@@ -711,8 +717,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:format_options, [{gettext("Markdown"), :markdown}, {gettext("HTML"), :html}])
          |> assign(:home_page_options, home_page_options())
          |> assign(:value_parent_options, [])
-         |> assign(:new_value_form, empty_new_value_form())
-         |> assign(:new_group_form, empty_new_group_form())
+         |> assign(:new_value_form, nil)
+         |> assign(:new_group_form, nil)
+         |> assign_tab_forms(active_tab)
          |> assign(:edit_group_form, edit_group_form(group, active_tab))
          |> assign(:link_card, link_card(group, active_tab))
          |> assign(:edit_group_section, opening_edit_section(params))
@@ -772,6 +779,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
          |> maybe_reload_edit_group_form(active_tab)
+         |> assign_tab_forms(active_tab)
          |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
          |> PollsState.assign_params(params)
@@ -1623,7 +1631,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # bar only shows for real edits.
   def handle_event("validate_edit_group", %{"group" => attrs} = params, socket) do
     if Access.can?(socket.assigns.access, :edit_group) do
-      group = socket.assigns.edit_group_form.source.data
+      group = edit_group_data(socket)
       template = params["description_template"]
       {attrs, _missing} = PostTemplates.Form.prepare(attrs, template, group.description)
 
@@ -1700,7 +1708,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       PostTemplates.Form.prepare(
         attrs,
         params["description_template"],
-        socket.assigns.edit_group_form.source.data.description
+        edit_group_data(socket).description
       )
 
     cond do
@@ -2191,6 +2199,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  # A sub-group of this group was created, changed or deleted
+  # (`Social.broadcast_child_group_changed/3`): only a list that shows it, or
+  # could now, is read again.
+  def handle_info({:child_group_changed, group_id, child}, socket)
+      when socket.assigns.group.id == group_id and not is_nil(socket.assigns.current_profile) do
+    if child_on_list?(socket, child),
+      do: {:noreply, schedule_refresh(socket, :children)},
+      else: {:noreply, socket}
+  end
+
+  def handle_info({:child_group_changed, _group_id, _child}, socket), do: {:noreply, socket}
+
   def handle_info({:group_reactions_updated, group_id}, socket)
       when socket.assigns.group.id == group_id do
     {:noreply, schedule_refresh(socket, :group_reactions)}
@@ -2234,6 +2254,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info(:flush_refresh, socket) do
     {:noreply, flush_refresh(socket)}
+  end
+
+  def handle_info(:flush_read_marker, socket) do
+    {:noreply, socket |> put_private(:read_marker_scheduled?, false) |> flush_read_marker()}
   end
 
   def handle_info({:calendar, message}, socket), do: CalendarState.handle_info(message, socket)
@@ -2371,6 +2395,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  # Leaving the page (navigation or a closed tab) writes the read marker the
+  # page still holds.
+  @impl true
+  def terminate(_reason, socket) do
+    flush_read_marker(socket)
+    :ok
+  end
+
   defp load_group_data(socket, group, active_tab \\ nil) do
     active_tab =
       active_tab ||
@@ -2480,6 +2512,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp refresh_spread_ms(:unread), do: :rand.uniform(@unread_refresh_spread_ms)
   defp refresh_spread_ms(:unread_values), do: :rand.uniform(@unread_values_spread_ms)
+  defp refresh_spread_ms(:children), do: :rand.uniform(@children_refresh_spread_ms)
   defp refresh_spread_ms(_kind), do: 0
 
   # `:unread_values` are values posted since the last count, added without a
@@ -2492,10 +2525,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:pending_refresh, MapSet.new())
       |> assign(:refresh_due_at, nil)
 
-    # On its own, as `cond` takes one branch and any kind can come with this one.
+    # On their own, as `cond` takes one branch and any kind can come with these.
     socket =
       if MapSet.member?(pending, :group_reactions) and not MapSet.member?(pending, :group),
         do: refresh_group_reactions_or_retry(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :children) and not MapSet.member?(pending, :group),
+        do: reload_children_or_retry(socket),
         else: socket
 
     cond do
@@ -2519,6 +2557,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
     assign_group_reactions(socket)
   rescue
     DBConnection.ConnectionError -> schedule_refresh(socket, :group_reactions)
+  end
+
+  defp reload_children_or_retry(socket) do
+    reload_children(socket)
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :children)
   end
 
   defp reload_current_group(socket) do
@@ -3490,6 +3534,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
     %{per_page: per_page, loaded_count: 0, total_count: 0, has_more?: false}
   end
 
+  # Each form is made when its tab opens, and dropped when the viewer leaves
+  # the tab without having typed anything into it. Every page used to keep
+  # all of them from its mount: a blank value, a blank group and a role, and
+  # a changeset of the group itself, on whatever tab it showed.
+  defp assign_tab_forms(socket, active_tab) do
+    socket
+    |> tab_form(:new_value_form, active_tab == "values", &empty_new_value_form/0)
+    |> tab_form(:new_group_form, active_tab == "create_group", &empty_new_group_form/0)
+    |> tab_form(:new_role_form, active_tab == "roles", &empty_new_role_form/0)
+  end
+
+  defp tab_form(socket, key, true = _shown, build) do
+    if socket.assigns[key], do: socket, else: assign(socket, key, build.())
+  end
+
+  defp tab_form(socket, key, false = _shown, _build) do
+    case socket.assigns[key] do
+      %Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes}} when changes != %{} -> socket
+      _untouched -> assign(socket, key, nil)
+    end
+  end
+
   defp empty_new_value_form do
     to_form(Value.changeset(%Value{}, %{}))
   end
@@ -3506,10 +3572,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # The picture column is not loaded by regular queries; the edit form is the
   # only place that needs the raw value, so it is fetched just for that tab.
+  # Other tabs keep no form (`assign_tab_forms/2`).
   defp edit_group_form(group, "edit_group"),
     do: to_form(Group.update_changeset(Social.load_picture(group), %{}))
 
-  defp edit_group_form(group, _active_tab), do: to_form(Group.update_changeset(group, %{}))
+  defp edit_group_form(_group, _active_tab), do: nil
+
+  # The group as the edit form holds it (with its picture), also for an
+  # event that arrives after the form was dropped.
+  defp edit_group_data(socket) do
+    case socket.assigns.edit_group_form do
+      %Phoenix.HTML.Form{source: %Ecto.Changeset{data: group}} -> group
+      nil -> Social.load_picture(socket.assigns.group)
+    end
+  end
 
   # What a link to the group shows outside Potok, for its settings: as it is
   # saved, so it costs nothing while the form is being typed in.
@@ -3538,8 +3614,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp edit_group_dirty?(_form), do: false
 
+  # By the form, not the tab: `handle_params` sets the new tab first, so a
+  # check of the tab here never made the form (the edit tab then showed the
+  # one from mount, without the group's picture or its link card).
   defp maybe_reload_edit_group_form(socket, "edit_group") do
-    if socket.assigns.active_tab == "edit_group" do
+    if socket.assigns.edit_group_form do
       socket
     else
       group = socket.assigns.group
@@ -3547,12 +3626,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket
       |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
       |> assign(:link_card, link_card(group, "edit_group"))
-      |> assign(:edit_group_section, "basics")
       |> assign(:inherits_members_option?, Social.inherits_members_option?(group))
     end
   end
 
-  defp maybe_reload_edit_group_form(socket, _active_tab), do: socket
+  # Coming back to the edit tab makes a fresh form anyway (above).
+  defp maybe_reload_edit_group_form(socket, _active_tab) do
+    socket
+    |> assign(:edit_group_form, nil)
+    |> assign(:link_card, nil)
+  end
 
   # A link can open the edit tab on one of its cards.
   defp opening_edit_section(%{"section" => section}) when section in @edit_group_sections,
@@ -3744,7 +3827,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # so the save only has to bring it into view.
   defp refuse_edit_group(socket, attrs, missing) do
     changeset =
-      socket.assigns.edit_group_form.source.data
+      edit_group_data(socket)
       |> Group.update_changeset(attrs)
       |> add_template_error(missing)
       |> Map.put(:action, :validate)
@@ -4623,17 +4706,46 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # A value that just arrived is the newest one the viewer has seen, so its id
   # is the read marker; no need to look up the group's latest value. Only members
   # have unread counts, and in an open chat everyone on the page would write it.
+  #
+  # Writing it for every value cost one database write per viewer per value
+  # (a group of ~140 viewers wrote 120 per post in the load test). The page
+  # writes it at most once every few seconds, with the newest id it has
+  # shown, and when it leaves (`terminate/2`). The profile's other pages learn
+  # of it that much later.
   defp mark_value_read(%{assigns: %{is_member: false}} = socket, %Value{}), do: socket
 
-  defp mark_value_read(socket, %Value{} = value) do
-    _ =
-      Social.mark_group_values_read(
-        socket.assigns.current_profile,
-        socket.assigns.group,
-        value.id
-      )
+  defp mark_value_read(socket, %Value{id: value_id}) do
+    pending = max(socket.private[:read_marker_value_id] || 0, value_id)
+    socket = put_private(socket, :read_marker_value_id, pending)
 
-    socket
+    cond do
+      @read_marker_delay_ms == 0 ->
+        flush_read_marker(socket)
+
+      socket.private[:read_marker_scheduled?] ->
+        socket
+
+      true ->
+        Process.send_after(self(), :flush_read_marker, @read_marker_delay_ms)
+        put_private(socket, :read_marker_scheduled?, true)
+    end
+  end
+
+  defp flush_read_marker(socket) do
+    case socket.private[:read_marker_value_id] do
+      nil ->
+        socket
+
+      value_id ->
+        _ =
+          Social.mark_group_values_read(
+            socket.assigns.current_profile,
+            socket.assigns.group,
+            value_id
+          )
+
+        put_private(socket, :read_marker_value_id, nil)
+    end
   end
 
   defp maybe_mark_group_values_read(socket, group, active_tab) do
@@ -4740,6 +4852,36 @@ defmodule PotokIdeWeb.GroupLive.Show do
       })
     else
       socket
+    end
+  end
+
+  # A sub-group concerns this page's list when the list is on screen and
+  # holds it, or when it may be on it or counted by it (hidden threads have a
+  # count): a public one where the list shows public groups (the root only
+  # with its switch on), one that inherits this group's members when the
+  # viewer is one, or the viewer's own. The folder view is always read again,
+  # as its open folders are not tracked here.
+  defp child_on_list?(socket, child) do
+    %{group: group, active_tab: active_tab, current_profile: profile} = socket.assigns
+
+    cond do
+      not needs_children?(group, active_tab) ->
+        false
+
+      socket.assigns[:sub_groups_view] == "tree" ->
+        true
+
+      Enum.any?(socket.assigns.loaded_children, &(&1.id == child.id)) ->
+        true
+
+      child.public? and (socket.assigns[:show_public_sub_groups] == true or not group.is_root) ->
+        true
+
+      child.inherits? and socket.assigns[:is_member] == true ->
+        true
+
+      true ->
+        child.creator_id == profile.id
     end
   end
 

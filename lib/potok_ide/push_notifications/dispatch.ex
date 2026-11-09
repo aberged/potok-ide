@@ -18,12 +18,13 @@ defmodule PotokIde.PushNotifications.Dispatch do
 
   @doc """
   Runs `fun` off the caller (usually a LiveView process), so the UI responds
-  while the push services are called. Tests run it inline so they can assert
-  on the requests deterministically.
+  while the push services are called. Notifications wait in one line, two
+  sent at a time (`PotokIde.JobQueue`). Tests run it inline so they can
+  assert on the requests deterministically.
   """
   def run(fun) when is_function(fun, 0) do
     if Application.get_env(:potok_ide, :async_notifications, true) do
-      {:ok, _pid} = Task.Supervisor.start_child(PotokIde.TaskSupervisor, fun)
+      PotokIde.JobQueue.run(PotokIde.PushNotifications.Queue, fun)
       :ok
     else
       fun.()

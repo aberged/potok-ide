@@ -569,7 +569,7 @@ defmodule PotokIde.Social do
   end
 
   defp broadcast_group_created(%Profile{} = creator, %Group{} = parent, group, changes) do
-    broadcast_group_updated(parent)
+    broadcast_child_group_changed(parent.id, group, :created)
     broadcast_group_membership_changed(creator.id, group.id, :added)
     broadcast_inheritance_changes(changes)
   end
@@ -647,8 +647,10 @@ defmodule PotokIde.Social do
         |> insert_admin_role(current_profile)
         |> Repo.transaction()
         |> case do
+          # Only the two can see it: their pages count their unread values
+          # again on the news of the membership, which also brings the chat
+          # into their list. Every other page on the root used to reload.
           {:ok, %{group: group}} ->
-            broadcast_group_updated(root_group)
             broadcast_group_membership_changed(current_profile.id, group.id, :added)
             broadcast_group_membership_changed(other_profile.id, group.id, :added)
             {:ok, group}
@@ -682,7 +684,7 @@ defmodule PotokIde.Social do
           broadcast_group_updated(updated_group)
 
           if updated_group.parent_id do
-            broadcast_group_updated(updated_group.parent_id)
+            broadcast_child_group_changed(updated_group.parent_id, updated_group, :updated)
           end
 
           broadcast_inheritance_changes(changes)
@@ -736,7 +738,7 @@ defmodule PotokIde.Social do
           broadcast_group_updated(withdrawn)
 
           if withdrawn.parent_id do
-            broadcast_group_updated(withdrawn.parent_id)
+            broadcast_child_group_changed(withdrawn.parent_id, withdrawn, :updated)
           end
 
           broadcast_inheritance_changes(changes)
@@ -1134,7 +1136,7 @@ defmodule PotokIde.Social do
             broadcast_group_deleted(deleted_group.id, parent_id)
 
             if parent_id do
-              broadcast_group_updated(parent_id)
+              broadcast_child_group_changed(parent_id, deleted_group, :deleted)
             end
 
             {:ok, deleted_group}
@@ -2289,10 +2291,14 @@ defmodule PotokIde.Social do
     end
   end
 
+  # Previews are a nicety: when three are being fetched already, the value
+  # stays without one instead of adding another page download to memory.
   defp run_link_preview(fun) do
     if LinkPreviews.async?() do
-      {:ok, _pid} = Task.Supervisor.start_child(PotokIde.TaskSupervisor, fun)
-      :ok
+      case Task.Supervisor.start_child(PotokIde.LinkPreviews.Fetchers, fun) do
+        {:ok, _pid} -> :ok
+        {:error, :max_children} -> :ok
+      end
     else
       fun.()
     end
@@ -6044,8 +6050,9 @@ defmodule PotokIde.Social do
   # The inviter may have pages open; the new profile has none yet.
   defp broadcast_initial_direct_group(nil, _root_group, _account), do: :ok
 
-  defp broadcast_initial_direct_group(%Group{} = group, root_group, %Account{} = account) do
-    broadcast_group_updated(root_group)
+  # As for any new direct chat, the membership news brings it into the
+  # inviter's list.
+  defp broadcast_initial_direct_group(%Group{} = group, _root_group, %Account{} = account) do
     broadcast_group_membership_changed(account.invited_by_id, group.id, :added)
   end
 
@@ -6121,6 +6128,28 @@ defmodule PotokIde.Social do
       [] -> :ok
       group_ids -> broadcast_group_roles_updated(group_ids)
     end
+  end
+
+  # A sub-group was created, changed or deleted. The parent's pages read their
+  # list again only when it can concern them (GroupLive.Show): it shows the
+  # sub-group, or the sub-group is public, inherits the parent's members, or
+  # is the viewer's own. The parent used to get `group_updated`, which
+  # reloaded every page on it: on the root, every user's (~3 ms of CPU each
+  # in the load test, for every new direct chat or top-level group).
+  defp broadcast_child_group_changed(parent_id, %Group{} = child, change)
+       when is_integer(parent_id) and change in [:created, :updated, :deleted] do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(parent_id),
+      {:child_group_changed, parent_id,
+       %{
+         id: child.id,
+         change: change,
+         public?: child.is_public,
+         inherits?: child.inherits_members,
+         creator_id: child.creator_id
+       }}
+    )
   end
 
   defp broadcast_group_updated(%Group{id: group_id}), do: broadcast_group_updated(group_id)

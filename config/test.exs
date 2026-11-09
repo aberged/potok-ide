@@ -9,6 +9,9 @@ config :potok_ide, async_notifications: false
 # Apply group refresh broadcasts inline so LiveView tests stay synchronous.
 config :potok_ide, live_refresh_debounce_ms: 0
 
+# A chat page writes its read marker as each value arrives.
+config :potok_ide, read_marker_delay_ms: 0
+
 # The LiveViewTest client stands in for the websocket process and does not
 # take `:garbage_collect` (this also leaves the LiveView's own collection off).
 config :potok_ide, transport_gc_delay_ms: nil
@@ -20,6 +23,9 @@ config :potok_ide, PotokIde.LinkPreviews,
   cache_ttl: 0,
   req_options: [plug: {Req.Test, PotokIde.LinkPreviews}],
   resolver: &PotokIde.LinkPreviewsTestResolver.resolve/1
+
+# Drawn pictures stay in memory in tests, not in a shared folder on disk.
+config :potok_ide, PotokIde.RenderCache, dir: false
 
 # Tests send event reminders by calling `Events.send_due_reminders/1`.
 config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false

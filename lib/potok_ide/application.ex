@@ -15,7 +15,17 @@ defmodule PotokIde.Application do
       PotokIdeWeb.Telemetry,
       PotokIde.Cache,
       {Task.Supervisor, name: PotokIde.TaskSupervisor},
-      {Task.Supervisor, name: PotokIde.LinkCards.Renderers, max_children: 1},
+      # ImageMagick runs outside the BEAM, so its memory is not the app's to
+      # manage: link cards and PNG avatars are drawn one at a time.
+      {Task.Supervisor, name: PotokIde.Renderers, max_children: 1},
+      # A link preview reads up to 1 MB of a page; past three at once a value
+      # goes without its card rather than wait.
+      {Task.Supervisor, name: PotokIde.LinkPreviews.Fetchers, max_children: 3},
+      {PotokIde.JobQueue,
+       name: PotokIde.PushNotifications.Queue,
+       task_supervisor: PotokIde.TaskSupervisor,
+       max_running: 2,
+       max_queued: 2_000},
       PotokIde.Repo,
       {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PotokIde.PubSub},

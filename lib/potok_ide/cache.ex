@@ -3,8 +3,9 @@ defmodule PotokIde.Cache do
   Small in-memory TTL cache backed by a public ETS table.
 
   Used for values that are expensive to compute but change rarely
-  (root group, FCM access token, rendered markdown, generated avatars),
-  and for the counters of `PotokIde.RateLimit`.
+  (root group, FCM access token, rendered markdown), for the counters of
+  `PotokIde.RateLimit`, and so that one caller draws a picture that
+  `PotokIde.RenderCache` then keeps on disk.
   Entries are stored as `{key, value, expires_at_ms | :infinity}`.
   """
 

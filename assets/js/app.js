@@ -1781,8 +1781,18 @@ window.addEventListener("phx:calendar_filters", ({detail}) => {
   } catch (_error) {}
 })
 
+// After a deploy every page reconnects at once. Phoenix retries after 10,
+// 50, 100 ms...; a random part spreads those retries over a few seconds, and
+// pages fall back to long polling (a request per poll, heavier for the
+// server) only when the websocket has not connected for 10 s, not 2.5 s.
+const reconnectAfterMs = (tries) => {
+  const base = [100, 500, 1000, 2000, 5000][tries - 1] ?? 10000
+  return base + Math.floor(Math.random() * Math.min(base, 3000))
+}
+
 const liveSocket = new LiveSocket("/live", Socket, {
-  longPollFallbackMs: 2500,
+  longPollFallbackMs: 10000,
+  reconnectAfterMs,
   // Read on every join, so a page opened by live navigation gets the latest
   // choices. The calendar shows times in the viewer's zone.
   params: () => ({

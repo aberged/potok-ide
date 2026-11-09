@@ -14,6 +14,12 @@ defmodule PotokIdeWeb.ProfileAuth do
   @unread_recount_delay_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @unread_recount_spread_ms 1_000
   @transport_gc_delay_ms Application.compile_env(:potok_ide, :transport_gc_delay_ms, 2_000)
+  @transport_gc_interval_ms Application.compile_env(:potok_ide, :transport_gc_interval_ms, 20_000)
+  @transport_gc_threshold_words Application.compile_env(
+                                  :potok_ide,
+                                  :transport_gc_threshold_words,
+                                  4_096
+                                )
 
   # Views that count unread values themselves, the header badge included:
   # unread messages are passed on to them, and the badges' query leaves the
@@ -273,26 +279,54 @@ defmodule PotokIdeWeb.ProfileAuth do
   # `:garbage_collect`; this asks for it once the join reply is out.
   #
   # The LiveView process keeps the same kind of garbage from its mount and
-  # first render (~180 KB, ~60 KB live), and with values arriving every few
-  # seconds it never idles long enough to hibernate, which would shrink it.
-  # LiveView has no `:garbage_collect` message, so a hook collects once.
+  # first render (~180 KB, ~60 KB live). LiveView has no `:garbage_collect`
+  # message, so a hook collects once; after that the page hibernates whenever
+  # it idles for 2 s (`hibernate_after` in config.exs).
+  #
+  # Every update the page sends afterwards leaves its encoded frame in the
+  # transport too (~110 KB per connection under load, ~8 KB live), and that
+  # process never hibernates. So the page that owns the websocket (not a
+  # nested one) looks at it every 20 s and asks for a collection only once
+  # its heap has grown, which costs nothing for a quiet socket.
   defp schedule_transport_gc(socket) do
     delay = transport_gc_delay_ms()
 
     if delay && connected?(socket) do
       Process.send_after(socket.transport_pid, :garbage_collect, delay)
       Process.send_after(self(), :collect_first_render_garbage, delay)
+      owner? = is_nil(socket.parent_pid)
 
-      attach_hook(socket, :collect_first_render_garbage, :handle_info, fn
+      attach_hook(socket, :collect_render_garbage, :handle_info, fn
         :collect_first_render_garbage, socket ->
           :erlang.garbage_collect(self())
-          {:halt, detach_hook(socket, :collect_first_render_garbage, :handle_info)}
+
+          if owner? do
+            Process.send_after(self(), :collect_transport_garbage, @transport_gc_interval_ms)
+            {:halt, socket}
+          else
+            {:halt, detach_hook(socket, :collect_render_garbage, :handle_info)}
+          end
+
+        :collect_transport_garbage, socket ->
+          collect_transport_garbage(socket.transport_pid)
+          Process.send_after(self(), :collect_transport_garbage, @transport_gc_interval_ms)
+          {:halt, socket}
 
         _message, socket ->
           {:cont, socket}
       end)
     else
       socket
+    end
+  end
+
+  defp collect_transport_garbage(transport_pid) do
+    case Process.info(transport_pid, :total_heap_size) do
+      {:total_heap_size, words} when words > @transport_gc_threshold_words ->
+        send(transport_pid, :garbage_collect)
+
+      _small_or_gone ->
+        :ok
     end
   end
 

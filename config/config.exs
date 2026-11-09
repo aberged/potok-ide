@@ -37,6 +37,12 @@ config :potok_ide, live_refresh_debounce_ms: 100
 # the garbage that rendering the page left (see ProfileAuth); nil turns it off.
 config :potok_ide, transport_gc_delay_ms: 2_000
 
+# After that, how often a page looks at its websocket process and has it
+# collect once its heap has grown past the threshold, in words (see
+# ProfileAuth). Every update a page sends leaves its encoded frame there as
+# garbage: ~110 KB per connection in the load test, ~8 KB once collected.
+config :potok_ide, transport_gc_interval_ms: 20_000, transport_gc_threshold_words: 4_096
+
 # Files attached to values (see PotokIde.Storage). Without an adapter
 # attachments are off; dev and test keep files on disk, and runtime.exs
 # switches to a bucket when BUCKET_NAME is set.
@@ -58,7 +64,11 @@ config :potok_ide, PotokIdeWeb.Endpoint,
     layout: false
   ],
   pubsub_server: PotokIde.PubSub,
-  live_view: [signing_salt: "0toMDt7c"]
+  # A page hibernates (its heap shrinks to its live data) after 2 s with no
+  # message, not LiveView's 15 s: with updates every few seconds a page was
+  # never idle that long, and kept ~166 KB where ~63 KB was live (load test,
+  # 2026-11-09; CPU about the same).
+  live_view: [signing_salt: "0toMDt7c", hibernate_after: 2_000]
 
 # Configure the mailer
 #

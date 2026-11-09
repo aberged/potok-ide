@@ -24,12 +24,23 @@ defmodule PotokIdeWeb.Endpoint do
   socket "/live", Phoenix.LiveView.Socket,
     # A full sweep on every collection keeps each socket process's heap near
     # its small live data instead of growing an old heap of rendered pages.
+    #
+    # The largest frame a page sends is a form with an app's HTML in it (the
+    # Form app is ~230 KB) or an upload chunk (64 KB); the default allows 10 MB,
+    # which one client could use to make a socket process hold ~100 MB of
+    # decoded terms.
     websocket: [
       connect_info: [session: @session_options],
       check_origin: @check_origin,
-      fullsweep_after: 0
+      fullsweep_after: 0,
+      max_frame_size: 4_000_000
     ],
     longpoll: [connect_info: [session: @session_options], check_origin: @check_origin]
+
+  # Fly's health check (fly.toml), answered before the canonical host
+  # redirect, request logging and the session, and without the database, so a
+  # database hiccup cannot take the only machine out of routing.
+  plug :health_check
 
   # Serve at "/" the static files from "priv/static" directory.
   #
@@ -70,15 +81,29 @@ defmodule PotokIdeWeb.Endpoint do
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 
+  # Bodies are parsed before any route checks who sent them, so they are kept
+  # small: the forms (log-in, password) and the JSON (push subscriptions) are
+  # a few hundred bytes. The default 8 MB of JSON decodes into ~100 MB of
+  # terms. Only /share-target posts files, as multipart, which goes to disk.
   plug Plug.Parsers,
-    parsers: [:urlencoded, :multipart, :json],
+    parsers: [:urlencoded, {:multipart, length: 8_000_000}, :json],
     pass: ["*/*"],
+    length: 100_000,
     json_decoder: Phoenix.json_library()
 
   plug Plug.MethodOverride
   plug Plug.Head
   plug Plug.Session, @session_options
   plug PotokIdeWeb.Router
+
+  defp health_check(%Plug.Conn{request_path: "/health"} = conn, _opts) do
+    conn
+    |> Plug.Conn.put_resp_content_type("text/plain")
+    |> Plug.Conn.send_resp(200, "ok")
+    |> Plug.Conn.halt()
+  end
+
+  defp health_check(conn, _opts), do: conn
 
   defp enforce_canonical_host(conn, _opts) do
     # LiveView socket transports cannot follow host redirects reliably.
