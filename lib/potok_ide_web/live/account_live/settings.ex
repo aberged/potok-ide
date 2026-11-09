@@ -7,6 +7,8 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
   alias PotokIde.Accounts
   alias PotokIde.PushNotifications
+  alias PotokIde.RateLimit
+  alias PotokIdeWeb.RateLimited
 
   # The cards of the page, like those of the group settings tabs.
   defp settings_card_class,
@@ -388,34 +390,17 @@ defmodule PotokIdeWeb.AccountLive.Settings do
     account = socket.assigns.current_scope.account
     true = Accounts.sudo_mode?(account)
 
-    case Accounts.change_account_email(account, account_params) do
-      %{valid?: true} = changeset ->
-        case Accounts.deliver_account_update_email_instructions(
-               Ecto.Changeset.apply_action!(changeset, :insert),
-               account.email,
-               &url(~p"/accounts/settings/confirm-email/#{&1}")
-             ) do
-          {:ok, _email} ->
-            info =
-              gettext("A link to confirm your email change has been sent to the new address.")
+    changeset = Accounts.change_account_email(account, account_params)
 
-            {:noreply, socket |> put_flash(:info, info)}
-
-          error ->
-            Logger.error("Update email confirmation delivery failed: #{inspect(error)}")
-
-            {:noreply,
-             put_flash(
-               socket,
-               :error,
-               gettext(
-                 "We couldn't send the confirmation email right now. Please try again later."
-               )
-             )}
-        end
-
-      changeset ->
+    with true <- changeset.valid?,
+         :ok <- RateLimit.hit(:email_change, account.id) do
+      send_email_change(socket, account, changeset)
+    else
+      false ->
         {:noreply, assign(socket, :email_form, to_form(changeset, action: :insert))}
+
+      {:error, :rate_limited, retry_after} ->
+        {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
     end
   end
 
@@ -452,6 +437,30 @@ defmodule PotokIdeWeb.AccountLive.Settings do
        :push_subscriptions,
        list_push_subscriptions(socket.assigns.current_scope.account)
      )}
+  end
+
+  defp send_email_change(socket, account, changeset) do
+    case Accounts.deliver_account_update_email_instructions(
+           Ecto.Changeset.apply_action!(changeset, :insert),
+           account.email,
+           &url(~p"/accounts/settings/confirm-email/#{&1}")
+         ) do
+      {:ok, _email} ->
+        info =
+          gettext("A link to confirm your email change has been sent to the new address.")
+
+        {:noreply, socket |> put_flash(:info, info)}
+
+      error ->
+        Logger.error("Update email confirmation delivery failed: #{inspect(error)}")
+
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("We couldn't send the confirmation email right now. Please try again later.")
+         )}
+    end
   end
 
   defp push_subscription_type(subscription) do

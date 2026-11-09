@@ -1,8 +1,6 @@
 defmodule PotokIdeWeb.AccountLive.Login do
   use PotokIdeWeb, :live_view
 
-  alias PotokIde.Accounts
-
   @impl true
   def render(assigns) do
     ~H"""
@@ -37,8 +35,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
         <.form
           for={@form}
           id="login_form_magic"
-          action={~p"/accounts/log-in"}
-          phx-submit="submit_magic"
+          action={~p"/accounts/log-in/magic-link"}
         >
           <.input
             readonly={!!@current_scope}
@@ -81,25 +78,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
     {:ok, assign(socket, form: form)}
   end
 
-  @impl true
-  def handle_event("submit_magic", %{"account" => %{"email" => email}}, socket) do
-    # || create_account_from_login_request(email)
-    account = Accounts.get_account_by_email(email)
-
-    if account do
-      Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}"))
-    end
-
-    info =
-      gettext(
-        "If your email is in our system, you will receive instructions for logging in shortly."
-      )
-
-    {:noreply,
-     socket
-     |> put_flash(:info, info)
-     |> push_navigate(to: ~p"/accounts/log-in/magic-link")}
-  end
+  # The form posts to `AccountSessionController.magic_link/2`, which sends the link.
 
   # defp create_account_from_login_request(email) do
   #   case Accounts.register_account(%{email: email}) do

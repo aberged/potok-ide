@@ -237,6 +237,8 @@ defmodule PotokIdeWeb.Router do
     end
 
     post "/accounts/log-in", AccountSessionController, :create
+    # A plain POST rather than a LiveView event: the rate limit needs the IP.
+    post "/accounts/log-in/magic-link", AccountSessionController, :magic_link
   end
 
   scope "/", PotokIdeWeb do

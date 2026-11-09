@@ -21,6 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIde.Polls
+  alias PotokIde.RateLimit
   alias PotokIde.Storage
   alias PotokIde.Tags
 
@@ -49,6 +50,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
+  alias PotokIdeWeb.RateLimited
   alias PotokIdeWeb.{TagComponents, TagEditor}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, AppValues, Components, CreateMenu}
 
@@ -1931,7 +1933,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
           invite_profile_suggestions(current_profile, group, identifier)
         )
 
-      case invite_group_identifier(current_profile, group, identifier) do
+      account_id = socket.assigns.current_scope.account.id
+
+      case invite_group_identifier(current_profile, account_id, group, identifier) do
         {:ok, message} ->
           {:noreply,
            socket
@@ -1960,6 +1964,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         {:error, reason} when reason in [:not_permitted, :direct_group] ->
           {:noreply, put_flash(socket, :error, access_error_message(reason))}
+
+        {:error, :rate_limited, retry_after} ->
+          {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
 
         {:error, %Ecto.Changeset{}} ->
           {:noreply, put_flash(socket, :error, gettext("An invitation is already pending."))}
@@ -3771,14 +3778,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp invite_group_identifier(_current_profile, _group, "") do
+  defp invite_group_identifier(_current_profile, _account_id, _group, "") do
     {:error, :blank_identifier}
   end
 
-  defp invite_group_identifier(current_profile, group, identifier) do
+  defp invite_group_identifier(current_profile, account_id, group, identifier) do
     cond do
       valid_email_identifier?(identifier) ->
-        invite_group_by_email(current_profile, group, identifier)
+        invite_group_by_email(current_profile, account_id, group, identifier)
 
       String.contains?(identifier, "@") ->
         {:error, :invalid_email}
@@ -3801,13 +3808,18 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
-  defp invite_group_by_email(current_profile, group, email) do
+  # An address with no account gets a new one and an email, so the permission
+  # and the inviting account's limit are checked before either.
+  defp invite_group_by_email(current_profile, account_id, group, email) do
     case Accounts.get_account_by_email(email) do
       %Account{} = account ->
         invite_group_for_account(current_profile, group, account)
 
       nil ->
-        with {:ok, account} <- Accounts.register_account(%{email: email}),
+        with nil <- Social.invitation_refusal(current_profile, group),
+             :ok <- RateLimit.check(:invitation_email, account_id),
+             {:ok, account} <- Accounts.register_account(%{email: email}),
+             :ok <- RateLimit.hit(:invitation_email, account_id),
              {:ok, _email} <-
                Accounts.deliver_login_instructions(account, &url(~p"/accounts/log-in/#{&1}"),
                  invited_by: current_profile,
@@ -3819,6 +3831,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         else
           {:ok, %GroupInvitation{}} ->
             {:ok, gettext("Invitation sent.")}
+
+          reason when is_atom(reason) ->
+            {:error, reason}
 
           error ->
             error

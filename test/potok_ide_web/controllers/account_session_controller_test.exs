@@ -1,8 +1,13 @@
 defmodule PotokIdeWeb.AccountSessionControllerTest do
   use PotokIdeWeb.ConnCase, async: true
 
+  import Ecto.Query
   import PotokIde.AccountsFixtures
+
   alias PotokIde.Accounts
+  alias PotokIde.Accounts.AccountToken
+  alias PotokIde.RateLimit
+  alias PotokIde.Repo
 
   setup do
     %{unconfirmed_account: unconfirmed_account_fixture(), account: account_fixture()}
@@ -181,5 +186,173 @@ defmodule PotokIdeWeb.AccountSessionControllerTest do
       refute get_session(conn, :account_token)
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Logged out successfully"
     end
+  end
+
+  describe "POST /accounts/log-in - password rate limits" do
+    test "refuses an address after its failed attempts, even with the right password", %{
+      conn: conn,
+      account: account
+    } do
+      account = set_password(account)
+      {max, _window} = RateLimit.limit(:password_email)
+
+      for _ <- 1..max do
+        conn = post(conn, ~p"/accounts/log-in", password_params(account.email, "wrong password"))
+        assert Phoenix.Flash.get(conn.assigns.flash, :error) == "Invalid email or password"
+      end
+
+      conn = post(conn, ~p"/accounts/log-in", password_params(account.email))
+
+      refute get_session(conn, :account_token)
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Too many requests"
+      assert Phoenix.Flash.get(conn.assigns.flash, :email) == account.email
+      assert redirected_to(conn) == ~p"/accounts/log-in"
+    end
+
+    test "a successful log-in is not a failure", %{conn: conn, account: account} do
+      account = set_password(account)
+      {max, _window} = RateLimit.limit(:password_email)
+
+      for _ <- 1..max do
+        conn = post(conn, ~p"/accounts/log-in", password_params(account.email))
+        assert get_session(conn, :account_token)
+      end
+
+      assert :ok = RateLimit.check(:password_email, RateLimit.email_key(account.email))
+    end
+
+    test "refuses an IP after its attempts on any address", %{conn: conn, account: account} do
+      account = set_password(account)
+      {max, _window} = RateLimit.limit(:password_ip)
+
+      for _ <- 1..max do
+        post(conn, ~p"/accounts/log-in", password_params(unique_account_email(), "x"))
+      end
+
+      conn = post(conn, ~p"/accounts/log-in", password_params(account.email))
+
+      refute get_session(conn, :account_token)
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Too many requests"
+
+      # Another IP is not refused.
+      conn = post(build_conn(), ~p"/accounts/log-in", password_params(account.email))
+      assert get_session(conn, :account_token)
+    end
+
+    test "the confirmed action is limited the same", %{conn: conn, account: account} do
+      account = set_password(account)
+      fill(:password_email, RateLimit.email_key(account.email))
+
+      conn =
+        post(
+          conn,
+          ~p"/accounts/log-in",
+          Map.put(password_params(account.email), "_action", "confirmed")
+        )
+
+      refute get_session(conn, :account_token)
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Too many requests"
+    end
+
+    test "a new password logs in even when the address is limited", %{
+      conn: conn,
+      account: account
+    } do
+      new_password = "a new password!"
+      fill(:password_email, RateLimit.email_key(account.email))
+
+      conn =
+        conn
+        |> log_in_account(account)
+        |> post(~p"/accounts/update-password", %{
+          "account" => %{
+            "email" => account.email,
+            "password" => new_password,
+            "password_confirmation" => new_password
+          }
+        })
+
+      assert get_session(conn, :account_token)
+      assert redirected_to(conn) == ~p"/accounts/settings"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "Password updated successfully!"
+      assert Accounts.get_account_by_email_and_password(account.email, new_password)
+    end
+  end
+
+  describe "POST /accounts/log-in/magic-link" do
+    test "sends a sign-in link when the address has an account", %{conn: conn, account: account} do
+      before = login_tokens(account)
+
+      conn = post(conn, ~p"/accounts/log-in/magic-link", magic_link_params(account.email))
+
+      assert redirected_to(conn) == ~p"/accounts/log-in/magic-link"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+      assert Phoenix.Flash.get(conn.assigns.flash, :email) == account.email
+      assert login_tokens(account) == before + 1
+    end
+
+    test "answers the same for an address without an account", %{conn: conn} do
+      conn =
+        post(conn, ~p"/accounts/log-in/magic-link", magic_link_params("idonotexist@example.com"))
+
+      assert redirected_to(conn) == ~p"/accounts/log-in/magic-link"
+      assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "If your email is in our system"
+    end
+
+    test "refuses an address after its requests, whether it has an account or not", %{
+      conn: conn,
+      account: account
+    } do
+      {max, _window} = RateLimit.limit(:magic_link_email)
+      before = login_tokens(account)
+
+      for email <- [account.email, "nobody#{System.unique_integer()}@example.com"] do
+        for _ <- 1..max do
+          conn = post(conn, ~p"/accounts/log-in/magic-link", magic_link_params(email))
+          assert Phoenix.Flash.get(conn.assigns.flash, :info)
+        end
+
+        # Typed in another case, it is the same address.
+        conn =
+          post(conn, ~p"/accounts/log-in/magic-link", magic_link_params(String.upcase(email)))
+
+        assert redirected_to(conn) == ~p"/accounts/log-in/magic-link"
+        assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Too many requests"
+        refute Phoenix.Flash.get(conn.assigns.flash, :info)
+      end
+
+      assert login_tokens(account) == before + max
+    end
+
+    test "refuses an IP after its requests", %{conn: conn, account: account} do
+      {max, _window} = RateLimit.limit(:magic_link_ip)
+      before = login_tokens(account)
+
+      for _ <- 1..max do
+        post(conn, ~p"/accounts/log-in/magic-link", magic_link_params(unique_account_email()))
+      end
+
+      conn = post(conn, ~p"/accounts/log-in/magic-link", magic_link_params(account.email))
+
+      assert Phoenix.Flash.get(conn.assigns.flash, :error) =~ "Too many requests"
+      assert login_tokens(account) == before
+    end
+  end
+
+  defp password_params(email, password \\ valid_account_password()),
+    do: %{"account" => %{"email" => email, "password" => password}}
+
+  defp magic_link_params(email), do: %{"account" => %{"email" => email}}
+
+  defp fill(name, id) do
+    {max, _window} = RateLimit.limit(name)
+    for _ <- 1..max, do: RateLimit.hit(name, id)
+  end
+
+  defp login_tokens(account) do
+    Repo.aggregate(
+      from(t in AccountToken, where: t.account_id == ^account.id and t.context == "login"),
+      :count
+    )
   end
 end

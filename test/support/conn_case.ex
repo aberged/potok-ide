@@ -42,9 +42,19 @@ defmodule PotokIdeWeb.ConnCase do
   Assertions check the English copy (the msgids), while visitors default to
   Serbian. `PotokIdeWeb.LocaleTest` covers that default with
   `Phoenix.ConnTest.build_conn/0`.
+
+  Each conn comes from an IP of its own, so the limits `PotokIde.RateLimit`
+  keeps per IP do not add up over the whole suite.
   """
   def build_conn do
-    Phoenix.ConnTest.build_conn() |> Phoenix.ConnTest.init_test_session(%{locale: "en"})
+    Phoenix.ConnTest.build_conn()
+    |> Map.put(:remote_ip, unique_ip())
+    |> Phoenix.ConnTest.init_test_session(%{locale: "en"})
+  end
+
+  defp unique_ip do
+    n = System.unique_integer([:positive])
+    {10, rem(div(n, 65_536), 256), rem(div(n, 256), 256), rem(n, 256)}
   end
 
   @doc """

@@ -66,6 +66,7 @@ defmodule PotokIdeWeb.Endpoint do
 
   plug :enforce_canonical_host
 
+  plug PotokIdeWeb.ClientIp
   plug Plug.RequestId
   plug Plug.Telemetry, event_prefix: [:phoenix, :endpoint]
 

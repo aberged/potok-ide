@@ -506,6 +506,21 @@ Profiles also have a sharing mode:
 
 Group invitations are addressed to profiles, not directly to accounts. That means a shared profile carries its memberships and pending invitations with it, and any linked account can see them when that shared profile is selected as the current profile.
 
+### Limits on log-in and emails
+
+`PotokIde.RateLimit` counts what anyone can repeat without being a member of anything, in fixed windows kept in `PotokIde.Cache`'s ETS table. A refusal is a flash message saying how many minutes to wait.
+
+| What | Counted per | Limit |
+|---|---|---|
+| Password log-in attempts | IP | 60 per 10 minutes |
+| Failed password log-ins | email address | 20 per 15 minutes |
+| Login link requests | typed address, with an account or not | 5 per 15 minutes |
+| Login link requests | IP | 20 per hour |
+| Invitation emails to new addresses (`/accounts/register` and a group's invite form) | inviting account | 50 per hour |
+| Email change confirmations | account | 10 per hour |
+
+The password is hashed only after both password limits pass. An IPv6 client is counted by its /64 network. Each machine counts for itself, so with several machines a limit lets through that many times as much. Behind Fly's proxy `conn.remote_ip` is the proxy's address; `PotokIdeWeb.ClientIp` takes the client's from `Fly-Client-IP`, a header read only when `FLY_APP_NAME` is set.
+
 ## Tech Stack
 
 Backend and framework:
@@ -570,6 +585,7 @@ Routes for logged-out visitors only (logged-in accounts are redirected):
 * `GET /accounts/log-in/magic-link` to request a login link
 * `GET /accounts/log-in/:token` to confirm a login link
 * `POST /accounts/log-in`
+* `POST /accounts/log-in/magic-link` sends the login link (a plain form post, so the rate limit sees the IP)
 
 Authenticated routes:
 

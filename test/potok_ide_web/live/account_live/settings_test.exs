@@ -167,6 +167,20 @@ defmodule PotokIdeWeb.AccountLive.SettingsTest do
              )
     end
 
+    test "refuses a new address past the account's limit", %{conn: conn, account: account} do
+      {max, _window} = PotokIde.RateLimit.limit(:email_change)
+      for _ <- 1..max, do: PotokIde.RateLimit.hit(:email_change, account.id)
+
+      {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
+
+      lv
+      |> form("#email_form", %{"account" => %{"email" => unique_account_email()}})
+      |> render_submit()
+
+      assert has_element?(lv, "#flash-error p", "Too many requests in a short time.")
+      refute has_element?(lv, "#flash-info")
+    end
+
     test "renders errors with invalid data (phx-change)", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/accounts/settings")
 

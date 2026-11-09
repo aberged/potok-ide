@@ -5,7 +5,9 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.RateLimit
   alias PotokIde.Social
+  alias PotokIde.Social.AccountProfile
 
   defp conn_with_current_profile(conn) do
     account = account_fixture()
@@ -130,6 +132,47 @@ defmodule PotokIdeWeb.AccountLive.RegistrationTest do
         |> render_submit()
 
       assert result =~ "has already been taken"
+    end
+
+    test "refuses invitations past the account's limit without opening an account", %{
+      conn: conn
+    } do
+      {conn, profile} = conn_with_current_profile(conn)
+      inviter_id = PotokIde.Repo.get_by!(AccountProfile, profile_id: profile.id).account_id
+
+      {max, _window} = RateLimit.limit(:invitation_email)
+      for _ <- 1..max, do: RateLimit.hit(:invitation_email, inviter_id)
+
+      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+      email = unique_account_email()
+
+      lv
+      |> form("#registration_form", account: valid_account_attributes(email: email))
+      |> render_submit()
+
+      assert has_element?(lv, "#flash-error p", "Too many requests in a short time.")
+      refute Accounts.get_account_by_email(email)
+    end
+
+    test "a mistyped address does not count toward the limit", %{conn: conn} do
+      {conn, profile} = conn_with_current_profile(conn)
+      inviter_id = PotokIde.Repo.get_by!(AccountProfile, profile_id: profile.id).account_id
+
+      {:ok, lv, _html} = live(conn, ~p"/accounts/register")
+
+      lv
+      |> form("#registration_form", account: %{"email" => "with spaces"})
+      |> render_submit()
+
+      lv
+      |> form("#registration_form",
+        account: valid_account_attributes(email: unique_account_email())
+      )
+      |> render_submit()
+
+      {max, _window} = RateLimit.limit(:invitation_email)
+      for _ <- 1..(max - 1), do: assert(:ok = RateLimit.hit(:invitation_email, inviter_id))
+      assert {:error, :rate_limited, _} = RateLimit.hit(:invitation_email, inviter_id)
     end
   end
 end

@@ -252,6 +252,12 @@ if config_env() == :prod do
 
   config :potok_ide, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
 
+  # Fly's proxy names the client in `Fly-Client-IP`; elsewhere a client could
+  # send that header itself, so it is only read on Fly.
+  config :potok_ide,
+         :client_ip_header,
+         if(System.get_env("FLY_APP_NAME"), do: "fly-client-ip")
+
   config :potok_ide, PotokIdeWeb.Endpoint,
     url: [host: host, port: 443, scheme: "https"],
     http: [

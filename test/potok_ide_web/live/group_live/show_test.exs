@@ -3,6 +3,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
+  import PotokIde.EventsFixtures, only: [account_with_profile!: 1]
 
   alias PotokIde.Accounts
   alias PotokIde.Repo
@@ -625,6 +626,66 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert direct_group.is_direct
       refute direct_group.is_public
+    end
+
+    test "a member who may not invite opens no account and sends no email", %{conn: conn} do
+      {_owner_account, owner_profile} = account_with_profile!("email-perm-own")
+      {member_account, member_profile} = account_with_profile!("email-perm-mem")
+      group = create_child_group!(owner_profile, "email-perm-group")
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, member_profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member_profile)
+      {:ok, _manifest} = Social.create_own_group_manifest(owner_profile, group)
+
+      {:ok, _role} =
+        Social.set_group_role_permission(
+          owner_profile,
+          group,
+          "everyone",
+          :invite_members,
+          :neutral
+        )
+
+      email = unique_account_email()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(member_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      # The form is hidden from such a member, so the event comes on its own.
+      render_hook(lv, "invite", %{"invite" => %{"identifier" => email}})
+
+      assert has_element?(lv, "#flash-error")
+      refute Accounts.get_account_by_email(email)
+      refute_received {:email, %Swoosh.Email{to: [{"", ^email}]}}
+    end
+
+    test "invitations to new addresses share the account's limit with the invite page", %{
+      conn: conn
+    } do
+      {owner_account, owner_profile} = account_with_profile!("email-limit-own")
+      group = create_child_group!(owner_profile, "email-limit-group")
+
+      {max, _window} = PotokIde.RateLimit.limit(:invitation_email)
+      for _ <- 1..max, do: PotokIde.RateLimit.hit(:invitation_email, owner_account.id)
+
+      email = unique_account_email()
+
+      {:ok, lv, _html} =
+        conn
+        |> log_in_account(owner_account)
+        |> live(~p"/groups/#{group.id}/members")
+
+      lv |> element("#group-tab-invite-profile") |> render_click()
+
+      lv
+      |> form("#group-invite-form-0", %{"invite" => %{"identifier" => email}})
+      |> render_submit()
+
+      assert has_element?(lv, "#flash-error p", "Too many requests in a short time.")
+      refute Accounts.get_account_by_email(email)
+      refute_received {:email, %Swoosh.Email{to: [{"", ^email}]}}
     end
 
     test "shows invite suggestions with avatars and excludes existing members and pending invitees",

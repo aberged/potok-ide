@@ -46,31 +46,31 @@ defmodule PotokIdeWeb.AccountLive.LoginTest do
   end
 
   describe "account login - magic link" do
-    test "sends magic link email when account exists", %{conn: conn} do
-      account = account_fixture()
-
+    # Sending is `AccountSessionControllerTest`'s: the form is a plain POST, so
+    # the rate limit can see the IP.
+    test "the form posts to the controller that sends the link", %{conn: conn} do
       {:ok, lv, _html} = live(conn, ~p"/accounts/log-in/magic-link")
 
-      {:ok, _lv, html} =
-        form(lv, "#login_form_magic", account: %{email: account.email})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/accounts/log-in/magic-link")
+      assert has_element?(
+               lv,
+               ~s(#login_form_magic[action="/accounts/log-in/magic-link"][method="post"])
+             )
 
-      assert html =~ "If your email is in our system"
-
-      assert PotokIde.Repo.get_by!(PotokIde.Accounts.AccountToken, account_id: account.id).context ==
-               "login"
+      refute has_element?(lv, "#login_form_magic[phx-submit]")
     end
 
-    test "does not disclose if account is registered", %{conn: conn} do
-      {:ok, lv, _html} = live(conn, ~p"/accounts/log-in/magic-link")
+    test "fills in the address the controller sends back", %{conn: conn} do
+      conn =
+        post(conn, ~p"/accounts/log-in/magic-link", %{
+          "account" => %{"email" => "someone@example.com"}
+        })
 
-      {:ok, _lv, html} =
-        form(lv, "#login_form_magic", account: %{email: "idonotexist@example.com"})
-        |> render_submit()
-        |> follow_redirect(conn, ~p"/accounts/log-in/magic-link")
+      assert redirected_to(conn) == ~p"/accounts/log-in/magic-link"
+
+      {:ok, lv, html} = live(recycle(conn), ~p"/accounts/log-in/magic-link")
 
       assert html =~ "If your email is in our system"
+      assert has_element?(lv, ~s(#login_form_magic_email[value="someone@example.com"]))
     end
   end
 

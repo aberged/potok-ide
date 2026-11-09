@@ -3,7 +3,8 @@ defmodule PotokIde.Cache do
   Small in-memory TTL cache backed by a public ETS table.
 
   Used for values that are expensive to compute but change rarely
-  (root group, FCM access token, rendered markdown, generated avatars).
+  (root group, FCM access token, rendered markdown, generated avatars),
+  and for the counters of `PotokIde.RateLimit`.
   Entries are stored as `{key, value, expires_at_ms | :infinity}`.
   """
 
@@ -87,6 +88,18 @@ defmodule PotokIde.Cache do
     value
   rescue
     ArgumentError -> value
+  end
+
+  @doc """
+  Adds one to the counter under `key` and returns the new count. A missing
+  key starts at 0 and expires `ttl` milliseconds from now; later increments
+  keep that expiry. Returns 0 when the table is not there.
+  """
+  def increment(key, ttl) when is_integer(ttl) do
+    expires_at = System.monotonic_time(:millisecond) + ttl
+    :ets.update_counter(@table, key, {2, 1}, {key, 0, expires_at})
+  rescue
+    ArgumentError -> 0
   end
 
   def delete(key) do

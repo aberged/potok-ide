@@ -1194,18 +1194,25 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Why `inviter` may not invite an account to `group`, or nil when it may.
+  Checked before an invitation by email opens an account and sends the email.
+  """
+  def invitation_refusal(%Profile{} = inviter, %Group{} = group) do
+    cond do
+      not member_of_group?(inviter, group) -> :inviter_not_a_member
+      group.is_direct -> :direct_group
+      not Access.can?(inviter, group, :invite_members) -> :not_permitted
+      true -> nil
+    end
+  end
+
   def invite_account_to_group(%Profile{} = inviter, %Group{} = group, %Account{} = account) do
     account = Accounts.get_account!(account.id)
 
     cond do
-      not member_of_group?(inviter, group) ->
-        {:error, :inviter_not_a_member}
-
-      group.is_direct ->
-        {:error, :direct_group}
-
-      not Access.can?(inviter, group, :invite_members) ->
-        {:error, :not_permitted}
+      reason = invitation_refusal(inviter, group) ->
+        {:error, reason}
 
       profile = get_account_default_profile(account) ->
         case invite_profile_to_group(inviter, group, profile) do
