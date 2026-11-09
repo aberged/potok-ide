@@ -14,6 +14,13 @@ x-app-env: &app-env
   MAILGUN_DOMAIN: potok.test
   # The nodes find each other like on Fly: every node's address behind one name.
   DNS_CLUSTER_QUERY: appcluster
+  # VM flags for this run (run.sh): the Fly profiles start one scheduler, as a
+  # Fly VM sees one CPU while this container sees all of the host's.
+  # rel/env.sh.eex only sets ERL_AFLAGS on Fly, so it is free here.
+  ERL_AFLAGS: ${APP_ERL_AFLAGS:-}
+  # Read only by a test variant built from a scratch worktree (A/B of
+  # LiveView's hibernate_after); the app itself ignores it.
+  LV_HIBERNATE_AFTER: ${LV_HIBERNATE_AFTER:-}
 
 x-app: &app
   image: potok_load_app

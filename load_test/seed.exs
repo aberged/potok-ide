@@ -27,6 +27,21 @@ defmodule LoadTest.Seed do
   @memberships_per_user 4
   @dms_per_user 3
 
+  # App groups under root, shaped like production on 2026-11-09 (14 of its 63
+  # root sub-groups were apps, with 440 KB of descriptions): the preset apps
+  # with their real files from priv/apps, a second feed and ten small apps.
+  # {app, name, preset, file, share of users who are members, public?}
+  @app_groups [
+    {"forme", "Forma", :questionnaire, "forme.html", 0.05, false},
+    {"feed", "Vesti", :feed, "feed.html", 0.20, true},
+    {"glasanje", "Glasanje", :polls, "glasanje.html", 0.10, true},
+    {"feed", "Vesti 2", :feed, "feed.html", 0.05, true}
+  ]
+  @mini_apps 10
+  @mini_app_share 0.05
+  @feed_stories 8
+  @data_values_per_app 40
+
   def run(n, out_dir \\ "/load_test/results") when is_integer(n) and n >= 10 do
     :rand.seed(:exsss, {17, 29, n})
 
@@ -64,10 +79,15 @@ defmodule LoadTest.Seed do
     {big_group_id, regular} = insert_regular_groups(root, profile_ids, now)
     dms = insert_direct_groups(root, profiles, now)
 
+    log("app groups")
+    apps = insert_app_groups(root, profile_ids, now)
+
     log("values")
     group_members = [{big_group_id, profile_ids} | regular] ++ dms
     latest = insert_values(group_members, big_group_id, dms, now)
     threads = insert_threads(regular, latest, now)
+    insert_app_data_values(apps, now)
+    set_last_value_at()
 
     log("read markers")
     insert_read_markers(group_members ++ threads, latest, now)
@@ -75,7 +95,11 @@ defmodule LoadTest.Seed do
     log("session tokens and cookies")
     cookies = insert_session_tokens(account_ids, now)
 
-    groups_by_profile = memberships_by_profile([{big_group_id, profile_ids} | regular])
+    app_members = Enum.map(apps, &{&1.id, &1.members})
+
+    groups_by_profile =
+      memberships_by_profile([{big_group_id, profile_ids} | regular] ++ app_members)
+
     dms_by_profile = memberships_by_profile(dms)
     write_users(out_dir, n, profile_ids, cookies, groups_by_profile, dms_by_profile)
 
@@ -83,7 +107,10 @@ defmodule LoadTest.Seed do
       users: n,
       root_id: root.id,
       big_group_id: big_group_id,
+      # group id => which app it runs, for loadgen's App API calls
+      apps: Map.new(apps, &{Integer.to_string(&1.id), &1.app}),
       groups: length(regular) + 1,
+      app_groups: length(apps),
       direct_groups: length(dms),
       threads: length(threads),
       values: Repo.aggregate(Value, :count),
@@ -147,7 +174,16 @@ defmodule LoadTest.Seed do
         {parent_id, pool, pool_size, depth} = pick_parent(nestable, root.id, profile_ids, n)
         members = Enum.take_random(pool, min(size, pool_size))
         public? = :rand.uniform() < 0.3
-        [id] = insert_groups([group_row("Grupa #{index}", parent_id, hd(members), public?, now)])
+
+        # Production's plain groups mostly have no description (p90 25 bytes).
+        description = if :rand.uniform() < 0.1, do: group_description(index), else: ""
+
+        row =
+          "Grupa #{index}"
+          |> group_row(parent_id, hd(members), public?, now)
+          |> Map.put(:description, description)
+
+        [id] = insert_groups([row])
         insert_creator_rows(id, members, now)
 
         nestable =
@@ -283,7 +319,8 @@ defmodule LoadTest.Seed do
   end
 
   # A few value threads (sub-groups started from a chat value) in mid-sized
-  # groups; like Social.create_value_thread they copy the parent's members.
+  # groups; like Social.create_value_thread they inherit the parent's members:
+  # the creator is a direct member and MemberInheritance adds the rest.
   defp insert_threads(regular, latest, now) do
     candidates =
       Enum.filter(regular, fn {id, members} -> length(members) in 10..500 and latest[id] end)
@@ -294,16 +331,149 @@ defmodule LoadTest.Seed do
     |> Enum.take_random(count)
     |> Enum.map(fn {group_id, members} ->
       value_id = Enum.random(latest[group_id])
+      %{rows: [[public?]]} = Repo.query!("SELECT is_public FROM groups WHERE id = $1", [group_id])
 
       [id] =
         insert_groups([
-          group_row("Nit #{value_id}", group_id, hd(members), false, now)
-          |> Map.merge(%{parent_value_id: value_id, home_page: :chat})
+          group_row("Nit #{value_id}", group_id, hd(members), public?, now)
+          |> Map.merge(%{parent_value_id: value_id, home_page: :chat, inherits_members: true})
         ])
 
-      insert_creator_rows(id, members, now)
+      insert_creator_rows(id, [hd(members)], now)
+      PotokIde.Social.MemberInheritance.sync(Repo, id)
       {id, members}
     end)
+  end
+
+  defp insert_app_groups(root, profile_ids, now) do
+    n = length(profile_ids)
+
+    presets =
+      Enum.map(@app_groups, fn {app, name, preset, file, share, public?} ->
+        {app, name, preset, app_file(file), share, public?}
+      end)
+
+    minis =
+      Enum.map(1..@mini_apps, fn i ->
+        {"mini", "Aplikacija #{i}", nil, mini_app_html(i), @mini_app_share, false}
+      end)
+
+    Enum.map(presets ++ minis, fn {app, name, preset, html, share, public?} ->
+      members = Enum.take_random(profile_ids, max(round(n * share), 3))
+
+      row =
+        name
+        |> group_row(root.id, hd(members), public?, now)
+        |> Map.merge(%{
+          description: html,
+          description_format: :html,
+          uses_api: true,
+          home_page: :description,
+          preset: preset
+        })
+
+      [id] = insert_groups([row])
+      insert_creator_rows(id, members, now)
+      if app == "feed", do: insert_feed_stories(id, members, now)
+      %{id: id, members: members, app: app}
+    end)
+  end
+
+  # Feed lists the sub-groups of its ".feed" group as stories.
+  defp insert_feed_stories(feed_id, [creator | _], now) do
+    [dot_feed] =
+      insert_groups([
+        group_row(".feed", feed_id, creator, false, now)
+        |> Map.merge(%{home_page: :subgroups, inherits_members: true})
+      ])
+
+    insert_creator_rows(dot_feed, [creator], now)
+    PotokIde.Social.MemberInheritance.sync(Repo, dot_feed)
+
+    Enum.each(1..@feed_stories, fn i ->
+      [story] =
+        insert_groups([
+          group_row("Vest #{i}", dot_feed, creator, false, now)
+          |> Map.merge(%{
+            description: group_description(i),
+            home_page: :description,
+            inherits_members: true,
+            published_at: DateTime.add(now, -i * 3600, :second)
+          })
+        ])
+
+      insert_creator_rows(story, [creator], now)
+      PotokIde.Social.MemberInheritance.sync(Repo, story)
+    end)
+  end
+
+  # Plain data values (no collection), about the size apps keep (~265 B of JSON).
+  defp insert_app_data_values(apps, now) do
+    rows =
+      for %{id: group_id, members: members, app: app} <- apps,
+          app in ["forme", "mini"],
+          k <- 1..@data_values_per_app do
+        at = DateTime.add(now, -k * 600, :second)
+
+        %{
+          content: "data:",
+          content_format: :markdown,
+          is_data: true,
+          data: %{
+            "title" => "Stavka #{k}",
+            "status" => Enum.random(["open", "done", "waiting"]),
+            "amount" => :rand.uniform(1000),
+            "note" => "Podatak iz load testa za aplikaciju u grupi #{group_id}, red #{k}."
+          },
+          mentions: %{},
+          mentioned_profile_ids: [],
+          creator_id: Enum.random(members),
+          group_id: group_id,
+          inserted_at: at,
+          updated_at: at
+        }
+      end
+
+    insert_rows(Value, rows)
+  end
+
+  # What the migration that added the column does: the newest chat value.
+  defp set_last_value_at do
+    Repo.query!("""
+    UPDATE groups g
+    SET last_value_at = v.last_value_at
+    FROM (
+      SELECT group_id, MAX(inserted_at) AS last_value_at
+      FROM values
+      WHERE is_data = FALSE
+      GROUP BY group_id
+    ) v
+    WHERE v.group_id = g.id
+    """)
+  end
+
+  defp app_file(file),
+    do: :potok_ide |> Application.app_dir(Path.join("priv/apps", file)) |> File.read!()
+
+  # About 8 KB of HTML, like a small pasted app.
+  defp mini_app_html(i) do
+    rows =
+      Enum.map_join(1..60, "\n", fn k ->
+        ~s(<li class="item" data-k="#{k}">Stavka #{k} male aplikacije #{i}, sa malo opisa.</li>)
+      end)
+
+    """
+    <div id="mini-app-#{i}"><h1>Aplikacija #{i}</h1><ul>#{rows}</ul></div>
+    <script>window.potok && window.potok.listValues && window.potok.listValues({limit: 20})</script>
+    """
+  end
+
+  defp group_description(i) do
+    paragraph =
+      "Ovo je opis grupe #{i} u load testu. **Potok** grupa ima pravila, članove i poruke; " <>
+        "ovaj tekst služi samo da opis ima veličinu kakvu ljudi pišu. "
+
+    "## O grupi #{i}\n\n" <> String.duplicate(paragraph, 8)
   end
 
   # 70% of members are caught up, 20% are behind, 10% never opened the group.

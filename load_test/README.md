@@ -7,7 +7,7 @@ Production is never touched.
 | File | What it does |
 |---|---|
 | `docker-compose.yml` | `db` (Postgres 16 + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `loadgen` |
-| `seed.exs` | Bulk-inserts N users, groups (one with everyone, Zipf-sized others, nesting), direct groups, threads, messages and read markers; writes `results/users_<N>.csv` with signed remember-me cookies |
+| `seed.exs` | Bulk-inserts N users, groups (one with everyone, Zipf-sized others, nesting), direct groups, threads, messages and read markers, and app groups under root shaped like production's (the preset apps from `priv/apps`, a feed with stories, ten small apps, data values); writes `results/users_<N>.csv` with signed remember-me cookies and `results/users_<N>.json` with the app group ids |
 | `sampler.exs` | Injected into the running app over `rpc`; writes `server.jsonl` every 5 s (BEAM memory, run queue, scheduler use, busiest mailboxes, LiveViews per view, Repo queue/query time, per-table DB time, LiveView mount/event times, traffic with the other node) |
 | `loadgen.exs` | One Erlang process per virtual user: page load with cookie, avatars, websocket, `phx_join`, heartbeats, live navigation, posts, reactions; writes `loadgen.jsonl` every 10 s and `summary.json` |
 | `run.sh` | Starts the stack with a profile, seeds if needed, starts the samplers, runs loadgen and collects everything into `results/<run>/` |
@@ -15,6 +15,11 @@ Production is never touched.
 | `inspect_ws.exs` | Over `rpc` during a run: memory of the websocket transport (Bandit handler) and LiveView processes, before and after a garbage collection of a sample |
 | `profile_requests.exs` | Over `rpc` during a run: samples the stacks of running processes for `PROFILE_SECONDS` and prints the hottest frames (the release has no `:tools`, so no tprof) |
 | `dist_probe.exs` | `--scenario probe`: posts values on a quiet two-node cluster and prints the messages and bytes each one costs between the nodes, by group size |
+| `micro.exs` | Over `rpc` on an idle app: how long one link card (ImageMagick) and one password check take on the container's CPU |
+| `memwatch.sh` | In the app container next to `micro.exs`: peak cgroup memory and the largest ImageMagick process |
+| `inspect_bin.exs` | Over `rpc` during a run: which processes hold the binary memory, and the ETS tables by size |
+| `inspect_ports.exs` | Over `rpc` during a run: memory and buffers of the TCP ports, and the binaries kept in `PotokIde.Cache` |
+| `probe_root_reload.exs` | Over `rpc` during a run: the CPU one new direct chat costs, as every open root page reloads (`group_updated` on root) |
 
 ## Running
 
@@ -33,7 +38,12 @@ docker compose build app        # after app code changes
 
 The run options:
 
-- **Profiles.** `fly` is 1 CPU / 512 MB, like `fly.toml`. `big` is 6 CPU / 3 GB. `cluster` is two nodes of 3 CPU / 1.2 GB, connected by DNSCluster like on Fly, with the users split evenly between them.
+- **Profiles.**
+  - `fly` is what the app gets on the Fly machine of `fly.toml` (shared-cpu-1x, 512 MB): 1 CPU, one scheduler and 425 MB. Measured on prod on 2026-11-09, the VM sees 461 MB, and hallpass, init and the kernel take about 36 MB of that. The container sees all of the host's CPUs, so `+S 1:1 +SDcpu 1:1` gives the BEAM the one scheduler it has on Fly. Before 2026-11-09 this profile gave 512 MB and 16 schedulers, so older numbers are not comparable.
+  - `throttled` is the same machine once Fly's CPU quota has run out: a shared CPU gets 5 ms per 80 ms (6.25%), and only a burst balance of at most 500 s runs it faster. It boots on a full CPU and drops to 0.0625 when the sampler starts.
+  - `big` is 6 CPU / 3 GB. `cluster` is two nodes of 3 CPU / 1.2 GB, connected by DNSCluster like on Fly, with the users split evenly between them.
+  - `--cpus`, `--mem` and `--erl-flags "..."` change one run without a rebuild (e.g. `--erl-flags "+sbwt none"`).
+- **The laptop is faster than Fly.** The same shell loop took 1.2–1.6 s here (1 CPU) and 1.7 s on the prod machine (AMD EPYC), so CPU numbers from here are 1.1–1.4× too low for Fly.
 - **Scales.** `1k` and `10k` use separate databases. Each is seeded on first use. `--reseed` starts over.
 - **Loadgen options.** Anything else is passed to `loadgen.exs`: `--think-min`, `--think-max`, `--poster-share`, `--post-min`, `--post-max`, `--big-post-share`, `--big-post-rate`, `--storm-window`.
 
@@ -46,6 +56,7 @@ Scenarios:
   - 5%: `/profiles`.
 
   10% of users post every 30–90 s, 5% of those posts in the group that has everyone. Readers react now and then.
+  An app group among a user's groups opens on its app, and loadgen then sends the App API calls that app makes when it opens (`app_*` metrics).
 - **`storm`.** `mix`, then every websocket drops and reconnects within 5 s, as after a deploy.
 - **`biggroup`.** Everyone sits in the group that has everyone (or on root). Posts go there at `--big-post-rate` per second.
 - **`probe`.** No users: see `dist_probe.exs`. Needs `--profile cluster`.
@@ -77,8 +88,12 @@ The metrics:
 - **`rejoin`.** A join after a reconnect.
 - **`event_*`.** Event round trips.
 - **`delivery_chat`.** Time from a post until another user viewing that group sees it.
-- **`delivery_root`.** The same for the root page, through the unread refresh.
+- **`delivery_root`.** The same for the root page. The root page never shows message text, so this is almost never measured.
 - **`heartbeat`.** Socket round trip, without a LiveView.
+- **`join_bytes_root|group|app`.** The size of the join reply, by page; these are bytes, so the summary's "ms" column reads as KB.
+- **`err.event_post_refused`.** A post that got "ok" without its text in the reply (refused with a flash).
+
+`loadgen.jsonl` lines carry `wall_ms`, so they line up with `server.jsonl` and `docker.csv`.
 
 The run behaves as follows:
 

@@ -4,7 +4,7 @@
 #
 # Every 5 s it appends one JSON line to server.jsonl: BEAM memory, run queue,
 # scheduler utilization, the busiest mailboxes, LiveView processes per view,
-# root presence size, and telemetry histograms for Repo queries (queue and
+# rows in the presence table, and telemetry histograms for Repo queries (queue and
 # query time, time per table), LiveView mount/handle_params/handle_event/render
 # and router dispatch. Histograms are log buckets (10% wide) kept in ETS
 # counters, so the overhead stays flat however much traffic comes in.
@@ -68,12 +68,10 @@ defmodule LoadTest.Sampler do
 
     :ok = :telemetry.attach_many(@handler, @events, &__MODULE__.handle_event/4, tab)
     _previously_on? = :msacc.start()
-    root = PotokIde.Social.get_root_group!()
 
     state = %{
       tab: tab,
       path: Path.join(out_dir, "server.jsonl"),
-      presence_topic: PotokIde.Social.group_presence_topic(root),
       sched: :scheduler.sample_all(),
       reductions: %{},
       dist: %{}
@@ -168,7 +166,7 @@ defmodule LoadTest.Sampler do
       rss_mb: rss_mb(),
       alloc: allocator_sizes(),
       dist: dist,
-      presence_root: presence_size(state.presence_topic),
+      presence_rows: presence_rows(),
       hist: histograms(rows),
       db_sources: db_sources(rows),
       exceptions: for({{:exc, name}, count} <- rows, into: %{}, do: {name, count}),
@@ -312,8 +310,10 @@ defmodule LoadTest.Sampler do
     for {:carriers_size, current, _max, _max_ever} <- items, reduce: 0, do: (acc -> acc + current)
   end
 
-  defp presence_size(topic) do
-    topic |> PotokIde.Presence.list() |> map_size()
+  # Rows of `PotokIde.Presence`'s table (who is online where); the root page
+  # tracks no presence, so the root topic was always empty.
+  defp presence_rows do
+    :ets.info(PotokIde.Presence.Online, :size)
   catch
     _, _ -> nil
   end

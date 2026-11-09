@@ -480,6 +480,8 @@ defmodule LoadGen.User do
        when kind in [:join, :nav_join, :rejoin] do
     if join_ref == state.join_ref do
       Metrics.count("join.ok.#{kind}")
+      # Bytes, not µs: the summary's "ms" column then reads as KB.
+      Metrics.hist(String.to_atom("join_bytes_" <> page_class(state)), byte_size(frame))
       debug(state, "joined #{kind} #{inspect(state.page)}")
       ids = Regex.scan(~r/"value-(\d+)"/, frame, capture: :all_but_first)
 
@@ -494,6 +496,7 @@ defmodule LoadGen.User do
       }
       |> set_joined(true)
       |> set_failing(false)
+      |> app_calls()
     else
       state
     end
@@ -524,6 +527,32 @@ defmodule LoadGen.User do
   end
 
   defp handle_reply(state, :heartbeat, _meta, _payload, _frame), do: state
+
+  # A refused post also gets "ok" (with a flash); only an inserted one comes
+  # back with its own text in the diff.
+  defp handle_reply(state, :event_post, nonce, %{"status" => "ok"}, frame)
+       when is_binary(nonce) do
+    if :binary.match(frame, nonce) == :nomatch,
+      do: Metrics.count("err.event_post_refused"),
+      else: Metrics.count("event.ok.event_post")
+
+    state
+  end
+
+  defp handle_reply(state, kind, _meta, %{"status" => "ok"}, frame)
+       when kind in [
+              :app_get_group,
+              :app_list_subgroups,
+              :app_get_config,
+              :app_list_values,
+              :app_list_polls
+            ] do
+    if :binary.match(frame, ~s("ok":false)) == :nomatch,
+      do: Metrics.count("event.ok.#{kind}"),
+      else: Metrics.count("err.#{kind}_refused")
+
+    state
+  end
 
   defp handle_reply(state, kind, _meta, %{"status" => "ok"} = payload, _frame) do
     Metrics.count("event.ok.#{kind}")
@@ -686,8 +715,10 @@ defmodule LoadGen.User do
 
   defp pick_post_target(%{cfg: %{scenario: "biggroup"} = cfg}), do: cfg.big_group_id
 
+  # App groups open on their app, which has no chat composer.
   defp pick_post_target(state) do
-    others = (state.user.groups -- [state.cfg.big_group_id]) ++ state.user.dms
+    chats = Enum.reject(state.user.groups, &Map.has_key?(state.cfg.apps, &1))
+    others = (chats -- [state.cfg.big_group_id]) ++ state.user.dms
 
     if others == [] or :rand.uniform() < state.cfg.big_post_share,
       do: state.cfg.big_group_id,
@@ -703,20 +734,62 @@ defmodule LoadGen.User do
     field = URI.encode_www_form("value[content]")
     body = "#{field}=#{URI.encode_www_form(text)}"
 
+    nonce = text |> String.split(" ", parts: 2) |> hd()
+
     %{state | seq: seq}
     |> push_event("form", "validate_value", "#{body}&_target=#{field}", :event_validate)
-    |> push_event("form", "create_value", body, :event_post)
+    |> push_event("form", "create_value", body, :event_post, nonce)
     |> tap(fn _ -> Metrics.count("posts.sent") end)
   end
+
+  # What each app asks for when it opens (the method names AppApi.run/3 takes).
+  @app_calls %{
+    "feed" => [{"get_group", %{}}, {"list_subgroups", %{"name" => ".feed", "limit" => 20}}],
+    "forme" => [{"get_group", %{}}, {"get_config", %{}}, {"list_values", %{"limit" => 50}}],
+    "glasanje" => [{"get_group", %{}}, {"list_polls", %{}}],
+    "mini" => [{"get_group", %{}}, {"list_values", %{"limit" => 20}}]
+  }
+
+  @app_kinds %{
+    "get_group" => :app_get_group,
+    "list_subgroups" => :app_list_subgroups,
+    "get_config" => :app_get_config,
+    "list_values" => :app_list_values,
+    "list_polls" => :app_list_polls
+  }
+
+  defp app_calls(%{page: {:group, id}} = state) do
+    case Map.get(state.cfg.apps, id) do
+      nil ->
+        state
+
+      app ->
+        Enum.reduce(Map.fetch!(@app_calls, app), state, fn {method, params}, state ->
+          value = %{"method" => method, "params" => params, "app_id" => ""}
+          push_event(state, "hook", "app_api", value, Map.fetch!(@app_kinds, method))
+        end)
+    end
+  end
+
+  defp app_calls(state), do: state
+
+  defp page_class(%{page: :root}), do: "root"
+
+  defp page_class(%{page: {:group, id}} = state),
+    do: if(Map.has_key?(state.cfg.apps, id), do: "app", else: "group")
+
+  defp page_class(_state), do: "other"
 
   defp react(state) do
     value = %{"id" => Integer.to_string(Enum.random(state.value_ids)), "emoji" => "👍"}
     push_event(state, "click", "toggle_reaction", value, :event_react)
   end
 
-  defp push_event(%{joined?: false} = state, _type, _event, _value, _kind), do: state
+  defp push_event(state, type, event, value, kind, meta \\ nil)
 
-  defp push_event(state, type, event, value, kind) do
+  defp push_event(%{joined?: false} = state, _type, _event, _value, _kind, _meta), do: state
+
+  defp push_event(state, type, event, value, kind, meta) do
     {state, ref} = next_ref(state)
 
     state =
@@ -728,7 +801,7 @@ defmodule LoadGen.User do
         %{type: type, event: event, value: value}
       ])
 
-    put_pending(state, ref, kind)
+    put_pending(state, ref, kind, meta)
   end
 
   # ---- navigation ----
@@ -829,6 +902,12 @@ defmodule LoadGen.User do
     t0 = System.monotonic_time(:microsecond)
 
     case Http.get(state.cfg, path, state.cookies) do
+      {:ok, 200, _body, _cookies, "/accounts/log-in" <> _, conn} ->
+        # The log-in page is a LiveView too, so it would parse and look connected.
+        Mint.HTTP.close(conn)
+        Metrics.hist(:page, System.monotonic_time(:microsecond) - t0)
+        fail(state, "auth_redirect")
+
       {:ok, 200, body, cookies, final_path, conn} ->
         Metrics.hist(:page, System.monotonic_time(:microsecond) - t0)
         Metrics.count("http.200")
@@ -1198,7 +1277,9 @@ defmodule LoadGen.Main do
         |> String.split(",", trim: true)
         |> Enum.map(&String.to_integer/1),
       root_id: meta["root_id"],
-      big_group_id: meta["big_group_id"]
+      big_group_id: meta["big_group_id"],
+      # group id => app ("forme", "feed", "glasanje", "mini"); seeds before 2026-11-09 have none
+      apps: Map.new(meta["apps"] || %{}, fn {id, app} -> {String.to_integer(id), app} end)
     }
 
     File.mkdir_p!(cfg.out)
@@ -1366,6 +1447,8 @@ defmodule LoadGen.Main do
 
     line = %{
       t: elapsed,
+      # Wall clock, to line up with server.jsonl and docker.csv.
+      wall_ms: System.system_time(:millisecond),
       phase: Metrics.phase(),
       started: started,
       connected: connected,
