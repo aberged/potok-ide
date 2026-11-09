@@ -3,7 +3,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
   The folder view of the sub-groups tab, loaded a level at a time: the
   folders directly below the group first, then those below a folder once it
   is opened, a page per level (see `Social.list_sub_group_folders/3`). A
-  search shows its matches and the folders on the way to them instead.
+  search, or a kind, membership or authorship picked in the filters, shows
+  its matches and the folders on the way to them instead.
 
   The tree is a map with the top level as `nodes` and whether it has another
   page as `more?`, the `ids` of every folder loaded, the `thread_count` for
@@ -23,21 +24,27 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
   The tree of `group`. Options: `threads?: false` leaves out threads,
   `public?: false` the public groups the profile is not in (see
   `Social.list_sub_group_folders/3`), `search:` shows the matches of a term,
-  and `thread_count:` is the number of threads directly below the group.
+  `preset:` the groups of one kind and `relation:` the profile's memberships
+  or own groups (as `Social.search_sub_group_folders/4` takes them), and
+  `thread_count:` is the number of threads directly below the group.
 
-  Without a search, the folders open in `previous` (the tree this one
-  replaces) are loaded again as far as they were and stay open, so a reload
-  keeps the view as it was. A search opens the folders on the way to its
-  matches, and the tree after it starts closed again.
+  Without any of these filters, the folders open in `previous` (the tree
+  this one replaces) are loaded again as far as they were and stay open, so
+  a reload keeps the view as it was. A filter opens the folders on the way
+  to its matches, and the tree after it starts closed again.
   """
   def load(%Group{} = group, profile, previous, opts \\ []) do
     search = if opts[:search] in [nil, ""], do: nil, else: opts[:search]
+    preset = if opts[:preset] in [nil, ""], do: nil, else: opts[:preset]
+    relation = if opts[:relation] in [nil, ""], do: nil, else: opts[:relation]
 
     tree = %{
       group_id: group.id,
       threads?: Keyword.get(opts, :threads?, true),
       public?: Keyword.get(opts, :public?, true),
       search: search,
+      preset: preset,
+      relation: relation,
       base_thread_count: Keyword.get(opts, :thread_count, 0),
       thread_count_floor: 0,
       nodes: [],
@@ -95,11 +102,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     |> refresh()
   end
 
-  defp load_nodes(%{search: nil} = tree, group, profile, previous) do
+  defp load_nodes(%{search: nil, preset: nil, relation: nil} = tree, group, profile, previous) do
     {top_limit, open} =
       case previous do
-        %{search: nil, nodes: nodes} -> {max(length(nodes), @page_size), open_folders(nodes)}
-        _after_search -> {@page_size, []}
+        %{search: nil, preset: nil, relation: nil, nodes: nodes} ->
+          {max(length(nodes), @page_size), open_folders(nodes)}
+
+        _after_search ->
+          {@page_size, []}
       end
 
     pages =
@@ -115,7 +125,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   defp load_nodes(tree, group, profile, previous) do
     {folders, truncated?} =
-      Social.search_sub_group_folders(group, profile, tree.search, folder_filters(tree))
+      Social.search_sub_group_folders(
+        group,
+        profile,
+        tree.search,
+        [preset: tree.preset, relation: tree.relation] ++ folder_filters(tree)
+      )
 
     %{
       tree

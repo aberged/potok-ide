@@ -1,9 +1,13 @@
 defmodule PotokIde.Social.SubGroupTreeTest do
   use PotokIde.DataCase
 
+  import Ecto.Query, only: [from: 2]
   import PotokIde.AccountsFixtures
 
+  alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Social.Group
+  alias PotokIdeWeb.GroupLive.Show.SubGroupTree
 
   setup do
     owner = profile!("subtree-owner")
@@ -37,6 +41,7 @@ defmodule PotokIde.Social.SubGroupTreeTest do
       nested: nested,
       deep: deep,
       public_child: public_child,
+      private_child: private_child,
       thread: thread,
       thread_child: thread_child
     }
@@ -133,6 +138,146 @@ defmodule PotokIde.Social.SubGroupTreeTest do
     end
   end
 
+  describe "search_sub_group_folders/4 by kind" do
+    setup ctx do
+      kind!(ctx.deep, :chat, false)
+      kind!(ctx.public_child, :feed, true)
+      # Made as a chat, then given an app: no longer a chat.
+      kind!(ctx.beta, :chat, true)
+      :ok
+    end
+
+    test "finds the groups of a kind at any depth with the folders on the way", ctx do
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, preset: "chat")
+
+      assert Enum.map(folders, &{&1.name, &1.parent_id}) == [
+               {"alpha", ctx.group.id},
+               {"alpha-nested", ctx.alpha.id},
+               {"deep-leaf", ctx.nested.id}
+             ]
+
+      assert {[%{name: "gamma-public"}], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "", preset: "feed")
+    end
+
+    test "takes the search and the kind together", ctx do
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "alpha", preset: "chat")
+
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "leaf", preset: "chat")
+
+      assert List.last(folders).name == "deep-leaf"
+    end
+
+    test "none finds the groups that show no kind", ctx do
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, preset: "none")
+
+      names = Enum.map(folders, & &1.name)
+      assert "alpha" in names
+      assert "Beta" in names
+      refute "deep-leaf" in names
+      refute "gamma-public" in names
+    end
+
+    test "an unknown kind and no search find nothing", ctx do
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, preset: "bogus")
+    end
+
+    test "the tree opens the way to them and starts closed after", ctx do
+      tree = SubGroupTree.load(ctx.group, ctx.owner, nil, preset: "chat")
+
+      assert [%{group: %{name: "alpha"}, open?: true, children: [nested]}] = tree.nodes
+      assert %{open?: true, children: [%{group: %{name: "deep-leaf"}}]} = nested
+
+      after_kind = SubGroupTree.load(ctx.group, ctx.owner, tree)
+      assert Enum.map(after_kind.nodes, & &1.group.name) == ["alpha", "Beta", "gamma-public"]
+      assert Enum.all?(after_kind.nodes, &(not &1.open?))
+    end
+  end
+
+  describe "search_sub_group_folders/4 by membership and authorship" do
+    setup ctx do
+      # Made by the other profile, the owner in it, deep down.
+      add_member!(ctx.owner, ctx.deep, ctx.other)
+      theirs = child!(ctx.other, ctx.deep, "theirs")
+      add_member!(ctx.other, theirs, ctx.owner)
+      %{theirs: theirs}
+    end
+
+    test "member finds the profile's groups at any depth, not the public ones it is not in",
+         ctx do
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, relation: "member")
+
+      names = Enum.map(folders, & &1.name)
+      assert "theirs" in names
+      assert "deep-leaf" in names
+      refute "gamma-public" in names
+    end
+
+    test "creator finds only the profile's own groups, with the folders on the way", ctx do
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, relation: "creator")
+
+      names = Enum.map(folders, & &1.name)
+      assert "deep-leaf" in names
+      assert "under-thread" in names
+      refute "theirs" in names
+      refute "gamma-public" in names
+
+      # The other profile's own: `theirs` sits below the owner's private
+      # folders, which it cannot see, so the search cannot reach it.
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.other, "", relation: "creator")
+
+      assert Enum.map(folders, &{&1.name, &1.parent_id}) == [
+               {"below-private", ctx.private_child.id},
+               {"gamma-public", ctx.group.id},
+               {"hidden-private", ctx.group.id}
+             ]
+
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, "theirs",
+                 relation: "creator"
+               )
+    end
+
+    test "takes the kind together with it", ctx do
+      kind!(ctx.theirs, :chat, false)
+
+      assert {folders, false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil,
+                 relation: "member",
+                 preset: "chat"
+               )
+
+      assert List.last(folders).name == "theirs"
+
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil,
+                 relation: "creator",
+                 preset: "chat"
+               )
+    end
+
+    test "an unknown relation and no search find nothing", ctx do
+      assert {[], false} =
+               Social.search_sub_group_folders(ctx.group, ctx.owner, nil, relation: "bogus")
+    end
+
+    test "the tree opens the way and starts closed after", ctx do
+      tree = SubGroupTree.load(ctx.group, ctx.other, nil, relation: "creator")
+      assert Enum.any?(tree.nodes, & &1.open?)
+
+      after_relation = SubGroupTree.load(ctx.group, ctx.other, tree)
+      assert Enum.all?(after_relation.nodes, &(not &1.open?))
+    end
+  end
+
   describe "without the public groups the profile is not in" do
     setup %{owner: owner, other: other, group: group, alpha: alpha} do
       # Public and the owner is not in it, but in a group below it.
@@ -226,6 +371,11 @@ defmodule PotokIde.Social.SubGroupTreeTest do
   defp child!(owner, parent, name, attrs \\ %{}) do
     {:ok, group} = Social.create_group(owner, parent, group_attrs(name, attrs))
     group
+  end
+
+  defp kind!(group, preset, uses_api) do
+    from(g in Group, where: g.id == ^group.id)
+    |> Repo.update_all(set: [preset: preset, uses_api: uses_api])
   end
 
   defp add_member!(owner, group, profile) do

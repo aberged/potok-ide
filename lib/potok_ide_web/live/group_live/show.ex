@@ -14,6 +14,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupAccountInvitation,
     GroupAltDescription,
     GroupInvitation,
+    GroupPresets,
     GroupRole,
     Profile,
     Value,
@@ -436,6 +437,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
             other_sub_groups_unread_count={@other_sub_groups_unread_count}
             children_search_query={@children_search_query}
+            children_preset={@children_preset}
+            children_relation={@children_relation}
             show_thread_sub_groups={@show_thread_sub_groups}
             thread_sub_groups_count={@thread_sub_groups_count}
             thread_sub_groups_unread_count={@thread_sub_groups_unread_count}
@@ -673,6 +676,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:thread_unread_counts, %{})
          |> assign(:thread_sub_groups_unread_count, 0)
          |> assign(:children_search_query, "")
+         |> assign(:children_preset, nil)
+         |> assign(:children_relation, nil)
          |> assign(:show_thread_sub_groups, connect_show_threads?(socket))
          |> assign(:show_public_sub_groups, connect_show_public_groups?(socket))
          |> assign(:thread_sub_groups_count, 0)
@@ -1281,6 +1286,52 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> assign(:children_search_query, "")
+     |> assign(:children_pagination, default_pagination(@children_page_size))
+     |> reload_children()}
+  end
+
+  # One kind at a time, or all of them (""). Like the search, it holds only
+  # while the viewer stays on the group.
+  def handle_event("filter_children_preset", %{"preset" => preset}, socket) do
+    next_preset = if preset in GroupPresets.filter_keys(), do: preset
+
+    if next_preset == socket.assigns.children_preset do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:children_preset, next_preset)
+       |> assign(:children_pagination, default_pagination(@children_page_size))
+       |> reload_children()}
+    end
+  end
+
+  def handle_event("filter_children_preset", _params, socket), do: {:noreply, socket}
+
+  # The viewer's memberships ("member"), its own groups ("creator"), or all
+  # (""). It holds as long as the kind does.
+  def handle_event("filter_children_relation", %{"relation" => relation}, socket) do
+    next_relation = if relation in Social.child_group_relations(), do: relation
+
+    if next_relation == socket.assigns.children_relation do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> assign(:children_relation, next_relation)
+       |> assign(:children_pagination, default_pagination(@children_page_size))
+       |> reload_children()}
+    end
+  end
+
+  def handle_event("filter_children_relation", _params, socket), do: {:noreply, socket}
+
+  # Takes off the kind and the membership filters; the search keeps its own reset.
+  def handle_event("clear_children_filters", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:children_preset, nil)
+     |> assign(:children_relation, nil)
      |> assign(:children_pagination, default_pagination(@children_page_size))
      |> reload_children()}
   end
@@ -3893,15 +3944,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Hidden threads are filtered out; shown ones mix with the other sub-groups.
   # The root leaves out the public groups the viewer is not in until shown,
-  # but those on the way to one of its groups.
+  # but those on the way to one of its groups. Direct conversations have no
+  # kind and are all the viewer's own, so the kind and membership filters
+  # leave them alone.
   defp children_filters(socket) do
     [
       is_direct: child_group_direct_filter(socket.assigns.sub_groups_kind),
       is_thread: if(socket.assigns.show_thread_sub_groups, do: nil, else: false),
       public: socket.assigns.show_public_sub_groups or not socket.assigns.group.is_root,
-      search: normalize_children_search_query(socket.assigns.children_search_query)
+      search: normalize_children_search_query(socket.assigns.children_search_query),
+      preset: children_narrowing(socket.assigns, :children_preset),
+      relation: children_narrowing(socket.assigns, :children_relation)
     ]
   end
+
+  defp children_narrowing(%{sub_groups_kind: "direct"}, _key), do: nil
+  defp children_narrowing(assigns, key), do: Map.fetch!(assigns, key)
 
   # The threads filter is only offered when the group has thread sub-groups;
   # the count ignores the search so the filter stays put while searching.
@@ -4204,6 +4262,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         threads?: filters[:is_thread] != false,
         public?: filters[:public],
         search: filters[:search],
+        preset: filters[:preset],
+        relation: filters[:relation],
         thread_count: count_thread_children(socket)
       )
 

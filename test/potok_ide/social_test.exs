@@ -1726,6 +1726,122 @@ defmodule PotokIde.SocialTest do
                Social.list_child_groups_page_for_profile(parent, viewer, public: false, limit: 1)
     end
 
+    test "preset: keeps the groups of the kind their avatar shows" do
+      {_account, owner} = EventsFixtures.account_with_profile!("kind-owner")
+      parent = EventsFixtures.group_with_members!(owner, [])
+
+      kind! = fn preset, uses_api ->
+        group = EventsFixtures.group_with_members!(owner, [], %{parent: parent})
+
+        from(g in Group, where: g.id == ^group.id)
+        |> PotokIde.Repo.update_all(set: [preset: preset, uses_api: uses_api])
+
+        group.id
+      end
+
+      chat = kind!.(:chat, false)
+      announcements = kind!.(:announcements, false)
+      feed = kind!.(:feed, true)
+      # Made as a chat, then given an app: the avatar shows the puzzle.
+      chat_with_app = kind!.(:chat, true)
+      # A feed whose app was taken away shows no kind either.
+      feed_without_app = kind!.(:feed, false)
+      by_hand = kind!.(nil, false)
+      pasted_app = kind!.(nil, true)
+
+      ids = fn opts ->
+        parent |> Social.list_child_groups_for_profile(owner, opts) |> Enum.map(& &1.id)
+      end
+
+      assert ids.(preset: "chat") == [chat]
+      assert ids.(preset: "announcements") == [announcements]
+      assert ids.(preset: "feed") == [feed]
+      assert ids.(preset: "polls") == []
+
+      assert Enum.sort(ids.(preset: "none")) ==
+               Enum.sort([chat_with_app, feed_without_app, by_hand, pasted_app])
+
+      # Anything else is no filter at all.
+      assert length(ids.(preset: "bogus")) == 7
+      assert length(ids.(preset: nil)) == 7
+
+      assert Social.list_child_group_ids_for_profile(parent, owner, preset: "feed") == [feed]
+      assert Social.count_child_groups_for_profile(parent, owner, preset: "none") == 4
+
+      assert {[_group], 4} =
+               Social.list_child_groups_page_for_profile(parent, owner, preset: "none", limit: 1)
+
+      assert ids.(preset: "chat", search: "nothing-like-it") == []
+    end
+
+    test "relation: keeps the viewer's memberships or the groups it made" do
+      {_account, owner} = EventsFixtures.account_with_profile!("rel-owner")
+      {_account, viewer} = EventsFixtures.account_with_profile!("rel-viewer")
+      parent = EventsFixtures.group_with_members!(owner, [viewer])
+
+      # Made by the owner, the viewer in it.
+      joined = EventsFixtures.group_with_members!(owner, [viewer], %{parent: parent})
+
+      # Made by the owner, the viewer a member through inheritance.
+      inherited =
+        EventsFixtures.group_with_members!(owner, [], %{
+          :parent => parent,
+          "inherits_members" => true
+        })
+
+      # Public, made by the owner, the viewer not in it.
+      open =
+        EventsFixtures.group_with_members!(owner, [], %{:parent => parent, "is_public" => true})
+
+      # Made by the viewer.
+      {:ok, own} =
+        Social.create_group(viewer, parent, %{
+          "name" => "rel-own",
+          "description" => "",
+          "description_format" => :markdown
+        })
+
+      # Made by the viewer, who has left it since; public, so still listed.
+      {:ok, left} =
+        Social.create_group(viewer, parent, %{
+          "name" => "rel-left",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      from(m in PotokIde.Social.GroupMembership,
+        where: m.group_id == ^left.id and m.profile_id == ^viewer.id
+      )
+      |> PotokIde.Repo.delete_all()
+
+      ids = fn opts ->
+        parent |> Social.list_child_groups_for_profile(viewer, opts) |> Enum.map(& &1.id)
+      end
+
+      assert Enum.sort(ids.([])) == Enum.sort([joined.id, inherited.id, open.id, own.id, left.id])
+
+      assert Enum.sort(ids.(relation: "member")) == Enum.sort([joined.id, inherited.id, own.id])
+      assert Enum.sort(ids.(relation: "creator")) == Enum.sort([own.id, left.id])
+      assert length(ids.(relation: "bogus")) == 5
+
+      assert Social.count_child_groups_for_profile(parent, viewer, relation: "member") == 3
+
+      assert {[_group], 2} =
+               Social.list_child_groups_page_for_profile(parent, viewer,
+                 relation: "creator",
+                 limit: 1
+               )
+
+      assert ids.(relation: "creator", search: "own") == [own.id]
+
+      from(g in Group, where: g.id == ^own.id)
+      |> PotokIde.Repo.update_all(set: [preset: :chat])
+
+      assert ids.(relation: "member", preset: "chat") == [own.id]
+      assert ids.(relation: "creator", preset: "folder") == []
+    end
+
     test "returns only child groups where the profile is a member" do
       account = account_fixture()
       other_account = account_fixture()
@@ -2260,6 +2376,17 @@ defmodule PotokIde.SocialTest do
       assert listed.(root, public: false, search: "below-inside") == [below_inside.id]
       assert listed.(root, public: false, is_direct: true) == []
 
+      # The kind filter reaches them too.
+      from(g in Group, where: g.id == ^below_inside.id)
+      |> PotokIde.Repo.update_all(set: [preset: :chat])
+
+      assert listed.(root, public: false, preset: "chat") == [below_inside.id]
+      refute below_inside.id in listed.(root, public: false, preset: "none")
+
+      # So do the membership filters: the reader is in each of them, made by the owner.
+      assert listed.(root, public: false, relation: "member") == everything -- [public_below.id]
+      assert listed.(root, public: false, relation: "creator") == []
+
       # Only the root: a group's own list stays what the profile can see in it.
       assert listed.(joined, []) == []
       assert listed.(below, []) == [deep.id]
@@ -2275,6 +2402,9 @@ defmodule PotokIde.SocialTest do
                Social.search_sub_group_folders(root, reader, "below-inside", public?: false)
 
       assert id == below_inside.id
+
+      assert {[%{id: ^id, parent_id: ^root_id}], false} =
+               Social.search_sub_group_folders(root, reader, nil, public?: false, preset: "chat")
     end
 
     test "the root lists a thread left without its parent, though threads are hidden" do

@@ -146,7 +146,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Groups and sub-groups"),
         text:
           gettext(
-            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form or page."
+            "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form or page. You can then narrow the list of sub-groups by kind, to the groups you are in, or to those you created."
           )
       },
       %{

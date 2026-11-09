@@ -214,6 +214,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   defp preset(key), do: Enum.find(presets(), &(&1.key == key))
 
   @doc """
+  The presets as kinds of group, in the order of this menu, for the kind
+  filter of the sub-groups tab: `%{key, icon, title}`.
+  """
+  def kinds, do: Enum.map(presets(), &Map.take(&1, [:key, :icon, :title]))
+
+  @doc """
   The icon and name of a preset (a `Group.preset` value) for the mark on the
   avatar of a group made from it: the same as in this menu, in the small size.
   Each `mark` is written out, as Tailwind makes the CSS only of icon names it

@@ -3188,13 +3188,18 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
+  @child_group_relations ~w(member creator)
+
   @doc """
   Child groups of `group` the profile can see, most active first. Options:
   `:is_direct` and `:is_thread` (true or false keep only those groups, nil
   keeps both; thread groups are the ones started from a chat value),
-  `:search` on the name, `public: false` to leave out the public groups the
-  profile is not in, but those with one of its memberships below them, and
-  `:limit` / `:offset`.
+  `:search` on the name, `:preset` for the groups of one kind (a key of
+  `GroupPresets.filter_keys/0`, by what `GroupPresets.shown/1` gives),
+  `:relation` for the groups the profile is a member of (`"member"`, also by
+  inheritance) or made (`"creator"`), `public: false` to leave out the public
+  groups the profile is not in, but those with one of its memberships below
+  them, and `:limit` / `:offset`.
 
   The root also lists the groups no other list leads to, whose parent the
   profile cannot see (`detached_group_ids/1`), even if they are threads.
@@ -3597,21 +3602,26 @@ defmodule PotokIde.Social do
 
   # The `WITH` head that defines `visible_children`: the sub-groups of $1 that
   # profile $2 can see, its memberships plus the public ones, filtered by $3
-  # (direct), $4 (name search) and $5 (thread). Without `public?`, only the
-  # public ones on the way to a membership further down (`member_paths`).
-  # The root adds the detached groups, $6 (`detached_group_ids/1`, empty
-  # elsewhere), which $5 leaves alone as threads have no switch there. They
-  # come as ids so no page pays for finding them: the walk up to the root
-  # inside this statement would make Postgres JIT-compile it on every group page.
+  # (direct), $4 (name search), $5 (thread), $7 (kind) and $8 (member or
+  # creator). Without `public?`, only the public ones on the way to a
+  # membership further down (`member_paths`). The root adds the detached groups, $6
+  # (`detached_group_ids/1`, empty elsewhere), which $5 leaves alone as
+  # threads have no switch there. They come as ids so no page pays for
+  # finding them: the walk up to the root inside this statement would make
+  # Postgres JIT-compile it on every group page.
   # The memberships are read first, behind OFFSET 0: the cached generic plan
   # would otherwise walk every child of the group to probe them, and the root
   # is the parent of every direct conversation.
   defp visible_children_sql(public?) do
-    name_filters =
+    own_filters =
       "($3::boolean IS NULL OR g.is_direct = $3)" <>
-        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')"
+        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')" <>
+        " AND ($7::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $7)" <>
+        " AND ($8::text IS NULL OR ($8 = 'creator' AND g.creator_id = $2)" <>
+        " OR ($8 = 'member' AND EXISTS (" <>
+        "SELECT 1 FROM group_memberships rm WHERE rm.group_id = g.id AND rm.profile_id = $2)))"
 
-    filters = "#{name_filters} AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
+    filters = "#{own_filters} AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
     public_filter = if public?, do: "", else: " AND g.id IN (SELECT id FROM member_paths)"
 
     """
@@ -3637,9 +3647,31 @@ defmodule PotokIde.Social do
       SELECT g.id, g.inserted_at, g.last_value_at
       FROM groups g
       WHERE g.id = ANY($6::bigint[])
-        AND #{name_filters}
+        AND #{own_filters}
     )
     """
+  end
+
+  # `GroupPresets.shown/1` in SQL: the preset of group `alias` while the group
+  # still fits it, else NULL.
+  defp shown_preset_sql(alias) do
+    apps = Enum.map_join(GroupPresets.app_keys(), ", ", &"'#{&1}'")
+
+    "CASE WHEN (#{alias}.preset IN (#{apps})) = #{alias}.uses_api THEN #{alias}.preset END"
+  end
+
+  defp normalize_preset_filter(preset) when is_atom(preset) and not is_nil(preset),
+    do: normalize_preset_filter(Atom.to_string(preset))
+
+  defp normalize_preset_filter(preset) do
+    if preset in GroupPresets.filter_keys(), do: preset
+  end
+
+  @doc "What `:relation` takes in the sub-group lists: the profile's memberships or its own groups."
+  def child_group_relations, do: @child_group_relations
+
+  defp normalize_relation_filter(relation) do
+    if relation in @child_group_relations, do: relation
   end
 
   defp visible_children_head(true), do: "WITH"
@@ -3683,7 +3715,9 @@ defmodule PotokIde.Social do
       normalize_boolean_filter(opts[:is_direct]),
       normalize_group_search_term(opts[:search]),
       normalize_boolean_filter(opts[:is_thread]),
-      if(group.is_root, do: detached_group_ids(profile), else: [])
+      if(group.is_root, do: detached_group_ids(profile), else: []),
+      normalize_preset_filter(opts[:preset]),
+      normalize_relation_filter(opts[:relation])
     ]
   end
 
@@ -3710,7 +3744,7 @@ defmodule PotokIde.Social do
   defp ordered_child_group_ids_query(limit, offset, public?),
     do: ordered_child_groups_query("vc.id", limit, offset, public?)
 
-  # Unread counts arrive as $7 / $8; the newest chat value comes from
+  # Unread counts arrive as $9 / $10; the newest chat value comes from
   # `groups.last_value_at`, kept up to date by `create_value/4` and
   # `delete_value/2`. `sort_child_groups/2` sorts the same way in memory.
   defp ordered_child_groups_query(select, limit, offset, public?) do
@@ -3718,7 +3752,7 @@ defmodule PotokIde.Social do
     #{visible_children_sql(public?)}
     SELECT #{select}
     FROM visible_children vc
-    LEFT JOIN UNNEST($7::bigint[], $8::bigint[]) AS uc(group_id, unread_count)
+    LEFT JOIN UNNEST($9::bigint[], $10::bigint[]) AS uc(group_id, unread_count)
       ON uc.group_id = vc.id
     ORDER BY
       COALESCE(uc.unread_count, 0) DESC,
@@ -3735,16 +3769,16 @@ defmodule PotokIde.Social do
     |> Enum.join()
   end
 
-  # $1..$8 are the filters and unread counts of `ordered_child_group_ids_query/3`.
-  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $9"]
+  # $1..$10 are the filters and unread counts of `ordered_child_group_ids_query/3`.
+  defp maybe_add_limit_sql(parts, limit) when is_integer(limit), do: parts ++ [" LIMIT $11"]
   defp maybe_add_limit_sql(parts, _limit), do: parts
 
   defp maybe_add_offset_sql(parts, limit, offset)
        when is_integer(limit) and is_integer(offset),
-       do: parts ++ [" OFFSET $10"]
+       do: parts ++ [" OFFSET $12"]
 
   defp maybe_add_offset_sql(parts, nil, offset) when is_integer(offset),
-    do: parts ++ [" OFFSET $9"]
+    do: parts ++ [" OFFSET $11"]
 
   defp maybe_add_offset_sql(parts, _limit, _offset), do: parts
 
@@ -4106,37 +4140,49 @@ defmodule PotokIde.Social do
   search walks down breadth first through #{@sub_group_search_max_groups}
   sub-groups at most and keeps the first #{@sub_group_search_max_matches}
   matches; `{folders, truncated?}` tells whether it cut either. Takes the
-  options of `list_sub_group_folders/3`; threads leave out what is below
-  them too.
+  options of `list_sub_group_folders/3`, where threads leave out what is
+  below them too, and `:preset` and `:relation`, which keep the matches of
+  one kind, or the profile's memberships or own groups, as in
+  `list_child_groups_for_profile/3`: with either, `search` may be nil.
   """
   def search_sub_group_folders(%Group{} = group, profile, search, opts \\ []) do
-    case normalize_group_search_term(search) do
-      nil -> {[], false}
-      term -> run_sub_group_search(group, profile, term, opts)
-    end
+    filters = %{
+      term: normalize_group_search_term(search),
+      preset: normalize_preset_filter(opts[:preset]),
+      relation: normalize_relation_filter(opts[:relation])
+    }
+
+    if filters == %{term: nil, preset: nil, relation: nil},
+      do: {[], false},
+      else: run_sub_group_search(group, profile, filters, opts)
   end
 
-  defp run_sub_group_search(group, profile, term, opts) do
+  defp run_sub_group_search(group, profile, filters, opts) do
     visible =
       "#{sub_group_filter_sql("g")}" <>
         " AND (g.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("g")})"
 
+    kind = shown_preset_sql("g")
+
     sql = """
     WITH RECURSIVE #{sub_group_memberships_sql()},
     tree AS (
-      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, ARRAY[g.id] AS path
+      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, #{kind} AS kind,
+        g.creator_id, ARRAY[g.id] AS path
       FROM groups g
       WHERE g.parent_id = $1 AND #{visible}
 
       UNION ALL
 
-      SELECT g.id, $1::bigint, g.name, g.parent_value_id, g.is_public, ARRAY[g.id]
+      SELECT g.id, $1::bigint, g.name, g.parent_value_id, g.is_public, #{kind}, g.creator_id,
+        ARRAY[g.id]
       FROM groups g
       WHERE g.id = ANY($8::bigint[]) AND g.is_direct = FALSE
 
       UNION ALL
 
-      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, t.path || g.id
+      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, #{kind}, g.creator_id,
+        t.path || g.id
       FROM tree t
       JOIN groups g ON g.parent_id = t.id
       WHERE #{visible}
@@ -4144,7 +4190,10 @@ defmodule PotokIde.Social do
     walked AS (SELECT * FROM tree LIMIT $3::integer + 1),
     matches AS (
       SELECT w.path FROM walked w
-      WHERE w.name ILIKE '%' || $2::text || '%'
+      WHERE ($2::text IS NULL OR w.name ILIKE '%' || $2::text || '%')
+        AND ($9::text IS NULL OR COALESCE(w.kind, 'none') = $9)
+        AND ($10::text IS NULL OR ($10 = 'creator' AND w.creator_id = $5)
+          OR ($10 = 'member' AND w.id IN (SELECT group_id FROM mine)))
       LIMIT $4::integer + 1
     ),
     shown AS (
@@ -4168,13 +4217,15 @@ defmodule PotokIde.Social do
 
     params = [
       group.id,
-      term,
+      filters.term,
       @sub_group_search_max_groups,
       @sub_group_search_max_matches,
       profile && profile.id,
       Keyword.get(opts, :threads?, true),
       Keyword.get(opts, :public?, true),
-      detached_ids_below(profile, [group.id])
+      detached_ids_below(profile, [group.id]),
+      filters.preset,
+      filters.relation
     ]
 
     %{rows: [[truncated? | _] | _] = rows} =

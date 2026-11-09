@@ -1111,7 +1111,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form or page. A preset sets what any group can have and nothing remembers it, so all of it can be changed later. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls and a form keep a copy of their app the same way, and a form gets its two groups for files only once it needs them."
+            "A new <Group>group</Group> can start from a preset: chat, folder, announcements, feed, polls, form or page. A preset sets what any group can have, so all of it can be changed later. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. Announcements also get a <GroupManifest>manifest</GroupManifest> of their own, in which `everyone` no longer writes. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls and a form keep a copy of their app the same way, and a form gets its two groups for files only once it needs them."
           )
       },
       %{
