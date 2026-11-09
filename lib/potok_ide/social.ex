@@ -445,7 +445,8 @@ defmodule PotokIde.Social do
                creator,
                parent,
                GroupPresets.attrs(preset, choices),
-               GroupPresets.taken_from_everyone(preset)
+               GroupPresets.taken_from_everyone(preset),
+               GroupPresets.preset(preset)
              ),
            {:ok, feed, feed_created} <- insert_preset_feed(creator, group, preset) do
         {group, feed, created ++ feed_created}
@@ -509,9 +510,10 @@ defmodule PotokIde.Social do
 
   defp insert_preset_feed(_creator, _group, _preset), do: {:ok, nil, []}
 
-  defp insert_preset_group(%Profile{} = creator, %Group{} = parent, attrs, taken) do
+  # `preset` is the one the group is made from, nil for what comes with it.
+  defp insert_preset_group(%Profile{} = creator, %Group{} = parent, attrs, taken, preset \\ nil) do
     with {:ok, attrs} <- checked_group_attrs(creator, parent, attrs),
-         {:ok, group, changes} <- insert_group_quietly(creator, parent, attrs),
+         {:ok, group, changes} <- insert_group_quietly(creator, parent, attrs, preset),
          :ok <- take_from_everyone(creator, group, taken) do
       {:ok, group, [{parent, group, changes}]}
     end
@@ -574,10 +576,11 @@ defmodule PotokIde.Social do
 
   # The creator is a direct member and admin; an inheriting group then gets
   # the parent's members. It tells nobody: `broadcast_group_created/4` follows.
-  defp insert_group_quietly(%Profile{} = creator, %Group{} = parent, attrs) do
+  defp insert_group_quietly(%Profile{} = creator, %Group{} = parent, attrs, preset \\ nil) do
     changeset =
       %Group{}
       |> Group.changeset(attrs)
+      |> Ecto.Changeset.put_change(:preset, preset)
       |> validate_inheritance_parent(parent.id)
 
     Multi.new()

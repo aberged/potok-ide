@@ -1,9 +1,10 @@
 defmodule PotokIde.Social.GroupPresets do
   @moduledoc """
-  Ready setups for a new group. A preset fills in what any group can have and
-  nothing remembers it afterwards, so all of it can be changed later on the
-  group's settings and roles. `Social.create_group/3` stays the way to set
-  everything by hand.
+  Ready setups for a new group. A preset fills in what any group can have, so
+  all of it can be changed later on the group's settings and roles. The group
+  keeps only the preset's name (`Group.preset`), for the mark on its avatar,
+  which shows while the group still fits it (`shown/1`).
+  `Social.create_group/3` stays the way to set everything by hand.
 
   The apps of a feed, of a group for polls and of a form are files in
   `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
@@ -18,6 +19,9 @@ defmodule PotokIde.Social.GroupPresets do
   # The form's key is not "form", whose element id the menu's own form has.
   @keys ~w(chat folder announcements feed polls questionnaire page)
 
+  # The presets whose group opens on an app.
+  @apps ~w(feed polls questionnaire)a
+
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
 
@@ -28,6 +32,21 @@ defmodule PotokIde.Social.GroupPresets do
   @chosen_by_viewer ~w(name is_public inherits_members)
 
   def keys, do: @keys
+
+  @doc "The value of `Group.preset` for a group made from `preset`."
+  def preset(preset) when preset in @keys, do: String.to_existing_atom(preset)
+
+  @doc """
+  The preset `group` was made from while it still fits: one with an app while
+  the group has an app, any other while it has none. Nil for a group made by
+  hand, or before presets were kept.
+  """
+  def shown(group) do
+    preset = Map.get(group, :preset)
+    app? = Map.get(group, :uses_api) == true
+
+    if preset && preset in @apps == app?, do: preset
+  end
 
   @doc """
   What the viewer starts from for what is theirs to pick. Only a feed is

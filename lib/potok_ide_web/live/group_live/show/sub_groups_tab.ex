@@ -181,7 +181,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             ]}
           >
             <.icon
-              name={if(@show_public_sub_groups, do: "hero-megaphone", else: "hero-eye-slash")}
+              name={if(@show_public_sub_groups, do: "hero-globe-alt", else: "hero-eye-slash")}
               class="size-4"
             />
             <span class="hidden sm:inline">{gettext("Public groups")}</span>
@@ -297,7 +297,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             phx-click="toggle_public_sub_groups"
             size="sm"
           >
-            <.icon name="hero-megaphone" class="size-4" />
+            <.icon name="hero-globe-alt" class="size-4" />
             {gettext("Show public groups")}
           </.button>
         </div>
@@ -587,7 +587,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           />
         <% end %>
         <Components.avatar_mark
-          icon={if(@group.public?, do: "hero-megaphone-micro", else: "hero-lock-closed-micro")}
+          icon={if(@group.public?, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")}
           class="-bottom-1 -left-1 size-3.5 [&>span]:size-2.5"
         />
       </span>

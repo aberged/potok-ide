@@ -7,6 +7,9 @@ defmodule PotokIde.Social.Group do
 
   @description_formats [:markdown, :html]
   @home_pages [:chat, :description, :subgroups]
+  # The keys of `PotokIde.Social.GroupPresets`, written out: that module matches
+  # on this struct, so reading them from it would compile in a circle.
+  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :page]
 
   schema "groups" do
     field :name, :string
@@ -23,6 +26,10 @@ defmodule PotokIde.Social.Group do
     field :is_root, :boolean, default: false
     field :is_root_public, :boolean, default: false
     field :uses_api, :boolean, default: false
+    # The ready setup the group was made from, for the mark on its avatar
+    # (`GroupPresets.shown/1`); nil for any other. Set once by
+    # `Social.create_group_from_preset/4`, never cast.
+    field :preset, Ecto.Enum, values: @presets
     # Holds every member of the parent (see `Social.MemberInheritance`).
     # Threads always do; `Social` keeps it off for the root's children.
     field :inherits_members, :boolean, default: false
@@ -199,6 +206,7 @@ defmodule PotokIde.Social.Group do
     changeset
     |> check_constraint(:description_format, name: :groups_description_format_check)
     |> check_constraint(:home_page, name: :groups_home_page_check)
+    |> check_constraint(:preset, name: :groups_preset_check)
     |> check_constraint(:is_public, name: :groups_root_private_check)
     |> check_constraint(:parent_id, name: :groups_root_parent_check)
     |> check_constraint(:creator_id, name: :groups_root_creator_check)

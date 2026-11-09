@@ -3,13 +3,21 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Locale
-  alias PotokIdeWeb.GroupLive.Show.{DescriptionTemplateForm, EventCard, MediaViewer, PollCard}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    CreateMenu,
+    DescriptionTemplateForm,
+    EventCard,
+    MediaViewer,
+    PollCard
+  }
+
   alias PotokIdeWeb.PostTemplates.Post
   alias PotokIdeWeb.TagComponents
 
   alias PotokIde.LinkPreviews
   alias PotokIde.Polls.Poll
-  alias PotokIde.Social.{Group, Mentions, Profile, Value, ValueAttachment}
+  alias PotokIde.Social.{Group, GroupPresets, Mentions, Profile, Value, ValueAttachment}
   alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
@@ -727,6 +735,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :icon, :string, required: true
   attr :title, :string, default: nil
   attr :class, :any, default: nil
+  attr :rest, :global
 
   @doc "A small mark on the corner of an avatar, for the kind of group or profile it is."
   def avatar_mark(assigns) do
@@ -738,6 +747,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         "absolute inline-flex size-4 items-center justify-center rounded-full bg-base-100 text-base-content/70 shadow-sm ring-1 ring-base-300",
         @class
       ]}
+      {@rest}
     >
       <.icon name={@icon} class="size-3" />
     </span>
@@ -930,18 +940,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <.avatar_mark
           :if={!@group.is_direct && !@group.is_root}
-          icon={if(@group.is_public, do: "hero-megaphone-micro", else: "hero-lock-closed-micro")}
+          icon={if(@group.is_public, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")}
           title={if(@group.is_public, do: gettext("Public group"), else: gettext("Private group"))}
           class="bottom-0 left-0 -mb-1 -ml-1"
         />
 
-        <.avatar_mark
-          :if={@group.uses_api && !@group.is_direct && !@group.is_root}
-          id={"group-app-badge-#{@group.id}"}
-          icon="hero-puzzle-piece-micro"
-          title={gettext("App")}
-          class="bottom-0 right-0 -mb-1 -mr-1"
-        />
+        <%= if mark = group_kind_mark(@group) do %>
+          <.avatar_mark
+            id={"group-kind-mark-#{@group.id}"}
+            data-kind={mark.kind}
+            icon={mark.icon}
+            title={mark.title}
+            class="bottom-0 right-0 -mb-1 -mr-1"
+          />
+        <% end %>
 
         <.count_badge
           :if={!@group.is_root and @pending_join_requests_count > 0}
@@ -999,6 +1011,24 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       </div>
     </div>
     """
+  end
+
+  # The corner says what kind of group it is: the preset it was made from while
+  # it still fits, or an app for any other group that has one.
+  defp group_kind_mark(%{is_direct: true}), do: nil
+  defp group_kind_mark(%{is_root: true}), do: nil
+
+  defp group_kind_mark(group) do
+    cond do
+      preset = GroupPresets.shown(group) ->
+        Map.put(CreateMenu.mark(preset), :kind, preset)
+
+      group.uses_api ->
+        %{kind: :app, icon: "hero-puzzle-piece-micro", title: gettext("App")}
+
+      true ->
+        nil
+    end
   end
 
   # A thread is the sub-group started from a chat value.

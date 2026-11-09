@@ -129,6 +129,55 @@ defmodule PotokIde.Social.GroupPresetsTest do
     end
   end
 
+  describe "the preset a group keeps" do
+    test "is the one it was made from, and what comes with a feed keeps none", ctx do
+      for key <- GroupPresets.keys() do
+        assert {:ok, %{group: group}} = create(ctx, key, %{"name" => "Iz #{key}"})
+
+        assert Repo.get!(Group, group.id).preset == String.to_existing_atom(key)
+      end
+
+      assert {:ok, %{feed: feed}} = create(ctx, "feed", %{"name" => "Drugi feed"})
+      assert Repo.get!(Group, feed.id).preset == nil
+    end
+
+    test "is nobody's to set by hand", ctx do
+      assert {:ok, group} =
+               Social.create_group(ctx.owner, ctx.parent, %{
+                 "name" => "Ručno",
+                 "preset" => "feed"
+               })
+
+      assert group.preset == nil
+
+      assert {:ok, %{group: chat}} = create(ctx, "chat")
+
+      assert {:ok, chat} =
+               Social.update_group(ctx.owner, chat, %{"name" => "Chat", "preset" => "feed"})
+
+      assert Repo.get!(Group, chat.id).preset == :chat
+    end
+
+    test "shows while the group still fits it" do
+      assert GroupPresets.shown(%Group{preset: :feed, uses_api: true}) == :feed
+      assert GroupPresets.shown(%Group{preset: :polls, uses_api: true}) == :polls
+      assert GroupPresets.shown(%Group{preset: :questionnaire, uses_api: true}) == :questionnaire
+      assert GroupPresets.shown(%Group{preset: :chat, uses_api: false}) == :chat
+      assert GroupPresets.shown(%Group{preset: :page, uses_api: false}) == :page
+
+      # An app turned off, or one pasted into a chat.
+      assert GroupPresets.shown(%Group{preset: :feed, uses_api: false}) == nil
+      assert GroupPresets.shown(%Group{preset: :chat, uses_api: true}) == nil
+
+      assert GroupPresets.shown(%Group{preset: nil, uses_api: true}) == nil
+      assert GroupPresets.shown(%{name: "no preset loaded"}) == nil
+    end
+
+    test "is one the column takes" do
+      assert GroupPresets.keys() == Enum.map(Ecto.Enum.values(Group, :preset), &Atom.to_string/1)
+    end
+  end
+
   describe "a feed" do
     test "is a group with Feed and a .feed with FeedCreator", ctx do
       assert {:ok, %{group: group, feed: feed}} = create(ctx, "feed")

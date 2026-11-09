@@ -1487,7 +1487,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-pending-join-requests-badge-#{public_child_group.id}", "1")
     end
 
-    test "sub-groups list marks app groups next to the avatar", %{conn: conn} do
+    test "sub-groups list marks the kind of each group next to the avatar", %{conn: conn} do
       owner_account = account_fixture()
 
       {:ok, owner_profile} =
@@ -1521,13 +1521,49 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
           "has_public_chat" => false
         })
 
+      {:ok, %{group: feed_group}} =
+        Social.create_group_from_preset(owner_profile, root_group, "feed", %{
+          "name" => "subgroup-kind-feed",
+          "is_public" => "true"
+        })
+
+      {:ok, %{group: chat_group}} =
+        Social.create_group_from_preset(owner_profile, root_group, "chat", %{
+          "name" => "subgroup-kind-chat"
+        })
+
+      # A chat that later got an app is marked as an app.
+      {:ok, %{group: chat_app_group}} =
+        Social.create_group_from_preset(owner_profile, root_group, "chat", %{
+          "name" => "subgroup-kind-chat-app"
+        })
+
+      {:ok, chat_app_group} =
+        Social.update_group(owner_profile, chat_app_group, %{"uses_api" => "true"})
+
       {:ok, lv, _html} =
         conn
         |> log_in_account(owner_account)
         |> live(~p"/groups/#{root_group.id}")
 
-      assert has_element?(lv, "#group-app-badge-#{app_group.id}")
-      refute has_element?(lv, "#group-app-badge-#{plain_group.id}")
+      assert has_element?(lv, "#group-kind-mark-#{app_group.id}[data-kind=app]")
+      assert has_element?(lv, "#group-kind-mark-#{app_group.id} .hero-puzzle-piece-micro")
+      refute has_element?(lv, "#group-kind-mark-#{plain_group.id}")
+
+      assert has_element?(lv, "#group-kind-mark-#{feed_group.id}[data-kind=feed]")
+      assert has_element?(lv, "#group-kind-mark-#{feed_group.id} .hero-newspaper-micro")
+      assert has_element?(lv, "#group-kind-mark-#{chat_group.id}[data-kind=chat]")
+
+      assert has_element?(
+               lv,
+               "#group-kind-mark-#{chat_group.id} .hero-chat-bubble-left-right-micro"
+             )
+
+      assert has_element?(lv, "#group-kind-mark-#{chat_app_group.id}[data-kind=app]")
+
+      # Public groups are marked with a globe, leaving the megaphone to announcements.
+      assert has_element?(lv, ".hero-globe-alt-micro")
+      refute has_element?(lv, ".hero-megaphone-micro")
     end
 
     test "renders group pictures in header and sub-group list", %{conn: conn} do

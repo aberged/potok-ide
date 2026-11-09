@@ -141,6 +141,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "chat",
         icon: "hero-chat-bubble-left-right",
+        mark: "hero-chat-bubble-left-right-micro",
         title: gettext("Chat"),
         hint: gettext("For talking. It opens on the messages."),
         summary: gettext("It opens on the messages, and every member can write.")
@@ -148,6 +149,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "folder",
         icon: "hero-folder",
+        mark: "hero-folder-micro",
         title: gettext("Folder"),
         hint: gettext("Keeps sub-groups together."),
         summary: gettext("It opens on the list of its sub-groups, which you add next.")
@@ -155,6 +157,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "announcements",
         icon: "hero-megaphone",
+        mark: "hero-megaphone-micro",
         title: gettext("Announcements"),
         hint: gettext("Only administrators write, the others read."),
         summary:
@@ -165,6 +168,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "feed",
         icon: "hero-newspaper",
+        mark: "hero-newspaper-micro",
         title: gettext("Feed"),
         hint: gettext("News to swipe through."),
         summary:
@@ -176,6 +180,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "polls",
         icon: "hero-chart-bar",
+        mark: "hero-chart-bar-micro",
         title: dgettext("polls", "Polls"),
         hint: dgettext("polls", "Votes and decisions, in one place."),
         summary:
@@ -187,6 +192,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "questionnaire",
         icon: "hero-clipboard-document-list",
+        mark: "hero-clipboard-document-list-micro",
         title: gettext("Form"),
         hint: gettext("Questions, answers and a summary of them."),
         summary:
@@ -197,6 +203,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
       %{
         key: "page",
         icon: "hero-document-text",
+        mark: "hero-document-text-micro",
         title: gettext("Page"),
         hint: gettext("Text that shows first, from a template."),
         summary: gettext("It opens on its text, which you write right after, from a template.")
@@ -205,6 +212,18 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   end
 
   defp preset(key), do: Enum.find(presets(), &(&1.key == key))
+
+  @doc """
+  The icon and name of a preset (a `Group.preset` value) for the mark on the
+  avatar of a group made from it: the same as in this menu, in the small size.
+  Each `mark` is written out, as Tailwind makes the CSS only of icon names it
+  finds in the source.
+  """
+  def mark(preset) when is_atom(preset) do
+    %{mark: icon, title: title} = preset(Atom.to_string(preset))
+
+    %{icon: icon, title: title}
+  end
 
   attr :menu, :map, default: nil, doc: "the `@group_create_menu` assign"
 

@@ -221,7 +221,7 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1709
+#: lib/potok_ide_web/live/group_live/show/components.ex:1739
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr ""
@@ -511,7 +511,7 @@ msgid "Poll"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:384
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:179
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:184
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:51
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
 #, elixir-autogen, elixir-format
@@ -897,12 +897,12 @@ msgstr ""
 msgid "of %{count} who may vote"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:182
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:187
 #, elixir-autogen, elixir-format
 msgid "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:180
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:185
 #, elixir-autogen, elixir-format
 msgid "Votes and decisions, in one place."
 msgstr ""

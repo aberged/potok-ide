@@ -183,6 +183,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "inherits_members"), do: dgettext("domain_map", "inherits members")
   defp own_field("Group", "last_value_at"), do: dgettext("domain_map", "newest value at")
   defp own_field("Group", "published_at"), do: dgettext("domain_map", "published at")
+  defp own_field("Group", "preset"), do: dgettext("domain_map", "ready setup")
   defp own_field("Group", "parent_id"), do: dgettext("domain_map", "parent group")
   defp own_field("Group", "parent_value_id"), do: dgettext("domain_map", "value of the thread")
 
