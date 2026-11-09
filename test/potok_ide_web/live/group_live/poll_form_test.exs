@@ -176,8 +176,12 @@ defmodule PotokIdeWeb.GroupLive.PollFormTest do
 
   test "a direct conversation has no polls", ctx do
     {:ok, direct} = Social.get_or_create_direct_group(ctx.owner, ctx.member)
+    lv = chat(ctx.owner_account, direct)
 
-    refute has_element?(chat(ctx.owner_account, direct), "#group-value-poll")
+    # The "+" stays, with files as its only choice.
+    assert has_element?(lv, "#group-value-add-toggle")
+    assert has_element?(lv, "#group-value-add-menu #group-value-attach")
+    refute has_element?(lv, "#group-value-poll")
   end
 
   describe "changing a poll" do

@@ -374,30 +374,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                   submit_label={gettext("Send message")}
                   has_attachments={@can_attach and Enum.any?(@attachments.entries, & &1.valid?)}
                 >
-                  <label
-                    :if={@can_attach}
-                    id="group-value-attach"
-                    title={gettext("Add files")}
-                    class={[
-                      icon_button_class("ghost", "md"),
-                      "has-focus-visible:ring-2 has-focus-visible:ring-primary/40"
-                    ]}
-                  >
-                    <.icon name="hero-paper-clip" class="size-5" />
-                    <span class="sr-only">{gettext("Add files")}</span>
-                    <.live_file_input upload={@attachments} class="sr-only" />
-                  </label>
-                  <button
-                    :if={@can_start_poll}
-                    id="group-value-poll"
-                    type="button"
-                    phx-click="poll_form_open"
-                    title={dgettext("polls", "New poll")}
-                    class={icon_button_class("ghost", "md")}
-                  >
-                    <.icon name="hero-chart-bar" class="size-5" />
-                    <span class="sr-only">{dgettext("polls", "New poll")}</span>
-                  </button>
+                  <.add_menu
+                    :if={@can_attach or @can_start_poll}
+                    attachments={@can_attach && @attachments}
+                    can_start_poll={@can_start_poll}
+                  />
                 </.composer_row>
               </.form>
             <% end %>
@@ -1231,6 +1212,173 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     </div>
     """
   end
+
+  attr :attachments, :any, required: true, doc: "the upload, or false when files are not allowed"
+  attr :can_start_poll, :boolean, required: true
+
+  # The "+" before the text, with a menu of what a message can carry. The menu
+  # opens upward on the client and stands in the page: above the composer
+  # nothing cuts it off, and it moves with the button when a phone keyboard
+  # closes. The file input stays outside the menu, so it never has `display:
+  # none` when the menu closes in the click that opens the picker.
+  defp add_menu(assigns) do
+    ~H"""
+    <div id="group-value-add" phx-hook=".ComposerAddMenu" class="relative shrink-0">
+      <button
+        id="group-value-add-toggle"
+        type="button"
+        aria-haspopup="menu"
+        aria-controls="group-value-add-menu"
+        aria-expanded="false"
+        phx-mounted={JS.ignore_attributes(["aria-expanded"])}
+        title={gettext("Add")}
+        class={[
+          icon_button_class("ghost", "md"),
+          "group/add aria-expanded:bg-base-content/10 aria-expanded:text-base-content"
+        ]}
+      >
+        <.icon
+          name="hero-plus"
+          class="size-5 transition-transform duration-200 ease-out group-aria-expanded/add:rotate-45"
+        />
+        <span class="sr-only">{gettext("Add")}</span>
+      </button>
+      <div
+        id="group-value-add-menu"
+        role="menu"
+        aria-labelledby="group-value-add-toggle"
+        hidden
+        phx-mounted={JS.ignore_attributes(["hidden"])}
+        class="absolute bottom-full left-0 z-30 mb-2 w-max min-w-52 origin-bottom-left rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-2xl shadow-primary/10 transition duration-150 ease-out starting:translate-y-1 starting:scale-95 starting:opacity-0"
+      >
+        <button
+          :if={@attachments}
+          id="group-value-attach"
+          type="button"
+          role="menuitem"
+          data-file-input={@attachments.ref}
+          class={add_menu_item_class()}
+        >
+          <span class={add_menu_icon_class()}>
+            <.icon name="hero-paper-clip" class="size-4" />
+          </span>
+          {gettext("Add files")}
+        </button>
+        <button
+          :if={@can_start_poll}
+          id="group-value-poll"
+          type="button"
+          role="menuitem"
+          phx-click="poll_form_open"
+          class={add_menu_item_class()}
+        >
+          <span class={add_menu_icon_class()}>
+            <.icon name="hero-chart-bar" class="size-4" />
+          </span>
+          {dgettext("polls", "New poll")}
+        </button>
+      </div>
+      <.live_file_input
+        :if={@attachments}
+        upload={@attachments}
+        class="sr-only"
+        tabindex="-1"
+        aria-hidden="true"
+      />
+    </div>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ComposerAddMenu">
+      export default {
+        mounted() {
+          this.toggle = this.el.querySelector("[aria-haspopup=menu]")
+          this.menu = this.el.querySelector("[role=menu]")
+
+          this.closeOutside = event => {
+            if (!this.el.contains(event.target)) this.close()
+          }
+
+          this.toggle.addEventListener("click", event => {
+            if (!this.menu.hidden) return this.close()
+
+            this.open()
+
+            // Opened from the keyboard: the first choice takes the focus.
+            if (event.detail === 0) this.items()[0]?.focus()
+          })
+
+          this.menu.addEventListener("click", event => {
+            const item = event.target.closest("[role=menuitem]")
+
+            if (!item) return
+
+            // In the same click, or the browser keeps the file picker shut.
+            if (item.dataset.fileInput) document.getElementById(item.dataset.fileInput)?.click()
+
+            this.close()
+          })
+
+          // Escape closes it, and the arrows walk the choices, as in any menu.
+          this.el.addEventListener("keydown", event => {
+            if (this.menu.hidden) return
+
+            if (event.key === "Escape") {
+              event.preventDefault()
+              this.close()
+              this.toggle.focus()
+              return
+            }
+
+            const items = this.items()
+            const index = items.indexOf(document.activeElement)
+            const next = {
+              ArrowDown: (index + 1) % items.length,
+              ArrowUp: index <= 0 ? items.length - 1 : index - 1,
+              Home: 0,
+              End: items.length - 1,
+            }[event.key]
+
+            if (next === undefined) return
+
+            event.preventDefault()
+            items[next].focus()
+          })
+
+          // Tabbing away closes it too.
+          this.el.addEventListener("focusout", event => {
+            if (event.relatedTarget && !this.el.contains(event.relatedTarget)) this.close()
+          })
+        },
+
+        destroyed() {
+          document.removeEventListener("pointerdown", this.closeOutside, true)
+        },
+
+        items() {
+          return [...this.menu.querySelectorAll("[role=menuitem]")]
+        },
+
+        open() {
+          this.menu.hidden = false
+          this.toggle.setAttribute("aria-expanded", "true")
+          document.addEventListener("pointerdown", this.closeOutside, true)
+        },
+
+        close() {
+          this.menu.hidden = true
+          this.toggle.setAttribute("aria-expanded", "false")
+          document.removeEventListener("pointerdown", this.closeOutside, true)
+        },
+      }
+    </script>
+    """
+  end
+
+  defp add_menu_item_class,
+    do:
+      "group/item flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm font-medium text-base-content/80 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:bg-base-200 focus-visible:text-base-content focus-visible:outline-none"
+
+  defp add_menu_icon_class,
+    do:
+      "inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-base-200 text-base-content/65 transition-colors group-hover/item:bg-base-300 group-focus-visible/item:bg-base-300"
 
   defp attachments?(%Value{attachments: [_ | _]}), do: true
   defp attachments?(_value), do: false

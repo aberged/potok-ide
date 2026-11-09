@@ -26,7 +26,9 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
     test "posts a value that is only a file", %{conn: conn, group: group} do
       {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
 
-      assert has_element?(lv, "#group-value-attach")
+      assert has_element?(lv, "#group-value-add-toggle[aria-controls=group-value-add-menu]")
+      assert has_element?(lv, "#group-value-add-menu #group-value-attach")
+      assert has_element?(lv, "#group-value-add-menu #group-value-poll")
 
       upload =
         file_input(lv, "#group-value-form", :attachments, [
@@ -92,11 +94,45 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
 
       assert has_element?(member_lv, "#group-value-form")
       refute has_element?(member_lv, "#group-value-attach")
+      assert has_element?(member_lv, "#group-value-poll")
 
       {:ok, owner_lv, _html} =
         conn |> log_in_account(owner_account) |> live(~p"/groups/#{group.id}/values")
 
       assert has_element?(owner_lv, "#group-value-attach")
+    end
+
+    test "with neither files nor polls allowed there is no + menu", %{conn: conn} do
+      {owner_account, owner} = account_with_profile!("fnone-owner")
+      {member_account, member} = account_with_profile!("fnone-member")
+
+      {:ok, group} =
+        Social.create_group(owner, Social.get_root_group!(), %{
+          "name" => "files-none-group",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(owner, group, member)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, group)
+
+      for permission <- [:attach_files, :create_polls] do
+        {:ok, _role} =
+          Social.set_group_role_permission(owner, group, "everyone", permission, :neutral)
+      end
+
+      {:ok, member_lv, _html} =
+        conn |> log_in_account(member_account) |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(member_lv, "#group-value-form")
+      refute has_element?(member_lv, "#group-value-add")
+
+      {:ok, owner_lv, _html} =
+        conn |> log_in_account(owner_account) |> live(~p"/groups/#{group.id}/values")
+
+      assert has_element?(owner_lv, "#group-value-add-toggle")
     end
   end
 
