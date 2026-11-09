@@ -12,6 +12,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
   @feed_creator_build "priv/apps/feed_creator.html"
   @polls_build "priv/apps/glasanje.html"
   @forms_build "priv/apps/forme.html"
+  @map_build "priv/apps/mapa.html"
 
   setup do
     {_account, owner} = account_with_profile!("preset-owner")
@@ -113,6 +114,18 @@ defmodule PotokIde.Social.GroupPresetsTest do
       assert Social.list_child_groups(group) == []
     end
 
+    test "a map opens on its app, closed, and its places are its sub-groups", ctx do
+      assert {:ok, %{group: group, feed: nil}} = create(ctx, "map")
+
+      assert group.uses_api
+      assert group.preset == :map
+      assert group.home_page == :description
+      assert group.description == File.read!(@map_build)
+      refute group.is_public
+      assert GroupPresets.shown(group) == :map
+      assert Access.can?(ctx.member, group, :create_subgroups)
+    end
+
     test "takes from the viewer only what is theirs to pick", ctx do
       assert {:ok, %{group: group}} =
                create(ctx, "chat", %{
@@ -174,15 +187,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
     end
 
     test "is one the column takes" do
-      assert GroupPresets.stored_keys() ==
-               Enum.map(Ecto.Enum.values(Group, :preset), &Atom.to_string/1)
-
-      assert GroupPresets.keys() -- GroupPresets.stored_keys() == []
-    end
-
-    test "shows only a kind the menu offers" do
-      assert GroupPresets.shown(%Group{preset: :map, uses_api: true}) == nil
-      assert GroupPresets.shown(%Group{preset: :map, uses_api: false}) == nil
+      assert GroupPresets.keys() == Enum.map(Ecto.Enum.values(Group, :preset), &Atom.to_string/1)
     end
   end
 

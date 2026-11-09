@@ -67,7 +67,7 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
 
       assert has_element?(lv, "dialog#group-create-menu")
 
-      for preset <- ~w(chat folder announcements feed polls questionnaire page) do
+      for preset <- ~w(chat folder announcements feed polls questionnaire map page) do
         assert has_element?(lv, "#group-create-preset-#{preset}")
       end
 
@@ -262,6 +262,17 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       assert has_element?(page, "#group-edit-description")
       refute has_element?(page, "#group-edit-description.hidden")
       assert has_element?(page, "#group-edit-basics.hidden")
+    end
+
+    test "a map leads to the map itself", ctx do
+      lv = ctx |> sub_groups() |> open_menu() |> pick("map")
+
+      {path, flash, group} = create(lv, "Mapa komšiluka")
+
+      assert path == ~p"/groups/#{group.id}"
+      assert flash["info"]
+      assert group.preset == :map
+      assert group.uses_api
     end
 
     test "a feed leads to where its posts are written", ctx do

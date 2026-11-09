@@ -126,6 +126,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   defp created_message("questionnaire"),
     do: gettext("The form is ready. Write its questions, then publish it.")
 
+  defp created_message("map"),
+    do:
+      gettext(
+        "The map is ready. Add its first place, or give a sub-group a place in its settings."
+      )
+
   defp created_message(_preset), do: gettext("Group created.")
 
   # Where the work goes on. An empty feed has nowhere to write from.
@@ -198,6 +204,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         summary:
           gettext(
             "It opens on the Form app: you write the questions and choose who fills it in and who sees the answers."
+          )
+      },
+      %{
+        key: "map",
+        icon: "hero-map",
+        mark: "hero-map-micro",
+        title: gettext("Map"),
+        hint: gettext("Its sub-groups as pins on a map."),
+        summary:
+          gettext(
+            "It opens on the Map app: its sub-groups that have a place show as pins, a tap opens one, and members add new places on the map."
           )
       },
       %{

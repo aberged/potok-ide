@@ -6,7 +6,7 @@ defmodule PotokIde.Social.GroupPresets do
   which shows while the group still fits it (`shown/1`).
   `Social.create_group/3` stays the way to set everything by hand.
 
-  The apps of a feed, of a group for polls and of a form are files in
+  The apps of a feed, of a group for polls, of a form and of a map are files in
   `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
   its description, as with a pasted app, so a new build reaches only the groups
   made after it.
@@ -17,14 +17,11 @@ defmodule PotokIde.Social.GroupPresets do
   alias PotokIde.Social.Group
 
   # The form's key is not "form", whose element id the menu's own form has.
-  @keys ~w(chat folder announcements feed polls questionnaire page)
+  @keys ~w(chat folder announcements feed polls questionnaire map page)
 
   # The presets whose group opens on an app.
-  @apps ~w(feed polls questionnaire)a
+  @apps ~w(feed polls questionnaire map)a
 
-  # What the column takes: every key, and "map" a deploy before the menu
-  # offers it, so that no machine meets a value it cannot load.
-  @stored_keys @keys ++ ["map"]
   @key_atoms Enum.map(@keys, &String.to_atom/1)
 
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
@@ -37,9 +34,6 @@ defmodule PotokIde.Social.GroupPresets do
   @chosen_by_viewer ~w(name is_public inherits_members)
 
   def keys, do: @keys
-
-  @doc "Every value `Group.preset` takes, a step ahead of `keys/0`."
-  def stored_keys, do: @stored_keys
 
   @doc "The presets whose group opens on an app, as strings."
   def app_keys, do: Enum.map(@apps, &Atom.to_string/1)
@@ -132,6 +126,18 @@ defmodule PotokIde.Social.GroupPresets do
   defp preset_attrs("questionnaire") do
     %{
       "description" => app("forme.html"),
+      "description_format" => :html,
+      "uses_api" => true,
+      "home_page" => :description
+    }
+  end
+
+  # The Map app shows the sub-groups that have a place (`Group.latitude`) as
+  # pins, and opens each one's description over itself. It keeps its starting
+  # view in its config; the places are the groups themselves.
+  defp preset_attrs("map") do
+    %{
+      "description" => app("mapa.html"),
       "description_format" => :html,
       "uses_api" => true,
       "home_page" => :description

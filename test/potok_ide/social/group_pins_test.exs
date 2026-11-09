@@ -18,7 +18,7 @@ defmodule PotokIde.Social.GroupPinsTest do
   test "there is a kind for every preset, an app and none" do
     kinds = Enum.map(GroupPins.kinds(), &elem(&1, 0))
 
-    for preset <- GroupPresets.stored_keys() ++ ["app", "none"] do
+    for preset <- GroupPresets.keys() ++ ["app", "none"] do
       assert preset in kinds, preset
       assert PinIcons.kind_look(preset).paths != []
     end

@@ -8,9 +8,8 @@ defmodule PotokIde.Social.Group do
   @description_formats [:markdown, :html]
   @home_pages [:chat, :description, :subgroups]
   # The keys of `PotokIde.Social.GroupPresets`, written out: that module matches
-  # on this struct, so reading them from it would compile in a circle. `:map`
-  # is stored a deploy before the menu offers it (`GroupPresets.stored_keys/0`).
-  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :page, :map]
+  # on this struct, so reading them from it would compile in a circle.
+  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :map, :page]
 
   @location_fields [:latitude, :longitude, :pin_icon]
 
