@@ -12,6 +12,13 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   the last 30 days of when groups were made until the viewer picks another.
   They are not remembered, except the public groups switch, which is the same
   one as in the sub-groups tab.
+
+  Areas (`GroupAreas`) lie under the pins: every area the viewer sees, whatever
+  the filters, drawn as a border once it is wide enough on the screen (its pin
+  then leaves the clusters). The browser asks for their borders by itself and
+  keeps them. Two layers, places and areas, are switched on the map, and the
+  browser remembers them. An area filter keeps the pins inside chosen areas,
+  and a tap on the map lists the areas there (`root_map_here`).
   """
 
   use Gettext, backend: PotokIdeWeb.Gettext
@@ -21,12 +28,20 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupPresets}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPresets}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, GroupSheet}
 
   @periods ~w(24h 7d 30d 12m any)
   @default_period "30d"
   @spot_limit 50
+  # Borders a view draws at most, and that one request may ask for.
+  @drawn_limit 300
+  @shapes_limit 100
+  # Areas a filter may hold, the ones its menu offers at a time, and the areas
+  # a tap on the map lists.
+  @area_filter_limit 10
+  @area_options_limit 30
+  @here_limit 6
 
   @doc "The time frames of the menu, in its order."
   def periods, do: @periods
@@ -39,7 +54,14 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_extent: nil,
       root_map_total: nil,
       root_map_spot: nil,
-      root_map_error?: false
+      root_map_error?: false,
+      root_map_layers: %{places: true, areas: true},
+      root_map_here: nil,
+      root_map_fit: nil,
+      root_map_area_param: nil,
+      root_map_area_query: "",
+      root_map_area_options: nil,
+      root_map_area_chosen: []
     )
     |> assign_range_form(%{})
   end
@@ -52,19 +74,22 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       time: :created,
       period: @default_period,
       from: nil,
-      to: nil
+      to: nil,
+      areas: []
     }
   end
 
   @doc """
-  Why a map that holds no group is empty: `:filters` while the viewer
-  narrowed it beyond where it starts, `:time` while only the starting time
-  frame keeps groups out, `:none` when it would hold none at any time.
+  Why a map that holds no group is empty: `:area` while chosen areas hold
+  none, `:filters` while the viewer narrowed it beyond where it starts,
+  `:time` while only the starting time frame keeps groups out, `:none` when it
+  would hold none at any time.
   """
   def empty_reason(filters) do
     any_time? = filters.period == "any"
 
     cond do
+      filters.areas != [] -> :area
       filters.search != "" or filters.preset != nil or filters.relation != nil -> :filters
       filters.period not in [@default_period, "any"] -> :filters
       filters.time == :active and not any_time? -> :filters
@@ -80,6 +105,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   view by itself. Another tab drops what the map held.
   """
   def maybe_load(socket, %Group{is_root: true}, "map") do
+    socket = if socket.assigns.root_map_area_options, do: socket, else: load_area_options(socket)
     if socket.assigns.root_map_extent, do: socket, else: load_extent(socket)
   end
 
@@ -89,8 +115,50 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_extent: nil,
       root_map_total: nil,
       root_map_spot: nil,
-      root_map_error?: false
+      root_map_error?: false,
+      root_map_here: nil,
+      root_map_area_options: nil
     )
+  end
+
+  @doc """
+  `?area=ID` opens the map on that area: its pins from any time, the map
+  fitted to it once the browser asks for its view. An area the viewer cannot
+  see is left out.
+  """
+  def assign_params(socket, params) do
+    param = params["area"]
+
+    with true <- param != socket.assigns.root_map_area_param,
+         true <- root?(socket),
+         {id, ""} <- Integer.parse(to_string(param)),
+         [%Group{}] <- GroupAreas.get_visible(socket.assigns.current_profile, [id]) do
+      filters = %{
+        socket.assigns.root_map_filters
+        | areas: [id],
+          period: "any",
+          from: nil,
+          to: nil
+      }
+
+      socket
+      |> assign(:root_map_area_param, param)
+      |> assign(:root_map_filters, filters)
+      |> assign(:root_map_extent, nil)
+      |> assign(:root_map_fit, GroupAreas.extent(socket.assigns.current_profile, [id]))
+      |> assign_chosen()
+      |> assign_range_form(%{})
+    else
+      _other -> assign(socket, :root_map_area_param, param)
+    end
+  end
+
+  @doc "Whether the link's area changed while the map stays open."
+  def params_changed?(socket, params), do: params["area"] != socket.assigns.root_map_area_param
+
+  def handle_params(socket, params) do
+    socket = assign_params(socket, params)
+    if socket.assigns.root_map_fit, do: refresh(socket), else: socket
   end
 
   defp load_extent(socket) do
@@ -100,27 +168,56 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  # What the view holds under the filters, as the browser draws it.
+  # What the view holds under the filters, as the browser draws it: pins and
+  # clusters while places are shown, the areas wide enough to draw while
+  # areas are, the chosen areas of the filter, and once a box to fit.
   defp load_view(socket) do
-    %{root_map_view: %{bbox: bbox, zoom: zoom}} = socket.assigns
+    %{root_map_view: %{bbox: bbox, zoom: zoom}, root_map_layers: layers} = socket.assigns
+    profile = socket.assigns.current_profile
 
-    case Social.list_map_cells(
-           socket.assigns.current_profile,
-           social_filters(socket.assigns),
-           bbox,
-           zoom
-         ) do
+    # With places off, the cells still bring the areas too small to draw.
+    cells =
+      if layers.places or layers.areas,
+        do: Social.list_map_cells(profile, social_filters(socket.assigns), bbox, zoom),
+        else: {:ok, %{places: [], clusters: [], total: nil}}
+
+    case cells do
       {:ok, cells} ->
-        {%{
-           ok: true,
-           places: Enum.map(cells.places, &AppApi.place_payload/1),
-           clusters: cells.clusters,
-           total: cells.total
-         }, assign(socket, root_map_total: cells.total, root_map_error?: false)}
+        areas =
+          if layers.areas,
+            do:
+              GroupAreas.list_drawable(profile, Social.map_bbox_params(bbox), zoom, @drawn_limit),
+            else: []
+
+        payload = %{
+          ok: true,
+          places: Enum.map(cells.places, &AppApi.place_payload/1),
+          clusters: cells.clusters,
+          total: cells.total,
+          areas: Enum.map(areas, &area_payload/1),
+          chosen: socket.assigns.root_map_filters.areas,
+          layers: layers
+        }
+
+        payload =
+          if socket.assigns.root_map_fit,
+            do: Map.put(payload, :fit, socket.assigns.root_map_fit),
+            else: payload
+
+        {payload,
+         assign(socket, root_map_total: cells.total, root_map_error?: false, root_map_fit: nil)}
 
       {:error, :timeout} ->
         {%{ok: false}, assign(socket, root_map_error?: true)}
     end
+  end
+
+  # An area as the browser draws it: what its pin shows, where its name
+  # stands (its pin), its box, and what its border is cached by.
+  defp area_payload(%{group: group, bbox: bbox}) do
+    group
+    |> AppApi.place_payload()
+    |> Map.merge(%{v: GroupAreas.version(group.updated_at), bbox: bbox})
   end
 
   # After a filter changed: the count again, and the view to the map.
@@ -135,10 +232,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  @doc "The filters as `Social.list_map_cells/4` takes them."
+  @doc """
+  The filters as `Social.list_map_cells/4` takes them: with the chosen areas,
+  and, while areas are drawn, the zoom of the view, so that the pins of areas
+  drawn as borders leave the clusters and the lists of a crowded spot.
+  """
   def social_filters(assigns) do
     filters = assigns.root_map_filters
     {from, to} = moments(filters, Map.get(assigns, :calendar_time_zone, "Etc/UTC"))
+    layers = Map.get(assigns, :root_map_layers) || %{areas: false}
+    view = Map.get(assigns, :root_map_view) || %{}
 
     %{
       search: filters.search,
@@ -147,7 +250,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       public?: assigns.show_public_sub_groups == true,
       time: filters.time,
       from: from,
-      to: to
+      to: to,
+      areas: filters.areas,
+      places?: Map.get(layers, :places, true),
+      shapes?: layers.areas,
+      zoom: Map.get(view, :zoom)
     }
   end
 
@@ -178,8 +285,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   ## Events
 
-  # The browser's view: `bbox` is `[west, south, east, north]`.
-  def handle_event("root_map_view", %{"bbox" => bbox, "zoom" => zoom}, socket) do
+  # The browser's view: `bbox` is `[west, south, east, north]`, `layers` the
+  # ones it remembers.
+  def handle_event("root_map_view", %{"bbox" => bbox, "zoom" => zoom} = params, socket) do
     with true <- root?(socket),
          [_, _, _, _] = bbox <- numbers(bbox),
          zoom when is_integer(zoom) and zoom in 0..24 <- zoom,
@@ -187,6 +295,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       {payload, socket} =
         socket
         |> assign(:root_map_view, %{bbox: bbox, zoom: zoom})
+        |> assign(:root_map_layers, layers(params["layers"], socket.assigns.root_map_layers))
         |> load_view()
 
       {:reply, payload, socket}
@@ -196,6 +305,137 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
       _invalid ->
         {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # The borders the browser lacks, simplified for its zoom.
+  def handle_event("root_map_shapes", %{"ids" => ids, "zoom" => zoom}, socket)
+      when is_list(ids) and is_integer(zoom) and zoom in 0..24 do
+    ids = ids |> Enum.filter(&is_integer/1) |> Enum.uniq() |> Enum.take(@shapes_limit)
+
+    with true <- root?(socket),
+         :ok <- RateLimit.hit(:root_map_view, socket.assigns.current_profile.id) do
+      shapes =
+        for shape <- GroupAreas.shapes(socket.assigns.current_profile, ids, zoom) do
+          %{id: shape.id, v: shape.version, geojson: Jason.Fragment.new(shape.geojson)}
+        end
+
+      {:reply, %{ok: true, level: GroupAreas.level(zoom), shapes: shapes}, socket}
+    else
+      _refused -> {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # A tap on the map, off the pins: the areas drawn there, smallest first.
+  def handle_event("root_map_here", %{"lat" => lat, "lng" => lng, "zoom" => zoom}, socket)
+      when is_number(lat) and is_number(lng) and is_integer(zoom) and zoom in 0..24 do
+    with true <- root?(socket),
+         true <- socket.assigns.root_map_layers.areas,
+         true <- abs(lat) <= 90 and abs(lng) <= 100_000 do
+      lng = lng - 360.0 * Float.floor((lng + 180.0) / 360.0)
+
+      areas =
+        GroupAreas.areas_at(socket.assigns.current_profile, lat, lng,
+          zoom: zoom,
+          limit: @here_limit
+        )
+
+      ids = Enum.map(areas, & &1.id)
+      here = if areas == [], do: nil, else: %{areas: areas, selected: List.first(ids)}
+
+      {:reply, %{ids: ids}, socket |> assign(:root_map_spot, nil) |> assign(:root_map_here, here)}
+    else
+      _no -> {:reply, %{ids: []}, assign(socket, :root_map_here, nil)}
+    end
+  end
+
+  def handle_event("root_map_here_pick", %{"id" => id}, socket) do
+    with %{areas: areas} = here <- socket.assigns.root_map_here,
+         {id, ""} <- Integer.parse(to_string(id)),
+         true <- Enum.any?(areas, &(&1.id == id)) do
+      {:noreply,
+       socket
+       |> assign(:root_map_here, %{here | selected: id})
+       |> push_event("root_map_select_area", %{id: id})}
+    else
+      _other -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("root_map_here_close", _params, socket) do
+    {:noreply,
+     socket |> assign(:root_map_here, nil) |> push_event("root_map_select_area", %{id: nil})}
+  end
+
+  # Fits the map to one area.
+  def handle_event("root_map_area_fit", %{"id" => id}, socket) do
+    with {id, ""} <- Integer.parse(to_string(id)),
+         [_, _] = bounds <- GroupAreas.extent(socket.assigns.current_profile, [id]) do
+      {:noreply, push_event(socket, "root_map_fit", %{bounds: bounds})}
+    else
+      _none -> {:noreply, socket}
+    end
+  end
+
+  # An area into the filter or out of it; one put in fits the map to the
+  # chosen areas.
+  def handle_event("root_map_area", %{"id" => id}, socket) do
+    profile = socket.assigns.current_profile
+    chosen = socket.assigns.root_map_filters.areas
+
+    with true <- root?(socket),
+         {id, ""} <- Integer.parse(to_string(id)) do
+      cond do
+        id in chosen ->
+          {:noreply, socket |> put_areas(List.delete(chosen, id)) |> refresh()}
+
+        length(chosen) < @area_filter_limit and GroupAreas.get_visible(profile, [id]) != [] ->
+          areas = chosen ++ [id]
+
+          {:noreply,
+           socket
+           |> put_areas(areas)
+           |> assign(:root_map_fit, GroupAreas.extent(profile, areas))
+           |> refresh()}
+
+        true ->
+          {:noreply, socket}
+      end
+    else
+      _invalid -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("root_map_area_clear", _params, socket) do
+    if socket.assigns.root_map_filters.areas == [],
+      do: {:noreply, socket},
+      else: {:noreply, socket |> put_areas([]) |> refresh()}
+  end
+
+  def handle_event("root_map_area_search", %{"root_map_area" => %{"q" => query}}, socket)
+      when is_binary(query) do
+    {:noreply,
+     socket
+     |> assign(:root_map_area_query, String.slice(query, 0, 120))
+     |> load_area_options()}
+  end
+
+  # A layer on or off; the browser remembers the choice.
+  def handle_event("root_map_layer", %{"layer" => layer}, socket)
+      when layer in ["places", "areas"] do
+    if root?(socket) do
+      key = if layer == "places", do: :places, else: :areas
+      layers = Map.update!(socket.assigns.root_map_layers, key, &(not &1))
+
+      socket =
+        socket
+        |> assign(:root_map_layers, layers)
+        |> assign(:root_map_here, if(layers.areas, do: socket.assigns.root_map_here))
+        |> push_event("root_map_layers", layers)
+
+      {:noreply, refresh(socket)}
+    else
+      {:noreply, socket}
     end
   end
 
@@ -226,7 +466,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
              [[south, west], [north, east]],
              @spot_limit
            ) do
-      {:noreply, assign(socket, :root_map_spot, %{groups: groups, more?: more?})}
+      {:noreply,
+       socket
+       |> assign(:root_map_spot, %{groups: groups, more?: more?})
+       |> assign(:root_map_here, nil)}
     else
       _invalid -> {:noreply, socket}
     end
@@ -325,6 +568,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     {:noreply,
      socket
      |> assign(:root_map_filters, default_filters())
+     |> assign_chosen()
      |> assign_range_form(%{})
      |> refresh()}
   end
@@ -343,6 +587,40 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   end
 
   defp root?(socket), do: match?(%Group{is_root: true}, socket.assigns.group)
+
+  defp put_areas(socket, areas) do
+    socket
+    |> assign(:root_map_filters, %{socket.assigns.root_map_filters | areas: areas})
+    |> assign_chosen()
+  end
+
+  # The chosen areas by name, for the filter's button and menu.
+  defp assign_chosen(socket) do
+    ids = socket.assigns.root_map_filters.areas
+
+    chosen =
+      if ids == [], do: [], else: GroupAreas.get_visible(socket.assigns.current_profile, ids)
+
+    assign(socket, :root_map_area_chosen, chosen)
+  end
+
+  defp load_area_options(socket) do
+    options =
+      GroupAreas.search(
+        socket.assigns.current_profile,
+        socket.assigns.root_map_area_query,
+        @area_options_limit
+      )
+
+    assign(socket, :root_map_area_options, options)
+  end
+
+  # The layers the browser remembers; anything else keeps the ones shown.
+  defp layers(%{"places" => places, "areas" => areas}, _current)
+       when is_boolean(places) and is_boolean(areas),
+       do: %{places: places, areas: areas}
+
+  defp layers(_other, current), do: current
 
   defp assign_range_form(socket, params),
     do: assign(socket, :root_map_range_form, to_form(params, as: :root_map_range))

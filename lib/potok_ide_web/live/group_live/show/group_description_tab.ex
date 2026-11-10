@@ -1,8 +1,30 @@
 defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social
+  alias PotokIde.Social.{Group, GroupAreas}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, AppHost, Components}
   alias PotokIdeWeb.PostTemplates.Post
+
+  @doc """
+  Where a group with a place stands, for the strip over its description: the
+  areas the viewer sees around its pin, smallest first, and for an area a link
+  to the root's map narrowed to it. Nil for a group without a place, or for a
+  guest.
+  """
+  def location(nil, _group), do: nil
+
+  def location(profile, %Group{} = group) do
+    if Group.placed?(group) do
+      %{
+        within: GroupAreas.containing(profile, group),
+        map_path:
+          if(GroupAreas.area?(group),
+            do: ~p"/groups/#{Social.root_group_id()}/map?#{[area: group.id]}"
+          )
+      }
+    end
+  end
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
@@ -36,6 +58,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   attr :switcher, :boolean, default: true, doc: "shows the chips of the alternative descriptions"
 
+  attr :location, :map,
+    default: nil,
+    doc: "where the group stands (`location/2`), shown over the description"
+
   def panel(assigns) do
     source = assigns.active_alt_description || assigns.group
 
@@ -48,6 +74,37 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
     ~H"""
     <div class="flex min-h-0 flex-1 flex-col px-2">
+      <div
+        :if={@location && (@location.within != [] or @location.map_path)}
+        id={"#{@prefix}-location"}
+        class="flex shrink-0 flex-wrap items-center gap-1.5 px-1 pb-2 pt-1"
+      >
+        <span
+          :if={@location.within != []}
+          class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/60"
+        >
+          <.icon name="hero-map-pin-micro" class="size-3.5" />
+          {gettext("Lies in")}
+        </span>
+        <.link
+          :for={area <- @location.within}
+          id={"#{@prefix}-location-area-#{area.id}"}
+          navigate={~p"/groups/#{area.id}"}
+          class="inline-flex max-w-full items-center gap-1 rounded-full border border-base-300/70 bg-base-100 px-2.5 py-1 text-xs font-semibold text-base-content/80 transition duration-150 ease-out hover:-translate-y-px hover:border-primary/40 hover:text-primary"
+        >
+          <.icon name="hero-viewfinder-circle-micro" class="size-3.5 shrink-0" />
+          <span class="truncate">{area.name}</span>
+        </.link>
+        <.link
+          :if={@location.map_path}
+          id={"#{@prefix}-location-map"}
+          navigate={@location.map_path}
+          class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition duration-150 ease-out hover:-translate-y-px hover:bg-primary/15"
+        >
+          <.icon name="hero-map-micro" class="size-3.5 shrink-0" />
+          {gettext("Groups in this area on the map")}
+        </.link>
+      </div>
       <nav
         :if={@switcher and @alt_descriptions != []}
         id="group-description-switcher"

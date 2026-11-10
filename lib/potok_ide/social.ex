@@ -27,6 +27,7 @@ defmodule PotokIde.Social do
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
+    GroupAreas,
     GroupBlock,
     GroupInvitation,
     GroupJoinRequestApproval,
@@ -130,6 +131,11 @@ defmodule PotokIde.Social do
     Repo.get_by!(Group, is_root: true)
   end
 
+  @doc "The root group's id."
+  def root_group_id do
+    Repo.one!(from(g in Group, where: g.is_root, select: g.id))
+  end
+
   # ---------
   # Profiles
   # ---------
@@ -159,6 +165,12 @@ defmodule PotokIde.Social do
   end
 
   def load_picture(nil), do: nil
+
+  @doc "The group with its area (`Group.area`), which regular queries leave out."
+  def load_area(%Group{id: id} = group) do
+    area = from(g in Group, where: g.id == ^id, select: g.area) |> Repo.one()
+    %{group | area: area}
+  end
 
   @doc "Minimal data needed to serve a profile avatar: `%{id, username, picture_url}` or nil."
   def get_profile_avatar_source(id) do
@@ -691,10 +703,12 @@ defmodule PotokIde.Social do
       changeset =
         group
         |> load_picture()
+        |> load_area()
         |> Group.update_changeset(Map.new(attrs))
         |> validate_home_alt_description(group)
         |> validate_inheritance_parent(group.parent_id)
         |> mark_published(group)
+        |> GroupAreas.put_pin()
 
       Multi.new()
       |> Multi.update(:group, changeset)
@@ -3391,14 +3405,15 @@ defmodule PotokIde.Social do
         SELECT count(*), avg(p.latitude), avg(p.longitude),
           min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id)
         FROM placed p
-        GROUP BY floor((p.longitude + 180.0) / 360.0 * $14::float8),
+        GROUP BY floor((p.longitude + 180.0) / 360.0 * $17::float8),
           floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
-            * $14::float8)
+            * $17::float8)
         ORDER BY count(*) DESC
         LIMIT #{@map_max_cells + 1}
         """
 
-    params = map_filter_params(profile, filters) ++ map_bbox_params(bbox) ++ [cells_per_axis]
+    params =
+      map_filter_params(profile, filters, zoom) ++ map_bbox_params(bbox) ++ [cells_per_axis]
 
     with {:ok, rows} <- map_query(sql, params, "social_map_cells_#{map_time(filters)}") do
       cells = Enum.take(rows, @map_max_cells)
@@ -3448,11 +3463,11 @@ defmodule PotokIde.Social do
     sql =
       map_placed_sql(map_time(filters), true) <>
         """
-        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $14::integer
+        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $17::integer
         """
 
     params =
-      map_filter_params(profile, filters) ++
+      map_filter_params(profile, filters, Map.get(filters, :zoom)) ++
         Enum.map([south, north, west, east], &to_float/1) ++ [nil, nil, limit + 1]
 
     with {:ok, rows} <- map_query(sql, params, "social_map_spot_#{map_time(filters)}") do
@@ -3483,8 +3498,16 @@ defmodule PotokIde.Social do
   end
 
   # $1 profile, $2 every public group, $3 name, $4 kind, $5 member or creator,
-  # $6 and $7 the moments, then the box: $8 south, $9 north, one or (across the
-  # antimeridian) two ranges of longitude, $10-$11 and $12-$13.
+  # $6 and $7 the moments, $8 the areas a group's pin must lie in (any of them,
+  # `GroupAreas`), $9 how wide an area is drawn as a border rather than a pin
+  # (nil: areas are no layer of their own), $10 whether the groups the filters
+  # keep are wanted at all, then the box: $11 south, $12 north, one or (across
+  # the antimeridian) two ranges of longitude, $13-$14 and $15-$16.
+  #
+  # The groups are those the filters keep and, while areas are a layer of
+  # their own ($9), every area the profile sees that is too small to draw,
+  # whatever the filters, as its pin; areas wide enough to draw come with their
+  # borders (`GroupAreas.list_drawable/4`) and leave the cells.
   defp map_placed_sql(time, bbox?) do
     moment =
       case time do
@@ -3495,9 +3518,9 @@ defmodule PotokIde.Social do
     box =
       if bbox? do
         """
-          AND g.latitude BETWEEN $8::float8 AND $9::float8
-          AND (g.longitude BETWEEN $10::float8 AND $11::float8
-            OR ($12::float8 IS NOT NULL AND g.longitude BETWEEN $12::float8 AND $13::float8))
+          AND g.latitude BETWEEN $11::float8 AND $12::float8
+          AND (g.longitude BETWEEN $13::float8 AND $14::float8
+            OR ($15::float8 IS NOT NULL AND g.longitude BETWEEN $15::float8 AND $16::float8))
         """
       else
         ""
@@ -3512,19 +3535,34 @@ defmodule PotokIde.Social do
         AND g.parent_id IS NOT NULL
         AND g.parent_value_id IS NULL
         AND g.is_direct = FALSE
-        AND (g.id IN (SELECT group_id FROM mine)
-          OR (g.is_public AND ($2::boolean OR g.id IN (SELECT id FROM member_paths))))
-        AND ($3::text IS NULL OR g.name ILIKE '%' || $3::text || '%')
-        AND ($4::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $4::text)
-        AND ($5::text IS NULL OR ($5::text = 'creator' AND g.creator_id = $1)
-          OR ($5::text = 'member' AND g.id IN (SELECT group_id FROM mine)))
-        AND ($6::timestamp IS NULL OR #{moment} >= $6::timestamp)
-        AND ($7::timestamp IS NULL OR #{moment} < $7::timestamp)
+        AND (($10::boolean AND ($9::float8 IS NULL OR g.area IS NULL)
+            AND (g.id IN (SELECT group_id FROM mine)
+              OR (g.is_public AND ($2::boolean OR g.id IN (SELECT id FROM member_paths))))
+            AND ($3::text IS NULL OR g.name ILIKE '%' || $3::text || '%')
+            AND ($4::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $4::text)
+            AND ($5::text IS NULL OR ($5::text = 'creator' AND g.creator_id = $1)
+              OR ($5::text = 'member' AND g.id IN (SELECT group_id FROM mine)))
+            AND ($6::timestamp IS NULL OR #{moment} >= $6::timestamp)
+            AND ($7::timestamp IS NULL OR #{moment} < $7::timestamp))
+          OR ($9::float8 IS NOT NULL AND g.area IS NOT NULL
+            AND (g.is_public OR g.id IN (SELECT group_id FROM mine))
+            AND GREATEST(ST_XMax(g.area) - ST_XMin(g.area),
+              (ST_YMax(g.area) - ST_YMin(g.area)) / cos(radians(g.latitude))) < $9::float8))
+        AND ($8::bigint[] IS NULL OR (g.id <> ALL($8::bigint[]) AND EXISTS (
+          SELECT 1 FROM groups fa
+          WHERE fa.id = ANY($8::bigint[]) AND fa.area IS NOT NULL
+            AND (fa.is_public OR fa.id IN (SELECT group_id FROM mine))
+            AND ST_Intersects(fa.area, ST_SetSRID(ST_MakePoint(g.longitude, g.latitude), 4326))
+            AND (g.area IS NULL OR ST_Area(fa.area) > ST_Area(g.area)))))
     #{box})
     """
   end
 
-  defp map_filter_params(%Profile{id: profile_id}, filters) do
+  # `zoom` is where areas are drawn as borders while `:shapes?` is on: wider
+  # ones leave the cells, smaller ones join them whatever the filters. nil
+  # leaves areas to the filters like any group (`map_extent/2`). `:places?`
+  # false keeps only those small areas.
+  defp map_filter_params(%Profile{id: profile_id}, filters, zoom \\ nil) do
     [
       profile_id,
       Map.get(filters, :public?) == true,
@@ -3532,18 +3570,28 @@ defmodule PotokIde.Social do
       normalize_preset_filter(Map.get(filters, :preset)),
       normalize_relation_filter(Map.get(filters, :relation)),
       map_moment(Map.get(filters, :from)),
-      map_moment(Map.get(filters, :to))
+      map_moment(Map.get(filters, :to)),
+      map_area_filter(Map.get(filters, :areas)),
+      if(Map.get(filters, :shapes?) == true and is_integer(zoom), do: GroupAreas.min_span(zoom)),
+      is_nil(zoom) or Map.get(filters, :places?) != false
     ]
   end
+
+  defp map_area_filter([_ | _] = ids), do: Enum.filter(ids, &is_integer/1)
+  defp map_area_filter(_none), do: nil
 
   defp map_moment(%DateTime{} = moment),
     do: moment |> DateTime.shift_zone!("Etc/UTC") |> DateTime.to_naive()
 
   defp map_moment(_none), do: nil
 
-  # The box as the map sees it, where a view across the antimeridian or wider
-  # than the world has longitudes past 180: south, north and one or two ranges.
-  defp map_bbox_params([west, south, east, north]) do
+  @doc """
+  The box `[west, south, east, north]` as a map sees it, where a view across
+  the antimeridian or wider than the world has longitudes past 180: `[south,
+  north, west, east, west2, east2]`, with a second range of longitude (or nils)
+  for a box across the antimeridian.
+  """
+  def map_bbox_params([west, south, east, north]) do
     [west, south, east, north] = Enum.map([west, south, east, north], &to_float/1)
     {south, north} = {south |> max(-90.0) |> min(90.0), north |> max(-90.0) |> min(90.0)}
     {south, north} = {min(south, north), max(south, north)}

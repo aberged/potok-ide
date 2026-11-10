@@ -41,10 +41,11 @@ defmodule Mix.Tasks.Potok.SrCyrl do
     %?\{[^}]*\} | <span\ lang=en>[^<]*<\/span> | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* |
     \b[\w-]+(?:\.[\w-]+)*\.(?:com|org|rs)\b | @?\b(?:admin|everyone)\b |
     \b(?:Amnesty\ International|Amnesty|API|Apple|Auth|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
-    Endpoint|English|ETS|ExUnit|FCM|FeedCreator|Firebase\ Cloud\ Messaging|Firebase|Gmail|
+    Endpoint|English|EPSG|ETS|ExUnit|FCM|FeedCreator|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
     Google\ Forms|Google\ Play|Google\ Sheets|Google|Heinrich-Böll-Stiftung|Heroicons|HTML|HTTPS|
-    iPhone|JavaScript|LiveView|localhost|Markdown|NoviSpy|Outlook|P256DH|Phoenix|PostgreSQL|
-    Presence|PubSub|QR|service\ worker|Sheets|Tailwind|URL|User\ Agent|WebSocket)\b
+    iPhone|JavaScript|LiveView|localhost|Markdown|MultiPolygon|NoviSpy|Outlook|P256DH|Phoenix|
+    Polygon|PostGIS|PostgreSQL|Presence|PubSub|QGIS|QR|service\ worker|Sheets|Tailwind|URL|
+    User\ Agent|WebSocket|WGS)\b
   /ux
 
   # The overview also keeps the handles of accounts (`@studenti\_u\_blokadi`).

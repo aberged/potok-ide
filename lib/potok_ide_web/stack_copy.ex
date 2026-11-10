@@ -134,6 +134,14 @@ defmodule PotokIdeWeb.StackCopy do
             )
         },
         %{
+          title: dgettext("stack", "PostGIS knows places on the Earth"),
+          text:
+            dgettext(
+              "stack",
+              "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin through an index instead of reading every border, and simplifies a border for each zoom of a map, so a phone gets only the points it can show."
+            )
+        },
+        %{
           title: dgettext("stack", "The compiler does part of the checking"),
           text:
             dgettext(

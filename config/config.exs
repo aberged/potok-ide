@@ -24,6 +24,10 @@ config :potok_ide,
   ecto_repos: [PotokIde.Repo],
   generators: [timestamp_type: :utc_datetime]
 
+# PostGIS geometries (a group's area on a map) come and go as `Geo` structs.
+config :potok_ide, PotokIde.Repo, types: PotokIde.PostgresTypes
+config :geo_postgis, json_library: Jason
+
 config :potok_ide, :android_app_links, package_name: "rs.potok.ide"
 
 # In dev/test, Plug.SSL canonical redirect is disabled (no canonical host).

@@ -1,6 +1,8 @@
 services:
   db:
-    image: postgres:16
+    # Postgres 16 with PostGIS (docker/db/Dockerfile)
+    build: ./docker/db
+    image: potok-postgis:16
     container_name: potok_ide_dev
     restart: unless-stopped
     environment:

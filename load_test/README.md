@@ -6,7 +6,7 @@ Production is never touched.
 
 | File | What it does |
 |---|---|
-| `docker-compose.yml` | `db` (Postgres 16 + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `loadgen` |
+| `docker-compose.yml` | `db` (Postgres 16 with PostGIS + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `loadgen` |
 | `seed.exs` | Bulk-inserts N users, groups (one with everyone, Zipf-sized others, nesting), direct groups, threads, messages and read markers, and app groups under root shaped like production's (the preset apps from `priv/apps`, a feed with stories, ten small apps, data values); writes `results/users_<N>.csv` with signed remember-me cookies and `results/users_<N>.json` with the app group ids |
 | `sampler.exs` | Injected into the running app over `rpc`; writes `server.jsonl` every 5 s (BEAM memory, run queue, scheduler use, busiest mailboxes, LiveViews per view, Repo queue/query time, per-table DB time, LiveView mount/event times, traffic with the other node) |
 | `loadgen.exs` | One Erlang process per virtual user: page load with cookie, avatars, websocket, `phx_join`, heartbeats, live navigation, posts, reactions; writes `loadgen.jsonl` every 10 s and `summary.json` |

@@ -122,3 +122,18 @@ msgid_plural "must be at most %{count} days after the start"
 msgstr[0] "može biti najviše %{count} dan posle početka"
 msgstr[1] "može biti najviše %{count} dana posle početka"
 msgstr[2] "može biti najviše %{count} dana posle početka"
+
+msgid "The border is not an area on a map."
+msgstr "Granica nije područje na mapi."
+
+msgid "The border has too many points."
+msgstr "Granica ima previše tačaka."
+
+msgid "The border has too many parts."
+msgstr "Granica ima previše delova."
+
+msgid "The border is wider than half the world."
+msgstr "Granica je šira od pola sveta."
+
+msgid "The border crosses itself."
+msgstr "Granica seče samu sebe."

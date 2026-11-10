@@ -368,7 +368,7 @@ msgstr "Više od polovine onih koji imaju pravo glasa"
 msgid "My groups"
 msgstr "Moje grupe"
 
-#: lib/potok_ide_web/live/group_live/show.ex:420
+#: lib/potok_ide_web/live/group_live/show.ex:421
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -509,7 +509,7 @@ msgstr "Prvo izaberi odgovor."
 msgid "Poll"
 msgstr "Glasanje"
 
-#: lib/potok_ide_web/live/group_live/show.ex:421
+#: lib/potok_ide_web/live/group_live/show.ex:422
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:194
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:51
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32

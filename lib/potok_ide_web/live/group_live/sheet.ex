@@ -63,6 +63,7 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
         app_upload={@uploads.sheet_app_file}
         host="sheet"
         switcher={false}
+        location={@location}
       />
       <PollForm.dialog :if={!@unavailable?} state={@poll_form} />
       <PollCard.dialog :if={!@unavailable?} view={@poll_dialog} />
@@ -99,6 +100,7 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
          app_api_bucket: AppApi.new_bucket()
        )
        |> assign_access(Social.get_group_access(profile, group))
+       |> assign(:location, GroupDescriptionTab.location(profile, group))
        |> AppHost.allow("sheet")
        |> load_descriptions()
        |> load_reactions()
@@ -167,6 +169,7 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
       socket
       |> assign(:group, group)
       |> assign_access(Social.get_group_access(profile, group))
+      |> assign(:location, GroupDescriptionTab.location(profile, group))
       |> load_descriptions()
       |> load_reactions()
     else

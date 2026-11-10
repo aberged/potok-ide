@@ -181,6 +181,8 @@ defmodule PotokIde.DomainMap do
   end
 
   defp type_name({:array, type}), do: type_name(type) <> "[]"
+  # A PostGIS column (`Group.area`), by the database's name for it.
+  defp type_name(Geo.PostGIS.Geometry), do: "geometry"
   defp type_name(type) when is_atom(type), do: Atom.to_string(type)
   defp type_name(type), do: inspect(type)
 

@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
+    GroupAreas,
     GroupInvitation,
     GroupPresets,
     GroupRole,
@@ -92,7 +93,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {"access", [:is_public, :is_root_public, :inherits_members]},
     {"home", [:home_page, :home_alt_description_id]},
     {"description", [:description_name, :description, :description_format, :uses_api]},
-    {"location", [:latitude, :longitude, :pin_icon]}
+    {"location", [:latitude, :longitude, :pin_icon, :area]}
   ]
 
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
@@ -540,6 +541,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
             spot={@root_map_spot}
             error={@root_map_error?}
             range_form={@root_map_range_form}
+            layers={@root_map_layers}
+            here={@root_map_here}
+            area_options={@root_map_area_options || []}
+            area_query={@root_map_area_query}
+            area_chosen={@root_map_area_chosen}
           />
           <CalendarTab.panel
             :if={@active_tab == "calendar"}
@@ -600,6 +606,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             can_react={@can_react_to_group}
             app_upload={if(@current_profile, do: @uploads.app_file)}
             host="page"
+            location={@group_location}
           />
           <CreateGroupTab.panel
             :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
@@ -614,6 +621,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
             edit_group_form={@edit_group_form}
             link_card={@link_card}
+            location_mode={location_mode(@edit_group_form, @edit_group_location_mode)}
+            location_within={@edit_group_location_within}
+            area_error={@edit_group_area_error}
             dirty={edit_group_dirty?(@edit_group_form)}
             section={@edit_group_section}
             inherits_members_option={@inherits_members_option?}
@@ -767,6 +777,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:new_group_form, nil)
          |> assign_tab_forms(active_tab)
          |> assign(:edit_group_form, edit_group_form(group, active_tab))
+         |> assign(:group_location, nil)
+         |> reset_location_draft(false)
          |> assign(:link_card, link_card(group, active_tab))
          |> assign(:edit_group_section, opening_edit_section(params))
          |> assign(:create_group_section, "basics")
@@ -831,6 +843,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
          |> PollsState.assign_params(params)
+         |> RootMapState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
 
       active_tab == "calendar" and CalendarState.params_changed?(socket, params) ->
@@ -838,6 +851,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       active_tab == "polls" and PollsState.params_changed?(socket, params) ->
         {:noreply, PollsState.handle_params(socket, params)}
+
+      active_tab == "map" and RootMapState.params_changed?(socket, params) ->
+        {:noreply, RootMapState.handle_params(socket, params)}
 
       sub_groups_view != socket.assigns.sub_groups_view ->
         {:noreply,
@@ -1680,7 +1696,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       changeset =
         group
-        |> Group.update_changeset(attrs)
+        |> Group.update_changeset(put_area_draft(attrs, socket.assigns.edit_group_area))
+        |> add_area_draft_error(socket.assigns.edit_group_area)
         |> Map.put(:action, :validate)
 
       {:noreply,
@@ -1706,9 +1723,79 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("discard_edit_group", _params, socket) do
     with_edit_group(socket, fn socket ->
-      assign(socket, :edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
+      socket
+      |> assign(:edit_group_form, edit_group_form(socket.assigns.group, "edit_group"))
+      |> reset_location_draft(true)
     end)
   end
+
+  # The Location card: a point or an area.
+  def handle_event("set_location_mode", %{"mode" => mode}, socket)
+      when mode in ["point", "area"] do
+    with_edit_group(socket, fn socket ->
+      socket = assign(socket, :edit_group_location_mode, mode)
+
+      socket =
+        if mode == "point",
+          do: socket |> assign(:edit_group_area, nil) |> assign(:edit_group_area_error, nil),
+          else: socket
+
+      socket
+      |> rebuild_edit_group_form()
+      |> push_event("location_mode", %{mode: mode})
+    end)
+  end
+
+  # The border the map of the Location card holds, outside the form (a
+  # border would go with every key typed): checked at once, with the pin it
+  # gets and the areas around that pin.
+  def handle_event("edit_group_area", params, socket) do
+    if Access.can?(socket.assigns.access, :edit_group) and socket.assigns.edit_group_form do
+      {draft, reply} =
+        case params["area"] do
+          nil ->
+            {nil, %{ok: true}}
+
+          json ->
+            with {:ok, area} <- GroupAreas.decode(json),
+                 {:ok, {lat, lng}} <- GroupAreas.pin_inside(area) do
+              {{:ok, area}, %{ok: true, lat: lat, lng: lng}}
+            else
+              {:error, reason} -> {{:error, reason}, %{ok: false, error: area_error_text(reason)}}
+            end
+        end
+
+      within =
+        case {reply, draft} do
+          {%{lat: lat, lng: lng}, {:ok, area}} ->
+            location_within(socket, lat, lng, GroupAreas.size(area))
+
+          _none ->
+            []
+        end
+
+      {:reply, reply,
+       socket
+       |> assign(:edit_group_area, draft)
+       |> assign(:edit_group_area_error, reply[:error])
+       |> assign(:edit_group_location_within, within)
+       |> rebuild_edit_group_form()}
+    else
+      {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # Where the pin of the Location card stands now.
+  def handle_event("edit_group_point_areas", %{"lat" => lat, "lng" => lng}, socket)
+      when is_number(lat) and is_number(lng) do
+    if Access.can?(socket.assigns.access, :edit_group) and abs(lat) <= 90 and abs(lng) <= 180,
+      do:
+        {:noreply, assign(socket, :edit_group_location_within, location_within(socket, lat, lng))},
+      else: {:noreply, socket}
+  end
+
+  def handle_event("edit_group_point_areas", _params, socket),
+    do: {:noreply, assign(socket, :edit_group_location_within, [])}
 
   # Rights differ from group to group, so a row's menu is worked out when it
   # is opened. The id comes from the page, so the group has to be one the
@@ -1761,7 +1848,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       missing != [] ->
         {:noreply, refuse_edit_group(socket, attrs, missing)}
 
+      match?({:error, _reason}, socket.assigns.edit_group_area) ->
+        {:noreply, socket |> rebuild_edit_group_form() |> assign(:edit_group_section, "location")}
+
       true ->
+        attrs = put_area_draft(attrs, socket.assigns.edit_group_area)
         save_edit_group(socket, current_profile, group, attrs)
     end
   end
@@ -1944,6 +2035,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           |> close_alt_description_form()
           |> assign(:group, group)
           |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+          |> reset_location_draft(true)
           |> reload_alt_descriptions()
           |> put_flash(:info, gettext("The description is now the default."))
 
@@ -2498,6 +2590,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_files(group, active_tab)
     |> CalendarState.maybe_load(group, active_tab)
     |> RootMapState.maybe_load(group, active_tab)
+    |> maybe_load_group_location(group, active_tab)
     |> PollsState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
@@ -3517,7 +3610,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # only place that needs the raw value, so it is fetched just for that tab.
   # Other tabs keep no form (`assign_tab_forms/2`).
   defp edit_group_form(group, "edit_group"),
-    do: to_form(Group.update_changeset(Social.load_picture(group), %{}))
+    do: to_form(Group.update_changeset(group |> Social.load_picture() |> Social.load_area(), %{}))
 
   defp edit_group_form(_group, _active_tab), do: nil
 
@@ -3526,7 +3619,92 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp edit_group_data(socket) do
     case socket.assigns.edit_group_form do
       %Phoenix.HTML.Form{source: %Ecto.Changeset{data: group}} -> group
-      nil -> Social.load_picture(socket.assigns.group)
+      nil -> socket.assigns.group |> Social.load_picture() |> Social.load_area()
+    end
+  end
+
+  # The Location card's mode: as picked, or by what the group holds.
+  defp location_mode(_form, mode) when mode in ["point", "area"], do: mode
+
+  defp location_mode(%Phoenix.HTML.Form{data: %Group{area: %Geo.MultiPolygon{}}}, _mode),
+    do: "area"
+
+  defp location_mode(_form, _mode), do: "point"
+
+  # The border drawn on the Location card goes in with the form's fields:
+  # `:unchanged` leaves the saved one, nil removes it.
+  defp put_area_draft(attrs, {:ok, area}), do: Map.put(attrs, "area", area)
+  defp put_area_draft(attrs, nil), do: Map.put(attrs, "area", nil)
+  defp put_area_draft(attrs, _unchanged_or_error), do: attrs
+
+  defp add_area_draft_error(changeset, {:error, reason}),
+    do: Ecto.Changeset.add_error(changeset, :area, Group.area_error(reason))
+
+  defp add_area_draft_error(changeset, _draft), do: changeset
+
+  defp area_error_text(reason),
+    do: PotokIdeWeb.CoreComponents.translate_error({Group.area_error(reason), []})
+
+  # The form again with the drawn border, so the save bar knows of it.
+  defp rebuild_edit_group_form(socket) do
+    case socket.assigns.edit_group_form do
+      %Phoenix.HTML.Form{params: params} ->
+        draft = socket.assigns.edit_group_area
+
+        changeset =
+          socket
+          |> edit_group_data()
+          |> Group.update_changeset(put_area_draft(params || %{}, draft))
+          |> add_area_draft_error(draft)
+          |> Map.put(:action, :validate)
+
+        assign(socket, :edit_group_form, to_form(changeset))
+
+      nil ->
+        socket
+    end
+  end
+
+  # A fresh form forgets what was drawn; `tell_map?` also puts the card's map
+  # back to what is saved.
+  defp reset_location_draft(socket, tell_map?) do
+    group = socket.assigns.group
+    profile = socket.assigns.current_profile
+
+    within =
+      if profile && socket.assigns.edit_group_form && Group.placed?(group),
+        do: GroupAreas.containing(profile, group),
+        else: []
+
+    socket =
+      socket
+      |> assign(:edit_group_area, :unchanged)
+      |> assign(:edit_group_location_mode, nil)
+      |> assign(:edit_group_area_error, nil)
+      |> assign(:edit_group_location_within, within)
+
+    case {tell_map?, socket.assigns.edit_group_form} do
+      {true, %Phoenix.HTML.Form{data: data} = form} ->
+        push_event(socket, "location_reset", %{
+          area: GroupAreas.to_geojson(data.area),
+          mode: location_mode(form, nil)
+        })
+
+      _other ->
+        socket
+    end
+  end
+
+  defp location_within(socket, lat, lng, larger_than \\ nil) do
+    case socket.assigns.current_profile do
+      nil ->
+        []
+
+      profile ->
+        GroupAreas.areas_at(profile, lat, lng,
+          except: socket.assigns.group.id,
+          larger_than: larger_than
+        )
     end
   end
 
@@ -3568,6 +3746,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       socket
       |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+      |> reset_location_draft(false)
       |> assign(:link_card, link_card(group, "edit_group"))
       |> assign(:inherits_members_option?, Social.inherits_members_option?(group))
     end
@@ -3600,6 +3779,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
       if Enum.any?(fields, &(&1 in section_fields)), do: section
     end)
   end
+
+  # Where a group with a place stands, over its description.
+  defp maybe_load_group_location(socket, group, active_tab)
+       when active_tab in ["group_home", "values"],
+       do:
+         assign(
+           socket,
+           :group_location,
+           GroupDescriptionTab.location(socket.assigns.current_profile, group)
+         )
+
+  defp maybe_load_group_location(socket, _group, _active_tab),
+    do: assign(socket, :group_location, nil)
 
   # Alternative descriptions are only needed where the description shows and
   # in the edit tab: apps can be large, so the other tabs skip them.
@@ -3700,6 +3892,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          socket
          |> assign(:group, updated_group)
          |> assign(:edit_group_form, edit_group_form(updated_group, "edit_group"))
+         |> reset_location_draft(false)
          |> assign(:link_card, link_card(updated_group, "edit_group"))
          |> put_flash(:info, gettext("Group updated."))
          |> refresh_group_data()}

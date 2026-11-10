@@ -46,6 +46,11 @@ defmodule PotokIde.Social.Group do
     field :longitude, :float
     # The pin it shows there (`GroupPins`); nil shows its kind.
     field :pin_icon, :string
+    # The area it covers, when its place is an area rather than a point: a
+    # border of one or more polygons (`GroupAreas`). Its pin then stands inside
+    # it, set by `Social.update_group/3`. Loaded only on demand
+    # (`Social.load_area/1`), as a border can hold thousands of points.
+    field :area, Geo.PostGIS.Geometry, load_in_query: false
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
@@ -130,10 +135,12 @@ defmodule PotokIde.Social.Group do
       :is_public,
       :is_root_public,
       :uses_api,
-      :inherits_members
+      :inherits_members,
+      :area
       | @location_fields
     ])
     |> validate_location()
+    |> validate_area()
     |> update_change(:description_name, &trim/1)
     |> validate_required([
       :name,
@@ -189,6 +196,16 @@ defmodule PotokIde.Social.Group do
   @doc "Whether the group has a place on a map."
   def placed?(%__MODULE__{latitude: lat, longitude: lng}), do: is_number(lat) and is_number(lng)
 
+  @doc """
+  The error messages of an area (`GroupAreas.normalize/1`), in the errors
+  domain: whole sentences, as the Location card shows them on their own.
+  """
+  def area_error(:invalid), do: "The border is not an area on a map."
+  def area_error(:too_many_points), do: "The border has too many points."
+  def area_error(:too_many_parts), do: "The border has too many parts."
+  def area_error(:too_wide), do: "The border is wider than half the world."
+  def area_error(:crosses_itself), do: "The border crosses itself."
+
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value
 
@@ -203,6 +220,21 @@ defmodule PotokIde.Social.Group do
     |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
     |> validate_both_coordinates()
     |> validate_inclusion(:pin_icon, PotokIde.Social.GroupPins.keys())
+  end
+
+  # A border as `GroupAreas.normalize/1` keeps it: polygons, closed rings,
+  # coordinates rounded like a pin's, within limits.
+  defp validate_area(changeset) do
+    case fetch_change(changeset, :area) do
+      {:ok, area} when not is_nil(area) ->
+        case PotokIde.Social.GroupAreas.normalize(area) do
+          {:ok, area} -> put_change(changeset, :area, area)
+          {:error, reason} -> add_error(changeset, :area, area_error(reason))
+        end
+
+      _none ->
+        changeset
+    end
   end
 
   defp validate_both_coordinates(changeset) do
@@ -254,6 +286,7 @@ defmodule PotokIde.Social.Group do
     |> check_constraint(:home_page, name: :groups_home_page_check)
     |> check_constraint(:preset, name: :groups_preset_check)
     |> check_constraint(:latitude, name: :groups_location_check)
+    |> check_constraint(:area, name: :groups_area_check)
     |> check_constraint(:is_public, name: :groups_root_private_check)
     |> check_constraint(:parent_id, name: :groups_root_parent_check)
     |> check_constraint(:creator_id, name: :groups_root_creator_check)

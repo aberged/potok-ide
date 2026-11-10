@@ -49,6 +49,15 @@ defmodule PotokIdeWeb.StackCopyTest do
     end
   end
 
+  test "PostGIS, which the page names, is what the areas run on" do
+    deps = Enum.map(Mix.Project.config()[:deps], &elem(&1, 0))
+    assert :geo_postgis in deps
+
+    assert "priv/repo/migrations/*.exs"
+           |> Path.wildcard()
+           |> Enum.any?(&(File.read!(&1) =~ "CREATE EXTENSION IF NOT EXISTS postgis"))
+  end
+
   test "there is no broker or job queue next to BEAM" do
     deps = Enum.map(Mix.Project.config()[:deps], &elem(&1, 0))
 

@@ -13,6 +13,17 @@
 // tap on a cluster zooms in until it spreads, or lists its groups when they
 // stand in one place (`root_map_spot`). The view is kept in the browser for
 // the next visit.
+//
+// Areas (`GroupAreas`) lie under the pins: the view's answer names the areas
+// wide enough to draw at its zoom, and their borders come once per level of
+// detail (`root_map_shapes`) and stay in a cache here, so moving the map sends
+// no border twice. An area that covers the whole view is drawn as its outline
+// only. A drawn area keeps its pin, the same one it shows far out, on its own
+// rather than in the clusters, and a tap on it opens the area's sheet like any
+// pin. A tap on the map, off the pins, asks
+// which areas stand there (`root_map_here`) and the server shows their card.
+// While an area filter holds areas, everything outside them is dimmed. The
+// layers (places, areas) are switched on the page and remembered here.
 
 // Leaflet 1.9's package names only its UMD build; the ESM one has named exports.
 let leafletModule = null
@@ -20,7 +31,23 @@ const loadLeaflet = () =>
   leafletModule || (leafletModule = import("leaflet/dist/leaflet-src.esm.js"))
 
 const VIEW_KEY = "potok:root-map-view"
+const LAYERS_KEY = "potok:root-map-layers"
 const MOVE_DELAY_MS = 250
+// A tap waits this long, so that a double tap zooms instead.
+const TAP_DELAY_MS = 250
+// The levels of detail borders come at (`GroupAreas.level/1`).
+const LEVELS = [6, 8, 10, 12, 14, 16]
+const SHAPES_PER_REQUEST = 100
+const SHAPE_CACHE_LIMIT = 800
+// A drawn area's pin stands over the other pins and clusters.
+const AREA_PIN_Z = 500
+// The whole world, around the holes of the chosen areas.
+const WORLD_RING = [
+  [-89.9, -540],
+  [-89.9, 540],
+  [89.9, 540],
+  [89.9, -540],
+]
 const PIN_SIZE = [32, 40]
 const PIN_ANCHOR = [16, 39]
 const FIT_PADDING = [48, 48]
@@ -122,6 +149,34 @@ const saveView = view => {
   } catch (_error) {}
 }
 
+const readLayers = () => {
+  try {
+    const layers = JSON.parse(window.localStorage.getItem(LAYERS_KEY) || "null")
+
+    if (layers && typeof layers.places === "boolean" && typeof layers.areas === "boolean") {
+      return {places: layers.places, areas: layers.areas}
+    }
+  } catch (_error) {}
+
+  return {places: true, areas: true}
+}
+
+const saveLayers = layers => {
+  try {
+    window.localStorage.setItem(LAYERS_KEY, JSON.stringify(layers))
+  } catch (_error) {}
+}
+
+const levelFor = zoom => LEVELS.find(level => level >= zoom) ?? LEVELS[LEVELS.length - 1]
+
+const shapeKey = (id, version, level) => `${id}:${version}:${level}`
+
+// A GeoJSON (Multi)Polygon as Leaflet's nested [lat, lng] lists.
+const toLatLngs = geojson => {
+  const polygons = geojson.type === "Polygon" ? [geojson.coordinates] : geojson.coordinates || []
+  return polygons.map(rings => rings.map(ring => ring.map(([lng, lat]) => [lat, lng])))
+}
+
 export const RootMap = {
   mounted() {
     this.map = null
@@ -133,10 +188,23 @@ export const RootMap = {
     this.selectedId = null
     this.pins = JSON.parse(this.el.dataset.pins || "{}")
     this.maxZoom = Number(this.el.dataset.maxZoom) || 19
+    this.layers = readLayers()
+    this.areas = []
+    this.chosen = []
+    this.shapes = new Map()
+    this.pendingShapes = new Set()
+    this.areaPaths = new Map()
+    this.areaMarkers = new Map()
+    this.selectedAreaId = null
 
     this.handleEvent("root_map_data", data => this.draw(data))
     this.handleEvent("root_map_fit", ({bounds}) => this.fit(bounds))
     this.handleEvent("group_sheet_closed", () => this.select(null))
+    this.handleEvent("root_map_select_area", ({id}) => this.selectArea(id))
+    this.handleEvent("root_map_layers", layers => {
+      this.layers = {places: layers.places === true, areas: layers.areas === true}
+      saveLayers(this.layers)
+    })
 
     this.resizer = new ResizeObserver(() => {
       if (this.el.offsetWidth === 0) return
@@ -158,6 +226,7 @@ export const RootMap = {
 
   destroyed() {
     clearTimeout(this.timer)
+    clearTimeout(this.tapTimer)
     this.resizer?.disconnect()
     this.map?.remove()
   },
@@ -191,7 +260,31 @@ export const RootMap = {
       attribution: this.el.dataset.attribution,
     }).addTo(this.map)
 
+    // Areas under the pins, the dimming around the chosen ones above them,
+    // and the chosen borders above that.
+    for (const [name, zIndex] of [
+      ["potokAreas", 350],
+      ["potokAreaMask", 360],
+      ["potokAreaChosen", 370],
+    ]) {
+      this.map.createPane(name).style.zIndex = String(zIndex)
+    }
+
+    this.areaRenderer = L.svg({pane: "potokAreas", padding: 0.5})
+    this.maskRenderer = L.svg({pane: "potokAreaMask", padding: 0.5})
+    this.chosenRenderer = L.svg({pane: "potokAreaChosen", padding: 0.5})
+    this.areaLayer = L.layerGroup().addTo(this.map)
+    this.maskLayer = L.layerGroup().addTo(this.map)
+    this.chosenLayer = L.layerGroup().addTo(this.map)
+    this.areaPinLayer = L.layerGroup().addTo(this.map)
     this.layer = L.layerGroup().addTo(this.map)
+
+    // A tap off the pins: the areas there. Pins keep their taps.
+    this.map.on("click", event => {
+      clearTimeout(this.tapTimer)
+      this.tapTimer = setTimeout(() => this.tapAt(event.latlng), TAP_DELAY_MS)
+    })
+    this.map.on("dblclick zoomstart", () => clearTimeout(this.tapTimer))
 
     const view = readView()
 
@@ -223,9 +316,13 @@ export const RootMap = {
     const seq = ++this.seq
     const bbox = [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()]
 
-    this.pushEvent("root_map_view", {bbox, zoom: Math.round(this.map.getZoom())}, reply => {
-      if (seq === this.seq && reply?.ok) this.draw(reply)
-    })
+    this.pushEvent(
+      "root_map_view",
+      {bbox, zoom: Math.round(this.map.getZoom()), layers: this.layers},
+      reply => {
+        if (seq === this.seq && reply?.ok) this.draw(reply)
+      }
+    )
   },
 
   // The server's cells are a fixed grid, so markers of neighbouring cells can
@@ -298,6 +395,18 @@ export const RootMap = {
 
   draw(data) {
     if (!this.layer) return
+
+    if (data.layers) {
+      this.layers = {places: data.layers.places === true, areas: data.layers.areas === true}
+      saveLayers(this.layers)
+    }
+
+    this.areas = data.areas || []
+    this.chosen = data.chosen || []
+    this.drawAreas()
+    this.fetchShapes()
+
+    if (Array.isArray(data.fit)) this.fit(data.fit)
 
     const {places, clusters} = this.merge(data.places || [], data.clusters || [])
     const L = this.L
@@ -375,9 +484,11 @@ export const RootMap = {
   },
 
   markSelected() {
-    for (const [id, marker] of this.markers) {
-      marker.getElement()?.classList.toggle("is-selected", id === this.selectedId)
-      marker.setZIndexOffset(id === this.selectedId ? 1000 : 0)
+    for (const markers of [this.markers, this.areaMarkers]) {
+      for (const [id, marker] of markers) {
+        marker.getElement()?.classList.toggle("is-selected", id === this.selectedId)
+        marker.setZIndexOffset(id === this.selectedId ? 1000 : marker.options.baseZ || 0)
+      }
     }
   },
 
@@ -385,5 +496,176 @@ export const RootMap = {
     if (!this.map || !Array.isArray(bounds)) return
 
     this.map.flyToBounds(bounds, {padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: 0.6})
+  },
+
+  // The areas there, smallest first; the server shows their card.
+  tapAt(latlng) {
+    if (!this.layers.areas) return
+
+    const zoom = Math.round(this.map.getZoom())
+
+    this.pushEvent("root_map_here", {lat: latlng.lat, lng: latlng.lng, zoom}, reply =>
+      this.selectArea(reply?.ids?.[0] ?? null)
+    )
+  },
+
+  // The border of an area at this zoom's level of detail, or at another
+  // level of the same version while that one is on its way.
+  shapeOf(area) {
+    const level = levelFor(Math.round(this.map.getZoom()))
+    const exact = this.shapes.get(shapeKey(area.id, area.v, level))
+    if (exact) return exact
+
+    const nearest = [...LEVELS].sort((a, b) => Math.abs(a - level) - Math.abs(b - level))
+
+    for (const other of nearest) {
+      const shape = this.shapes.get(shapeKey(area.id, area.v, other))
+      if (shape) return shape
+    }
+
+    return null
+  },
+
+  // Asks for the borders this zoom lacks, a hundred at a time.
+  fetchShapes() {
+    if (!this.map) return
+
+    const zoom = Math.round(this.map.getZoom())
+    const level = levelFor(zoom)
+    const missing = this.areas.filter(area => {
+      const key = shapeKey(area.id, area.v, level)
+      return !this.shapes.has(key) && !this.pendingShapes.has(key)
+    })
+
+    for (let start = 0; start < missing.length; start += SHAPES_PER_REQUEST) {
+      const batch = missing.slice(start, start + SHAPES_PER_REQUEST)
+      const keys = batch.map(area => shapeKey(area.id, area.v, level))
+      keys.forEach(key => this.pendingShapes.add(key))
+
+      this.pushEvent("root_map_shapes", {ids: batch.map(area => area.id), zoom}, reply => {
+        keys.forEach(key => this.pendingShapes.delete(key))
+        if (!reply?.ok) return
+
+        for (const shape of reply.shapes || []) {
+          this.shapes.set(shapeKey(shape.id, shape.v, reply.level), shape.geojson)
+        }
+
+        while (this.shapes.size > SHAPE_CACHE_LIMIT) {
+          this.shapes.delete(this.shapes.keys().next().value)
+        }
+
+        this.drawAreas()
+      })
+    }
+  },
+
+  drawAreas() {
+    if (!this.areaLayer) return
+
+    const L = this.L
+    this.areaLayer.clearLayers()
+    this.maskLayer.clearLayers()
+    this.chosenLayer.clearLayers()
+    this.areaPaths = new Map()
+
+    const view = this.map.getBounds()
+    const holes = []
+
+    // Biggest first, as they come, so that smaller areas lie on top.
+    for (const area of this.areas) {
+      const shape = this.shapeOf(area)
+      if (!shape) continue
+
+      const latlngs = toLatLngs(shape)
+      const [west, south, east, north] = area.bbox
+      const covers =
+        west <= view.getWest() &&
+        east >= view.getEast() &&
+        south <= view.getSouth() &&
+        north >= view.getNorth()
+      const color = lookOf(area, this.pins).color
+      const chosen = this.chosen.includes(area.id)
+
+      const path = L.polygon(latlngs, {
+        pane: "potokAreas",
+        renderer: this.areaRenderer,
+        color,
+        fillColor: color,
+        weight: 2,
+        className: covers ? "potok-area is-outline" : "potok-area",
+      }).addTo(this.areaLayer)
+
+      this.areaPaths.set(area.id, path)
+
+      if (chosen) {
+        holes.push(...latlngs.map(rings => rings[0]))
+
+        L.polygon(latlngs, {
+          pane: "potokAreaChosen",
+          renderer: this.chosenRenderer,
+          color,
+          weight: 3,
+          fill: false,
+          interactive: false,
+          className: "potok-area-chosen",
+        }).addTo(this.chosenLayer)
+      }
+    }
+
+    if (holes.length > 0) {
+      L.polygon([WORLD_RING, ...holes], {
+        pane: "potokAreaMask",
+        renderer: this.maskRenderer,
+        stroke: false,
+        interactive: false,
+        className: "potok-area-mask",
+      }).addTo(this.maskLayer)
+    }
+
+    this.drawAreaPins()
+    this.markAreaSelected()
+  },
+
+  // The pins of the areas drawn as borders: the server leaves them out of the
+  // clusters, and they stand here even before a border arrives, over the
+  // other pins.
+  drawAreaPins() {
+    const L = this.L
+    this.areaPinLayer.clearLayers()
+    this.areaMarkers = new Map()
+
+    for (const area of this.areas) {
+      const marker = L.marker([area.lat, area.lng], {
+        icon: L.divIcon({
+          html: pinSvg(lookOf(area, this.pins), this.pins, !area.is_public),
+          className: "potok-pin potok-map-pin",
+          iconSize: PIN_SIZE,
+          iconAnchor: PIN_ANCHOR,
+        }),
+        title: area.name,
+        alt: area.name,
+        riseOnHover: true,
+        zIndexOffset: AREA_PIN_Z,
+        baseZ: AREA_PIN_Z,
+      })
+        .on("click", () => this.select(area.id, true))
+        .addTo(this.areaPinLayer)
+
+      this.areaMarkers.set(area.id, marker)
+    }
+
+    this.markSelected()
+  },
+
+  selectArea(id) {
+    this.selectedAreaId = id
+    this.markAreaSelected()
+  },
+
+  markAreaSelected() {
+    for (const [id, path] of this.areaPaths) {
+      path.getElement()?.classList.toggle("is-selected", id === this.selectedAreaId)
+      if (id === this.selectedAreaId) path.bringToFront()
+    }
   },
 }

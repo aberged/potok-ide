@@ -127,3 +127,18 @@ msgid "must be at most %{count} days after the start"
 msgid_plural "must be at most %{count} days after the start"
 msgstr[0] ""
 msgstr[1] ""
+
+msgid "The border is not an area on a map."
+msgstr ""
+
+msgid "The border has too many points."
+msgstr ""
+
+msgid "The border has too many parts."
+msgstr ""
+
+msgid "The border is wider than half the world."
+msgstr ""
+
+msgid "The border crosses itself."
+msgstr ""

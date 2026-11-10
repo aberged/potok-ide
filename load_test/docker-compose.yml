@@ -45,7 +45,9 @@ x-app: &app
 
 services:
   db:
-    image: postgres:16
+    # Postgres 16 with PostGIS, as in development (../docker/db/Dockerfile).
+    build: ../docker/db
+    image: potok-postgis:16
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres

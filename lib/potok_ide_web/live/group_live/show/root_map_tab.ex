@@ -1,9 +1,10 @@
 defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   @moduledoc """
   The root's map (`RootMapState`): a bar of filters over a map of every group
-  with a place the viewer sees. The map is the browser's (`root_map.js`,
-  ignored by patches); what stands over it, the count, the empty state and the
-  list of a crowded spot, is rendered here.
+  with a place the viewer sees, and of the areas it sees. The map is the
+  browser's (`root_map.js`, ignored by patches); what stands over it, the
+  count, the layers, the empty state, the list of a crowded spot and the card
+  of the areas where the viewer tapped, is rendered here.
   """
   use PotokIdeWeb, :html
 
@@ -21,6 +22,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :spot, :map, default: nil, doc: "the groups of a crowded spot"
   attr :error, :boolean, default: false
   attr :range_form, :any, required: true
+  attr :layers, :map, default: %{places: true, areas: true}, doc: "the layers shown"
+  attr :here, :map, default: nil, doc: "the areas where the viewer tapped, and the one picked"
+  attr :area_options, :list, default: [], doc: "the areas the filter's menu offers"
+  attr :area_query, :string, default: "", doc: "what the filter's menu searches"
+  attr :area_chosen, :list, default: [], doc: "the areas of the filter"
 
   def panel(assigns) do
     filters = assigns.filters
@@ -28,7 +34,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
     assigns =
       assigns
       |> assign(:search_form, to_form(%{"q" => filters.search}, as: :root_map_search))
+      |> assign(:area_form, to_form(%{"q" => assigns.area_query}, as: :root_map_area))
       |> assign(:empty_reason, RootMapState.empty_reason(filters))
+      |> assign(:area_list, area_list(assigns.area_chosen, assigns.area_options))
 
     ~H"""
     <div id="group-panel-map" class="card relative flex min-h-0 flex-1 flex-col px-2 pb-2">
@@ -86,6 +94,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           icon={time_icon(@filters)}
           active={@filters.period != "any"}
         />
+        <ChoiceMenus.choice_toggle
+          id="root-map-area"
+          choices={[%{key: "", icon: "hero-viewfinder-circle", title: gettext("All areas")}]}
+          idle_label={gettext("Area")}
+          title={gettext("Show the groups inside areas")}
+          label={gettext("Areas")}
+          text={area_text(@area_chosen)}
+          icon="hero-viewfinder-circle"
+          active={@filters.areas != []}
+        />
 
         <.form for={@search_form} id="root-map-search-form" phx-change="root_map_search">
           <.search_field
@@ -119,7 +137,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
 
         <div class="pointer-events-none absolute inset-x-2 top-2 z-[1100] flex items-start justify-between gap-2">
           <p
-            :if={@total && @extent && @extent.count > 0}
+            :if={@layers.places && @total && @extent && @extent.count > 0}
             id="root-map-total"
             class="pointer-events-auto rounded-full border border-base-300/70 bg-base-100/90 px-3 py-1.5 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur"
           >
@@ -133,17 +151,37 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                 )
             )}
           </p>
-          <span :if={!(@total && @extent && @extent.count > 0)}></span>
-          <button
-            :if={@extent && @extent.count > 0}
-            id="root-map-fit"
-            type="button"
-            phx-click="root_map_fit"
-            class="pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-base-300/70 bg-base-100/90 px-3 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur transition duration-150 ease-out hover:-translate-y-px hover:text-base-content active:scale-95"
-          >
-            <.icon name="hero-arrows-pointing-out" class="size-4" />
-            {pgettext("map", "Show all")}
-          </button>
+          <span :if={!(@layers.places && @total && @extent && @extent.count > 0)}></span>
+          <div class="flex shrink-0 items-center gap-2">
+            <button
+              :if={@extent && @extent.count > 0}
+              id="root-map-fit"
+              type="button"
+              phx-click="root_map_fit"
+              class="pointer-events-auto inline-flex h-9 items-center gap-1.5 rounded-full border border-base-300/70 bg-base-100/90 px-3 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur transition duration-150 ease-out hover:-translate-y-px hover:text-base-content active:scale-95"
+            >
+              <.icon name="hero-arrows-pointing-out" class="size-4" />
+              {pgettext("map", "Show all")}
+            </button>
+            <button
+              id="root-map-layers-toggle"
+              type="button"
+              phx-click={JS.dispatch("potok:choice-menu-open", to: "#root-map-layers-menu")}
+              aria-haspopup="menu"
+              aria-controls="root-map-layers-menu"
+              aria-label={gettext("Map layers")}
+              title={gettext("Map layers")}
+              class={[
+                "pointer-events-auto inline-flex size-9 items-center justify-center rounded-full border bg-base-100/90 shadow-sm backdrop-blur transition duration-150 ease-out hover:-translate-y-px active:scale-95",
+                if(@layers.places and @layers.areas,
+                  do: "border-base-300/70 text-base-content/80 hover:text-base-content",
+                  else: "border-primary/50 text-primary"
+                )
+              ]}
+            >
+              <.icon name="hero-square-3-stack-3d" class="size-4" />
+            </button>
+          </div>
         </div>
 
         <div
@@ -157,6 +195,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             </span>
             <p class="text-sm font-semibold">
               <%= case @empty_reason do %>
+                <% :area -> %>
+                  {gettext("No group with a place inside the chosen areas fits these filters.")}
                 <% :filters -> %>
                   {gettext("No group with a place fits these filters.")}
                 <% :time -> %>
@@ -168,6 +208,17 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             <p class="mt-1 text-xs text-base-content/65">
               {gettext("A group gets its place in its settings, on the Location card.")}
             </p>
+            <.button
+              :if={@empty_reason == :area}
+              id="root-map-area-clear"
+              type="button"
+              phx-click="root_map_area_clear"
+              variant="soft"
+              size="sm"
+              class="mt-3"
+            >
+              {gettext("Leave the areas out")}
+            </.button>
             <.button
               :if={@empty_reason == :filters}
               id="root-map-clear-filters"
@@ -263,7 +314,146 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             {gettext("More groups stand here. Search by name to find one.")}
           </p>
         </section>
+
+        <.here_card :if={@here && !@spot} here={@here} chosen={@filters.areas} />
       </div>
+
+      <ChoiceMenus.choice_menu
+        id="root-map-layers"
+        choices={[]}
+        event="root_map_layer"
+        param="layer"
+        label={gettext("Map layers")}
+      >
+        <:top>
+          <p class="px-2.5 pb-1 pt-1.5 text-xs font-semibold text-base-content/60">
+            {gettext("Map layers")}
+          </p>
+          <button
+            :for={layer <- layer_rows()}
+            id={"root-map-layer-#{layer.key}"}
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={to_string(Map.fetch!(@layers, layer.key))}
+            phx-click="root_map_layer"
+            phx-value-layer={layer.key}
+            class="group/layer flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none"
+          >
+            <span class={[
+              "inline-flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+              if(Map.fetch!(@layers, layer.key),
+                do: "bg-primary/15 text-primary",
+                else: "bg-base-200 text-base-content/50"
+              )
+            ]}>
+              <.icon name={layer.icon} class="size-4" />
+            </span>
+            <span class="min-w-0 flex-1">
+              <span class="block font-semibold">{layer.title}</span>
+              <span class="block text-xs text-base-content/60">{layer.hint}</span>
+            </span>
+            <span
+              aria-hidden="true"
+              class={[
+                "relative inline-flex h-5 w-9 shrink-0 rounded-full transition-colors duration-150",
+                if(Map.fetch!(@layers, layer.key), do: "bg-primary", else: "bg-base-300")
+              ]}
+            >
+              <span class={[
+                "absolute top-0.5 size-4 rounded-full bg-base-100 shadow-sm transition-all duration-150",
+                if(Map.fetch!(@layers, layer.key), do: "left-4.5", else: "left-0.5")
+              ]}>
+              </span>
+            </span>
+          </button>
+        </:top>
+      </ChoiceMenus.choice_menu>
+
+      <ChoiceMenus.choice_menu
+        id="root-map-area"
+        choices={[]}
+        event="root_map_area"
+        param="id"
+        label={gettext("Areas")}
+      >
+        <:top>
+          <.form
+            for={@area_form}
+            id="root-map-area-search-form"
+            phx-change="root_map_area_search"
+            phx-submit="root_map_area_search"
+            class="px-1 pb-1"
+          >
+            <.input
+              field={@area_form[:q]}
+              id="root-map-area-search-input"
+              type="search"
+              placeholder={gettext("Find an area")}
+              autocomplete="off"
+              phx-debounce="250"
+            />
+          </.form>
+          <button
+            id="root-map-area-option-all"
+            type="button"
+            role="menuitemradio"
+            aria-checked={to_string(@filters.areas == [])}
+            phx-click={
+              JS.push("root_map_area_clear") |> ChoiceMenus.close_choice_menu("root-map-area")
+            }
+            class={[
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+              if(@filters.areas == [],
+                do: "font-semibold text-primary",
+                else: "font-medium text-base-content/80"
+              )
+            ]}
+          >
+            <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-base-200">
+              <.icon name="hero-viewfinder-circle" class="size-4" />
+            </span>
+            <span class="min-w-0 flex-1 truncate">{gettext("All areas")}</span>
+            <.icon :if={@filters.areas == []} name="hero-check" class="size-4 shrink-0" />
+          </button>
+          <div class="mx-2 my-1 border-t border-base-300/70" aria-hidden="true"></div>
+          <button
+            :for={area <- @area_list}
+            id={"root-map-area-option-#{area.id}"}
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={to_string(area.id in @filters.areas)}
+            phx-click="root_map_area"
+            phx-value-id={area.id}
+            class={[
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+              if(area.id in @filters.areas,
+                do: "font-semibold text-primary",
+                else: "font-medium text-base-content/80"
+              )
+            ]}
+          >
+            <PinIcons.pin
+              id={"root-map-area-pin-#{area.id}"}
+              color={PinIcons.look(area).color}
+              paths={PinIcons.look(area).paths}
+              picture_url={PinIcons.look(area).picture && Avatars.group_avatar_url(area)}
+              class="h-7 w-[1.4rem] shrink-0 drop-shadow-sm"
+            />
+            <span class="min-w-0 flex-1 truncate">{area.name}</span>
+            <.icon :if={area.id in @filters.areas} name="hero-check" class="size-4 shrink-0" />
+          </button>
+          <p
+            :if={@area_list == []}
+            id="root-map-area-none"
+            class="px-2.5 py-2 text-xs text-base-content/60"
+          >
+            {if(@area_query == "",
+              do: gettext("No group you see has an area yet."),
+              else: gettext("No area by that name.")
+            )}
+          </p>
+        </:top>
+      </ChoiceMenus.choice_menu>
 
       <ChoiceMenus.choice_menu
         id="root-map-relation"
@@ -421,6 +611,135 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
     do: gettext("from %{date}", date: Format.day_month(from))
 
   defp range_text(%{to: %Date{} = to}), do: gettext("until %{date}", date: Format.day_month(to))
+
+  attr :here, :map, required: true
+  attr :chosen, :list, required: true
+
+  # The areas where the viewer tapped: the one picked, smallest first, what
+  # it does, and the bigger ones around it.
+  defp here_card(assigns) do
+    area = Enum.find(assigns.here.areas, &(&1.id == assigns.here.selected))
+
+    assigns =
+      assigns
+      |> assign(:area, area)
+      |> assign(:others, Enum.reject(assigns.here.areas, &(&1.id == area.id)))
+
+    ~H"""
+    <section
+      id="root-map-here"
+      aria-labelledby="root-map-here-title"
+      class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
+    >
+      <header class="flex items-center gap-3 px-4 pt-3">
+        <PinIcons.pin
+          id="root-map-here-pin"
+          color={PinIcons.look(@area).color}
+          paths={PinIcons.look(@area).paths}
+          picture_url={PinIcons.look(@area).picture && Avatars.group_avatar_url(@area)}
+          class="h-9 w-7 shrink-0 drop-shadow-sm"
+        />
+        <div class="min-w-0 flex-1">
+          <h3 id="root-map-here-title" class="truncate text-sm font-semibold">{@area.name}</h3>
+          <p class="flex items-center gap-1 text-xs text-base-content/60">
+            <.icon
+              name={if(@area.is_public, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")}
+              class="size-3.5"
+            />
+            <span class="truncate">
+              {gettext("Area")}{" · " <> PinIcons.kind_label(GroupPins.kind(@area))}
+            </span>
+          </p>
+        </div>
+        <.icon_button
+          id="root-map-here-close"
+          type="button"
+          phx-click="root_map_here_close"
+          icon="hero-x-mark"
+          label={gettext("Close")}
+        />
+      </header>
+      <div class="flex flex-wrap gap-2 px-4 pb-3 pt-2.5">
+        <.button
+          id="root-map-here-open"
+          type="button"
+          phx-click="root_map_open"
+          phx-value-id={@area.id}
+          variant="soft"
+          size="sm"
+        >
+          <.icon name="hero-arrow-top-right-on-square" class="size-4" />
+          {gettext("Open")}
+        </.button>
+        <.button
+          id="root-map-here-filter"
+          type="button"
+          phx-click="root_map_area"
+          phx-value-id={@area.id}
+          variant="soft"
+          size="sm"
+          aria-pressed={to_string(@area.id in @chosen)}
+        >
+          <.icon name="hero-viewfinder-circle" class="size-4" />
+          {if(@area.id in @chosen, do: gettext("Show all groups"), else: gettext("Only inside"))}
+        </.button>
+        <.icon_button
+          id="root-map-here-fit"
+          type="button"
+          phx-click="root_map_area_fit"
+          phx-value-id={@area.id}
+          icon="hero-magnifying-glass-plus"
+          label={gettext("Zoom to the area")}
+        />
+      </div>
+      <div :if={@others != []} class="border-t border-base-300/60 px-4 py-2.5">
+        <p class="text-xs font-semibold text-base-content/60">{gettext("Also here")}</p>
+        <div class="mt-1.5 flex flex-wrap gap-1.5">
+          <button
+            :for={other <- @others}
+            id={"root-map-here-pick-#{other.id}"}
+            type="button"
+            phx-click="root_map_here_pick"
+            phx-value-id={other.id}
+            class="inline-flex max-w-full cursor-pointer items-center gap-1 rounded-full border border-base-300/70 bg-base-100 px-2.5 py-1 text-xs font-semibold text-base-content/80 transition duration-150 ease-out hover:-translate-y-px hover:border-primary/40 hover:text-primary active:scale-95"
+          >
+            <span class="truncate">{other.name}</span>
+          </button>
+        </div>
+      </div>
+    </section>
+    """
+  end
+
+  defp layer_rows do
+    [
+      %{
+        key: :places,
+        icon: "hero-map-pin",
+        title: gettext("Places"),
+        hint: gettext("Groups as pins, by the filters")
+      },
+      %{
+        key: :areas,
+        icon: "hero-viewfinder-circle",
+        title: gettext("Areas"),
+        hint: gettext("Every area you see, as a border or a pin")
+      }
+    ]
+  end
+
+  # What the area filter's button says.
+  defp area_text([]), do: nil
+  defp area_text([area]), do: gettext("In %{name}", name: area.name)
+
+  defp area_text(areas),
+    do: ngettext("In %{count} area", "In %{count} areas", length(areas))
+
+  # The menu lists the chosen areas first, then what the search found.
+  defp area_list(chosen, options) do
+    ids = MapSet.new(chosen, & &1.id)
+    chosen ++ Enum.reject(options, &MapSet.member?(ids, &1.id))
+  end
 
   defp time_icon(%{time: :active}), do: "hero-chat-bubble-left-ellipsis"
   defp time_icon(%{period: "any"}), do: "hero-squares-2x2"

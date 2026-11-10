@@ -50,3 +50,20 @@ Filteri su isti kao u podgrupama korena (član ili autor, vrsta, ime), uz filter
 Grupa može biti jako mnogo, pa ih broji server, a ne telefon: dok se mapa pomera, pregledač pita samo za ono što vidi (`root_map_view`), a `Social.list_map_cells/4` skuplja grupe u ćelije od oko 64 piksela. Ćelija sa jednom grupom vraća pin, svaka druga krug sa brojem, pa odgovor ima najviše nekoliko stotina oznaka. Dodir na krug približava mapu dok se krug ne raspadne, a grupe na istom mestu otvara kao listu. Dodir na pin otvara opis grupe u istom dijalogu kao kod aplikacije Mapa.
 
 Mapa korena se ne osvežava sama: novo stanje stiže kad se mapa pomeri, kad se promeni filter ili kad se tab ponovo otvori.
+
+## Područja
+
+Mesto grupe može biti i područje, kao kod mesne zajednice: granica od jednog ili više poligona, sa rupama ili bez njih (`Group.area`, PostGIS, `PotokIde.Social.GroupAreas`). Zadaje je ko sme da uređuje grupu, na kartici **Lokacija** (prekidač **Tačka / Područje**): crta se dodirom na mapu (temena, tačke na sredini ivica, poništavanje), ili se uvozi iz GeoJSON fajla, koji čita pregledač. Ako fajl ima više područja, bira se jedno po imenu (`name`, `naziv`…). Granica ide serveru posebnim događajem, ne kroz formu, a server je proverava i sam stavlja pin područja u njegovu unutrašnjost.
+
+| Pravilo | Kako |
+|---|---|
+| Ko je u području | grupa čiji je pin unutar granice; drugo područje samo ako je manje (centar grada ne „leži“ u kvartu) |
+| Ko vidi područje | ko vidi njegovu grupu: članovi, a za javnu grupu svi prijavljeni |
+| Nalazi se u | na opisu grupe i u listu preko mape: vidljiva područja oko pina, od najmanjeg |
+| Na mapi korena | sloj **Područja** ne zavisi od filtera: granica se crta kad je široka bar ~28 px, uvek sa svojim pinom; manje područje je pin u krugovima sa brojem, i kad su **Mesta** isključena |
+| Slojevi | **Mesta** i **Područja** se pale i gase dugmetom na mapi, pregledač pamti izbor |
+| Dodir na mapu | kartica sa područjima na tom mestu: Otvori, Samo unutra, Uvećaj, i veća područja okolo |
+| Filter | meni **Područje** (pretraga, više područja), ostavlja pinove unutar njih i zatamni ostalo; link `?area=ID` |
+| Granice | stižu jednom po nivou detalja (`root_map_shapes`, uprošćene za ~0,75 px) i ostaju u kešu pregledača |
+
+Aplikacija Mapa još ne crta područja: grupa-područje je u njoj običan pin u svojoj unutrašnjoj tački.
