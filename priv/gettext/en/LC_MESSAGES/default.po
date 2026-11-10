@@ -1008,8 +1008,8 @@ msgstr ""
 msgid "Could not update access request."
 msgstr "Could not update value."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:398
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1239
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:401
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1286
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Could not update group description."
 msgstr "Could not update value."
@@ -1237,12 +1237,12 @@ msgstr ""
 msgid "You are already a group member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:248
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:298
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:319
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:349
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:518
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1020
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:251
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:301
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:322
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:352
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:521
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1049
 #, elixir-autogen, elixir-format, fuzzy
 msgid "You must be a group member to access group data values."
 msgstr ""
@@ -1704,9 +1704,9 @@ msgstr ""
 msgid "Show password"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1032
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1128
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1288
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1061
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1157
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1335
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr ""
@@ -2288,16 +2288,16 @@ msgid "Your roles in this group do not allow posting messages."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:4784
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:377
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:416
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:658
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:783
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:910
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1017
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1104
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1117
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1205
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1231
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:380
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:419
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:661
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:812
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:939
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1046
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1133
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1146
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1252
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1278
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr ""
@@ -4465,8 +4465,8 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:338
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1073
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:341
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1102
 #, elixir-autogen, elixir-format
 msgid "Could not save the data value."
 msgstr ""
@@ -4551,9 +4551,9 @@ msgstr ""
 msgid "Apps"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:780
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1149
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1227
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:809
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1178
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1274
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr ""
@@ -4884,7 +4884,7 @@ msgstr ""
 msgid "You cannot send pictures in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1050
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1079
 #, elixir-autogen, elixir-format
 msgid "A file is missing or does not fit."
 msgstr ""
@@ -4904,32 +4904,32 @@ msgstr ""
 msgid "Private files"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1035
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1064
 #, elixir-autogen, elixir-format
 msgid "That is too much to save."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1056
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1085
 #, elixir-autogen, elixir-format
 msgid "The group for private files is no longer closed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1053
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1082
 #, elixir-autogen, elixir-format
 msgid "The group that keeps the files is gone."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1029
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1058
 #, elixir-autogen, elixir-format
 msgid "The scores are out, so the answer can no longer change."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1023
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1052
 #, elixir-autogen, elixir-format
 msgid "This no longer takes answers."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1026
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1055
 #, elixir-autogen, elixir-format
 msgid "You have already answered."
 msgstr ""
@@ -4974,12 +4974,12 @@ msgstr ""
 msgid "Too many requests in a short time. Try again in %{minutes} min."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1070
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1099
 #, elixir-autogen, elixir-format
 msgid "Counting took too long. Try narrowing it down."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1307
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1354
 #, elixir-autogen, elixir-format
 msgid "Too many requests in a short time. Try again shortly."
 msgstr ""
@@ -5093,7 +5093,7 @@ msgstr ""
 msgid "Company"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:139
+#: lib/potok_ide_web/pin_icons.ex:140
 #, elixir-autogen, elixir-format
 msgid "Danger"
 msgstr ""
@@ -5123,7 +5123,7 @@ msgstr ""
 msgid "Home and lodging"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:143
+#: lib/potok_ide_web/pin_icons.ex:144
 #, elixir-autogen, elixir-format
 msgid "Idea and initiative"
 msgstr ""
@@ -5131,11 +5131,6 @@ msgstr ""
 #: lib/potok_ide_web/pin_icons.ex:119
 #, elixir-autogen, elixir-format
 msgid "Institution and culture"
-msgstr ""
-
-#: lib/potok_ide_web/pin_icons.ex:125
-#, elixir-autogen, elixir-format
-msgid "Internet"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:504
@@ -5179,7 +5174,7 @@ msgstr ""
 msgid "My location"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:134
+#: lib/potok_ide_web/pin_icons.ex:135
 #, elixir-autogen, elixir-format
 msgid "Nature and outings"
 msgstr ""
@@ -5194,7 +5189,7 @@ msgstr ""
 msgid "Pin on the map"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:137
+#: lib/potok_ide_web/pin_icons.ex:138
 #, elixir-autogen, elixir-format
 msgid "Place"
 msgstr ""
@@ -5204,17 +5199,17 @@ msgstr ""
 msgid "Places and services"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:142
+#: lib/potok_ide_web/pin_icons.ex:143
 #, elixir-autogen, elixir-format
 msgid "Power and outages"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:138
+#: lib/potok_ide_web/pin_icons.ex:139
 #, elixir-autogen, elixir-format
 msgid "Problem to report"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:136
+#: lib/potok_ide_web/pin_icons.ex:137
 #, elixir-autogen, elixir-format
 msgid "Recommended"
 msgstr ""
@@ -5234,7 +5229,7 @@ msgstr ""
 msgid "Reports and safety"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:140
+#: lib/potok_ide_web/pin_icons.ex:141
 #, elixir-autogen, elixir-format
 msgid "Safety"
 msgstr ""
@@ -5254,7 +5249,7 @@ msgstr ""
 msgid "Show and tickets"
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:135
+#: lib/potok_ide_web/pin_icons.ex:136
 #, elixir-autogen, elixir-format
 msgid "Sight and viewpoint"
 msgstr ""
@@ -5289,7 +5284,7 @@ msgstr ""
 msgid "Unless you pick another, the pin shows the kind of group, like the mark on its picture."
 msgstr ""
 
-#: lib/potok_ide_web/pin_icons.ex:141
+#: lib/potok_ide_web/pin_icons.ex:142
 #, elixir-autogen, elixir-format
 msgid "Waste and recycling"
 msgstr ""
@@ -5764,4 +5759,14 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:692
 #, elixir-autogen, elixir-format
 msgid "Zoom to the area"
+msgstr ""
+
+#: lib/potok_ide_web/pin_icons.ex:134
+#, elixir-autogen, elixir-format
+msgid "Local community"
+msgstr ""
+
+#: lib/potok_ide_web/pin_icons.ex:125
+#, elixir-autogen, elixir-format
+msgid "Municipality"
 msgstr ""

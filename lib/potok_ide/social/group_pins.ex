@@ -29,7 +29,7 @@ defmodule PotokIde.Social.GroupPins do
     {"repair", "wrench-screwdriver", :places},
     {"transport", "truck", :places},
     {"money", "banknotes", :places},
-    {"internet", "wifi", :places},
+    {"municipality", "identification", :places},
     # Community and events
     {"event", "calendar-days", :community},
     {"show", "ticket", :community},
@@ -39,6 +39,7 @@ defmodule PotokIde.Social.GroupPins do
     {"sport", "trophy", :community},
     {"music", "musical-note", :community},
     {"art", "paint-brush", :community},
+    {"local_community", "home-modern", :community},
     # Nature and sights
     {"nature", "sun", :nature},
     {"sight", "camera", :nature},

@@ -24,10 +24,17 @@ defmodule PotokIde.Social.GroupPinsTest do
     end
   end
 
+  test "a municipality and a local community have pins, the internet no longer does" do
+    assert {"municipality", "identification", :places} in GroupPins.icons()
+    assert {"local_community", "home-modern", :community} in GroupPins.icons()
+    refute "internet" in GroupPins.keys()
+  end
+
   test "a group shows its own pin while the list has it, its kind's otherwise" do
     assert GroupPins.pin(%Group{pin_icon: "shop"}) == "shop"
     assert GroupPins.pin(%Group{pin_icon: "picture"}) == "picture"
     assert GroupPins.pin(%Group{pin_icon: "retired"}) == nil
+    assert GroupPins.pin(%Group{pin_icon: "internet"}) == nil
     assert GroupPins.pin(%Group{pin_icon: nil}) == nil
   end
 
