@@ -45,6 +45,22 @@ defmodule PotokIdeWeb.GroupLive.GroupLocationSettingsTest do
     end
   end
 
+  test "the picked pins show the group's kind in their corner, as on the map",
+       %{conn: conn, owner: owner} do
+    group = group_with_members!(owner, [])
+    {:ok, lv, _html} = settings(conn, group)
+
+    # A group of no kind has no mark, on its avatar or on its pin.
+    refute has_element?(lv, "#group-edit-pins [data-pin-mark]")
+
+    group |> Ecto.Changeset.change(preset: :chat) |> Repo.update!()
+    {:ok, lv, _html} = settings(conn, group)
+
+    refute has_element?(lv, "#group-edit-pin-kind [data-pin-mark]")
+    assert has_element?(lv, "#group-edit-pin-picture [data-pin-mark]")
+    assert has_element?(lv, "#group-edit-pin-shop [data-pin-mark]")
+  end
+
   test "saves the place and the pin, and clears them again", %{conn: conn, owner: owner} do
     group = group_with_members!(owner, [])
     {:ok, lv, _html} = settings(conn, group)

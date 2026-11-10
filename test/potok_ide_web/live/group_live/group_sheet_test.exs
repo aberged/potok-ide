@@ -102,6 +102,21 @@ defmodule PotokIdeWeb.GroupLive.GroupSheetTest do
     assert PotokIde.Repo.get!(Value, value_id).group_id == ctx.form.id
   end
 
+  test "the sheet's pin keeps the group's kind in its corner once the group picked a pin", ctx do
+    {view, _sheet} = open_sheet(ctx.member_account, ctx.map, ctx.form)
+    assert has_element?(view, "#group-sheet-pin")
+    refute has_element?(view, "#group-sheet-pin [data-pin-mark]")
+
+    form = ctx.form |> Ecto.Changeset.change(pin_icon: "shop") |> PotokIde.Repo.update!()
+    {view, _sheet} = open_sheet(ctx.member_account, ctx.map, form)
+    assert has_element?(view, "#group-sheet-pin [data-pin-mark]")
+
+    # A group of no kind has no mark, on its avatar or on its pin.
+    page = ctx.page |> Ecto.Changeset.change(pin_icon: "shop") |> PotokIde.Repo.update!()
+    {view, _sheet} = open_sheet(ctx.member_account, ctx.map, page)
+    refute has_element?(view, "#group-sheet-pin [data-pin-mark]")
+  end
+
   test "a text description shows in the sheet, with its reactions", ctx do
     {_view, sheet} = open_sheet(ctx.member_account, ctx.map, ctx.page)
 

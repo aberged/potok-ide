@@ -1,6 +1,8 @@
 defmodule PotokIde.Social.GroupPinsTest do
   use ExUnit.Case, async: true
 
+  import Phoenix.LiveViewTest, only: [render_component: 2]
+
   alias PotokIde.Social.{Group, GroupPins, GroupPresets}
   alias PotokIdeWeb.PinIcons
 
@@ -52,4 +54,45 @@ defmodule PotokIde.Social.GroupPinsTest do
     assert Enum.all?(catalogue.icons, &Map.has_key?(catalogue.tones, &1.tone))
     assert length(catalogue.icons) == length(GroupPins.icons())
   end
+
+  test "every kind but none has a mark for a picked pin, the avatar's small glyph" do
+    catalogue = PinIcons.catalogue()
+
+    assert catalogue.mark_transform =~ ~r/^translate\(/
+
+    for kind <- catalogue.kinds do
+      if kind.key == "none" do
+        assert kind.mark == nil
+      else
+        assert [_ | _] = kind.mark
+        assert kind.mark != kind.paths, kind.key
+      end
+    end
+  end
+
+  test "a pin the group picked keeps its kind's mark, one by kind does not" do
+    chat = PinIcons.mark("chat")
+
+    assert PinIcons.look(%Group{preset: :chat, pin_icon: "shop"}).mark == chat
+    assert PinIcons.look(%Group{preset: :chat, pin_icon: "picture"}).mark == chat
+    assert PinIcons.look(%Group{uses_api: true, pin_icon: "shop"}).mark == PinIcons.mark("app")
+
+    assert PinIcons.look(%Group{preset: :chat}).mark == nil
+    assert PinIcons.look(%Group{preset: :chat, pin_icon: "retired"}).mark == nil
+    assert PinIcons.look(%Group{pin_icon: "shop"}).mark == nil
+  end
+
+  test "a pin draws the mark in its top right corner only when it has one" do
+    look = PinIcons.look(%Group{preset: :page, pin_icon: "shop"})
+
+    html =
+      render_pin(id: "pin", color: look.color, paths: look.paths, mark: look.mark)
+
+    assert html =~ ~s(<g data-pin-mark>)
+    assert html =~ ~s(cx="26.5")
+
+    refute render_pin(id: "pin", color: look.color, paths: look.paths) =~ "data-pin-mark"
+  end
+
+  defp render_pin(assigns), do: render_component(&PinIcons.pin/1, assigns)
 end

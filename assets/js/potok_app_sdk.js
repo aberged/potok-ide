@@ -519,8 +519,11 @@ const potok = {
   // {y}, `attribution` as HTML, `max_zoom`), `default_bounds` ([[south, west],
   // [north, east]], where a map opens until its editors save a view),
   // `pins` (how every pin is drawn: `drop`, `glyph_transform`, `tones`,
-  // `kinds` and `icons` with SVG `paths` and names in the viewer's language),
-  // `place_kinds` for `createPlace`, `can_create_places` and `can_edit_view`.
+  // `kinds` and `icons` with SVG `paths` and names in the viewer's language;
+  // each kind's small `mark`, nil for "none", goes by `mark_transform` in the
+  // top right corner of a pin the group picked, the lock of a closed group in
+  // the top left), `place_kinds` for `createPlace`, `can_create_places` and
+  // `can_edit_view`.
   getMapConfig: () => call("map_config"),
 
   // The sub-groups right under this group that the viewer sees and that have a

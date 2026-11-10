@@ -296,11 +296,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                 phx-value-id={group.id}
                 class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none"
               >
-                <PinIcons.pin
+                <.group_pin
                   id={"root-map-spot-pin-#{group.id}"}
-                  color={PinIcons.look(group).color}
-                  paths={PinIcons.look(group).paths}
-                  picture_url={PinIcons.look(group).picture && Avatars.group_avatar_url(group)}
+                  group={group}
                   class="h-8 w-[1.6rem] shrink-0 drop-shadow-sm"
                 />
                 <span class="min-w-0 flex-1">
@@ -446,11 +444,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
               )
             ]}
           >
-            <PinIcons.pin
+            <.group_pin
               id={"root-map-area-pin-#{area.id}"}
-              color={PinIcons.look(area).color}
-              paths={PinIcons.look(area).paths}
-              picture_url={PinIcons.look(area).picture && Avatars.group_avatar_url(area)}
+              group={area}
               class="h-7 w-[1.4rem] shrink-0 drop-shadow-sm"
             />
             <span class="min-w-0 flex-1 truncate">{area.name}</span>
@@ -731,11 +727,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
       class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
     >
       <header class="flex items-center gap-3 px-4 pt-3">
-        <PinIcons.pin
+        <.group_pin
           id="root-map-here-pin"
-          color={PinIcons.look(@area).color}
-          paths={PinIcons.look(@area).paths}
-          picture_url={PinIcons.look(@area).picture && Avatars.group_avatar_url(@area)}
+          group={@area}
           class="h-9 w-7 shrink-0 drop-shadow-sm"
         />
         <div class="min-w-0 flex-1">
@@ -827,7 +821,27 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
     ]
   end
 
-  # What the area filter's button says.
+  attr :id, :string, required: true
+  attr :group, :map, required: true
+  attr :class, :string, required: true
+
+  # A group's pin, with its kind's mark when it picked its own (`PinIcons.look/1`).
+  defp group_pin(assigns) do
+    assigns = assign(assigns, :look, PinIcons.look(assigns.group))
+
+    ~H"""
+    <PinIcons.pin
+      id={@id}
+      color={@look.color}
+      paths={@look.paths}
+      picture_url={@look.picture && Avatars.group_avatar_url(@group)}
+      mark={@look.mark}
+      class={@class}
+    />
+    """
+  end
+
+  # What the pin filter's button says.
   defp pin_text([]), do: nil
   defp pin_text([key]), do: pin_label(key)
   defp pin_text(keys), do: ngettext("%{count} pin", "%{count} pins", length(keys))

@@ -538,7 +538,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               </legend>
               <p class="text-xs text-base-content/65">
                 {gettext(
-                  "Unless you pick another, the pin shows the kind of group, like the mark on its picture."
+                  "Unless you pick another, the pin shows the kind of group, like the mark on its picture. A pin you pick keeps the kind in its corner."
                 )}
               </p>
               <%= for section <- pin_sections(@group) do %>
@@ -564,6 +564,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                         color={pin.look.color}
                         paths={pin.look.paths}
                         picture_url={pin.picture_url}
+                        mark={pin.look.mark}
                         class="h-10 w-8 drop-shadow-sm"
                       />
                     </span>
@@ -1072,7 +1073,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   end
 
   # The pins a group can show, under the headings of `GroupPins`: its kind's,
-  # its picture, then the icons. `value` is what the form sends ("" for the kind's).
+  # its picture, then the icons, which keep the kind's mark as on the map.
+  # `value` is what the form sends ("" for the kind's).
   defp pin_sections(group) do
     kind = GroupPins.kind(group)
 
@@ -1088,7 +1090,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         key: "picture",
         value: GroupPins.picture(),
         label: gettext("Group picture"),
-        look: PinIcons.kind_look(kind),
+        look: %{PinIcons.kind_look(kind) | mark: PinIcons.mark(kind)},
         picture_url: Avatars.group_avatar_url(group)
       }
     ]
@@ -1103,7 +1105,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 key: key,
                 value: key,
                 label: PinIcons.label(key),
-                look: PinIcons.icon_look(key),
+                look: %{PinIcons.icon_look(key) | mark: PinIcons.mark(kind)},
                 picture_url: nil
               }
             end)

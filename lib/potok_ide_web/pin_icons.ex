@@ -16,33 +16,44 @@ defmodule PotokIdeWeb.PinIcons do
 
   # The dependency is a sparse checkout of `optimized`, which Mix reports as its path.
   @heroicons Mix.Project.deps_paths()[:heroicons]
-  @solid_dir Path.join(
-               if(File.dir?(Path.join(@heroicons, "24")),
-                 do: @heroicons,
-                 else: Path.join(@heroicons, "optimized")
-               ),
-               "24/solid"
+  @optimized if(File.dir?(Path.join(@heroicons, "24")),
+               do: @heroicons,
+               else: Path.join(@heroicons, "optimized")
              )
+  @solid_dir Path.join(@optimized, "24/solid")
+  # The small glyphs, the avatar's `hero-*-micro`.
+  @micro_dir Path.join(@optimized, "16/solid")
 
   # A drop on a 32 x 40 box: a circle of radius 14 around (16, 15) with its
   # point at the bottom. The glyph sits in the circle at 18 px.
   @drop "M16 38.5C11 33 2 24 2 15a14 14 0 1 1 28 0c0 9-9 18-14 23.5Z"
   @glyph_transform "translate(7 6) scale(0.75)"
 
-  @paths (for name <- GroupPins.heroicons(), into: %{} do
-            file = Path.join(@solid_dir, name <> ".svg")
-            Module.put_attribute(__MODULE__, :external_resource, file)
+  # A picked pin keeps its group's kind in a white disc of radius 5.5 around
+  # (26.5, 6.5), at the top right as on the avatar: the 16 px glyph at 7.5 px.
+  @mark_transform "translate(22.75 2.75) scale(0.46875)"
 
-            paths =
-              ~r/<path\b([^>]*)\/>/
-              |> Regex.scan(File.read!(file), capture: :all_but_first)
-              |> Enum.map(fn [attrs] ->
-                [_, d] = Regex.run(~r/\bd="([^"]+)"/, attrs)
-                %{d: d, evenodd: String.contains?(attrs, ~s(fill-rule="evenodd"))}
-              end)
+  read_paths = fn dir, name ->
+    file = Path.join(dir, name <> ".svg")
+    Module.put_attribute(__MODULE__, :external_resource, file)
 
-            if paths == [], do: raise("no paths in #{file}")
-            {name, paths}
+    paths =
+      ~r/<path\b([^>]*)\/>/
+      |> Regex.scan(File.read!(file), capture: :all_but_first)
+      |> Enum.map(fn [attrs] ->
+        [_, d] = Regex.run(~r/\bd="([^"]+)"/, attrs)
+        %{d: d, evenodd: String.contains?(attrs, ~s(fill-rule="evenodd"))}
+      end)
+
+    if paths == [], do: raise("no paths in #{file}")
+    paths
+  end
+
+  @paths Map.new(GroupPins.heroicons(), &{&1, read_paths.(@solid_dir, &1)})
+
+  # A group without a kind has no mark, on its avatar or on its pin.
+  @marks (for {kind, icon} <- GroupPins.kinds(), kind != "none", into: %{} do
+            {kind, read_paths.(@micro_dir, icon)}
           end)
 
   @doc "The drop's outline, for a map to draw the same pin."
@@ -54,18 +65,35 @@ defmodule PotokIdeWeb.PinIcons do
   @doc "The paths of the Heroicons glyph `name`."
   def paths(name), do: Map.fetch!(@paths, name)
 
+  @doc "Where the kind's mark goes on a picked pin, as an SVG transform."
+  def mark_transform, do: @mark_transform
+
+  @doc """
+  The small glyph of the kind `kind` that a picked pin keeps in its corner,
+  as on the avatar; nil for a group without a kind.
+  """
+  def mark(kind), do: Map.get(@marks, kind)
+
   @doc """
   What a map needs to draw every pin: the drop, the tones, the kinds and the
-  icons with their names in the viewer's language.
+  icons with their names in the viewer's language. Each kind also has the
+  `mark` a picked pin shows in its corner, placed by `mark_transform`.
   """
   def catalogue do
     %{
       drop: @drop,
       glyph_transform: @glyph_transform,
+      mark_transform: @mark_transform,
       tones: Map.new(GroupPins.tones(), fn {tone, color} -> {Atom.to_string(tone), color} end),
       kinds:
         for {kind, icon} <- GroupPins.kinds() do
-          %{key: kind, title: kind_label(kind), tone: "kind", paths: paths(icon)}
+          %{
+            key: kind,
+            title: kind_label(kind),
+            tone: "kind",
+            paths: paths(icon),
+            mark: mark(kind)
+          }
         end,
       icons:
         for {key, icon, tone} <- GroupPins.icons() do
@@ -74,25 +102,30 @@ defmodule PotokIdeWeb.PinIcons do
     }
   end
 
-  @doc "The tone and glyph `group` shows: its own pin, or its kind's."
+  @doc """
+  The tone and glyph `group` shows: its own pin, or its kind's. A pin of its
+  own keeps the kind's `mark` in its corner.
+  """
   def look(group) do
+    kind = GroupPins.kind(group)
+
     case GroupPins.pin(group) do
-      nil -> kind_look(GroupPins.kind(group))
-      "picture" -> Map.put(kind_look(GroupPins.kind(group)), :picture, true)
-      key -> icon_look(key)
+      nil -> kind_look(kind)
+      "picture" -> %{kind_look(kind) | picture: true, mark: mark(kind)}
+      key -> %{icon_look(key) | mark: mark(kind)}
     end
   end
 
   @doc "The tone and glyph of the kind `kind`."
   def kind_look(kind) do
     {^kind, icon} = List.keyfind(GroupPins.kinds(), kind, 0)
-    %{color: GroupPins.tone_color(:kind), paths: paths(icon), picture: false}
+    %{color: GroupPins.tone_color(:kind), paths: paths(icon), picture: false, mark: nil}
   end
 
   @doc "The tone and glyph of the icon pin `key`."
   def icon_look(key) do
     {^key, icon, tone} = List.keyfind(GroupPins.icons(), key, 0)
-    %{color: GroupPins.tone_color(tone), paths: paths(icon), picture: false}
+    %{color: GroupPins.tone_color(tone), paths: paths(icon), picture: false, mark: nil}
   end
 
   @doc """
@@ -161,18 +194,31 @@ defmodule PotokIdeWeb.PinIcons do
   def label("power"), do: gettext("Power and outages")
   def label("idea"), do: gettext("Idea and initiative")
 
-  attr :id, :string, required: true, doc: "unique on the page, for the picture's clip"
+  attr :id, :string,
+    required: true,
+    doc: "unique on the page: the SVG's, and it names the picture's clip"
+
   attr :color, :string, required: true
   attr :paths, :list, required: true
   attr :picture_url, :string, default: nil, doc: "the group's picture, drawn in the drop"
+  attr :mark, :list, default: nil, doc: "the kind's small glyph, in the top right corner"
   attr :class, :any, default: "h-10 w-8"
 
-  @doc "A pin as an SVG: the drop with a glyph, or with the group's picture."
+  @doc """
+  A pin as an SVG: the drop with a glyph, or with the group's picture, and
+  the kind's mark when the group picked its pin (`look/1`).
+  """
   def pin(assigns) do
-    assigns = assign(assigns, drop: @drop, glyph_transform: @glyph_transform)
+    assigns =
+      assign(assigns,
+        drop: @drop,
+        glyph_transform: @glyph_transform,
+        mark_transform: @mark_transform,
+        mark_color: GroupPins.tone_color(:kind)
+      )
 
     ~H"""
-    <svg viewBox="0 0 32 40" class={@class} aria-hidden="true" focusable="false">
+    <svg id={@id} viewBox="0 0 32 40" class={@class} aria-hidden="true" focusable="false">
       <defs :if={@picture_url}>
         <clipPath id={"#{@id}-clip"}><circle cx="16" cy="15" r="12" /></clipPath>
       </defs>
@@ -200,6 +246,17 @@ defmodule PotokIdeWeb.PinIcons do
           fill-rule={if(path.evenodd, do: "evenodd")}
           clip-rule={if(path.evenodd, do: "evenodd")}
         />
+      </g>
+      <g :if={@mark} data-pin-mark>
+        <circle cx="26.5" cy="6.5" r="5.5" fill="#ffffff" />
+        <g transform={@mark_transform} fill={@mark_color}>
+          <path
+            :for={path <- @mark}
+            d={path.d}
+            fill-rule={if(path.evenodd, do: "evenodd")}
+            clip-rule={if(path.evenodd, do: "evenodd")}
+          />
+        </g>
       </g>
     </svg>
     """

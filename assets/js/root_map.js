@@ -59,6 +59,7 @@ const FIT_MAX_ZOOM = 16
 const FALLBACK_COLOR = "#0a5bc4"
 const DEFAULT_DROP = "M16 38.5C11 33 2 24 2 15a14 14 0 1 1 28 0c0 9-9 18-14 23.5Z"
 const DEFAULT_GLYPH = "translate(7 6) scale(0.75)"
+const DEFAULT_MARK = "translate(22.75 2.75) scale(0.46875)"
 
 const escapeAttribute = value =>
   String(value)
@@ -67,7 +68,8 @@ const escapeAttribute = value =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
 
-// A place's own icon while the catalogue has it, its kind's otherwise.
+// A place's own icon while the catalogue has it, its kind's otherwise. A pin
+// of its own keeps the kind's mark, as `PinIcons.look/1` does.
 const lookOf = (place, pins) => {
   const kind =
     pins.kinds.find(row => row.key === place.kind) || pins.kinds.find(row => row.key === "none")
@@ -75,14 +77,24 @@ const lookOf = (place, pins) => {
     place.pin && place.pin !== "picture" ? pins.icons.find(row => row.key === place.pin) : null
   const base = icon || kind
   const tone = base?.tone || "kind"
+  const own = Boolean(icon) || place.pin === "picture"
 
   return {
     tone,
     color: pins.tones[tone] || FALLBACK_COLOR,
     paths: base?.paths || [],
     picture: place.pin === "picture" ? place.picture_url : null,
+    mark: own ? kind?.mark || null : null,
   }
 }
+
+const glyphPaths = paths =>
+  paths
+    .map(path => {
+      const rule = path.evenodd ? ' fill-rule="evenodd" clip-rule="evenodd"' : ""
+      return `<path d="${escapeAttribute(path.d)}"${rule}/>`
+    })
+    .join("")
 
 // The cluster's ring: one arc per tone, as long as its share of the groups,
 // in the order of the catalogue's tones. The same drawing as the Map app's
@@ -115,7 +127,8 @@ const addTones = (into, tones) => {
 let clipCounter = 0
 
 // The drop in its tone with a white glyph, or the group's picture; a lock
-// for a closed group. The same drawing as `PinIcons.pin/1`.
+// at the top left for a closed group and the kind's mark at the top right for
+// a picked pin, as the avatar has them. The same drawing as `PinIcons.pin/1`.
 const pinSvg = (look, pins, locked) => {
   const drop = escapeAttribute(pins.drop || DEFAULT_DROP)
   const transform = escapeAttribute(pins.glyph_transform || DEFAULT_GLYPH)
@@ -128,19 +141,19 @@ const pinSvg = (look, pins, locked) => {
       `<image href="${escapeAttribute(look.picture)}" x="4" y="3" width="24" height="24" ` +
       `preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})"/>`
   } else {
-    const paths = look.paths
-      .map(path => {
-        const rule = path.evenodd ? ' fill-rule="evenodd" clip-rule="evenodd"' : ""
-        return `<path d="${escapeAttribute(path.d)}"${rule}/>`
-      })
-      .join("")
-    inner = `<g transform="${transform}" fill="#ffffff">${paths}</g>`
+    inner = `<g transform="${transform}" fill="#ffffff">${glyphPaths(look.paths)}</g>`
   }
 
   const lock = locked
-    ? '<g><circle cx="26.5" cy="6.5" r="5.5" fill="#ffffff"/>' +
-      '<rect x="23.9" y="6.3" width="5.2" height="3.9" rx="0.8" fill="#1f2937"/>' +
-      '<path d="M24.9 6.4v-0.9a1.6 1.6 0 0 1 3.2 0v0.9" fill="none" stroke="#1f2937" stroke-width="1"/></g>'
+    ? '<g data-pin-lock><circle cx="5.5" cy="6.5" r="5.5" fill="#ffffff"/>' +
+      '<rect x="2.9" y="6.3" width="5.2" height="3.9" rx="0.8" fill="#1f2937"/>' +
+      '<path d="M3.9 6.4v-0.9a1.6 1.6 0 0 1 3.2 0v0.9" fill="none" stroke="#1f2937" stroke-width="1"/></g>'
+    : ""
+
+  const mark = look.mark
+    ? '<g data-pin-mark><circle cx="26.5" cy="6.5" r="5.5" fill="#ffffff"/>' +
+      `<g transform="${escapeAttribute(pins.mark_transform || DEFAULT_MARK)}" ` +
+      `fill="${escapeAttribute(pins.tones.kind || FALLBACK_COLOR)}">${glyphPaths(look.mark)}</g></g>`
     : ""
 
   return (
@@ -148,6 +161,7 @@ const pinSvg = (look, pins, locked) => {
     `<path d="${drop}" fill="${escapeAttribute(look.color)}" stroke="#ffffff" stroke-width="1.75" stroke-linejoin="round"/>` +
     inner +
     lock +
+    mark +
     "</svg>"
   )
 }

@@ -9,7 +9,7 @@ Mapa ne čuva mesta. Svako mesto je obična grupa:
 | Mapa ima | Gde to stoji |
 |---|---|
 | mesta | podgrupe grupe mape, sa geografskom širinom i dužinom (`Group.latitude`, `longitude`) |
-| izgled pina | `Group.pin_icon`: ikonica iz kataloga (`PotokIde.Social.GroupPins`), slika grupe, ili ništa za znak vrste |
+| izgled pina | `Group.pin_icon`: ikonica iz kataloga (`PotokIde.Social.GroupPins`), slika grupe, ili ništa za znak vrste; izabrani pin u gornjem desnom uglu zadržava mali znak vrste (`mark` vrste u katalogu), kao avatar grupe, a zatvorena grupa ima katanac u gornjem levom |
 | crteže pinova i njihova imena | stranica ih šalje uz `getMapConfig` (`PotokIdeWeb.PinIcons`), pa nova ikonica ne traži novi build |
 | početni prikaz | konfiguracija aplikacije (`saveConfig`): `{view: {bounds: [[jug, zapad], [sever, istok]]}}` |
 | pločice mape | Potok ih šalje dalje sa OpenStreetMap-a, preko `/tiles` (`PotokIde.MapTiles`), i čuva ih nedelju dana |

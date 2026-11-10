@@ -80,6 +80,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSheet do
               color={look(@sheet.group).color}
               paths={look(@sheet.group).paths}
               picture_url={look(@sheet.group).picture && Avatars.group_avatar_url(@sheet.group)}
+              mark={look(@sheet.group).mark}
               class="h-10 w-8 shrink-0 drop-shadow-sm"
             />
             <div class="min-w-0 flex-1">
