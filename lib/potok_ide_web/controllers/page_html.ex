@@ -137,6 +137,58 @@ defmodule PotokIdeWeb.PageHTML do
     """
   end
 
+  @doc """
+  The lead of the landing's section on where Potok comes from, and the
+  description of the overview it leads to (`/origin`).
+  """
+  def origin_lead do
+    gettext(
+      "After November 1, 2024, the student and citizen movement in Serbia talked in Viber groups, spread the word on Instagram and gathered sign-ups with forms and spreadsheets. Potok grew out of an overview of those eighteen apps and services and of what they offer."
+    )
+  end
+
+  # The centers of eighteen apps in a funnel (columns of 6, 5, 4 and 3), and
+  # the streams that run out of its tip.
+  @origin_apps for {x, ys} <- [
+                     {12, [12, 32, 52, 72, 92, 112]},
+                     {32, [22, 42, 62, 82, 102]},
+                     {52, [32, 52, 72, 92]},
+                     {72, [42, 62, 82]}
+                   ],
+                   y <- ys,
+                   do: {x, y}
+
+  @origin_streams [
+    "M84 55C122 40 156 76 205 55",
+    "M84 62C124 62 160 52 205 62",
+    "M84 69C122 84 156 48 205 69"
+  ]
+
+  # Eighteen small apps that run together into one stream, next to the
+  # landing's section on where Potok comes from.
+  defp origin_springs(assigns) do
+    assigns =
+      assign(assigns, apps: Enum.with_index(@origin_apps), streams: @origin_streams)
+
+    ~H"""
+    <svg viewBox="0 0 320 124" class="lp-origin-springs" aria-hidden="true">
+      <rect
+        :for={{{x, y}, i} <- @apps}
+        class="lp-origin-app"
+        x={x - 5.5}
+        y={y - 5.5}
+        width="11"
+        height="11"
+        rx="3.5"
+        style={"--i:#{i}"}
+      />
+      <path :for={d <- @streams} class="lp-flow" d={d} />
+      <rect class="lp-origin-box" x="206" y="39" width="110" height="46" rx="11" />
+      <text class="font-brand" x="261" y="68">potok</text>
+    </svg>
+    """
+  end
+
   # The cards of the landing page's "what Potok can do" section.
   defp features do
     [

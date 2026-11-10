@@ -25,6 +25,8 @@ defmodule PotokIdeWeb.PageControllerTest do
           "#landing-domain-link[href='/domain']",
           "#landing-join",
           "#landing-join ~ #landing-domain",
+          "#landing-join + #landing-origin + #landing-domain",
+          "#landing-origin-link[href='/origin']",
           "#landing-login-link[href='/accounts/log-in']",
           "#landing-join-login[href='/accounts/log-in']",
           "#guest-header #landing-login-link",
@@ -229,6 +231,58 @@ defmodule PotokIdeWeb.PageControllerTest do
       end
 
       refute text =~ ~r/\p{Cyrillic}[a-zA-Z]|[a-zA-Z]\p{Cyrillic}/u
+    end
+  end
+
+  describe "the overview of where Potok comes from" do
+    defp origin_page(conn, locale) do
+      conn
+      |> init_test_session(%{locale: locale})
+      |> get(~p"/origin")
+      |> html_response(200)
+      |> LazyHTML.from_document()
+    end
+
+    defp origin_text(document, selector) do
+      document |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()
+    end
+
+    test "renders the document, its tables in frames that scroll", %{conn: conn} do
+      document = origin_page(conn, "sr")
+
+      assert origin_text(document, "#origin-text h1") =~ ~r/^Potok — /
+      assert count(document, "#origin-text .or-table > table") == 3
+      assert count(document, "#origin-text .or-matrix > table") == 1
+      assert count(document, "#origin-text .or-matrix td.or-none") > 0
+      assert count(document, "#origin-text table[style], #origin-text td[style]") == 0
+      assert count(document, "#origin-language-note") == 0
+
+      links = LazyHTML.query(document, "#origin-text a[href^='http']")
+
+      assert Enum.count(links) > 20
+      assert Enum.count(links) == count(document, "#origin-text a[target=_blank][rel~=noopener]")
+    end
+
+    test "is in Cyrillic, with the English titles of sources and site names in Latin",
+         %{conn: conn} do
+      document = origin_page(conn, "sr_Cyrl")
+
+      assert origin_text(document, "#origin-text h1") =~ ~r/^Поток — /
+      assert origin_text(document, "#origin-text span[lang=en]") =~ "Believe the Hype"
+      assert origin_text(document, "#origin-text") =~ "nszbor.org"
+      assert origin_text(document, "#origin-text") =~ "Вајбер"
+    end
+
+    test "tells English visitors that it is in Serbian", %{conn: conn} do
+      document = origin_page(conn, "en")
+
+      assert count(document, "#origin-language-note") == 1
+      assert count(document, "article#origin-text[lang=sr]") == 1
+      assert origin_text(document, "#origin-text h1") =~ ~r/^Potok — /
+    end
+
+    test "is open to accounts that are logged in", %{conn: conn} do
+      assert conn |> log_in_account(account_fixture()) |> get(~p"/origin") |> html_response(200)
     end
   end
 

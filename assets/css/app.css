@@ -2271,7 +2271,8 @@
   }
 
   /* The map's section on the landing page */
-  .lp-domain {
+  .lp-domain,
+  .lp-origin {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 21rem);
     align-items: center;
@@ -2284,11 +2285,13 @@
     box-shadow: var(--lp-shadow);
   }
 
-  .lp-domain h2 {
+  .lp-domain h2,
+  .lp-origin h2 {
     margin-top: 0;
   }
 
-  .lp-domain p {
+  .lp-domain p,
+  .lp-origin p {
     max-width: 34rem;
     margin-top: 10px;
     color: var(--lp-muted);
@@ -2350,6 +2353,250 @@
     .lp-domain-loop {
       max-width: 21rem;
     }
+  }
+
+  /* Where Potok comes from: its section on the landing page, the map's card
+     with the picture on the other side, and the overview at /origin. */
+  .lp-origin {
+    grid-template-columns: minmax(0, 19rem) minmax(0, 1fr);
+  }
+
+  .lp-origin-springs {
+    order: -1;
+    width: 100%;
+    height: auto;
+  }
+
+  .lp-origin-app {
+    fill: color-mix(in oklab, var(--lp-accent) 22%, var(--color-base-100));
+    stroke: var(--lp-accent);
+    stroke-width: 1.25;
+    animation: lp-spring 3.6s ease-in-out infinite;
+    animation-delay: calc(var(--i) * -0.2s);
+  }
+
+  .lp-origin-springs .lp-flow {
+    fill: none;
+    stroke: var(--lp-accent);
+    stroke-width: 1.75;
+    stroke-linecap: round;
+    stroke-dasharray: 5 7;
+    animation: lp-flow 1.8s linear infinite;
+  }
+
+  .lp-origin-springs .lp-flow:nth-of-type(2) {
+    animation-duration: 1.4s;
+  }
+
+  .lp-origin-springs .lp-flow:nth-of-type(3) {
+    animation-duration: 2.2s;
+  }
+
+  .lp-origin-box {
+    fill: var(--color-base-100);
+    stroke: var(--lp-accent);
+    stroke-width: 1.5;
+  }
+
+  .lp-origin-springs text {
+    fill: currentColor;
+    font-size: 19px;
+    font-weight: 700;
+    text-anchor: middle;
+  }
+
+  @media (max-width: 720px) {
+    .lp-origin {
+      grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lp-origin-springs {
+      order: 0;
+      max-width: 21rem;
+    }
+  }
+
+  @keyframes lp-flow {
+    to {
+      stroke-dashoffset: -24;
+    }
+  }
+
+  @keyframes lp-spring {
+    50% {
+      opacity: 0.45;
+    }
+  }
+
+  .or-note {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 9px 14px;
+    border: 1px solid var(--lp-line);
+    border-radius: 12px;
+    background: var(--lp-card);
+    color: var(--lp-muted);
+    font-size: 14.5px;
+    line-height: 1.45;
+  }
+
+  .or-doc {
+    margin-top: 10px;
+    line-height: 1.65;
+  }
+
+  .or-doc > :is(h1, h2, p, ul) {
+    max-width: 46rem;
+  }
+
+  .or-doc h1 {
+    font-size: clamp(27px, 4.4vw, 38px);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .or-doc h1 + p {
+    margin-top: 10px;
+    color: var(--lp-muted);
+    font-size: 14px;
+  }
+
+  .or-doc h2 {
+    margin-top: clamp(32px, 6vw, 48px);
+    font-size: clamp(21px, 3vw, 26px);
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  .or-doc p,
+  .or-doc ul {
+    margin-top: 12px;
+  }
+
+  .or-doc ul {
+    padding-left: 1.25rem;
+    list-style: disc;
+  }
+
+  .or-doc li + li {
+    margin-top: 6px;
+  }
+
+  .or-doc li::marker {
+    color: var(--lp-accent);
+  }
+
+  .or-doc strong {
+    font-weight: 700;
+  }
+
+  .or-doc a {
+    color: var(--lp-accent);
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklab, var(--lp-accent) 40%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+    transition: text-decoration-color 0.2s;
+  }
+
+  .or-doc a:hover {
+    text-decoration-color: currentColor;
+  }
+
+  .or-doc a:focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
+
+  /* A table scrolls sideways inside its frame, never the page. */
+  .or-table {
+    margin-top: 18px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    border: 1px solid var(--lp-line);
+    border-radius: 16px;
+    background: var(--lp-card);
+    box-shadow: var(--lp-shadow);
+  }
+
+  .or-table table {
+    width: 100%;
+    min-width: 46rem;
+    border-collapse: collapse;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .or-table th,
+  .or-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--lp-line);
+    text-align: left;
+    vertical-align: top;
+  }
+
+  .or-table th {
+    background: color-mix(in oklab, var(--lp-accent) 7%, var(--lp-card));
+    color: var(--lp-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    line-height: 1.35;
+  }
+
+  .or-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .or-table tbody tr:hover td {
+    background: color-mix(in oklab, var(--lp-accent) 5%, var(--lp-card));
+  }
+
+  /* The matrix: names stay in view while its marks scroll by. */
+  .or-matrix table {
+    min-width: 54rem;
+  }
+
+  .or-matrix :is(th, td) {
+    vertical-align: middle;
+  }
+
+  .or-matrix :is(th, td):not(:first-child) {
+    text-align: center;
+  }
+
+  .or-matrix td:not(:first-child) {
+    color: var(--lp-accent);
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .or-matrix td.or-full {
+    font-size: 21px;
+  }
+
+  .or-matrix td.or-none {
+    color: color-mix(in oklab, var(--color-base-content) 30%, transparent);
+  }
+
+  .or-matrix :is(th, td):first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    font-weight: 600;
+  }
+
+  .or-matrix td:first-child {
+    background: var(--lp-card);
   }
 }
 

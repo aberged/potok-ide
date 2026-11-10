@@ -115,6 +115,24 @@
       </.link>
     </section>
 
+    <section id="landing-origin" class="lp-section">
+      <p class="lp-kicker">{gettext("Where Potok springs from")}</p>
+      <div class="lp-origin">
+        <div>
+          <h2>{gettext("Eighteen springs, one stream.")}</h2>
+          <p>{origin_lead()}</p>
+          <.link id="landing-origin-link" href={~p"/origin"} class="lp-domain-link group">
+            {gettext("Read the overview (in Serbian)")}
+            <.icon
+              name="hero-arrow-right"
+              class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </.link>
+        </div>
+        <.origin_springs />
+      </div>
+    </section>
+
     <section id="landing-domain" class="lp-section">
       <p class="lp-kicker">{gettext("Under the surface")}</p>
       <div class="lp-domain">

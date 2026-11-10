@@ -45,6 +45,29 @@ defmodule Mix.Tasks.Potok.SrCyrlTest do
     test "respells foreign words" do
       assert SrCyrl.transliterate("Chat") == "Чет"
       assert SrCyrl.transliterate("Push obaveštenja") == "Пуш обавештења"
+      assert SrCyrl.transliterate("u Viber grupi, s Viberom") == "у Вајбер групи, с Вајбером"
+    end
+
+    test "leaves site names and text marked as English in Latin" do
+      assert SrCyrl.transliterate("na nszbor.org i obuka.itblokada.org") ==
+               "на nszbor.org и obuka.itblokada.org"
+
+      assert SrCyrl.transliterate("Naslov <span lang=en>Signal Polls: Yes</span> i Google Forms") ==
+               "Наслов <span lang=en>Signal Polls: Yes</span> и Google Forms"
+    end
+
+    test "writes a mention as a word" do
+      assert SrCyrl.transliterate("@pominjanje ljudi") == "@помињање људи"
+    end
+  end
+
+  describe "the overview at /origin" do
+    test "keeps the handles of accounts in Latin" do
+      {_path, contents} =
+        Enum.find(SrCyrl.generate(), fn {path, _} -> path =~ "ORIGIN.sr_Cyrl.md" end)
+
+      assert contents =~ ~S(@studenti\_u\_blokadi)
+      assert contents =~ "@sviublokadefdu"
     end
   end
 

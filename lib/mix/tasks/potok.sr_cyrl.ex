@@ -1,7 +1,7 @@
 defmodule Mix.Tasks.Potok.SrCyrl do
   @moduledoc """
-  Generates the Cyrillic Serbian translations (`sr_Cyrl`) and privacy policy
-  from the Latin ones (`sr`).
+  Generates the Cyrillic Serbian translations (`sr_Cyrl`), privacy policy and
+  the overview of where Potok comes from (`/origin`) from the Latin ones (`sr`).
 
   `sr` is the reference: edit it, then run this task. The `sr_Cyrl` files are
   output, so changes made to them by hand are lost. A test fails when they are
@@ -18,6 +18,8 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   @target "priv/gettext/sr_Cyrl/LC_MESSAGES"
   @policy_source "priv/static/PRIVACY_POLICY.sr.md"
   @policy_target "priv/static/PRIVACY_POLICY.sr_Cyrl.md"
+  @origin_source "priv/static/ORIGIN.sr.md"
+  @origin_target "priv/static/ORIGIN.sr_Cyrl.md"
 
   @letters ~w(a b c č ć d dž đ e f g h i j k l lj m n nj o p r s š t u v z ž)
            |> Enum.zip(~w(а б ц ч ћ д џ ђ е ф г х и ј к л љ м н њ о п р с ш т у в з ж))
@@ -32,25 +34,37 @@ defmodule Mix.Tasks.Potok.SrCyrl do
            end)
            |> Map.new()
 
-  # What stays in Latin: interpolations, markup and addresses, the role names
-  # (users see and type them as they are), technical names and brands.
+  # What stays in Latin: interpolations, markup, text marked as English,
+  # addresses and site names, the role names (users see and type them as they
+  # are), technical names and brands.
   @kept ~r/
-    %?\{[^}]*\} | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* | @?\b(?:admin|everyone)\b |
-    \b(?:API|Apple|Auth|BEAM|CSS|CSV|daisyUI|Ecto|Elixir|Endpoint|English|ETS|ExUnit|FCM|FeedCreator|
-    Firebase\ Cloud\ Messaging|Firebase|Gmail|Google\ Play|Google|Heroicons|HTML|HTTPS|iPhone|
-    JavaScript|LiveView|localhost|Markdown|Outlook|P256DH|Phoenix|PostgreSQL|Presence|PubSub|
-    service\ worker|Tailwind|URL|User\ Agent|WebSocket)\b
+    %?\{[^}]*\} | <span\ lang=en>[^<]*<\/span> | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* |
+    \b[\w-]+(?:\.[\w-]+)*\.(?:com|org|rs)\b | @?\b(?:admin|everyone)\b |
+    \b(?:Amnesty\ International|Amnesty|API|Apple|Auth|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
+    Endpoint|English|ETS|ExUnit|FCM|FeedCreator|Firebase\ Cloud\ Messaging|Firebase|Gmail|
+    Google\ Forms|Google\ Play|Google\ Sheets|Google|Heinrich-Böll-Stiftung|Heroicons|HTML|HTTPS|
+    iPhone|JavaScript|LiveView|localhost|Markdown|NoviSpy|Outlook|P256DH|Phoenix|PostgreSQL|
+    Presence|PubSub|QR|service\ worker|Sheets|Tailwind|URL|User\ Agent|WebSocket)\b
   /ux
+
+  # The overview also keeps the handles of accounts (`@studenti\_u\_blokadi`).
+  # Only there: in the translations, `@pominjanje` is a Serbian word.
+  @origin_kept Regex.compile!(Regex.source(@kept) <> "| @\\w[\\w\\\\]*", "ux")
 
   # Foreign words that the Latin text keeps in their own spelling.
   @words %{
     "Chat" => "Чет",
     "chat" => "чет",
+    "Discord" => "Дискорд",
+    "Facebook" => "Фејсбук",
     "Feed" => "Фид",
     "feed" => "фид",
     "Push" => "Пуш",
     "push" => "пуш",
-    "emoji" => "емоџи"
+    "emoji" => "емоџи",
+    "Viber" => "Вајбер",
+    "WhatsApp" => "Вотсап",
+    "YouTube" => "Јутјуб"
   }
 
   @impl Mix.Task
@@ -73,12 +87,16 @@ defmodule Mix.Tasks.Potok.SrCyrl do
          messages |> PO.compose() |> IO.iodata_to_binary()}
       end
 
-    [{@policy_target, @policy_source |> File.read!() |> transliterate()} | translations]
+    [
+      {@policy_target, @policy_source |> File.read!() |> transliterate()},
+      {@origin_target, @origin_source |> File.read!() |> transliterate(@origin_kept)}
+      | translations
+    ]
   end
 
   @doc "Latin Serbian text in Cyrillic, without what has to stay in Latin."
-  def transliterate(text) do
-    @kept
+  def transliterate(text, kept \\ @kept) do
+    kept
     |> Regex.split(text, include_captures: true)
     |> Enum.chunk_every(2, 2, [""])
     |> Enum.map_join(fn [plain, kept] -> letters(plain) <> kept end)

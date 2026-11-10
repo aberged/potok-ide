@@ -1292,7 +1292,7 @@ msgstr "Auth"
 msgid "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
 msgstr "Пуш обавештења у прегледачу захтевају активан service worker и HTTPS ван localhost-а. Инсталирана Поток апликација користи дозволе уређаја и Firebase Cloud Messaging."
 
-#: lib/potok_ide_web/controllers/page_html.ex:155
+#: lib/potok_ide_web/controllers/page_html.ex:207
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:29
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:155
 #, elixir-autogen, elixir-format
@@ -2326,7 +2326,7 @@ msgid "Attach files to messages."
 msgstr "Качење фајлова уз поруке."
 
 #: lib/potok_ide/social/app_files.ex:104
-#: lib/potok_ide_web/controllers/page_html.ex:173
+#: lib/potok_ide_web/controllers/page_html.ex:225
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:31
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:20
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:42
@@ -2813,7 +2813,7 @@ msgstr "Време"
 msgid "Back to the calendar"
 msgstr "Назад на календар"
 
-#: lib/potok_ide_web/controllers/page_html.ex:164
+#: lib/potok_ide_web/controllers/page_html.ex:216
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:30
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:56
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:48
@@ -4137,12 +4137,12 @@ msgstr "Да ли профил користи један налог или ви�
 msgid "Always with you"
 msgstr "Увек уз тебе"
 
-#: lib/potok_ide_web/controllers/page_html.ex:216
+#: lib/potok_ide_web/controllers/page_html.ex:268
 #, elixir-autogen, elixir-format
 msgid "An app for your phone, or an install straight from the browser."
 msgstr "Апликација за телефон или инсталација право из прегледача."
 
-#: lib/potok_ide_web/controllers/page_html.ex:191
+#: lib/potok_ide_web/controllers/page_html.ex:243
 #, elixir-autogen, elixir-format
 msgid "Apps in a group"
 msgstr "Апликације у групи"
@@ -4152,7 +4152,7 @@ msgstr "Апликације у групи"
 msgid "For now, Potok is by invitation only."
 msgstr "Поток је за сада само уз позивницу."
 
-#: lib/potok_ide_web/controllers/page_html.ex:146
+#: lib/potok_ide_web/controllers/page_html.ex:198
 #, elixir-autogen, elixir-format
 msgid "Groups and sub-groups"
 msgstr "Групе и подгрупе"
@@ -4162,42 +4162,42 @@ msgstr "Групе и подгрупе"
 msgid "Know someone who could use it? Send them an invitation by email."
 msgstr "Знаш некога коме би добро дошао? Пошаљи му позивницу на имејл."
 
-#: lib/potok_ide_web/controllers/page_html.ex:227
+#: lib/potok_ide_web/controllers/page_html.ex:279
 #, elixir-autogen, elixir-format
 msgid "Light and dark theme"
 msgstr "Светла и тамна тема"
 
-#: lib/potok_ide_web/controllers/page_html.ex:206
+#: lib/potok_ide_web/controllers/page_html.ex:258
 #, elixir-autogen, elixir-format
 msgid "Notifications"
 msgstr "Обавештења"
 
-#: lib/potok_ide_web/controllers/page_html.ex:215
+#: lib/potok_ide_web/controllers/page_html.ex:267
 #, elixir-autogen, elixir-format
 msgid "On your phone"
 msgstr "На телефону"
 
-#: lib/potok_ide_web/controllers/page_html.ex:166
+#: lib/potok_ide_web/controllers/page_html.ex:218
 #, elixir-autogen, elixir-format
 msgid "One-off, all-day and repeating events, the answers Going, Maybe or Not going, and reminders. My calendar gathers the events of all your groups, and you can export them to Google, Apple or Outlook."
 msgstr "Једнократни, целодневни и понављајући догађаји, одговори Долазим, Можда или Не долазим и подсетници. Мој календар скупља догађаје из свих твојих група, а можеш их извести у Google, Apple или Outlook."
 
-#: lib/potok_ide_web/controllers/page_html.ex:228
+#: lib/potok_ide_web/controllers/page_html.ex:280
 #, elixir-autogen, elixir-format
 msgid "Or the way your system is set."
 msgstr "Или како је подешен систем."
 
-#: lib/potok_ide_web/controllers/page_html.ex:222
+#: lib/potok_ide_web/controllers/page_html.ex:274
 #, elixir-autogen, elixir-format
 msgid "Personal and shared, say for a family or an association."
 msgstr "Лични и дељени, на пример за породицу или удружење."
 
-#: lib/potok_ide_web/controllers/page_html.ex:182
+#: lib/potok_ide_web/controllers/page_html.ex:234
 #, elixir-autogen, elixir-format
 msgid "Roles and permissions"
 msgstr "Улоге и дозволе"
 
-#: lib/potok_ide_web/controllers/page_html.ex:221
+#: lib/potok_ide_web/controllers/page_html.ex:273
 #, elixir-autogen, elixir-format
 msgid "Several profiles"
 msgstr "Више профила"
@@ -4236,12 +4236,12 @@ msgstr "Наслов, време, место и опис виде се и ван
 msgid "For shared links, it can describe itself in a <meta name=\"description\" content=\"...\"> tag."
 msgstr "За дељене линкове може да се опише тагом <meta name=\"description\" content=\"...\">."
 
-#: lib/potok_ide_web/controllers/page_html.ex:233
+#: lib/potok_ide_web/controllers/page_html.ex:285
 #, elixir-autogen, elixir-format
 msgid "Latin and Cyrillic"
 msgstr "Латиница и ћирилица"
 
-#: lib/potok_ide_web/controllers/page_html.ex:234
+#: lib/potok_ide_web/controllers/page_html.ex:286
 #, elixir-autogen, elixir-format
 msgid "Serbian in both scripts, and English."
 msgstr "Српски на оба писма, и English."
@@ -4513,22 +4513,22 @@ msgstr "Системска тема"
 msgid "The language and the look of the app."
 msgstr "Језик и изглед апликације."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:124
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:142
 #, elixir-autogen, elixir-format
 msgid "Profiles, groups, values, roles, reactions, threads, events, descriptions and apps are all entities of the domain model of the social application network that Potok implements."
 msgstr "Профили, групе, вредности, улоге, реакције, нити, догађаји, описи и апликације, све су то ентитети домен модела апликативне друштвене мреже коју Поток имплементира."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:129
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:147
 #, elixir-autogen, elixir-format
 msgid "See the domain map"
 msgstr "Погледај мапу домена"
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:122
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:140
 #, elixir-autogen, elixir-format
 msgid "Simple, but not shallow."
 msgstr "Једноставно, али не и плитко."
 
-#: lib/potok_ide_web/controllers/page_html/home.html.heex:119
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:137
 #, elixir-autogen, elixir-format
 msgid "Under the surface"
 msgstr "Испод површине"
@@ -4857,12 +4857,12 @@ msgstr "Ова група те је блокирала."
 msgid "You cannot write in this group."
 msgstr "У овој групи не можеш да пишеш."
 
-#: lib/potok_ide_web/controllers/page_html.ex:184
+#: lib/potok_ide_web/controllers/page_html.ex:236
 #, elixir-autogen, elixir-format
 msgid "Administrator, All members and roles you make yourself, with 19 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
 msgstr "Администратор, Сви и улоге које сам направиш, са 19 дозвола: од писања и слања фајлова до прављења догађаја и уређивања групе. Подгрупа преузима улоге родитеља или има своје."
 
-#: lib/potok_ide_web/controllers/page_html.ex:157
+#: lib/potok_ide_web/controllers/page_html.ex:209
 #, elixir-autogen, elixir-format
 msgid "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there."
 msgstr "Одговори са цитатом, нити за дуже разговоре, реакције и @помињање људи или целих улога. Линкови добијају преглед, а поруку можеш и да измениш. Разговор јавне групе можеш да отвориш, па у њему пишу и они који нису чланови. У разговору можеш да покренеш и гласање, па сви гласају одмах ту."
@@ -4872,7 +4872,7 @@ msgstr "Одговори са цитатом, нити за дуже разго�
 msgid "Pictures from the keyboard go out from the message field."
 msgstr "Слике са тастатуре шаљеш из поља за поруку."
 
-#: lib/potok_ide_web/controllers/page_html.ex:175
+#: lib/potok_ide_web/controllers/page_html.ex:227
 #, elixir-autogen, elixir-format
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description and the files of an open chat. In the Android app you send a GIF or a sticker straight from the keyboard."
 msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Слике, видео и звук отварају се одмах у разговору, све остаје у картици Фајлови, а преузимају их само чланови, осим слика које ставиш у опис групе и фајлова из отвореног разговора. У Андроид апликацији ГИФ и налепницу шаљеш право са тастатуре."
@@ -4932,12 +4932,12 @@ msgstr "Одговори се више не примају."
 msgid "You have already answered."
 msgstr "Твој одговор је већ послат."
 
-#: lib/potok_ide_web/controllers/page_html.ex:193
+#: lib/potok_ide_web/controllers/page_html.ex:245
 #, elixir-autogen, elixir-format
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
 msgstr "Опис групе не мора да буде само текст. Може да буде и мала апликација, на пример форма, анкета или списак задужења. Или изабери шаблон, на пример вест или догађај, и попуни поља."
 
-#: lib/potok_ide_web/controllers/page_html.ex:148
+#: lib/potok_ide_web/controllers/page_html.ex:200
 #, elixir-autogen, elixir-format
 msgid "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form, map or page. You can then narrow the list of sub-groups by kind, to the groups you are in, or to those you created. You can put a group on a map, with a pin you pick for it. The map of groups shows every group with a place that you can see, and you narrow it with the same filters and by time."
 msgstr "Гранај групе колико год треба. Свака је јавна или приватна, подгрупа може да наследи чланове и улоге, а број непрочитаних порука сабира се кроз цело стабло. На групу можеш да реагујеш као и на поруку. Нову групу почињеш од готове поставке: чет, фолдер, обавештења, фид, гласања, форма, мапа или страница. Листу подгрупа после сужаваш по врсти, по томе где си члан или чији си аутор. Групу можеш да ставиш на мапу, са пином који јој изабереш. Мапа група приказује све групе са местом које видиш, а сужаваш је истим филтерима и по времену."
@@ -4952,7 +4952,7 @@ msgstr "Форма"
 msgid "It opens on the Form app: you write the questions and choose who fills it in and who sees the answers."
 msgstr "Отвара се на апликацији Форма: ти пишеш питања и бираш ко је попуњава, а ко види одговоре."
 
-#: lib/potok_ide_web/controllers/page_html.ex:208
+#: lib/potok_ide_web/controllers/page_html.ex:260
 #, elixir-autogen, elixir-format
 msgid "On your phone and in the browser, for messages, mentions, events, polls and form responses."
 msgstr "На телефону и у прегледачу, за поруке, помињања, догађаје, гласања и одговоре на форме."
@@ -5039,7 +5039,7 @@ msgid "Member"
 msgstr "Члан"
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:68
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:266
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:274
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:218
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:453
 #, elixir-autogen, elixir-format
@@ -5332,27 +5332,27 @@ msgstr[0] "%{count} група у овом делу мапе"
 msgstr[1] "%{count} групе у овом делу мапе"
 msgstr[2] "%{count} група у овом делу мапе"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:400
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:418
 #, elixir-autogen, elixir-format
 msgid "%{from} – %{to}"
 msgstr "%{from} – %{to}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:377
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:395
 #, elixir-autogen, elixir-format
 msgid "12 months"
 msgstr "12 месеци"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:360
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:377
 #, elixir-autogen, elixir-format
 msgid "24 hours"
 msgstr "24 сата"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:371
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:389
 #, elixir-autogen, elixir-format
 msgid "30 days"
 msgstr "30 дана"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:365
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:383
 #, elixir-autogen, elixir-format
 msgid "7 days"
 msgstr "7 дана"
@@ -5362,29 +5362,29 @@ msgstr "7 дана"
 msgid "A group gets its place in its settings, on the Location card."
 msgstr "Група добија место у својим подешавањима, на картици Локација."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:393
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:411
 #, elixir-autogen, elixir-format
 msgid "Active · %{frame}"
 msgstr "Активне · %{frame}"
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:82
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:379
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:384
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:397
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:402
 #, elixir-autogen, elixir-format
 msgid "Any time"
 msgstr "Било када"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:294
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:302
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr "Настанак"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:338
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:346
 #, elixir-autogen, elixir-format
 msgid "From"
 msgstr "Од"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:331
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:339
 #, elixir-autogen, elixir-format
 msgid "From date to date"
 msgstr "Од датума до датума"
@@ -5400,32 +5400,32 @@ msgid "Groups in this place"
 msgstr "Групе на овом месту"
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:76
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:274
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:282
 #, elixir-autogen, elixir-format
 msgid "Kind of groups"
 msgstr "Врста група"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:376
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:394
 #, elixir-autogen, elixir-format
 msgid "Last 12 months"
 msgstr "Последњих 12 месеци"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:360
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:376
 #, elixir-autogen, elixir-format
 msgid "Last 24 hours"
 msgstr "Последња 24 сата"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:388
 #, elixir-autogen, elixir-format
 msgid "Last 30 days"
 msgstr "Последњих 30 дана"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:364
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:382
 #, elixir-autogen, elixir-format
 msgid "Last 7 days"
 msgstr "Последњих 7 дана"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:295
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:303
 #, elixir-autogen, elixir-format
 msgid "Last message"
 msgstr "Последња порука"
@@ -5435,7 +5435,7 @@ msgstr "Последња порука"
 msgid "Map of groups"
 msgstr "Мапа група"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:255
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:263
 #, elixir-autogen, elixir-format
 msgid "More groups stand here. Search by name to find one."
 msgstr "Овде има још група. Потражи по имену ону која ти треба."
@@ -5460,7 +5460,7 @@ msgstr "Ниједна твоја група још нема место на м�
 msgid "Open the map of groups"
 msgstr "Отвори мапу група"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:349
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:362
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr "Прикажи"
@@ -5491,27 +5491,27 @@ msgid "The map took too long to load. Narrow the filters or zoom in."
 msgstr "Мапа се предуго учитавала. Сузи филтере или приближи мапу."
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:84
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:282
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:290
 #, elixir-autogen, elixir-format
 msgid "Time frame"
 msgstr "Период"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:340
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:352
 #, elixir-autogen, elixir-format
 msgid "To"
 msgstr "До"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:288
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:296
 #, elixir-autogen, elixir-format
 msgid "What the time frame counts"
 msgstr "По чему се рачуна период"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:403
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:421
 #, elixir-autogen, elixir-format
 msgid "from %{date}"
 msgstr "од %{date}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:405
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:423
 #, elixir-autogen, elixir-format
 msgid "until %{date}"
 msgstr "до %{date}"
@@ -5531,3 +5531,30 @@ msgstr "Прикажи их из било ког времена"
 msgctxt "map"
 msgid "Show all"
 msgstr "Прикажи све"
+
+#: lib/potok_ide_web/controllers/page_html.ex:145
+#, elixir-autogen, elixir-format
+msgid "After November 1, 2024, the student and citizen movement in Serbia talked in Viber groups, spread the word on Instagram and gathered sign-ups with forms and spreadsheets. Potok grew out of an overview of those eighteen apps and services and of what they offer."
+msgstr "После 1. новембра 2024. студентски и грађански покрет у Србији разговарао је у Вајбер групама, обавештавао преко Инстаграма, а пријаве скупљао обрасцима и табелама. Поток је настао из прегледа тих осамнаест апликација и сервиса и функција које пружају."
+
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:122
+#, elixir-autogen, elixir-format
+msgid "Eighteen springs, one stream."
+msgstr "Осамнаест извора, један поток."
+
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:125
+#, elixir-autogen, elixir-format
+msgid "Read the overview (in Serbian)"
+msgstr "Прочитај цео преглед"
+
+#: lib/potok_ide_web/controllers/page_html/origin.html.heex:11
+#, elixir-autogen, elixir-format
+msgid "This overview is in Serbian: it is about the movement in Serbia, and so are its sources."
+msgstr "Преглед је на српском јер говори о покрету у Србији и ослања се на српске изворе."
+
+#: lib/potok_ide_web/controllers/page_controller.ex:108
+#: lib/potok_ide_web/controllers/page_html/home.html.heex:119
+#: lib/potok_ide_web/controllers/page_html/origin.html.heex:8
+#, elixir-autogen, elixir-format
+msgid "Where Potok springs from"
+msgstr "Где Поток извире"

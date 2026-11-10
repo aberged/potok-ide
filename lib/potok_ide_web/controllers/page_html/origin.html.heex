@@ -1,0 +1,19 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+>
+  <div id="origin" class="mx-auto w-full max-w-5xl px-5 pb-16 sm:px-8">
+    <p class="lp-kicker">{gettext("Where Potok springs from")}</p>
+    <p :if={@serbian_only?} id="origin-language-note" class="or-note">
+      <.icon name="hero-language" class="size-4 shrink-0" />
+      {gettext(
+        "This overview is in Serbian: it is about the movement in Serbia, and so are its sources."
+      )}
+    </p>
+    <article id="origin-text" class="or-doc" lang={@serbian_only? && "sr"}>
+      {raw(@origin_html)}
+    </article>
+  </div>
+</Layouts.guest>
