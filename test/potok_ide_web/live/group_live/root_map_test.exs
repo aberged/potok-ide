@@ -257,5 +257,13 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     assert_push_event(lv, "root_map_data", %{places: []})
     assert has_element?(lv, "#root-map-empty")
     refute has_element?(lv, "#root-map-any-time")
+
+    # Closed, it leaves the map be until a filter changes.
+    lv |> element("#root-map-empty-close") |> render_click()
+    refute has_element?(lv, "#root-map-empty")
+
+    lv |> element("#root-map-preset-option-polls") |> render_click()
+    assert_push_event(lv, "root_map_data", %{places: []})
+    assert has_element?(lv, "#root-map-empty")
   end
 end

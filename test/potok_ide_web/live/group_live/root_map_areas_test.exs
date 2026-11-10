@@ -238,10 +238,16 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     # Once only: the next view keeps where the viewer moved.
     refute Map.has_key?(view(lv, 10), :fit)
 
-    # A chosen area that holds nothing says so.
+    # A chosen area that holds nothing says so, and steps aside when closed,
+    # the area still chosen.
     {:ok, _} = Social.update_group(ctx.owner, ctx.shop, %{"latitude" => "", "longitude" => ""})
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map?#{[area: ctx.quarter.id]}")
-    assert has_element?(lv, "#root-map-area-clear")
+    assert has_element?(lv, "#root-map-empty")
+    refute has_element?(lv, "#root-map-area-clear")
+
+    lv |> element("#root-map-empty-close") |> render_click()
+    refute has_element?(lv, "#root-map-empty")
+    assert view(lv, 10).chosen == [ctx.quarter.id]
 
     # A public area the viewer is not in works the same.
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map?#{[area: ctx.city.id]}")

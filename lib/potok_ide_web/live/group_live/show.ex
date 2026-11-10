@@ -537,6 +537,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             filters={@root_map_filters}
             show_public={@show_public_sub_groups}
             extent={@root_map_extent}
+            empty_closed={@root_map_empty_closed?}
             total={@root_map_total}
             spot={@root_map_spot}
             error={@root_map_error?}

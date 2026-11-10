@@ -18,6 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :filters, :map, required: true, doc: "`@root_map_filters`"
   attr :show_public, :boolean, required: true, doc: "the root's public groups switch"
   attr :extent, :map, default: nil, doc: "`Social.map_extent/2`, nil until loaded"
+  attr :empty_closed, :boolean, default: false, doc: "the empty state closed by the viewer"
   attr :total, :integer, default: nil, doc: "the groups in the map's view"
   attr :spot, :map, default: nil, doc: "the groups of a crowded spot"
   attr :error, :boolean, default: false
@@ -185,11 +186,19 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         </div>
 
         <div
-          :if={@extent && @extent.count == 0}
+          :if={@extent && @extent.count == 0 && !@empty_closed}
           id="root-map-empty"
           class="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center p-6"
         >
-          <div class="pointer-events-auto max-w-sm rounded-3xl border border-base-300/70 bg-base-100/95 p-5 text-center shadow-xl backdrop-blur">
+          <div class="pointer-events-auto relative max-w-sm rounded-3xl border border-base-300/70 bg-base-100/95 p-5 text-center shadow-xl backdrop-blur">
+            <.icon_button
+              id="root-map-empty-close"
+              type="button"
+              phx-click="root_map_empty_close"
+              icon="hero-x-mark"
+              label={gettext("Close")}
+              class="absolute right-2 top-2"
+            />
             <span class="mx-auto mb-3 inline-flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
               <.icon name="hero-map" class="size-6" />
             </span>
@@ -208,17 +217,6 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             <p class="mt-1 text-xs text-base-content/65">
               {gettext("A group gets its place in its settings, on the Location card.")}
             </p>
-            <.button
-              :if={@empty_reason == :area}
-              id="root-map-area-clear"
-              type="button"
-              phx-click="root_map_area_clear"
-              variant="soft"
-              size="sm"
-              class="mt-3"
-            >
-              {gettext("Leave the areas out")}
-            </.button>
             <.button
               :if={@empty_reason == :filters}
               id="root-map-clear-filters"

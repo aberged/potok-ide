@@ -55,6 +55,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_total: nil,
       root_map_spot: nil,
       root_map_error?: false,
+      root_map_empty_closed?: false,
       root_map_layers: %{places: true, areas: true},
       root_map_here: nil,
       root_map_fit: nil,
@@ -161,7 +162,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     if socket.assigns.root_map_fit, do: refresh(socket), else: socket
   end
 
+  # A new count brings the empty state back, closed or not.
   defp load_extent(socket) do
+    socket = assign(socket, :root_map_empty_closed?, false)
+
     case Social.map_extent(socket.assigns.current_profile, social_filters(socket.assigns)) do
       {:ok, extent} -> assign(socket, root_map_extent: extent, root_map_error?: false)
       {:error, :timeout} -> assign(socket, root_map_extent: nil, root_map_error?: true)
@@ -477,6 +481,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   def handle_event("root_map_spot_close", _params, socket),
     do: {:noreply, assign(socket, :root_map_spot, nil)}
+
+  # The empty state steps aside so the map behind it shows, until the
+  # filters change.
+  def handle_event("root_map_empty_close", _params, socket),
+    do: {:noreply, assign(socket, :root_map_empty_closed?, true)}
 
   def handle_event("root_map_fit", _params, socket) do
     socket = load_extent(socket)
