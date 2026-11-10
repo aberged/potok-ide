@@ -280,7 +280,8 @@ defmodule PotokIde.Social.GroupAreas do
   with what a pin needs. Options: `:except` leaves one group out, `:zoom`
   keeps only the areas drawn as borders at that zoom (`min_span/1`),
   `:larger_than` only those bigger than an area of that size (`size/1`), as
-  only a bigger area holds another, `:limit` (10).
+  only a bigger area holds another, `:pins` and `:keep` as in
+  `list_drawable/5`, `:limit` (10).
   """
   def areas_at(%Profile{} = profile, lat, lng, opts \\ [])
       when is_number(lat) and is_number(lng) do
@@ -297,6 +298,7 @@ defmodule PotokIde.Social.GroupAreas do
     |> except_id(opts[:except])
     |> drawn_at(opts[:zoom])
     |> larger_than(opts[:larger_than])
+    |> with_pins(opts[:pins], opts[:keep])
     |> order_by([g], asc: fragment("ST_Area(?)", g.area), asc: g.id)
     |> limit(^Keyword.get(opts, :limit, 10))
     |> select([g], struct(g, ^@fields))
@@ -308,6 +310,12 @@ defmodule PotokIde.Social.GroupAreas do
 
   defp drawn_at(query, nil), do: query
   defp drawn_at(query, zoom), do: where(query, [g], span(g.area, g.latitude) >= ^min_span(zoom))
+
+  # Only the areas showing one of `pins`, and those of `keep` whatever they show.
+  defp with_pins(query, pins, _keep) when pins in [nil, []], do: query
+
+  defp with_pins(query, pins, keep),
+    do: where(query, [g], g.pin_icon in ^pins or g.id in ^List.wrap(keep))
 
   defp larger_than(query, nil), do: query
 
@@ -359,9 +367,16 @@ defmodule PotokIde.Social.GroupAreas do
   sees that reach into the box and are wide enough there (`min_span/1`),
   biggest first so that smaller ones lie on top, at most `limit`. Each is
   `%{group, bbox: [west, south, east, north]}`. `ranges` is the box as
-  `Social.map_bbox_params/1` gives it.
+  `Social.map_bbox_params/1` gives it. Options: `:pins` keeps only the areas
+  showing one of those pins (`Group.pin_icon`), except the ids of `:keep`.
   """
-  def list_drawable(%Profile{} = profile, [south, north, west, east, west2, east2], zoom, limit)
+  def list_drawable(
+        %Profile{} = profile,
+        [south, north, west, east, west2, east2],
+        zoom,
+        limit,
+        opts \\ []
+      )
       when is_integer(zoom) and is_integer(limit) do
     box =
       dynamic(
@@ -397,6 +412,7 @@ defmodule PotokIde.Social.GroupAreas do
     visible(profile)
     |> where(^box)
     |> drawn_at(zoom)
+    |> with_pins(opts[:pins], opts[:keep])
     |> order_by([g], desc: fragment("ST_Area(?)", g.area), asc: g.id)
     |> limit(^limit)
     |> select([g], {

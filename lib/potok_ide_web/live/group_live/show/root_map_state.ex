@@ -8,14 +8,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   as it moves; the server gathers the groups into clusters on a grid
   (`Social.list_map_cells/4`), so a phone draws a few hundred markers however
   many groups there are. The filters live here, in assigns: the root's
-  sub-group filters (public groups, membership, kind, name) and a time frame,
-  the last 30 days of when groups were made until the viewer picks another.
+  sub-group filters (public groups, membership, kind, name), the pins groups
+  show (any of those picked), and a time frame, the last 30 days of when
+  groups were made until the viewer picks another.
   They are not remembered, except the public groups switch, which is the same
   one as in the sub-groups tab.
 
   Areas (`GroupAreas`) lie under the pins: every area the viewer sees, whatever
-  the filters, drawn as a border once it is wide enough on the screen (its pin
-  then leaves the clusters). The browser asks for their borders by itself and
+  the filters but the pins, drawn as a border once it is wide enough on the
+  screen (its pin then leaves the clusters). The browser asks for their borders by itself and
   keeps them. Two layers, places and areas, are switched on the map, and the
   browser remembers them. An area filter keeps the pins inside chosen areas,
   and a tap on the map lists the areas there (`root_map_here`).
@@ -28,7 +29,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupAreas, GroupPresets}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, GroupSheet}
 
   @periods ~w(24h 7d 30d 12m any)
@@ -76,7 +77,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       period: @default_period,
       from: nil,
       to: nil,
-      areas: []
+      areas: [],
+      pins: []
     }
   end
 
@@ -92,6 +94,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     cond do
       filters.areas != [] -> :area
       filters.search != "" or filters.preset != nil or filters.relation != nil -> :filters
+      filters.pins != [] -> :filters
       filters.period not in [@default_period, "any"] -> :filters
       filters.time == :active and not any_time? -> :filters
       not any_time? -> :time
@@ -190,7 +193,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
         areas =
           if layers.areas,
             do:
-              GroupAreas.list_drawable(profile, Social.map_bbox_params(bbox), zoom, @drawn_limit),
+              GroupAreas.list_drawable(profile, Social.map_bbox_params(bbox), zoom, @drawn_limit,
+                pins: socket.assigns.root_map_filters.pins,
+                keep: socket.assigns.root_map_filters.areas
+              ),
             else: []
 
         payload = %{
@@ -256,6 +262,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       from: from,
       to: to,
       areas: filters.areas,
+      pins: filters.pins,
       places?: Map.get(layers, :places, true),
       shapes?: layers.areas,
       zoom: Map.get(view, :zoom)
@@ -341,7 +348,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       areas =
         GroupAreas.areas_at(socket.assigns.current_profile, lat, lng,
           zoom: zoom,
-          limit: @here_limit
+          limit: @here_limit,
+          pins: socket.assigns.root_map_filters.pins,
+          keep: socket.assigns.root_map_filters.areas
         )
 
       ids = Enum.map(areas, & &1.id)
@@ -513,6 +522,24 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       true -> {:noreply, socket}
     end
   end
+
+  # A pin in or out of the filter; the filter keeps the catalogue's order.
+  def handle_event("root_map_pin", %{"pin" => key}, socket) when is_binary(key) do
+    pins = socket.assigns.root_map_filters.pins
+
+    cond do
+      key in pins ->
+        put_filter(socket, :pins, List.delete(pins, key))
+
+      key in GroupPins.icon_keys() ->
+        put_filter(socket, :pins, Enum.filter(GroupPins.icon_keys(), &(&1 == key or &1 in pins)))
+
+      true ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("root_map_pin_clear", _params, socket), do: put_filter(socket, :pins, [])
 
   def handle_event("root_map_relation", %{"relation" => relation}, socket) do
     cond do

@@ -153,6 +153,23 @@ defmodule PotokIde.Social.RootMapTest do
       assert ids(ctx.viewer, Map.put(all, :preset, "bogus")) == ids(ctx.viewer, all)
     end
 
+    test "narrow by the pins they show, any of those picked", ctx do
+      all = %{public?: true}
+      {:ok, chat} = Social.update_group(ctx.owner, ctx.chat, %{"pin_icon" => "food"})
+      {:ok, poll} = Social.update_group(ctx.owner, ctx.poll, %{"pin_icon" => "event"})
+
+      assert ids(ctx.viewer, Map.put(all, :pins, ["food"])) == [chat.id]
+
+      assert ids(ctx.viewer, Map.put(all, :pins, ["food", "event"])) ==
+               Enum.sort([chat.id, poll.id])
+
+      # A group that shows its kind has no pin of these.
+      assert ids(ctx.viewer, Map.put(all, :pins, ["shop"])) == []
+      assert ids(ctx.viewer, Map.put(all, :pins, [])) == ids(ctx.viewer, all)
+
+      assert {:ok, %{count: 1}} = Social.map_extent(ctx.viewer, Map.put(all, :pins, ["event"]))
+    end
+
     test "narrow by when a group was made, or last written in", ctx do
       now = DateTime.utc_now() |> DateTime.truncate(:second)
       long_ago = DateTime.add(now, -90, :day)

@@ -1094,13 +1094,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     ]
 
     icons =
-      GroupPins.icons()
-      |> Enum.chunk_by(fn {_key, _icon, tone} -> pin_heading(tone) end)
-      |> Enum.map(fn [{_key, _icon, tone} | _] = chunk ->
+      for section <- PinIcons.sections() do
         %{
-          title: pin_heading(tone),
+          title: section.title,
           pins:
-            Enum.map(chunk, fn {key, _icon, _tone} ->
+            Enum.map(section.keys, fn key ->
               %{
                 key: key,
                 value: key,
@@ -1110,15 +1108,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               }
             end)
         }
-      end)
+      end
 
     [%{title: gettext("This group"), pins: own} | icons]
   end
-
-  defp pin_heading(:places), do: gettext("Places and services")
-  defp pin_heading(:community), do: gettext("Community and events")
-  defp pin_heading(:nature), do: gettext("Nature and sights")
-  defp pin_heading(_reports), do: gettext("Reports and safety")
 
   # Errors of the border that came back from a save, unless the card already
   # says what is wrong with it.

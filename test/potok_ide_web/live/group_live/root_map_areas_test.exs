@@ -162,6 +162,66 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     refute ctx.shop.id in ids(data.places)
   end
 
+  test "a pin filter keeps the places and areas showing those pins, and the chosen areas", ctx do
+    {:ok, _} = Social.update_group(ctx.owner, ctx.city, %{"pin_icon" => "municipality"})
+    {:ok, _} = Social.update_group(ctx.owner, ctx.quarter, %{"pin_icon" => "local_community"})
+    {:ok, _} = Social.update_group(ctx.owner, ctx.shop, %{"pin_icon" => "food"})
+    {lat, lng} = @ns
+
+    lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
+    view(lv, 12)
+
+    lv |> element("#root-map-pin-option-municipality") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert ids(data.areas) == [ctx.city.id]
+    assert data.places == []
+    assert has_element?(lv, "#root-map-pin-option-municipality[aria-checked='true']")
+    assert has_element?(lv, "#root-map-pin-option-all[aria-checked='false']")
+    assert has_element?(lv, "#root-map-pin-toggle", "Municipality")
+    # Phones show no text on the button: its label names the pin.
+    assert has_element?(lv, "#root-map-pin-toggle[aria-label='Pins on the map: Municipality']")
+
+    # A tap lists only the areas the map shows.
+    render_hook(lv, "root_map_here", %{lat: lat + 0.02, lng: lng, zoom: 12})
+    assert_reply(lv, %{ids: [city_id]})
+    assert city_id == ctx.city.id
+
+    # Far out, an area too small for a border is a pin only with its pin picked.
+    refute ctx.quarter.id in ids(view(lv, 7).places)
+
+    lv |> element("#root-map-pin-option-local_community") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert ctx.quarter.id in ids(data.places)
+    assert has_element?(lv, "#root-map-pin-toggle", "2")
+
+    # A chosen area stays drawn whatever its pin.
+    lv |> element("#root-map-pin-option-local_community") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
+    view(lv, 12)
+    lv |> element("#root-map-area-option-#{ctx.quarter.id}") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert ids(data.areas) == [ctx.city.id, ctx.quarter.id]
+
+    # A pin no group shows empties the map, and clearing the filters brings
+    # every pin back.
+    lv |> element("#root-map-area-option-all") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
+    lv |> element("#root-map-pin-option-municipality") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
+    lv |> element("#root-map-pin-option-help") |> render_click()
+    assert_push_event(lv, "root_map_data", %{places: [], areas: []})
+    assert has_element?(lv, "#root-map-empty")
+
+    lv |> element("#root-map-clear-filters") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert ids(data.areas) == [ctx.city.id, ctx.quarter.id]
+    assert has_element?(lv, "#root-map-pin-option-all[aria-checked='true']")
+
+    # A key that is no pin changes nothing.
+    render_click(lv, "root_map_pin", %{"pin" => "bogus"})
+    assert has_element?(lv, "#root-map-pin-option-all[aria-checked='true']")
+  end
+
   test "a tap lists the areas there, smallest first, and the card acts on them", ctx do
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
     view(lv, 12)

@@ -41,9 +41,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
 
     ~H"""
     <div id="group-panel-map" class="card relative flex min-h-0 flex-1 flex-col px-2 pb-2">
+      <%!-- On a phone 360 px wide the six buttons and the search share one row:
+           circles of 40 px, 4 px apart, the row flush with the left edge. --%>
       <div
         id="root-map-filters"
-        class="group/filters relative z-45 flex shrink-0 flex-wrap items-start justify-end gap-2 px-2 pb-2"
+        class="group/filters relative z-45 flex shrink-0 flex-wrap items-start justify-end gap-1 px-2 pb-2 max-sm:pl-0 sm:gap-2"
       >
         <button
           id="root-map-public-toggle"
@@ -57,7 +59,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             )
           }
           class={[
-            "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+            "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs max-sm:px-[11px] transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
             if(@show_public,
               do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
               else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
@@ -83,6 +85,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           idle_label={gettext("Kind")}
           title={gettext("Show one kind of groups")}
           label={gettext("Kind of groups")}
+        />
+        <ChoiceMenus.choice_toggle
+          id="root-map-pin"
+          choices={[%{key: "", icon: "hero-map-pin", title: gettext("All pins")}]}
+          idle_label={gettext("Pin")}
+          title={gettext("Show the groups with the pins you pick")}
+          label={gettext("Pins on the map")}
+          text={pin_text(@filters.pins)}
+          icon="hero-map-pin"
+          active={@filters.pins != []}
         />
         <ChoiceMenus.choice_toggle
           id="root-map-time"
@@ -470,6 +482,66 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         label={gettext("Kind of groups")}
       />
       <ChoiceMenus.choice_menu
+        id="root-map-pin"
+        choices={[]}
+        event="root_map_pin"
+        param="pin"
+        label={gettext("Pins on the map")}
+      >
+        <:top>
+          <button
+            id="root-map-pin-option-all"
+            type="button"
+            role="menuitemradio"
+            aria-checked={to_string(@filters.pins == [])}
+            phx-click={JS.push("root_map_pin_clear") |> ChoiceMenus.close_choice_menu("root-map-pin")}
+            class={[
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+              if(@filters.pins == [],
+                do: "font-semibold text-primary",
+                else: "font-medium text-base-content/80"
+              )
+            ]}
+          >
+            <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-base-200">
+              <.icon name="hero-map-pin" class="size-4" />
+            </span>
+            <span class="min-w-0 flex-1 truncate">{gettext("All pins")}</span>
+            <.icon :if={@filters.pins == []} name="hero-check" class="size-4 shrink-0" />
+          </button>
+          <%= for section <- PinIcons.sections() do %>
+            <p class="px-2.5 pb-1 pt-3 text-[0.7rem] font-semibold uppercase tracking-wide text-base-content/55">
+              {section.title}
+            </p>
+            <button
+              :for={key <- section.keys}
+              id={"root-map-pin-option-#{key}"}
+              type="button"
+              role="menuitemcheckbox"
+              aria-checked={to_string(key in @filters.pins)}
+              phx-click="root_map_pin"
+              phx-value-pin={key}
+              class={[
+                "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+                if(key in @filters.pins,
+                  do: "font-semibold text-primary",
+                  else: "font-medium text-base-content/80"
+                )
+              ]}
+            >
+              <PinIcons.pin
+                id={"root-map-pin-icon-#{key}"}
+                color={PinIcons.icon_look(key).color}
+                paths={PinIcons.icon_look(key).paths}
+                class="h-7 w-[1.4rem] shrink-0 drop-shadow-sm"
+              />
+              <span class="min-w-0 flex-1 truncate">{PinIcons.label(key)}</span>
+              <.icon :if={key in @filters.pins} name="hero-check" class="size-4 shrink-0" />
+            </button>
+          <% end %>
+        </:top>
+      </ChoiceMenus.choice_menu>
+      <ChoiceMenus.choice_menu
         id="root-map-time"
         choices={period_choices()}
         selected={@filters.period}
@@ -727,6 +799,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   end
 
   # What the area filter's button says.
+  defp pin_text([]), do: nil
+  defp pin_text([key]), do: PinIcons.label(key)
+  defp pin_text(keys), do: ngettext("%{count} pin", "%{count} pins", length(keys))
+
   defp area_text([]), do: nil
   defp area_text([area]), do: gettext("In %{name}", name: area.name)
 

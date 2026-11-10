@@ -3390,8 +3390,9 @@ defmodule PotokIde.Social do
   groups, all of them with `public?: true`, otherwise those on the way to one
   of its memberships, as in the root's sub-groups. `filters` narrow them:
   `:search` on the name, `:preset` and `:relation` as in
-  `list_child_groups_for_profile/3`, and `:from` (counts in) and `:to` (does
-  not) on `:time`, `:created` (when the group took its place in a feed, as in
+  `list_child_groups_for_profile/3`, `:pins` the keys of `Group.pin_icon` a
+  group must show one of, and `:from` (counts in) and `:to` (does not) on
+  `:time`, `:created` (when the group took its place in a feed, as in
   `list_visible_child_groups_newest_first/3`) or `:active` (its newest value;
   a group never written in then stays out).
   """
@@ -3405,9 +3406,9 @@ defmodule PotokIde.Social do
         SELECT count(*), avg(p.latitude), avg(p.longitude),
           min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id)
         FROM placed p
-        GROUP BY floor((p.longitude + 180.0) / 360.0 * $17::float8),
+        GROUP BY floor((p.longitude + 180.0) / 360.0 * $18::float8),
           floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
-            * $17::float8)
+            * $18::float8)
         ORDER BY count(*) DESC
         LIMIT #{@map_max_cells + 1}
         """
@@ -3463,7 +3464,7 @@ defmodule PotokIde.Social do
     sql =
       map_placed_sql(map_time(filters), true) <>
         """
-        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $17::integer
+        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $18::integer
         """
 
     params =
@@ -3501,13 +3502,14 @@ defmodule PotokIde.Social do
   # $6 and $7 the moments, $8 the areas a group's pin must lie in (any of them,
   # `GroupAreas`), $9 how wide an area is drawn as a border rather than a pin
   # (nil: areas are no layer of their own), $10 whether the groups the filters
-  # keep are wanted at all, then the box: $11 south, $12 north, one or (across
-  # the antimeridian) two ranges of longitude, $13-$14 and $15-$16.
+  # keep are wanted at all, $11 the pins a group must show (any of them), then
+  # the box: $12 south, $13 north, one or (across the antimeridian) two ranges
+  # of longitude, $14-$15 and $16-$17.
   #
   # The groups are those the filters keep and, while areas are a layer of
   # their own ($9), every area the profile sees that is too small to draw,
-  # whatever the filters, as its pin; areas wide enough to draw come with their
-  # borders (`GroupAreas.list_drawable/4`) and leave the cells.
+  # whatever the filters but the pins, as its pin; areas wide enough to draw
+  # come with their borders (`GroupAreas.list_drawable/5`) and leave the cells.
   defp map_placed_sql(time, bbox?) do
     moment =
       case time do
@@ -3518,9 +3520,9 @@ defmodule PotokIde.Social do
     box =
       if bbox? do
         """
-          AND g.latitude BETWEEN $11::float8 AND $12::float8
-          AND (g.longitude BETWEEN $13::float8 AND $14::float8
-            OR ($15::float8 IS NOT NULL AND g.longitude BETWEEN $15::float8 AND $16::float8))
+          AND g.latitude BETWEEN $12::float8 AND $13::float8
+          AND (g.longitude BETWEEN $14::float8 AND $15::float8
+            OR ($16::float8 IS NOT NULL AND g.longitude BETWEEN $16::float8 AND $17::float8))
         """
       else
         ""
@@ -3535,6 +3537,7 @@ defmodule PotokIde.Social do
         AND g.parent_id IS NOT NULL
         AND g.parent_value_id IS NULL
         AND g.is_direct = FALSE
+        AND ($11::text[] IS NULL OR g.pin_icon = ANY($11::text[]))
         AND (($10::boolean AND ($9::float8 IS NULL OR g.area IS NULL)
             AND (g.id IN (SELECT group_id FROM mine)
               OR (g.is_public AND ($2::boolean OR g.id IN (SELECT id FROM member_paths))))
@@ -3559,9 +3562,9 @@ defmodule PotokIde.Social do
   end
 
   # `zoom` is where areas are drawn as borders while `:shapes?` is on: wider
-  # ones leave the cells, smaller ones join them whatever the filters. nil
-  # leaves areas to the filters like any group (`map_extent/2`). `:places?`
-  # false keeps only those small areas.
+  # ones leave the cells, smaller ones join them whatever the filters but the
+  # pins. nil leaves areas to the filters like any group (`map_extent/2`).
+  # `:places?` false keeps only those small areas.
   defp map_filter_params(%Profile{id: profile_id}, filters, zoom \\ nil) do
     [
       profile_id,
@@ -3573,9 +3576,13 @@ defmodule PotokIde.Social do
       map_moment(Map.get(filters, :to)),
       map_area_filter(Map.get(filters, :areas)),
       if(Map.get(filters, :shapes?) == true and is_integer(zoom), do: GroupAreas.min_span(zoom)),
-      is_nil(zoom) or Map.get(filters, :places?) != false
+      is_nil(zoom) or Map.get(filters, :places?) != false,
+      map_pin_filter(Map.get(filters, :pins))
     ]
   end
+
+  defp map_pin_filter([_ | _] = keys), do: Enum.filter(keys, &is_binary/1)
+  defp map_pin_filter(_none), do: nil
 
   defp map_area_filter([_ | _] = ids), do: Enum.filter(ids, &is_integer/1)
   defp map_area_filter(_none), do: nil

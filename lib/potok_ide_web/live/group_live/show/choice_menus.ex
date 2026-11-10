@@ -59,13 +59,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
   # Opens its `choice_menu/1` on the client: the menu holds nothing the server
   # would have to load.
   def choice_toggle(assigns) do
+    choice = Enum.find(assigns.choices, &chosen?(&1, assigns.selected))
+
     assigns =
       assigns
-      |> assign(:choice, Enum.find(assigns.choices, &chosen?(&1, assigns.selected)))
+      |> assign(:choice, choice)
       |> assign(
         :active,
         if(is_nil(assigns.active), do: assigns.selected != nil, else: assigns.active)
       )
+      # What a screen reader hears after the label, as phones show no text:
+      # the button's own text, or the choice picked.
+      |> assign(:named, assigns.text || (assigns.selected && choice && choice.title))
 
     ~H"""
     <button
@@ -74,10 +79,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
       phx-click={JS.dispatch("potok:choice-menu-open", to: "##{@id}-menu")}
       aria-haspopup="menu"
       aria-controls={"#{@id}-menu"}
-      aria-label={if(@selected, do: "#{@label}: #{@text || @choice.title}", else: @label)}
+      aria-label={if(@named, do: "#{@label}: #{@named}", else: @label)}
       title={@title}
       class={[
-        "mt-1 inline-flex h-10 max-w-48 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 max-sm:group-has-[input:focus]/filters:hidden",
+        "mt-1 inline-flex h-10 max-w-48 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs max-sm:px-[11px] transition duration-150 ease-out hover:-translate-y-px active:scale-95 max-sm:group-has-[input:focus]/filters:hidden",
         if(@active,
           do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
           else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
@@ -204,7 +209,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
 
           // The arrows walk the choices, as in any menu.
           this.el.addEventListener("keydown", event => {
-            const items = [...this.el.querySelectorAll("[role=menuitemradio]")]
+            const items = [
+              ...this.el.querySelectorAll("[role=menuitemradio], [role=menuitemcheckbox]"),
+            ]
             const index = items.indexOf(document.activeElement)
             const next = {
               ArrowDown: (index + 1) % items.length,

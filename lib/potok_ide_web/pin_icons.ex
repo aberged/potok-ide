@@ -95,6 +95,24 @@ defmodule PotokIdeWeb.PinIcons do
     %{color: GroupPins.tone_color(tone), paths: paths(icon), picture: false}
   end
 
+  @doc """
+  The icon pins in the sections of a list, as `%{title, keys}`: places, the
+  community, nature, and reports with alerts.
+  """
+  def sections do
+    GroupPins.icons()
+    |> Enum.chunk_by(fn {_key, _icon, tone} -> section_title(tone) end)
+    |> Enum.map(fn [{_key, _icon, tone} | _] = chunk ->
+      %{title: section_title(tone), keys: Enum.map(chunk, &elem(&1, 0))}
+    end)
+  end
+
+  @doc "The title of the section of pins in `tone`."
+  def section_title(:places), do: gettext("Places and services")
+  def section_title(:community), do: gettext("Community and events")
+  def section_title(:nature), do: gettext("Nature and sights")
+  def section_title(_reports), do: gettext("Reports and safety")
+
   @doc "The name of a kind on a map: the preset's, an app's or none."
   def kind_label(kind) do
     case Enum.find(CreateMenu.kinds(), &(&1.key == kind)) do

@@ -149,7 +149,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               if(@show_thread_sub_groups, do: gettext("Hide threads"), else: gettext("Show threads"))
             }
             class={[
-              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs max-sm:px-[11px] transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
               if(@show_thread_sub_groups,
                 do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
                 else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"
@@ -194,7 +194,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               )
             }
             class={[
-              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
+              "mt-1 inline-flex h-10 items-center gap-1.5 rounded-full border px-3 text-sm font-semibold shadow-xs max-sm:px-[11px] transition duration-150 ease-out hover:-translate-y-px active:scale-95 phx-click-loading:opacity-60 max-sm:group-has-[input:focus]/filters:hidden",
               if(@show_public_sub_groups,
                 do: "border-primary/50 bg-base-100 text-primary hover:bg-base-200",
                 else: "border-gray-500/50 bg-base-100 text-base-content/65 hover:text-base-content"

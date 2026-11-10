@@ -86,6 +86,9 @@ defmodule PotokIde.Social.GroupPins do
   @doc "The icon pins in order, as `{key, heroicon, tone}`."
   def icons, do: @icons
 
+  @doc "The keys of the icon pins, in order: what a map filters by."
+  def icon_keys, do: @keys
+
   @doc "The kinds a pin can show, as `{kind, heroicon}`."
   def kinds, do: @kinds
 
