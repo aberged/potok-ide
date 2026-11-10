@@ -51,6 +51,16 @@ defmodule PotokIde.Social.Group do
     # it, set by `Social.update_group/3`. Loaded only on demand
     # (`Social.load_area/1`), as a border can hold thousands of points.
     field :area, Geo.PostGIS.Geometry, load_in_query: false
+    # Kept by Postgres from the row (generated columns), never written here:
+    # the name as a search compares it (`NameSearch`), and an area's size, box
+    # and width on a map (`GroupAreas`), so map queries need not read borders.
+    field :name_folded, :string, load_in_query: false, writable: :never
+    field :area_size, :float, load_in_query: false, writable: :never
+    field :area_west, :float, load_in_query: false, writable: :never
+    field :area_south, :float, load_in_query: false, writable: :never
+    field :area_east, :float, load_in_query: false, writable: :never
+    field :area_north, :float, load_in_query: false, writable: :never
+    field :area_span, :float, load_in_query: false, writable: :never
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []

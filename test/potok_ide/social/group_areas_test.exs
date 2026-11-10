@@ -244,22 +244,22 @@ defmodule PotokIde.Social.GroupAreasTest do
 
     test "a map draws the areas wide enough at its zoom, biggest first", ctx do
       %{city: city, quarter: quarter} = ctx
-      box = Social.map_bbox_params([19.0, 44.5, 20.7, 46.0])
+      box = [19.0, 44.5, 20.7, 46.0]
 
-      drawn = fn zoom ->
-        GroupAreas.list_drawable(ctx.outsider, box, zoom, 300) |> Enum.map(& &1.group.id)
+      drawn = fn zoom, box ->
+        {:ok, view} =
+          Social.list_map_cells(ctx.outsider, %{public?: true, shapes?: true}, box, zoom)
+
+        view.areas
       end
 
       # 0.4° wide is ~36 px at zoom 7; the 0.1° quarter needs zoom 9.
-      assert drawn.(5) == []
-      assert drawn.(7) == [city.id]
-      assert drawn.(10) == [city.id, quarter.id]
+      assert drawn.(5, box) == []
+      assert Enum.map(drawn.(7, box), & &1.id) == [city.id]
+      assert Enum.map(drawn.(10, box), & &1.id) == [city.id, quarter.id]
+      assert drawn.(10, [21.0, 43.0, 22.0, 44.0]) == []
 
-      far = Social.map_bbox_params([21.0, 43.0, 22.0, 44.0])
-      assert GroupAreas.list_drawable(ctx.outsider, far, 10, 300) == []
-
-      [%{bbox: [west, south, east, north]} | _] =
-        GroupAreas.list_drawable(ctx.outsider, box, 10, 300)
+      [west, south, east, north] = drawn.(10, box) |> hd() |> GroupAreas.bbox()
 
       assert_in_delta west, 19.65, 1.0e-6
       assert_in_delta south, 45.05, 1.0e-6
@@ -330,17 +330,65 @@ defmodule PotokIde.Social.GroupAreasTest do
       assert pins(ctx.outsider, %{shapes?: true}, 18) == Enum.sort([inside.id, outside.id])
     end
 
-    test "an area too small to draw is a pin whatever the filters, and alone without places",
-         ctx do
+    test "an area follows the filters like any group, and stays alone without places", ctx do
       %{quarter: quarter, inside: inside} = ctx
       # Nothing passes this time frame, and the quarter is ~9 px wide at zoom 7.
       gone = %{from: DateTime.add(DateTime.utc_now(), 1, :day)}
 
       assert pins(ctx.outsider, gone, 7) == []
-      assert pins(ctx.outsider, Map.put(gone, :shapes?, true), 7) == [quarter.id]
+      assert pins(ctx.outsider, Map.put(gone, :shapes?, true), 7) == []
+      assert pins(ctx.outsider, %{shapes?: true, search: "nothing like it"}, 7) == []
+      assert pins(ctx.outsider, %{shapes?: true, pins: ["shop"]}, 7) == []
 
       assert pins(ctx.outsider, %{shapes?: true, places?: false}, 7) == [quarter.id]
       refute inside.id in pins(ctx.outsider, %{shapes?: true, places?: false}, 7)
+    end
+
+    test "the count, the total, the box, a spot and a tap come from the same groups", ctx do
+      %{quarter: quarter, inside: inside, outside: outside} = ctx
+      box = [19.0, 44.5, 20.7, 46.0]
+      {lat, lng} = @ns
+      drawn = %{public?: true, shapes?: true}
+
+      # The quarter is drawn at zoom 12: out of the cells, still counted.
+      assert {:ok, view} = Social.list_map_cells(ctx.outsider, drawn, box, 12)
+      assert Enum.map(view.areas, & &1.id) == [quarter.id]
+      assert view.total == 3
+
+      assert {:ok, %{count: 3, bounds: [[south, west], [_north, _east]]}} =
+               Social.map_extent(ctx.outsider, %{public?: true})
+
+      # The quarter's own edges, not its pin.
+      assert_in_delta south, 45.2, 1.0e-6
+      assert_in_delta west, 19.8, 1.0e-6
+
+      assert {:ok, {spot, false}} =
+               Social.list_map_spot(
+                 ctx.outsider,
+                 Map.put(drawn, :zoom, 12),
+                 [[44.5, 19.0], [46.0, 20.7]],
+                 10
+               )
+
+      assert Enum.map(spot, & &1.id) |> Enum.sort() == Enum.sort([inside.id, outside.id])
+
+      assert {:ok, [%{id: id}]} =
+               Social.list_map_areas_at(ctx.outsider, %{public?: true}, {lat, lng}, 12, 6)
+
+      assert id == quarter.id
+
+      # A filter leaves the area out everywhere.
+      search = Map.put(drawn, :search, "nothing like it")
+      assert {:ok, %{areas: [], total: 0}} = Social.list_map_cells(ctx.outsider, search, box, 12)
+
+      assert {:ok, []} =
+               Social.list_map_areas_at(ctx.outsider, search, {lat, lng}, 12, 6)
+
+      # So does the public switch, for public groups one is not in.
+      assert {:ok, %{areas: [], total: 0}} =
+               Social.list_map_cells(ctx.outsider, %{shapes?: true}, box, 12)
+
+      assert {:ok, %{count: 0}} = Social.map_extent(ctx.outsider, %{})
     end
 
     test "the area filter keeps the pins inside, not the area itself", ctx do

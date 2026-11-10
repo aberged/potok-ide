@@ -539,6 +539,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             extent={@root_map_extent}
             empty_closed={@root_map_empty_closed?}
             total={@root_map_total}
+            truncated={@root_map_truncated?}
             spot={@root_map_spot}
             error={@root_map_error?}
             range_form={@root_map_range_form}

@@ -20,6 +20,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :extent, :map, default: nil, doc: "`Social.map_extent/2`, nil until loaded"
   attr :empty_closed, :boolean, default: false, doc: "the empty state closed by the viewer"
   attr :total, :integer, default: nil, doc: "the groups in the map's view"
+  attr :truncated, :boolean, default: false, doc: "the view had more cells than it shows"
   attr :spot, :map, default: nil, doc: "the groups of a crowded spot"
   attr :error, :boolean, default: false
   attr :range_form, :any, required: true
@@ -36,7 +37,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
       assigns
       |> assign(:search_form, to_form(%{"q" => filters.search}, as: :root_map_search))
       |> assign(:area_form, to_form(%{"q" => assigns.area_query}, as: :root_map_area))
-      |> assign(:empty_reason, RootMapState.empty_reason(filters))
+      |> assign(:empty_reason, RootMapState.empty_reason(filters, assigns.show_public))
       |> assign(:area_list, area_list(assigns.area_chosen, assigns.area_options))
 
     ~H"""
@@ -150,7 +151,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
 
         <div class="pointer-events-none absolute inset-x-2 top-2 z-[1100] flex items-start justify-between gap-2">
           <p
-            :if={@layers.places && @total && @extent && @extent.count > 0}
+            :if={@total && @extent && @extent.count > 0}
             id="root-map-total"
             class="pointer-events-auto rounded-full border border-base-300/70 bg-base-100/90 px-3 py-1.5 text-xs font-semibold text-base-content/80 shadow-sm backdrop-blur"
           >
@@ -163,8 +164,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                   @total
                 )
             )}
+            <span :if={@truncated} id="root-map-truncated" class="font-normal text-base-content/60">
+              {" · " <> gettext("only a part, zoom in")}
+            </span>
           </p>
-          <span :if={!(@layers.places && @total && @extent && @extent.count > 0)}></span>
+          <span :if={!(@total && @extent && @extent.count > 0)}></span>
           <div class="flex shrink-0 items-center gap-2">
             <button
               :if={@extent && @extent.count > 0}
@@ -220,8 +224,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                   {gettext("No group with a place inside the chosen areas fits these filters.")}
                 <% :filters -> %>
                   {gettext("No group with a place fits these filters.")}
-                <% :time -> %>
-                  {gettext("No group with a place appeared in the last 30 days.")}
+                <% :public -> %>
+                  {gettext("Public groups you are not in are hidden.")}
                 <% :none -> %>
                   {gettext("None of your groups has a place on the map yet.")}
               <% end %>
@@ -241,16 +245,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
               {gettext("Clear filters")}
             </.button>
             <.button
-              :if={@empty_reason == :time}
-              id="root-map-any-time"
+              :if={@empty_reason == :public}
+              id="root-map-show-public"
               type="button"
-              phx-click="root_map_period"
-              phx-value-period="any"
+              phx-click="root_map_toggle_public"
               variant="soft"
               size="sm"
               class="mt-3"
             >
-              {gettext("Show them from any time")}
+              <.icon name="hero-globe-alt" class="size-4" />
+              {gettext("Show public groups")}
             </.button>
           </div>
         </div>
@@ -311,7 +315,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                       }
                       class="size-3.5"
                     />
-                    <span class="truncate">{PinIcons.kind_label(GroupPins.kind(group))}</span>
+                    <span class="truncate">{place_label(group)}</span>
                   </span>
                 </span>
               </button>
@@ -508,6 +512,31 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
             </span>
             <span class="min-w-0 flex-1 truncate">{gettext("All pins")}</span>
             <.icon :if={@filters.pins == []} name="hero-check" class="size-4 shrink-0" />
+          </button>
+          <p class="px-2.5 pb-1 pt-3 text-[0.7rem] font-semibold uppercase tracking-wide text-base-content/55">
+            {gettext("Kind and picture")}
+          </p>
+          <button
+            :for={{key, icon} <- [{"kind", "hero-squares-2x2"}, {"picture", "hero-photo"}]}
+            id={"root-map-pin-option-#{key}"}
+            type="button"
+            role="menuitemcheckbox"
+            aria-checked={to_string(key in @filters.pins)}
+            phx-click="root_map_pin"
+            phx-value-pin={key}
+            class={[
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+              if(key in @filters.pins,
+                do: "font-semibold text-primary",
+                else: "font-medium text-base-content/80"
+              )
+            ]}
+          >
+            <span class="inline-flex h-7 w-[1.4rem] shrink-0 items-center justify-center rounded-lg bg-base-200">
+              <.icon name={icon} class="size-4" />
+            </span>
+            <span class="min-w-0 flex-1 truncate">{pin_label(key)}</span>
+            <.icon :if={key in @filters.pins} name="hero-check" class="size-4 shrink-0" />
           </button>
           <%= for section <- PinIcons.sections() do %>
             <p class="px-2.5 pb-1 pt-3 text-[0.7rem] font-semibold uppercase tracking-wide text-base-content/55">
@@ -744,14 +773,14 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         <.button
           id="root-map-here-filter"
           type="button"
-          phx-click="root_map_area"
+          phx-click="root_map_area_only"
           phx-value-id={@area.id}
           variant="soft"
           size="sm"
-          aria-pressed={to_string(@area.id in @chosen)}
+          aria-pressed={to_string(@chosen == [@area.id])}
         >
           <.icon name="hero-viewfinder-circle" class="size-4" />
-          {if(@area.id in @chosen, do: gettext("Show all groups"), else: gettext("Only inside"))}
+          {if(@chosen == [@area.id], do: gettext("Show all groups"), else: gettext("Only inside"))}
         </.button>
         <.icon_button
           id="root-map-here-fit"
@@ -800,8 +829,18 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
 
   # What the area filter's button says.
   defp pin_text([]), do: nil
-  defp pin_text([key]), do: PinIcons.label(key)
+  defp pin_text([key]), do: pin_label(key)
   defp pin_text(keys), do: ngettext("%{count} pin", "%{count} pins", length(keys))
+
+  defp pin_label("kind"), do: gettext("Pin of its kind")
+  defp pin_label("picture"), do: gettext("Group picture")
+  defp pin_label(key), do: PinIcons.label(key)
+
+  # What a group on the map is, under its name: an area or its kind.
+  defp place_label(%{area_west: west} = group) when is_number(west),
+    do: gettext("Area") <> " · " <> PinIcons.kind_label(GroupPins.kind(group))
+
+  defp place_label(group), do: PinIcons.kind_label(GroupPins.kind(group))
 
   defp area_text([]), do: nil
   defp area_text([area]), do: gettext("In %{name}", name: area.name)
@@ -815,7 +854,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
     chosen ++ Enum.reject(options, &MapSet.member?(ids, &1.id))
   end
 
-  defp time_icon(%{time: :active}), do: "hero-chat-bubble-left-ellipsis"
   defp time_icon(%{period: "any"}), do: "hero-squares-2x2"
+  defp time_icon(%{time: :active}), do: "hero-chat-bubble-left-ellipsis"
   defp time_icon(_filters), do: "hero-clock"
 end

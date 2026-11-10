@@ -168,6 +168,24 @@ defmodule PotokIde.Social.RootMapTest do
       assert ids(ctx.viewer, Map.put(all, :pins, [])) == ids(ctx.viewer, all)
 
       assert {:ok, %{count: 1}} = Social.map_extent(ctx.viewer, Map.put(all, :pins, ["event"]))
+
+      # Its kind's pin, and the group's picture.
+      {:ok, own} = Social.update_group(ctx.viewer, ctx.own, %{"pin_icon" => "picture"})
+      assert ids(ctx.viewer, Map.put(all, :pins, ["picture"])) == [own.id]
+      assert ids(ctx.viewer, Map.put(all, :pins, ["kind"])) == []
+      assert ids(ctx.viewer, Map.put(all, :pins, ["kind", "food"])) == [chat.id]
+      {:ok, _} = Social.update_group(ctx.owner, poll, %{"pin_icon" => ""})
+      assert ids(ctx.viewer, Map.put(all, :pins, ["kind"])) == [poll.id]
+    end
+
+    test "an app that fits no preset is a kind of its own", ctx do
+      all = %{public?: true}
+
+      {1, _} =
+        Repo.update_all(from(g in Group, where: g.id == ^ctx.chat.id), set: [uses_api: true])
+
+      assert ids(ctx.viewer, Map.put(all, :preset, "app")) == [ctx.chat.id]
+      assert ids(ctx.viewer, Map.put(all, :preset, "none")) == []
     end
 
     test "narrow by when a group was made, or last written in", ctx do

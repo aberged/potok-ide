@@ -188,6 +188,16 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "longitude"), do: dgettext("domain_map", "longitude on a map")
   defp own_field("Group", "pin_icon"), do: dgettext("domain_map", "pin on a map")
   defp own_field("Group", "area"), do: dgettext("domain_map", "area on a map, as its border")
+
+  defp own_field("Group", "name_folded"),
+    do: dgettext("domain_map", "name as a search reads it, in Latin and without diacritics")
+
+  defp own_field("Group", "area_size"), do: dgettext("domain_map", "size of the area")
+  defp own_field("Group", "area_west"), do: dgettext("domain_map", "western edge of the area")
+  defp own_field("Group", "area_south"), do: dgettext("domain_map", "southern edge of the area")
+  defp own_field("Group", "area_east"), do: dgettext("domain_map", "eastern edge of the area")
+  defp own_field("Group", "area_north"), do: dgettext("domain_map", "northern edge of the area")
+  defp own_field("Group", "area_span"), do: dgettext("domain_map", "width of the area on a map")
   defp own_field("Group", "parent_id"), do: dgettext("domain_map", "parent group")
   defp own_field("Group", "parent_value_id"), do: dgettext("domain_map", "value of the thread")
 
@@ -1143,7 +1153,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking. The root has no map app but a map of its own: the places of every group the viewer sees, at any depth, which the server gathers into numbered circles where they stand close, narrowed by the filters of the sub-groups, by the pins the groups show and by when a group appeared or was last written in."
+            "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking. The root has no map app but a map of its own: the places of every group the viewer sees, at any depth, which the server gathers into numbered circles where they stand close, narrowed by the filters of the sub-groups, by the pins the groups show and by when a group appeared or was last written in, at any time until the viewer picks a time frame. A search by a group's name, there and among the sub-groups, takes no notice of diacritics or of a name written in Latin or Cyrillic."
           )
       },
       %{
@@ -1151,7 +1161,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Group>group</Group>'s place can be an area instead of a point, as a local community covers its streets: a border drawn on the map or brought from a GeoJSON file, set by whoever may edit the group. The area keeps a pin, which the server puts inside it by itself. An area holds a group when it holds that group's pin, so every place shows the areas around it, smallest first, and an area inside a bigger one lies in it too. Each viewer sees only the areas of the groups they see. On the root's map every area shows its pin whatever the filters, unless a filter of pins leaves it out, and once it is wide enough also its border, under the pins; a tap on the map lists the areas there, and a filter keeps only the groups inside chosen areas."
+            "A <Group>group</Group>'s place can be an area instead of a point, as a local community covers its streets: a border drawn on the map or brought from a GeoJSON file, set by whoever may edit the group. The area keeps a pin, which the server puts inside it by itself. An area holds a group when it holds that group's pin, so every place shows the areas around it, smallest first, and an area inside a bigger one lies in it too. Each viewer sees only the areas of the groups they see. On the root's map an area is only the shape of its group: the filters keep it or leave it out like any group, and once it is wide enough it also shows its border, under the pins; a tap on the map lists the areas there, and a filter keeps only the groups inside chosen areas, which stay outlined."
           )
       },
       %{

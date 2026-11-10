@@ -2677,21 +2677,30 @@
   border: 0;
 }
 
+/* A cluster: its count on a white disc in a ring of the tones of its groups,
+   as in the Map app (potok-mapa `.pm-cluster`). */
 .potok-cluster {
   display: grid;
   place-items: center;
   width: var(--cluster-size);
   height: var(--cluster-size);
   border-radius: 9999px;
-  background: color-mix(in oklab, #0a5bc4 85%, transparent);
-  box-shadow:
-    0 0 0 4px color-mix(in oklab, #0a5bc4 25%, transparent),
-    0 2px 6px rgb(0 0 0 / 0.3);
-  color: #ffffff;
+  background: var(--cluster-ring, #0a5bc4);
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.3);
+  transition: transform 150ms ease-out;
+}
+
+.potok-cluster span {
+  display: grid;
+  place-items: center;
+  width: calc(var(--cluster-size) - 10px);
+  height: calc(var(--cluster-size) - 10px);
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #111827;
   font-size: 0.8125rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
-  transition: transform 150ms ease-out;
 }
 
 .potok-cluster-icon:hover .potok-cluster,

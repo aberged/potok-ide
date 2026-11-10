@@ -35,19 +35,23 @@ defmodule PotokIde.Social do
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
+    GroupPins,
     GroupPresets,
     GroupReaction,
     GroupRole,
     GroupValueRead,
     MemberInheritance,
+    MapSql,
     Mentions,
+    NameSearch,
     Notifications,
     Profile,
     ProfileInvitation,
     Value,
     ValueAggregate,
     ValueAttachment,
-    ValueReaction
+    ValueReaction,
+    Visibility
   }
 
   def subscribe_account(%Account{id: account_id}) when is_integer(account_id) do
@@ -3322,19 +3326,7 @@ defmodule PotokIde.Social do
   end
 
   # What a pin on a map needs (`GroupPins`), and the picture's version.
-  @placed_fields [
-    :id,
-    :parent_id,
-    :name,
-    :latitude,
-    :longitude,
-    :pin_icon,
-    :preset,
-    :uses_api,
-    :is_public,
-    :inherits_members,
-    :updated_at
-  ]
+  @placed_fields GroupAreas.fields()
 
   @doc """
   The direct sub-groups of `group` the profile can see that have a place on a
@@ -3374,104 +3366,107 @@ defmodule PotokIde.Social do
   # A statement that runs out of time gives up rather than hold a connection.
   @map_timeout_ms 4_000
   @map_max_cells 2_000
+  @map_max_drawn 300
   # Web Mercator ends here; a place nearer a pole is drawn on that edge.
   @mercator_max_lat 85.0511287798
+  # The tones of pins (`GroupPins`) a cluster counts, in this order.
+  @map_tones [:kind, :places, :community, :nature, :reports, :alert]
 
   @doc """
-  The places of the root's map in the box `[west, south, east, north]` seen at
-  `zoom`, gathered on a grid of cells about 64 pixels wide: a cell holding one
-  group gives that group (with the fields of `list_visible_placed_children/3`),
-  any other a cluster `%{count, lat, lng, bounds: [[south, west], [north, east]]}`.
-  Returns `{:ok, %{places, clusters, total, truncated}}`, where `total` counts
-  the groups in the box, or `{:error, :timeout}`.
+  What the root's map shows in the box `[west, south, east, north]` at `zoom`,
+  out of one set of groups, the ones the filters keep, points and areas
+  alike:
+
+  * `places`: each group alone in its cell of a grid about 64 pixels wide,
+    with the fields of `list_visible_placed_children/3`;
+  * `clusters`: every other cell, `%{count, lat, lng, bounds: [[south, west],
+    [north, east]], tones: %{tone => count}}`;
+  * `areas`: while `:shapes?` is on, the areas wide enough at `zoom` to be
+    drawn as borders (`GroupAreas.min_span/1`), biggest first, at most 300,
+    with their boxes (`GroupAreas.bbox/1`); they are in no cell;
+  * `total`: the groups in the box, in cells and borders;
+  * `truncated`: whether the box had more cells than a view takes.
+
+  Returns `{:ok, view}` or `{:error, :timeout}`.
 
   The groups are every group with a place the profile sees anywhere below the
-  root, threads and direct conversations aside: its memberships, and the public
-  groups, all of them with `public?: true`, otherwise those on the way to one
-  of its memberships, as in the root's sub-groups. `filters` narrow them:
-  `:search` on the name, `:preset` and `:relation` as in
-  `list_child_groups_for_profile/3`, `:pins` the keys of `Group.pin_icon` a
-  group must show one of, and `:from` (counts in) and `:to` (does not) on
-  `:time`, `:created` (when the group took its place in a feed, as in
-  `list_visible_child_groups_newest_first/3`) or `:active` (its newest value;
-  a group never written in then stays out).
+  root, threads and direct conversations aside (`Visibility.listed_sql/2`):
+  its memberships, and the public groups, all of them with `public?: true`,
+  otherwise those on the way to one of its memberships. `filters` narrow
+  them, areas as much as points:
+
+  * `:search` on the name (`NameSearch`);
+  * `:preset`, a kind as in `list_child_groups_for_profile/3`, `"none"` or
+    `"app"`, and `:relation`, the profile's memberships or own groups;
+  * `:pins`, keys of `Group.pin_icon` (`GroupPins.keys/0`), with `"kind"` for
+    the groups that show their kind;
+  * `:areas`, only the groups inside one of these areas (`GroupAreas`), not
+    the areas themselves;
+  * `:from` (counts in) and `:to` (does not) on `:time`: `:created`, when the
+    group took its place in a feed, or `:active`, its newest value, where a
+    group never written in stays out;
+  * `:places?` false keeps only the areas.
   """
   def list_map_cells(%Profile{} = profile, filters, bbox, zoom) when is_integer(zoom) do
-    cells_per_axis = 4.0 * Integer.pow(2, zoom |> max(0) |> min(24))
-    lat = "LEAST(GREATEST(p.latitude, -#{@mercator_max_lat}), #{@mercator_max_lat})"
-
-    sql =
-      map_placed_sql(map_time(filters), true) <>
-        """
-        SELECT count(*), avg(p.latitude), avg(p.longitude),
-          min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id)
-        FROM placed p
-        GROUP BY floor((p.longitude + 180.0) / 360.0 * $18::float8),
-          floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
-            * $18::float8)
-        ORDER BY count(*) DESC
-        LIMIT #{@map_max_cells + 1}
-        """
-
-    params =
-      map_filter_params(profile, filters, zoom) ++ map_bbox_params(bbox) ++ [cells_per_axis]
-
-    with {:ok, rows} <- map_query(sql, params, "social_map_cells_#{map_time(filters)}") do
-      cells = Enum.take(rows, @map_max_cells)
-      single_ids = for [1 | rest] <- cells, do: List.last(rest)
-
-      clusters =
-        for [count, lat, lng, south, north, west, east, _id] <- cells, count > 1 do
-          %{count: count, lat: lat, lng: lng, bounds: [[south, west], [north, east]]}
-        end
-
-      {:ok,
-       %{
-         places: placed_groups(single_ids),
-         clusters: clusters,
-         total: Enum.reduce(cells, 0, fn [count | _], sum -> sum + count end),
-         truncated: length(rows) > @map_max_cells
-       }}
+    with {:ok, [rows]} <- map_queries([map_view_query(profile, filters, bbox, zoom)]) do
+      {:ok, map_view(rows)}
     end
   end
 
   @doc """
   How many groups the root's map holds under `filters` (as in
-  `list_map_cells/4`), wherever they stand, and the box around them, nil for
-  none: `{:ok, %{count, bounds}}` or `{:error, :timeout}`.
+  `list_map_cells/4`), wherever they stand, and the box around them and their
+  areas, nil for none: `{:ok, %{count, bounds}}` or `{:error, :timeout}`.
   """
   def map_extent(%Profile{} = profile, filters) do
-    sql =
-      map_placed_sql(map_time(filters), false) <>
-        "SELECT count(*), min(latitude), max(latitude), min(longitude), max(longitude) FROM placed"
+    with {:ok, [rows]} <- map_queries([map_extent_query(profile, filters)]) do
+      {:ok, map_extent_result(rows)}
+    end
+  end
 
-    params = map_filter_params(profile, filters)
+  @doc """
+  `map_extent/2` and, for a `view` (`%{bbox, zoom}`), `list_map_cells/4` in
+  one transaction, as a change of filters needs both: `{:ok, %{extent,
+  view}}`, `view` nil without one, or `{:error, :timeout}`.
+  """
+  def load_map(%Profile{} = profile, filters, view) do
+    queries =
+      [map_extent_query(profile, filters)] ++
+        if view,
+          do: [map_view_query(profile, Map.put(filters, :zoom, view.zoom), view.bbox, view.zoom)],
+          else: []
 
-    with {:ok, [[count, south, north, west, east]]} <-
-           map_query(sql, params, "social_map_extent_#{map_time(filters)}") do
-      {:ok, %{count: count, bounds: if(count > 0, do: [[south, west], [north, east]])}}
+    with {:ok, [extent | rest]} <- map_queries(queries) do
+      {:ok,
+       %{
+         extent: map_extent_result(extent),
+         view: if(rest == [], do: nil, else: map_view(hd(rest)))
+       }}
     end
   end
 
   @doc """
   The groups of the root's map under `filters` inside `bounds`
-  (`[[south, west], [north, east]]`, edges included), by name: what a cluster
-  that cannot spread any further holds. `{:ok, {groups, more?}}` with at most
-  `limit` groups, or `{:error, :timeout}`.
+  (`[[south, west], [north, east]]`, edges included) and in no border, by
+  name: what a cluster that cannot spread any further holds. `{:ok, {groups,
+  more?}}` with at most `limit` groups, or `{:error, :timeout}`.
   """
   def list_map_spot(%Profile{} = profile, filters, [[south, west], [north, east]], limit)
       when is_integer(limit) and limit > 0 do
+    box = %{
+      south: to_float(south),
+      north: to_float(north),
+      west: to_float(west),
+      east: to_float(east)
+    }
+
+    {cte, values} = map_placed(:spot, profile, filters, box)
+
     sql =
-      map_placed_sql(map_time(filters), true) <>
-        """
-        SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $18::integer
-        """
+      cte <>
+        "SELECT p.id FROM placed p WHERE NOT p.drawn ORDER BY lower(p.name), p.id LIMIT $limit"
 
-    params =
-      map_filter_params(profile, filters, Map.get(filters, :zoom)) ++
-        Enum.map([south, north, west, east], &to_float/1) ++ [nil, nil, limit + 1]
-
-    with {:ok, rows} <- map_query(sql, params, "social_map_spot_#{map_time(filters)}") do
+    with {:ok, [rows]} <- map_queries([MapSql.bind(sql, Map.put(values, :limit, limit + 1))]) do
       ids = rows |> Enum.map(&hd/1) |> Enum.take(limit)
       by_id = Map.new(placed_groups(ids), &{&1.id, &1})
 
@@ -3479,17 +3474,129 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  The areas the root's map draws as borders at `zoom` that cover the point
+  `{lat, lng}`, out of the groups the filters keep, smallest first, at most
+  `limit`: what a tap on the map lists. `{:ok, groups}` or `{:error,
+  :timeout}`.
+  """
+  def list_map_areas_at(%Profile{} = profile, filters, {lat, lng}, zoom, limit)
+      when is_number(lat) and is_number(lng) and is_integer(zoom) do
+    filters = Map.merge(filters, %{shapes?: true, zoom: zoom})
+    {cte, values} = map_placed(:here, profile, filters, %{lat: lat * 1.0, lng: lng * 1.0})
+    sql = cte <> "SELECT p.id FROM placed p ORDER BY p.area_size, p.id LIMIT $limit"
+
+    with {:ok, [rows]} <- map_queries([MapSql.bind(sql, Map.put(values, :limit, limit))]) do
+      ids = Enum.map(rows, &hd/1)
+      by_id = Map.new(placed_groups(ids), &{&1.id, &1})
+      {:ok, Enum.flat_map(ids, &List.wrap(by_id[&1]))}
+    end
+  end
+
+  defp map_view_query(profile, filters, bbox, zoom) do
+    cells_per_axis = 4.0 * Integer.pow(2, zoom |> max(0) |> min(24))
+    lat = "LEAST(GREATEST(p.latitude, -#{@mercator_max_lat}), #{@mercator_max_lat})"
+    [south, north, west, east, west2, east2] = map_bbox_params(bbox)
+    box = %{south: south, north: north, west: west, east: east, west2: west2, east2: east2}
+    filters = Map.put(filters, :zoom, zoom)
+    {cte, values} = map_placed(:view, profile, filters, box)
+
+    tones =
+      Enum.map_join(@map_tones, ", ", &"count(*) FILTER (WHERE p.tone = '#{&1}')")
+
+    sql =
+      cte <>
+        """
+        SELECT * FROM (
+          SELECT 'c' AS kind, count(*) AS n, avg(p.latitude), avg(p.longitude),
+            min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id),
+            ARRAY[#{tones}]::bigint[]
+          FROM placed p
+          WHERE NOT p.drawn
+          GROUP BY floor((p.longitude + 180.0) / 360.0 * $cells::float8),
+            floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
+              * $cells::float8)
+          ORDER BY count(*) DESC
+          LIMIT #{@map_max_cells + 1}
+        ) c
+        UNION ALL
+        SELECT 'a', d.n, NULL, NULL, NULL, NULL, NULL, NULL, d.id, NULL
+        FROM (
+          SELECT p.id, count(*) OVER () AS n FROM placed p
+          WHERE p.drawn
+          ORDER BY p.area_size DESC, p.id
+          LIMIT #{@map_max_drawn}
+        ) d
+        """
+
+    MapSql.bind(sql, Map.put(values, :cells, cells_per_axis))
+  end
+
+  defp map_view(rows) do
+    cells = for ["c" | cell] <- rows, do: cell
+    kept = Enum.take(cells, @map_max_cells)
+    drawn = for ["a", count, _, _, _, _, _, _, id, _] <- rows, do: {count, id}
+    single_ids = for [1, _, _, _, _, _, _, id, _] <- kept, do: id
+    drawn_ids = Enum.map(drawn, &elem(&1, 1))
+    by_id = Map.new(placed_groups(single_ids ++ drawn_ids), &{&1.id, &1})
+
+    clusters =
+      for [count, lat, lng, south, north, west, east, _id, tones] <- kept, count > 1 do
+        %{
+          count: count,
+          lat: lat,
+          lng: lng,
+          bounds: [[south, west], [north, east]],
+          tones: @map_tones |> Enum.zip(tones) |> Enum.reject(&(elem(&1, 1) == 0)) |> Map.new()
+        }
+      end
+
+    drawn_total =
+      case drawn do
+        [{count, _id} | _] -> count
+        [] -> 0
+      end
+
+    %{
+      places: Enum.flat_map(single_ids, &List.wrap(by_id[&1])),
+      clusters: clusters,
+      areas: Enum.flat_map(drawn_ids, &List.wrap(by_id[&1])),
+      total: Enum.reduce(kept, drawn_total, fn [count | _], sum -> sum + count end),
+      truncated: length(cells) > @map_max_cells
+    }
+  end
+
+  defp map_extent_query(profile, filters) do
+    {cte, values} = map_placed(:extent, profile, Map.delete(filters, :shapes?), %{})
+
+    sql =
+      cte <>
+        """
+        SELECT count(*),
+          min(COALESCE(p.area_south, p.latitude)), max(COALESCE(p.area_north, p.latitude)),
+          min(COALESCE(p.area_west, p.longitude)), max(COALESCE(p.area_east, p.longitude))
+        FROM placed p
+        """
+
+    MapSql.bind(sql, values)
+  end
+
+  defp map_extent_result([[count, south, north, west, east]]),
+    do: %{count: count, bounds: if(count > 0, do: [[south, west], [north, east]])}
+
+  # The groups `ids` with what a pin needs and, for an area, its box.
   defp placed_groups([]), do: []
 
   defp placed_groups(ids) do
-    from(g in Group, where: g.id in ^ids, select: struct(g, ^@placed_fields))
-    |> Repo.all()
+    fields = @placed_fields ++ GroupAreas.box_fields()
+    from(g in Group, where: g.id in ^ids, select: struct(g, ^fields)) |> Repo.all()
   end
 
-  defp map_query(sql, params, name) do
+  # Runs `{sql, params}` queries in one transaction with a time limit.
+  defp map_queries(queries) do
     Repo.with_statement_timeout(
       @map_timeout_ms,
-      fn -> Repo.query!(sql, params, cache_statement: name).rows end,
+      fn -> Enum.map(queries, fn {sql, params} -> Repo.query!(sql, params).rows end) end,
       jit: false
     )
   end
@@ -3498,91 +3605,164 @@ defmodule PotokIde.Social do
     if Map.get(filters, :time) == :active, do: :active, else: :created
   end
 
-  # $1 profile, $2 every public group, $3 name, $4 kind, $5 member or creator,
-  # $6 and $7 the moments, $8 the areas a group's pin must lie in (any of them,
-  # `GroupAreas`), $9 how wide an area is drawn as a border rather than a pin
-  # (nil: areas are no layer of their own), $10 whether the groups the filters
-  # keep are wanted at all, $11 the pins a group must show (any of them), then
-  # the box: $12 south, $13 north, one or (across the antimeridian) two ranges
-  # of longitude, $14-$15 and $16-$17.
+  # The groups of the root's map under `filters`, as a `placed` table for
+  # the query that follows, with `$name` parameters (`MapSql`), and their
+  # values: `{sql, values}`. Only the filters picked are in the SQL. `scope`
+  # says which of them a query wants:
   #
-  # The groups are those the filters keep and, while areas are a layer of
-  # their own ($9), every area the profile sees that is too small to draw,
-  # whatever the filters but the pins, as its pin; areas wide enough to draw
-  # come with their borders (`GroupAreas.list_drawable/5`) and leave the cells.
-  defp map_placed_sql(time, bbox?) do
+  # * `:view`: in a box (`box` values), by pin or, for an area drawn as a
+  #   border, by the area itself reaching into it;
+  # * `:spot`: by pin inside the bounds of a cluster;
+  # * `:here`: areas drawn at the zoom that cover a point (`lat`, `lng`);
+  # * `:extent`: wherever they stand.
+  #
+  # `drawn` marks the areas wide enough at the filters' `:zoom` to be drawn
+  # as borders, while `:shapes?` is on; otherwise every area is a pin.
+  defp map_placed(scope, %Profile{id: profile_id}, filters, extra) do
+    zoom = Map.get(filters, :zoom)
+    shapes? = scope != :extent and Map.get(filters, :shapes?) == true and is_integer(zoom)
+    places? = scope == :extent or Map.get(filters, :places?) != false
+    search = normalize_group_search_term(Map.get(filters, :search))
+    kind = normalize_preset_filter(Map.get(filters, :preset))
+    relation = normalize_relation_filter(Map.get(filters, :relation))
+    from = map_moment(Map.get(filters, :from))
+    to = map_moment(Map.get(filters, :to))
+    areas = map_area_filter(Map.get(filters, :areas))
+    {pins, kind_pin?} = map_pin_filter(Map.get(filters, :pins))
+    time = map_time(filters)
+
     moment =
       case time do
         :active -> "g.last_value_at"
         :created -> "COALESCE(g.published_at, g.inserted_at)"
       end
 
-    box =
-      if bbox? do
-        """
-          AND g.latitude BETWEEN $12::float8 AND $13::float8
-          AND (g.longitude BETWEEN $14::float8 AND $15::float8
-            OR ($16::float8 IS NOT NULL AND g.longitude BETWEEN $16::float8 AND $17::float8))
-        """
-      else
-        ""
-      end
+    conditions =
+      [
+        "g.latitude IS NOT NULL",
+        "g.parent_id IS NOT NULL",
+        "g.parent_value_id IS NULL",
+        "g.is_direct = FALSE",
+        Visibility.listed_sql("g", Map.get(filters, :public?) == true),
+        !places? && "g.area IS NOT NULL",
+        search && NameSearch.sql("g", "$search"),
+        kind && "#{shown_kind_sql("g")} = $kind::text",
+        relation == "creator" && "g.creator_id = $profile",
+        relation == "member" && "g.id IN (SELECT group_id FROM mine)",
+        time == :active && "g.last_value_at IS NOT NULL",
+        from && "#{moment} >= $from::timestamp",
+        to && "#{moment} < $to::timestamp",
+        map_pins_sql(pins, kind_pin?),
+        areas && "g.id <> ALL($areas::bigint[])",
+        areas && map_inside_areas_sql(),
+        map_scope_sql(scope, shapes?)
+      ]
+      |> Enum.filter(& &1)
 
-    """
-    WITH RECURSIVE #{sub_group_memberships_sql("$1")},
-    placed AS (
-      SELECT g.id, g.name, g.latitude, g.longitude
+    drawn = if shapes?, do: "COALESCE(g.area_span >= $min_span::float8, FALSE)", else: "FALSE"
+
+    sql = """
+    WITH RECURSIVE #{sub_group_memberships_sql("$profile")},
+    placed AS MATERIALIZED (
+      SELECT g.id, g.name, g.latitude, g.longitude, g.area_size,
+        g.area_west, g.area_south, g.area_east, g.area_north,
+        #{drawn} AS drawn, #{map_tone_sql("g")} AS tone
       FROM groups g
-      WHERE g.latitude IS NOT NULL
-        AND g.parent_id IS NOT NULL
-        AND g.parent_value_id IS NULL
-        AND g.is_direct = FALSE
-        AND ($11::text[] IS NULL OR g.pin_icon = ANY($11::text[]))
-        AND (($10::boolean AND ($9::float8 IS NULL OR g.area IS NULL)
-            AND (g.id IN (SELECT group_id FROM mine)
-              OR (g.is_public AND ($2::boolean OR g.id IN (SELECT id FROM member_paths))))
-            AND ($3::text IS NULL OR g.name ILIKE '%' || $3::text || '%')
-            AND ($4::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $4::text)
-            AND ($5::text IS NULL OR ($5::text = 'creator' AND g.creator_id = $1)
-              OR ($5::text = 'member' AND g.id IN (SELECT group_id FROM mine)))
-            AND ($6::timestamp IS NULL OR #{moment} >= $6::timestamp)
-            AND ($7::timestamp IS NULL OR #{moment} < $7::timestamp))
-          OR ($9::float8 IS NOT NULL AND g.area IS NOT NULL
-            AND (g.is_public OR g.id IN (SELECT group_id FROM mine))
-            AND GREATEST(ST_XMax(g.area) - ST_XMin(g.area),
-              (ST_YMax(g.area) - ST_YMin(g.area)) / cos(radians(g.latitude))) < $9::float8))
-        AND ($8::bigint[] IS NULL OR (g.id <> ALL($8::bigint[]) AND EXISTS (
-          SELECT 1 FROM groups fa
-          WHERE fa.id = ANY($8::bigint[]) AND fa.area IS NOT NULL
-            AND (fa.is_public OR fa.id IN (SELECT group_id FROM mine))
-            AND ST_Intersects(fa.area, ST_SetSRID(ST_MakePoint(g.longitude, g.latitude), 4326))
-            AND (g.area IS NULL OR ST_Area(fa.area) > ST_Area(g.area)))))
-    #{box})
+      WHERE #{Enum.join(conditions, "\n    AND ")}
+    )
+    """
+
+    values =
+      Map.merge(extra, %{
+        profile: profile_id,
+        search: search,
+        kind: kind,
+        from: from,
+        to: to,
+        areas: areas,
+        pins: pins,
+        known_pins: GroupPins.keys(),
+        min_span: if(shapes?, do: GroupAreas.min_span(zoom))
+      })
+
+    {sql, values}
+  end
+
+  defp map_scope_sql(:extent, _shapes?), do: nil
+
+  defp map_scope_sql(:spot, _shapes?) do
+    "g.latitude BETWEEN $south::float8 AND $north::float8" <>
+      " AND g.longitude BETWEEN $west::float8 AND $east::float8"
+  end
+
+  defp map_scope_sql(:here, true) do
+    "g.area_span >= $min_span::float8" <>
+      " AND ST_Intersects(g.area, ST_SetSRID(ST_MakePoint($lng::float8, $lat::float8), 4326))"
+  end
+
+  defp map_scope_sql(:view, shapes?) do
+    pin =
+      "(g.latitude BETWEEN $south::float8 AND $north::float8" <>
+        " AND (g.longitude BETWEEN $west::float8 AND $east::float8" <>
+        " OR ($west2::float8 IS NOT NULL" <>
+        " AND g.longitude BETWEEN $west2::float8 AND $east2::float8)))"
+
+    if shapes? do
+      "(#{pin} OR (g.area_span >= $min_span::float8" <>
+        " AND (g.area && ST_MakeEnvelope($west, $south, $east, $north, 4326)" <>
+        " OR ($west2::float8 IS NOT NULL" <>
+        " AND g.area && ST_MakeEnvelope($west2, $south, $east2, $north, 4326)))))"
+    else
+      pin
+    end
+  end
+
+  # A group inside one of the chosen areas the profile may see: its pin is,
+  # and for an area, it is the smaller one. One join from the areas to the
+  # pins (`groups_pin_index`), not one test per group.
+  defp map_inside_areas_sql do
+    """
+    g.id IN (
+      SELECT p.id FROM groups fa
+      JOIN groups p ON p.latitude IS NOT NULL
+        AND ST_Intersects(fa.area, ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326))
+        AND (p.area_size IS NULL OR p.area_size < fa.area_size)
+      WHERE fa.id = ANY($areas::bigint[]) AND fa.area IS NOT NULL
+        AND #{Visibility.may_see_sql("fa", "$profile")})
     """
   end
 
-  # `zoom` is where areas are drawn as borders while `:shapes?` is on: wider
-  # ones leave the cells, smaller ones join them whatever the filters but the
-  # pins. nil leaves areas to the filters like any group (`map_extent/2`).
-  # `:places?` false keeps only those small areas.
-  defp map_filter_params(%Profile{id: profile_id}, filters, zoom \\ nil) do
-    [
-      profile_id,
-      Map.get(filters, :public?) == true,
-      normalize_group_search_term(Map.get(filters, :search)),
-      normalize_preset_filter(Map.get(filters, :preset)),
-      normalize_relation_filter(Map.get(filters, :relation)),
-      map_moment(Map.get(filters, :from)),
-      map_moment(Map.get(filters, :to)),
-      map_area_filter(Map.get(filters, :areas)),
-      if(Map.get(filters, :shapes?) == true and is_integer(zoom), do: GroupAreas.min_span(zoom)),
-      is_nil(zoom) or Map.get(filters, :places?) != false,
-      map_pin_filter(Map.get(filters, :pins))
-    ]
+  # The pins a group must show one of: keys of `Group.pin_icon`, and with
+  # "kind" the groups that show their kind (no pin, or one the list lost).
+  defp map_pins_sql([], false), do: nil
+  defp map_pins_sql(_keys, false), do: "g.pin_icon = ANY($pins::text[])"
+
+  defp map_pins_sql([], true),
+    do: "(g.pin_icon IS NULL OR g.pin_icon <> ALL($known_pins::text[]))"
+
+  defp map_pins_sql(_keys, true) do
+    "(g.pin_icon = ANY($pins::text[]) OR g.pin_icon IS NULL" <>
+      " OR g.pin_icon <> ALL($known_pins::text[]))"
   end
 
-  defp map_pin_filter([_ | _] = keys), do: Enum.filter(keys, &is_binary/1)
-  defp map_pin_filter(_none), do: nil
+  defp map_pin_filter([_ | _] = keys) do
+    keys = Enum.filter(keys, &is_binary/1)
+    {Enum.filter(keys, &(&1 in GroupPins.keys())), "kind" in keys}
+  end
+
+  defp map_pin_filter(_none), do: {[], false}
+
+  # The tone of a group's pin (`GroupPins`): its icon's, or "kind".
+  defp map_tone_sql(table) do
+    whens =
+      GroupPins.icons()
+      |> Enum.group_by(&elem(&1, 2), &elem(&1, 0))
+      |> Enum.map_join(" ", fn {tone, keys} ->
+        "WHEN #{table}.pin_icon IN (#{Enum.map_join(keys, ", ", &"'#{&1}'")}) THEN '#{tone}'"
+      end)
+
+    "CASE #{whens} ELSE 'kind' END"
+  end
 
   defp map_area_filter([_ | _] = ids), do: Enum.filter(ids, &is_integer/1)
   defp map_area_filter(_none), do: nil
@@ -3769,19 +3949,7 @@ defmodule PotokIde.Social do
 
   # Groups the profile can see, the rule of `visible_children_sql/1`, without
   # threads and direct conversations.
-  defp visible_plain_groups(%Profile{id: profile_id}) do
-    from(g in Group,
-      as: :group,
-      where: is_nil(g.parent_value_id) and g.is_direct == false,
-      where:
-        g.is_public or
-          exists(
-            from(m in GroupMembership,
-              where: m.group_id == parent_as(:group).id and m.profile_id == ^profile_id
-            )
-          )
-    )
-  end
+  defp visible_plain_groups(%Profile{} = profile), do: Visibility.plain_groups(profile)
 
   @doc """
   The groups content shared from another app can go to, most recently active
@@ -3822,7 +3990,9 @@ defmodule PotokIde.Social do
       )
 
     from(g in query,
-      where: ilike(g.name, ^pattern) or (g.is_direct and exists(other_member_matches))
+      where:
+        fragment("? LIKE '%' || potok_fold(?) || '%'", g.name_folded, ^search) or
+          (g.is_direct and exists(other_member_matches))
     )
   end
 
@@ -3956,8 +4126,8 @@ defmodule PotokIde.Social do
   defp visible_children_sql(public?) do
     own_filters =
       "($3::boolean IS NULL OR g.is_direct = $3)" <>
-        " AND ($4::text IS NULL OR g.name ILIKE '%' || $4 || '%')" <>
-        " AND ($7::text IS NULL OR COALESCE(#{shown_preset_sql("g")}, 'none') = $7)" <>
+        " AND ($4::text IS NULL OR #{NameSearch.sql("g", "$4")})" <>
+        " AND ($7::text IS NULL OR #{shown_kind_sql("g")} = $7)" <>
         " AND ($8::text IS NULL OR ($8 = 'creator' AND g.creator_id = $2)" <>
         " OR ($8 = 'member' AND EXISTS (" <>
         "SELECT 1 FROM group_memberships rm WHERE rm.group_id = g.id AND rm.profile_id = $2)))"
@@ -3995,6 +4165,12 @@ defmodule PotokIde.Social do
 
   # `GroupPresets.shown/1` in SQL: the preset of group `alias` while the group
   # still fits it, else NULL.
+  # The kind a kind filter compares: the shown preset, "app" for any other
+  # app, "none" otherwise, as `GroupPins.kind/1` names it.
+  defp shown_kind_sql(alias),
+    do:
+      "COALESCE(#{shown_preset_sql(alias)}, CASE WHEN #{alias}.uses_api THEN 'app' ELSE 'none' END)"
+
   defp shown_preset_sql(alias) do
     apps = Enum.map_join(GroupPresets.app_keys(), ", ", &"'#{&1}'")
 
@@ -4136,16 +4312,9 @@ defmodule PotokIde.Social do
   defp normalize_boolean_filter(false), do: false
   defp normalize_boolean_filter(_), do: nil
 
-  defp normalize_group_search_term(search_term) when is_binary(search_term) do
-    search_term
-    |> String.trim()
-    |> case do
-      "" -> nil
-      value -> String.slice(value, 0, 120)
-    end
-  end
-
-  defp normalize_group_search_term(_), do: nil
+  # A term every group search takes (`NameSearch.term/1`): trimmed, short,
+  # with LIKE's own characters escaped.
+  defp normalize_group_search_term(search_term), do: NameSearch.term(search_term)
 
   def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
@@ -4503,27 +4672,27 @@ defmodule PotokIde.Social do
       "#{sub_group_filter_sql("g")}" <>
         " AND (g.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("g")})"
 
-    kind = shown_preset_sql("g")
+    kind = shown_kind_sql("g")
 
     sql = """
     WITH RECURSIVE #{sub_group_memberships_sql()},
     tree AS (
-      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, #{kind} AS kind,
-        g.creator_id, ARRAY[g.id] AS path
+      SELECT g.id, g.parent_id, g.name, g.name_folded, g.parent_value_id, g.is_public,
+        #{kind} AS kind, g.creator_id, ARRAY[g.id] AS path
       FROM groups g
       WHERE g.parent_id = $1 AND #{visible}
 
       UNION ALL
 
-      SELECT g.id, $1::bigint, g.name, g.parent_value_id, g.is_public, #{kind}, g.creator_id,
-        ARRAY[g.id]
+      SELECT g.id, $1::bigint, g.name, g.name_folded, g.parent_value_id, g.is_public, #{kind},
+        g.creator_id, ARRAY[g.id]
       FROM groups g
       WHERE g.id = ANY($8::bigint[]) AND g.is_direct = FALSE
 
       UNION ALL
 
-      SELECT g.id, g.parent_id, g.name, g.parent_value_id, g.is_public, #{kind}, g.creator_id,
-        t.path || g.id
+      SELECT g.id, g.parent_id, g.name, g.name_folded, g.parent_value_id, g.is_public, #{kind},
+        g.creator_id, t.path || g.id
       FROM tree t
       JOIN groups g ON g.parent_id = t.id
       WHERE #{visible}
@@ -4531,8 +4700,8 @@ defmodule PotokIde.Social do
     walked AS (SELECT * FROM tree LIMIT $3::integer + 1),
     matches AS (
       SELECT w.path FROM walked w
-      WHERE ($2::text IS NULL OR w.name ILIKE '%' || $2::text || '%')
-        AND ($9::text IS NULL OR COALESCE(w.kind, 'none') = $9)
+      WHERE ($2::text IS NULL OR #{NameSearch.sql("w", "$2")})
+        AND ($9::text IS NULL OR w.kind = $9)
         AND ($10::text IS NULL OR ($10 = 'creator' AND w.creator_id = $5)
           OR ($10 = 'member' AND w.id IN (SELECT group_id FROM mine)))
       LIMIT $4::integer + 1

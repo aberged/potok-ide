@@ -27,6 +27,8 @@ defmodule PotokIde.Application do
        max_running: 2,
        max_queued: 2_000},
       PotokIde.Repo,
+      # The simplified borders maps asked for, kept once made.
+      PotokIde.Social.AreaShapes,
       {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: PotokIde.PubSub},
       PotokIde.Presence,

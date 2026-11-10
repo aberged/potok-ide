@@ -50,10 +50,10 @@ defmodule PotokIde.Social.GroupPresets do
   def app_keys, do: Enum.map(@apps, &Atom.to_string/1)
 
   @doc """
-  What the sub-groups list can be narrowed to: the kind `shown/1` gives, or
-  `"none"` for the groups it gives none.
+  What the sub-groups list can be narrowed to: the kind `shown/1` gives,
+  `"app"` for an app that fits no preset, or `"none"` for the other groups.
   """
-  def filter_keys, do: @keys ++ ["none"]
+  def filter_keys, do: @keys ++ ["app", "none"]
 
   @doc "The value of `Group.preset` for a group made from `preset`."
   def preset(preset) when preset in @keys, do: String.to_existing_atom(preset)

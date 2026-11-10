@@ -28,11 +28,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
     ]
   end
 
-  # "" is every kind, "none" the groups that show none (`GroupPresets.shown/1`).
+  # "" is every kind, "app" an app that fits no preset, "none" the other
+  # groups that show none (`GroupPresets.shown/1`, `GroupPins.kind/1`).
   def kind_choices do
     [%{key: "", icon: "hero-squares-2x2", title: gettext("All kinds")}] ++
       CreateMenu.kinds() ++
-      [%{key: "none", icon: "hero-minus-circle", title: gettext("No kind"), divider: true}]
+      [
+        %{key: "app", icon: "hero-puzzle-piece", title: gettext("App"), divider: true},
+        %{key: "none", icon: "hero-minus-circle", title: gettext("No kind")}
+      ]
   end
 
   defp chosen?(choice, selected), do: choice.key == (selected || "")

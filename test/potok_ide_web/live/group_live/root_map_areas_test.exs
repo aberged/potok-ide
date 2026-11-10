@@ -82,11 +82,12 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     }
   end
 
-  defp live_map(account, path) do
+  # With the public groups shown: the city is public and the viewer not in it.
+  defp live_map(account, path, connect_params \\ %{"show_public_groups" => true}) do
     {:ok, lv, _html} =
       build_conn()
       |> log_in_account(account)
-      |> put_connect_params(%{"time_zone" => "Europe/Belgrade"})
+      |> put_connect_params(Map.merge(%{"time_zone" => "Europe/Belgrade"}, connect_params))
       |> live(path)
 
     lv
@@ -125,7 +126,8 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
   end
 
   test "an area drawn as a border leaves the pins, and with areas off it is a pin again", ctx do
-    lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
+    # Public groups hidden: the city's pin would stand on the quarter's.
+    lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map", %{})
 
     reply = view(lv, 12)
     assert ctx.shop.id in ids(reply.places)
@@ -138,14 +140,14 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert ctx.quarter.id in ids(data.places)
     assert has_element?(lv, "#root-map-layer-areas[aria-checked='false']")
 
-    # Places off: only the areas.
+    # Places off: only the areas, and the count says so.
     reply = view(lv, 12, %{places: false, areas: true})
     assert reply.places == [] and reply.clusters == []
-    assert ids(reply.areas) == [ctx.city.id, ctx.quarter.id]
-    refute has_element?(lv, "#root-map-total")
+    assert ids(reply.areas) == [ctx.quarter.id]
+    assert reply.total == 1
   end
 
-  test "an area too small to draw is still a pin, with places off or filtered out", ctx do
+  test "an area too small to draw is a pin, which the filters leave out like any", ctx do
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
 
     # Far out the quarter is too small for a border: with places off it is
@@ -154,12 +156,18 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert ids(reply.areas) == [ctx.city.id]
     assert ids(reply.places) == [ctx.quarter.id]
 
-    # The filters keep the quarter out of the places, not out of the areas.
+    # The viewer made none of them: the filter leaves out pins and borders.
     view(lv, 7, %{places: true, areas: true})
     lv |> element("#root-map-relation-option-creator") |> render_click()
+    assert_push_event(lv, "root_map_data", %{places: [], areas: [], clusters: []})
+
+    # A name finds an area as it finds any group, in any script.
+    lv |> element("#root-map-relation-option-all") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
+    lv |> form("#root-map-search-form", root_map_search: %{q: "лиман"}) |> render_change()
     assert_push_event(lv, "root_map_data", data)
-    assert ctx.quarter.id in ids(data.places)
-    refute ctx.shop.id in ids(data.places)
+    assert ids(data.places) == [ctx.quarter.id]
+    assert data.areas == []
   end
 
   test "a pin filter keeps the places and areas showing those pins, and the chosen areas", ctx do
@@ -194,13 +202,15 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert ctx.quarter.id in ids(data.places)
     assert has_element?(lv, "#root-map-pin-toggle", "2")
 
-    # A chosen area stays drawn whatever its pin.
+    # A chosen area stays outlined whatever its pin; the city is no group
+    # inside the quarter.
     lv |> element("#root-map-pin-option-local_community") |> render_click()
     assert_push_event(lv, "root_map_data", _data)
     view(lv, 12)
     lv |> element("#root-map-area-option-#{ctx.quarter.id}") |> render_click()
     assert_push_event(lv, "root_map_data", data)
-    assert ids(data.areas) == [ctx.city.id, ctx.quarter.id]
+    assert [%{ctx: true, id: quarter_id}] = data.areas
+    assert quarter_id == ctx.quarter.id
 
     # A pin no group shows empties the map, and clearing the filters brings
     # every pin back.
@@ -237,7 +247,8 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert city_id == ctx.city.id
     assert has_element?(lv, "#root-map-here-title", "Grad Novi Sad")
 
-    # Only inside the city: the shop, not the far place nor the city itself.
+    # Only inside the city: the shop, not the far place nor the city itself,
+    # which stays an outline. The filters changed, so the card closes.
     lv |> element("#root-map-here-filter") |> render_click()
     assert_push_event(lv, "root_map_data", data)
     assert data.chosen == [ctx.city.id]
@@ -245,10 +256,21 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert ctx.shop.id in ids(data.places)
     refute ctx.far.id in ids(data.places)
     refute ctx.city.id in ids(data.places)
+    assert [%{ctx: true} = city] = Enum.filter(data.areas, &(&1.id == ctx.city.id))
+    assert city.bbox == [19.65, 45.05, 20.05, 45.45]
     assert has_element?(lv, "#root-map-area-toggle", "Grad Novi Sad")
+    refute has_element?(lv, "#root-map-here")
 
+    # Inside it, the quarter; its card fits the map to it.
+    render_hook(lv, "root_map_here", %{lat: lat + 0.02, lng: lng, zoom: 12})
+    assert_reply(lv, %{ids: [quarter_id]})
+    assert quarter_id == ctx.quarter.id
     lv |> element("#root-map-here-fit") |> render_click()
     assert_push_event(lv, "root_map_fit", %{bounds: [[_, _], [_, _]]})
+
+    # Only inside the quarter instead: one area at a time.
+    lv |> element("#root-map-here-filter") |> render_click()
+    assert_push_event(lv, "root_map_data", %{chosen: [^quarter_id]})
 
     # Where no area stands, the card closes.
     render_hook(lv, "root_map_here", %{lat: 43.0, lng: 21.0, zoom: 12})

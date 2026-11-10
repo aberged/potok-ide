@@ -10,16 +10,20 @@ defmodule PotokIde.Social.GroupAreas do
   as long as that other area is the smaller one (a city's pin may well fall
   inside one of its quarters, which does not hold the city).
 
-  An area is seen by whoever may see its group: its members and, for a public
-  group, every signed-in profile. Areas do not follow the root map's filters:
-  they are what a map stands on, and the filters choose its pins (the user's
-  choice, 2026-11-10).
+  An area is seen by whoever may see its group (`Visibility`): its members
+  and, for a public group, every signed-in profile. On the root's map an area
+  is only the shape of its group: the filters keep it or leave it out like
+  any group (the user's choice, 2026-11-10).
+
+  What maps ask of an area most, its size, box and width on a map, Postgres
+  keeps with the row (`Group.area_size` and the rest), so no query reads a
+  whole border for them.
   """
 
   import Ecto.Query
 
   alias PotokIde.Repo
-  alias PotokIde.Social.{Group, GroupMembership, Profile}
+  alias PotokIde.Social.{AreaShapes, Group, NameSearch, Profile, Visibility}
 
   # Big enough for an official border; a drawn one stays far below.
   @max_points 10_000
@@ -235,53 +239,36 @@ defmodule PotokIde.Social.GroupAreas do
 
   ## Which areas
 
-  # The areas a profile sees: its groups' and the public groups', never a
-  # thread's or a direct conversation's (the root has no place at all).
-  defp visible(%Profile{id: profile_id}) do
-    from(g in Group,
-      as: :group,
-      where:
-        not is_nil(g.area) and not g.is_root and is_nil(g.parent_value_id) and
-          g.is_direct == false,
-      where:
-        g.is_public or
-          exists(
-            from(m in GroupMembership,
-              where: m.group_id == parent_as(:group).id and m.profile_id == ^profile_id
-            )
-          )
-    )
+  # The areas a profile may see (`Visibility`): its groups' and the public
+  # groups' (the root has no place at all).
+  defp visible(%Profile{} = profile) do
+    Visibility.plain_groups(profile)
+    |> where([g], not is_nil(g.area) and not g.is_root)
   end
 
-  # How wide an area is in degrees of longitude, its height counted as a
-  # Mercator map stretches it at its pin.
-  defmacrop span(area, lat) do
-    quote do
-      fragment(
-        "GREATEST(ST_XMax(?) - ST_XMin(?), (ST_YMax(?) - ST_YMin(?)) / cos(radians(?)))",
-        unquote(area),
-        unquote(area),
-        unquote(area),
-        unquote(area),
-        unquote(lat)
-      )
-    end
-  end
+  @doc "What a pin needs of a group, as maps load it."
+  def fields, do: @fields
+
+  @doc "The fields of an area's box, kept by Postgres (`Group.area_west` and so on)."
+  def box_fields, do: [:area_west, :area_south, :area_east, :area_north]
+
+  @doc "An area group's box, `[west, south, east, north]`, when loaded with `box_fields/0`."
+  def bbox(%Group{area_west: west, area_south: south, area_east: east, area_north: north}),
+    do: [west, south, east, north]
 
   @doc """
-  How wide (in degrees of longitude, as `span` measures it) an area must be to
-  be drawn as a border at `zoom` rather than as a pin.
+  How wide (in degrees of longitude, as `Group.area_span` measures it) an area
+  must be to be drawn as a border at `zoom` rather than as a pin.
   """
   def min_span(zoom) when is_integer(zoom),
     do: @drawn_px * 360.0 / (256.0 * Integer.pow(2, zoom |> max(0) |> min(24)))
 
   @doc """
-  The areas the profile sees that cover the point, smallest first, as groups
-  with what a pin needs. Options: `:except` leaves one group out, `:zoom`
-  keeps only the areas drawn as borders at that zoom (`min_span/1`),
+  The areas the profile may see that cover the point, smallest first, as
+  groups with what a pin needs. Options: `:except` leaves one group out,
+  `:zoom` keeps only the areas drawn as borders at that zoom (`min_span/1`),
   `:larger_than` only those bigger than an area of that size (`size/1`), as
-  only a bigger area holds another, `:pins` and `:keep` as in
-  `list_drawable/5`, `:limit` (10).
+  only a bigger area holds another, `:limit` (10).
   """
   def areas_at(%Profile{} = profile, lat, lng, opts \\ [])
       when is_number(lat) and is_number(lng) do
@@ -298,8 +285,7 @@ defmodule PotokIde.Social.GroupAreas do
     |> except_id(opts[:except])
     |> drawn_at(opts[:zoom])
     |> larger_than(opts[:larger_than])
-    |> with_pins(opts[:pins], opts[:keep])
-    |> order_by([g], asc: fragment("ST_Area(?)", g.area), asc: g.id)
+    |> order_by([g], asc: g.area_size, asc: g.id)
     |> limit(^Keyword.get(opts, :limit, 10))
     |> select([g], struct(g, ^@fields))
     |> Repo.all()
@@ -309,22 +295,15 @@ defmodule PotokIde.Social.GroupAreas do
   defp except_id(query, id), do: where(query, [g], g.id != ^id)
 
   defp drawn_at(query, nil), do: query
-  defp drawn_at(query, zoom), do: where(query, [g], span(g.area, g.latitude) >= ^min_span(zoom))
-
-  # Only the areas showing one of `pins`, and those of `keep` whatever they show.
-  defp with_pins(query, pins, _keep) when pins in [nil, []], do: query
-
-  defp with_pins(query, pins, keep),
-    do: where(query, [g], g.pin_icon in ^pins or g.id in ^List.wrap(keep))
+  defp drawn_at(query, zoom), do: where(query, [g], g.area_span >= ^min_span(zoom))
 
   defp larger_than(query, nil), do: query
-
-  defp larger_than(query, size),
-    do: where(query, [g], fragment("ST_Area(?) > ?::float8", g.area, ^(size * 1.0)))
+  defp larger_than(query, size), do: where(query, [g], g.area_size > ^(size * 1.0))
 
   @doc """
   How big an area is, in square degrees: enough to tell which of two areas
-  is the bigger one, which is all it is used for.
+  is the bigger one, which is all it is used for (`Group.area_size` keeps it
+  for a saved one).
   """
   def size(%Geo.MultiPolygon{} = area) do
     [[size]] = Repo.query!("SELECT ST_Area($1::geometry)", [area]).rows
@@ -332,10 +311,7 @@ defmodule PotokIde.Social.GroupAreas do
   end
 
   defp size_of(%Group{id: id}) do
-    from(g in Group,
-      where: g.id == ^id and not is_nil(g.area),
-      select: fragment("ST_Area(?)", g.area)
-    )
+    from(g in Group, where: g.id == ^id and not is_nil(g.area), select: g.area_size)
     |> Repo.one()
   end
 
@@ -348,8 +324,8 @@ defmodule PotokIde.Social.GroupAreas do
   end
 
   @doc """
-  The areas the profile sees that hold the group's pin, smallest first: where
-  the group is. None for a group without a place.
+  The areas the profile may see that hold the group's pin, smallest first:
+  where the group is. None for a group without a place.
   """
   def containing(%Profile{} = profile, %Group{} = group) do
     if Group.placed?(group) do
@@ -360,70 +336,6 @@ defmodule PotokIde.Social.GroupAreas do
     else
       []
     end
-  end
-
-  @doc """
-  The areas a map draws as borders in its box at `zoom`: those the profile
-  sees that reach into the box and are wide enough there (`min_span/1`),
-  biggest first so that smaller ones lie on top, at most `limit`. Each is
-  `%{group, bbox: [west, south, east, north]}`. `ranges` is the box as
-  `Social.map_bbox_params/1` gives it. Options: `:pins` keeps only the areas
-  showing one of those pins (`Group.pin_icon`), except the ids of `:keep`.
-  """
-  def list_drawable(
-        %Profile{} = profile,
-        [south, north, west, east, west2, east2],
-        zoom,
-        limit,
-        opts \\ []
-      )
-      when is_integer(zoom) and is_integer(limit) do
-    box =
-      dynamic(
-        [g],
-        fragment(
-          "? && ST_MakeEnvelope(?::float8, ?::float8, ?::float8, ?::float8, 4326)",
-          g.area,
-          ^west,
-          ^south,
-          ^east,
-          ^north
-        )
-      )
-
-    box =
-      if west2 do
-        dynamic(
-          [g],
-          ^box or
-            fragment(
-              "? && ST_MakeEnvelope(?::float8, ?::float8, ?::float8, ?::float8, 4326)",
-              g.area,
-              ^west2,
-              ^south,
-              ^east2,
-              ^north
-            )
-        )
-      else
-        box
-      end
-
-    visible(profile)
-    |> where(^box)
-    |> drawn_at(zoom)
-    |> with_pins(opts[:pins], opts[:keep])
-    |> order_by([g], desc: fragment("ST_Area(?)", g.area), asc: g.id)
-    |> limit(^limit)
-    |> select([g], {
-      struct(g, ^@fields),
-      fragment("ST_XMin(?)", g.area),
-      fragment("ST_YMin(?)", g.area),
-      fragment("ST_XMax(?)", g.area),
-      fragment("ST_YMax(?)", g.area)
-    })
-    |> Repo.all()
-    |> Enum.map(fn {group, w, s, e, n} -> %{group: group, bbox: [w, s, e, n]} end)
   end
 
   @doc "The level of detail (`@levels`) a map at `zoom` asks borders at."
@@ -441,14 +353,7 @@ defmodule PotokIde.Social.GroupAreas do
     boxes =
       from(g in Group,
         where: g.id in ^ids and not is_nil(g.area),
-        select:
-          {g.id,
-           [
-             fragment("ST_XMin(?)", g.area),
-             fragment("ST_YMin(?)", g.area),
-             fragment("ST_XMax(?)", g.area),
-             fragment("ST_YMax(?)", g.area)
-           ]}
+        select: {g.id, [g.area_west, g.area_south, g.area_east, g.area_north]}
       )
       |> Repo.all()
       |> Map.new()
@@ -469,9 +374,9 @@ defmodule PotokIde.Social.GroupAreas do
                 p.longitude,
                 p.latitude
               ) and
-              (is_nil(p.area) or fragment("ST_Area(?) > ST_Area(?)", a.area, p.area)),
+              (is_nil(p.area_size) or a.area_size > p.area_size),
           where: p.id in ^ids,
-          order_by: [asc: p.id, asc: fragment("ST_Area(?)", a.area), asc: a.id],
+          order_by: [asc: p.id, asc: a.area_size, asc: a.id],
           select: {p.id, a.id}
         )
         |> Repo.all()
@@ -482,39 +387,52 @@ defmodule PotokIde.Social.GroupAreas do
   end
 
   @doc """
-  The borders of the areas `ids` the profile sees, simplified for the level
-  of detail of `zoom` (`level/1`), as GeoJSON text: `[%{id, version, geojson}]`,
-  where `version` changes whenever the group does. `:parent_id` keeps only
-  the areas right under that group, as a map app shows.
+  The borders of the areas `ids` the profile may see, simplified for the
+  level of detail of `zoom` (`level/1`), as GeoJSON text: `[%{id, version,
+  geojson}]`, where `version` changes whenever the group does. `:parent_id`
+  keeps only the areas right under that group, as a map app shows. Borders
+  come from `AreaShapes`, which keeps the ones already made.
   """
   def shapes(%Profile{} = profile, ids, zoom, opts \\ [])
       when is_list(ids) and is_integer(zoom) do
     level = level(zoom)
-    tolerance = 0.75 * 360.0 / (256.0 * Integer.pow(2, level))
-
-    digits =
-      cond do
-        level <= 8 -> 4
-        level <= 12 -> 5
-        true -> 6
-      end
 
     visible(profile)
     |> where([g], g.id in ^ids)
     |> under(opts[:parent_id])
-    |> select([g], %{
-      id: g.id,
-      updated_at: g.updated_at,
-      geojson:
-        fragment(
-          "ST_AsGeoJSON(ST_Multi(ST_SimplifyPreserveTopology(?, ?::float8)), ?::int)",
-          g.area,
-          ^tolerance,
-          ^digits
-        )
-    })
+    |> select([g], %{id: g.id, updated_at: g.updated_at, size: g.area_size})
     |> Repo.all()
-    |> Enum.map(&%{id: &1.id, version: version(&1.updated_at), geojson: &1.geojson})
+    |> AreaShapes.fetch(level, &simplified(&1, level))
+    |> Enum.map(fn {area, geojson} ->
+      %{id: area.id, version: version(area.updated_at), geojson: geojson}
+    end)
+  end
+
+  # The borders of `ids` simplified for `level`: within ~0.75 px of the real
+  # one at that zoom, with no more decimals than that needs.
+  defp simplified(ids, level) do
+    tolerance = 0.75 * 360.0 / (256.0 * Integer.pow(2, level))
+
+    digits =
+      cond do
+        level <= 8 -> 3
+        level <= 12 -> 4
+        true -> 5
+      end
+
+    from(g in Group,
+      where: g.id in ^ids,
+      select:
+        {g.id,
+         fragment(
+           "ST_AsGeoJSON(ST_Multi(ST_SimplifyPreserveTopology(?, ?::float8)), ?::int)",
+           g.area,
+           ^tolerance,
+           ^digits
+         )}
+    )
+    |> Repo.all()
+    |> Map.new()
   end
 
   defp under(query, nil), do: query
@@ -524,32 +442,27 @@ defmodule PotokIde.Social.GroupAreas do
   def version(%DateTime{} = updated_at), do: DateTime.to_unix(updated_at)
 
   @doc """
-  The areas the profile sees whose name holds `term` (all for a blank one), by
-  name, at most `limit`: what a filter offers.
+  The areas the profile may see whose name holds `term` (`NameSearch`; all
+  for a blank one), by name, at most `limit`: what a filter offers.
   """
   def search(%Profile{} = profile, term, limit) when is_integer(limit) do
-    term = term |> to_string() |> String.trim() |> String.slice(0, 120)
-
     visible(profile)
-    |> then(fn query ->
-      if term == "",
-        do: query,
-        else: where(query, [g], ilike(g.name, ^"%#{escape_like(term)}%"))
-    end)
+    |> NameSearch.where_matches(NameSearch.term(to_string(term)))
     |> order_by([g], asc: fragment("lower(?)", g.name), asc: g.id)
     |> limit(^limit)
     |> select([g], struct(g, ^@fields))
     |> Repo.all()
   end
 
-  defp escape_like(term), do: String.replace(term, ["\\", "%", "_"], &("\\" <> &1))
-
-  @doc "The areas `ids` the profile sees, in the order of `ids`."
+  @doc """
+  The areas `ids` the profile may see, in the order of `ids`, with their
+  boxes (`bbox/1`).
+  """
   def get_visible(%Profile{} = profile, ids) when is_list(ids) do
     by_id =
       visible(profile)
       |> where([g], g.id in ^ids)
-      |> select([g], struct(g, ^@fields))
+      |> select([g], struct(g, ^(@fields ++ box_fields())))
       |> Repo.all()
       |> Map.new(&{&1.id, &1})
 
@@ -557,18 +470,13 @@ defmodule PotokIde.Social.GroupAreas do
   end
 
   @doc """
-  The box around the areas `ids` the profile sees, `[[south, west], [north,
-  east]]`, or nil for none.
+  The box around the areas `ids` the profile may see, `[[south, west],
+  [north, east]]`, or nil for none.
   """
   def extent(%Profile{} = profile, ids) when is_list(ids) do
     visible(profile)
     |> where([g], g.id in ^ids)
-    |> select([g], [
-      fragment("ST_YMin(ST_Extent(?))", g.area),
-      fragment("ST_XMin(ST_Extent(?))", g.area),
-      fragment("ST_YMax(ST_Extent(?))", g.area),
-      fragment("ST_XMax(ST_Extent(?))", g.area)
-    ])
+    |> select([g], [min(g.area_south), min(g.area_west), max(g.area_north), max(g.area_east)])
     |> Repo.one()
     |> case do
       [south, west, north, east] when is_number(south) -> [[south, west], [north, east]]

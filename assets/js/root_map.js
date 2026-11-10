@@ -14,16 +14,20 @@
 // stand in one place (`root_map_spot`). The view is kept in the browser for
 // the next visit.
 //
-// Areas (`GroupAreas`) lie under the pins: the view's answer names the areas
-// wide enough to draw at its zoom, and their borders come once per level of
-// detail (`root_map_shapes`) and stay in a cache here, so moving the map sends
-// no border twice. An area that covers the whole view is drawn as its outline
-// only. A drawn area keeps its pin, the same one it shows far out, on its own
-// rather than in the clusters, and a tap on it opens the area's sheet like any
-// pin. A tap on the map, off the pins, asks
-// which areas stand there (`root_map_here`) and the server shows their card.
-// While an area filter holds areas, everything outside them is dimmed. The
+// An area (`GroupAreas`) is only the shape of a group the filters keep: the
+// view's answer names the areas wide enough to draw at its zoom, and their
+// borders come once per level of detail (`root_map_shapes`) and stay in a
+// cache here, so moving the map sends no border twice. An area that covers
+// the whole view is drawn as its outline only. A drawn area keeps its pin, the
+// same one it shows far out, on its own rather than in the clusters, and a tap
+// on it opens the area's sheet like any pin. A tap on the map, off the pins,
+// asks which areas stand there (`root_map_here`) and the server shows their
+// card. The chosen areas of the area filter come marked `ctx`: an outline at
+// any zoom and whatever the filters, with everything outside them dimmed. The
 // layers (places, areas) are switched on the page and remembered here.
+//
+// Markers and borders are kept by what they show, so a new answer only adds
+// what is new and takes away what is gone.
 
 // Leaflet 1.9's package names only its UMD build; the ESM one has named exports.
 let leafletModule = null
@@ -73,10 +77,39 @@ const lookOf = (place, pins) => {
   const tone = base?.tone || "kind"
 
   return {
+    tone,
     color: pins.tones[tone] || FALLBACK_COLOR,
     paths: base?.paths || [],
     picture: place.pin === "picture" ? place.picture_url : null,
   }
+}
+
+// The cluster's ring: one arc per tone, as long as its share of the groups,
+// in the order of the catalogue's tones. The same drawing as the Map app's
+// (potok-mapa `src/places.ts`, `ringGradient`).
+const ringGradient = (counts, tones) => {
+  const total = Object.values(counts).reduce((sum, count) => sum + count, 0)
+  if (total === 0) return FALLBACK_COLOR
+
+  const order = [...Object.keys(tones), ...Object.keys(counts).filter(tone => !(tone in tones))]
+  const stops = []
+  let start = 0
+
+  for (const tone of order) {
+    const count = counts[tone] || 0
+    if (count === 0) continue
+
+    const end = start + (count / total) * 360
+    stops.push(`${tones[tone] || FALLBACK_COLOR} ${start.toFixed(2)}deg ${end.toFixed(2)}deg`)
+    start = end
+  }
+
+  return stops.length === 1 ? stops[0].split(" ")[0] : `conic-gradient(${stops.join(", ")})`
+}
+
+const addTones = (into, tones) => {
+  for (const [tone, count] of Object.entries(tones || {})) into[tone] = (into[tone] || 0) + count
+  return into
 }
 
 let clipCounter = 0
@@ -169,6 +202,34 @@ const saveLayers = layers => {
 
 const levelFor = zoom => LEVELS.find(level => level >= zoom) ?? LEVELS[LEVELS.length - 1]
 
+// What a pin shows, so that one showing the same stays on the map.
+const placeKey = (prefix, place) =>
+  [prefix, place.id, place.lat, place.lng, place.pin, place.kind, place.is_public, place.picture_url].join(":")
+
+// Keeps the layers of `drawn` (key => layer) whose key `next` (key => make)
+// still has, takes the others off `group` and adds the new ones. Returns the
+// markers by the place id they carry.
+const sync = (drawn, next, group) => {
+  for (const [key, layer] of drawn) {
+    if (!next.has(key)) {
+      group.removeLayer(layer)
+      drawn.delete(key)
+    }
+  }
+
+  for (const [key, make] of next) {
+    if (!drawn.has(key)) drawn.set(key, make().addTo(group))
+  }
+
+  const byId = new Map()
+
+  for (const layer of drawn.values()) {
+    if (layer.options?.placeId !== undefined) byId.set(layer.options.placeId, layer)
+  }
+
+  return byId
+}
+
 const shapeKey = (id, version, level) => `${id}:${version}:${level}`
 
 // A GeoJSON (Multi)Polygon as Leaflet's nested [lat, lng] lists.
@@ -185,6 +246,9 @@ export const RootMap = {
     this.seq = 0
     this.timer = null
     this.markers = new Map()
+    this.drawnMarkers = new Map()
+    this.drawnAreaMarkers = new Map()
+    this.drawnPaths = new Map()
     this.selectedId = null
     this.pins = JSON.parse(this.el.dataset.pins || "{}")
     this.maxZoom = Number(this.el.dataset.maxZoom) || 19
@@ -222,19 +286,30 @@ export const RootMap = {
     // groups of a spot): Leaflet's zoom buttons and the attribution move up
     // above it rather than hide under it.
     this.box = this.el.closest("#root-map-wrap")?.parentElement
+    this.coverSize = new ResizeObserver(() => this.liftControls())
     this.coverWatch = new MutationObserver(() => this.liftControls())
-    if (this.box) this.coverWatch.observe(this.box, {childList: true, subtree: true})
+    if (this.box) this.coverWatch.observe(this.box, {childList: true})
     this.liftControls()
   },
 
   liftControls() {
-    const cover = this.box?.querySelector(":scope > #root-map-here, :scope > #root-map-spot")
+    const cover = this.box?.querySelector(
+      ":scope > #root-map-here, :scope > #root-map-spot, :scope > #root-map-error"
+    )
+
+    if (cover !== this.cover) {
+      if (this.cover) this.coverSize.unobserve(this.cover)
+      if (cover) this.coverSize.observe(cover)
+      this.cover = cover
+    }
+
     const lift = cover ? `${cover.offsetHeight + 8}px` : "0px"
     if (this.el.style.getPropertyValue("--map-cover") !== lift) this.el.style.setProperty("--map-cover", lift)
   },
 
   // The server forgot the view with the old socket.
   reconnected() {
+    this.pendingShapes.clear()
     this.schedule(0)
   },
 
@@ -242,6 +317,7 @@ export const RootMap = {
     clearTimeout(this.timer)
     clearTimeout(this.tapTimer)
     this.coverWatch?.disconnect()
+    this.coverSize?.disconnect()
     this.resizer?.disconnect()
     this.map?.remove()
   },
@@ -345,7 +421,7 @@ export const RootMap = {
   // one cluster here, the biggest first, as supercluster does in the Map app.
   merge(places, clusters) {
     const items = [
-      ...clusters.map(cluster => ({...cluster, size: clusterSize(cluster.count)})),
+      ...clusters.map(cluster => ({...cluster, tones: cluster.tones || {}, size: clusterSize(cluster.count)})),
       ...places.map(place => ({
         count: 1,
         lat: place.lat,
@@ -354,6 +430,7 @@ export const RootMap = {
           [place.lat, place.lng],
           [place.lat, place.lng],
         ],
+        tones: {[lookOf(place, this.pins).tone]: 1},
         size: PIN_SIZE[1],
         place,
       })),
@@ -393,6 +470,7 @@ export const RootMap = {
 
       merged.push({
         count,
+        tones: near.reduce((sum, item) => addTones(sum, item.tones), {}),
         lat: near.reduce((sum, item) => sum + item.lat * item.count, 0) / count,
         lng: near.reduce((sum, item) => sum + item.lng * item.count, 0) / count,
         bounds: [
@@ -425,49 +503,51 @@ export const RootMap = {
 
     const {places, clusters} = this.merge(data.places || [], data.clusters || [])
     const L = this.L
-    this.layer.clearLayers()
-    this.markers = new Map()
+    const next = new Map()
 
     for (const cluster of clusters) {
-      const size = clusterSize(cluster.count)
-      const label = (this.el.dataset.clusterLabel || "%{count}").replace(
-        "%{count}",
-        String(cluster.count)
-      )
+      const ring = ringGradient(cluster.tones || {}, this.pins.tones || {})
+      const key = `c:${cluster.lat}:${cluster.lng}:${cluster.count}:${ring}`
 
-      L.marker([cluster.lat, cluster.lng], {
-        icon: L.divIcon({
-          html:
-            `<div class="potok-cluster" style="--cluster-size:${size}px" role="img" ` +
-            `aria-label="${escapeAttribute(label)}"><span>${clusterText(cluster.count)}</span></div>`,
-          className: "potok-cluster-icon",
-          iconSize: [size, size],
-        }),
-        title: label,
-        riseOnHover: true,
+      next.set(key, () => {
+        const size = clusterSize(cluster.count)
+        const label = (this.el.dataset.clusterLabel || "%{count}").replace(
+          "%{count}",
+          String(cluster.count)
+        )
+
+        return L.marker([cluster.lat, cluster.lng], {
+          icon: L.divIcon({
+            html:
+              `<div class="potok-cluster" style="--cluster-size:${size}px;--cluster-ring:${escapeAttribute(ring)}" ` +
+              `role="img" aria-label="${escapeAttribute(label)}"><span>${clusterText(cluster.count)}</span></div>`,
+            className: "potok-cluster-icon",
+            iconSize: [size, size],
+          }),
+          title: label,
+          riseOnHover: true,
+        }).on("click", () => this.openCluster(cluster))
       })
-        .on("click", () => this.openCluster(cluster))
-        .addTo(this.layer)
     }
 
     for (const place of places) {
-      const marker = L.marker([place.lat, place.lng], {
-        icon: L.divIcon({
-          html: pinSvg(lookOf(place, this.pins), this.pins, !place.is_public),
-          className: "potok-pin potok-map-pin",
-          iconSize: PIN_SIZE,
-          iconAnchor: PIN_ANCHOR,
-        }),
-        title: place.name,
-        alt: place.name,
-        riseOnHover: true,
-      })
-        .on("click", () => this.select(place.id, true))
-        .addTo(this.layer)
-
-      this.markers.set(place.id, marker)
+      next.set(placeKey("p", place), () =>
+        L.marker([place.lat, place.lng], {
+          icon: L.divIcon({
+            html: pinSvg(lookOf(place, this.pins), this.pins, !place.is_public),
+            className: "potok-pin potok-map-pin",
+            iconSize: PIN_SIZE,
+            iconAnchor: PIN_ANCHOR,
+          }),
+          title: place.name,
+          alt: place.name,
+          riseOnHover: true,
+          placeId: place.id,
+        }).on("click", () => this.select(place.id, true))
+      )
     }
 
+    this.markers = sync(this.drawnMarkers, next, this.layer)
     this.markSelected()
   },
 
@@ -528,14 +608,17 @@ export const RootMap = {
   // level of the same version while that one is on its way.
   shapeOf(area) {
     const level = levelFor(Math.round(this.map.getZoom()))
-    const exact = this.shapes.get(shapeKey(area.id, area.v, level))
-    if (exact) return exact
-
     const nearest = [...LEVELS].sort((a, b) => Math.abs(a - level) - Math.abs(b - level))
 
     for (const other of nearest) {
-      const shape = this.shapes.get(shapeKey(area.id, area.v, other))
-      if (shape) return shape
+      const key = shapeKey(area.id, area.v, other)
+      const shape = this.shapes.get(key)
+
+      if (shape) {
+        this.shapes.delete(key)
+        this.shapes.set(key, shape)
+        return {shape, key}
+      }
     }
 
     return null
@@ -578,63 +661,77 @@ export const RootMap = {
     if (!this.areaLayer) return
 
     const L = this.L
-    this.areaLayer.clearLayers()
-    this.maskLayer.clearLayers()
-    this.chosenLayer.clearLayers()
-    this.areaPaths = new Map()
-
     const view = this.map.getBounds()
+    const next = new Map()
+    const chosenNext = new Map()
     const holes = []
+    this.areaPaths = new Map()
 
     // Biggest first, as they come, so that smaller areas lie on top.
     for (const area of this.areas) {
-      const shape = this.shapeOf(area)
-      if (!shape) continue
+      const found = this.shapeOf(area)
+      if (!found) continue
 
-      const latlngs = toLatLngs(shape)
+      const latlngs = toLatLngs(found.shape)
+      const color = lookOf(area, this.pins).color
+
+      if (area.ctx) {
+        holes.push(...latlngs.map(rings => rings[0]))
+
+        chosenNext.set(`${found.key}:${color}`, () =>
+          L.polygon(latlngs, {
+            pane: "potokAreaChosen",
+            renderer: this.chosenRenderer,
+            color,
+            weight: 3,
+            fill: false,
+            interactive: false,
+            className: "potok-area-chosen",
+          })
+        )
+
+        continue
+      }
+
       const [west, south, east, north] = area.bbox
       const covers =
         west <= view.getWest() &&
         east >= view.getEast() &&
         south <= view.getSouth() &&
         north >= view.getNorth()
-      const color = lookOf(area, this.pins).color
-      const chosen = this.chosen.includes(area.id)
 
-      const path = L.polygon(latlngs, {
-        pane: "potokAreas",
-        renderer: this.areaRenderer,
-        color,
-        fillColor: color,
-        weight: 2,
-        className: covers ? "potok-area is-outline" : "potok-area",
-      }).addTo(this.areaLayer)
-
-      this.areaPaths.set(area.id, path)
-
-      if (chosen) {
-        holes.push(...latlngs.map(rings => rings[0]))
-
+      next.set(`${found.key}:${color}:${covers}`, () =>
         L.polygon(latlngs, {
-          pane: "potokAreaChosen",
-          renderer: this.chosenRenderer,
+          pane: "potokAreas",
+          renderer: this.areaRenderer,
           color,
-          weight: 3,
-          fill: false,
-          interactive: false,
-          className: "potok-area-chosen",
-        }).addTo(this.chosenLayer)
-      }
+          fillColor: color,
+          weight: 2,
+          className: covers ? "potok-area is-outline" : "potok-area",
+          placeId: area.id,
+        })
+      )
     }
 
-    if (holes.length > 0) {
-      L.polygon([WORLD_RING, ...holes], {
-        pane: "potokAreaMask",
-        renderer: this.maskRenderer,
-        stroke: false,
-        interactive: false,
-        className: "potok-area-mask",
-      }).addTo(this.maskLayer)
+    this.areaPaths = sync(this.drawnPaths, next, this.areaLayer)
+    this.drawnChosen = this.drawnChosen || new Map()
+    sync(this.drawnChosen, chosenNext, this.chosenLayer)
+
+    const maskKey = [...chosenNext.keys()].join("|")
+
+    if (maskKey !== this.maskKey) {
+      this.maskKey = maskKey
+      this.maskLayer.clearLayers()
+
+      if (holes.length > 0) {
+        L.polygon([WORLD_RING, ...holes], {
+          pane: "potokAreaMask",
+          renderer: this.maskRenderer,
+          stroke: false,
+          interactive: false,
+          className: "potok-area-mask",
+        }).addTo(this.maskLayer)
+      }
     }
 
     this.drawAreaPins()
@@ -646,29 +743,30 @@ export const RootMap = {
   // other pins.
   drawAreaPins() {
     const L = this.L
-    this.areaPinLayer.clearLayers()
-    this.areaMarkers = new Map()
+    const next = new Map()
 
     for (const area of this.areas) {
-      const marker = L.marker([area.lat, area.lng], {
-        icon: L.divIcon({
-          html: pinSvg(lookOf(area, this.pins), this.pins, !area.is_public),
-          className: "potok-pin potok-map-pin",
-          iconSize: PIN_SIZE,
-          iconAnchor: PIN_ANCHOR,
-        }),
-        title: area.name,
-        alt: area.name,
-        riseOnHover: true,
-        zIndexOffset: AREA_PIN_Z,
-        baseZ: AREA_PIN_Z,
-      })
-        .on("click", () => this.select(area.id, true))
-        .addTo(this.areaPinLayer)
+      if (area.ctx) continue
 
-      this.areaMarkers.set(area.id, marker)
+      next.set(placeKey("a", area), () =>
+        L.marker([area.lat, area.lng], {
+          icon: L.divIcon({
+            html: pinSvg(lookOf(area, this.pins), this.pins, !area.is_public),
+            className: "potok-pin potok-map-pin",
+            iconSize: PIN_SIZE,
+            iconAnchor: PIN_ANCHOR,
+          }),
+          title: area.name,
+          alt: area.name,
+          riseOnHover: true,
+          zIndexOffset: AREA_PIN_Z,
+          baseZ: AREA_PIN_Z,
+          placeId: area.id,
+        }).on("click", () => this.select(area.id, true))
+      )
     }
 
+    this.areaMarkers = sync(this.drawnAreaMarkers, next, this.areaPinLayer)
     this.markSelected()
   },
 

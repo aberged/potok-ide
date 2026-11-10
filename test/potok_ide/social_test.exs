@@ -1758,17 +1758,19 @@ defmodule PotokIde.SocialTest do
       assert ids.(preset: "feed") == [feed]
       assert ids.(preset: "polls") == []
 
-      assert Enum.sort(ids.(preset: "none")) ==
-               Enum.sort([chat_with_app, feed_without_app, by_hand, pasted_app])
+      # An app that fits no preset shows the puzzle: a kind of its own.
+      assert Enum.sort(ids.(preset: "app")) == Enum.sort([chat_with_app, pasted_app])
+      assert Enum.sort(ids.(preset: "none")) == Enum.sort([feed_without_app, by_hand])
 
       # Anything else is no filter at all.
       assert length(ids.(preset: "bogus")) == 7
       assert length(ids.(preset: nil)) == 7
 
       assert Social.list_child_group_ids_for_profile(parent, owner, preset: "feed") == [feed]
-      assert Social.count_child_groups_for_profile(parent, owner, preset: "none") == 4
+      assert Social.count_child_groups_for_profile(parent, owner, preset: "none") == 2
+      assert Social.count_child_groups_for_profile(parent, owner, preset: "app") == 2
 
-      assert {[_group], 4} =
+      assert {[_group], 2} =
                Social.list_child_groups_page_for_profile(parent, owner, preset: "none", limit: 1)
 
       assert ids.(preset: "chat", search: "nothing-like-it") == []

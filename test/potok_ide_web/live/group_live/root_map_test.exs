@@ -151,7 +151,7 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     refute has_element?(lv, "#root-map-empty")
   end
 
-  test "the time frame starts at 30 days of new groups and takes other frames and dates", ctx do
+  test "the time frame starts at any time and takes other frames and dates", ctx do
     long_ago = DateTime.utc_now() |> DateTime.add(-60, :day) |> DateTime.truncate(:second)
 
     open_id = ctx.open.id
@@ -163,13 +163,21 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     lv =
       live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map", %{"show_public_groups" => true})
 
-    assert has_element?(lv, "#root-map-time-option-30d[aria-checked='true']")
+    assert has_element?(lv, "#root-map-time-option-any[aria-checked='true']")
     assert has_element?(lv, "#root-map-time-created[aria-pressed='true']")
-    assert place_ids(view(lv)) == [ctx.shop.id]
+    assert place_ids(view(lv)) == Enum.sort([ctx.shop.id, ctx.open.id])
 
-    lv |> element("#root-map-time-option-any") |> render_click()
+    lv |> element("#root-map-time-option-30d") |> render_click()
     assert_push_event(lv, "root_map_data", data)
-    assert place_ids(data) == Enum.sort([ctx.shop.id, ctx.open.id])
+    assert place_ids(data) == [ctx.shop.id]
+
+    # Never written in: out of "last message", any time too.
+    lv |> element("#root-map-time-option-any") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
+    lv |> element("#root-map-time-active") |> render_click()
+    assert_push_event(lv, "root_map_data", %{places: []})
+    lv |> element("#root-map-time-created") |> render_click()
+    assert_push_event(lv, "root_map_data", _data)
 
     # Nobody wrote in either.
     lv |> element("#root-map-time-option-7d") |> render_click()
@@ -244,7 +252,7 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     assert_push_event(lv, "root_map_fit", %{bounds: [[44.81, 20.46], [44.81, 20.46]]})
   end
 
-  test "a newcomer learns where places come from", _ctx do
+  test "a newcomer learns where places come from", ctx do
     {account, _profile} = account_with_profile!("rmap-new")
     lv = live_map(account, ~p"/groups/#{Social.get_root_group!().id}/map")
 
@@ -252,17 +260,24 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     refute has_element?(lv, "#root-map-clear-filters")
     assert %{ok: true, places: [], total: 0} = view(lv)
 
-    # The time frame it starts with is not what keeps the map empty.
-    lv |> element("#root-map-any-time") |> render_click()
+    # What keeps it empty is the public groups it hides; the card shows them.
+    lv |> element("#root-map-show-public") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert place_ids(data) == [ctx.open.id]
+    refute has_element?(lv, "#root-map-empty")
+
+    # Closed, the card leaves the map be until a filter changes.
+    lv |> element("#root-map-preset-option-polls") |> render_click()
     assert_push_event(lv, "root_map_data", %{places: []})
     assert has_element?(lv, "#root-map-empty")
-    refute has_element?(lv, "#root-map-any-time")
 
-    # Closed, it leaves the map be until a filter changes.
     lv |> element("#root-map-empty-close") |> render_click()
     refute has_element?(lv, "#root-map-empty")
 
-    lv |> element("#root-map-preset-option-polls") |> render_click()
+    lv |> element("#root-map-layer-areas") |> render_click()
+    refute has_element?(lv, "#root-map-empty")
+
+    lv |> element("#root-map-preset-option-app") |> render_click()
     assert_push_event(lv, "root_map_data", %{places: []})
     assert has_element?(lv, "#root-map-empty")
   end

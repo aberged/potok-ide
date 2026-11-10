@@ -13,9 +13,17 @@ defmodule PotokIde.Repo do
   time. Inside another transaction the settings last until that one ends.
   """
   def with_statement_timeout(ms, fun, opts \\ []) when is_integer(ms) and ms > 0 do
+    # Both settings in one statement, a round trip less than two SETs; nil
+    # leaves jit as it is.
+    jit = if Keyword.get(opts, :jit, true) == false, do: "off"
+
     transaction(fn ->
-      query!("SET LOCAL statement_timeout = #{ms}")
-      if Keyword.get(opts, :jit, true) == false, do: query!("SET LOCAL jit = off")
+      query!(
+        "SELECT set_config('statement_timeout', $1, true), " <>
+          "set_config('jit', COALESCE($2::text, current_setting('jit')), true)",
+        [Integer.to_string(ms), jit]
+      )
+
       fun.()
     end)
   rescue
