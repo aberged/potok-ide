@@ -12,7 +12,7 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupPins, GroupPresets}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets}
 
   setup do
     {owner_account, owner} = account_with_profile!("map-owner")
@@ -56,6 +56,30 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
         )
       )
 
+    group
+  end
+
+  defp square({lat, lng}, half) do
+    {:ok, area} =
+      GroupAreas.decode(%{
+        "type" => "Polygon",
+        "coordinates" => [
+          [
+            [lng - half, lat - half],
+            [lng + half, lat - half],
+            [lng + half, lat + half],
+            [lng - half, lat + half],
+            [lng - half, lat - half]
+          ]
+        ]
+      })
+
+    area
+  end
+
+  defp area_child!(owner, parent, area, attrs \\ %{}) do
+    group = child!(owner, parent, attrs)
+    {:ok, group} = Social.update_group(owner, group, %{"area" => area})
     group
   end
 
@@ -127,6 +151,66 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
 
       assert_reply(visitor, %{ok: true, places: [%{id: shop_id}]})
       assert shop_id == shop.id
+    end
+  end
+
+  describe "areas" do
+    setup ctx do
+      city = area_child!(ctx.owner, ctx.map, square({45.25, 19.85}, 0.2))
+      quarter = area_child!(ctx.owner, ctx.map, square({45.25, 19.85}, 0.05))
+      shop = child!(ctx.owner, ctx.map, %{"latitude" => 45.26, "longitude" => 19.86})
+      far = child!(ctx.owner, ctx.map, %{"latitude" => 43.3, "longitude" => 21.9})
+      # An area of another group: no place of this map, so it holds nothing here.
+      _elsewhere = area_child!(ctx.owner, Social.get_root_group!(), square({45.25, 19.85}, 0.3))
+
+      %{city: city, quarter: quarter, shop: shop, far: far}
+    end
+
+    test "list_places says which places are areas and which areas hold each place", ctx do
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+      call(view, "list_places")
+      assert_reply(view, %{ok: true, places: places})
+
+      by_id = Map.new(places, &{&1.id, &1})
+
+      assert %{shape: "point", areas: areas} = by_id[ctx.shop.id]
+      assert areas == [ctx.quarter.id, ctx.city.id]
+      assert %{shape: "point", areas: []} = by_id[ctx.far.id]
+      refute Map.has_key?(by_id[ctx.shop.id], :bbox)
+
+      # The quarter lies in the city, not the city in the quarter its pin
+      # falls in.
+      assert %{shape: "area", areas: [city_id], bbox: [west, south, east, north], v: v} =
+               by_id[ctx.quarter.id]
+
+      assert city_id == ctx.city.id
+      assert is_integer(v)
+      assert_in_delta west, 19.8, 1.0e-6
+      assert_in_delta south, 45.2, 1.0e-6
+      assert_in_delta east, 19.9, 1.0e-6
+      assert_in_delta north, 45.3, 1.0e-6
+      assert %{shape: "area", areas: []} = by_id[ctx.city.id]
+    end
+
+    test "place_shapes gives the borders of this map's areas only", ctx do
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+      grandchild = area_child!(ctx.owner, ctx.city, square({45.25, 19.85}, 0.01))
+
+      call(view, "place_shapes", %{
+        "ids" => [ctx.city.id, grandchild.id, ctx.shop.id],
+        "zoom" => 11
+      })
+
+      assert_reply(view, %{ok: true, level: 12, shapes: [shape]})
+      assert shape.id == ctx.city.id
+
+      assert %{"type" => "MultiPolygon", "coordinates" => [[ring]]} =
+               shape.geojson |> Jason.encode!() |> Jason.decode!()
+
+      assert length(ring) == 5
+
+      call(view, "place_shapes", %{"ids" => "x", "zoom" => 11})
+      assert_reply(view, %{ok: false, error: "invalid_place"})
     end
   end
 

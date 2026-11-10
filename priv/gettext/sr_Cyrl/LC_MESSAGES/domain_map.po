@@ -2012,8 +2012,8 @@ msgstr "Место на мапи има обе координате, сваку 
 
 #: lib/potok_ide_web/domain_copy.ex:969
 #, elixir-autogen, elixir-format
-msgid "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. That is how a group becomes a map. The root needs no such app: it has a map of its own."
-msgstr "Добија <Group>групе</Group> непосредно испод себе које имају место на мапи, са пином који свака показује, а ко ту сме да прави подгрупе може да дода нову тамо где додирне. Додир на пин отвара опис те групе преко апликације, где њена апликација, форма или гласање, ради са правима те групе. Тако група постаје мапа. Корену таква апликација не треба: он има своју мапу."
+msgid "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders and with the areas each place lies in, so the app draws the areas and shows only the groups inside one. That is how a group becomes a map. The root needs no such app: it has a map of its own."
+msgstr "Добија <Group>групе</Group> непосредно испод себе које имају место на мапи, са пином који свака показује, а ко ту сме да прави подгрупе може да дода нову тамо где додирне. Додир на пин отвара опис те групе преко апликације, где њена апликација, форма или гласање, ради са правима те групе. Међу њима групе које покривају подручје стижу са својим границама и са подручјима у којима је свако место, па апликација црта подручја и показује само групе унутар једног. Тако група постаје мапа. Корену таква апликација не треба: он има своју мапу."
 
 #: lib/potok_ide_web/domain_copy.ex:967
 #, elixir-autogen, elixir-format

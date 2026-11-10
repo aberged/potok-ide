@@ -852,6 +852,7 @@ const APP_FRAME_METHODS = new Set([
   "list_places",
   "create_place",
   "show_group",
+  "place_shapes",
 ])
 
 // Calls that carry a file of the frame's, sent through the page's upload.

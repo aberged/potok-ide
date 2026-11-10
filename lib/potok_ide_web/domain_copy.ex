@@ -968,7 +968,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. That is how a group becomes a map. The root needs no such app: it has a map of its own."
+              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders and with the areas each place lies in, so the app draws the areas and shows only the groups inside one. That is how a group becomes a map. The root needs no such app: it has a map of its own."
             )
         },
         %{

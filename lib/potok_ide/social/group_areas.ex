@@ -414,11 +414,65 @@ defmodule PotokIde.Social.GroupAreas do
   def level(zoom) when is_integer(zoom), do: Enum.find(@levels, 16, &(&1 >= zoom))
 
   @doc """
+  What a map of `places` (groups the profile was already given) needs of
+  their areas: the box of each area among them, and for each place the areas
+  among them that hold it, smallest first, by the rule of `containing/2`.
+  `%{boxes: %{id => [west, south, east, north]}, holders: %{id => [area id]}}`.
+  """
+  def among(places) when is_list(places) do
+    ids = Enum.map(places, & &1.id)
+
+    boxes =
+      from(g in Group,
+        where: g.id in ^ids and not is_nil(g.area),
+        select:
+          {g.id,
+           [
+             fragment("ST_XMin(?)", g.area),
+             fragment("ST_YMin(?)", g.area),
+             fragment("ST_XMax(?)", g.area),
+             fragment("ST_YMax(?)", g.area)
+           ]}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    holders =
+      if boxes == %{} do
+        %{}
+      else
+        area_ids = Map.keys(boxes)
+
+        from(p in Group,
+          join: a in Group,
+          on:
+            a.id in ^area_ids and a.id != p.id and
+              fragment(
+                "ST_Intersects(?, ST_SetSRID(ST_MakePoint(?, ?), 4326))",
+                a.area,
+                p.longitude,
+                p.latitude
+              ) and
+              (is_nil(p.area) or fragment("ST_Area(?) > ST_Area(?)", a.area, p.area)),
+          where: p.id in ^ids,
+          order_by: [asc: p.id, asc: fragment("ST_Area(?)", a.area), asc: a.id],
+          select: {p.id, a.id}
+        )
+        |> Repo.all()
+        |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+      end
+
+    %{boxes: boxes, holders: holders}
+  end
+
+  @doc """
   The borders of the areas `ids` the profile sees, simplified for the level
   of detail of `zoom` (`level/1`), as GeoJSON text: `[%{id, version, geojson}]`,
-  where `version` changes whenever the group does.
+  where `version` changes whenever the group does. `:parent_id` keeps only
+  the areas right under that group, as a map app shows.
   """
-  def shapes(%Profile{} = profile, ids, zoom) when is_list(ids) and is_integer(zoom) do
+  def shapes(%Profile{} = profile, ids, zoom, opts \\ [])
+      when is_list(ids) and is_integer(zoom) do
     level = level(zoom)
     tolerance = 0.75 * 360.0 / (256.0 * Integer.pow(2, level))
 
@@ -431,6 +485,7 @@ defmodule PotokIde.Social.GroupAreas do
 
     visible(profile)
     |> where([g], g.id in ^ids)
+    |> under(opts[:parent_id])
     |> select([g], %{
       id: g.id,
       updated_at: g.updated_at,
@@ -445,6 +500,9 @@ defmodule PotokIde.Social.GroupAreas do
     |> Repo.all()
     |> Enum.map(&%{id: &1.id, version: version(&1.updated_at), geojson: &1.geojson})
   end
+
+  defp under(query, nil), do: query
+  defp under(query, parent_id), do: where(query, [g], g.parent_id == ^parent_id)
 
   @doc "What a group's area is known by in a browser's cache: it changes with the group."
   def version(%DateTime{} = updated_at), do: DateTime.to_unix(updated_at)

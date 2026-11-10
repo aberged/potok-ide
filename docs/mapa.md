@@ -66,4 +66,14 @@ Mesto grupe može biti i područje, kao kod mesne zajednice: granica od jednog i
 | Filter | meni **Područje** (pretraga, više područja), ostavlja pinove unutar njih i zatamni ostalo; link `?area=ID` |
 | Granice | stižu jednom po nivou detalja (`root_map_shapes`, uprošćene za ~0,75 px) i ostaju u kešu pregledača |
 
-Aplikacija Mapa još ne crta područja: grupa-područje je u njoj običan pin u svojoj unutrašnjoj tački.
+### Područja u aplikaciji Mapa
+
+Aplikacija Mapa crta područja među svojim podgrupama po istim pravilima kao mapa korena (`src/areas.ts`):
+
+- `listPlaces` uz svako mesto kaže `shape` (`point` ili `area`) i `areas`, područja među tim mestima koja ga obuhvataju, od najmanjeg; područje ima i `bbox` i `v`.
+- Granice traži `placeShapes(ids, zoom)`, sto po pozivu, i čuva ih po `id`, `v` i nivou detalja.
+- Područje šire od ~28 px je granica sa svojim pinom (iznad ostalih), manje je pin među ostalima. Čipovi vrsta biraju samo mesta, ne područja.
+- Dugme **Slojevi** (samo kad mapa ima područja) pali i gasi **Mesta** i **Područja**.
+- Dodir na mapu van pinova otvara karticu područja na tom mestu (Otvori, Samo unutra, Uvećaj, i veća područja okolo). **Samo unutra** ostavlja pinove tog područja, zatamni ostatak i stavi čip „U: …“ koji filter skida.
+- U listi mesta red kaže „Područje“ ili „U: …“ (najmanje područje oko mesta).
+- Područje druge grupe (koje nije neposredno ispod mape) nije na mapi i ne obuhvata ništa u njoj.

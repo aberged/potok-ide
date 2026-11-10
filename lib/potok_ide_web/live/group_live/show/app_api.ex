@@ -58,6 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     AppData,
     AppFiles,
     Group,
+    GroupAreas,
     GroupPins,
     GroupPresets,
     ValueAttachment,
@@ -96,11 +97,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
     set_notifications ensure_file_groups file_url prepare_upload
-    map_config list_places create_place show_group
+    map_config list_places create_place show_group place_shapes
   )
 
   # Every pin a map gets in one call; the rest waits for a map that reads by area.
   @max_places 2_000
+  # Borders a map may ask for at once.
+  @max_shapes 100
 
   # A filter of a page of values, as JSON: kept small, as it is matched in SQL.
   @max_match_bytes 4_096
@@ -758,10 +761,36 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     with :ok <- heavy_read(socket) do
       {places, truncated?} = Social.list_visible_placed_children(group, profile, @max_places)
+      areas = GroupAreas.among(places)
 
-      {%{ok: true, places: Enum.map(places, &place_payload/1), truncated: truncated?}, socket}
+      {%{
+         ok: true,
+         places: Enum.map(places, &map_place_payload(&1, areas)),
+         truncated: truncated?
+       }, socket}
     else
       {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # The borders of areas right under the group, simplified for a zoom.
+  defp run("place_shapes", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with ids when is_list(ids) <- params["ids"],
+         zoom when is_integer(zoom) and zoom in 0..24 <- params["zoom"],
+         :ok <- heavy_read(socket) do
+      ids = ids |> Enum.filter(&is_integer/1) |> Enum.uniq() |> Enum.take(@max_shapes)
+
+      shapes =
+        for shape <- GroupAreas.shapes(profile, ids, zoom, parent_id: group.id) do
+          %{id: shape.id, v: shape.version, geojson: Jason.Fragment.new(shape.geojson)}
+        end
+
+      {%{ok: true, level: GroupAreas.level(zoom), shapes: shapes}, socket}
+    else
+      {:error, reply} -> {reply, socket}
+      _invalid -> {error("invalid_place", nil), socket}
     end
   end
 
@@ -1183,6 +1212,24 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       picture_url: Avatars.group_avatar_url(group),
       is_public: group.is_public
     }
+  end
+
+  # A place of a map app: a pin (`place_payload/1`), whether it is a point or
+  # an area (with its box and what its border is cached by), and the areas of
+  # the same map that hold it, smallest first (`GroupAreas.among/1`).
+  defp map_place_payload(%Group{} = group, %{boxes: boxes, holders: holders}) do
+    payload =
+      group
+      |> place_payload()
+      |> Map.merge(%{shape: "point", areas: Map.get(holders, group.id, [])})
+
+    case Map.fetch(boxes, group.id) do
+      {:ok, bbox} ->
+        Map.merge(payload, %{shape: "area", bbox: bbox, v: GroupAreas.version(group.updated_at)})
+
+      :error ->
+        payload
+    end
   end
 
   defp fetch_child(params, socket) do
