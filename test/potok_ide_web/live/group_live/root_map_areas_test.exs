@@ -1,9 +1,9 @@
 defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
   @moduledoc """
-  Areas on the root's map (`RootMapState`, `GroupAreas`): drawn under the pins
-  whatever the filters, their borders asked for once, two layers, a tap that
-  lists the areas there, a filter by area, `?area=` links, and the strip that
-  says where a group lies.
+  Areas on the root's map (`RootMapState`, `GroupAreas`): pins like any
+  other, with borders under the pins once wide enough, asked for once, two
+  layers, a tap that lists the areas there, a filter by area, `?area=` links,
+  and the strip that says where a group lies.
   """
   use PotokIdeWeb.ConnCase, async: true
 
@@ -114,8 +114,10 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert is_integer(v)
     assert reply.chosen == []
 
-    # Far out the quarter is too small to draw; it is a pin like any other.
-    assert ids(view(lv, 7).areas) == [ctx.city.id]
+    # Farther out the quarter is too small for a border; the city, ~104 px
+    # wide at zoom 8, still has one.
+    assert ids(view(lv, 8).areas) == [ctx.city.id]
+    assert view(lv, 7).areas == []
 
     render_hook(lv, "root_map_shapes", %{ids: [ctx.city.id, ctx.closed.id], zoom: 12})
     assert_reply(lv, %{ok: true, level: 12, shapes: [shape]})
@@ -125,13 +127,15 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
              shape.geojson |> Jason.encode!() |> Jason.decode!()
   end
 
-  test "an area drawn as a border leaves the pins, and with areas off it is a pin again", ctx do
+  test "an area drawn as a border keeps its pin among the others, and with areas off is only a pin",
+       ctx do
     # Public groups hidden: the city's pin would stand on the quarter's.
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map", %{})
 
-    reply = view(lv, 12)
+    reply = view(lv, 14)
+    assert ids(reply.areas) == [ctx.quarter.id]
     assert ctx.shop.id in ids(reply.places)
-    refute ctx.quarter.id in ids(reply.places)
+    assert ctx.quarter.id in ids(reply.places)
 
     lv |> element("#root-map-layer-areas") |> render_click()
     assert_push_event(lv, "root_map_layers", %{places: true, areas: false})
@@ -140,9 +144,9 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert ctx.quarter.id in ids(data.places)
     assert has_element?(lv, "#root-map-layer-areas[aria-checked='false']")
 
-    # Places off: only the areas, and the count says so.
+    # Places off: only the areas, a border and its pin, and the count says so.
     reply = view(lv, 12, %{places: false, areas: true})
-    assert reply.places == [] and reply.clusters == []
+    assert ids(reply.places) == [ctx.quarter.id] and reply.clusters == []
     assert ids(reply.areas) == [ctx.quarter.id]
     assert reply.total == 1
   end
@@ -150,14 +154,15 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
   test "an area too small to draw is a pin, which the filters leave out like any", ctx do
     lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
 
-    # Far out the quarter is too small for a border: with places off it is
-    # the only pin, the city a border.
-    reply = view(lv, 7, %{places: false, areas: true})
+    # Far out only the city is wide enough for a border; with places off the
+    # pins of both areas, in its middle, are one cluster.
+    reply = view(lv, 8, %{places: false, areas: true})
     assert ids(reply.areas) == [ctx.city.id]
-    assert ids(reply.places) == [ctx.quarter.id]
+    assert reply.places == []
+    assert [%{count: 2}] = reply.clusters
 
     # The viewer made none of them: the filter leaves out pins and borders.
-    view(lv, 7, %{places: true, areas: true})
+    view(lv, 8, %{places: true, areas: true})
     lv |> element("#root-map-relation-option-creator") |> render_click()
     assert_push_event(lv, "root_map_data", %{places: [], areas: [], clusters: []})
 
@@ -182,7 +187,7 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     lv |> element("#root-map-pin-option-municipality") |> render_click()
     assert_push_event(lv, "root_map_data", data)
     assert ids(data.areas) == [ctx.city.id]
-    assert data.places == []
+    assert ids(data.places) == [ctx.city.id]
     assert has_element?(lv, "#root-map-pin-option-municipality[aria-checked='true']")
     assert has_element?(lv, "#root-map-pin-option-all[aria-checked='false']")
     assert has_element?(lv, "#root-map-pin-toggle", "Municipality")
@@ -194,12 +199,14 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert_reply(lv, %{ids: [city_id]})
     assert city_id == ctx.city.id
 
-    # Far out, an area too small for a border is a pin only with its pin picked.
-    refute ctx.quarter.id in ids(view(lv, 7).places)
+    # Far out, the quarter's pin shows only with its pin picked: then it
+    # stands with the city's, in its middle, as one cluster.
+    assert ids(view(lv, 7).places) == [ctx.city.id]
 
     lv |> element("#root-map-pin-option-local_community") |> render_click()
     assert_push_event(lv, "root_map_data", data)
-    assert ctx.quarter.id in ids(data.places)
+    assert data.places == []
+    assert [%{count: 2}] = data.clusters
     assert has_element?(lv, "#root-map-pin-toggle", "2")
 
     # A chosen area stays outlined whatever its pin; the city is no group

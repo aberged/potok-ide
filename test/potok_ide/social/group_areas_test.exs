@@ -253,9 +253,12 @@ defmodule PotokIde.Social.GroupAreasTest do
         view.areas
       end
 
-      # 0.4° wide is ~36 px at zoom 7; the 0.1° quarter needs zoom 9.
-      assert drawn.(5, box) == []
-      assert Enum.map(drawn.(7, box), & &1.id) == [city.id]
+      # The city is 0.4° wide and ~0.57° tall as Mercator stretches it: ~52 px
+      # at zoom 7, ~104 px at zoom 8. The quarter, a quarter of that, needs
+      # zoom 10.
+      assert drawn.(7, box) == []
+      assert Enum.map(drawn.(8, box), & &1.id) == [city.id]
+      assert Enum.map(drawn.(9, box), & &1.id) == [city.id]
       assert Enum.map(drawn.(10, box), & &1.id) == [city.id, quarter.id]
       assert drawn.(10, [21.0, 43.0, 22.0, 44.0]) == []
 
@@ -322,12 +325,51 @@ defmodule PotokIde.Social.GroupAreasTest do
       cells.places |> Enum.map(& &1.id) |> Enum.sort()
     end
 
-    test "an area's pin leaves the clusters where the area is drawn", ctx do
+    test "an area's pin stays among the pins where its border is drawn", ctx do
       %{quarter: quarter, inside: inside, outside: outside} = ctx
       all = Enum.sort([quarter.id, inside.id, outside.id])
 
       assert pins(ctx.outsider, %{}, 18) == all
-      assert pins(ctx.outsider, %{shapes?: true}, 18) == Enum.sort([inside.id, outside.id])
+      assert pins(ctx.outsider, %{shapes?: true}, 18) == all
+
+      assert {:ok, %{areas: [%{id: id}]}} =
+               Social.list_map_cells(
+                 ctx.outsider,
+                 %{public?: true, shapes?: true},
+                 [19.0, 44.5, 20.7, 46.0],
+                 18
+               )
+
+      assert id == quarter.id
+    end
+
+    test "past the borders a view draws, an area is still a pin and counted", ctx do
+      # 300 more quarters like the first, one on another: 301 borders to draw.
+      Repo.query!(
+        """
+        INSERT INTO groups (name, description_format, is_public, creator_id, parent_id,
+          inserted_at, updated_at, latitude, longitude, area)
+        SELECT 'Kvart ' || n, description_format, is_public, creator_id, parent_id,
+          inserted_at, updated_at, latitude, longitude, area
+        FROM groups, generate_series(1, 300) n
+        WHERE id = $1
+        """,
+        [ctx.quarter.id]
+      )
+
+      assert {:ok, view} =
+               Social.list_map_cells(
+                 ctx.outsider,
+                 %{public?: true, shapes?: true},
+                 [19.0, 44.5, 20.7, 46.0],
+                 12
+               )
+
+      assert length(view.areas) == 300
+      assert view.total == 303
+
+      shown = length(view.places) + Enum.sum(Enum.map(view.clusters, & &1.count))
+      assert shown == 303
     end
 
     test "an area follows the filters like any group, and stays alone without places", ctx do
@@ -350,7 +392,7 @@ defmodule PotokIde.Social.GroupAreasTest do
       {lat, lng} = @ns
       drawn = %{public?: true, shapes?: true}
 
-      # The quarter is drawn at zoom 12: out of the cells, still counted.
+      # The quarter's border is drawn at zoom 12, and its pin is in the cells.
       assert {:ok, view} = Social.list_map_cells(ctx.outsider, drawn, box, 12)
       assert Enum.map(view.areas, & &1.id) == [quarter.id]
       assert view.total == 3
@@ -370,7 +412,8 @@ defmodule PotokIde.Social.GroupAreasTest do
                  10
                )
 
-      assert Enum.map(spot, & &1.id) |> Enum.sort() == Enum.sort([inside.id, outside.id])
+      assert Enum.map(spot, & &1.id) |> Enum.sort() ==
+               Enum.sort([quarter.id, inside.id, outside.id])
 
       assert {:ok, [%{id: id}]} =
                Social.list_map_areas_at(ctx.outsider, %{public?: true}, {lat, lng}, 12, 6)

@@ -35,7 +35,7 @@ Kad gledalac zatvori dijalog, mapa dobija `onGroupSheetClose(id)` i pušta pin.
 
 ## Gusta mesta
 
-Mesta koja su na ekranu bliže od 60 piksela skupljaju se u krug sa brojem. Obod kruga je prsten podeljen po tonovima pinova u njemu (mesta i usluge, zajednica, priroda, prijave, vrste grupa), pa se mešavina vidi pre otvaranja. Dodir otvara krug za nivo bliže. Mesta na istoj adresi ostaju zajedno do poslednjeg nivoa, pa dodir na takav krug otvara njihovu listu.
+Mesta koja su na ekranu bliže od 60 piksela skupljaju se u krug sa brojem, pinovi područja kao i svi ostali. Obod kruga je prsten podeljen po tonovima pinova u njemu (mesta i usluge, zajednica, priroda, prijave, vrste grupa), pa se mešavina vidi pre otvaranja. Dodir otvara krug za nivo bliže. Mesta na istoj adresi ostaju zajedno do poslednjeg nivoa, pa dodir na takav krug otvara njihovu listu.
 
 ## Kad se nešto promeni
 
@@ -47,7 +47,7 @@ Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:ro
 
 Filteri su isti kao u podgrupama korena (član ili autor, vrsta, ime), uz filter po pinu (meni **Pin**, jedan ili više pinova, po delovima kao u biraču pina) i filter po vremenu: poslednja 24 sata, 7 ili 30 dana, 12 meseci, bilo kada, ili od datuma do datuma. Vreme se računa po nastanku grupe (kad je nastala ili postala javna, kao u Feed-u) ili po poslednjoj poruci. Mapa se otvara na svim vremenima. Pretraga po imenu (i u podgrupama i u meniju **Područje**) ne mari za velika slova, kvačice ni pismo: „cacak“ nalazi „Čačak“, „beograd“ nalazi „Београд“ (`NameSearch`, `potok_fold/1` u bazi).
 
-Grupa može biti jako mnogo, pa ih broji server, a ne telefon: dok se mapa pomera, pregledač pita samo za ono što vidi (`root_map_view`), a `Social.list_map_cells/4` skuplja grupe u ćelije od oko 64 piksela. Ćelija sa jednom grupom vraća pin, svaka druga krug sa brojem, pa odgovor ima najviše nekoliko stotina oznaka. Dodir na krug približava mapu dok se krug ne raspadne, a grupe na istom mestu otvara kao listu. Dodir na pin otvara opis grupe u istom dijalogu kao kod aplikacije Mapa.
+Grupa može biti jako mnogo, pa ih broji server, a ne telefon: dok se mapa pomera, pregledač pita samo za ono što vidi (`root_map_view`), a `Social.list_map_cells/4` skuplja grupe u ćelije od oko 64 piksela. Ćelija sa jednom grupom vraća pin, svaka druga krug sa brojem, pa odgovor ima najviše nekoliko stotina oznaka. Oznake susednih ćelija koje bi se na ekranu dodirivale pregledač spaja u jedan krug, pa između oznaka uvek ostaje malo mesta. Dodir na krug približava mapu dok se krug ne raspadne, a grupe na istom mestu otvara kao listu. Dodir na pin otvara opis grupe u istom dijalogu kao kod aplikacije Mapa.
 
 Mapa korena se ne osvežava sama: novo stanje stiže kad se mapa pomeri, kad se promeni filter ili kad se tab ponovo otvori.
 
@@ -60,7 +60,7 @@ Mesto grupe može biti i područje, kao kod mesne zajednice: granica od jednog i
 | Ko je u području | grupa čiji je pin unutar granice; drugo područje samo ako je manje (centar grada ne „leži“ u kvartu) |
 | Ko vidi područje | ko vidi njegovu grupu: članovi, a za javnu grupu svi prijavljeni |
 | Nalazi se u | na opisu grupe i u listu preko mape: vidljiva područja oko pina, od najmanjeg |
-| Na mapi korena | područje je samo oblik svoje grupe: filteri (i prekidač **Javne grupe**) ga zadrže ili izostave kao svaku grupu, a broj, „Prikaži sve“, lista na mestu i dodir računaju isti skup; granica se crta kad je široka bar ~28 px, uvek sa svojim pinom; manje područje je pin u krugovima sa brojem |
+| Na mapi korena | područje je samo oblik svoje grupe: filteri (i prekidač **Javne grupe**) ga zadrže ili izostave kao svaku grupu, a broj, „Prikaži sve“, lista na mestu i dodir računaju isti skup; pin područja je u krugovima kao i svaki drugi, a kad je područje široko bar ~64 px (dva pina) ispod pinova se crta i njegova granica |
 | Slojevi | **Mesta** i **Područja** se pale i gase dugmetom na mapi, pregledač pamti izbor |
 | Dodir na mapu | kartica sa područjima na tom mestu: Otvori, Samo unutra, Uvećaj, i veća područja okolo |
 | Filter | meni **Područje** (pretraga, više područja), ostavlja grupe unutar njih i zatamni ostalo; izabrana područja ostaju uokvirena na svakom zumu; **Samo unutra** na kartici bira samo to područje; link `?area=ID` |
@@ -72,7 +72,7 @@ Aplikacija Mapa crta područja među svojim podgrupama po istim pravilima kao ma
 
 - `listPlaces` uz svako mesto kaže `shape` (`point` ili `area`) i `areas`, područja među tim mestima koja ga obuhvataju, od najmanjeg; područje ima i `bbox` i `v`.
 - Granice traži `placeShapes(ids, zoom)`, sto po pozivu, i čuva ih po `id`, `v` i nivou detalja.
-- Područje šire od ~28 px je granica sa svojim pinom (iznad ostalih), manje je pin među ostalima. Čipovi vrsta biraju samo mesta, ne područja.
+- Pin područja je među ostalim pinovima i skuplja se u krugove; područje šire od ~64 px dobija i granicu ispod pinova. Čipovi vrsta i pretraga biraju područja kao i mesta.
 - Dugme **Slojevi** (samo kad mapa ima područja) pali i gasi **Mesta** i **Područja**.
 - Dodir na mapu van pinova otvara karticu područja na tom mestu (Otvori, Samo unutra, Uvećaj, i veća područja okolo). **Samo unutra** ostavlja pinove tog područja, zatamni ostatak i stavi čip „U: …“ koji filter skida.
 - U listi mesta red kaže „Područje“ ili „U: …“ (najmanje područje oko mesta).

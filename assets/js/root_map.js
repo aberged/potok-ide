@@ -14,15 +14,14 @@
 // stand in one place (`root_map_spot`). The view is kept in the browser for
 // the next visit.
 //
-// An area (`GroupAreas`) is only the shape of a group the filters keep: the
-// view's answer names the areas wide enough to draw at its zoom, and their
-// borders come once per level of detail (`root_map_shapes`) and stay in a
-// cache here, so moving the map sends no border twice. An area that covers
-// the whole view is drawn as its outline only. A drawn area keeps its pin, the
-// same one it shows far out, on its own rather than in the clusters, and a tap
-// on it opens the area's sheet like any pin. A tap on the map, off the pins,
-// asks which areas stand there (`root_map_here`) and the server shows their
-// card. The chosen areas of the area filter come marked `ctx`: an outline at
+// An area (`GroupAreas`) is only the shape of a group the filters keep: its
+// pin is one of the pins, in the clusters like any other, and the view's
+// answer also names the areas wide enough at its zoom (two pins wide) to show
+// their borders under the pins. Borders come once per level of detail
+// (`root_map_shapes`) and stay in a cache here, so moving the map sends no
+// border twice. An area that covers the whole view is drawn as its outline
+// only. A tap on the map, off the pins, asks which areas stand there
+// (`root_map_here`) and the server shows their card. The chosen areas of the area filter come marked `ctx`: an outline at
 // any zoom and whatever the filters, with everything outside them dimmed. The
 // layers (places, areas) are switched on the page and remembered here.
 //
@@ -43,8 +42,9 @@ const TAP_DELAY_MS = 250
 const LEVELS = [6, 8, 10, 12, 14, 16]
 const SHAPES_PER_REQUEST = 100
 const SHAPE_CACHE_LIMIT = 800
-// A drawn area's pin stands over the other pins and clusters.
-const AREA_PIN_Z = 500
+// Markers closer than their half sizes and this much more become one, so
+// that none stands against another.
+const MERGE_GAP = 8
 // The whole world, around the holes of the chosen areas.
 const WORLD_RING = [
   [-89.9, -540],
@@ -247,7 +247,6 @@ export const RootMap = {
     this.timer = null
     this.markers = new Map()
     this.drawnMarkers = new Map()
-    this.drawnAreaMarkers = new Map()
     this.drawnPaths = new Map()
     this.selectedId = null
     this.pins = JSON.parse(this.el.dataset.pins || "{}")
@@ -258,7 +257,6 @@ export const RootMap = {
     this.shapes = new Map()
     this.pendingShapes = new Set()
     this.areaPaths = new Map()
-    this.areaMarkers = new Map()
     this.selectedAreaId = null
 
     this.handleEvent("root_map_data", data => this.draw(data))
@@ -367,7 +365,6 @@ export const RootMap = {
     this.areaLayer = L.layerGroup().addTo(this.map)
     this.maskLayer = L.layerGroup().addTo(this.map)
     this.chosenLayer = L.layerGroup().addTo(this.map)
-    this.areaPinLayer = L.layerGroup().addTo(this.map)
     this.layer = L.layerGroup().addTo(this.map)
 
     // A tap off the pins: the areas there. Pins keep their taps.
@@ -417,8 +414,9 @@ export const RootMap = {
   },
 
   // The server's cells are a fixed grid, so markers of neighbouring cells can
-  // stand closer than they are wide. Those that would cover each other become
-  // one cluster here, the biggest first, as supercluster does in the Map app.
+  // stand closer than they are wide. Those that would cover or touch each
+  // other become one cluster here, the biggest first, as supercluster does in
+  // the Map app.
   merge(places, clusters) {
     const items = [
       ...clusters.map(cluster => ({...cluster, tones: cluster.tones || {}, size: clusterSize(cluster.count)})),
@@ -455,7 +453,10 @@ export const RootMap = {
       for (let other = index + 1; other < items.length; other++) {
         const item = items[other]
 
-        if (!taken.has(other) && base.point.distanceTo(item.point) < (base.size + item.size) / 2) {
+        if (
+          !taken.has(other) &&
+          base.point.distanceTo(item.point) < (base.size + item.size) / 2 + MERGE_GAP
+        ) {
           near.push(item)
           taken.add(other)
         }
@@ -579,11 +580,9 @@ export const RootMap = {
   },
 
   markSelected() {
-    for (const markers of [this.markers, this.areaMarkers]) {
-      for (const [id, marker] of markers) {
-        marker.getElement()?.classList.toggle("is-selected", id === this.selectedId)
-        marker.setZIndexOffset(id === this.selectedId ? 1000 : marker.options.baseZ || 0)
-      }
+    for (const [id, marker] of this.markers) {
+      marker.getElement()?.classList.toggle("is-selected", id === this.selectedId)
+      marker.setZIndexOffset(id === this.selectedId ? 1000 : 0)
     }
   },
 
@@ -734,40 +733,7 @@ export const RootMap = {
       }
     }
 
-    this.drawAreaPins()
     this.markAreaSelected()
-  },
-
-  // The pins of the areas drawn as borders: the server leaves them out of the
-  // clusters, and they stand here even before a border arrives, over the
-  // other pins.
-  drawAreaPins() {
-    const L = this.L
-    const next = new Map()
-
-    for (const area of this.areas) {
-      if (area.ctx) continue
-
-      next.set(placeKey("a", area), () =>
-        L.marker([area.lat, area.lng], {
-          icon: L.divIcon({
-            html: pinSvg(lookOf(area, this.pins), this.pins, !area.is_public),
-            className: "potok-pin potok-map-pin",
-            iconSize: PIN_SIZE,
-            iconAnchor: PIN_ANCHOR,
-          }),
-          title: area.name,
-          alt: area.name,
-          riseOnHover: true,
-          zIndexOffset: AREA_PIN_Z,
-          baseZ: AREA_PIN_Z,
-          placeId: area.id,
-        }).on("click", () => this.select(area.id, true))
-      )
-    }
-
-    this.areaMarkers = sync(this.drawnAreaMarkers, next, this.areaPinLayer)
-    this.markSelected()
   },
 
   selectArea(id) {

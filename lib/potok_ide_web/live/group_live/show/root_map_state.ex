@@ -14,13 +14,14 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   public groups switch, which is the same one as in the sub-groups tab.
 
   An area (`GroupAreas`) is only the shape of its group: the filters keep it
-  or leave it out like any group, and once it is wide enough on the screen it
-  is drawn as a border with its pin, out of the clusters. Everything the map
-  says comes from that one set (`Social.list_map_cells/4`): the pins, the
-  borders, the count, the list of a crowded spot and the areas a tap finds.
-  The chosen areas of the area filter stay outlined whatever the filters. The
-  browser asks for borders by itself and keeps them. Two layers, places and
-  areas, are switched on the map, and the browser remembers them.
+  or leave it out like any group, its pin gathers into clusters like any
+  other, and once it is wide enough on the screen its border is drawn under
+  the pins as well. Everything the map says comes from that one set
+  (`Social.list_map_cells/4`): the pins, the borders, the count, the list of
+  a crowded spot and the areas a tap finds. The chosen areas of the area
+  filter stay outlined whatever the filters. The browser asks for borders by
+  itself and keeps them. Two layers, places and areas, are switched on the
+  map, and the browser remembers them.
   """
 
   use Gettext, backend: PotokIdeWeb.Gettext
@@ -286,8 +287,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   @doc """
   The filters as `Social.list_map_cells/4` takes them: with the chosen areas,
-  and, while areas are drawn, the zoom of the view, so that the pins of areas
-  drawn as borders leave the clusters and the lists of a crowded spot.
+  and, while areas are drawn, the zoom of the view, which says the areas wide
+  enough for a border and the ones a tap on the map finds.
   """
   def social_filters(assigns) do
     filters = assigns.root_map_filters

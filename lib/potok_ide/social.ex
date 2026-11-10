@@ -3383,8 +3383,9 @@ defmodule PotokIde.Social do
     [north, east]], tones: %{tone => count}}`;
   * `areas`: while `:shapes?` is on, the areas wide enough at `zoom` to be
     drawn as borders (`GroupAreas.min_span/1`), biggest first, at most 300,
-    with their boxes (`GroupAreas.bbox/1`); they are in no cell;
-  * `total`: the groups in the box, in cells and borders;
+    with their boxes (`GroupAreas.bbox/1`). Only their borders: their pins
+    are in the cells like any other, so an area past the 300 still shows;
+  * `total`: the groups in the box, by pin or by border;
   * `truncated`: whether the box had more cells than a view takes.
 
   Returns `{:ok, view}` or `{:error, :timeout}`.
@@ -3446,9 +3447,9 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  The groups of the root's map under `filters` inside `bounds`
-  (`[[south, west], [north, east]]`, edges included) and in no border, by
-  name: what a cluster that cannot spread any further holds. `{:ok, {groups,
+  The groups of the root's map under `filters` whose pins stand inside
+  `bounds` (`[[south, west], [north, east]]`, edges included), by name: what
+  a cluster that cannot spread any further holds. `{:ok, {groups,
   more?}}` with at most `limit` groups, or `{:error, :timeout}`.
   """
   def list_map_spot(%Profile{} = profile, filters, [[south, west], [north, east]], limit)
@@ -3464,7 +3465,7 @@ defmodule PotokIde.Social do
 
     sql =
       cte <>
-        "SELECT p.id FROM placed p WHERE NOT p.drawn ORDER BY lower(p.name), p.id LIMIT $limit"
+        "SELECT p.id FROM placed p ORDER BY lower(p.name), p.id LIMIT $limit"
 
     with {:ok, [rows]} <- map_queries([MapSql.bind(sql, Map.put(values, :limit, limit + 1))]) do
       ids = rows |> Enum.map(&hd/1) |> Enum.take(limit)
@@ -3512,7 +3513,7 @@ defmodule PotokIde.Social do
             min(p.latitude), max(p.latitude), min(p.longitude), max(p.longitude), min(p.id),
             ARRAY[#{tones}]::bigint[]
           FROM placed p
-          WHERE NOT p.drawn
+          WHERE p.in_box
           GROUP BY floor((p.longitude + 180.0) / 360.0 * $cells::float8),
             floor((1.0 - ln(tan(radians(#{lat})) + 1.0 / cos(radians(#{lat}))) / pi()) / 2.0
               * $cells::float8)
@@ -3520,13 +3521,15 @@ defmodule PotokIde.Social do
           LIMIT #{@map_max_cells + 1}
         ) c
         UNION ALL
-        SELECT 'a', d.n, NULL, NULL, NULL, NULL, NULL, NULL, d.id, NULL
+        SELECT 'a', NULL, NULL, NULL, NULL, NULL, NULL, NULL, d.id, NULL
         FROM (
-          SELECT p.id, count(*) OVER () AS n FROM placed p
+          SELECT p.id FROM placed p
           WHERE p.drawn
           ORDER BY p.area_size DESC, p.id
           LIMIT #{@map_max_drawn}
         ) d
+        UNION ALL
+        SELECT 't', count(*), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL FROM placed p
         """
 
     MapSql.bind(sql, Map.put(values, :cells, cells_per_axis))
@@ -3535,9 +3538,9 @@ defmodule PotokIde.Social do
   defp map_view(rows) do
     cells = for ["c" | cell] <- rows, do: cell
     kept = Enum.take(cells, @map_max_cells)
-    drawn = for ["a", count, _, _, _, _, _, _, id, _] <- rows, do: {count, id}
+    drawn_ids = for ["a", _, _, _, _, _, _, _, id, _] <- rows, do: id
+    [total] = for ["t", count | _] <- rows, do: count
     single_ids = for [1, _, _, _, _, _, _, id, _] <- kept, do: id
-    drawn_ids = Enum.map(drawn, &elem(&1, 1))
     by_id = Map.new(placed_groups(single_ids ++ drawn_ids), &{&1.id, &1})
 
     clusters =
@@ -3551,17 +3554,11 @@ defmodule PotokIde.Social do
         }
       end
 
-    drawn_total =
-      case drawn do
-        [{count, _id} | _] -> count
-        [] -> 0
-      end
-
     %{
       places: Enum.flat_map(single_ids, &List.wrap(by_id[&1])),
       clusters: clusters,
       areas: Enum.flat_map(drawn_ids, &List.wrap(by_id[&1])),
-      total: Enum.reduce(kept, drawn_total, fn [count | _], sum -> sum + count end),
+      total: total,
       truncated: length(cells) > @map_max_cells
     }
   end
@@ -3611,7 +3608,8 @@ defmodule PotokIde.Social do
   # says which of them a query wants:
   #
   # * `:view`: in a box (`box` values), by pin or, for an area drawn as a
-  #   border, by the area itself reaching into it;
+  #   border, by the area itself reaching into it; `in_box` marks the pins
+  #   in it, which the cells take;
   # * `:spot`: by pin inside the bounds of a cluster;
   # * `:here`: areas drawn at the zoom that cover a point (`lat`, `lng`);
   # * `:extent`: wherever they stand.
@@ -3660,13 +3658,14 @@ defmodule PotokIde.Social do
       |> Enum.filter(& &1)
 
     drawn = if shapes?, do: "COALESCE(g.area_span >= $min_span::float8, FALSE)", else: "FALSE"
+    in_box = if scope == :view, do: map_view_pin_sql(), else: "TRUE"
 
     sql = """
     WITH RECURSIVE #{sub_group_memberships_sql("$profile")},
     placed AS MATERIALIZED (
       SELECT g.id, g.name, g.latitude, g.longitude, g.area_size,
         g.area_west, g.area_south, g.area_east, g.area_north,
-        #{drawn} AS drawn, #{map_tone_sql("g")} AS tone
+        #{drawn} AS drawn, #{in_box} AS in_box, #{map_tone_sql("g")} AS tone
       FROM groups g
       WHERE #{Enum.join(conditions, "\n    AND ")}
     )
@@ -3701,11 +3700,7 @@ defmodule PotokIde.Social do
   end
 
   defp map_scope_sql(:view, shapes?) do
-    pin =
-      "(g.latitude BETWEEN $south::float8 AND $north::float8" <>
-        " AND (g.longitude BETWEEN $west::float8 AND $east::float8" <>
-        " OR ($west2::float8 IS NOT NULL" <>
-        " AND g.longitude BETWEEN $west2::float8 AND $east2::float8)))"
+    pin = map_view_pin_sql()
 
     if shapes? do
       "(#{pin} OR (g.area_span >= $min_span::float8" <>
@@ -3715,6 +3710,14 @@ defmodule PotokIde.Social do
     else
       pin
     end
+  end
+
+  # A pin inside the view's box, or its second range across the antimeridian.
+  defp map_view_pin_sql do
+    "(g.latitude BETWEEN $south::float8 AND $north::float8" <>
+      " AND (g.longitude BETWEEN $west::float8 AND $east::float8" <>
+      " OR ($west2::float8 IS NOT NULL" <>
+      " AND g.longitude BETWEEN $west2::float8 AND $east2::float8)))"
   end
 
   # A group inside one of the chosen areas the profile may see: its pin is,

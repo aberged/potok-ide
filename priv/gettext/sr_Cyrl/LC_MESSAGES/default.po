@@ -5603,8 +5603,8 @@ msgstr "Подручја"
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:825
 #, elixir-autogen, elixir-format
-msgid "Every area you see, as a border or a pin"
-msgstr "Сва подручја која видиш, као граница или пин"
+msgid "Borders of the areas wide enough, under the pins"
+msgstr "Границе довољно широких подручја, испод пинова"
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:463
 #, elixir-autogen, elixir-format

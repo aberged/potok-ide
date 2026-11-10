@@ -31,9 +31,10 @@ defmodule PotokIde.Social.GroupAreas do
   # Web Mercator ends here, as a map does.
   @max_lat 85.0511287798
 
-  # An area is drawn as a border once it is this wide on the screen; below it,
-  # it is a pin like any other.
-  @drawn_px 28
+  # An area is drawn as a border once it is this wide on the screen, two pins
+  # wide, so that its border shows around the pin; below it, only its pin.
+  # Its pin stays among the others either way.
+  @drawn_px 64
 
   # The levels of detail a map asks borders at: a border simplified for level
   # z stays within ~0.75 px of the real one at zoom z.

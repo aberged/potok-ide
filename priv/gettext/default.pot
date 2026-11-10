@@ -5603,7 +5603,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:825
 #, elixir-autogen, elixir-format
-msgid "Every area you see, as a border or a pin"
+msgid "Borders of the areas wide enough, under the pins"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:463

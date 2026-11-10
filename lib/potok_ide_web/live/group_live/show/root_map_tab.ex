@@ -822,7 +822,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         key: :areas,
         icon: "hero-viewfinder-circle",
         title: gettext("Areas"),
-        hint: gettext("Every area you see, as a border or a pin")
+        hint: gettext("Borders of the areas wide enough, under the pins")
       }
     ]
   end
