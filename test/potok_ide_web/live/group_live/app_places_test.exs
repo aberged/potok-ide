@@ -12,7 +12,7 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRoutes}
 
   setup do
     {owner_account, owner} = account_with_profile!("map-owner")
@@ -211,6 +211,63 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
 
       call(view, "place_shapes", %{"ids" => "x", "zoom" => 11})
       assert_reply(view, %{ok: false, error: "invalid_place"})
+    end
+  end
+
+  describe "routes" do
+    setup ctx do
+      quarter = area_child!(ctx.owner, ctx.map, square({45.25, 19.85}, 0.05))
+
+      {:ok, line} =
+        GroupRoutes.decode(%{
+          "type" => "LineString",
+          "coordinates" => [[19.6, 45.25], [19.86, 45.26], [19.95, 45.25]]
+        })
+
+      walk = child!(ctx.owner, ctx.map, %{})
+      {:ok, walk} = Social.update_group(ctx.owner, walk, %{"route" => line})
+
+      %{quarter: quarter, walk: walk}
+    end
+
+    test "list_places says which places are routes, how long, and which areas they pass through",
+         ctx do
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+      call(view, "list_places")
+      assert_reply(view, %{ok: true, places: places})
+
+      by_id = Map.new(places, &{&1.id, &1})
+
+      # Its pin, its start, is west of the quarter; its line runs through it.
+      assert %{
+               shape: "route",
+               lat: 45.25,
+               lng: 19.6,
+               areas: areas,
+               bbox: bbox,
+               v: v,
+               length: length
+             } =
+               by_id[ctx.walk.id]
+
+      assert areas == [ctx.quarter.id]
+      assert bbox == [19.6, 45.25, 19.95, 45.26]
+      assert is_integer(v)
+      assert is_integer(length) and length > 27_000
+      assert %{shape: "area"} = by_id[ctx.quarter.id]
+    end
+
+    test "place_shapes gives a route's line", ctx do
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+      call(view, "place_shapes", %{"ids" => [ctx.walk.id, ctx.quarter.id], "zoom" => 12})
+      assert_reply(view, %{ok: true, level: 12, shapes: shapes})
+
+      by_id = Map.new(shapes, &{&1.id, &1.geojson |> Jason.encode!() |> Jason.decode!()})
+
+      assert %{"type" => "MultiLineString", "coordinates" => [[[19.6, 45.25] | _]]} =
+               by_id[ctx.walk.id]
+
+      assert %{"type" => "MultiPolygon"} = by_id[ctx.quarter.id]
     end
   end
 

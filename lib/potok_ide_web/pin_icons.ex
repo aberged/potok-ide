@@ -179,6 +179,7 @@ defmodule PotokIdeWeb.PinIcons do
   def label("association"), do: gettext("Association")
   def label("help"), do: gettext("Help and volunteering")
   def label("meetup"), do: gettext("Meeting point")
+  def label("route"), do: gettext("Route")
   def label("sport"), do: gettext("Sport")
   def label("music"), do: gettext("Music")
   def label("art"), do: gettext("Art")

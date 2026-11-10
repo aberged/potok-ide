@@ -188,6 +188,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "longitude"), do: dgettext("domain_map", "longitude on a map")
   defp own_field("Group", "pin_icon"), do: dgettext("domain_map", "pin on a map")
   defp own_field("Group", "area"), do: dgettext("domain_map", "area on a map, as its border")
+  defp own_field("Group", "route"), do: dgettext("domain_map", "route on a map, as its line")
 
   defp own_field("Group", "name_folded"),
     do: dgettext("domain_map", "name as a search reads it, in Latin and without diacritics")
@@ -198,6 +199,15 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "area_east"), do: dgettext("domain_map", "eastern edge of the area")
   defp own_field("Group", "area_north"), do: dgettext("domain_map", "northern edge of the area")
   defp own_field("Group", "area_span"), do: dgettext("domain_map", "width of the area on a map")
+
+  defp own_field("Group", "route_length"),
+    do: dgettext("domain_map", "length of the route, in metres")
+
+  defp own_field("Group", "route_west"), do: dgettext("domain_map", "western edge of the route")
+  defp own_field("Group", "route_south"), do: dgettext("domain_map", "southern edge of the route")
+  defp own_field("Group", "route_east"), do: dgettext("domain_map", "eastern edge of the route")
+  defp own_field("Group", "route_north"), do: dgettext("domain_map", "northern edge of the route")
+  defp own_field("Group", "route_span"), do: dgettext("domain_map", "width of the route on a map")
   defp own_field("Group", "parent_id"), do: dgettext("domain_map", "parent group")
   defp own_field("Group", "parent_value_id"), do: dgettext("domain_map", "value of the thread")
 
@@ -706,6 +716,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "An area on a map always has its pin as well.")
   end
 
+  def check_text("groups_route_check") do
+    dgettext(
+      "domain_map",
+      "A route on a map always has its pin as well, and a place is never an area and a route at once."
+    )
+  end
+
   def check_text("group_member_roles_role_key_check") do
     dgettext("domain_map", "The role `everyone` is not written here.")
   end
@@ -978,7 +995,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders and with the areas each place lies in, so the app draws the areas and shows only the groups inside one. That is how a group becomes a map. The root needs no such app: it has a map of its own."
+              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders, groups that run along a route with their lines and lengths, and each place with the areas it lies in or passes through, so the app draws the areas and routes and shows only the groups inside one area. That is how a group becomes a map. The root needs no such app: it has a map of its own."
             )
         },
         %{
@@ -1162,6 +1179,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Group>group</Group>'s place can be an area instead of a point, as a local community covers its streets: a border drawn on the map or brought from a GeoJSON file, set by whoever may edit the group. The area keeps a pin, which the server puts inside it by itself. An area holds a group when it holds that group's pin, so every place shows the areas around it, smallest first, and an area inside a bigger one lies in it too. Each viewer sees only the areas of the groups they see. On the root's map an area is only the shape of its group: the filters keep it or leave it out like any group, and once it is wide enough it also shows its border, under the pins; a tap on the map lists the areas there, and a filter keeps only the groups inside chosen areas, which stay outlined."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A place can be a route"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Group>group</Group>'s place can also be a route, as a walk, a race, a march or a bike path runs: a line drawn on the map or brought from a GPX, KML or GeoJSON file, set by whoever may edit the group. A place is a point, an area or a route, never an area and a route at once. The route keeps its pin at its start, where people meet, which the server puts there by itself, and the map marks its end with a ring. A route lies in every area it passes through, not only in the one it starts in, so its page lists those areas and the filter by area keeps it. On the root's map a route is only the shape of its group, as an area is: the filters keep it or leave it out, and once it is wide enough its line is drawn over the areas, under the pins, in a layer of its own; a tap on the line opens the group, and a link to the map can show one route, whatever the filters."
           )
       },
       %{

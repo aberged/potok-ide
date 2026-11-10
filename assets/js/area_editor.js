@@ -6,6 +6,7 @@
 //
 // The editor only draws and keeps the border; the card sends it to the server
 // (`edit_group_area`), which checks it and puts the area's pin inside it.
+// A route's editor (`RouteEditor`) is this one with an open line.
 
 export const MAX_EDIT_CORNERS = 500
 // What the server keeps at most (`GroupAreas.normalize/1`).
@@ -103,7 +104,8 @@ export const areasInGeoJSON = json => {
   return found
 }
 
-const nameOf = properties => {
+// A feature's name: the first of the usual name properties, or its first text.
+export const nameOf = properties => {
   if (!properties) return null
 
   for (const key of ["name", "naziv", "NAZIV", "Name", "NAME", "ime", "title"]) {
@@ -296,6 +298,28 @@ export class AreaEditor {
     this.onChange?.(this.toGeoJSON(), this.state())
   }
 
+  // A border shown as it is, from a file.
+  renderFixed() {
+    this.L.polygon(
+      this.fixed.map(rings => rings.map(ring => ring.map(([lng, lat]) => [lat, lng]))),
+      {className: "potok-area-edit is-fixed", interactive: false, weight: 2}
+    ).addTo(this.layer)
+  }
+
+  // The drawn border through the corners: a line until there are three.
+  makeShape() {
+    const L = this.L
+    const className = this.crosses() ? "potok-area-edit is-crossing" : "potok-area-edit"
+
+    if (this.corners.length >= 3) return L.polygon(this.corners, {className, interactive: false, weight: 2.5})
+    if (this.corners.length === 2) return L.polyline(this.corners, {className, interactive: false, weight: 2.5})
+    return null
+  }
+
+  cornerHtml(index) {
+    return `<span class="potok-corner${index === this.selected ? " is-selected" : ""}"></span>`
+  }
+
   render() {
     const L = this.L
     this.layer.clearLayers()
@@ -304,23 +328,11 @@ export class AreaEditor {
     if (!this.active) return
 
     if (this.fixed) {
-      L.polygon(
-        this.fixed.map(rings => rings.map(ring => ring.map(([lng, lat]) => [lat, lng]))),
-        {className: "potok-area-edit is-fixed", interactive: false, weight: 2}
-      ).addTo(this.layer)
-
+      this.renderFixed()
       return
     }
 
-    const crossing = this.crosses()
-    const className = crossing ? "potok-area-edit is-crossing" : "potok-area-edit"
-
-    if (this.corners.length >= 3) {
-      this.shape = L.polygon(this.corners, {className, interactive: false, weight: 2.5})
-    } else if (this.corners.length === 2) {
-      this.shape = L.polyline(this.corners, {className, interactive: false, weight: 2.5})
-    }
-
+    this.shape = this.makeShape()
     this.shape?.addTo(this.layer)
     this.drawMidpoints()
 
@@ -331,7 +343,7 @@ export class AreaEditor {
         autoPan: true,
         zIndexOffset: 1000,
         icon: L.divIcon({
-          html: `<span class="potok-corner${index === this.selected ? " is-selected" : ""}"></span>`,
+          html: this.cornerHtml(index),
           className: "potok-corner-icon",
           iconSize: CORNER_SIZE,
         }),
@@ -398,6 +410,6 @@ export class AreaEditor {
   }
 }
 
-const round = value => Number(value.toFixed(6))
+export const round = value => Number(value.toFixed(6))
 
 const sameCorner = (a, b) => a[0] === b[0] && a[1] === b[1]

@@ -137,3 +137,18 @@ msgstr "Граница је шира од пола света."
 
 msgid "The border crosses itself."
 msgstr "Граница сече саму себе."
+
+msgid "The route is not a line on a map."
+msgstr "Рута није линија на мапи."
+
+msgid "The route has too many points."
+msgstr "Рута има превише тачака."
+
+msgid "The route has too many parts."
+msgstr "Рута има превише делова."
+
+msgid "The route is wider than half the world."
+msgstr "Рута је шира од пола света."
+
+msgid "A place is either an area or a route."
+msgstr "Место је или подручје или рута."

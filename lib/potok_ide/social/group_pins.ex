@@ -36,6 +36,7 @@ defmodule PotokIde.Social.GroupPins do
     {"association", "user-group", :community},
     {"help", "hand-raised", :community},
     {"meetup", "flag", :community},
+    {"route", "arrow-turn-up-right", :community},
     {"sport", "trophy", :community},
     {"music", "musical-note", :community},
     {"art", "paint-brush", :community},

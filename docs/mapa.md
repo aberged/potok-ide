@@ -77,3 +77,30 @@ Aplikacija Mapa crta područja među svojim podgrupama po istim pravilima kao ma
 - Dodir na mapu van pinova otvara karticu područja na tom mestu (Otvori, Samo unutra, Uvećaj, i veća područja okolo). **Samo unutra** ostavlja pinove tog područja, zatamni ostatak i stavi čip „U: …“ koji filter skida.
 - U listi mesta red kaže „Područje“ ili „U: …“ (najmanje područje oko mesta).
 - Područje druge grupe (koje nije neposredno ispod mape) nije na mapi i ne obuhvata ništa u njoj.
+
+## Rute
+
+Mesto grupe može biti i ruta: otvorena linija od jednog ili više delova, kao šetnja, trka, protestna ili komemorativna šetnja, pešačka ili biciklistička staza (`Group.route`, PostGIS `MultiLineString`, `PotokIde.Social.GroupRoutes`). Zadaje je ko sme da uređuje grupu, na kartici **Lokacija** (prekidač **Tačka / Područje / Ruta**): crta se dodirom na mapu (tačke redom, tačkice na sredini deonica, poništavanje, **Obrni smer**), ili se uvozi iz GPX, KML ili GeoJSON fajla, koji čita pregledač (`route_files.js`). Ruta ide serveru posebnim događajem (`edit_group_route`), a server je proverava i stavlja pin na njen početak.
+
+| Pravilo | Kako |
+|---|---|
+| Pin | na početku rute (prva tačka prvog dela), gde se ljudi okupljaju; kraj je kružić na mapi |
+| Ili, ili | mesto je tačka, područje ili ruta, nikad i područje i ruta (`groups_route_check`); nova ruta briše područje i obrnuto |
+| Ruta sme | da seče samu sebe i da se završi gde počinje (krug); deo mora imati bar dve tačke; najviše 100 delova i 10.000 tačaka |
+| Fajlovi | GPX (`trk`/`trkseg`, `rte`), KML (`LineString`, i u `MultiGeometry`, `gx:Track`), GeoJSON (`LineString`, `MultiLineString`); KMZ treba raspakovati; do 20 MB; ako ima više ruta, bira se jedna po imenu; preko 10.000 tačaka pregledač je uprošćava |
+| U području | ruta je u svakom području kroz koje prolazi, ne samo u onom gde počinje (`GroupAreas.areas_along/3`); stranica grupe kaže „Prolazi kroz“, uz dužinu rute |
+| Na mapi korena | ruta je samo oblik svoje grupe, kao područje: filteri je zadrže ili izostave; pin je u krugovima, a kad je ruta široka bar ~64 px, preko područja se crta njena linija (najviše 150 po pogledu); dodir na liniju otvara grupu |
+| Sloj | **Rute** se pale i gase u meniju slojeva, pored **Mesta** i **Područja** |
+| Filter po području | zadržava i rute koje samo prolaze kroz izabrano područje |
+| Link | `?route=ID` otvara mapu na ruti, od bilo kada, i crta je kakvi god da su filteri |
+| Linije | stižu kao granice (`root_map_shapes`, `ST_Simplify` koji čuva kratke petlje), u istom kešu |
+
+### Rute u aplikaciji Mapa
+
+Aplikacija Mapa crta rute među svojim podgrupama po istim pravilima kao mapa korena (`src/areas.ts`):
+
+- `listPlaces` za rutu kaže `shape: "route"`, `bbox`, `v` i `length` (metri), a `lat`, `lng` su njen početak; `areas` su područja među tim mestima kroz koja prolazi.
+- Linije daje `placeShapes(ids, zoom)` kao i granice (`MultiLineString`), u istom kešu.
+- Pin rute je među ostalim pinovima; ruta šira od ~64 px dobija i liniju iznad granica, sa kružićem na kraju (najviše 150 u pogledu). Dodir na liniju otvara grupu kao i dodir na pin.
+- Dugme **Slojevi** (kad mapa ima područja ili rute) pali i gasi i **Rute**; bez **Mesta** ostaju oblici čiji je sloj upaljen.
+- **Samo unutra** zadržava i rute koje prolaze kroz to područje; u listi red kaže „Ruta · 1,3 km“ i „Kroz: …“.

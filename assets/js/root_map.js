@@ -21,9 +21,19 @@
 // (`root_map_shapes`) and stay in a cache here, so moving the map sends no
 // border twice. An area that covers the whole view is drawn as its outline
 // only. A tap on the map, off the pins, asks which areas stand there
-// (`root_map_here`) and the server shows their card. The chosen areas of the area filter come marked `ctx`: an outline at
-// any zoom and whatever the filters, with everything outside them dimmed. The
-// layers (places, areas) are switched on the page and remembered here.
+// (`root_map_here`) and the server shows their card. The chosen areas of the
+// area filter come marked `ctx`: an outline at any zoom and whatever the
+// filters, with everything outside them dimmed.
+//
+// A route (`GroupRoutes`) is the same: its pin, at its start, is one of the
+// pins, and once it is wide enough its line is drawn over the areas, in the
+// tone of its pin over a casing, with a ring at its end. Lines come and stay
+// like borders. A wider line nobody sees takes a tap on the route, which
+// opens its sheet as its pin does. The route of a `?route=` link comes
+// marked `ctx`, drawn whatever the filters.
+//
+// The layers (places, areas, routes) are switched on the page and remembered
+// here.
 //
 // Markers and borders are kept by what they show, so a new answer only adds
 // what is new and takes away what is gone.
@@ -201,12 +211,20 @@ const readLayers = () => {
     const layers = JSON.parse(window.localStorage.getItem(LAYERS_KEY) || "null")
 
     if (layers && typeof layers.places === "boolean" && typeof layers.areas === "boolean") {
-      return {places: layers.places, areas: layers.areas}
+      // Remembered before routes were a layer: routes shown.
+      const routes = typeof layers.routes === "boolean" ? layers.routes : true
+      return {places: layers.places, areas: layers.areas, routes}
     }
   } catch (_error) {}
 
-  return {places: true, areas: true}
+  return {places: true, areas: true, routes: true}
 }
+
+const layersOf = layers => ({
+  places: layers.places === true,
+  areas: layers.areas === true,
+  routes: layers.routes === true,
+})
 
 const saveLayers = layers => {
   try {
@@ -252,6 +270,12 @@ const toLatLngs = geojson => {
   return polygons.map(rings => rings.map(ring => ring.map(([lng, lat]) => [lat, lng])))
 }
 
+// A GeoJSON (Multi)LineString as Leaflet's [lat, lng] lists, one per part.
+const lineLatLngs = geojson => {
+  const lines = geojson.type === "LineString" ? [geojson.coordinates] : geojson.coordinates || []
+  return lines.filter(line => line.length >= 2).map(line => line.map(([lng, lat]) => [lat, lng]))
+}
+
 export const RootMap = {
   mounted() {
     this.map = null
@@ -272,13 +296,16 @@ export const RootMap = {
     this.pendingShapes = new Set()
     this.areaPaths = new Map()
     this.selectedAreaId = null
+    this.routes = []
+    this.drawnRoutes = new Map()
+    this.routePaths = new Map()
 
     this.handleEvent("root_map_data", data => this.draw(data))
     this.handleEvent("root_map_fit", ({bounds}) => this.fit(bounds))
     this.handleEvent("group_sheet_closed", () => this.select(null))
     this.handleEvent("root_map_select_area", ({id}) => this.selectArea(id))
     this.handleEvent("root_map_layers", layers => {
-      this.layers = {places: layers.places === true, areas: layers.areas === true}
+      this.layers = layersOf(layers)
       saveLayers(this.layers)
     })
 
@@ -364,11 +391,13 @@ export const RootMap = {
     }).addTo(this.map)
 
     // Areas under the pins, the dimming around the chosen ones above them,
-    // and the chosen borders above that.
+    // the chosen borders above that, and routes over all of them, still
+    // under the pins.
     for (const [name, zIndex] of [
       ["potokAreas", 350],
       ["potokAreaMask", 360],
       ["potokAreaChosen", 370],
+      ["potokRoutes", 380],
     ]) {
       this.map.createPane(name).style.zIndex = String(zIndex)
     }
@@ -376,9 +405,11 @@ export const RootMap = {
     this.areaRenderer = L.svg({pane: "potokAreas", padding: 0.5})
     this.maskRenderer = L.svg({pane: "potokAreaMask", padding: 0.5})
     this.chosenRenderer = L.svg({pane: "potokAreaChosen", padding: 0.5})
+    this.routeRenderer = L.svg({pane: "potokRoutes", padding: 0.5})
     this.areaLayer = L.layerGroup().addTo(this.map)
     this.maskLayer = L.layerGroup().addTo(this.map)
     this.chosenLayer = L.layerGroup().addTo(this.map)
+    this.routeLayer = L.layerGroup().addTo(this.map)
     this.layer = L.layerGroup().addTo(this.map)
 
     // A tap off the pins: the areas there. Pins keep their taps.
@@ -505,13 +536,15 @@ export const RootMap = {
     if (!this.layer) return
 
     if (data.layers) {
-      this.layers = {places: data.layers.places === true, areas: data.layers.areas === true}
+      this.layers = layersOf(data.layers)
       saveLayers(this.layers)
     }
 
     this.areas = data.areas || []
+    this.routes = data.routes || []
     this.chosen = data.chosen || []
     this.drawAreas()
+    this.drawRoutes()
     this.fetchShapes()
 
     if (Array.isArray(data.fit)) this.fit(data.fit)
@@ -598,6 +631,11 @@ export const RootMap = {
       marker.getElement()?.classList.toggle("is-selected", id === this.selectedId)
       marker.setZIndexOffset(id === this.selectedId ? 1000 : 0)
     }
+
+    for (const [id, route] of this.routePaths) {
+      route.line.getElement()?.classList.toggle("is-selected", id === this.selectedId)
+      if (id === this.selectedId) route.bringToFront()
+    }
   },
 
   fit(bounds) {
@@ -617,8 +655,9 @@ export const RootMap = {
     )
   },
 
-  // The border of an area at this zoom's level of detail, or at another
-  // level of the same version while that one is on its way.
+  // The border of an area, or the line of a route, at this zoom's level of
+  // detail, or at another level of the same version while that one is on its
+  // way.
   shapeOf(area) {
     const level = levelFor(Math.round(this.map.getZoom()))
     const nearest = [...LEVELS].sort((a, b) => Math.abs(a - level) - Math.abs(b - level))
@@ -637,13 +676,13 @@ export const RootMap = {
     return null
   },
 
-  // Asks for the borders this zoom lacks, a hundred at a time.
+  // Asks for the borders and lines this zoom lacks, a hundred at a time.
   fetchShapes() {
     if (!this.map) return
 
     const zoom = Math.round(this.map.getZoom())
     const level = levelFor(zoom)
-    const missing = this.areas.filter(area => {
+    const missing = [...this.areas, ...this.routes].filter(area => {
       const key = shapeKey(area.id, area.v, level)
       return !this.shapes.has(key) && !this.pendingShapes.has(key)
     })
@@ -666,6 +705,7 @@ export const RootMap = {
         }
 
         this.drawAreas()
+        this.drawRoutes()
       })
     }
   },
@@ -748,6 +788,84 @@ export const RootMap = {
     }
 
     this.markAreaSelected()
+  },
+
+  // The lines of the routes, widest first as they come, so shorter ones lie
+  // on top. Each is one group of paths: the casing, the line, the line that
+  // takes a tap, and the ring at its end (none for a loop).
+  drawRoutes() {
+    if (!this.routeLayer) return
+
+    const next = new Map()
+
+    for (const route of this.routes) {
+      const found = this.shapeOf(route)
+      if (!found) continue
+
+      const lines = lineLatLngs(found.shape)
+      if (lines.length === 0) continue
+
+      const color = lookOf(route, this.pins).color
+      next.set(`${found.key}:${color}:${route.ctx ? "ctx" : ""}`, () => this.routeShape(route, lines, color))
+    }
+
+    this.routePaths = sync(this.drawnRoutes, next, this.routeLayer)
+    this.markSelected()
+  },
+
+  routeShape(route, lines, color) {
+    const L = this.L
+    const common = {pane: "potokRoutes", renderer: this.routeRenderer, lineCap: "round", lineJoin: "round"}
+    const last = lines[lines.length - 1]
+    const start = lines[0][0]
+    const end = last[last.length - 1]
+
+    const casing = L.polyline(lines, {
+      ...common,
+      color: "#ffffff",
+      weight: 6.5,
+      interactive: false,
+      className: "potok-route-casing",
+    })
+
+    const line = L.polyline(lines, {
+      ...common,
+      color,
+      weight: 3.5,
+      interactive: false,
+      className: route.ctx ? "potok-route is-chosen" : "potok-route",
+    })
+
+    // Wide enough for a finger; a tap here is not a tap on the map.
+    const hit = L.polyline(lines, {
+      ...common,
+      color,
+      opacity: 0,
+      weight: 18,
+      bubblingMouseEvents: false,
+      className: "potok-route-hit",
+    }).on("click", () => this.select(route.id, true))
+
+    const parts = [casing, line, hit]
+
+    if (start[0] !== end[0] || start[1] !== end[1]) {
+      parts.push(
+        L.circleMarker(end, {
+          ...common,
+          radius: 4.5,
+          color,
+          weight: 2.5,
+          fillColor: "#ffffff",
+          fillOpacity: 1,
+          interactive: false,
+          className: "potok-route-end",
+        })
+      )
+    }
+
+    const group = L.featureGroup(parts, {placeId: route.id})
+    group.line = line
+    return group
   },
 
   selectArea(id) {

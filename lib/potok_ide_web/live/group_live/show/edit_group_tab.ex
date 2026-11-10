@@ -2,8 +2,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.MapTiles
-  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupRole}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupRole, GroupRoutes}
   alias PotokIdeWeb.Avatars
+  alias PotokIdeWeb.Distance
   alias PotokIdeWeb.GroupLive.Show.Components
   alias PotokIdeWeb.PinIcons
 
@@ -74,13 +75,16 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :group, :map, required: true
   attr :edit_group_form, :any, required: true
   attr :link_card, :map, default: nil, doc: "what a link to the group shows, if guests see it"
-  attr :location_mode, :string, default: "point", doc: ~s{the Location card's "point" or "area"}
+
+  attr :location_mode, :string,
+    default: "point",
+    doc: ~s{the Location card's "point", "area" or "route"}
 
   attr :location_within, :list,
     default: [],
-    doc: "the areas the viewer sees around the card's pin, smallest first"
+    doc: "the areas the viewer sees around the card's pin, or along its route, smallest first"
 
-  attr :area_error, :string, default: nil, doc: "what is wrong with the border drawn"
+  attr :shape_error, :string, default: nil, doc: "what is wrong with the border or route drawn"
   attr :dirty, :boolean, default: false, doc: "whether the form has unsaved changes"
   attr :format_options, :list, required: true
   attr :home_page_options, :list, required: true
@@ -320,7 +324,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             title={pgettext("map", "Location")}
             subtitle={
               gettext(
-                "Where the group stands on a map, a point or an area, and the pin it shows there."
+                "Where the group stands on a map, a point, an area or a route, and the pin it shows there."
               )
             }
           >
@@ -332,14 +336,15 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             <div
               id="group-location-mode"
               role="radiogroup"
-              aria-label={gettext("A point or an area")}
-              class="mb-3 grid grid-cols-2 gap-1 rounded-2xl bg-base-200 p-1 sm:w-80"
+              aria-label={gettext("A point, an area or a route")}
+              class="mb-3 grid grid-cols-3 gap-1 rounded-2xl bg-base-200 p-1 sm:w-96"
             >
               <button
                 :for={
                   {mode, icon, label} <- [
                     {"point", "hero-map-pin", gettext("Point")},
-                    {"area", "hero-viewfinder-circle", gettext("Area")}
+                    {"area", "hero-viewfinder-circle", gettext("Area")},
+                    {"route", "hero-arrow-turn-up-right", gettext("Route")}
                   ]
                 }
                 id={"group-location-mode-#{mode}"}
@@ -349,7 +354,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 phx-click="set_location_mode"
                 phx-value-mode={mode}
                 class={[
-                  "inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-3 py-1.5 text-sm font-semibold transition duration-150 ease-out active:scale-95",
+                  "inline-flex min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold transition duration-150 ease-out active:scale-95 sm:px-3",
                   if(@location_mode == mode,
                     do: "bg-base-100 text-base-content shadow-sm",
                     else: "text-base-content/65 hover:text-base-content"
@@ -367,6 +372,15 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             >
               {gettext(
                 "An area, such as a local community's, covers its whole border: tap the map to put its corners, drag a corner to move it, and tap the dot between two corners to add one. A border can also come from a GeoJSON file. Its pin stands inside it by itself."
+              )}
+            </p>
+            <p
+              :if={@location_mode == "route"}
+              id="group-route-hint"
+              class="mb-3 text-xs text-base-content/65"
+            >
+              {gettext(
+                "A route, such as a walk, a race or a bike path, runs along a line: tap the map to add its points in order, drag a point to move it, and tap the dot between two points to add one. A route can also come from a GPX, KML or GeoJSON file. Its pin stands at its start."
               )}
             </p>
             <div id="group-location-map-wrap" phx-update="ignore">
@@ -419,6 +433,41 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 }
                 data-msg-pick={gettext("The file holds %{count} areas. Pick one:", count: "%{count}")}
                 data-msg-unnamed={gettext("Area %{number}", number: "%{number}")}
+                data-route={Jason.encode!(GroupRoutes.to_geojson(@edit_group_form.data.route))}
+                data-route-length={
+                  @edit_group_form.data.route_length &&
+                    Distance.text(@edit_group_form.data.route_length)
+                }
+                data-route-undo="group-route-undo"
+                data-route-remove-point="group-route-remove-point"
+                data-route-reverse="group-route-reverse"
+                data-route-restart="group-route-restart"
+                data-route-import="group-route-import"
+                data-msg-route-points={gettext("A route needs at least two points.")}
+                data-msg-route-length={gettext("Length: %{length}.", length: "%{length}")}
+                data-msg-route-fixed={
+                  gettext(
+                    "A route from a file (points: %{points}, parts: %{parts}). Bring another file or draw it again to change it.",
+                    points: "%{points}",
+                    parts: "%{parts}"
+                  )
+                }
+                data-msg-no-route={gettext("The file holds no route (a track or a line).")}
+                data-msg-route-file={gettext("The file is not GPX, KML or GeoJSON.")}
+                data-msg-kmz={
+                  gettext("A KMZ file is a zipped KML: unzip it and bring the KML file inside.")
+                }
+                data-msg-route-too-big={gettext("The file is larger than 20 MB.")}
+                data-msg-route-simplified={
+                  gettext("The route was simplified to %{to} of its %{from} points.",
+                    to: "%{to}",
+                    from: "%{from}"
+                  )
+                }
+                data-msg-route-pick={
+                  gettext("The file holds %{count} routes. Pick one:", count: "%{count}")
+                }
+                data-msg-route-unnamed={gettext("Route %{number}", number: "%{number}")}
               >
               </div>
               <p id="group-location-error" class="mt-2 text-xs text-error" hidden></p>
@@ -467,11 +516,68 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 {gettext("GeoJSON file")}
               </.button>
             </div>
-            <p :if={@area_error} id="group-area-error" class="mt-2 text-xs text-error">
-              {@area_error}
+            <div
+              id="group-route-tools"
+              class={["mt-3 flex flex-wrap gap-2", @location_mode != "route" && "hidden"]}
+            >
+              <.button
+                id="group-route-undo"
+                type="button"
+                variant="soft"
+                size="sm"
+                disabled
+                phx-mounted={JS.ignore_attributes(["disabled"])}
+              >
+                <.icon name="hero-arrow-uturn-left" class="size-4" />
+                {gettext("Undo")}
+              </.button>
+              <.button
+                id="group-route-remove-point"
+                type="button"
+                variant="soft"
+                size="sm"
+                disabled
+                phx-mounted={JS.ignore_attributes(["disabled"])}
+              >
+                <.icon name="hero-minus-circle" class="size-4" />
+                {gettext("Remove point")}
+              </.button>
+              <.button
+                id="group-route-reverse"
+                type="button"
+                variant="soft"
+                size="sm"
+                disabled
+                phx-mounted={JS.ignore_attributes(["disabled"])}
+              >
+                <.icon name="hero-arrows-right-left" class="size-4" />
+                {gettext("Reverse direction")}
+              </.button>
+              <.button
+                id="group-route-restart"
+                type="button"
+                variant="soft"
+                size="sm"
+                disabled
+                phx-mounted={JS.ignore_attributes(["disabled"])}
+              >
+                <.icon name="hero-arrow-path" class="size-4" />
+                {gettext("Draw again")}
+              </.button>
+              <.button id="group-route-import" type="button" variant="soft" size="sm">
+                <.icon name="hero-arrow-up-tray" class="size-4" />
+                {gettext("GPX, KML or GeoJSON file")}
+              </.button>
+            </div>
+            <p
+              :if={@shape_error}
+              id={if @location_mode == "route", do: "group-route-error", else: "group-area-error"}
+              class="mt-2 text-xs text-error"
+            >
+              {@shape_error}
             </p>
             <p
-              :for={message <- area_errors(@edit_group_form, @area_error)}
+              :for={message <- shape_errors(@edit_group_form, @shape_error)}
               class="mt-2 text-xs text-error"
             >
               {message}
@@ -481,7 +587,9 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               id="group-location-within"
               class="mt-3 flex flex-wrap items-center gap-1.5"
             >
-              <span class="text-xs font-semibold text-base-content/60">{gettext("Lies in")}</span>
+              <span class="text-xs font-semibold text-base-content/60">
+                {if @location_mode == "route", do: gettext("Passes through"), else: gettext("Lies in")}
+              </span>
               <.link
                 :for={area <- @location_within}
                 id={"group-location-within-#{area.id}"}
@@ -492,7 +600,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 <span class="truncate">{area.name}</span>
               </.link>
             </div>
-            <div class={["mt-3 grid grid-cols-2 gap-3", @location_mode == "area" && "hidden"]}>
+            <div class={["mt-3 grid grid-cols-2 gap-3", @location_mode != "point" && "hidden"]}>
               <.input
                 field={@edit_group_form[:latitude]}
                 id="group-edit-latitude"
@@ -1117,13 +1225,15 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   # Errors of the border that came back from a save, unless the card already
   # says what is wrong with it.
-  defp area_errors(_form, error) when is_binary(error), do: []
+  # What the changeset says of the border or the route, when the card's own
+  # error does not say it already.
+  defp shape_errors(_form, error) when is_binary(error), do: []
 
-  defp area_errors(%Phoenix.HTML.Form{source: %Ecto.Changeset{action: action} = changeset}, nil)
+  defp shape_errors(%Phoenix.HTML.Form{source: %Ecto.Changeset{action: action} = changeset}, nil)
        when not is_nil(action),
-       do: translate_errors(changeset.errors, :area)
+       do: translate_errors(changeset.errors, :area) ++ translate_errors(changeset.errors, :route)
 
-  defp area_errors(_form, _error), do: []
+  defp shape_errors(_form, _error), do: []
 
   defp pin_checked?(form, value), do: to_string(form[:pin_icon].value || "") == value
 

@@ -18,6 +18,11 @@ defmodule PotokIde.Social.GroupAreas do
   What maps ask of an area most, its size, box and width on a map, Postgres
   keeps with the row (`Group.area_size` and the rest), so no query reads a
   whole border for them.
+
+  A route (`GroupRoutes`) lies in every area it passes through, not only in
+  the one its pin, its start, stands in (the user's choice, 2026-11-10):
+  `areas_along/3`. Maps get the lines of routes here too (`shapes/4`), as
+  they get borders.
   """
 
   import Ecto.Query
@@ -311,32 +316,75 @@ defmodule PotokIde.Social.GroupAreas do
     size
   end
 
-  defp size_of(%Group{id: id}) do
-    from(g in Group, where: g.id == ^id and not is_nil(g.area), select: g.area_size)
-    |> Repo.one()
-  end
-
-  @doc "Whether the group's place is an area."
-  def area?(%Group{area: %Geo.MultiPolygon{}}), do: true
-
-  def area?(%Group{id: id} = group) do
-    Group.placed?(group) and
-      Repo.exists?(from(g in Group, where: g.id == ^id and not is_nil(g.area)))
+  @doc """
+  What kind of place the group has: `:none`, `:point`, `{:area, size}` with
+  its size (`size/1`), or `{:route, meters}` with its length.
+  """
+  def place_kind(%Group{id: id} = group) do
+    if Group.placed?(group) do
+      from(g in Group, where: g.id == ^id, select: {g.area_size, g.route_length})
+      |> Repo.one()
+      |> case do
+        {size, _length} when is_number(size) -> {:area, size}
+        {_size, meters} when is_number(meters) -> {:route, meters}
+        _point -> :point
+      end
+    else
+      :none
+    end
   end
 
   @doc """
-  The areas the profile may see that hold the group's pin, smallest first:
-  where the group is. None for a group without a place.
+  The areas the profile may see that hold the group, smallest first: where
+  the group is. A point or an area lies in the areas that hold its pin (a
+  bigger one, for an area), a route in the areas it passes through. None for
+  a group without a place. `kind` is the group's `place_kind/1`, when known.
   """
-  def containing(%Profile{} = profile, %Group{} = group) do
-    if Group.placed?(group) do
-      areas_at(profile, group.latitude, group.longitude,
-        except: group.id,
-        larger_than: size_of(group)
-      )
-    else
-      []
+  def containing(%Profile{} = profile, %Group{} = group, kind \\ nil) do
+    case kind || place_kind(group) do
+      :none ->
+        []
+
+      :point ->
+        areas_at(profile, group.latitude, group.longitude, except: group.id)
+
+      {:area, size} ->
+        areas_at(profile, group.latitude, group.longitude, except: group.id, larger_than: size)
+
+      {:route, _meters} ->
+        areas_along(profile, group, except: group.id)
     end
+  end
+
+  @doc """
+  The areas the profile may see that a route passes through, smallest first,
+  as groups with what a pin needs: a route not yet saved
+  (`%Geo.MultiLineString{}`), or a saved route group, whose line is never
+  loaded for it. Options: `:except` leaves one group out, `:limit` (10).
+  """
+  def areas_along(profile, route, opts \\ [])
+
+  def areas_along(%Profile{} = profile, %Geo.MultiLineString{} = route, opts) do
+    visible(profile)
+    |> where([g], fragment("ST_Intersects(?, ?)", g.area, type(^route, Geo.PostGIS.Geometry)))
+    |> along(opts)
+  end
+
+  def areas_along(%Profile{} = profile, %Group{id: id}, opts) do
+    visible(profile)
+    |> join(:inner, [g], r in Group,
+      on: r.id == ^id and fragment("ST_Intersects(?, ?)", g.area, r.route)
+    )
+    |> along(opts)
+  end
+
+  defp along(query, opts) do
+    query
+    |> except_id(opts[:except])
+    |> order_by([g], asc: g.area_size, asc: g.id)
+    |> limit(^Keyword.get(opts, :limit, 10))
+    |> select([g], struct(g, ^@fields))
+    |> Repo.all()
   end
 
   @doc "The level of detail (`@levels`) a map at `zoom` asks borders at."
@@ -344,9 +392,11 @@ defmodule PotokIde.Social.GroupAreas do
 
   @doc """
   What a map of `places` (groups the profile was already given) needs of
-  their areas: the box of each area among them, and for each place the areas
-  among them that hold it, smallest first, by the rule of `containing/2`.
-  `%{boxes: %{id => [west, south, east, north]}, holders: %{id => [area id]}}`.
+  their shapes: the box of each area among them, the box and length of each
+  route, and for each place the areas among them that hold it, smallest
+  first, by the rule of `containing/2` (a route lies in the areas it passes
+  through). `%{boxes: %{id => [west, south, east, north]}, routes: %{id =>
+  %{bbox, length}}, holders: %{id => [area id]}}`.
   """
   def among(places) when is_list(places) do
     ids = Enum.map(places, & &1.id)
@@ -355,6 +405,19 @@ defmodule PotokIde.Social.GroupAreas do
       from(g in Group,
         where: g.id in ^ids and not is_nil(g.area),
         select: {g.id, [g.area_west, g.area_south, g.area_east, g.area_north]}
+      )
+      |> Repo.all()
+      |> Map.new()
+
+    routes =
+      from(g in Group,
+        where: g.id in ^ids and not is_nil(g.route),
+        select:
+          {g.id,
+           %{
+             bbox: [g.route_west, g.route_south, g.route_east, g.route_north],
+             length: g.route_length
+           }}
       )
       |> Repo.all()
       |> Map.new()
@@ -370,7 +433,13 @@ defmodule PotokIde.Social.GroupAreas do
           on:
             a.id in ^area_ids and a.id != p.id and
               fragment(
-                "ST_Intersects(?, ST_SetSRID(ST_MakePoint(?, ?), 4326))",
+                """
+                CASE WHEN ? IS NOT NULL THEN ST_Intersects(?, ?)
+                ELSE ST_Intersects(?, ST_SetSRID(ST_MakePoint(?, ?), 4326)) END
+                """,
+                p.route,
+                a.area,
+                p.route,
                 a.area,
                 p.longitude,
                 p.latitude
@@ -384,24 +453,31 @@ defmodule PotokIde.Social.GroupAreas do
         |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
       end
 
-    %{boxes: boxes, holders: holders}
+    %{boxes: boxes, routes: routes, holders: holders}
   end
 
   @doc """
-  The borders of the areas `ids` the profile may see, simplified for the
-  level of detail of `zoom` (`level/1`), as GeoJSON text: `[%{id, version,
-  geojson}]`, where `version` changes whenever the group does. `:parent_id`
-  keeps only the areas right under that group, as a map app shows. Borders
-  come from `AreaShapes`, which keeps the ones already made.
+  The shapes of the areas and routes `ids` the profile may see, simplified
+  for the level of detail of `zoom` (`level/1`), as GeoJSON text: a
+  `MultiPolygon` border for an area, a `MultiLineString` line for a route.
+  `[%{id, version, geojson}]`, where `version` changes whenever the group
+  does. `:parent_id` keeps only the groups right under that group, as a map
+  app shows. Shapes come from `AreaShapes`, which keeps the ones already made.
   """
   def shapes(%Profile{} = profile, ids, zoom, opts \\ [])
       when is_list(ids) and is_integer(zoom) do
     level = level(zoom)
 
-    visible(profile)
+    Visibility.plain_groups(profile)
+    |> where([g], (not is_nil(g.area) or not is_nil(g.route)) and not g.is_root)
     |> where([g], g.id in ^ids)
     |> under(opts[:parent_id])
-    |> select([g], %{id: g.id, updated_at: g.updated_at, size: g.area_size})
+    # A size tells two edits in the same second apart: an area's, or a route's length.
+    |> select([g], %{
+      id: g.id,
+      updated_at: g.updated_at,
+      size: fragment("COALESCE(?, ?)", g.area_size, g.route_length)
+    })
     |> Repo.all()
     |> AreaShapes.fetch(level, &simplified(&1, level))
     |> Enum.map(fn {area, geojson} ->
@@ -409,8 +485,11 @@ defmodule PotokIde.Social.GroupAreas do
     end)
   end
 
-  # The borders of `ids` simplified for `level`: within ~0.75 px of the real
-  # one at that zoom, with no more decimals than that needs.
+  # The shapes of `ids` simplified for `level`: within ~0.75 px of the real
+  # one at that zoom, with no more decimals than that needs. A border keeps
+  # its topology (rings that do not cross); a line may cross itself anyway,
+  # and keeps a part that would collapse (a short loop), so no route vanishes.
+  # Either way the ends stay, so a map finds where a route ends.
   defp simplified(ids, level) do
     tolerance = 0.75 * 360.0 / (256.0 * Integer.pow(2, level))
 
@@ -426,8 +505,17 @@ defmodule PotokIde.Social.GroupAreas do
       select:
         {g.id,
          fragment(
-           "ST_AsGeoJSON(ST_Multi(ST_SimplifyPreserveTopology(?, ?::float8)), ?::int)",
+           """
+           ST_AsGeoJSON(
+             CASE WHEN ? IS NOT NULL THEN ST_Multi(ST_SimplifyPreserveTopology(?, ?::float8))
+             ELSE ST_Multi(ST_Simplify(?, ?::float8, true)) END,
+             ?::int
+           )
+           """,
            g.area,
+           g.area,
+           ^tolerance,
+           g.route,
            ^tolerance,
            ^digits
          )}

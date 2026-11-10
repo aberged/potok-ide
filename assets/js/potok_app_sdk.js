@@ -530,17 +530,21 @@ const potok = {
   // place: `{ok: true, places: [{id, name, lat, lng, kind, pin, picture_url,
   // is_public, shape, areas}], truncated}`, up to 2000. `pin` is the group's
   // own choice (a key of `pins.icons`, or "picture" for its picture), null for
-  // its kind's. `shape` is "point", or "area" for a group that covers an area:
-  // then `lat`, `lng` are its pin, a point inside it, and it also has `bbox`
-  // ([west, south, east, north]) and `v`, which changes with its border.
+  // its kind's. `shape` is "point", "area" for a group that covers an area
+  // (then `lat`, `lng` are its pin, a point inside it), or "route" for a group
+  // that runs along a line, such as a walk or a bike path (then `lat`, `lng`
+  // are its start, and `length` is in metres). An area and a route also have
+  // `bbox` ([west, south, east, north]) and `v`, which changes with its shape.
   // `areas` are the ids of the areas among these places that hold this one,
-  // smallest first (an area holds another only when it is the bigger one).
+  // smallest first (an area holds another only when it is the bigger one; a
+  // route lies in every area it passes through).
   listPlaces: () => call("list_places"),
 
-  // The borders of areas among `listPlaces`, simplified for `zoom` (at most
-  // 100 ids): `{ok: true, level, shapes: [{id, v, geojson}]}`, where `geojson`
-  // is a MultiPolygon and `level` the zoom the borders were simplified for
-  // (one of 6, 8, 10, 12, 14, 16); keep them by `id`, `v` and `level`.
+  // The shapes of areas and routes among `listPlaces`, simplified for `zoom`
+  // (at most 100 ids): `{ok: true, level, shapes: [{id, v, geojson}]}`, where
+  // `geojson` is a MultiPolygon for an area and a MultiLineString for a route,
+  // and `level` the zoom they were simplified for (one of 6, 8, 10, 12, 14,
+  // 16); keep them by `id`, `v` and `level`.
   placeShapes: (ids, zoom) => call("place_shapes", {ids, zoom}),
 
   // Makes a sub-group standing at `lat`, `lng`, as the page's "Create

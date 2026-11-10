@@ -2768,6 +2768,41 @@
   }
 }
 
+/* Routes on the root's map (`root_map.js`): a line in the tone of the
+   route's pin over a casing that keeps it apart from the streets, a ring at
+   its end, thicker while picked or named by the link. A wider line nobody
+   sees takes the tap. */
+.potok-map .potok-route {
+  stroke-opacity: 0.95;
+  transition: stroke-width 150ms ease-out;
+}
+
+.potok-map .potok-route.is-selected,
+.potok-map .potok-route.is-chosen {
+  stroke-width: 5.5px;
+  stroke-opacity: 1;
+}
+
+.potok-map .potok-route-casing {
+  stroke-opacity: 0.85;
+}
+
+.potok-map .potok-route-hit {
+  cursor: pointer;
+}
+
+:where([data-theme=dark]) .potok-map .potok-route-casing {
+  stroke: #0f172a;
+  stroke-opacity: 0.7;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) .potok-map .potok-route-casing {
+    stroke: #0f172a;
+    stroke-opacity: 0.7;
+  }
+}
+
 /* The border being drawn on the Location card (`area_editor.js`): corners
    with a finger-sized target, a smaller dot in the middle of each side, the
    line red while it crosses itself. */
@@ -2786,6 +2821,29 @@
   stroke: var(--color-error);
   fill: var(--color-error);
   stroke-dasharray: 6 4;
+}
+
+/* The route being drawn (`route_editor.js`): a line through its points, the
+   first one filled, where the pin goes, the last one a ring around a dot. */
+.potok-map .potok-route-edit {
+  stroke: var(--color-primary);
+  stroke-opacity: 0.95;
+}
+
+.potok-map .potok-route-edit.is-fixed {
+  stroke-opacity: 0.8;
+}
+
+.potok-corner.is-start {
+  background: var(--color-primary);
+  border-color: #ffffff;
+  box-shadow:
+    0 0 0 2px var(--color-primary),
+    0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+.potok-corner.is-end {
+  background: radial-gradient(circle, var(--color-primary) 0 2.5px, #ffffff 3px);
 }
 
 .potok-corner-icon {
@@ -2840,6 +2898,7 @@
   .potok-map-pin svg,
   .potok-cluster,
   .potok-map .potok-area,
+  .potok-map .potok-route,
   .potok-map .leaflet-bottom,
   .potok-corner,
   .potok-midpoint {

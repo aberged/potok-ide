@@ -39,6 +39,7 @@ defmodule PotokIde.Social do
     GroupPresets,
     GroupReaction,
     GroupRole,
+    GroupRoutes,
     GroupValueRead,
     MemberInheritance,
     MapSql,
@@ -170,10 +171,16 @@ defmodule PotokIde.Social do
 
   def load_picture(nil), do: nil
 
-  @doc "The group with its area (`Group.area`), which regular queries leave out."
+  @doc """
+  The group with its area or route (`Group.area`, `Group.route`) and the
+  route's length, which regular queries leave out.
+  """
   def load_area(%Group{id: id} = group) do
-    area = from(g in Group, where: g.id == ^id, select: g.area) |> Repo.one()
-    %{group | area: area}
+    {area, route, length} =
+      from(g in Group, where: g.id == ^id, select: {g.area, g.route, g.route_length})
+      |> Repo.one()
+
+    %{group | area: area, route: route, route_length: length}
   end
 
   @doc "Minimal data needed to serve a profile avatar: `%{id, username, picture_url}` or nil."
@@ -713,6 +720,7 @@ defmodule PotokIde.Social do
         |> validate_inheritance_parent(group.parent_id)
         |> mark_published(group)
         |> GroupAreas.put_pin()
+        |> GroupRoutes.put_pin()
 
       Multi.new()
       |> Multi.update(:group, changeset)
@@ -3367,6 +3375,9 @@ defmodule PotokIde.Social do
   @map_timeout_ms 4_000
   @map_max_cells 2_000
   @map_max_drawn 300
+  # A route is drawn as a line, its casing, a wider line to tap and a ring at
+  # its end, so fewer of them than borders.
+  @map_max_routes 150
   # Web Mercator ends here; a place nearer a pole is drawn on that edge.
   @mercator_max_lat 85.0511287798
   # The tones of pins (`GroupPins`) a cluster counts, in this order.
@@ -3374,8 +3385,8 @@ defmodule PotokIde.Social do
 
   @doc """
   What the root's map shows in the box `[west, south, east, north]` at `zoom`,
-  out of one set of groups, the ones the filters keep, points and areas
-  alike:
+  out of one set of groups, the ones the filters keep, points, areas and
+  routes alike:
 
   * `places`: each group alone in its cell of a grid about 64 pixels wide,
     with the fields of `list_visible_placed_children/3`;
@@ -3385,7 +3396,11 @@ defmodule PotokIde.Social do
     drawn as borders (`GroupAreas.min_span/1`), biggest first, at most 300,
     with their boxes (`GroupAreas.bbox/1`). Only their borders: their pins
     are in the cells like any other, so an area past the 300 still shows;
-  * `total`: the groups in the box, by pin or by border;
+  * `routes`: while `:routes?` is on, the routes wide enough at `zoom` to be
+    drawn as lines, by the same measure, widest first, at most 150, with
+    their boxes (`GroupRoutes.bbox/1`) and lengths. Their pins, at their
+    starts, are in the cells too;
+  * `total`: the groups in the box, by pin, by border or by line;
   * `truncated`: whether the box had more cells than a view takes.
 
   Returns `{:ok, view}` or `{:error, :timeout}`.
@@ -3402,11 +3417,13 @@ defmodule PotokIde.Social do
   * `:pins`, keys of `Group.pin_icon` (`GroupPins.keys/0`), with `"kind"` for
     the groups that show their kind;
   * `:areas`, only the groups inside one of these areas (`GroupAreas`), not
-    the areas themselves;
+    the areas themselves: a route is inside an area it passes through;
   * `:from` (counts in) and `:to` (does not) on `:time`: `:created`, when the
     group took its place in a feed, or `:active`, its newest value, where a
     group never written in stays out;
-  * `:places?` false keeps only the areas.
+  * `:places?` false keeps only the shapes whose layer is on: the areas
+    (`:shapes?`), the routes (`:routes?`) or both; the areas alone when
+    neither is.
   """
   def list_map_cells(%Profile{} = profile, filters, bbox, zoom) when is_integer(zoom) do
     with {:ok, [rows]} <- map_queries([map_view_query(profile, filters, bbox, zoom)]) do
@@ -3529,6 +3546,14 @@ defmodule PotokIde.Social do
           LIMIT #{@map_max_drawn}
         ) d
         UNION ALL
+        SELECT 'r', NULL, NULL, NULL, NULL, NULL, NULL, NULL, r.id, NULL
+        FROM (
+          SELECT p.id FROM placed p
+          WHERE p.route_drawn
+          ORDER BY p.route_span DESC, p.id
+          LIMIT #{@map_max_routes}
+        ) r
+        UNION ALL
         SELECT 't', count(*), NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL FROM placed p
         """
 
@@ -3539,9 +3564,10 @@ defmodule PotokIde.Social do
     cells = for ["c" | cell] <- rows, do: cell
     kept = Enum.take(cells, @map_max_cells)
     drawn_ids = for ["a", _, _, _, _, _, _, _, id, _] <- rows, do: id
+    route_ids = for ["r", _, _, _, _, _, _, _, id, _] <- rows, do: id
     [total] = for ["t", count | _] <- rows, do: count
     single_ids = for [1, _, _, _, _, _, _, id, _] <- kept, do: id
-    by_id = Map.new(placed_groups(single_ids ++ drawn_ids), &{&1.id, &1})
+    by_id = Map.new(placed_groups(single_ids ++ drawn_ids ++ route_ids), &{&1.id, &1})
 
     clusters =
       for [count, lat, lng, south, north, west, east, _id, tones] <- kept, count > 1 do
@@ -3558,20 +3584,24 @@ defmodule PotokIde.Social do
       places: Enum.flat_map(single_ids, &List.wrap(by_id[&1])),
       clusters: clusters,
       areas: Enum.flat_map(drawn_ids, &List.wrap(by_id[&1])),
+      routes: Enum.flat_map(route_ids, &List.wrap(by_id[&1])),
       total: total,
       truncated: length(cells) > @map_max_cells
     }
   end
 
   defp map_extent_query(profile, filters) do
-    {cte, values} = map_placed(:extent, profile, Map.delete(filters, :shapes?), %{})
+    {cte, values} =
+      map_placed(:extent, profile, Map.drop(filters, [:shapes?, :routes?]), %{})
 
     sql =
       cte <>
         """
         SELECT count(*),
-          min(COALESCE(p.area_south, p.latitude)), max(COALESCE(p.area_north, p.latitude)),
-          min(COALESCE(p.area_west, p.longitude)), max(COALESCE(p.area_east, p.longitude))
+          min(COALESCE(p.area_south, p.route_south, p.latitude)),
+          max(COALESCE(p.area_north, p.route_north, p.latitude)),
+          min(COALESCE(p.area_west, p.route_west, p.longitude)),
+          max(COALESCE(p.area_east, p.route_east, p.longitude))
         FROM placed p
         """
 
@@ -3581,11 +3611,14 @@ defmodule PotokIde.Social do
   defp map_extent_result([[count, south, north, west, east]]),
     do: %{count: count, bounds: if(count > 0, do: [[south, west], [north, east]])}
 
-  # The groups `ids` with what a pin needs and, for an area, its box.
+  # The groups `ids` with what a pin needs and, for an area or a route, its
+  # box, and a route's length.
   defp placed_groups([]), do: []
 
   defp placed_groups(ids) do
-    fields = @placed_fields ++ GroupAreas.box_fields()
+    fields =
+      @placed_fields ++ GroupAreas.box_fields() ++ GroupRoutes.box_fields() ++ [:route_length]
+
     from(g in Group, where: g.id in ^ids, select: struct(g, ^fields)) |> Repo.all()
   end
 
@@ -3608,17 +3641,19 @@ defmodule PotokIde.Social do
   # says which of them a query wants:
   #
   # * `:view`: in a box (`box` values), by pin or, for an area drawn as a
-  #   border, by the area itself reaching into it; `in_box` marks the pins
-  #   in it, which the cells take;
+  #   border or a route drawn as a line, by the shape itself reaching into
+  #   it; `in_box` marks the pins in it, which the cells take;
   # * `:spot`: by pin inside the bounds of a cluster;
   # * `:here`: areas drawn at the zoom that cover a point (`lat`, `lng`);
   # * `:extent`: wherever they stand.
   #
   # `drawn` marks the areas wide enough at the filters' `:zoom` to be drawn
-  # as borders, while `:shapes?` is on; otherwise every area is a pin.
+  # as borders, while `:shapes?` is on, and `route_drawn` the routes wide
+  # enough to be drawn as lines, while `:routes?` is; otherwise each is a pin.
   defp map_placed(scope, %Profile{id: profile_id}, filters, extra) do
     zoom = Map.get(filters, :zoom)
     shapes? = scope != :extent and Map.get(filters, :shapes?) == true and is_integer(zoom)
+    routes? = scope != :extent and Map.get(filters, :routes?) == true and is_integer(zoom)
     places? = scope == :extent or Map.get(filters, :places?) != false
     search = normalize_group_search_term(Map.get(filters, :search))
     kind = normalize_preset_filter(Map.get(filters, :preset))
@@ -3642,7 +3677,11 @@ defmodule PotokIde.Social do
         "g.parent_value_id IS NULL",
         "g.is_direct = FALSE",
         Visibility.listed_sql("g", Map.get(filters, :public?) == true),
-        !places? && "g.area IS NOT NULL",
+        !places? &&
+          map_shapes_only_sql(
+            Map.get(filters, :shapes?) == true,
+            Map.get(filters, :routes?) == true
+          ),
         search && NameSearch.sql("g", "$search"),
         kind && "#{shown_kind_sql("g")} = $kind::text",
         relation == "creator" && "g.creator_id = $profile",
@@ -3653,11 +3692,15 @@ defmodule PotokIde.Social do
         map_pins_sql(pins, kind_pin?),
         areas && "g.id <> ALL($areas::bigint[])",
         areas && map_inside_areas_sql(),
-        map_scope_sql(scope, shapes?)
+        map_scope_sql(scope, shapes?, routes?)
       ]
       |> Enum.filter(& &1)
 
     drawn = if shapes?, do: "COALESCE(g.area_span >= $min_span::float8, FALSE)", else: "FALSE"
+
+    route_drawn =
+      if routes?, do: "COALESCE(g.route_span >= $min_span::float8, FALSE)", else: "FALSE"
+
     in_box = if scope == :view, do: map_view_pin_sql(), else: "TRUE"
 
     sql = """
@@ -3665,7 +3708,9 @@ defmodule PotokIde.Social do
     placed AS MATERIALIZED (
       SELECT g.id, g.name, g.latitude, g.longitude, g.area_size,
         g.area_west, g.area_south, g.area_east, g.area_north,
-        #{drawn} AS drawn, #{in_box} AS in_box, #{map_tone_sql("g")} AS tone
+        g.route_west, g.route_south, g.route_east, g.route_north, g.route_span,
+        #{drawn} AS drawn, #{route_drawn} AS route_drawn, #{in_box} AS in_box,
+        #{map_tone_sql("g")} AS tone
       FROM groups g
       WHERE #{Enum.join(conditions, "\n    AND ")}
     )
@@ -3681,35 +3726,44 @@ defmodule PotokIde.Social do
         areas: areas,
         pins: pins,
         known_pins: GroupPins.keys(),
-        min_span: if(shapes?, do: GroupAreas.min_span(zoom))
+        min_span: if(shapes? or routes?, do: GroupAreas.min_span(zoom))
       })
 
     {sql, values}
   end
 
-  defp map_scope_sql(:extent, _shapes?), do: nil
+  # With the places' layer off: the groups whose shape has its layer on.
+  defp map_shapes_only_sql(true, true), do: "(g.area IS NOT NULL OR g.route IS NOT NULL)"
+  defp map_shapes_only_sql(false, true), do: "g.route IS NOT NULL"
+  defp map_shapes_only_sql(_shapes?, false), do: "g.area IS NOT NULL"
 
-  defp map_scope_sql(:spot, _shapes?) do
+  defp map_scope_sql(:extent, _shapes?, _routes?), do: nil
+
+  defp map_scope_sql(:spot, _shapes?, _routes?) do
     "g.latitude BETWEEN $south::float8 AND $north::float8" <>
       " AND g.longitude BETWEEN $west::float8 AND $east::float8"
   end
 
-  defp map_scope_sql(:here, true) do
+  defp map_scope_sql(:here, true, _routes?) do
     "g.area_span >= $min_span::float8" <>
       " AND ST_Intersects(g.area, ST_SetSRID(ST_MakePoint($lng::float8, $lat::float8), 4326))"
   end
 
-  defp map_scope_sql(:view, shapes?) do
-    pin = map_view_pin_sql()
-
-    if shapes? do
-      "(#{pin} OR (g.area_span >= $min_span::float8" <>
-        " AND (g.area && ST_MakeEnvelope($west, $south, $east, $north, 4326)" <>
-        " OR ($west2::float8 IS NOT NULL" <>
-        " AND g.area && ST_MakeEnvelope($west2, $south, $east2, $north, 4326)))))"
-    else
-      pin
+  defp map_scope_sql(:view, shapes?, routes?) do
+    case for {true, column} <- [{shapes?, "area"}, {routes?, "route"}],
+             do: map_view_shape_sql(column) do
+      [] -> map_view_pin_sql()
+      shapes -> "(" <> Enum.join([map_view_pin_sql() | shapes], " OR ") <> ")"
     end
+  end
+
+  # An area's border or a route's line (`column`) drawn at the zoom that
+  # reaches into the view's box, or its second range across the antimeridian.
+  defp map_view_shape_sql(column) do
+    "(g.#{column}_span >= $min_span::float8" <>
+      " AND (g.#{column} && ST_MakeEnvelope($west, $south, $east, $north, 4326)" <>
+      " OR ($west2::float8 IS NOT NULL" <>
+      " AND g.#{column} && ST_MakeEnvelope($west2, $south, $east2, $north, 4326))))"
   end
 
   # A pin inside the view's box, or its second range across the antimeridian.
@@ -3721,8 +3775,10 @@ defmodule PotokIde.Social do
   end
 
   # A group inside one of the chosen areas the profile may see: its pin is,
-  # and for an area, it is the smaller one. One join from the areas to the
-  # pins (`groups_pin_index`), not one test per group.
+  # and for an area, it is the smaller one; a route also when it only passes
+  # through (its pin is its start). One join from the areas to the pins
+  # (`groups_pin_index`) and one to the routes (`groups_route_index`), not
+  # one test per group.
   defp map_inside_areas_sql do
     """
     g.id IN (
@@ -3730,6 +3786,11 @@ defmodule PotokIde.Social do
       JOIN groups p ON p.latitude IS NOT NULL
         AND ST_Intersects(fa.area, ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326))
         AND (p.area_size IS NULL OR p.area_size < fa.area_size)
+      WHERE fa.id = ANY($areas::bigint[]) AND fa.area IS NOT NULL
+        AND #{Visibility.may_see_sql("fa", "$profile")}
+      UNION ALL
+      SELECT p.id FROM groups fa
+      JOIN groups p ON p.route IS NOT NULL AND ST_Intersects(fa.area, p.route)
       WHERE fa.id = ANY($areas::bigint[]) AND fa.area IS NOT NULL
         AND #{Visibility.may_see_sql("fa", "$profile")})
     """

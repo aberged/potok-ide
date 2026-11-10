@@ -16,6 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupInvitation,
     GroupPresets,
     GroupRole,
+    GroupRoutes,
     Profile,
     Value,
     ValueAttachment
@@ -50,6 +51,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ValuesTab
   }
 
+  alias PotokIdeWeb.Distance
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
@@ -93,7 +95,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {"access", [:is_public, :is_root_public, :inherits_members]},
     {"home", [:home_page, :home_alt_description_id]},
     {"description", [:description_name, :description, :description_format, :uses_api]},
-    {"location", [:latitude, :longitude, :pin_icon, :area]}
+    {"location", [:latitude, :longitude, :pin_icon, :area, :route]}
   ]
 
   # Bursts of `group_updated` / unread broadcasts are coalesced into one
@@ -625,7 +627,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             link_card={@link_card}
             location_mode={location_mode(@edit_group_form, @edit_group_location_mode)}
             location_within={@edit_group_location_within}
-            area_error={@edit_group_area_error}
+            shape_error={@edit_group_shape_error}
             dirty={edit_group_dirty?(@edit_group_form)}
             section={@edit_group_section}
             inherits_members_option={@inherits_members_option?}
@@ -1698,8 +1700,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       changeset =
         group
-        |> Group.update_changeset(put_area_draft(attrs, socket.assigns.edit_group_area))
-        |> add_area_draft_error(socket.assigns.edit_group_area)
+        |> Group.update_changeset(put_shape_draft(attrs, socket.assigns.edit_group_shape))
+        |> add_shape_draft_error(socket.assigns.edit_group_shape)
         |> Map.put(:action, :validate)
 
       {:noreply,
@@ -1731,18 +1733,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
-  # The Location card: a point or an area.
+  # The Location card: a point, an area or a route. A point drops the shape,
+  # and so does the other kind of shape: an area for a route and the other
+  # way round. Its map sends what it holds for the new mode.
   def handle_event("set_location_mode", %{"mode" => mode}, socket)
-      when mode in ["point", "area"] do
+      when mode in ["point", "area", "route"] do
     with_edit_group(socket, fn socket ->
-      socket = assign(socket, :edit_group_location_mode, mode)
+      kind = shape_kind(socket)
 
       socket =
-        if mode == "point",
-          do: socket |> assign(:edit_group_area, nil) |> assign(:edit_group_area_error, nil),
+        if mode == "point" or (kind != nil and kind != mode),
+          do: socket |> assign(:edit_group_shape, nil) |> assign(:edit_group_shape_error, nil),
           else: socket
 
       socket
+      |> assign(:edit_group_location_mode, mode)
       |> rebuild_edit_group_form()
       |> push_event("location_mode", %{mode: mode})
     end)
@@ -1763,7 +1768,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
                  {:ok, {lat, lng}} <- GroupAreas.pin_inside(area) do
               {{:ok, area}, %{ok: true, lat: lat, lng: lng}}
             else
-              {:error, reason} -> {{:error, reason}, %{ok: false, error: area_error_text(reason)}}
+              {:error, reason} ->
+                {{:error, :area, reason}, %{ok: false, error: shape_error_text(:area, reason)}}
             end
         end
 
@@ -1776,12 +1782,40 @@ defmodule PotokIdeWeb.GroupLive.Show do
             []
         end
 
-      {:reply, reply,
-       socket
-       |> assign(:edit_group_area, draft)
-       |> assign(:edit_group_area_error, reply[:error])
-       |> assign(:edit_group_location_within, within)
-       |> rebuild_edit_group_form()}
+      {:reply, reply, put_location_draft(socket, draft, reply, within)}
+    else
+      {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # The route the map of the Location card holds, outside the form like a
+  # border: checked at once, with its start (where the pin goes), its length
+  # and the areas it passes through.
+  def handle_event("edit_group_route", params, socket) do
+    if Access.can?(socket.assigns.access, :edit_group) and socket.assigns.edit_group_form do
+      {draft, reply, within} =
+        case params["route"] && GroupRoutes.decode(params["route"]) do
+          nil ->
+            {nil, %{ok: true}, []}
+
+          {:ok, route} ->
+            {lat, lng} = GroupRoutes.start(route)
+            meters = GroupRoutes.meters(route)
+
+            {{:ok, route},
+             %{
+               ok: true,
+               lat: lat,
+               lng: lng,
+               length: round(meters),
+               length_text: Distance.text(meters)
+             }, route_within(socket, route)}
+
+          {:error, reason} ->
+            {{:error, :route, reason}, %{ok: false, error: shape_error_text(:route, reason)}, []}
+        end
+
+      {:reply, reply, put_location_draft(socket, draft, reply, within)}
     else
       {:reply, %{ok: false}, socket}
     end
@@ -1850,11 +1884,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       missing != [] ->
         {:noreply, refuse_edit_group(socket, attrs, missing)}
 
-      match?({:error, _reason}, socket.assigns.edit_group_area) ->
+      match?({:error, _kind, _reason}, socket.assigns.edit_group_shape) ->
         {:noreply, socket |> rebuild_edit_group_form() |> assign(:edit_group_section, "location")}
 
       true ->
-        attrs = put_area_draft(attrs, socket.assigns.edit_group_area)
+        attrs = put_shape_draft(attrs, socket.assigns.edit_group_shape)
         save_edit_group(socket, current_profile, group, attrs)
     end
   end
@@ -3626,38 +3660,77 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # The Location card's mode: as picked, or by what the group holds.
-  defp location_mode(_form, mode) when mode in ["point", "area"], do: mode
+  defp location_mode(_form, mode) when mode in ["point", "area", "route"], do: mode
 
   defp location_mode(%Phoenix.HTML.Form{data: %Group{area: %Geo.MultiPolygon{}}}, _mode),
     do: "area"
 
+  defp location_mode(%Phoenix.HTML.Form{data: %Group{route: %Geo.MultiLineString{}}}, _mode),
+    do: "route"
+
   defp location_mode(_form, _mode), do: "point"
 
-  # The border drawn on the Location card goes in with the form's fields:
-  # `:unchanged` leaves the saved one, nil removes it.
-  defp put_area_draft(attrs, {:ok, area}), do: Map.put(attrs, "area", area)
-  defp put_area_draft(attrs, nil), do: Map.put(attrs, "area", nil)
-  defp put_area_draft(attrs, _unchanged_or_error), do: attrs
+  # The kind of shape the Location card holds now, "area", "route" or nil:
+  # the drawn one's, or the saved one's while nothing was drawn.
+  defp shape_kind(socket) do
+    case socket.assigns.edit_group_shape do
+      {:ok, %Geo.MultiPolygon{}} -> "area"
+      {:ok, %Geo.MultiLineString{}} -> "route"
+      {:error, kind, _reason} -> Atom.to_string(kind)
+      nil -> nil
+      :unchanged -> location_kind(edit_group_data(socket))
+    end
+  end
 
-  defp add_area_draft_error(changeset, {:error, reason}),
+  defp location_kind(%Group{area: %Geo.MultiPolygon{}}), do: "area"
+  defp location_kind(%Group{route: %Geo.MultiLineString{}}), do: "route"
+  defp location_kind(_group), do: nil
+
+  # The shape drawn on the Location card, a border or a route, goes in with
+  # the form's fields, and takes the other kind's place: `:unchanged` leaves
+  # the saved one, nil removes both.
+  defp put_shape_draft(attrs, {:ok, %Geo.MultiPolygon{} = area}),
+    do: Map.merge(attrs, %{"area" => area, "route" => nil})
+
+  defp put_shape_draft(attrs, {:ok, %Geo.MultiLineString{} = route}),
+    do: Map.merge(attrs, %{"area" => nil, "route" => route})
+
+  defp put_shape_draft(attrs, nil), do: Map.merge(attrs, %{"area" => nil, "route" => nil})
+  defp put_shape_draft(attrs, _unchanged_or_error), do: attrs
+
+  defp add_shape_draft_error(changeset, {:error, :area, reason}),
     do: Ecto.Changeset.add_error(changeset, :area, Group.area_error(reason))
 
-  defp add_area_draft_error(changeset, _draft), do: changeset
+  defp add_shape_draft_error(changeset, {:error, :route, reason}),
+    do: Ecto.Changeset.add_error(changeset, :route, Group.route_error(reason))
 
-  defp area_error_text(reason),
+  defp add_shape_draft_error(changeset, _draft), do: changeset
+
+  defp shape_error_text(:area, reason),
     do: PotokIdeWeb.CoreComponents.translate_error({Group.area_error(reason), []})
+
+  defp shape_error_text(:route, reason),
+    do: PotokIdeWeb.CoreComponents.translate_error({Group.route_error(reason), []})
+
+  defp put_location_draft(socket, draft, reply, within) do
+    socket
+    |> assign(:edit_group_shape, draft)
+    |> assign(:edit_group_shape_error, reply[:error])
+    |> assign(:edit_group_location_within, within)
+    |> rebuild_edit_group_form()
+  end
 
   # The form again with the drawn border, so the save bar knows of it.
   defp rebuild_edit_group_form(socket) do
     case socket.assigns.edit_group_form do
       %Phoenix.HTML.Form{params: params} ->
-        draft = socket.assigns.edit_group_area
+        draft = socket.assigns.edit_group_shape
 
         changeset =
           socket
           |> edit_group_data()
-          |> Group.update_changeset(put_area_draft(params || %{}, draft))
-          |> add_area_draft_error(draft)
+          |> Group.update_changeset(put_shape_draft(params || %{}, draft))
+          |> add_shape_draft_error(draft)
           |> Map.put(:action, :validate)
 
         assign(socket, :edit_group_form, to_form(changeset))
@@ -3680,20 +3753,29 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket =
       socket
-      |> assign(:edit_group_area, :unchanged)
+      |> assign(:edit_group_shape, :unchanged)
       |> assign(:edit_group_location_mode, nil)
-      |> assign(:edit_group_area_error, nil)
+      |> assign(:edit_group_shape_error, nil)
       |> assign(:edit_group_location_within, within)
 
     case {tell_map?, socket.assigns.edit_group_form} do
       {true, %Phoenix.HTML.Form{data: data} = form} ->
         push_event(socket, "location_reset", %{
           area: GroupAreas.to_geojson(data.area),
+          route: GroupRoutes.to_geojson(data.route),
+          route_length: data.route_length && Distance.text(data.route_length),
           mode: location_mode(form, nil)
         })
 
       _other ->
         socket
+    end
+  end
+
+  defp route_within(socket, route) do
+    case socket.assigns.current_profile do
+      nil -> []
+      profile -> GroupAreas.areas_along(profile, route, except: socket.assigns.group.id)
     end
   end
 

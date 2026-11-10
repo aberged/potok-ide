@@ -3,25 +3,33 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   alias PotokIde.Social
   alias PotokIde.Social.{Group, GroupAreas}
+  alias PotokIdeWeb.Distance
   alias PotokIdeWeb.GroupLive.Show.{AppApi, AppHost, Components}
   alias PotokIdeWeb.PostTemplates.Post
 
   @doc """
   Where a group with a place stands, for the strip over its description: the
-  areas the viewer sees around its pin, smallest first, and for an area a link
-  to the root's map narrowed to it. Nil for a group without a place, or for a
-  guest.
+  areas the viewer sees around its pin, smallest first, or for a route the
+  areas it passes through and its length; for an area a link to the root's
+  map narrowed to it, for a route a link to the map showing it. Nil for a
+  group without a place, or for a guest.
   """
   def location(nil, _group), do: nil
 
   def location(profile, %Group{} = group) do
     if Group.placed?(group) do
+      kind = GroupAreas.place_kind(group)
+      root = Social.root_group_id()
+
       %{
-        within: GroupAreas.containing(profile, group),
+        within: GroupAreas.containing(profile, group, kind),
+        route_length: with({:route, meters} <- kind, do: meters, else: (_other -> nil)),
         map_path:
-          if(GroupAreas.area?(group),
-            do: ~p"/groups/#{Social.root_group_id()}/map?#{[area: group.id]}"
-          )
+          case kind do
+            {:area, _size} -> ~p"/groups/#{root}/map?#{[area: group.id]}"
+            {:route, _meters} -> ~p"/groups/#{root}/map?#{[route: group.id]}"
+            _point -> nil
+          end
       }
     end
   end
@@ -80,11 +88,19 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
         class="flex shrink-0 flex-wrap items-center gap-1.5 px-1 pb-2 pt-1"
       >
         <span
+          :if={@location.route_length}
+          id={"#{@prefix}-location-route"}
+          class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/75"
+        >
+          <.icon name="hero-arrow-turn-up-right-micro" class="size-3.5" />
+          {gettext("Route · %{length}", length: Distance.text(@location.route_length))}
+        </span>
+        <span
           :if={@location.within != []}
           class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/60"
         >
           <.icon name="hero-map-pin-micro" class="size-3.5" />
-          {gettext("Lies in")}
+          {if @location.route_length, do: gettext("Passes through"), else: gettext("Lies in")}
         </span>
         <.link
           :for={area <- @location.within}
@@ -102,7 +118,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition duration-150 ease-out hover:-translate-y-px hover:bg-primary/15"
         >
           <.icon name="hero-map-micro" class="size-3.5 shrink-0" />
-          {gettext("Groups in this area on the map")}
+          {if @location.route_length,
+            do: gettext("Route on the map"),
+            else: gettext("Groups in this area on the map")}
         </.link>
       </div>
       <nav

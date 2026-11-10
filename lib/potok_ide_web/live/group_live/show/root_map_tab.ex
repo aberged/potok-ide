@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   @moduledoc """
   The root's map (`RootMapState`): a bar of filters over a map of every group
-  with a place the viewer sees, and of the areas it sees. The map is the
+  with a place the viewer sees, and of the areas and routes it sees. The map is the
   browser's (`root_map.js`, ignored by patches); what stands over it, the
   count, the layers, the empty state, the list of a crowded spot and the card
   of the areas where the viewer tapped, is rendered here.
@@ -24,7 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :spot, :map, default: nil, doc: "the groups of a crowded spot"
   attr :error, :boolean, default: false
   attr :range_form, :any, required: true
-  attr :layers, :map, default: %{places: true, areas: true}, doc: "the layers shown"
+  attr :layers, :map, default: %{places: true, areas: true, routes: true}, doc: "the layers shown"
   attr :here, :map, default: nil, doc: "the areas where the viewer tapped, and the one picked"
   attr :area_options, :list, default: [], doc: "the areas the filter's menu offers"
   attr :area_query, :string, default: "", doc: "what the filter's menu searches"
@@ -190,7 +190,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
               title={gettext("Map layers")}
               class={[
                 "pointer-events-auto inline-flex size-9 items-center justify-center rounded-full border bg-base-100/90 shadow-sm backdrop-blur transition duration-150 ease-out hover:-translate-y-px active:scale-95",
-                if(@layers.places and @layers.areas,
+                if(Enum.all?(Map.values(@layers)),
                   do: "border-base-300/70 text-base-content/80 hover:text-base-content",
                   else: "border-primary/50 text-primary"
                 )
@@ -817,6 +817,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         icon: "hero-viewfinder-circle",
         title: gettext("Areas"),
         hint: gettext("Borders of the areas wide enough, under the pins")
+      },
+      %{
+        key: :routes,
+        icon: "hero-arrow-turn-up-right",
+        title: gettext("Routes"),
+        hint: gettext("Lines of the routes long enough, over the areas")
       }
     ]
   end
@@ -850,9 +856,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   defp pin_label("picture"), do: gettext("Group picture")
   defp pin_label(key), do: PinIcons.label(key)
 
-  # What a group on the map is, under its name: an area or its kind.
+  # What a group on the map is, under its name: an area, a route or its kind.
   defp place_label(%{area_west: west} = group) when is_number(west),
     do: gettext("Area") <> " · " <> PinIcons.kind_label(GroupPins.kind(group))
+
+  defp place_label(%{route_west: west} = group) when is_number(west),
+    do: gettext("Route") <> " · " <> PinIcons.kind_label(GroupPins.kind(group))
 
   defp place_label(group), do: PinIcons.kind_label(GroupPins.kind(group))
 

@@ -32,7 +32,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   there too when a rule is public.
 
   A map (`map_config`, `list_places`) shows the direct sub-groups the viewer
-  sees that have a place (`Group.latitude`), and `create_place` adds one there:
+  sees that have a place (`Group.latitude`), a point, an area or a route, with
+  the borders and lines of the last two from `place_shapes`, and
+  `create_place` adds a point there:
   a group from a preset, asked of whoever may make a sub-group by hand, as the
   page's own menu asks. `show_group` opens a sub-group's description on the
   page, over the app (`GroupSheet`), where its own apps run with that group's
@@ -773,7 +775,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  # The borders of areas right under the group, simplified for a zoom.
+  # The borders of areas and the lines of routes right under the group,
+  # simplified for a zoom.
   defp run("place_shapes", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
@@ -1214,20 +1217,26 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     }
   end
 
-  # A place of a map app: a pin (`place_payload/1`), whether it is a point or
-  # an area (with its box and what its border is cached by), and the areas of
-  # the same map that hold it, smallest first (`GroupAreas.among/1`).
-  defp map_place_payload(%Group{} = group, %{boxes: boxes, holders: holders}) do
+  # A place of a map app: a pin (`place_payload/1`), whether it is a point, an
+  # area or a route (with its box and what its shape is cached by, and a
+  # route's length in metres), and the areas of the same map that hold it,
+  # smallest first (`GroupAreas.among/1`).
+  defp map_place_payload(%Group{} = group, %{boxes: boxes, routes: routes, holders: holders}) do
     payload =
       group
       |> place_payload()
       |> Map.merge(%{shape: "point", areas: Map.get(holders, group.id, [])})
 
-    case Map.fetch(boxes, group.id) do
-      {:ok, bbox} ->
-        Map.merge(payload, %{shape: "area", bbox: bbox, v: GroupAreas.version(group.updated_at)})
+    version = GroupAreas.version(group.updated_at)
 
-      :error ->
+    case {Map.fetch(boxes, group.id), Map.fetch(routes, group.id)} do
+      {{:ok, bbox}, _route} ->
+        Map.merge(payload, %{shape: "area", bbox: bbox, v: version})
+
+      {:error, {:ok, %{bbox: bbox, length: length}}} ->
+        Map.merge(payload, %{shape: "route", bbox: bbox, v: version, length: round(length)})
+
+      {:error, :error} ->
         payload
     end
   end

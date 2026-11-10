@@ -20,8 +20,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   (`Social.list_map_cells/4`): the pins, the borders, the count, the list of
   a crowded spot and the areas a tap finds. The chosen areas of the area
   filter stay outlined whatever the filters. The browser asks for borders by
-  itself and keeps them. Two layers, places and areas, are switched on the
-  map, and the browser remembers them.
+  itself and keeps them.
+
+  A route (`GroupRoutes`) is the same: its pin, at its start, gathers with the
+  others, and once it is wide enough its line is drawn over the areas. The
+  area filter keeps a route that passes through a chosen area. `?route=ID`
+  opens the map on one route, drawn whatever the filters.
+
+  Three layers, places, areas and routes, are switched on the map, and the
+  browser remembers them.
   """
 
   use Gettext, backend: PotokIdeWeb.Gettext
@@ -31,7 +38,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRoutes}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, GroupSheet}
 
   @periods ~w(24h 7d 30d 12m any)
@@ -59,10 +66,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_spot: nil,
       root_map_error?: false,
       root_map_empty_closed?: false,
-      root_map_layers: %{places: true, areas: true},
+      root_map_layers: %{places: true, areas: true, routes: true},
       root_map_here: nil,
       root_map_fit: nil,
       root_map_area_param: nil,
+      root_map_route_param: nil,
+      root_map_route: nil,
       root_map_area_query: "",
       root_map_area_options: nil,
       root_map_area_chosen: []
@@ -125,12 +134,17 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   @doc """
   `?area=ID` opens the map on that area: its pins from any time, the map
-  fitted to it once the browser asks for its view. An area the viewer cannot
-  see is left out.
+  fitted to it once the browser asks for its view. `?route=ID` opens it on
+  that route: from any time, fitted to the route, which is drawn whatever
+  the filters. An area or a route the viewer cannot see is left out.
   """
   def assign_params(socket, params) do
-    param = params["area"]
+    socket
+    |> assign_area_param(params["area"])
+    |> assign_route_param(params["route"])
+  end
 
+  defp assign_area_param(socket, param) do
     with true <- param != socket.assigns.root_map_area_param,
          true <- root?(socket),
          {id, ""} <- Integer.parse(to_string(param)),
@@ -155,12 +169,43 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  @doc "Whether the link's area changed while the map stays open."
-  def params_changed?(socket, params), do: params["area"] != socket.assigns.root_map_area_param
+  defp assign_route_param(socket, param) do
+    with true <- param != socket.assigns.root_map_route_param,
+         true <- root?(socket),
+         {id, ""} <- Integer.parse(to_string(param)),
+         %Group{} = route <- GroupRoutes.get_visible(socket.assigns.current_profile, id) do
+      filters = %{socket.assigns.root_map_filters | period: "any", from: nil, to: nil}
+
+      socket
+      |> assign(
+        root_map_route_param: param,
+        root_map_route: route,
+        root_map_filters: filters,
+        root_map_extent: nil,
+        root_map_fit: GroupRoutes.bounds(route)
+      )
+      |> assign_range_form(%{})
+    else
+      _other ->
+        if param != socket.assigns.root_map_route_param,
+          do: assign(socket, root_map_route_param: param, root_map_route: nil),
+          else: socket
+    end
+  end
+
+  @doc "Whether the link's area or route changed while the map stays open."
+  def params_changed?(socket, params) do
+    params["area"] != socket.assigns.root_map_area_param or
+      params["route"] != socket.assigns.root_map_route_param
+  end
 
   def handle_params(socket, params) do
+    route = socket.assigns.root_map_route
     socket = assign_params(socket, params)
-    if socket.assigns.root_map_fit, do: refresh(socket), else: socket
+
+    if socket.assigns.root_map_fit || socket.assigns.root_map_route != route,
+      do: refresh(socket),
+      else: socket
   end
 
   # A new count brings the empty state back, closed or not.
@@ -174,13 +219,14 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   end
 
   # What the view holds under the filters, as the browser draws it: pins and
-  # clusters, the areas drawn as borders, the chosen areas of the filter as
-  # outlines, and once a box to fit. With both layers off it holds nothing.
+  # clusters, the areas drawn as borders and the routes as lines, the chosen
+  # areas of the filter as outlines, the route of the link, and once a box to
+  # fit. With every layer off it holds nothing but that route.
   defp load_view(socket) do
     %{root_map_view: %{bbox: bbox, zoom: zoom}, root_map_layers: layers} = socket.assigns
 
     view =
-      if layers.places or layers.areas,
+      if any_layer?(layers),
         do:
           Social.list_map_cells(
             socket.assigns.current_profile,
@@ -197,7 +243,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     do:
       view_payload(
         socket,
-        {:ok, %{places: [], clusters: [], areas: [], total: nil, truncated: false}}
+        {:ok, %{places: [], clusters: [], areas: [], routes: [], total: nil, truncated: false}}
       )
 
   defp view_payload(socket, {:ok, view}) do
@@ -212,12 +258,23 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
           ),
         else: []
 
+    linked = socket.assigns.root_map_route
+
+    routes =
+      for route <- view.routes, is_nil(linked) or route.id != linked.id do
+        route_payload(route)
+      end
+
+    routes =
+      if linked, do: routes ++ [linked |> route_payload() |> Map.put(:ctx, true)], else: routes
+
     payload = %{
       ok: true,
       places: Enum.map(view.places, &AppApi.place_payload/1),
       clusters: view.clusters,
       total: view.total,
       areas: Enum.map(view.areas, &area_payload/1) ++ chosen,
+      routes: routes,
       chosen: socket.assigns.root_map_filters.areas,
       layers: layers
     }
@@ -247,6 +304,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     |> Map.merge(%{v: GroupAreas.version(group.updated_at), bbox: GroupAreas.bbox(group)})
   end
 
+  # A route as the browser draws it: what its pin shows, its box, and what
+  # its line is cached by.
+  defp route_payload(%Group{} = group) do
+    group
+    |> AppApi.place_payload()
+    |> Map.merge(%{v: GroupAreas.version(group.updated_at), bbox: GroupRoutes.bbox(group)})
+  end
+
+  defp any_layer?(layers), do: Enum.any?(Map.values(layers))
+
   # After a filter changed: the count and the view in one go, the cards of
   # the old set closed, the empty state back.
   defp refresh(socket) do
@@ -257,7 +324,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
     socket = assign(socket, root_map_spot: nil, root_map_here: nil, root_map_empty_closed?: false)
     %{root_map_view: view, root_map_layers: layers} = socket.assigns
-    view = if view && (layers.places or layers.areas), do: view
+    view = if view && any_layer?(layers), do: view
 
     case Social.load_map(socket.assigns.current_profile, social_filters(socket.assigns), view) do
       {:ok, %{extent: extent, view: loaded}} ->
@@ -287,8 +354,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   @doc """
   The filters as `Social.list_map_cells/4` takes them: with the chosen areas,
-  and, while areas are drawn, the zoom of the view, which says the areas wide
-  enough for a border and the ones a tap on the map finds.
+  the layers, and the zoom of the view, which says the areas wide enough for
+  a border, the routes wide enough for a line and the areas a tap finds.
   """
   def social_filters(assigns) do
     filters = assigns.root_map_filters
@@ -308,6 +375,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       pins: filters.pins,
       places?: Map.get(layers, :places, true),
       shapes?: layers.areas,
+      routes?: Map.get(layers, :routes, false),
       zoom: Map.get(view, :zoom)
     }
   end
@@ -508,9 +576,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   # A layer on or off; the browser remembers the choice.
   def handle_event("root_map_layer", %{"layer" => layer}, socket)
-      when layer in ["places", "areas"] do
+      when layer in ["places", "areas", "routes"] do
     if root?(socket) do
-      key = if layer == "places", do: :places, else: :areas
+      key = Map.fetch!(%{"places" => :places, "areas" => :areas, "routes" => :routes}, layer)
       layers = Map.update!(socket.assigns.root_map_layers, key, &(not &1))
 
       socket =
@@ -729,10 +797,19 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     assign(socket, :root_map_area_options, options)
   end
 
-  # The layers the browser remembers; anything else keeps the ones shown.
-  defp layers(%{"places" => places, "areas" => areas}, _current)
-       when is_boolean(places) and is_boolean(areas),
-       do: %{places: places, areas: areas}
+  # The layers the browser remembers; anything else keeps the ones shown. A
+  # browser that remembers no routes (from before they were a layer) keeps
+  # the routes shown.
+  defp layers(%{"places" => places, "areas" => areas} = remembered, current)
+       when is_boolean(places) and is_boolean(areas) do
+    routes = remembered["routes"]
+
+    %{
+      places: places,
+      areas: areas,
+      routes: if(is_boolean(routes), do: routes, else: Map.get(current, :routes, true))
+    }
+  end
 
   defp layers(_other, current), do: current
 

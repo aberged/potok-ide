@@ -51,9 +51,15 @@ defmodule PotokIde.Social.Group do
     # it, set by `Social.update_group/3`. Loaded only on demand
     # (`Social.load_area/1`), as a border can hold thousands of points.
     field :area, Geo.PostGIS.Geometry, load_in_query: false
+    # The line it runs along, when its place is a route rather than a point or
+    # an area: one or more parts (`GroupRoutes`), as a walk or a bike path
+    # runs. Its pin then stands at its start, set by `Social.update_group/3`.
+    # A group has an area or a route, never both. Loaded with the area.
+    field :route, Geo.PostGIS.Geometry, load_in_query: false
     # Kept by Postgres from the row (generated columns), never written here:
-    # the name as a search compares it (`NameSearch`), and an area's size, box
-    # and width on a map (`GroupAreas`), so map queries need not read borders.
+    # the name as a search compares it (`NameSearch`), an area's size, box and
+    # width on a map (`GroupAreas`), and a route's length in metres, box and
+    # width (`GroupRoutes`), so map queries need not read borders or lines.
     field :name_folded, :string, load_in_query: false, writable: :never
     field :area_size, :float, load_in_query: false, writable: :never
     field :area_west, :float, load_in_query: false, writable: :never
@@ -61,6 +67,12 @@ defmodule PotokIde.Social.Group do
     field :area_east, :float, load_in_query: false, writable: :never
     field :area_north, :float, load_in_query: false, writable: :never
     field :area_span, :float, load_in_query: false, writable: :never
+    field :route_length, :float, load_in_query: false, writable: :never
+    field :route_west, :float, load_in_query: false, writable: :never
+    field :route_south, :float, load_in_query: false, writable: :never
+    field :route_east, :float, load_in_query: false, writable: :never
+    field :route_north, :float, load_in_query: false, writable: :never
+    field :route_span, :float, load_in_query: false, writable: :never
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
@@ -146,11 +158,14 @@ defmodule PotokIde.Social.Group do
       :is_root_public,
       :uses_api,
       :inherits_members,
-      :area
+      :area,
+      :route
       | @location_fields
     ])
     |> validate_location()
     |> validate_area()
+    |> validate_route()
+    |> one_shape()
     |> update_change(:description_name, &trim/1)
     |> validate_required([
       :name,
@@ -216,6 +231,16 @@ defmodule PotokIde.Social.Group do
   def area_error(:too_wide), do: "The border is wider than half the world."
   def area_error(:crosses_itself), do: "The border crosses itself."
 
+  @doc """
+  The error messages of a route (`GroupRoutes.normalize/1`), in the errors
+  domain, as whole sentences like `area_error/1`.
+  """
+  def route_error(:invalid), do: "The route is not a line on a map."
+  def route_error(:too_many_points), do: "The route has too many points."
+  def route_error(:too_many_parts), do: "The route has too many parts."
+  def route_error(:too_wide), do: "The route is wider than half the world."
+  def route_error(:with_area), do: "A place is either an area or a route."
+
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value
 
@@ -244,6 +269,33 @@ defmodule PotokIde.Social.Group do
 
       _none ->
         changeset
+    end
+  end
+
+  # A line as `GroupRoutes.normalize/1` keeps it: parts of at least two
+  # points, coordinates rounded like a pin's, within limits.
+  defp validate_route(changeset) do
+    case fetch_change(changeset, :route) do
+      {:ok, route} when not is_nil(route) ->
+        case PotokIde.Social.GroupRoutes.normalize(route) do
+          {:ok, route} -> put_change(changeset, :route, route)
+          {:error, reason} -> add_error(changeset, :route, route_error(reason))
+        end
+
+      _none ->
+        changeset
+    end
+  end
+
+  # A place is a point, an area or a route: a new area takes the route's
+  # place and a new route the area's (written even when not loaded, so the
+  # row never holds both), and both at once is a mistake.
+  defp one_shape(changeset) do
+    case {get_change(changeset, :area), get_change(changeset, :route)} do
+      {nil, nil} -> changeset
+      {_area, nil} -> force_change(changeset, :route, nil)
+      {nil, _route} -> force_change(changeset, :area, nil)
+      {_area, _route} -> add_error(changeset, :route, route_error(:with_area))
     end
   end
 
@@ -297,6 +349,7 @@ defmodule PotokIde.Social.Group do
     |> check_constraint(:preset, name: :groups_preset_check)
     |> check_constraint(:latitude, name: :groups_location_check)
     |> check_constraint(:area, name: :groups_area_check)
+    |> check_constraint(:route, name: :groups_route_check)
     |> check_constraint(:is_public, name: :groups_root_private_check)
     |> check_constraint(:parent_id, name: :groups_root_parent_check)
     |> check_constraint(:creator_id, name: :groups_root_creator_check)
