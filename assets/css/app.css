@@ -2611,6 +2611,12 @@
   font-size: 10px;
 }
 
+/* Above a card the page lays over the map's bottom (`root_map.js`). */
+.potok-map .leaflet-bottom {
+  bottom: var(--map-cover, 0px);
+  transition: bottom 200ms ease-out;
+}
+
 /* Leaflet's zoom buttons and attribution in the theme's colours. */
 .potok-map .leaflet-bar {
   border: 1px solid color-mix(in oklab, var(--color-base-300) 80%, transparent);
@@ -2825,6 +2831,7 @@
   .potok-map-pin svg,
   .potok-cluster,
   .potok-map .potok-area,
+  .potok-map .leaflet-bottom,
   .potok-corner,
   .potok-midpoint {
     transition: none;

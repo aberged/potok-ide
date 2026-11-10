@@ -217,6 +217,20 @@ export const RootMap = {
     })
 
     this.resizer.observe(this.el)
+
+    // The page renders a card over the map's bottom (`#root-map-here`, the
+    // groups of a spot): Leaflet's zoom buttons and the attribution move up
+    // above it rather than hide under it.
+    this.box = this.el.closest("#root-map-wrap")?.parentElement
+    this.coverWatch = new MutationObserver(() => this.liftControls())
+    if (this.box) this.coverWatch.observe(this.box, {childList: true, subtree: true})
+    this.liftControls()
+  },
+
+  liftControls() {
+    const cover = this.box?.querySelector(":scope > #root-map-here, :scope > #root-map-spot")
+    const lift = cover ? `${cover.offsetHeight + 8}px` : "0px"
+    if (this.el.style.getPropertyValue("--map-cover") !== lift) this.el.style.setProperty("--map-cover", lift)
   },
 
   // The server forgot the view with the old socket.
@@ -227,6 +241,7 @@ export const RootMap = {
   destroyed() {
     clearTimeout(this.timer)
     clearTimeout(this.tapTimer)
+    this.coverWatch?.disconnect()
     this.resizer?.disconnect()
     this.map?.remove()
   },
