@@ -1,10 +1,12 @@
 defmodule Mix.Tasks.Potok.SyncReminder do
   @moduledoc """
-  Reminds that the landing page and the domain map may have to follow a change.
+  Reminds that the landing page, the domain map and the help page may have to
+  follow a change.
 
   When the app's code changed, it names each page the change left untouched.
-  Whether that page needs new text takes judgment, so this never fails. See
-  "Landing page and domain map" in `AGENTS.md`.
+  The help page (`/pomoc`) is named only for a change to what users see, the
+  LiveViews and components. Whether a page needs new text takes judgment, so
+  this never fails. See "Landing page, domain map and help" in `AGENTS.md`.
 
   It reads the changed files from git, or takes them as arguments:
 
@@ -12,9 +14,9 @@ defmodule Mix.Tasks.Potok.SyncReminder do
   """
   use Mix.Task
 
-  @shortdoc "Reminds of the landing page and domain map after a change"
+  @shortdoc "Reminds of the landing page, domain map and help after a change"
 
-  @heading ~s(Did this change leave a page behind? See "Landing page and domain map" in AGENTS.md.)
+  @heading ~s(Did this change leave a page behind? See "Landing page, domain map and help" in AGENTS.md.)
 
   @app_code ~w(
     priv/repo/migrations/
@@ -25,6 +27,11 @@ defmodule Mix.Tasks.Potok.SyncReminder do
     assets/js/potok_app_sdk.js
   )
 
+  @screens ~w(
+    lib/potok_ide_web/live/
+    lib/potok_ide_web/components/
+  )
+
   @pages [
     %{
       name: "Landing page (/)",
@@ -32,7 +39,8 @@ defmodule Mix.Tasks.Potok.SyncReminder do
       files: ~w(
         lib/potok_ide_web/controllers/page_html.ex
         lib/potok_ide_web/controllers/page_html/home.html.heex
-      )
+      ),
+      after: @app_code
     },
     %{
       name: "Domain map (/domain)",
@@ -42,7 +50,20 @@ defmodule Mix.Tasks.Potok.SyncReminder do
         lib/potok_ide_web/domain_copy.ex
         lib/potok_ide_web/controllers/page_html/domain.html.heex
         assets/js/domain_map.js
-      )
+      ),
+      after: @app_code
+    },
+    %{
+      name: "Help (/pomoc)",
+      where:
+        "priv/static/HELP.sr.md and HELP.en.md, then mix potok.sr_cyrl; " <>
+          "pictures again with help_shots/make.exs --only <names>",
+      files: ~w(
+        priv/static/HELP.sr.md
+        priv/static/HELP.en.md
+        priv/static/images/help/
+      ),
+      after: @screens
     }
   ]
 
@@ -61,12 +82,16 @@ defmodule Mix.Tasks.Potok.SyncReminder do
     end
   end
 
+  # A page is left behind when its kind of code changed and none of its files
+  # did. A page's files never count as a change to the app (a folder among
+  # them, as `priv/static/images/help/`, stands for all it holds).
   defp pages_left_behind(paths) do
-    if Enum.any?(paths -- page_files(), &String.starts_with?(&1, @app_code)) do
-      Enum.reject(@pages, fn page -> Enum.any?(page.files, &(&1 in paths)) end)
-    else
-      []
-    end
+    code = Enum.reject(paths, &String.starts_with?(&1, page_files()))
+
+    Enum.filter(@pages, fn page ->
+      Enum.any?(code, &String.starts_with?(&1, page.after)) and
+        not Enum.any?(paths, &String.starts_with?(&1, page.files))
+    end)
   end
 
   defp page_files, do: Enum.flat_map(@pages, & &1.files)

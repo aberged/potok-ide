@@ -36,5 +36,31 @@ defmodule Mix.Tasks.Potok.SyncReminderTest do
     test "a change to a page alone is no change to the app" do
       assert SyncReminder.reminders(["lib/potok_ide/domain_map.ex"]) == []
     end
+
+    test "names the help page too when a screen changed" do
+      screen = "lib/potok_ide_web/live/group_live/show.ex"
+
+      assert [_heading, landing, domain, help] = SyncReminder.reminders([screen])
+
+      assert landing =~ "Landing page"
+      assert domain =~ "Domain map"
+      assert help =~ "Help (/pomoc)"
+    end
+
+    test "leaves the help page out when its text or pictures changed" do
+      screen = "lib/potok_ide_web/components/layouts.ex"
+
+      for touched <- ["priv/static/HELP.sr.md", "priv/static/images/help/poruke.webp"] do
+        reminders = SyncReminder.reminders([screen, touched])
+
+        assert length(reminders) == 3
+        refute Enum.any?(reminders, &(&1 =~ "Help"))
+      end
+    end
+
+    test "a change to the help page alone is no change to the app" do
+      assert SyncReminder.reminders(["priv/static/HELP.en.md", "priv/static/images/help/a.webp"]) ==
+               []
+    end
   end
 end

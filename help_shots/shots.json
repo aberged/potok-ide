@@ -1,0 +1,295 @@
+[
+  {
+    "name": "neprocitano",
+    "as": "ana",
+    "url": "/groups/{groups.building}",
+    "steps": [{ "wait": "#group-values-unread-divider" }]
+  },
+  {
+    "name": "prijava",
+    "url": "/accounts/log-in"
+  },
+  {
+    "name": "pocetna",
+    "as": "ana",
+    "url": "/groups"
+  },
+  {
+    "name": "meni",
+    "as": "ana",
+    "url": "/groups",
+    "steps": [{ "click": "label[for=app-drawer-toggle]" }, { "wait": "#app-help-link" }, { "pause": 400 }]
+  },
+  {
+    "name": "podgrupe-folderi",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/sub_groups?view=tree",
+    "steps": [{ "click": "#sub-group-folder-toggle-{groups.mz_map}" }, { "pause": 800 }]
+  },
+  {
+    "name": "primer-mz",
+    "as": "ana",
+    "url": "/groups/{groups.mz}"
+  },
+  {
+    "name": "primer-mz-mapa",
+    "as": "ana",
+    "url": "/groups/{groups.mz_map}",
+    "steps": [
+      { "pause": 2000 },
+      { "frameClick": ["iframe[id$='-iframe']", ".pm-cluster-icon"] },
+      { "pause": 2500 }
+    ]
+  },
+  {
+    "name": "primer-plenum",
+    "as": "ana",
+    "url": "/groups/{groups.plenum}"
+  },
+  {
+    "name": "primer-zadruga",
+    "as": "ana",
+    "url": "/groups/{groups.coop}"
+  },
+  {
+    "name": "primer-zgrada",
+    "as": "ana",
+    "url": "/groups/{groups.building}"
+  },
+  {
+    "name": "profili",
+    "as": "ana",
+    "url": "/profiles"
+  },
+  {
+    "name": "profil-uredi",
+    "as": "ana",
+    "url": "/profiles/{people.ana.profile_id}/edit"
+  },
+  {
+    "name": "pocetna-filteri",
+    "as": "ana",
+    "url": "/groups",
+    "steps": [{ "click": "#group-children-preset-toggle" }, { "pause": 400 }]
+  },
+  {
+    "name": "grupa-zaglavlje",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "clip": "#group-header"
+  },
+  {
+    "name": "grupa-meni",
+    "as": "ana",
+    "url": "/groups/{groups.mz}",
+    "steps": [{ "click": "#group-actions-menu" }, { "pause": 400 }]
+  },
+  {
+    "name": "o-grupi",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/group_home"
+  },
+  {
+    "name": "poruke",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [{ "show": "#value-{values.zbor_question}" }]
+  },
+  {
+    "name": "poruka-meni",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "show": "#value-{values.zbor_question}" },
+      { "longpress": "#value-{values.zbor_thread} .chat-bubble" },
+      { "wait": "#value-sheet" },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "poruke-odgovor",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "show": "#value-{values.zbor_question}" },
+      { "longpress": "#value-{values.zbor_question} .chat-bubble" },
+      { "wait": "#value-sheet" },
+      { "click": "#value-sheet button:has-text('Odgovori')" },
+      { "type": ["#group-value-content", "Pitaću i ja u opštini."] },
+      { "pause": 400 }
+    ]
+  },
+  {
+    "name": "nit",
+    "as": "ana",
+    "url": "/groups/{groups.mz_thread}"
+  },
+  {
+    "name": "prilozi",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [{ "click": "#group-value-add-toggle" }, { "pause": 400 }]
+  },
+  {
+    "name": "pretraga-poruka",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-search-messages" },
+      { "type": ["#value-search-dialog input", "lipa"] },
+      { "pause": 1200 }
+    ]
+  },
+  {
+    "name": "kreiraj-podgrupu",
+    "as": "ana",
+    "url": "/groups/{groups.mz}",
+    "steps": [{ "click": "#group-sub-groups-create-fab" }, { "wait": "#group-create-menu" }, { "pause": 400 }]
+  },
+  {
+    "name": "kreiraj-korak",
+    "as": "ana",
+    "url": "/groups/{groups.mz}",
+    "steps": [
+      { "click": "#group-sub-groups-create-fab" },
+      { "click": "#group-create-preset-chat" },
+      { "type": ["#group-create-menu input[type=text]", "Radna grupa za rasvetu"] },
+      { "pause": 400 }
+    ]
+  },
+  {
+    "name": "uredi-grupu",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/edit_group",
+    "steps": [{ "click": "#group-edit-tab-access" }, { "pause": 500 }]
+  },
+  {
+    "name": "clanovi",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/members"
+  },
+  {
+    "name": "pozovi",
+    "as": "ana",
+    "url": "/groups/{groups.plenum}/invite_profile",
+    "steps": [{ "type": ["#group-panel-invite-profile input[type=text]", "mi"] }, { "pause": 900 }]
+  },
+  {
+    "name": "uloge",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/roles"
+  },
+  {
+    "name": "kalendar",
+    "as": "ana",
+    "url": "/groups/{groups.root}/calendar"
+  },
+  {
+    "name": "dogadjaj",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}/calendar?event={events.zbor}"
+  },
+  {
+    "name": "dogadjaj-forma",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}/calendar",
+    "steps": [
+      { "click": "#calendar-new-event" },
+      { "type": ["#calendar-event-form input[type=text]", "Akcija čišćenja parka"] },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "glasanje-forma",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-value-add-toggle" },
+      { "click": "#group-value-poll" },
+      { "type": ["#poll-form-dialog input[type=text]", "Kada da održimo sledeći zbor?"] },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "glasanje-kartica",
+    "as": "jelena",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [{ "show": "#value-{values.zbor_poll}" }],
+    "clip": "#value-{values.zbor_poll}"
+  },
+  {
+    "name": "glasanje-detalji",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}/polls",
+    "steps": [{ "click": "#polls-list a, #polls-list [phx-click]" }, { "pause": 800 }]
+  },
+  {
+    "name": "mapa-grupa",
+    "as": "ana",
+    "url": "/groups/{groups.root}/map?area={groups.mz}",
+    "steps": [{ "pause": 2500 }]
+  },
+  {
+    "name": "mapa-kartica",
+    "as": "ana",
+    "url": "/groups/{groups.root}/map?place={groups.mz_pothole}",
+    "steps": [{ "pause": 2000 }, { "click": ".potok-map-pin.is-focus" }, { "pause": 1500 }]
+  },
+  {
+    "name": "lokacija-podrucje",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/edit_group",
+    "steps": [{ "click": "#group-edit-tab-location" }, { "pause": 2500 }]
+  },
+  {
+    "name": "fajlovi",
+    "as": "ana",
+    "url": "/groups/{groups.building}/files"
+  },
+  {
+    "name": "tagovi",
+    "as": "ana",
+    "url": "/tags"
+  },
+  {
+    "name": "pracenje",
+    "as": "ana",
+    "url": "/groups/{groups.plenum}",
+    "steps": [{ "click": "#group-follow-menu" }, { "pause": 400 }]
+  },
+  {
+    "name": "obavestenja",
+    "as": "ana",
+    "url": "/notices"
+  },
+  {
+    "name": "podesavanja-push",
+    "as": "ana",
+    "worker": true,
+    "url": "/accounts/settings",
+    "steps": [{ "show": "#push-notifications-panel" }, { "pause": 1500 }]
+  },
+  {
+    "name": "feed",
+    "as": "ana",
+    "url": "/groups/{groups.plenum_news}",
+    "steps": [{ "pause": 2500 }]
+  },
+  {
+    "name": "forma",
+    "as": "ana",
+    "url": "/groups/{groups.coop_orders}",
+    "steps": [{ "pause": 2500 }]
+  },
+  {
+    "name": "opis-sablon",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/edit_group",
+    "steps": [
+      { "click": "#group-edit-tab-description" },
+      { "click": "#group-description-template-change" },
+      { "show": "#group-description-templates" },
+      { "pause": 800 }
+    ]
+  }
+]

@@ -52,3 +52,6 @@ docs/ios-secrets-and-checklist.md
 
 # Stress test output (see load_test/README.md).
 /load_test/results/
+
+# Pictures for the help page: Playwright for help_shots/make.exs.
+/help_shots/node_modules/

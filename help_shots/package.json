@@ -1,0 +1,10 @@
+{
+  "name": "potok-help-shots",
+  "private": true,
+  "description": "Pictures of Potok for its help page (/pomoc). Run through make.exs, see README.md.",
+  "type": "module",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "playwright-core": "1.64.1"
+  }
+}

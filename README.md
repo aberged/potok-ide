@@ -602,6 +602,7 @@ Public routes:
 * `GET /` redirects based on account and profile state
 * `GET /locale/:locale` updates the active locale
 * `GET /privacy-policy` renders `priv/static/PRIVACY_POLICY.md`, or its `.sr.md` and `.sr_Cyrl.md` translations
+* `GET /pomoc` renders the help page from `priv/static/HELP.sr.md` (the reference), `HELP.sr_Cyrl.md` (written by `mix potok.sr_cyrl`) and `HELP.en.md`, with pictures of the app that `help_shots/make.exs` takes (see `help_shots/README.md`); `GET /help` redirects there
 * `GET /avatar/profile/:id` and `GET /avatar/group/:id` serve avatar images (no session)
 * `GET /.well-known/assetlinks.json` for Android App Links
 * `GET /.well-known/apple-app-site-association` and `GET /apple-app-site-association` for iOS Universal Links
@@ -1107,4 +1108,4 @@ For exact PowerShell and macOS secret commands plus a checked Apple Developer an
 
 ## Maintenance Notes
 
-Use `mix precommit` as the final verification step for code changes. If you change the domain model, routes, or deployment assumptions, update this README at the same time so it stays aligned with the application. The landing page and the domain map at `/domain` follow the same rule: see "Landing page and domain map" in `AGENTS.md`.
+Use `mix precommit` as the final verification step for code changes. If you change the domain model, routes, or deployment assumptions, update this README at the same time so it stays aligned with the application. The landing page, the domain map at `/domain` and the help page at `/pomoc` follow the same rule: see "Landing page, domain map and help" in `AGENTS.md`.

@@ -318,6 +318,15 @@ defmodule PotokIdeWeb.Layouts do
                     )}
                   </.link>
                 <% end %>
+                <%!-- A page of its own, outside the app's LiveViews. --%>
+                <.link
+                  id="app-help-link"
+                  href={~p"/pomoc"}
+                  data-drawer-close
+                  class={@nav_link_class}
+                >
+                  <.icon name="hero-question-mark-circle" class="size-6" /> {gettext("Help")}
+                </.link>
               </div>
             </div>
 
@@ -508,13 +517,22 @@ defmodule PotokIdeWeb.Layouts do
                 />
                 <.theme_toggle />
               </div>
-              <.link
-                id="guest-privacy-link"
-                href={~p"/privacy-policy"}
-                class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
-              >
-                {gettext("Privacy policy")}
-              </.link>
+              <div class="flex flex-wrap items-center gap-x-5 gap-y-2 md:justify-end">
+                <.link
+                  id="guest-help-link"
+                  href={~p"/pomoc"}
+                  class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
+                >
+                  {gettext("Help")}
+                </.link>
+                <.link
+                  id="guest-privacy-link"
+                  href={~p"/privacy-policy"}
+                  class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
+                >
+                  {gettext("Privacy policy")}
+                </.link>
+              </div>
             </div>
           </div>
         </footer>

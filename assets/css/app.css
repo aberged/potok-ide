@@ -2607,6 +2607,339 @@
   .or-matrix td:first-child {
     background: var(--lp-card);
   }
+
+  /* Help page (`page_html/help.html.heex`, text from `HelpDoc`): contents in a
+     column of their own from `lg`, a list that folds open above the text on
+     phones. Pictures of the app sit in a phone's frame, a row of them scrolls
+     sideways. */
+  .hp-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+
+  .hp-toc {
+    display: none;
+  }
+
+  .hp-toc-title {
+    padding: 0 10px;
+    color: var(--lp-accent);
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .hp-toc-list {
+    margin-top: 10px;
+    font-size: 14px;
+    line-height: 1.35;
+  }
+
+  .hp-toc-list > li + li {
+    margin-top: 2px;
+  }
+
+  .hp-toc-list a {
+    display: block;
+    padding: 6px 10px;
+    border-radius: 10px;
+    color: var(--lp-muted);
+    transition:
+      background-color 0.2s,
+      color 0.2s,
+      transform 0.2s;
+  }
+
+  .hp-toc-list > li > a {
+    color: var(--color-base-content);
+    font-weight: 600;
+  }
+
+  .hp-toc-list a:hover {
+    background: var(--lp-accent-soft);
+    color: var(--color-base-content);
+    transform: translateX(2px);
+  }
+
+  .hp-toc-list a:focus-visible {
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 1px;
+  }
+
+  .hp-toc-list ol {
+    margin: 2px 0 8px 12px;
+    padding-left: 6px;
+    border-left: 1px solid var(--lp-line);
+    font-size: 13.5px;
+  }
+
+  .hp-top h1 {
+    margin-top: 6px;
+    font-size: clamp(30px, 5vw, 44px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.025em;
+    text-wrap: balance;
+  }
+
+  .hp-lead {
+    max-width: 44rem;
+    margin-top: 14px;
+    color: var(--lp-muted);
+    font-size: clamp(16px, 2.2vw, 18.5px);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .hp-toc-phone {
+    margin-top: 26px;
+    border: 1px solid var(--lp-line);
+    border-radius: 16px;
+    background: var(--lp-card);
+    box-shadow: var(--lp-shadow);
+  }
+
+  .hp-toc-phone summary {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 16px;
+    border-radius: 16px;
+    font-weight: 700;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .hp-toc-phone summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .hp-toc-phone summary:focus-visible {
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
+
+  .hp-toc-chevron {
+    margin-left: auto;
+    color: var(--lp-muted);
+    transition: transform 0.2s;
+  }
+
+  .hp-toc-phone[open] .hp-toc-chevron {
+    transform: rotate(180deg);
+  }
+
+  .hp-toc-phone .hp-toc-list {
+    margin: 0;
+    padding: 0 8px 12px;
+  }
+
+  @media (min-width: 64rem) {
+    .hp-layout {
+      grid-template-columns: 14rem minmax(0, 1fr);
+      gap: 48px;
+    }
+
+    .hp-toc {
+      display: block;
+      position: sticky;
+      top: calc(var(--app-safe-area-top, 0px) + 1.25rem);
+      align-self: start;
+      max-height: calc(100dvh - 2.5rem);
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      /* Its words line up with the header's mark, past the links' padding. */
+      margin-left: -10px;
+      padding: 6px 6px 16px 0;
+      scrollbar-width: thin;
+    }
+
+    .hp-toc-phone {
+      display: none;
+    }
+  }
+
+  .hp-doc {
+    margin-top: 12px;
+  }
+
+  .hp-doc > :is(h2, h3, h4, p, ul, ol, blockquote) {
+    max-width: 44rem;
+  }
+
+  .hp-doc :is(h2, h3, h4) {
+    scroll-margin-top: calc(var(--app-safe-area-top, 0px) + 1rem);
+  }
+
+  .hp-doc h2 {
+    margin-top: clamp(40px, 7vw, 60px);
+    padding-top: clamp(26px, 4vw, 34px);
+    border-top: 1px solid var(--lp-line);
+    font-size: clamp(23px, 3.4vw, 30px);
+  }
+
+  .hp-doc h3 {
+    margin-top: 30px;
+    font-size: 19px;
+    font-weight: 750;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+  }
+
+  .hp-doc h4 {
+    margin-top: 22px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .hp-doc ol {
+    margin-top: 12px;
+    padding-left: 1.4rem;
+    list-style: decimal;
+  }
+
+  .hp-doc ol li + li {
+    margin-top: 6px;
+  }
+
+  .hp-doc ol li::marker {
+    color: var(--lp-accent);
+    font-weight: 700;
+  }
+
+  .hp-doc li > :is(ul, ol) {
+    margin-top: 6px;
+  }
+
+  .hp-doc em {
+    font-style: italic;
+  }
+
+  .hp-doc code {
+    padding: 1px 6px;
+    border-radius: 6px;
+    background: var(--lp-accent-soft);
+    font-size: 0.9em;
+  }
+
+  /* A tip: a line in the margin of the mark's blue. */
+  .hp-doc blockquote {
+    margin-top: 18px;
+    padding: 12px 16px;
+    border-left: 3px solid var(--lp-accent);
+    border-radius: 4px 14px 14px 4px;
+    background: var(--lp-accent-soft);
+  }
+
+  .hp-doc blockquote > :first-child {
+    margin-top: 0;
+  }
+
+  .hp-table table {
+    min-width: 34rem;
+  }
+
+  .hp-shot {
+    width: min(100%, 17.5rem);
+    margin: 24px 0 0;
+  }
+
+  .hp-shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--lp-line);
+    border-radius: 24px;
+    background: var(--color-base-100);
+    box-shadow: var(--lp-shadow);
+    transition:
+      transform 0.3s,
+      box-shadow 0.3s;
+  }
+
+  .hp-shot:hover img {
+    transform: translateY(-2px);
+    box-shadow: var(--lp-shadow-hover);
+  }
+
+  .hp-shot figcaption {
+    margin-top: 10px;
+    padding: 0 4px;
+    color: var(--lp-muted);
+    font-size: 13.5px;
+    line-height: 1.45;
+    text-wrap: pretty;
+  }
+
+  .hp-missing img {
+    aspect-ratio: 390 / 844;
+    border-style: dashed;
+  }
+
+  .hp-shots {
+    display: flex;
+    gap: 18px;
+    margin: 24px -20px 0;
+    padding: 0 20px 10px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 20px;
+    scrollbar-width: thin;
+  }
+
+  .hp-shots .hp-shot {
+    flex: 0 0 auto;
+    width: min(70vw, 16rem);
+    margin: 0;
+    scroll-snap-align: start;
+  }
+
+  /* Where there is room, a row's pictures share it instead of scrolling. */
+  @media (min-width: 40rem) {
+    .hp-shots {
+      margin-inline: 0;
+      padding-inline: 0;
+      scroll-padding-inline: 0;
+    }
+
+    .hp-shots .hp-shot {
+      flex: 1 1 0;
+      width: auto;
+      min-width: 11rem;
+      max-width: 16rem;
+    }
+  }
+
+  .hp-to-top {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 48px;
+    padding: 8px 14px;
+    border: 1px solid var(--lp-line);
+    border-radius: 999px;
+    color: var(--lp-muted);
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      color 0.2s,
+      border-color 0.2s,
+      transform 0.2s;
+  }
+
+  .hp-to-top:hover {
+    border-color: color-mix(in oklab, var(--lp-accent) 40%, transparent);
+    color: var(--lp-accent);
+    transform: translateY(-1px);
+  }
+
+  .hp-to-top:focus-visible {
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
 }
 
 /* Maps (`location_picker.js`): Leaflet's container in the theme's colours,

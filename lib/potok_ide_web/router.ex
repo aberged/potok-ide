@@ -80,6 +80,8 @@ defmodule PotokIdeWeb.Router do
     get "/domain", PageController, :domain
     get "/stack", PageController, :stack
     get "/origin", PageController, :origin
+    get "/pomoc", PageController, :help
+    get "/help", PageController, :help_redirect
   end
 
   # The service worker takes these posts (`priv/static/sw.js`); this is for

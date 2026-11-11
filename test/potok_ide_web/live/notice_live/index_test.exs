@@ -55,6 +55,11 @@ defmodule PotokIdeWeb.NoticeLive.IndexTest do
     assert has_element?(view, "#nav-notices-link[href='/notices']")
   end
 
+  test "the menu leads to the help page", ctx do
+    view = open(ctx.conn, ctx.reader_account, ~p"/invitations")
+    assert has_element?(view, "#app-sidebar #app-help-link[href='/pomoc']")
+  end
+
   describe "received notices" do
     test "come newest first, the unread marked, and opening reads them", ctx do
       first = send!(ctx.owner, ctx.group, "First")

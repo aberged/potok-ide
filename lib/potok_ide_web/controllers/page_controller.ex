@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.PageController do
 
   alias PotokIde.DomainMap
   alias PotokIdeWeb.DomainCopy
+  alias PotokIdeWeb.HelpDoc
   alias PotokIdeWeb.StackCopy
 
   plug :assign_nav_counts when action in [:privacy]
@@ -109,6 +110,19 @@ defmodule PotokIdeWeb.PageController do
     |> assign(:page_description, PotokIdeWeb.PageHTML.origin_lead())
     |> render(:origin, origin_html: origin_html(locale), serbian_only?: locale == "en")
   end
+
+  def help(conn, _params) do
+    locale = conn.assigns.current_locale
+    doc = HelpDoc.get(locale)
+
+    conn
+    |> assign(:page_title, gettext("Help"))
+    |> assign(:page_description, doc.lead)
+    |> render(:help, doc: doc, serbian_pictures?: locale == "en")
+  end
+
+  # For those who type the address in English; anchors stay in the browser.
+  def help_redirect(conn, _params), do: redirect(conn, to: ~p"/pomoc")
 
   def privacy(conn, _params) do
     render(conn, :privacy, privacy_policy_html: privacy_policy_html(conn.assigns.current_locale))

@@ -38,10 +38,12 @@ self.addEventListener("message", event => {
   }
 })
 
+// The help page's pictures stay out: forty of them would push the app's own
+// files and the offline page out of a cache of STATIC_CACHE_MAX_ENTRIES.
 const isStaticAsset = pathname => {
   return pathname.startsWith("/assets/") ||
     pathname.startsWith("/fonts/") ||
-    pathname.startsWith("/images/") ||
+    (pathname.startsWith("/images/") && !pathname.startsWith("/images/help/")) ||
     pathname === "/favicon.ico" ||
     pathname === "/manifest.webmanifest" ||
     pathname === "/robots.txt"

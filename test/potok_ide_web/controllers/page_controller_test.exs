@@ -31,6 +31,8 @@ defmodule PotokIdeWeb.PageControllerTest do
           "#landing-join-login[href='/accounts/log-in']",
           "#guest-header #landing-login-link",
           "#guest-footer #guest-privacy-link[href='/privacy-policy']",
+          "#guest-footer #guest-help-link[href='/pomoc']",
+          "#landing-features > a#landing-help-link[href='/pomoc']",
           "meta[name=description]"
         ] do
       assert Enum.count(LazyHTML.query(document, selector)) == 1, "missing #{selector}"
@@ -283,6 +285,80 @@ defmodule PotokIdeWeb.PageControllerTest do
 
     test "is open to accounts that are logged in", %{conn: conn} do
       assert conn |> log_in_account(account_fixture()) |> get(~p"/origin") |> html_response(200)
+    end
+  end
+
+  describe "the help page" do
+    defp help_page(conn, locale) do
+      conn
+      |> init_test_session(%{locale: locale})
+      |> get(~p"/pomoc")
+      |> html_response(200)
+      |> LazyHTML.from_document()
+    end
+
+    defp help_text(document, selector) do
+      document |> LazyHTML.query(selector) |> LazyHTML.text() |> String.trim()
+    end
+
+    test "lists every section in both lists of contents", %{conn: conn} do
+      document = help_page(conn, "sr")
+      sections = count(document, "#help-text h2[id]")
+
+      assert sections > 0
+      assert help_text(document, "#help-top h1") == PotokIdeWeb.HelpDoc.get("sr").title
+      assert count(document, "#help-toc .hp-toc-list > li > a") == sections
+      assert count(document, "#help-toc-phone .hp-toc-list > li > a") == sections
+
+      for link <- LazyHTML.query(document, "#help-toc a") do
+        ["#" <> id] = LazyHTML.attribute(link, "href")
+        assert count(document, "#help-text [id='#{id}']") == 1, "no section #{id}"
+      end
+
+      assert count(document, "#help-language-note") == 0
+      assert count(document, "#guest-about-link[href='/']") == 1
+    end
+
+    test "gives every element its own id and every picture its size", %{conn: conn} do
+      document = help_page(conn, "sr")
+      ids = document |> LazyHTML.query("[id]") |> LazyHTML.attribute("id")
+
+      assert ids == Enum.uniq(ids)
+
+      assert count(document, "#help-text figure img") ==
+               count(document, "#help-text figure img[width][height][loading=lazy]")
+    end
+
+    test "is in Cyrillic, with the same sections", %{conn: conn} do
+      document = help_page(conn, "sr_Cyrl")
+
+      assert help_text(document, "#help-top h1") =~ ~r/\p{Cyrillic}/u
+
+      assert count(document, "#help-text h2[id]") ==
+               count(help_page(conn, "sr"), "#help-text h2[id]")
+    end
+
+    test "tells English visitors that the pictures are in Serbian", %{conn: conn} do
+      document = help_page(conn, "en")
+
+      assert count(document, "#help-language-note") == 1
+      assert help_text(document, "#help-top h1") == PotokIdeWeb.HelpDoc.get("en").title
+    end
+
+    test "leads accounts that are logged in back to the app", %{conn: conn} do
+      document =
+        conn
+        |> log_in_account(account_fixture())
+        |> get(~p"/pomoc")
+        |> html_response(200)
+        |> LazyHTML.from_document()
+
+      assert count(document, "#guest-header #help-back-link[href='/groups']") == 1
+      assert count(document, "#guest-about-link") == 0
+    end
+
+    test "is also at /help", %{conn: conn} do
+      assert conn |> get(~p"/help") |> redirected_to() == ~p"/pomoc"
     end
   end
 

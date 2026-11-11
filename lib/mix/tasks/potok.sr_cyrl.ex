@@ -1,7 +1,8 @@
 defmodule Mix.Tasks.Potok.SrCyrl do
   @moduledoc """
-  Generates the Cyrillic Serbian translations (`sr_Cyrl`), privacy policy and
-  the overview of where Potok comes from (`/origin`) from the Latin ones (`sr`).
+  Generates the Cyrillic Serbian translations (`sr_Cyrl`), privacy policy, the
+  overview of where Potok comes from (`/origin`) and the help page (`/pomoc`)
+  from the Latin ones (`sr`).
 
   `sr` is the reference: edit it, then run this task. The `sr_Cyrl` files are
   output, so changes made to them by hand are lost. A test fails when they are
@@ -20,6 +21,8 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   @policy_target "priv/static/PRIVACY_POLICY.sr_Cyrl.md"
   @origin_source "priv/static/ORIGIN.sr.md"
   @origin_target "priv/static/ORIGIN.sr_Cyrl.md"
+  @help_source "priv/static/HELP.sr.md"
+  @help_target "priv/static/HELP.sr_Cyrl.md"
 
   @letters ~w(a b c č ć d dž đ e f g h i j k l lj m n nj o p r s š t u v z ž)
            |> Enum.zip(~w(а б ц ч ћ д џ ђ е ф г х и ј к л љ м н њ о п р с ш т у в з ж))
@@ -51,6 +54,10 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   # The overview also keeps the handles of accounts (`@studenti\_u\_blokadi`).
   # Only there: in the translations, `@pominjanje` is a Serbian word.
   @origin_kept Regex.compile!(Regex.source(@kept) <> "| @\\w[\\w\\\\]*", "ux")
+
+  # The help page also keeps where its links and pictures go (`](#poruke)`,
+  # `](poruke-odgovor)`): the same names in every language.
+  @help_kept Regex.compile!(Regex.source(@kept) <> "| \\]\\([^)\\s]*\\)", "ux")
 
   # Foreign words that the Latin text keeps in their own spelling.
   @words %{
@@ -90,7 +97,8 @@ defmodule Mix.Tasks.Potok.SrCyrl do
 
     [
       {@policy_target, @policy_source |> File.read!() |> transliterate()},
-      {@origin_target, @origin_source |> File.read!() |> transliterate(@origin_kept)}
+      {@origin_target, @origin_source |> File.read!() |> transliterate(@origin_kept)},
+      {@help_target, @help_source |> File.read!() |> transliterate(@help_kept)}
       | translations
     ]
   end

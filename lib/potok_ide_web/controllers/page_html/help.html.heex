@@ -1,0 +1,54 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+>
+  <:header_action :if={@current_scope && @current_scope.account}>
+    <.link
+      id="help-back-link"
+      href={~p"/groups"}
+      class="inline-flex items-center gap-1.5 rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+    >
+      <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to Potok")}
+    </.link>
+  </:header_action>
+
+  <div id="help" class="hp mx-auto w-full max-w-5xl px-5 pb-16 sm:px-8">
+    <div class="hp-layout">
+      <nav id="help-toc" class="hp-toc" aria-labelledby="help-toc-title">
+        <p id="help-toc-title" class="hp-toc-title">{gettext("Contents")}</p>
+        <.help_toc toc={@doc.toc} prefix="help-toc" />
+      </nav>
+
+      <div class="hp-main">
+        <header id="help-top" class="hp-top">
+          <p class="lp-kicker">{gettext("Help")}</p>
+          <h1>{@doc.title}</h1>
+          <p class="hp-lead">{@doc.lead}</p>
+          <p :if={@serbian_pictures?} id="help-language-note" class="or-note">
+            <.icon name="hero-language" class="size-4 shrink-0" />
+            {gettext("The pictures show Potok in Serbian.")}
+          </p>
+        </header>
+
+        <details id="help-toc-phone" class="hp-toc-phone">
+          <summary>
+            <.icon name="hero-list-bullet" class="size-5 text-(--lp-accent)" />
+            <span>{gettext("Contents")}</span>
+            <.icon name="hero-chevron-down" class="hp-toc-chevron size-4" />
+          </summary>
+          <.help_toc toc={@doc.toc} prefix="help-toc-phone" />
+        </details>
+
+        <article id="help-text" class="or-doc hp-doc">
+          {raw(@doc.html)}
+        </article>
+
+        <a id="help-to-top" href="#help-top" class="hp-to-top">
+          <.icon name="hero-arrow-up" class="size-4" /> {gettext("Back to the top")}
+        </a>
+      </div>
+    </div>
+  </div>
+</Layouts.guest>

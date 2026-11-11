@@ -5,7 +5,7 @@ defmodule PotokIdeWeb.StackCopy do
 
   Every sentence says what the code does today, so a new dependency, a process
   of its own or a daisyUI part taken up or dropped can make it wrong. See
-  "Landing page and domain map" in `AGENTS.md`.
+  "Landing page, domain map and help" in `AGENTS.md`.
 
   Code in the texts is marked as `` `name` ``, as in
   `PotokIdeWeb.DomainCopy.parts/1`. The tools' own names stay in Latin through
