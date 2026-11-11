@@ -78,7 +78,6 @@ Ta raspodela ima cenu: informacije su rasute po kanalima, isti podaci se unose v
 | Prijave i podaci | Google Forms, blokade.org, stopbrutalnosti.com, baza „Za dan posle“ | Obrasci za volontere, redare, kontrolore i incidente, koji se slivaju u bazu grupe |
 | Mapa | problem-lokator.rs, deljenje lokacije | Zajednička mapa zborova, događaja i prijava |
 | Podgrupe i uloge | Discord, WhatsApp zajednice, imenik na nszbor.org | Zbor → radne grupe; uloge kao što su moderator, redar, kontrolor, delegat |
-| Bezbednost (E2E) | Signal i WhatsApp; delimično Viber | Šifrovanje kao podrazumevano za razgovore, glasanja i prijave |
 | Obuka i resursi | nszbor.org, obuka.itblokada.org | Biblioteka priručnika i obuka dostupna svakoj grupi |
 | Donacije i solidarnost | Mreža solidarnosti, Fondacija Alek Kavčić, apeli na Instagramu | Povezivanje potreba i ponude: novac, smeštaj, prevoz, materijal |
 
