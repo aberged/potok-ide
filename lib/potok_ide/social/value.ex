@@ -12,6 +12,10 @@ defmodule PotokIde.Social.Value do
   schema "values" do
     field :content, :string
     field :content_format, Ecto.Enum, values: @content_formats, default: :markdown
+    # Kept by Postgres from the content (a generated column), never written
+    # here: a chat value's text as a search compares it
+    # (`Social.search_group_values/3`); nil for app data values.
+    field :content_folded, :string, load_in_query: false, writable: :never
     field :is_data, :boolean, default: false
     field :data, :map
     # The collection of an app's data value and what goes with it, all set by

@@ -410,15 +410,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   def highlighted_text(assigns) do
     assigns = assign(assigns, :segments, highlighted_text_segments(assigns.text, assigns.query))
 
+    # No whitespace between the parts: it would show as a gap around a match.
     ~H"""
-    <span class={@class}>
-      <span
-        :for={segment <- @segments}
-        class={if segment.match?, do: @match_class, else: nil}
-      >
-        {segment.text}
-      </span>
-    </span>
+    <span class={@class} phx-no-format><span :for={segment <- @segments} class={segment.match? && @match_class}>{segment.text}</span></span>
     """
   end
 
@@ -2610,22 +2604,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp highlighted_text_segments(text, query) when is_binary(text) and not is_binary(query),
     do: [%{text: text, match?: false}]
 
-  defp highlighted_text_segments(text, query) do
-    normalized_query = String.trim(query)
-
-    if normalized_query == "" do
-      [%{text: text, match?: false}]
-    else
-      regex = Regex.compile!(Regex.escape(normalized_query), "iu")
-
-      regex
-      |> Regex.split(text, include_captures: true, trim: false)
-      |> Enum.reject(&(&1 == ""))
-      |> Enum.map(fn segment ->
-        %{text: segment, match?: Regex.match?(regex, segment)}
-      end)
-    end
-  end
+  # Matched as the searches match (`NameSearch`, `Social.search_group_values/3`):
+  # "cacak" lights up "Čačak" and "Чачак".
+  defp highlighted_text_segments(text, query), do: PotokIde.TextFold.segments(text, query)
 
   # Form preview: the field value is the raw URL/data URL the user entered.
   defp group_picture_url(url) when is_binary(url) do

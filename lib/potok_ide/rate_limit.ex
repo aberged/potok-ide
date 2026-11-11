@@ -2,8 +2,9 @@ defmodule PotokIde.RateLimit do
   @moduledoc """
   Counts attempts in fixed windows, for what anyone can repeat without being
   a member of anything: password log-ins, sign-in links and the emails sent to
-  an address someone types. Also for what an app can repeat in its viewer's
-  name and that scans every value it keeps: counts and sums.
+  an address someone types. Also for what scans many values and can be asked
+  again and again: an app's counts and sums in its viewer's name, and
+  searches of a group's messages.
 
   The counters live in `PotokIde.Cache`'s ETS table, so each machine counts for
   itself: with N machines a limit lets through up to N times as much.
@@ -36,6 +37,9 @@ defmodule PotokIde.RateLimit do
     # Views of the root's map, per profile on all its pages: the map asks once
     # it stops moving, so even a busy minute asks a few dozen times.
     root_map_view: {300, :timer.minutes(1)},
+    # Searches of a group's messages, per profile on all its pages: the box
+    # asks 300 ms after the last key, so even fast typing asks a few a second.
+    value_search: {60, :timer.minutes(1)},
     # Map tiles one IP asks Potok for, kept or not: a fast pan over a big
     # screen asks for a few hundred a minute.
     tile_ip: {1200, :timer.minutes(1)},
@@ -53,6 +57,7 @@ defmodule PotokIde.RateLimit do
           | :app_heavy_read
           | :app_create_place
           | :root_map_view
+          | :value_search
           | :tile_ip
           | :tile_upstream
 

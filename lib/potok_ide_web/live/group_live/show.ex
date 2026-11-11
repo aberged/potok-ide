@@ -48,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     RootMapTab,
     SubGroupsTab,
     SubGroupTree,
+    ValueSearch,
     ValuesTab
   }
 
@@ -393,6 +394,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </button>
 
+          <.icon_button
+            :if={ValueSearch.available?(@group, @active_tab, @access)}
+            id="group-search-messages"
+            type="button"
+            phx-click="value_search_open"
+            icon="hero-magnifying-glass"
+            label={gettext("Search messages")}
+          />
+
           <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
             <GroupMenu.items group={@group} access={@access} active_tab={@active_tab}>
               <%!-- The root has no bar of sections. --%>
@@ -683,6 +693,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <TagComponents.tag_editor editor={@tag_editor} />
       <CreateMenu.menu menu={@group_create_menu} />
       <PollForm.dialog state={@poll_form} />
+      <ValueSearch.dialog
+        state={@value_search}
+        results={@streams.value_search_results}
+        group={@group}
+        member={@is_member}
+        time_zone={@calendar_time_zone}
+      />
       <PollCard.dialog view={@poll_dialog} />
       <GroupSheet.dialog
         :if={@group_sheet}
@@ -729,6 +746,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:loaded_value_ids, MapSet.new())
          |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
          |> assign(:unread_divider, nil)
+         |> ValueSearch.init()
          |> assign(:files_view, "list")
          |> assign(:files_has_more?, false)
          |> assign(:files_loaded_count, 0)
@@ -855,6 +873,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:focus_value_id, nil)
          |> assign(:values_has_newer?, false)
          |> forget_unread_start()
+         |> assign(:value_search, nil)
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
@@ -894,6 +913,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   @impl true
+  def handle_event("value_search_" <> _ = event, params, socket),
+    do: ValueSearch.handle_event(event, params, socket)
+
   def handle_event("calendar_" <> _ = event, params, socket),
     do: CalendarState.handle_event(event, params, socket)
 

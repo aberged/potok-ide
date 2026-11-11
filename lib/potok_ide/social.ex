@@ -4573,6 +4573,94 @@ defmodule PotokIde.Social do
     end
   end
 
+  @value_search_limit 20
+  @value_search_timeout_ms 3_000
+  @max_value_id 9_223_372_036_854_775_807
+
+  @doc """
+  The chat values of `group` whose text holds `term` (a `NameSearch.term/1`),
+  newest first, with their creators: `{:ok, {values, more?}}`, or
+  `{:error, :timeout}` when the search takes too long. Texts compare folded
+  (`values.content_folded`), so case, diacritics and script do not count.
+
+  Options:
+  * `:threads_for`, a profile that is a member: also the threads right below
+    the group that it is in, whose values have the thread as `group_id`;
+  * `:outsider`, someone reading an open chat from outside: leaves out the
+    announcements of events that are not public, as the chat hides them;
+  * `:before_id`, to page on from the oldest value found; `:limit`.
+
+  Each chat is read from its newest value through the chat id index, so a
+  word that turns up often stops early, and one found nowhere reads the whole
+  chat: ~30 ms for 100,000 values, as the text is folded already.
+  """
+  def search_group_values(%Group{} = group, term, opts \\ []) when is_binary(term) do
+    limit = Keyword.get(opts, :limit, @value_search_limit)
+    before_id = Keyword.get(opts, :before_id) || @max_value_id
+    outsider? = Keyword.get(opts, :outsider, false)
+
+    Repo.with_statement_timeout(
+      @value_search_timeout_ms,
+      fn ->
+        group_ids = [group.id | value_search_thread_ids(group, opts[:threads_for])]
+
+        %{rows: rows} =
+          Repo.query!(value_search_sql(outsider?), [group_ids, before_id, term, limit + 1],
+            cache_statement: "social_search_group_values_#{outsider?}"
+          )
+
+        {ids, more} = rows |> List.flatten() |> Enum.split(limit)
+
+        by_id =
+          from(v in Value, where: v.id in ^ids, preload: :creator)
+          |> Repo.all()
+          |> Map.new(&{&1.id, &1})
+
+        {ids |> Enum.map(&by_id[&1]) |> Enum.reject(&is_nil/1), more != []}
+      end,
+      jit: false
+    )
+  end
+
+  defp value_search_thread_ids(_group, nil), do: []
+
+  defp value_search_thread_ids(%Group{id: group_id}, %Profile{id: profile_id}) do
+    from(g in Group,
+      join: m in GroupMembership,
+      on: m.group_id == g.id and m.profile_id == ^profile_id,
+      where: g.parent_id == ^group_id and not is_nil(g.parent_value_id),
+      select: g.id
+    )
+    |> Repo.all()
+  end
+
+  # Each chat from its newest value down, then the newest of all of them.
+  defp value_search_sql(outsider?) do
+    hidden_events =
+      if outsider?,
+        do:
+          "AND NOT EXISTS (SELECT 1 FROM group_events e WHERE e.value_id = x.id AND NOT e.is_public)",
+        else: ""
+
+    """
+    SELECT v.id
+    FROM unnest($1::bigint[]) AS g(id)
+    CROSS JOIN LATERAL (
+      SELECT x.id
+      FROM values x
+      WHERE x.group_id = g.id
+        AND x.is_data = FALSE
+        AND x.id < $2
+        AND x.content_folded LIKE '%' || potok_fold($3::text) || '%'
+        #{hidden_events}
+      ORDER BY x.id DESC
+      LIMIT $4
+    ) v
+    ORDER BY v.id DESC
+    LIMIT $4
+    """
+  end
+
   @doc """
   Keyset page of the files attached in the group, newest first, with their
   uploaders. Returns `{attachments, more?}` like `list_group_values_page/2`.

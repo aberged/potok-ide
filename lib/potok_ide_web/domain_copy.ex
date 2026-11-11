@@ -249,6 +249,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("Value", "content"), do: dgettext("domain_map", "content")
   defp own_field("Value", "content_format"), do: dgettext("domain_map", "content format")
+
+  defp own_field("Value", "content_folded"),
+    do: dgettext("domain_map", "text as a search reads it, in Latin and without diacritics")
+
   defp own_field("Value", "is_data"), do: dgettext("domain_map", "app data")
   defp own_field("Value", "data"), do: dgettext("domain_map", "stored data")
   defp own_field("Value", "mentions"), do: dgettext("domain_map", "mentions")
@@ -1167,6 +1171,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "While a <Group>group</Group> is public, its chat can reach past the members. A signed-in profile that is not a member then reads its <Value>values</Value> and files, and writes and reacts as far as `everyone` may. It sends no files, opens no threads and has a limit on how much it writes. Its message pushes only to those it mentions or answers, and a reply reaches it the same way. A <GroupBlock>block</GroupBlock> stops one profile from writing and reacting there, asking to join or being invited. A member answers to their roles, so blocking one also removes them from the group."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Unread is measured from one marker"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
           )
       },
       %{

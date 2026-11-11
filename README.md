@@ -86,6 +86,9 @@ Chat values:
 * The first http(s) link of a chat value gets an Open Graph preview card (title, description, site name, image), fetched after posting and cached per URL for 6 hours. The fetcher only connects to public addresses. The author can remove the card.
 * The feed holds at most 200 values. Opening a value loads a window around it (ten older, twenty newer), scrolling loads pages of twenty at either end and drops as many at the other, and a button brings the feed back to the newest values.
 * Unread counts come from `GroupValueRead`. A group's folder in the sub-groups tree shows the unread values of its whole subtree, and the root group's count is the sum over all groups.
+* Opening a chat moves the marker to the newest value (`Social.read_group_chat/2`, one query, no write when nothing is unread) and draws a line above the first value that was unread. When the unread values do not fit on the screen the chat opens with the line at the top; more of them than a page load around the first. A profile with no marker gets no line; only members get markers, and an empty chat read gets one at 0.
+* Rows of the sub-groups list show the group's newest value to members (`Social.last_chat_previews/1`, `ValuePreview`). New values bring their preview in the unread broadcast; editing or deleting the newest one sends `{:group_last_value_changed, ...}` on the group's unread topic.
+* The magnifier in the header searches the chat (`Social.search_group_values/3`): `values.content_folded` (the content through `potok_fold/1`, a generated column, NULL for app data) against the folded term, each chat read from its newest value through its id index under a 3 s timeout, 20 at a time, `RateLimit` `:value_search`. Members also search the threads right below the group that they are in. Matches are lit with `TextFold`, the same fold in Elixir, which a test holds to the SQL one.
 
 Files:
 
