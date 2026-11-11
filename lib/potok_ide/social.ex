@@ -4663,7 +4663,9 @@ defmodule PotokIde.Social do
 
   @doc """
   Keyset page of the files attached in the group, newest first, with their
-  uploaders. Returns `{attachments, more?}` like `list_group_values_page/2`.
+  uploaders and enough of their values to tell a chat message from an app's
+  data value (`attachment_value_query/0`). Returns `{attachments, more?}` like
+  `list_group_values_page/2`.
   """
   def list_group_attachments(%Group{} = group, opts \\ []) do
     limit = Keyword.get(opts, :limit, 30)
@@ -4673,7 +4675,7 @@ defmodule PotokIde.Social do
         where: a.group_id == ^group.id,
         order_by: [desc: a.id],
         limit: ^(limit + 1),
-        preload: :profile
+        preload: [:profile, value: ^attachment_value_query()]
       )
       |> maybe_before_id(opts[:before_id])
       |> Repo.all()
@@ -4685,10 +4687,14 @@ defmodule PotokIde.Social do
   def get_group_attachment(%Group{id: group_id}, attachment_id) when is_integer(attachment_id) do
     from(a in ValueAttachment,
       where: a.id == ^attachment_id and a.group_id == ^group_id,
-      preload: :profile
+      preload: [:profile, value: ^attachment_value_query()]
     )
     |> Repo.one()
   end
+
+  # A file's value as the Files tab needs it: whether it is a chat message,
+  # which the file links to, or an app's data value (`AppFiles`), in no chat.
+  defp attachment_value_query, do: from(v in Value, select: [:id, :is_data])
 
   @doc """
   The attachment when the profile reads the chat it was posted in: a member of
@@ -5075,7 +5081,8 @@ defmodule PotokIde.Social do
       from(a in ValueAttachment,
         where: a.group_id in ^member_group_ids,
         order_by: [desc: a.id],
-        limit: ^(@attachment_tree_max_files + 1)
+        limit: ^(@attachment_tree_max_files + 1),
+        preload: [value: ^attachment_value_query()]
       )
       |> Repo.all()
 

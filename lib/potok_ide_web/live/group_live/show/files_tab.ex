@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.ValueAttachment
+  alias PotokIde.Social.{Value, ValueAttachment}
   alias PotokIdeWeb.GroupLive.Show.{Components, MediaViewer}
   alias PotokIdeWeb.TagComponents
 
@@ -100,6 +100,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
                     <span class="tabular-nums">{Components.format_bytes(file.byte_size)}</span>
                   </:details>
                 </.file_link>
+                <.message_link file={file} id={"file-message-#{file.id}"} />
                 <TagComponents.tag_button
                   id={"file-tags-#{file.id}"}
                   kind={:attachment}
@@ -181,18 +182,20 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
       </summary>
       <div class="ml-[1.05rem] space-y-0.5 border-l border-base-300/70 pl-2">
         <.tree_folder :for={child <- @node.children} node={child} />
-        <.file_link
-          :for={file <- @node.files}
-          file={file}
-          id={"files-tree-file-#{file.id}"}
-          gallery={"files-folder-#{@node.group.id}"}
-          class="rounded-xl px-2 py-1.5"
-          compact
-        >
-          <:details>
-            <span class="tabular-nums">{Components.format_bytes(file.byte_size)}</span>
-          </:details>
-        </.file_link>
+        <div :for={file <- @node.files} class="flex items-center gap-1">
+          <.file_link
+            file={file}
+            id={"files-tree-file-#{file.id}"}
+            gallery={"files-folder-#{@node.group.id}"}
+            class="min-w-0 flex-1 rounded-xl px-2 py-1.5"
+            compact
+          >
+            <:details>
+              <span class="tabular-nums">{Components.format_bytes(file.byte_size)}</span>
+            </:details>
+          </.file_link>
+          <.message_link file={file} id={"files-tree-message-#{file.id}"} />
+        </div>
       </div>
     </details>
     """
@@ -270,6 +273,30 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
     </a>
     """
   end
+
+  attr :file, ValueAttachment, required: true
+  attr :id, :string, required: true
+
+  # Opens the chat at the message the file came with, loading the chat around
+  # it (`?value=`), in the group that keeps the file: a sub-group or a thread
+  # in the folder tree. A button of its own, since the row is the file's link.
+  # Files sent to an app are data values in no chat and get none, only its
+  # room, so the icons of the rows stay in columns.
+  defp message_link(assigns) do
+    ~H"""
+    <.icon_button
+      :if={chat_message?(@file)}
+      id={@id}
+      navigate={~p"/groups/#{@file.group_id}/values?#{[value: @file.value_id]}"}
+      icon="hero-chat-bubble-bottom-center-text"
+      label={gettext("Go to the message")}
+    />
+    <span :if={!chat_message?(@file)} class="size-8 shrink-0" aria-hidden="true"></span>
+    """
+  end
+
+  defp chat_message?(%ValueAttachment{value: %Value{is_data: false}}), do: true
+  defp chat_message?(_file), do: false
 
   defp action_icon(kind) when kind in [:image, :video], do: "hero-arrows-pointing-out"
   defp action_icon(:audio), do: "hero-play"

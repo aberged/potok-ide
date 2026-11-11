@@ -221,7 +221,7 @@ msgstr "Odluka"
 msgid "Delete"
 msgstr "Obriši"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1767
+#: lib/potok_ide_web/live/group_live/show/components.ex:1761
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr "Obrisati ovu poruku? Briše se i glasanje, sa svim glasovima."

@@ -5,7 +5,9 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Social.{Value, ValueAttachment}
   alias PotokIde.Storage
 
   setup %{conn: conn} do
@@ -171,6 +173,94 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
       assert has_element?(lv, "#group-files-tree #files-folder-#{group.id}")
       assert has_element?(lv, "#files-folder-#{child.id} #files-tree-file-#{nested.id}")
       assert has_element?(lv, "#files-tree-file-#{own.id}")
+    end
+
+    test "each file links to the message it came with", %{
+      conn: conn,
+      profile: profile,
+      group: group
+    } do
+      {:ok, child} =
+        Social.create_group(profile, group, %{
+          "name" => "files-link-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, %{attachments: [own]}} =
+        Social.create_value(profile, group, %{"content" => "with a file"}, [
+          stored_file!(group, "own.pdf")
+        ])
+
+      {:ok, %{attachments: [nested]}} =
+        Social.create_value(profile, child, %{}, [stored_file!(child, "nested.txt")])
+
+      own_path = "/groups/#{group.id}/values?value=#{own.value_id}"
+      nested_path = "/groups/#{child.id}/values?value=#{nested.value_id}"
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
+
+      assert has_element?(lv, ~s(#file-#{own.id} a#file-message-#{own.id}[href="#{own_path}"]))
+
+      lv |> element("#group-files-view-tree") |> render_click()
+
+      assert has_element?(lv, ~s(a#files-tree-message-#{own.id}[href="#{own_path}"]))
+
+      assert has_element?(
+               lv,
+               ~s(#files-folder-#{child.id} a#files-tree-message-#{nested.id}[href="#{nested_path}"])
+             )
+
+      lv |> element("#group-files-view-list") |> render_click()
+      lv |> element("#file-message-#{own.id}") |> render_click()
+      assert_redirect(lv, own_path)
+
+      {:ok, chat, _html} = live(conn, own_path)
+
+      assert has_element?(
+               chat,
+               ~s(#group-values-feed[data-focus-value-id="#{own.value_id}"] #value-#{own.value_id})
+             )
+    end
+
+    test "a file sent to an app has no message to link to", %{
+      conn: conn,
+      profile: profile,
+      group: group
+    } do
+      data_value =
+        Repo.insert!(%Value{
+          group_id: group.id,
+          creator_id: profile.id,
+          is_data: true,
+          content: "",
+          content_format: :markdown,
+          data: %{"slot" => "cv"}
+        })
+
+      file = stored_file!(group, "app.pdf")
+
+      app_file =
+        Repo.insert!(%ValueAttachment{
+          value_id: data_value.id,
+          group_id: group.id,
+          profile_id: profile.id,
+          storage_key: file.storage_key,
+          filename: file.filename,
+          content_type: file.content_type,
+          byte_size: file.byte_size
+        })
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
+
+      assert has_element?(lv, "#file-#{app_file.id}", "app.pdf")
+      refute has_element?(lv, "#file-message-#{app_file.id}")
+
+      lv |> element("#group-files-view-tree") |> render_click()
+
+      assert has_element?(lv, "#files-tree-file-#{app_file.id}")
+      refute has_element?(lv, "#files-tree-message-#{app_file.id}")
     end
 
     test "the header button opens the files tab", %{conn: conn, group: group} do
