@@ -7,6 +7,7 @@ defmodule PotokIde.EventsTest do
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Recurrence}
   alias PotokIde.Social
+  alias PotokIde.Social.{GroupAreas, GroupRoutes}
 
   setup do
     {owner_account, owner} = account_with_profile!("ev-owner")
@@ -470,6 +471,204 @@ defmodule PotokIde.EventsTest do
 
       {_account, outsider} = account_with_profile!("ev-ids-out")
       assert Events.calendar_group_ids(outsider, ctx.group, false) == []
+    end
+  end
+
+  describe "places" do
+    setup ctx do
+      # A spot the owner and the member are in, a closed one only the owner is
+      # in, and a group with no place.
+      spot =
+        group_with_members!(ctx.owner, [ctx.member], %{
+          "name" => "Dom kulture",
+          "latitude" => 45.25,
+          "longitude" => 19.85
+        })
+
+      closed =
+        group_with_members!(ctx.owner, [], %{
+          "name" => "Kancelarija",
+          "latitude" => 45.26,
+          "longitude" => 19.86
+        })
+
+      plain = group_with_members!(ctx.owner, [ctx.member])
+      %{spot: spot, closed: closed, plain: plain, date: Date.add(today(), 5)}
+    end
+
+    test "an event takes place at a group the author sees, or at a point of its own", ctx do
+      attrs = event_attrs(ctx.date, %{"place_group_id" => "#{ctx.spot.id}"})
+      assert {:ok, event} = Events.create_event(ctx.member, ctx.group, attrs, zone())
+      assert event.place_group_id == ctx.spot.id
+      assert event.location == "Hall 2"
+
+      assert %{group: group, lat: 45.25, lng: 19.85, shape: :point} =
+               Events.place(ctx.member, event)
+
+      assert group.id == ctx.spot.id
+
+      for id <- [ctx.closed.id, ctx.plain.id, Social.get_root_group!().id] do
+        attrs = event_attrs(ctx.date, %{"place_group_id" => "#{id}"})
+        assert {:error, changeset} = Events.create_event(ctx.member, ctx.group, attrs, zone())
+        assert %{place_group_id: ["That group has no place you can see."]} = errors_on(changeset)
+      end
+
+      attrs = event_attrs(ctx.date, %{"latitude" => "44.8125004", "longitude" => "20.4612"})
+      assert {:ok, event} = Events.create_event(ctx.member, ctx.group, attrs, zone())
+      assert {event.latitude, event.longitude} == {44.8125, 20.4612}
+
+      assert Events.place(ctx.other, event) == %{
+               group: nil,
+               lat: 44.8125,
+               lng: 20.4612,
+               shape: :point,
+               bounds: [[44.8125, 20.4612], [44.8125, 20.4612]],
+               length: nil
+             }
+    end
+
+    test "a group and a point at once, half a point or a point off the Earth is a mistake",
+         ctx do
+      both =
+        event_attrs(ctx.date, %{
+          "place_group_id" => "#{ctx.spot.id}",
+          "latitude" => "45.0",
+          "longitude" => "20.0"
+        })
+
+      assert {:error, changeset} = Events.create_event(ctx.member, ctx.group, both, zone())
+
+      assert %{place_group_id: ["An event's place is a group or a point on the map, not both."]} =
+               errors_on(changeset)
+
+      half = event_attrs(ctx.date, %{"latitude" => "45.0"})
+      assert {:error, changeset} = Events.create_event(ctx.member, ctx.group, half, zone())
+      assert %{longitude: ["can't be blank"]} = errors_on(changeset)
+
+      off = event_attrs(ctx.date, %{"latitude" => "91", "longitude" => "20"})
+      assert {:error, changeset} = Events.create_event(ctx.member, ctx.group, off, zone())
+      assert %{latitude: [_message]} = errors_on(changeset)
+    end
+
+    test "the place follows its group and shows only to those who see the group", ctx do
+      attrs = event_attrs(ctx.date, %{"place_group_id" => "#{ctx.closed.id}"})
+      event = create_event!(ctx.owner, ctx.group, attrs)
+
+      assert %{group: %{id: closed_id}} = Events.place(ctx.owner, event)
+      assert closed_id == ctx.closed.id
+      # The member sees the event but not the closed group: only its words.
+      assert Events.place(ctx.member, event) == nil
+
+      {:ok, _moved} =
+        Social.update_group(ctx.owner, ctx.closed, %{"latitude" => 44.0, "longitude" => 21.0})
+
+      assert %{lat: 44.0, lng: 21.0} = Events.place(ctx.owner, event)
+
+      # Deleting the group leaves the words.
+      {:ok, _deleted} = Social.delete_group(ctx.owner, Repo.reload!(ctx.closed))
+      event = Repo.reload!(event)
+      assert event.place_group_id == nil
+      assert event.location == "Hall 2"
+      assert Events.place(ctx.owner, event) == nil
+    end
+
+    test "a group kept as it was stays, though the editor no longer sees it", ctx do
+      attrs = event_attrs(ctx.date, %{"place_group_id" => "#{ctx.spot.id}"})
+      event = create_event!(ctx.member, ctx.group, attrs)
+      {:ok, _} = Social.remove_group_member(ctx.owner, ctx.spot, ctx.member)
+
+      assert {:ok, updated} =
+               Events.update_event(
+                 ctx.member,
+                 event,
+                 %{"title" => "Renamed", "place_group_id" => "#{ctx.spot.id}"}
+               )
+
+      assert updated.place_group_id == ctx.spot.id
+    end
+
+    test "members are told when the place on the map changes", ctx do
+      capture_push_requests!()
+      owner_device = push_device!(ctx.owner_account)
+      event = create_event!(ctx.member, ctx.group, event_attrs(ctx.date))
+
+      {:ok, event} =
+        Events.update_event(ctx.member, event, %{"place_group_id" => "#{ctx.spot.id}"})
+
+      assert pushed_endpoints() == [owner_device]
+
+      {:ok, _event} =
+        Events.update_event(ctx.member, event, %{
+          "place_group_id" => "",
+          "latitude" => "45.1",
+          "longitude" => "19.9"
+        })
+
+      assert pushed_endpoints() == [owner_device]
+    end
+
+    test "an area or a route of its own keeps its pin, and takes the other's place", ctx do
+      {:ok, area} =
+        GroupAreas.decode(%{
+          "type" => "Polygon",
+          "coordinates" => [
+            [[19.8, 45.2], [19.9, 45.2], [19.9, 45.3], [19.8, 45.3], [19.8, 45.2]]
+          ]
+        })
+
+      # The pin the form sent does not count: the area's is inside it.
+      attrs =
+        event_attrs(ctx.date, %{"latitude" => "1", "longitude" => "1"}) |> Map.put("area", area)
+
+      assert {:ok, event} = Events.create_event(ctx.member, ctx.group, attrs, zone())
+      assert_in_delta event.latitude, 45.25, 0.01
+      assert_in_delta event.longitude, 19.85, 0.01
+
+      assert %{group: nil, shape: :area, bounds: [[45.2, 19.8], [45.3, 19.9]], length: nil} =
+               Events.place(ctx.other, event)
+
+      assert %{"type" => "MultiPolygon"} = Events.shape_geojson(event)
+
+      {:ok, route} =
+        GroupRoutes.decode(%{
+          "type" => "LineString",
+          "coordinates" => [[19.81, 45.21], [19.85, 45.22]]
+        })
+
+      assert {:ok, event} = Events.update_event(ctx.member, event, %{"route" => route})
+      event = Events.load_shape(event)
+      assert {event.area, event.latitude, event.longitude} == {nil, 45.21, 19.81}
+      assert %{shape: :route, length: meters} = Events.place(ctx.member, event)
+      assert_in_delta meters, 3300, 300
+
+      both =
+        event_attrs(ctx.date, %{"latitude" => "45", "longitude" => "19"})
+        |> Map.merge(%{"area" => area, "route" => route})
+
+      assert {:error, changeset} = Events.create_event(ctx.member, ctx.group, both, zone())
+      assert %{route: [_message]} = errors_on(changeset)
+
+      # A group in place of its own place leaves no route behind.
+      {:ok, event} =
+        Events.update_event(ctx.member, event, %{
+          "place_group_id" => "#{ctx.spot.id}",
+          "latitude" => "",
+          "longitude" => ""
+        })
+
+      event = Events.load_shape(event)
+      assert {event.route, event.latitude, event.place_group_id} == {nil, nil, ctx.spot.id}
+      assert Events.shape_geojson(event) == nil
+    end
+
+    test "an event without a date shows its next occurrence", ctx do
+      event = create_event!(ctx.member, ctx.group, event_attrs(ctx.date))
+      assert Events.upcoming_occurrence(event).date == ctx.date
+
+      daily =
+        create_event!(ctx.member, ctx.group, event_attrs(today(), %{"recurrence" => "daily"}))
+
+      assert Events.upcoming_occurrence(daily).date in [today(), Date.add(today(), 1)]
     end
   end
 

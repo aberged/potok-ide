@@ -25,6 +25,14 @@
 // The fields belong to the group's form: writing them fires one `input`, so
 // the form's `phx-change` sends them as if typed. They have no `phx-debounce`,
 // which would lose a value written here during its wait.
+//
+// The server's events are the group card's unless the page names others, as
+// an event's place does: `data-area-event`, `data-route-event`,
+// `data-point-event` (empty for none: the form's fields carry the point),
+// `data-mode-event` and `data-reset-event` (pushed to every hook on the page,
+// so each picker listens to its own). The pin is the one drawn in
+// `data-pin-source` when given, and a map with no point opens on
+// `data-center` at `data-zoom` when given.
 
 import {
   AreaEditor,
@@ -81,7 +89,15 @@ export const LocationPicker = {
     this.L = null
     this.editors = {}
     this.writing = false
-    this.mode = MODES.includes(this.el.dataset.mode) ? this.el.dataset.mode : "point"
+    const data = this.el.dataset
+    this.events = {
+      area: data.areaEvent || "edit_group_area",
+      route: data.routeEvent || "edit_group_route",
+      point: data.pointEvent !== undefined ? data.pointEvent : "edit_group_point_areas",
+      mode: data.modeEvent || "location_mode",
+      reset: data.resetEvent || "location_reset",
+    }
+    this.mode = MODES.includes(data.mode) ? data.mode : "point"
     this.startArea = JSON.parse(this.el.dataset.area || "null")
     this.startRoute = JSON.parse(this.el.dataset.route || "null")
     // The route's length as the server wrote it, for the status line.
@@ -155,9 +171,9 @@ export const LocationPicker = {
       this.tools[key] = {button, action}
     }
 
-    this.handleEvent("location_mode", ({mode}) => this.setMode(mode))
+    this.handleEvent(this.events.mode, ({mode}) => this.setMode(mode))
 
-    this.handleEvent("location_reset", ({area, route, route_length, mode}) => {
+    this.handleEvent(this.events.reset, ({area, route, route_length, mode}) => {
       this.startArea = area
       this.startRoute = route
       this.routeLength = route_length || null
@@ -250,11 +266,14 @@ export const LocationPicker = {
 
     const point = this.inputPoint()
     const shapeBounds = this.editor()?.bounds()
+    const center = this.startCenter()
 
     if (shapeBounds) {
       this.map.fitBounds(shapeBounds, {padding: FIT_PADDING})
     } else if (point) {
       this.map.setView(point, PLACE_ZOOM)
+    } else if (center) {
+      this.map.setView(center, Number(this.el.dataset.zoom) || PLACE_ZOOM)
     } else {
       this.map.fitBounds(JSON.parse(this.el.dataset.defaultBounds))
     }
@@ -310,6 +329,22 @@ export const LocationPicker = {
     return lat === null || lng === null ? null : [lat, lng]
   },
 
+  // Where a map with no point opens, when the page says so: `[lat, lng]`.
+  startCenter() {
+    try {
+      const center = JSON.parse(this.el.dataset.center || "null")
+
+      return Array.isArray(center) &&
+        Number.isFinite(center[0]) &&
+        Number.isFinite(center[1]) &&
+        Math.abs(center[0]) <= 90
+        ? center
+        : null
+    } catch (_error) {
+      return null
+    }
+  },
+
   syncFromInputs() {
     if (!this.map) return
 
@@ -356,12 +391,16 @@ export const LocationPicker = {
     this.marker = null
   },
 
-  // The pin of the choice that is ticked, drawn by the server next to it: a
-  // copy without its id, and with a picture's clip of its own, so no id is
-  // on the page twice.
+  // The pin of the choice that is ticked, drawn by the server next to it, or
+  // the one in `data-pin-source`: a copy without its id, and with a picture's
+  // clip of its own, so no id is on the page twice.
   icon() {
-    const checked = this.form?.querySelector(`input[name="${this.el.dataset.pinName}"]:checked`)
-    const svg = checked?.closest("label")?.querySelector("[data-pin-svg] svg")
+    const source = this.el.dataset.pinSource && document.getElementById(this.el.dataset.pinSource)
+    const checked =
+      !source && this.form?.querySelector(`input[name="${this.el.dataset.pinName}"]:checked`)
+    const svg = source
+      ? source.querySelector("svg")
+      : checked?.closest("label")?.querySelector("[data-pin-svg] svg")
     const id = svg?.id
     const html = !svg
       ? ""
@@ -393,15 +432,14 @@ export const LocationPicker = {
     this.writing = false
   },
 
-  // Where the pin now stands, for the areas around it (server side).
+  // Where the pin now stands, for the areas around it (server side). A page
+  // that names no such event leaves the point to the form's fields.
   sendPoint(point) {
+    if (!this.events.point) return
     clearTimeout(this.pointTimer)
 
     this.pointTimer = setTimeout(() => {
-      this.pushEvent(
-        "edit_group_point_areas",
-        point ? {lat: point[0], lng: point[1]} : {}
-      )
+      this.pushEvent(this.events.point, point ? {lat: point[0], lng: point[1]} : {})
     }, SEND_DELAY_MS)
   },
 
@@ -415,7 +453,7 @@ export const LocationPicker = {
     clearTimeout(this.areaTimer)
     const seq = (this.areaSeq = (this.areaSeq || 0) + 1)
 
-    this.pushEvent("edit_group_area", {area: geometry}, reply => {
+    this.pushEvent(this.events.area, {area: geometry}, reply => {
       if (seq !== this.areaSeq || !reply?.ok || !Number.isFinite(reply.lat)) return
 
       const point = [reply.lat, reply.lng]
@@ -435,7 +473,7 @@ export const LocationPicker = {
     clearTimeout(this.routeTimer)
     const seq = (this.routeSeq = (this.routeSeq || 0) + 1)
 
-    this.pushEvent("edit_group_route", {route: geometry}, reply => {
+    this.pushEvent(this.events.route, {route: geometry}, reply => {
       if (seq !== this.routeSeq) return
 
       this.routeLength = reply?.ok ? reply.length_text || null : null

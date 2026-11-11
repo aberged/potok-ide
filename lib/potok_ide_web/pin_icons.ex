@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.PinIcons do
   use Gettext, backend: PotokIdeWeb.Gettext
 
   alias PotokIde.Social.GroupPins
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.CreateMenu
 
   # The dependency is a sparse checkout of `optimized`, which Mix reports as its path.
@@ -262,4 +263,36 @@ defmodule PotokIdeWeb.PinIcons do
     </svg>
     """
   end
+
+  attr :id, :string, required: true
+  attr :group, :map, required: true, doc: "with what a pin needs (`GroupAreas.fields/0`)"
+  attr :class, :any, required: true
+
+  @doc "A group's pin, with its kind's mark when it picked its own (`look/1`)."
+  def group_pin(assigns) do
+    assigns = assign(assigns, :look, look(assigns.group))
+
+    ~H"""
+    <.pin
+      id={@id}
+      color={@look.color}
+      paths={@look.paths}
+      picture_url={@look.picture && Avatars.group_avatar_url(@group)}
+      mark={@look.mark}
+      class={@class}
+    />
+    """
+  end
+
+  @doc """
+  What a group on a map is, under its name: an area, a route or its kind. An
+  area or a route is told by its box, so only when loaded with it.
+  """
+  def place_label(%{area_west: west} = group) when is_number(west),
+    do: gettext("Area") <> " · " <> kind_label(GroupPins.kind(group))
+
+  def place_label(%{route_west: west} = group) when is_number(west),
+    do: gettext("Route") <> " · " <> kind_label(GroupPins.kind(group))
+
+  def place_label(group), do: kind_label(GroupPins.kind(group))
 end

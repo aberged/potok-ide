@@ -15,6 +15,10 @@ defmodule PotokIde.Events do
   are no members get reminders and changes of the occurrences they said
   they come to (going or maybe).
 
+  An event's place is words, and it can also stand on a map: at the place of
+  a group the author sees, following that group, or at a point of its own.
+  Each viewer sees the group only when they see it (`place/2`).
+
   Changes are broadcast on a topic per group (`subscribe/1`) as
   `{:calendar, {:events_changed, group_id}}` and
   `{:calendar, {:responses_changed, event_id, date}}`; those of public
@@ -38,7 +42,17 @@ defmodule PotokIde.Events do
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AccountProfile, Group, GroupMembership, Profile}
+
+  alias PotokIde.Social.{
+    Access,
+    AccountProfile,
+    Group,
+    GroupAreas,
+    GroupMembership,
+    GroupPlaces,
+    GroupRoutes,
+    Profile
+  }
 
   @summary_profiles 12
 
@@ -54,8 +68,26 @@ defmodule PotokIde.Events do
     :recurrence_until
   ]
 
-  # Changes members are told about.
-  @notable_fields [:location | @schedule_fields]
+  # Changes members are told about: the time and the place, in words or on
+  # the map.
+  @notable_fields [
+    :location,
+    :place_group_id,
+    :latitude,
+    :longitude,
+    :area,
+    :route | @schedule_fields
+  ]
+
+  # What an event's own area or route is, without the shape: its kind, a
+  # route's length and the box a map fits to.
+  @own_shape_sql """
+  SELECT CASE WHEN area IS NOT NULL THEN 'area' WHEN route IS NOT NULL THEN 'route' END,
+         ST_Length(route::geography),
+         ST_YMin(g), ST_XMin(g), ST_YMax(g), ST_XMax(g)
+  FROM (SELECT area, route, coalesce(area::geometry, route::geometry) AS g
+          FROM group_events WHERE id = $1) s
+  """
 
   ## Live updates
 
@@ -200,6 +232,96 @@ defmodule PotokIde.Events do
     end
   end
 
+  @doc """
+  Where the event takes place on a map, as `profile` may see it: its own
+  place, or the place of its group (`place_group_id`) when the profile sees
+  that group and the group still has a place; nil otherwise. `lat` and `lng`
+  are the pin, `shape` is `:point`, `:area` or `:route`, `bounds` the box a
+  map fits to (`[[south, west], [north, east]]`) and `length` a route's, in
+  metres. The only way the place is read, so no page shows a group to one
+  who does not see it.
+  """
+  def place(%Profile{} = profile, %Event{} = event) do
+    cond do
+      is_number(event.latitude) and is_number(event.longitude) ->
+        own_place(event)
+
+      event.place_group_id ->
+        case GroupPlaces.get_visible(profile, event.place_group_id) do
+          %Group{} = group ->
+            %{
+              group: group,
+              lat: group.latitude,
+              lng: group.longitude,
+              shape: GroupPlaces.shape(group),
+              bounds: GroupPlaces.bounds(group),
+              length: group.route_length
+            }
+
+          nil ->
+            nil
+        end
+
+      true ->
+        nil
+    end
+  end
+
+  # A place of its own: the point, or the area or the route its pin belongs
+  # to, read without the shape itself.
+  defp own_place(%Event{id: id, latitude: lat, longitude: lng}) do
+    point = %{
+      group: nil,
+      lat: lat,
+      lng: lng,
+      shape: :point,
+      bounds: [[lat, lng], [lat, lng]],
+      length: nil
+    }
+
+    case id && Repo.query!(@own_shape_sql, [id]).rows do
+      [[kind, length, south, west, north, east]] when kind in ["area", "route"] ->
+        %{
+          point
+          | shape: String.to_existing_atom(kind),
+            bounds: [[south, west], [north, east]],
+            length: length
+        }
+
+      _point ->
+        point
+    end
+  end
+
+  @doc "The event with its area or route (`Event.area`, `Event.route`), which queries leave out."
+  def load_shape(%Event{id: nil} = event), do: event
+
+  def load_shape(%Event{id: id} = event) do
+    {area, route} = Repo.one!(from(e in Event, where: e.id == ^id, select: {e.area, e.route}))
+    %{event | area: area, route: route}
+  end
+
+  @doc "The event's own area or route as GeoJSON, for a map; nil for none."
+  def shape_geojson(%Event{} = event) do
+    case load_shape(event) do
+      %Event{area: %Geo.MultiPolygon{} = area} -> GroupAreas.to_geojson(area)
+      %Event{route: %Geo.MultiLineString{} = route} -> GroupRoutes.to_geojson(route)
+      _none -> nil
+    end
+  end
+
+  @doc """
+  The occurrence to show for an event without a date: the one on now or the
+  next, or the first one of an event that is over.
+  """
+  def upcoming_occurrence(%Event{} = event) do
+    span = DateTime.diff(event.ends_at, event.starts_at)
+    since = DateTime.add(DateTime.utc_now(:second), -span - 1)
+
+    Recurrence.next_occurrence_after(event, since) ||
+      Recurrence.build(event, Recurrence.start_date(event))
+  end
+
   @doc "A new event for the form, on `date` from 18:00 to 19:00 with a reminder an hour before."
   def new_event(%Date{} = date) do
     %Event{
@@ -230,6 +352,9 @@ defmodule PotokIde.Events do
       %Event{group_id: group.id, creator_id: creator.id, reminded_through: now}
       |> Event.changeset(attrs, time_zone)
       |> check_publish(access, group)
+      |> check_place(creator)
+      |> GroupAreas.put_pin()
+      |> GroupRoutes.put_pin()
       |> put_next_reminder(now, [])
       |> Repo.insert()
       |> case do
@@ -315,6 +440,9 @@ defmodule PotokIde.Events do
             locked
             |> Event.changeset(attrs, locked.time_zone)
             |> check_publish(access, group)
+            |> check_place(actor)
+            |> GroupAreas.put_pin()
+            |> GroupRoutes.put_pin()
 
           schedule_changed? = Enum.any?(@schedule_fields, &Map.has_key?(changeset.changes, &1))
           notable? = Enum.any?(@notable_fields, &Map.has_key?(changeset.changes, &1))
@@ -648,7 +776,16 @@ defmodule PotokIde.Events do
   defp event_group(%Event{group: %Group{} = group}), do: group
   defp event_group(%Event{group_id: group_id}), do: Repo.get!(Group, group_id)
 
-  defp lock_event!(id), do: Repo.one!(from(e in Event, where: e.id == ^id, lock: "FOR UPDATE"))
+  # The event with its area or route, so a change of place knows what to clear.
+  defp lock_event!(id) do
+    Repo.one!(
+      from(e in Event,
+        where: e.id == ^id,
+        lock: "FOR UPDATE",
+        select_merge: %{area: e.area, route: e.route}
+      )
+    )
+  end
 
   defp today(%Event{} = event), do: Recurrence.local_date(DateTime.utc_now(), event.time_zone)
 
@@ -657,6 +794,26 @@ defmodule PotokIde.Events do
     if can_publish?(access, group),
       do: changeset,
       else: Ecto.Changeset.delete_change(changeset, :is_public)
+  end
+
+  # A group picked as the place must be one the profile sees, with a place.
+  # A group kept as it was stays, even one the profile does not see: another
+  # member picked it.
+  defp check_place(changeset, profile) do
+    case Ecto.Changeset.get_change(changeset, :place_group_id) do
+      id when is_integer(id) ->
+        if GroupPlaces.get_visible(profile, id),
+          do: changeset,
+          else:
+            Ecto.Changeset.add_error(
+              changeset,
+              :place_group_id,
+              "That group has no place you can see."
+            )
+
+      _none ->
+        changeset
+    end
   end
 
   # `next_reminder_at` from the new fields, counting the members' own

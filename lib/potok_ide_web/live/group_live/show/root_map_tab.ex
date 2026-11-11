@@ -3,15 +3,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   The root's map (`RootMapState`): a bar of filters over a map of every group
   with a place the viewer sees, and of the areas and routes it sees. The map is the
   browser's (`root_map.js`, ignored by patches); what stands over it, the
-  count, the layers, the empty state, the list of a crowded spot and the card
-  of the areas where the viewer tapped, is rendered here.
+  count, the layers, the empty state, the list of a crowded spot, the card
+  of the areas where the viewer tapped and the card of an event whose place
+  is in focus, is rendered here.
   """
   use PotokIdeWeb, :html
 
-  alias PotokIde.Events.Format
+  alias PotokIde.Events.{Format, Recurrence}
   alias PotokIde.MapTiles
   alias PotokIde.Social.GroupPins
-  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.{ChoiceMenus, RootMapState}
   alias PotokIdeWeb.PinIcons
 
@@ -29,6 +29,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :area_options, :list, default: [], doc: "the areas the filter's menu offers"
   attr :area_query, :string, default: "", doc: "what the filter's menu searches"
   attr :area_chosen, :list, default: [], doc: "the areas of the filter"
+  attr :focus, :map, default: nil, doc: "the place of `?place=` or `?event=` in focus"
+  attr :focus_card, :boolean, default: false, doc: "the focused event's card shows"
+  attr :time_zone, :string, default: "Etc/UTC", doc: "the viewer's, for the event's time"
 
   def panel(assigns) do
     filters = assigns.filters
@@ -201,8 +204,9 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           </div>
         </div>
 
+        <%!-- A place in focus shows even where no group of the filters stands. --%>
         <div
-          :if={@extent && @extent.count == 0 && !@empty_closed}
+          :if={@extent && @extent.count == 0 && !@empty_closed && is_nil(@focus)}
           id="root-map-empty"
           class="pointer-events-none absolute inset-0 z-[1100] flex items-center justify-center p-6"
         >
@@ -296,7 +300,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                 phx-value-id={group.id}
                 class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none"
               >
-                <.group_pin
+                <PinIcons.group_pin
                   id={"root-map-spot-pin-#{group.id}"}
                   group={group}
                   class="h-8 w-[1.6rem] shrink-0 drop-shadow-sm"
@@ -313,7 +317,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                       }
                       class="size-3.5"
                     />
-                    <span class="truncate">{place_label(group)}</span>
+                    <span class="truncate">{PinIcons.place_label(group)}</span>
                   </span>
                 </span>
               </button>
@@ -328,6 +332,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         </section>
 
         <.here_card :if={@here && !@spot} here={@here} chosen={@filters.areas} />
+
+        <.focus_card
+          :if={@focus && @focus.event && @focus_card && !@spot && !@here && !@error}
+          focus={@focus}
+          time_zone={@time_zone}
+        />
       </div>
 
       <ChoiceMenus.choice_menu
@@ -444,7 +454,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
               )
             ]}
           >
-            <.group_pin
+            <PinIcons.group_pin
               id={"root-map-area-pin-#{area.id}"}
               group={area}
               class="h-7 w-[1.4rem] shrink-0 drop-shadow-sm"
@@ -707,6 +717,95 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
 
   defp range_text(%{to: %Date{} = to}), do: gettext("until %{date}", date: Format.day_month(to))
 
+  attr :focus, :map, required: true, doc: "an event's place in focus (`RootMapState`)"
+  attr :time_zone, :string, required: true
+
+  # The card of the event whose place is in focus: what it is, when, where,
+  # and the way back to it.
+  defp focus_card(assigns) do
+    %{event: event, group: group} = assigns.focus
+
+    assigns =
+      assigns
+      |> assign(:today, Recurrence.local_date(DateTime.utc_now(), assigns.time_zone))
+      |> assign(
+        :place_text,
+        cond do
+          String.trim(event.location) != "" -> event.location
+          group -> group.name
+          true -> nil
+        end
+      )
+
+    ~H"""
+    <section
+      id="root-map-focus"
+      aria-labelledby="root-map-focus-title"
+      class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
+    >
+      <header class="flex items-start gap-3 px-4 pt-3">
+        <span class="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+          <.icon name="hero-calendar-days" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3
+            id="root-map-focus-title"
+            class="text-sm font-semibold leading-snug wrap-break-word"
+          >
+            {@focus.event.title}
+          </h3>
+          <p id="root-map-focus-when" class="text-xs text-base-content/65 first-letter:uppercase">
+            {Format.occurrence(@focus.occurrence, @time_zone, @today)}
+          </p>
+          <p
+            :if={@place_text}
+            id="root-map-focus-place"
+            class="mt-0.5 flex items-start gap-1 text-xs text-base-content/65"
+          >
+            <.icon name="hero-map-pin-micro" class="mt-px size-3.5 shrink-0" />
+            <span class="min-w-0 wrap-break-word">{@place_text}</span>
+          </p>
+        </div>
+        <.icon_button
+          id="root-map-focus-close"
+          type="button"
+          phx-click="root_map_focus_close"
+          icon="hero-x-mark"
+          label={gettext("Close")}
+        />
+      </header>
+      <div class="flex flex-wrap items-center gap-2 px-4 pt-2.5 pb-3">
+        <.button
+          id="root-map-focus-open"
+          navigate={
+            ~p"/groups/#{@focus.event.group_id}/calendar?#{[event: @focus.event.id, on: Date.to_iso8601(@focus.occurrence.date)]}"
+          }
+          variant="soft"
+          size="sm"
+        >
+          <.icon name="hero-calendar-days" class="size-4" />
+          {gettext("Open the event")}
+        </.button>
+        <button
+          :if={@focus.group}
+          id="root-map-focus-group"
+          type="button"
+          phx-click="root_map_open"
+          phx-value-id={@focus.group.id}
+          class="inline-flex max-w-full cursor-pointer items-center gap-1.5 rounded-full border border-base-300/70 bg-base-100 py-0.5 pr-2.5 pl-1 text-xs font-semibold text-base-content/80 transition duration-150 ease-out hover:-translate-y-px hover:border-primary/40 hover:text-primary active:scale-95"
+        >
+          <PinIcons.group_pin
+            id="root-map-focus-group-pin"
+            group={@focus.group}
+            class="h-6 w-[1.2rem] shrink-0"
+          />
+          <span class="truncate">{@focus.group.name}</span>
+        </button>
+      </div>
+    </section>
+    """
+  end
+
   attr :here, :map, required: true
   attr :chosen, :list, required: true
 
@@ -727,7 +826,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
       class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
     >
       <header class="flex items-center gap-3 px-4 pt-3">
-        <.group_pin
+        <PinIcons.group_pin
           id="root-map-here-pin"
           group={@area}
           class="h-9 w-7 shrink-0 drop-shadow-sm"
@@ -827,26 +926,6 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
     ]
   end
 
-  attr :id, :string, required: true
-  attr :group, :map, required: true
-  attr :class, :string, required: true
-
-  # A group's pin, with its kind's mark when it picked its own (`PinIcons.look/1`).
-  defp group_pin(assigns) do
-    assigns = assign(assigns, :look, PinIcons.look(assigns.group))
-
-    ~H"""
-    <PinIcons.pin
-      id={@id}
-      color={@look.color}
-      paths={@look.paths}
-      picture_url={@look.picture && Avatars.group_avatar_url(@group)}
-      mark={@look.mark}
-      class={@class}
-    />
-    """
-  end
-
   # What the pin filter's button says.
   defp pin_text([]), do: nil
   defp pin_text([key]), do: pin_label(key)
@@ -855,15 +934,6 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   defp pin_label("kind"), do: gettext("Pin of its kind")
   defp pin_label("picture"), do: gettext("Group picture")
   defp pin_label(key), do: PinIcons.label(key)
-
-  # What a group on the map is, under its name: an area, a route or its kind.
-  defp place_label(%{area_west: west} = group) when is_number(west),
-    do: gettext("Area") <> " · " <> PinIcons.kind_label(GroupPins.kind(group))
-
-  defp place_label(%{route_west: west} = group) when is_number(west),
-    do: gettext("Route") <> " · " <> PinIcons.kind_label(GroupPins.kind(group))
-
-  defp place_label(group), do: PinIcons.kind_label(GroupPins.kind(group))
 
   defp area_text([]), do: nil
   defp area_text([area]), do: gettext("In %{name}", name: area.name)

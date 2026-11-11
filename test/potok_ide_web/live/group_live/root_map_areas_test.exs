@@ -357,7 +357,12 @@ defmodule PotokIdeWeb.GroupLive.RootMapAreasTest do
     assert has_element?(lv, "#group-location-area-#{ctx.quarter.id}", "Liman")
     assert has_element?(lv, "#group-location-area-#{ctx.city.id}", "Grad Novi Sad")
     refute has_element?(lv, "#group-location-area-#{ctx.closed.id}")
-    refute has_element?(lv, "#group-location-map")
+
+    # A point leads to the map with its pin in focus.
+    assert has_element?(
+             lv,
+             ~s{#group-location-map[href="/groups/#{ctx.root.id}/map?place=#{ctx.shop.id}"]}
+           )
 
     {:ok, lv, _html} =
       build_conn()

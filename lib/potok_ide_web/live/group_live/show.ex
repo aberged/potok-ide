@@ -550,6 +550,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
             area_options={@root_map_area_options || []}
             area_query={@root_map_area_query}
             area_chosen={@root_map_area_chosen}
+            focus={@root_map_focus}
+            focus_card={@root_map_focus_card?}
+            time_zone={@calendar_time_zone}
           />
           <CalendarTab.panel
             :if={@active_tab == "calendar"}
@@ -578,6 +581,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
             form_values={@calendar_form_values}
             announce={@calendar_announce?}
             notify={@calendar_notify?}
+            place_group={@calendar_place_group}
+            place_map={@calendar_place_map?}
+            place_center={@calendar_place_center}
+            place_options={@calendar_place_options}
+            place_query={@calendar_place_query}
+            place_mode={@calendar_place_mode}
+            place_start={@calendar_place_start}
+            event_place={@calendar_event_place}
+            event_map_path={@calendar_event_map_path}
           />
           <PollsTab.panel
             :if={@active_tab == "polls"}

@@ -5,16 +5,20 @@ defmodule PotokIdeWeb.EventIcsController do
   alias PotokIde.Events.ICS
   alias PotokIde.Social
 
-  # The calendar file of an event, for members of its group.
+  # The calendar file of an event, for members of its group, with its place
+  # on a map as this profile may see it.
   def show(conn, %{"id" => id}) do
     profile = Social.get_account_current_profile(conn.assigns.current_scope.account)
 
     with {event_id, ""} <- Integer.parse(id),
          {:ok, event} <- if(profile, do: Events.get_event(profile, event_id), else: :error) do
+      place = Events.place(profile, event)
+
       body =
         ICS.render(event,
           host: conn.host,
-          url: url(~p"/groups/#{event.group_id}/calendar?event=#{event.id}")
+          url: url(~p"/groups/#{event.group_id}/calendar?event=#{event.id}"),
+          geo: place && {place.lat, place.lng}
         )
 
       conn

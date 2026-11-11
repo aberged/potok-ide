@@ -280,6 +280,11 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("Event", "title"), do: dgettext("domain_map", "title")
   defp own_field("Event", "location"), do: dgettext("domain_map", "location")
+  defp own_field("Event", "place_group_id"), do: dgettext("domain_map", "group it takes place at")
+  defp own_field("Event", "latitude"), do: dgettext("domain_map", "latitude of its point")
+  defp own_field("Event", "longitude"), do: dgettext("domain_map", "longitude of its point")
+  defp own_field("Event", "area"), do: dgettext("domain_map", "its area on a map, as its border")
+  defp own_field("Event", "route"), do: dgettext("domain_map", "its route on a map, as its line")
   defp own_field("Event", "all_day"), do: dgettext("domain_map", "all day")
   defp own_field("Event", "starts_at"), do: dgettext("domain_map", "start")
   defp own_field("Event", "ends_at"), do: dgettext("domain_map", "end")
@@ -593,7 +598,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("Event", _edges) do
     dgettext(
       "domain_map",
-      "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event."
+      "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event. Its place is words, and on a map the place of a group or a point, an area or a route of its own."
     )
   end
 
@@ -735,6 +740,20 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("group_events_recurrence_interval_check") do
     dgettext("domain_map", "The repeat interval is from 1 to 99.")
+  end
+
+  def check_text("group_events_place_check") do
+    dgettext(
+      "domain_map",
+      "An event's point has both coordinates, each within its range, or neither, and an event at a group's place has no point of its own."
+    )
+  end
+
+  def check_text("group_events_shape_check") do
+    dgettext(
+      "domain_map",
+      "An event's area or route always has its pin as well, and an event never has an area and a route at once."
+    )
   end
 
   def check_text("polls_max_choices_check"), do: dgettext("domain_map", "At least one answer.")
@@ -1235,6 +1254,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "An event can take place at a group"),
+        text:
+          dgettext(
+            "domain_map",
+            "An <Event>event</Event>'s place is words, and it can also stand on the map: at the place of a <Group>group</Group> or at a place of its own, never both. A place of its own is a point, an area or a route, as a group's is, drawn the same way, and an area or a route keeps its pin. Only a group with a place that the author sees can be picked, and the event then stands where the group stands, even after the group moves. Whoever does not see that group sees only the words, and deleting the group leaves the words as well. A link from a group or from an event opens the root's map on its place, which stands out whatever the filters, and an event shows a card of its own there."
           )
       }
     ]

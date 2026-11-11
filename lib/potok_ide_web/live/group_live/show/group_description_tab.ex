@@ -10,9 +10,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
   @doc """
   Where a group with a place stands, for the strip over its description: the
   areas the viewer sees around its pin, smallest first, or for a route the
-  areas it passes through and its length; for an area a link to the root's
-  map narrowed to it, for a route a link to the map showing it. Nil for a
-  group without a place, or for a guest.
+  areas it passes through and its length; and a link to the root's map: for
+  an area narrowed to it, for a route showing it, for a point with its pin in
+  focus. Nil for a group without a place, or for a guest.
   """
   def location(nil, _group), do: nil
 
@@ -21,15 +21,18 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
       kind = GroupAreas.place_kind(group)
       root = Social.root_group_id()
 
+      {shape, map_path} =
+        case kind do
+          {:area, _size} -> {:area, ~p"/groups/#{root}/map?#{[area: group.id]}"}
+          {:route, _meters} -> {:route, ~p"/groups/#{root}/map?#{[route: group.id]}"}
+          _point -> {:point, ~p"/groups/#{root}/map?#{[place: group.id]}"}
+        end
+
       %{
         within: GroupAreas.containing(profile, group, kind),
         route_length: with({:route, meters} <- kind, do: meters, else: (_other -> nil)),
-        map_path:
-          case kind do
-            {:area, _size} -> ~p"/groups/#{root}/map?#{[area: group.id]}"
-            {:route, _meters} -> ~p"/groups/#{root}/map?#{[route: group.id]}"
-            _point -> nil
-          end
+        shape: shape,
+        map_path: map_path
       }
     end
   end
@@ -118,9 +121,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
           class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition duration-150 ease-out hover:-translate-y-px hover:bg-primary/15"
         >
           <.icon name="hero-map-micro" class="size-3.5 shrink-0" />
-          {if @location.route_length,
-            do: gettext("Route on the map"),
-            else: gettext("Groups in this area on the map")}
+          <%= case @location.shape do %>
+            <% :route -> %>
+              {gettext("Route on the map")}
+            <% :area -> %>
+              {gettext("Groups in this area on the map")}
+            <% :point -> %>
+              {gettext("Show on the map")}
+          <% end %>
         </.link>
       </div>
       <nav

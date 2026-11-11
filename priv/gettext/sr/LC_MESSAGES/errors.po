@@ -152,3 +152,9 @@ msgstr "Ruta je šira od pola sveta."
 
 msgid "A place is either an area or a route."
 msgstr "Mesto je ili područje ili ruta."
+
+msgid "An event's place is a group or a point on the map, not both."
+msgstr "Mesto događaja je grupa ili tačka na mapi, ne oboje."
+
+msgid "That group has no place you can see."
+msgstr "Ta grupa nema mesto koje vidiš."

@@ -2672,6 +2672,40 @@
   transform: scale(1.25);
 }
 
+/* The place of a link (`?place=`, `?event=`): its pin stands out over the
+   others, and a ring in the mark's blue spreads from its tip. The pin is
+   positioned so that it covers the ring. */
+.potok-map-pin.is-focus svg {
+  position: relative;
+  transform: scale(1.25);
+}
+
+.potok-focus-ring {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  width: 34px;
+  height: 14px;
+  margin: -8px 0 0 -17px;
+  border: 2px solid #0a5bc4;
+  border-radius: 50%;
+  background: rgb(10 91 196 / 0.18);
+  pointer-events: none;
+  animation: potok-focus-pulse 1.8s ease-out infinite;
+}
+
+@keyframes potok-focus-pulse {
+  from {
+    transform: scale(0.5);
+    opacity: 0.9;
+  }
+
+  to {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
 .potok-cluster-icon {
   background: none;
   border: 0;
@@ -2903,6 +2937,12 @@
   .potok-corner,
   .potok-midpoint {
     transition: none;
+  }
+
+  .potok-focus-ring {
+    animation: none;
+    transform: scale(1.4);
+    opacity: 0.75;
   }
 }
 

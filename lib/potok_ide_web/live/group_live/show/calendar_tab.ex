@@ -3,7 +3,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
 
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Format, Occurrence}
-  alias PotokIdeWeb.GroupLive.Show.{CalendarState, Components}
+  alias PotokIde.MapTiles
+  alias PotokIdeWeb.{Distance, PinIcons}
+  alias PotokIdeWeb.GroupLive.Show.{CalendarState, ChoiceMenus, Components, LocationEditor}
   alias PotokIdeWeb.TagComponents
 
   # Chip colours of sub-groups' events; the group's own use the primary colour.
@@ -41,6 +43,19 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :form_values, :any, default: nil
   attr :announce, :boolean, default: true
   attr :notify, :boolean, default: true
+  attr :place_group, :map, default: nil, doc: "the form's picked group, `%{id, group}`"
+  attr :place_map, :boolean, default: false, doc: "the form's map shows"
+  attr :place_center, :any, default: nil, doc: "where the form's map opens with no point"
+  attr :place_options, :list, default: [], doc: "the menu's groups, as `{group, meters}`"
+  attr :place_query, :string, default: ""
+  attr :place_mode, :string, default: "point", doc: ~s{the form's map: "point", "area" or "route"}
+
+  attr :place_start, :map,
+    default: %{area: nil, route: nil, route_length: nil},
+    doc: "the area or route the form's map opens with"
+
+  attr :event_place, :map, default: nil, doc: "the open event's place (`Events.place/2`)"
+  attr :event_map_path, :string, default: nil, doc: "the root's map opened on the open event"
 
   def panel(assigns) do
     assigns =
@@ -228,6 +243,13 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                   notify={@notify}
                   can_announce={PotokIde.Social.Access.can?(@access, :post_values)}
                   can_publish={Events.can_publish?(@access, @group)}
+                  place_group={@place_group}
+                  place_map={@place_map}
+                  place_center={@place_center}
+                  place_options={@place_options}
+                  place_query={@place_query}
+                  place_mode={@place_mode}
+                  place_start={@place_start}
                 />
               <% @event -> %>
                 <.event_detail
@@ -242,6 +264,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
                   current_profile={@current_profile}
                   time_zone={@time_zone}
                   today={@today}
+                  place={@event_place}
+                  map_path={@event_map_path}
                 />
             <% end %>
           </aside>
@@ -466,6 +490,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :current_profile, :map, required: true
   attr :time_zone, :string, required: true
   attr :today, Date, required: true
+  attr :place, :map, default: nil, doc: "where it takes place on a map (`Events.place/2`)"
+  attr :map_path, :string, default: nil, doc: "the root's map opened on it"
 
   defp event_detail(assigns) do
     event = assigns.event
@@ -573,14 +599,67 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
             {gettext("Shown in your time zone; the event is in %{zone}.", zone: @event.time_zone)}
           </dd>
         </div>
-        <div :if={@event.location != ""} class="flex gap-3">
+        <div
+          :if={@event.location != "" || (@place && @place.group) || @map_path}
+          class="flex gap-3"
+        >
           <dt class="pt-0.5 text-base-content/65">
             <.icon name="hero-map-pin" class="size-4" />
             <span class="sr-only">
               {gettext("Location")}
             </span>
           </dt>
-          <dd id="calendar-event-location" class="wrap-break-word">{@event.location}</dd>
+          <dd id="calendar-event-location" class="min-w-0 flex-1 space-y-1.5">
+            <p
+              :if={@event.location != ""}
+              id="calendar-event-location-text"
+              class="wrap-break-word"
+            >
+              {@event.location}
+            </p>
+            <div
+              :if={(@place && @place.group) || @map_path}
+              class="flex flex-wrap items-center gap-1.5"
+            >
+              <span
+                :if={@place && is_nil(@place.group) && @place.shape in [:area, :route]}
+                id="calendar-event-place-shape"
+                class="inline-flex items-center gap-1 text-xs font-semibold text-base-content/70"
+              >
+                <%= if @place.shape == :area do %>
+                  <.icon name="hero-viewfinder-circle-micro" class="size-3.5" />
+                  {gettext("Area")}
+                <% else %>
+                  <.icon name="hero-arrow-turn-up-right-micro" class="size-3.5" />
+                  {if @place.length,
+                    do: gettext("Route · %{length}", length: Distance.text(@place.length)),
+                    else: gettext("Route")}
+                <% end %>
+              </span>
+              <.link
+                :if={@place && @place.group}
+                id="calendar-event-place-group"
+                navigate={~p"/groups/#{@place.group.id}"}
+                class="inline-flex max-w-full items-center gap-1.5 rounded-full border border-base-300/70 bg-base-100 py-0.5 pr-2.5 pl-1 text-xs font-semibold text-base-content/80 transition duration-150 ease-out hover:-translate-y-px hover:border-primary/40 hover:text-primary"
+              >
+                <PinIcons.group_pin
+                  id="calendar-event-place-group-pin"
+                  group={@place.group}
+                  class="h-6 w-[1.2rem] shrink-0"
+                />
+                <span class="truncate">{@place.group.name}</span>
+              </.link>
+              <.link
+                :if={@map_path}
+                id="calendar-event-map"
+                navigate={@map_path}
+                class="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary transition duration-150 ease-out hover:-translate-y-px hover:bg-primary/15"
+              >
+                <.icon name="hero-map-micro" class="size-3.5 shrink-0" />
+                {gettext("Show on the map")}
+              </.link>
+            </div>
+          </dd>
         </div>
         <div :if={@event.creator} class="flex items-center gap-3">
           <dt class="text-base-content/65">
@@ -817,8 +896,26 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
   attr :notify, :boolean, default: true
   attr :can_announce, :boolean, default: false
   attr :can_publish, :boolean, default: false
+  attr :place_group, :map, default: nil
+  attr :place_map, :boolean, default: false
+  attr :place_center, :any, default: nil
+  attr :place_options, :list, default: []
+  attr :place_query, :string, default: ""
+  attr :place_mode, :string, default: "point"
+  attr :place_start, :map, default: %{area: nil, route: nil, route_length: nil}
 
   defp event_form(assigns) do
+    assigns =
+      assigns
+      # The map shows whenever the event has a point of its own.
+      |> assign(:map_shown?, assigns.place_map or assigns.values.point != nil)
+      |> assign(:place_errors, place_errors(assigns.form))
+      |> assign(:event_look, PinIcons.icon_look("event"))
+      |> assign(
+        :place_search_form,
+        to_form(%{"q" => assigns.place_query}, as: :calendar_place)
+      )
+
     ~H"""
     <div
       id="calendar-event-form-card"
@@ -950,13 +1047,204 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           />
         </div>
 
-        <.input
-          field={@form[:location]}
-          type="text"
-          label={gettext("Location")}
-          maxlength="300"
-          phx-debounce="300"
-        />
+        <div id="calendar-form-place" class="mb-2">
+          <.input
+            field={@form[:location]}
+            type="text"
+            label={gettext("Location")}
+            maxlength="300"
+            phx-debounce="300"
+          />
+          <%!-- The place on a map lives in these fields, always rendered, so
+               every change of the form carries it. --%>
+          <.input field={@form[:place_group_id]} id="calendar-place-group-id" type="hidden" />
+          <div
+            :if={@place_group}
+            id="calendar-place-chip"
+            class="mb-2 flex items-center gap-2 rounded-2xl border border-base-300/70 bg-base-200/40 py-1.5 pr-1 pl-2"
+          >
+            <%= if @place_group.group do %>
+              <PinIcons.group_pin
+                id="calendar-place-chip-pin"
+                group={@place_group.group}
+                class="h-8 w-[1.6rem] shrink-0 drop-shadow-sm"
+              />
+              <span class="min-w-0 flex-1">
+                <span class="block truncate text-sm font-semibold">
+                  {@place_group.group.name}
+                </span>
+                <span class="block truncate text-xs text-base-content/60">
+                  {PinIcons.place_label(@place_group.group)}
+                </span>
+              </span>
+            <% else %>
+              <.icon name="hero-map-pin" class="ml-1 size-5 shrink-0 text-base-content/45" />
+              <span class="min-w-0 flex-1 truncate text-sm text-base-content/70">
+                {gettext("A group you do not see")}
+              </span>
+            <% end %>
+            <.icon_button
+              id="calendar-place-chip-clear"
+              type="button"
+              phx-click="calendar_place_clear_group"
+              icon="hero-x-mark"
+              label={gettext("Remove the group")}
+              size="xs"
+            />
+          </div>
+          <p
+            :if={@place_group && @place_group.group && !@place_group.group.is_public}
+            id="calendar-place-private-hint"
+            class="-mt-1 mb-2 flex gap-1.5 text-xs text-base-content/65"
+          >
+            <.icon name="hero-lock-closed-micro" class="mt-px size-3.5 shrink-0" />
+            {gettext("Those who do not see this group see only the text of the place.")}
+          </p>
+          <div class="flex flex-wrap gap-2">
+            <.button
+              id="calendar-place-toggle"
+              type="button"
+              variant="soft"
+              size="sm"
+              aria-haspopup="menu"
+              aria-controls="calendar-place-menu"
+              phx-click={
+                JS.push("calendar_place_open")
+                |> JS.dispatch("potok:choice-menu-open", to: "#calendar-place-menu")
+              }
+            >
+              <.icon name="hero-building-library" class="size-4" />
+              {gettext("Pick a location")}
+            </.button>
+            <.button
+              :if={!@map_shown?}
+              id="calendar-place-on-map"
+              type="button"
+              variant="soft"
+              size="sm"
+              phx-click="calendar_place_map"
+            >
+              <.icon name="hero-map" class="size-4" />
+              {gettext("Pick on the map")}
+            </.button>
+          </div>
+          <div :if={@map_shown?} id="calendar-place-map-card" class="mt-3">
+            <LocationEditor.mode_switch
+              id="calendar-place-mode"
+              mode={@place_mode}
+              event="calendar_place_mode"
+              class="mb-3"
+            />
+            <LocationEditor.shape_hint prefix="calendar-place" mode={@place_mode} />
+            <%!-- The pin the map puts, copied by its hook. --%>
+            <span id="calendar-place-pin" class="hidden" aria-hidden="true">
+              <PinIcons.pin
+                id="calendar-place-pin-svg"
+                color={@event_look.color}
+                paths={@event_look.paths}
+              />
+            </span>
+            <%!-- The area or route goes to the server on its own
+                 (`calendar_place_area`, `calendar_place_route`), as on a
+                 group's Location card; the pin it gets comes back into the
+                 fields below. --%>
+            <div id="calendar-place-map-wrap" phx-update="ignore">
+              <div
+                id="calendar-place-map"
+                phx-hook="LocationPicker"
+                class="potok-map h-56 w-full overflow-hidden rounded-2xl border border-base-300 bg-base-200 sm:h-64"
+                data-tiles={MapTiles.url_template("/tiles")}
+                data-attribution={MapTiles.attribution()}
+                data-max-zoom={MapTiles.max_zoom()}
+                data-default-bounds={Jason.encode!(MapTiles.default_bounds())}
+                data-center={@place_center && Jason.encode!(@place_center)}
+                data-zoom="13"
+                data-lat-input="calendar-place-latitude"
+                data-lng-input="calendar-place-longitude"
+                data-pin-source="calendar-place-pin"
+                data-locate-button="calendar-place-locate"
+                data-error-target="calendar-place-map-error"
+                data-locate-error={gettext("Your location is not available.")}
+                data-load-error={gettext("The map could not load. Type the coordinates instead.")}
+                data-mode={@place_mode}
+                data-area={Jason.encode!(@place_start.area)}
+                data-route={Jason.encode!(@place_start.route)}
+                data-route-length={@place_start.route_length}
+                data-area-event="calendar_place_area"
+                data-route-event="calendar_place_route"
+                data-point-event=""
+                data-mode-event="calendar_place_map_mode"
+                data-reset-event="calendar_place_map_reset"
+                {LocationEditor.picker_attrs("calendar-place")}
+              >
+              </div>
+              <p id="calendar-place-map-error" class="mt-2 text-xs text-error" hidden></p>
+              <p id="calendar-place-area-status" class="mt-2 text-xs text-base-content/65" hidden></p>
+              <div id="calendar-place-area-choices" class="mt-2" hidden></div>
+            </div>
+            <p :if={@place_mode == "point"} class="mt-2 text-xs text-base-content/65">
+              {gettext("Tap the map to put the event's place, or drag the pin.")}
+            </p>
+            <LocationEditor.shape_tools prefix="calendar-place" mode={@place_mode} />
+            <div class="mt-2 flex flex-wrap gap-2">
+              <.button
+                id="calendar-place-locate"
+                type="button"
+                variant="soft"
+                size="sm"
+                hidden
+                phx-mounted={JS.ignore_attributes(["hidden"])}
+              >
+                <.icon name="hero-map-pin" class="size-4" />
+                {gettext("My location")}
+              </.button>
+              <.button
+                id="calendar-place-clear-point"
+                type="button"
+                variant="ghost"
+                size="sm"
+                phx-click="calendar_place_clear_point"
+              >
+                <.icon name="hero-x-mark" class="size-4" />
+                {if @values.point, do: gettext("Remove location"), else: gettext("Close the map")}
+              </.button>
+            </div>
+          </div>
+          <div class={[
+            "mt-3 grid grid-cols-2 gap-x-2",
+            (!@map_shown? or @place_mode != "point") && "hidden"
+          ]}>
+            <.input
+              field={@form[:latitude]}
+              id="calendar-place-latitude"
+              type="number"
+              step="any"
+              min="-90"
+              max="90"
+              inputmode="decimal"
+              label={gettext("Latitude")}
+            />
+            <.input
+              field={@form[:longitude]}
+              id="calendar-place-longitude"
+              type="number"
+              step="any"
+              min="-180"
+              max="180"
+              inputmode="decimal"
+              label={gettext("Longitude")}
+            />
+          </div>
+          <div :if={@place_errors != []} id="calendar-place-errors" role="alert">
+            <p
+              :for={message <- @place_errors}
+              class="mt-1.5 flex items-center gap-2 text-sm text-error"
+            >
+              <.icon name="hero-exclamation-circle" class="size-5 shrink-0" />
+              {message}
+            </p>
+          </div>
+        </div>
         <.input
           field={@form[:description]}
           type="textarea"
@@ -1048,9 +1336,102 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarTab do
           </.button>
         </div>
       </.form>
+
+      <%!-- Outside the form, as it holds a form of its own. --%>
+      <ChoiceMenus.choice_menu
+        id="calendar-place"
+        choices={[]}
+        event="calendar_place_pick"
+        param="id"
+        label={gettext("Groups with a place")}
+        wide
+      >
+        <:top>
+          <.form
+            for={@place_search_form}
+            id="calendar-place-search-form"
+            phx-change="calendar_place_search"
+            phx-submit="calendar_place_search"
+            class="px-1 pb-1"
+          >
+            <.input
+              field={@place_search_form[:q]}
+              id="calendar-place-search-input"
+              type="search"
+              placeholder={gettext("Find a group")}
+              autocomplete="off"
+              phx-debounce="250"
+            />
+          </.form>
+          <button
+            :for={{group, meters} <- @place_options}
+            id={"calendar-place-option-#{group.id}"}
+            type="button"
+            role="menuitemradio"
+            aria-checked={to_string(@values.place_group_id == group.id)}
+            phx-click={
+              JS.push("calendar_place_pick", value: %{id: group.id})
+              |> ChoiceMenus.close_choice_menu("calendar-place")
+            }
+            class={[
+              "flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-1.5 text-left text-sm transition-colors duration-150 hover:bg-base-200 focus-visible:bg-base-200 focus-visible:outline-none",
+              if(@values.place_group_id == group.id,
+                do: "font-semibold text-primary",
+                else: "font-medium text-base-content/80"
+              )
+            ]}
+          >
+            <PinIcons.group_pin
+              id={"calendar-place-option-pin-#{group.id}"}
+              group={group}
+              class="h-7 w-[1.4rem] shrink-0 drop-shadow-sm"
+            />
+            <span class="min-w-0 flex-1">
+              <span class="block truncate">{group.name}</span>
+              <span class="block truncate text-xs font-normal text-base-content/60">
+                {place_option_label(group, meters)}
+              </span>
+            </span>
+            <.icon
+              :if={@values.place_group_id == group.id}
+              name="hero-check"
+              class="size-4 shrink-0"
+            />
+          </button>
+          <p
+            :if={@place_options == []}
+            id="calendar-place-none"
+            class="px-2.5 py-2 text-xs text-base-content/60"
+          >
+            {if(@place_query == "",
+              do: gettext("No group you see has a place yet."),
+              else: gettext("No group by that name.")
+            )}
+          </p>
+        </:top>
+      </ChoiceMenus.choice_menu>
     </div>
     """
   end
+
+  # The errors of the place on a map: the group's always, a coordinate's
+  # while its field does not show them itself (a field the map filled in was
+  # never typed in).
+  defp place_errors(form) do
+    unused = fn field -> if used_input?(field), do: [], else: field.errors end
+
+    (form[:place_group_id].errors ++
+       form[:area].errors ++
+       form[:route].errors ++ unused.(form[:latitude]) ++ unused.(form[:longitude]))
+    |> Enum.map(&translate_error/1)
+    |> Enum.uniq()
+  end
+
+  # What a group in the menu is, and how far it stands from the event.
+  defp place_option_label(group, meters) when is_number(meters) and meters >= 10,
+    do: PinIcons.place_label(group) <> " · " <> Distance.text(meters)
+
+  defp place_option_label(group, _meters), do: PinIcons.place_label(group)
 
   defp scope_text(%{group: %{is_root: true}, show_groups: true, show_public: true}),
     do: gettext("Events of your groups and public events.")

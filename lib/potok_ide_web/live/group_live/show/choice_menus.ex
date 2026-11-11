@@ -108,6 +108,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
   attr :event, :string, required: true, doc: "sent with the key picked"
   attr :param, :string, required: true, doc: "the name the key goes under"
   attr :label, :string, required: true
+  attr :wide, :boolean, default: false, doc: "a wider card, for rows of two lines"
   slot :top, doc: "what stands above the choices and leaves the menu open"
   slot :bottom, doc: "what stands below the choices, such as a small form"
 
@@ -135,7 +136,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
         data-card
         role="menu"
         aria-label={@label}
-        class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(15rem,calc(100vw-1.25rem))] overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100/95 p-1.5 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
+        class={[
+          "absolute right-2 top-2 max-h-[calc(100dvh-1rem)] overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100/95 p-1.5 shadow-2xl shadow-primary/10 outline-none backdrop-blur",
+          if(@wide,
+            do: "w-[min(20rem,calc(100vw-1.25rem))]",
+            else: "w-[min(15rem,calc(100vw-1.25rem))]"
+          )
+        ]}
       >
         {render_slot(@top)}
         <%= for choice <- @choices do %>

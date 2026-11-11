@@ -27,6 +27,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   area filter keeps a route that passes through a chosen area. `?route=ID`
   opens the map on one route, drawn whatever the filters.
 
+  `?place=ID` opens the map on one group's place, and `?event=ID` on the place
+  of a calendar event (`Events.place/2`), with a card of the event: a link
+  from a group's page or from an event. The place is in focus whatever the
+  filters: its pin stands out, and an area or a route is outlined. Only the
+  map tab reads them, as the calendar has an `event` of its own.
+
   Three layers, places, areas and routes, are switched on the map, and the
   browser remembers them.
   """
@@ -36,9 +42,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3]
 
+  alias PotokIde.Events
+  alias PotokIde.Events.Event
   alias PotokIde.RateLimit
   alias PotokIde.Social
-  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRoutes}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPlaces, GroupPresets, GroupRoutes}
   alias PotokIdeWeb.GroupLive.Show.{AppApi, GroupSheet}
 
   @periods ~w(24h 7d 30d 12m any)
@@ -72,6 +80,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_area_param: nil,
       root_map_route_param: nil,
       root_map_route: nil,
+      # `?place=` and `?event=`: the place in focus (`focus/2`) and whether
+      # the event's card shows.
+      root_map_place_param: nil,
+      root_map_event_param: nil,
+      root_map_focus: nil,
+      root_map_focus_card?: false,
       root_map_area_query: "",
       root_map_area_options: nil,
       root_map_area_chosen: []
@@ -136,12 +150,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   `?area=ID` opens the map on that area: its pins from any time, the map
   fitted to it once the browser asks for its view. `?route=ID` opens it on
   that route: from any time, fitted to the route, which is drawn whatever
-  the filters. An area or a route the viewer cannot see is left out.
+  the filters. `?place=ID` and `?event=ID` put a group's or an event's place
+  in focus, from any time and fitted to it. An area, a route, a group or an
+  event the viewer cannot see is left out.
   """
   def assign_params(socket, params) do
     socket
     |> assign_area_param(params["area"])
     |> assign_route_param(params["route"])
+    |> assign_focus_params(params)
   end
 
   defp assign_area_param(socket, param) do
@@ -193,19 +210,96 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  @doc "Whether the link's area or route changed while the map stays open."
+  # The place of `?event=` or else of `?place=`, read on the map tab only:
+  # the calendar's `?event=` must not leave the map a focus to fly to later.
+  defp assign_focus_params(socket, params) do
+    {place, event} = {params["place"], params["event"]}
+
+    cond do
+      socket.assigns[:active_tab] != "map" or not root?(socket) ->
+        socket
+
+      {place, event} ==
+          {socket.assigns.root_map_place_param, socket.assigns.root_map_event_param} ->
+        socket
+
+      true ->
+        socket = assign(socket, root_map_place_param: place, root_map_event_param: event)
+
+        case focus(socket.assigns.current_profile,
+               event_id: parse_id(event),
+               group_id: parse_id(place)
+             ) do
+          nil ->
+            assign(socket, root_map_focus: nil, root_map_focus_card?: false)
+
+          focus ->
+            filters = %{socket.assigns.root_map_filters | period: "any", from: nil, to: nil}
+
+            socket
+            |> assign(
+              root_map_focus: focus,
+              root_map_focus_card?: focus.event != nil,
+              root_map_filters: filters,
+              root_map_extent: nil,
+              root_map_fit: focus.bounds
+            )
+            |> assign_range_form(%{})
+        end
+    end
+  end
+
+  # What the map puts in focus: the place of a visible event that is not
+  # cancelled, or else of a visible group with a place. `bounds` is what the
+  # map fits to, `shape` how the place is drawn.
+  defp focus(profile, event_id: event_id, group_id: group_id) do
+    with id when is_integer(id) <- event_id,
+         {:ok, %Event{} = event} <- Events.get_event(profile, id),
+         false <- Event.cancelled?(event),
+         %{} = place <- Events.place(profile, event) do
+      Map.merge(place, %{event: event, occurrence: Events.upcoming_occurrence(event)})
+    else
+      _no_event ->
+        with id when is_integer(id) <- group_id,
+             %Group{} = group <- GroupPlaces.get_visible(profile, id) do
+          %{
+            group: group,
+            event: nil,
+            occurrence: nil,
+            lat: group.latitude,
+            lng: group.longitude,
+            shape: GroupPlaces.shape(group),
+            bounds: GroupPlaces.bounds(group)
+          }
+        else
+          _none -> nil
+        end
+    end
+  end
+
+  defp parse_id(param) do
+    case Integer.parse(to_string(param)) do
+      {id, ""} when id > 0 -> id
+      _invalid -> nil
+    end
+  end
+
+  @doc "Whether the link's area, route, group or event changed while the map stays open."
   def params_changed?(socket, params) do
     params["area"] != socket.assigns.root_map_area_param or
-      params["route"] != socket.assigns.root_map_route_param
+      params["route"] != socket.assigns.root_map_route_param or
+      params["place"] != socket.assigns.root_map_place_param or
+      params["event"] != socket.assigns.root_map_event_param
   end
 
   def handle_params(socket, params) do
-    route = socket.assigns.root_map_route
+    %{root_map_route: route, root_map_focus: focus} = socket.assigns
     socket = assign_params(socket, params)
 
-    if socket.assigns.root_map_fit || socket.assigns.root_map_route != route,
-      do: refresh(socket),
-      else: socket
+    if socket.assigns.root_map_fit || socket.assigns.root_map_route != route ||
+         socket.assigns.root_map_focus != focus,
+       do: refresh(socket),
+       else: socket
   end
 
   # A new count brings the empty state back, closed or not.
@@ -248,6 +342,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   defp view_payload(socket, {:ok, view}) do
     layers = socket.assigns.root_map_layers
+    focus = socket.assigns.root_map_focus
 
     chosen =
       if layers.areas,
@@ -260,23 +355,53 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
     linked = socket.assigns.root_map_route
 
+    # The focused group's area or route is outlined whatever the layers,
+    # once: not again among the view's, nor when the filter or `?route=`
+    # already outlines it.
+    focus_area = focus_shape(focus, :area)
+    focus_route = focus_shape(focus, :route)
+
+    focus_area =
+      if focus_area && layers.areas && focus_area.id in socket.assigns.root_map_filters.areas,
+        do: nil,
+        else: focus_area
+
+    focus_route =
+      if focus_route && linked && focus_route.id == linked.id, do: nil, else: focus_route
+
+    outlined = Enum.map(Enum.reject([linked, focus_route, focus_area], &is_nil/1), & &1.id)
+
     routes =
-      for route <- view.routes, is_nil(linked) or route.id != linked.id do
+      for route <- view.routes, route.id not in outlined do
         route_payload(route)
       end
 
     routes =
-      if linked, do: routes ++ [linked |> route_payload() |> Map.put(:ctx, true)], else: routes
+      Enum.reduce([linked, focus_route], routes, fn
+        nil, routes -> routes
+        route, routes -> routes ++ [route |> route_payload() |> Map.put(:ctx, true)]
+      end)
+
+    areas =
+      for area <- view.areas, area.id not in outlined do
+        area_payload(area)
+      end
+
+    areas =
+      if focus_area,
+        do: areas ++ chosen ++ [focus_area |> area_payload() |> Map.put(:ctx, true)],
+        else: areas ++ chosen
 
     payload = %{
       ok: true,
       places: Enum.map(view.places, &AppApi.place_payload/1),
       clusters: view.clusters,
       total: view.total,
-      areas: Enum.map(view.areas, &area_payload/1) ++ chosen,
+      areas: areas,
       routes: routes,
       chosen: socket.assigns.root_map_filters.areas,
-      layers: layers
+      layers: layers,
+      focus: focus_payload(focus)
     }
 
     payload =
@@ -311,6 +436,42 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     |> AppApi.place_payload()
     |> Map.merge(%{v: GroupAreas.version(group.updated_at), bbox: GroupRoutes.bbox(group)})
   end
+
+  # The focused group, when its place is of `shape`.
+  defp focus_shape(%{group: %Group{} = group, shape: shape}, shape), do: group
+  defp focus_shape(_focus, _shape), do: nil
+
+  # The pin in focus, as the browser draws it whatever the filters: the
+  # group's, or the calendar's own pin at an event's point. `event` says a tap
+  # brings the event's card back rather than opening the group.
+  defp focus_payload(nil), do: nil
+
+  defp focus_payload(%{group: %Group{} = group, event: event}),
+    do: group |> AppApi.place_payload() |> Map.put(:event, event != nil)
+
+  defp focus_payload(%{event: %Event{} = event, lat: lat, lng: lng} = focus) do
+    payload = %{
+      id: nil,
+      name: event.title,
+      lat: lat,
+      lng: lng,
+      kind: "none",
+      pin: "event",
+      picture_url: nil,
+      is_public: true,
+      event: true
+    }
+
+    # An area or a route of the event's own: the browser asks for it once
+    # (`root_map_focus_shape`) and keeps it by its key.
+    if focus.shape in [:area, :route],
+      do:
+        Map.put(payload, :shape, %{key: focus_shape_key(event), kind: Atom.to_string(focus.shape)}),
+      else: payload
+  end
+
+  defp focus_shape_key(%Event{id: id, updated_at: updated_at}),
+    do: "event-#{id}-#{DateTime.to_unix(updated_at)}"
 
   defp any_layer?(layers), do: Enum.any?(Map.values(layers))
 
@@ -631,6 +792,41 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
 
   def handle_event("root_map_spot_close", _params, socket),
     do: {:noreply, assign(socket, :root_map_spot, nil)}
+
+  # The area or route of the event in focus, its own: once, as the browser
+  # keeps it.
+  def handle_event("root_map_focus_shape", _params, socket) do
+    with %{event: %Event{} = event, group: nil, shape: shape} when shape in [:area, :route] <-
+           socket.assigns.root_map_focus,
+         %{} = geojson <- Events.shape_geojson(event) do
+      {:reply,
+       %{ok: true, key: focus_shape_key(event), kind: Atom.to_string(shape), geojson: geojson},
+       socket}
+    else
+      _none -> {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # The event's card steps aside; a tap on its pin brings it back, in place
+  # of the other cards at the map's bottom.
+  def handle_event("root_map_focus_close", _params, socket),
+    do: {:noreply, assign(socket, :root_map_focus_card?, false)}
+
+  def handle_event("root_map_focus_show", _params, socket) do
+    case socket.assigns.root_map_focus do
+      %{event: %Event{}} ->
+        socket =
+          if socket.assigns.root_map_here,
+            do: push_event(socket, "root_map_select_area", %{id: nil}),
+            else: socket
+
+        {:noreply,
+         assign(socket, root_map_focus_card?: true, root_map_spot: nil, root_map_here: nil)}
+
+      _none ->
+        {:noreply, socket}
+    end
+  end
 
   # The empty state steps aside so the map behind it shows, until the
   # filters change.

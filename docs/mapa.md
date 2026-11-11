@@ -51,6 +51,19 @@ Grupa može biti jako mnogo, pa ih broji server, a ne telefon: dok se mapa pomer
 
 Mapa korena se ne osvežava sama: novo stanje stiže kad se mapa pomeri, kad se promeni filter ili kad se tab ponovo otvori.
 
+### Linkovi na jedno mesto
+
+Mapa korena se otvara i na jednom mestu, od bilo kada i kakvi god da su filteri:
+
+| Link | Šta pokazuje |
+|---|---|
+| `?place=ID` | mesto grupe: istaknut pin sa prstenom koji pulsira, a područje ili rutu i uokvirene; vodi ga traka iznad opisa grupe-tačke („Prikaži na mapi“) |
+| `?event=ID` | mesto događaja iz kalendara, uz karticu događaja dole (naslov, vreme, mesto, **Otvori događaj**, × je sklanja, dodir na pin je vraća); otkazan događaj ne pokazuje ništa |
+
+Oba parametra čita samo tab mape (`RootMapState`), jer kalendar ima svoj `event`. Grupa ili događaj koje gledalac ne vidi ne menjaju ništa.
+
+Mesto događaja su reči („Mesto“), a na mapi može biti **grupa sa mestom** (`group_events.place_group_id`) ili **svoje mesto**: tačka, područje ili ruta (`latitude`/`longitude`, `area`, `route`), nikad oboje. U formi događaja dugme **Izaberi lokaciju** otvara meni grupa sa mestom koje autor vidi, od najbližih (`GroupPlaces.search/4`), a **Izaberi na mapi** otvara malu mapu sa istim izborom **Tačka / Područje / Ruta** kao na kartici Lokacija grupe (isti `LocationPicker`, uz događaje forme `calendar_place_area` i `calendar_place_route`, i zajedničke delove u `LocationEditor`). Područje drži pin u sebi, a ruta na početku; na mapi korena područje događaja je uokvireno, a ruta istaknuta, i pregledač ih traži jednom (`root_map_focus_shape`). Događaj na mestu grupe stoji gde i grupa i prati je kad se pomeri; ko grupu ne vidi, vidi samo reči (`Events.place/2`), a brisanje grupe ostavlja reči. Detalj događaja ima link **Prikaži na mapi**, a `.ics` dobija liniju `GEO`.
+
 ## Područja
 
 Mesto grupe može biti i područje, kao kod mesne zajednice: granica od jednog ili više poligona, sa rupama ili bez njih (`Group.area`, PostGIS, `PotokIde.Social.GroupAreas`). Zadaje je ko sme da uređuje grupu, na kartici **Lokacija** (prekidač **Tačka / Područje**): crta se dodirom na mapu (temena, tačke na sredini ivica, poništavanje), ili se uvozi iz GeoJSON fajla, koji čita pregledač. Ako fajl ima više područja, bira se jedno po imenu (`name`, `naziv`…). Granica ide serveru posebnim događajem, ne kroz formu, a server je proverava i sam stavlja pin područja u njegovu unutrašnjost.

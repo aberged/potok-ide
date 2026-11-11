@@ -41,6 +41,18 @@ defmodule PotokIde.Events.ICSTest do
     refute Enum.any?(lines, &String.starts_with?(&1, "RRULE"))
   end
 
+  test "a place on a map is a GEO line, in plain decimals" do
+    event = event(~D[2026-11-07], ~T[18:00:00], 90, location: "Hall 2")
+
+    lines =
+      event
+      |> ICS.render(host: "potok.rs", now: @now, geo: {45.25, 1.0e-5})
+      |> String.split("\r\n", trim: true)
+
+    assert "GEO:45.250000;0.000010" in lines
+    refute Enum.any?(lines(event), &String.starts_with?(&1, "GEO"))
+  end
+
   test "a weekly event in its zone, with its end and cancelled dates" do
     lines =
       lines(

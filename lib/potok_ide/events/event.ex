@@ -10,6 +10,15 @@ defmodule PotokIde.Events.Event do
   `reminder_minutes` are the organizer's reminders, before the start of a
   timed occurrence or before 09:00 on the day of an all-day one. Members can
   pick their own (`PotokIde.Events.MemberSetting`).
+
+  `location` is the place in words, and stays. The event can also stand on a
+  map: at the place of a group (`place_group_id`), where it follows the group,
+  or at a place of its own, never both. A place of its own is a point
+  (`latitude`, `longitude`), an area or a route, as a group's is: an area or
+  a route keeps a pin, inside the area or at the route's start, which
+  `PotokIde.Events` puts there. Deleting the group leaves the words. Only
+  `PotokIde.Events.place/2` reads the place, as a viewer may not see the
+  group (the user's choice, 2026-11-10).
   """
 
   use Ecto.Schema
@@ -17,6 +26,7 @@ defmodule PotokIde.Events.Event do
   import Ecto.Changeset
 
   alias PotokIde.Events.Recurrence
+  alias PotokIde.Social.{Group, GroupAreas, GroupRoutes}
 
   @recurrences [:none, :daily, :weekly, :monthly, :yearly]
   @monthly_modes [:day_of_month, :nth_weekday, :last_weekday]
@@ -31,6 +41,14 @@ defmodule PotokIde.Events.Event do
     field :title, :string
     field :description, :string, default: ""
     field :location, :string, default: ""
+    # A point of its own on a map, both or neither; never with a place group.
+    field :latitude, :float
+    field :longitude, :float
+    # An area or a route of its own, whose pin is the point: never both.
+    # Loaded only on demand (`PotokIde.Events.load_shape/1`), as a border can
+    # hold thousands of points.
+    field :area, Geo.PostGIS.Geometry, load_in_query: false
+    field :route, Geo.PostGIS.Geometry, load_in_query: false
     field :all_day, :boolean, default: false
     # Seen by every profile, not only the group's members; set by those with
     # `publish_events` (`PotokIde.Events` drops the change for others).
@@ -72,6 +90,9 @@ defmodule PotokIde.Events.Event do
     field :tags, {:array, :any}, virtual: true, default: []
 
     belongs_to :group, PotokIde.Social.Group
+    # The group it takes place at, standing where that group stands. Never
+    # preloaded: `PotokIde.Events.place/2` shows it only to those who see it.
+    belongs_to :place_group, PotokIde.Social.Group
     belongs_to :creator, PotokIde.Social.Profile
     # The chat value that announced the event.
     belongs_to :value, PotokIde.Social.Value
@@ -119,7 +140,8 @@ defmodule PotokIde.Events.Event do
   The form changeset. `time_zone` is the viewer's: a new event takes it, an
   existing one keeps its own, and the form's dates and times are read in
   that zone. `group_id`, `creator_id` and the reminder fields are set by the
-  caller, never cast.
+  caller, never cast. `place_group_id` is cast, and `PotokIde.Events` checks
+  that the one who saves sees that group and that it has a place.
   """
   def changeset(%__MODULE__{} = event, attrs, time_zone) do
     attrs = normalize_list_attrs(attrs)
@@ -131,6 +153,11 @@ defmodule PotokIde.Events.Event do
       :title,
       :description,
       :location,
+      :place_group_id,
+      :latitude,
+      :longitude,
+      :area,
+      :route,
       :all_day,
       :is_public,
       :start_date,
@@ -152,12 +179,16 @@ defmodule PotokIde.Events.Event do
     |> validate_length(:title, max: 200)
     |> validate_length(:location, max: 300)
     |> validate_length(:description, max: 5000)
+    |> validate_place()
     |> validate_start_time()
     |> put_default_end()
     |> put_instants()
     |> validate_recurrence()
     |> validate_reminders()
     |> check_constraint(:ends_at, name: :group_events_ends_after_start)
+    |> check_constraint(:latitude, name: :group_events_place_check)
+    |> check_constraint(:area, name: :group_events_shape_check)
+    |> foreign_key_constraint(:place_group_id)
   end
 
   @doc "Cancels the single occurrence on `date`."
@@ -181,6 +212,80 @@ defmodule PotokIde.Events.Event do
 
   defp trim(value) when is_binary(value), do: String.trim(value)
   defp trim(value), do: value
+
+  # A point as a group's pin is kept: both coordinates or neither, each within
+  # its range, to six decimals. An area or a route as a group's, and only one
+  # of them: a new one takes the other's place, and without a point there is
+  # neither (the event's shapes must be loaded for that to reach the row). A
+  # group and a place of its own at once is a mistake: the form clears one
+  # when the other is picked.
+  defp validate_place(changeset) do
+    changeset
+    |> update_change(:latitude, &round_coordinate/1)
+    |> update_change(:longitude, &round_coordinate/1)
+    |> validate_number(:latitude, greater_than_or_equal_to: -90, less_than_or_equal_to: 90)
+    |> validate_number(:longitude, greater_than_or_equal_to: -180, less_than_or_equal_to: 180)
+    |> validate_both_coordinates()
+    |> validate_shape(:area, &GroupAreas.normalize/1, &Group.area_error/1)
+    |> validate_shape(:route, &GroupRoutes.normalize/1, &Group.route_error/1)
+    |> one_shape()
+    |> validate_one_place()
+  end
+
+  defp validate_shape(changeset, field, normalize, error) do
+    case fetch_change(changeset, field) do
+      {:ok, shape} when not is_nil(shape) ->
+        case normalize.(shape) do
+          {:ok, shape} -> put_change(changeset, field, shape)
+          {:error, reason} -> add_error(changeset, field, error.(reason))
+        end
+
+      _none ->
+        changeset
+    end
+  end
+
+  defp one_shape(changeset) do
+    cond do
+      get_field(changeset, :latitude) == nil ->
+        changeset |> put_change(:area, nil) |> put_change(:route, nil)
+
+      get_change(changeset, :area) && get_change(changeset, :route) ->
+        add_error(changeset, :route, Group.route_error(:with_area))
+
+      get_change(changeset, :area) ->
+        put_change(changeset, :route, nil)
+
+      get_change(changeset, :route) ->
+        put_change(changeset, :area, nil)
+
+      true ->
+        changeset
+    end
+  end
+
+  defp validate_both_coordinates(changeset) do
+    case {get_field(changeset, :latitude), get_field(changeset, :longitude)} do
+      {nil, nil} -> changeset
+      {lat, lng} when is_number(lat) and is_number(lng) -> changeset
+      {nil, _lng} -> add_error(changeset, :latitude, "can't be blank", validation: :required)
+      {_lat, nil} -> add_error(changeset, :longitude, "can't be blank", validation: :required)
+    end
+  end
+
+  defp validate_one_place(changeset) do
+    if get_field(changeset, :place_group_id) && get_field(changeset, :latitude),
+      do:
+        add_error(
+          changeset,
+          :place_group_id,
+          "An event's place is a group or a point on the map, not both."
+        ),
+      else: changeset
+  end
+
+  defp round_coordinate(value) when is_float(value), do: Float.round(value, 6)
+  defp round_coordinate(value), do: value
 
   # The columns are NOT NULL, and casting "" yields nil.
   defp put_blank(changeset, field) do

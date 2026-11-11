@@ -157,3 +157,9 @@ msgstr ""
 
 msgid "A place is either an area or a route."
 msgstr ""
+
+msgid "An event's place is a group or a point on the map, not both."
+msgstr ""
+
+msgid "That group has no place you can see."
+msgstr ""

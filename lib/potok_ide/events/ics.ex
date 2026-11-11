@@ -16,7 +16,9 @@ defmodule PotokIde.Events.ICS do
 
   @doc """
   The calendar file of `event`. Options: `:host` (for the UID), `:url` (a
-  link back to the event) and `:now` (the time stamp).
+  link back to the event), `:geo` (where it takes place on a map, `{lat,
+  lng}`, as `PotokIde.Events.place/2` shows it to the one who asks) and
+  `:now` (the time stamp).
   """
   def render(%Event{} = event, opts) do
     host = Keyword.fetch!(opts, :host)
@@ -35,6 +37,7 @@ defmodule PotokIde.Events.ICS do
       "SUMMARY:#{escape(event.title)}",
       event.description != "" && "DESCRIPTION:#{escape(event.description)}",
       event.location != "" && "LOCATION:#{escape(event.location)}",
+      geo(opts[:geo]),
       opts[:url] && "URL:#{opts[:url]}",
       times(event),
       rrule(event),
@@ -47,6 +50,14 @@ defmodule PotokIde.Events.ICS do
     |> Enum.filter(&is_binary/1)
     |> Enum.map_join(&(fold(&1) <> "\r\n"))
   end
+
+  # `GEO:lat;lng`, as plain decimals: `Float.to_string/1` writes 1.0e-5.
+  defp geo({lat, lng}) when is_number(lat) and is_number(lng),
+    do: "GEO:#{coordinate(lat)};#{coordinate(lng)}"
+
+  defp geo(_none), do: nil
+
+  defp coordinate(value), do: :erlang.float_to_binary(value * 1.0, decimals: 6)
 
   defp times(%Event{all_day: true} = event) do
     [

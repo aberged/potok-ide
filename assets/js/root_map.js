@@ -32,6 +32,16 @@
 // opens its sheet as its pin does. The route of a `?route=` link comes
 // marked `ctx`, drawn whatever the filters.
 //
+// A link to one group's place (`?place=`) or to a calendar event's
+// (`?event=`) comes as `focus` in every answer, nil when there is none: its
+// pin is drawn whatever the filters, over the others, with a ring at its tip;
+// a focused group's area or route also comes marked `ctx`. An event's own
+// area or route comes as a key; its shape is asked for once
+// (`root_map_focus_shape`), kept here, and drawn like a chosen area (an
+// outline over the dimmed world) or a chosen route. A tap on the pin, or on
+// the event's route, brings back the event's card (`root_map_focus_show`); on
+// a group's pin it opens the group.
+//
 // The layers (places, areas, routes) are switched on the page and remembered
 // here.
 //
@@ -299,6 +309,9 @@ export const RootMap = {
     this.routes = []
     this.drawnRoutes = new Map()
     this.routePaths = new Map()
+    this.focusKey = null
+    // The event's own area or route in focus: {key, kind, geojson}.
+    this.focusShape = null
 
     this.handleEvent("root_map_data", data => this.draw(data))
     this.handleEvent("root_map_fit", ({bounds}) => this.fit(bounds))
@@ -322,8 +335,8 @@ export const RootMap = {
     this.resizer.observe(this.el)
 
     // The page renders a card over the map's bottom (`#root-map-here`, the
-    // groups of a spot): Leaflet's zoom buttons and the attribution move up
-    // above it rather than hide under it.
+    // groups of a spot, an event in focus): Leaflet's zoom buttons and the
+    // attribution move up above it rather than hide under it.
     this.box = this.el.closest("#root-map-wrap")?.parentElement
     this.coverSize = new ResizeObserver(() => this.liftControls())
     this.coverWatch = new MutationObserver(() => this.liftControls())
@@ -333,7 +346,7 @@ export const RootMap = {
 
   liftControls() {
     const cover = this.box?.querySelector(
-      ":scope > #root-map-here, :scope > #root-map-spot, :scope > #root-map-error"
+      ":scope > #root-map-here, :scope > #root-map-spot, :scope > #root-map-focus, :scope > #root-map-error"
     )
 
     if (cover !== this.cover) {
@@ -411,6 +424,7 @@ export const RootMap = {
     this.chosenLayer = L.layerGroup().addTo(this.map)
     this.routeLayer = L.layerGroup().addTo(this.map)
     this.layer = L.layerGroup().addTo(this.map)
+    this.focusLayer = L.layerGroup().addTo(this.map)
 
     // A tap off the pins: the areas there. Pins keep their taps.
     this.map.on("click", event => {
@@ -597,6 +611,44 @@ export const RootMap = {
 
     this.markers = sync(this.drawnMarkers, next, this.layer)
     this.markSelected()
+    this.drawFocus(data.focus || null)
+  },
+
+  // The place of a link, whatever the filters: its pin over the others, with
+  // a ring at its tip, drawn again only when it shows something else.
+  drawFocus(focus) {
+    this.syncFocusShape(focus?.shape || null)
+
+    const key = focus ? `${placeKey("f", focus)}:${focus.event ? "event" : "group"}` : null
+    if (key === this.focusKey) return
+
+    this.focusKey = key
+    this.focusLayer.clearLayers()
+    if (!focus) return
+
+    const L = this.L
+
+    L.marker([focus.lat, focus.lng], {
+      icon: L.divIcon({
+        html:
+          '<span class="potok-focus-ring" aria-hidden="true"></span>' +
+          pinSvg(lookOf(focus, this.pins), this.pins, !focus.is_public),
+        className: "potok-pin potok-map-pin is-focus",
+        iconSize: PIN_SIZE,
+        iconAnchor: PIN_ANCHOR,
+      }),
+      title: focus.name,
+      alt: focus.name,
+      zIndexOffset: 2000,
+    })
+      .on("click", () => {
+        if (focus.event) {
+          this.pushEvent("root_map_focus_show", {})
+        } else {
+          this.select(focus.id, true)
+        }
+      })
+      .addTo(this.focusLayer)
   },
 
   // A cluster spreads as the map zooms in; one that stands in one place, or
@@ -642,6 +694,36 @@ export const RootMap = {
     if (!this.map || !Array.isArray(bounds)) return
 
     this.map.flyToBounds(bounds, {padding: FIT_PADDING, maxZoom: FIT_MAX_ZOOM, duration: 0.6})
+  },
+
+  // The event's own area or route: asked for once, kept by its key, drawn
+  // with the areas and the routes once it is here.
+  syncFocusShape(shape) {
+    if (!shape) {
+      if (this.focusShape) {
+        this.focusShape = null
+        this.drawAreas()
+        this.drawRoutes()
+      }
+      return
+    }
+
+    if (this.focusShape?.key === shape.key) return
+
+    this.focusShape = {key: shape.key, kind: shape.kind, geojson: null}
+
+    this.pushEvent("root_map_focus_shape", {}, reply => {
+      if (!reply?.ok || this.focusShape?.key !== reply.key) return
+
+      this.focusShape.geojson = reply.geojson
+      this.drawAreas()
+      this.drawRoutes()
+    })
+  },
+
+  // The colour of an event's own shape: its pin's.
+  eventColor() {
+    return lookOf({kind: "none", pin: "event"}, this.pins).color
   },
 
   // The areas there, smallest first; the server shows their card.
@@ -766,6 +848,24 @@ export const RootMap = {
       )
     }
 
+    // The event's own area, outlined like a chosen one.
+    if (this.focusShape?.kind === "area" && this.focusShape.geojson) {
+      const latlngs = toLatLngs(this.focusShape.geojson)
+      holes.push(...latlngs.map(rings => rings[0]))
+
+      chosenNext.set(`focus:${this.focusShape.key}`, () =>
+        L.polygon(latlngs, {
+          pane: "potokAreaChosen",
+          renderer: this.chosenRenderer,
+          color: this.eventColor(),
+          weight: 3,
+          fill: false,
+          interactive: false,
+          className: "potok-area-chosen",
+        })
+      )
+    }
+
     this.areaPaths = sync(this.drawnPaths, next, this.areaLayer)
     this.drawnChosen = this.drawnChosen || new Map()
     sync(this.drawnChosen, chosenNext, this.chosenLayer)
@@ -809,6 +909,18 @@ export const RootMap = {
       next.set(`${found.key}:${color}:${route.ctx ? "ctx" : ""}`, () => this.routeShape(route, lines, color))
     }
 
+    // The event's own route, drawn like the route of a link.
+    if (this.focusShape?.kind === "route" && this.focusShape.geojson) {
+      const lines = lineLatLngs(this.focusShape.geojson)
+      const color = this.eventColor()
+
+      if (lines.length > 0) {
+        next.set(`focus:${this.focusShape.key}:${color}`, () =>
+          this.routeShape({ctx: true, event: true}, lines, color)
+        )
+      }
+    }
+
     this.routePaths = sync(this.drawnRoutes, next, this.routeLayer)
     this.markSelected()
   },
@@ -844,7 +956,13 @@ export const RootMap = {
       weight: 18,
       bubblingMouseEvents: false,
       className: "potok-route-hit",
-    }).on("click", () => this.select(route.id, true))
+    }).on("click", () => {
+      if (route.event) {
+        this.pushEvent("root_map_focus_show", {})
+      } else {
+        this.select(route.id, true)
+      }
+    })
 
     const parts = [casing, line, hit]
 
@@ -863,7 +981,8 @@ export const RootMap = {
       )
     }
 
-    const group = L.featureGroup(parts, {placeId: route.id})
+    // An event's route is no group's: nothing selects it.
+    const group = L.featureGroup(parts, route.event ? {} : {placeId: route.id})
     group.line = line
     return group
   },

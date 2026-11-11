@@ -5,7 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupRole, GroupRoutes}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Distance
-  alias PotokIdeWeb.GroupLive.Show.Components
+  alias PotokIdeWeb.GroupLive.Show.{Components, LocationEditor}
   alias PotokIdeWeb.PinIcons
 
   attr :card, :map, required: true
@@ -333,56 +333,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 "The map of groups shows this group as a pin to everyone who sees it, and so does a Map app in the group above. Tap the map to put it, or drag it."
               )}
             </p>
-            <div
+            <LocationEditor.mode_switch
               id="group-location-mode"
-              role="radiogroup"
-              aria-label={gettext("A point, an area or a route")}
-              class="mb-3 grid grid-cols-3 gap-1 rounded-2xl bg-base-200 p-1 sm:w-96"
-            >
-              <button
-                :for={
-                  {mode, icon, label} <- [
-                    {"point", "hero-map-pin", gettext("Point")},
-                    {"area", "hero-viewfinder-circle", gettext("Area")},
-                    {"route", "hero-arrow-turn-up-right", gettext("Route")}
-                  ]
-                }
-                id={"group-location-mode-#{mode}"}
-                type="button"
-                role="radio"
-                aria-checked={to_string(@location_mode == mode)}
-                phx-click="set_location_mode"
-                phx-value-mode={mode}
-                class={[
-                  "inline-flex min-w-0 cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-1.5 text-sm font-semibold transition duration-150 ease-out active:scale-95 sm:px-3",
-                  if(@location_mode == mode,
-                    do: "bg-base-100 text-base-content shadow-sm",
-                    else: "text-base-content/65 hover:text-base-content"
-                  )
-                ]}
-              >
-                <.icon name={icon} class="size-4" />
-                {label}
-              </button>
-            </div>
-            <p
-              :if={@location_mode == "area"}
-              id="group-area-hint"
-              class="mb-3 text-xs text-base-content/65"
-            >
-              {gettext(
-                "An area, such as a local community's, covers its whole border: tap the map to put its corners, drag a corner to move it, and tap the dot between two corners to add one. A border can also come from a GeoJSON file. Its pin stands inside it by itself."
-              )}
-            </p>
-            <p
-              :if={@location_mode == "route"}
-              id="group-route-hint"
-              class="mb-3 text-xs text-base-content/65"
-            >
-              {gettext(
-                "A route, such as a walk, a race or a bike path, runs along a line: tap the map to add its points in order, drag a point to move it, and tap the dot between two points to add one. A route can also come from a GPX, KML or GeoJSON file. Its pin stands at its start."
-              )}
-            </p>
+              mode={@location_mode}
+              event="set_location_mode"
+              class="mb-3 sm:w-96"
+            />
+            <LocationEditor.shape_hint prefix="group" mode={@location_mode} />
             <div id="group-location-map-wrap" phx-update="ignore">
               <div
                 id="group-location-map"
@@ -402,173 +359,19 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 data-load-error={gettext("The map could not load. Type the coordinates instead.")}
                 data-mode={@location_mode}
                 data-area={Jason.encode!(GroupAreas.to_geojson(@edit_group_form.data.area))}
-                data-area-undo="group-area-undo"
-                data-area-remove-corner="group-area-remove-corner"
-                data-area-restart="group-area-restart"
-                data-area-import="group-area-import"
-                data-area-status="group-area-status"
-                data-area-choices="group-area-choices"
-                data-msg-crosses={gettext("The border crosses itself: move a corner.")}
-                data-msg-corners={gettext("An area needs at least three corners.")}
-                data-msg-fixed={
-                  gettext(
-                    "A border from a file (points: %{points}, parts: %{parts}). Bring another file or draw it again to change it.",
-                    points: "%{points}",
-                    parts: "%{parts}"
-                  )
-                }
-                data-msg-no-area={gettext("The file holds no area (Polygon or MultiPolygon).")}
-                data-msg-not-geographic={
-                  gettext(
-                    "The file's coordinates are not longitude and latitude (WGS 84, EPSG:4326). Convert it, for example in QGIS or on mapshaper.org."
-                  )
-                }
-                data-msg-file={gettext("The file is not GeoJSON.")}
-                data-msg-too-big={gettext("The file is larger than 5 MB.")}
-                data-msg-simplified={
-                  gettext("The border was simplified to %{to} of its %{from} points.",
-                    to: "%{to}",
-                    from: "%{from}"
-                  )
-                }
-                data-msg-pick={gettext("The file holds %{count} areas. Pick one:", count: "%{count}")}
-                data-msg-unnamed={gettext("Area %{number}", number: "%{number}")}
                 data-route={Jason.encode!(GroupRoutes.to_geojson(@edit_group_form.data.route))}
                 data-route-length={
                   @edit_group_form.data.route_length &&
                     Distance.text(@edit_group_form.data.route_length)
                 }
-                data-route-undo="group-route-undo"
-                data-route-remove-point="group-route-remove-point"
-                data-route-reverse="group-route-reverse"
-                data-route-restart="group-route-restart"
-                data-route-import="group-route-import"
-                data-msg-route-points={gettext("A route needs at least two points.")}
-                data-msg-route-length={gettext("Length: %{length}.", length: "%{length}")}
-                data-msg-route-fixed={
-                  gettext(
-                    "A route from a file (points: %{points}, parts: %{parts}). Bring another file or draw it again to change it.",
-                    points: "%{points}",
-                    parts: "%{parts}"
-                  )
-                }
-                data-msg-no-route={gettext("The file holds no route (a track or a line).")}
-                data-msg-route-file={gettext("The file is not GPX, KML or GeoJSON.")}
-                data-msg-kmz={
-                  gettext("A KMZ file is a zipped KML: unzip it and bring the KML file inside.")
-                }
-                data-msg-route-too-big={gettext("The file is larger than 20 MB.")}
-                data-msg-route-simplified={
-                  gettext("The route was simplified to %{to} of its %{from} points.",
-                    to: "%{to}",
-                    from: "%{from}"
-                  )
-                }
-                data-msg-route-pick={
-                  gettext("The file holds %{count} routes. Pick one:", count: "%{count}")
-                }
-                data-msg-route-unnamed={gettext("Route %{number}", number: "%{number}")}
+                {LocationEditor.picker_attrs("group")}
               >
               </div>
               <p id="group-location-error" class="mt-2 text-xs text-error" hidden></p>
               <p id="group-area-status" class="mt-2 text-xs text-base-content/65" hidden></p>
               <div id="group-area-choices" class="mt-2" hidden></div>
             </div>
-            <div
-              id="group-area-tools"
-              class={["mt-3 flex flex-wrap gap-2", @location_mode != "area" && "hidden"]}
-            >
-              <.button
-                id="group-area-undo"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-arrow-uturn-left" class="size-4" />
-                {gettext("Undo")}
-              </.button>
-              <.button
-                id="group-area-remove-corner"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-minus-circle" class="size-4" />
-                {gettext("Remove corner")}
-              </.button>
-              <.button
-                id="group-area-restart"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-arrow-path" class="size-4" />
-                {gettext("Draw again")}
-              </.button>
-              <.button id="group-area-import" type="button" variant="soft" size="sm">
-                <.icon name="hero-arrow-up-tray" class="size-4" />
-                {gettext("GeoJSON file")}
-              </.button>
-            </div>
-            <div
-              id="group-route-tools"
-              class={["mt-3 flex flex-wrap gap-2", @location_mode != "route" && "hidden"]}
-            >
-              <.button
-                id="group-route-undo"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-arrow-uturn-left" class="size-4" />
-                {gettext("Undo")}
-              </.button>
-              <.button
-                id="group-route-remove-point"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-minus-circle" class="size-4" />
-                {gettext("Remove point")}
-              </.button>
-              <.button
-                id="group-route-reverse"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-arrows-right-left" class="size-4" />
-                {gettext("Reverse direction")}
-              </.button>
-              <.button
-                id="group-route-restart"
-                type="button"
-                variant="soft"
-                size="sm"
-                disabled
-                phx-mounted={JS.ignore_attributes(["disabled"])}
-              >
-                <.icon name="hero-arrow-path" class="size-4" />
-                {gettext("Draw again")}
-              </.button>
-              <.button id="group-route-import" type="button" variant="soft" size="sm">
-                <.icon name="hero-arrow-up-tray" class="size-4" />
-                {gettext("GPX, KML or GeoJSON file")}
-              </.button>
-            </div>
+            <LocationEditor.shape_tools prefix="group" mode={@location_mode} />
             <p
               :if={@shape_error}
               id={if @location_mode == "route", do: "group-route-error", else: "group-area-error"}

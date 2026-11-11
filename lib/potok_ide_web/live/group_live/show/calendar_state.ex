@@ -9,6 +9,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   "with sub-groups" switch live in assigns. Times are shown in the viewer's
   zone, which the browser sends when the socket connects, as it sends the
   root calendar's filters (its groups' events, public events).
+
+  The form's place on a map, a group with a place picked from a menu or a
+  point picked on a map, lives in the form's own fields, which the page
+  always renders: picking changes the form's params and builds the changeset
+  again, as typing does, so the next keystroke cannot bring an old value back.
   """
 
   use PotokIdeWeb, :verified_routes
@@ -28,14 +33,18 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
 
   alias PotokIde.Events
   alias PotokIde.Events.{Event, Occurrence, Recurrence}
-  alias PotokIde.Social.{Access, Group}
+  alias PotokIde.Social
+  alias PotokIde.Social.{Access, Group, GroupAreas, GroupPlaces, GroupRoutes}
   alias PotokIde.Tags
+  alias PotokIdeWeb.Distance
 
   # Changes from other members are applied after this, like the group's own
   # refreshes; 0 (the test config) applies them at once.
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @spread_ms 1_000
   @default_zone "Etc/UTC"
+  # The groups with a place the form's menu offers at a time.
+  @place_options_limit 20
 
   ## Setup
 
@@ -93,6 +102,25 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       calendar_form_values: nil,
       calendar_announce?: true,
       calendar_notify?: true,
+      # The form's place: the picked group as `%{id, group}` (nil `group` for
+      # one the viewer does not see), whether its map shows, where a map with
+      # no point opens, and the menu's groups for its search.
+      calendar_place_group: nil,
+      calendar_place_map?: false,
+      calendar_place_center: nil,
+      calendar_place_options: [],
+      calendar_place_query: "",
+      # The map's mode ("point", "area" or "route") and the area or route
+      # drawn on it, which stays out of the form's fields (it would go with
+      # every key typed): `:unchanged` keeps the saved one, nil removes it,
+      # `{:ok, shape}` or `{:error, kind, reason}` is what was drawn.
+      calendar_place_mode: "point",
+      calendar_place_shape: :unchanged,
+      calendar_place_start: %{area: nil, route: nil, route_length: nil},
+      # The open event's place (`Events.place/2`) and its link to the map.
+      calendar_event_place: nil,
+      calendar_event_map_path: nil,
+      calendar_root_id: nil,
       calendar_pending: MapSet.new(),
       calendar_flush_scheduled?: false
     )
@@ -266,7 +294,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   def maybe_load(socket, _group, _active_tab) do
     socket
     |> sync_subscriptions([])
-    |> assign(:calendar_form, nil)
+    |> close_form()
   end
 
   # `topics` are group ids and `:public` (see `Events.subscribe/1`).
@@ -377,6 +405,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
         )
         |> assign(:calendar_event_member?, access.member?)
         |> assign(:calendar_my_reminders, Events.member_reminders(profile, event))
+        |> assign_event_place(event)
         |> load_summary()
 
       {:error, :not_found} ->
@@ -408,8 +437,38 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       calendar_summary: nil,
       calendar_can_manage?: false,
       calendar_event_member?: false,
-      calendar_my_reminders: nil
+      calendar_my_reminders: nil,
+      calendar_event_place: nil,
+      calendar_event_map_path: nil
     )
+  end
+
+  # Where the open event stands on a map, as the viewer may see it, and the
+  # root's map opened on it; a cancelled event keeps its place but no link.
+  defp assign_event_place(socket, %Event{} = event) do
+    case Events.place(socket.assigns.current_profile, event) do
+      nil ->
+        assign(socket, calendar_event_place: nil, calendar_event_map_path: nil)
+
+      place ->
+        {root_id, socket} = root_id(socket)
+
+        path =
+          if Event.cancelled?(event),
+            do: nil,
+            else: ~p"/groups/#{root_id}/map?#{[event: event.id]}"
+
+        assign(socket, calendar_event_place: place, calendar_event_map_path: path)
+    end
+  end
+
+  # The root's id, asked once per page.
+  defp root_id(%{assigns: %{group: %Group{is_root: true, id: id}}} = socket), do: {id, socket}
+  defp root_id(%{assigns: %{calendar_root_id: id}} = socket) when is_integer(id), do: {id, socket}
+
+  defp root_id(socket) do
+    id = Social.root_group_id()
+    {id, assign(socket, :calendar_root_id, id)}
   end
 
   # The occurrence on `date`, or for a cancelled date that date marked
@@ -423,13 +482,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
     end
   end
 
-  defp resolve_occurrence(%Event{} = event, nil) do
-    span = DateTime.diff(event.ends_at, event.starts_at)
-    since = DateTime.add(DateTime.utc_now(:second), -span - 1)
-
-    {Recurrence.next_occurrence_after(event, since) ||
-       Recurrence.build(event, Recurrence.start_date(event)), false}
-  end
+  defp resolve_occurrence(%Event{} = event, nil), do: {Events.upcoming_occurrence(event), false}
 
   defp load_summary(%{assigns: %{calendar_occurrence: %Occurrence{} = occurrence}} = socket) do
     assign(
@@ -478,7 +531,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   def handle_event("calendar_open", %{"id" => id, "date" => date}, socket) do
     case {parse_id(id), parse_date(date)} do
       {id, %Date{} = date} when is_integer(id) ->
-        {:noreply, socket |> assign(:calendar_form, nil) |> patch(event: id, on: date)}
+        {:noreply, socket |> close_form() |> patch(event: id, on: date)}
 
       _ ->
         {:noreply, socket}
@@ -495,6 +548,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
       {:noreply,
        socket
        |> assign(:calendar_announce?, Access.can?(socket.assigns.access, :post_values))
+       |> reset_place(event)
        |> put_form(event, Events.change_event(event, %{}, socket.assigns.calendar_time_zone))}
     else
       {:noreply, socket}
@@ -504,9 +558,13 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   def handle_event("calendar_edit", _params, socket) do
     case socket.assigns do
       %{calendar_event: %Event{} = event, calendar_can_manage?: true} ->
+        # The form starts from the saved area or route, which its map shows.
+        event = Events.load_shape(event)
+
         {:noreply,
          socket
          |> assign(:calendar_notify?, true)
+         |> reset_place(event)
          |> put_form(event, Events.change_event(event, %{}, socket.assigns.calendar_time_zone))}
 
       _ ->
@@ -515,14 +573,177 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   end
 
   def handle_event("calendar_close_form", _params, socket),
-    do: {:noreply, assign(socket, calendar_form: nil, calendar_form_event: nil)}
+    do: {:noreply, close_form(socket)}
+
+  # The menu of groups with a place opens: the nearest first.
+  def handle_event("calendar_place_open", _params, socket) do
+    if socket.assigns.calendar_form,
+      do: {:noreply, socket |> assign(:calendar_place_query, "") |> load_place_options()},
+      else: {:noreply, socket}
+  end
+
+  def handle_event("calendar_place_search", %{"calendar_place" => %{"q" => query}}, socket)
+      when is_binary(query) do
+    if socket.assigns.calendar_form,
+      do:
+        {:noreply,
+         socket
+         |> assign(:calendar_place_query, String.slice(query, 0, 120))
+         |> load_place_options()},
+      else: {:noreply, socket}
+  end
+
+  # A group with a place becomes the event's place, in place of a point. Its
+  # name fills the words of the place when they are empty or the name of the
+  # group picked before, where the author sees and can change them.
+  def handle_event("calendar_place_pick", %{"id" => id}, socket) do
+    with %Phoenix.HTML.Form{} = form <- socket.assigns.calendar_form,
+         id when is_integer(id) <- parse_place_id(id),
+         %Group{} = group <- GroupPlaces.get_visible(socket.assigns.current_profile, id) do
+      text = String.trim(to_string(form[:location].value || ""))
+
+      location =
+        case socket.assigns.calendar_place_group do
+          _any when text == "" -> %{"location" => group.name}
+          %{group: %Group{name: ^text}} -> %{"location" => group.name}
+          _other -> %{}
+        end
+
+      {:noreply,
+       socket
+       |> assign(calendar_place_map?: false, calendar_place_group: %{id: group.id, group: group})
+       |> drop_shape()
+       |> put_place(
+         Map.merge(
+           %{
+             "place_group_id" => Integer.to_string(group.id),
+             "latitude" => "",
+             "longitude" => ""
+           },
+           location
+         )
+       )}
+    else
+      _invalid -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("calendar_place_clear_group", _params, socket),
+    do: {:noreply, put_place(socket, %{"place_group_id" => ""})}
+
+  # The map opens in place of the group, where the group stood or else where
+  # the calendar's group stands.
+  def handle_event("calendar_place_map", _params, socket) do
+    if socket.assigns.calendar_form do
+      center =
+        case socket.assigns.calendar_place_group do
+          %{group: %Group{latitude: lat, longitude: lng}} -> [lat, lng]
+          _none -> group_center(socket.assigns.group)
+        end
+
+      {:noreply,
+       socket
+       |> assign(calendar_place_map?: true, calendar_place_center: center)
+       |> assign(:calendar_place_mode, shape_kind(socket) || "point")
+       |> put_place(%{"place_group_id" => ""})}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # The place leaves the map: its point, area and route, and the map closes.
+  def handle_event("calendar_place_clear_point", _params, socket) do
+    {:noreply,
+     socket
+     |> assign(:calendar_place_map?, false)
+     |> drop_shape()
+     |> put_place(%{"latitude" => "", "longitude" => ""})}
+  end
+
+  # A point, an area or a route, as on a group's Location card: a point drops
+  # the shape, and so does the other kind of shape. The map is told the mode.
+  def handle_event("calendar_place_mode", %{"mode" => mode}, socket)
+      when mode in ["point", "area", "route"] do
+    if socket.assigns.calendar_form do
+      kind = shape_kind(socket)
+
+      socket =
+        if mode == "point" or (kind != nil and kind != mode),
+          do: drop_shape(socket),
+          else: socket
+
+      {:noreply,
+       socket
+       |> assign(:calendar_place_mode, mode)
+       |> put_place(%{})
+       |> push_event("calendar_place_map_mode", %{mode: mode})}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  # The border the form's map holds, checked at once, with the pin it gets.
+  def handle_event("calendar_place_area", params, socket) do
+    if socket.assigns.calendar_form do
+      {draft, reply} =
+        case params["area"] do
+          nil ->
+            {nil, %{ok: true}}
+
+          json ->
+            with {:ok, area} <- GroupAreas.decode(json),
+                 {:ok, {lat, lng}} <- GroupAreas.pin_inside(area) do
+              {{:ok, area}, %{ok: true, lat: lat, lng: lng}}
+            else
+              {:error, reason} ->
+                {{:error, :area, reason}, %{ok: false, error: shape_error_text(:area, reason)}}
+            end
+        end
+
+      {:reply, reply, put_shape(socket, draft, reply)}
+    else
+      {:reply, %{ok: false}, socket}
+    end
+  end
+
+  # The route the form's map holds, checked at once, with its start (where
+  # the pin goes) and its length.
+  def handle_event("calendar_place_route", params, socket) do
+    if socket.assigns.calendar_form do
+      {draft, reply} =
+        case params["route"] && GroupRoutes.decode(params["route"]) do
+          nil ->
+            {nil, %{ok: true}}
+
+          {:ok, route} ->
+            {lat, lng} = GroupRoutes.start(route)
+            meters = GroupRoutes.meters(route)
+
+            {{:ok, route},
+             %{
+               ok: true,
+               lat: lat,
+               lng: lng,
+               length: round(meters),
+               length_text: Distance.text(meters)
+             }}
+
+          {:error, reason} ->
+            {{:error, :route, reason}, %{ok: false, error: shape_error_text(:route, reason)}}
+        end
+
+      {:reply, reply, put_shape(socket, draft, reply)}
+    else
+      {:reply, %{ok: false}, socket}
+    end
+  end
 
   def handle_event("calendar_validate", %{"event" => params} = all, socket) do
     case socket.assigns.calendar_form_event do
       %Event{} = event ->
         changeset =
-          event
-          |> Events.change_event(fit_monthly_mode(params), socket.assigns.calendar_time_zone)
+          socket
+          |> place_changeset(event, fit_monthly_mode(params))
           |> Map.put(:action, :validate)
 
         {:noreply, socket |> put_flags(all) |> put_form(event, changeset)}
@@ -532,55 +753,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
     end
   end
 
+  # A border or a route the server refused keeps the form open on it.
   def handle_event("calendar_save", %{"event" => params} = all, socket) do
-    socket = put_flags(socket, all)
-    params = fit_monthly_mode(params)
-    profile = socket.assigns.current_profile
-
-    result =
-      case socket.assigns.calendar_form_event do
-        %Event{id: nil} ->
-          Events.create_event(
-            profile,
-            socket.assigns.group,
-            params,
-            socket.assigns.calendar_time_zone,
-            announce: socket.assigns.calendar_announce?
-          )
-
-        %Event{} = event ->
-          Events.update_event(profile, event, params, notify: socket.assigns.calendar_notify?)
-
-        nil ->
-          {:error, :not_found}
-      end
-
-    case result do
-      {:ok, event} ->
-        date = Recurrence.start_date(event)
-
-        {:noreply,
-         socket
-         |> assign(calendar_form: nil, calendar_form_event: nil)
-         |> load_month()
-         |> put_flash(:info, gettext("The event was saved."))
-         |> patch(event: event.id, on: date, month: Date.beginning_of_month(date))
-         |> force_detail_reload()}
-
-      {:error, %Ecto.Changeset{} = changeset} ->
-        {:noreply,
-         put_form(
-           socket,
-           socket.assigns.calendar_form_event,
-           Map.put(changeset, :action, :insert)
-         )}
-
-      {:error, _reason} ->
-        {:noreply,
-         socket
-         |> assign(calendar_form: nil, calendar_form_event: nil)
-         |> put_flash(:error, gettext("You cannot change this event."))}
-    end
+    if match?({:error, _kind, _reason}, socket.assigns.calendar_place_shape),
+      do: handle_event("calendar_validate", all, socket),
+      else: save_event(socket, params, all)
   end
 
   def handle_event("calendar_respond", %{"status" => status}, socket)
@@ -642,6 +819,57 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
 
+  defp save_event(socket, params, all) do
+    socket = put_flags(socket, all)
+    params = params |> fit_monthly_mode() |> put_shape_draft(socket.assigns.calendar_place_shape)
+    profile = socket.assigns.current_profile
+
+    result =
+      case socket.assigns.calendar_form_event do
+        %Event{id: nil} ->
+          Events.create_event(
+            profile,
+            socket.assigns.group,
+            params,
+            socket.assigns.calendar_time_zone,
+            announce: socket.assigns.calendar_announce?
+          )
+
+        %Event{} = event ->
+          Events.update_event(profile, event, params, notify: socket.assigns.calendar_notify?)
+
+        nil ->
+          {:error, :not_found}
+      end
+
+    case result do
+      {:ok, event} ->
+        date = Recurrence.start_date(event)
+
+        {:noreply,
+         socket
+         |> close_form()
+         |> load_month()
+         |> put_flash(:info, gettext("The event was saved."))
+         |> patch(event: event.id, on: date, month: Date.beginning_of_month(date))
+         |> force_detail_reload()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply,
+         put_form(
+           socket,
+           socket.assigns.calendar_form_event,
+           Map.put(changeset, :action, :insert)
+         )}
+
+      {:error, _reason} ->
+        {:noreply,
+         socket
+         |> close_form()
+         |> put_flash(:error, gettext("You cannot change this event."))}
+    end
+  end
+
   # Only the root calendar has these filters. The browser keeps them for the
   # next visits (`calendar_filters` in app.js).
   defp toggle_filter(%{assigns: %{group: %Group{is_root: true}}} = socket, key) do
@@ -702,8 +930,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
   defp put_form(socket, %Event{} = event, %Ecto.Changeset{} = changeset) do
     start_date = Ecto.Changeset.get_field(changeset, :start_date)
     all_day? = Ecto.Changeset.get_field(changeset, :all_day)
+    place_group_id = Ecto.Changeset.get_field(changeset, :place_group_id)
+    latitude = Ecto.Changeset.get_field(changeset, :latitude)
+    longitude = Ecto.Changeset.get_field(changeset, :longitude)
 
-    assign(socket,
+    socket
+    |> assign(
       calendar_form: to_form(changeset, as: :event),
       calendar_form_event: event,
       calendar_form_values: %{
@@ -718,10 +950,203 @@ defmodule PotokIdeWeb.GroupLive.Show.CalendarState do
           if(start_date, do: Recurrence.monthly_modes_for(start_date), else: [:day_of_month]),
         reminder_choices: Event.reminder_choices(%Event{all_day: all_day?}),
         reminders: Ecto.Changeset.get_field(changeset, :reminder_minutes) || [],
-        time_zone: Ecto.Changeset.get_field(changeset, :time_zone)
+        time_zone: Ecto.Changeset.get_field(changeset, :time_zone),
+        place_group_id: place_group_id,
+        point: if(is_number(latitude) and is_number(longitude), do: [latitude, longitude])
       }
     )
+    |> put_place_group(place_group_id)
   end
+
+  # The area or route the form's map shows when it opens, as GeoJSON, with a
+  # route's length: what was drawn (`length_text` as the server answered the
+  # map), or else what is saved.
+  defp start_shape(_event, {:ok, %Geo.MultiPolygon{} = area}, _length_text),
+    do: %{area: GroupAreas.to_geojson(area), route: nil, route_length: nil}
+
+  defp start_shape(_event, {:ok, %Geo.MultiLineString{} = route}, length_text),
+    do: %{area: nil, route: GroupRoutes.to_geojson(route), route_length: length_text}
+
+  defp start_shape(%Event{} = event, :unchanged, _length_text) do
+    %{
+      area: GroupAreas.to_geojson(event.area),
+      route: GroupRoutes.to_geojson(event.route),
+      route_length: event.route && Distance.text(GroupRoutes.meters(event.route))
+    }
+  end
+
+  defp start_shape(_event, _none_or_error, _length_text),
+    do: %{area: nil, route: nil, route_length: nil}
+
+  # The picked group, read again only when another one is picked.
+  defp put_place_group(socket, nil), do: assign(socket, :calendar_place_group, nil)
+
+  defp put_place_group(%{assigns: %{calendar_place_group: %{id: id}}} = socket, id), do: socket
+
+  defp put_place_group(socket, id) do
+    group = GroupPlaces.get_visible(socket.assigns.current_profile, id)
+    assign(socket, :calendar_place_group, %{id: id, group: group})
+  end
+
+  # The form's place fields changed by a pick: into the form's params, as if
+  # typed, and the changeset built again. A field marked unused is used now,
+  # so its errors show.
+  defp put_place(socket, place_params) do
+    case socket.assigns do
+      %{calendar_form: %Phoenix.HTML.Form{} = form, calendar_form_event: %Event{} = event} ->
+        unused = Enum.map(Map.keys(place_params), &("_unused_" <> &1))
+
+        params =
+          (form.params || %{})
+          |> Map.drop(unused)
+          |> Map.merge(place_params)
+
+        changeset =
+          socket
+          |> place_changeset(event, params)
+          |> Map.put(:action, :validate)
+
+        put_form(socket, event, changeset)
+
+      _closed ->
+        socket
+    end
+  end
+
+  # The form's changeset with the shape drawn on its map, which no field of
+  # the form carries.
+  defp place_changeset(socket, %Event{} = event, params) do
+    draft = socket.assigns.calendar_place_shape
+
+    params =
+      params
+      |> Map.drop(["area", "route"])
+      |> put_shape_draft(draft)
+
+    event
+    |> Events.change_event(params, socket.assigns.calendar_time_zone)
+    |> add_shape_draft_error(draft)
+  end
+
+  # The shape drawn on the map goes in with the form's fields and takes the
+  # other kind's place: `:unchanged` leaves the saved one, nil removes both.
+  defp put_shape_draft(params, {:ok, %Geo.MultiPolygon{} = area}),
+    do: Map.merge(params, %{"area" => area, "route" => nil})
+
+  defp put_shape_draft(params, {:ok, %Geo.MultiLineString{} = route}),
+    do: Map.merge(params, %{"area" => nil, "route" => route})
+
+  defp put_shape_draft(params, nil), do: Map.merge(params, %{"area" => nil, "route" => nil})
+  defp put_shape_draft(params, _unchanged_or_error), do: params
+
+  defp add_shape_draft_error(changeset, {:error, :area, reason}),
+    do: Ecto.Changeset.add_error(changeset, :area, Group.area_error(reason))
+
+  defp add_shape_draft_error(changeset, {:error, :route, reason}),
+    do: Ecto.Changeset.add_error(changeset, :route, Group.route_error(reason))
+
+  defp add_shape_draft_error(changeset, _draft), do: changeset
+
+  defp shape_error_text(:area, reason),
+    do: PotokIdeWeb.CoreComponents.translate_error({Group.area_error(reason), []})
+
+  defp shape_error_text(:route, reason),
+    do: PotokIdeWeb.CoreComponents.translate_error({Group.route_error(reason), []})
+
+  # What the map drew, and the form again with it.
+  defp put_shape(socket, draft, reply) do
+    socket
+    |> assign(
+      calendar_place_shape: draft,
+      calendar_place_start:
+        start_shape(socket.assigns.calendar_form_event, draft, reply[:length_text])
+    )
+    |> put_place(%{})
+  end
+
+  # No area or route any more: the saved one goes too, and the map is a
+  # point's.
+  defp drop_shape(socket),
+    do:
+      assign(socket,
+        calendar_place_shape: nil,
+        calendar_place_mode: "point",
+        calendar_place_start: start_shape(nil, nil, nil)
+      )
+
+  # The kind of shape the form holds now, "area", "route" or nil: the drawn
+  # one's, or the saved one's while nothing was drawn.
+  defp shape_kind(socket) do
+    case socket.assigns.calendar_place_shape do
+      {:ok, %Geo.MultiPolygon{}} -> "area"
+      {:ok, %Geo.MultiLineString{}} -> "route"
+      {:error, kind, _reason} -> Atom.to_string(kind)
+      nil -> nil
+      :unchanged -> event_shape_kind(socket.assigns.calendar_form_event)
+    end
+  end
+
+  defp event_shape_kind(%Event{area: %Geo.MultiPolygon{}}), do: "area"
+  defp event_shape_kind(%Event{route: %Geo.MultiLineString{}}), do: "route"
+  defp event_shape_kind(_event), do: nil
+
+  # A new form starts with the event's own place: its map open when it has a
+  # point, opening where the calendar's group stands otherwise.
+  defp reset_place(socket, %Event{} = event) do
+    assign(socket,
+      calendar_place_group: nil,
+      calendar_place_map?: is_number(event.latitude),
+      calendar_place_center: group_center(socket.assigns.group),
+      calendar_place_options: [],
+      calendar_place_query: "",
+      calendar_place_mode: event_shape_kind(event) || "point",
+      calendar_place_shape: :unchanged,
+      calendar_place_start: start_shape(event, :unchanged, nil)
+    )
+  end
+
+  defp close_form(socket) do
+    assign(socket,
+      calendar_form: nil,
+      calendar_form_event: nil,
+      calendar_place_group: nil,
+      calendar_place_map?: false,
+      calendar_place_options: [],
+      calendar_place_query: "",
+      calendar_place_mode: "point",
+      calendar_place_shape: :unchanged
+    )
+  end
+
+  defp load_place_options(socket) do
+    options =
+      GroupPlaces.search(
+        socket.assigns.current_profile,
+        socket.assigns.calendar_place_query,
+        place_near(socket),
+        @place_options_limit
+      )
+
+    assign(socket, :calendar_place_options, options)
+  end
+
+  # What the menu measures from: the event's point, the picked group, or the
+  # calendar's group, whichever stands on the map first.
+  defp place_near(socket) do
+    case {socket.assigns.calendar_form_values, socket.assigns.calendar_place_group} do
+      {%{point: [lat, lng]}, _group} -> {lat, lng}
+      {_values, %{group: %Group{latitude: lat, longitude: lng}}} -> {lat, lng}
+      _none -> socket.assigns.group |> group_center() |> then(&(&1 && List.to_tuple(&1)))
+    end
+  end
+
+  defp group_center(%Group{latitude: lat, longitude: lng}) when is_number(lat) and is_number(lng),
+    do: [lat, lng]
+
+  defp group_center(_group), do: nil
+
+  defp parse_place_id(id) when is_integer(id) and id > 0, do: id
+  defp parse_place_id(id), do: parse_id(id)
 
   ## Live updates
 
