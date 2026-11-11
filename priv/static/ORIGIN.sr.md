@@ -1,6 +1,6 @@
 # Potok — društvo društvu - aplikacije i funkcionalnosti
 
-Nov 9, 2026 · @Adam
+Nov 9, 2026 · @Potok
 
 ## Uvod
 
