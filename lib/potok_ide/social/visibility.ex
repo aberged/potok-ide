@@ -6,9 +6,10 @@ defmodule PotokIde.Social.Visibility do
     page's sheet, the areas a group lies in, the area menu, borders.
   * **listed**: what the root's lists and map show, of the groups the profile
     may see: its memberships, and public groups, all of them while the root's
-    "Public groups" switch is on, otherwise only those on the way to one of
-    its memberships. The SQL needs the `mine` and `member_paths` tables of
-    `Social`'s membership walk.
+    "Public groups" switch is on, otherwise only those it follows and those
+    on the way to one of its memberships or followed groups. The SQL needs
+    the `mine` and `member_paths` tables of `Social`'s membership walk,
+    where `member_paths` holds the followed groups too.
 
   Threads and direct conversations are never among plain groups.
   """
@@ -40,7 +41,8 @@ defmodule PotokIde.Social.Visibility do
 
   @doc """
   SQL: group `table` is listed for the profile, every public group with the
-  switch on (`public?`), otherwise only those on the way to a membership.
+  switch on (`public?`), otherwise only the followed ones and those on the
+  way to a membership or a follow.
   """
   def listed_sql(table, true = _public?),
     do: "(#{table}.is_public OR #{table}.id IN (SELECT group_id FROM mine))"

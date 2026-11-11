@@ -3436,7 +3436,7 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
-  @child_group_relations ~w(member creator)
+  @child_group_relations ~w(member creator follower)
 
   @doc """
   Child groups of `group` the profile can see, most active first. Options:
@@ -3445,9 +3445,10 @@ defmodule PotokIde.Social do
   `:search` on the name, `:preset` for the groups of one kind (a key of
   `GroupPresets.filter_keys/0`, by what `GroupPresets.shown/1` gives),
   `:relation` for the groups the profile is a member of (`"member"`, also by
-  inheritance) or made (`"creator"`), `public: false` to leave out the public
-  groups the profile is not in, but those with one of its memberships below
-  them, and `:limit` / `:offset`.
+  inheritance), made (`"creator"`) or follows (`"follower"`), `public: false`
+  to leave out the public groups the profile is not in, but those it follows
+  and those with one of its memberships or followed groups below them, and
+  `:limit` / `:offset`.
 
   The root also lists the groups no other list leads to, whose parent the
   profile cannot see (`detached_group_ids/1`), even if they are threads.
@@ -3616,12 +3617,13 @@ defmodule PotokIde.Social do
   The groups are every group with a place the profile sees anywhere below the
   root, threads and direct conversations aside (`Visibility.listed_sql/2`):
   its memberships, and the public groups, all of them with `public?: true`,
-  otherwise those on the way to one of its memberships. `filters` narrow
-  them, areas as much as points:
+  otherwise those it follows and those on the way to one of its memberships
+  or followed groups. `filters` narrow them, areas as much as points:
 
   * `:search` on the name (`NameSearch`);
   * `:preset`, a kind as in `list_child_groups_for_profile/3`, `"none"` or
-    `"app"`, and `:relation`, the profile's memberships or own groups;
+    `"app"`, and `:relation`, the profile's memberships, own groups or
+    followed groups;
   * `:pins`, keys of `Group.pin_icon` (`GroupPins.keys/0`), with `"kind"` for
     the groups that show their kind;
   * `:areas`, only the groups inside one of these areas (`GroupAreas`), not
@@ -3936,6 +3938,7 @@ defmodule PotokIde.Social do
         kind && "#{shown_kind_sql("g")} = $kind::text",
         relation == "creator" && "g.creator_id = $profile",
         relation == "member" && "g.id IN (SELECT group_id FROM mine)",
+        relation == "follower" && "g.id IN (SELECT group_id FROM followed)",
         time == :active && "g.last_value_at IS NOT NULL",
         from && "#{moment} >= $from::timestamp",
         to && "#{moment} < $to::timestamp",
@@ -4469,9 +4472,10 @@ defmodule PotokIde.Social do
 
   # The `WITH` head that defines `visible_children`: the sub-groups of $1 that
   # profile $2 can see, its memberships plus the public ones, filtered by $3
-  # (direct), $4 (name search), $5 (thread), $7 (kind) and $8 (member or
-  # creator). Without `public?`, only the public ones on the way to a
-  # membership further down (`member_paths`). The root adds the detached groups, $6
+  # (direct), $4 (name search), $5 (thread), $7 (kind) and $8 (member,
+  # creator or follower). Without `public?`, only the public ones it follows
+  # or on the way to a membership or a follow further down (`member_paths`).
+  # The root adds the detached groups, $6
   # (`detached_group_ids/1`, empty elsewhere), which $5 leaves alone as
   # threads have no switch there. They come as ids so no page pays for
   # finding them: the walk up to the root inside this statement would make
@@ -4486,7 +4490,9 @@ defmodule PotokIde.Social do
         " AND ($7::text IS NULL OR #{shown_kind_sql("g")} = $7)" <>
         " AND ($8::text IS NULL OR ($8 = 'creator' AND g.creator_id = $2)" <>
         " OR ($8 = 'member' AND EXISTS (" <>
-        "SELECT 1 FROM group_memberships rm WHERE rm.group_id = g.id AND rm.profile_id = $2)))"
+        "SELECT 1 FROM group_memberships rm WHERE rm.group_id = g.id AND rm.profile_id = $2))" <>
+        " OR ($8 = 'follower' AND EXISTS (" <>
+        "SELECT 1 FROM group_follows rf WHERE rf.group_id = g.id AND rf.profile_id = $2)))"
 
     filters = "#{own_filters} AND ($5::boolean IS NULL OR (g.parent_value_id IS NOT NULL) = $5)"
     public_filter = if public?, do: "", else: " AND g.id IN (SELECT id FROM member_paths)"
@@ -4540,7 +4546,10 @@ defmodule PotokIde.Social do
     if preset in GroupPresets.filter_keys(), do: preset
   end
 
-  @doc "What `:relation` takes in the sub-group lists: the profile's memberships or its own groups."
+  @doc """
+  What `:relation` takes in the sub-group lists: the profile's memberships,
+  its own groups or the groups it follows.
+  """
   def child_group_relations, do: @child_group_relations
 
   defp normalize_relation_filter(relation) do
@@ -4549,23 +4558,9 @@ defmodule PotokIde.Social do
 
   defp visible_children_head(true), do: "WITH"
 
-  # The groups above the profile's memberships.
   defp visible_children_head(false) do
-    """
-    WITH RECURSIVE member_paths(id) AS (
-      SELECT g.parent_id
-      FROM group_memberships gm
-      JOIN groups g ON g.id = gm.group_id
-      WHERE gm.profile_id = $2 AND g.parent_id IS NOT NULL
-
-      UNION
-
-      SELECT g.parent_id
-      FROM member_paths mp
-      JOIN groups g ON g.id = mp.id
-      WHERE g.parent_id IS NOT NULL
-    ),
-    """
+    memberships = "SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $2"
+    "WITH RECURSIVE #{member_paths_sql("$2", memberships)},"
   end
 
   # The groups no sub-groups list leads to although a membership of the
@@ -5020,8 +5015,9 @@ defmodule PotokIde.Social do
   `parents` are `{parent_id, limit, after}`: up to `limit` folders sorting
   after `after`, the `%{id, name}` of the last folder already shown, or nil
   for the first page. Options: `threads?: false` leaves out threads, and
-  `public?: false` the public groups the profile is not in, but those with
-  one of its memberships below them.
+  `public?: false` the public groups the profile is not in, but those it
+  follows and those with one of its memberships or followed groups below
+  them.
 
   Returns `%{parent_id => {folders, more?}}`, an entry per parent. Each
   folder is `%{id, name, thread?, public?, member?, child_count,
@@ -5102,7 +5098,7 @@ defmodule PotokIde.Social do
   matches; `{folders, truncated?}` tells whether it cut either. Takes the
   options of `list_sub_group_folders/3`, where threads leave out what is
   below them too, and `:preset` and `:relation`, which keep the matches of
-  one kind, or the profile's memberships or own groups, as in
+  one kind, or the profile's memberships, own groups or followed groups, as in
   `list_child_groups_for_profile/3`: with either, `search` may be nil.
   """
   def search_sub_group_folders(%Group{} = group, profile, search, opts \\ []) do
@@ -5153,7 +5149,8 @@ defmodule PotokIde.Social do
       WHERE ($2::text IS NULL OR #{NameSearch.sql("w", "$2")})
         AND ($9::text IS NULL OR w.kind = $9)
         AND ($10::text IS NULL OR ($10 = 'creator' AND w.creator_id = $5)
-          OR ($10 = 'member' AND w.id IN (SELECT group_id FROM mine)))
+          OR ($10 = 'member' AND w.id IN (SELECT group_id FROM mine))
+          OR ($10 = 'follower' AND w.id IN (SELECT group_id FROM followed)))
       LIMIT $4::integer + 1
     ),
     shown AS (
@@ -5201,16 +5198,40 @@ defmodule PotokIde.Social do
 
   # The folder queries take the profile as $5 (nil sees no memberships),
   # whether threads are shown as $6 and whether every public group is as $7.
-  # `member_paths` are the groups above the memberships, needed only when $7 is
-  # false. The groups the root adds (`detached_ids_below/2`) are $8.
+  # `followed` are the groups the profile follows and may see, for the
+  # follower filter: a follow outlives the right to see its group, so it is
+  # checked again here. `member_paths` (`member_paths_sql/2`) are needed only
+  # when $7 is false. The groups the root adds (`detached_ids_below/2`) are $8.
   defp sub_group_memberships_sql(profile_param \\ "$5") do
     """
     mine AS MATERIALIZED (
       SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = #{profile_param}
     ),
+    followed AS (
+      SELECT f.group_id FROM group_follows f JOIN groups g ON g.id = f.group_id
+      WHERE f.profile_id = #{profile_param}
+        AND (g.is_public OR f.group_id IN (SELECT group_id FROM mine))
+    ),
+    #{member_paths_sql(profile_param, "SELECT group_id FROM mine")}
+    """
+  end
+
+  # The public groups the root keeps while it hides the others: those the
+  # profile follows, and those above its memberships (`memberships`, SQL
+  # that gives their `group_id`) and its follows. A private group it follows
+  # and may see is a membership. The follows are an arm of their own rather
+  # than mixed into the memberships, which grew the planner's estimate past
+  # Postgres' JIT threshold for a profile in thousands of groups.
+  defp member_paths_sql(profile_param, memberships) do
+    """
     member_paths(id) AS (
-      SELECT g.parent_id FROM mine JOIN groups g ON g.id = mine.group_id
+      SELECT g.parent_id FROM (#{memberships}) m JOIN groups g ON g.id = m.group_id
       WHERE g.parent_id IS NOT NULL
+
+      UNION
+
+      SELECT f.group_id FROM group_follows f JOIN groups g ON g.id = f.group_id
+      WHERE f.profile_id = #{profile_param} AND g.is_public
 
       UNION
 
@@ -5233,7 +5254,7 @@ defmodule PotokIde.Social do
   end
 
   # The public groups the folder view shows, members or not: all of them, or
-  # only those on the way to a membership.
+  # only the followed ones and those on the way to a membership or a follow.
   defp sub_group_public_sql(alias) do
     "#{alias}.is_public AND ($7::boolean OR #{alias}.id IN (SELECT id FROM member_paths))"
   end

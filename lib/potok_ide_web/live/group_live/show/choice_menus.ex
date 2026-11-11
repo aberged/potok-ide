@@ -24,6 +24,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
         icon: "hero-pencil-square",
         title: gettext("Created by me"),
         short: gettext("Creator")
+      },
+      %{
+        key: "follower",
+        icon: "hero-bell",
+        title: gettext("Groups I follow"),
+        short: gettext("Follower")
       }
     ]
   end

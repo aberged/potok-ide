@@ -148,7 +148,7 @@ Deljeni profil pozivaš drugom nalogu po korisničkom imenu, u delu Deljenje. Ka
 
 Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Katanac znači da je grupa privatna, a globus da je javna.
 
-Iznad spiska su filteri: javne grupe u kojima nisi član, niti, grupe u kojima si član ili koje si napravio, vrsta grupe i pretraga po nazivu. Pretraga nalazi grupu i kad kucaš bez kvačica, latinicom ili ćirilicom. Grupe se mogu prikazati kao spisak ili kao fascikle.
+Iznad spiska su filteri: javne grupe u kojima nisi član, niti, grupe u kojima si član, koje si napravio ili koje pratiš, vrsta grupe i pretraga po nazivu. Grupe koje pratiš ostaju na spisku i kad sakriješ javne grupe. Pretraga nalazi grupu i kad kucaš bez kvačica, latinicom ili ćirilicom. Grupe se mogu prikazati kao spisak ili kao fascikle.
 
 Na početnoj su i Moj kalendar, sa događajima svih tvojih grupa, Mapa grupa i Moja glasanja.
 
@@ -307,7 +307,7 @@ Tag stavljaš na grupe, profile, događaje, poruke i fajlove, dugmetom #. Javni 
 
 Zvono u zaglavlju grupe je praćenje. Jedan dodir i pratiš grupu. Posle toga zvono otvara izbor: push obaveštenja za ovu grupu, kartica Obaveštenja i prestanak praćenja. Početna strana, razgovori u četiri oka i niti se ne prate.
 
-Ko ima dozvolu, na kartici Obaveštenja šalje obaveštenje svim pratiocima, do 2000 znakova. Stranica Obaveštenja (zvono u gornjoj traci) ima primljena obaveštenja i spisak grupa koje pratiš.
+Ko ima dozvolu, na kartici Obaveštenja šalje obaveštenje svim pratiocima, do 2000 znakova. Stranica Obaveštenja (zvono u gornjoj traci) ima primljena obaveštenja i spisak grupa koje pratiš. Na početnoj strani i na mapi grupa filter „Grupe koje pratim“ ostavlja samo njih.
 
 ![Praćenje grupe](pracenje) ![Primljena obaveštenja](obavestenja)
 

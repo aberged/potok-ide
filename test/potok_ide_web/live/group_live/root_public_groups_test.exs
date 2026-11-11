@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.GroupLive.RootPublicGroupsTest do
   import Phoenix.LiveViewTest
   import PotokIde.EventsFixtures
 
+  alias PotokIde.Notices
   alias PotokIde.Social
 
   setup do
@@ -24,6 +25,7 @@ defmodule PotokIdeWeb.GroupLive.RootPublicGroupsTest do
 
     %{
       owner: owner,
+      viewer: viewer,
       viewer_account: viewer_account,
       root: root,
       mine: mine,
@@ -106,6 +108,60 @@ defmodule PotokIdeWeb.GroupLive.RootPublicGroupsTest do
     assert has_element?(lv, "#sub-group-folder-#{ctx.open.id}")
     lv |> element("#sub-group-folder-toggle-#{ctx.mine.id}") |> render_click()
     assert has_element?(lv, "#sub-group-folder-#{ctx.mine.id} #sub-group-folder-#{mine_open.id}")
+  end
+
+  test "the root keeps the public groups the viewer follows, and narrows to them", ctx do
+    followed =
+      group_with_members!(ctx.owner, [], %{"name" => "rootpub-d-followed", "is_public" => true})
+
+    {:ok, _follow} = Notices.follow(ctx.viewer, followed)
+
+    {:ok, lv, _html} = live_as(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/sub_groups")
+
+    assert has_element?(lv, "#group-children-public-toggle[aria-pressed='false']")
+    assert has_element?(lv, "#child-group-#{followed.id}")
+    refute has_element?(lv, "#child-group-#{ctx.open.id}")
+
+    lv |> element("#group-children-relation-option-follower") |> render_click()
+
+    assert has_element?(lv, "#group-children-relation-option-follower[aria-checked=true]")
+    assert has_element?(lv, "#child-group-#{followed.id}")
+    refute has_element?(lv, "#child-group-#{ctx.mine.id}")
+    refute has_element?(lv, "#child-group-#{ctx.way.id}")
+
+    lv |> element("#group-children-relation-option-member") |> render_click()
+
+    refute has_element?(lv, "#child-group-#{followed.id}")
+    assert has_element?(lv, "#child-group-#{ctx.mine.id}")
+  end
+
+  test "a follow made on another page shows the group at once", ctx do
+    {:ok, lv, _html} = live_as(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/sub_groups")
+    refute has_element?(lv, "#child-group-#{ctx.open.id}")
+
+    {:ok, _follow} = Notices.follow(ctx.viewer, ctx.open)
+    assert has_element?(lv, "#child-group-#{ctx.open.id}")
+
+    :ok = Notices.unfollow(ctx.viewer, ctx.open.id)
+    refute has_element?(lv, "#child-group-#{ctx.open.id}")
+  end
+
+  test "the folder view keeps the way to a followed group", ctx do
+    path = group_with_members!(ctx.owner, [], %{"name" => "rootpub-e-path", "is_public" => true})
+
+    followed =
+      group_with_members!(ctx.owner, [], %{:parent => path, "is_public" => true})
+
+    {:ok, _follow} = Notices.follow(ctx.viewer, followed)
+
+    {:ok, lv, _html} =
+      live_as(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/sub_groups?view=tree")
+
+    assert has_element?(lv, "#sub-group-folder-#{path.id}")
+    refute has_element?(lv, "#sub-group-folder-#{ctx.open.id}")
+
+    lv |> element("#sub-group-folder-toggle-#{path.id}") |> render_click()
+    assert has_element?(lv, "#sub-group-folder-#{path.id} #sub-group-folder-#{followed.id}")
   end
 
   test "other groups list their public sub-groups and have no switch", ctx do

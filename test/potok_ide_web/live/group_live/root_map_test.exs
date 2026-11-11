@@ -10,6 +10,7 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
   import Phoenix.LiveViewTest
   import PotokIde.EventsFixtures
 
+  alias PotokIde.Notices
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.Group
@@ -110,6 +111,23 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     assert_push_event(lv, "root_map_data", data)
     assert place_ids(data) == Enum.sort([ctx.shop.id, ctx.open.id])
     refute ctx.closed.id in place_ids(data)
+  end
+
+  test "a followed public group stays with the switch off, and the follows narrow to it", ctx do
+    {:ok, _follow} = Notices.follow(ctx.viewer, ctx.open)
+
+    lv = live_map(ctx.viewer_account, ~p"/groups/#{ctx.root.id}/map")
+
+    assert has_element?(lv, "#root-map-public-toggle[aria-pressed='false']")
+    assert place_ids(view(lv)) == Enum.sort([ctx.shop.id, ctx.open.id])
+
+    lv |> element("#root-map-relation-option-follower") |> render_click()
+    assert_push_event(lv, "root_map_data", data)
+    assert place_ids(data) == [ctx.open.id]
+
+    # Unfollowed on another page: the map is read again.
+    :ok = Notices.unfollow(ctx.viewer, ctx.open.id)
+    assert_push_event(lv, "root_map_data", %{places: [], total: 0})
   end
 
   test "far out, groups gather into clusters", ctx do

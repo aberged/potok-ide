@@ -2569,8 +2569,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:group_notices, message}, socket),
     do: NoticesState.handle_info(message, socket)
 
-  def handle_info({:notices, message}, socket),
-    do: NoticesState.handle_profile_message(message, socket)
+  def handle_info({:notices, message}, socket) do
+    {:noreply, socket} = NoticesState.handle_profile_message(message, socket)
+    {:noreply, follows_changed(socket, message)}
+  end
 
   def handle_info({:polls, message}, socket) do
     {:noreply, socket} = PollsState.handle_info(message, socket)
@@ -4449,7 +4451,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Hidden threads are filtered out; shown ones mix with the other sub-groups.
   # The root leaves out the public groups the viewer is not in until shown,
-  # but those on the way to one of its groups. Direct conversations have no
+  # but those it follows and those on the way to one of its groups or follows. Direct conversations have no
   # kind and are all the viewer's own, so the kind and membership filters
   # leave them alone.
   defp children_filters(socket) do
@@ -5323,6 +5325,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # with its switch on), one that inherits this group's members when the
   # viewer is one, or the viewer's own. The folder view is always read again,
   # as its open folders are not tracked here.
+  # The root keeps the public groups the viewer follows while it hides the
+  # others, and narrows to them: a follow made on another page changes its
+  # list and its map.
+  defp follows_changed(
+         %{assigns: %{group: %Group{is_root: true}}} = socket,
+         {:follow_changed, _profile_id, _group_id}
+       ) do
+    socket =
+      if socket.assigns.show_public_sub_groups and socket.assigns.children_relation != "follower",
+        do: socket,
+        else: schedule_refresh(socket, :children)
+
+    RootMapState.follows_changed(socket)
+  end
+
+  defp follows_changed(socket, _message), do: socket
+
   defp child_on_list?(socket, child) do
     %{group: group, active_tab: active_tab, current_profile: profile} = socket.assigns
 
@@ -5342,8 +5361,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
       child.inherits? and socket.assigns[:is_member] == true ->
         true
 
+      child.creator_id == profile.id ->
+        true
+
+      # The root hides the public groups the viewer is not in, but those it follows.
       true ->
-        child.creator_id == profile.id
+        child.public? and Notices.follows?(profile, child.id)
     end
   end
 

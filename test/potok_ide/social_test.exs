@@ -6,6 +6,7 @@ defmodule PotokIde.SocialTest do
 
   alias PotokIde.Accounts
   alias PotokIde.EventsFixtures
+  alias PotokIde.Notices
   alias PotokIde.PushNotifications
   alias PotokIde.Social
   alias PotokIde.Social.Group
@@ -1842,6 +1843,65 @@ defmodule PotokIde.SocialTest do
 
       assert ids.(relation: "member", preset: "chat") == [own.id]
       assert ids.(relation: "creator", preset: "folder") == []
+    end
+
+    test "relation: follower and public: false keep the groups the viewer follows and the way to them" do
+      {_account, owner} = EventsFixtures.account_with_profile!("follow-owner")
+      {_account, viewer} = EventsFixtures.account_with_profile!("follow-viewer")
+      parent = EventsFixtures.group_with_members!(owner, [viewer])
+      public = %{:parent => parent, "is_public" => true}
+
+      followed = EventsFixtures.group_with_members!(owner, [], public)
+      other = EventsFixtures.group_with_members!(owner, [], public)
+
+      # Public, the viewer neither in it nor following it, but following a
+      # group below it.
+      way = EventsFixtures.group_with_members!(owner, [], public)
+
+      below =
+        EventsFixtures.group_with_members!(owner, [], %{:parent => way, "is_public" => true})
+
+      joined = EventsFixtures.group_with_members!(owner, [viewer], %{parent: parent})
+
+      # Private, followed, then left: the follow stays, the group is not seen.
+      left = EventsFixtures.group_with_members!(owner, [viewer], %{parent: parent})
+
+      for group <- [followed, below, joined, left], do: {:ok, _} = Notices.follow(viewer, group)
+      {:ok, _removed} = Social.remove_group_member(owner, left, viewer.id)
+
+      sorted = &Enum.sort(Enum.map(&1, fn group -> group.id end))
+      ids = &sorted.(Social.list_child_groups_for_profile(parent, viewer, &1))
+
+      assert ids.([]) == sorted.([followed, other, way, joined])
+      assert ids.(public: false) == sorted.([followed, way, joined])
+      assert ids.(relation: "follower") == sorted.([followed, joined])
+      assert ids.(relation: "follower", public: false) == sorted.([followed, joined])
+      assert ids.(relation: "member", public: false) == [joined.id]
+      assert Social.count_child_groups_for_profile(parent, viewer, public: false) == 3
+
+      assert Enum.sort(Social.list_child_group_ids_for_profile(parent, viewer, public: false)) ==
+               sorted.([followed, way, joined])
+
+      folders = fn parent_id ->
+        %{^parent_id => {folders, false}} =
+          Social.list_sub_group_folders(viewer, [{parent_id, 10, nil}], public?: false)
+
+        folders
+      end
+
+      assert sorted.(folders.(parent.id)) == sorted.([followed, way, joined])
+      assert %{child_count: 1} = Enum.find(folders.(parent.id), &(&1.id == way.id))
+      assert sorted.(folders.(way.id)) == [below.id]
+
+      {found, false} =
+        Social.search_sub_group_folders(parent, viewer, nil, relation: "follower", public?: false)
+
+      assert sorted.(found) == sorted.([followed, way, below, joined])
+
+      # Unfollowed, the way is hidden again.
+      :ok = Notices.unfollow(viewer, below.id)
+      assert ids.(public: false) == sorted.([followed, joined])
+      assert sorted.(folders.(parent.id)) == sorted.([followed, joined])
     end
 
     test "returns only child groups where the profile is a member" do

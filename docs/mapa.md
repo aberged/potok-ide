@@ -54,7 +54,7 @@ Kad se podgrupa napravi, promeni ili obriše, stranica javi aplikaciji `onSubgro
 
 ## Mapa korena
 
-Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:root/map`, `RootMapState` i `RootMapTab` u Potoku, kuka `root_map.js`), na kom su sve grupe sa mestom koje gledalac vidi, na bilo kojoj dubini: grupe u kojima je član i javne grupe, uz isti prekidač **Javne grupe** kao u podgrupama korena. Threadovi, direktni razgovori i zapisi (vidi gore) nisu na njoj.
+Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:root/map`, `RootMapState` i `RootMapTab` u Potoku, kuka `root_map.js`), na kom su sve grupe sa mestom koje gledalac vidi, na bilo kojoj dubini: grupe u kojima je član i javne grupe, uz isti prekidač **Javne grupe** kao u podgrupama korena. Grupe koje prati ostaju na mapi i kad je prekidač isključen, a filter **Grupe koje pratim** ostavlja samo njih. Threadovi, direktni razgovori i zapisi (vidi gore) nisu na njoj.
 
 Filteri su isti kao u podgrupama korena (član ili autor, vrsta, ime), uz filter po pinu (meni **Pin**, jedan ili više pinova, po delovima kao u biraču pina) i filter po vremenu: poslednja 24 sata, 7 ili 30 dana, 12 meseci, bilo kada, ili od datuma do datuma. Vreme se računa po nastanku grupe (kad je nastala ili postala javna, kao u Feed-u) ili po poslednjoj poruci. Mapa se otvara na svim vremenima. Pretraga po imenu (i u podgrupama i u meniju **Područje**) ne mari za velika slova, kvačice ni pismo: „cacak“ nalazi „Čačak“, „beograd“ nalazi „Београд“ (`NameSearch`, `potok_fold/1` u bazi).
 

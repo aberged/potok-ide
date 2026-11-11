@@ -169,6 +169,13 @@ defmodule PotokIde.Notices do
     %{notices?: notices?, following?: not is_nil(push), push?: push == true, followers: followers}
   end
 
+  @doc "Whether `profile` follows the group with `group_id`, whether it still sees it or not."
+  def follows?(%Profile{id: profile_id}, group_id) when is_integer(group_id) do
+    Repo.exists?(
+      from(f in GroupFollow, where: f.group_id == ^group_id and f.profile_id == ^profile_id)
+    )
+  end
+
   @doc "The groups `profile` follows and still sees, by name, each with whether it pushes."
   def list_followed_groups(%Profile{id: profile_id} = profile) do
     from(g in Visibility.plain_groups(profile),

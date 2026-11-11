@@ -58,8 +58,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           aria-pressed={to_string(@show_public)}
           title={
             if(@show_public,
-              do: gettext("Hide public groups you are not in"),
-              else: gettext("Show public groups you are not in")
+              do: gettext("Hide public groups you are not in and do not follow"),
+              else: gettext("Show public groups you are not in and do not follow")
             )
           }
           class={[
@@ -79,8 +79,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           choices={ChoiceMenus.relation_choices()}
           selected={@filters.relation}
           idle_label={gettext("All groups")}
-          title={gettext("Show the groups you are in or created")}
-          label={gettext("Membership and authorship")}
+          title={gettext("Show the groups you are in, created or follow")}
+          label={gettext("Membership, authorship and following")}
         />
         <ChoiceMenus.choice_toggle
           id="root-map-preset"
@@ -229,7 +229,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
                 <% :filters -> %>
                   {gettext("No group with a place fits these filters.")}
                 <% :public -> %>
-                  {gettext("Public groups you are not in are hidden.")}
+                  {gettext("Public groups you are not in and do not follow are hidden.")}
                 <% :none -> %>
                   {gettext("None of your groups has a place on the map yet.")}
               <% end %>
@@ -481,7 +481,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
         selected={@filters.relation}
         event="root_map_relation"
         param="relation"
-        label={gettext("Membership and authorship")}
+        label={gettext("Membership, authorship and following")}
       />
       <ChoiceMenus.choice_menu
         id="root-map-preset"

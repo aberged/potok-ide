@@ -110,7 +110,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   @doc """
   Why a map that holds no group is empty: `:area` while chosen areas hold
   none, `:filters` while the viewer narrowed it beyond where it starts,
-  `:public` while the public groups the viewer is not in are hidden
+  `:public` while the public groups the viewer is not in and does not follow are hidden
   (`public?` is the switch), `:none` when it would hold none at all.
   """
   def empty_reason(filters, public?) do
@@ -121,6 +121,21 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       true -> :none
     end
   end
+
+  @doc """
+  A follow of the profile changed on another page: an open map that holds the
+  followed groups while it hides the other public ones, or narrows to them,
+  is read again.
+  """
+  def follows_changed(%{assigns: %{active_tab: "map", root_map_extent: extent}} = socket)
+      when not is_nil(extent) do
+    if socket.assigns.show_public_sub_groups and
+         socket.assigns.root_map_filters.relation != "follower",
+       do: socket,
+       else: refresh(socket)
+  end
+
+  def follows_changed(socket), do: socket
 
   ## Loading
 

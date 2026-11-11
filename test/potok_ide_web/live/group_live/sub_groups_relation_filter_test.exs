@@ -5,6 +5,7 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsRelationFilterTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.Notices
   alias PotokIde.Social
 
   # Fixed names keep the folders in one order (see root_public_groups_test.exs).
@@ -26,6 +27,7 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsRelationFilterTest do
 
     %{
       conn: log_in_account(conn, account),
+      me: me,
       group: group,
       mine: mine,
       theirs: theirs,
@@ -111,6 +113,18 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsRelationFilterTest do
            )
 
     refute has_element?(lv, "#sub-group-folder-#{ctx.public.id}")
+  end
+
+  test "the groups I follow narrow the list", ctx do
+    {:ok, _follow} = Notices.follow(ctx.me, ctx.public)
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups")
+
+    lv |> element("#group-children-relation-option-follower") |> render_click()
+
+    assert has_element?(lv, "#child-group-#{ctx.public.id}")
+    refute has_element?(lv, "#child-group-#{ctx.mine.id}")
+    refute has_element?(lv, "#child-group-#{ctx.theirs.id}")
+    assert has_element?(lv, "#group-children-relation-toggle[aria-label*=':']")
   end
 
   test "the root's direct conversations have no membership filter", %{conn: conn} do

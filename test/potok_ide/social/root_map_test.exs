@@ -9,6 +9,7 @@ defmodule PotokIde.Social.RootMapTest do
   import Ecto.Query
   import PotokIde.EventsFixtures
 
+  alias PotokIde.Notices
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.Group
@@ -83,6 +84,31 @@ defmodule PotokIde.Social.RootMapTest do
 
       refute closed.id in ids(viewer, %{public?: true})
       assert closed.id in ids(owner)
+    end
+
+    test "keep the public groups the profile follows, and the way to them, with the switch off",
+         ctx do
+      %{owner: owner, viewer: viewer, root: root} = ctx
+
+      followed = placed!(owner, root, {44.1, 20.1}, %{"is_public" => true})
+      _other = placed!(owner, root, {44.2, 20.2}, %{"is_public" => true})
+      way = placed!(owner, root, {44.3, 20.3}, %{"is_public" => true})
+      below = placed!(owner, way, {44.4, 20.4}, %{"is_public" => true})
+      mine = group_with_members!(owner, [viewer], %{"latitude" => 44.5, "longitude" => 20.5})
+
+      # Private, followed and then left: no longer seen.
+      left = group_with_members!(owner, [viewer], %{"latitude" => 44.6, "longitude" => 20.6})
+
+      for group <- [followed, below, left], do: {:ok, _} = Notices.follow(viewer, group)
+      {:ok, _removed} = Social.remove_group_member(owner, left, viewer.id)
+
+      assert ids(viewer) == Enum.sort([followed.id, way.id, below.id, mine.id])
+      assert ids(viewer, %{relation: "follower"}) == Enum.sort([followed.id, below.id])
+
+      assert ids(viewer, %{relation: "follower", public?: true}) ==
+               Enum.sort([followed.id, below.id])
+
+      assert ids(viewer, %{relation: "member"}) == [mine.id]
     end
 
     test "leave out threads, direct conversations and groups without a place", ctx do

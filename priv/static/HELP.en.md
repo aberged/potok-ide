@@ -142,7 +142,7 @@ You invite another account into a shared profile by username, in the Sharing par
 
 The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. A lock means the group is private, and a globe that it is public.
 
-Above the list are the filters: public groups you are not a member of, threads, groups you are a member of or created, the kind of group and a search by name. The search finds a group even when you type without diacritics, in Latin or in Cyrillic. Groups can be shown as a list or as folders.
+Above the list are the filters: public groups you are not a member of, threads, groups you are a member of, created or follow, the kind of group and a search by name. The groups you follow stay on the list even when you hide public groups. The search finds a group even when you type without diacritics, in Latin or in Cyrillic. Groups can be shown as a list or as folders.
 
 The home page also has My calendar, with the events of all your groups, the Map of groups and My polls.
 
@@ -301,7 +301,7 @@ You put a tag on groups, profiles, events, messages and files, with the # button
 
 The bell in a group's header is for following. One tap and you follow the group. After that, the bell opens the choices: push notifications for this group, the Notices tab and stopping following. The home page, one-to-one conversations and threads cannot be followed.
 
-Whoever has the permission sends a notice to all followers on the Notices tab, up to 2000 characters. The Notices page (the bell in the top bar) has the notices you received and a list of the groups you follow.
+Whoever has the permission sends a notice to all followers on the Notices tab, up to 2000 characters. The Notices page (the bell in the top bar) has the notices you received and a list of the groups you follow. On the home page and on the map of groups, the filter "Groups I follow" leaves only them.
 
 ![Following a group](pracenje) ![Notices received](obavestenja)
 

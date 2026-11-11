@@ -24,7 +24,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :children_relation, :string,
     default: nil,
-    doc: "the viewer's memberships or own groups (`Social.child_group_relations/0`), nil for all"
+    doc:
+      "the viewer's memberships, own or followed groups (`Social.child_group_relations/0`), nil for all"
 
   attr :show_thread_sub_groups, :boolean, default: false
   attr :thread_sub_groups_count, :integer, default: 0
@@ -35,7 +36,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   attr :show_public_sub_groups, :boolean,
     default: false,
-    doc: "whether the root shows the public groups the viewer is not in"
+    doc: "whether the root shows the public groups the viewer is not in and does not follow"
 
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
@@ -180,7 +181,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           </button>
 
           <%!-- The root's public groups the viewer is not in, hidden until shown;
-             those on the way to one of the viewer's groups stay. --%>
+             those it follows and those on the way to one of its groups or
+             follows stay. --%>
           <button
             :if={@group.is_root and @sub_groups_kind != "direct"}
             id="group-children-public-toggle"
@@ -189,8 +191,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
             aria-pressed={to_string(@show_public_sub_groups)}
             title={
               if(@show_public_sub_groups,
-                do: gettext("Hide public groups you are not in"),
-                else: gettext("Show public groups you are not in")
+                do: gettext("Hide public groups you are not in and do not follow"),
+                else: gettext("Show public groups you are not in and do not follow")
               )
             }
             class={[
@@ -214,8 +216,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               choices={ChoiceMenus.relation_choices()}
               selected={@relation}
               idle_label={gettext("All groups")}
-              title={gettext("Show the sub-groups you are in or created")}
-              label={gettext("Membership and authorship")}
+              title={gettext("Show the sub-groups you are in, created or follow")}
+              label={gettext("Membership, authorship and following")}
             />
             <ChoiceMenus.choice_toggle
               id="group-children-preset"
@@ -343,7 +345,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           id="group-children-public-hidden"
           class="mt-3 flex flex-wrap items-center gap-3 text-sm text-base-content/65"
         >
-          <span>{gettext("Public groups you are not in are hidden.")}</span>
+          <span>{gettext("Public groups you are not in and do not follow are hidden.")}</span>
           <.button
             id="group-children-show-public"
             type="button"
@@ -458,7 +460,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           selected={@relation}
           event="filter_children_relation"
           param="relation"
-          label={gettext("Membership and authorship")}
+          label={gettext("Membership, authorship and following")}
         />
         <ChoiceMenus.choice_menu
           id="group-children-preset"
