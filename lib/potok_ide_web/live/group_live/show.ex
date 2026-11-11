@@ -746,6 +746,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:refresh_due_at, nil)
          |> assign(:unread_overview, nil)
          |> assign(:pending_unread_values, [])
+         |> assign(:child_preview_ids, MapSet.new())
          |> assign(:app_api_bucket, AppApi.new_bucket())
          |> assign(:child_pending_join_request_counts, %{})
          |> assign(:group_unread_counts, %{})
@@ -2551,11 +2552,31 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:group_members_unread_changed, _group_id}, socket),
     do: {:noreply, schedule_refresh(socket, :unread)}
 
+  # The profile's own value (`ProfileAuth` passes it on for the lists) only
+  # changes the group's row; anyone else's is also one more unread.
+  def handle_info(
+        {:group_value_unread, %{creator_id: creator_id} = unread},
+        %{assigns: %{current_profile: %{id: creator_id}}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> note_child_last_value(unread.group_id, unread[:preview], unread.inserted_at)
+     |> schedule_refresh(:child_previews)}
+  end
+
   def handle_info({:group_value_unread, unread}, socket) do
     {:noreply,
      socket
+     |> note_child_last_value(unread.group_id, unread[:preview], unread.inserted_at)
      |> update(:pending_unread_values, &[unread | &1])
      |> schedule_refresh(:unread_values)}
+  end
+
+  def handle_info({:group_last_value_changed, group_id, preview, last_value_at}, socket) do
+    {:noreply,
+     socket
+     |> note_child_last_value(group_id, preview, last_value_at)
+     |> schedule_refresh(:child_previews)}
   end
 
   def handle_info({:account_profiles_updated, account_id}, socket)
@@ -2730,11 +2751,57 @@ defmodule PotokIdeWeb.GroupLive.Show do
         do: reload_children_or_retry(socket),
         else: socket
 
+    socket =
+      cond do
+        MapSet.member?(pending, :group) -> reload_current_group(socket)
+        MapSet.member?(pending, :unread) -> refresh_unread_counts_or_retry(socket)
+        MapSet.member?(pending, :unread_values) -> add_unread_values(socket)
+        true -> socket
+      end
+
+    stream_child_previews(socket)
+  end
+
+  # A loaded sub-group's row takes a new, edited or deleted newest value at
+  # once, in memory (`loaded_children`), and is sent once the burst is over,
+  # whichever of the branches above ran: some re-send only the rows whose
+  # count changed, and the profile's own values change none.
+  defp note_child_last_value(socket, group_id, preview, last_value_at) do
+    case Enum.find_index(socket.assigns.loaded_children, &(&1.id == group_id)) do
+      nil ->
+        socket
+
+      index ->
+        socket
+        |> update(:loaded_children, fn children ->
+          List.update_at(
+            children,
+            index,
+            &%{&1 | last_value: preview, last_value_at: last_value_at}
+          )
+        end)
+        |> update(:child_preview_ids, &MapSet.put(&1, group_id))
+    end
+  end
+
+  # The rows go where the newest value puts them now, as `add_unread_values/1`
+  # moves them.
+  defp stream_child_previews(%{assigns: %{child_preview_ids: ids}} = socket) do
+    %{group: group, active_tab: active_tab, loaded_children: loaded_children} = socket.assigns
+    socket = assign(socket, :child_preview_ids, MapSet.new())
+
     cond do
-      MapSet.member?(pending, :group) -> reload_current_group(socket)
-      MapSet.member?(pending, :unread) -> refresh_unread_counts_or_retry(socket)
-      MapSet.member?(pending, :unread_values) -> add_unread_values(socket)
-      true -> socket
+      MapSet.size(ids) == 0 or not needs_children?(group, active_tab) or
+          socket.assigns.sub_groups_view == "tree" ->
+        socket
+
+      overview = socket.assigns.unread_overview ->
+        stream_moved_children(socket, Social.sort_child_groups(loaded_children, overview), ids)
+
+      true ->
+        loaded_children
+        |> Enum.filter(&MapSet.member?(ids, &1.id))
+        |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
     end
   end
 

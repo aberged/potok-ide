@@ -15,11 +15,12 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # values announced, for their cards; its 19th and 20th the tags the viewer
   # sees on the values and on the group, and the root page's 9th those on the
   # sub-groups. Its 10th finds the groups only the root lists, whose parent the
-  # viewer cannot see. The chat page's 21st loads the polls that values carry,
+  # viewer cannot see, and its 11th the newest message of each listed group,
+  # for its row. The chat page's 21st loads the polls that values carry,
   # and its 22nd, like the first HTML's 6th, asks whether the group has a poll,
   # for the bar of sections.
   @max_dead_render_queries 6
-  @max_root_page_queries 10
+  @max_root_page_queries 11
   @max_chat_page_queries 22
 
   setup %{conn: conn} do

@@ -217,6 +217,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "member_count"), do: dgettext("domain_map", "member count")
   defp own_field("Group", "sub_group_count"), do: dgettext("domain_map", "sub-group count")
   defp own_field("Group", "viewer_is_member"), do: dgettext("domain_map", "viewer is a member")
+  defp own_field("Group", "last_value"), do: dgettext("domain_map", "newest value, for a member")
 
   defp own_field("GroupAccountInvitation", "account_id") do
     dgettext("domain_map", "invited account")

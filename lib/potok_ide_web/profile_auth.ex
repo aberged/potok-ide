@@ -26,6 +26,10 @@ defmodule PotokIdeWeb.ProfileAuth do
   # unread count out.
   @unread_counting_views [PotokIdeWeb.GroupLive.Show, PotokIdeWeb.InvitationLive.Index]
 
+  # Views whose lists show each group's newest value: they hear of the
+  # profile's own values too, and of edits and deletes of the newest one.
+  @last_value_views [PotokIdeWeb.GroupLive.Show]
+
   def on_mount(:mount_current_profile, _params, _session, socket) do
     current_scope = socket.assigns[:current_scope]
 
@@ -151,8 +155,12 @@ defmodule PotokIdeWeb.ProfileAuth do
             end
 
           # A value someone else posted: one more unread, no query needed.
+          # The profile's own only changes the group's row in a list.
           {:group_value_unread, unread}, socket ->
             cond do
+              own_value_listed?(unread, socket) ->
+                {:cont, socket}
+
               not unread_value_counts?(unread, socket) ->
                 {:halt, socket}
 
@@ -162,6 +170,9 @@ defmodule PotokIdeWeb.ProfileAuth do
               true ->
                 {:halt, add_unread_value(socket, unread)}
             end
+
+          {:group_last_value_changed, _group_id, _preview, _last_value_at}, socket ->
+            if socket.view in @last_value_views, do: {:cont, socket}, else: {:halt, socket}
 
           :recount_root_group_unread, socket ->
             {:halt,
@@ -270,6 +281,12 @@ defmodule PotokIdeWeb.ProfileAuth do
   # Not the profile's own value, nor one on its way from a group it just left.
   defp unread_value_counts?(%{creator_id: creator_id, group_id: group_id}, socket) do
     not match?(%{id: ^creator_id}, socket.assigns[:current_profile]) and
+      MapSet.member?(unread_groups(socket), group_id)
+  end
+
+  defp own_value_listed?(%{creator_id: creator_id, group_id: group_id}, socket) do
+    socket.view in @last_value_views and
+      match?(%{id: ^creator_id}, socket.assigns[:current_profile]) and
       MapSet.member?(unread_groups(socket), group_id)
   end
 

@@ -396,7 +396,15 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                     unread_count={Map.get(@unread_counts, group.id, 0)}
                   >
                     <:subtitle :if={child_details?(group)}>
-                      <.child_details group={group} time_zone={@time_zone} />
+                      <div class="flex w-full min-w-0 flex-col gap-0.5">
+                        <.child_last_value
+                          :if={group.last_value && group.last_value.text}
+                          group={group}
+                          current_profile={@current_profile}
+                          unread={Map.get(@unread_counts, group.id, 0) > 0}
+                        />
+                        <.child_details group={group} time_zone={@time_zone} />
+                      </div>
                     </:subtitle>
                   </Components.group_identity>
                 </div>
@@ -471,7 +479,49 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
   # Direct conversations load no counts, so they show the time alone.
   defp child_details?(group),
-    do: group.last_value_at != nil or group.member_count != nil or group.tags != []
+    do:
+      group.last_value_at != nil or group.member_count != nil or group.tags != [] or
+        group.last_value != nil
+
+  attr :group, :map, required: true
+  attr :current_profile, :map, default: nil
+  attr :unread, :boolean, default: false
+
+  # The group's newest value, below its name: "Ana: …", "You: …" for the
+  # viewer's own, and no name from the other side of a direct conversation,
+  # whose name the row already shows. Stronger while the group has unread values.
+  defp child_last_value(assigns) do
+    %{group: group, current_profile: profile} = assigns
+    creator_id = group.last_value.creator_id
+    mine? = match?(%{id: ^creator_id}, profile)
+
+    assigns =
+      assign(assigns,
+        mine?: mine?,
+        author:
+          cond do
+            mine? -> gettext("You:")
+            group.is_direct -> nil
+            true -> group.last_value.author <> ":"
+          end
+      )
+
+    ~H"""
+    <p
+      id={"child-group-last-value-text-#{@group.id}"}
+      data-mine={@mine? && "true"}
+      class={[
+        "truncate text-xs leading-4",
+        if(@unread, do: "text-base-content/85", else: "text-base-content/65")
+      ]}
+    >
+      <span :if={@author} class={["font-semibold", !@unread && "text-base-content/75"]}>
+        {@author}
+      </span>
+      {@group.last_value.text}
+    </p>
+    """
+  end
 
   attr :group, :map, required: true
   attr :time_zone, :string, required: true

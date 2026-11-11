@@ -81,6 +81,9 @@ defmodule PotokIde.Social.Group do
     field :member_count, :integer, virtual: true
     field :sub_group_count, :integer, virtual: true
     field :viewer_is_member, :boolean, virtual: true
+    # The newest chat value as a `PotokIde.Social.ValuePreview`, in the rows of
+    # the groups whose chat the viewer reads there; nil otherwise.
+    field :last_value, :map, virtual: true
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__

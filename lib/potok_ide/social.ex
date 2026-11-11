@@ -51,6 +51,7 @@ defmodule PotokIde.Social do
     Value,
     ValueAggregate,
     ValueAttachment,
+    ValuePreview,
     ValueReaction,
     Visibility
   }
@@ -2228,6 +2229,7 @@ defmodule PotokIde.Social do
 
         broadcast_value_updated(updated_value)
         broadcast_values_updated(reply_ids(updated_value))
+        maybe_broadcast_last_value_edited(group, updated_value)
         schedule_link_preview(updated_value)
         {:ok, updated_value}
 
@@ -2269,14 +2271,21 @@ defmodule PotokIde.Social do
         )
         |> repo.one()
 
-      {:ok, set_group_last_value_at(repo, value.group_id, latest)}
+      set_group_last_value_at(repo, value.group_id, latest)
+      {:ok, latest}
     end)
     |> Repo.transaction()
     |> case do
-      {:ok, %{value: deleted_value, attachments: {_count, storage_keys}}} ->
+      {:ok,
+       %{
+         value: deleted_value,
+         attachments: {_count, storage_keys},
+         group_last_value_at: last_value_at
+       }} ->
         Storage.delete_later(storage_keys)
         broadcast_value_deleted(deleted_value)
         broadcast_group_unread_counts_updated(deleted_value.group_id)
+        maybe_broadcast_last_value_removed(deleted_value, last_value_at)
         broadcast_values_updated(reply_ids)
         if poll, do: Polls.broadcast_deleted(poll)
         {:ok, deleted_value}
@@ -2284,6 +2293,44 @@ defmodule PotokIde.Social do
       {:error, _step, reason, _changes} ->
         {:error, reason}
     end
+  end
+
+  # A list row shows the group's newest value (`ValuePreview`), so an edit of
+  # that one goes to the members' pages, which only change the row.
+  defp maybe_broadcast_last_value_edited(%Group{is_root: true}, _value), do: :ok
+
+  defp maybe_broadcast_last_value_edited(%Group{} = group, %Value{} = value) do
+    if latest_group_value_id(group) == value.id do
+      broadcast_group_last_value_changed(
+        group.id,
+        ValuePreview.from_value(value),
+        value.inserted_at
+      )
+    end
+
+    :ok
+  end
+
+  # Deleting the newest value puts the one before it, or nothing, in the
+  # group's row, so a deleted text does not linger in the lists.
+  defp maybe_broadcast_last_value_removed(%Value{is_data: true}, _last_value_at), do: :ok
+
+  defp maybe_broadcast_last_value_removed(%Value{id: id, group_id: group_id}, last_value_at) do
+    preview = Map.get(last_chat_previews([group_id]), group_id)
+
+    if preview == nil or preview.value_id < id do
+      broadcast_group_last_value_changed(group_id, preview, last_value_at)
+    end
+
+    :ok
+  end
+
+  defp broadcast_group_last_value_changed(group_id, preview, last_value_at) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_unread_topic(group_id),
+      {:group_last_value_changed, group_id, preview, last_value_at}
+    )
   end
 
   # `groups.last_value_at` orders the sub-groups list. `update_all` leaves
@@ -4095,7 +4142,45 @@ defmodule PotokIde.Social do
       |> Enum.map(&load_child_group_row(fields, &1))
       |> Enum.unzip()
 
-    {maybe_preload_group_members(groups), rest}
+    {groups |> maybe_preload_group_members() |> put_last_values(), rest}
+  end
+
+  # The newest value of each listed group whose chat the profile reads as a
+  # member, direct conversations included. An open chat lets outsiders read
+  # too, but its row would not follow it: only members' pages hear of values.
+  defp put_last_values(groups) do
+    previews = last_chat_previews(for g <- groups, g.is_direct or g.viewer_is_member, do: g.id)
+    Enum.map(groups, &%{&1 | last_value: Map.get(previews, &1.id)})
+  end
+
+  @doc """
+  The newest chat value of each of `group_ids` as a `ValuePreview`, by group
+  id; groups without one are left out. The caller decides who may read them.
+  One query, each group's newest value found through its chat id index.
+  """
+  def last_chat_previews([]), do: %{}
+
+  def last_chat_previews(group_ids) when is_list(group_ids) do
+    sql = """
+    SELECT g.id, v.id, v.creator_id, p.username, v.content, v.content_format,
+      ARRAY(SELECT a.filename FROM value_attachments a WHERE a.value_id = v.id ORDER BY a.id)
+    FROM unnest($1::bigint[]) AS g(id)
+    CROSS JOIN LATERAL (
+      SELECT id, creator_id, content, content_format
+      FROM values
+      WHERE group_id = g.id AND is_data = FALSE
+      ORDER BY id DESC
+      LIMIT 1
+    ) v
+    JOIN profiles p ON p.id = v.creator_id
+    """
+
+    %{rows: rows} = Repo.query!(sql, [group_ids], cache_statement: "social_last_chat_previews")
+
+    Map.new(rows, fn [group_id, value_id, creator_id, author, content, format, filenames] ->
+      {group_id,
+       ValuePreview.from_columns(value_id, creator_id, author, content, format, filenames)}
+    end)
   end
 
   # What the sub-groups list shows below each group; direct conversations get
@@ -6705,9 +6790,10 @@ defmodule PotokIde.Social do
   # creator, whose pages skip it by `creator_id`. It goes out with the group's
   # chain up to the root, worked out once here, so each member's pages add it
   # to their counts without a query (`add_unread_value/3`) instead of all
-  # counting again at once. The creator's read marker moved past it, which may
-  # have read older values too, so the creator's other pages count again. The
-  # root group's values never count.
+  # counting again at once, and with its preview for the group's row in the
+  # lists, which the creator's pages show too. The creator's read marker moved
+  # past it, which may have read older values too, so the creator's other
+  # pages count again. The root group's values never count.
   defp broadcast_group_value_unread(_creator, %Group{is_root: true}, _value), do: :ok
 
   defp broadcast_group_value_unread(%Profile{} = creator, %Group{id: group_id}, %Value{} = value) do
@@ -6716,7 +6802,8 @@ defmodule PotokIde.Social do
       group_id: group_id,
       value_id: value.id,
       inserted_at: value.inserted_at,
-      chain: group_ancestry(group_id)
+      chain: group_ancestry(group_id),
+      preview: ValuePreview.from_value(value)
     }
 
     Phoenix.PubSub.broadcast(
