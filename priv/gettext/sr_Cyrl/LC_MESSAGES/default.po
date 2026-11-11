@@ -1001,8 +1001,8 @@ msgstr "Није могуће послати захтев за приступ."
 msgid "Could not update access request."
 msgstr "Није могуће ажурирати захтев за приступ."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:403
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1295
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:412
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1608
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Није могуће ажурирати опис групе."
@@ -1230,12 +1230,12 @@ msgstr "Већ имате позивницу за ову групу на чек�
 msgid "You are already a group member."
 msgstr "Већ сте члан групе."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:253
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:303
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:324
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:354
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:523
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1052
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:262
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:312
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:333
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:363
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:532
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1113
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to access group data values."
 msgstr "Морате бити члан групе да бисте приступили вредностима података групе."
@@ -1699,9 +1699,10 @@ msgstr "Освежи"
 msgid "Show password"
 msgstr "Прикажи лозинку"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1064
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1160
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1344
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1125
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1221
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1468
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1657
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Превише измена за кратко време. Покушајте поново ускоро."
@@ -2284,16 +2285,17 @@ msgid "Your roles in this group do not allow posting messages."
 msgstr "Ваше улоге у овој групи не дозвољавају писање порука."
 
 #: lib/potok_ide_web/live/group_live/show.ex:5080
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:382
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:421
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:663
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:815
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:942
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1049
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1136
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1149
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1261
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1287
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:391
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:430
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:672
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:845
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:926
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1003
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1110
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1197
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1210
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1322
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1600
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr "Ваше улоге у овој групи то не дозвољавају."
@@ -4475,8 +4477,8 @@ msgstr "Поруке"
 msgid "Copy"
 msgstr "Копирај"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:343
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1105
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:352
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1166
 #, elixir-autogen, elixir-format
 msgid "Could not save the data value."
 msgstr "Није могуће сачувати вредност података."
@@ -4561,9 +4563,13 @@ msgstr "Разговори, догађаји, фајлови, улоге, нот
 msgid "Apps"
 msgstr "Апликације"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:812
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1181
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1283
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:842
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1242
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1350
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1391
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1421
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1456
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1596
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr "Није могуће сачувати групу."
@@ -4894,7 +4900,7 @@ msgstr "До 10 фајлова по поруци, до 100 МБ сваки. Сл
 msgid "You cannot send pictures in this group."
 msgstr "У овој групи не можеш да шаљеш слике."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1082
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1143
 #, elixir-autogen, elixir-format
 msgid "A file is missing or does not fit."
 msgstr "Фајл недостаје или не одговара."
@@ -4914,32 +4920,32 @@ msgstr "Фајлови послати кроз %{name}. Отварају их с
 msgid "Private files"
 msgstr "Приватни фајлови"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1067
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1128
 #, elixir-autogen, elixir-format
 msgid "That is too much to save."
 msgstr "То је превише за чување."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1088
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1149
 #, elixir-autogen, elixir-format
 msgid "The group for private files is no longer closed."
 msgstr "Група за приватне фајлове више није затворена."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1085
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1146
 #, elixir-autogen, elixir-format
 msgid "The group that keeps the files is gone."
 msgstr "Групе која чува фајлове више нема."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1061
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1122
 #, elixir-autogen, elixir-format
 msgid "The scores are out, so the answer can no longer change."
 msgstr "Оцене су објављене, па одговор више не може да се мења."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1055
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1116
 #, elixir-autogen, elixir-format
 msgid "This no longer takes answers."
 msgstr "Одговори се више не примају."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1058
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1119
 #, elixir-autogen, elixir-format
 msgid "You have already answered."
 msgstr "Твој одговор је већ послат."
@@ -4951,8 +4957,8 @@ msgstr "Опис групе не мора да буде само текст. М�
 
 #: lib/potok_ide_web/controllers/page_html.ex:200
 #, elixir-autogen, elixir-format
-msgid "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form, map or page. You can then narrow the list of sub-groups by kind, to the groups you are in, or to those you created. You can put a group on a map, with a pin you pick for it, and the group's kind stays in the pin's corner. The map of groups shows every group with a place that you can see, and you narrow it with the same filters, by time and by pin. You can also draw a group an area, like a local community's, and the map then shows what lies in it and which areas a place lies in. You can also give a group a route, such as a walk, a race or a bike path: draw it or bring it from a GPX, KML or GeoJSON file, and the map shows where it goes and which areas it passes through. A search finds a group even when you type its name without diacritics, in Latin or in Cyrillic. From a group's page, one tap shows it on the map of groups. You can follow a group you see even when you are not its member, and its notices then come to you apart from the messages, with their own counter."
-msgstr "Гранај групе колико год треба. Свака је јавна или приватна, подгрупа може да наследи чланове и улоге, а број непрочитаних порука сабира се кроз цело стабло. На групу можеш да реагујеш као и на поруку. Нову групу почињеш од готове поставке: чет, фолдер, обавештења, фид, гласања, форма, мапа или страница. Листу подгрупа после сужаваш по врсти, по томе где си члан или чији си аутор. Групу можеш да ставиш на мапу, са пином који јој изабереш, а врста групе остаје у углу пина. Мапа група приказује све групе са местом које видиш, а сужаваш је истим филтерима, по времену и по пину. Групи можеш да нацрташ и подручје, као месној заједници, па на мапи видиш шта је у њему и у којим подручјима је неко место. Групи можеш да даш и руту, као шетњи, трци или бициклистичкој стази: нацрташ је или донесеш из GPX, KML или GeoJSON фајла, а мапа показује куда иде и кроз која подручја пролази. Претрага налази групу и кад јој име укуцаш без квачица, латиницом или ћирилицом. Са странице групе једним додиром је видиш на мапи група. Групу коју видиш можеш да запратиш и кад ниси њен члан, па ти њена обавештења стижу одвојено од порука, са својим бројачем."
+msgid "Branch out your groups as far as you need. Each one is public or private, a sub-group can inherit members and roles, and unread counts add up through the whole tree. You can react to a group just as you do to a message. You start a new group from a ready setup: chat, folder, announcements, feed, polls, form, map or page. You can then narrow the list of sub-groups by kind, to the groups you are in, or to those you created. You can put a group on a map, with a pin you pick for it, and the group's kind stays in the pin's corner. The map of groups shows every group with a place that you can see, and you narrow it with the same filters, by time and by pin. A map in a group can also hold tens of thousands of places that an app brings in from a list, such as the rows of an open dataset: they stay on that map, and the map of groups leaves them out. You can also draw a group an area, like a local community's, and the map then shows what lies in it and which areas a place lies in. You can also give a group a route, such as a walk, a race or a bike path: draw it or bring it from a GPX, KML or GeoJSON file, and the map shows where it goes and which areas it passes through. A search finds a group even when you type its name without diacritics, in Latin or in Cyrillic. From a group's page, one tap shows it on the map of groups. You can follow a group you see even when you are not its member, and its notices then come to you apart from the messages, with their own counter."
+msgstr "Гранај групе колико год треба. Свака је јавна или приватна, подгрупа може да наследи чланове и улоге, а број непрочитаних порука сабира се кроз цело стабло. На групу можеш да реагујеш као и на поруку. Нову групу почињеш од готове поставке: чет, фолдер, обавештења, фид, гласања, форма, мапа или страница. Листу подгрупа после сужаваш по врсти, по томе где си члан или чији си аутор. Групу можеш да ставиш на мапу, са пином који јој изабереш, а врста групе остаје у углу пина. Мапа група приказује све групе са местом које видиш, а сужаваш је истим филтерима, по времену и по пину. Мапа у групи може да држи и десетине хиљада места која апликација унесе са списка, као редове отворених података: она остају на тој мапи, а мапа група их изоставља. Групи можеш да нацрташ и подручје, као месној заједници, па на мапи видиш шта је у њему и у којим подручјима је неко место. Групи можеш да даш и руту, као шетњи, трци или бициклистичкој стази: нацрташ је или донесеш из GPX, KML или GeoJSON фајла, а мапа показује куда иде и кроз која подручја пролази. Претрага налази групу и кад јој име укуцаш без квачица, латиницом или ћирилицом. Са странице групе једним додиром је видиш на мапи група. Групу коју видиш можеш да запратиш и кад ниси њен члан, па ти њена обавештења стижу одвојено од порука, са својим бројачем."
 
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:206
 #, elixir-autogen, elixir-format
@@ -4984,12 +4990,13 @@ msgstr "Форма је спремна. Напиши питања, па је о�
 msgid "Too many requests in a short time. Try again in %{minutes} min."
 msgstr "Превише захтева у кратком року. Покушај поново за %{minutes} мин."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1102
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1163
 #, elixir-autogen, elixir-format
 msgid "Counting took too long. Try narrowing it down."
 msgstr "Бројање је трајало предуго. Покушај да сузиш избор."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1363
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1578
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1676
 #, elixir-autogen, elixir-format
 msgid "Too many requests in a short time. Try again shortly."
 msgstr "Превише захтева у кратком року. Покушај поново ускоро."
@@ -5134,7 +5141,7 @@ msgstr "Помоћ и волонтирање"
 msgid "Home and lodging"
 msgstr "Дом и смештај"
 
-#: lib/potok_ide_web/pin_icons.ex:197
+#: lib/potok_ide_web/pin_icons.ex:198
 #, elixir-autogen, elixir-format
 msgid "Idea and initiative"
 msgstr "Идеја и иницијатива"
@@ -5213,7 +5220,7 @@ msgstr "Место"
 msgid "Places and services"
 msgstr "Места и услуге"
 
-#: lib/potok_ide_web/pin_icons.ex:196
+#: lib/potok_ide_web/pin_icons.ex:197
 #, elixir-autogen, elixir-format
 msgid "Power and outages"
 msgstr "Струја и кварови"
@@ -5244,7 +5251,7 @@ msgstr "Сервис и мајстори"
 msgid "Reports and safety"
 msgstr "Пријаве и безбедност"
 
-#: lib/potok_ide_web/pin_icons.ex:194
+#: lib/potok_ide_web/pin_icons.ex:195
 #, elixir-autogen, elixir-format
 msgid "Safety"
 msgstr "Безбедност"
@@ -5300,7 +5307,7 @@ msgstr "Превоз и достава"
 msgid "Unless you pick another, the pin shows the kind of group, like the mark on its picture. A pin you pick keeps the kind in its corner."
 msgstr "Ако не изабереш други, пин показује врсту групе, као знак на њеној слици. Пин који изабереш задржава врсту у углу."
 
-#: lib/potok_ide_web/pin_icons.ex:195
+#: lib/potok_ide_web/pin_icons.ex:196
 #, elixir-autogen, elixir-format
 msgid "Waste and recycling"
 msgstr "Отпад и рециклажа"
@@ -5588,7 +5595,7 @@ msgstr "Подручје, као код месне заједнице, покр�
 #: lib/potok_ide_web/live/group_live/show/location_editor.ex:95
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:117
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:842
-#: lib/potok_ide_web/pin_icons.ex:292
+#: lib/potok_ide_web/pin_icons.ex:293
 #, elixir-autogen, elixir-format
 msgid "Area"
 msgstr "Подручје"
@@ -5873,7 +5880,7 @@ msgstr "Обрни смер"
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:636
 #: lib/potok_ide_web/live/group_live/show/location_editor.ex:96
 #: lib/potok_ide_web/pin_icons.ex:183
-#: lib/potok_ide_web/pin_icons.ex:295
+#: lib/potok_ide_web/pin_icons.ex:296
 #, elixir-autogen, elixir-format
 msgid "Route"
 msgstr "Рута"
@@ -6300,6 +6307,26 @@ msgstr[0] "стигло до %{count} пратиоца"
 msgstr[1] "стигло до %{count} пратиоца"
 msgstr[2] "стигло до %{count} пратилаца"
 
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1416
+#, elixir-autogen, elixir-format
+msgid "From 1 to %{count} groups at a time."
+msgstr "Од 1 до %{count} група одједном."
+
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:922
+#, elixir-autogen, elixir-format
+msgid "Some of these groups were saved in between. Send them again."
+msgstr "Неке од ових група су у међувремену сачуване. Пошаљи их поново."
+
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1583
+#, elixir-autogen, elixir-format
+msgid "The map took too long. Zoom in and try again."
+msgstr "Мапа се предуго учитава. Приближи је и покушај поново."
+
+#: lib/potok_ide_web/pin_icons.ex:194
+#, elixir-autogen, elixir-format
+msgid "Warning"
+msgstr "Упозорење"
+
 #: lib/potok_ide_web/controllers/page_html/help.html.heex:49
 #, elixir-autogen, elixir-format
 msgid "Back to the top"
@@ -6313,7 +6340,6 @@ msgstr "Садржај"
 
 #: lib/potok_ide_web/components/layouts.ex:328
 #: lib/potok_ide_web/components/layouts.ex:526
-#: lib/potok_ide_web/controllers/page_controller.ex:119
 #: lib/potok_ide_web/controllers/page_html/help.html.heex:26
 #, elixir-autogen, elixir-format
 msgid "Help"

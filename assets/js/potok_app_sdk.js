@@ -280,8 +280,10 @@ const listParams = (options = {}) => ({
   match: options.match ?? null,
 })
 
-// What an app may set on a group below it. A field left out stays as it is.
-const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, picture} = {}) =>
+// What an app may set on a group below it. A field left out stays as it is;
+// `lat` and `lng` both null take its place on a map away, `pin` null shows its
+// kind's.
+const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, picture, lat, lng, pin} = {}) =>
   Object.fromEntries(
     Object.entries({
       name,
@@ -290,8 +292,23 @@ const childParams = ({name, description, descriptionFormat, isPublic, inheritsMe
       is_public: isPublic,
       inherits_members: inheritsMembers,
       picture,
+      lat,
+      lng,
+      pin,
     }).filter(([_field, value]) => value !== undefined)
   )
+
+// A child of `createChildren`: what `childParams` takes, and the app's `key`.
+const newChildParams = ({key, ...attrs} = {}) => ({
+  ...childParams(attrs),
+  ...(key === undefined ? {} : {key}),
+})
+
+// The filters of a big map's view, or of the spot of a cluster.
+const placeFilters = ({search, pins} = {}) => ({
+  ...(typeof search === "string" && search.trim() !== "" ? {search} : {}),
+  ...(Array.isArray(pins) && pins.length > 0 ? {pins} : {}),
+})
 
 const potok = {
   // With `{collection}` the value goes into that collection, as its rule in the
@@ -467,6 +484,19 @@ const potok = {
 
   createChild: attrs => call("create_child", childParams(attrs)),
 
+  // Up to 100 children at once, all or none: `invalid_group` with the `index`
+  // of the one that failed, and nothing saved. A child whose `key` (1 to 64
+  // characters, unique under this group) is there already is not made again:
+  // `{ok: true, groups: [{id, key, created}]}` in the order sent, `created`
+  // false for those. So a call that timed out can be sent again as it was.
+  // One write for the rate limit; open pages hear of the call once. Groups
+  // with a key are records: the root's map does not show them.
+  createChildren: (children, options = {}) =>
+    call("create_children", {
+      children: Array.isArray(children) ? children.map(newChildParams) : children,
+      ...(options.onExisting === undefined ? {} : {on_existing: options.onExisting}),
+    }),
+
   updateChild: (id, attrs) => call("update_child", {...childParams(attrs), id}),
 
   // Closes the group again, and its inherited members leave.
@@ -538,7 +568,32 @@ const potok = {
   // `areas` are the ids of the areas among these places that hold this one,
   // smallest first (an area holds another only when it is the bigger one; a
   // route lies in every area it passes through).
-  listPlaces: () => call("list_places"),
+  //
+  // With a view, `{bbox: [west, south, east, north], zoom, search, pins,
+  // extent, counts}`, a map of up to 2000 places gets them all as above, with
+  // `mode: "all"`, and a bigger one what its view shows, gathered by Potok
+  // into cells of about 64 pixels: `{ok: true, mode: "view", places (each
+  // alone in its cell), clusters: [{count, lat, lng, bounds: [[south, west],
+  // [north, east]], tones: {tone: count}}], total, truncated}`, with `extent:
+  // {count, bounds}` when asked for (`extent: true`) and `pins: [{pin, count}]`
+  // over the whole map (`counts: true`). `search` and `pins` (keys of
+  // `pins.icons`, and "kind") filter a big map only. Ask again when the view
+  // moves; a view slower than 4 seconds is `timeout`.
+  listPlaces: view =>
+    view === undefined
+      ? call("list_places")
+      : call("list_places", {
+          bbox: view.bbox,
+          zoom: view.zoom,
+          ...placeFilters(view),
+          ...(view.extent === true ? {extent: true} : {}),
+          ...(view.counts === true ? {counts: true} : {}),
+        }),
+
+  // The places of a big map whose pins stand inside `bounds` ([[south, west],
+  // [north, east]], edges included), by name, at most 50: what a cluster holds
+  // that cannot spread any further. `{ok: true, places, has_more}`.
+  listPlacesAt: (bounds, options = {}) => call("list_places_at", {bounds, ...placeFilters(options)}),
 
   // The shapes of areas and routes among `listPlaces`, simplified for `zoom`
   // (at most 100 ids): `{ok: true, level, shapes: [{id, v, geojson}]}`, where

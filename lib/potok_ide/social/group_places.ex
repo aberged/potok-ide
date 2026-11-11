@@ -6,7 +6,8 @@ defmodule PotokIde.Social.GroupPlaces do
   (`?place=`).
 
   A group is seen by whoever may see it (`Visibility`): its members and, for
-  a public group, every signed-in profile. The root has no place.
+  a public group, every signed-in profile. The root has no place, and records
+  (`Group.external_key`) are left out: only their own map shows them.
   """
 
   import Ecto.Query
@@ -123,9 +124,11 @@ defmodule PotokIde.Social.GroupPlaces do
     end
   end
 
-  # The groups with a place the profile may see.
+  # The groups with a place the profile may see. Records (`Group.external_key`)
+  # stay on their own map: thousands of rows of a dataset are no place to pick
+  # (and the index the nearest come from holds none).
   defp placed(%Profile{} = profile) do
     Visibility.plain_groups(profile)
-    |> where([g], not is_nil(g.latitude) and not g.is_root)
+    |> where([g], not is_nil(g.latitude) and not g.is_root and is_nil(g.external_key))
   end
 end

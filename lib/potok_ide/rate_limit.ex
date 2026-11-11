@@ -34,6 +34,13 @@ defmodule PotokIde.RateLimit do
     app_heavy_read: {120, :timer.minutes(1)},
     # Places an app adds on a map (`createPlace`), per profile: each is a group.
     app_create_place: {20, :timer.hours(1)},
+    # Calls of `createChildren`, per profile, each up to 100 groups: a year of
+    # an open dataset (some 35,000 rows) fits in a fraction of it, a runaway
+    # loop does not fill the database.
+    app_create_children: {2_000, :timer.hours(1)},
+    # Views of a big map app (`listPlaces` with a view, `listPlacesAt`), per
+    # profile on all its pages, as for the root's map.
+    app_map_view: {300, :timer.minutes(1)},
     # Views of the root's map, per profile on all its pages: the map asks once
     # it stops moving, so even a busy minute asks a few dozen times.
     root_map_view: {300, :timer.minutes(1)},
@@ -59,6 +66,8 @@ defmodule PotokIde.RateLimit do
           | :email_change
           | :app_heavy_read
           | :app_create_place
+          | :app_create_children
+          | :app_map_view
           | :root_map_view
           | :value_search
           | :group_notice

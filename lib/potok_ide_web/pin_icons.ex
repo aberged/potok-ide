@@ -191,6 +191,7 @@ defmodule PotokIdeWeb.PinIcons do
   def label("place"), do: gettext("Place")
   def label("problem"), do: gettext("Problem to report")
   def label("emergency"), do: gettext("Danger")
+  def label("warning"), do: gettext("Warning")
   def label("safety"), do: gettext("Safety")
   def label("waste"), do: gettext("Waste and recycling")
   def label("power"), do: gettext("Power and outages")

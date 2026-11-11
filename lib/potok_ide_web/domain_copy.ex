@@ -188,6 +188,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "latitude"), do: dgettext("domain_map", "latitude on a map")
   defp own_field("Group", "longitude"), do: dgettext("domain_map", "longitude on a map")
   defp own_field("Group", "pin_icon"), do: dgettext("domain_map", "pin on a map")
+  defp own_field("Group", "external_key"), do: dgettext("domain_map", "an app's own key")
   defp own_field("Group", "area"), do: dgettext("domain_map", "area on a map, as its border")
   defp own_field("Group", "route"), do: dgettext("domain_map", "route on a map, as its line")
 
@@ -759,6 +760,10 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  def check_text("groups_external_key_check") do
+    dgettext("domain_map", "An app's key for a group has from 1 to 64 characters.")
+  end
+
   def check_text("groups_area_check") do
     dgettext("domain_map", "An area on a map always has its pin as well.")
   end
@@ -1060,7 +1065,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders, groups that run along a route with their lines and lengths, and each place with the areas it lies in or passes through, so the app draws the areas and routes and shows only the groups inside one area. That is how a group becomes a map. The root needs no such app: it has a map of its own."
+              "It gets the <Group>groups</Group> right under it that have a place on a map, with the pin each one shows, and whoever may make a sub-group there can add one where they tap. A tap on a pin opens that group's description over the app, where its own app, a form or a poll, works with that group's rights. Among them, groups that cover an area come with their borders, groups that run along a route with their lines and lengths, and each place with the areas it lies in or passes through, so the app draws the areas and routes and shows only the groups inside one area. A map of more than 2000 places gets only what its view shows, which the server gathers into numbered circles as on the root's map, filtered by name and by the pins the groups show. That is how a group becomes a map. The root needs no such app: it has a map of its own."
             )
         },
         %{
@@ -1069,7 +1074,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back. A new one opens its chat if the app's group has. That is how one app writes what another shows, and a feed gets its editors' desk."
+              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
             )
         },
         %{
@@ -1252,6 +1257,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Group>group</Group> can have a place: both coordinates or neither, set by whoever may edit it, with a pin picked from a list or the one of its kind, and a picked pin keeps the kind's mark in its corner, as the group's picture does. A map app shows the places of the groups right under its own, each to whoever sees that group. A group added from the map is an ordinary sub-group, made by whoever may make one there. The map's pictures come through Potok, so the map service does not see who is looking. The root has no map app but a map of its own: the places of every group the viewer sees, at any depth, which the server gathers into numbered circles where they stand close, narrowed by the filters of the sub-groups, by the pins the groups show and by when a group appeared or was last written in, at any time until the viewer picks a time frame. A search by a group's name, there and among the sub-groups, takes no notice of diacritics or of a name written in Latin or Cyrillic."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Records stay on their own map"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Group>group</Group> an app made with a key of its own is a record, such as one row of an open dataset brought in with thousands of others. The key is set once and is unique under its parent, so bringing the same list in again makes no duplicates. A record is an ordinary group, seen by whoever may see it, but it stands only on its own map: the root's map and the place picker of events leave records out, and the unread counts of the profile that brought them in do not follow them. Pages hear of a hundred records made at once as of one change."
           )
       },
       %{

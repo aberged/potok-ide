@@ -26,6 +26,11 @@ Mesto dobija grupa na dva načina:
 
 - u svojim podešavanjima, na kartici **Lokacija**: dodir ili prevlačenje pina na mapi, ili koordinate, i izbor pina. To sme ko sme da uređuje tu grupu.
 - sa mape, dugmetom **Dodaj mesto**: krstić u sredini, naziv i vrsta. Nastaje podgrupa kao iz menija „Kreiraj podgrupu“, sa istim podrazumevanim podešavanjima. To sme član mape koji sme da pravi podgrupe, najviše 20 mesta na sat.
+- iz druge aplikacije u istoj grupi, pozivima `createChild`/`updateChild` sa `lat`, `lng` i `pin`, ili `createChildren` za do 100 odjednom. Tako aplikacija za uvoz (`potok-saobracajke`) od redova otvorenih podataka pravi mesta.
+
+## Zapisi
+
+Grupa koju je aplikacija napravila sa ključem (`createChildren`, `Group.external_key`) je zapis, kao jedna saobraćajna nezgoda iz tabele MUP-a. Ključ se upisuje jednom i jedinstven je ispod roditelja, pa ponovni uvoz istog fajla ne pravi duplikate. Zapis je obična grupa sa mestom i stoji na mapi svoje grupe, ali ga **mapa korena i biranje mesta za događaje izostavljaju**: inače bi stotine hiljada tačaka zatrpale mapu korena i usporile svako njeno pomeranje. Indeksi koje mapa korena čita (`groups_place_index`, `groups_pin_index`) zato i ne drže zapise. Nepročitano profila koji ih je uneo ih ne prati, pa uvoz radi poseban profil, kao kod uvoza područja. Probni uvoz se briše sa `PotokIde.Social.RecordImport.start_remove(parent_id, profile_id)` preko `bin/potok_ide rpc`.
 
 ## Klik na pin
 
@@ -37,13 +42,19 @@ Kad gledalac zatvori dijalog, mapa dobija `onGroupSheetClose(id)` i pušta pin.
 
 Mesta koja su na ekranu bliže od 60 piksela skupljaju se u krug sa brojem, pinovi područja kao i svi ostali. Obod kruga je prsten podeljen po tonovima pinova u njemu (mesta i usluge, zajednica, priroda, prijave, vrste grupa), pa se mešavina vidi pre otvaranja. Dodir otvara krug za nivo bliže. Mesta na istoj adresi ostaju zajedno do poslednjeg nivoa, pa dodir na takav krug otvara njihovu listu.
 
+## Velike mape
+
+Do 2000 mesta mapa ih dobija sva odjednom i sama ih skuplja u krugove. Preko toga, kao godina saobraćajnih nezgoda sa oko 35.000 tačaka, `listPlaces` sa pogledom (`bbox`, `zoom`) odgovara sa `mode: "view"`: server skuplja neposredne podgrupe u ćelije od oko 64 piksela, istim upitom kao mapa korena (`Social.list_map_cells/4` sa filterom `:parent_id`), a mapa pita ponovo kad se pomeri. Pretraga po imenu i filter po pinu tada idu na server, a dodir na krug koji se više ne raspada otvara listu (`listPlacesAt`, najviše 50 po imenu). Indeks `groups_placed_parent_index (parent_id, latitude, longitude)` drži taj upit brzim.
+
+Filter po pinu se pojavi čim na mapi postoje bar dva različita pina, a urednik mape čipovima daje svoja imena (legenda u konfiguraciji, npr. `problem` = „Poginuli“).
+
 ## Kad se nešto promeni
 
-Kad se podgrupa napravi, promeni ili obriše, stranica javi aplikaciji `onSubgroupsChange` bez ikakvih podataka, jer bi id mogao da oda grupu koju gledalac ne vidi. Mapa onda ponovo pita `listPlaces`, svaki gledalac u svom nasumičnom trenutku do dve sekunde.
+Kad se podgrupa napravi, promeni ili obriše, stranica javi aplikaciji `onSubgroupsChange` bez ikakvih podataka, jer bi id mogao da oda grupu koju gledalac ne vidi. Mapa onda ponovo pita `listPlaces`, svaki gledalac u svom nasumičnom trenutku do dve sekunde. `createChildren` javlja jednom za ceo poziv, a velika mapa pita ponovo najviše jednom u 10 sekundi, pa uvoz dok je mapa otvorena ne zatrpava ni stranicu ni server.
 
 ## Mapa korena
 
-Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:root/map`, `RootMapState` i `RootMapTab` u Potoku, kuka `root_map.js`), na kom su sve grupe sa mestom koje gledalac vidi, na bilo kojoj dubini: grupe u kojima je član i javne grupe, uz isti prekidač **Javne grupe** kao u podgrupama korena. Threadovi i direktni razgovori nisu na njoj.
+Koren nema aplikaciju Mapa. Umesto nje ima svoj tab **Mapa grupa** (`/groups/:root/map`, `RootMapState` i `RootMapTab` u Potoku, kuka `root_map.js`), na kom su sve grupe sa mestom koje gledalac vidi, na bilo kojoj dubini: grupe u kojima je član i javne grupe, uz isti prekidač **Javne grupe** kao u podgrupama korena. Threadovi, direktni razgovori i zapisi (vidi gore) nisu na njoj.
 
 Filteri su isti kao u podgrupama korena (član ili autor, vrsta, ime), uz filter po pinu (meni **Pin**, jedan ili više pinova, po delovima kao u biraču pina) i filter po vremenu: poslednja 24 sata, 7 ili 30 dana, 12 meseci, bilo kada, ili od datuma do datuma. Vreme se računa po nastanku grupe (kad je nastala ili postala javna, kao u Feed-u) ili po poslednjoj poruci. Mapa se otvara na svim vremenima. Pretraga po imenu (i u podgrupama i u meniju **Područje**) ne mari za velika slova, kvačice ni pismo: „cacak“ nalazi „Čačak“, „beograd“ nalazi „Београд“ (`NameSearch`, `potok_fold/1` u bazi).
 

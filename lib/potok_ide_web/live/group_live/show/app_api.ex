@@ -95,23 +95,32 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   @signed_in_methods ~w(
     list_subgroups open_group get_group list_children get_child
-    create_child update_child withdraw_child preview_description
+    create_child create_children update_child withdraw_child preview_description
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
     set_notifications ensure_file_groups file_url prepare_upload
-    map_config list_places create_place show_group place_shapes
+    map_config list_places list_places_at create_place show_group place_shapes
   )
 
-  # Every pin a map gets in one call; the rest waits for a map that reads by area.
+  # Every pin a map gets in one call; a bigger map reads by view, gathered on
+  # the server (`list_places` with `bbox`). Tests set a smaller one.
   @max_places 2_000
   # Borders a map may ask for at once.
   @max_shapes 100
+  # The places of a spot a big map lists (`list_places_at`).
+  @max_spot 50
+
+  # Sub-groups one `create_children` makes, and the length of their keys.
+  @max_children_per_call 100
+  @max_key_length 64
 
   # A filter of a page of values, as JSON: kept small, as it is matched in SQL.
   @max_match_bytes 4_096
 
-  # All an app may set on a group. Never `uses_api`: an app that made another
-  # app would run its code for every viewer of that group.
+  # All an app may set on a group, besides its place (`place_attrs/1`). Never
+  # `uses_api`: an app that made another app would run its code for every
+  # viewer of that group. Never `external_key` here: only `create_children`
+  # gives one, once.
   @child_fields ~w(name description description_format is_public inherits_members)
 
   def new_bucket do
@@ -758,20 +767,41 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
      }, socket}
   end
 
-  defp run("list_places", _params, socket) do
+  # With a view (`bbox`, `zoom`): a map of up to `max_places/0` gets them all,
+  # as without one, and says so (`mode: "all"`); a bigger one gets what its
+  # view shows, gathered into cells on the server (`mode: "view"`).
+  defp run("list_places", %{"bbox" => _bbox} = params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
-    with :ok <- heavy_read(socket) do
-      {places, truncated?} = Social.list_visible_placed_children(group, profile, @max_places)
-      areas = GroupAreas.among(places)
-
-      {%{
-         ok: true,
-         places: Enum.map(places, &map_place_payload(&1, areas)),
-         truncated: truncated?
-       }, socket}
+    with {:ok, view} <- places_view(params) do
+      if Social.placed_children_more_than?(group, profile, max_places()),
+        do: places_in_view(view, socket),
+        else: all_places(socket, %{mode: "all"})
     else
       {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("list_places", _params, socket), do: all_places(socket, %{})
+
+  # A cluster of a big map that cannot spread any further.
+  defp run("list_places_at", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with [[south, west], [north, east]] <- params["bounds"],
+         [_, _, _, _] <- map_numbers([south, west, north, east]),
+         {:ok, filters} <- places_filters(params, group),
+         :ok <- map_view_turn(profile),
+         {:ok, {places, more?}} <-
+           Social.list_map_spot(profile, filters, [[south, west], [north, east]], @max_spot) do
+      areas = GroupAreas.among(places)
+
+      {%{ok: true, places: Enum.map(places, &map_place_payload(&1, areas)), has_more: more?},
+       socket}
+    else
+      {:error, :timeout} -> {map_timeout(), socket}
+      {:error, %{ok: false} = reply} -> {reply, socket}
+      _invalid -> {error("invalid_place", nil), socket}
     end
   end
 
@@ -859,12 +889,42 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{group: group, current_profile: profile} = socket.assigns
 
     with :ok <- require_child_manager(socket),
+         {:ok, place} <- child_place(params),
          {:ok, socket} <- take_write_token(socket) do
-      # A story keeps the comments of its feed: apps need not know of open chats.
-      attrs = Map.put(child_attrs(params), "has_public_chat", group.has_public_chat)
-
-      Social.create_group(profile, group, attrs)
+      Social.create_group(profile, group, new_child_attrs(params, place, group))
       |> child_reply(socket)
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # Many sub-groups at once, all or none, for one write: what an app brings in
+  # from a list. A child whose `key` is there already is not made again.
+  defp run("create_children", params, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with :ok <- require_child_manager(socket),
+         :ok <- on_existing(params["on_existing"]),
+         {:ok, children} <- new_children(params["children"], group),
+         :ok <- children_turn(profile),
+         {:ok, socket} <- take_write_token(socket) do
+      case Social.create_children(profile, group, children) do
+        {:ok, rows} ->
+          groups = Enum.map(rows, &%{id: &1.id, key: &1.key, created: &1.created?})
+          {%{ok: true, groups: groups}, socket}
+
+        {:error, {:invalid, index, _changeset}} ->
+          {invalid_child(index), socket}
+
+        {:error, :conflict} ->
+          {error(
+             "conflict",
+             gettext("Some of these groups were saved in between. Send them again.")
+           ), socket}
+
+        {:error, _not_allowed} ->
+          {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+      end
     else
       {:error, reply} -> {reply, socket}
     end
@@ -875,8 +935,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     with :ok <- require_child_manager(socket),
          {:ok, child} <- fetch_editable_child(params, socket),
+         {:ok, place} <- child_place(params),
          {:ok, socket} <- take_write_token(socket) do
-      Social.update_group(profile, child, child_attrs(params))
+      Social.update_group(profile, child, Map.merge(child_attrs(params), place))
       |> child_reply(socket)
     else
       {:error, reply} -> {reply, socket}
@@ -1275,6 +1336,258 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
+  # A story keeps the comments of its feed: apps need not know of open chats.
+  defp new_child_attrs(params, place, group) do
+    params
+    |> child_attrs()
+    |> Map.merge(place)
+    |> Map.put("has_public_chat", group.has_public_chat)
+  end
+
+  defp child_place(params) do
+    case place_attrs(params) do
+      {:ok, place} -> {:ok, place}
+      :error -> {:error, error("invalid_group", gettext("Could not save the group."))}
+    end
+  end
+
+  # Where a sub-group stands on a map: `lat` and `lng` both or neither, both
+  # null for no place, and its `pin` (`GroupPins`), null for its kind's.
+  # Raw `latitude` or `pin_icon` keys are not taken.
+  defp place_attrs(params) do
+    with {:ok, place} <- child_coordinates(params),
+         {:ok, pin} <- child_pin(params) do
+      {:ok, Map.merge(place, pin)}
+    end
+  end
+
+  defp child_coordinates(params) do
+    case {Map.has_key?(params, "lat") or Map.has_key?(params, "lng"), params["lat"],
+          params["lng"]} do
+      {false, _lat, _lng} ->
+        {:ok, %{}}
+
+      {true, nil, nil} ->
+        {:ok, %{"latitude" => nil, "longitude" => nil}}
+
+      {true, lat, lng} ->
+        with {:ok, lat} <- coordinate(lat, 90),
+             {:ok, lng} <- coordinate(lng, 180) do
+          {:ok, %{"latitude" => lat, "longitude" => lng}}
+        end
+    end
+  end
+
+  defp child_pin(%{"pin" => pin}) do
+    with {:ok, pin} <- place_pin(pin), do: {:ok, %{"pin_icon" => pin}}
+  end
+
+  defp child_pin(_params), do: {:ok, %{}}
+
+  defp on_existing(nil), do: :ok
+  defp on_existing("skip"), do: :ok
+
+  defp on_existing(_other),
+    do: {:error, error("invalid_group", gettext("Could not save the group."))}
+
+  # The children as `Social.create_children/3` takes them, each checked as
+  # `create_child` checks one; the first that fails answers with its index.
+  defp new_children(children, group)
+       when is_list(children) and children != [] and
+              length(children) <= @max_children_per_call do
+    children
+    |> Enum.with_index()
+    |> Enum.reduce_while({[], MapSet.new()}, fn {child, index}, {made, keys} ->
+      case new_child(child, group, keys) do
+        {:ok, attrs, keys} -> {:cont, {[attrs | made], keys}}
+        :error -> {:halt, {:error, invalid_child(index)}}
+      end
+    end)
+    |> case do
+      {:error, reply} -> {:error, reply}
+      {made, _keys} -> {:ok, Enum.reverse(made)}
+    end
+  end
+
+  defp new_children(children, _group) when is_list(children) do
+    {:error,
+     error(
+       "too_large",
+       gettext("From 1 to %{count} groups at a time.", count: @max_children_per_call)
+     )}
+  end
+
+  defp new_children(_children, _group),
+    do: {:error, error("invalid_group", gettext("Could not save the group."))}
+
+  # No picture in a batch: up to a million characters each, a hundred times.
+  defp new_child(%{"name" => name} = child, group, keys)
+       when is_binary(name) and not is_map_key(child, "picture") do
+    with {:ok, place} <- place_attrs(child),
+         {:ok, key} <- child_key(child["key"], keys) do
+      attrs =
+        child
+        |> new_child_attrs(place, group)
+        |> then(&if(key, do: Map.put(&1, "external_key", key), else: &1))
+
+      {:ok, attrs, if(key, do: MapSet.put(keys, key), else: keys)}
+    end
+  end
+
+  defp new_child(_child, _group, _keys), do: :error
+
+  defp child_key(nil, _keys), do: {:ok, nil}
+
+  defp child_key(key, keys) when is_binary(key) do
+    length = String.length(key)
+
+    if length in 1..@max_key_length and not String.match?(key, ~r/[\x00-\x1f\x7f]/) and
+         not MapSet.member?(keys, key),
+       do: {:ok, key},
+       else: :error
+  end
+
+  defp child_key(_key, _keys), do: :error
+
+  defp invalid_child(index) do
+    %{
+      ok: false,
+      error: "invalid_group",
+      message: gettext("Could not save the group."),
+      index: index
+    }
+  end
+
+  defp children_turn(profile) do
+    case RateLimit.hit(:app_create_children, profile.id) do
+      :ok ->
+        :ok
+
+      {:error, :rate_limited, _retry_after} ->
+        {:error,
+         error("rate_limited", gettext("Too many changes in a short time. Try again shortly."))}
+    end
+  end
+
+  defp max_places, do: Application.get_env(:potok_ide, :app_max_places, @max_places)
+
+  # Every place of a map that holds few enough, as a map got them before views.
+  defp all_places(socket, extra) do
+    %{group: group, current_profile: profile} = socket.assigns
+
+    with :ok <- heavy_read(socket) do
+      {places, truncated?} = Social.list_visible_placed_children(group, profile, max_places())
+      areas = GroupAreas.among(places)
+
+      {%{ok: true, places: Enum.map(places, &map_place_payload(&1, areas)), truncated: truncated?}
+       |> Map.merge(extra), socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # A big map's view: the box `[west, south, east, north]`, as the root's map
+  # sends it, the zoom, the filters, and what else the map asks for.
+  defp places_view(params) do
+    with [_, _, _, _] = bbox <- map_numbers(params["bbox"]),
+         zoom when is_integer(zoom) and zoom in 0..24 <- params["zoom"],
+         {:ok, filters} <- places_filters(params, nil) do
+      {:ok,
+       %{
+         bbox: bbox,
+         zoom: zoom,
+         filters: filters,
+         extent?: params["extent"] == true,
+         counts?: params["counts"] == true
+       }}
+    else
+      {:error, reply} -> {:error, reply}
+      _invalid -> {:error, error("invalid_place", nil)}
+    end
+  end
+
+  # `search` on the name and `pins` (keys of `GroupPins` and "kind"), over the
+  # direct sub-groups of `group`.
+  defp places_filters(params, group) do
+    with search when is_nil(search) or is_binary(search) <- params["search"],
+         pins when is_nil(pins) or is_list(pins) <- params["pins"] do
+      {:ok,
+       %{
+         parent_id: group && group.id,
+         search: search && String.slice(search, 0, 100),
+         pins: pins && Enum.filter(pins, &is_binary/1)
+       }}
+    else
+      _invalid -> {:error, error("invalid_place", nil)}
+    end
+  end
+
+  defp places_in_view(view, socket) do
+    %{group: group, current_profile: profile} = socket.assigns
+    filters = %{view.filters | parent_id: group.id}
+
+    with :ok <- map_view_turn(profile),
+         {:ok, %{view: cells, extent: extent}} <- load_child_map(profile, filters, view),
+         {:ok, pins} <- child_pin_counts(group, profile, view.counts?) do
+      areas = GroupAreas.among(cells.places)
+
+      reply =
+        %{
+          ok: true,
+          mode: "view",
+          places: Enum.map(cells.places, &map_place_payload(&1, areas)),
+          clusters: cells.clusters,
+          total: cells.total,
+          truncated: cells.truncated
+        }
+        |> then(&if(extent, do: Map.put(&1, :extent, extent), else: &1))
+        |> then(&if(pins, do: Map.put(&1, :pins, pins), else: &1))
+
+      {reply, socket}
+    else
+      {:error, :timeout} -> {map_timeout(), socket}
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp load_child_map(profile, filters, %{extent?: true} = view) do
+    Social.load_map(profile, filters, %{bbox: view.bbox, zoom: view.zoom})
+  end
+
+  defp load_child_map(profile, filters, view) do
+    with {:ok, cells} <- Social.list_map_cells(profile, filters, view.bbox, view.zoom) do
+      {:ok, %{view: cells, extent: nil}}
+    end
+  end
+
+  defp child_pin_counts(_group, _profile, false), do: {:ok, nil}
+
+  defp child_pin_counts(group, profile, true) do
+    with {:ok, counts} <- Social.count_child_places_by_pin(group, profile) do
+      {:ok, Enum.map(counts, fn {pin, count} -> %{pin: pin, count: count} end)}
+    end
+  end
+
+  defp map_view_turn(profile) do
+    case RateLimit.hit(:app_map_view, profile.id) do
+      :ok ->
+        :ok
+
+      {:error, :rate_limited, _retry_after} ->
+        {:error,
+         error("rate_limited", gettext("Too many requests in a short time. Try again shortly."))}
+    end
+  end
+
+  defp map_timeout,
+    do: error("timeout", gettext("The map took too long. Zoom in and try again."))
+
+  defp map_numbers(list) when is_list(list) do
+    if Enum.all?(list, &(is_number(&1) and abs(&1) <= 100_000)), do: list
+  end
+
+  defp map_numbers(_other), do: nil
+
   defp child_reply({:ok, %Group{} = child}, socket) do
     {%{ok: true, group: child_payload(child, socket.assigns.current_profile)}, socket}
   end
@@ -1476,7 +1789,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       description_format: to_string(child.description_format),
       can_edit: can_edit?,
       member_count: Social.count_group_members(child),
-      updated_at: child.updated_at
+      updated_at: child.updated_at,
+      key: child.external_key,
+      lat: child.latitude,
+      lng: child.longitude,
+      pin: GroupPins.pin(child)
     })
   end
 

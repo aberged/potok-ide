@@ -49,6 +49,7 @@ defmodule PotokIde.Social.GroupPins do
     # Reports and safety
     {"problem", "exclamation-triangle", :alert},
     {"emergency", "fire", :alert},
+    {"warning", "exclamation-circle", :reports},
     {"safety", "shield-check", :reports},
     {"waste", "trash", :reports},
     {"power", "bolt", :reports},

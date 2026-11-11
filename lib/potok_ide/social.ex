@@ -547,6 +547,114 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Makes `children` under `parent` in one transaction, all or none: what an app
+  brings in by the hundred (`AppApi`, `create_children`). Each child is attrs
+  as for `create_group/3`, with an optional `"external_key"`, the app's own
+  key, unique under `parent` and set once. A child whose key `parent` holds
+  already is not made again, so a list sent twice makes no duplicates.
+
+  Returns `{:ok, [%{id, key, created?}]}` in the order given, `{:error,
+  {:invalid, index, changeset}}` for the first child that cannot be saved,
+  `{:error, :conflict}` when another call took a key in between, or the
+  refusal of `create_group/3`, checked once for all.
+
+  Pages hear of it once, with one `child_group_changed` for the parent. The
+  creator's pages do not hear of the memberships in groups with a key:
+  records are not followed for unread (`member_group_ids/1`), and a message
+  for each of thousands would hold up the very page that brings them in.
+  """
+  def create_children(%Profile{} = creator, %Group{} = parent, children)
+      when is_list(children) do
+    with {:ok, base} <- checked_group_attrs(creator, parent, %{}) do
+      keys = for %{"external_key" => key} when is_binary(key) <- children, do: key
+
+      Repo.transaction(fn ->
+        existing = existing_child_keys(parent.id, keys)
+
+        children
+        |> Enum.with_index()
+        |> Enum.map(fn {attrs, index} ->
+          key = Map.get(attrs, "external_key")
+
+          case existing do
+            %{^key => id} when is_binary(key) ->
+              {%{id: id, key: key, created?: false}, nil}
+
+            _new ->
+              attrs = attrs |> Map.delete("external_key") |> Map.merge(base)
+              insert_child_quietly(creator, parent, attrs, key, index)
+          end
+        end)
+      end)
+      |> case do
+        {:ok, rows} ->
+          broadcast_children_created(creator, parent, for({_row, made} <- rows, made, do: made))
+          {:ok, Enum.map(rows, &elem(&1, 0))}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp existing_child_keys(_parent_id, []), do: %{}
+
+  defp existing_child_keys(parent_id, keys) do
+    from(g in Group,
+      where: g.parent_id == ^parent_id and g.external_key in ^Enum.uniq(keys),
+      select: {g.external_key, g.id}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
+  defp insert_child_quietly(creator, parent, attrs, key, index) do
+    case insert_group_quietly(creator, parent, attrs, nil, key) do
+      {:ok, group, changes} ->
+        {%{id: group.id, key: key, created?: true}, {group, changes}}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        if external_key_taken?(changeset),
+          do: Repo.rollback(:conflict),
+          else: Repo.rollback({:invalid, index, changeset})
+
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp external_key_taken?(%Ecto.Changeset{errors: errors}) do
+    Enum.any?(errors, fn
+      {:external_key, {_message, opts}} -> opts[:constraint] == :unique
+      _other -> false
+    end)
+  end
+
+  # One message to the parent's pages for the whole call, and the creator's
+  # memberships only for groups that are not records.
+  defp broadcast_children_created(_creator, _parent, []), do: :ok
+
+  defp broadcast_children_created(%Profile{} = creator, %Group{} = parent, made) do
+    groups = Enum.map(made, &elem(&1, 0))
+
+    broadcast_child_group_changed(
+      parent.id,
+      %Group{
+        id: hd(groups).id,
+        is_public: Enum.any?(groups, & &1.is_public),
+        inherits_members: Enum.any?(groups, & &1.inherits_members),
+        creator_id: creator.id
+      },
+      :created
+    )
+
+    for %Group{external_key: nil, id: id} <- groups,
+        do: broadcast_group_membership_changed(creator.id, id, :added)
+
+    made |> Enum.flat_map(&elem(&1, 1)) |> broadcast_inheritance_changes()
+  end
+
   defp insert_preset_feed(%Profile{} = creator, %Group{} = group, "feed") do
     insert_preset_group(
       creator,
@@ -622,13 +730,30 @@ defmodule PotokIde.Social do
     broadcast_inheritance_changes(changes)
   end
 
+  # A new group has no sub-groups yet, so only one that inherits has members to
+  # take in (`MemberInheritance.sync/3`, which finds nothing for any other).
+  # Asking anyway walks every inheriting group in the table: 12 ms a group
+  # among 35,000 records, too slow for groups made by the hundred.
+  defp inherit_new(repo, %Group{inherits_members: true, id: id}),
+    do: MemberInheritance.sync(repo, id)
+
+  defp inherit_new(_repo, %Group{}), do: []
+
   # The creator is a direct member and admin; an inheriting group then gets
   # the parent's members. It tells nobody: `broadcast_group_created/4` follows.
-  defp insert_group_quietly(%Profile{} = creator, %Group{} = parent, attrs, preset \\ nil) do
+  # `key` is the app's own (`create_children/3`), set once like `preset`.
+  defp insert_group_quietly(
+         %Profile{} = creator,
+         %Group{} = parent,
+         attrs,
+         preset \\ nil,
+         key \\ nil
+       ) do
     changeset =
       %Group{}
       |> Group.changeset(attrs)
       |> Ecto.Changeset.put_change(:preset, preset)
+      |> Ecto.Changeset.put_change(:external_key, key)
       |> validate_inheritance_parent(parent.id)
 
     Multi.new()
@@ -640,9 +765,7 @@ defmodule PotokIde.Social do
       })
     end)
     |> insert_admin_role(creator)
-    |> Multi.run(:inheritance, fn repo, %{group: group} ->
-      {:ok, MemberInheritance.sync(repo, group.id)}
-    end)
+    |> Multi.run(:inheritance, fn repo, %{group: group} -> {:ok, inherit_new(repo, group)} end)
     |> Repo.transaction()
     |> case do
       {:ok, %{group: group, inheritance: changes}} ->
@@ -1679,15 +1802,15 @@ defmodule PotokIde.Social do
       (
         SELECT COALESCE(array_agg(gm.group_id), '{}')
         FROM group_memberships gm
-        WHERE gm.profile_id = $1
-          AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+        JOIN groups g ON g.id = gm.group_id
+        WHERE gm.profile_id = $1 AND NOT g.is_root AND g.external_key IS NULL
       ),
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
       #{Notices.newest_notice_sql()}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v2_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v3_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -1722,12 +1845,14 @@ defmodule PotokIde.Social do
 
   @doc """
   The groups whose values count as unread for the profile: its memberships,
-  without the root. `nav_counts/2` has them too, for a page that loads those.
+  without the root and without records (`Group.external_key`), which an app
+  brings in by the thousand and nobody writes in. `nav_counts/2` has them
+  too, for a page that loads those.
   """
   def member_group_ids(%Profile{id: profile_id}) do
     from(gm in GroupMembership,
       join: g in assoc(gm, :group),
-      where: gm.profile_id == ^profile_id and not g.is_root,
+      where: gm.profile_id == ^profile_id and not g.is_root and is_nil(g.external_key),
       select: gm.group_id
     )
     |> Repo.all()
@@ -3423,6 +3548,21 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  Whether `group` has more than `limit` of what `list_visible_placed_children/3`
+  lists: too many for a map to take at once, so it reads by view.
+  """
+  def placed_children_more_than?(%Group{} = group, %Profile{} = profile, limit)
+      when is_integer(limit) and limit >= 0 do
+    visible_plain_groups(profile)
+    |> where([g], g.parent_id == ^group.id and not is_nil(g.latitude))
+    |> offset(^limit)
+    |> limit(1)
+    |> select([g], g.id)
+    |> Repo.one()
+    |> is_integer()
+  end
+
+  @doc """
   The group `id` the sheet of `parent`'s page may open, when the profile can
   see it: under the root any group, as the root's map shows them all, under
   any other group one of its direct sub-groups (`get_visible_child_group/3`).
@@ -3579,6 +3719,38 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  How many of `group`'s direct sub-groups with a place the profile may see
+  show each pin, as a map app's pin filter offers them: an icon's key
+  (`GroupPins`), `"picture"`, or `"kind"` for those that show their kind.
+  `{:ok, [{pin, count}]}`, the most shown first, or `{:error, :timeout}`.
+  """
+  def count_child_places_by_pin(%Group{} = group, %Profile{} = profile) do
+    pins =
+      from(g in visible_plain_groups(profile),
+        where: g.parent_id == ^group.id and not is_nil(g.latitude),
+        select: %{
+          pin:
+            fragment(
+              "CASE WHEN ? = ANY(?::text[]) THEN ? ELSE 'kind' END",
+              g.pin_icon,
+              ^GroupPins.keys(),
+              g.pin_icon
+            )
+        }
+      )
+
+    Repo.with_statement_timeout(
+      @map_timeout_ms,
+      fn ->
+        from(p in subquery(pins), group_by: p.pin, select: {p.pin, count()})
+        |> Repo.all()
+        |> Enum.sort_by(fn {pin, count} -> {-count, pin} end)
+      end,
+      jit: false
+    )
+  end
+
   defp map_view_query(profile, filters, bbox, zoom) do
     cells_per_axis = 4.0 * Integer.pow(2, zoom |> max(0) |> min(24))
     lat = "LEAST(GREATEST(p.latitude, -#{@mercator_max_lat}), #{@mercator_max_lat})"
@@ -3705,8 +3877,13 @@ defmodule PotokIde.Social do
 
   # The groups of the root's map under `filters`, as a `placed` table for
   # the query that follows, with `$name` parameters (`MapSql`), and their
-  # values: `{sql, values}`. Only the filters picked are in the SQL. `scope`
-  # says which of them a query wants:
+  # values: `{sql, values}`. Only the filters picked are in the SQL.
+  #
+  # With `:parent_id` they are the direct sub-groups of that group the
+  # profile may see instead, records among them: what a map app shows. The
+  # root's map leaves records (`Group.external_key`) out.
+  #
+  # `scope` says which of the filters a query wants:
   #
   # * `:view`: in a box (`box` values), by pin or, for an area drawn as a
   #   border or a route drawn as a line, by the shape itself reaching into
@@ -3731,6 +3908,7 @@ defmodule PotokIde.Social do
     areas = map_area_filter(Map.get(filters, :areas))
     {pins, kind_pin?} = map_pin_filter(Map.get(filters, :pins))
     time = map_time(filters)
+    parent_id = Map.get(filters, :parent_id)
 
     moment =
       case time do
@@ -3741,10 +3919,14 @@ defmodule PotokIde.Social do
     conditions =
       [
         "g.latitude IS NOT NULL",
-        "g.parent_id IS NOT NULL",
+        if(parent_id, do: "g.parent_id = $parent::bigint", else: "g.parent_id IS NOT NULL"),
+        !parent_id && "g.external_key IS NULL",
         "g.parent_value_id IS NULL",
         "g.is_direct = FALSE",
-        Visibility.listed_sql("g", Map.get(filters, :public?) == true),
+        if(parent_id,
+          do: Visibility.may_see_sql("g", "$profile"),
+          else: Visibility.listed_sql("g", Map.get(filters, :public?) == true)
+        ),
         !places? &&
           map_shapes_only_sql(
             Map.get(filters, :shapes?) == true,
@@ -3759,7 +3941,7 @@ defmodule PotokIde.Social do
         to && "#{moment} < $to::timestamp",
         map_pins_sql(pins, kind_pin?),
         areas && "g.id <> ALL($areas::bigint[])",
-        areas && map_inside_areas_sql(),
+        areas && map_inside_areas_sql(is_nil(parent_id)),
         map_scope_sql(scope, shapes?, routes?)
       ]
       |> Enum.filter(& &1)
@@ -3787,6 +3969,7 @@ defmodule PotokIde.Social do
     values =
       Map.merge(extra, %{
         profile: profile_id,
+        parent: parent_id,
         search: search,
         kind: kind,
         from: from,
@@ -3847,11 +4030,14 @@ defmodule PotokIde.Social do
   # through (its pin is its start). One join from the areas to the pins
   # (`groups_pin_index`) and one to the routes (`groups_route_index`), not
   # one test per group.
-  defp map_inside_areas_sql do
+  defp map_inside_areas_sql(root?) do
+    # The root's map reads the pins through `groups_pin_index`, which holds no records.
+    records = if root?, do: " AND p.external_key IS NULL", else: ""
+
     """
     g.id IN (
       SELECT p.id FROM groups fa
-      JOIN groups p ON p.latitude IS NOT NULL
+      JOIN groups p ON p.latitude IS NOT NULL#{records}
         AND ST_Intersects(fa.area, ST_SetSRID(ST_MakePoint(p.longitude, p.latitude), 4326))
         AND (p.area_size IS NULL OR p.area_size < fa.area_size)
       WHERE fa.id = ANY($areas::bigint[]) AND fa.area IS NOT NULL

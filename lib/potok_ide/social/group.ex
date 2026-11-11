@@ -46,6 +46,12 @@ defmodule PotokIde.Social.Group do
     field :longitude, :float
     # The pin it shows there (`GroupPins`); nil shows its kind.
     field :pin_icon, :string
+    # An app's own key for a group it made (`Social.create_children/4`),
+    # unique under the parent, so that the same list brought in again makes no
+    # duplicates. A group with a key is a record: its own map shows it, the
+    # root's map and the place picker of events do not, and unread counts do
+    # not follow it. Set once when the group is made, never cast.
+    field :external_key, :string
     # The area it covers, when its place is an area rather than a point: a
     # border of one or more polygons (`GroupAreas`). Its pin then stands inside
     # it, set by `Social.update_group/3`. Loaded only on demand
@@ -142,6 +148,11 @@ defmodule PotokIde.Social.Group do
     |> maybe_force_html_from_uses_api()
     |> maybe_force_inherits_members_for_thread()
     |> add_check_constraints()
+    |> check_constraint(:external_key, name: :groups_external_key_check)
+    |> unique_constraint([:parent_id, :external_key],
+      name: :groups_parent_external_key_index,
+      error_key: :external_key
+    )
     |> unique_constraint(:parent_value_id)
     |> validate_creation_constraints()
   end

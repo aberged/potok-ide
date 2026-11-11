@@ -837,4 +837,83 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       assert_reply(view, %{ok: false, error: "not_found"})
     end
   end
+
+  describe "a sub-group's place on a map" do
+    test "create_child puts it on a map, with a pin", ctx do
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "create_child", %{
+        "name" => "place",
+        "lat" => 44.8125004,
+        "lng" => 20.4612,
+        "pin" => "shop"
+      })
+
+      assert_reply(view, %{
+        ok: true,
+        group: %{id: id, lat: 44.8125, lng: 20.4612, pin: "shop", key: nil}
+      })
+
+      group = Repo.get!(Group, id)
+      assert {group.latitude, group.longitude, group.pin_icon} == {44.8125, 20.4612, "shop"}
+    end
+
+    test "update_child moves it, changes its pin and takes it away", ctx do
+      story = child!(ctx.owner, ctx.feed, "story")
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "update_child", %{"id" => story.id, "lat" => 45.2671, "lng" => 19.8335})
+      assert_reply(view, %{ok: true, group: %{lat: 45.2671, lng: 19.8335, pin: nil}})
+
+      call(view, "update_child", %{"id" => story.id, "pin" => "warning"})
+      assert_reply(view, %{ok: true, group: %{lat: 45.2671, pin: "warning"}})
+
+      call(view, "update_child", %{"id" => story.id, "pin" => nil})
+      assert_reply(view, %{ok: true, group: %{pin: nil}})
+
+      call(view, "update_child", %{"id" => story.id, "lat" => nil, "lng" => nil})
+      assert_reply(view, %{ok: true, group: %{lat: nil, lng: nil}})
+      assert Repo.get!(Group, story.id).latitude == nil
+    end
+
+    test "refuses half a place, one out of range, and a pin it does not know", ctx do
+      story = child!(ctx.owner, ctx.feed, "story")
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      for bad <- [
+            %{"lat" => 44.8},
+            %{"lng" => 20.4},
+            %{"lat" => 44.8, "lng" => nil},
+            %{"lat" => 90.5, "lng" => 20.4},
+            %{"lat" => 44.8, "lng" => 180.5},
+            %{"lat" => "44.8", "lng" => "20.4"},
+            %{"pin" => "rocket"}
+          ] do
+        call(view, "create_child", Map.put(bad, "name", "place"))
+        assert_reply(view, %{ok: false, error: "invalid_group"})
+
+        call(view, "update_child", Map.put(bad, "id", story.id))
+        assert_reply(view, %{ok: false, error: "invalid_group"})
+      end
+
+      assert Repo.get!(Group, story.id).latitude == nil
+    end
+
+    test "takes no raw columns of a place or a key", ctx do
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "create_child", %{
+        "name" => "place",
+        "latitude" => 44.8,
+        "longitude" => 20.4,
+        "pin_icon" => "shop",
+        "external_key" => "mine",
+        "key" => "mine"
+      })
+
+      assert_reply(view, %{ok: true, group: %{id: id}})
+      group = Repo.get!(Group, id)
+      assert {group.latitude, group.pin_icon, group.external_key} == {nil, nil, nil}
+    end
+  end
 end
