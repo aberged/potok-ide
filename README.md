@@ -33,6 +33,7 @@ The main concepts in the system are:
 * `AccountProfile`: the join entity between accounts and profiles.
 * `PushSubscription`: a Web Push subscription or native push token of an account, with the language of the session that saved it.
 * `Poll`: a question put to a vote in a group, with the rules of who votes, who sees the results and who sees the details, its deadline and, once it ended, its decision. `PollOption` is an answer with its count, and `PollBallot` that a profile voted and, unless the poll is secret, for what.
+* `Notices.GroupFollow`: a profile follows a group, member or not, to receive its notices, with its own switch for their push. `Notices.GroupNotice` is one notice a group sent, and `Notices.GroupNoticeReceipt` that it reached one follower and whether that one read it.
 * `Event`: an event in a group's calendar, once or repeating, kept in its IANA time zone, with the organizer's reminders and the chat value that announced it. Its place is words, and on a map the place of a group (`place_group_id`) or a place of its own, a point, an area or a route (`latitude`/`longitude`, `area`, `route`), never both.
 * `Events.Response`: a member's answer (going, maybe, not going) for one occurrence of an event, named by its local start date.
 * `Events.MemberSetting`: a member's own reminders for an event, in place of the organizer's.
@@ -65,7 +66,7 @@ Group access and direct-group behavior:
 Roles and permissions:
 
 * Every group uses a manifest: its own, or the one of its nearest ancestor that has one. The root group always has one, and its default manifest is fixed.
-* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events`, `publish_events`, `create_polls`, `vote_polls`, `manage_polls`, `publish_polls`, `manage_tags` and `edit_group`.
+* The permissions are `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `manage_join_requests`, `remove_members`, `delete_values`, `create_events`, `manage_events`, `publish_events`, `create_polls`, `vote_polls`, `manage_polls`, `publish_polls`, `send_notices`, `manage_tags` and `edit_group`.
 * The built-in `admin` role holds every permission. Every member implicitly holds `everyone`, which by default allows `post_values`, `attach_files`, `react`, `open_threads`, `create_subgroups`, `invite_members`, `mention_roles`, `create_events`, `create_polls` and `vote_polls`.
 * For other roles a permission is granted when one of the member's roles allows it and none denies it. `everyone` can only allow.
 * Creators become admins of their groups. Admins create roles, give a group its own manifest (a copy of the inherited one) or revert it to the inherited one, and assign roles per group in the members tab.
@@ -158,6 +159,16 @@ Polls:
 * `PotokIde.Polls.Scheduler` runs on every node and every 30 seconds closes polls past their deadline and sends reminders, with `FOR UPDATE SKIP LOCKED`. A vote checks the time itself, so a deadline holds to the second.
 * `GET /polls/:id/results.csv?part=results|voters` downloads a poll for those its rules show that part to.
 
+Following and notices:
+
+* Anyone who may see a group follows it with its bell: a public group any signed-in profile, a private one its members. The root, direct conversations and threads are not followed (`Notices.followable?/1`). Members do not follow by themselves.
+* Those with `send_notices` (admins hold it) send notices from the group's Notices tab (`/groups/:id/notices`): one text of up to 2,000 characters, markdown like a message, never edited. The author, or anyone with `send_notices`, deletes one, and it goes from everyone who received it. A group sends at most 10 an hour (`RateLimit` `:group_notice`).
+* A notice is written as a receipt for every follower who may see the group when it is sent, never for its author, in the same transaction (`INSERT ... SELECT`). What was received stays after unfollowing; a later follower finds the older notices on the group's tab.
+* The tab lists everything the group sent to everyone who sees the group; the author shows only to its members. It joins the group's section bar once the group sent a notice and the bar has room (at most six sections); the bell and the group's menu always lead there.
+* Unread receipts are a counter of their own in the header (`#nav-notices-link`), apart from unread messages, counted in the badges' one query (`Social.nav_counts/2`). `/notices` lists the received notices and reads them all, and the group's tab reads that group's.
+* A push goes to the devices of a follower's accounts while both its follow (`push`) and its profile (`notice_push`, the switch in Settings) allow it, never to the accounts of the author's profile. It opens the notice on the group's page.
+* Pages hear of notices over topics of their own, `notices:<profile_id>` and `group_notices:<group_id>`, as some LiveViews do not know every message of `profiles:` and `groups:`.
+
 Relationship summary:
 
 ```text
@@ -185,6 +196,9 @@ Value 1----* child_values
 Value 1----* ValueReaction
 Value 1----* ValueAttachment
 Value 1----0..1 Event (announcement)
+
+Group 1----* Notices.GroupFollow *----1 Profile
+Group 1----* Notices.GroupNotice 1----* Notices.GroupNoticeReceipt *----1 Profile
 
 Event 1----* Events.Response *----1 Profile
 Event 1----* Events.MemberSetting *----1 Profile
@@ -625,6 +639,7 @@ Authenticated routes that require a current profile:
 * `GET /groups/:id`
 * `GET /groups/:id/:tab`
 * `GET /invitations`
+* `GET /notices` lists the notices of the groups the profile follows, and the groups it follows
 * `GET /requests`
 * `GET /accounts/register`
 * `GET /accounts/settings`

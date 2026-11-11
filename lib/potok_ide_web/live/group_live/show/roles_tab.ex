@@ -376,6 +376,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
   def permission_label(:vote_polls), do: dgettext("polls", "Vote")
   def permission_label(:manage_polls), do: dgettext("polls", "Manage polls")
   def permission_label(:publish_polls), do: dgettext("polls", "Open polls to non-members")
+  def permission_label(:send_notices), do: gettext("Send notices")
   def permission_label(:manage_tags), do: gettext("Manage tags")
   def permission_label(:edit_group), do: gettext("Edit group")
 
@@ -432,6 +433,10 @@ defmodule PotokIdeWeb.GroupLive.Show.RolesTab do
 
   defp permission_description(:publish_polls) do
     dgettext("polls", "Let signed-in visitors of a public group vote too.")
+  end
+
+  defp permission_description(:send_notices) do
+    gettext("Send notices to everyone who follows the group, members or not, and delete them.")
   end
 
   defp permission_description(:manage_tags),

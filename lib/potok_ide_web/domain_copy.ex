@@ -168,6 +168,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Profile", "username"), do: dgettext("domain_map", "username")
   defp own_field("Profile", "profile_picture_url"), do: dgettext("domain_map", "profile picture")
   defp own_field("Profile", "sharing"), do: dgettext("domain_map", "sharing")
+  defp own_field("Profile", "notice_push"), do: dgettext("domain_map", "push of notices")
 
   defp own_field("Group", "group_picture_url"), do: dgettext("domain_map", "group picture")
 
@@ -366,6 +367,17 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("MemberSetting", "reminder_minutes"), do: dgettext("domain_map", "own reminders")
 
+  defp own_field("GroupFollow", "profile_id"), do: dgettext("domain_map", "follower")
+  defp own_field("GroupFollow", "push"), do: dgettext("domain_map", "push to devices")
+
+  defp own_field("GroupNotice", "creator_id"), do: dgettext("domain_map", "who sent it")
+  defp own_field("GroupNotice", "body"), do: dgettext("domain_map", "text")
+  defp own_field("GroupNotice", "recipients_count"), do: dgettext("domain_map", "how many got it")
+
+  defp own_field("GroupNoticeReceipt", "profile_id"), do: dgettext("domain_map", "recipient")
+  defp own_field("GroupNoticeReceipt", "notice_id"), do: dgettext("domain_map", "notice")
+  defp own_field("GroupNoticeReceipt", "read_at"), do: dgettext("domain_map", "read at")
+
   defp own_field("Tag", "owner_id"), do: dgettext("domain_map", "owner")
 
   defp own_field("Tagging", "tag_id"), do: dgettext("domain_map", "tag")
@@ -434,6 +446,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def domain_name("content"), do: dgettext("domain_map", "Content")
   def domain_name("calendar"), do: dgettext("domain_map", "Calendar")
   def domain_name("polls"), do: dgettext("domain_map", "Polls")
+  def domain_name("notices"), do: dgettext("domain_map", "Following and notices")
   def domain_name("tags"), do: dgettext("domain_map", "Tags")
   def domain_name("joining"), do: dgettext("domain_map", "Joining a group")
 
@@ -461,6 +474,9 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("Poll"), do: dgettext("domain_map", "Poll")
   def entity_name("PollOption"), do: dgettext("domain_map", "Answer")
   def entity_name("PollBallot"), do: dgettext("domain_map", "Ballot")
+  def entity_name("GroupFollow"), do: dgettext("domain_map", "Following")
+  def entity_name("GroupNotice"), do: dgettext("domain_map", "Notice")
+  def entity_name("GroupNoticeReceipt"), do: dgettext("domain_map", "Received notice")
   def entity_name("Tag"), do: dgettext("domain_map", "Tag")
   def entity_name("Tagging"), do: dgettext("domain_map", "Tagging")
   def entity_name("GroupInvitation"), do: dgettext("domain_map", "Group invitation")
@@ -635,6 +651,27 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  defp entity_description("GroupFollow", _edges) do
+    dgettext(
+      "domain_map",
+      "A profile follows a group, to receive its notices. Anyone who sees the group may follow it, a public one without being a member. It says whether the group's notices push to the follower's devices."
+    )
+  end
+
+  defp entity_description("GroupNotice", _edges) do
+    dgettext(
+      "domain_map",
+      "A notice a group sent to those who follow it: one text, never edited. It remembers who sent it and how many followers it reached. Deleting it deletes it for everyone who received it."
+    )
+  end
+
+  defp entity_description("GroupNoticeReceipt", _edges) do
+    dgettext(
+      "domain_map",
+      "A notice that reached one profile, and whether it was read. It is written when the notice is sent, for every follower who sees the group then, so it stays after unfollowing. Unread ones make the counter of notices."
+    )
+  end
+
   defp entity_description("MemberSetting", _edges) do
     dgettext(
       "domain_map",
@@ -780,6 +817,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("poll_options_votes_count_check") do
     dgettext("domain_map", "The number of votes is never negative.")
+  end
+
+  def check_text("group_notices_body_check") do
+    dgettext("domain_map", "The text has 1 to 2,000 characters, and not only spaces.")
   end
 
   def check_text("value_attachments_byte_size_check") do
@@ -1163,6 +1204,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline. One account gives one vote, whichever of its profiles it uses, and a profile several accounts share votes on its own. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A group sends notices to those who follow it"),
+        text:
+          dgettext(
+            "domain_map",
+            "A profile can follow a <Group>group</Group> it sees, a public one without being a member: that is a <GroupFollow>following</GroupFollow>. The root, direct conversations and threads are not followed. Whoever holds the permission to send notices sends a <GroupNotice>notice</GroupNotice>, and `admin` holds it as it holds every permission. The notice is written as a <GroupNoticeReceipt>received notice</GroupNoticeReceipt> for every follower who sees the group at that moment, never for its author, so it stays after unfollowing, and a later follower finds the older ones on the group's page. Unread received notices make their own counter, apart from unread messages, and opening the list of notices or the group's notices reads them. A push goes out while both the following and the profile allow it. Deleting a notice takes it from everyone who received it."
           )
       },
       %{

@@ -14,20 +14,26 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   use PotokIdeWeb, :html
 
+  alias PotokIde.Notices
   alias PotokIde.Social.{Access, Group}
   alias PotokIdeWeb.GroupLive.Show.Components
   alias PotokIdeWeb.TagComponents
 
   @row_prefix "group-row"
 
+  # A bar of more does not fit every phone: past this, notices give way.
+  @max_sections 6
+
   @doc """
   The sections of a group, in the order of its bar. The root has none: its
   header switches between conversations and groups. `flags` says whether it has
-  a calendar (`:calendar?`) and polls (`:polls?`), as these take a query.
+  a calendar (`:calendar?`), polls (`:polls?`) and notices (`:notices?`), as
+  these take a query. Notices join only while the bar has room for them; the
+  group's menu and its bell always lead there.
   """
   def sections(%Group{is_root: true}, _member?, _flags), do: []
 
-  def sections(%Group{} = group, member?, %{calendar?: calendar?, polls?: polls?}) do
+  def sections(%Group{} = group, member?, %{calendar?: calendar?, polls?: polls?} = flags) do
     member_of_group? = member? and group.parent_id != nil
 
     [
@@ -49,6 +55,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         },
       polls? &&
         %{key: "polls", tab: "polls", icon: "hero-chart-bar", label: dgettext("polls", "Polls")},
+      Map.get(flags, :notices?, false) &&
+        %{key: "notices", tab: "notices", icon: "hero-bell-alert", label: gettext("Notices")},
       # Threads are sub-groups, which direct conversations do not have.
       ((member? or group.is_public) and not group.is_direct) &&
         %{
@@ -66,7 +74,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         }
     ]
     |> Enum.filter(& &1)
+    |> fit_bar()
   end
+
+  defp fit_bar(sections) when length(sections) > @max_sections,
+    do: Enum.reject(sections, &(&1.key == "notices"))
+
+  defp fit_bar(sections), do: sections
 
   attr :group, :map, required: true
   attr :access, :any, required: true, doc: "the viewer's access to `group`"
@@ -124,6 +138,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         <.icon name="hero-squares-2x2" class="size-4" />
         <span class="ml-2 truncate">{gettext("Browse by tags")}</span>
       </.link>
+      <.tab_item
+        :if={Notices.followable?(@group)}
+        id={"#{@id_prefix}-tab-notices"}
+        group={@group}
+        tab="notices"
+        active_tab={@active_tab}
+        label={gettext("Notices")}
+        icon="hero-bell-alert"
+      />
       <.tab_item
         :if={@access.member? and !@group.is_direct}
         id={"#{@id_prefix}-tab-roles"}

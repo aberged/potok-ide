@@ -1910,6 +1910,8 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
   const invitationsLink = document.getElementById("nav-invitations-link")
   const invitationsBadge = document.getElementById("nav-invitations-count-badge")
   const rootGroupBadge = document.getElementById("nav-root-group-unread-badge")
+  const noticesLink = document.getElementById("nav-notices-link")
+  const noticesBadge = document.getElementById("nav-notices-count-badge")
   const selectedProfileCard = document.getElementById("nav-selected-profile-card")
   const selectedProfileName = document.getElementById("nav-selected-profile-name")
   const defaultTitle = brandTitle?.dataset.defaultTitle || ""
@@ -1937,6 +1939,10 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
     invitationsLink.hidden = !hasProfile
   }
 
+  if (noticesLink) {
+    noticesLink.hidden = !hasProfile
+  }
+
   if (brandAvatar) {
     brandAvatar.alt = detail.username || "Potok"
   }
@@ -1950,6 +1956,11 @@ window.addEventListener("phx:current_profile_updated", ({detail}) => {
     if (rootGroupBadge) {
       rootGroupBadge.hidden = true
       rootGroupBadge.textContent = ""
+    }
+
+    if (noticesBadge) {
+      noticesBadge.hidden = true
+      noticesBadge.textContent = ""
     }
 
     if (brandAvatar) {
@@ -2034,6 +2045,20 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
 
   rootGroupBadge.hidden = count <= 0
   rootGroupBadge.textContent = count > 999 ? "999+" : String(count)
+})
+
+// Unread notices of the groups the profile follows, kept apart from messages.
+window.addEventListener("phx:unread_notices_count_updated", ({detail}) => {
+  const noticesBadge = document.getElementById("nav-notices-count-badge")
+
+  if (!noticesBadge) {
+    return
+  }
+
+  const count = Number(detail.count || 0)
+
+  noticesBadge.hidden = count <= 0
+  noticesBadge.textContent = count > 999 ? "999+" : String(count)
 })
 
 registerCapacitorMagicLinks()

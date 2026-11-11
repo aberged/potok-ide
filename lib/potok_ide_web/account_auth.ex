@@ -93,6 +93,7 @@ defmodule PotokIdeWeb.AccountAuth do
     |> assign(:pending_invitations_count, counts.pending_invitations)
     |> assign(:pending_group_join_requests_count, counts.pending_group_join_requests)
     |> assign(:root_group_unread_count, counts.root_unread)
+    |> assign(:unread_notices_count, counts.unread_notices)
   end
 
   defp ensure_account_token(conn) do
@@ -318,8 +319,9 @@ defmodule PotokIdeWeb.AccountAuth do
   (`Social.nav_counts/2`), made once the socket is connected: the first HTML
   shows them empty, as the rest of the page arrives after the connect too.
   The unread count's `as_of` goes to the socket's private
-  `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values, and
-  the profile's groups to `:member_group_ids`, for it to subscribe to; a view
+  `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values (the
+  notices' to `:unread_notices_as_of`, for the same), and the profile's groups
+  to `:member_group_ids`, for it to subscribe to; a view
   that counts unread values itself
   (`PotokIdeWeb.ProfileAuth.counts_unread_itself?/1`) gets no unread count.
   """
@@ -327,7 +329,8 @@ defmodule PotokIdeWeb.AccountAuth do
     keys = [
       :pending_invitations_count,
       :pending_group_join_requests_count,
-      :root_group_unread_count
+      :root_group_unread_count,
+      :unread_notices_count
     ]
 
     counts =
@@ -348,6 +351,7 @@ defmodule PotokIdeWeb.AccountAuth do
       socket
       |> put_root_unread_as_of(counts)
       |> Phoenix.LiveView.put_private(:member_group_ids, counts.member_group_ids)
+      |> Phoenix.LiveView.put_private(:unread_notices_as_of, counts.unread_notices_as_of)
       |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
         counts.pending_invitations
       end)
@@ -355,6 +359,7 @@ defmodule PotokIdeWeb.AccountAuth do
         counts.pending_group_join_requests
       end)
       |> Phoenix.Component.assign_new(:root_group_unread_count, fn -> counts.root_unread end)
+      |> Phoenix.Component.assign_new(:unread_notices_count, fn -> counts.unread_notices end)
     else
       socket
     end

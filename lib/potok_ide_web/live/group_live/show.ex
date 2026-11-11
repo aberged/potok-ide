@@ -22,6 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ValueAttachment
   }
 
+  alias PotokIde.Notices
   alias PotokIde.Polls
   alias PotokIde.RateLimit
   alias PotokIde.Storage
@@ -39,6 +40,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     InviteProfileTab,
     MediaViewer,
     MembersTab,
+    NoticesState,
+    NoticesTab,
     PollCard,
     PollForm,
     PollsState,
@@ -53,6 +56,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   }
 
   alias PotokIdeWeb.Distance
+  alias PotokIdeWeb.NoticeComponents
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.ProfileAuth
   alias PotokIdeWeb.PublicPreview
@@ -127,6 +131,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      unread_notices_count={@unread_notices_count}
       collapse_nav
     >
       <%!-- Online indicators are toggled by this rule set instead of re-rendering streamed items. --%>
@@ -276,10 +281,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </div>
 
+          <%!-- On phones a row of its own under the name, as the name would
+               shrink to a letter next to it and the bell. --%>
           <div
             :if={!@group.is_root and !@is_member and !@access.blocked?}
             id="group-join-request-callout"
-            class="flex shrink-0 items-center"
+            class="flex shrink-0 items-center max-sm:order-last max-sm:basis-full max-sm:pb-1.5 max-sm:pl-12 max-sm:cramped:hidden"
           >
             <.button
               :if={is_nil(@pending_join_request)}
@@ -305,7 +312,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 @group,
                 @is_member,
                 @active_tab,
-                %{calendar?: @calendar_tab?, polls?: @polls_section?},
+                %{
+                  calendar?: @calendar_tab?,
+                  polls?: @polls_section?,
+                  notices?: @notice_state.notices?
+                },
                 {@current_group_unread_count, @sub_groups_unread_count, @pending_join_requests_count}
               )
             }
@@ -393,6 +404,64 @@ defmodule PotokIdeWeb.GroupLive.Show do
               </div>
             </div>
           </button>
+
+          <%!-- Following the group, for its notices: one tap follows, and a
+               followed group's bell opens what can be changed. --%>
+          <.icon_button
+            :if={@can_follow_group? and !@notice_state.following?}
+            id="group-follow-button"
+            type="button"
+            phx-click="notice_follow"
+            icon="hero-bell"
+            label={gettext("Follow the group")}
+          />
+          <Layouts.drop_down_menu
+            :if={@can_follow_group? and @notice_state.following?}
+            id="group-follow-menu"
+            icon={
+              if(@notice_state.push? and @current_profile.notice_push,
+                do: "hero-bell-solid",
+                else: "hero-bell-slash"
+              )
+            }
+            label={gettext("You follow the group")}
+          >
+            <div class="flex min-w-56 flex-col gap-2">
+              <p class="px-1 text-sm font-semibold text-base-content">
+                {gettext("You follow the group")}
+              </p>
+              <NoticeComponents.push_switch
+                id="group-follow-push"
+                checked={@notice_state.push?}
+                disabled={!@current_profile.notice_push}
+                label={gettext("Push notifications")}
+                class="px-1"
+                phx-click="notice_follow_push"
+                phx-value-push={to_string(!@notice_state.push?)}
+              />
+              <NoticeComponents.push_off_note
+                :if={!@current_profile.notice_push}
+                id="group-follow-push-off"
+              />
+              <Components.group_tab_button
+                id="group-follow-notices"
+                tab="notices"
+                active_tab={@active_tab}
+                label={gettext("Notices")}
+                icon="hero-bell-alert"
+              />
+              <button
+                id="group-unfollow"
+                type="button"
+                data-dropdown-close
+                phx-click="notice_unfollow"
+                class="flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+              >
+                <.icon name="hero-bell-slash" class="size-4" />
+                <span class="ml-2 truncate">{gettext("Stop following")}</span>
+              </button>
+            </div>
+          </Layouts.drop_down_menu>
 
           <.icon_button
             :if={ValueSearch.available?(@group, @active_tab, @access)}
@@ -614,6 +683,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
             include_subgroups={@polls_include_subgroups?}
             show_groups={@polls_show_groups?}
             show_public={@polls_show_public?}
+          />
+          <NoticesTab.panel
+            :if={@active_tab == "notices"}
+            group={@group}
+            access={@access}
+            current_profile={@current_profile}
+            state={@notice_state}
+            can_follow={@can_follow_group?}
+            can_send={@can_send_notices?}
+            form={@notice_form}
+            notices={@streams.group_notices}
+            empty={@notices_empty?}
+            more={@notices_more?}
+            focus_id={@notice_focus_id}
           />
           <GroupDescriptionTab.panel
             :if={
@@ -839,6 +922,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> RootMapState.init()
          |> PollForm.init()
          |> PollsState.init(params)
+         |> NoticesState.init(params)
          |> GroupSheet.init()
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
@@ -882,6 +966,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
          |> PollsState.assign_params(params)
+         |> NoticesState.assign_params(params)
          |> RootMapState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
 
@@ -936,6 +1021,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("group_create_menu_" <> _ = event, params, socket),
     do: CreateMenu.handle_event(event, params, socket)
+
+  def handle_event("notice_" <> _ = event, params, socket),
+    do: NoticesState.handle_event(event, params, socket)
 
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
@@ -2477,6 +2565,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:calendar, message}, socket), do: CalendarState.handle_info(message, socket)
 
+  # The group's own notices topic, and the profile's (`PotokIde.Notices`).
+  def handle_info({:group_notices, message}, socket),
+    do: NoticesState.handle_info(message, socket)
+
+  def handle_info({:notices, message}, socket),
+    do: NoticesState.handle_profile_message(message, socket)
+
   def handle_info({:polls, message}, socket) do
     {:noreply, socket} = PollsState.handle_info(message, socket)
     {:noreply, refresh_polls_section(socket, message)}
@@ -2613,6 +2708,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {:noreply,
            socket
            |> assign_access(access)
+           |> NoticesState.reload(group, access)
            |> load_group_data(group)
            |> sync_group_presence()}
         else
@@ -2686,6 +2782,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> RootMapState.maybe_load(group, active_tab)
     |> maybe_load_group_location(group, active_tab)
     |> PollsState.maybe_load(group, active_tab)
+    |> NoticesState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
@@ -2857,6 +2954,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if can_view_group?(group, access.member?) do
       socket
       |> assign_access(access)
+      |> NoticesState.reload(group, access)
       |> load_group_data(group)
       |> maybe_scroll_values_to_latest(previous_newest_value_id)
     else
@@ -5379,6 +5477,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp normalize_active_tab(tab, group, %Access{} = access)
        when tab in ["create_group", "invite_profile", "edit_group"] do
     if Access.can?(access, tab_permission(tab)), do: tab, else: default_active_tab(group)
+  end
+
+  # Everyone who sees a group reads its notices; Show only mounts such groups.
+  defp normalize_active_tab("notices", group, _access) do
+    if Notices.followable?(group), do: "notices", else: default_active_tab(group)
   end
 
   defp normalize_active_tab(_, group, _access), do: default_active_tab(group)

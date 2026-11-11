@@ -20,6 +20,9 @@ defmodule PotokIde.Social.Profile do
     field :description, :string
     field :description_format, Ecto.Enum, values: @description_formats, default: :markdown
     field :sharing, Ecto.Enum, values: @sharing_modes, default: :unique
+    # Whether the notices of the groups it follows push to its devices at all;
+    # never cast, `PotokIde.Notices.set_notice_push/2` changes it.
+    field :notice_push, :boolean, default: true
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []

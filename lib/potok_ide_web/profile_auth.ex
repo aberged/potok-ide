@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   import Phoenix.LiveView
 
   alias PotokIde.Accounts
+  alias PotokIde.Notices
   alias PotokIde.Social
 
   # Same debounce as the group page's refreshes; 0 (the test config) recounts
@@ -29,6 +30,15 @@ defmodule PotokIdeWeb.ProfileAuth do
   # Views whose lists show each group's newest value: they hear of the
   # profile's own values too, and of edits and deletes of the newest one.
   @last_value_views [PotokIdeWeb.GroupLive.Show]
+
+  # Views that get the profile's `{:notices, _}` messages, which every other
+  # view would not know (see `PotokIde.Notices`): the list of notices, and the
+  # group page, whose bell shows the follow. The badge is kept here for all.
+  @notice_views [PotokIdeWeb.NoticeLive.Index, PotokIdeWeb.GroupLive.Show]
+
+  # Of those, the views that read a new notice as it arrives, so it never
+  # reaches the badge.
+  @notice_reading_views [PotokIdeWeb.NoticeLive.Index]
 
   def on_mount(:mount_current_profile, _params, _session, socket) do
     current_scope = socket.assigns[:current_scope]
@@ -80,6 +90,7 @@ defmodule PotokIdeWeb.ProfileAuth do
                   counts.pending_group_join_requests
                 )
                 |> maybe_put_root_unread(counts, counts_unread?)
+                |> put_unread_notices(counts.unread_notices, counts.unread_notices_as_of)
                 |> sync_profile_subscription(previous_profile)
                 |> push_current_profile_updated(current_profile)
                 |> push_pending_invitations_count_updated(counts.pending_invitations)
@@ -180,6 +191,15 @@ defmodule PotokIdeWeb.ProfileAuth do
              |> put_private(:unread_recount_scheduled, false)
              |> recount_root_group_unread()}
 
+          {:notices, message}, socket ->
+            notice_message(message, socket)
+
+          :recount_unread_notices, socket ->
+            {:halt,
+             socket
+             |> put_private(:notice_recount_scheduled, false)
+             |> recount_unread_notices()}
+
           _message, socket ->
             {:cont, socket}
         end)
@@ -228,10 +248,14 @@ defmodule PotokIdeWeb.ProfileAuth do
              (is_nil(current_profile) or subscribed_profile_id != current_profile.id) do
           profile_to_unsubscribe = previous_profile || %{id: subscribed_profile_id}
           Social.unsubscribe_profile(profile_to_unsubscribe)
+          Notices.unsubscribe(profile_to_unsubscribe)
         end
 
+        # Only here, keyed on the subscribed profile: a second subscription
+        # would count every notice twice.
         if current_profile && current_profile.id != subscribed_profile_id do
           Social.subscribe_profile(current_profile)
+          Notices.subscribe(current_profile)
         end
 
         sync_unread_groups(socket, subscribed_profile_id)
@@ -375,6 +399,88 @@ defmodule PotokIdeWeb.ProfileAuth do
   end
 
   defp unread_recount_delay_ms, do: @unread_recount_delay_ms
+
+  # The notices of the page's profile: the badge is kept here, and only the
+  # views that list notices see the messages. One about another profile is
+  # left over from before a switch.
+  defp notice_message(message, socket) do
+    socket =
+      if current_profile_message?(message, socket),
+        do: count_notice_message(socket, message),
+        else: socket
+
+    if socket.view in @notice_views, do: {:cont, socket}, else: {:halt, socket}
+  end
+
+  # A view that lists notices reads a new one at once, so the badge stays.
+  defp count_notice_message(socket, {:received, _profile_id, notice_id, _group_id}) do
+    cond do
+      socket.view in @notice_reading_views -> socket
+      is_nil(socket.private[:unread_notices_as_of]) -> schedule_notice_recount(socket)
+      notice_id <= socket.private[:unread_notices_as_of] -> socket
+      true -> put_unread_notices(socket, (socket.assigns[:unread_notices_count] || 0) + 1)
+    end
+  end
+
+  defp count_notice_message(socket, {:read, _profile_id}), do: schedule_notice_recount(socket)
+
+  defp count_notice_message(socket, {:deleted, _profile_id, _notice_id, _group_id, true}),
+    do: schedule_notice_recount(socket)
+
+  defp count_notice_message(socket, {:push_changed, _profile_id, on?}) do
+    case socket.assigns[:current_profile] do
+      %{} = profile ->
+        Phoenix.Component.assign(socket, :current_profile, %{profile | notice_push: on?})
+
+      nil ->
+        socket
+    end
+  end
+
+  defp count_notice_message(socket, _message), do: socket
+
+  defp schedule_notice_recount(socket) do
+    case unread_recount_delay_ms() do
+      0 ->
+        recount_unread_notices(socket)
+
+      delay ->
+        if socket.private[:notice_recount_scheduled] do
+          socket
+        else
+          Process.send_after(
+            self(),
+            :recount_unread_notices,
+            delay + :rand.uniform(@unread_recount_spread_ms)
+          )
+
+          put_private(socket, :notice_recount_scheduled, true)
+        end
+    end
+  end
+
+  defp recount_unread_notices(socket) do
+    case socket.assigns[:current_profile] do
+      nil ->
+        put_unread_notices(socket, 0, nil)
+
+      profile ->
+        %{count: count, as_of: as_of} = Notices.unread_snapshot(profile)
+        put_unread_notices(socket, count, as_of)
+    end
+  end
+
+  defp put_unread_notices(socket, count, as_of) do
+    socket
+    |> put_private(:unread_notices_as_of, as_of)
+    |> put_unread_notices(count)
+  end
+
+  defp put_unread_notices(socket, count) do
+    socket
+    |> Phoenix.Component.assign(:unread_notices_count, count)
+    |> push_event("unread_notices_count_updated", %{count: count})
+  end
 
   # The badge's count already holds the values up to its `as_of`; without one
   # (the count failed, or another one is shown) the badge is recounted.

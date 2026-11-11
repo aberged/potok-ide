@@ -10,6 +10,7 @@ defmodule PotokIde.Social do
 
   alias Ecto.Multi
   alias PotokIde.LinkPreviews
+  alias PotokIde.Notices
   alias PotokIde.Presence
   alias PotokIde.Polls
   alias PotokIde.Polls.Poll
@@ -1613,13 +1614,14 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  The three header badges in one query: pending invitations, join requests
-  the profile may approve and unread values (the root group's count). The
-  same numbers as `count_pending_invitations/1`,
-  `count_pending_group_join_requests_for_approver/1` and
-  `count_root_group_unread_values/1`; the approver's groups are only loaded
-  when some of them have join requests. `root_unread_as_of` is the
-  unread count's `as_of` (see `root_group_unread_snapshot/1`).
+  The header badges in one query: pending invitations, join requests the
+  profile may approve, unread values (the root group's count) and unread
+  notices. The same numbers as `count_pending_invitations/1`,
+  `count_pending_group_join_requests_for_approver/1`,
+  `count_root_group_unread_values/1` and `PotokIde.Notices.unread_snapshot/1`;
+  the approver's groups are only loaded when some of them have join requests.
+  `root_unread_as_of` and `unread_notices_as_of` are the counts' `as_of` (see
+  `root_group_unread_snapshot/1`).
 
   `unread: false` leaves the unread count out (0, `as_of` nil), for pages
   that count unread values themselves.
@@ -1632,6 +1634,8 @@ defmodule PotokIde.Social do
       pending_group_join_requests: 0,
       root_unread: 0,
       root_unread_as_of: nil,
+      unread_notices: 0,
+      unread_notices_as_of: nil,
       member_group_ids: nil
     }
 
@@ -1678,11 +1682,26 @@ defmodule PotokIde.Social do
         WHERE gm.profile_id = $1
           AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
       ),
-      #{unread_sql}
+      #{unread_sql},
+      #{Notices.unread_count_sql("$1")},
+      #{Notices.newest_notice_sql()}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_#{unread?}") do
-      {:ok, %{rows: [[invitations, join_request_counts, member_group_ids, unread, unread_as_of]]}} ->
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v2_#{unread?}") do
+      {:ok,
+       %{
+         rows: [
+           [
+             invitations,
+             join_request_counts,
+             member_group_ids,
+             unread,
+             unread_as_of,
+             unread_notices,
+             unread_notices_as_of
+           ]
+         ]
+       }} ->
         %{
           pending_invitations: invitations,
           pending_group_join_requests:
@@ -1691,6 +1710,8 @@ defmodule PotokIde.Social do
             |> approvable_join_request_total(profile),
           root_unread: unread,
           root_unread_as_of: unread_as_of,
+          unread_notices: unread_notices,
+          unread_notices_as_of: unread_notices_as_of,
           member_group_ids: member_group_ids
         }
 

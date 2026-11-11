@@ -6,8 +6,10 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   require Logger
 
   alias PotokIde.Accounts
+  alias PotokIde.Notices
   alias PotokIde.PushNotifications
   alias PotokIde.RateLimit
+  alias PotokIdeWeb.NoticeComponents
   alias PotokIdeWeb.RateLimited
 
   # The cards of the page, like those of the group settings tabs.
@@ -26,6 +28,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      unread_notices_count={@unread_notices_count}
       full_width
     >
       <.page_container id="settings-page" class="space-y-4">
@@ -154,6 +157,33 @@ defmodule PotokIdeWeb.AccountLive.Settings do
               {gettext(
                 "Browser push requires an active service worker and HTTPS outside localhost. The installed Potok app uses native device permissions and Firebase Cloud Messaging."
               )}
+            </p>
+          </div>
+        </section>
+
+        <%!-- The profile's switch for every notice of the groups it follows;
+             each follow has its own on the Notices page. --%>
+        <section id="notice-push-settings" class={settings_card_class()}>
+          <div class="space-y-3">
+            <.card_title
+              icon="hero-bell-alert"
+              title={gettext("Notices of followed groups")}
+              subtitle={
+                gettext(
+                  "For the profile %{profile}. Each followed group also has its own switch, on the Notices page.",
+                  profile: @current_profile.username
+                )
+              }
+            />
+            <NoticeComponents.push_switch
+              id="notice-push-toggle"
+              checked={@current_profile.notice_push}
+              label={gettext("Push notifications for notices")}
+              phx-click="toggle_notice_push"
+              phx-value-push={to_string(!@current_profile.notice_push)}
+            />
+            <p class="text-xs text-base-content/65">
+              {gettext("It holds for every device of every account that uses this profile.")}
             </p>
           </div>
         </section>
@@ -428,6 +458,11 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       changeset ->
         {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
     end
+  end
+
+  def handle_event("toggle_notice_push", %{"push" => push}, socket) do
+    {:ok, profile} = Notices.set_notice_push(socket.assigns.current_profile, push == "true")
+    {:noreply, assign(socket, :current_profile, profile)}
   end
 
   def handle_event("refresh_push_subscriptions", _params, socket) do

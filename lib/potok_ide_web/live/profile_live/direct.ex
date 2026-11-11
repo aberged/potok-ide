@@ -15,6 +15,7 @@ defmodule PotokIdeWeb.ProfileLive.Direct do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      unread_notices_count={@unread_notices_count}
     >
       <div class="flex min-h-0 flex-1 items-center justify-center px-4">
         <div class="text-sm text-base-content/70">{gettext("Opening direct group...")}</div>

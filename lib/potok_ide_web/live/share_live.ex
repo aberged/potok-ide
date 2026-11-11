@@ -30,6 +30,7 @@ defmodule PotokIdeWeb.ShareLive do
       pending_invitations_count={@pending_invitations_count}
       pending_group_join_requests_count={@pending_group_join_requests_count}
       root_group_unread_count={@root_group_unread_count}
+      unread_notices_count={@unread_notices_count}
       full_width
     >
       <.page_container id="share-page">

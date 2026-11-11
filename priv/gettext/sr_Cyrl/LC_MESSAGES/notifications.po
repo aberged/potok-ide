@@ -105,3 +105,8 @@ msgstr "Нов одговор у групи %{group}"
 #, elixir-autogen, elixir-format
 msgid "Someone sent a response."
 msgstr "Стигао је нов одговор."
+
+#: lib/potok_ide/notices/notifications.ex:25
+#, elixir-autogen, elixir-format
+msgid "Notice from %{group}"
+msgstr "Обавештење: %{group}"

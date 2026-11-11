@@ -58,6 +58,10 @@ const TABLES = {
     Account: [COLUMN[0], 116],
     PushSubscription: [COLUMN[0], 188],
     GmailRefreshToken: [COLUMN[0], 260],
+    // Under the legend, which stands at the left from y 338 to 432.
+    GroupFollow: [COLUMN[0], 476],
+    GroupNotice: [COLUMN[0], 548],
+    GroupNoticeReceipt: [COLUMN[0], 620],
     Profile: [COLUMN[1], 44],
     AccountProfile: [COLUMN[1], 116],
     ProfileInvitation: [COLUMN[2], 44],
@@ -94,6 +98,7 @@ const TABLES = {
     content: [622, 182, 394, 158],
     calendar: [622, 350, 394, 158],
     polls: [622, 518, 394, 158],
+    notices: [16, 446, 192, 230],
     tags: [218, 494, 394, 86],
   },
 }

@@ -18,10 +18,12 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # viewer cannot see, and its 11th the newest message of each listed group,
   # for its row. The chat page's 21st loads the polls that values carry,
   # and its 22nd, like the first HTML's 6th, asks whether the group has a poll,
-  # for the bar of sections.
-  @max_dead_render_queries 6
+  # for the bar of sections. The chat page's 23rd, like the first HTML's 7th,
+  # reads whether the group sent notices, whether the viewer follows it and
+  # how many do, for the bell and the bar (`Notices.group_state/2`).
+  @max_dead_render_queries 7
   @max_root_page_queries 11
-  @max_chat_page_queries 22
+  @max_chat_page_queries 23
 
   setup %{conn: conn} do
     account = account_fixture()

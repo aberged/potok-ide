@@ -40,6 +40,9 @@ defmodule PotokIde.RateLimit do
     # Searches of a group's messages, per profile on all its pages: the box
     # asks 300 ms after the last key, so even fast typing asks a few a second.
     value_search: {60, :timer.minutes(1)},
+    # Notices one group sends its followers, each a push to every follower's
+    # devices: a busy day of a local community fits, a loop does not.
+    group_notice: {10, :timer.hours(1)},
     # Map tiles one IP asks Potok for, kept or not: a fast pan over a big
     # screen asks for a few hundred a minute.
     tile_ip: {1200, :timer.minutes(1)},
@@ -58,6 +61,7 @@ defmodule PotokIde.RateLimit do
           | :app_create_place
           | :root_map_view
           | :value_search
+          | :group_notice
           | :tile_ip
           | :tile_upstream
 

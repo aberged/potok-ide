@@ -32,6 +32,7 @@ defmodule PotokIde.Social.GroupRole do
     :vote_polls,
     :manage_polls,
     :publish_polls,
+    :send_notices,
     :manage_tags,
     :edit_group
   ]

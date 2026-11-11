@@ -41,6 +41,7 @@ defmodule PotokIdeWeb.Layouts do
   attr :pending_invitations_count, :integer, default: 0
   attr :pending_group_join_requests_count, :integer, default: 0
   attr :root_group_unread_count, :integer, default: 0
+  attr :unread_notices_count, :integer, default: 0
 
   attr :full_width, :boolean,
     default: false,
@@ -96,6 +97,23 @@ defmodule PotokIdeWeb.Layouts do
                 id="nav-root-group-unread-badge"
                 count={@root_group_unread_count}
                 hidden={@root_group_unread_count <= 0}
+                class="absolute -right-1 -top-1"
+              />
+            </.link>
+            <%!-- Notices of the groups the profile follows, counted apart from messages. --%>
+            <.link
+              id="nav-notices-link"
+              navigate={~p"/notices"}
+              alt={gettext("Notices")}
+              aria-label={gettext("Notices")}
+              class="relative"
+              hidden={is_nil(@current_profile)}
+            >
+              <.icon name="hero-bell" class="size-6" />
+              <.count_badge
+                id="nav-notices-count-badge"
+                count={@unread_notices_count}
+                hidden={@unread_notices_count <= 0}
                 class="absolute -right-1 -top-1"
               />
             </.link>
@@ -250,6 +268,15 @@ defmodule PotokIdeWeb.Layouts do
                     class={@nav_link_class}
                   >
                     <.icon name="hero-user-group" class="size-6" /> {gettext("Groups")}
+                  </.link>
+                  <.link
+                    navigate={~p"/notices"}
+                    data-nav-link
+                    data-nav-target="/notices"
+                    data-nav-match="prefix"
+                    class={@nav_link_class}
+                  >
+                    <.icon name="hero-bell" class="size-6" /> {gettext("Notices")}
                   </.link>
                   <.link
                     navigate={~p"/invitations"}
