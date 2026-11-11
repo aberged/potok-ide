@@ -252,6 +252,12 @@
   white-space: nowrap;
 }
 
+/* The divider above the first unread value takes the date's place, so the
+   date moves up over it. */
+[data-unread-start][data-day-label]::before {
+  top: -4rem;
+}
+
 /* Seek bar of the audio player in values: the played part (`--progress`,
    set by the `.AudioPlayer` hook) takes the text color, the rest is a faint
    track of the same color. */

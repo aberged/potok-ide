@@ -191,6 +191,17 @@ defmodule PotokIdeWeb.GroupLive.OpenChatTest do
 
       refute Repo.get_by(GroupValueRead, profile_id: ctx.visitor.id, group_id: ctx.group.id)
     end
+
+    test "opening it writes no read marker and shows no divider", ctx do
+      value!(ctx.member, ctx.group, "before")
+      open(ctx.conn, ctx.visitor_account, ctx.group)
+      value!(ctx.member, ctx.group, "after")
+
+      view = open(ctx.conn, ctx.visitor_account, ctx.group)
+
+      refute Repo.get_by(GroupValueRead, profile_id: ctx.visitor.id, group_id: ctx.group.id)
+      refute has_element?(view, "#group-values-unread-divider")
+    end
   end
 
   describe "outside the group, in a chat that is not open" do

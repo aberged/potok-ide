@@ -26,6 +26,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     default: nil,
     doc: "the linked value (`?value=`) the feed opens at instead of the newest"
 
+  attr :unread_divider, :map,
+    default: nil,
+    doc: "`%{value_id, count}` of the values the viewer had not read on opening the chat"
+
   attr :is_member, :boolean, required: true
   attr :access, Access, required: true
   attr :attachments, Phoenix.LiveView.UploadConfig, required: true
@@ -140,6 +144,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 can_block={@can_block}
                 can_tag={@is_member}
                 outsider={!@is_member}
+                unread_divider={unread_divider_count(@unread_divider, value)}
               />
             </div>
 
@@ -421,6 +426,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.hadNewer = this.hasNewer()
               this.anchor = null
               this.heldValue = null
+              this.heldBlock = "center"
               this.jumpButton = document.getElementById("group-values-jump-latest")
               this.newValuesDot = this.jumpButton?.querySelector("[data-new-values]")
 
@@ -476,13 +482,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.resizeObserver.observe(this.el.querySelector("#group-values-list"))
               this.markRuns()
 
-              // A link to a value (`?value=`) opens the feed at it instead of the newest.
+              // A link to a value (`?value=`) opens the feed at it instead of the
+              // newest, and so does the divider above the first unread value.
               requestAnimationFrame(() => {
                 const focusValueId = this.el.dataset.focusValueId
                 const target = focusValueId && document.getElementById(`value-${focusValueId}`)
+                const divider = document.getElementById("group-values-unread-divider")
 
                 if (target) {
                   this.showValue(target, "instant")
+                } else if (divider) {
+                  this.showDivider(divider)
                 } else {
                   this.scrollToLatest()
                 }
@@ -558,6 +568,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 const newDay = !previous || at.toDateString() !== previous.at.toDateString()
                 const continued =
                   !newDay &&
+                  !item.hasAttribute("data-unread-start") &&
                   item.dataset.creatorId === previous.creator &&
                   at - previous.at <= RUN_GAP_MS
 
@@ -602,7 +613,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.feedHeight = this.el.clientHeight
 
               if (this.heldValue?.isConnected) {
-                this.heldValue.scrollIntoView({ block: "center", behavior: "instant" })
+                this.heldValue.scrollIntoView({ block: this.heldBlock, behavior: "instant" })
               } else if (change === 0) {
                 if (this.atBottom && !this.hasNewer()) this.scrollToLatest()
               } else if (this.nearLatest) {
@@ -666,6 +677,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               this.setNearLatest(!this.hasNewer())
             },
 
+            // Unread values that fit below the divider leave the feed on the
+            // newest, as ever. More than that open with the divider at the top,
+            // held there like a value jumped to (`showValue`).
+            showDivider(divider) {
+              divider.scrollIntoView({ block: "start", behavior: "instant" })
+
+              if (this.distanceToBottom() <= AT_BOTTOM_PX) {
+                this.scrollToLatest()
+                return
+              }
+
+              this.heldValue = divider
+              this.heldBlock = "start"
+              this.atBottom = false
+              this.notePosition()
+            },
+
             showValue(target, behavior) {
               target.scrollIntoView({ block: "center", behavior })
               // Pictures above it get their height only after this and would push
@@ -673,6 +701,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               // position is noted now, as the scroll event comes a frame after the
               // resize observer's first report.
               this.heldValue = target
+              this.heldBlock = "center"
               this.atBottom = false
               this.notePosition()
 
@@ -1129,6 +1158,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
     </dialog>
     """
   end
+
+  defp unread_divider_count(%{value_id: id, count: count}, %Value{id: id}), do: count
+  defp unread_divider_count(_divider, _value), do: nil
 
   defp composer_form_class do
     "flex flex-col rounded-[1.75rem] border border-base-300 bg-base-100 px-1 py-0.5 shadow-sm transition-colors duration-150 sm:p-3 [&.phx-drop-target-active]:border-primary [&.phx-drop-target-active]:bg-primary/5"

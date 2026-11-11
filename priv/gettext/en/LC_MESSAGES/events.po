@@ -455,7 +455,7 @@ msgid "%{month} %{day}, %{year}"
 msgstr ""
 
 #: lib/potok_ide/events/format.ex:100
-#: lib/potok_ide_web/live/group_live/show/values_tab.ex:94
+#: lib/potok_ide_web/live/group_live/show/values_tab.ex:98
 #, elixir-autogen, elixir-format
 msgid "Yesterday"
 msgstr ""

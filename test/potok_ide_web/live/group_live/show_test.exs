@@ -3911,11 +3911,14 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
     test "the feed keeps at most 200 values", %{
       conn: conn,
       account: account,
+      profile: profile,
       member: member,
       group: group,
       value: value
     } do
       ids = [value.id | insert_values!(member, group, 229)]
+      # Read, so the chat opens on the newest and not at the unread divider.
+      :ok = Social.mark_group_values_read(profile, group)
 
       {:ok, lv, _html} =
         conn

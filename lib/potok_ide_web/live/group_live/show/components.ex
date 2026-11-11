@@ -1531,6 +1531,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :can_tag, :boolean, default: false, doc: "may open the value's tags (members)"
   attr :outsider, :boolean, default: false, doc: "the viewer is not a member of the group"
 
+  attr :unread_divider, :integer,
+    default: nil,
+    doc: "the count of unread values from this one on, when the divider stands above it"
+
   def value_message(assigns) do
     assigns = hide_members_events(assigns)
     mine? = value_from_current_profile?(assigns.current_profile, assigns.value)
@@ -1566,7 +1570,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
     ~H"""
     <%!-- `.ValuesFeed` marks a value that goes on from the one before it
-         (`data-continued`) and the first value of a day (`data-day-label`). --%>
+         (`data-continued`) and the first value of a day (`data-day-label`).
+         The first unread value carries the divider above it (`data-unread-start`),
+         below the day's date when both are there. --%>
     <div
       id={@dom_id}
       data-value-id={@value.id}
@@ -1574,15 +1580,27 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       data-author={@value.creator.username}
       data-at={datetime_to_iso8601(@value.inserted_at)}
       data-mentions-me={@mentions_me? && "true"}
+      data-unread-start={@unread_divider && "true"}
       phx-mounted={JS.ignore_attributes(["data-continued", "data-day-label"])}
       class={[
-        "chat group/value relative mt-2.5 py-0 hover:z-10 focus-within:z-10 data-continued:mt-0.5 data-day-label:mt-10",
+        "chat group/value relative mt-2.5 py-0 hover:z-10 focus-within:z-10 data-continued:mt-0.5 data-day-label:mt-10 data-unread-start:mt-10 data-unread-start:data-day-label:mt-18",
         if(@mine?,
           do: "chat-end grid-cols-[minmax(0,1fr)_auto]",
           else: "chat-start grid-cols-[auto_minmax(0,1fr)]"
         )
       ]}
     >
+      <div
+        :if={@unread_divider}
+        id="group-values-unread-divider"
+        class="pointer-events-none absolute inset-x-0 -top-7 flex h-5 scroll-mt-12 items-center gap-3 text-xs font-semibold text-primary"
+      >
+        <span class="h-px flex-1 bg-primary/35" aria-hidden="true"></span>
+        <span class="shrink-0">
+          {ngettext("1 new message", "%{count} new messages", @unread_divider)}
+        </span>
+        <span class="h-px flex-1 bg-primary/35" aria-hidden="true"></span>
+      </div>
       <.inspect_tree
         :if={false}
         id={"value-message-assigns-#{@value.id}"}

@@ -514,6 +514,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             replying_to_value={@replying_to_value}
             thread_origin={@thread_origin}
             focus_value_id={@focus_value_id}
+            unread_divider={@unread_divider}
             is_member={@is_member}
             access={@access}
             attachments={@uploads.attachments}
@@ -727,6 +728,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:newest_value_id, nil)
          |> assign(:loaded_value_ids, MapSet.new())
          |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
+         |> assign(:unread_divider, nil)
          |> assign(:files_view, "list")
          |> assign(:files_has_more?, false)
          |> assign(:files_loaded_count, 0)
@@ -851,6 +853,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:active_tab, active_tab)
          |> assign(:focus_value_id, nil)
          |> assign(:values_has_newer?, false)
+         |> forget_unread_start()
          |> assign(:sub_groups_kind, sub_groups_kind)
          |> assign(:sub_groups_view, sub_groups_view)
          |> assign(:children_pagination, default_pagination(@children_page_size))
@@ -4636,12 +4639,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # The first load after a `?value=` link opens the chat around that value,
   # which the `.ValuesFeed` hook then scrolls to; a value not in this chat is
-  # dropped. A feed showing earlier values reloads the same span, and one at
-  # the newest reloads as many of the newest as it had.
+  # dropped. Opening with more unread values than a page opens around the
+  # first of them, where the divider stands; fewer are among the newest. A
+  # feed showing earlier values reloads the same span, and one at the newest
+  # reloads as many of the newest as it had.
   defp maybe_load_values(socket, group, active_tab) do
     if needs_values?(group, active_tab) do
       %{focus_value_id: focus_value_id, loaded_value_ids: loaded} = socket.assigns
       limit = max(MapSet.size(loaded), @values_page_size)
+      open_at_divider? = socket.private[:open_at_divider?] == true
+      socket = put_private(socket, :open_at_divider?, false)
 
       cond do
         is_integer(focus_value_id) and MapSet.size(loaded) == 0 ->
@@ -4653,6 +4660,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
               socket
               |> assign(:focus_value_id, nil)
               |> load_latest_values(group)
+          end
+
+        open_at_divider? and socket.assigns.unread_divider.count > limit ->
+          case load_values_around(socket, socket.assigns.unread_divider.value_id) do
+            {:ok, socket} -> socket
+            :error -> load_latest_values(socket, group, limit)
           end
 
         socket.assigns.values_has_newer? and is_integer(socket.assigns.oldest_value_id) ->
@@ -4980,13 +4993,43 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # Only members have unread counts, so only they get a marker; someone
+  # reading an open chat from outside has none to move.
   defp maybe_mark_group_values_read(socket, group, active_tab) do
-    if needs_values?(group, active_tab) and socket.assigns.current_profile do
-      _ = Social.mark_group_values_read(socket.assigns.current_profile, group)
-      socket
-    else
-      socket
+    profile = socket.assigns.current_profile
+
+    cond do
+      not (needs_values?(group, active_tab) and profile != nil and socket.assigns.is_member) ->
+        socket
+
+      socket.private[:unread_noted] == {group.id, profile.id} ->
+        _ = Social.mark_group_values_read(profile, group)
+        socket
+
+      true ->
+        note_unread_start(socket, profile, group)
     end
+  end
+
+  # The divider stands above the first value the profile had not read when it
+  # opened the chat, so that is noted as the marker moves, once per visit to
+  # the tab: a reload would find nothing unread, and values that came while
+  # the chat was open are read, though their marker may not be written yet.
+  defp note_unread_start(socket, profile, group) do
+    start = Social.read_group_chat(profile, group)
+
+    socket
+    |> put_private(:unread_noted, {group.id, profile.id})
+    |> put_private(:open_at_divider?, start != nil)
+    |> assign(:unread_divider, start)
+  end
+
+  # Leaving the chat tab ends the visit: coming back measures again.
+  defp forget_unread_start(socket) do
+    socket
+    |> put_private(:unread_noted, nil)
+    |> put_private(:open_at_divider?, false)
+    |> assign(:unread_divider, nil)
   end
 
   defp assign_group_unread_counts(socket) do

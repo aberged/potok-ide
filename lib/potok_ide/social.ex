@@ -5187,14 +5187,16 @@ defmodule PotokIde.Social do
 
   @doc """
   Moves the profile's read marker in `group` up to `up_to`: a value id, or
-  `:latest` for the group's newest chat value. It never moves back.
+  `:latest` for the group's newest chat value. It never moves back. A chat
+  read while still empty gets a marker at 0, so the first values posted after
+  it find the place the profile left (`unread_start/2`).
   """
   def mark_group_values_read(profile, group, up_to \\ :latest)
 
   def mark_group_values_read(nil, _group, _up_to), do: :ok
 
   def mark_group_values_read(%Profile{} = profile, %Group{} = group, up_to) do
-    latest_value_id = if up_to == :latest, do: latest_group_value_id(group), else: up_to
+    latest_value_id = if up_to == :latest, do: latest_group_value_id(group) || 0, else: up_to
 
     case latest_value_id do
       nil ->
@@ -5215,6 +5217,69 @@ defmodule PotokIde.Social do
           {:error, reason} ->
             {:error, reason}
         end
+    end
+  end
+
+  @doc """
+  Where the profile stopped reading `group`: the first chat value after its
+  read marker and how many chat values there are from it on, as
+  `%{value_id: id, count: n}`. Nil when nothing is unread, and without a
+  marker: a profile that never opened the group has no place to come back to.
+  The chat's divider stands there.
+  """
+  def unread_start(nil, _group), do: nil
+
+  def unread_start(%Profile{} = profile, %Group{} = group) do
+    case read_position(profile, group) do
+      {:unread, start, _last_value_id} -> start
+      _read_or_no_marker -> nil
+    end
+  end
+
+  @doc """
+  Marks the chat of `group` read, as `mark_group_values_read/2` does, and
+  returns where its unread values began (`unread_start/2`), which the marker
+  then moves past. One query reads both, and a marker with nothing after it
+  is left alone, so opening a read chat costs no more than that query.
+  """
+  def read_group_chat(%Profile{} = profile, %Group{} = group) do
+    case read_position(profile, group) do
+      :no_marker ->
+        _ = mark_group_values_read(profile, group)
+        nil
+
+      :read ->
+        nil
+
+      {:unread, start, last_value_id} ->
+        _ = mark_group_values_read(profile, group, last_value_id)
+        start
+    end
+  end
+
+  # The marker's row joined with the chat values after it: none at all
+  # without a marker, which `COUNT(r.profile_id)` tells from a marker with
+  # nothing after it, as an aggregate always gives one row.
+  defp read_position(%Profile{id: profile_id}, %Group{id: group_id}) do
+    sql = """
+    SELECT COUNT(r.profile_id), MIN(v.id), MAX(v.id), COUNT(v.id)
+    FROM group_value_reads r
+    LEFT JOIN values v
+      ON v.group_id = r.group_id
+     AND v.is_data = FALSE
+     AND v.id > COALESCE(r.last_read_value_id, 0)
+    WHERE r.profile_id = $1 AND r.group_id = $2
+    """
+
+    case Repo.query!(sql, [profile_id, group_id], cache_statement: "social_read_position") do
+      %{rows: [[0, _first, _last, _count]]} ->
+        :no_marker
+
+      %{rows: [[_marker, nil, _last, _count]]} ->
+        :read
+
+      %{rows: [[_marker, first, last, count]]} ->
+        {:unread, %{value_id: first, count: count}, last}
     end
   end
 
