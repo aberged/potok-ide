@@ -45,6 +45,7 @@ defmodule PotokIdeWeb.HostingCostControllerTest do
     assert has?(document, "#costs-current #costs-so-far")
     assert has?(document, "#costs-projected")
     assert has?(document, "#costs-current-machines")
+    assert text(document, "#costs-current-machines-projected") =~ "by the end of the month"
     assert has?(document, "#costs-current-postgres")
     assert has?(document, "#costs-month-#{key(this_month())}")
     assert text(document, "#costs-month-#{key(last)} .hc-month-invoice") =~ "$47.50"

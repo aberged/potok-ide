@@ -23,7 +23,7 @@ defmodule PotokIdeWeb.HostingCostHTML do
   def category_name(:bandwidth), do: dgettext("costs", "Data sent")
   def category_name(:ips), do: dgettext("costs", "IP addresses")
 
-  def category_text(:machines), do: dgettext("costs", "the app itself, by the second")
+  def category_text(:machines), do: dgettext("costs", "the app's server")
   def category_text(:postgres), do: dgettext("costs", "Managed Postgres, plan and data")
   def category_text(:storage), do: dgettext("costs", "pictures and files, in Tigris")
   def category_text(:bandwidth), do: dgettext("costs", "pages and files sent out")

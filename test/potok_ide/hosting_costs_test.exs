@@ -250,6 +250,15 @@ defmodule PotokIde.HostingCostsTest do
                       0.01
 
       assert_in_delta Decimal.to_float(overview.current.projected), 48.1, 0.5
+
+      # Each row heads for its own month: the machine about $10, the plan $38.
+      by_category = overview.current.projected_by_category
+      assert_in_delta Decimal.to_float(by_category.machines), 10.13, 0.05
+      assert_in_delta Decimal.to_float(by_category.postgres), 38.0, 0.5
+
+      assert_in_delta by_category |> Map.values() |> Enum.map(&Decimal.to_float/1) |> Enum.sum(),
+                      Decimal.to_float(overview.current.projected),
+                      0.05
     end
 
     test "has nothing to show before the first estimate" do

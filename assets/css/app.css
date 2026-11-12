@@ -2382,7 +2382,7 @@
 
   .hc-bars li {
     display: grid;
-    grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 6.5rem;
+    grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) minmax(7rem, 11rem);
     align-items: center;
     gap: 6px 18px;
   }
@@ -2420,10 +2420,23 @@
   }
 
   .hc-bar-value {
-    font-size: 15px;
-    font-weight: 600;
+    display: grid;
+    justify-items: end;
     text-align: right;
     font-variant-numeric: tabular-nums;
+    line-height: 1.25;
+  }
+
+  .hc-bar-value span {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  /* Where the row heads by the end of the month, so its sum so far does not
+     read as a price per second or per hour. */
+  .hc-bar-value small {
+    color: var(--dm-muted);
+    font-size: 12.5px;
   }
 
   .hc-note,

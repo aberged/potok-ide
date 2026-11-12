@@ -11,12 +11,12 @@
 msgid ""
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:181
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:197
 #, elixir-autogen, elixir-format
 msgid "Billed, in US dollars"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:83
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "By month"
 msgstr ""
@@ -26,12 +26,12 @@ msgstr ""
 msgid "By the end of the month, at this pace"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:148
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:164
 #, elixir-autogen, elixir-format
 msgid "Change the invoice"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:161
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:177
 #, elixir-autogen, elixir-format
 msgid "Copy an invoice"
 msgstr ""
@@ -46,24 +46,24 @@ msgstr ""
 msgid "Database"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:85
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:106
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:101
 #: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:122
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:138
 #, elixir-autogen, elixir-format
 msgid "Estimate"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:132
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:148
 #, elixir-autogen, elixir-format
 msgid "Estimate off by"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:65
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:75
 #, elixir-autogen, elixir-format
 msgid "Estimated at %{time} on %{date}."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:215
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:233
 #, elixir-autogen, elixir-format
 msgid "Fly bills in US dollars, and waives a personal organization's bill for a month that comes to less than $5."
 msgstr ""
@@ -73,7 +73,7 @@ msgstr ""
 msgid "How Potok is built"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:196
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:212
 #, elixir-autogen, elixir-format
 msgid "How to read this"
 msgstr ""
@@ -83,9 +83,9 @@ msgstr ""
 msgid "IP addresses"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:86
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:114
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:126
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:102
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:130
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:142
 #, elixir-autogen, elixir-format
 msgid "Invoice"
 msgstr ""
@@ -100,17 +100,17 @@ msgstr ""
 msgid "Managed Postgres, plan and data"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:173
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:189
 #, elixir-autogen, elixir-format
 msgid "Month"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:187
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:203
 #, elixir-autogen, elixir-format
 msgid "Note (optional)"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:163
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:179
 #, elixir-autogen, elixir-format
 msgid "Only operators see this. Copy the total of a month from the invoice in Fly's dashboard; an empty sum removes the invoice of that month."
 msgstr ""
@@ -120,12 +120,12 @@ msgstr ""
 msgid "Pick the month of the invoice."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:75
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:88
 #, elixir-autogen, elixir-format
 msgid "Potok does not estimate its costs here, as it cannot read Fly. Billed months still show below."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:209
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:225
 #, elixir-autogen, elixir-format
 msgid "Potok has estimated since %{date}; earlier months show only their invoices."
 msgstr ""
@@ -135,7 +135,7 @@ msgstr ""
 msgid "Potok runs on Fly.io and pays for it every month, in US dollars. Fly gives no way to read its bills, so Potok estimates them itself every quarter of an hour, from what runs and Fly's price list. Once a month is billed, the real sum stands next to the estimate."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:190
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:206
 #, elixir-autogen, elixir-format
 msgid "Save"
 msgstr ""
@@ -150,12 +150,12 @@ msgstr ""
 msgid "Stored files"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:199
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:215
 #, elixir-autogen, elixir-format
 msgid "The estimate counts the app's machines by the second, the database's plan and its data, the stored files, dedicated IPv4 addresses and the data sent out. Taxes, credits and support plans are not in it."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:73
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:83
 #, elixir-autogen, elixir-format
 msgid "The first estimate is on its way: Potok writes one every quarter of an hour."
 msgstr ""
@@ -165,7 +165,7 @@ msgstr ""
 msgid "The invoice is saved."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:205
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:221
 #, elixir-autogen, elixir-format
 msgid "The prices are Fly's list prices as of %{date}."
 msgstr ""
@@ -181,7 +181,7 @@ msgstr ""
 msgid "What Potok costs"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:149
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:165
 #, elixir-autogen, elixir-format
 msgid "Write the invoice"
 msgstr ""
@@ -201,12 +201,17 @@ msgstr ""
 msgid "pictures and files, in Tigris"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:98
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:114
 #, elixir-autogen, elixir-format
 msgid "so far"
 msgstr ""
 
 #: lib/potok_ide_web/controllers/hosting_cost_html.ex:26
 #, elixir-autogen, elixir-format
-msgid "the app itself, by the second"
+msgid "the app's server"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:66
+#, elixir-autogen, elixir-format
+msgid "≈ %{amount} by the end of the month"
 msgstr ""

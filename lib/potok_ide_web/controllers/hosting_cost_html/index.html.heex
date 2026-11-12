@@ -57,7 +57,17 @@
               >
               </span>
             </div>
-            <span class="hc-bar-value">{usd(amount, @current_locale)}</span>
+            <div class="hc-bar-value">
+              <span>{usd(amount, @current_locale)}</span>
+              <small
+                :if={@overview.current.projected_by_category[category]}
+                id={"costs-current-#{category}-projected"}
+              >
+                {dgettext("costs", "≈ %{amount} by the end of the month",
+                  amount: usd(@overview.current.projected_by_category[category], @current_locale)
+                )}
+              </small>
+            </div>
           </li>
         </ul>
 

@@ -322,8 +322,10 @@ defmodule PotokIde.HostingCosts do
   # The month so far, and that plus the rate of the last hour (with the bytes
   # of the last week) for each hour of the month without an estimate: the
   # hours left, and those before Potok began estimating or while it could not,
-  # so the first month heads for a whole month's sum too.
-  defp current(%{estimate: nil} = month, _current_hour), do: Map.put(month, :projected, nil)
+  # so the first month heads for a whole month's sum too. Each category heads
+  # for its own sum the same way (`projected_by_category`).
+  defp current(%{estimate: nil} = month, _current_hour),
+    do: Map.merge(month, %{projected: nil, projected_by_category: %{}})
 
   defp current(month, current_hour) do
     month_start = DateTime.new!(month.month, ~T[00:00:00], "Etc/UTC")
@@ -337,17 +339,31 @@ defmodule PotokIde.HostingCosts do
       )
 
     hours_without = max(month_hours(month_start) - counted, 0)
+    rates = hourly_rates(current_hour)
 
-    projected =
-      Decimal.add(month.estimate, Decimal.mult(hourly_rate(current_hour), hours_without))
+    by_category =
+      Map.new(month.by_category, fn {category, so_far} ->
+        rate = Map.get(rates, category, Decimal.new(0))
+        {category, Decimal.round(Decimal.add(so_far, Decimal.mult(rate, hours_without)), 2)}
+      end)
 
-    Map.put(month, :projected, Decimal.round(projected, 2))
+    rate = Enum.reduce(Map.values(rates), Decimal.new(0), &Decimal.add/2)
+    projected = Decimal.add(month.estimate, Decimal.mult(rate, hours_without))
+
+    Map.merge(month, %{
+      projected: Decimal.round(projected, 2),
+      projected_by_category: by_category
+    })
   end
 
-  defp hourly_rate(current_hour) do
-    # The last full hour, or the current one when it is the first.
+  # What each category costs in an hour: the last full hour, or the current
+  # one when it is the first; the bytes sent as their average of the last week.
+  defp hourly_rates(current_hour) do
     steady =
-      steady_rate(add_hours(current_hour, -1)) || steady_rate(current_hour) || Decimal.new(0)
+      case steady_rates(add_hours(current_hour, -1)) do
+        rates when rates == %{} -> steady_rates(current_hour)
+        rates -> rates
+      end
 
     {sent, hours} =
       from(c in CostHour,
@@ -358,18 +374,17 @@ defmodule PotokIde.HostingCosts do
       )
       |> Repo.one()
 
-    sent_rate = if hours > 0, do: Decimal.div(sent, hours), else: Decimal.new(0)
-
-    Decimal.add(steady, sent_rate)
+    if hours > 0, do: Map.put(steady, :bandwidth, Decimal.div(sent, hours)), else: steady
   end
 
-  defp steady_rate(hour) do
-    Repo.one(
-      from(c in CostHour,
-        where: c.hour == ^hour and c.category != :bandwidth,
-        select: sum(c.amount_usd)
-      )
+  defp steady_rates(hour) do
+    from(c in CostHour,
+      where: c.hour == ^hour and c.category != :bandwidth,
+      group_by: c.category,
+      select: {c.category, sum(c.amount_usd)}
     )
+    |> Repo.all()
+    |> Map.new()
   end
 
   ## Invoices
