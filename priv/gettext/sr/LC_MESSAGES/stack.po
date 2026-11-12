@@ -11,97 +11,97 @@ msgstr ""
 "Language: sr\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide_web/stack_copy.ex:93
+#: lib/potok_ide_web/stack_copy.ex:104
 #, elixir-autogen, elixir-format
 msgid "A cache inside the machine"
 msgstr "Keš u samoj mašini"
 
-#: lib/potok_ide_web/stack_copy.ex:197
+#: lib/potok_ide_web/stack_copy.ex:208
 #, elixir-autogen, elixir-format
 msgid "A conversation is a stream"
 msgstr "Razgovor je tok"
 
-#: lib/potok_ide_web/stack_copy.ex:61
+#: lib/potok_ide_web/stack_copy.ex:72
 #, elixir-autogen, elixir-format
 msgid "A crash stays in its process"
 msgstr "Pad ostaje u svom procesu"
 
-#: lib/potok_ide_web/stack_copy.ex:123
+#: lib/potok_ide_web/stack_copy.ex:134
 #, elixir-autogen, elixir-format
 msgid "A function takes a value and returns a new one, and the old one stays as it was, so nothing can change it while something else reads it. Data is easy to follow: steps come one after another, and the shape of the data picks the branch that runs."
 msgstr "Funkcija prima vrednost i vraća novu, a stara ostaje kakva je bila, pa niko ne može da je promeni dok je neko drugi čita. Podatak se lako prati: koraci se nižu jedan za drugim, a oblik podatka bira granu koja se izvršava."
 
-#: lib/potok_ide_web/stack_copy.ex:53
+#: lib/potok_ide_web/stack_copy.ex:64
 #, elixir-autogen, elixir-format
 msgid "A process for every open page"
 msgstr "Proces za svaku otvorenu stranicu"
 
-#: lib/potok_ide_web/stack_copy.ex:110
+#: lib/potok_ide_web/stack_copy.ex:121
 #, elixir-autogen, elixir-format
 msgid "All the rules of the app: who may do what, how threads and inheritance work, what is unread, how events repeat."
 msgstr "Sva pravila aplikacije: ko sme šta, kako rade niti i nasleđivanje, šta je nepročitano, kako se događaji ponavljaju."
 
-#: lib/potok_ide_web/stack_copy.ex:231
+#: lib/potok_ide_web/stack_copy.ex:242
 #, elixir-autogen, elixir-format
 msgid "An app from a group's description runs in an isolated frame, with no access to the page around it. It talks to Potok through messages that reach the page's process, and there every permission is checked again."
 msgstr "Aplikacija iz opisa grupe radi u izolovanom okviru, bez pristupa stranici oko sebe. Sa Potokom razgovara porukama koje stižu do procesa stranice, a tamo se svako pravo proverava iznova."
 
-#: lib/potok_ide_web/stack_copy.ex:343
+#: lib/potok_ide_web/stack_copy.ex:354
 #, elixir-autogen, elixir-format
 msgid "An app in a group loads the same CSS as Potok, so its author can use the same components and colors, and the app follows the theme."
 msgstr "Aplikacija u grupi učitava isti CSS kao Potok, pa njen autor može da koristi iste komponente i boje, a aplikacija prati temu."
 
-#: lib/potok_ide_web/stack_copy.ex:341
+#: lib/potok_ide_web/stack_copy.ex:352
 #, elixir-autogen, elixir-format
 msgid "Apps get the same classes"
 msgstr "Aplikacije dobijaju iste klase"
 
-#: lib/potok_ide_web/stack_copy.ex:229
+#: lib/potok_ide_web/stack_copy.ex:240
 #, elixir-autogen, elixir-format
 msgid "Apps in a group"
 msgstr "Aplikacije u grupi"
 
-#: lib/potok_ide_web/stack_copy.ex:259
+#: lib/potok_ide_web/stack_copy.ex:270
 #, elixir-autogen, elixir-format
 msgid "At build time Tailwind goes through the templates and the JavaScript and makes one CSS file, with only the classes that appear there. A class removed from a template leaves the file by itself."
 msgstr "Pri gradnji Tailwind pregleda šablone i JavaScript i pravi jedan CSS fajl, samo sa klasama koje se tu pojavljuju. Klasa izbačena iz šablona sama nestaje iz fajla."
 
-#: lib/potok_ide_web/stack_copy.ex:47
+#: lib/potok_ide_web/stack_copy.ex:58
 #, elixir-autogen, elixir-format
 msgid "BEAM is the virtual machine of Erlang, a language born for telephone exchanges, where thousands of calls run at once and none may bring the others down. Conversations in Potok ask for the same. The logo here is Erlang's, as BEAM has none of its own."
 msgstr "BEAM je virtuelna mašina Erlanga, jezika nastalog za telefonske centrale, gde hiljade razgovora teku istovremeno i nijedan ne sme da obori ostale. Razgovori u Potoku traže isto. Znak ovde je Erlangov, jer BEAM nema svoj."
 
-#: lib/potok_ide_web/stack_copy.ex:77
+#: lib/potok_ide_web/stack_copy.ex:88
 #, elixir-autogen, elixir-format
 msgid "Background work is ordinary processes"
 msgstr "Pozadinski poslovi su obični procesi"
 
-#: lib/potok_ide_web/stack_copy.ex:153
+#: lib/potok_ide_web/stack_copy.ex:164
 #, elixir-autogen, elixir-format
 msgid "Code that reads itself"
 msgstr "Kod koji čita sam sebe"
 
-#: lib/potok_ide_web/stack_copy.ex:327
+#: lib/potok_ide_web/stack_copy.ex:338
 #, elixir-autogen, elixir-format
 msgid "Colors are named by role, like `base-100`, `primary` or `error`, and a theme gives them their values. Potok has its own light and dark theme, with the blue of its mark, and switches between them with one attribute on the page."
 msgstr "Boje se zovu po ulozi, kao `base-100`, `primary` ili `error`, a vrednost im daje tema. Potok ima svoju svetlu i tamnu temu, sa plavom iz znaka, i menja ih jednim atributom na stranici."
 
-#: lib/potok_ide_web/stack_copy.ex:325
+#: lib/potok_ide_web/stack_copy.ex:336
 #, elixir-autogen, elixir-format
 msgid "Colors by role"
 msgstr "Boje po ulozi"
 
-#: lib/potok_ide_web/stack_copy.ex:304
+#: lib/potok_ide_web/stack_copy.ex:315
 #, elixir-autogen, elixir-format
 msgid "Components and themes"
 msgstr "Komponente i teme"
 
-#: lib/potok_ide_web/stack_copy.ex:317
+#: lib/potok_ide_web/stack_copy.ex:328
 #, elixir-autogen, elixir-format
 msgid "Components as classes"
 msgstr "Komponente kao klase"
 
-#: lib/potok_ide_web/stack_copy.ex:121
+#: lib/potok_ide_web/stack_copy.ex:132
 #, elixir-autogen, elixir-format
 msgid "Data never changes in place"
 msgstr "Podaci se ne menjaju u mestu"
@@ -111,42 +111,42 @@ msgstr "Podaci se ne menjaju u mestu"
 msgid "Domain map"
 msgstr "Mapa domena"
 
-#: lib/potok_ide_web/stack_copy.ex:131
+#: lib/potok_ide_web/stack_copy.ex:142
 #, elixir-autogen, elixir-format
 msgid "Ecto describes every table in code, and changes pass their checks before they reach PostgreSQL. Changes that belong together form one transaction: all of them are written, or none."
 msgstr "Ecto opisuje svaku tabelu u kodu, a izmene prolaze provere pre nego što stignu do PostgreSQL-a. Izmene koje idu zajedno čine jednu transakciju: upišu se sve ili nijedna."
 
-#: lib/potok_ide_web/stack_copy.ex:129
+#: lib/potok_ide_web/stack_copy.ex:140
 #, elixir-autogen, elixir-format
 msgid "Ecto guards the database"
 msgstr "Ecto čuva bazu"
 
-#: lib/potok_ide_web/stack_copy.ex:291
+#: lib/potok_ide_web/stack_copy.ex:302
 #, elixir-autogen, elixir-format
 msgid "Elaborate pages like the landing page and the domain map also have hand-written styles, in the same CSS file and with the same colors."
 msgstr "Složene strane, kao naslovna i mapa domena, imaju i ručno pisane stilove, u istom CSS fajlu i sa istim bojama."
 
-#: lib/potok_ide_web/stack_copy.ex:115
+#: lib/potok_ide_web/stack_copy.ex:126
 #, elixir-autogen, elixir-format
 msgid "Elixir is a language that runs on BEAM. It gets everything above from it and adds readable code and good tools. All of Potok's server code is written in it, with every rule from the domain map."
 msgstr "Elixir je jezik koji radi na BEAM-u. Od njega dobija sve gore navedeno, a dodaje čitljiv kod i dobre alate. U njemu je napisan sav serverski kod Potoka, sa svim pravilima sa mape domena."
 
-#: lib/potok_ide_web/stack_copy.ex:55
+#: lib/potok_ide_web/stack_copy.ex:66
 #, elixir-autogen, elixir-format
 msgid "Every open page has a light process of its own on the server, with its own memory. Processes share no memory and send each other messages, and BEAM keeps switching between them, so slow work on one page does not hold up the others."
 msgstr "Svaka otvorena stranica ima na serveru svoj lagan proces, sa svojom memorijom. Procesi ne dele memoriju nego šalju jedni drugima poruke, a BEAM ih stalno smenjuje, pa spor posao na jednoj stranici ne zadržava ostale."
 
-#: lib/potok_ide_web/stack_copy.ex:191
+#: lib/potok_ide_web/stack_copy.ex:202
 #, elixir-autogen, elixir-format
 msgid "Every page after log-in is LiveView. The view is worked out on the server, and over a WebSocket connection the browser gets only what changed. JavaScript stays for what only a browser can do, like scrolling or uploading files. The phone apps show the same pages from the same server, so a new feature reaches every device at once."
 msgstr "Sve stranice posle prijave su LiveView. Prikaz se računa na serveru, a pregledač preko WebSocket veze dobija samo ono što se promenilo. JavaScript ostaje za ono što ume samo pregledač, recimo skrolovanje i otpremanje fajlova. Aplikacije za telefon prikazuju iste stranice sa istog servera, pa nova mogućnost stiže na sve uređaje odjednom."
 
-#: lib/potok_ide_web/stack_copy.ex:178
+#: lib/potok_ide_web/stack_copy.ex:189
 #, elixir-autogen, elixir-format
 msgid "Everything between the browser and the rules: pages, the live connection, log-in, addresses, files."
 msgstr "Sve između pregledača i pravila: stranice, veza uživo, prijava, adrese, fajlovi."
 
-#: lib/potok_ide_web/stack_copy.ex:42
+#: lib/potok_ide_web/stack_copy.ex:53
 #, elixir-autogen, elixir-format
 msgid "Everything that happens at once: open pages, notifications, reminders and the links between servers."
 msgstr "Sve što se dešava istovremeno: otvorene stranice, obaveštenja, podsetnici i veze između servera."
@@ -156,7 +156,7 @@ msgstr "Sve što se dešava istovremeno: otvorene stranice, obaveštenja, podset
 msgid "Five tools, from the virtual machine to the message bubble. Each one solves its own part of the app, and this page says which part and how."
 msgstr "Pet alata, od virtuelne mašine do oblačića poruke. Svaki rešava svoj deo aplikacije, a ovde piše koji i kako."
 
-#: lib/potok_ide_web/stack_copy.ex:333
+#: lib/potok_ide_web/stack_copy.ex:344
 #, elixir-autogen, elixir-format
 msgid "Forms"
 msgstr "Obrasci"
@@ -166,47 +166,47 @@ msgstr "Obrasci"
 msgid "How"
 msgstr "Kako"
 
-#: lib/potok_ide_web/stack_copy.ex:246
+#: lib/potok_ide_web/stack_copy.ex:257
 #, elixir-autogen, elixir-format
 msgid "How every element looks: spacing, type, colors, and the layout on a phone and on a big screen."
 msgstr "Izgled svakog elementa: razmaci, slova, boje i raspored na telefonu i na velikom ekranu."
 
-#: lib/potok_ide_web/stack_copy.ex:281
+#: lib/potok_ide_web/stack_copy.ex:292
 #, elixir-autogen, elixir-format
 msgid "Icons without images"
 msgstr "Ikonice bez slika"
 
-#: lib/potok_ide_web/stack_copy.ex:189
+#: lib/potok_ide_web/stack_copy.ex:200
 #, elixir-autogen, elixir-format
 msgid "LiveView: pages live on the server"
 msgstr "LiveView: stranice žive na serveru"
 
-#: lib/potok_ide_web/stack_copy.ex:69
+#: lib/potok_ide_web/stack_copy.ex:80
 #, elixir-autogen, elixir-format
 msgid "Memory is cleaned per process"
 msgstr "Memorija se čisti po procesu"
 
-#: lib/potok_ide_web/stack_copy.ex:257
+#: lib/potok_ide_web/stack_copy.ex:268
 #, elixir-autogen, elixir-format
 msgid "Only what is used"
 msgstr "Samo ono što se koristi"
 
-#: lib/potok_ide_web/stack_copy.ex:183
+#: lib/potok_ide_web/stack_copy.ex:194
 #, elixir-autogen, elixir-format
 msgid "Phoenix is a web framework written in Elixir. It takes every request, checks the session and the language, leads it to the right page and keeps the connection to the browser open."
 msgstr "Phoenix je veb okvir napisan u Elixir-u. Prima svaki zahtev, proverava sesiju i jezik, vodi ga do prave stranice i drži vezu sa pregledačem otvorenom."
 
-#: lib/potok_ide_web/stack_copy.ex:265
+#: lib/potok_ide_web/stack_copy.ex:276
 #, elixir-autogen, elixir-format
 msgid "Phone first"
 msgstr "Prvo telefon"
 
-#: lib/potok_ide_web/stack_copy.ex:267
+#: lib/potok_ide_web/stack_copy.ex:278
 #, elixir-autogen, elixir-format
 msgid "Plain classes hold for a narrow screen, and `sm:` and `lg:` add what changes on a wider one. Potok added variants of its own: `keyboard-open:` while the phone's keyboard is open, and `cramped:` for screens too short for the bars around a conversation."
 msgstr "Obične klase važe za uzak ekran, a `sm:` i `lg:` dodaju šta se menja na širem. Potok je dodao svoje varijante: `keyboard-open:` dok je tastatura telefona otvorena i `cramped:` za ekrane preniske za trake oko razgovora."
 
-#: lib/potok_ide_web/stack_copy.ex:351
+#: lib/potok_ide_web/stack_copy.ex:362
 #, elixir-autogen, elixir-format
 msgid "Potok does not use everything daisyUI offers. Buttons are written with Tailwind, and dialogs are native `<dialog>` elements, as they have to sit above everything on the page."
 msgstr "Potok ne koristi sve što daisyUI nudi. Dugmad su pisana Tailwind-om, a dijalozi su izvorni `<dialog>` elementi, jer moraju da stoje iznad svega na stranici."
@@ -216,27 +216,27 @@ msgstr "Potok ne koristi sve što daisyUI nudi. Dugmad su pisana Tailwind-om, a 
 msgid "Potok uses BEAM, Elixir, Phoenix, Tailwind and daisyUI."
 msgstr "Potok koristi BEAM, Elixir, Phoenix, Tailwind i daisyUI."
 
-#: lib/potok_ide_web/stack_copy.ex:215
+#: lib/potok_ide_web/stack_copy.ex:226
 #, elixir-autogen, elixir-format
 msgid "Presence tracks which profile has a group open and keeps that in step between servers, without the database. A page listens only to the profiles it cares about, so one member coming in does not wake a whole big group."
 msgstr "Presence prati koji profil ima otvorenu grupu i usklađuje to među serverima, bez baze. Stranica sluša samo profile koji je zanimaju, pa ulazak jednog člana ne budi celu veliku grupu."
 
-#: lib/potok_ide_web/stack_copy.ex:213
+#: lib/potok_ide_web/stack_copy.ex:224
 #, elixir-autogen, elixir-format
 msgid "Presence: who is here"
 msgstr "Presence: ko je tu"
 
-#: lib/potok_ide_web/stack_copy.ex:108
+#: lib/potok_ide_web/stack_copy.ex:119
 #, elixir-autogen, elixir-format
 msgid "Programming language"
 msgstr "Programski jezik"
 
-#: lib/potok_ide_web/stack_copy.ex:205
+#: lib/potok_ide_web/stack_copy.ex:216
 #, elixir-autogen, elixir-format
 msgid "PubSub: a new value reaches everyone"
 msgstr "PubSub: nova vrednost stiže svima"
 
-#: lib/potok_ide_web/stack_copy.ex:306
+#: lib/potok_ide_web/stack_copy.ex:317
 #, elixir-autogen, elixir-format
 msgid "Ready-made parts of the screen and their colors: message bubbles, fields, menus, the light and the dark theme."
 msgstr "Gotovi delovi ekrana i njihove boje: oblačići poruka, polja, meniji, svetla i tamna tema."
@@ -246,77 +246,77 @@ msgstr "Gotovi delovi ekrana i njihove boje: oblačići poruka, polja, meniji, s
 msgid "See what each of them solves and how"
 msgstr "Pogledaj šta koji od njih rešava i kako"
 
-#: lib/potok_ide_web/stack_copy.ex:87
+#: lib/potok_ide_web/stack_copy.ex:98
 #, elixir-autogen, elixir-format
 msgid "Servers find each other through DNS and join a cluster. A message sent on one reaches a process on another, with no broker such as Redis in between."
 msgstr "Serveri se pronalaze preko DNS-a i povezuju u klaster. Poruka poslata na jednom stiže do procesa na drugom, bez posrednika kao što je Redis."
 
-#: lib/potok_ide_web/stack_copy.ex:85
+#: lib/potok_ide_web/stack_copy.ex:96
 #, elixir-autogen, elixir-format
 msgid "Several servers, one system"
 msgstr "Više servera, jedan sistem"
 
-#: lib/potok_ide_web/stack_copy.ex:273
+#: lib/potok_ide_web/stack_copy.ex:284
 #, elixir-autogen, elixir-format
 msgid "States and the theme"
 msgstr "Stanja i tema"
 
-#: lib/potok_ide_web/stack_copy.ex:244
+#: lib/potok_ide_web/stack_copy.ex:255
 #, elixir-autogen, elixir-format
 msgid "Styling"
 msgstr "Stilovi"
 
-#: lib/potok_ide_web/stack_copy.ex:251
+#: lib/potok_ide_web/stack_copy.ex:262
 #, elixir-autogen, elixir-format
 msgid "Tailwind is a set of small CSS classes written right in the template. Instead of a separate style for each part of the screen, an element carries its look with it."
 msgstr "Tailwind je skup sitnih CSS klasa koje se pišu direktno u šablonu. Umesto posebnog stila za svaki deo ekrana, element nosi svoj izgled uza sebe."
 
-#: lib/potok_ide_web/stack_copy.ex:147
+#: lib/potok_ide_web/stack_copy.ex:158
 #, elixir-autogen, elixir-format
 msgid "Templates and addresses are checked while the code is built. A link to a page that does not exist is a warning, and a warning stops the change. The compiler also splits a template into fixed and changing parts, which is why LiveView sends only the differences."
 msgstr "Šabloni i adrese proveravaju se još dok se kod gradi. Link ka nepostojećoj stranici je upozorenje, a upozorenje zaustavlja izmenu. Kompajler usput deli šablon na stalne i promenljive delove, i zato LiveView šalje samo razlike."
 
-#: lib/potok_ide_web/stack_copy.ex:163
+#: lib/potok_ide_web/stack_copy.ex:174
 #, elixir-autogen, elixir-format
 msgid "Tests (ExUnit) and helper tasks are written in Elixir too. One command before every change builds the code with no warnings, formats it and runs the tests, and the Cyrillic version of this page is generated from the Latin one."
 msgstr "I testovi (ExUnit) i pomoćni zadaci pisani su u Elixir-u. Jedna komanda pre svake izmene gradi kod bez upozorenja, formatira ga i pušta testove, a ćirilica ove stranice nastaje iz latinice."
 
-#: lib/potok_ide_web/stack_copy.ex:335
+#: lib/potok_ide_web/stack_copy.ex:346
 #, elixir-autogen, elixir-format
 msgid "Text fields, selects and checkboxes come from daisyUI, and one component in the code, `input`, shows them all the same way, with the same error messages."
 msgstr "Polja za unos, padajući izbori i potvrdna polja dolaze iz daisyUI-ja, a jedna komponenta u kodu, `input`, sve ih prikazuje na isti način, sa istim porukama o greškama."
 
-#: lib/potok_ide_web/stack_copy.ex:145
+#: lib/potok_ide_web/stack_copy.ex:156
 #, elixir-autogen, elixir-format
 msgid "The compiler does part of the checking"
 msgstr "Deo provere radi kompajler"
 
-#: lib/potok_ide_web/stack_copy.ex:155
+#: lib/potok_ide_web/stack_copy.ex:166
 #, elixir-autogen, elixir-format
 msgid "The fields and keys on the domain map are not copied by hand: fields come from the Ecto schemas and keys from the database catalog, so they cannot fall behind the code. When a table shows up without a description, a test fails."
 msgstr "Polja i ključevi na mapi domena ne prepisuju se ručno: polja dolaze iz Ecto šema, a ključevi iz kataloga baze, pa ne mogu da zaostanu za kodom. Kad se pojavi tabela bez opisa, test pada."
 
-#: lib/potok_ide_web/stack_copy.ex:283
+#: lib/potok_ide_web/stack_copy.ex:294
 #, elixir-autogen, elixir-format
 msgid "The icons are Heroicons, included as a plugin for Tailwind: the class `hero-bell` is a bell written into the CSS itself, so there is no image to load, and it takes its color from the text."
 msgstr "Ikonice su Heroicons, uključene kao dodatak za Tailwind: klasa `hero-bell` je zvonce zapisano u samom CSS-u, pa nema slike koja se učitava, a boju nasleđuje od teksta."
 
-#: lib/potok_ide_web/stack_copy.ex:199
+#: lib/potok_ide_web/stack_copy.ex:210
 #, elixir-autogen, elixir-format
 msgid "The messages of a conversation are a LiveView stream: the server keeps them out of the page's memory and sends the browser only the new, edited or deleted one. The browser holds the rest, so a long conversation does not weigh on the server."
 msgstr "Poruke razgovora su LiveView tok: server ih ne drži u memoriji stranice, nego pregledaču šalje samo novu, izmenjenu ili obrisanu. Ostatak čuva pregledač, pa dug razgovor ne opterećuje server."
 
-#: lib/potok_ide_web/stack_copy.ex:221
+#: lib/potok_ide_web/stack_copy.ex:232
 #, elixir-autogen, elixir-format
 msgid "The router and access checks"
 msgstr "Ruter i provera pristupa"
 
-#: lib/potok_ide_web/stack_copy.ex:223
+#: lib/potok_ide_web/stack_copy.ex:234
 #, elixir-autogen, elixir-format
 msgid "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, a public group's page for guests, files and avatars, stays a plain response to a request, so a reader holds no process open. Only an app on a guest's page gets a small process of its own, which asks now and then whether guests may still see it."
 msgstr "Ruter deli adrese na one za goste, naloge i profile, a ista provera važi i za prvo učitavanje i za vezu uživo. Ono čemu veza uživo ne treba, kao naslovna strana, mapa domena, ova stranica, strana javne grupe za goste, fajlovi i avatari, ostaje običan odgovor na zahtev, pa čitalac ne drži otvoren proces. Samo aplikacija na strani za goste dobija svoj mali proces, koji s vremena na vreme proverava da li gosti još smeju da je vide."
 
-#: lib/potok_ide_web/stack_copy.ex:275
+#: lib/potok_ide_web/stack_copy.ex:286
 #, elixir-autogen, elixir-format
 msgid "The variants `phx-click-loading:` and `phx-submit-loading:` change the look while the server handles a click, so a button reacts at once. `dark:` follows the chosen theme, or the device's."
 msgstr "Varijante `phx-click-loading:` i `phx-submit-loading:` menjaju izgled dok server obrađuje klik, pa dugme reaguje odmah. `dark:` prati izabranu temu ili onu sa uređaja."
@@ -326,17 +326,17 @@ msgstr "Varijante `phx-click-loading:` i `phx-submit-loading:` menjaju izgled do
 msgid "Tools"
 msgstr "Alati"
 
-#: lib/potok_ide_web/stack_copy.ex:161
+#: lib/potok_ide_web/stack_copy.ex:172
 #, elixir-autogen, elixir-format
 msgid "Tools in the same language"
 msgstr "Alati u istom jeziku"
 
-#: lib/potok_ide_web/stack_copy.ex:40
+#: lib/potok_ide_web/stack_copy.ex:51
 #, elixir-autogen, elixir-format
 msgid "Virtual machine"
 msgstr "Virtuelna mašina"
 
-#: lib/potok_ide_web/stack_copy.ex:176
+#: lib/potok_ide_web/stack_copy.ex:187
 #, elixir-autogen, elixir-format
 msgid "Web framework"
 msgstr "Veb okvir"
@@ -346,7 +346,7 @@ msgstr "Veb okvir"
 msgid "What Potok is made of"
 msgstr "Od čega je Potok napravljen"
 
-#: lib/potok_ide_web/stack_copy.ex:349
+#: lib/potok_ide_web/stack_copy.ex:360
 #, elixir-autogen, elixir-format
 msgid "What Potok leaves out"
 msgstr "Šta Potok ne koristi"
@@ -356,52 +356,67 @@ msgstr "Šta Potok ne koristi"
 msgid "What it solves"
 msgstr "Šta rešava"
 
-#: lib/potok_ide_web/stack_copy.ex:63
+#: lib/potok_ide_web/stack_copy.ex:74
 #, elixir-autogen, elixir-format
 msgid "When something goes wrong, only that process falls. Its page reconnects on its own and nobody else notices. A supervisor starts the permanent parts of the app and brings them back if they stop."
 msgstr "Kad nešto pođe naopako, pada samo taj proces. Njegova stranica se sama ponovo poveže, a ostali ne primete ništa. Stalne delove aplikacije pokreće nadzornik, koji ih vraća ako stanu."
 
-#: lib/potok_ide_web/stack_copy.ex:289
+#: lib/potok_ide_web/stack_copy.ex:300
 #, elixir-autogen, elixir-format
 msgid "Where Tailwind stops"
 msgstr "Gde Tailwind staje"
 
-#: lib/potok_ide_web/stack_copy.ex:319
+#: lib/potok_ide_web/stack_copy.ex:330
 #, elixir-autogen, elixir-format
 msgid "`chat-bubble` is a message bubble, `drawer` the side menu, `dropdown` a drop-down menu, `toast` a note at the bottom of the screen. It is all plain CSS, so it does not get in the way of LiveView, which updates the page by itself."
 msgstr "`chat-bubble` je oblačić poruke, `drawer` bočni meni, `dropdown` padajući meni, `toast` poruka na dnu ekrana. Sve je običan CSS, pa ne smeta LiveView-u, koji sam menja stranicu."
 
-#: lib/potok_ide_web/stack_copy.ex:311
+#: lib/potok_ide_web/stack_copy.ex:322
 #, elixir-autogen, elixir-format
 msgid "daisyUI is a plugin for Tailwind. It gives the common parts of an interface as named classes and adds no JavaScript."
 msgstr "daisyUI je dodatak za Tailwind. Česte delove interfejsa daje kao klase sa imenom i ne dodaje JavaScript."
 
-#: lib/potok_ide_web/stack_copy.ex:207
+#: lib/potok_ide_web/stack_copy.ex:218
 #, elixir-autogen, elixir-format
 msgid "When someone saves a value, Phoenix PubSub publishes it on the group's topic, and every page process listening there gets it and shows it. Unread counts have a topic of their own, so one value is one publication, however many members the group has. So do the values apps keep under rules, and each page decides by those rules whether its reader may see one."
 msgstr "Kad neko sačuva vrednost, Phoenix PubSub je objavi na kanalu grupe, a svaki proces stranice koji ga sluša dobije je i prikaže. Nepročitano ima svoj kanal, pa je jedna vrednost jedna objava, koliko god članova grupa imala. Svoj kanal imaju i vrednosti koje aplikacije čuvaju po pravilima, a svaka stranica po tim pravilima odlučuje da li njen čitalac sme da vidi vrednost."
 
-#: lib/potok_ide_web/stack_copy.ex:95
+#: lib/potok_ide_web/stack_copy.ex:106
 #, elixir-autogen, elixir-format
 msgid "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown and the access token for notifications. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
 msgstr "ETS je tabela u memoriji koju čitaju svi procesi. U njoj Potok drži ono što je skupo izračunati, a retko se menja: obrađen Markdown i pristupni token za obaveštenja. Slike koje crta, kartice linkova i avatare, čuva u fajlovima na disku, pa ne zauzimaju memoriju. ETS broji i pokušaje prijave i mejlove koje neko traži da se pošalju, pa niko ne može da ih ponavlja bez kraja."
 
-#: lib/potok_ide_web/stack_copy.ex:71
+#: lib/potok_ide_web/stack_copy.ex:82
 #, elixir-autogen, elixir-format
 msgid "Each process cleans its own memory, so cleaning never stops the whole server. Potok makes use of that: a page's connection does a full sweep every time, both are swept once more two seconds after loading, and after that the page looks at its connection every 20 seconds and has it swept if it has grown. A page that receives nothing for two seconds shrinks to what it really holds. That is how a small server holds many open pages."
 msgstr "Svaki proces sam čisti svoju memoriju, pa čišćenje nikad ne zaustavlja ceo server. Potok to koristi: veza stranice svaki put čisti potpuno, obe se još jednom počiste dve sekunde posle učitavanja, a posle toga stranica na svakih 20 sekundi pogleda svoju vezu i počisti je ako je narasla. Stranica kojoj dve sekunde ništa ne stigne skupi se na ono što zaista drži. Tako i mali server drži mnogo otvorenih stranica."
 
-#: lib/potok_ide_web/stack_copy.ex:79
-#, elixir-autogen, elixir-format
-msgid "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
-msgstr "Obaveštenja se šalju iz posebnih procesa, pa stranica ne čeka servise za dostavu. Čekaju u jednom redu i idu po dva odjednom, pa niz objava ne pokrene stotine slanja u istom trenutku. Podsetnici za događaje su proces koji se budi na svakih pola minuta, a tako rade i rokovi glasanja. Jednom na sat drugi proces briše fajlove koje su aplikacije primile, a nijedan odgovor ih nije uzeo. Slike za kartice linkova i za avatare u obaveštenjima crtaju se jedna po jedna, svaka u svom procesu, a najviše tri pregleda linkova preuzimaju se odjednom. Ništa od toga ne traži poseban sistem za redove poslova. Još jedan proces čuva uprošćene granice područja i linije ruta koje je mapa tražila i pušta one koje najduže nisu korišćene."
-
-#: lib/potok_ide_web/stack_copy.ex:137
+#: lib/potok_ide_web/stack_copy.ex:148
 #, elixir-autogen, elixir-format
 msgid "PostGIS knows places on the Earth"
 msgstr "PostGIS poznaje mesta na Zemlji"
 
-#: lib/potok_ide_web/stack_copy.ex:139
+#: lib/potok_ide_web/stack_copy.ex:150
 #, elixir-autogen, elixir-format
 msgid "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin or that a route passes through by an index instead of reading every border, measures a route's length along the Earth's surface, and simplifies a border or a route for each zoom of a map, so a phone gets only the points it can show."
 msgstr "PostgreSQL pokreće PostGIS, svoje proširenje za mesta na Zemlji. On proverava da granica područja ne seče samu sebe, kroz indeks nalazi područja koja obuhvataju pin grupe ili kroz koja ruta prolazi umesto da čita svaku granicu, meri dužinu rute po površini Zemlje, i uprošćava granicu ili rutu za svaki zum mape, pa telefon dobija samo tačke koje može da prikaže."
+
+#: lib/potok_ide_web/stack_copy.ex:36
+#, elixir-autogen, elixir-format
+msgid "Everything here runs at Fly.io: the app, the database and the files. See this month so far and every month before, estimated and billed."
+msgstr "Sve ovo radi na Fly.io: aplikacija, baza i fajlovi. Pogledaj ovaj mesec do sada i svaki mesec pre njega, procenjeno i naplaćeno."
+
+#: lib/potok_ide_web/stack_copy.ex:90
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. Every quarter of an hour one more asks Fly.io what runs and writes down what that hour cost, for the costs page. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
+msgstr "Obaveštenja se šalju iz posebnih procesa, pa stranica ne čeka servise za dostavu. Čekaju u jednom redu i idu po dva odjednom, pa niz objava ne pokrene stotine slanja u istom trenutku. Podsetnici za događaje su proces koji se budi na svakih pola minuta, a tako rade i rokovi glasanja. Jednom na sat drugi proces briše fajlove koje su aplikacije primile, a nijedan odgovor ih nije uzeo. Slike za kartice linkova i za avatare u obaveštenjima crtaju se jedna po jedna, svaka u svom procesu, a najviše tri pregleda linkova preuzimaju se odjednom. Na svakih petnaest minuta još jedan pita Fly.io šta radi i upisuje koliko je taj sat koštao, za stranu sa troškovima. Ništa od toga ne traži poseban sistem za redove poslova. Još jedan proces čuva uprošćene granice područja i linije ruta koje je mapa tražila i pušta one koje najduže nisu korišćene."
+
+#: lib/potok_ide_web/stack_copy.ex:42
+#, elixir-autogen, elixir-format
+msgid "See the costs"
+msgstr "Pogledaj troškove"
+
+#: lib/potok_ide_web/stack_copy.ex:33
+#, elixir-autogen, elixir-format
+msgid "What Potok costs"
+msgstr "Koliko Potok košta"

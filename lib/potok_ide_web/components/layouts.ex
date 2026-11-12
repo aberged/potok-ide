@@ -327,6 +327,14 @@ defmodule PotokIdeWeb.Layouts do
                 >
                   <.icon name="hero-question-mark-circle" class="size-6" /> {gettext("Help")}
                 </.link>
+                <.link
+                  id="app-costs-link"
+                  href={~p"/troskovi"}
+                  data-drawer-close
+                  class={@nav_link_class}
+                >
+                  <.icon name="hero-banknotes" class="size-6" /> {gettext("Costs")}
+                </.link>
               </div>
             </div>
 
@@ -524,6 +532,13 @@ defmodule PotokIdeWeb.Layouts do
                   class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
                 >
                   {gettext("Help")}
+                </.link>
+                <.link
+                  id="guest-costs-link"
+                  href={~p"/troskovi"}
+                  class="text-sm text-base-content/65 underline-offset-4 transition hover:text-base-content hover:underline"
+                >
+                  {gettext("Costs")}
                 </.link>
                 <.link
                   id="guest-privacy-link"

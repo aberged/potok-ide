@@ -26,7 +26,7 @@ Potok runs in the browser, on a computer and on a phone, and there is an app for
 
 The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and access requests. Your picture leads to your profiles.
 
-The button with three lines opens the menu: every part of the app, your account settings, the language (Serbian in Latin or Cyrillic, or English), the light or dark theme and this help.
+The button with three lines opens the menu: every part of the app, your account settings, the language (Serbian in Latin or Cyrillic, or English), the light or dark theme, this help and what Potok costs.
 
 ![The home page: groups, with their unread messages and newest message](pocetna) ![The menu with every part of the app](meni)
 

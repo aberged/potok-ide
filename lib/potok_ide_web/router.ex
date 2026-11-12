@@ -84,6 +84,16 @@ defmodule PotokIdeWeb.Router do
     get "/pomoc/:slug", PageController, :help_tutorial
     get "/help", PageController, :help_redirect
     get "/help/:slug", PageController, :help_tutorial_redirect
+    # Public: what Potok costs. The operators' form shows in it for them.
+    get "/troskovi", HostingCostController, :index
+    get "/costs", HostingCostController, :index_redirect
+  end
+
+  # An operator copies a Fly invoice: it needs a login; anyone else gets 404.
+  scope "/", PotokIdeWeb do
+    pipe_through [:browser, :require_authenticated_account]
+
+    post "/troskovi/racuni", HostingCostController, :save_invoice
   end
 
   # The service worker takes these posts (`priv/static/sw.js`); this is for

@@ -45,10 +45,10 @@ defmodule Mix.Tasks.Potok.SrCyrl do
     %?\{[^}]*\} | <span\ lang=en>[^<]*<\/span> | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* |
     \b[\w-]+(?:\.[\w-]+)*\.(?:com|org|rs)\b | @?\b(?:admin|everyone)\b |
     \b(?:Amnesty\ International|Amnesty|API|Apple|Auth|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
-    Endpoint|English|EPSG|ETS|ExUnit|FCM|FeedCreator|GPX|KML|KMZ|LineString|MultiLineString|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
+    Endpoint|English|EPSG|ETS|ExUnit|FCM|FeedCreator|Fly\.io|Fly|GPX|KML|KMZ|LineString|MultiLineString|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
     Google\ Forms|Google\ Play|Google\ Sheets|Google|Heinrich-Böll-Stiftung|Heroicons|HTML|HTTPS|
-    iPhone|JavaScript|LiveView|localhost|Markdown|MultiPolygon|NoviSpy|Outlook|P256DH|Phoenix|
-    Polygon|PostGIS|PostgreSQL|Presence|PubSub|QGIS|QR|service\ worker|Sheets|Tailwind|URL|
+    iPhone|IPv4|IPv6|JavaScript|LiveView|localhost|Managed\ Postgres|Markdown|MultiPolygon|NoviSpy|Outlook|P256DH|Phoenix|
+    Polygon|PostGIS|PostgreSQL|Postgres|Presence|PubSub|QGIS|QR|service\ worker|Sheets|Tailwind|Tigris|URL|USD|
     User\ Agent|WebSocket|WGS)\b
   /ux
 

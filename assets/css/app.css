@@ -1220,6 +1220,8 @@
     --dm-notices: #b4532a;
     --dm-tags: #ad3a76;
     --dm-joining: #4a8128;
+    /* Warm gray: a technical area beside the domain, named wherever it shows. */
+    --dm-hosting: #6e6656;
     --st-beam: #a90533;
     --st-elixir: #5b3080;
     --st-phoenix: #e64800;
@@ -1239,6 +1241,7 @@
     --dm-notices: #f6a77f;
     --dm-tags: #f09ac7;
     --dm-joining: #a3da7c;
+    --dm-hosting: #c9c0ae;
     --st-beam: #ff8fa3;
     --st-elixir: #c9a6ef;
     --st-phoenix: #ff9466;
@@ -1258,6 +1261,7 @@
       --dm-notices: #f6a77f;
       --dm-tags: #f09ac7;
       --dm-joining: #a3da7c;
+      --dm-hosting: #c9c0ae;
       --st-beam: #ff8fa3;
       --st-elixir: #c9a6ef;
       --st-phoenix: #ff9466;
@@ -2323,6 +2327,363 @@
       display: flex;
       align-items: center;
       gap: 12px;
+    }
+  }
+
+  /* What Potok costs (`HostingCostHTML`, `/troskovi`): the look of `/stack`,
+     one hue for the bars, and the invoice as a dark tick across its month. */
+  .hc-current {
+    display: grid;
+    gap: 22px;
+    padding: clamp(20px, 4vw, 32px);
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+  }
+
+  .hc-kicker,
+  .hc-label,
+  .hc-month-sums dt {
+    color: var(--dm-muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .hc-figures {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 14px 48px;
+  }
+
+  .hc-hero {
+    margin-top: 2px;
+    font-size: clamp(38px, 7vw, 56px);
+    font-weight: 700;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hc-figure {
+    margin-top: 4px;
+    color: var(--dm-muted);
+    font-size: clamp(24px, 4vw, 30px);
+    font-weight: 700;
+    line-height: 1.1;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hc-bars {
+    display: grid;
+    gap: 14px;
+  }
+
+  .hc-bars li {
+    display: grid;
+    grid-template-columns: minmax(9rem, 15rem) minmax(0, 1fr) 6.5rem;
+    align-items: center;
+    gap: 6px 18px;
+  }
+
+  .hc-bar-name {
+    display: grid;
+    line-height: 1.25;
+  }
+
+  .hc-bar-name span {
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .hc-bar-name small {
+    color: var(--dm-muted);
+    font-size: 13px;
+  }
+
+  .hc-bar-track,
+  .hc-month-chart {
+    position: relative;
+    height: 10px;
+    border-radius: 0 4px 4px 0;
+    background: color-mix(in oklab, var(--dm-line) 60%, transparent);
+  }
+
+  .hc-bar,
+  .hc-month-bar {
+    display: block;
+    height: 100%;
+    border-radius: 0 4px 4px 0;
+    background: var(--dm-accent);
+    transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .hc-bar-value {
+    font-size: 15px;
+    font-weight: 600;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hc-note,
+  .hc-empty,
+  .hc-section-lead {
+    max-width: 62ch;
+    color: var(--dm-muted);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+
+  .hc-empty {
+    font-size: 16px;
+  }
+
+  .hc-section {
+    display: grid;
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 32px;
+    border-top: 1px solid var(--dm-line);
+    scroll-margin-top: 8px;
+  }
+
+  .hc-section h2 {
+    font-size: 23px;
+    font-weight: 700;
+    line-height: 1.15;
+  }
+
+  .hc-section-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px 24px;
+  }
+
+  .hc-legend {
+    display: flex;
+    gap: 18px;
+    color: var(--dm-muted);
+    font-size: 13.5px;
+  }
+
+  .hc-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  .hc-key {
+    display: inline-block;
+  }
+
+  .hc-key-estimate {
+    width: 18px;
+    height: 10px;
+    border-radius: 0 4px 4px 0;
+    background: var(--dm-accent);
+  }
+
+  .hc-key-invoice {
+    width: 3px;
+    height: 16px;
+    border-radius: 2px;
+    background: var(--dm-fg);
+  }
+
+  .hc-months {
+    display: grid;
+  }
+
+  .hc-month {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr) minmax(0, 23rem);
+    grid-template-areas:
+      "name chart sums"
+      "name note note";
+    align-items: center;
+    gap: 6px 24px;
+    padding-block: 16px;
+    border-bottom: 1px solid var(--dm-line);
+  }
+
+  .hc-month:last-child {
+    border-bottom: 0;
+  }
+
+  .hc-month-name {
+    grid-area: name;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 8px;
+  }
+
+  .hc-month-name h3 {
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: capitalize;
+  }
+
+  .hc-tag {
+    padding: 1px 8px;
+    border-radius: 999px;
+    background: var(--dm-accent-soft);
+    color: var(--dm-accent);
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .hc-month-chart {
+    grid-area: chart;
+    overflow: visible;
+  }
+
+  .hc-month-current .hc-month-bar {
+    background: repeating-linear-gradient(
+      135deg,
+      var(--dm-accent) 0 5px,
+      color-mix(in oklab, var(--dm-accent) 55%, var(--dm-surface)) 5px 8px
+    );
+  }
+
+  .hc-month-tick {
+    position: absolute;
+    top: -4px;
+    width: 3px;
+    height: 18px;
+    margin-left: -1.5px;
+    border-radius: 2px;
+    background: var(--dm-fg);
+    box-shadow: 0 0 0 2px var(--dm-surface);
+  }
+
+  .hc-month-sums {
+    grid-area: sums;
+    display: grid;
+    grid-template-columns: minmax(0, 6rem) minmax(0, 6rem) minmax(0, 1fr);
+    gap: 4px 14px;
+  }
+
+  .hc-month-sums dt {
+    font-size: 11px;
+  }
+
+  .hc-month-sums dd {
+    margin-top: 1px;
+    font-size: 15px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  /* The difference can take two lines rather than leave the page. */
+  .hc-month-sums div:nth-child(3) dd {
+    white-space: normal;
+  }
+
+  .hc-month-note,
+  .hc-month-edit {
+    grid-column: 2 / -1;
+  }
+
+  .hc-month-note {
+    color: var(--dm-muted);
+    font-size: 14px;
+  }
+
+  .hc-month-edit {
+    display: inline-flex;
+    align-items: center;
+    justify-self: start;
+    gap: 6px;
+    border-radius: 6px;
+    color: var(--dm-accent);
+    font-size: 14px;
+    font-weight: 600;
+    transition: opacity 0.2s;
+  }
+
+  .hc-month-edit:hover {
+    opacity: 0.8;
+  }
+
+  .hc-month-edit:focus-visible {
+    outline: 2px solid var(--dm-accent);
+    outline-offset: 3px;
+  }
+
+  .hc-form {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(0, 11rem) minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 0 16px;
+    max-width: 52rem;
+  }
+
+  .hc-form .fieldset {
+    margin-bottom: 0;
+  }
+
+  .hc-notes ul {
+    display: grid;
+    gap: 10px;
+    max-width: 68ch;
+    padding-left: 1.2em;
+    list-style: disc;
+    line-height: 1.55;
+  }
+
+  .hc-notes li::marker {
+    color: var(--dm-muted);
+  }
+
+  @media (max-width: 760px) {
+    .hc-bars li {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .hc-bar-track {
+      grid-column: 1 / -1;
+      grid-row: 2;
+    }
+
+    .hc-month {
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-areas:
+        "name"
+        "chart"
+        "sums"
+        "note";
+      gap: 10px;
+    }
+
+    .hc-month-note,
+    .hc-month-edit {
+      grid-column: 1;
+    }
+
+    .hc-form {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 0 12px;
+    }
+
+    .hc-form .fieldset:nth-of-type(3) {
+      grid-column: 1 / -1;
+    }
+
+    .hc-form button {
+      grid-column: 1 / -1;
+      margin-top: 8px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hc-bar,
+    .hc-month-bar {
+      transition: none;
     }
   }
 

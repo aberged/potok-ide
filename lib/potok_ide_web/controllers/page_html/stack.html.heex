@@ -48,5 +48,21 @@
         </div>
       </div>
     </section>
+
+    <section id="stack-costs" class="dm-stack">
+      <.link id="stack-costs-link" href={~p"/troskovi"} class="group">
+        <div>
+          <h2 class="font-brand">{StackCopy.costs_title()}</h2>
+          <p>{StackCopy.costs_teaser()}</p>
+          <span class="dm-stack-more">
+            {StackCopy.costs_more()}
+            <.icon
+              name="hero-arrow-right"
+              class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+            />
+          </span>
+        </div>
+      </.link>
+    </section>
   </div>
 </Layouts.guest>

@@ -1,0 +1,212 @@
+## "msgid"s in this file come from POT (.pot) files.
+###
+### Do not add, change, or remove "msgid"s manually here as
+### they're tied to the ones in the corresponding POT file
+### (with the same domain).
+###
+### Use "mix gettext.extract --merge" or "mix gettext.merge"
+### to merge POT files into PO files.
+msgid ""
+msgstr ""
+"Language: sr_Cyrl\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:181
+#, elixir-autogen, elixir-format
+msgid "Billed, in US dollars"
+msgstr "Наплаћено, у америчким доларима"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:83
+#, elixir-autogen, elixir-format
+msgid "By month"
+msgstr "По месецима"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:34
+#, elixir-autogen, elixir-format
+msgid "By the end of the month, at this pace"
+msgstr "До краја месеца, овим темпом"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:148
+#, elixir-autogen, elixir-format
+msgid "Change the invoice"
+msgstr "Измени рачун"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:161
+#, elixir-autogen, elixir-format
+msgid "Copy an invoice"
+msgstr "Упиши рачун"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:23
+#, elixir-autogen, elixir-format
+msgid "Data sent"
+msgstr "Саобраћај"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:21
+#, elixir-autogen, elixir-format
+msgid "Database"
+msgstr "База података"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:85
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:106
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:122
+#, elixir-autogen, elixir-format
+msgid "Estimate"
+msgstr "Процена"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:132
+#, elixir-autogen, elixir-format
+msgid "Estimate off by"
+msgstr "Процена одступа за"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:65
+#, elixir-autogen, elixir-format
+msgid "Estimated at %{time} on %{date}."
+msgstr "Последња процена: %{date} у %{time}."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:215
+#, elixir-autogen, elixir-format
+msgid "Fly bills in US dollars, and waives a personal organization's bill for a month that comes to less than $5."
+msgstr "Fly наплаћује у америчким доларима, а месец у ком рачун личне организације износи мање од 5 $ не наплаћује."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:14
+#, elixir-autogen, elixir-format
+msgid "How Potok is built"
+msgstr "Од чега је Поток направљен"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:196
+#, elixir-autogen, elixir-format
+msgid "How to read this"
+msgstr "Како ово читати"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:24
+#, elixir-autogen, elixir-format
+msgid "IP addresses"
+msgstr "ИП адресе"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:86
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:114
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:126
+#, elixir-autogen, elixir-format
+msgid "Invoice"
+msgstr "Рачун"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:20
+#, elixir-autogen, elixir-format
+msgid "Machines"
+msgstr "Машине"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:27
+#, elixir-autogen, elixir-format
+msgid "Managed Postgres, plan and data"
+msgstr "Managed Postgres, пакет и подаци"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:173
+#, elixir-autogen, elixir-format
+msgid "Month"
+msgstr "Месец"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:187
+#, elixir-autogen, elixir-format
+msgid "Note (optional)"
+msgstr "Напомена (није обавезна)"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:163
+#, elixir-autogen, elixir-format
+msgid "Only operators see this. Copy the total of a month from the invoice in Fly's dashboard; an empty sum removes the invoice of that month."
+msgstr "Ово виде само оператори. Препиши укупан износ месеца са рачуна на Fly-овој контролној табли; празан износ брише рачун тог месеца."
+
+#: lib/potok_ide_web/controllers/hosting_cost_controller.ex:45
+#, elixir-autogen, elixir-format
+msgid "Pick the month of the invoice."
+msgstr "Изабери месец рачуна."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:75
+#, elixir-autogen, elixir-format
+msgid "Potok does not estimate its costs here, as it cannot read Fly. Billed months still show below."
+msgstr "Поток овде не процењује трошкове јер не може да чита Fly. Наплаћени месеци су ипак испод."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:209
+#, elixir-autogen, elixir-format
+msgid "Potok has estimated since %{date}; earlier months show only their invoices."
+msgstr "Поток процењује од %{date}, а ранији месеци имају само рачуне."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:14
+#, elixir-autogen, elixir-format
+msgid "Potok runs on Fly.io and pays for it every month, in US dollars. Fly gives no way to read its bills, so Potok estimates them itself every quarter of an hour, from what runs and Fly's price list. Once a month is billed, the real sum stands next to the estimate."
+msgstr "Поток ради на Fly.io и плаћа га сваког месеца, у америчким доларима. Fly не даје начин да се прочитају његови рачуни, па их Поток сам процењује на сваких петнаест минута, из онога што ради и Fly-овог ценовника. Кад месец буде наплаћен, прави износ стоји поред процене."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:190
+#, elixir-autogen, elixir-format
+msgid "Save"
+msgstr "Сачувај"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:28
+#, elixir-autogen, elixir-format
+msgid "So far"
+msgstr "До сада"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:22
+#, elixir-autogen, elixir-format
+msgid "Stored files"
+msgstr "Фајлови"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:199
+#, elixir-autogen, elixir-format
+msgid "The estimate counts the app's machines by the second, the database's plan and its data, the stored files, dedicated IPv4 addresses and the data sent out. Taxes, credits and support plans are not in it."
+msgstr "Процена броји машине апликације по секунди, пакет базе и њене податке, сачуване фајлове, наменске IPv4 адресе и послате податке. Порези, кредити и планови подршке нису у њој."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:73
+#, elixir-autogen, elixir-format
+msgid "The first estimate is on its way: Potok writes one every quarter of an hour."
+msgstr "Прва процена стиже ускоро: Поток је уписује на сваких петнаест минута."
+
+#: lib/potok_ide_web/controllers/hosting_cost_controller.ex:35
+#, elixir-autogen, elixir-format
+msgid "The invoice is saved."
+msgstr "Рачун је сачуван."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:205
+#, elixir-autogen, elixir-format
+msgid "The prices are Fly's list prices as of %{date}."
+msgstr "Цене су из Fly-овог ценовника на дан %{date}."
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:22
+#, elixir-autogen, elixir-format
+msgid "This month"
+msgstr "Овај месец"
+
+#: lib/potok_ide_web/controllers/hosting_cost_controller.ex:58
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:16
+#, elixir-autogen, elixir-format
+msgid "What Potok costs"
+msgstr "Колико Поток кошта"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:149
+#, elixir-autogen, elixir-format
+msgid "Write the invoice"
+msgstr "Упиши рачун"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:30
+#, elixir-autogen, elixir-format
+msgid "dedicated IPv4 addresses"
+msgstr "наменске IPv4 адресе"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:29
+#, elixir-autogen, elixir-format
+msgid "pages and files sent out"
+msgstr "послате странице и фајлови"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:28
+#, elixir-autogen, elixir-format
+msgid "pictures and files, in Tigris"
+msgstr "слике и фајлови (Tigris)"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html/index.html.heex:98
+#, elixir-autogen, elixir-format
+msgid "so far"
+msgstr "до сада"
+
+#: lib/potok_ide_web/controllers/hosting_cost_html.ex:26
+#, elixir-autogen, elixir-format
+msgid "the app itself, by the second"
+msgstr "сама апликација, по секунди"

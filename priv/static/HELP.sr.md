@@ -32,7 +32,7 @@ Potok radi u pregledaču, na računaru i na telefonu, a postoji i aplikacija za 
 
 Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve za pristup. Tvoja slika vodi na profile.
 
-Dugme sa tri crte otvara meni: svi delovi aplikacije, podešavanja naloga, jezik (latinica, ćirilica ili engleski), svetla ili tamna tema i ova pomoć.
+Dugme sa tri crte otvara meni: svi delovi aplikacije, podešavanja naloga, jezik (latinica, ćirilica ili engleski), svetla ili tamna tema, ova pomoć i koliko Potok košta.
 
 ![Početna strana: grupe, sa brojem nepročitanih poruka i poslednjom porukom](pocetna) ![Meni sa svim delovima aplikacije](meni)
 

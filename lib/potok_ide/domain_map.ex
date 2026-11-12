@@ -18,7 +18,7 @@ defmodule PotokIde.DomainMap do
   alias PotokIde.Cache
   alias PotokIde.Repo
 
-  @domains ~w(account profiles group content calendar polls notices tags joining)
+  @domains ~w(account profiles group content calendar polls notices tags joining hosting)
 
   @entities [
     {"account",
@@ -64,7 +64,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.ProfileInvitation,
        PotokIde.Social.GroupJoinRequest,
        PotokIde.Social.GroupJoinRequestApproval
-     ]}
+     ]},
+    {"hosting", [PotokIde.HostingCosts.CostHour, PotokIde.HostingCosts.Invoice]}
   ]
 
   # Columns that point at another table with no key to hold them there:

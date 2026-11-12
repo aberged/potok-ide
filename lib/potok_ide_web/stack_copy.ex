@@ -30,6 +30,17 @@ defmodule PotokIdeWeb.StackCopy do
   def solves, do: dgettext("stack", "What it solves")
   def how, do: dgettext("stack", "How")
 
+  def costs_title, do: dgettext("stack", "What Potok costs")
+
+  def costs_teaser do
+    dgettext(
+      "stack",
+      "Everything here runs at Fly.io: the app, the database and the files. See this month so far and every month before, estimated and billed."
+    )
+  end
+
+  def costs_more, do: dgettext("stack", "See the costs")
+
   @doc "The tools, from the bottom layer up."
   def tools, do: [beam(), elixir(), phoenix(), tailwind(), daisyui()]
 
@@ -78,7 +89,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
+              "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. Every quarter of an hour one more asks Fly.io what runs and writes down what that hour cost, for the costs page. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
             )
         },
         %{

@@ -35,6 +35,19 @@ config :potok_ide, PotokIde.MapTiles,
   cache_dir: false,
   req_options: [plug: {Req.Test, PotokIde.MapTiles}]
 
+# Fly is a `Req.Test` stub, and tests estimate by calling
+# `HostingCosts.sample/1`; the page reads the database every time.
+config :potok_ide, PotokIde.HostingCosts,
+  token: "test-token",
+  apps: ["potok-test"],
+  postgres_plan: "basic",
+  cache_ttl: 0,
+  req_options: [plug: {Req.Test, PotokIde.HostingCosts.Fly}]
+
+config :potok_ide, PotokIde.HostingCosts.Sampler, enabled: false
+
+config :potok_ide, :operator_emails, ["operator@example.com"]
+
 # Tests send event reminders by calling `Events.send_due_reminders/1`.
 config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 

@@ -39,8 +39,8 @@ msgid "Account confirmed successfully."
 msgstr ""
 
 #: lib/potok_ide_web/components/core_components.ex:762
-#: lib/potok_ide_web/components/layouts.ex:785
-#: lib/potok_ide_web/components/layouts.ex:788
+#: lib/potok_ide_web/components/layouts.ex:800
+#: lib/potok_ide_web/components/layouts.ex:803
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
@@ -50,8 +50,8 @@ msgstr ""
 msgid "An invitation is already pending."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:654
 #: lib/potok_ide_web/components/layouts.ex:669
+#: lib/potok_ide_web/components/layouts.ex:684
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -310,7 +310,7 @@ msgstr ""
 msgid "Keep me logged in on this device"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:744
+#: lib/potok_ide_web/components/layouts.ex:759
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr ""
@@ -321,7 +321,7 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/public_event.html.heex:31
 #: lib/potok_ide_web/controllers/page_html/public_group.html.heex:20
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:12
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:91
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:92
 #: lib/potok_ide_web/live/account_live/confirmation.ex:80
 #: lib/potok_ide_web/live/account_live/login.ex:16
 #: lib/potok_ide_web/live/account_live/password_login.ex:16
@@ -340,7 +340,7 @@ msgstr ""
 msgid "Log me in only this time"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:350
+#: lib/potok_ide_web/components/layouts.ex:358
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
@@ -484,7 +484,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:347
+#: lib/potok_ide_web/components/layouts.ex:355
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
@@ -681,7 +681,7 @@ msgstr ""
 msgid "Group picture URL"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:336
+#: lib/potok_ide_web/components/layouts.ex:344
 #, elixir-autogen, elixir-format
 msgid "Account"
 msgstr ""
@@ -691,7 +691,7 @@ msgstr ""
 msgid "Navigation"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:360
+#: lib/potok_ide_web/components/layouts.ex:368
 #: lib/potok_ide_web/live/account_live/settings.ex:357
 #, elixir-autogen, elixir-format
 msgid "Preferences"
@@ -1143,8 +1143,8 @@ msgstr ""
 msgid "Public group"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:646
 #: lib/potok_ide_web/components/layouts.ex:661
+#: lib/potok_ide_web/components/layouts.ex:676
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr ""
@@ -3883,12 +3883,12 @@ msgstr ""
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:507
+#: lib/potok_ide_web/components/layouts.ex:515
 #, elixir-autogen, elixir-format
 msgid "No ads, no tracking. The only cookie here is the one that keeps you logged in."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:533
+#: lib/potok_ide_web/components/layouts.ex:548
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:25
 #, elixir-autogen, elixir-format
 msgid "Privacy policy"
@@ -3899,20 +3899,20 @@ msgstr ""
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:588
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:103
+#: lib/potok_ide_web/components/layouts.ex:603
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:104
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:590
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:105
+#: lib/potok_ide_web/components/layouts.ex:605
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:106
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:485
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:98
+#: lib/potok_ide_web/components/layouts.ex:493
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "What is Potok?"
 msgstr ""
@@ -4124,7 +4124,7 @@ msgstr ""
 msgid "You are not in any group yet."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:504
+#: lib/potok_ide_web/components/layouts.ex:512
 #: lib/potok_ide_web/emails/email_components.ex:24
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
@@ -4226,7 +4226,7 @@ msgstr ""
 msgid "Several profiles"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:396
+#: lib/potok_ide_web/components/layouts.ex:404
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Society for society"
@@ -4504,14 +4504,14 @@ msgstr ""
 msgid "Conversations"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:722
-#: lib/potok_ide_web/components/layouts.ex:723
+#: lib/potok_ide_web/components/layouts.ex:737
+#: lib/potok_ide_web/components/layouts.ex:738
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:713
-#: lib/potok_ide_web/components/layouts.ex:714
+#: lib/potok_ide_web/components/layouts.ex:728
+#: lib/potok_ide_web/components/layouts.ex:729
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr ""
@@ -4527,8 +4527,8 @@ msgstr ""
 msgid "Shared profile"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:704
-#: lib/potok_ide_web/components/layouts.ex:705
+#: lib/potok_ide_web/components/layouts.ex:719
+#: lib/potok_ide_web/components/layouts.ex:720
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr ""
@@ -4563,7 +4563,7 @@ msgstr ""
 msgid "Potok can think of values as arising in groups, and of groups as arising from values."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:400
+#: lib/potok_ide_web/components/layouts.ex:408
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
@@ -6342,7 +6342,7 @@ msgid "Contents"
 msgstr ""
 
 #: lib/potok_ide_web/components/layouts.ex:328
-#: lib/potok_ide_web/components/layouts.ex:526
+#: lib/potok_ide_web/components/layouts.ex:534
 #: lib/potok_ide_web/controllers/page_controller.ex:119
 #: lib/potok_ide_web/controllers/page_html/help.html.heex:11
 #, elixir-autogen, elixir-format
@@ -6421,7 +6421,7 @@ msgstr ""
 msgid "It counts once the group opens its description to guests."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:87
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:88
 #, elixir-autogen, elixir-format
 msgid "Log in to see its chat and members, and to take part."
 msgstr ""
@@ -6436,7 +6436,7 @@ msgstr ""
 msgid "People without an account read it next to the default description."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:64
+#: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:63
 #, elixir-autogen, elixir-format
 msgid "The group made this app. Potok never asks for your password inside an app: log in only with the button at the top."
 msgstr ""
@@ -6449,4 +6449,10 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:86
 #, elixir-autogen, elixir-format
 msgid "This is a public group on Potok."
+msgstr ""
+
+#: lib/potok_ide_web/components/layouts.ex:336
+#: lib/potok_ide_web/components/layouts.ex:541
+#, elixir-autogen, elixir-format
+msgid "Costs"
 msgstr ""

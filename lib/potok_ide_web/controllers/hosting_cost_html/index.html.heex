@@ -1,0 +1,231 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+>
+  <div id="costs" class="dm hc mx-auto w-full max-w-5xl px-5 pb-16 sm:px-8">
+    <header class="st-top">
+      <.link id="costs-stack-link" href={~p"/stack"} class="st-back group">
+        <.icon
+          name="hero-arrow-left"
+          class="size-4 transition-transform duration-200 group-hover:-translate-x-0.5"
+        />
+        {dgettext("costs", "How Potok is built")}
+      </.link>
+      <h1 class="font-brand">{dgettext("costs", "What Potok costs")}</h1>
+      <p>{lead()}</p>
+    </header>
+
+    <section id="costs-current" class="hc-current" aria-labelledby="costs-current-title">
+      <h2 id="costs-current-title" class="hc-kicker">
+        {dgettext("costs", "This month") <> " · " <> month_name(@overview.current.month)}
+      </h2>
+
+      <%= if @overview.current.estimate do %>
+        <div class="hc-figures">
+          <div>
+            <p class="hc-label">{dgettext("costs", "So far")}</p>
+            <p id="costs-so-far" class="hc-hero font-brand">
+              {usd(@overview.current.estimate, @current_locale)}
+            </p>
+          </div>
+          <div :if={@overview.current.projected}>
+            <p class="hc-label">{dgettext("costs", "By the end of the month, at this pace")}</p>
+            <p id="costs-projected" class="hc-figure font-brand">
+              {"≈ " <> usd(@overview.current.projected, @current_locale)}
+            </p>
+          </div>
+        </div>
+
+        <ul id="costs-current-categories" class="hc-bars">
+          <li
+            :for={{category, amount} <- @overview.current.by_category}
+            id={"costs-current-#{category}"}
+          >
+            <div class="hc-bar-name">
+              <span>{category_name(category)}</span>
+              <small>{category_text(category)}</small>
+            </div>
+            <div
+              class="hc-bar-track"
+              title={category_name(category) <> ": " <> usd(amount, @current_locale)}
+            >
+              <span
+                class="hc-bar"
+                style={"width: #{share(amount, max_of(Enum.map(@overview.current.by_category, &elem(&1, 1))))}%"}
+              >
+              </span>
+            </div>
+            <span class="hc-bar-value">{usd(amount, @current_locale)}</span>
+          </li>
+        </ul>
+
+        <p :if={@overview.updated_at} class="hc-note">
+          {dgettext("costs", "Estimated at %{time} on %{date}.",
+            time: time_text(@overview.updated_at),
+            date: date_text(@overview.updated_at, @current_locale)
+          )}
+        </p>
+      <% else %>
+        <p id="costs-current-empty" class="hc-empty">
+          <%= if @overview.estimating? do %>
+            {dgettext(
+              "costs",
+              "The first estimate is on its way: Potok writes one every quarter of an hour."
+            )}
+          <% else %>
+            {dgettext(
+              "costs",
+              "Potok does not estimate its costs here, as it cannot read Fly. Billed months still show below."
+            )}
+          <% end %>
+        </p>
+      <% end %>
+    </section>
+
+    <section id="costs-months" class="hc-section" aria-labelledby="costs-months-title">
+      <div class="hc-section-head">
+        <h2 id="costs-months-title" class="font-brand">{dgettext("costs", "By month")}</h2>
+        <p class="hc-legend" aria-hidden="true">
+          <span><i class="hc-key hc-key-estimate"></i>{dgettext("costs", "Estimate")}</span>
+          <span><i class="hc-key hc-key-invoice"></i>{dgettext("costs", "Invoice")}</span>
+        </p>
+      </div>
+
+      <ol class="hc-months">
+        <li
+          :for={month <- @overview.months}
+          id={"costs-month-#{month_key(month.month)}"}
+          class={["hc-month", month.current? && "hc-month-current"]}
+        >
+          <div class="hc-month-name">
+            <h3>{month_name(month.month)}</h3>
+            <span :if={month.current?} class="hc-tag">{dgettext("costs", "so far")}</span>
+          </div>
+
+          <div class="hc-month-chart" aria-hidden="true">
+            <span
+              :if={month.estimate}
+              class="hc-month-bar"
+              style={"width: #{share(month.estimate, months_max(@overview.months))}%"}
+              title={dgettext("costs", "Estimate") <> ": " <> usd(month.estimate, @current_locale)}
+            >
+            </span>
+            <span
+              :if={month.invoice}
+              class="hc-month-tick"
+              style={"left: #{share(month.invoice.amount_usd, months_max(@overview.months))}%"}
+              title={
+                dgettext("costs", "Invoice") <> ": " <> usd(month.invoice.amount_usd, @current_locale)
+              }
+            >
+            </span>
+          </div>
+
+          <dl class="hc-month-sums">
+            <div>
+              <dt>{dgettext("costs", "Estimate")}</dt>
+              <dd class="hc-month-estimate">{usd(month.estimate, @current_locale)}</dd>
+            </div>
+            <div>
+              <dt>{dgettext("costs", "Invoice")}</dt>
+              <dd class="hc-month-invoice">
+                {usd(month.invoice && month.invoice.amount_usd, @current_locale)}
+              </dd>
+            </div>
+            <div :if={difference(month, @current_locale)}>
+              <dt>{dgettext("costs", "Estimate off by")}</dt>
+              <dd>{difference(month, @current_locale)}</dd>
+            </div>
+          </dl>
+
+          <p :if={month.invoice && month.invoice.note} class="hc-month-note">
+            {month.invoice.note}
+          </p>
+          <.link
+            :if={@operator?}
+            id={"costs-month-edit-#{month_key(month.month)}"}
+            href={~p"/troskovi?mesec=#{month_key(month.month)}" <> "#costs-invoice"}
+            class="hc-month-edit"
+          >
+            <.icon name="hero-pencil-square-micro" class="size-4" />
+            {if month.invoice,
+              do: dgettext("costs", "Change the invoice"),
+              else: dgettext("costs", "Write the invoice")}
+          </.link>
+        </li>
+      </ol>
+    </section>
+
+    <section
+      :if={@operator?}
+      id="costs-invoice"
+      class="hc-section hc-invoice"
+      aria-labelledby="costs-invoice-title"
+    >
+      <h2 id="costs-invoice-title" class="font-brand">{dgettext("costs", "Copy an invoice")}</h2>
+      <p class="hc-section-lead">
+        {dgettext(
+          "costs",
+          "Only operators see this. Copy the total of a month from the invoice in Fly's dashboard; an empty sum removes the invoice of that month."
+        )}
+      </p>
+      <.form for={@form} id="invoice-form" action={~p"/troskovi/racuni"} class="hc-form">
+        <.input
+          field={@form[:month]}
+          type="month"
+          value={@form_month}
+          label={dgettext("costs", "Month")}
+          required
+        />
+        <.input
+          field={@form[:amount_usd]}
+          type="number"
+          step="0.01"
+          min="0"
+          label={dgettext("costs", "Billed, in US dollars")}
+        />
+        <.input
+          field={@form[:note]}
+          type="text"
+          maxlength="500"
+          label={dgettext("costs", "Note (optional)")}
+        />
+        <.button id="invoice-form-submit" type="submit" variant="landing">
+          {dgettext("costs", "Save")}
+        </.button>
+      </.form>
+    </section>
+
+    <section id="costs-notes" class="hc-section hc-notes" aria-labelledby="costs-notes-title">
+      <h2 id="costs-notes-title" class="font-brand">{dgettext("costs", "How to read this")}</h2>
+      <ul>
+        <li>
+          {dgettext(
+            "costs",
+            "The estimate counts the app's machines by the second, the database's plan and its data, the stored files, dedicated IPv4 addresses and the data sent out. Taxes, credits and support plans are not in it."
+          )}
+        </li>
+        <li>
+          {dgettext("costs", "The prices are Fly's list prices as of %{date}.",
+            date: date_text(@overview.checked_on, @current_locale)
+          )}
+          <span :if={@overview.since}>
+            {dgettext(
+              "costs",
+              "Potok has estimated since %{date}; earlier months show only their invoices.",
+              date: date_text(@overview.since, @current_locale)
+            )}
+          </span>
+        </li>
+        <li>
+          {dgettext(
+            "costs",
+            "Fly bills in US dollars, and waives a personal organization's bill for a month that comes to less than $5."
+          )}
+        </li>
+      </ul>
+    </section>
+  </div>
+</Layouts.guest>

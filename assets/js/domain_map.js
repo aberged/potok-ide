@@ -89,6 +89,8 @@ const TABLES = {
     GroupBlock: [COLUMN[2], 428],
     Tag: [COLUMN[1], 524],
     Tagging: [COLUMN[2], 524],
+    CostHour: [COLUMN[1], 620],
+    Invoice: [COLUMN[2], 620],
   },
   clusters: {
     account: [16, 14, 192, 302],
@@ -100,6 +102,7 @@ const TABLES = {
     polls: [622, 518, 394, 158],
     notices: [16, 446, 192, 230],
     tags: [218, 494, 394, 86],
+    hosting: [218, 590, 394, 86],
   },
 }
 

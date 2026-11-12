@@ -392,6 +392,17 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Tagging", "added_by_id"), do: dgettext("domain_map", "who added it")
   defp own_field("Tagging", "attachment_id"), do: dgettext("domain_map", "file")
 
+  defp own_field("CostHour", "hour"), do: dgettext("domain_map", "hour")
+  defp own_field("CostHour", "category"), do: dgettext("domain_map", "what it pays for")
+  defp own_field("CostHour", "item"), do: dgettext("domain_map", "which one")
+  defp own_field("CostHour", "quantity"), do: dgettext("domain_map", "how much of it")
+  defp own_field("CostHour", "amount_usd"), do: dgettext("domain_map", "cost in dollars")
+  defp own_field("CostHour", "detail"), do: dgettext("domain_map", "what it was estimated from")
+
+  defp own_field("Invoice", "month"), do: dgettext("domain_map", "month")
+  defp own_field("Invoice", "amount_usd"), do: dgettext("domain_map", "billed in dollars")
+  defp own_field("Invoice", "note"), do: dgettext("domain_map", "note")
+
   defp own_field(_entity, _column), do: nil
 
   defp common_field("id"), do: dgettext("domain_map", "identifier")
@@ -457,6 +468,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def domain_name("notices"), do: dgettext("domain_map", "Following and notices")
   def domain_name("tags"), do: dgettext("domain_map", "Tags")
   def domain_name("joining"), do: dgettext("domain_map", "Joining a group")
+  def domain_name("hosting"), do: dgettext("domain_map", "Hosting costs")
 
   def entity_name("Account"), do: dgettext("domain_map", "Account")
   def entity_name("AccountToken"), do: dgettext("domain_map", "Account token")
@@ -492,6 +504,8 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ProfileInvitation"), do: dgettext("domain_map", "Profile invitation")
   def entity_name("GroupJoinRequest"), do: dgettext("domain_map", "Join request")
   def entity_name("GroupJoinRequestApproval"), do: dgettext("domain_map", "Approved request")
+  def entity_name("CostHour"), do: dgettext("domain_map", "Hour of costs")
+  def entity_name("Invoice"), do: dgettext("domain_map", "Invoice")
 
   defp entity_description("Account", _edges) do
     dgettext(
@@ -736,6 +750,20 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  defp entity_description("CostHour", _edges) do
+    dgettext(
+      "domain_map",
+      "A technical table with no links to the rest of the domain: what one hour of one thing Potok runs on cost at `Fly.io`, a machine, the database, the stored files, the IP addresses or the data sent out, estimated by Potok itself from what `Fly.io` reports and its price list."
+    )
+  end
+
+  defp entity_description("Invoice", _edges) do
+    dgettext(
+      "domain_map",
+      "What `Fly.io` actually billed for one month, copied from the invoice, so the estimate of that month stands next to the real sum."
+    )
+  end
+
   @doc "A check of the database in words; nil for one nobody wrote down."
   def check_text("groups_root_private_check"),
     do: dgettext("domain_map", "The root is not public.")
@@ -848,6 +876,18 @@ defmodule PotokIdeWeb.DomainCopy do
       "domain_map",
       "Only app data has a collection, named with small letters, digits, - and _."
     )
+  end
+
+  def check_text("hosting_cost_hours_amount_check") do
+    dgettext("domain_map", "Neither the cost nor the amount is negative.")
+  end
+
+  def check_text("hosting_invoices_month_check") do
+    dgettext("domain_map", "A month is written as its first day.")
+  end
+
+  def check_text("hosting_invoices_amount_check") do
+    dgettext("domain_map", "The sum is not negative, and the note has up to 500 characters.")
   end
 
   def check_text(_name), do: nil
@@ -1369,6 +1409,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "An <Event>event</Event>'s place is words, and it can also stand on the map: at the place of a <Group>group</Group> or at a place of its own, never both. A place of its own is a point, an area or a route, as a group's is, drawn the same way, and an area or a route keeps its pin. Only a group with a place that the author sees can be picked, and the event then stands where the group stands, even after the group moves. Whoever does not see that group sees only the words, and deleting the group leaves the words as well. A link from a group or from an event opens the root's map on its place, which stands out whatever the filters, and an event shows a card of its own there."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Potok estimates what it costs"),
+        text:
+          dgettext(
+            "domain_map",
+            "`Fly.io` gives no way to read its bills, so Potok estimates them itself. Every quarter of an hour it reads which machines run and how big they are, how big the database and the stored files are and how much data went out, and writes what each <CostHour>hour</CostHour> cost by the price list. An hour it missed is filled in from what runs now, and the data sent from `Fly.io`'s own metrics. Once a month is billed, one of the people who run Potok copies the sum from the <Invoice>invoice</Invoice>, and only they may. Anyone sees both on the costs page, even without an account."
           )
       }
     ]

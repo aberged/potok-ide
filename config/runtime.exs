@@ -62,6 +62,22 @@ parse_env_list = fn
     |> Enum.reject(&(&1 == ""))
 end
 
+# What Potok costs on Fly (`/troskovi`): a read-only token
+# (`fly tokens create readonly <org>`), the apps whose machines count (this
+# one by default), the organization of Fly's metrics and the database's plan.
+# Operators, by the emails of their accounts, copy Fly's invoices there.
+if config_env() != :test do
+  config :potok_ide, PotokIde.HostingCosts,
+    token: System.get_env("FLY_COSTS_TOKEN"),
+    apps:
+      parse_env_list.(System.get_env("FLY_COSTS_APPS")) ||
+        List.wrap(System.get_env("FLY_APP_NAME")),
+    org: System.get_env("FLY_COSTS_ORG") || "personal",
+    postgres_plan: System.get_env("FLY_COSTS_POSTGRES_PLAN") || "basic"
+
+  config :potok_ide, :operator_emails, parse_env_list.(System.get_env("OPERATOR_EMAILS")) || []
+end
+
 android_app_links = Application.get_env(:potok_ide, :android_app_links, [])
 
 android_app_links =
