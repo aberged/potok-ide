@@ -1,7 +1,7 @@
 # Pictures for the help page
 
-The help page (`/pomoc`, text in `priv/static/HELP.*.md`) shows the app as a phone
-sees it. These pictures are not drawn by hand: `make.exs` builds a made-up world in a
+The help page (`/pomoc`, text in `priv/static/HELP.*.md`) and its tutorials
+(`/pomoc/<slug>`, text in `priv/static/help/`) show the app as a phone sees it. These pictures are not drawn by hand: `make.exs` builds a made-up world in a
 database of its own, serves the app, and `shots.mjs` photographs it with Chrome. When a
 screen changes, take its pictures again.
 
@@ -37,17 +37,18 @@ there, not that it shows the right thing.
   push key, builds the world, runs `shots.mjs`, converts the PNGs and writes the
   manifest. It stops the app when done.
 - `world.exs` is the world: twelve people (`ana` is the one who looks, in most
-  pictures) and the four organizations of the help text's examples: the local community
-  MZ Topolik, the faculty's plenum, the co-op Zadruga Livada and the building Zgrada
-  Cvetna 12. Messages are dated yesterday and today, so the pictures always read as
+  pictures), the three organizations of the help text's examples (the local community
+  MZ Topolik, the co-op Zadruga Livada and the building Zgrada Cvetna 12) and the feed
+  Vesti Topolika, for the picture of the Feed app. Messages are dated yesterday and today, so the pictures always read as
   fresh. It writes `tmp/help_shots/world.json`: ids and a log-in cookie per person.
 - `shots.json` lists the pictures: `name` (the file name, and the name the help text
   uses), `as` (who looks; none for a guest), `url` (where `{groups.mz}` and the like
   come from `world.json`), `steps` and `clip` (an element to cut out instead of the
   whole screen). Steps: `click`, `tap`, `fill`, `type`, `press`, `wait`, `gone`,
   `goto`, `scroll`, `show` (to the top of the screen), `top`, `longpress`,
-  `frameClick` (inside an app's frame), `pause`, `eval`. `worker: true` lets the page
-  have a service worker (push settings).
+  `frameClick` and `frameType` (inside an app's frame), `select`, `pause`, `eval`.
+  `worker: true` lets the page have a service worker (push settings). No step sends a
+  form: every picture shows the moment before, so the world stays the same for all.
 - `shots.mjs` runs the list: a 390 × 844 phone at twice the pixels, Serbian, Belgrade
   time, the light theme.
 
@@ -60,5 +61,7 @@ there, not that it shows the right thing.
   assembly's.
 - Fonts and emoji are the system's, so pictures taken on another system look a little
   different. Take them all on the same machine.
-- A name in `shots.json` and in the help text must match: a test compares them, and
-  another one compares the pictures in `HELP.sr.md`, `HELP.sr_Cyrl.md` and `HELP.en.md`.
+- A name in `shots.json` and in the help texts must match: a test compares them with
+  the pictures of the help page and its tutorials together, and others compare the
+  pictures of each page across its three languages. A picture may stand on several
+  pages.

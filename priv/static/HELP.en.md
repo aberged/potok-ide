@@ -54,7 +54,7 @@ In a group, people write messages, send files, plan events and start polls, and 
 
 ### Membership and inheritance {:#clanstvo}
 
-You get into a group by invitation, or by a request that someone approves. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So a plenum's working groups have all the plenum's students at once, and whoever is no longer a member of the plenum is no longer theirs.
+You get into a group by invitation, or by a request that someone approves. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
 
 ### Roles and permissions {:#uloge-i-dozvole}
 
@@ -78,14 +78,14 @@ A group's description doesn't have to be just text. It can be a small app, say a
 
 ## Examples of organizing {:#primeri}
 
-Four communities, each put together as a tree of groups. You don't have to copy any of them: take what suits you and change it as the community grows. Groups can always be rearranged, and roles added to.
+Three communities, each put together as a tree of groups. You don't have to copy any of them: take what suits you and change it as the community grows. Groups can always be rearranged, and roles added to. Each one also has a page of its own that shows, step by step, how to put it together.
 
 ### A local community's assembly {:#primer-mz}
 
 The local community of Topolik is a public group with its area on the map, so even those who are not members yet can see it.
 
 - **MZ Topolik**, a folder, public, with an area on the map
-  - **Council notices**: an announcements group, its administrators from the council write, the others read and react
+  - **Council notices**: an announcements group in which the council writes, and the others read and react
   - **Citizens' assembly**: a chat, polls and the assembly's event in the calendar
   - **Neighbourhood map**: a map on which each problem is a group with its own pin and chat
 
@@ -93,18 +93,9 @@ The group has a manifest of its own and the role council, which may send notices
 
 A week looks like this: a neighbour puts the pothole in her street on the map, with a picture. The assembly talks about it, and the longer discussion moves to a thread. Before the assembly, the council starts a poll with a quorum and schedules the assembly as a public event at the community hall. Whoever follows the community gets a notice on their phone too.
 
+[Step by step: how to put together a local community](/pomoc/mesna-zajednica)
+
 ![MZ Topolik: council notices, the assembly and the neighbourhood map](primer-mz) ![The neighbourhood map: problems as pins and a path along the canal](primer-mz-mapa)
-
-### A faculty and its plenum {:#primer-plenum}
-
-- **The faculty's plenum**, a folder, public
-  - **Plenum**: a public chat, open to non-members too
-  - **Media working group** and **Logistics working group**: chats that inherit members
-  - **Plenum news**: a feed of news, which the media working group writes in its own part
-
-Decisions go to a vote: secret, with a quorum and the majority rule the plenum chooses, and the results can be downloaded. The public chat lets those who are not members ask questions too, while the working groups stay internal. Students who don't come to every plenum follow the group and get only its notices.
-
-![The faculty's plenum: the public plenum, working groups and news](primer-plenum)
 
 ### A co-op buying together {:#primer-zadruga}
 
@@ -113,7 +104,9 @@ Decisions go to a vote: secret, with a quorum and the majority rule the plenum c
   - **Orders**: a form each member fills in once and changes until the deadline
   - **Arrangements**: a chat about picking up and swaps
 
-The pick-up is an event that repeats every Saturday, with a reminder. In the form, the organizer sees every order and their totals. A dedicated app in the group's description can also run the buying rounds, the driver and the split of costs.
+The pick-up is an event that repeats every Saturday, with a reminder. In the form, the organizer sees every order and a summary of them, and takes them away as a table. A dedicated app in the group's description can also run the buying rounds, the driver and the split of costs.
+
+[Step by step: how to put together a co-op](/pomoc/zadruga)
 
 ![Zadruga Livada: notices, orders and arrangements](primer-zadruga)
 
@@ -126,15 +119,17 @@ For a small community, one chat group is enough.
 
 The chat holds the minutes and the house rules (all of them are also in the Files tab), a poll on the colour of the entrance and an event for cleaning the basement. The house council answers with a shared profile, so the residents know who writes on the council's behalf. A club, a choir or a sports team is put together the same way.
 
+[Step by step: how to put together a building or a club](/pomoc/zgrada)
+
 ![Zgrada Cvetna 12: minutes, a poll and an event in the same chat](primer-zgrada)
 
 ## Profiles {:#profili}
 
-On the Profiles page you see your current and default profile and a list of all your profiles. With "Use this profile" you change the one you are using, and "Create profile" makes a new one.
+On the Profiles page you see your current and default profile and a list of all your profiles. Tapping a profile in the list changes the one you are using, and "Create profile" makes a new one.
 
 A username has 2 to 16 letters, digits and the characters `_`, `.` and `-`. A profile picture is resized to 200 × 200, and files over 5 MB are rejected. A profile also has a description and public tags.
 
-You invite another account into a shared profile by username, in the Sharing part. Once they accept, both accounts use the same profile.
+You share a shared profile with another profile: in the Sharing part you type its username. The invitation shows on the Profiles page while the invited profile is the current one, and once it is accepted, both accounts use the shared profile.
 
 ![Profiles: current, default and the shared profile savet-cvetna](profili) ![Editing a profile: name, picture, description, sharing and tags](profil-uredi)
 
@@ -192,7 +187,7 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 - **Announcements**: only administrators write, the others read and react.
 - **Feed**: news you swipe through, with a part where its editors write it.
 - **Polls**: all of the group's polls in one place.
-- **Form**: questions, answers and their totals.
+- **Form**: questions, answers and a summary of them.
 - **Map**: sub-groups as pins on a map. It is not offered on the home page, only inside a group.
 - **Page**: a text people see first, made from a template.
 
@@ -263,7 +258,7 @@ Under "More settings" are:
 - a secret poll, changing your vote and answers added by members;
 - a public poll, in which non-members vote too;
 - who votes, who sees the results and who sees who voted for what;
-- the decision rule (most votes, more than half, two thirds or an absolute majority) and a quorum.
+- the decision rule (the most votes, more than half of the votes, two thirds of the votes or more than half of those who may vote) and a quorum.
 
 ![A new poll](glasanje-forma) ![A poll in the chat, after voting](glasanje-kartica)
 
@@ -314,11 +309,11 @@ You turn on push notifications in your account settings, separately for each bro
 Some kinds of groups get a ready-made app:
 
 - **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them.
-- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), the totals of the answers, a quiz and attached files.
+- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 
-![Feed: a piece of the plenum's news](feed) ![The order form, as a member sees it](forma)
+![Feed: news from the neighbourhood](feed) ![The order form, as a member sees it](forma)
 
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see.
 

@@ -303,6 +303,80 @@ defmodule PotokIdeWeb.PageHTML do
     """
   end
 
+  # The frame of the help page and of its tutorials: the contents in a column
+  # of their own on a wide screen and folded above the text on a phone, the
+  # title and lead, the text and a way back to the top.
+  attr :id, :string, required: true, doc: "the page's id, which starts every id inside"
+  attr :doc, :map, required: true, doc: "the text, from `HelpDoc`"
+  attr :serbian_pictures?, :boolean, required: true
+  attr :flash, :map, required: true
+  attr :current_scope, :any, required: true
+  attr :current_locale, :string, required: true
+  attr :available_locales, :list, required: true
+  slot :kicker, required: true, doc: "what stands above the title"
+  slot :after_text, doc: "what follows the text"
+
+  defp help_frame(assigns) do
+    ~H"""
+    <Layouts.guest
+      flash={@flash}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      about_link={true}
+    >
+      <:header_action :if={@current_scope && @current_scope.account}>
+        <.link
+          id={"#{@id}-back-link"}
+          href={~p"/groups"}
+          class="inline-flex items-center gap-1.5 rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+        >
+          <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to Potok")}
+        </.link>
+      </:header_action>
+
+      <div id={@id} class="hp mx-auto w-full max-w-5xl px-5 pb-16 sm:px-8">
+        <div class="hp-layout">
+          <nav id={"#{@id}-toc"} class="hp-toc" aria-labelledby={"#{@id}-toc-title"}>
+            <p id={"#{@id}-toc-title"} class="hp-toc-title">{gettext("Contents")}</p>
+            <.help_toc toc={@doc.toc} prefix={"#{@id}-toc"} />
+          </nav>
+
+          <div class="hp-main">
+            <header id={"#{@id}-top"} class="hp-top">
+              {render_slot(@kicker)}
+              <h1>{@doc.title}</h1>
+              <p class="hp-lead">{@doc.lead}</p>
+              <p :if={@serbian_pictures?} id={"#{@id}-language-note"} class="or-note">
+                <.icon name="hero-language" class="size-4 shrink-0" />
+                {gettext("The pictures show Potok in Serbian.")}
+              </p>
+            </header>
+
+            <details id={"#{@id}-toc-phone"} class="hp-toc-phone">
+              <summary>
+                <.icon name="hero-list-bullet" class="size-5 text-(--lp-accent)" />
+                <span>{gettext("Contents")}</span>
+                <.icon name="hero-chevron-down" class="hp-toc-chevron size-4" />
+              </summary>
+              <.help_toc toc={@doc.toc} prefix={"#{@id}-toc-phone"} />
+            </details>
+
+            <article id={"#{@id}-text"} class="or-doc hp-doc">
+              {raw(@doc.html)}
+            </article>
+
+            {render_slot(@after_text)}
+
+            <a id={"#{@id}-to-top"} href={"##{@id}-top"} class="hp-to-top">
+              <.icon name="hero-arrow-up" class="size-4" /> {gettext("Back to the top")}
+            </a>
+          </div>
+        </div>
+      </div>
+    </Layouts.guest>
+    """
+  end
+
   # The contents of the help page: its sections, each with its subsections.
   attr :toc, :list, required: true
   attr :prefix, :string, required: true, doc: "keeps ids apart between the two lists"

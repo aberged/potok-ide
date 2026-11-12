@@ -1,9 +1,9 @@
 defmodule HelpShots.World do
   @moduledoc """
-  The made-up world the help page's pictures show: twelve people and the four
-  organizations of the help text's examples (a local community, a faculty's
-  plenum, a buying co-op and a building), with what they wrote yesterday and
-  today. Names, places and words are invented; the map is real.
+  The made-up world the help page's pictures show: twelve people, the three
+  organizations of the help text's examples (a local community, a buying co-op
+  and a building) and the neighbourhood's news feed, with what they wrote
+  yesterday and today. Names, places and words are invented; the map is real.
 
   `build/1` returns what `shots.mjs` needs: ids by name and a signed log-in
   cookie for every person.
@@ -38,18 +38,17 @@ defmodule HelpShots.World do
     root = Social.get_root_group!()
 
     mz = local_community(p, root, files_dir)
-    plenum = plenum(p, root)
+    news = news(p, root)
     coop = coop(p, root)
-    building = building(p, root, files_dir)
-    direct = direct(p)
     shared = shared_profile(people)
-    pending(p, mz, plenum)
+    building = building(p, root, files_dir, shared)
+    direct = direct(p)
+    pending(p, mz)
 
     # Ana reads everything up to yesterday evening, so today's messages are new.
     for {group, until} <- [
           {mz.zbor, :yesterday},
           {mz.root, :latest},
-          {plenum.root, :latest},
           {building.root, :yesterday}
         ] do
       mark_read(p.("ana"), group, until)
@@ -86,11 +85,7 @@ defmodule HelpShots.World do
             mz_thread: mz.thread,
             mz_map: mz.map,
             mz_pothole: mz.pothole,
-            plenum: plenum.root,
-            plenum_chat: plenum.chat,
-            plenum_media: plenum.media,
-            plenum_news: plenum.news,
-            plenum_desk: plenum.desk,
+            news: news,
             coop: coop.root,
             coop_orders: coop.orders,
             coop_notices: coop.notices,
@@ -108,7 +103,9 @@ defmodule HelpShots.World do
       },
       polls: %{zbor: mz.poll.id, building: building.poll.id},
       events: %{zbor: mz.event.id},
-      shared_profile_id: shared.id
+      shared_profile_id: shared.id,
+      # For the date fields of forms, which take it as written.
+      dates: %{saturday: Date.to_iso8601(next_weekday(6))}
     }
   end
 
@@ -180,6 +177,12 @@ defmodule HelpShots.World do
     end
 
     notices = preset(ana, mz, "announcements", "Obaveštenja saveta")
+
+    # The council writes in its notices; the others read and react.
+    for permission <- ~w(post_values attach_files)a do
+      {:ok, _} = Social.set_group_role_permission(ana, notices, council.key, permission, :allow)
+    end
+
     zbor = preset(ana, mz, "chat", "Zbor građana")
     map = preset(ana, mz, "map", "Mapa kraja")
 
@@ -254,7 +257,7 @@ defmodule HelpShots.World do
 
     send_notice(ana, mz, "Zbor građana je u četvrtak u 18 časova u Domu kulture. Dođite!")
 
-    post(ana, notices, "Javna rasveta u parku biće popravljena do petka.", ago(1, 9, 5))
+    post(p.("marko"), notices, "Javna rasveta u parku biće popravljena do petka.", ago(1, 9, 5))
 
     post(ana, notices, """
     Komunalno preduzeće odnosi krupni otpad u subotu. Iznesite ga ispred zgrade do 7 \
@@ -356,37 +359,21 @@ defmodule HelpShots.World do
     }
   end
 
-  # A faculty's plenum --------------------------------------------------------
+  # The neighbourhood's news -------------------------------------------------
 
-  defp plenum(p, root) do
+  # A feed of its own, not one of the examples: the help text shows it with the
+  # apps a group can have.
+  defp news(p, root) do
     luka = p.("luka")
-
-    plenum =
-      folder(luka, root, "Plenum fakulteta", true, """
-      Plenum studenata fakulteta. Odluke donosimo zajedno, na plenumu i u glasanjima.
-      """)
-
-    members(luka, plenum, ~w(ana sara petar tamara nikola) |> Enum.map(p))
-
-    chat = preset(luka, plenum, "chat", "Plenum", public: true)
-    {:ok, chat} = Social.update_group(luka, chat, %{"has_public_chat" => true})
-    media = preset(luka, plenum, "chat", "Radna grupa za medije")
-    _logistics = preset(luka, plenum, "chat", "Radna grupa za logistiku")
-    %{group: news, feed: desk} = preset_full(luka, plenum, "feed", "Vesti plenuma", public: true)
-
-    post(p.("sara"), chat, "Sutra plenum u 12 u amfiteatru. Dnevni red je u opisu grupe.", ago(1, 17, 30))
-    post(p.("petar"), chat, "Može li neko da prenosi uživo za one koji ne mogu da dođu?", ago(1, 17, 41))
-    post(p.("tamara"), chat, "Radna grupa za medije se javlja, imamo kameru.", ago(1, 17, 55))
-
-    post(p.("tamara"), media, "Ko pravi saopštenje posle plenuma?", ago(0, 10, 2))
-    post(p.("ana"), media, "Ja ću napisati nacrt, pa ga ovde doteramo.", ago(0, 10, 9))
+    %{group: news, feed: desk} = preset_full(luka, root, "feed", "Vesti Topolika", public: true)
+    members(luka, news, ~w(ana stefan milica nikola) |> Enum.map(p))
 
     stories = [
-      {"Plenum izglasao nove radne grupe", "Odluke",
-       "Posle tri sata rasprave, plenum je izglasao dve nove radne grupe: za medije i za logistiku.",
+      {"Sajam polovnih knjiga u Domu kulture", "Događaji",
+       "U subotu od 10 do 14 časova: razmena i prodaja polovnih knjiga. Donesite one koje vam više ne trebaju.",
        ago(1, 20, 0)},
-      {"Raspored dežurstava za ovu nedelju", "Organizacija",
-       "Dežurstva su objavljena u grupi logistike. Prijavite se za smenu koja vam odgovara.",
+      {"Staza uz kanal je gotova", "Kraj",
+       "Staza od pruge do mosta je asfaltirana i obeležena. Šetači i biciklisti mogu njome već od danas.",
        ago(0, 9, 0)}
     ]
 
@@ -404,13 +391,13 @@ defmodule HelpShots.World do
       Repo.update_all(from(g in Group, where: g.id == ^story.id), set: [published_at: at])
     end
 
-    for name <- ~w(ana sara petar) do
-      {:ok, _} = Notices.follow(p.(name), plenum)
+    for name <- ~w(ana stefan) do
+      {:ok, _} = Notices.follow(p.(name), news)
     end
 
-    send_notice(luka, plenum, "Plenum je sutra u 12 u amfiteatru A1.")
+    send_notice(luka, news, "Nova vest: staza uz kanal je gotova. Otvaranje je u nedelju u 11 časova, kod mosta.")
 
-    %{root: plenum, chat: chat, media: media, news: news, desk: desk}
+    news
   end
 
   # A buying co-op ------------------------------------------------------------
@@ -435,7 +422,12 @@ defmodule HelpShots.World do
 
     notices = preset(dragan, coop, "announcements", "Obaveštenja kupcima")
     orders = preset(dragan, coop, "questionnaire", "Porudžbine")
-    order_form(dragan, orders)
+    order_form(dragan, orders, [
+      {p.("ivana"), [0, 1], "2", 1, "Preuzima Sara."},
+      {p.("milica"), [0, 2, 3], "3", 0, ""},
+      {p.("sara"), [1, 3], "", 0, "Preuzimam i za Ivanu."},
+      {dragan, [0, 2], "1", 0, ""}
+    ])
     chat = preset(dragan, coop, "chat", "Dogovor")
 
     post(dragan, notices, "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova.", ago(1, 12, 0))
@@ -456,14 +448,20 @@ defmodule HelpShots.World do
 
   # A building ----------------------------------------------------------------
 
-  defp building(p, root, files_dir) do
+  defp building(p, root, files_dir, shared) do
     ivana = p.("ivana")
 
     building =
       preset(ivana, root, "chat", "Zgrada Cvetna 12")
 
     members(ivana, building, ~w(ana marko petar tamara) |> Enum.map(p))
-    council = preset(ivana, building, "chat", "Kućni savet")
+
+    # The council keeps to itself: no inherited members, only those invited,
+    # and the profile it answers with in the building.
+    council = preset(ivana, building, "chat", "Kućni savet", inherits: false)
+    members(ivana, council, [p.("ana"), p.("marko"), shared])
+    members(ivana, building, [shared])
+    post(p.("marko"), council, "Da li za čišćenje podruma da iznajmimo kontejner?", ago(1, 19, 0))
 
     minutes = pdf(files_dir, "zapisnik-sastanka.pdf")
 
@@ -502,6 +500,8 @@ defmodule HelpShots.World do
       "end_time" => "12:00"
     })
 
+    post(shared, building, "Ključ od podruma je kod Petra, u stanu 7. Vreće za otpad donosi savet.", ago(0, 11, 30))
+
     %{root: building, council: council, poll: poll}
   end
 
@@ -511,10 +511,13 @@ defmodule HelpShots.World do
     direct
   end
 
-  # Ana and Marko answer for the building's council with one shared profile.
+  # Ana and Marko answer for the building's council with one shared profile:
+  # Ana made it and invited Marko's profile, which accepted.
   defp shared_profile(people) do
+    %{"ana" => ana, "marko" => marko} = people
+
     {:ok, profile} =
-      Social.create_profile_for_account(people["ana"].account, %{
+      Social.create_profile_for_account(ana.account, %{
         username: "savet-cvetna",
         profile_picture_url: nil,
         description: "Kućni savet zgrade Cvetna 12.",
@@ -522,13 +525,15 @@ defmodule HelpShots.World do
         sharing: :shared
       })
 
+    {:ok, invitation} = Social.invite_profile_to_profile(ana.account, ana.profile, profile, marko.profile)
+    {:ok, _} = Social.accept_profile_invitation(invitation, marko.profile, marko.account)
+
     profile
   end
 
-  defp pending(p, mz, plenum) do
+  defp pending(p, mz) do
     {:ok, _} = Social.request_group_access(p.("sara"), mz.root)
     {:ok, _} = Social.request_group_access(p.("petar"), mz.root)
-    {:ok, _} = Social.invite_profile_to_group(p.("luka"), plenum.media, p.("nikola"))
   end
 
   # Helpers --------------------------------------------------------------------
@@ -551,7 +556,7 @@ defmodule HelpShots.World do
 
   defp preset_full(creator, parent, preset, name, opts) do
     choices =
-      %{"name" => name, "inherits_members" => not parent.is_root}
+      %{"name" => name, "inherits_members" => Keyword.get(opts, :inherits, not parent.is_root)}
       |> then(&if Keyword.has_key?(opts, :public), do: Map.put(&1, "is_public", opts[:public]), else: &1)
 
     {:ok, result} = Social.create_group_from_preset(creator, parent, preset, choices)
@@ -789,8 +794,16 @@ defmodule HelpShots.World do
   end
 
   # The co-op's order form, as the Forma app saves it: published, filled in by
-  # every member once and changed by its author until Thursday.
-  defp order_form(editor, group) do
+  # every member once and changed by its author until Thursday at 20:00, with
+  # the orders of `answers`: who, the products (by index), litres of milk, who
+  # picks up (by index) and a note.
+  defp order_form(editor, group, answers) do
+    closes_at =
+      next_weekday(4)
+      |> DateTime.new!(~T[20:00:00], @zone)
+      |> DateTime.shift_zone!("Etc/UTC")
+      |> DateTime.to_iso8601()
+
     option = fn label -> %{"id" => id(), "goTo" => nil, "label" => label, "picture" => nil} end
 
     question = fn kind, title, extra ->
@@ -834,13 +847,8 @@ defmodule HelpShots.World do
       )
     end
 
-    form = %{
-      "v" => 1,
-      "title" => "Porudžbine za subotu",
-      "description" => "Poruči do četvrtka u 20 časova. Preuzimanje je u subotu od 9 do 11, u dvorištu škole.",
-      "theme" => %{"header" => nil},
-      "startNext" => "next",
-      "items" => [
+    [products, milk, pick_up, note] =
+      items = [
         question.("checkbox", "Šta poručuješ?", %{
           "required" => true,
           "options" => Enum.map(["Mleko, 1 l", "Domaći sir, 500 g", "Jaja, 10 komada", "Paket povrća"], option)
@@ -851,7 +859,15 @@ defmodule HelpShots.World do
           "options" => Enum.map(["Ja, u subotu", "Neko drugi za mene"], option)
         }),
         question.("paragraph", "Napomena", %{})
-      ],
+      ]
+
+    form = %{
+      "v" => 1,
+      "title" => "Porudžbine za subotu",
+      "description" => "Poruči do četvrtka u 20 časova. Preuzimanje je u subotu od 9 do 11, u dvorištu škole.",
+      "theme" => %{"header" => nil},
+      "startNext" => "next",
+      "items" => items,
       "settings" => %{
         "fill" => ["everyone"],
         "once" => true,
@@ -868,7 +884,7 @@ defmodule HelpShots.World do
         "view" => [],
         "public" => false,
         "editOwn" => true,
-        "closesAt" => nil,
+        "closesAt" => closes_at,
         "anonymous" => false,
         "published" => true,
         "anotherLink" => false,
@@ -898,13 +914,30 @@ defmodule HelpShots.World do
           "uploads" => %{},
           "edit_own" => true,
           "anonymous" => false,
-          "closes_at" => nil
+          "closes_at" => closes_at
         }
       },
       "secret" => %{"keys" => %{}, "score" => %{"responses" => %{}}}
     }
 
     {:ok, _} = PotokIde.Social.AppData.save_config(editor, group, nil, data, nil)
+
+    for {profile, chosen, litres, who, text} <- answers do
+      response = %{
+        "v" => 1,
+        "form_rev" => 1,
+        "a" => %{
+          products["id"] => Enum.map(chosen, &Enum.at(products["options"], &1)["id"]),
+          milk["id"] => litres,
+          pick_up["id"] => Enum.at(pick_up["options"], who)["id"],
+          note["id"] => text
+        },
+        "other" => %{}
+      }
+
+      {:ok, _value, _rule} =
+        PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
+    end
   end
 
   defp id, do: :crypto.strong_rand_bytes(5) |> Base.encode32(case: :lower, padding: false)

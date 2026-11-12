@@ -145,13 +145,13 @@ async function run(page, step) {
     case "fill": {
       const field = page.locator(fill(value[0])).first()
       await field.evaluate(el => (el.spellcheck = false))
-      await field.fill(value[1])
+      await field.fill(fill(value[1]))
       break
     }
     case "type": {
       const field = page.locator(fill(value[0])).first()
       await field.evaluate(el => (el.spellcheck = false))
-      await field.pressSequentially(value[1], { delay: 60 })
+      await field.pressSequentially(fill(value[1]), { delay: 60 })
       break
     }
     case "press":
@@ -178,6 +178,24 @@ async function run(page, step) {
       await frame.locator(fill(value[1])).first().click()
       break
     }
+    // [the app frame, a field inside it, the text], typed as by hand.
+    case "frameType": {
+      const frame = page.frameLocator(fill(value[0])).first()
+      const field = frame.locator(fill(value[1])).first()
+      await field.evaluate(el => (el.spellcheck = false))
+      await field.pressSequentially(fill(value[2]), { delay: 60 })
+      break
+    }
+    // [the app frame, an element inside it] at the top of the frame.
+    case "frameShow": {
+      const frame = page.frameLocator(fill(value[0])).first()
+      await frame.locator(fill(value[1])).first().evaluate(el => el.scrollIntoView({ block: "start" }))
+      break
+    }
+    // [a select, the value of the option to choose]
+    case "select":
+      await page.locator(fill(value[0])).first().selectOption(fill(value[1]))
+      break
     case "longpress":
       await longPress(page, fill(value))
       break

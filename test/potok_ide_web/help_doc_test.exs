@@ -156,14 +156,14 @@ defmodule PotokIdeWeb.HelpDocTest do
     end
 
     test "every picture is there, with its size" do
-      for name <- HelpDoc.get("sr").images do
+      for name <- pictures() do
         assert File.exists?(Path.join(HelpDoc.images_dir(), "#{name}.webp")), "no #{name}.webp"
         assert %{"w" => _, "h" => _} = HelpDoc.manifest()[name], "#{name} is not in the manifest"
       end
     end
 
     test "no picture is left over" do
-      names = HelpDoc.get("sr").images
+      names = pictures()
 
       files =
         HelpDoc.images_dir()
@@ -178,7 +178,7 @@ defmodule PotokIdeWeb.HelpDocTest do
     test "shows the pictures that help_shots takes" do
       taken = @shots |> File.read!() |> Jason.decode!() |> Enum.map(& &1["name"])
 
-      assert Enum.sort(taken) == Enum.sort(Enum.uniq(HelpDoc.get("sr").images))
+      assert Enum.sort(taken) == Enum.sort(pictures())
     end
 
     test "gives the app's own numbers" do
@@ -199,5 +199,73 @@ defmodule PotokIdeWeb.HelpDocTest do
         assert html =~ ~r/\b#{size} MB/
       end
     end
+  end
+
+  describe "the tutorials" do
+    test "are there for every example of the help page, in every language" do
+      assert HelpDoc.tutorial_slugs() == ~w(mesna-zajednica zadruga zgrada)
+
+      for slug <- HelpDoc.tutorial_slugs() do
+        assert HelpDoc.tutorial_locales(slug) |> Enum.sort() == ~w(en sr sr_Cyrl)
+      end
+
+      assert HelpDoc.tutorial("nothing", "sr") == :error
+    end
+
+    test "have the same steps and pictures in every language, in the same order" do
+      for slug <- HelpDoc.tutorial_slugs() do
+        {:ok, sr} = HelpDoc.tutorial(slug, "sr")
+
+        for locale <- ~w(sr_Cyrl en) do
+          {:ok, doc} = HelpDoc.tutorial(slug, locale)
+          assert doc.ids == sr.ids, "the steps of #{slug} in #{locale} differ from sr"
+          assert doc.images == sr.images, "the pictures of #{slug} in #{locale} differ from sr"
+        end
+      end
+    end
+
+    test "use each step id once, and their links go somewhere" do
+      help_ids = HelpDoc.get("sr").ids
+      tutorials = HelpDoc.tutorial_slugs()
+
+      for slug <- tutorials, locale <- HelpDoc.locales() do
+        {:ok, doc} = HelpDoc.tutorial(slug, locale)
+
+        assert doc.ids == Enum.uniq(doc.ids), "a step id repeats in #{slug} (#{locale})"
+        assert doc.anchors -- doc.ids == [], "a link of #{slug} (#{locale}) goes nowhere"
+
+        for "/pomoc" <> rest <- links(doc.html) do
+          case rest do
+            "#" <> id -> assert id in help_ids, "#{slug} (#{locale}) links to no section #{id}"
+            "/" <> other -> assert other in tutorials, "#{slug} (#{locale}) links to #{other}"
+          end
+        end
+      end
+    end
+
+    test "each has a link from its example on the help page, in every language" do
+      for locale <- HelpDoc.locales() do
+        links = links(HelpDoc.get(locale).html)
+
+        for slug <- HelpDoc.tutorial_slugs() do
+          assert "/pomoc/#{slug}" in links, "the help page (#{locale}) does not lead to #{slug}"
+        end
+      end
+    end
+
+    test "every link from the help page to a tutorial goes to one" do
+      for "/pomoc/" <> slug <- links(HelpDoc.get("sr").html) do
+        assert slug in HelpDoc.tutorial_slugs()
+      end
+    end
+  end
+
+  # Every picture of the help page and of its tutorials.
+  defp pictures do
+    HelpDoc.all_pages() |> Enum.flat_map(& &1.images) |> Enum.uniq()
+  end
+
+  defp links(html) do
+    html |> LazyHTML.from_fragment() |> LazyHTML.query("a[href]") |> LazyHTML.attribute("href")
   end
 end

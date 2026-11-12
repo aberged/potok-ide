@@ -50,7 +50,11 @@ defmodule Mix.Tasks.Potok.SyncReminderTest do
     test "leaves the help page out when its text or pictures changed" do
       screen = "lib/potok_ide_web/components/layouts.ex"
 
-      for touched <- ["priv/static/HELP.sr.md", "priv/static/images/help/poruke.webp"] do
+      for touched <- [
+            "priv/static/HELP.sr.md",
+            "priv/static/help/zgrada.sr.md",
+            "priv/static/images/help/poruke.webp"
+          ] do
         reminders = SyncReminder.reminders([screen, touched])
 
         assert length(reminders) == 3

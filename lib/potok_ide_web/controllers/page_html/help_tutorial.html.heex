@@ -1,0 +1,36 @@
+<.help_frame
+  id="tutorial"
+  doc={@doc}
+  serbian_pictures?={@serbian_pictures?}
+  flash={@flash}
+  current_scope={@current_scope}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+>
+  <:kicker>
+    <.link id="tutorial-examples-link" href={~p"/pomoc" <> "#primeri"} class="hp-crumb">
+      <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to the examples")}
+    </.link>
+    <p class="lp-kicker">{gettext("Step by step")}</p>
+  </:kicker>
+
+  <:after_text>
+    <section id="tutorial-others" class="hp-others" aria-labelledby="tutorial-others-title">
+      <h2 id="tutorial-others-title" class="hp-others-title">{gettext("Other examples")}</h2>
+      <div class="hp-others-grid">
+        <.link
+          :for={other <- @others}
+          id={"tutorial-other-#{other.slug}"}
+          href={~p"/pomoc/#{other.slug}"}
+          class="hp-other"
+        >
+          <span class="hp-other-title">{other.title}</span>
+          <span class="hp-other-lead">{other.lead}</span>
+          <span class="hp-other-go">
+            {gettext("Step by step")} <.icon name="hero-arrow-right" class="size-4" />
+          </span>
+        </.link>
+      </div>
+    </section>
+  </:after_text>
+</.help_frame>

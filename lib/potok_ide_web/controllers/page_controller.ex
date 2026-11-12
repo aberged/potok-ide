@@ -124,6 +124,29 @@ defmodule PotokIdeWeb.PageController do
   # For those who type the address in English; anchors stay in the browser.
   def help_redirect(conn, _params), do: redirect(conn, to: ~p"/pomoc")
 
+  # One of the help page's example organizations, built step by step.
+  def help_tutorial(conn, %{"slug" => slug}) do
+    locale = conn.assigns.current_locale
+
+    case HelpDoc.tutorial(slug, locale) do
+      {:ok, doc} ->
+        conn
+        |> assign(:page_title, doc.title)
+        |> assign(:page_description, doc.lead)
+        |> render(:help_tutorial,
+          doc: doc,
+          others: Enum.reject(HelpDoc.tutorials(locale), &(&1.slug == slug)),
+          serbian_pictures?: locale == "en"
+        )
+
+      :error ->
+        raise Phoenix.Router.NoRouteError, conn: conn, router: PotokIdeWeb.Router
+    end
+  end
+
+  def help_tutorial_redirect(conn, %{"slug" => slug}),
+    do: redirect(conn, to: ~p"/pomoc/#{slug}")
+
   def privacy(conn, _params) do
     render(conn, :privacy, privacy_policy_html: privacy_policy_html(conn.assigns.current_locale))
   end

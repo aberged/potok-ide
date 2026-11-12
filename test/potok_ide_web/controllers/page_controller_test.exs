@@ -362,6 +362,75 @@ defmodule PotokIdeWeb.PageControllerTest do
     end
   end
 
+  describe "the tutorials of the help page" do
+    defp tutorial_page(conn, slug, locale) do
+      conn
+      |> init_test_session(%{locale: locale})
+      |> get(~p"/pomoc/#{slug}")
+      |> html_response(200)
+      |> LazyHTML.from_document()
+    end
+
+    test "each lists its steps, leads back to the examples and to the others", %{conn: conn} do
+      for slug <- PotokIdeWeb.HelpDoc.tutorial_slugs() do
+        document = tutorial_page(conn, slug, "sr")
+        {:ok, doc} = PotokIdeWeb.HelpDoc.tutorial(slug, "sr")
+        steps = count(document, "#tutorial-text h2[id]")
+
+        assert steps > 0
+        assert help_text(document, "#tutorial-top h1") == doc.title
+        assert count(document, "#tutorial-toc .hp-toc-list > li > a") == steps
+        assert count(document, "#tutorial-toc-phone .hp-toc-list > li > a") == steps
+        assert count(document, "#tutorial-examples-link[href='/pomoc#primeri']") == 1
+
+        others = PotokIdeWeb.HelpDoc.tutorial_slugs() -- [slug]
+        assert count(document, "#tutorial-others a.hp-other") == length(others)
+
+        for other <- others do
+          assert count(document, "#tutorial-other-#{other}[href='/pomoc/#{other}']") == 1
+        end
+
+        ids = document |> LazyHTML.query("[id]") |> LazyHTML.attribute("id")
+        assert ids == Enum.uniq(ids), "an id repeats on #{slug}"
+
+        assert count(document, "#tutorial-text figure img") ==
+                 count(document, "#tutorial-text figure img[width][height][loading=lazy]")
+
+        assert count(document, "#tutorial-language-note") == 0
+      end
+    end
+
+    test "are in Cyrillic and in English too", %{conn: conn} do
+      cyrillic = tutorial_page(conn, "zgrada", "sr_Cyrl")
+      assert help_text(cyrillic, "#tutorial-top h1") =~ ~r/\p{Cyrillic}/u
+
+      english = tutorial_page(conn, "zgrada", "en")
+      assert count(english, "#tutorial-language-note") == 1
+      {:ok, doc} = PotokIdeWeb.HelpDoc.tutorial("zgrada", "en")
+      assert help_text(english, "#tutorial-top h1") == doc.title
+    end
+
+    test "lead accounts that are logged in back to the app", %{conn: conn} do
+      document =
+        conn
+        |> log_in_account(account_fixture())
+        |> get(~p"/pomoc/zadruga")
+        |> html_response(200)
+        |> LazyHTML.from_document()
+
+      assert count(document, "#guest-header #tutorial-back-link[href='/groups']") == 1
+      assert count(document, "#guest-about-link") == 0
+    end
+
+    test "an unknown one is not found", %{conn: conn} do
+      assert conn |> get(~p"/pomoc/nema-ga") |> response(404)
+    end
+
+    test "are also under /help", %{conn: conn} do
+      assert conn |> get(~p"/help/zadruga") |> redirected_to() == ~p"/pomoc/zadruga"
+    end
+  end
+
   describe "Potok's card for shared links" do
     defp og(document, property) do
       document

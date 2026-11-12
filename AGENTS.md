@@ -7,7 +7,7 @@ This is a web application written using the Phoenix web framework.
 
 ### Landing page, domain map and help
 
-`/` (the landing page, for guests) and `/domain` (the map of the domain) describe the app to people who have not seen it, and `/pomoc` (the help page) shows how to use it, with pictures of the app. They are part of every change that makes them wrong or incomplete.
+`/` (the landing page, for guests) and `/domain` (the map of the domain) describe the app to people who have not seen it, and `/pomoc` (the help page, with a tutorial per example organization at `/pomoc/<slug>`) shows how to use it, with pictures of the app. They are part of every change that makes them wrong or incomplete.
 
 - **Planning:** every plan has a short "Landing / domain / help" section: what changes on which page, or "not affected" and why.
 - **Changing:** update them in the same change, in every language (`sr` is the reference, then `mix potok.sr_cyrl`). The user edits the landing copy themselves: keep their wording and write new sentences in the same voice ("ti" in Serbian).
@@ -22,7 +22,7 @@ This is a web application written using the Phoenix web framework.
 | What apps can do: the app API, `potok_app_sdk.js` | `DomainCopy.apps/0` |
 | The core words: group, value, thread | `DomainCopy.core_labels/0`, `#landing-domain` |
 | How the app is built: a dependency, a process of its own, a daisyUI part taken up or dropped | `StackCopy.tools/0` (the page `/stack`). Tests see only a few of these; the reminder does not name this page |
-| A screen users see: a feature, a button, a label, a tab or a step that moved | `priv/static/HELP.sr.md` (then `HELP.en.md` and `mix potok.sr_cyrl`), and its pictures again: `help_shots/make.exs --only <names>` (see `help_shots/README.md`). Tests keep the three texts and the pictures in step, not the words |
+| A screen users see: a feature, a button, a label, a tab or a step that moved | `priv/static/HELP.sr.md` and the step-by-step tutorials of its examples in `priv/static/help/<slug>.sr.md` (then the `.en.md` texts and `mix potok.sr_cyrl`), and their pictures again: `help_shots/make.exs --only <names>` (see `help_shots/README.md`). Tests keep the three texts and the pictures in step, not the words |
 
 Usually not affected: fixes that restore what the pages already say, styling, refactors, tests, operations. `docs/potok-landing.html` is the user's own page and the app does not read it: leave it.
 

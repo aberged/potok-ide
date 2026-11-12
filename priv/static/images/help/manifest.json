@@ -71,6 +71,38 @@
     "h": 844,
     "w": 390
   },
+  "mz-dodaj-mesto": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-javni-dogadjaj": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-kvorum": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-nova-grupa": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-obavestenja-saveta": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-obavestenje": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-pisanje-saveta": {
+    "h": 844,
+    "w": 390
+  },
+  "mz-uloga-clana": {
+    "h": 844,
+    "w": 390
+  },
   "neprocitano": {
     "h": 844,
     "w": 390
@@ -147,10 +179,6 @@
     "h": 844,
     "w": 390
   },
-  "primer-plenum": {
-    "h": 844,
-    "w": 390
-  },
   "primer-zadruga": {
     "h": 844,
     "w": 390
@@ -176,6 +204,30 @@
     "w": 390
   },
   "uredi-grupu": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-forma-pravila": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-mesto": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-odgovori": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-preuzimanje": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-deljeni-profil": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-kucni-savet": {
     "h": 844,
     "w": 390
   }

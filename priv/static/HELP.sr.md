@@ -60,7 +60,7 @@ U grupi se pišu poruke, šalju fajlovi, zakazuju događaji i pokreću glasanja,
 
 ### Članstvo i nasleđivanje {:#clanstvo}
 
-U grupu se ulazi na poziv ili zahtevom koji neko odobri. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako radne grupe plenuma odmah imaju sve studente plenuma, a ko više nije član plenuma, nije ni njihov.
+U grupu se ulazi na poziv ili zahtevom koji neko odobri. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
 
 ### Uloge i dozvole {:#uloge-i-dozvole}
 
@@ -84,14 +84,14 @@ Opis grupe ne mora biti samo tekst. Može biti mala aplikacija, recimo forma, ve
 
 ## Primeri organizacije {:#primeri}
 
-Četiri zajednice, svaka složena kao stablo grupa. Ne moraš da kopiraš nijednu: uzmi ono što ti odgovara i promeni kad zajednica poraste. Grupe se uvek mogu preurediti, a uloge dopuniti.
+Tri zajednice, svaka složena kao stablo grupa. Ne moraš da kopiraš nijednu: uzmi ono što ti odgovara i promeni kad zajednica poraste. Grupe se uvek mogu preurediti, a uloge dopuniti. Za svaku postoji i posebna stranica, koja korak po korak pokazuje kako se složi.
 
 ### Zbor mesne zajednice {:#primer-mz}
 
 Mesna zajednica Topolik je javna grupa sa svojim područjem na mapi, pa je vidi i ko još nije član.
 
 - **MZ Topolik**, fascikla, javna, sa područjem na mapi
-  - **Obaveštenja saveta**: grupa obaveštenja, pišu njeni administratori iz saveta, ostali čitaju i reaguju
+  - **Obaveštenja saveta**: grupa obaveštenja u kojoj piše savet, a ostali čitaju i reaguju
   - **Zbor građana**: razgovor, glasanja i događaj zbora u kalendaru
   - **Mapa kraja**: mapa na kojoj je svaki problem grupa sa svojim pinom i razgovorom
 
@@ -99,18 +99,9 @@ Grupa ima sopstveni manifest i ulogu savet, koja sme da šalje obaveštenja prat
 
 Jedna nedelja izgleda ovako: komšinica stavi rupu u ulici na mapu, sa slikom. U zboru se o tome razgovara, a duža rasprava ode u nit. Pre zbora savet pokrene glasanje sa kvorumom i zakaže zbor kao javni događaj u Domu kulture. Ko prati MZ, dobije obaveštenje i na telefon.
 
+[Korak po korak: kako da složiš mesnu zajednicu](/pomoc/mesna-zajednica)
+
 ![MZ Topolik: obaveštenja saveta, zbor i mapa kraja](primer-mz) ![Mapa kraja: problemi kao pinovi i staza uz kanal](primer-mz-mapa)
-
-### Fakultet i plenum {:#primer-plenum}
-
-- **Plenum fakulteta**, fascikla, javna
-  - **Plenum**: javni razgovor, otvoren i nečlanovima
-  - **Radna grupa za medije** i **Radna grupa za logistiku**: razgovori koji nasleđuju članove
-  - **Vesti plenuma**: feed sa vestima, koje radna grupa za medije piše u svom delu
-
-Odluke idu na glasanje: tajno, sa kvorumom i pravilom većine koje plenum izabere, a rezultati se mogu preuzeti. Javni razgovor dozvoljava da pitanja postave i oni koji nisu članovi, a radne grupe ostaju unutrašnje. Studenti koji ne dolaze na svaki plenum prate grupu i dobijaju samo obaveštenja.
-
-![Plenum fakulteta: javni plenum, radne grupe i vesti](primer-plenum)
 
 ### Zadruga i zajednička nabavka {:#primer-zadruga}
 
@@ -119,7 +110,9 @@ Odluke idu na glasanje: tajno, sa kvorumom i pravilom većine koje plenum izaber
   - **Porudžbine**: forma koju svaki član popuni jednom i menja do roka
   - **Dogovor**: razgovor o preuzimanju i zamenama
 
-Preuzimanje je događaj koji se ponavlja svake subote, sa podsetnikom. Organizator u formi vidi sve porudžbine i njihov zbir. Posebna aplikacija u opisu grupe može voditi i ture nabavke, vozača i podelu troškova.
+Preuzimanje je događaj koji se ponavlja svake subote, sa podsetnikom. Organizator u formi vidi sve porudžbine i njihov rezime, a preuzima ih kao tabelu. Posebna aplikacija u opisu grupe može voditi i ture nabavke, vozača i podelu troškova.
+
+[Korak po korak: kako da složiš zadrugu](/pomoc/zadruga)
 
 ![Zadruga Livada: obaveštenja, porudžbine i dogovor](primer-zadruga)
 
@@ -132,15 +125,17 @@ Za malu zajednicu dovoljna je jedna grupa za razgovor.
 
 U razgovoru stoje zapisnici i pravila kućnog reda (svi su i u kartici Fajlovi), glasanje o boji ulaza i događaj za čišćenje podruma. Kućni savet odgovara deljenim profilom, pa stanari znaju ko piše u ime saveta. Klub, hor ili ekipa za rekreaciju slažu se isto.
 
+[Korak po korak: kako da složiš zgradu ili klub](/pomoc/zgrada)
+
 ![Zgrada Cvetna 12: zapisnik, glasanje i događaj u istom razgovoru](primer-zgrada)
 
 ## Profili {:#profili}
 
-Na stranici Profili vidiš trenutni i podrazumevani profil i spisak svih svojih profila. Dugmetom „Koristi ovaj profil“ menjaš onaj kojim se služiš, a „Kreiraj profil“ pravi novi.
+Na stranici Profili vidiš trenutni i podrazumevani profil i spisak svih svojih profila. Dodirom na profil u spisku menjaš onaj kojim se služiš, a „Kreiraj profil“ pravi novi.
 
 Korisničko ime ima od 2 do 16 slova, brojeva i znakova `_`, `.` i `-`. Slika profila se smanjuje na 200 × 200, a fajlovi veći od 5 MB se odbijaju. Profil ima i opis i javne tagove.
 
-Deljeni profil pozivaš drugom nalogu po korisničkom imenu, u delu Deljenje. Kad prihvati, oba naloga koriste isti profil.
+Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo korisničko ime. Poziv se vidi na stranici Profili dok je pozvani profil trenutni, a kad ga prihvati, oba naloga koriste deljeni profil.
 
 ![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, opis, deljenje i tagovi](profil-uredi)
 
@@ -198,7 +193,7 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 - **Obaveštenja**: pišu samo administratori, ostali čitaju i reaguju.
 - **Feed**: vesti koje se listaju prevlačenjem, sa delom u kome ih urednici pišu.
 - **Glasanja**: sva glasanja grupe na jednom mestu.
-- **Forma**: pitanja, odgovori i njihov zbir.
+- **Forma**: pitanja, odgovori i njihov rezime.
 - **Mapa**: podgrupe kao pinovi na mapi. Ne nudi se na početnoj strani, nego unutar grupe.
 - **Stranica**: tekst koji se prvi vidi, napravljen iz šablona.
 
@@ -269,7 +264,7 @@ Pod „Više podešavanja“ su:
 - tajno glasanje, promena glasa i odgovori koje dodaju članovi;
 - javno glasanje, u kome glasaju i nečlanovi;
 - ko glasa, ko vidi rezultate i ko vidi ko je za šta glasao;
-- pravilo odluke (najviše glasova, više od polovine, dve trećine ili apsolutna većina) i kvorum.
+- pravilo odluke (najviše glasova, više od polovine glasova, dve trećine glasova ili više od polovine onih koji imaju pravo glasa) i kvorum.
 
 ![Novo glasanje](glasanje-forma) ![Glasanje u razgovoru, posle glasanja](glasanje-kartica)
 
@@ -320,11 +315,11 @@ Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregled
 Neke vrste grupa dobijaju gotovu aplikaciju:
 
 - **Feed** je niz vesti koje se listaju prevlačenjem, sa reakcijama i komentarima. Urednici ih pišu u podgrupi `.feed`, iz šablona, čuvaju kao nacrt i objavljuju.
-- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), zbir odgovora, kviz i prilaganje fajlova.
+- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova.
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
 
-![Feed: vest plenuma](feed) ![Forma za porudžbine, kako je vidi član](forma)
+![Feed: vest iz kraja](feed) ![Forma za porudžbine, kako je vidi član](forma)
 
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge.
 

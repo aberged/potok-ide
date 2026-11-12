@@ -2913,6 +2913,115 @@
     }
   }
 
+  /* A tutorial (`page_html/help_tutorial.html.heex`): a way back to the help
+     page's examples above the title, the other examples as cards below the
+     text. */
+  .hp-crumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    color: var(--lp-muted);
+    font-size: 14px;
+    font-weight: 600;
+    transition:
+      color 0.2s,
+      transform 0.2s;
+  }
+
+  .hp-crumb:hover {
+    color: var(--lp-accent);
+    transform: translateX(-2px);
+  }
+
+  .hp-crumb:focus-visible {
+    border-radius: 6px;
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 3px;
+  }
+
+  .hp-others {
+    margin-top: 56px;
+    padding-top: 32px;
+    border-top: 1px solid var(--lp-line);
+  }
+
+  .hp-others-title {
+    font-size: clamp(20px, 3vw, 24px);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .hp-others-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+
+  .hp-other {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--lp-line);
+    border-radius: 20px;
+    background: var(--lp-card);
+    box-shadow: var(--lp-shadow);
+    transition:
+      transform 180ms ease,
+      box-shadow 180ms ease,
+      border-color 180ms ease;
+  }
+
+  .hp-other:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--lp-accent) 35%, transparent);
+    box-shadow: var(--lp-shadow-hover);
+  }
+
+  .hp-other:focus-visible {
+    outline: 2px solid var(--lp-accent);
+    outline-offset: 2px;
+  }
+
+  .hp-other-title {
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+
+  .hp-other-lead {
+    display: -webkit-box;
+    overflow: hidden;
+    color: var(--lp-muted);
+    font-size: 14.5px;
+    line-height: 1.5;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .hp-other-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: auto;
+    padding-top: 4px;
+    color: var(--lp-accent);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .hp-other:hover .hp-other-go .size-4 {
+    transform: translateX(3px);
+  }
+
+  .hp-other-go .size-4 {
+    transition: transform 180ms ease;
+  }
+
   .hp-to-top {
     display: inline-flex;
     align-items: center;

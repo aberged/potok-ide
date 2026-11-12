@@ -42,11 +42,6 @@
     ]
   },
   {
-    "name": "primer-plenum",
-    "as": "ana",
-    "url": "/groups/{groups.plenum}"
-  },
-  {
     "name": "primer-zadruga",
     "as": "ana",
     "url": "/groups/{groups.coop}"
@@ -171,7 +166,7 @@
   {
     "name": "pozovi",
     "as": "ana",
-    "url": "/groups/{groups.plenum}/invite_profile",
+    "url": "/groups/{groups.building}/invite_profile",
     "steps": [{ "type": ["#group-panel-invite-profile input[type=text]", "mi"] }, { "pause": 900 }]
   },
   {
@@ -254,7 +249,7 @@
   {
     "name": "pracenje",
     "as": "ana",
-    "url": "/groups/{groups.plenum}",
+    "url": "/groups/{groups.mz}",
     "steps": [{ "click": "#group-follow-menu" }, { "pause": 400 }]
   },
   {
@@ -272,7 +267,7 @@
   {
     "name": "feed",
     "as": "ana",
-    "url": "/groups/{groups.plenum_news}",
+    "url": "/groups/{groups.news}",
     "steps": [{ "pause": 2500 }]
   },
   {
@@ -290,6 +285,184 @@
       { "click": "#group-description-template-change" },
       { "show": "#group-description-templates" },
       { "pause": 800 }
+    ]
+  },
+  {
+    "name": "mz-nova-grupa",
+    "as": "ana",
+    "url": "/groups/{groups.root}",
+    "steps": [
+      { "click": "#group-sub-groups-create-fab" },
+      { "wait": "#group-create-menu" },
+      { "click": "#group-create-preset-folder" },
+      { "type": ["#group-create-menu input[type=text]", "MZ Topolik"] },
+      { "click": "#group-create-preset-form input[type=checkbox][name*='is_public']" },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "mz-uloga-clana",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/members",
+    "steps": [
+      { "click": "#member-{people.marko.profile_id}-roles-toggle" },
+      { "wait": "#member-{people.marko.profile_id}-role-editor" },
+      { "scroll": "#member-{people.marko.profile_id}-role-editor" },
+      { "pause": 400 }
+    ]
+  },
+  {
+    "name": "mz-obavestenja-saveta",
+    "as": "ana",
+    "url": "/groups/{groups.mz}",
+    "steps": [
+      { "click": "#group-sub-groups-create-fab" },
+      { "wait": "#group-create-menu" },
+      { "click": "#group-create-preset-announcements" },
+      { "type": ["#group-create-menu input[type=text]", "Obaveštenja saveta"] },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "mz-pisanje-saveta",
+    "as": "ana",
+    "url": "/groups/{groups.mz_notices}/roles",
+    "steps": [{ "show": "#group-roles-list > li:has-text('savet')" }, { "pause": 300 }]
+  },
+  {
+    "name": "mz-dodaj-mesto",
+    "as": "ana",
+    "url": "/groups/{groups.mz_map}",
+    "steps": [
+      { "pause": 2000 },
+      { "frameClick": ["iframe[id$='-iframe']", ".pm-cluster-icon"] },
+      { "pause": 2500 },
+      { "frameClick": ["iframe[id$='-iframe']", "button:has-text('Dodaj mesto')"] },
+      { "pause": 1200 },
+      { "frameClick": ["iframe[id$='-iframe']", "button:has-text('Ovde')"] },
+      { "pause": 800 },
+      { "frameType": ["iframe[id$='-iframe']", "input[placeholder^='Na primer']", "Ugašen semafor kod škole"] },
+      { "pause": 800 }
+    ]
+  },
+  {
+    "name": "mz-javni-dogadjaj",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}/calendar",
+    "steps": [
+      { "click": "#calendar-new-event" },
+      { "wait": "#calendar-event-form" },
+      { "type": ["#calendar-event-form input[type=text]", "Zbor građana"] },
+      { "fill": ["#calendar-form-place input[type=text]", "Dom kulture"] },
+      { "click": "#calendar-place-toggle" },
+      { "wait": "#calendar-place-search-input" },
+      { "type": ["#calendar-place-search-input", "Dom"] },
+      { "pause": 600 },
+      { "click": "[id^='calendar-place-option-']:has-text('Dom kulture')" },
+      { "wait": "#calendar-place-chip" },
+      { "click": "#calendar-form-public input[type=checkbox]" },
+      { "click": "label:has(#calendar-form-reminder-1440)" },
+      { "show": "#calendar-form-place" },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "mz-kvorum",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-value-add-toggle" },
+      { "click": "#group-value-poll" },
+      { "wait": "#poll-form-dialog" },
+      { "type": ["#poll-form-dialog input[type=text]", "Da tražimo ležeće policajce u Ulici lipa?"] },
+      { "click": "#poll-form-for-against" },
+      { "click": "#poll-form-deadline-72" },
+      { "click": "#poll-form-more > summary" },
+      { "select": ["#poll-form-decision select", "simple"] },
+      { "wait": "#poll-form-decision input[type=number]" },
+      { "fill": ["#poll-form-decision input[type=number]", "30"] },
+      { "scroll": "#poll-form-decision" },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "mz-obavestenje",
+    "as": "ana",
+    "url": "/groups/{groups.mz}/notices",
+    "steps": [
+      { "type": ["#group-notice-form textarea", "Zbor je u četvrtak u 18 časova u Domu kulture. Na dnevnom redu su ležeći policajci u Ulici lipa."] },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "zadruga-mesto",
+    "as": "dragan",
+    "url": "/groups/{groups.coop}/edit_group",
+    "steps": [{ "click": "#group-edit-tab-location" }, { "pause": 2500 }]
+  },
+  {
+    "name": "zadruga-forma-pravila",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}",
+    "steps": [
+      { "pause": 2000 },
+      { "frameClick": ["iframe[id$='-iframe']", "button:has-text('Podešavanja')"] },
+      { "pause": 1500 },
+      { "frameShow": ["iframe[id$='-iframe']", ":text('Javna forma')"] },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "zadruga-odgovori",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}",
+    "steps": [
+      { "pause": 2000 },
+      { "frameClick": ["iframe[id$='-iframe']", "button:has-text('Odgovori')"] },
+      { "pause": 2000 }
+    ]
+  },
+  {
+    "name": "zadruga-preuzimanje",
+    "as": "dragan",
+    "url": "/groups/{groups.coop}/calendar",
+    "steps": [
+      { "click": "#calendar-new-event" },
+      { "wait": "#calendar-event-form" },
+      { "type": ["#calendar-event-form input[type=text]", "Preuzimanje porudžbina"] },
+      { "fill": ["#calendar-event-form input[type=date][name*='start_date']", "{dates.saturday}"] },
+      { "fill": ["#calendar-event-form input[type=date][name*='end_date']", "{dates.saturday}"] },
+      { "click": "#calendar-event-form input[type=text]" },
+      { "pause": 400 },
+      { "select": ["#calendar-event-form select[name*='[recurrence]']", "weekly"] },
+      { "wait": "#calendar-form-weekdays" },
+      { "show": "#calendar-event-form input[type=date][name*='start_date']" },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "zgrada-kucni-savet",
+    "as": "ivana",
+    "url": "/groups/{groups.building}",
+    "steps": [
+      { "click": "#group-actions-menu" },
+      { "click": "[id$='-tab-create-sub-group']:visible" },
+      { "wait": "#group-create-menu" },
+      { "click": "#group-create-preset-chat" },
+      { "type": ["#group-create-menu input[type=text]", "Kućni savet"] },
+      { "click": "#group-create-preset-inherits input[type=checkbox]" },
+      { "pause": 500 }
+    ]
+  },
+  {
+    "name": "zgrada-deljeni-profil",
+    "as": "ana",
+    "url": "/profiles/{shared_profile_id}/edit",
+    "steps": [
+      { "click": "#profile-edit-tab-sharing" },
+      { "type": ["#shared-profile-invitation-username", "petar"] },
+      { "show": "#profile-edit-sharing" },
+      { "pause": 500 }
     ]
   }
 ]

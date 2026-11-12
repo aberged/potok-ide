@@ -56,11 +56,12 @@ defmodule Mix.Tasks.Potok.SyncReminder do
     %{
       name: "Help (/pomoc)",
       where:
-        "priv/static/HELP.sr.md and HELP.en.md, then mix potok.sr_cyrl; " <>
-          "pictures again with help_shots/make.exs --only <names>",
+        "priv/static/HELP.sr.md and HELP.en.md, the tutorials in priv/static/help/, " <>
+          "then mix potok.sr_cyrl; pictures again with help_shots/make.exs --only <names>",
       files: ~w(
         priv/static/HELP.sr.md
         priv/static/HELP.en.md
+        priv/static/help/
         priv/static/images/help/
       ),
       after: @screens

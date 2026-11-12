@@ -4260,7 +4260,7 @@ msgstr ""
 msgid "Serbian in both scripts, and English."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:13
+#: lib/potok_ide_web/controllers/page_html.ex:333
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:30
 #, elixir-autogen, elixir-format
 msgid "Back to Potok"
@@ -6319,13 +6319,13 @@ msgstr ""
 msgid "Warning"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:49
+#: lib/potok_ide_web/controllers/page_html.ex:371
 #, elixir-autogen, elixir-format
 msgid "Back to the top"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:20
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:38
+#: lib/potok_ide_web/controllers/page_html.ex:340
+#: lib/potok_ide_web/controllers/page_html.ex:358
 #, elixir-autogen, elixir-format
 msgid "Contents"
 msgstr ""
@@ -6333,7 +6333,7 @@ msgstr ""
 #: lib/potok_ide_web/components/layouts.ex:328
 #: lib/potok_ide_web/components/layouts.ex:526
 #: lib/potok_ide_web/controllers/page_controller.ex:119
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:26
+#: lib/potok_ide_web/controllers/page_html/help.html.heex:11
 #, elixir-autogen, elixir-format
 msgid "Help"
 msgstr ""
@@ -6343,7 +6343,7 @@ msgstr ""
 msgid "How to use all this, step by step and with pictures"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help.html.heex:31
+#: lib/potok_ide_web/controllers/page_html.ex:351
 #, elixir-autogen, elixir-format
 msgid "The pictures show Potok in Serbian."
 msgstr ""
@@ -6356,4 +6356,20 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/choice_menus.ex:31
 #, elixir-autogen, elixir-format
 msgid "Groups I follow"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_tutorial.html.heex:12
+#, elixir-autogen, elixir-format
+msgid "Back to the examples"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_tutorial.html.heex:19
+#, elixir-autogen, elixir-format
+msgid "Other examples"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_tutorial.html.heex:14
+#: lib/potok_ide_web/controllers/page_html/help_tutorial.html.heex:30
+#, elixir-autogen, elixir-format
+msgid "Step by step"
 msgstr ""
