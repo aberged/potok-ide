@@ -41,6 +41,9 @@ The run options:
 - **Profiles.**
   - `fly` is what the app gets on the Fly machine of `fly.toml` (shared-cpu-1x, 512 MB): 1 CPU, one scheduler and 425 MB. Measured on prod on 2026-11-09, the VM sees 461 MB, and hallpass, init and the kernel take about 36 MB of that. The container sees all of the host's CPUs, so `+S 1:1 +SDcpu 1:1` gives the BEAM the one scheduler it has on Fly. Before 2026-11-09 this profile gave 512 MB and 16 schedulers, so older numbers are not comparable.
   - `throttled` is the same machine once Fly's CPU quota has run out: a shared CPU gets 5 ms per 80 ms (6.25%), and only a burst balance of at most 500 s runs it faster. It boots on a full CPU and drops to 0.0625 when the sampler starts.
+  - `fly4` is the machine of `fly.toml` since v432 (shared-cpu-4x, 1 GB, `swap_size_mb = 512`): 4 CPUs, four schedulers, 928 MB and 512 MB of swap. On 2026-11-11 the prod VM saw 964 MiB, and the same ~36 MB as above is left out.
+  - `throttled4` is `fly4` once its burst balance has run out. Fly's quota is per vCPU but shared by the machine: 4 × 5 ms per 80 ms, so 0.25 CPU for the whole machine (`fly_instance_cpu_baseline` reads 0.25). It boots on 4 CPUs and drops when the sampler starts; `--cpus 0.2` is that baseline in laptop terms.
+  - `--swap MB` changes a profile's swap (Docker's `memswap_limit` is memory plus swap).
   - `big` is 6 CPU / 3 GB. `cluster` is two nodes of 3 CPU / 1.2 GB, connected by DNSCluster like on Fly, with the users split evenly between them.
   - `--cpus`, `--mem` and `--erl-flags "..."` change one run without a rebuild (e.g. `--erl-flags "+sbwt none"`).
 - **The laptop is faster than Fly.** The same shell loop took 1.2–1.6 s here (1 CPU) and 1.7 s on the prod machine (AMD EPYC), so CPU numbers from here are 1.1–1.4× too low for Fly.

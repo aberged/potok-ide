@@ -33,8 +33,10 @@ x-app: &app
       limits:
         cpus: "${APP_CPUS:-1}"
         memory: ${APP_MEM:-512M}
-  # No swap, like a Fly machine: hitting the limit means an OOM kill.
-  memswap_limit: ${APP_MEM:-512M}
+  # Memory plus swap. run.sh sets it to the memory limit (no swap, so hitting
+  # the limit means an OOM kill) unless the profile has swap, like fly4's
+  # 512 MB (fly.toml swap_size_mb).
+  memswap_limit: ${APP_MEMSWAP:-512M}
   ulimits:
     nofile:
       soft: 65536

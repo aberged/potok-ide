@@ -8,8 +8,13 @@
 #                         the BEAM can use there (the VM sees 461 MB; hallpass, init and the kernel take
 #                         the rest; measured on prod 2026-11-09). throttled = the same once Fly's CPU quota
 #                         has run out: 0.0625 CPU (5 ms per 80 ms). big = 6 CPU / 3 GB. cluster = two
-#                         connected nodes of 3 CPU / 1.2 GB with the users split between them
+#                         connected nodes of 3 CPU / 1.2 GB with the users split between them.
+#                         fly4 = the machine of fly.toml since v432 (shared-cpu-4x, 1 GB, 512 MB swap):
+#                         4 CPUs, four schedulers, 928 MB (the VM sees 964 MiB, measured 2026-11-11) and
+#                         512 MB swap. throttled4 = the same once the burst balance has run out: Fly's
+#                         quota is shared by the vCPUs, 4 x 5 ms per 80 ms = 0.25 CPU for the machine
 #   --cpus N, --mem M   override the profile's CPU and memory limits (e.g. --mem 512M)
+#   --swap MB           override the profile's swap (0 = none)
 #   --erl-flags "..."   extra VM flags for this run (e.g. "+sbwt none"), no rebuild needed
 #   --scale 1k|10k      which seeded database to use (potok_load_1k / potok_load_10k)
 #   --pool N            POOL_SIZE (default 10, as in production)
@@ -26,7 +31,7 @@ export MSYS_NO_PATHCONV=1
 export COMPOSE_PROFILES=cluster
 
 profile=fly scale=1k scenario=mix users=1000 ramp=120 hold=300 pool=10 reseed=0
-cpus_override="" mem_override="" erl_extra=""
+cpus_override="" mem_override="" swap_override="" erl_extra=""
 extra=()
 
 while [ $# -gt 0 ]; do
@@ -40,23 +45,36 @@ while [ $# -gt 0 ]; do
     --pool) pool="$2"; shift 2 ;;
     --cpus) cpus_override="$2"; shift 2 ;;
     --mem) mem_override="$2"; shift 2 ;;
+    --swap) swap_override="$2"; shift 2 ;;
     --erl-flags) erl_extra="$2"; shift 2 ;;
     --reseed) reseed=1; shift ;;
     *) extra+=("$1"); shift ;;
   esac
 done
 
-nodes=1 erl=""
+nodes=1 erl="" swap=0
 case "$profile" in
   fly) cpus=1 mem=425M erl="+S 1:1 +SDcpu 1:1" ;;
   throttled) cpus=0.0625 mem=425M erl="+S 1:1 +SDcpu 1:1" ;;
+  fly4) cpus=4 mem=928M swap=512 erl="+S 4:4 +SDcpu 4:4" ;;
+  throttled4) cpus=0.25 mem=928M swap=512 erl="+S 4:4 +SDcpu 4:4" ;;
   big) cpus=6 mem=3G ;;
   cluster) cpus=3 mem=1200M nodes=2 ;;
   *) echo "unknown profile $profile" >&2; exit 1 ;;
 esac
 cpus=${cpus_override:-$cpus}
 mem=${mem_override:-$mem}
+swap=${swap_override:-$swap}
 erl="$erl $erl_extra"
+
+# Docker's memswap_limit is memory plus swap, in MB.
+to_mb() {
+  case "$1" in
+    *G | *g) echo $((${1%[Gg]} * 1024)) ;;
+    *M | *m) echo "${1%[Mm]}" ;;
+    *) echo "$1" ;;
+  esac
+}
 
 case "$scale" in
   1k) db=potok_load_1k seed_n=1000 ;;
@@ -73,7 +91,8 @@ log() { echo "[run $(date +%H:%M:%S)] $*" | tee -a "$out/run.log"; }
 psql_db() { docker compose exec -T db psql -U postgres -d "$db" -At "$@"; }
 
 start_node() {
-  APP_CPUS="$1" APP_MEM="$2" APP_ERL_AFLAGS="${5:-}" docker compose up -d --force-recreate --no-deps "$3" >/dev/null
+  APP_CPUS="$1" APP_MEM="$2" APP_MEMSWAP="$(($(to_mb "$2") + swap))M" APP_ERL_AFLAGS="${5:-}" \
+    docker compose up -d --force-recreate --no-deps "$3" >/dev/null
   for _ in $(seq 1 90); do
     code=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: localhost' "http://127.0.0.1:$4/accounts/log-in" || true)
     [ "$code" = "200" ] && return 0
@@ -103,7 +122,7 @@ start_second_node() {
   exit 1
 }
 
-log "profile=$profile (nodes=$nodes cpus=$cpus mem=$mem pool=$pool erl='$erl') db=$db scenario=$scenario users=$users ramp=${ramp}s hold=${hold}s"
+log "profile=$profile (nodes=$nodes cpus=$cpus mem=$mem swap=${swap}M pool=$pool erl='$erl') db=$db scenario=$scenario users=$users ramp=${ramp}s hold=${hold}s"
 stop_second_node
 docker compose up -d --wait db >/dev/null
 
@@ -128,7 +147,10 @@ log "starting app with limits"
 # A throttled machine boots with its burst balance (Fly showed ~50 s left after a
 # deploy), so it starts on a full CPU and is cut down once the sampler runs.
 boot_cpus=$cpus
-[ "$profile" = throttled ] && boot_cpus=1
+case "$profile" in
+  throttled) boot_cpus=1 ;;
+  throttled4) boot_cpus=4 ;;
+esac
 start_app "$boot_cpus" "$mem" "$erl"
 [ "$nodes" = 2 ] && start_second_node
 log "vm: $(rpc 'IO.write("schedulers=#{:erlang.system_info(:schedulers)} online=#{:erlang.system_info(:schedulers_online)} dirty_cpu=#{:erlang.system_info(:dirty_cpu_schedulers)} beam_mb=#{div(:erlang.memory(:total), 1048576)}")')"
