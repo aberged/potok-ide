@@ -463,9 +463,11 @@ defmodule PotokIde.Social.GroupAreas do
   `[%{id, version, geojson}]`, where `version` changes whenever the group
   does. `:parent_id` keeps only the groups right under that group, as a map
   app shows. Shapes come from `AreaShapes`, which keeps the ones already made.
+  A guest (nil) gets the shapes of public groups (`Visibility.plain_groups/1`).
   """
-  def shapes(%Profile{} = profile, ids, zoom, opts \\ [])
-      when is_list(ids) and is_integer(zoom) do
+  def shapes(profile, ids, zoom, opts \\ [])
+      when (is_nil(profile) or is_struct(profile, Profile)) and is_list(ids) and
+             is_integer(zoom) do
     level = level(zoom)
 
     Visibility.plain_groups(profile)

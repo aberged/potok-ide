@@ -639,9 +639,11 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
   defp reload_list(socket, _pending), do: socket
 
   # An app reads what changed for itself, through the same rules: all it hears
-  # is which poll.
+  # is which poll. The app on screen may be an alternative description's.
   defp tell_app(socket, %{tallies: tallies, ids: ids}) do
-    if Show.description_visible?(socket.assigns) and socket.assigns.group.uses_api do
+    source = Map.get(socket.assigns, :active_alt_description) || socket.assigns.group
+
+    if Show.description_visible?(socket.assigns) and source.uses_api do
       tallies
       |> Map.keys()
       |> MapSet.new()

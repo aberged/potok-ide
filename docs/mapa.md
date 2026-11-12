@@ -82,7 +82,7 @@ Mesto grupe može biti i područje, kao kod mesne zajednice: granica od jednog i
 | Pravilo | Kako |
 |---|---|
 | Ko je u području | grupa čiji je pin unutar granice; drugo područje samo ako je manje (centar grada ne „leži“ u kvartu) |
-| Ko vidi područje | ko vidi njegovu grupu: članovi, a za javnu grupu svi prijavljeni |
+| Ko vidi područje | ko vidi njegovu grupu: članovi, a za javnu grupu svi prijavljeni, i gosti bez naloga u aplikaciji Mapa grupe koja je otvorila opis za njih |
 | Nalazi se u | na opisu grupe i u listu preko mape: vidljiva područja oko pina, od najmanjeg |
 | Na mapi korena | područje je samo oblik svoje grupe: filteri (i prekidač **Javne grupe**) ga zadrže ili izostave kao svaku grupu, a broj, „Prikaži sve“, lista na mestu i dodir računaju isti skup; pin područja je u krugovima kao i svaki drugi, a kad je područje široko bar ~64 px (dva pina) ispod pinova se crta i njegova granica |
 | Slojevi | **Mesta** i **Područja** se pale i gase dugmetom na mapi, pregledač pamti izbor |

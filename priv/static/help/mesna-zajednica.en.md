@@ -22,7 +22,7 @@ The order matters in one place: create the role council before the sub-groups. T
 
 1. On the home page, tap the **+** button at the bottom right (Create sub-group).
 2. To "What kind of group do you need?", answer **Folder**: it keeps sub-groups together.
-3. Type the name "MZ Topolik" and turn on **Public group**, so the neighbours find it and ask to join. The name, picture and description of a public group can be seen outside Potok too, by anyone with the link.
+3. Type the name "MZ Topolik" and turn on **Public group**, so the neighbours find it and ask to join. The name, picture and a short part of the description of a public group can be seen outside Potok too, by anyone with the link.
 4. Tap **Create**. The new group opens, on its empty Sub-groups tab.
 
 ![A folder on the home page: its name and public group](mz-nova-grupa)
@@ -34,7 +34,7 @@ The order matters in one place: create the role council before the sub-groups. T
 3. Under **Pin on the map**, choose **Local community**.
 4. Tap **Save changes** on the bar at the bottom.
 
-The group map now shows MZ Topolik with its border and everything within the area. In the same menu, on the **Description** card, write what the group is for: **Change template** offers ready-made shapes.
+The group map now shows MZ Topolik with its border and everything within the area. In the same menu, on the **Description** card, write what the group is for: **Change template** offers ready-made shapes. For neighbours without an account to read the description too, turn on **Description open to guests** on the **Access** card and save.
 
 ![An area drawn with vertices](lokacija-podrucje)
 

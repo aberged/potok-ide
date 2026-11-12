@@ -205,6 +205,25 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesViewTest do
     assert_reply(view, %{ok: false, error: "invalid_place"})
   end
 
+  test "a guest gets the public places of a view, with their pins", ctx do
+    {:ok, map} = Social.update_group(ctx.owner, ctx.map, %{"description_for_guests" => true})
+    %{a: a, b: b, c: c, d: d, e: e, record: record, closed: closed} = seed!(%{ctx | map: map})
+
+    {:ok, view, _html} = live(build_conn(), ~p"/groups/#{map.id}")
+
+    call(view, "list_places", %{"bbox" => @serbia, "zoom" => 18, "counts" => true})
+    assert_reply(view, %{ok: true, mode: "view", total: 6, pins: pins} = reply)
+
+    # The owner's closed place stays out, as for any member who is not in it.
+    assert single_ids(reply) == Enum.sort([a.id, b.id, c.id, d.id, e.id, record])
+    assert pins |> Enum.map(& &1.count) |> Enum.sum() == 6
+
+    call(view, "list_places_at", %{"bounds" => [[44.79, 20.39], [44.86, 20.46]]})
+    assert_reply(view, %{ok: true, places: spot})
+    assert spot != []
+    refute closed.id in Enum.map(spot, & &1.id)
+  end
+
   test "refuses a view it cannot read", ctx do
     view = open_map(ctx.member_account, ctx.map)
 

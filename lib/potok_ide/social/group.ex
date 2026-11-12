@@ -23,6 +23,10 @@ defmodule PotokIde.Social.Group do
     field :description_name, :string
     field :home_page, Ecto.Enum, values: @home_pages, default: :description
     field :has_public_chat, :boolean, default: false
+    # Guests, people without an account who have the group's link, read its
+    # description while it is public (`guest_description?/1`). Kept while it
+    # is private, like `has_public_chat`.
+    field :description_for_guests, :boolean, default: false
     field :is_direct, :boolean, default: false
     field :is_public, :boolean, default: false
     field :is_root, :boolean, default: false
@@ -121,6 +125,7 @@ defmodule PotokIde.Social.Group do
       :description_format,
       :home_page,
       :has_public_chat,
+      :description_for_guests,
       :is_direct,
       :is_public,
       :is_root,
@@ -138,6 +143,7 @@ defmodule PotokIde.Social.Group do
       :description_format,
       :home_page,
       :has_public_chat,
+      :description_for_guests,
       :is_public,
       :is_root,
       :is_root_public
@@ -168,6 +174,7 @@ defmodule PotokIde.Social.Group do
       :home_page,
       :home_alt_description_id,
       :has_public_chat,
+      :description_for_guests,
       :is_public,
       :is_root_public,
       :uses_api,
@@ -186,6 +193,7 @@ defmodule PotokIde.Social.Group do
       :description_format,
       :home_page,
       :has_public_chat,
+      :description_for_guests,
       :is_public,
       :is_root_public
     ])
@@ -209,6 +217,18 @@ defmodule PotokIde.Social.Group do
       do: true
 
   def guest_preview?(%__MODULE__{}), do: false
+
+  @doc """
+  Whether guests read the group's description, not only its card: a group
+  they get a preview of (`guest_preview?/1`) that opened it to them. Its
+  alternative descriptions follow only where each is marked for it
+  (`PotokIde.Social.GroupAltDescription`). A group that stops being public
+  keeps the choice, as with `open_chat?/1`.
+  """
+  def guest_description?(%__MODULE__{description_for_guests: true} = group),
+    do: guest_preview?(group)
+
+  def guest_description?(%__MODULE__{}), do: false
 
   @doc """
   Whether the group's chat reaches past its members: any signed-in profile reads

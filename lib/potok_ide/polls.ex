@@ -87,8 +87,15 @@ defmodule PotokIde.Polls do
   `scope` is what the viewer looks at: `{:groups, ids}` (its own groups),
   `{:public_of, group_id}` (a public group it is outside of), `:public`, or
   `{:groups_and_public, ids}`. `:status` is `:open`, `:closed` or `:waiting`.
+
+  A guest, nil for both the profile and the account, looks only at the public
+  polls of one group (`{:public_of, group_id}`), where an app of that group's
+  description shows them, and votes in none.
   """
-  def overview(%Profile{} = profile, account, scope, opts \\ []) do
+  def overview(profile, account, scope, opts \\ [])
+      when is_struct(profile, Profile) or
+             (is_nil(profile) and is_nil(account) and tuple_size(scope) == 2 and
+                elem(scope, 0) == :public_of) do
     status = Keyword.get(opts, :status, :open)
     now = Keyword.get_lazy(opts, :now, fn -> DateTime.utc_now(:second) end)
     limit = if status == :waiting, do: @waiting_candidates, else: @page_size
@@ -177,7 +184,18 @@ defmodule PotokIde.Polls do
   What `profile` sees of each poll, as `%{poll_id => %View{}}`. The polls need
   their answers; `contexts` is `%{group_id => {group, access}}`.
   """
-  def views(polls, %Profile{} = profile, account, contexts, now \\ DateTime.utc_now(:second)) do
+  def views(polls, profile, account, contexts, now \\ DateTime.utc_now(:second))
+
+  # A guest has no ballot, and `Rules.view/7` shows it what anyone outside sees.
+  def views(polls, nil, nil, contexts, now) do
+    Map.new(polls, fn %Poll{} = poll ->
+      {group, access} = Map.fetch!(contexts, poll.group_id)
+
+      {poll.id, Rules.view(poll, group, access, nil, nil, nil, now)}
+    end)
+  end
+
+  def views(polls, %Profile{} = profile, account, contexts, now) do
     account_id = ballot_account_id(profile, account)
     ballots = ballots_of_viewer(polls, profile, account_id)
 
@@ -214,8 +232,12 @@ defmodule PotokIde.Polls do
     {own, Enum.find(ballots, &(&1.profile_id != profile_id))}
   end
 
-  @doc "What `profile` sees of one poll, with its answers and group loaded."
-  def view_of(%Poll{group: %Group{} = group} = poll, %Profile{} = profile, account) do
+  @doc """
+  What `profile` sees of one poll, with its answers and group loaded; nil for
+  both the profile and the account is a guest.
+  """
+  def view_of(%Poll{group: %Group{} = group} = poll, profile, account)
+      when is_struct(profile, Profile) or (is_nil(profile) and is_nil(account)) do
     access = Access.for_profile(profile, group)
 
     [poll]

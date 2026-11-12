@@ -9,8 +9,13 @@ defmodule PotokIdeWeb.PublicPreview do
   goes on to `require_authenticated_account`, so a guest cannot tell a private
   group from one that does not exist.
 
-  Guests only ever get a name, a picture and a piece of the description; chats,
-  members and the rest of the group stay behind the login.
+  Guests get a name, a picture and a piece of the description, unless the
+  group opened its description to them (`Group.guest_description?/1`): then
+  they read that and the alternative descriptions marked for them
+  (`PotokIdeWeb.GuestDescriptions`), text on this plain page, an app in a
+  small LiveView of its own (`PotokIdeWeb.GroupLive.GuestApp`). The meta tags
+  stay the card's either way. Chats, members and the rest of the group stay
+  behind the login.
   """
 
   use PotokIdeWeb, :verified_routes
@@ -26,6 +31,8 @@ defmodule PotokIdeWeb.PublicPreview do
   alias PotokIde.PlainText
   alias PotokIde.Social
   alias PotokIde.Social.Group
+  alias PotokIdeWeb.GroupLive.GuestApp
+  alias PotokIdeWeb.GuestDescriptions
   alias PotokIdeWeb.Locale
 
   @description_length 200
@@ -40,7 +47,7 @@ defmodule PotokIdeWeb.PublicPreview do
         conn
         |> put_session(:account_return_to, current_path(conn))
         |> put_view(html: PotokIdeWeb.PageHTML)
-        |> render(template, [{:page_noindex, true} | assigns])
+        |> render_preview(template, assigns, path)
         |> halt()
 
       _ ->
@@ -77,6 +84,78 @@ defmodule PotokIdeWeb.PublicPreview do
 
   defp guest?(%{assigns: %{current_scope: %{account: %{}}}}), do: false
   defp guest?(_conn), do: true
+
+  # A group that opened its description to guests shows it instead of the
+  # card. An app runs in a LiveView of its own, which the route's live_session
+  # must not reach: its first render would run the session's log-in check
+  # (`Phoenix.LiveView.Static`) and send the guest to log in.
+  defp render_preview(conn, :public_group, assigns, path) do
+    case guest_page(path, conn.query_params, assigns[:group], conn) do
+      nil ->
+        render(conn, :public_group, [{:page_noindex, true} | assigns])
+
+      page ->
+        conn
+        |> put_private(:phoenix_live_view, nil)
+        |> then(&if(page.app_session, do: assign(&1, :live_module, GuestApp), else: &1))
+        |> render(:public_group_page, [{:page_noindex, true}, {:guest, page} | assigns])
+    end
+  end
+
+  defp render_preview(conn, template, assigns, _path),
+    do: render(conn, template, [{:page_noindex, true} | assigns])
+
+  # The group of the link, or, for a link into an app (`?at=`) whose group
+  # keeps its description from guests, the group the link stands for.
+  defp guest_page([group_id | _rest] = path, query, preview_group, conn) do
+    page_of(group_id, query, preview_group, conn) ||
+      linked_page(path, query, preview_group, conn)
+  end
+
+  defp linked_page([_group_id, "group_home"], %{"at" => linked_id}, preview_group, conn),
+    do: page_of(linked_id, %{}, preview_group, conn)
+
+  defp linked_page(_path, _query, _preview_group, _conn), do: nil
+
+  defp page_of(group_id, query, preview_group, conn) do
+    with id when is_integer(id) <- parse_id(group_id),
+         %Group{} = group <- known_group(id, preview_group),
+         [_ | _] = entries <- GuestDescriptions.entries(group),
+         entry = GuestDescriptions.pick(entries, group, query["d"]),
+         source when not is_nil(source) <- GuestDescriptions.source(group, entry) do
+      %{
+        group: group,
+        entries: entries,
+        entry: entry,
+        source: source,
+        app_session: app_session(group, entry, conn)
+      }
+    else
+      _ -> nil
+    end
+  end
+
+  # The preview read this group already, unless the link stands for another.
+  defp known_group(id, %Group{id: id} = group), do: group
+  defp known_group(id, _other), do: Social.get_public_group(id)
+
+  defp app_session(_group, %{uses_api: false}, _conn), do: nil
+
+  defp app_session(%Group{} = group, entry, conn),
+    do: %{"group_id" => group.id, "alt_id" => entry.id, "client" => client_key(conn)}
+
+  # The guest's address, hashed, for the limit on what one address asks of the
+  # apps: the session is signed, not hidden, and sits in the page.
+  defp client_key(%Plug.Conn{remote_ip: ip}) when is_tuple(ip) do
+    ip
+    |> :inet.ntoa()
+    |> to_string()
+    |> then(&:crypto.hash(:sha256, &1))
+    |> binary_part(0, 12)
+    |> Base.url_encode64(padding: false)
+  end
+
+  defp client_key(_conn), do: nil
 
   # A calendar link names its event whatever group it goes through: the root's
   # calendar shows the events of every group.
@@ -119,6 +198,12 @@ defmodule PotokIdeWeb.PublicPreview do
   end
 
   defp group_description(%Group{} = group), do: group_text(group) || default_description(group)
+
+  @doc """
+  What the card of `group` says under its name: a piece of its description,
+  what an app says about itself, or what it is.
+  """
+  def card_text(%Group{} = group), do: group_description(group)
 
   defp default_description(%Group{uses_api: true}), do: gettext("An app on Potok.")
   defp default_description(%Group{}), do: gettext("A group on Potok.")

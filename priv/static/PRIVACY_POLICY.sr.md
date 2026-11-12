@@ -73,7 +73,7 @@ Informacije možemo deliti samo u sledećim okolnostima:
 - Sa pružaocima usluga koji pomažu u radu Potoka, kao što su isporuka imejlova, hosting, infrastruktura baze podataka i pružaoci push obaveštenja
 - Sa uslugom Firebase Cloud Messaging kada su uključena push obaveštenja na Androidu
 - Sa drugim korisnicima Potoka u okviru uobičajenog rada aplikacije, na primer kada su vaš profil, članstvo u grupi, pozivnice ili objavljeni sadržaj vidljivi unutar grupa ili drugih funkcija za saradnju koje koristite
-- Sa svakim ko ima link, uključujući ljude bez naloga i usluge koje prikazuju preglede deljenih linkova: naziv, slika i kratak deo opisa javne grupe, kao i naslov, vreme, mesto i kratak deo opisa javnog događaja
+- Sa svakim ko ima link, uključujući ljude bez naloga i usluge koje prikazuju preglede deljenih linkova: naziv, slika i kratak deo opisa javne grupe, kao i naslov, vreme, mesto i kratak deo opisa javnog događaja. Kada javna grupa to uključi, i ceo njen opis, alternativni opisi označeni za to i ono što aplikacije u njima pokazuju posetiocima bez naloga: javne grupe ispod nje, javna glasanja i rezimei koje pravila prikazuju svima
 - Ako to zahteva zakon, pravni postupak ili važeći zahtev državnog organa
 - Radi zaštite prava, bezbednosti i integriteta Potoka, naših korisnika ili javnosti
 - U vezi sa spajanjem, preuzimanjem, finansiranjem ili prodajom imovine, u skladu sa važećim propisima

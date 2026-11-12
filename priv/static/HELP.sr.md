@@ -70,7 +70,11 @@ Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopst
 
 ### Javno, privatno i otvoreno {:#vidljivost}
 
-Privatnu grupu vide samo njeni članovi. Javnu grupu vidi svako ko je prijavljen i može da zatraži pristup, a njen naziv, slika i opis vide se i van Potoka, svakome ko ima link.
+Privatnu grupu vide samo njeni članovi. Javnu grupu vidi svako ko je prijavljen i može da zatraži pristup, a njen naziv, slika i kratak deo opisa vide se i van Potoka, svakome ko ima link.
+
+Javna grupa može da otvori i ceo opis onima bez naloga: Uredi grupu, Pristup, „Opis vidljiv i bez prijave“. Ko otvori njen link tada čita opis, i alternativne opise označene „Vidljiv i bez prijave“, a aplikacija u opisu, kao Feed ili Mapa, za njega samo čita: pokazuje javne grupe ispod sebe, ali ne piše, ne glasa i ne reaguje. Razgovor, članovi i ko je reagovao ostaju iza prijave, a pretraživači tu stranu ne prikazuju.
+
+![Javna grupa kako je vidi neko bez naloga](gost-opis)
 
 Javna grupa može da otvori i razgovor: tada svako ko je prijavljen čita poruke i piše, i bez učlanjenja. Takav posetilac ne šalje fajlove i ne otvara niti.
 
@@ -201,7 +205,7 @@ U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje 
 
 ![Kakva grupa ti treba?](kreiraj-podgrupu) ![Naziv, javnost i nasleđivanje članova](kreiraj-korak)
 
-Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, razgovor otvoren nečlanovima, nasleđivanje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
 
 ![Uredi grupu: pristup i članstvo, sa izgledom linka van Potoka](uredi-grupu)
 
@@ -314,14 +318,14 @@ Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregled
 
 Neke vrste grupa dobijaju gotovu aplikaciju:
 
-- **Feed** je niz vesti koje se listaju prevlačenjem, sa reakcijama i komentarima. Urednici ih pišu u podgrupi `.feed`, iz šablona, čuvaju kao nacrt i objavljuju.
+- **Feed** je niz vesti koje se listaju prevlačenjem, sa reakcijama i komentarima. Urednici ih pišu u podgrupi `.feed`, iz šablona, čuvaju kao nacrt i objavljuju. Da bi vesti čitali i oni bez naloga, uključi „Opis vidljiv i bez prijave“ i u Feedu i u `.feed`: nova vest taj izbor preuzima od `.feed`.
 - **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova.
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
 
 ![Feed: vest iz kraja](feed) ![Forma za porudžbine, kako je vidi član](forma)
 
-Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge.
+Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.
 
 Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
 
@@ -331,4 +335,4 @@ Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, �
 
 Tekst, link ili fajl iz druge aplikacije na telefonu podeliš u Potok. Izabereš grupu ili razgovor, a deljeno te čeka u polju za pisanje. Isto radi i Potok instaliran iz pregledača.
 
-Link ka javnoj grupi ili javnom događaju deliš iz menija grupe ili iz događaja. Van Potoka se vide samo naziv, slika i opis.
+Link ka javnoj grupi ili javnom događaju deliš iz menija grupe ili iz događaja. Van Potoka se vide naziv, slika i kratak deo opisa, a ceo opis kad ga grupa otvori i za posetioce bez naloga.

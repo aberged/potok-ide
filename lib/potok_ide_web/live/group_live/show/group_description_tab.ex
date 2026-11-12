@@ -264,12 +264,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
     """
   end
 
-  # A template is made for the width it has in Feed, which is this column
-  # there, so it does not spread over a wide screen here. Anything else takes
-  # the whole panel, as an author may have written a wide table.
-  defp description_column(%{uses_api: true}), do: nil
+  @doc """
+  The column a text description takes. A template is made for the width it
+  has in Feed, which is this column there, so it does not spread over a wide
+  screen here. Anything else takes the whole panel, as an author may have
+  written a wide table. Nil for an app, which takes the panel too.
+  """
+  def description_column(%{uses_api: true}), do: nil
 
-  defp description_column(source) do
+  def description_column(source) do
     if Post.decode(source.description) != :free, do: "mx-auto w-full max-w-2xl sm:px-5"
   end
 

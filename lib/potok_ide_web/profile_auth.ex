@@ -221,6 +221,11 @@ defmodule PotokIdeWeb.ProfileAuth do
     end
   end
 
+  # The collections every page gets with its profile, for a LiveView that
+  # mounts without one: a guest's app (`PotokIdeWeb.GroupLive.GuestApp`).
+  def on_mount(:collect_socket_garbage, _params, _session, socket),
+    do: {:cont, schedule_transport_gc(socket)}
+
   @doc """
   Whether the socket's LiveView counts unread values itself, the header
   badge included. Such a view gets `{:group_unread_counts_updated, ...}`,

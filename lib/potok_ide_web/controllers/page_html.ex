@@ -7,6 +7,8 @@ defmodule PotokIdeWeb.PageHTML do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.DomainCopy
+  alias PotokIdeWeb.GroupLive.Show.{Components, GroupDescriptionTab}
+  alias PotokIdeWeb.GuestDescriptions
   alias PotokIdeWeb.StackCopy
 
   embed_templates "page_html/*"
@@ -243,7 +245,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Apps in a group"),
         text:
           gettext(
-            "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. Or pick a template, say news or an event, and fill in the fields."
+            "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
           )
       }
     ]

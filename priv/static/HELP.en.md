@@ -64,7 +64,11 @@ A sub-group takes its roles from the group above. If it needs different ones, it
 
 ### Public, private and open {:#vidljivost}
 
-A private group is seen only by its members. A public group is seen by everyone who is logged in, who can request access, and its name, picture and description can be seen outside Potok too, by anyone who has the link.
+A private group is seen only by its members. A public group is seen by everyone who is logged in, who can request access, and its name, picture and a short part of its description can be seen outside Potok too, by anyone who has the link.
+
+A public group can also open its whole description to people without an account: Edit group, Access, "Description open to guests". Whoever opens its link then reads the description, and the alternative descriptions marked "Guests read it too", and an app in the description, such as Feed or Map, only reads for them: it shows the public groups below it, but does not write, vote or react. The chat, the members and who reacted stay behind the login, and search engines do not list the page.
+
+![A public group as someone without an account sees it](gost-opis)
 
 A public group can also open its chat: then everyone who is logged in reads the messages and writes, without joining. Such a visitor sends no files and opens no threads.
 
@@ -195,7 +199,7 @@ In the second step you enter the name and choose whether the group is public and
 
 ![What kind of group do you need?](kreiraj-podgrupu) ![Name, public or not, and inheriting members](kreiraj-korak)
 
-Edit group has everything else: name and picture, access and membership (public group, chat open to non-members, inheritance), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+Edit group has everything else: name and picture, access and membership (public group, description open to guests, chat open to non-members, inheritance), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
 
 ![Edit group: access and membership, with how the link looks outside Potok](uredi-grupu)
 
@@ -308,14 +312,14 @@ You turn on push notifications in your account settings, separately for each bro
 
 Some kinds of groups get a ready-made app:
 
-- **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them.
+- **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them. For people without an account to read the news too, turn on "Description open to guests" both in the Feed and in `.feed`: a new story takes that choice from `.feed`.
 - **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 
 ![Feed: news from the neighbourhood](feed) ![The order form, as a member sees it](forma)
 
-You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see.
+You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.
 
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
 
@@ -325,4 +329,4 @@ Whoever writes HTML can turn a description into an app of their own (Edit group,
 
 You share a text, a link or a file from another app on your phone into Potok. You choose a group or a conversation, and what you shared waits for you in the field you write in. Potok installed from the browser does the same.
 
-You share a link to a public group or a public event from the group's menu or from the event. Outside Potok, only the name, picture and description can be seen.
+You share a link to a public group or a public event from the group's menu or from the event. Outside Potok, the name, picture and a short part of the description can be seen, and the whole description once the group opens it to visitors without an account.

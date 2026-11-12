@@ -222,7 +222,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, files and avatars, stays a plain response to a request, so a reader holds no process open."
+              "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, a public group's page for guests, files and avatars, stays a plain response to a request, so a reader holds no process open. Only an app on a guest's page gets a small process of its own, which asks now and then whether guests may still see it."
             )
         },
         %{

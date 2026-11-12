@@ -43,12 +43,19 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   Reads are free, but counts and sums (`summarize_values`, `aggregate_values`)
   scan every value the app keeps and hold the page for up to five seconds, so
   they are limited per viewer (`PotokIde.RateLimit`, `:app_heavy_read`).
+
+  A guest, a visitor without an account at a group that opened its
+  description to guests (`PotokIdeWeb.GroupLive.GuestApp`), has no profile.
+  It gets the calls that only read (`@guest_methods`), with the sight of a
+  guest: the public groups, and the descriptions of those open to guests. A
+  sub-group opens over the app as text (`GuestSheet`). Everything that writes,
+  reacts, votes or reads members' values stays refused.
   """
   use Gettext, backend: PotokIdeWeb.Gettext
   use PotokIdeWeb, :verified_routes
 
   import Phoenix.Component, only: [assign: 3]
-  import Phoenix.LiveView, only: [push_navigate: 2]
+  import Phoenix.LiveView, only: [push_navigate: 2, redirect: 2]
 
   alias PotokIde.Polls
   alias PotokIde.Polls.{Poll, Rules, View}
@@ -69,6 +76,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   alias PotokIdeWeb.AppFileToken
   alias PotokIdeWeb.Avatars
+  alias PotokIdeWeb.GroupLive.GuestSheet
   alias PotokIdeWeb.GroupLive.Show
 
   alias PotokIdeWeb.GroupLive.Show.{
@@ -101,6 +109,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     set_notifications ensure_file_groups file_url prepare_upload
     map_config list_places list_places_at create_place show_group place_shapes
   )
+
+  # What a guest may call of those: reads, with a guest's sight (`Social`
+  # takes nil for the viewer there). The rest stays refused for a guest.
+  @guest_methods ~w(
+    get_group list_subgroups open_group share_group show_group list_polls get_poll
+    map_config list_places list_places_at place_shapes
+  )
+
+  @refused_to_guests @signed_in_methods -- @guest_methods
 
   # Every pin a map gets in one call; a bigger map reads by view, gathered on
   # the server (`list_places` with `bbox`). Tests set a smaller one.
@@ -426,7 +443,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
-       when method in @signed_in_methods do
+       when method in @refused_to_guests do
     {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
   end
 
@@ -652,7 +669,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     with id when is_integer(id) <- non_negative_integer(params["id"]),
          %Group{} = target <- reachable_group(group, profile, id) do
-      {%{ok: true}, push_navigate(socket, to: group_tab_path(target, params["tab"]))}
+      {%{ok: true}, navigate(socket, group_tab_path(target, params["tab"]))}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -704,7 +721,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     poll_scope = if access.member?, do: {:groups, [group.id]}, else: {:public_of, group.id}
 
     page =
-      Polls.overview(profile, scope.account, poll_scope,
+      Polls.overview(profile, scope && scope.account, poll_scope,
         status: poll_status(params["status"]),
         before_id: non_negative_integer(params["before_id"])
       )
@@ -719,7 +736,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with id when is_integer(id) <- non_negative_integer(params["id"]),
          %Poll{} = poll <- Polls.get_poll(id),
          true <- poll.group_id == socket.assigns.group.id,
-         %{scope: :full} = view <- Polls.view_of(poll, profile, scope.account) do
+         %{scope: :full} = view <- Polls.view_of(poll, profile, scope && scope.account) do
       {%{ok: true, poll: poll_payload(view)}, socket}
     else
       _not_found -> {error("not_found", nil), socket}
@@ -791,7 +808,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with [[south, west], [north, east]] <- params["bounds"],
          [_, _, _, _] <- map_numbers([south, west, north, east]),
          {:ok, filters} <- places_filters(params, group),
-         :ok <- map_view_turn(profile),
+         :ok <- map_view_turn(socket),
          {:ok, {places, more?}} <-
            Social.list_map_spot(profile, filters, [[south, west], [north, east]], @max_spot) do
       areas = GroupAreas.among(places)
@@ -852,6 +869,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # A sheet opens no sheet of its own: one over the other would lose the way back.
   defp run("show_group", _params, %{assigns: %{in_group_sheet: true}} = socket) do
     {error("unavailable", nil), socket}
+  end
+
+  defp run("show_group", params, %{assigns: %{current_profile: nil}} = socket) do
+    with id when is_integer(id) <- non_negative_integer(params["id"]),
+         %Group{} = child <- Social.get_visible_child_group(socket.assigns.group, nil, id) do
+      {%{ok: true}, GuestSheet.open(socket, child)}
+    else
+      _not_found -> {error("not_found", nil), socket}
+    end
   end
 
   defp run("show_group", params, socket) do
@@ -1336,12 +1362,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  # A story keeps the comments of its feed: apps need not know of open chats.
+  # A story keeps the comments of its feed, and goes to guests when the feed's
+  # stories do: apps need not know of open chats or of guests.
   defp new_child_attrs(params, place, group) do
     params
     |> child_attrs()
     |> Map.merge(place)
     |> Map.put("has_public_chat", group.has_public_chat)
+    |> Map.put("description_for_guests", group.description_for_guests)
   end
 
   defp child_place(params) do
@@ -1526,7 +1554,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{group: group, current_profile: profile} = socket.assigns
     filters = %{view.filters | parent_id: group.id}
 
-    with :ok <- map_view_turn(profile),
+    with :ok <- map_view_turn(socket),
          {:ok, %{view: cells, extent: extent}} <- load_child_map(profile, filters, view),
          {:ok, pins} <- child_pin_counts(group, profile, view.counts?) do
       areas = GroupAreas.among(cells.places)
@@ -1568,8 +1596,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  defp map_view_turn(profile) do
-    case RateLimit.hit(:app_map_view, profile.id) do
+  defp map_view_turn(socket) do
+    case RateLimit.hit(:app_map_view, rate_key(socket)) do
       :ok ->
         :ok
 
@@ -1661,13 +1689,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # Counts and sums scan every value the app keeps and hold the page while they
   # run, so a viewer gets only so many a minute, on all their pages together.
   defp heavy_read(socket) do
-    key =
-      case socket.assigns.current_profile do
-        nil -> {:page, self()}
-        profile -> profile.id
-      end
-
-    case RateLimit.hit(:app_heavy_read, key) do
+    case RateLimit.hit(:app_heavy_read, rate_key(socket)) do
       :ok ->
         :ok
 
@@ -1676,6 +1698,16 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          error("rate_limited", gettext("Too many requests in a short time. Try again shortly."))}
     end
   end
+
+  # A viewer on all its pages, or a guest's page.
+  defp rate_key(%{assigns: %{current_profile: nil}}), do: {:page, self()}
+  defp rate_key(%{assigns: %{current_profile: profile}}), do: profile.id
+
+  # A guest's page is no live view of the router, so it loads the next one.
+  defp navigate(%{assigns: %{current_profile: nil}} = socket, path),
+    do: redirect(socket, to: path)
+
+  defp navigate(socket, path), do: push_navigate(socket, to: path)
 
   defp error(code, nil), do: %{ok: false, error: code}
   defp error(code, message), do: %{ok: false, error: code, message: message}
@@ -1711,7 +1743,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       can_create_children: manages_children?(access) and Access.can?(access, :create_subgroups),
       # Then any member can put a group here by hand, past the app.
       everyone_creates_subgroups: Access.everyone_can?(access, :create_subgroups),
-      can_start_polls: Rules.can_create?(access, group)
+      can_start_polls: Rules.can_create?(access, group),
+      signed_in: not is_nil(profile)
     }
   end
 
@@ -1734,18 +1767,22 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   # `description_html` is sanitized, so an app can put it in its page. The raw
   # description would run there with the viewer's rights. An app in a sub-group
-  # has no text to show, only what it says about itself.
+  # has no text to show, only what it says about itself. A guest reads the text
+  # of a group open to guests only, and learns nothing of who made it.
   defp subgroup_payload(%Group{} = group, stats) do
     %{
       id: group.id,
       name: group.name,
-      description_html: Components.description_html(group),
+      description_html:
+        if(stats.profile || Group.guest_description?(group),
+          do: Components.description_html(group)
+        ),
       app_description: if(group.uses_api, do: PublicPreview.own_description(group)),
       uses_api: group.uses_api,
       picture_url: Avatars.group_avatar_url(group),
       is_public: group.is_public,
       inherits_members: group.inherits_members,
-      creator_id: group.creator_id,
+      creator_id: if(stats.profile, do: group.creator_id),
       inserted_at: group.inserted_at,
       published_at: group.published_at,
       last_value_at: group.last_value_at,

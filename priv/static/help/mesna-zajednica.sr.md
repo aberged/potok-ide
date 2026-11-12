@@ -23,7 +23,7 @@ Redosled je bitan na jednom mestu: ulogu savet napravi pre podgrupa. Obaveštenj
 
 1. Na početnoj strani dodirni dugme **+** dole desno (Kreiraj podgrupu).
 2. Na pitanje „Kakva grupa ti treba?“ izaberi **Folder**: on drži podgrupe na okupu.
-3. Upiši naziv „MZ Topolik“ i uključi **Javna grupa**, da je komšije nađu i zatraže pristup. Naziv, slika i opis javne grupe vide se i van Potoka, svakome ko ima link.
+3. Upiši naziv „MZ Topolik“ i uključi **Javna grupa**, da je komšije nađu i zatraže pristup. Naziv, slika i kratak deo opisa javne grupe vide se i van Potoka, svakome ko ima link.
 4. Dodirni **Kreiraj**. Otvara se nova grupa, na praznoj kartici Podgrupe.
 
 ![Folder na početnoj strani: naziv i javna grupa](mz-nova-grupa)
@@ -35,7 +35,7 @@ Redosled je bitan na jednom mestu: ulogu savet napravi pre podgrupa. Obaveštenj
 3. Pod **Pin na mapi** izaberi **Mesna zajednica**.
 4. Dodirni **Sačuvaj izmene** na traci na dnu.
 
-Mapa grupa sada pokazuje MZ Topolik sa njenom granicom i sve što je u području. U istom meniju, na kartici **Opis**, napiši čemu grupa služi: **Promeni šablon** nudi gotove oblike.
+Mapa grupa sada pokazuje MZ Topolik sa njenom granicom i sve što je u području. U istom meniju, na kartici **Opis**, napiši čemu grupa služi: **Promeni šablon** nudi gotove oblike. Da bi opis čitale i komšije bez naloga, na kartici **Pristup** uključi **Opis vidljiv i bez prijave** i sačuvaj.
 
 ![Područje ucrtano temenima](lokacija-podrucje)
 

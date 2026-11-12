@@ -1064,6 +1064,53 @@
     text-decoration: underline;
   }
 
+  /* A description's tab on a guest's page of a group (`public_group_page`). */
+  .lp-chip {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.375rem;
+    max-width: 14rem;
+    border: 1px solid var(--lp-line);
+    border-radius: 9999px;
+    padding: 0.375rem 0.875rem;
+    background: var(--color-base-100);
+    color: var(--lp-muted);
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: transform 150ms ease, border-color 150ms ease, color 150ms ease;
+  }
+
+  .lp-chip:hover {
+    transform: translateY(-1px);
+    border-color: color-mix(in oklab, var(--lp-blue) 40%, transparent);
+    color: var(--color-base-content);
+  }
+
+  .lp-chip:focus-visible {
+    outline: 3px solid color-mix(in oklab, var(--lp-sky) 70%, transparent);
+    outline-offset: 2px;
+  }
+
+  .lp-chip.is-active {
+    border-color: transparent;
+    background: linear-gradient(135deg, var(--lp-blue), var(--lp-deep));
+    box-shadow: 0 8px 18px -12px color-mix(in oklab, var(--lp-deep) 80%, transparent);
+    color: #ffffff;
+  }
+
+  /* An app on a guest's page: as tall as the screen leaves it, never a sliver. */
+  .lp-app-box {
+    display: flex;
+    flex-direction: column;
+    height: calc(100dvh - 13rem);
+    min-height: 30rem;
+    overflow: hidden;
+    border: 1px solid var(--lp-line);
+    border-radius: 1.5rem;
+    background: var(--color-base-100);
+  }
+
   .lp-waves path {
     stroke-linecap: round;
   }

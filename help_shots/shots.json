@@ -159,6 +159,11 @@
     "steps": [{ "click": "#group-edit-tab-access" }, { "pause": 500 }]
   },
   {
+    "name": "gost-opis",
+    "url": "/groups/{groups.mz}",
+    "steps": [{ "wait": "#guest-description" }, { "pause": 800 }]
+  },
+  {
     "name": "clanovi",
     "as": "ana",
     "url": "/groups/{groups.mz}/members"

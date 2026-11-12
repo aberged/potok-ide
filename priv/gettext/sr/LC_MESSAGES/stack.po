@@ -313,8 +313,8 @@ msgstr "Ruter i provera pristupa"
 
 #: lib/potok_ide_web/stack_copy.ex:223
 #, elixir-autogen, elixir-format
-msgid "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, files and avatars, stays a plain response to a request, so a reader holds no process open."
-msgstr "Ruter deli adrese na one za goste, naloge i profile, a ista provera važi i za prvo učitavanje i za vezu uživo. Ono čemu veza uživo ne treba, kao naslovna strana, mapa domena, ova stranica, fajlovi i avatari, ostaje običan odgovor na zahtev, pa čitalac ne drži otvoren proces."
+msgid "The router divides addresses into those for guests, accounts and profiles, and the same check holds for the first load and for the live connection. What needs no live connection, like the landing page, the domain map, this page, a public group's page for guests, files and avatars, stays a plain response to a request, so a reader holds no process open. Only an app on a guest's page gets a small process of its own, which asks now and then whether guests may still see it."
+msgstr "Ruter deli adrese na one za goste, naloge i profile, a ista provera važi i za prvo učitavanje i za vezu uživo. Ono čemu veza uživo ne treba, kao naslovna strana, mapa domena, ova stranica, strana javne grupe za goste, fajlovi i avatari, ostaje običan odgovor na zahtev, pa čitalac ne drži otvoren proces. Samo aplikacija na strani za goste dobija svoj mali proces, koji s vremena na vreme proverava da li gosti još smeju da je vide."
 
 #: lib/potok_ide_web/stack_copy.ex:275
 #, elixir-autogen, elixir-format

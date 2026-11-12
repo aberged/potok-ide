@@ -471,6 +471,16 @@ const potok = {
   // Resolves to `{ok: true, group_id}`: the group in the address, or null.
   getLinkedGroup: () => call("linked_group"),
 
+  // For a guest (`getCurrentProfile()` is null): takes the page to Potok's
+  // log-in, which brings them back to this group afterwards. Resolves to
+  // `{ok: true}` as the page leaves, or `unavailable` where there is no guest.
+  // The frame goes away with the page, so a pending `localStorage` save goes
+  // first: the same browser finds it again once signed in.
+  openLogin: () => {
+    if (storageSaveTimer) saveLocalStorage()
+    return call("open_login")
+  },
+
   // This group, its parent and what the viewer may do here.
   getGroup: () => call("get_group"),
 

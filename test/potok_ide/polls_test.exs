@@ -1185,6 +1185,46 @@ defmodule PotokIde.PollsTest do
     end
   end
 
+  describe "a guest" do
+    test "reads the public polls of one group and votes in none", %{
+      owner: owner,
+      owner_account: account
+    } do
+      group = public_group(owner)
+      public = create_poll!(owner, group, %{"is_public" => "true"})
+      _members = create_poll!(owner, group, %{"question" => "Members?"})
+      vote!(owner, account, public, 0)
+
+      %{rows: [row]} = Polls.overview(nil, nil, {:public_of, group.id}, status: :open)
+
+      assert row.id == public.id
+      refute row.view.can_vote?
+      refute row.view.voted?
+      assert row.view.voters_count == 1
+
+      view = Polls.view_of(Polls.get_poll(public.id), nil, nil)
+      refute view.can_vote?
+      assert view.scope == :full
+    end
+
+    test "sees no counts where the poll keeps them from everyone", %{owner: owner} do
+      group = public_group(owner)
+
+      poll =
+        create_poll!(owner, group, %{"is_public" => "true", "results_role_keys" => ["admin"]})
+
+      refute Polls.view_of(Polls.get_poll(poll.id), nil, nil).results?
+    end
+
+    test "has nothing to wait for and looks at one group only", %{owner: owner} do
+      group = public_group(owner)
+      _poll = create_poll!(owner, group, %{"is_public" => "true"})
+
+      assert %{rows: []} = Polls.overview(nil, nil, {:public_of, group.id}, status: :waiting)
+      assert_raise FunctionClauseError, fn -> Polls.overview(nil, nil, :public) end
+    end
+  end
+
   describe "put_views/5" do
     test "costs nothing without a poll and reads a poll afresh", %{
       owner: owner,

@@ -178,6 +178,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("Group", "home_page"), do: dgettext("domain_map", "home page")
   defp own_field("Group", "has_public_chat"), do: dgettext("domain_map", "public chat")
+
+  defp own_field("Group", "description_for_guests"),
+    do: dgettext("domain_map", "description open to guests")
+
   defp own_field("Group", "is_direct"), do: dgettext("domain_map", "direct conversation")
   defp own_field("Group", "is_root"), do: dgettext("domain_map", "root")
   defp own_field("Group", "is_root_public"), do: dgettext("domain_map", "public from the root")
@@ -228,6 +232,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupAltDescription", "visible_role_keys") do
     dgettext("domain_map", "roles that see it")
   end
+
+  defp own_field("GroupAltDescription", "for_guests"),
+    do: dgettext("domain_map", "guests read it too")
 
   defp own_field("GroupJoinRequestApproval", "approved_at"),
     do: dgettext("domain_map", "approved at")
@@ -775,6 +782,10 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  def check_text("group_alt_descriptions_for_guests_check") do
+    dgettext("domain_map", "A description only some roles see never goes to guests.")
+  end
+
   def check_text("group_member_roles_role_key_check") do
     dgettext("domain_map", "The role `everyone` is not written here.")
   end
@@ -1130,6 +1141,15 @@ defmodule PotokIdeWeb.DomainCopy do
               "domain_map",
               "An app in the default description decides what the card of a shared link says about the group."
             )
+        },
+        %{
+          icon: "hero-globe-alt",
+          title: dgettext("domain_map", "Opens to guests"),
+          text:
+            dgettext(
+              "domain_map",
+              "Where a public <Group>group</Group> opens its description to guests, its app runs for people without an account too. It then lists the public groups below it and shows the descriptions of those open to guests, maps them and reads public <Poll>polls</Poll>, and a tap on a group opens its text over the app. That is how a feed or a map can be read by anyone with the link."
+            )
         }
       ],
       limits_title: dgettext("domain_map", "Where it stops"),
@@ -1142,6 +1162,10 @@ defmodule PotokIdeWeb.DomainCopy do
         dgettext(
           "domain_map",
           "Members read and save values, and so do signed-in non-members where an app's rules open that to them in a public group. Rules can narrow it further, and the number of saves is limited."
+        ),
+        dgettext(
+          "domain_map",
+          "A guest saves, reacts and votes in nothing. Of an app's values it gets only the settings and counts that public rules show everyone."
         ),
         dgettext(
           "domain_map",
@@ -1225,6 +1249,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "While a <Group>group</Group> is public, its chat can reach past the members. A signed-in profile that is not a member then reads its <Value>values</Value> and files, and writes and reacts as far as `everyone` may. It sends no files, opens no threads and has a limit on how much it writes. Its message pushes only to those it mentions or answers, and a reply reaches it the same way. A <GroupBlock>block</GroupBlock> stops one profile from writing and reacting there, asking to join or being invited. A member answers to their roles, so blocking one also removes them from the group."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A public group can open its description to guests"),
+        text:
+          dgettext(
+            "domain_map",
+            "Anyone with the link of a public <Group>group</Group> sees its name, its picture and a piece of its description, without an account. Whoever may edit the group can open the whole description to such guests, and then each <GroupAltDescription>alternative description</GroupAltDescription> marked for them goes along; one that only some <GroupRole>roles</GroupRole> see never does. A description that is an app runs for guests too, and only reads: the public groups below it, the descriptions of those open to guests, a map of them, public <Poll>polls</Poll> and what public rules show. The chat, the members and who reacted stay behind the login, and search engines do not list the page. A group that stops being public closes it, and keeps the choice for when it opens again."
           )
       },
       %{

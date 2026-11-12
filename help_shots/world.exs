@@ -161,7 +161,7 @@ defmodule HelpShots.World do
       - Problem u kraju? Dodaj ga na **Mapu kraja**, sa slikom.
       """)
 
-    {:ok, mz} = Social.update_group(ana, mz, %{"area" => area(@mz_area), "pin_icon" => "local_community"})
+    {:ok, mz} = Social.update_group(ana, mz, %{"area" => area(@mz_area), "pin_icon" => "local_community", "description_for_guests" => true})
 
     members(ana, mz, ~w(marko jelena stefan milica nikola ivana dragan tamara) |> Enum.map(p))
 

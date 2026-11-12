@@ -199,7 +199,7 @@ Iz toga slede tri pravila za šablone:
 - **Poslednji upis pobeđuje.** Ako dvoje istovremeno menja istu objavu, ostaje ono što je sačuvano poslednje.
 - **Nacrt je lični.** Drugi urednik ga ne vidi dok ga autor ne pozove u grupu.
 - **Bez zakazivanja.** Objava izlazi kad se klikne.
-- **Prijava.** App API radi samo za prijavljene. Neprijavljeni sa linkom vide pregled javne grupe, a ne Feed.
+- **Gosti.** Neprijavljeni sa linkom vide pregled javne grupe. Kad Feed u **Uredi grupu**, **Pristup** uključi **Opis vidljiv i bez prijave**, vide i sam Feed, samo za čitanje: vesti, broj komentara i reakcije, a tekst vesti samo kad je i ona otvorena za goste. Ostale pokazuju naslov i dugme **Prijavi se**, a **Komentari** gosta vode na prijavu i posle nje nazad na istu vest (Feed od 2026-11-12; starije kopije pokazuju samo naslov). Nova vest taj izbor preuzima od `.feed` u trenutku kad nastane, kao i otvoren razgovor, pa se za goste pali i na `.feed`. Postojeće vesti ostaju kakve jesu dok im se prekidač ne promeni ručno. Gost ne reaguje, ne komentariše i ne otvara chat.
 
 ## Isti obrazac za druge stvari
 

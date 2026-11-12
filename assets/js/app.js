@@ -831,6 +831,7 @@ const APP_FRAME_METHODS = new Set([
   "pick_emoji",
   "linked_group",
   "link_group",
+  "open_login",
   "list_polls",
   "get_poll",
   "open_poll",
@@ -1057,6 +1058,18 @@ const GroupAppFrame = {
     if (method === "link_group") {
       const result = this.host() === "page" ? linkGroup(params?.id) : {ok: false, error: "unavailable"}
       this.post({potok: 1, id, ...result})
+      return
+    }
+
+    // Only a guest's page (`public_group_page`) has a log-in to go to, and it
+    // comes back to this same page afterwards; the frame cannot leave it itself.
+    if (method === "open_login") {
+      if (document.getElementById("guest-group")) {
+        this.post({potok: 1, id, ok: true})
+        window.location.assign("/accounts/log-in")
+      } else {
+        this.post({potok: 1, id, ok: false, error: "unavailable"})
+      }
       return
     }
 

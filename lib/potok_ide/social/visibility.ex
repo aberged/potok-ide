@@ -12,13 +12,28 @@ defmodule PotokIde.Social.Visibility do
     where `member_paths` holds the followed groups too.
 
   Threads and direct conversations are never among plain groups.
+
+  A guest, nil in place of a profile, may see the public plain groups, the ones
+  it gets a preview of (`Group.guest_preview?/1`): what an app shows a visitor
+  without an account at a group that opened its description to guests.
   """
 
   import Ecto.Query
 
   alias PotokIde.Social.{Group, GroupMembership, Profile}
 
-  @doc "The plain groups the profile may see: public ones and its memberships."
+  @doc """
+  The plain groups the profile may see: public ones and its memberships. A
+  guest (nil) sees the public ones; the root is never public.
+  """
+  def plain_groups(nil) do
+    from(g in Group,
+      as: :group,
+      where: is_nil(g.parent_value_id) and g.is_direct == false,
+      where: g.is_public and not g.is_root
+    )
+  end
+
   def plain_groups(%Profile{id: profile_id}) do
     from(g in Group,
       as: :group,

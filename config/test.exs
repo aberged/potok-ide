@@ -12,6 +12,9 @@ config :potok_ide, live_refresh_debounce_ms: 0
 # A chat page writes its read marker as each value arrives.
 config :potok_ide, read_marker_delay_ms: 0
 
+# A guest's app asks on every call whether guests still read the description.
+config :potok_ide, guest_recheck_ms: 0
+
 # The LiveViewTest client stands in for the websocket process and does not
 # take `:garbage_collect` (this also leaves the LiveView's own collection off).
 config :potok_ide, transport_gc_delay_ms: nil

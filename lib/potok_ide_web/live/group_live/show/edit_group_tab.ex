@@ -198,9 +198,22 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             <p class="-mt-1 mb-3 text-xs text-base-content/65">
               {gettext("Everyone can see the group and ask to join it.")}
               {gettext(
-                "Its name, picture and description also show outside Potok, to anyone with the link."
+                "Its name, picture and a short part of its description also show outside Potok, to anyone with the link."
               )}
             </p>
+
+            <div :if={@open_chat_option} id="group-edit-guest-description">
+              <.input
+                field={@edit_group_form[:description_for_guests]}
+                label={gettext("Description open to guests")}
+                type="checkbox"
+              />
+              <p class="-mt-1 mb-3 text-xs text-base-content/65">
+                {gettext(
+                  "Anyone with the link reads the description without an account, with the alternative descriptions marked for it. Apps only show them things: they cannot write, vote or react. Search engines do not list the page."
+                )}
+              </p>
+            </div>
 
             <div :if={@open_chat_option} id="group-edit-open-chat">
               <.input
@@ -542,6 +555,22 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   <span class="shrink-0 rounded-full bg-base-200 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider text-base-content/65">
                     {kind_label(alt)}
                   </span>
+                  <span
+                    :if={alt.for_guests and Group.guest_preview?(@group)}
+                    id={"alt-description-#{alt.id}-guests"}
+                    title={
+                      if(@group.description_for_guests,
+                        do: gettext("Guests read it too"),
+                        else: gettext("Guests read it once the group opens its description to them")
+                      )
+                    }
+                    class={[
+                      "inline-flex shrink-0 items-center gap-1 rounded-full border border-base-300 px-2 py-0.5 text-xs text-base-content/70",
+                      !@group.description_for_guests && "border-dashed opacity-60"
+                    ]}
+                  >
+                    <.icon name="hero-globe-alt" class="size-3" /> {gettext("Guests")}
+                  </span>
                 </div>
                 <div :if={alt.visible_role_keys != []} class="flex flex-wrap gap-1">
                   <span
@@ -595,11 +624,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                       else: gettext("Remove the role limit to make it the default")
                     )
                   }
-                  data-confirm={
-                    gettext(
-                      "Make this the default description? The current default takes its place in the list."
-                    )
-                  }
+                  data-confirm={promote_confirm(@group, alt)}
                 />
                 <.icon_button
                   id={"alt-description-#{alt.id}-delete"}
@@ -620,6 +645,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 :if={@alt_description_form && editing?(@editing_alt_description, alt)}
                 form={@alt_description_form}
                 editing={@editing_alt_description}
+                group={@group}
                 roles={@roles}
                 format_options={@format_options}
                 template_list_open={@template_list == "alt-description"}
@@ -633,6 +659,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             :if={@alt_description_form && new_alt_description?(@editing_alt_description)}
             form={@alt_description_form}
             editing={@editing_alt_description}
+            group={@group}
             roles={@roles}
             format_options={@format_options}
             template_list_open={@template_list == "alt-description"}
@@ -764,6 +791,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   attr :form, :any, required: true
   attr :editing, :any, required: true
+  attr :group, :map, required: true
   attr :roles, :list, required: true
   attr :format_options, :list, required: true
   attr :template_list_open, :boolean, default: false
@@ -771,6 +799,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :class, :any, default: nil
 
   defp alt_description_form(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :guests_option,
+        Group.guest_preview?(assigns.group) and picked_roles(assigns.form) == []
+      )
+
     ~H"""
     <.form
       for={@form}
@@ -814,6 +849,34 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           </label>
         </div>
       </fieldset>
+
+      <%!-- Only a description everyone sees can go to guests, so a role takes
+             the choice away (`GroupAltDescription`). --%>
+      <div :if={@guests_option} id="alt-description-for-guests" class="mt-3">
+        <.input
+          field={@form[:for_guests]}
+          label={gettext("Guests read it too")}
+          type="checkbox"
+        />
+        <p class="-mt-1 text-xs text-base-content/65">
+          {gettext("People without an account read it next to the default description.")}
+        </p>
+        <p
+          :if={!@group.description_for_guests}
+          id="alt-description-for-guests-closed"
+          class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-base-content/65"
+        >
+          <span>{gettext("It counts once the group opens its description to guests.")}</span>
+          <button
+            id="alt-description-for-guests-access"
+            type="button"
+            phx-click={JS.push("set_edit_group_section", value: %{section: "access"})}
+            class="font-semibold text-primary underline-offset-2 transition hover:underline"
+          >
+            {gettext("Open Access")}
+          </button>
+        </p>
+      </div>
 
       <Components.description_workspace
         id_prefix="alt-description"
@@ -1056,6 +1119,24 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   defp kind_label(%{uses_api: true}), do: gettext("App")
   defp kind_label(%{description_format: :html}), do: gettext("HTML")
   defp kind_label(_alt), do: gettext("Markdown")
+
+  # The roles ticked so far; the hidden "" keeps clearing them all a change.
+  defp picked_roles(form) do
+    form[:visible_role_keys].value |> List.wrap() |> Enum.reject(&(&1 in [nil, ""]))
+  end
+
+  # The default reaches guests when the group opened it to them, so making
+  # another one the default shows that one to them, whatever its own mark said.
+  defp promote_confirm(%Group{} = group, alt) do
+    confirm =
+      gettext(
+        "Make this the default description? The current default takes its place in the list."
+      )
+
+    if Group.guest_description?(group) and not alt.for_guests,
+      do: confirm <> " " <> gettext("Guests will read it too, as the default is open to them."),
+      else: confirm
+  end
 
   # Roles deleted since are held by nobody and are not shown.
   defp role_names(keys, roles) do

@@ -97,7 +97,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @create_group_sections ~w(basics access home description)
   @group_form_section_fields [
     {"basics", [:name, :group_picture_url]},
-    {"access", [:is_public, :is_root_public, :inherits_members]},
+    {"access",
+     [:is_public, :is_root_public, :description_for_guests, :has_public_chat, :inherits_members]},
     {"home", [:home_page, :home_alt_description_id]},
     {"description", [:description_name, :description, :description_format, :uses_api]},
     {"location", [:latitude, :longitude, :pin_icon, :area, :route]}

@@ -57,6 +57,19 @@ defmodule PotokIde.Social do
     Visibility
   }
 
+  # Who looks at what an app shows: a profile, or nil for a guest, a visitor
+  # without an account at a group that opened its description to guests, who
+  # sees the public groups only (`Visibility.plain_groups/1`).
+  defguardp is_viewer(viewer) when is_nil(viewer) or is_struct(viewer, Profile)
+
+  # A guest reads the places of a map app only, the direct sub-groups of one
+  # group (`:parent_id`), never the root's map, which follows a profile's
+  # memberships and the groups it follows.
+  defguardp is_map_viewer(viewer, filters)
+            when is_struct(viewer, Profile) or
+                   (is_nil(viewer) and is_map_key(filters, :parent_id) and
+                      is_integer(:erlang.map_get(:parent_id, filters)))
+
   def subscribe_account(%Account{id: account_id}) when is_integer(account_id) do
     Phoenix.PubSub.subscribe(PotokIde.PubSub, account_topic(account_id))
   end
@@ -432,7 +445,12 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
-  @doc "The group when `profile` can see it: a member, or anyone for a public group."
+  @doc """
+  The group when `profile` can see it: a member, or anyone for a public group.
+  A guest (nil) sees the groups it gets a preview of (`get_public_group/1`).
+  """
+  def get_visible_group(nil, id) when is_integer(id), do: get_public_group(id)
+
   def get_visible_group(%Profile{} = profile, id) when is_integer(id) do
     case Repo.get(Group, id) do
       %Group{} = group -> if group.is_public or member_of_group?(profile, group), do: group
@@ -1022,6 +1040,62 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  # What a guest's list of descriptions needs; the text is read for the one on
+  # screen only, as an app's can run to hundreds of kilobytes.
+  @guest_alt_fields [:id, :group_id, :name, :uses_api, :for_guests, :visible_role_keys, :position]
+
+  @doc """
+  The alternative descriptions guests may read, in display order and without
+  their text: marked for guests, seen by everyone, and not empty. Whether the
+  group opened its own description to them is the caller's to ask
+  (`Group.guest_description?/1`).
+  """
+  def list_guest_alt_descriptions(%Group{id: group_id}) do
+    from(d in GroupAltDescription,
+      where: d.group_id == ^group_id and d.for_guests,
+      where: fragment("cardinality(?) = 0", d.visible_role_keys),
+      where: fragment("? ~ '[^[:space:]]'", d.description),
+      order_by: [asc: d.position, asc: d.id],
+      select: struct(d, ^@guest_alt_fields)
+    )
+    |> Repo.all()
+  end
+
+  @doc """
+  Whether guests still read description `alt_id` of group `group_id`, nil for
+  the default (`Group.guest_description?/1`, and the alternative's own mark).
+  Reads only the flags, for a guest's page that asks again now and then.
+  """
+  def guest_description_open?(group_id, alt_id) when is_integer(group_id) do
+    group =
+      from(g in Group,
+        where: g.id == ^group_id,
+        select:
+          struct(g, [
+            :id,
+            :is_public,
+            :is_root,
+            :is_direct,
+            :parent_value_id,
+            :description_for_guests
+          ])
+      )
+      |> Repo.one()
+
+    group != nil and Group.guest_description?(group) and guest_alt_open?(group_id, alt_id)
+  end
+
+  defp guest_alt_open?(_group_id, nil), do: true
+
+  defp guest_alt_open?(group_id, alt_id) when is_integer(alt_id) do
+    Repo.exists?(
+      from(d in GroupAltDescription,
+        where: d.id == ^alt_id and d.group_id == ^group_id and d.for_guests,
+        where: fragment("cardinality(?) = 0", d.visible_role_keys)
+      )
+    )
+  end
+
   def get_alt_description(%Group{id: group_id}, id) do
     Repo.get_by(GroupAltDescription, id: id, group_id: group_id)
   end
@@ -1180,6 +1254,10 @@ defmodule PotokIde.Social do
   each app's data values follow it. One limited to some roles is refused,
   since the default is visible to everyone who sees the group.
 
+  Guests keep what they saw of the old default: it goes to the list marked
+  for them when the group had opened its description to them. The one that
+  becomes the default then reaches them too, whatever its own mark said.
+
   `default_name` names the old default in the list when it had no name of
   its own (its label then came from the page's locale).
   """
@@ -1214,7 +1292,8 @@ defmodule PotokIde.Social do
           name: old.description_name || default_name,
           description: old.description || "",
           description_format: old.description_format,
-          uses_api: old.uses_api
+          uses_api: old.uses_api,
+          for_guests: old.description_for_guests
         )
         |> Ecto.Changeset.unique_constraint(:name,
           name: :group_alt_descriptions_group_id_lower_name_index,
@@ -3508,8 +3587,8 @@ defmodule PotokIde.Social do
   see. Names are not unique, so the oldest such group wins. Threads and direct
   conversations do not count.
   """
-  def get_visible_child_group_by_name(%Group{} = group, %Profile{} = profile, name)
-      when is_binary(name) do
+  def get_visible_child_group_by_name(%Group{} = group, profile, name)
+      when is_viewer(profile) and is_binary(name) do
     visible_plain_groups(profile)
     |> where([g], g.parent_id == ^group.id and g.name == ^name)
     |> order_by([g], asc: g.id)
@@ -3521,7 +3600,8 @@ defmodule PotokIde.Social do
   The direct sub-group `id` of `group`, when the profile can see it. Threads
   and direct conversations do not count.
   """
-  def get_visible_child_group(%Group{} = group, %Profile{} = profile, id) when is_integer(id) do
+  def get_visible_child_group(%Group{} = group, profile, id)
+      when is_viewer(profile) and is_integer(id) do
     visible_plain_groups(profile)
     |> where([g], g.id == ^id and g.parent_id == ^group.id)
     |> Repo.one()
@@ -3535,8 +3615,8 @@ defmodule PotokIde.Social do
   map, oldest first, as `{groups, truncated?}`: what a map shows. Threads and
   direct conversations do not count. Only what a pin needs is loaded.
   """
-  def list_visible_placed_children(%Group{} = group, %Profile{} = profile, limit)
-      when is_integer(limit) and limit > 0 do
+  def list_visible_placed_children(%Group{} = group, profile, limit)
+      when is_viewer(profile) and is_integer(limit) and limit > 0 do
     rows =
       visible_plain_groups(profile)
       |> where([g], g.parent_id == ^group.id and not is_nil(g.latitude))
@@ -3552,8 +3632,8 @@ defmodule PotokIde.Social do
   Whether `group` has more than `limit` of what `list_visible_placed_children/3`
   lists: too many for a map to take at once, so it reads by view.
   """
-  def placed_children_more_than?(%Group{} = group, %Profile{} = profile, limit)
-      when is_integer(limit) and limit >= 0 do
+  def placed_children_more_than?(%Group{} = group, profile, limit)
+      when is_viewer(profile) and is_integer(limit) and limit >= 0 do
     visible_plain_groups(profile)
     |> where([g], g.parent_id == ^group.id and not is_nil(g.latitude))
     |> offset(^limit)
@@ -3634,8 +3714,12 @@ defmodule PotokIde.Social do
   * `:places?` false keeps only the shapes whose layer is on: the areas
     (`:shapes?`), the routes (`:routes?`) or both; the areas alone when
     neither is.
+
+  A map app passes `:parent_id` for the direct sub-groups of its group, and
+  only then may the profile be nil, a guest, who sees the public ones.
   """
-  def list_map_cells(%Profile{} = profile, filters, bbox, zoom) when is_integer(zoom) do
+  def list_map_cells(profile, filters, bbox, zoom)
+      when is_map_viewer(profile, filters) and is_integer(zoom) do
     with {:ok, [rows]} <- map_queries([map_view_query(profile, filters, bbox, zoom)]) do
       {:ok, map_view(rows)}
     end
@@ -3657,7 +3741,7 @@ defmodule PotokIde.Social do
   one transaction, as a change of filters needs both: `{:ok, %{extent,
   view}}`, `view` nil without one, or `{:error, :timeout}`.
   """
-  def load_map(%Profile{} = profile, filters, view) do
+  def load_map(profile, filters, view) when is_map_viewer(profile, filters) do
     queries =
       [map_extent_query(profile, filters)] ++
         if view,
@@ -3679,8 +3763,8 @@ defmodule PotokIde.Social do
   a cluster that cannot spread any further holds. `{:ok, {groups,
   more?}}` with at most `limit` groups, or `{:error, :timeout}`.
   """
-  def list_map_spot(%Profile{} = profile, filters, [[south, west], [north, east]], limit)
-      when is_integer(limit) and limit > 0 do
+  def list_map_spot(profile, filters, [[south, west], [north, east]], limit)
+      when is_map_viewer(profile, filters) and is_integer(limit) and limit > 0 do
     box = %{
       south: to_float(south),
       north: to_float(north),
@@ -3727,7 +3811,7 @@ defmodule PotokIde.Social do
   (`GroupPins`), `"picture"`, or `"kind"` for those that show their kind.
   `{:ok, [{pin, count}]}`, the most shown first, or `{:error, :timeout}`.
   """
-  def count_child_places_by_pin(%Group{} = group, %Profile{} = profile) do
+  def count_child_places_by_pin(%Group{} = group, profile) when is_viewer(profile) do
     pins =
       from(g in visible_plain_groups(profile),
         where: g.parent_id == ^group.id and not is_nil(g.latitude),
@@ -3897,7 +3981,10 @@ defmodule PotokIde.Social do
   # `drawn` marks the areas wide enough at the filters' `:zoom` to be drawn
   # as borders, while `:shapes?` is on, and `route_drawn` the routes wide
   # enough to be drawn as lines, while `:routes?` is; otherwise each is a pin.
-  defp map_placed(scope, %Profile{id: profile_id}, filters, extra) do
+  # A guest's NULL profile leaves the membership tables empty, so only public
+  # groups pass `Visibility.may_see_sql/2`, with the same SQL text.
+  defp map_placed(scope, profile, filters, extra) do
+    profile_id = profile && profile.id
     zoom = Map.get(filters, :zoom)
     shapes? = scope != :extent and Map.get(filters, :shapes?) == true and is_integer(zoom)
     routes? = scope != :extent and Map.get(filters, :routes?) == true and is_integer(zoom)
@@ -4138,7 +4225,8 @@ defmodule PotokIde.Social do
   the last group of the previous page, and `:from` and `:to`, the moments
   between which a group took its place: `:from` counts in, `:to` does not.
   """
-  def list_visible_child_groups_newest_first(%Group{} = group, %Profile{} = profile, opts) do
+  def list_visible_child_groups_newest_first(%Group{} = group, profile, opts)
+      when is_viewer(profile) do
     limit = Keyword.fetch!(opts, :limit)
 
     rows =
@@ -4157,8 +4245,8 @@ defmodule PotokIde.Social do
   group and up to `:limit` older ones, as `{groups, has_more?, has_newer?}`. A
   group the list does not hold gives its first page. Takes `:from` and `:to` too.
   """
-  def list_visible_child_groups_around(%Group{} = group, %Profile{} = profile, id, opts)
-      when is_integer(id) do
+  def list_visible_child_groups_around(%Group{} = group, profile, id, opts)
+      when is_viewer(profile) and is_integer(id) do
     limit = Keyword.fetch!(opts, :limit)
     groups = feed_groups(group, profile, opts)
 
@@ -4256,8 +4344,8 @@ defmodule PotokIde.Social do
   profile can see both: what `list_visible_child_groups_newest_first/3` can
   list under what `get_visible_child_group_by_name/3` finds.
   """
-  def get_visible_grandchild_group(%Group{} = group, %Profile{} = profile, id)
-      when is_integer(id) do
+  def get_visible_grandchild_group(%Group{} = group, profile, id)
+      when is_viewer(profile) and is_integer(id) do
     parents =
       visible_plain_groups(profile)
       |> where([g], g.parent_id == ^group.id)
@@ -4270,7 +4358,8 @@ defmodule PotokIde.Social do
 
   # Groups the profile can see, the rule of `visible_children_sql/1`, without
   # threads and direct conversations.
-  defp visible_plain_groups(%Profile{} = profile), do: Visibility.plain_groups(profile)
+  defp visible_plain_groups(profile) when is_viewer(profile),
+    do: Visibility.plain_groups(profile)
 
   @doc """
   The groups content shared from another app can go to, most recently active

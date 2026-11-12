@@ -724,6 +724,18 @@ Every call resolves to the server reply, `{ok: true, ...}` or `{ok: false, error
 * `onSubgroupsChange(listener)` calls `listener()` when a sub-group of this group was made, changed or deleted, and returns a function that removes the listener. It says no more, as the group could be one the viewer does not see: read again what the app shows. Every viewer hears it at once, so read at a moment of your own (the map waits a random 0-2 s).
 * `onNewValue(listener, options)` calls `listener(value)` for every new data value of this app, including the viewer's own, and returns a function that removes the listener. With `{scope: "group"}` it also gets the values of the group's other apps that the viewer can open. Each value of this app is also dispatched on `window` as a `phx:new_data_value` `CustomEvent` (`detail` is the value). Values are pushed only while a description is on screen. Values in a collection never come here: see below.
 
+#### Guests
+
+A public group can open its description to guests (Edit group, Access, `Group.guest_description?/1`), and each alternative description marked for them goes along. Whoever opens its link without an account then reads it on a plain page (`PotokIdeWeb.PublicPreview`, `PotokIdeWeb.GuestDescriptions`), and an app in it runs in a small LiveView of its own inside that page (`PotokIdeWeb.GroupLive.GuestApp`).
+
+* `getCurrentProfile()` resolves to `null`, `getGroup()` has `signed_in: false`, and so does `viewer` in `getConfig()`.
+* `openLogin()` takes the page to Potok's log-in, which brings the guest back to the same group, for an app's own "Log in to vote" and the like. A frame cannot leave the page itself. Anywhere but a guest's page it answers `unavailable`.
+* A guest gets the calls that read, with a guest's sight: `getGroup`, `listSubgroups`, `openGroup` (a full page load), `shareGroup`, `showGroup` (a sheet of text over the app: the group's description when it is open to guests too, otherwise its card), `listPolls` and `getPoll` (public polls, with no vote), `getMapConfig`, `listPlaces`, `listPlacesAt` and `placeShapes`, and `getConfig` and `summarizeValues` where a rule is public.
+* It sees the public groups only, and the `description_html` of a group only when that group opens its description to guests too; `creator_id` is `null`.
+* Everything else answers `forbidden` or `not_a_member`, as it would for a signed-in viewer who may not.
+* The calls from one address count against a limit of 600 a minute. The page listens to nothing live: it asks again, at most once a minute, whether guests may still see the description, and answers `unavailable` once they may not.
+* Groups keep the copy of a preset app they were made with, so an app that knows guests reaches only groups made after it. An older copy gets the same answers and shows them as it can.
+
 #### Collections and rules
 
 Values without a collection are what the calls above describe: every member reads them all. An app that needs more keeps its values in collections (`PotokIde.Social.AppData`), under rules its editors write into the app's config. Potok normalizes the rules and holds to them on every call. The Forma app (`potok-forme`, the "Form" preset) is built on them; see [docs/forma.md](docs/forma.md).

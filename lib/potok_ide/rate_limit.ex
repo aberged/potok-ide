@@ -41,6 +41,9 @@ defmodule PotokIde.RateLimit do
     # Views of a big map app (`listPlaces` with a view, `listPlacesAt`), per
     # profile on all its pages, as for the root's map.
     app_map_view: {300, :timer.minutes(1)},
+    # Every app call guests make from one address, on all their pages: what a
+    # few people behind one address read (a house, a phone network), not a loop.
+    app_guest_client: {600, :timer.minutes(1)},
     # Views of the root's map, per profile on all its pages: the map asks once
     # it stops moving, so even a busy minute asks a few dozen times.
     root_map_view: {300, :timer.minutes(1)},
@@ -68,6 +71,7 @@ defmodule PotokIde.RateLimit do
           | :app_create_place
           | :app_create_children
           | :app_map_view
+          | :app_guest_client
           | :root_map_view
           | :value_search
           | :group_notice

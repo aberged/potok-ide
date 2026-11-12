@@ -460,7 +460,9 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
         </button>
       </div>
     </div>
-  `:w},It=(e,t,n,r)=>{switch(t.phase){case`loading`:return Q(`Učitavam objave…`);case`preview`:return Q(`Pregled`,`FeedCreator radi tek na stranici grupe.`);case`denied`:return Q(`Objave uređuju oni koji smeju da menjaju ovu grupu`,`Aplikacija pravi grupe u ime onoga ko je koristi, pa je dostupna samo njima.`);case`failed`:return Q(`Objave nisu učitane`,void 0,x`<button id="retry" class="d-btn d-btn-primary d-btn-sm mt-3" @click=${()=>void e.start()}>
+  `:w},It=(e,t,n,r)=>{switch(t.phase){case`loading`:return Q(`Učitavam objave…`);case`preview`:return Q(`Pregled`,`FeedCreator radi tek na stranici grupe.`);case`denied`:return Q(`Objave uređuju oni koji smeju da menjaju ovu grupu`,`Aplikacija pravi grupe u ime onoga ko je koristi, pa je dostupna samo njima.`,t.group?.signed_in===!1?x`<button id="log-in" class="d-btn d-btn-primary d-btn-sm mt-3" @click=${()=>void window.potok.openLogin()}>
+              Prijavi se
+            </button>`:void 0);case`failed`:return Q(`Objave nisu učitane`,void 0,x`<button id="retry" class="d-btn d-btn-primary d-btn-sm mt-3" @click=${()=>void e.start()}>
           Pokušaj ponovo
         </button>`)}return t.screen===`templates`?xt(e,t):t.screen===`editor`&&t.form?Pt(e,t,n,r):yt(e,t)},Lt=`(min-width: 56rem)`;function Rt(e){e.classList.add(`fc`);let t={tab:`write`,audience:null,confirmingWithdraw:!1},n=window.matchMedia(Lt),r=()=>{let{state:a}=i;a.screen!==`editor`&&(t.tab=`write`),se(x`${It(i,a,t,r)}${Ft(i,a)}`,e),i.showPreview(a.screen===`editor`&&(n.matches||t.tab===`preview`))},i=et(window.potok,localStorage,()=>r());n.addEventListener(`change`,r),window.addEventListener(`keydown`,e=>{e.key!==`Escape`||!t.audience&&!t.confirmingWithdraw||(t.audience=null,t.confirmingWithdraw=!1,r())}),i.start()}Rt(document.querySelector(`#creator`));
 
