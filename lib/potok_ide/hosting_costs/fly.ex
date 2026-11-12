@@ -31,10 +31,7 @@ defmodule PotokIde.HostingCosts.Fly do
   `{:ok, %{"fra" => 1234.0}}`.
   """
   def data_out(apps, %DateTime{} = at, seconds) when is_integer(seconds) and seconds > 0 do
-    # Fly app names are small letters, digits and dashes, none of them special
-    # in a regex; anything else could break out of the query's string.
-    names = apps |> Enum.filter(&(&1 =~ ~r/\A[a-z0-9-]+\z/)) |> Enum.join("|")
-    query = ~s|sum by (region) (increase(fly_edge_data_out{app=~"#{names}"}[#{seconds}s]))|
+    query = ~s|sum by (region) (increase(fly_edge_data_out{#{selector(apps)}}[#{seconds}s]))|
     url = url(:prometheus_url) <> "/#{config()[:org]}/api/v1/query"
 
     request(:post, url, :flyv1, form: [query: query, time: DateTime.to_unix(at)])
@@ -52,6 +49,85 @@ defmodule PotokIde.HostingCosts.Fly do
       error ->
         error
     end
+  end
+
+  @doc """
+  The bytes `apps` sent out in each hour from the one ending at `first_end`
+  to the one ending at `last_end`, by region:
+  `{:ok, %{hour_end_unix => [{%{"region" => "fra"}, 1234.0}]}}`. Fly keeps
+  its metrics for about ten days; older hours are not in the map.
+  """
+  def data_out_hourly(apps, %DateTime{} = first_end, %DateTime{} = last_end) do
+    query = ~s|sum by (region) (increase(fly_edge_data_out{#{selector(apps)}}[1h]))|
+    hourly(query, first_end, last_end)
+  end
+
+  @doc """
+  What Fly's metrics saw of the machines of `apps` in each hour, by machine
+  (`instance`): how many samples it gave (`samples`, by `app` and `region`
+  too), the memory it saw (`memory`), its processors (`cpus`) and their
+  baseline (`baseline`), each as `data_out_hourly/3` returns them.
+  """
+  def machines_hourly(apps, %DateTime{} = first_end, %DateTime{} = last_end) do
+    selector = selector(apps)
+
+    queries = [
+      samples:
+        "sum by (app, instance, region) (count_over_time(fly_instance_up{#{selector}}[1h]))",
+      memory: "max by (instance) (max_over_time(fly_instance_memory_mem_total{#{selector}}[1h]))",
+      cpus:
+        ~s|count by (instance) (max_over_time(fly_instance_cpu{#{selector},mode="idle"}[1h]))|,
+      baseline: "max by (instance) (max_over_time(fly_instance_cpu_baseline{#{selector}}[1h]))"
+    ]
+
+    Enum.reduce_while(queries, {:ok, %{}}, fn {key, query}, {:ok, acc} ->
+      case hourly(query, first_end, last_end) do
+        {:ok, by_hour} -> {:cont, {:ok, Map.put(acc, key, by_hour)}}
+        error -> {:halt, error}
+      end
+    end)
+  end
+
+  defp hourly(query, first_end, last_end) do
+    url = url(:prometheus_url) <> "/#{config()[:org]}/api/v1/query_range"
+
+    form = [
+      query: query,
+      start: DateTime.to_unix(first_end),
+      end: DateTime.to_unix(last_end),
+      step: 3600
+    ]
+
+    request(:post, url, :flyv1, form: form)
+    |> body("metrics by the hour", &match?(%{"status" => "success"}, &1))
+    |> case do
+      {:ok, %{"data" => %{"result" => results}}} when is_list(results) ->
+        {:ok,
+         for %{"metric" => metric, "values" => values} <- results,
+             [time, value] <- values,
+             reduce: %{} do
+           acc ->
+             Map.update(
+               acc,
+               trunc(time),
+               [{metric, parse_float(value)}],
+               &[{metric, parse_float(value)} | &1]
+             )
+         end}
+
+      {:ok, _other} ->
+        {:ok, %{}}
+
+      error ->
+        error
+    end
+  end
+
+  # Fly app names are small letters, digits and dashes, none of them special
+  # in a regex; anything else could break out of the query's string.
+  defp selector(apps) do
+    names = apps |> Enum.filter(&(&1 =~ ~r/\A[a-z0-9-]+\z/)) |> Enum.join("|")
+    ~s|app=~"#{names}"|
   end
 
   @doc "How many dedicated IPv4 addresses `app` has; shared ones cost nothing."

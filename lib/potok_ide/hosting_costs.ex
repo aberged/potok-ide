@@ -11,11 +11,15 @@ defmodule PotokIde.HostingCosts do
 
   The current hour is written again on every pass, and the hour before it once
   more for the bytes sent, which Fly's metrics only have in full once the hour
-  is over. An hour a pass found missing (the app was down, Fly did not answer)
-  is filled in, up to `@backfill_hours` back, from what runs now; such rows
-  say so in `detail`. Each category is filled on its own, so a source that
-  failed is asked again next time without touching the others. The rows of an
-  hour are replaced, never added twice, so every node of a cluster may sample.
+  is over. Every hour of the month a pass finds missing (before Potok began
+  estimating, while the app was down or Fly did not answer) is filled in, and
+  at least `@backfill_hours` back: the machines and the bytes sent from Fly's
+  metrics of that hour (which Fly keeps for about ten days; older hours take
+  the earliest machine the metrics know), the stored files from when they
+  were sent, the rest from what runs now. Such rows say so in `detail`. Each
+  category is filled on its own, so a source that failed is asked again next
+  time without touching the others. The rows of an hour are replaced, never
+  added twice, so every node of a cluster may sample.
 
   What Fly actually billed is copied from the invoice by an operator
   (`PotokIde.Operators`) as an `Invoice`, and the page shows both.
@@ -57,35 +61,44 @@ defmodule PotokIde.HostingCosts do
     current = hour_of(now)
     hours = hours_due(current)
     recorded = recorded(hours)
-    snapshot = snapshot()
 
-    rows =
+    due =
       for hour <- hours,
           category <- CostHour.categories(),
           write?(hour, category, current, recorded),
-          row <- rows(category, hour, snapshot, current, now),
-          do: row
+          do: {hour, category}
 
-    {count, _} =
-      Repo.insert_all(CostHour, rows,
-        on_conflict: {:replace, [:quantity, :amount_usd, :detail, :updated_at]},
-        conflict_target: [:hour, :category, :item]
-      )
+    snapshot = snapshot()
+    history = history(due, current)
+
+    count =
+      due
+      |> Enum.flat_map(fn {hour, category} ->
+        rows(category, hour, snapshot, history, current, now)
+      end)
+      |> Enum.chunk_every(2_000)
+      |> Enum.reduce(0, fn rows, count ->
+        {written, _} =
+          Repo.insert_all(CostHour, rows,
+            on_conflict: {:replace, [:quantity, :amount_usd, :detail, :updated_at]},
+            conflict_target: [:hour, :category, :item]
+          )
+
+        count + written
+      end)
 
     Cache.delete(@cache_key)
     count
   end
 
-  # From the first hour ever written (or now, the first time), at most
-  # `@backfill_hours` back.
+  # The month so far, and at least `@backfill_hours` back across its start.
   defp hours_due(current) do
-    from_hour =
-      case Repo.one(from(c in CostHour, select: min(c.hour))) do
-        nil -> current
-        first -> Enum.max([first, add_hours(current, -@backfill_hours)], DateTime)
-      end
+    month_start = DateTime.new!(month_of(current), ~T[00:00:00], "Etc/UTC")
 
-    hours_between(Enum.min([from_hour, current], DateTime), current)
+    hours_between(
+      Enum.min([month_start, add_hours(current, -@backfill_hours)], DateTime),
+      current
+    )
   end
 
   defp recorded(hours) do
@@ -117,6 +130,150 @@ defmodule PotokIde.HostingCosts do
     }
   end
 
+  # What the past hours that are due were like, read only for the categories
+  # that have such hours: the machines and the bytes sent from Fly's metrics,
+  # the stored files from when they were sent.
+  defp history(due, current) do
+    past = for {hour, category} <- due, hour != current, do: {category, hour}
+    by_category = Enum.group_by(past, &elem(&1, 0), &elem(&1, 1))
+
+    %{
+      machines: hourly(by_category[:machines], &machine_history/2),
+      bandwidth: hourly(by_category[:bandwidth], &bandwidth_history/2),
+      storage: hourly(by_category[:storage], &storage_history/2)
+    }
+  end
+
+  defp hourly(nil, _fun), do: :none
+
+  defp hourly(hours, fun) do
+    {first, last} = Enum.min_max_by(hours, &DateTime.to_unix/1)
+    fun.(first, last)
+  end
+
+  # Each hour's running machines: how much of the hour each one ran (its
+  # samples against the most any machine had), its size from the memory and
+  # the processors it saw, and whether its processors are shared.
+  defp machine_history(first, last) do
+    with {:ok, metrics} <- Fly.machines_hourly(apps(), add_hours(first, 1), add_hours(last, 1)) do
+      by_hour =
+        Map.new(metrics.samples, fn {hour_end, series} ->
+          full = series |> Enum.map(&elem(&1, 1)) |> Enum.max(fn -> 0 end)
+
+          machines =
+            for {metric, samples} <- series, samples > 0 and full > 0 do
+              instance = metric["instance"]
+
+              %{
+                instance: instance,
+                app: metric["app"],
+                region: metric["region"],
+                fraction: min(samples / full, 1.0),
+                guest:
+                  guest(
+                    value_of(metrics.cpus, hour_end, instance),
+                    value_of(metrics.memory, hour_end, instance),
+                    value_of(metrics.baseline, hour_end, instance)
+                  )
+              }
+            end
+
+          {DateTime.from_unix!(hour_end - 3600), with_sizes(machines)}
+        end)
+
+      # The earliest hour with a machine of known size, which stands in for
+      # the hours before the metrics.
+      earliest =
+        by_hour
+        |> Enum.reject(fn {_hour, machines} -> machines == [] end)
+        |> Enum.min_by(fn {hour, _} -> DateTime.to_unix(hour) end, fn -> nil end)
+        |> case do
+          nil -> nil
+          {hour, machines} -> {hour, Enum.max_by(machines, & &1.fraction)}
+        end
+
+      {:ok, %{by_hour: by_hour, earliest: earliest}}
+    end
+  end
+
+  defp value_of(metrics, hour_end, instance) do
+    metrics
+    |> Map.get(hour_end, [])
+    |> Enum.find_value(fn {metric, value} -> if metric["instance"] == instance, do: value end)
+  end
+
+  # A machine of a few seconds (a release command) may have no size in the
+  # metrics: it gets the size of the machine that ran longest that hour.
+  defp with_sizes(machines) do
+    main = machines |> Enum.filter(& &1.guest) |> Enum.max_by(& &1.fraction, fn -> nil end)
+
+    for machine <- machines,
+        guest <- [machine.guest || (main && main.guest)],
+        guest != nil,
+        do: %{machine | guest: guest}
+  end
+
+  # Fly's machines have memory in steps of 256 MB, and the system sees a
+  # little less of it; shared processors have a baseline of a sixteenth each.
+  defp guest(cpus, memory_bytes, baseline)
+       when is_number(cpus) and cpus >= 1 and is_number(memory_bytes) do
+    cpus = round(cpus)
+    memory_mb = (Float.ceil(memory_bytes / 1_048_576 / 256) |> trunc()) * 256
+    kind = if is_number(baseline) and baseline / cpus > 0.5, do: "performance", else: "shared"
+
+    %{"cpu_kind" => kind, "cpus" => cpus, "memory_mb" => max(memory_mb, 256)}
+  end
+
+  defp guest(_cpus, _memory_bytes, _baseline), do: nil
+
+  defp bandwidth_history(first, last) do
+    with {:ok, by_end} <- Fly.data_out_hourly(apps(), add_hours(first, 1), add_hours(last, 1)) do
+      {:ok,
+       Map.new(by_end, fn {hour_end, series} ->
+         {DateTime.from_unix!(hour_end - 3600),
+          Map.new(series, fn {metric, bytes} -> {Map.get(metric, "region", "?"), bytes} end)}
+       end)}
+    end
+  end
+
+  # The bytes stored at the end of each hour, from when the files were sent.
+  # Files deleted since are not counted.
+  defp storage_history(first, last) do
+    until = add_hours(last, 1)
+
+    buckets =
+      from(a in ValueAttachment,
+        where: a.inserted_at < ^until,
+        group_by: fragment("date_trunc('hour', ?)", a.inserted_at),
+        order_by: fragment("date_trunc('hour', ?)", a.inserted_at),
+        select: {
+          type(fragment("date_trunc('hour', ?)", a.inserted_at), :utc_datetime),
+          type(sum(a.byte_size), :integer)
+        }
+      )
+      |> Repo.all()
+
+    {before, within} =
+      Enum.split_while(buckets, fn {hour, _} -> DateTime.before?(hour, first) end)
+
+    start = before |> Enum.map(&elem(&1, 1)) |> Enum.sum()
+    added = Map.new(within)
+
+    {by_hour, _} =
+      first
+      |> hours_between(last)
+      |> Enum.map_reduce(start, fn hour, total ->
+        total = total + Map.get(added, hour, 0)
+        {{hour, total}, total}
+      end)
+
+    {:ok, Map.new(by_hour)}
+  rescue
+    error ->
+      Logger.warning("Stored bytes by hour unknown: #{Exception.message(error)}")
+      :error
+  end
+
   defp collect([], _fun), do: :error
 
   defp collect(apps, fun) do
@@ -145,7 +302,9 @@ defmodule PotokIde.HostingCosts do
       :error
   end
 
-  defp rows(:machines, hour, %{machines: {:ok, apps}}, current, _now) do
+  # The current hour: the machines as they run now.
+  defp rows(:machines, hour, %{machines: {:ok, apps}}, _history, current, _now)
+       when hour == current do
     for {app, machines} <- apps,
         %{"id" => id, "state" => state} = machine <- machines,
         not release_command?(machine),
@@ -154,7 +313,37 @@ defmodule PotokIde.HostingCosts do
         do: row(hour, :machines, id, 1.0, cost, detail(machine, app, hour, current))
   end
 
-  defp rows(:postgres, hour, %{postgres_bytes: {:ok, bytes}}, current, _now) do
+  # A past hour: the machines that ran as Fly's metrics saw them (before the
+  # metrics, the earliest one they know, for the whole hour), and the disks of
+  # those stopped now that did not run then.
+  defp rows(:machines, hour, snapshot, %{machines: {:ok, history}}, current, _now)
+       when hour != current do
+    running = ran_in(history, hour)
+    ran = MapSet.new(running, fn {machine, _assumed} -> machine.instance end)
+
+    stopped =
+      with {:ok, apps} <- snapshot.machines do
+        for {app, machines} <- apps,
+            %{"id" => id, "state" => state} = machine <- machines,
+            state in @stopped,
+            not MapSet.member?(ran, id),
+            do:
+              row(
+                hour,
+                :machines,
+                id,
+                1.0,
+                machine_cost(machine, state, hour),
+                detail(machine, app, hour, nil)
+              )
+      else
+        _ -> []
+      end
+
+    for({machine, assumed} <- running, do: history_row(hour, machine, assumed)) ++ stopped
+  end
+
+  defp rows(:postgres, hour, %{postgres_bytes: {:ok, bytes}}, _history, current, _now) do
     month_hours = month_hours(hour)
     plan = postgres_plan()
     gb = bytes / @gib
@@ -166,40 +355,89 @@ defmodule PotokIde.HostingCosts do
     ]
   end
 
-  defp rows(:storage, hour, %{storage_bytes: {:ok, bytes}}, current, _now) do
-    gb = bytes / @gib
-    billed_gb = max(gb - Prices.get(:storage_free_gb), 0.0)
-    amount = billed_gb * Prices.get(:storage_gb_month) / month_hours(hour)
+  defp rows(:storage, hour, %{storage_bytes: {:ok, bytes}}, _history, current, _now)
+       when hour == current,
+       do: [storage_row(hour, bytes, %{})]
 
-    [row(hour, :storage, "files", gb, amount, filled(hour, current))]
-  end
+  defp rows(:storage, hour, _snapshot, %{storage: {:ok, by_hour}}, current, _now)
+       when hour != current,
+       do: [storage_row(hour, Map.get(by_hour, hour, 0), %{"filled" => true})]
 
-  defp rows(:ips, hour, %{ipv4: {:ok, counts}}, current, _now) do
+  defp rows(:ips, hour, %{ipv4: {:ok, counts}}, _history, current, _now) do
     count = counts |> Enum.map(&elem(&1, 1)) |> Enum.sum()
     amount = count * Prices.get(:ipv4_month) / month_hours(hour)
 
     [row(hour, :ips, "ipv4", count * 1.0, amount, filled(hour, current))]
   end
 
-  # Exact from Fly's metrics, filled in or not; the current hour so far.
-  defp rows(:bandwidth, hour, _snapshot, _current, now) do
-    until = Enum.min([add_hours(hour, 1), now], DateTime)
-    seconds = DateTime.diff(until, hour)
+  # The current hour so far, from Fly's metrics.
+  defp rows(:bandwidth, hour, _snapshot, _history, current, now) when hour == current do
+    seconds = DateTime.diff(now, hour)
 
     with true <- seconds >= 60,
-         {:ok, by_region} <- Fly.data_out(apps(), until, seconds) do
-      by_region = if by_region == %{}, do: %{"-" => 0.0}, else: by_region
-
-      for {region, bytes} <- by_region do
-        gb = bytes / @gib
-        row(hour, :bandwidth, region, gb, gb * Prices.bandwidth_per_gb(region), %{})
-      end
+         {:ok, by_region} <- Fly.data_out(apps(), now, seconds) do
+      bandwidth_rows(hour, by_region)
     else
       _ -> []
     end
   end
 
-  defp rows(_category, _hour, _snapshot, _current, _now), do: []
+  # A past hour, in full, from Fly's metrics, while they still have it.
+  defp rows(:bandwidth, hour, _snapshot, %{bandwidth: {:ok, by_hour}}, current, _now)
+       when hour != current do
+    case Map.fetch(by_hour, hour) do
+      {:ok, by_region} -> bandwidth_rows(hour, by_region)
+      :error -> []
+    end
+  end
+
+  defp rows(_category, _hour, _snapshot, _history, _current, _now), do: []
+
+  defp ran_in(%{by_hour: by_hour, earliest: earliest}, hour) do
+    case {Map.get(by_hour, hour, []), earliest} do
+      {[_ | _] = machines, _earliest} ->
+        Enum.map(machines, &{&1, false})
+
+      {[], {first, machine}} ->
+        if DateTime.before?(hour, first), do: [{%{machine | fraction: 1.0}, true}], else: []
+
+      _none ->
+        []
+    end
+  end
+
+  defp history_row(hour, machine, assumed) do
+    cost = Prices.machine_per_second(machine.guest, machine.region) * 3600 * machine.fraction
+
+    detail =
+      %{
+        "filled" => true,
+        "app" => machine.app,
+        "region" => machine.region,
+        "state" => "started",
+        "size" => size_name(machine.guest)
+      }
+      |> then(&if(assumed, do: Map.put(&1, "assumed", true), else: &1))
+
+    row(hour, :machines, machine.instance, machine.fraction, cost, detail)
+  end
+
+  defp storage_row(hour, bytes, detail) do
+    gb = bytes / @gib
+    billed_gb = max(gb - Prices.get(:storage_free_gb), 0.0)
+    amount = billed_gb * Prices.get(:storage_gb_month) / month_hours(hour)
+
+    row(hour, :storage, "files", gb, amount, detail)
+  end
+
+  defp bandwidth_rows(hour, by_region) do
+    by_region = if by_region == %{}, do: %{"-" => 0.0}, else: by_region
+
+    for {region, bytes} <- by_region do
+      gb = bytes / @gib
+      row(hour, :bandwidth, region, gb, gb * Prices.bandwidth_per_gb(region), %{})
+    end
+  end
 
   defp release_command?(machine),
     do: get_in(machine, ["config", "metadata", "fly_process_group"]) == "fly_app_release_command"
@@ -329,41 +567,46 @@ defmodule PotokIde.HostingCosts do
 
   defp current(month, current_hour) do
     month_start = DateTime.new!(month.month, ~T[00:00:00], "Etc/UTC")
+    month_hours = month_hours(month_start)
 
+    # Each category counts its own hours: one Fly's metrics could not fill
+    # (machines before they begin) takes the category's rate, not nothing.
     counted =
-      Repo.one(
-        from(c in CostHour,
-          where: c.hour >= ^month_start and c.hour <= ^current_hour and c.category != :bandwidth,
-          select: count(c.hour, :distinct)
-        )
+      from(c in CostHour,
+        where: c.hour >= ^month_start and c.hour <= ^current_hour,
+        group_by: c.category,
+        select: {c.category, count(c.hour, :distinct)}
       )
+      |> Repo.all()
+      |> Map.new()
 
-    hours_without = max(month_hours(month_start) - counted, 0)
     rates = hourly_rates(current_hour)
+    so_far = Map.new(month.by_category)
 
     by_category =
-      Map.new(month.by_category, fn {category, so_far} ->
+      for category <- CostHour.categories(),
+          Map.has_key?(so_far, category) or Map.has_key?(rates, category),
+          into: %{} do
+        missing = max(month_hours - Map.get(counted, category, 0), 0)
         rate = Map.get(rates, category, Decimal.new(0))
-        {category, Decimal.round(Decimal.add(so_far, Decimal.mult(rate, hours_without)), 2)}
-      end)
 
-    rate = Enum.reduce(Map.values(rates), Decimal.new(0), &Decimal.add/2)
-    projected = Decimal.add(month.estimate, Decimal.mult(rate, hours_without))
+        {category,
+         Decimal.add(Map.get(so_far, category, Decimal.new(0)), Decimal.mult(rate, missing))}
+      end
+
+    projected = Enum.reduce(Map.values(by_category), Decimal.new(0), &Decimal.add/2)
 
     Map.merge(month, %{
       projected: Decimal.round(projected, 2),
-      projected_by_category: by_category
+      projected_by_category: Map.new(by_category, fn {c, sum} -> {c, Decimal.round(sum, 2)} end)
     })
   end
 
   # What each category costs in an hour: the last full hour, or the current
-  # one when it is the first; the bytes sent as their average of the last week.
+  # one for a category that has none; the bytes sent as their average of the
+  # last week.
   defp hourly_rates(current_hour) do
-    steady =
-      case steady_rates(add_hours(current_hour, -1)) do
-        rates when rates == %{} -> steady_rates(current_hour)
-        rates -> rates
-      end
+    steady = Map.merge(steady_rates(current_hour), steady_rates(add_hours(current_hour, -1)))
 
     {sent, hours} =
       from(c in CostHour,
