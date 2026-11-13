@@ -693,6 +693,22 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       assert html =~ "<strong>bold</strong>"
     end
 
+    test "shows a story's own picture by a signed address, no other group's", ctx do
+      story = child!(ctx.owner, ctx.feed, "story with a picture")
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "preview_description", %{
+        "description" =>
+          ~s|<p><img src="/avatar/group/#{story.id}?p=5"><img src="/avatar/group/#{ctx.parent.id}"></p>|,
+        "description_format" => "html"
+      })
+
+      assert_reply(view, %{ok: true, html: html})
+      [_, signature] = Regex.run(~r/[?&]s=([^&]+)/, PotokIdeWeb.Avatars.group_avatar_url(story))
+      assert html =~ ~s|src="/avatar/group/#{story.id}?p=5&amp;s=#{signature}"|
+      assert html =~ ~s|src="/avatar/group/#{ctx.parent.id}"|
+    end
+
     test "gives nothing for an empty description", ctx do
       view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
 

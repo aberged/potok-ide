@@ -462,7 +462,8 @@ defmodule PotokIde.NoticesTest do
       assert title == "Notice from #{ctx.public.name}"
       assert tag == "group-#{ctx.public.id}-notice-#{notice.id}"
       assert url == "/groups/#{ctx.public.id}/notices?notice=#{notice.id}"
-      assert badge == "/avatar/group/#{ctx.public.id}?format=png"
+      assert badge == PotokIdeWeb.Avatars.group_badge_url(ctx.public)
+      assert badge =~ ~r"\A/avatar/group/#{ctx.public.id}\?format=png&s="
       assert payload_for.("sr").title =~ ctx.public.name
     end
   end

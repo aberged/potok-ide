@@ -27,7 +27,7 @@ defmodule PotokIde.Notices.Notifications do
         # One per notice, so a second one never replaces the first.
         tag: "group-#{group.id}-notice-#{notice.id}",
         url: "/groups/#{group.id}/notices?notice=#{notice.id}",
-        badge: "/avatar/group/#{group.id}?format=png"
+        badge: PotokIdeWeb.Avatars.group_badge_url(group)
       }
     end)
   end

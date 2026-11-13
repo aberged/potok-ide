@@ -132,5 +132,5 @@ defmodule PotokIde.Polls.Notifications do
 
   defp url(%Poll{id: id, group_id: group_id}), do: "/groups/#{group_id}/polls?poll=#{id}"
 
-  defp group_badge(%Group{id: id}), do: "/avatar/group/#{id}?format=png"
+  defp group_badge(%Group{} = group), do: PotokIdeWeb.Avatars.group_badge_url(group)
 end

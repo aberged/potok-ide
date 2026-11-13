@@ -1614,8 +1614,9 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
                "img[src^='/avatar/group/#{child_group.id}'][alt='pictured-child-group']"
              )
 
-      # The avatar route redirects to the external picture.
-      conn = get(conn, "/avatar/group/#{child_group.id}")
+      # The avatar route redirects to the external picture, by the address the
+      # page signed: the group is private.
+      conn = get(conn, PotokIdeWeb.Avatars.group_avatar_url(child_group))
       assert redirected_to(conn) == "https://example.com/group-avatar.png"
     end
 

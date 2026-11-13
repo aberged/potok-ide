@@ -989,10 +989,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          {:ok, format} <- description_format(params["description_format"]),
          {:ok, socket} <- take_write_token(socket) do
       html =
-        Components.description_html(%Group{
-          description: string_param(params["description"], ""),
-          description_format: format
-        })
+        %Group{description: string_param(params["description"], ""), description_format: format}
+        |> Components.description_html()
+        |> sign_child_pictures(socket.assigns.group)
 
       {%{ok: true, html: html}, socket}
     else
@@ -1002,6 +1001,22 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp run(_method, _params, socket) do
     {error("unknown_method", nil), socket}
+  end
+
+  # A story being edited shows its own picture, which its description holds
+  # without a signature (`Avatars.sign_group_pictures/2`): those of the
+  # group's sub-groups are signed, as whoever manages them sees them.
+  defp sign_child_pictures(nil, _group), do: nil
+
+  defp sign_child_pictures(html, %Group{} = group) do
+    ids =
+      ~r"/avatar/group/(\d{1,18})"
+      |> Regex.scan(html, capture: :all_but_first)
+      |> Enum.map(fn [id] -> String.to_integer(id) end)
+      |> Enum.uniq()
+      |> Enum.take(100)
+
+    Avatars.sign_group_pictures(html, Social.child_group_ids(group, ids))
   end
 
   defp prepare_value_upload(profile, group, alt, params, file) do

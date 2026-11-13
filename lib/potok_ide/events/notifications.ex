@@ -76,7 +76,7 @@ defmodule PotokIde.Events.Notifications do
           "#{starts_in(event, minutes)} · #{when_text(occurrence)}#{location} · #{group.name}",
         tag: "#{tag(event)}-#{occurrence.date}-reminder",
         url: url(occurrence),
-        badge: "/avatar/group/#{group.id}?format=png"
+        badge: PotokIdeWeb.Avatars.group_badge_url(group)
       }
     end)
   end

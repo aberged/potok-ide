@@ -1034,6 +1034,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :content_format, :any, default: :markdown
   attr :uses_api, :boolean, default: false
   attr :mentions, :map, default: %{}, doc: "resolved `@` mentions to highlight (`Value.mentions`)"
+
+  attr :group_id, :integer,
+    default: nil,
+    doc: "the group whose description this is: its picture's address gets signed"
+
   attr :class, :any, default: nil
 
   # The `rich-content` wrapper lives here, not in the rendered HTML: the
@@ -1041,9 +1046,22 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   def formatted_content(assigns) do
     ~H"""
     <div class={[@class, "rich-content"]}>
-      {cached_formatted_content(@content, @content_format, @uses_api, @mentions)}
+      {@content
+      |> cached_formatted_content(@content_format, @uses_api, @mentions)
+      |> sign_group_pictures(@group_id)}
     </div>
     """
+  end
+
+  # A description shows its own group's picture by a signed address
+  # (`Avatars.sign_group_pictures/2`).
+  defp sign_group_pictures(html, nil), do: html
+
+  defp sign_group_pictures(html, group_id) do
+    html
+    |> Phoenix.HTML.safe_to_string()
+    |> Avatars.sign_group_pictures(group_id)
+    |> Phoenix.HTML.raw()
   end
 
   # Markdown parsing + sanitizing is pure in (content, format, uses_api,
@@ -1076,16 +1094,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   @doc """
   The sanitized HTML of a group's default description, as `formatted_content/1`
-  shows it (the `rich-content` wrapper is up to the caller). Nil when there is
-  no text to show: empty, or an app, whose description is its source code.
+  shows it (the `rich-content` wrapper is up to the caller), with the group's
+  own picture by a signed address. Nil when there is no text to show: empty, or
+  an app, whose description is its source code.
   """
   def description_html(%Group{uses_api: true}), do: nil
 
-  def description_html(%Group{description: description, description_format: format}) do
+  def description_html(%Group{id: id, description: description, description_format: format}) do
     if is_binary(description) and String.trim(description) != "" do
       description
       |> cached_formatted_content(format, false, %{})
       |> Phoenix.HTML.safe_to_string()
+      |> Avatars.sign_group_pictures(id)
     end
   end
 

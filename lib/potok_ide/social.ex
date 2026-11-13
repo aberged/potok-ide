@@ -208,13 +208,38 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  @doc "Minimal data needed to serve a group avatar: `%{id, name, picture_url}` or nil."
+  @doc """
+  Minimal data needed to serve a group avatar: `%{id, name, picture_url,
+  guest_preview?}` or nil. `guest_preview?` says whether guests see the group
+  (`Group.guest_preview?/1`).
+  """
   def get_group_avatar_source(id) do
     from(g in Group,
       where: g.id == ^id,
-      select: %{id: g.id, name: g.name, picture_url: g.group_picture_url}
+      select:
+        struct(g, [
+          :id,
+          :name,
+          :group_picture_url,
+          :is_public,
+          :is_root,
+          :is_direct,
+          :parent_value_id
+        ])
     )
     |> Repo.one()
+    |> case do
+      nil ->
+        nil
+
+      group ->
+        %{
+          id: group.id,
+          name: group.name,
+          picture_url: group.group_picture_url,
+          guest_preview?: Group.guest_preview?(group)
+        }
+    end
   end
 
   @doc "A hash of the group's picture, nil without one. Does not load the picture."
@@ -3595,6 +3620,21 @@ defmodule PotokIde.Social do
     |> order_by([g], asc: g.id)
     |> limit(1)
     |> Repo.one()
+  end
+
+  @doc "Which of `ids` are direct sub-groups of `group`, of any kind."
+  def child_group_ids(%Group{id: parent_id}, ids) when is_list(ids) do
+    case for id <- ids,
+             is_integer(id) and id > 0 and id < 9_223_372_036_854_775_807,
+             uniq: true,
+             do: id do
+      [] ->
+        []
+
+      ids ->
+        from(g in Group, where: g.parent_id == ^parent_id and g.id in ^ids, select: g.id)
+        |> Repo.all()
+    end
   end
 
   @doc """

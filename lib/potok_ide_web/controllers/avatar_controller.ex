@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.AvatarController do
   alias PotokIde.ImageMagick
   alias PotokIde.{RenderCache, Renderers}
   alias PotokIde.Social
+  alias PotokIdeWeb.Avatars
 
   @cache_control "public, max-age=86400"
   # Initials PNGs are drawn once per name and kept on disk (PotokIde.RenderCache).
@@ -27,12 +28,19 @@ defmodule PotokIdeWeb.AvatarController do
     |> serve_avatar(conn)
   end
 
-  def group(conn, %{"id" => id}) do
+  # A group guests cannot see is answered as one that does not exist, unless
+  # the address is one Potok signed for someone who sees it (`Avatars`).
+  def group(conn, %{"id" => id} = params) do
     id
     |> parse_id()
     |> case do
       {:ok, id} -> Social.get_group_avatar_source(id)
       :error -> nil
+    end
+    |> case do
+      %{guest_preview?: true} = source -> source
+      %{id: id} = source -> if Avatars.group_signature?(id, params["s"]), do: source
+      nil -> nil
     end
     |> serve_avatar(conn)
   end

@@ -1,8 +1,9 @@
 defmodule PotokIdeWeb.AvatarControllerTest do
   use PotokIdeWeb.ConnCase, async: true
 
-  alias PotokIde.Social
   alias PotokIde.Repo
+  alias PotokIde.Social
+  alias PotokIdeWeb.Avatars
 
   setup do
     {:ok, profile} =
@@ -221,8 +222,39 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       assert response(conn, 404)
     end
 
+    test "a group guests cannot see answers as one that does not exist", %{
+      conn: conn,
+      group: group
+    } do
+      missing = conn |> get(~p"/avatar/group/99999") |> response(404)
+
+      assert conn |> get(~p"/avatar/group/#{group.id}") |> response(404) == missing
+      assert conn |> get(~p"/avatar/group/#{group.id}?format=png") |> response(404) == missing
+
+      other = Avatars.group_avatar_url(%{id: group.id + 1})
+      [_, signature] = Regex.run(~r/[?&]s=([^&]+)/, other)
+      assert conn |> get(~p"/avatar/group/#{group.id}?s=#{signature}") |> response(404) == missing
+    end
+
+    test "sends it by the address Potok signed, a push notification's too", %{
+      conn: conn,
+      group: group
+    } do
+      assert conn |> get(Avatars.group_avatar_url(group)) |> response(200) =~ "<svg"
+
+      badge = get(conn, Avatars.group_badge_url(group))
+      assert response(badge, 200)
+      assert get_resp_header(badge, "content-type") in [["image/png"], ["image/svg+xml"]]
+    end
+
+    test "a group guests see needs no signature", %{conn: conn, group: group} do
+      {:ok, group} = group |> Ecto.Changeset.change(is_public: true) |> Repo.update()
+
+      assert conn |> get(~p"/avatar/group/#{group.id}") |> response(200) =~ "<svg"
+    end
+
     test "returns initials avatar when the group has no picture", %{conn: conn, group: group} do
-      conn = get(conn, ~p"/avatar/group/#{group.id}")
+      conn = get(conn, Avatars.group_avatar_url(group))
       assert response(conn, 200)
       [content_type] = get_resp_header(conn, "content-type")
       assert content_type in ["image/png", "image/svg+xml"]
@@ -231,7 +263,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
     test "escapes the initials of the group name", %{conn: conn, group: group} do
       {:ok, group} = group |> Ecto.Changeset.change(name: "&co <b>") |> Repo.update()
 
-      body = conn |> get(~p"/avatar/group/#{group.id}") |> response(200)
+      body = conn |> get(Avatars.group_avatar_url(group)) |> response(200)
 
       assert body =~ ">&amp;&lt;</text>"
     end
@@ -242,7 +274,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       {:ok, updated_group} =
         group |> Ecto.Changeset.change(group_picture_url: data_url) |> Repo.update()
 
-      conn = get(conn, ~p"/avatar/group/#{updated_group.id}")
+      conn = get(conn, Avatars.group_avatar_url(updated_group))
       assert response(conn, 200)
       assert get_resp_header(conn, "content-type") == ["image/png"]
       assert conn.resp_body == "fake-png"
@@ -254,7 +286,7 @@ defmodule PotokIdeWeb.AvatarControllerTest do
       {:ok, group} =
         group |> Ecto.Changeset.change(group_picture_url: data_url) |> Repo.update()
 
-      conn = get(conn, ~p"/avatar/group/#{group.id}")
+      conn = get(conn, Avatars.group_avatar_url(group))
 
       assert response(conn, 200) =~ "<svg"
       refute conn.resp_body =~ "alert"
