@@ -282,12 +282,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </div>
 
-          <%!-- On phones a row of its own under the name, as the name would
-               shrink to a letter next to it and the bell. --%>
+          <%!-- On phones only the icon, a circle like the bell's, so it fits in
+               the row next to the name; the words stay for screen readers. --%>
           <div
             :if={!@group.is_root and !@is_member and !@access.blocked?}
             id="group-join-request-callout"
-            class="flex shrink-0 items-center max-sm:order-last max-sm:basis-full max-sm:pb-1.5 max-sm:pl-12 max-sm:cramped:hidden"
+            class="flex shrink-0 items-center"
           >
             <.button
               :if={is_nil(@pending_join_request)}
@@ -295,15 +295,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
               type="button"
               phx-click="request_join"
               variant="soft"
+              class="max-sm:w-10 max-sm:px-0"
             >
-              {gettext("Request access")}
+              <.icon name="hero-hand-raised" class="size-5 sm:hidden" />
+              <span class="max-sm:sr-only">{gettext("Request access")}</span>
             </.button>
             <div
               :if={!is_nil(@pending_join_request)}
               id="group-request-access-pending"
-              class="inline-flex items-center rounded-full bg-sky-900 px-3 py-2 text-sm font-medium text-sky-50"
+              title={gettext("Access request pending")}
+              class="inline-flex items-center justify-center rounded-full bg-sky-900 text-sm font-medium text-sky-50 max-sm:size-10 sm:px-3 sm:py-2"
             >
-              {gettext("Access request pending")}
+              <.icon name="hero-clock" class="size-5 sm:hidden" />
+              <span class="max-sm:sr-only">{gettext("Access request pending")}</span>
             </div>
           </div>
 
