@@ -36,6 +36,7 @@ defmodule PotokIde.Notices do
   import Ecto.Query
 
   alias Phoenix.PubSub
+  alias PotokIde.CountMark
   alias PotokIde.Notices.{GroupFollow, GroupNotice, GroupNoticeReceipt, Notifications}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.RateLimit
@@ -412,15 +413,15 @@ defmodule PotokIde.Notices do
       "WHERE profile_id = #{param} AND read_at IS NULL LIMIT #{@unread_cap}) unread_notices)"
   end
 
-  @doc "SQL for the newest notice's id: a count holds every notice up to it."
-  def newest_notice_sql, do: "(SELECT COALESCE(MAX(id), 0)::bigint FROM group_notices)"
+  @doc "SQL for the newest notices' ids, for what a count holds (`PotokIde.CountMark`)."
+  def notice_mark_sql, do: CountMark.ids_sql("group_notices")
 
-  @doc "The unread count, and the newest notice it already holds (`as_of`)."
+  @doc "The unread count, and the notices it already holds (`as_of`, a `PotokIde.CountMark`)."
   def unread_snapshot(%Profile{id: profile_id}) do
-    %{rows: [[count, as_of]]} =
-      Repo.query!("SELECT #{unread_count_sql("$1")}, #{newest_notice_sql()}", [profile_id])
+    %{rows: [[count, ids]]} =
+      Repo.query!("SELECT #{unread_count_sql("$1")}, #{notice_mark_sql()}", [profile_id])
 
-    %{count: count, as_of: as_of}
+    %{count: count, as_of: CountMark.from_ids(ids)}
   end
 
   @doc "Reads every notice of `profile`; returns how many were unread."

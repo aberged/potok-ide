@@ -3,6 +3,7 @@ defmodule PotokIde.NoticesTest do
 
   import PotokIde.EventsFixtures
 
+  alias PotokIde.CountMark
   alias PotokIde.Notices
   alias PotokIde.Notices.{GroupFollow, GroupNotice, GroupNoticeReceipt, Notifications}
   alias PotokIde.Repo
@@ -314,6 +315,20 @@ defmodule PotokIde.NoticesTest do
   end
 
   describe "reading" do
+    test "a notice still being sent when the counter counted is not taken as counted", ctx do
+      {:ok, _follow} = Notices.follow(ctx.outsider, ctx.public)
+
+      # The id a notice takes before its transaction commits: a later notice
+      # commits first, and the count sees only that one.
+      %{rows: [[on_its_way]]} = Repo.query!("SELECT nextval('group_notices_id_seq')")
+      sent = send!(ctx.owner, ctx.public)
+
+      assert %{count: 1, as_of: as_of} = Notices.unread_snapshot(ctx.outsider)
+      assert CountMark.counted?(as_of, sent.id)
+      refute CountMark.counted?(as_of, on_its_way)
+      refute CountMark.counted?(Social.nav_counts(ctx.outsider).unread_notices_as_of, on_its_way)
+    end
+
     test "the counter counts unread notices, and reading clears it", ctx do
       {:ok, _follow} = Notices.follow(ctx.outsider, ctx.public)
       {:ok, _follow} = Notices.follow(ctx.member, ctx.private)
@@ -322,7 +337,7 @@ defmodule PotokIde.NoticesTest do
       second = send!(ctx.owner, ctx.public)
 
       assert %{count: 2, as_of: as_of} = Notices.unread_snapshot(ctx.outsider)
-      assert as_of >= second.id
+      assert CountMark.counted?(as_of, second.id)
       assert Social.nav_counts(ctx.outsider).unread_notices == 2
 
       Notices.subscribe(ctx.outsider)

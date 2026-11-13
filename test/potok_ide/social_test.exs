@@ -5,6 +5,7 @@ defmodule PotokIde.SocialTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.CountMark
   alias PotokIde.EventsFixtures
   alias PotokIde.Notices
   alias PotokIde.PushNotifications
@@ -2316,7 +2317,7 @@ defmodule PotokIde.SocialTest do
              }
 
       assert Social.child_unread_summary(overview, child_group.id) == %{direct: 0, other: 1}
-      assert Social.unread_overview(nil) == %{total: 0, as_of: 0, groups: %{}}
+      assert Social.unread_overview(nil) == %{total: 0, as_of: {0, []}, groups: %{}}
 
       assert :ok = Social.mark_group_values_read(owner_profile, child_group, first_value.id)
       assert %{own: 1, subtree: 2} = Social.unread_overview(owner_profile).groups[child_group.id]
@@ -2541,6 +2542,35 @@ defmodule PotokIde.SocialTest do
       assert Social.add_unread_value(counted, unread, member_ids) == :counted
     end
 
+    test "a value still being sent when the count was taken is added, not taken as counted" do
+      [owner_profile, writer_profile] = unread_profiles(["race-owner", "race-writer"])
+      group = unread_group!(owner_profile, Social.get_root_group!(), "race-group")
+      unread_member!(owner_profile, group, writer_profile)
+      Social.subscribe_group_unread(group.id)
+
+      # The id a value takes before its transaction commits: a later value
+      # commits first, and the count sees only that one.
+      %{rows: [[on_its_way]]} = Repo.query!("SELECT nextval('values_id_seq')")
+      {:ok, value} = Social.create_value(writer_profile, group, %{"content" => "first in"})
+      assert_receive {:group_value_unread, %{value_id: value_id} = unread}
+      assert value_id == value.id
+
+      overview = Social.unread_overview(owner_profile)
+      snapshot = Social.root_group_unread_snapshot(owner_profile)
+      nav = Social.nav_counts(owner_profile)
+      assert overview.total == 1 and snapshot.count == 1 and nav.root_unread == 1
+
+      member_ids = MapSet.new([group.id])
+      assert Social.add_unread_value(overview, unread, member_ids) == :counted
+      assert CountMark.counted?(snapshot.as_of, value.id)
+      assert CountMark.counted?(nav.root_unread_as_of, value.id)
+
+      late = %{unread | value_id: on_its_way}
+      assert {:ok, %{total: 2}} = Social.add_unread_value(overview, late, member_ids)
+      refute CountMark.counted?(snapshot.as_of, on_its_way)
+      refute CountMark.counted?(nav.root_unread_as_of, on_its_way)
+    end
+
     test "root values reach no one, and a read is not echoed to the page that marked it" do
       [owner_profile, writer_profile] = unread_profiles(["echo-owner", "echo-writer"])
       root_group = Social.get_root_group!()
@@ -2741,7 +2771,7 @@ defmodule PotokIde.SocialTest do
 
       assert %{total: 0, groups: groups} = overview
       assert groups == %{}
-      assert overview.as_of >= value.id
+      assert CountMark.counted?(overview.as_of, value.id)
     end
   end
 

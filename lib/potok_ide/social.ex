@@ -9,6 +9,7 @@ defmodule PotokIde.Social do
   require Logger
 
   alias Ecto.Multi
+  alias PotokIde.CountMark
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Presence
@@ -1822,8 +1823,8 @@ defmodule PotokIde.Social do
   `count_pending_group_join_requests_for_approver/1`,
   `count_root_group_unread_values/1` and `PotokIde.Notices.unread_snapshot/1`;
   the approver's groups are only loaded when some of them have join requests.
-  `root_unread_as_of` and `unread_notices_as_of` are the counts' `as_of` (see
-  `root_group_unread_snapshot/1`).
+  `root_unread_as_of` and `unread_notices_as_of` are what the counts hold
+  (`PotokIde.CountMark`, see `root_group_unread_snapshot/1`).
 
   `unread: false` leaves the unread count out (0, `as_of` nil), for pages
   that count unread values themselves.
@@ -1859,10 +1860,10 @@ defmodule PotokIde.Social do
           WHERE gm.profile_id = $1
             AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
         ),
-        (SELECT COALESCE(MAX(id), 0)::bigint FROM values)
+        #{CountMark.ids_sql("values")}
         """
       else
-        "0::bigint, NULL::bigint"
+        "0::bigint, NULL::bigint[]"
       end
 
     sql = """
@@ -1886,10 +1887,10 @@ defmodule PotokIde.Social do
       ),
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
-      #{Notices.newest_notice_sql()}
+      #{Notices.notice_mark_sql()}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v3_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v4_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -1911,9 +1912,9 @@ defmodule PotokIde.Social do
             |> Enum.map(fn [group_id, count] -> {group_id, count} end)
             |> approvable_join_request_total(profile),
           root_unread: unread,
-          root_unread_as_of: unread_as_of,
+          root_unread_as_of: CountMark.from_ids(unread_as_of),
           unread_notices: unread_notices,
-          unread_notices_as_of: unread_notices_as_of,
+          unread_notices_as_of: CountMark.from_ids(unread_notices_as_of),
           member_group_ids: member_group_ids
         }
 
@@ -5803,9 +5804,9 @@ defmodule PotokIde.Social do
   def count_root_group_unread_values(profile), do: root_group_unread_snapshot(profile).count
 
   @doc """
-  `count_root_group_unread_values/1` with the newest value id the count saw
-  (`as_of`, as in `unread_overview/1`), so a page can add later values to it
-  one by one. `as_of` is `nil` when the count failed.
+  `count_root_group_unread_values/1` with what the count holds (`as_of`, a
+  `PotokIde.CountMark`, as in `unread_overview/1`), so a page can add later
+  values to it one by one. `as_of` is `nil` when the count failed.
   """
   def root_group_unread_snapshot(nil), do: %{count: 0, as_of: nil}
 
@@ -5824,11 +5825,11 @@ defmodule PotokIde.Social do
         WHERE gm.profile_id = $1
           AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
       ),
-      (SELECT COALESCE(MAX(id), 0)::bigint FROM values)
+      #{CountMark.ids_sql("values")}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count") do
-      {:ok, %{rows: [[count, as_of]]}} -> %{count: count, as_of: as_of}
+    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count_v2") do
+      {:ok, %{rows: [[count, ids]]}} -> %{count: count, as_of: CountMark.from_ids(ids)}
       {:error, _reason} -> %{count: 0, as_of: nil}
     end
   end
@@ -5847,11 +5848,11 @@ defmodule PotokIde.Social do
 
   @doc """
   A profile's unread values for every group that has some at or below it, in
-  one query: `%{total: n, as_of: id, groups: %{group_id => %{subtree: n,
+  one query: `%{total: n, as_of: mark, groups: %{group_id => %{subtree: n,
   own: n, parent_id: id, direct?: bool, thread?: bool}}}`. `own` counts the
   group's own values, `subtree` adds those of its sub-groups, threads
-  included, and `total` is the root group's count. `as_of` is the newest value
-  id when the count was taken: `add_unread_value/3` skips values up to it.
+  included, and `total` is the root group's count. `as_of` is what the count
+  holds (`PotokIde.CountMark`): `add_unread_value/3` skips those values.
 
   The counts follow the sub-groups lists, so every value can be found from
   the root: groups the profile cannot see are left out, and `parent_id` of the
@@ -5863,7 +5864,7 @@ defmodule PotokIde.Social do
   through every group below the one being looked at. Read the result with
   `unread_counts_for/2`, `thread_unread_counts/2` and `child_unread_summary/2`.
   """
-  def unread_overview(nil), do: %{total: 0, as_of: 0, groups: %{}}
+  def unread_overview(nil), do: %{total: 0, as_of: CountMark.from_ids([]), groups: %{}}
 
   def unread_overview(%Profile{id: profile_id}) do
     {own, as_of} = own_unread_counts(profile_id)
@@ -5893,13 +5894,14 @@ defmodule PotokIde.Social do
   end
 
   # Unread chat values per group the profile is a member of (the root's own
-  # values never count), leaving out groups with none, and the newest value id
-  # the same statement saw: one statement, so one snapshot for both. (Folding
+  # values never count), leaving out groups with none, and the newest value ids
+  # the same statement saw (`CountMark`): one statement, so one snapshot for
+  # both. (Folding
   # `group_chain/2` into it saves a round trip but measured slower.)
   defp own_unread_counts(profile_id) do
     sql = """
-    SELECT hw.max_id, c.group_id, c.unread
-    FROM (SELECT COALESCE(MAX(id), 0)::bigint AS max_id FROM values) hw
+    SELECT hw.ids, c.group_id, c.unread
+    FROM (SELECT #{CountMark.ids_sql("values")} AS ids) hw
     LEFT JOIN LATERAL (
       SELECT gm.group_id, COUNT(v.id)::bigint AS unread
       FROM group_memberships gm
@@ -5915,13 +5917,13 @@ defmodule PotokIde.Social do
     ) c ON TRUE
     """
 
-    %{rows: [[as_of | _] | _] = rows} =
-      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts")
+    %{rows: [[ids | _] | _] = rows} =
+      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v2")
 
     own =
-      for [_as_of, group_id, count] <- rows, group_id != nil, into: %{}, do: {group_id, count}
+      for [_ids, group_id, count] <- rows, group_id != nil, into: %{}, do: {group_id, count}
 
-    {own, as_of}
+    {own, CountMark.from_ids(ids)}
   end
 
   # `group_ids` and all their ancestors with what the overview needs about
@@ -6020,17 +6022,19 @@ defmodule PotokIde.Social do
   Counts a value from a `{:group_value_unread, unread}` broadcast
   into an `unread_overview/1` result, without a query. Returns
   `{:ok, overview}`, or `:counted` when the overview already holds the value
-  (it is not newer than `as_of`).
+  (`as_of`, see `PotokIde.CountMark`).
 
   `member_ids` are the profile's memberships (`ProfileAuth.unread_groups/1`),
   which with the value's chain tell what `unread_overview/1` asks the database:
   which of the groups above the value the profile can see.
   """
-  def add_unread_value(%{as_of: as_of}, %{value_id: value_id}, _member_ids)
-      when value_id <= as_of,
-      do: :counted
+  def add_unread_value(%{as_of: as_of} = overview, %{value_id: value_id} = unread, member_ids) do
+    if CountMark.counted?(as_of, value_id),
+      do: :counted,
+      else: count_unread_value(overview, unread, member_ids)
+  end
 
-  def add_unread_value(overview, %{group_id: group_id, chain: chain}, member_ids) do
+  defp count_unread_value(overview, %{group_id: group_id, chain: chain}, member_ids) do
     shown =
       chain
       |> Map.new(fn node ->

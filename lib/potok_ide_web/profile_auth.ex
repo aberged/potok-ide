@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   import Phoenix.LiveView
 
   alias PotokIde.Accounts
+  alias PotokIde.CountMark
   alias PotokIde.Notices
   alias PotokIde.Social
 
@@ -422,7 +423,7 @@ defmodule PotokIdeWeb.ProfileAuth do
     cond do
       socket.view in @notice_reading_views -> socket
       is_nil(socket.private[:unread_notices_as_of]) -> schedule_notice_recount(socket)
-      notice_id <= socket.private[:unread_notices_as_of] -> socket
+      CountMark.counted?(socket.private[:unread_notices_as_of], notice_id) -> socket
       true -> put_unread_notices(socket, (socket.assigns[:unread_notices_count] || 0) + 1)
     end
   end
@@ -487,22 +488,24 @@ defmodule PotokIdeWeb.ProfileAuth do
     |> push_event("unread_notices_count_updated", %{count: count})
   end
 
-  # The badge's count already holds the values up to its `as_of`; without one
-  # (the count failed, or another one is shown) the badge is recounted.
+  # The badge's count already holds the values its `as_of` says
+  # (`PotokIde.CountMark`); without one (the count failed, or another one is
+  # shown) the badge is recounted.
   defp add_unread_value(socket, %{value_id: value_id}) do
     case socket.private[:root_unread_as_of] do
       nil ->
         schedule_unread_recount(socket)
 
-      as_of when value_id <= as_of ->
-        socket
+      as_of ->
+        if CountMark.counted?(as_of, value_id) do
+          socket
+        else
+          count = socket.assigns.root_group_unread_count + 1
 
-      _as_of ->
-        count = socket.assigns.root_group_unread_count + 1
-
-        socket
-        |> Phoenix.Component.assign(:root_group_unread_count, count)
-        |> push_root_group_unread_count_updated(count)
+          socket
+          |> Phoenix.Component.assign(:root_group_unread_count, count)
+          |> push_root_group_unread_count_updated(count)
+        end
     end
   end
 
