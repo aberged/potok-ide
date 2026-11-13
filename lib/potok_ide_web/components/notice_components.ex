@@ -58,6 +58,31 @@ defmodule PotokIdeWeb.NoticeComponents do
     """
   end
 
+  attr :notice, :map, required: true
+  attr :can_dismiss, :boolean, default: false
+  attr :class, :any, default: nil
+
+  @doc """
+  The card of a notice's first link, once it was fetched (`PotokIde.Notices`),
+  as a chat message shows one. Its × sends `notice_dismiss_preview`.
+  """
+  def notice_link_preview(assigns) do
+    ~H"""
+    <Components.link_preview_card
+      :if={link_preview?(@notice)}
+      item_id={@notice.id}
+      id_prefix="notice-link-preview"
+      preview={@notice.link_preview}
+      can_dismiss={@can_dismiss}
+      dismiss_event="notice_dismiss_preview"
+      class={@class}
+    />
+    """
+  end
+
+  defp link_preview?(%{link_preview: %{"url" => url}}) when is_binary(url), do: true
+  defp link_preview?(_notice), do: false
+
   attr :id, :string, required: true
 
   @doc "The note under a push switch when the profile has turned every notice's push off."

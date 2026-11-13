@@ -226,6 +226,68 @@ defmodule PotokIdeWeb.GuestDescriptionPageTest do
     assert text(document, "#guest-description") =~ "Most je otvoren."
   end
 
+  describe "the address an app writes on the page" do
+    setup %{owner: owner} do
+      app =
+        public_group!(owner, %{
+          "name" => "Vesti",
+          "description" => "<p>app</p>",
+          "description_format" => :html,
+          "uses_api" => true,
+          "home_page" => :description
+        })
+
+      story =
+        group_with_members!(owner, [], %{
+          :parent => app,
+          "name" => "Most",
+          "description" => "Most je otvoren.",
+          "is_public" => true,
+          "description_for_guests" => true
+        })
+
+      %{app: app, story: story}
+    end
+
+    test "opens the story when the app keeps to its members", ctx do
+      document = ctx.conn |> get(~p"/groups/#{ctx.app.id}?#{[at: ctx.story.id]}") |> document()
+
+      assert og(document, "title") == "Most"
+      assert text(document, "#guest-description") =~ "Most je otvoren."
+    end
+
+    test "opens no group the app does not reach, whatever it shows guests", ctx do
+      other =
+        public_group!(ctx.owner, %{
+          "name" => "Druga grupa",
+          "description" => "Tuđ tekst.",
+          "description_for_guests" => true
+        })
+
+      for path <- [
+            ~p"/groups/#{ctx.app.id}?#{[at: other.id]}",
+            ~p"/groups/#{ctx.app.id}/group_home?#{[at: other.id]}"
+          ] do
+        document = ctx.conn |> get(path) |> document()
+
+        assert og(document, "title") == "Vesti"
+        assert found?(document, "#public-group")
+        refute found?(document, "#guest-group")
+        refute document |> LazyHTML.to_html() |> String.contains?("Tuđ tekst")
+      end
+    end
+
+    test "runs the app for a guest where the app opened to guests, with the story's card", ctx do
+      {:ok, app} = Social.update_group(ctx.owner, ctx.app, %{"description_for_guests" => true})
+
+      document = ctx.conn |> get(~p"/groups/#{app.id}?#{[at: ctx.story.id]}") |> document()
+
+      assert found?(document, "#guest-app")
+      assert og(document, "title") == "Most"
+      assert og(document, "site_name") == "Vesti · Potok"
+    end
+  end
+
   test "a public event keeps its own card", ctx do
     event =
       create_event!(

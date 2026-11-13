@@ -16,6 +16,11 @@ defmodule PotokIdeWeb.PublicPreview do
   small LiveView of its own (`PotokIdeWeb.GroupLive.GuestApp`). The meta tags
   stay the card's either way. Chats, members and the rest of the group stay
   behind the login.
+
+  A link into an app that names one of its groups (`?at=`, such as a story of
+  a feed) gets the card of that group, with the app's name over its title and
+  the app's mark on its picture, where guests reach the group through the app
+  (`linked_groups/2`). Anything else the link names gets the app's own card.
   """
 
   use PotokIdeWeb, :verified_routes
@@ -36,6 +41,7 @@ defmodule PotokIdeWeb.PublicPreview do
   alias PotokIdeWeb.Locale
 
   @description_length 200
+  @site_name_length 40
   # The largest id Postgres takes; asking for a larger one would raise.
   @max_id 9_223_372_036_854_775_807
 
@@ -47,7 +53,7 @@ defmodule PotokIdeWeb.PublicPreview do
         conn
         |> put_session(:account_return_to, current_path(conn))
         |> put_view(html: PotokIdeWeb.PageHTML)
-        |> render_preview(template, assigns, path)
+        |> render_preview(template, assigns)
         |> halt()
 
       _ ->
@@ -73,7 +79,7 @@ defmodule PotokIdeWeb.PublicPreview do
            "url" => url,
            "title" => assigns[:page_title],
            "description" => assigns[:page_description],
-           "site_name" => "Potok",
+           "site_name" => assigns[:page_site_name] || "Potok",
            "image_url" => assigns[:page_image]
          }}
       else
@@ -89,8 +95,8 @@ defmodule PotokIdeWeb.PublicPreview do
   # card. An app runs in a LiveView of its own, which the route's live_session
   # must not reach: its first render would run the session's log-in check
   # (`Phoenix.LiveView.Static`) and send the guest to log in.
-  defp render_preview(conn, :public_group, assigns, path) do
-    case guest_page(path, conn.query_params, assigns[:group], conn) do
+  defp render_preview(conn, :public_group, assigns) do
+    case guest_page(assigns, conn) do
       nil ->
         render(conn, :public_group, [{:page_noindex, true} | assigns])
 
@@ -102,25 +108,24 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
-  defp render_preview(conn, template, assigns, _path),
+  defp render_preview(conn, template, assigns),
     do: render(conn, template, [{:page_noindex, true} | assigns])
 
   # The group of the link, or, for a link into an app (`?at=`) whose group
-  # keeps its description from guests, the group the link stands for.
-  defp guest_page([group_id | _rest] = path, query, preview_group, conn) do
-    page_of(group_id, query, preview_group, conn) ||
-      linked_page(path, query, preview_group, conn)
+  # keeps its description from guests, the group the link stands for. Only
+  # the groups the preview found count, so a link opens no other.
+  defp guest_page(assigns, conn) do
+    case assigns[:app_group] do
+      %Group{} = app ->
+        page_of(app, conn.query_params, conn) || page_of(assigns[:group], %{}, conn)
+
+      nil ->
+        page_of(assigns[:group], conn.query_params, conn)
+    end
   end
 
-  defp linked_page([_group_id, "group_home"], %{"at" => linked_id}, preview_group, conn),
-    do: page_of(linked_id, %{}, preview_group, conn)
-
-  defp linked_page(_path, _query, _preview_group, _conn), do: nil
-
-  defp page_of(group_id, query, preview_group, conn) do
-    with id when is_integer(id) <- parse_id(group_id),
-         %Group{} = group <- known_group(id, preview_group),
-         [_ | _] = entries <- GuestDescriptions.entries(group),
+  defp page_of(%Group{} = group, query, conn) do
+    with [_ | _] = entries <- GuestDescriptions.entries(group),
          entry = GuestDescriptions.pick(entries, group, query["d"]),
          source when not is_nil(source) <- GuestDescriptions.source(group, entry) do
       %{
@@ -135,9 +140,7 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
-  # The preview read this group already, unless the link stands for another.
-  defp known_group(id, %Group{id: id} = group), do: group
-  defp known_group(id, _other), do: Social.get_public_group(id)
+  defp page_of(_group, _query, _conn), do: nil
 
   defp app_session(_group, %{uses_api: false}, _conn), do: nil
 
@@ -162,9 +165,14 @@ defmodule PotokIdeWeb.PublicPreview do
   defp preview([group_id, "calendar"], %{"event" => event_id}),
     do: event_preview(event_id) || group_preview(group_id)
 
-  # A link into an app stands for the group it opens on (`shareGroup`).
-  defp preview([group_id, "group_home"], %{"at" => linked_id} = query),
-    do: linked_preview(group_id, linked_id, query) || group_preview(group_id)
+  # A link into an app stands for the group it opens on (`shareGroup`), and so
+  # does the address the app writes on the page (`linkGroup`), which has no tab
+  # where the group opens on the app.
+  defp preview([group_id, "group_home"], %{"at" => item_id} = query),
+    do: linked_preview(group_id, item_id, query, :tab) || group_preview(group_id)
+
+  defp preview([group_id], %{"at" => item_id} = query),
+    do: linked_preview(group_id, item_id, query, :home) || group_preview(group_id)
 
   defp preview([group_id], _query), do: group_preview(group_id)
   defp preview([group_id, _tab], _query), do: group_preview(group_id)
@@ -184,16 +192,51 @@ defmodule PotokIdeWeb.PublicPreview do
     end
   end
 
-  # With its query, as on an event's card, or a site that reads the address
-  # again would show the card of the app.
-  defp linked_preview(group_id, linked_id, query) do
-    with {:public_group, assigns} <- group_preview(linked_id),
-         id when is_integer(id) <- parse_id(group_id) do
-      page_url = url(~p"/groups/#{id}/group_home?#{Map.take(query, ["d", "at"])}")
-
-      {:public_group, Keyword.put(assigns, :page_url, page_url)}
+  # The card of the group a link into an app names, with the app's name and
+  # mark. On the page's own address, only where the page opens on the app
+  # (`GroupLive.Show`'s first tab). The address keeps its query, as on an
+  # event's card, or a site that reads it again would show the card of the
+  # app, and always names the tab, wherever the link came from.
+  defp linked_preview(app_id, item_id, query, via) do
+    with {app, item} <- linked_groups(app_id, item_id),
+         true <- via == :tab or app.home_page == :description do
+      {:public_group,
+       group: item,
+       app_group: app,
+       page_title: item.name,
+       page_description: group_description(item),
+       page_image: linked_image(item, app),
+       page_site_name: site_name(app),
+       page_url: url(~p"/groups/#{app.id}/group_home?#{Map.take(query, ["d", "at"])}")}
     else
       _ -> nil
+    end
+  end
+
+  @doc """
+  The group of an app and the group a link into it names (`?at=`), as
+  `{app, item}`: both seen by guests, the item one of the app's sub-groups or
+  a group under one, as an app reaches them
+  (`Social.get_visible_child_or_grandchild_group/3`). nil for anything else,
+  so a link cannot put the app's mark on another group.
+  """
+  def linked_groups(app_id, item_id) do
+    with app_id when is_integer(app_id) <- parse_id(app_id),
+         item_id when is_integer(item_id) <- parse_id(item_id),
+         %Group{} = app <- Social.get_public_group(app_id),
+         %Group{} = item <- Social.get_visible_child_or_grandchild_group(app, nil, item_id),
+         true <- Group.guest_preview?(item) do
+      {app, item}
+    else
+      _ -> nil
+    end
+  end
+
+  # The small line over the title of a card: the app's name, then Potok.
+  defp site_name(%Group{name: name}) do
+    case name |> to_string() |> String.replace(~r/\s+/u, " ") |> String.trim() do
+      "" -> "Potok"
+      name -> PlainText.truncate(name, @site_name_length) <> " · Potok"
     end
   end
 
@@ -246,6 +289,14 @@ defmodule PotokIdeWeb.PublicPreview do
     version = group |> LinkCards.group_card() |> LinkCards.version()
 
     url(~p"/cards/group/#{"#{group.id}.jpg"}?#{[v: version]}")
+  end
+
+  # The card of `item` with the mark of `app`, served where the link is checked
+  # again (`PotokIdeWeb.CardController.linked/2`).
+  defp linked_image(%Group{} = item, %Group{} = app) do
+    version = item |> LinkCards.linked_card(app) |> LinkCards.version()
+
+    url(~p"/cards/group/#{app.id}/#{"#{item.id}.jpg"}?#{[v: version]}")
   end
 
   defp event_image(%Event{} = event) do

@@ -11,6 +11,7 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
   import PotokIde.EventsFixtures
   import PotokIde.PollsFixtures, only: [create_poll!: 2]
 
+  alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Notices.GroupNotice
   alias PotokIde.Repo
@@ -44,6 +45,22 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
     access = Social.get_group_access(author, group)
     {:ok, notice} = Notices.send_notice(author, group, access, %{"body" => body})
     notice
+  end
+
+  # Every linked page answers with the same Open Graph card.
+  defp stub_linked_page! do
+    Req.Test.stub(LinkPreviews, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_content_type("text/html")
+      |> Plug.Conn.send_resp(200, """
+      <html><head>
+        <meta property="og:title" content="Example article">
+        <meta property="og:description" content="A short summary.">
+        <meta property="og:site_name" content="Example">
+        <meta property="og:image" content="https://cdn.example.com/card.png">
+      </head></html>
+      """)
+    end)
   end
 
   describe "the bell" do
@@ -225,6 +242,72 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
     end
   end
 
+  describe "the card of a notice's link" do
+    test "comes to the sender's tab and to a follower's open one", ctx do
+      stub_linked_page!()
+      {:ok, _follow} = Notices.follow(ctx.visitor, ctx.group)
+      follower_view = open_group(ctx.conn, ctx.visitor_account, ctx.group, "notices")
+      view = open_group(ctx.conn, ctx.owner_account, ctx.group, "notices")
+      Req.Test.allow(LinkPreviews, self(), view.pid)
+
+      view
+      |> form("#group-notice-form", notice: %{body: "Read https://example.com/article"})
+      |> render_submit()
+
+      assert [%GroupNotice{id: id}] = Repo.all(GroupNotice)
+
+      assert has_element?(
+               view,
+               "#group-notice-#{id} #notice-link-preview-#{id}",
+               "Example article"
+             )
+
+      assert has_element?(view, "#notice-link-preview-#{id}", "A short summary.")
+
+      assert has_element?(
+               view,
+               "#notice-link-preview-link-#{id}[href='https://example.com/article'][target=_blank]"
+             )
+
+      assert has_element?(
+               view,
+               "#notice-link-preview-image-#{id}[src='https://cdn.example.com/card.png'][referrerpolicy=no-referrer]"
+             )
+
+      assert has_element?(follower_view, "#notice-link-preview-#{id}", "Example article")
+    end
+
+    test "its × is for whoever may delete the notice, and takes it from every page", ctx do
+      stub_linked_page!()
+      notice = send!(ctx.owner, ctx.group, "https://example.com/article")
+
+      member_view = open_group(ctx.conn, ctx.member_account, ctx.group, "notices")
+      assert has_element?(member_view, "#notice-link-preview-#{notice.id}")
+      refute has_element?(member_view, "#notice-link-preview-dismiss-#{notice.id}")
+
+      view = open_group(ctx.conn, ctx.owner_account, ctx.group, "notices")
+      view |> element("#notice-link-preview-dismiss-#{notice.id}") |> render_click()
+
+      refute has_element?(view, "#notice-link-preview-#{notice.id}")
+      assert has_element?(view, "#group-notice-#{notice.id}", "https://example.com/article")
+      refute has_element?(member_view, "#notice-link-preview-#{notice.id}")
+      assert Repo.get!(GroupNotice, notice.id).link_preview == nil
+
+      refute has_element?(
+               open_group(ctx.conn, ctx.owner_account, ctx.group, "notices"),
+               "#notice-link-preview-#{notice.id}"
+             )
+    end
+
+    test "a notice without a link has none", ctx do
+      notice = send!(ctx.owner, ctx.group)
+      view = open_group(ctx.conn, ctx.owner_account, ctx.group, "notices")
+
+      assert has_element?(view, "#group-notice-#{notice.id}")
+      refute has_element?(view, "#notice-link-preview-#{notice.id}")
+    end
+  end
+
   describe "the way there" do
     test "the group's menu leads there for any group that can be followed", ctx do
       view = open_group(ctx.conn, ctx.visitor_account, ctx.group)
@@ -270,6 +353,7 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
           {:received, id, 1, ctx.group.id},
           {:read, id},
           {:deleted, id, 1, ctx.group.id, true},
+          {:preview_changed, id, 1, ctx.group.id},
           {:follow_changed, id, ctx.group.id + 1},
           {:push_changed, id, false}
         ] do
@@ -277,5 +361,31 @@ defmodule PotokIdeWeb.GroupLive.NoticesTest do
     end
 
     assert render(view) =~ "group-header"
+  end
+
+  test "the card of a notice not on screen changes nothing", ctx do
+    for tab <- ["group_home", "notices"] do
+      view = open_group(ctx.conn, ctx.visitor_account, ctx.group, tab)
+      send(view.pid, {:group_notices, {:preview_changed, 1}})
+
+      assert render(view) =~ "group-header"
+      refute has_element?(view, "#group-notice-1")
+    end
+  end
+
+  test "a card for a notice the open tab does not show leaves it out", ctx do
+    view = open_group(ctx.conn, ctx.visitor_account, ctx.group, "notices")
+
+    notice =
+      Repo.insert!(%GroupNotice{
+        group_id: ctx.group.id,
+        creator_id: ctx.owner.id,
+        body: "https://example.com/article",
+        link_preview: %{"url" => "https://example.com/article", "title" => "Example article"}
+      })
+
+    send(view.pid, {:group_notices, {:preview_changed, notice.id}})
+
+    refute has_element?(view, "#group-notice-#{notice.id}")
   end
 end

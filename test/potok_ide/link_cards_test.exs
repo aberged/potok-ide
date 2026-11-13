@@ -4,6 +4,7 @@ defmodule PotokIde.LinkCardsTest do
   import PotokIde.EventsFixtures
 
   alias PotokIde.ImageMagick
+  alias PotokIde.Initials
   alias PotokIde.LinkCards
   alias PotokIde.LinkPreviews
   alias PotokIde.Social
@@ -55,6 +56,8 @@ defmodule PotokIde.LinkCardsTest do
 
   defp card_image(group), do: group |> LinkCards.group_card() |> LinkCards.image()
 
+  defp linked_image(group, app), do: group |> LinkCards.linked_card(app) |> LinkCards.image()
+
   defp assert_drawn({:ok, jpeg, completeness}, expected) do
     assert completeness == expected
     assert format_of(jpeg) == "JPEG 1200 630"
@@ -81,6 +84,28 @@ defmodule PotokIde.LinkCardsTest do
 
       assert described |> LinkCards.group_card() |> LinkCards.version() ==
                pictured |> LinkCards.group_card() |> LinkCards.version()
+    end
+
+    test "of a group in an app follows the app's name and picture too", %{owner: owner} do
+      story = group!(owner, %{"name" => "Most"})
+      app = group!(owner, %{"name" => "Vesti"})
+      version = story |> LinkCards.linked_card(app) |> LinkCards.version()
+
+      refute version == story |> LinkCards.group_card() |> LinkCards.version()
+      assert story |> LinkCards.linked_card(app) |> LinkCards.version() == version
+
+      {:ok, renamed} = Social.update_group(owner, app, %{"name" => "Vesti iz kraja"})
+      renamed_version = story |> LinkCards.linked_card(renamed) |> LinkCards.version()
+      refute renamed_version == version
+
+      {:ok, pictured} =
+        Social.update_group(owner, renamed, %{"group_picture_url" => "https://example.com/a.png"})
+
+      pictured_version = story |> LinkCards.linked_card(pictured) |> LinkCards.version()
+      refute pictured_version == renamed_version
+
+      {:ok, described} = Social.update_group(owner, pictured, %{"description" => "Novo"})
+      assert story |> LinkCards.linked_card(described) |> LinkCards.version() == pictured_version
     end
   end
 
@@ -127,6 +152,34 @@ defmodule PotokIde.LinkCardsTest do
                Gettext.with_locale(PotokIdeWeb.Gettext, "sr", fn ->
                  LinkCards.event_card(event)
                end)
+    end
+
+    test "a group in an app is its own card with the app's pill", %{owner: owner} do
+      story = group!(owner, %{"name" => "Most"})
+      app = group!(owner, %{"name" => "🌍 Vesti iz kraja"})
+      card = LinkCards.linked_card(story, app)
+
+      assert Map.delete(card, :app) == LinkCards.group_card(story)
+      assert card.app.id == app.id
+      assert card.app.name == "Vesti iz kraja"
+      assert card.app.initials == Initials.of("Vesti iz kraja")
+      # The colours of the app's avatar, which hashes the name as it is.
+      assert card.app.colors == Initials.colors("🌍 Vesti iz kraja")
+    end
+
+    test "cuts a long name of the app in its pill", %{owner: owner} do
+      app = group!(owner, %{"name" => String.duplicate("Vesti ", 10)})
+      name = LinkCards.linked_card(group!(owner, %{"name" => "Most"}), app).app.name
+
+      assert String.length(name) <= 24
+      assert String.ends_with?(name, "…")
+    end
+
+    test "an app's name with nothing to draw leaves the group's own card", %{owner: owner} do
+      story = group!(owner, %{"name" => "Most"})
+
+      assert LinkCards.linked_card(story, group!(owner, %{"name" => "🌍🌍"})) ==
+               LinkCards.group_card(story)
     end
 
     test "a series shows its next occurrence", %{owner: owner} do
@@ -280,9 +333,120 @@ defmodule PotokIde.LinkCardsTest do
       |> card_image()
       |> assert_drawn(:whole)
     end
+
+    test "draws a group in an app with the app's pill, whatever the pictures", %{owner: owner} do
+      apps = [
+        group!(owner, %{"name" => "Vesti"}),
+        group!(owner, %{"name" => "Vesti", "group_picture_url" => data_url(png!(200, 200))})
+      ]
+
+      stories = [
+        group!(owner, %{"name" => "Most"}),
+        group!(owner, %{"name" => "Most", "group_picture_url" => data_url(png!(300, 300))}),
+        group!(owner, %{"name" => "Most", "group_picture_url" => data_url(png!(1080, 608))})
+      ]
+
+      for app <- apps, story <- stories do
+        story |> linked_image(app) |> assert_drawn(:whole)
+      end
+    end
+
+    test "draws the app's initials for now, while its picture cannot be read", %{owner: owner} do
+      Req.Test.stub(LinkPreviews, fn conn -> Plug.Conn.send_resp(conn, 404, "") end)
+
+      app =
+        group!(owner, %{
+          "name" => "Vesti",
+          "group_picture_url" => "https://pictures.example/gone.png"
+        })
+
+      owner |> group!(%{"name" => "Most"}) |> linked_image(app) |> assert_drawn(:partial)
+    end
+
+    test "draws any name of an app", %{owner: owner} do
+      story = group!(owner, %{"name" => "Most"})
+
+      for name <- ["100% @tvoj \\n test %w", "@/etc/passwd", "Вести из краја"] do
+        story |> linked_image(group!(owner, %{"name" => name})) |> assert_drawn(:whole)
+      end
+    end
+
+    test "puts the pill across from Potok's mark, or over a photo across from Potok's pill",
+         %{owner: owner} do
+      app = group!(owner, %{"name" => "Vesti iz kraja"})
+      top_right = fn {x, y, _width, height} -> x >= 740 and y + height <= 100 end
+      bottom_left = fn {x, y, width, _height} -> x + width <= 440 and y >= 536 end
+
+      for {attrs, where} <- [
+            {%{}, top_right},
+            {%{"group_picture_url" => data_url(png!(300, 300))}, top_right},
+            {%{"group_picture_url" => data_url(png!(1080, 608))}, bottom_left}
+          ] do
+        story = group!(owner, Map.put(attrs, "name", "Most"))
+        {:ok, plain, :whole} = card_image(story)
+        {:ok, linked, :whole} = linked_image(story, app)
+
+        assert where.(difference_box(plain, linked))
+      end
+    end
+
+    # ImageMagick cut the marks off the first line when it centered a caption.
+    test "draws the marks on capital letters of an app's name whole", %{owner: owner} do
+      story = group!(owner, %{"name" => "Most"})
+      # A blue picture, so the white in the pill is only the name.
+      picture = data_url(png!(200, 200))
+
+      marked =
+        label_height(story, group!(owner, %{"name" => "ŽŠČĆ", "group_picture_url" => picture}))
+
+      plain =
+        label_height(story, group!(owner, %{"name" => "ZSCC", "group_picture_url" => picture}))
+
+      assert marked / plain > 1.15
+    end
   end
 
   defp huge_picture, do: <<0x89, "PNG", :binary.copy("x", 5_000_001)::binary>>
+
+  # Where two drawings of a card differ, as `{x, y, width, height}`.
+  defp difference_box(jpeg, other) do
+    in_temp_file(fn first ->
+      in_temp_file(fn second ->
+        File.write!(first, jpeg)
+        File.write!(second, other)
+
+        {:ok, box} =
+          ImageMagick.run(
+            ["jpeg:" <> first, "jpeg:" <> second, "-compose", "difference", "-composite"] ++
+              ["-colorspace", "Gray", "-threshold", "12%", "-format", "%@", "info:"]
+          )
+
+        [width, height, x, y] =
+          ~r/(\d+)x(\d+)\+(\d+)\+(\d+)\s*\z/
+          |> Regex.run(box, capture: :all_but_first)
+          |> Enum.map(&String.to_integer/1)
+
+        {x, y, width, height}
+      end)
+    end)
+  end
+
+  # In pixels, the white of the name in the pill of a card without a photo.
+  defp label_height(story, app) do
+    {:ok, jpeg, :whole} = linked_image(story, app)
+
+    in_temp_file(fn path ->
+      File.write!(path, jpeg)
+
+      {:ok, height} =
+        ImageMagick.run(
+          [path, "-crop", "420x70+740+18", "+repage", "-colorspace", "Gray"] ++
+            ["-threshold", "85%", "-trim", "-format", "%h", "info:"]
+        )
+
+      String.to_integer(height)
+    end)
+  end
 
   # In pixels, in the part of the card that holds the name.
   defp text_height(group) do

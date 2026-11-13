@@ -300,7 +300,7 @@ You put a tag on groups, profiles, events, messages and files, with the # button
 
 The bell in a group's header is for following. One tap and you follow the group. After that, the bell opens the choices: push notifications for this group, the Notices tab and stopping following. The home page, one-to-one conversations and threads cannot be followed.
 
-Whoever has the permission sends a notice to all followers on the Notices tab, up to 2000 characters. The Notices page (the bell in the top bar) has the notices you received and a list of the groups you follow. On the home page and on the map of groups, the filter "Groups I follow" leaves only them.
+Whoever has the permission sends a notice to all followers on the Notices tab, up to 2000 characters. A link in a notice gets a preview as in a chat, and whoever may delete the notice can remove the preview. The Notices page (the bell in the top bar) has the notices you received and a list of the groups you follow. On the home page and on the map of groups, the filter "Groups I follow" leaves only them.
 
 ![Following a group](pracenje) ![Notices received](obavestenja)
 
@@ -329,4 +329,4 @@ Whoever writes HTML can turn a description into an app of their own (Edit group,
 
 You share a text, a link or a file from another app on your phone into Potok. You choose a group or a conversation, and what you shared waits for you in the field you write in. Potok installed from the browser does the same.
 
-You share a link to a public group or a public event from the group's menu or from the event. Outside Potok, the name, picture and a short part of the description can be seen, and the whole description once the group opens it to visitors without an account.
+You share a link to a public group or a public event from the group's menu or from the event. Outside Potok, the name, picture and a short part of the description can be seen, and the whole description once the group opens it to visitors without an account. When you share a story from Feed or anything else from an app, the card shows just that, with the app's name and picture in its corner. The same goes for the page's address, which follows the story on screen.

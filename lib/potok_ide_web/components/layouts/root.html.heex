@@ -21,6 +21,7 @@
       url={assigns[:page_url] || PotokIdeWeb.Endpoint.url() <> @conn.request_path}
       locale={assigns[:current_locale] || PotokIdeWeb.Locale.default_locale()}
       noindex={assigns[:page_noindex] || false}
+      site_name={assigns[:page_site_name]}
     />
     <.live_title default="Potok" suffix=" · ide">{assigns[:page_title]}</.live_title>
     <link rel="manifest" href="/manifest.webmanifest" />

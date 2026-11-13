@@ -94,6 +94,19 @@ defmodule PotokIde.Social.GuestVisibilityTest do
     assert Enum.map(groups, & &1.id) == [ctx.open.id]
   end
 
+  test "what an app reaches for a guest is a public sub-group or a public group under one", ctx do
+    story = group!(ctx.owner, ctx.open, "gv-story", %{"is_public" => true})
+    deeper = group!(ctx.owner, story, "gv-deeper", %{"is_public" => true})
+    reach = &Social.get_visible_child_or_grandchild_group(ctx.parent, nil, &1)
+
+    assert reach.(ctx.open.id).id == ctx.open.id
+    assert reach.(story.id).id == story.id
+
+    for id <- [ctx.closed.id, ctx.below_closed.id, ctx.thread.id, deeper.id, ctx.parent.id] do
+      assert reach.(id) == nil
+    end
+  end
+
   test "a map app shows a guest its public places only", ctx do
     {places, false} = Social.list_visible_placed_children(ctx.parent, nil, 10)
     assert Enum.map(places, & &1.id) == [ctx.open.id]

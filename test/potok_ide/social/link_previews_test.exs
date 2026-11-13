@@ -138,6 +138,34 @@ defmodule PotokIde.Social.LinkPreviewsTest do
       refute_received {:fetched, _path}
     end
 
+    # The address an app writes on the page (`linkGroup`), copied from the bar.
+    test "to a story in an app shows the story, with the app's name", ctx do
+      app = create_public_group!(ctx.owner, %{"name" => "Vesti", "home_page" => :description})
+
+      {:ok, story} =
+        Social.create_group(ctx.owner, app, %{
+          "name" => "Most",
+          "description" => "Most je otvoren.",
+          "description_format" => :markdown,
+          "is_public" => true
+        })
+
+      url = own_url("/groups/#{app.id}?at=#{story.id}")
+
+      assert {:ok, value} = Social.create_value(ctx.owner, ctx.group, %{"content" => url})
+
+      assert %{
+               "url" => ^url,
+               "title" => "Most",
+               "description" => "Most je otvoren.",
+               "site_name" => "Vesti · Potok",
+               "image_url" => image_url
+             } = Repo.get!(Value, value.id).link_preview
+
+      assert image_url =~ "/cards/group/#{app.id}/#{story.id}.jpg?v="
+      refute_received {:fetched, _path}
+    end
+
     test "to an event shows its card", ctx do
       linked = create_public_group!(ctx.owner, %{"name" => "Komšije"})
 

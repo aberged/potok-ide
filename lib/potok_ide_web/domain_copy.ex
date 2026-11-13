@@ -381,6 +381,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupNotice", "creator_id"), do: dgettext("domain_map", "who sent it")
   defp own_field("GroupNotice", "body"), do: dgettext("domain_map", "text")
   defp own_field("GroupNotice", "recipients_count"), do: dgettext("domain_map", "how many got it")
+  defp own_field("GroupNotice", "link_preview"), do: dgettext("domain_map", "link preview")
 
   defp own_field("GroupNoticeReceipt", "profile_id"), do: dgettext("domain_map", "recipient")
   defp own_field("GroupNoticeReceipt", "notice_id"), do: dgettext("domain_map", "notice")
@@ -683,7 +684,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("GroupNotice", _edges) do
     dgettext(
       "domain_map",
-      "A notice a group sent to those who follow it: one text, never edited. It remembers who sent it and how many followers it reached. Deleting it deletes it for everyone who received it."
+      "A notice a group sent to those who follow it: one text, never edited. It remembers who sent it, how many followers it reached and the preview of its first link. Deleting it deletes it for everyone who received it."
     )
   end
 
@@ -1179,7 +1180,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "An app in the default description decides what the card of a shared link says about the group."
+              "An app in the default description decides what the card of a shared link says about the group. A link into the app that names a public group it reaches, such as a story of a feed, gets that group's card, marked with the app's name and picture."
             )
         },
         %{
@@ -1280,7 +1281,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A profile can follow a <Group>group</Group> it sees, a public one without being a member: that is a <GroupFollow>following</GroupFollow>. The root, direct conversations and threads are not followed. Whoever holds the permission to send notices sends a <GroupNotice>notice</GroupNotice>, and `admin` holds it as it holds every permission. The notice is written as a <GroupNoticeReceipt>received notice</GroupNoticeReceipt> for every follower who sees the group at that moment, never for its author, so it stays after unfollowing, and a later follower finds the older ones on the group's page. Unread received notices make their own counter, apart from unread messages, and opening the list of notices or the group's notices reads them. A push goes out while both the following and the profile allow it. Deleting a notice takes it from everyone who received it. At the root, the groups a profile follows stay on its lists and on the map of groups while the other public groups are hidden, and its sub-groups can be narrowed to them."
+            "A profile can follow a <Group>group</Group> it sees, a public one without being a member: that is a <GroupFollow>following</GroupFollow>. The root, direct conversations and threads are not followed. Whoever holds the permission to send notices sends a <GroupNotice>notice</GroupNotice>, and `admin` holds it as it holds every permission. The notice is written as a <GroupNoticeReceipt>received notice</GroupNoticeReceipt> for every follower who sees the group at that moment, never for its author, so it stays after unfollowing, and a later follower finds the older ones on the group's page. Unread received notices make their own counter, apart from unread messages, and opening the list of notices or the group's notices reads them. A push goes out while both the following and the profile allow it. Deleting a notice takes it from everyone who received it. The preview of a notice's first link comes a moment after it is sent, and whoever may delete the notice may remove the preview, for everyone. At the root, the groups a profile follows stay on its lists and on the map of groups while the other public groups are hidden, and its sub-groups can be narrowed to them."
           )
       },
       %{

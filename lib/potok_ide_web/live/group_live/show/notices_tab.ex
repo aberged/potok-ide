@@ -192,6 +192,11 @@ defmodule PotokIdeWeb.GroupLive.Show.NoticesTab do
               />
             </header>
             <NoticeComponents.notice_body body={notice.body} />
+            <NoticeComponents.notice_link_preview
+              notice={notice}
+              can_dismiss={Notices.can_delete?(@current_profile, @access, @group, notice)}
+              class="mt-2.5"
+            />
           </article>
         </div>
 

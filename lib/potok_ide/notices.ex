@@ -15,6 +15,9 @@ defmodule PotokIde.Notices do
   follower's devices while both its follow (`GroupFollow.push`) and its
   profile (`Profile.notice_push`) allow it.
 
+  The card of a notice's first link is fetched once, after it is sent
+  (`PotokIde.LinkPreviews`), and whoever may delete the notice may remove it.
+
   Pages hear of notices over two topics of their own, never over `profiles:`
   or `groups:`, whose LiveViews do not all know every message:
 
@@ -22,14 +25,20 @@ defmodule PotokIde.Notices do
       page's profile, with `{:notices, message}` where message is
       `{:received, profile_id, notice_id, group_id}`, `{:read, profile_id}`,
       `{:deleted, profile_id, notice_id, group_id, unread?}`,
+      `{:preview_changed, profile_id, notice_id, group_id}`,
       `{:follow_changed, profile_id, group_id}` or
       `{:push_changed, profile_id, on?}`;
     * `group_notices:<group_id>`, for the group's own page, with
-      `{:group_notices, {:posted, notice_id}}` or
+      `{:group_notices, {:posted, notice_id}}`,
+      `{:group_notices, {:preview_changed, notice_id}}` or
       `{:group_notices, {:removed, notice_id}}`.
+
+  `:preview_changed` tells that the card of a notice's link came or was
+  removed, and the pages read the notice again.
 
   One message goes to each follower a notice reaches: on one machine that is
   a lookup per follower, and in a cluster also a message per other node. The
+  card of its link costs one more, when it comes and when it is removed. The
   limit of notices a group sends keeps it rare.
   """
 
@@ -37,6 +46,7 @@ defmodule PotokIde.Notices do
 
   alias Phoenix.PubSub
   alias PotokIde.CountMark
+  alias PotokIde.LinkPreviews
   alias PotokIde.Notices.{GroupFollow, GroupNotice, GroupNoticeReceipt, Notifications}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.RateLimit
@@ -247,6 +257,7 @@ defmodule PotokIde.Notices do
         Enum.each(recipient_ids, &tell_profile(&1, {:received, &1, notice.id, group.id}))
         tell_group(group.id, {:posted, notice.id})
         notify_followers(notice, group, author)
+        schedule_link_preview(notice)
         {:ok, notice}
 
       {:error, changeset} ->
@@ -304,6 +315,38 @@ defmodule PotokIde.Notices do
     )
   end
 
+  # The card of the first link comes after the notice went out: the page is
+  # fetched off the sender, written on the notice, and every page that shows
+  # it reads it again. A notice deleted meanwhile takes no card.
+  defp schedule_link_preview(%GroupNotice{body: body} = notice) do
+    case LinkPreviews.first_url(body) do
+      nil -> :ok
+      url -> LinkPreviews.run(fn -> fetch_link_preview(notice, url) end)
+    end
+  end
+
+  defp fetch_link_preview(%GroupNotice{id: notice_id, group_id: group_id}, url) do
+    with {:ok, preview} <- LinkPreviews.fetch(url),
+         {1, _} <-
+           Repo.update_all(from(n in GroupNotice, where: n.id == ^notice_id),
+             set: [link_preview: preview]
+           ) do
+      tell_preview_changed(notice_id, group_id)
+    end
+
+    :ok
+  end
+
+  # Every follower it reached, then the group's page, with the same message
+  # whether the card came or went.
+  defp tell_preview_changed(notice_id, group_id) do
+    from(r in GroupNoticeReceipt, where: r.notice_id == ^notice_id, select: r.profile_id)
+    |> Repo.all()
+    |> Enum.each(&tell_profile(&1, {:preview_changed, &1, notice_id, group_id}))
+
+    tell_group(group_id, {:preview_changed, notice_id})
+  end
+
   @doc "Deletes a notice for everyone who received it."
   def delete_notice(%Profile{} = profile, %Group{} = group, %Access{} = access, notice_id)
       when is_integer(notice_id) do
@@ -329,6 +372,28 @@ defmodule PotokIde.Notices do
 
       tell_group(group.id, {:removed, notice.id})
       {:ok, notice}
+    else
+      nil -> {:error, :not_found}
+      false -> {:error, :not_allowed}
+    end
+  end
+
+  @doc """
+  Removes the card of a notice's link for everyone who received it. Whoever
+  may delete the notice may remove its card, and it does not come back.
+  """
+  def dismiss_link_preview(%Profile{} = profile, %Group{} = group, %Access{} = access, notice_id)
+      when is_integer(notice_id) do
+    with %GroupNotice{} = notice <- get_group_notice(group, notice_id),
+         true <- can_delete?(profile, access, group, notice) do
+      query = from(n in GroupNotice, where: n.id == ^notice.id and not is_nil(n.link_preview))
+
+      case Repo.update_all(query, set: [link_preview: nil]) do
+        {1, _} -> tell_preview_changed(notice.id, group.id)
+        {0, _} -> :ok
+      end
+
+      {:ok, %{notice | link_preview: nil}}
     else
       nil -> {:error, :not_found}
       false -> {:error, :not_allowed}

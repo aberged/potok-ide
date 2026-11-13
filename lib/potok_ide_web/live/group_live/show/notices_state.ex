@@ -190,6 +190,18 @@ defmodule PotokIdeWeb.GroupLive.Show.NoticesState do
     end
   end
 
+  def handle_event("notice_dismiss_preview", %{"id" => id}, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    with %{} <- profile,
+         id when is_integer(id) <- parse_id(id),
+         {:ok, notice} <- Notices.dismiss_link_preview(profile, group, access, id) do
+      {:noreply, stream_insert(socket, :group_notices, notice, update_only: true)}
+    else
+      _refused -> {:noreply, put_flash(socket, :error, gettext("Could not remove the preview."))}
+    end
+  end
+
   def handle_event("notice_load_more", _params, socket) do
     %{entries: notices, more?: more?} =
       Notices.list_group_notices(socket.assigns.group,
@@ -219,6 +231,19 @@ defmodule PotokIdeWeb.GroupLive.Show.NoticesState do
        socket
        |> assign(:notices_empty?, false)
        |> stream_insert(:group_notices, notice, at: 0)}
+    else
+      _elsewhere -> {:noreply, socket}
+    end
+  end
+
+  # The card of a notice's link came or was removed. Only a notice on screen
+  # changes: the tab reads the others with their cards when it opens.
+  def handle_info({:preview_changed, notice_id}, socket) do
+    %{group: group, active_tab: active_tab} = socket.assigns
+
+    with "notices" <- active_tab,
+         %GroupNotice{} = notice <- Notices.get_group_notice(group, notice_id) do
+      {:noreply, stream_insert(socket, :group_notices, notice, update_only: true)}
     else
       _elsewhere -> {:noreply, socket}
     end

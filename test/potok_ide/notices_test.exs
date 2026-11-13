@@ -4,6 +4,7 @@ defmodule PotokIde.NoticesTest do
   import PotokIde.EventsFixtures
 
   alias PotokIde.CountMark
+  alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Notices.{GroupFollow, GroupNotice, GroupNoticeReceipt, Notifications}
   alias PotokIde.Repo
@@ -49,6 +50,18 @@ defmodule PotokIde.NoticesTest do
     end
 
     notice
+  end
+
+  # A linked page with an Open Graph title naming its path.
+  defp og_page(conn) do
+    conn
+    |> Plug.Conn.put_resp_content_type("text/html")
+    |> Plug.Conn.send_resp(200, """
+    <html><head>
+      <meta property="og:title" content="Page #{conn.request_path}">
+      <meta property="og:image" content="https://cdn.example.com/card.png">
+    </head></html>
+    """)
   end
 
   defp give_send_role!(owner, group, member) do
@@ -311,6 +324,161 @@ defmodule PotokIde.NoticesTest do
       assert Repo.aggregate(GroupFollow, :count) == 0
       assert Repo.aggregate(GroupNotice, :count) == 0
       assert Repo.aggregate(GroupNoticeReceipt, :count) == 0
+    end
+  end
+
+  describe "link previews" do
+    # Every page answers with a title naming its path, and tells the test.
+    setup do
+      test_pid = self()
+
+      Req.Test.stub(LinkPreviews, fn conn ->
+        send(test_pid, {:fetched, conn.request_path})
+        og_page(conn)
+      end)
+
+      :ok
+    end
+
+    test "the first link's card comes once the notice is out, and its pages hear of it", ctx do
+      {:ok, _follow} = Notices.follow(ctx.outsider, ctx.public)
+      Notices.subscribe(ctx.outsider)
+      Notices.subscribe_group(ctx.public)
+
+      notice =
+        send!(ctx.owner, ctx.public, "Read https://example.com/one and https://example.com/two")
+
+      assert_received {:fetched, "/one"}
+      refute_received {:fetched, "/two"}
+
+      outsider_id = ctx.outsider.id
+      public_id = ctx.public.id
+      notice_id = notice.id
+      assert_received {:notices, {:preview_changed, ^outsider_id, ^notice_id, ^public_id}}
+      assert_received {:group_notices, {:preview_changed, ^notice_id}}
+
+      assert %{
+               "url" => "https://example.com/one",
+               "title" => "Page /one",
+               "image_url" => "https://cdn.example.com/card.png"
+             } = Repo.get!(GroupNotice, notice.id).link_preview
+
+      assert %{entries: [%{notice: %GroupNotice{link_preview: %{"title" => "Page /one"}}}]} =
+               Notices.list_received(ctx.outsider)
+    end
+
+    test "no card without a link, nor of a page that cannot be read", ctx do
+      Notices.subscribe_group(ctx.public)
+
+      plain = send!(ctx.owner, ctx.public, "No link here.")
+      refute_received {:fetched, _path}
+
+      Req.Test.stub(LinkPreviews, fn conn -> Plug.Conn.send_resp(conn, 404, "gone") end)
+      gone = send!(ctx.owner, ctx.public, "https://example.com/gone")
+
+      refute_received {:group_notices, {:preview_changed, _notice_id}}
+      assert Repo.get!(GroupNotice, plain.id).link_preview == nil
+      assert Repo.get!(GroupNotice, gone.id).link_preview == nil
+    end
+
+    test "a link to Potok gets what a guest would see, so a private group gets none", ctx do
+      private_url = PotokIdeWeb.Endpoint.url() <> "/groups/#{ctx.private.id}"
+      public_url = PotokIdeWeb.Endpoint.url() <> "/groups/#{ctx.public.id}"
+
+      hidden = send!(ctx.owner, ctx.public, "Inside: #{private_url}")
+      shown = send!(ctx.owner, ctx.public, "Here: #{public_url}")
+
+      refute_received {:fetched, _path}
+      assert Repo.get!(GroupNotice, hidden.id).link_preview == nil
+
+      assert %{"site_name" => "Potok", "title" => title, "url" => ^public_url} =
+               Repo.get!(GroupNotice, shown.id).link_preview
+
+      assert title == ctx.public.name
+    end
+
+    test "a notice deleted before its page answers takes no card", ctx do
+      Notices.subscribe_group(ctx.public)
+
+      Req.Test.stub(LinkPreviews, fn conn ->
+        Repo.delete_all(GroupNotice)
+        og_page(conn)
+      end)
+
+      assert {:ok, _notice} =
+               Notices.send_notice(ctx.owner, ctx.public, access(ctx.owner, ctx.public), %{
+                 "body" => "https://example.com/late"
+               })
+
+      refute_received {:group_notices, {:preview_changed, _notice_id}}
+      assert Repo.aggregate(GroupNotice, :count) == 0
+    end
+
+    test "whoever may delete the notice removes its card for everyone, once", ctx do
+      {:ok, _follow} = Notices.follow(ctx.outsider, ctx.public)
+      notice = send!(ctx.owner, ctx.public, "https://example.com/card")
+      assert %{"title" => "Page /card"} = Repo.get!(GroupNotice, notice.id).link_preview
+      Notices.subscribe(ctx.outsider)
+      Notices.subscribe_group(ctx.public)
+
+      assert {:error, :not_allowed} =
+               Notices.dismiss_link_preview(
+                 ctx.member,
+                 ctx.public,
+                 access(ctx.member, ctx.public),
+                 notice.id
+               )
+
+      assert {:error, :not_found} =
+               Notices.dismiss_link_preview(
+                 ctx.owner,
+                 ctx.private,
+                 access(ctx.owner, ctx.private),
+                 notice.id
+               )
+
+      refute_received {:group_notices, {:preview_changed, _notice_id}}
+
+      assert {:ok, %GroupNotice{link_preview: nil}} =
+               Notices.dismiss_link_preview(
+                 ctx.owner,
+                 ctx.public,
+                 access(ctx.owner, ctx.public),
+                 notice.id
+               )
+
+      outsider_id = ctx.outsider.id
+      public_id = ctx.public.id
+      notice_id = notice.id
+      assert_received {:notices, {:preview_changed, ^outsider_id, ^notice_id, ^public_id}}
+      assert_received {:group_notices, {:preview_changed, ^notice_id}}
+      assert Repo.get!(GroupNotice, notice.id).link_preview == nil
+
+      # Gone is gone: removing it again tells nobody.
+      assert {:ok, %GroupNotice{link_preview: nil}} =
+               Notices.dismiss_link_preview(
+                 ctx.owner,
+                 ctx.public,
+                 access(ctx.owner, ctx.public),
+                 notice.id
+               )
+
+      refute_received {:group_notices, {:preview_changed, _notice_id}}
+    end
+
+    test "a sender removes the card of another sender's notice", ctx do
+      give_send_role!(ctx.owner, ctx.public, ctx.member)
+      notice = send!(ctx.owner, ctx.public, "https://example.com/card")
+
+      assert {:ok, %GroupNotice{link_preview: nil}} =
+               Notices.dismiss_link_preview(
+                 ctx.member,
+                 ctx.public,
+                 access(ctx.member, ctx.public),
+                 notice.id
+               )
+
+      assert Repo.get!(GroupNotice, notice.id).link_preview == nil
     end
   end
 

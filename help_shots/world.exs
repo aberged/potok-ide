@@ -39,6 +39,7 @@ defmodule HelpShots.World do
 
     mz = local_community(p, root, files_dir)
     news = news(p, root)
+    assembly_notice(p, mz)
     coop = coop(p, root)
     shared = shared_profile(people)
     building = building(p, root, files_dir, shared)
@@ -245,17 +246,12 @@ defmodule HelpShots.World do
     Tags.add_tag(ana, :group, map.id, "komunalno", :public)
     Tags.add_tag(ana, :group, zbor.id, "zbor", :public)
 
-    # The council's notices to whoever follows the community.
+    # Whoever follows the community gets the council's notice of the assembly,
+    # sent after the news feed's own notice, so it is the newest
+    # (`assembly_notice/2`).
     for name <- ~w(ana stefan milica nikola tamara luka sara) do
       {:ok, _} = Notices.follow(p.(name), mz)
     end
-
-    send_notice(p.("marko"), mz, """
-    Od ponedeljka do srede nema vode u ulicama Lipa i Breza, od 8 do 14 časova, zbog \
-    radova na vodovodu.
-    """)
-
-    send_notice(ana, mz, "Zbor građana je u četvrtak u 18 časova u Domu kulture. Dođite!")
 
     post(p.("marko"), notices, "Javna rasveta u parku biće popravljena do petka.", ago(1, 9, 5))
 
@@ -622,6 +618,20 @@ defmodule HelpShots.World do
     for {name, emoji} <- reactions do
       {:ok, _} = Social.toggle_value_reaction(p.(name), group, value, emoji)
     end
+  end
+
+  # The notice of the assembly, newest of all, so it tops Ana's notices with the
+  # card of the public event it links: a link to Potok, read from the database.
+  # Marko sends it, as a notice never reaches its author. Its day is the event's,
+  # as the card shows the date.
+  defp assembly_notice(p, mz) do
+    url = "#{PotokIdeWeb.Endpoint.url()}/groups/#{mz.zbor.id}/calendar?event=#{mz.event.id}"
+    date = mz.event.starts_at |> DateTime.shift_zone!(@zone) |> DateTime.to_date()
+    day = Enum.at(~w(ponedeljak utorak sredu četvrtak petak subotu nedelju), Date.day_of_week(date) - 1)
+
+    send_notice(p.("marko"), mz.root, """
+    Zbor građana je u #{day} u 18 časova u Domu kulture. Dođite! [Zbor u kalendaru](#{url})
+    """)
   end
 
   defp send_notice(author, group, body) do

@@ -1,9 +1,10 @@
 defmodule PotokIde.LinkPreviews do
   @moduledoc """
-  Open Graph previews of links in chat values. The page of a value's first
-  link is fetched (`PotokIde.LinkPreviews.HTTP`), and its title,
-  description, image and site name are kept on the value
-  (`Value.link_preview`). Images are shown straight from the linked site.
+  Open Graph previews of links in chat values and group notices. The page of
+  the first link is fetched (`PotokIde.LinkPreviews.HTTP`), and its title,
+  description, image and site name are kept on the value or the notice
+  (`Value.link_preview`, `GroupNotice.link_preview`). Images are shown
+  straight from the linked site.
 
   Results are cached per URL, failures too, so a link posted again is not
   fetched again for a while.
@@ -26,6 +27,24 @@ defmodule PotokIde.LinkPreviews do
 
   @doc "True when previews are fetched off the caller (false in tests)."
   def async?, do: config(:async, true)
+
+  @doc """
+  Runs `fun`, which fetches a preview and keeps it, off the caller under
+  `PotokIde.LinkPreviews.Fetchers`, or on the caller while `async?/0` is
+  false. Previews are a nicety: when three are being fetched already, `fun`
+  does not run, rather than adding another page download to memory.
+  """
+  def run(fun) when is_function(fun, 0) do
+    if async?() do
+      case Task.Supervisor.start_child(PotokIde.LinkPreviews.Fetchers, fun) do
+        {:ok, _pid} -> :ok
+        {:error, :max_children} -> :ok
+      end
+    else
+      fun.()
+      :ok
+    end
+  end
 
   @doc """
   The first http(s) link of a value's content, or nil. Links in code blocks

@@ -344,26 +344,35 @@ defmodule PotokIdeWeb.PublicPreviewTest do
   end
 
   describe "a link into an app" do
+    # A feed opens on its app, as one made from the preset does.
     setup %{owner: owner} do
       app =
         public_group!(owner, %{
           "name" => "Vesti",
           "description" => "<p>app</p>",
           "description_format" => :html,
-          "uses_api" => true
+          "uses_api" => true,
+          "home_page" => :description
         })
 
       %{app: app}
     end
 
-    defp story!(owner, app, attrs) do
+    defp story!(owner, app, attrs, feed_attrs \\ %{}) do
       {:ok, feed} =
-        Social.create_group(owner, app, %{
-          "name" => ".feed",
-          "description" => "",
-          "description_format" => :markdown,
-          "is_public" => true
-        })
+        Social.create_group(
+          owner,
+          app,
+          Map.merge(
+            %{
+              "name" => ".feed",
+              "description" => "",
+              "description_format" => :markdown,
+              "is_public" => true
+            },
+            feed_attrs
+          )
+        )
 
       {:ok, story} =
         Social.create_group(
@@ -391,6 +400,90 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       assert og(document, "title") == "Most"
       assert og(document, "description") == "Most je otvoren."
       assert og(document, "url") == PotokIdeWeb.Endpoint.url() <> path
+      assert og(document, "site_name") == "Vesti · Potok"
+
+      assert og(document, "image") =~
+               PotokIdeWeb.Endpoint.url() <> "/cards/group/#{app.id}/#{story.id}.jpg?v="
+    end
+
+    # The address the app writes on the page (`linkGroup`), where the group
+    # opens on the app, so it names no tab.
+    test "the address of the page counts as the shared link", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+
+      document = ctx.conn |> get(~p"/groups/#{ctx.app.id}?#{[at: story.id]}") |> document()
+
+      assert og(document, "title") == "Most"
+      assert og(document, "description") == "Most je otvoren."
+      assert og(document, "site_name") == "Vesti · Potok"
+      assert og(document, "image") =~ "/cards/group/#{ctx.app.id}/#{story.id}.jpg?v="
+
+      assert og(document, "url") ==
+               url(~p"/groups/#{ctx.app.id}/group_home?#{[at: story.id]}")
+    end
+
+    test "the address of the page counts only where the group opens on the app", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+      {:ok, app} = Social.update_group(ctx.owner, ctx.app, %{"home_page" => :chat})
+
+      bare = ctx.conn |> get(~p"/groups/#{app.id}?#{[at: story.id]}") |> document()
+      assert og(bare, "title") == "Vesti"
+      assert og(bare, "site_name") == "Potok"
+
+      tab = ctx.conn |> get(~p"/groups/#{app.id}/group_home?#{[at: story.id]}") |> document()
+      assert og(tab, "title") == "Most"
+    end
+
+    test "names only a group the app reaches, never another", ctx do
+      other = public_group!(ctx.owner, %{"name" => "Druga grupa"})
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+
+      deeper =
+        group_with_members!(ctx.owner, [], %{
+          :parent => story,
+          "name" => "Ispod priče",
+          "is_public" => true
+        })
+
+      hidden =
+        story!(ctx.owner, ctx.app, %{"is_public" => true}, %{
+          "name" => ".skriveno",
+          "is_public" => false
+        })
+
+      for at <- [other.id, deeper.id, hidden.id, ctx.app.id] do
+        document = ctx.conn |> get(~p"/groups/#{ctx.app.id}?#{[at: at]}") |> document()
+
+        assert og(document, "title") == "Vesti"
+        assert og(document, "site_name") == "Potok"
+        refute og(document, "image") =~ "/cards/group/#{ctx.app.id}/"
+      end
+    end
+
+    test "a message's card says what the tags say", ctx do
+      story = story!(ctx.owner, ctx.app, %{"is_public" => true})
+      url = url(~p"/groups/#{ctx.app.id}?#{[at: story.id]}")
+      document = ctx.conn |> get(~p"/groups/#{ctx.app.id}?#{[at: story.id]}") |> document()
+
+      assert {:ok, preview} = PotokIdeWeb.PublicPreview.link_preview(url)
+      assert preview["url"] == url
+      assert preview["title"] == og(document, "title")
+      assert preview["description"] == og(document, "description")
+      assert preview["site_name"] == og(document, "site_name")
+      assert preview["image_url"] == og(document, "image")
+    end
+
+    test "cuts a long name of the app in the line over the title", ctx do
+      {:ok, app} =
+        Social.update_group(ctx.owner, ctx.app, %{"name" => String.duplicate("Vesti ", 12)})
+
+      story = story!(ctx.owner, app, %{"is_public" => true})
+
+      site_name =
+        ctx.conn |> get(~p"/groups/#{app.id}?#{[at: story.id]}") |> document() |> og("site_name")
+
+      assert String.ends_with?(site_name, "… · Potok")
+      assert String.length(site_name) <= 40 + String.length(" · Potok")
     end
 
     test "keeps the alternative description in the address of the card", ctx do
@@ -420,6 +513,7 @@ defmodule PotokIdeWeb.PublicPreviewTest do
 
       assert og(document, "title") == "Vesti"
       assert og(document, "url") == url(~p"/groups/#{ctx.app.id}")
+      assert og(document, "site_name") == "Potok"
       refute document |> LazyHTML.to_html() |> String.contains?("Most")
     end
 

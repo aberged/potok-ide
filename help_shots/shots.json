@@ -260,7 +260,10 @@
   {
     "name": "obavestenja",
     "as": "ana",
-    "url": "/notices"
+    "url": "/notices",
+    "steps": [
+      { "wait": "[id^='notice-link-preview-image-'][style], [id^='notice-link-preview-image-'][data-shape]" }
+    ]
   },
   {
     "name": "podesavanja-push",
@@ -395,7 +398,7 @@
     "as": "ana",
     "url": "/groups/{groups.mz}/notices",
     "steps": [
-      { "type": ["#group-notice-form textarea", "Zbor je u četvrtak u 18 časova u Domu kulture. Na dnevnom redu su ležeći policajci u Ulici lipa."] },
+      { "type": ["#group-notice-form textarea", "Na dnevnom redu zbora su i ležeći policajci u Ulici lipa. Ponesite predloge!"] },
       { "pause": 500 }
     ]
   },

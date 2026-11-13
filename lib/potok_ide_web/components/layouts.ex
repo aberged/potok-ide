@@ -398,9 +398,14 @@ defmodule PotokIdeWeb.Layouts do
   attr :locale, :string, required: true
   attr :noindex, :boolean, default: false, doc: "keeps the page out of search engines"
 
+  attr :site_name, :string,
+    default: nil,
+    doc: "the line over the title, such as an app's name for a link into it; Potok without one"
+
   def social_meta(assigns) do
     assigns =
       assigns
+      |> assign(:site_name, assigns.site_name || "Potok")
       |> assign(:title, assigns.title || "Potok · " <> gettext("Society for society"))
       |> assign(
         :description,
@@ -414,7 +419,7 @@ defmodule PotokIdeWeb.Layouts do
     ~H"""
     <meta name="description" content={@description} />
     <meta :if={@noindex} name="robots" content="noindex" />
-    <meta property="og:site_name" content="Potok" />
+    <meta property="og:site_name" content={@site_name} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content={@url} />
     <meta property="og:title" content={@title} />

@@ -1885,7 +1885,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <.link_preview_card
           :if={@link_preview}
-          value_id={@value.id}
+          item_id={@value.id}
           preview={@link_preview}
           mine={@mine?}
           can_dismiss={@mine? and !@editing?}
@@ -2084,24 +2084,31 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     end
   end
 
-  attr :value_id, :integer, required: true
+  attr :item_id, :integer, required: true, doc: "the id of the value or notice, in the DOM ids"
+  attr :id_prefix, :string, default: "value-link-preview"
   attr :preview, :map, required: true
   attr :mine, :boolean, default: false
   attr :can_dismiss, :boolean, default: false
+  attr :dismiss_event, :string, default: "dismiss_link_preview"
   attr :class, :any, default: nil
 
-  # The image comes straight from the linked site, without a referrer.
-  # `.LinkPreviewImage` hides one that fails to load, fits a banner to the
-  # image's own proportions and turns a small or squarish image (a logo)
-  # into a thumbnail beside the text; re-renders keep what it set.
-  defp link_preview_card(assigns) do
+  @doc """
+  The card of a link's page (`PotokIde.LinkPreviews`), under a chat value or
+  a notice. Its × sends `dismiss_event` with the item's id.
+
+  The image comes straight from the linked site, without a referrer.
+  `.LinkPreviewImage` hides one that fails to load, fits a banner to the
+  image's own proportions and turns a small or squarish image (a logo) into
+  a thumbnail beside the text; re-renders keep what it set.
+  """
+  def link_preview_card(assigns) do
     ~H"""
     <div
-      id={"value-link-preview-#{@value_id}"}
+      id={"#{@id_prefix}-#{@item_id}"}
       class={["group/preview relative w-80 max-w-full sm:w-96", @class]}
     >
       <a
-        id={"value-link-preview-link-#{@value_id}"}
+        id={"#{@id_prefix}-link-#{@item_id}"}
         href={@preview["url"]}
         target={!LinkPreviews.own_url?(@preview["url"]) && "_blank"}
         rel="noopener noreferrer nofollow"
@@ -2117,7 +2124,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       >
         <img
           :if={@preview["image_url"]}
-          id={"value-link-preview-image-#{@value_id}"}
+          id={"#{@id_prefix}-image-#{@item_id}"}
           phx-hook=".LinkPreviewImage"
           phx-mounted={JS.ignore_attributes(["hidden", "data-shape", "style"])}
           src={@preview["image_url"]}
@@ -2148,10 +2155,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <%!-- Outside the link, so removing the preview does not open it. Revealed on hover where there is one. --%>
       <button
         :if={@can_dismiss}
-        id={"value-link-preview-dismiss-#{@value_id}"}
+        id={"#{@id_prefix}-dismiss-#{@item_id}"}
         type="button"
-        phx-click="dismiss_link_preview"
-        phx-value-id={@value_id}
+        phx-click={@dismiss_event}
+        phx-value-id={@item_id}
         title={gettext("Remove preview")}
         aria-label={gettext("Remove preview")}
         class="absolute top-2 right-2 inline-flex size-7 items-center justify-center rounded-full bg-base-100/85 text-base-content/70 shadow-sm backdrop-blur transition duration-150 ease-out hover:bg-base-100 hover:text-base-content active:scale-95 focus-visible:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover/preview:opacity-100 phx-click-loading:pointer-events-none phx-click-loading:animate-pulse"

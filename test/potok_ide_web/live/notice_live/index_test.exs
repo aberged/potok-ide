@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.NoticeLive.IndexTest do
   import PotokIde.EventsFixtures
 
   alias PotokIde.Accounts
+  alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Notices.{GroupNotice, GroupNoticeReceipt}
   alias PotokIde.Repo
@@ -41,6 +42,20 @@ defmodule PotokIdeWeb.NoticeLive.IndexTest do
     access = Social.get_group_access(author, group)
     {:ok, notice} = Notices.send_notice(author, group, access, %{"body" => body})
     notice
+  end
+
+  # Every linked page answers with the same Open Graph card.
+  defp stub_linked_page! do
+    Req.Test.stub(LinkPreviews, fn conn ->
+      conn
+      |> Plug.Conn.put_resp_content_type("text/html")
+      |> Plug.Conn.send_resp(200, """
+      <html><head>
+        <meta property="og:title" content="Example article">
+        <meta property="og:image" content="https://cdn.example.com/card.png">
+      </head></html>
+      """)
+    end)
   end
 
   test "asks for a profile first", %{conn: conn} do
@@ -133,6 +148,85 @@ defmodule PotokIdeWeb.NoticeLive.IndexTest do
       refute has_element?(view, "#notices-load-more")
     end
 
+    test "a link's card comes to the open page, and the new notice keeps its mark", ctx do
+      stub_linked_page!()
+      view = open(ctx.conn, ctx.reader_account)
+
+      notice = send!(ctx.owner, ctx.group, "Read https://example.com/article")
+
+      assert has_element?(
+               view,
+               "#notice-#{notice.id}[data-unread='true'] #notice-link-preview-#{notice.id}",
+               "Example article"
+             )
+
+      assert has_element?(
+               view,
+               "#notice-link-preview-link-#{notice.id}[href='https://example.com/article'][target=_blank]"
+             )
+
+      refute has_element?(view, "#notice-link-preview-dismiss-#{notice.id}")
+    end
+
+    test "a card that comes later keeps the mark of a notice unread on opening", ctx do
+      notice =
+        Repo.insert!(%GroupNotice{
+          group_id: ctx.group.id,
+          creator_id: ctx.owner.id,
+          body: "https://example.com/article"
+        })
+
+      Repo.insert!(%GroupNoticeReceipt{notice_id: notice.id, profile_id: ctx.reader.id})
+
+      view = open(ctx.conn, ctx.reader_account)
+      assert has_element?(view, "#notice-#{notice.id}[data-unread='true']")
+      refute has_element?(view, "#notice-link-preview-#{notice.id}")
+
+      Repo.update!(
+        Ecto.Changeset.change(notice,
+          link_preview: %{"url" => "https://example.com/article", "title" => "Example article"}
+        )
+      )
+
+      send(view.pid, {:notices, {:preview_changed, ctx.reader.id, notice.id, ctx.group.id}})
+
+      assert has_element?(
+               view,
+               "#notice-#{notice.id}[data-unread='true'] #notice-link-preview-#{notice.id}",
+               "Example article"
+             )
+    end
+
+    test "a card for a notice the page does not show leaves it out", ctx do
+      view = open(ctx.conn, ctx.reader_account)
+
+      notice =
+        Repo.insert!(%GroupNotice{
+          group_id: ctx.group.id,
+          creator_id: ctx.owner.id,
+          body: "https://example.com/article",
+          link_preview: %{"url" => "https://example.com/article", "title" => "Example article"}
+        })
+
+      Repo.insert!(%GroupNoticeReceipt{notice_id: notice.id, profile_id: ctx.reader.id})
+      send(view.pid, {:notices, {:preview_changed, ctx.reader.id, notice.id, ctx.group.id}})
+
+      refute has_element?(view, "#notice-#{notice.id}")
+    end
+
+    test "a card removed on the group's page leaves this one", ctx do
+      stub_linked_page!()
+      notice = send!(ctx.owner, ctx.group, "https://example.com/article")
+      view = open(ctx.conn, ctx.reader_account)
+      assert has_element?(view, "#notice-link-preview-#{notice.id}")
+
+      access = Social.get_group_access(ctx.owner, ctx.group)
+      {:ok, _notice} = Notices.dismiss_link_preview(ctx.owner, ctx.group, access, notice.id)
+
+      refute has_element?(view, "#notice-link-preview-#{notice.id}")
+      assert has_element?(view, "#notice-#{notice.id}")
+    end
+
     test "says so when there are none", ctx do
       {_account, _profile} = account_with_profile!("nl-empty")
       {empty_account, _empty} = account_with_profile!("nl-empty2")
@@ -197,6 +291,7 @@ defmodule PotokIdeWeb.NoticeLive.IndexTest do
             {:received, id, 1, ctx.group.id},
             {:read, id},
             {:deleted, id, 1, ctx.group.id, true},
+            {:preview_changed, id, 1, ctx.group.id},
             {:follow_changed, id, ctx.group.id},
             {:push_changed, id, true}
           ] do

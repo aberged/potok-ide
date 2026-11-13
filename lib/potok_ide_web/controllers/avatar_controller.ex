@@ -4,6 +4,7 @@ defmodule PotokIdeWeb.AvatarController do
   require Logger
 
   alias PotokIde.ImageMagick
+  alias PotokIde.Initials
   alias PotokIde.{RenderCache, Renderers}
   alias PotokIde.Social
   alias PotokIdeWeb.Avatars
@@ -136,17 +137,6 @@ defmodule PotokIdeWeb.AvatarController do
     _ -> :error
   end
 
-  @avatar_colors [
-    {"#4f46e5", "#e0e7ff"},
-    {"#0891b2", "#cffafe"},
-    {"#059669", "#d1fae5"},
-    {"#d97706", "#fef3c7"},
-    {"#dc2626", "#fee2e2"},
-    {"#7c3aed", "#ede9fe"},
-    {"#db2777", "#fce7f3"},
-    {"#ea580c", "#ffedd5"}
-  ]
-
   # When no PNG could be drawn: Potok's icon, which every push service shows.
   defp fallback_png(username) do
     case default_avatar_png() do
@@ -158,24 +148,12 @@ defmodule PotokIdeWeb.AvatarController do
   defp initials_svg(username) do
     initials =
       username
-      |> to_string()
-      |> String.split(~r/[\s_-]+/, trim: true)
-      |> Enum.take(2)
-      |> Enum.map_join(fn part ->
-        part
-        |> String.first()
-        |> to_string()
-      end)
-      |> case do
-        "" -> "?"
-        initials -> String.upcase(initials)
-      end
+      |> Initials.of()
       # Group names may hold any character.
       |> Phoenix.HTML.html_escape()
       |> Phoenix.HTML.safe_to_string()
 
-    color_index = :erlang.phash2(username, length(@avatar_colors))
-    {bg_color, text_color} = Enum.at(@avatar_colors, color_index)
+    {bg_color, text_color} = Initials.colors(username)
 
     """
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">

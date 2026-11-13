@@ -9,6 +9,12 @@ defmodule PotokIde.LinkCards do
   never its group, which may be private. The parts are in `priv/cards`, made by
   `build.sh` there.
 
+  A group a link into an app names (`linked_card/2`, such as a story of a
+  feed) also carries the app in a pill like Potok's own: the app's picture in
+  a circle, or its initials on its colour as the app shows them, and its name.
+  The pill stands top right, across from Potok's mark, or bottom left over a
+  wide photo, across from Potok's pill.
+
   `version/1` is a hash of everything that is drawn. Sites keep a picture by its
   address, so the address changes with the content, and as it comes from the
   data and not from what is asked for, nobody can ask for endless new drawings.
@@ -19,6 +25,7 @@ defmodule PotokIde.LinkCards do
 
   alias PotokIde.Events.{Event, Format, Recurrence}
   alias PotokIde.ImageMagick
+  alias PotokIde.Initials
   alias PotokIde.LinkPreviews.HTTP
   alias PotokIde.PlainText
   alias PotokIde.{RenderCache, Renderers}
@@ -48,6 +55,20 @@ defmodule PotokIde.LinkCards do
 
   @max_title 90
   @max_line 60
+  @max_label 24
+
+  # The app's pill copies Potok's own (`priv/cards/build.sh`): its height,
+  # round ends, colour and type, with the app's picture where Potok's mark is.
+  # Raise `@pill_design` when its look changes: only the cards with a pill are
+  # drawn again.
+  @pill_design 1
+  @pill_height 56
+  @pill_color "#0a47a3cc"
+  @pill_text 22
+  @pill_avatar 40
+  # Wider names are drawn smaller. The widest pill stays clear of the tile, the
+  # mark and the title on the plain layouts, and of Potok's pill over a photo.
+  @max_pill_text 340
   # Text sizes by length. ImageMagick can fit a text to a box itself, but that
   # took over 15 s.
   @plain_sizes [{14, 96}, {28, 80}, {56, 64}, {@max_title, 48}]
@@ -65,6 +86,32 @@ defmodule PotokIde.LinkCards do
       title: title(group.name),
       picture: Social.group_picture_hash(group.id)
     }
+  end
+
+  @doc """
+  What the card of `group` shows where a link into the app of `app` names it
+  (`PotokIdeWeb.PublicPreview.linked_groups/2`): the group's card and the
+  app's pill. The group's plain card when nothing of the app's name can be
+  drawn. The initials and their colours are the app's avatar's
+  (`PotokIde.Initials`), so the pill looks like the group in Potok.
+  """
+  def linked_card(%Group{} = group, %Group{} = app) do
+    case app.name |> drawable() |> cut(@max_label) do
+      "" ->
+        group_card(group)
+
+      label ->
+        group
+        |> group_card()
+        |> Map.put(:app, %{
+          id: app.id,
+          name: label,
+          picture: Social.group_picture_hash(app.id),
+          initials: app.name |> drawable() |> Initials.of(),
+          colors: Initials.colors(app.name),
+          look: @pill_design
+        })
+    end
   end
 
   @doc """
@@ -133,17 +180,17 @@ defmodule PotokIde.LinkCards do
     if String.starts_with?(text, "@"), do: "\\" <> text, else: text
   end
 
-  # The picture comes first and off the turn, as a slow server should not hold
+  # The pictures come first and off the turn, as a slow server should not hold
   # up other cards.
   defp draw(card) do
-    picture = read_picture(card)
+    pictures = read_pictures(card)
 
     paint =
       :potok_ide
       |> Application.get_env(__MODULE__, [])
       |> Keyword.get(:paint, &paint/2)
 
-    Renderers.run(fn -> paint.(card, picture) end)
+    Renderers.run(fn -> paint.(card, pictures) end)
   rescue
     exception ->
       Logger.warning("Could not draw a link card: #{Exception.message(exception)}")
@@ -154,23 +201,59 @@ defmodule PotokIde.LinkCards do
       :error
   end
 
-  # nil for a group without a picture a card can show, `:unreadable` for one that
-  # could not be had, otherwise `%{bytes: _, type: _}`.
-  defp read_picture(%{kind: :group, id: id, picture: hash}) when is_binary(hash) do
+  # The group's picture and the picture of the app in its pill, each nil for
+  # none a card can show, `:unreadable` for one that could not be had, otherwise
+  # `%{bytes: _, type: _}`. The addresses are read here, where the database
+  # is, and the downloads from other servers run at the same time.
+  defp read_pictures(card) do
+    deadline = System.monotonic_time(:millisecond) + @download_timeout
+
+    [group, app] =
+      [card, card[:app]]
+      |> Enum.map(&(&1 |> picture_url() |> start_picture()))
+      |> Enum.map(&finish_picture(&1, deadline))
+
+    %{group: group, app: app}
+  end
+
+  # A group's card and the app in a pill both name a group by `id`.
+  defp picture_url(%{id: id, picture: hash}) when is_integer(id) and is_binary(hash) do
     case Social.get_group_avatar_source(id) do
-      %{picture_url: url} when is_binary(url) -> url |> String.trim() |> picture_at()
+      %{picture_url: url} when is_binary(url) -> String.trim(url)
       _ -> nil
     end
   end
 
-  defp read_picture(_card), do: nil
+  defp picture_url(_part), do: nil
 
-  defp picture_at(url) do
+  defp start_picture(nil), do: nil
+
+  defp start_picture(url) do
     cond do
-      Regex.match?(@svg_picture, url) -> nil
-      String.starts_with?(url, "data:") -> url |> decode() |> typed()
-      String.starts_with?(url, ["http://", "https://"]) -> url |> download() |> typed()
-      true -> nil
+      Regex.match?(@svg_picture, url) ->
+        nil
+
+      String.starts_with?(url, "data:") ->
+        {:read, url |> decode() |> typed()}
+
+      String.starts_with?(url, ["http://", "https://"]) ->
+        {:download,
+         Task.Supervisor.async_nolink(PotokIde.TaskSupervisor, fn -> HTTP.get_image(url) end)}
+
+      true ->
+        nil
+    end
+  end
+
+  defp finish_picture(nil, _deadline), do: nil
+  defp finish_picture({:read, picture}, _deadline), do: picture
+
+  defp finish_picture({:download, task}, deadline) do
+    timeout = max(deadline - System.monotonic_time(:millisecond), 0)
+
+    case Task.yield(task, timeout) || Task.shutdown(task, :brutal_kill) do
+      {:ok, {:ok, bytes}} -> typed({:ok, bytes})
+      _ -> :unreadable
     end
   end
 
@@ -179,15 +262,6 @@ defmodule PotokIde.LinkCards do
          {:ok, bytes} <- base64 |> String.trim() |> Base.decode64() do
       {:ok, bytes}
     else
-      _ -> :error
-    end
-  end
-
-  defp download(url) do
-    task = Task.Supervisor.async_nolink(PotokIde.TaskSupervisor, fn -> HTTP.get_image(url) end)
-
-    case Task.yield(task, @download_timeout) || Task.shutdown(task, :brutal_kill) do
-      {:ok, {:ok, bytes}} -> {:ok, bytes}
       _ -> :error
     end
   end
@@ -210,34 +284,55 @@ defmodule PotokIde.LinkCards do
   defp type(_bytes), do: nil
 
   # One process makes, uses and removes the files.
-  defp paint(card, picture) do
+  defp paint(card, pictures) do
     dir = Path.join(System.tmp_dir!(), "potok_card_#{System.unique_integer([:positive])}")
 
     try do
       File.mkdir_p!(dir)
-      paint(card, picture, dir)
+      paint(card, pictures, dir)
     after
       File.rm_rf(dir)
     end
   end
 
-  defp paint(card, nil, dir), do: finish(compose(card, nil, dir), :whole)
-  defp paint(card, :unreadable, dir), do: finish(compose(card, nil, dir), :partial)
+  # A card that has to do without a picture that could not be read is partial,
+  # and so is one a picture broke, drawn once more without any.
+  defp paint(card, %{group: group_picture, app: app_picture}, dir) do
+    {picture, picture_whole?} = measured(group_picture, dir, "picture")
+    {pill, pill_whole?} = pill(card, app_picture, dir)
+    pictured? = picture != nil or match?(%{avatar: {:picture, _source}}, pill)
 
-  defp paint(card, %{} = picture, dir) do
-    measured = measure(picture, dir)
+    case compose(card, picture, pill, dir) do
+      {:ok, jpeg} when picture_whole? and pill_whole? ->
+        {:ok, jpeg, :whole}
 
-    case measured && compose(card, measured, dir) do
-      {:ok, jpeg} -> {:ok, jpeg, :whole}
-      _broken -> finish(compose(card, nil, dir), :partial)
+      {:ok, jpeg} ->
+        {:ok, jpeg, :partial}
+
+      _broken when pictured? ->
+        finish(compose(card, nil, initials_pill(pill, card), dir), :partial)
+
+      _broken ->
+        :error
     end
   end
 
   defp finish({:ok, jpeg}, completeness), do: {:ok, jpeg, completeness}
   defp finish(_failed, _completeness), do: :error
 
-  defp measure(%{bytes: bytes, type: type}, dir) do
-    path = Path.join(dir, "picture")
+  # A picture to draw, measured, and whether it is all the card should show.
+  defp measured(nil, _dir, _name), do: {nil, true}
+  defp measured(:unreadable, _dir, _name), do: {nil, false}
+
+  defp measured(%{} = picture, dir, name) do
+    case measure(picture, dir, name) do
+      nil -> {nil, false}
+      measured -> {measured, true}
+    end
+  end
+
+  defp measure(%{bytes: bytes, type: type}, dir, name) do
+    path = Path.join(dir, name)
     source = "#{type}:#{path}[0]"
 
     with :ok <- File.write(path, bytes),
@@ -249,10 +344,53 @@ defmodule PotokIde.LinkCards do
     end
   end
 
-  defp compose(card, picture, dir) do
+  # The pill of the app a link went through, nil for a card without one, and
+  # whether it has all it should. Its name is drawn first, as the pill is as
+  # wide as the name.
+  defp pill(%{app: app}, app_picture, dir) do
+    {avatar, whole?} =
+      case measured(app_picture, dir, "app_picture") do
+        {%{source: source}, whole?} -> {{:picture, source}, whole?}
+        {nil, whole?} -> {{:initials, app.initials, app.colors}, whole?}
+      end
+
+    case pill_label(app.name, dir) do
+      {:ok, label, width} -> {%{label: label, width: width, avatar: avatar}, whole?}
+      :error -> {nil, false}
+    end
+  end
+
+  defp pill(_card, _app_picture, _dir), do: {nil, true}
+
+  defp initials_pill(%{} = pill, %{app: app}),
+    do: %{pill | avatar: {:initials, app.initials, app.colors}}
+
+  defp initials_pill(nil, _card), do: nil
+
+  # The name, drawn as the titles are and written next to the card's files,
+  # with the width of the pill that holds it: the circle and the space around.
+  defp pill_label(name, dir) do
+    path = Path.join(dir, "label.png")
+
+    args =
+      @limits ++
+        caption(name, 1000, @pill_text, "white") ++
+        ["-resize", "#{@max_pill_text}x>", "-write", "png:" <> path, "-format", "%w", "info:"]
+
+    # The width ends the output, after any warning on the way.
+    with {:ok, output} <- ImageMagick.run(args),
+         [_all, width] <- Regex.run(~r/(\d+)\s*\z/, output) do
+      {:ok, "png:" <> path, 8 + @pill_avatar + 10 + String.to_integer(width) + 24}
+    else
+      _ -> :error
+    end
+  end
+
+  defp compose(card, picture, pill, dir) do
     output = Path.join(dir, "card.jpg")
 
     with [_ | _] = layers <- layers(card, picture),
+         layers = with_pill(layers, pill, photo?(card, picture)),
          {:ok, _output} <- ImageMagick.run(@limits ++ layers ++ @jpeg ++ ["jpeg:" <> output]) do
       File.read(output)
     else
@@ -265,8 +403,47 @@ defmodule PotokIde.LinkCards do
     end
   end
 
+  defguardp is_wide_photo(width, height)
+            when width >= @photo_width and width / height >= @photo_ratio
+
+  defp photo?(%{kind: :group}, %{width: width, height: height}) when is_wide_photo(width, height),
+    do: true
+
+  defp photo?(_card, _picture), do: false
+
+  defp with_pill(layers, nil, _photo?), do: layers
+
+  # Over a photo, bottom left across from Potok's pill.
+  defp with_pill(layers, pill, true), do: over(layers, pill_layer(pill), 20, 556)
+
+  # Top right across from Potok's mark, at the same distance from the edge and
+  # with the same middle.
+  defp with_pill(layers, pill, false), do: over(layers, pill_layer(pill), 1160 - pill.width, 25)
+
+  defp pill_layer(%{label: label, width: width, avatar: avatar}) do
+    radius = div(@pill_height, 2)
+
+    (["(", "-size", "#{width}x#{@pill_height}", "xc:none", "-fill", @pill_color] ++
+       ["-draw", "roundrectangle 0,0 #{width - 1},#{@pill_height - 1} #{radius},#{radius}"])
+    |> over(avatar_layer(avatar), 8, div(@pill_height - @pill_avatar, 2))
+    |> Kernel.++(["(", label, ")", "-gravity", "west", "-geometry", "+58+0", "-composite", ")"])
+  end
+
+  # The app's picture in a circle, as the app shows a group, or its initials on
+  # its colour, as the app does for a group without a picture.
+  defp avatar_layer({:picture, source}), do: tile(source, @pill_avatar, div(@pill_avatar, 2))
+
+  defp avatar_layer({:initials, initials, {background, color}}) do
+    middle = (@pill_avatar - 1) / 2
+
+    (["(", "-size", "#{@pill_avatar}x#{@pill_avatar}", "xc:none", "-fill", background] ++
+       ["-draw", "circle #{middle},#{middle} #{middle},0"] ++
+       text(initials, @pill_avatar, @pill_avatar, 16, color))
+    |> Kernel.++(["-gravity", "center", "-composite", ")"])
+  end
+
   defp layers(%{kind: :group}, %{width: width, height: height} = picture)
-       when width >= @photo_width and width / height >= @photo_ratio do
+       when is_wide_photo(width, height) do
     (["-define", "jpeg:size=2400x1260", picture.source] ++
        ["-resize", "1200x630^", "-gravity", "center", "-extent", "1200x630"])
     |> over([part("pill.png")], 1030, 556)
@@ -321,15 +498,21 @@ defmodule PotokIde.LinkCards do
       ["-draw", "roundrectangle 0,0 209,209 44,44", ")"]
   end
 
-  # Centered from the middle, a caption goes by the font's height, which cuts off
-  # the marks on Č, Š and Ž in the first line, so it starts from the top and only
-  # then moves to the middle, by what is really drawn. The space between lines
-  # keeps those marks off the line above.
+  # Centered in a box of its own, by what is really drawn (`caption/4`).
   defp text(string, width, height, size, color \\ "white") do
-    ["(", "-background", "none", "-fill", color, "-font", part("Comfortaa-Bold.ttf")] ++
-      ["-pointsize", "#{size}", "-interline-spacing", "#{div(size, 5)}", "-gravity", "north"] ++
-      ["-size", "#{width}x", "caption:" <> escape(string), "-trim", "+repage"] ++
+    ["("] ++
+      caption(string, width, size, color) ++
       ["-gravity", "center", "-extent", "#{width}x#{height}", ")"]
+  end
+
+  # Centered from the middle, a caption goes by the font's height, which cuts off
+  # the marks on Č, Š and Ž in the first line, so it starts from the top and is
+  # trimmed to what is really drawn. The space between lines keeps those marks
+  # off the line above.
+  defp caption(string, width, size, color) do
+    ["-background", "none", "-fill", color, "-font", part("Comfortaa-Bold.ttf")] ++
+      ["-pointsize", "#{size}", "-interline-spacing", "#{div(size, 5)}", "-gravity", "north"] ++
+      ["-size", "#{width}x", "caption:" <> escape(string), "-trim", "+repage"]
   end
 
   defp size(text, sizes) do

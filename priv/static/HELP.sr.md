@@ -306,7 +306,7 @@ Tag stavljaš na grupe, profile, događaje, poruke i fajlove, dugmetom #. Javni 
 
 Zvono u zaglavlju grupe je praćenje. Jedan dodir i pratiš grupu. Posle toga zvono otvara izbor: push obaveštenja za ovu grupu, kartica Obaveštenja i prestanak praćenja. Početna strana, razgovori u četiri oka i niti se ne prate.
 
-Ko ima dozvolu, na kartici Obaveštenja šalje obaveštenje svim pratiocima, do 2000 znakova. Stranica Obaveštenja (zvono u gornjoj traci) ima primljena obaveštenja i spisak grupa koje pratiš. Na početnoj strani i na mapi grupa filter „Grupe koje pratim“ ostavlja samo njih.
+Ko ima dozvolu, na kartici Obaveštenja šalje obaveštenje svim pratiocima, do 2000 znakova. Link u obaveštenju dobija pregled kao u razgovoru, a ko sme da obriše obaveštenje, može da ukloni i pregled. Stranica Obaveštenja (zvono u gornjoj traci) ima primljena obaveštenja i spisak grupa koje pratiš. Na početnoj strani i na mapi grupa filter „Grupe koje pratim“ ostavlja samo njih.
 
 ![Praćenje grupe](pracenje) ![Primljena obaveštenja](obavestenja)
 
@@ -335,4 +335,4 @@ Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, �
 
 Tekst, link ili fajl iz druge aplikacije na telefonu podeliš u Potok. Izabereš grupu ili razgovor, a deljeno te čeka u polju za pisanje. Isto radi i Potok instaliran iz pregledača.
 
-Link ka javnoj grupi ili javnom događaju deliš iz menija grupe ili iz događaja. Van Potoka se vide naziv, slika i kratak deo opisa, a ceo opis kad ga grupa otvori i za posetioce bez naloga.
+Link ka javnoj grupi ili javnom događaju deliš iz menija grupe ili iz događaja. Van Potoka se vide naziv, slika i kratak deo opisa, a ceo opis kad ga grupa otvori i za posetioce bez naloga. Kad podeliš vest iz Feed-a ili nešto drugo iz aplikacije, kartica pokazuje baš to, a ime i slika aplikacije stoje u uglu. Isto važi i za adresu strane, koja prati vest na ekranu.

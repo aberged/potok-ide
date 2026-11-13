@@ -6,7 +6,8 @@ defmodule PotokIdeWeb.NoticeLive.Index do
   Opening the page reads every notice: the ones unread until then keep their
   mark while the page is open. One that arrives meanwhile comes on top, marked
   and already read, so the badge never counts it (`ProfileAuth` passes the
-  profile's `{:notices, _}` messages here).
+  profile's `{:notices, _}` messages here). The card of a notice's link comes
+  a moment after the notice, and the row keeps its mark.
   """
 
   use PotokIdeWeb, :live_view
@@ -100,6 +101,7 @@ defmodule PotokIdeWeb.NoticeLive.Index do
                 </:subtitle>
               </Components.group_identity>
               <NoticeComponents.notice_body body={row.notice.body} class="mt-2 px-1" />
+              <NoticeComponents.notice_link_preview notice={row.notice} class="mt-2.5" />
             </article>
           </div>
 
@@ -197,11 +199,22 @@ defmodule PotokIdeWeb.NoticeLive.Index do
       end
 
     socket
+    |> put_private(:new_notice_ids, MapSet.new())
+    |> mark_new(rows)
     |> assign(:notices_more?, more?)
     |> assign(:notices_oldest_id, oldest_id(rows))
     |> stream(:notices, rows, reset: true)
     |> load_followed(profile)
   end
+
+  # The notices this page shows as new. They are read by now, so a row read
+  # again when its card arrives would lose its mark without this.
+  defp mark_new(socket, rows) do
+    ids = for %{unread?: true, notice: %{id: id}} <- rows, do: id
+    put_private(socket, :new_notice_ids, MapSet.union(new_notice_ids(socket), MapSet.new(ids)))
+  end
+
+  defp new_notice_ids(socket), do: socket.private[:new_notice_ids] || MapSet.new()
 
   defp load_followed(socket, profile) do
     followed =
@@ -225,6 +238,7 @@ defmodule PotokIdeWeb.NoticeLive.Index do
 
     {:noreply,
      socket
+     |> mark_new(rows)
      |> assign(:notices_more?, more?)
      |> assign(:notices_oldest_id, oldest_id(rows) || socket.assigns.notices_oldest_id)
      |> stream(:notices, rows)}
@@ -266,7 +280,25 @@ defmodule PotokIdeWeb.NoticeLive.Index do
 
       row ->
         Notices.mark_read(profile, notice_id)
-        {:noreply, stream_insert(socket, :notices, row, at: 0)}
+
+        {:noreply,
+         socket
+         |> mark_new([row])
+         |> stream_insert(:notices, row, at: 0)}
+    end
+  end
+
+  # The card of a notice's link came or was removed. Only a row on the page
+  # changes: one that comes later is read with its card.
+  def handle_info({:notices, {:preview_changed, profile_id, notice_id, _group_id}}, socket)
+      when profile_id == socket.assigns.current_profile.id do
+    case Notices.get_received(socket.assigns.current_profile, notice_id) do
+      nil ->
+        {:noreply, socket}
+
+      row ->
+        row = %{row | unread?: row.unread? or MapSet.member?(new_notice_ids(socket), notice_id)}
+        {:noreply, stream_insert(socket, :notices, row, update_only: true)}
     end
   end
 

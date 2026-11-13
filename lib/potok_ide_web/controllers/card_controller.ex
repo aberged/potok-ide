@@ -28,6 +28,16 @@ defmodule PotokIdeWeb.CardController do
     end
   end
 
+  # The card of a group as a link into an app names it, with the app's pill:
+  # checked again on every request (`PublicPreview.linked_groups/2`), so it
+  # goes with the link's card when either group closes or moves.
+  def linked(conn, %{"app_id" => app_id, "file" => file}) do
+    case PublicPreview.linked_groups(app_id, String.replace_suffix(file, ".jpg", "")) do
+      {app, group} -> group |> LinkCards.linked_card(app) |> serve(conn)
+      nil -> send_resp(conn, 404, "")
+    end
+  end
+
   def event(conn, %{"file" => file}) do
     with id when is_integer(id) <- parse_file(file),
          %Event{} = event <- Events.get_public_event(id) do

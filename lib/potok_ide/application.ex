@@ -19,7 +19,7 @@ defmodule PotokIde.Application do
       # manage: link cards and PNG avatars are drawn one at a time.
       {Task.Supervisor, name: PotokIde.Renderers, max_children: 1},
       # A link preview reads up to 1 MB of a page; past three at once a value
-      # goes without its card rather than wait.
+      # or a notice goes without its card rather than wait.
       {Task.Supervisor, name: PotokIde.LinkPreviews.Fetchers, max_children: 3},
       {PotokIde.JobQueue,
        name: PotokIde.PushNotifications.Queue,

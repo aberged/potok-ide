@@ -679,7 +679,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{group: group, current_profile: profile} = socket.assigns
 
     with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = target <- group_below(group, profile, id),
+         %Group{} = target <- Social.get_visible_child_or_grandchild_group(group, profile, id),
          {:ok, socket} <- take_write_token(socket) do
       case Social.toggle_group_reaction(profile, target, params["emoji"]) do
         {:ok, reactions} ->
@@ -1208,11 +1208,14 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
-  defp share_target(group, profile, id, true), do: group_below(group, profile, id)
+  defp share_target(group, profile, id, true),
+    do: Social.get_visible_child_or_grandchild_group(group, profile, id)
+
   defp share_target(group, profile, id, false), do: reachable_group(group, profile, id)
 
   # The app itself, open on that group (`linkGroup`). Guests get the card of the
-  # group from `PublicPreview` all the same.
+  # group from `PublicPreview`, with the app's mark, where they reach it through
+  # the app as well.
   defp shared_url(%{assigns: %{group: group, active_alt_description: alt}}, target, true) do
     query = if alt, do: [d: alt.id, at: target.id], else: [at: target.id]
 
@@ -1224,12 +1227,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp reachable_group(%Group{parent_id: id}, profile, id),
     do: Social.get_visible_group(profile, id)
 
-  defp reachable_group(group, profile, id), do: group_below(group, profile, id)
-
-  defp group_below(group, profile, id) do
-    Social.get_visible_child_group(group, profile, id) ||
-      Social.get_visible_grandchild_group(group, profile, id)
-  end
+  defp reachable_group(group, profile, id),
+    do: Social.get_visible_child_or_grandchild_group(group, profile, id)
 
   defp require_child_manager(socket) do
     if manages_children?(socket.assigns.access) do

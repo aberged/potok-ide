@@ -133,6 +133,84 @@ defmodule PotokIdeWeb.CardControllerTest do
     end
   end
 
+  describe "the card of a group in an app" do
+    setup %{owner: owner} do
+      app = group!(owner, %{"name" => "Vesti"})
+      feed = group!(owner, %{:parent => app, "name" => ".feed"})
+      story = group!(owner, %{:parent => feed, "name" => "Most"})
+
+      %{app: app, feed: feed, story: story}
+    end
+
+    defp linked_card(app_id, file), do: "/cards/group/#{app_id}/#{file}"
+
+    test "is a picture that may be kept for good, drawn apart from the group's own", ctx do
+      id = ctx.story.id
+      conn = get(ctx.conn, linked_card(ctx.app.id, "#{id}.jpg"))
+
+      assert response(conn, 200) == "drawn"
+      assert get_resp_header(conn, "content-type") == ["image/jpeg"]
+      assert get_resp_header(conn, "cache-control") == ["public, max-age=31536000, immutable"]
+      assert get_resp_header(conn, "set-cookie") == []
+      assert_received {:painted, :group, ^id}
+
+      assert ctx.conn |> get(group_card(id)) |> response(200) == "drawn"
+      assert_received {:painted, :group, ^id}
+    end
+
+    test "is there for a direct sub-group of the app too", ctx do
+      child = group!(ctx.owner, %{:parent => ctx.app, "name" => "Dete"})
+
+      assert ctx.conn |> get(linked_card(ctx.app.id, "#{child.id}.jpg")) |> response(200) ==
+               "drawn"
+    end
+
+    test "looks like nothing where guests do not reach the group through the app", ctx do
+      other = group!(ctx.owner)
+      deeper = group!(ctx.owner, %{:parent => ctx.story, "name" => "Dublje"})
+      hidden = group_with_members!(ctx.owner, [], %{:parent => ctx.feed, "name" => "Skriveno"})
+      closed = group_with_members!(ctx.owner, [], %{:parent => ctx.app, "name" => ".zatvoreno"})
+      under_closed = group!(ctx.owner, %{:parent => closed, "name" => "Ispod"})
+      private_app = group_with_members!(ctx.owner, [])
+      in_private_app = group!(ctx.owner, %{:parent => private_app, "name" => "Javno"})
+
+      for {app_id, id} <- [
+            {ctx.app.id, other.id},
+            {ctx.app.id, deeper.id},
+            {ctx.app.id, hidden.id},
+            {ctx.app.id, under_closed.id},
+            {private_app.id, in_private_app.id},
+            {ctx.app.id, ctx.app.id}
+          ] do
+        ctx.conn |> get(linked_card(app_id, "#{id}.jpg")) |> assert_nothing()
+      end
+
+      for {app_id, file} <- [
+            {"abc", "#{ctx.story.id}.jpg"},
+            {"0", "#{ctx.story.id}.jpg"},
+            {@huge_id, "#{ctx.story.id}.jpg"},
+            {ctx.app.id, "abc.jpg"},
+            {ctx.app.id, "#{@huge_id}.jpg"}
+          ] do
+        ctx.conn |> get(linked_card(app_id, file)) |> assert_nothing()
+      end
+    end
+
+    test "is gone at once when the group or the app closes, even in the cache", ctx do
+      path = linked_card(ctx.app.id, "#{ctx.story.id}.jpg")
+      assert ctx.conn |> get(path) |> response(200)
+
+      closed = ctx.story |> Ecto.Changeset.change(is_public: false) |> Repo.update!()
+      ctx.conn |> get(path) |> assert_nothing()
+
+      closed |> Ecto.Changeset.change(is_public: true) |> Repo.update!()
+      assert ctx.conn |> get(path) |> response(200)
+
+      ctx.app |> Ecto.Changeset.change(is_public: false) |> Repo.update!()
+      ctx.conn |> get(path) |> assert_nothing()
+    end
+  end
+
   describe "the card of an event" do
     test "is a picture too, even in a private group", %{conn: conn, owner: owner} do
       event = public_event!(owner)

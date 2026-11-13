@@ -2634,20 +2634,7 @@ defmodule PotokIde.Social do
   defp schedule_link_preview(%Value{id: value_id, content: content}) do
     case LinkPreviews.first_url(content) do
       nil -> :ok
-      url -> run_link_preview(fn -> fetch_value_link_preview(value_id, url) end)
-    end
-  end
-
-  # Previews are a nicety: when three are being fetched already, the value
-  # stays without one instead of adding another page download to memory.
-  defp run_link_preview(fun) do
-    if LinkPreviews.async?() do
-      case Task.Supervisor.start_child(PotokIde.LinkPreviews.Fetchers, fun) do
-        {:ok, _pid} -> :ok
-        {:error, :max_children} -> :ok
-      end
-    else
-      fun.()
+      url -> LinkPreviews.run(fn -> fetch_value_link_preview(value_id, url) end)
     end
   end
 
@@ -4395,6 +4382,18 @@ defmodule PotokIde.Social do
     visible_plain_groups(profile)
     |> where([g], g.id == ^id and g.parent_id in subquery(parents))
     |> Repo.one()
+  end
+
+  @doc """
+  The group `id` an app of `group` reaches for the profile: one of its direct
+  sub-groups or a group under one, both seen by the profile. A nil profile is
+  a guest, who sees public groups only, so the group in between must be
+  public too.
+  """
+  def get_visible_child_or_grandchild_group(%Group{} = group, profile, id)
+      when is_viewer(profile) and is_integer(id) do
+    get_visible_child_group(group, profile, id) ||
+      get_visible_grandchild_group(group, profile, id)
   end
 
   # Groups the profile can see, the rule of `visible_children_sql/1`, without

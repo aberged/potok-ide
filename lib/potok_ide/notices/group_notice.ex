@@ -4,6 +4,10 @@ defmodule PotokIde.Notices.GroupNotice do
   It is never edited. `recipients_count` is how many followers it reached,
   written once when it is sent. Deleting it deletes it for everyone who
   received it.
+
+  `link_preview` is the card of its first link, written once after it is sent
+  (`PotokIde.LinkPreviews`). Whoever may delete the notice may remove the
+  card, and as the text never changes, it is never fetched again.
   """
 
   use Ecto.Schema
@@ -15,6 +19,7 @@ defmodule PotokIde.Notices.GroupNotice do
   schema "group_notices" do
     field :body, :string
     field :recipients_count, :integer, default: 0
+    field :link_preview, :map
 
     belongs_to :group, PotokIde.Social.Group
     belongs_to :creator, PotokIde.Social.Profile

@@ -122,7 +122,7 @@ Vidljivost ide posebnim putem. Feed čita kroz `.feed`, pa gledalac mora da vidi
 |---|---|
 | Roditelj javan, `.feed` privatna | nečlan dobija `not_found`, a Feed mu kaže da `.feed` ne postoji |
 | `.feed` javna, objava privatna | objavu vide samo njeni članovi, a to je način za objave samo za članove |
-| `.feed` privatna, objava javna | u Feed-u je vide samo članovi `.feed`, ali svako sa linkom je vidi van Potoka |
+| `.feed` privatna, objava javna | u Feed-u je vide samo članovi `.feed`, ali svako sa linkom same objave (`/groups/<id>`) je vidi van Potoka; link iz Feed-a (`?at=`) tada pokazuje karticu Feed-a, jer gost do objave ne stiže kroz Feed |
 
 Chat podrazumevano vide samo članovi grupe. Nečlan koji klikne Komentari vidi broj komentara, opis objave i dugme za pristup, ali ne i same komentare. Ko želi da razgovara o svim objavama, treba da uđe u roditeljsku grupu, a ne u pojedinačnu objavu.
 

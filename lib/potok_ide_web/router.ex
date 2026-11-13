@@ -120,11 +120,13 @@ defmodule PotokIdeWeb.Router do
   end
 
   # What sites and apps fetch for the card of a shared link (`13.jpg`): only for
-  # what guests can see, and with no session, as with avatars.
+  # what guests can see, and with no session, as with avatars. A group a link
+  # into an app names has its card under the app's id (`/group/12/13.jpg`).
   scope "/cards", PotokIdeWeb do
     pipe_through :avatars
 
     get "/group/:file", CardController, :group
+    get "/group/:app_id/:file", CardController, :linked
     get "/event/:file", CardController, :event
   end
 
