@@ -1742,7 +1742,7 @@ defmodule PotokIde.SocialTest do
       end
 
       chat = kind!.(:chat, false)
-      announcements = kind!.(:announcements, false)
+      folder = kind!.(:folder, false)
       feed = kind!.(:feed, true)
       # Made as a chat, then given an app: the avatar shows the puzzle.
       chat_with_app = kind!.(:chat, true)
@@ -1756,7 +1756,7 @@ defmodule PotokIde.SocialTest do
       end
 
       assert ids.(preset: "chat") == [chat]
-      assert ids.(preset: "announcements") == [announcements]
+      assert ids.(preset: "folder") == [folder]
       assert ids.(preset: "feed") == [feed]
       assert ids.(preset: "polls") == []
 

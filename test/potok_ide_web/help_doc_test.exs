@@ -236,8 +236,18 @@ defmodule PotokIdeWeb.HelpDocTest do
 
         for "/pomoc" <> rest <- links(doc.html) do
           case rest do
-            "#" <> id -> assert id in help_ids, "#{slug} (#{locale}) links to no section #{id}"
-            "/" <> other -> assert other in tutorials, "#{slug} (#{locale}) links to #{other}"
+            "#" <> id ->
+              assert id in help_ids, "#{slug} (#{locale}) links to no section #{id}"
+
+            "/" <> other ->
+              [tutorial | step] = String.split(other, "#", parts: 2)
+              assert tutorial in tutorials, "#{slug} (#{locale}) links to #{other}"
+
+              # A step of another tutorial.
+              for id <- step do
+                {:ok, target} = HelpDoc.tutorial(tutorial, locale)
+                assert id in target.ids, "#{slug} (#{locale}) links to no step #{other}"
+              end
           end
         end
       end

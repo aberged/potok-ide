@@ -95,7 +95,6 @@ Tri zajednice, svaka složena kao stablo grupa. Ne moraš da kopiraš nijednu: u
 Mesna zajednica Topolik je javna grupa sa svojim područjem na mapi, pa je vidi i ko još nije član.
 
 - **MZ Topolik**, fascikla, javna, sa područjem na mapi
-  - **Obaveštenja saveta**: grupa obaveštenja u kojoj piše savet, a ostali čitaju i reaguju
   - **Zbor građana**: razgovor, glasanja i događaj zbora u kalendaru
   - **Mapa kraja**: mapa na kojoj je svaki problem grupa sa svojim pinom i razgovorom
 
@@ -105,20 +104,19 @@ Jedna nedelja izgleda ovako: komšinica stavi rupu u ulici na mapu, sa slikom. U
 
 [Korak po korak: kako da složiš mesnu zajednicu](/pomoc/mesna-zajednica)
 
-![MZ Topolik: obaveštenja saveta, zbor i mapa kraja](primer-mz) ![Mapa kraja: problemi kao pinovi i staza uz kanal](primer-mz-mapa)
+![MZ Topolik: zbor i mapa kraja](primer-mz) ![Mapa kraja: problemi kao pinovi i staza uz kanal](primer-mz-mapa)
 
 ### Zadruga i zajednička nabavka {:#primer-zadruga}
 
 - **Zadruga Livada**, fascikla, privatna, sa mestom preuzimanja na mapi
-  - **Obaveštenja kupcima**: šta ima ove nedelje i do kada se poručuje
   - **Porudžbine**: forma koju svaki član popuni jednom i menja do roka
   - **Dogovor**: razgovor o preuzimanju i zamenama
 
-Preuzimanje je događaj koji se ponavlja svake subote, sa podsetnikom. Organizator u formi vidi sve porudžbine i njihov rezime, a preuzima ih kao tabelu. Posebna aplikacija u opisu grupe može voditi i ture nabavke, vozača i podelu troškova.
+Šta ima ove nedelje i do kada se poručuje, zadruga javlja obaveštenjem svima koji je prate. Preuzimanje je događaj koji se ponavlja svake subote, sa podsetnikom. Organizator u formi vidi sve porudžbine i njihov rezime, a preuzima ih kao tabelu. Posebna aplikacija u opisu grupe može voditi i ture nabavke, vozača i podelu troškova.
 
 [Korak po korak: kako da složiš zadrugu](/pomoc/zadruga)
 
-![Zadruga Livada: obaveštenja, porudžbine i dogovor](primer-zadruga)
+![Zadruga Livada: porudžbine i dogovor](primer-zadruga)
 
 ### Stambena zgrada ili klub {:#primer-zgrada}
 
@@ -194,7 +192,6 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 
 - **Chat**: otvara se na porukama, a pisati mogu svi članovi.
 - **Folder**: drži podgrupe na okupu.
-- **Obaveštenja**: pišu samo administratori, ostali čitaju i reaguju.
 - **Feed**: vesti koje se listaju prevlačenjem, sa delom u kome ih urednici pišu.
 - **Glasanja**: sva glasanja grupe na jednom mestu.
 - **Forma**: pitanja, odgovori i njihov rezime.

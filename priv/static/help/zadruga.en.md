@@ -10,11 +10,10 @@ Step by step to a co-op like Zadruga Livada in the example: a private group with
 ## What we build {:#sta-pravimo}
 
 - **Zadruga Livada**, a folder, private, with the pick-up place on the map
-  - **Notices to buyers**: what there is this week and until when to order
   - **Orders**: a form each member fills in once and changes until the deadline
   - **Arrangements**: a chat about picking up and swaps
 
-![Zadruga Livada, finished: notices, orders and arrangements](primer-zadruga)
+![Zadruga Livada, finished: orders and arrangements](primer-zadruga)
 
 ## 1. The co-op's group {:#grupa}
 
@@ -38,10 +37,12 @@ In the group's menu, choose **Invite profile** and type a username or an email. 
 
 ## 4. Notices to buyers {:#obavestenja}
 
-1. On the **Sub-groups** tab, tap **+** and choose **Announcements**.
-2. Type "Obaveštenja kupcima" (notices to buyers), leave **Inherit members** on and tap **Create**.
+What there is this week and until when to order, the co-op tells in a notice. It reaches everyone who follows the co-op, apart from the messages and on their phones too.
 
-Only administrators write here, and members read and react. Every week, write here what there is and until when to order.
+1. Every member taps the bell in the header of Zadruga Livada. Only its members can follow a private group, and nobody follows it on their own.
+2. In the group's menu, choose **Notices**, type the text in **New notice** and tap **Send**.
+
+As an administrator, you can send notices from the start. You give it to others with the permission **Send notices** in the group's roles, as to the council in the [local community](/pomoc/mesna-zajednica#savet).
 
 ## 5. A form for orders {:#porudzbine}
 

@@ -141,15 +141,16 @@ defmodule PotokIde.Social.OpenChatTest do
       refute reacts?(nil, ctx.group)
     end
 
-    test "only read in a group from the announcements preset", ctx do
+    test "only read where \"everyone\" may not write", ctx do
       {:ok, %{group: group}} =
         Social.create_group_from_preset(
           ctx.owner,
           Social.get_root_group!(),
-          "announcements",
+          "chat",
           %{"name" => "open-news", "is_public" => true}
         )
 
+      without_everyone!(ctx.owner, group, :post_values)
       {:ok, group} = Social.update_group(ctx.owner, group, %{"has_public_chat" => true})
 
       assert reads?(ctx.visitor, group)

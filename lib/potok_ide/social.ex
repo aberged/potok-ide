@@ -537,7 +537,7 @@ defmodule PotokIde.Social do
                creator,
                parent,
                attrs,
-               GroupPresets.taken_from_everyone(preset),
+               [],
                GroupPresets.preset(preset)
              ),
            {:ok, feed, feed_created} <- insert_preset_feed(creator, group, preset) do

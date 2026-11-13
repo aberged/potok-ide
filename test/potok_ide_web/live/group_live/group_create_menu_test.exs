@@ -67,10 +67,14 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
 
       assert has_element?(lv, "dialog#group-create-menu")
 
-      for preset <- ~w(chat folder announcements feed polls questionnaire map page) do
+      for preset <- ~w(chat folder feed polls questionnaire map page) do
         assert has_element?(lv, "#group-create-preset-#{preset}")
       end
 
+      # A group sends notices to its followers instead, and a page opened
+      # before cannot pick it either.
+      refute has_element?(lv, "#group-create-preset-announcements")
+      render_click(lv, "group_create_menu_pick", %{"preset" => "announcements"})
       refute has_element?(lv, "#group-create-preset-form")
       refute has_element?(lv, "#group-panel-create-group")
     end
@@ -238,8 +242,8 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
   end
 
   describe "where it leads" do
-    test "chat, folder and announcements lead to the new group", ctx do
-      for preset <- ~w(chat folder announcements) do
+    test "chat and folder lead to the new group", ctx do
+      for preset <- ~w(chat folder) do
         lv = ctx |> sub_groups() |> open_menu() |> pick(preset)
 
         {path, flash, group} = create(lv, "Grupa #{preset}")
@@ -249,11 +253,16 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       end
     end
 
-    test "in announcements a member is not asked to start the conversation", ctx do
+    test "a member who may not write is not asked to start the conversation", ctx do
       add_member!(ctx.owner, ctx.parent, ctx.member)
 
-      lv = ctx |> sub_groups() |> open_menu() |> pick("announcements")
+      lv = ctx |> sub_groups() |> open_menu() |> pick("chat")
       {_path, _flash, group} = create(lv, "Oglasna tabla")
+
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, group)
+
+      {:ok, _role} =
+        Social.set_group_role_permission(ctx.owner, group, "everyone", :post_values, :neutral)
 
       board = open(ctx, ctx.member_account, ~p"/groups/#{group.id}/values")
 

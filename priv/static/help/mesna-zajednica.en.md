@@ -10,13 +10,10 @@ Step by step, from an empty home page to a local community with its council, its
 ## What we build {:#sta-pravimo}
 
 - **MZ Topolik**, a folder, public, with an area on the map and the role council
-  - **Council notices**: the council writes, the others read and react
   - **Citizens' assembly**: a chat, polls and the assembly's event
   - **Neighbourhood map**: each problem in the neighbourhood is a group with its own pin
 
-The order matters in one place: create the role council before the sub-groups. The council's notices get their own list of roles when they are created, as a copy of the list of the group above, so the council must already be on it.
-
-![MZ Topolik, finished: council notices, the assembly and the neighbourhood map](primer-mz)
+![MZ Topolik, finished: the assembly and the neighbourhood map](primer-mz)
 
 ## 1. The community's group {:#grupa}
 
@@ -56,23 +53,14 @@ The council has the other permissions like every member, through the role Everyo
 
 ![Inviting by username or email](pozovi) ![The shield next to a member: the council's role is on](mz-uloga-clana)
 
-## 5. Council notices {:#obavestenja-saveta}
+## 5. The citizens' assembly {:#zbor}
 
-1. On the **Sub-groups** tab, tap **+** and choose **Announcements**.
-2. Type "Obaveštenja saveta" (council notices). Leave **Inherit members** on: every member of the community is a member of this group too, with the same roles, and nobody is invited separately.
-3. Tap **Create**.
-4. In this group only administrators write, and the council doesn't yet. In the new group's menu, choose **Roles** and, for the council, allow **Post messages** and **Attach files**.
-
-![An announcements group: its name and inherited members](mz-obavestenja-saveta) ![The roles in the council's notices: the council may write](mz-pisanje-saveta)
-
-## 6. The citizens' assembly {:#zbor}
-
-1. Go back to MZ Topolik (the path at the top of the group) and, on the **Sub-groups** tab, tap **+**, then **Chat**.
+1. In MZ Topolik, on the **Sub-groups** tab, tap **+** and choose **Chat**.
 2. Type "Zbor građana" (citizens' assembly), leave **Inherit members** on and tap **Create**.
 
 This is where people talk, vote and schedule the assembly. Move a longer discussion of one message into a thread: long-press the message and choose **Thread**.
 
-## 7. The neighbourhood map {:#mapa}
+## 6. The neighbourhood map {:#mapa}
 
 1. In MZ Topolik, tap **+** and choose **Map**. A map is offered only inside a group, not on the home page.
 2. Type "Mapa kraja" (neighbourhood map) and tap **Create**. An empty map opens.
@@ -84,7 +72,7 @@ Add the community hall, where the assembly meets, the same way. Every member who
 
 ![A new place on the neighbourhood map](mz-dodaj-mesto) ![The neighbourhood map with problems and a path along the canal](primer-mz-mapa)
 
-## 8. Scheduling the assembly {:#dogadjaj}
+## 7. Scheduling the assembly {:#dogadjaj}
 
 1. In the assembly, open the **Calendar** tab and tap **+ Event**.
 2. Type the title, the day and the times it starts and ends.
@@ -95,7 +83,7 @@ Add the community hall, where the assembly meets, the same way. Every member who
 
 ![A new event: its location, public event and reminders](mz-javni-dogadjaj)
 
-## 9. A poll with a quorum {:#glasanje}
+## 8. A poll with a quorum {:#glasanje}
 
 1. In the assembly, tap **+** next to the message field, then **New poll**.
 2. Type the question and pick the ready answers **For / Against / Abstain**. For the deadline, choose, say, **3 days**.
@@ -104,11 +92,11 @@ Add the community hall, where the assembly meets, the same way. Every member who
 
 ![A poll with a decision rule and a quorum](mz-kvorum)
 
-## 10. Notices to followers {:#pratioci}
+## 9. Notices to followers {:#pratioci}
 
-The group of council notices is for members. To everyone else, those who are not members too, the community sends notices: short news for those who follow it.
+The council writes to the neighbours through the notices of MZ Topolik: short news for everyone who follows it, members and those who are not. Notices come apart from the messages, so they don't get lost in the chat.
 
-1. Whoever wants them taps the bell in the header of MZ Topolik. Anyone logged in can follow a public group.
+1. Whoever wants them taps the bell in the header of MZ Topolik. Anyone logged in can follow a public group. Members tap the bell too: nobody follows a group on their own.
 2. A council member chooses **Notices** in the menu of MZ Topolik, types the text in **New notice**, up to 2000 characters, and taps **Send**. The notice reaches the followers, on their phones too, and can't be changed afterwards.
 
 ![A new notice to the followers of MZ Topolik](mz-obavestenje)

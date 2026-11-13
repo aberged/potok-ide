@@ -67,29 +67,6 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group.uses_api
     end
 
-    test "announcements let only administrators write", ctx do
-      assert {:ok, %{group: group}} = create(ctx, "announcements")
-
-      assert group.home_page == :chat
-
-      assert Access.can?(ctx.owner, group, :post_values)
-      assert Access.can?(ctx.member, group, :react)
-
-      for permission <- [:post_values, :attach_files, :open_threads, :create_subgroups] do
-        refute Access.can?(ctx.member, group, permission), "#{permission} stayed with the member"
-      end
-
-      assert Access.can?(ctx.member, ctx.parent, :post_values)
-    end
-
-    test "announcements keep the vote and leave starting polls to administrators", ctx do
-      assert {:ok, %{group: group}} = create(ctx, "announcements")
-
-      assert Access.can?(ctx.member, group, :vote_polls)
-      refute Access.can?(ctx.member, group, :create_polls)
-      assert Access.can?(ctx.owner, group, :create_polls)
-    end
-
     test "polls open on the app, for members who start polls in it", ctx do
       assert {:ok, %{group: group} = created} = create(ctx, "polls")
 
@@ -310,6 +287,19 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group_named?("Mapa")
 
       assert {:ok, %{group: %Group{preset: :map}}} = create(ctx, "map", %{"name" => "Mapa"})
+    end
+
+    # A group sends notices to its followers instead (`PotokIde.Notices`).
+    test "no announcements any more", ctx do
+      refute "announcements" in GroupPresets.keys()
+      refute "announcements" in GroupPresets.filter_keys()
+
+      assert {:error, :preset_not_allowed} =
+               Social.create_group_from_preset(ctx.owner, ctx.parent, "announcements", %{
+                 "name" => "Oglasna tabla"
+               })
+
+      refute group_named?("Oglasna tabla")
     end
 
     test "nor those who lost the right to", ctx do

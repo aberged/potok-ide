@@ -51,6 +51,18 @@ defmodule PotokIdeWeb.GroupLive.OpenChatTest do
     group
   end
 
+  # A group where only administrators write: `everyone` may not.
+  defp read_only_group!(owner, name) do
+    group = group!(owner, name)
+
+    {:ok, _manifest} = Social.create_own_group_manifest(owner, group)
+
+    {:ok, _role} =
+      Social.set_group_role_permission(owner, group, "everyone", :post_values, :neutral)
+
+    group
+  end
+
   defp open(conn, account, group, tab \\ "values") do
     {:ok, view, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/#{tab}")
     view
@@ -245,12 +257,7 @@ defmodule PotokIdeWeb.GroupLive.OpenChatTest do
 
   describe "a read-only group" do
     test "tells someone outside it that they cannot write", ctx do
-      {:ok, %{group: group}} =
-        Social.create_group_from_preset(ctx.owner, Social.get_root_group!(), "announcements", %{
-          "name" => "oc-news",
-          "is_public" => true
-        })
-
+      group = read_only_group!(ctx.owner, "oc-news")
       {:ok, group} = Social.update_group(ctx.owner, group, %{"has_public_chat" => true})
       value = value!(ctx.owner, group, "news")
 
@@ -467,11 +474,7 @@ defmodule PotokIdeWeb.GroupLive.OpenChatTest do
     test "says when those outside the group would only read", ctx do
       refute has_element?(edit(ctx, ctx.closed), "#group-edit-open-chat-read-only")
 
-      {:ok, %{group: group}} =
-        Social.create_group_from_preset(ctx.owner, Social.get_root_group!(), "announcements", %{
-          "name" => "oc-news",
-          "is_public" => true
-        })
+      group = read_only_group!(ctx.owner, "oc-news")
 
       assert has_element?(edit(ctx, group), "#group-edit-open-chat-read-only")
     end

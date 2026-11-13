@@ -60,7 +60,6 @@ defmodule PotokIde.Social.GroupPins do
   @kinds [
     {"chat", "chat-bubble-left-right"},
     {"folder", "folder"},
-    {"announcements", "megaphone"},
     {"feed", "newspaper"},
     {"polls", "chart-bar"},
     {"questionnaire", "clipboard-document-list"},

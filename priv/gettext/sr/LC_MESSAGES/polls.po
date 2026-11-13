@@ -510,7 +510,7 @@ msgid "Poll"
 msgstr "Glasanje"
 
 #: lib/potok_ide_web/live/group_live/show.ex:508
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:194
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:183
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
 #, elixir-autogen, elixir-format
@@ -896,12 +896,12 @@ msgstr "Glas nije zabeležen. Pokušaj ponovo."
 msgid "of %{count} who may vote"
 msgstr "od %{count} sa pravom glasa"
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:197
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:186
 #, elixir-autogen, elixir-format
 msgid "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
 msgstr "Otvara se na aplikaciji Glasanja, tabli svih glasanja grupe, gde članovi glasaju i pokreću nova."
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:195
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:184
 #, elixir-autogen, elixir-format
 msgid "Votes and decisions, in one place."
 msgstr "Glasanja i odluke, na jednom mestu."

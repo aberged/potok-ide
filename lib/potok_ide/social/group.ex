@@ -9,7 +9,7 @@ defmodule PotokIde.Social.Group do
   @home_pages [:chat, :description, :subgroups]
   # The keys of `PotokIde.Social.GroupPresets`, written out: that module matches
   # on this struct, so reading them from it would compile in a circle.
-  @presets [:chat, :folder, :announcements, :feed, :polls, :questionnaire, :map, :page]
+  @presets [:chat, :folder, :feed, :polls, :questionnaire, :map, :page]
 
   @location_fields [:latitude, :longitude, :pin_icon]
 

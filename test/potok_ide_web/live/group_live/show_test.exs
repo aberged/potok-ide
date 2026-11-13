@@ -1561,9 +1561,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       assert has_element?(lv, "#group-kind-mark-#{chat_app_group.id}[data-kind=app]")
 
-      # Public groups are marked with a globe, leaving the megaphone to announcements.
+      # Public groups are marked with a globe.
       assert has_element?(lv, ".hero-globe-alt-micro")
-      refute has_element?(lv, ".hero-megaphone-micro")
     end
 
     test "renders group pictures in header and sub-group list", %{conn: conn} do

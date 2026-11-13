@@ -17,7 +17,7 @@ defmodule PotokIde.Social.GroupPresets do
   alias PotokIde.Social.Group
 
   # The form's key is not "form", whose element id the menu's own form has.
-  @keys ~w(chat folder announcements feed polls questionnaire map page)
+  @keys ~w(chat folder feed polls questionnaire map page)
 
   # The presets whose group opens on an app.
   @apps ~w(feed polls questionnaire map)a
@@ -26,10 +26,6 @@ defmodule PotokIde.Social.GroupPresets do
 
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
-
-  # What a member keeps here is reading, reacting and voting. Threads go too: a
-  # member could open one and not write in it, as it would inherit these rights.
-  @read_only ~w(post_values attach_files open_threads create_subgroups create_polls)a
 
   @chosen_by_viewer ~w(name is_public inherits_members)
 
@@ -101,15 +97,10 @@ defmodule PotokIde.Social.GroupPresets do
     }
   end
 
-  @doc "The permissions `everyone` loses in a group from `preset`."
-  def taken_from_everyone("announcements"), do: @read_only
-  def taken_from_everyone(preset) when preset in @keys, do: []
-
   @doc "What `everyone` loses in `.feed`: a group made there by hand would go straight into the feed."
   def taken_from_everyone_in_feed, do: [:create_subgroups]
 
   defp preset_attrs("chat"), do: plain(:chat)
-  defp preset_attrs("announcements"), do: plain(:chat)
   defp preset_attrs("folder"), do: plain(:subgroups)
   defp preset_attrs("page"), do: plain(:description)
 

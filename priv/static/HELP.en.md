@@ -89,7 +89,6 @@ Three communities, each put together as a tree of groups. You don't have to copy
 The local community of Topolik is a public group with its area on the map, so even those who are not members yet can see it.
 
 - **MZ Topolik**, a folder, public, with an area on the map
-  - **Council notices**: an announcements group in which the council writes, and the others read and react
   - **Citizens' assembly**: a chat, polls and the assembly's event in the calendar
   - **Neighbourhood map**: a map on which each problem is a group with its own pin and chat
 
@@ -99,20 +98,19 @@ A week looks like this: a neighbour puts the pothole in her street on the map, w
 
 [Step by step: how to put together a local community](/pomoc/mesna-zajednica)
 
-![MZ Topolik: council notices, the assembly and the neighbourhood map](primer-mz) ![The neighbourhood map: problems as pins and a path along the canal](primer-mz-mapa)
+![MZ Topolik: the assembly and the neighbourhood map](primer-mz) ![The neighbourhood map: problems as pins and a path along the canal](primer-mz-mapa)
 
 ### A co-op buying together {:#primer-zadruga}
 
 - **Zadruga Livada**, a folder, private, with the pick-up place on the map
-  - **Notices to buyers**: what there is this week and until when to order
   - **Orders**: a form each member fills in once and changes until the deadline
   - **Arrangements**: a chat about picking up and swaps
 
-The pick-up is an event that repeats every Saturday, with a reminder. In the form, the organizer sees every order and a summary of them, and takes them away as a table. A dedicated app in the group's description can also run the buying rounds, the driver and the split of costs.
+What there is this week and until when to order, the co-op tells everyone who follows it in a notice. The pick-up is an event that repeats every Saturday, with a reminder. In the form, the organizer sees every order and a summary of them, and takes them away as a table. A dedicated app in the group's description can also run the buying rounds, the driver and the split of costs.
 
 [Step by step: how to put together a co-op](/pomoc/zadruga)
 
-![Zadruga Livada: notices, orders and arrangements](primer-zadruga)
+![Zadruga Livada: orders and arrangements](primer-zadruga)
 
 ### A building or a club {:#primer-zgrada}
 
@@ -188,7 +186,6 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 
 - **Chat**: opens on its messages, and all members can write.
 - **Folder**: keeps sub-groups together.
-- **Announcements**: only administrators write, the others read and react.
 - **Feed**: news you swipe through, with a part where its editors write it.
 - **Polls**: all of the group's polls in one place.
 - **Form**: questions, answers and a summary of them.

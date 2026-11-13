@@ -320,24 +320,6 @@
     ]
   },
   {
-    "name": "mz-obavestenja-saveta",
-    "as": "ana",
-    "url": "/groups/{groups.mz}",
-    "steps": [
-      { "click": "#group-sub-groups-create-fab" },
-      { "wait": "#group-create-menu" },
-      { "click": "#group-create-preset-announcements" },
-      { "type": ["#group-create-menu input[type=text]", "Obaveštenja saveta"] },
-      { "pause": 500 }
-    ]
-  },
-  {
-    "name": "mz-pisanje-saveta",
-    "as": "ana",
-    "url": "/groups/{groups.mz_notices}/roles",
-    "steps": [{ "show": "#group-roles-list > li:has-text('savet')" }, { "pause": 300 }]
-  },
-  {
     "name": "mz-dodaj-mesto",
     "as": "ana",
     "url": "/groups/{groups.mz_map}",

@@ -11,13 +11,10 @@ Korak po korak, od prazne početne strane do mesne zajednice sa savetom, zborom 
 ## Šta pravimo {:#sta-pravimo}
 
 - **MZ Topolik**, fascikla, javna, sa područjem na mapi i ulogom savet
-  - **Obaveštenja saveta**: piše savet, ostali čitaju i reaguju
   - **Zbor građana**: razgovor, glasanja i događaj zbora
   - **Mapa kraja**: svaki problem u kraju je grupa sa svojim pinom
 
-Redosled je bitan na jednom mestu: ulogu savet napravi pre podgrupa. Obaveštenja saveta dobijaju svoj spisak uloga kad nastanu, kao kopiju spiska grupe iznad, pa savet u toj kopiji treba već da postoji.
-
-![Gotova MZ Topolik: obaveštenja saveta, zbor i mapa kraja](primer-mz)
+![Gotova MZ Topolik: zbor i mapa kraja](primer-mz)
 
 ## 1. Grupa mesne zajednice {:#grupa}
 
@@ -57,23 +54,14 @@ Ostale dozvole savet ima kao i svaki član, kroz ulogu Svi, pa ih ovde ne diraš
 
 ![Pozivanje po korisničkom imenu ili imejlu](pozovi) ![Štit pored člana: uloga savet je uključena](mz-uloga-clana)
 
-## 5. Obaveštenja saveta {:#obavestenja-saveta}
+## 5. Zbor građana {:#zbor}
 
-1. Na kartici **Podgrupe** dodirni **+** i izaberi **Obaveštenja**.
-2. Upiši „Obaveštenja saveta“. **Nasleđuje članove** ostavi uključeno: svaki član MZ je i član ove grupe, sa istim ulogama, i niko se ne poziva posebno.
-3. Dodirni **Kreiraj**.
-4. U ovoj grupi pišu samo administratori, a savet još ne. U meniju nove grupe izaberi **Uloge** i kod uloge savet dozvoli **Pisanje poruka** i **Kačenje fajlova**.
-
-![Grupa obaveštenja: naziv i nasleđivanje članova](mz-obavestenja-saveta) ![Uloge u Obaveštenjima saveta: savet sme da piše](mz-pisanje-saveta)
-
-## 6. Zbor građana {:#zbor}
-
-1. Vrati se u MZ Topolik (putanja na vrhu grupe) i na kartici **Podgrupe** dodirni **+**, pa **Chat**.
+1. U MZ Topolik na kartici **Podgrupe** dodirni **+** i izaberi **Chat**.
 2. Upiši „Zbor građana“, ostavi **Nasleđuje članove** uključeno i dodirni **Kreiraj**.
 
 Tu se razgovara, glasa i zakazuje zbor. Dužu raspravu o jednoj poruci prebaci u nit: dugo pritisni poruku i izaberi **Nit**.
 
-## 7. Mapa kraja {:#mapa}
+## 6. Mapa kraja {:#mapa}
 
 1. U MZ Topolik dodirni **+** i izaberi **Mapa**. Mapa se nudi samo unutar grupe, ne na početnoj strani.
 2. Upiši „Mapa kraja“ i dodirni **Kreiraj**. Otvara se prazna mapa.
@@ -85,7 +73,7 @@ Na isti način dodaj i Dom kulture, gde se zbor održava. Mesta može da dodaje 
 
 ![Novo mesto na Mapi kraja](mz-dodaj-mesto) ![Mapa kraja sa problemima i stazom uz kanal](primer-mz-mapa)
 
-## 8. Zakazivanje zbora {:#dogadjaj}
+## 7. Zakazivanje zbora {:#dogadjaj}
 
 1. U Zboru građana otvori karticu **Kalendar** i dodirni **+ Događaj**.
 2. Upiši naslov „Zbor građana“, dan i vreme početka i kraja.
@@ -96,7 +84,7 @@ Na isti način dodaj i Dom kulture, gde se zbor održava. Mesta može da dodaje 
 
 ![Novi događaj: lokacija, javni događaj i podsetnici](mz-javni-dogadjaj)
 
-## 9. Glasanje sa kvorumom {:#glasanje}
+## 8. Glasanje sa kvorumom {:#glasanje}
 
 1. U Zboru građana dodirni **+** pored polja za pisanje, pa **Novo glasanje**.
 2. Upiši pitanje i izaberi gotove odgovore **Za / Protiv / Uzdržan**. Za rok izaberi, na primer, **3 dana**.
@@ -105,11 +93,11 @@ Na isti način dodaj i Dom kulture, gde se zbor održava. Mesta može da dodaje 
 
 ![Glasanje sa pravilom odluke i kvorumom](mz-kvorum)
 
-## 10. Obaveštenja pratiocima {:#pratioci}
+## 9. Obaveštenja pratiocima {:#pratioci}
 
-Grupa Obaveštenja saveta je za članove. Svima ostalima, i onima koji nisu članovi, MZ šalje obaveštenja: kratke vesti za one koji je prate.
+Savet komšijama piše kroz obaveštenja MZ Topolik: kratke vesti za sve koji je prate, i za članove i za one koji to nisu. Obaveštenja stižu odvojeno od poruka, pa se ne gube u razgovoru.
 
-1. Ko hoće da ih dobija, dodirne zvono u zaglavlju MZ Topolik. Javnu grupu može da prati svako ko je prijavljen.
+1. Ko hoće da ih dobija, dodirne zvono u zaglavlju MZ Topolik. Javnu grupu može da prati svako ko je prijavljen. I članovi treba da dodirnu zvono: niko ne prati grupu sam od sebe.
 2. Član saveta u meniju MZ Topolik izabere **Obaveštenja**, upiše tekst u **Novo obaveštenje**, do 2000 znakova, i dodirne **Pošalji**. Obaveštenje stiže pratiocima, i na telefon, i posle se ne može izmeniti.
 
 ![Novo obaveštenje pratiocima MZ Topolik](mz-obavestenje)

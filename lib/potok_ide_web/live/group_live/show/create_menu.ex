@@ -165,17 +165,6 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         summary: gettext("It opens on the list of its sub-groups, which you add next.")
       },
       %{
-        key: "announcements",
-        icon: "hero-megaphone",
-        mark: "hero-megaphone-micro",
-        title: gettext("Announcements"),
-        hint: gettext("Only administrators write, the others read."),
-        summary:
-          gettext(
-            "It opens on the messages. Only administrators can write, and the others read and react."
-          )
-      },
-      %{
         key: "feed",
         icon: "hero-newspaper",
         mark: "hero-newspaper-micro",

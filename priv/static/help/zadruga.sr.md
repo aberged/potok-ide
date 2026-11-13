@@ -11,11 +11,10 @@ Korak po korak do zadruge kakva je Zadruga Livada iz primera: privatna grupa sa 
 ## Šta pravimo {:#sta-pravimo}
 
 - **Zadruga Livada**, fascikla, privatna, sa mestom preuzimanja na mapi
-  - **Obaveštenja kupcima**: šta ima ove nedelje i do kada se poručuje
   - **Porudžbine**: forma koju svaki član popuni jednom i menja do roka
   - **Dogovor**: razgovor o preuzimanju i zamenama
 
-![Gotova Zadruga Livada: obaveštenja, porudžbine i dogovor](primer-zadruga)
+![Gotova Zadruga Livada: porudžbine i dogovor](primer-zadruga)
 
 ## 1. Grupa zadruge {:#grupa}
 
@@ -39,10 +38,12 @@ U meniju grupe izaberi **Pozovi profil** i upiši korisničko ime ili imejl. Ko 
 
 ## 4. Obaveštenja kupcima {:#obavestenja}
 
-1. Na kartici **Podgrupe** dodirni **+** i izaberi **Obaveštenja**.
-2. Upiši „Obaveštenja kupcima“, ostavi **Nasleđuje članove** uključeno i dodirni **Kreiraj**.
+Šta ima ove nedelje i do kada se poručuje, zadruga javlja obaveštenjem. Ono stiže svima koji zadrugu prate, odvojeno od poruka i na telefon.
 
-Ovde pišu samo administratori, a članovi čitaju i reaguju. Svake nedelje tu napiši šta ima i do kada se poručuje.
+1. Svaki član dodirne zvono u zaglavlju Zadruge Livada. Privatnu grupu prate samo njeni članovi, a niko je ne prati sam od sebe.
+2. U meniju grupe izaberi **Obaveštenja**, upiši tekst u **Novo obaveštenje** i dodirni **Pošalji**.
+
+Kao administrator obaveštenja šalješ od početka. Drugima to daješ dozvolom **Slanje obaveštenja** u ulogama grupe, kao savetu u [mesnoj zajednici](/pomoc/mesna-zajednica#savet).
 
 ## 5. Forma za porudžbine {:#porudzbine}
 

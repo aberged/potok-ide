@@ -81,7 +81,6 @@ defmodule HelpShots.World do
           [
             root: root,
             mz: mz.root,
-            mz_notices: mz.notices,
             mz_zbor: mz.zbor,
             mz_thread: mz.thread,
             mz_map: mz.map,
@@ -89,7 +88,6 @@ defmodule HelpShots.World do
             news: news,
             coop: coop.root,
             coop_orders: coop.orders,
-            coop_notices: coop.notices,
             building: building.root,
             building_council: building.council,
             direct: direct
@@ -177,13 +175,6 @@ defmodule HelpShots.World do
       {:ok, _} = Social.assign_group_member_role(ana, mz, p.(name).id, council.key)
     end
 
-    notices = preset(ana, mz, "announcements", "Obaveštenja saveta")
-
-    # The council writes in its notices; the others read and react.
-    for permission <- ~w(post_values attach_files)a do
-      {:ok, _} = Social.set_group_role_permission(ana, notices, council.key, permission, :allow)
-    end
-
     zbor = preset(ana, mz, "chat", "Zbor građana")
     map = preset(ana, mz, "map", "Mapa kraja")
 
@@ -252,13 +243,6 @@ defmodule HelpShots.World do
     for name <- ~w(ana stefan milica nikola tamara luka sara) do
       {:ok, _} = Notices.follow(p.(name), mz)
     end
-
-    post(p.("marko"), notices, "Javna rasveta u parku biće popravljena do petka.", ago(1, 9, 5))
-
-    post(ana, notices, """
-    Komunalno preduzeće odnosi krupni otpad u subotu. Iznesite ga ispred zgrade do 7 \
-    časova.
-    """, ago(0, 8, 12))
 
     # The assembly's chat: yesterday evening and this morning.
     question =
@@ -342,7 +326,6 @@ defmodule HelpShots.World do
 
     %{
       root: mz,
-      notices: notices,
       zbor: zbor,
       map: map,
       pothole: pothole,
@@ -416,7 +399,6 @@ defmodule HelpShots.World do
 
     members(dragan, coop, ~w(ana ivana milica sara) |> Enum.map(p))
 
-    notices = preset(dragan, coop, "announcements", "Obaveštenja kupcima")
     orders = preset(dragan, coop, "questionnaire", "Porudžbine")
     order_form(dragan, orders, [
       {p.("ivana"), [0, 1], "2", 1, "Preuzima Sara."},
@@ -426,7 +408,13 @@ defmodule HelpShots.World do
     ])
     chat = preset(dragan, coop, "chat", "Dogovor")
 
-    post(dragan, notices, "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova.", ago(1, 12, 0))
+    # The week's news goes to those who follow the co-op. Ana does not, so her
+    # notices stay as the pictures of the notices show them.
+    for name <- ~w(ivana milica sara) do
+      {:ok, _} = Notices.follow(p.(name), coop)
+    end
+
+    send_notice(dragan, coop, "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova.")
     post(p.("ivana"), chat, "Može li neko da preuzme i za mene? Radim u subotu.", ago(0, 7, 50))
     post(p.("sara"), chat, "Mogu ja, ostavi mi spisak.", ago(0, 8, 5))
 
@@ -439,7 +427,7 @@ defmodule HelpShots.World do
       "recurrence_weekdays" => ["6"]
     })
 
-    %{root: coop, notices: notices, orders: orders, chat: chat}
+    %{root: coop, orders: orders, chat: chat}
   end
 
   # A building ----------------------------------------------------------------
@@ -620,7 +608,7 @@ defmodule HelpShots.World do
     end
   end
 
-  # The notice of the assembly, newest of all, so it tops Ana's notices with the
+  # The notice of the assembly, the newest Ana gets, so it tops her notices with the
   # card of the public event it links: a link to Potok, read from the database.
   # Marko sends it, as a notice never reaches its author. Its day is the event's,
   # as the card shows the date.
