@@ -287,7 +287,7 @@ Mapa grupa na početnoj strani pokazuje svaku grupu sa mestom koju smeš da vidi
 Mesto grupi daješ u Uredi grupu, pod Lokacija:
 
 - **Tačka**: dodir na mapu, ili tvoja lokacija.
-- **Područje**: granica koju crtaš temenima, kao mesna zajednica, ili koju doneseš iz GeoJSON fajla. Mapa onda pokazuje šta je u području.
+- **Područje**: granica koju crtaš temenima, kao mesna zajednica, ili koju doneseš iz GeoJSON fajla. Mapa onda pokazuje šta je u području. Kad se u području vide i granice manjih područja, kao mesnih zajednica u opštini, njegova granica dobija širok providan pojas, da se vidi i tamo gde se poklapa sa njihovim.
 - **Ruta**: šetnja, trka ili biciklistička staza, nacrtana ili donesena iz GPX, KML ili GeoJSON fajla. Mapa pokazuje i kroz koja područja prolazi.
 
 Za pin biraš jednu od 33 ikone ili sliku grupe, a u uglu pina stoji vrsta grupe. Grupa sa mapom (Mapa) pokazuje svoje podgrupe kao pinove, a „Dodaj mesto“ pravi novu.

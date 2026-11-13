@@ -3654,6 +3654,13 @@
   filter: drop-shadow(0 0 1.5px rgb(255 255 255 / 0.9));
 }
 
+/* An area that holds borders drawn inside it, as a municipality holds its
+   local communities: their borders lie on its own, so its border also gets a
+   wide soft band in its tone, under every area, which shows past theirs. */
+.potok-map .potok-area-band {
+  stroke-opacity: 0.3;
+}
+
 :where([data-theme=dark]) .potok-map .potok-area {
   fill-opacity: 0.18;
 }
@@ -3661,6 +3668,10 @@
 :where([data-theme=dark]) .potok-map .potok-area-mask {
   fill: #000000;
   fill-opacity: 0.45;
+}
+
+:where([data-theme=dark]) .potok-map .potok-area-band {
+  stroke-opacity: 0.45;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -3671,6 +3682,10 @@
   :root:not([data-theme]) .potok-map .potok-area-mask {
     fill: #000000;
     fill-opacity: 0.45;
+  }
+
+  :root:not([data-theme]) .potok-map .potok-area-band {
+    stroke-opacity: 0.45;
   }
 }
 

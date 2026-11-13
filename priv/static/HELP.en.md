@@ -281,7 +281,7 @@ The map of groups on the home page shows every group with a place that you may s
 You give a group its place in Edit group, under Location:
 
 - **Point**: a tap on the map, or your location.
-- **Area**: a border you draw with its corners, like a local community's, or bring from a GeoJSON file. The map then shows what lies in the area.
+- **Area**: a border you draw with its corners, like a local community's, or bring from a GeoJSON file. The map then shows what lies in the area. When the borders of smaller areas show inside it, as local communities do in a municipality, its border gets a wide see-through band, so it shows even where theirs lie on it.
 - **Route**: a walk, a race or a bike path, drawn or brought from a GPX, KML or GeoJSON file. The map also shows which areas it passes through.
 
 For the pin you choose one of 33 icons or the group's picture, and the pin's corner shows the group's kind. A group with a map (Map) shows its sub-groups as pins, and "Add a place" makes a new one.

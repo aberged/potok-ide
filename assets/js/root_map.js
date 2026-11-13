@@ -20,7 +20,11 @@
 // their borders under the pins. Borders come once per level of detail
 // (`root_map_shapes`) and stay in a cache here, so moving the map sends no
 // border twice. An area that covers the whole view is drawn as its outline
-// only. A tap on the map, off the pins, asks which areas stand there
+// only. An area that holds another drawn one (that one's pin inside its
+// border, the smaller one, as `GroupAreas` has it) also gets a wide soft band
+// in its tone under every border, so its own border shows where theirs lie on
+// it, as a municipality's around its local communities. A tap on the map,
+// off the pins, asks which areas stand there
 // (`root_map_here`) and the server shows their card. The chosen areas of the
 // area filter come marked `ctx`: an outline at any zoom and whatever the
 // filters, with everything outside them dimmed.
@@ -62,6 +66,9 @@ const TAP_DELAY_MS = 250
 const LEVELS = [6, 8, 10, 12, 14, 16]
 const SHAPES_PER_REQUEST = 100
 const SHAPE_CACHE_LIMIT = 800
+// The band under the border of an area that holds drawn ones: wider than a
+// border on either side, so it shows past the borders that lie on it.
+const BAND_WEIGHT = 8
 // Markers closer than their half sizes and this much more become one, so
 // that none stands against another.
 const MERGE_GAP = 8
@@ -286,6 +293,51 @@ const lineLatLngs = geojson => {
   return lines.filter(line => line.length >= 2).map(line => line.map(([lng, lat]) => [lat, lng]))
 }
 
+// Whether a point lies inside a GeoJSON (Multi)Polygon: inside an odd number
+// of its rings, so a hole counts out. The same test as the Map app's
+// (potok-mapa `src/areas.ts`, `contains`).
+const contains = (geojson, lat, lng) => {
+  const polygons = geojson.type === "Polygon" ? [geojson.coordinates] : geojson.coordinates || []
+  let inside = false
+
+  for (const rings of polygons) {
+    for (const ring of rings) {
+      for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
+        const [xi, yi] = ring[i]
+        const [xj, yj] = ring[j]
+
+        if (yi > lat !== yj > lat && lng < ((xj - xi) * (lat - yi)) / (yj - yi) + xi) inside = !inside
+      }
+    }
+  }
+
+  return inside
+}
+
+// The ids of the areas among `drawn` (`{area, shape}`, the biggest first, as
+// the server sends them) that hold a smaller one of them: that one's pin
+// inside their border, as `GroupAreas` has it. Their boxes go first, so few
+// borders are read.
+const holderIds = drawn => {
+  const ids = new Set()
+
+  drawn.forEach(({area, shape}, index) => {
+    const [west, south, east, north] = area.bbox
+
+    for (let other = index + 1; other < drawn.length; other++) {
+      const {lat, lng} = drawn[other].area
+      if (lat < south || lat > north || lng < west || lng > east) continue
+
+      if (contains(shape, lat, lng)) {
+        ids.add(area.id)
+        break
+      }
+    }
+  })
+
+  return ids
+}
+
 export const RootMap = {
   mounted() {
     this.map = null
@@ -296,6 +348,7 @@ export const RootMap = {
     this.markers = new Map()
     this.drawnMarkers = new Map()
     this.drawnPaths = new Map()
+    this.drawnBands = new Map()
     this.selectedId = null
     this.pins = JSON.parse(this.el.dataset.pins || "{}")
     this.maxZoom = Number(this.el.dataset.maxZoom) || 19
@@ -403,10 +456,11 @@ export const RootMap = {
       attribution: this.el.dataset.attribution,
     }).addTo(this.map)
 
-    // Areas under the pins, the dimming around the chosen ones above them,
-    // the chosen borders above that, and routes over all of them, still
-    // under the pins.
+    // The bands of the areas that hold others under every area, areas under
+    // the pins, the dimming around the chosen ones above them, the chosen
+    // borders above that, and routes over all of them, still under the pins.
     for (const [name, zIndex] of [
+      ["potokAreaBands", 340],
       ["potokAreas", 350],
       ["potokAreaMask", 360],
       ["potokAreaChosen", 370],
@@ -415,10 +469,12 @@ export const RootMap = {
       this.map.createPane(name).style.zIndex = String(zIndex)
     }
 
+    this.bandRenderer = L.svg({pane: "potokAreaBands", padding: 0.5})
     this.areaRenderer = L.svg({pane: "potokAreas", padding: 0.5})
     this.maskRenderer = L.svg({pane: "potokAreaMask", padding: 0.5})
     this.chosenRenderer = L.svg({pane: "potokAreaChosen", padding: 0.5})
     this.routeRenderer = L.svg({pane: "potokRoutes", padding: 0.5})
+    this.bandLayer = L.layerGroup().addTo(this.map)
     this.areaLayer = L.layerGroup().addTo(this.map)
     this.maskLayer = L.layerGroup().addTo(this.map)
     this.chosenLayer = L.layerGroup().addTo(this.map)
@@ -799,7 +855,9 @@ export const RootMap = {
     const view = this.map.getBounds()
     const next = new Map()
     const chosenNext = new Map()
+    const bandNext = new Map()
     const holes = []
+    const drawn = []
     this.areaPaths = new Map()
 
     // Biggest first, as they come, so that smaller areas lie on top.
@@ -828,6 +886,8 @@ export const RootMap = {
         continue
       }
 
+      drawn.push({area, shape: found.shape, key: found.key, latlngs, color})
+
       const [west, south, east, north] = area.bbox
       const covers =
         west <= view.getWest() &&
@@ -844,6 +904,26 @@ export const RootMap = {
           weight: 2,
           className: covers ? "potok-area is-outline" : "potok-area",
           placeId: area.id,
+        })
+      )
+    }
+
+    // The band under the border of an area that holds a drawn one, in a pane
+    // under every area, so it covers no border, nor the one picked by a tap.
+    const holders = holderIds(drawn)
+
+    for (const {area, key, latlngs, color} of drawn) {
+      if (!holders.has(area.id)) continue
+
+      bandNext.set(`${key}:${color}`, () =>
+        L.polygon(latlngs, {
+          pane: "potokAreaBands",
+          renderer: this.bandRenderer,
+          color,
+          weight: BAND_WEIGHT,
+          fill: false,
+          interactive: false,
+          className: "potok-area-band",
         })
       )
     }
@@ -867,6 +947,7 @@ export const RootMap = {
     }
 
     this.areaPaths = sync(this.drawnPaths, next, this.areaLayer)
+    sync(this.drawnBands, bandNext, this.bandLayer)
     this.drawnChosen = this.drawnChosen || new Map()
     sync(this.drawnChosen, chosenNext, this.chosenLayer)
 
