@@ -43,8 +43,12 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: cleartext
   },
+  // The page runs under the status bar and the home bar, and the CSS keeps its
+  // content clear of them through env(safe-area-inset-*). "always" added the
+  // same insets again in the scroll view, above or below the page depending on
+  // where it had last scrolled to, as after the keyboard.
   ios: {
-    contentInset: "always"
+    contentInset: "never"
   },
   plugins: {
     Keyboard: {

@@ -19,7 +19,7 @@
 
 // Include phoenix_html to handle method=PUT/DELETE in forms and buttons.
 import {App} from "@capacitor/app"
-import {Capacitor} from "@capacitor/core"
+import {Capacitor, SystemBars, SystemBarsStyle} from "@capacitor/core"
 import {PushNotifications as NativePushNotifications} from "@capacitor/push-notifications"
 import "phoenix_html"
 // Establish Phoenix Socket and LiveView configuration.
@@ -1307,14 +1307,26 @@ const registerKeyboardWatcher = () => {
   scheduleSyncKeyboardState()
 }
 
-// `ios.contentInset: "always"` (capacitor.config.ts) already starts the page
-// below the status bar, yet with `viewport-fit=cover` iOS can still report the
-// bar's height in env(safe-area-inset-top), as it does after the keyboard
-// closes. Counted twice, it left an empty band above the top bar.
-const registerNativeIosTopInset = () => {
-  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
-    document.documentElement.style.setProperty("--app-effective-safe-area-top", "0px")
+// The apps run under the status bar, so its clock and icons follow the app's
+// theme rather than the phone's: light on a dark page, dark on a light one.
+// Every theme sets `color-scheme`, "system" included.
+const registerSystemBarsStyle = () => {
+  if (!Capacitor.isNativePlatform()) {
+    return
   }
+
+  const root = document.documentElement
+
+  const applyStyle = () => {
+    const dark = window.getComputedStyle(root).colorScheme === "dark"
+
+    SystemBars.setStyle({style: dark ? SystemBarsStyle.Dark : SystemBarsStyle.Light}).catch(() => {})
+  }
+
+  new MutationObserver(applyStyle).observe(root, {attributeFilter: ["data-theme"]})
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyStyle)
+
+  applyStyle()
 }
 
 const recentlyHandledCapacitorMagicLinkToken = token => {
@@ -2061,7 +2073,7 @@ registerCapacitorMagicLinks()
 registerCapacitorBackButton()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
-registerNativeIosTopInset()
+registerSystemBarsStyle()
 registerKeyboardWatcher()
 
 window.addEventListener("DOMContentLoaded", () => {
