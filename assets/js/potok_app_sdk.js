@@ -421,13 +421,35 @@ const potok = {
 
   // Calls `listener` with each change in the app's collections the viewer may
   // see: `{event, collection, value?, id?, revision?}`, where `event` is
-  // "created", "updated", "deleted", "cleared", "regraded" or "config".
+  // "created", "updated", "deleted", "cleared", "regraded", "config" or
+  // "process", when an instance of the collection's process moved (`id` is
+  // the instance's: read it again with `listProcesses`).
   onValues(listener, options = {}) {
     if (typeof listener !== "function") return () => {}
 
     collectionListeners.set(listener, options.collection ?? null)
     return () => collectionListeners.delete(listener)
   },
+
+  // The instances of `collection`'s process the viewer may see, newest first,
+  // up to 100 (`ids` keeps those of these values): `status` ("running",
+  // "waiting", "done", "failed" or "cancelled"), `element`, `wake_at`,
+  // `error`, the sub-groups it made (`groups`), who decided what (`log`), and
+  // the `task` it waits on, with its `outcomes` and whether the viewer may
+  // pick one (`can_complete`).
+  listProcesses: (collection, options = {}) =>
+    call("list_processes", {collection, ids: options.ids ?? null}),
+
+  // Finishes the task the instance waits on at `element` with `outcome`, for
+  // someone holding the task's role; `comment` goes into its log. A task
+  // someone finished first gives `{ok: false, error: "not_waiting"}`.
+  completeTask: (id, element, outcome, options = {}) =>
+    call("complete_task", {id, element, outcome, comment: options.comment ?? null}),
+
+  // For the app's editors: takes a failed instance up again where it stopped,
+  // or cancels one that runs or waits.
+  retryProcess: id => call("retry_process", {id}),
+  cancelProcess: id => call("cancel_process", {id}),
 
   updateDescription: (description, options = {}) =>
     call("update_description", {

@@ -36,6 +36,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppValues do
   defp message(:regraded, payload, _assigns),
     do: %{event: "regraded", collection: payload.collection}
 
+  # Only which instance moved: the app reads it with what the viewer may see.
+  defp message(:process, payload, _assigns),
+    do: %{event: "process", collection: payload.collection, id: payload.id}
+
   defp message(:deleted, payload, assigns) do
     if sees?(assigns, payload.creator_id, payload.read),
       do: %{event: "deleted", collection: payload.collection, id: payload.id}

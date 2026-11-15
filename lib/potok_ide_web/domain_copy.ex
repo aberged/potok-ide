@@ -1146,6 +1146,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-cog-6-tooth",
+          title: dgettext("domain_map", "Runs a process"),
+          text:
+            dgettext(
+              "domain_map",
+              "A collection's rule can carry the graph of a process, which Potok checks as the app saves it and runs for every new <Value>value</Value>: messages, sub-groups and pushes signed by the process's own <Profile>profile</Profile>, tasks for the people of a role, deadlines and timers. The app lists the <ValueProcess>instances</ValueProcess> of the values its viewer may read, lets whoever holds a task's role finish it, and lets its editors take a failed one up again or cancel one. Each move reaches the app live."
+            )
+        },
+        %{
           icon: "hero-newspaper",
           title: dgettext("domain_map", "Reads the groups below it"),
           text:

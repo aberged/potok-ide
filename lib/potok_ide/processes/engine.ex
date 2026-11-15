@@ -34,6 +34,7 @@ defmodule PotokIde.Processes.Engine do
 
   alias PotokIde.Social.{
     Access,
+    AppData,
     AppProcess,
     Group,
     ProcessActions,
@@ -129,15 +130,37 @@ defmodule PotokIde.Processes.Engine do
 
       {:ok, {:stop, instance, announcements}} ->
         ProcessActions.announce(announcements)
-        instance
+        tell(instance)
 
       {:ok, :skip} ->
-        if last == :moved, do: Repo.get(ValueProcess, id)
+        if last == :moved, do: tell(Repo.get(ValueProcess, id))
 
       {:error, {:failed, element, reason}} ->
-        fail(id, element, reason)
+        id |> fail(element, reason) |> tell()
     end
   end
+
+  # The app's open pages hear that an instance moved, and read it again.
+  defp tell(nil), do: nil
+
+  defp tell(%ValueProcess{} = instance) do
+    case Repo.get(AppProcess, instance.app_process_id) do
+      %AppProcess{} = process ->
+        AppData.broadcast(%Group{id: process.group_id}, :process, %{
+          alt_id: process.alt_description_id,
+          collection: process.collection,
+          id: instance.id
+        })
+
+      nil ->
+        :ok
+    end
+
+    instance
+  end
+
+  defp told({:ok, instance}), do: {:ok, tell(instance)}
+  defp told(error), do: error
 
   defp guarded(id, budget) do
     Repo.transaction(fn -> step(id, budget) end)
@@ -395,6 +418,7 @@ defmodule PotokIde.Processes.Engine do
           })
       end
     end)
+    |> told()
   end
 
   defp comment_text(comment) when is_binary(comment) do
@@ -417,6 +441,7 @@ defmodule PotokIde.Processes.Engine do
           Repo.rollback(:not_failed)
       end
     end)
+    |> told()
   end
 
   @doc "Cancels an instance that runs or waits."
@@ -430,6 +455,7 @@ defmodule PotokIde.Processes.Engine do
           Repo.rollback(:not_running)
       end
     end)
+    |> told()
   end
 
   @doc """

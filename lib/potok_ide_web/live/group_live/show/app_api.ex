@@ -58,6 +58,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   import Phoenix.LiveView, only: [push_navigate: 2, redirect: 2]
 
   alias PotokIde.Polls
+  alias PotokIde.Processes
   alias PotokIde.Polls.{Poll, Rules, View}
   alias PotokIde.{MapTiles, RateLimit}
   alias PotokIde.Social
@@ -109,6 +110,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     save_config update_value delete_value delete_values grade_value list_roles
     set_notifications ensure_file_groups file_url prepare_upload
     map_config list_places list_places_at create_place show_group place_shapes
+    list_processes complete_task retry_process cancel_process
   )
 
   # What a guest may call of those: reads, with a guest's sight (`Social`
@@ -541,6 +543,58 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          {:ok, socket} <- take_write_token(socket) do
       case AppData.grade(profile, group, alt, id, params["items"]) do
         {:ok, value, _rule} -> {%{ok: true, value: present_value(value, socket)}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # The instances of a collection's process the viewer may see (`Processes`).
+  defp run("list_processes", %{"collection" => collection} = params, socket)
+       when is_binary(collection) do
+    %{current_profile: profile, group: group, active_alt_description: alt, access: access} =
+      socket.assigns
+
+    ids = params["ids"]
+    ids = if is_list(ids), do: Enum.filter(ids, &is_integer/1) |> Enum.take(100)
+
+    {%{ok: true, processes: Processes.list(profile, group, alt, access, collection, ids: ids)},
+     socket}
+  end
+
+  defp run("complete_task", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt, access: access} =
+      socket.assigns
+
+    with {:ok, id} <- id_param(params),
+         {:ok, socket} <- take_write_token(socket) do
+      case Processes.complete_task(
+             profile,
+             group,
+             alt,
+             access,
+             id,
+             params["element"],
+             params["outcome"],
+             params["comment"]
+           ) do
+        {:ok, process} -> {%{ok: true, process: process}, socket}
+        {:error, reason} -> {data_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run(method, params, socket) when method in ["retry_process", "cancel_process"] do
+    %{group: group, active_alt_description: alt, access: access} = socket.assigns
+    act = if method == "retry_process", do: &Processes.retry/4, else: &Processes.cancel/4
+
+    with {:ok, id} <- id_param(params),
+         {:ok, socket} <- take_write_token(socket) do
+      case act.(group, alt, access, id) do
+        {:ok, process} -> {%{ok: true, process: process}, socket}
         {:error, reason} -> {data_error(reason), socket}
       end
     else
@@ -1219,7 +1273,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
              :not_scored,
              :invalid_summary,
              :invalid_aggregate,
-             :invalid_match
+             :invalid_match,
+             :not_waiting,
+             :invalid_outcome,
+             :process_inactive,
+             :not_failed,
+             :not_running
            ] ->
         error(Atom.to_string(reason), nil)
 
