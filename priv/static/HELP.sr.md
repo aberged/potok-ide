@@ -218,7 +218,7 @@ U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ 
 
 ![Uloge i njihove dozvole](uloge)
 
-Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces, uz ime onoga ko je proces pokrenuo, a u podgrupi koju je proces napravio njegovo ime vodi na aplikaciju. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom.
+Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces, uz ime onoga ko je proces pokrenuo, a u podgrupi koju je proces napravio njegovo ime vodi na aplikaciju. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom. Uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo.
 
 ### Sve dozvole {:#dozvole}
 
@@ -326,7 +326,7 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.
 
-Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
+Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
 
 ![Šabloni za opis grupe](opis-sablon)
 

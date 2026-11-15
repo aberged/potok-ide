@@ -9,7 +9,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   attr :processes, :list,
     default: [],
-    doc: "the processes of the group's apps: `%{id, process, profile, role_keys, warning}`"
+    doc:
+      "the processes of the group's apps: `%{id, process, profile, role_keys, warning, counts, failed}`"
 
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
@@ -333,6 +334,55 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 </p>
               </div>
 
+              <div
+                :if={entry.counts != %{}}
+                id={"process-#{entry.id}-counts"}
+                class="mx-1 mb-1.5 flex flex-wrap gap-1.5"
+              >
+                <span
+                  :for={{status, label} <- count_labels(entry.counts)}
+                  id={"process-#{entry.id}-count-#{status}"}
+                  class={[
+                    "inline-flex h-6 items-center rounded-full px-2 text-[11px] font-semibold",
+                    count_class(status)
+                  ]}
+                >
+                  {label}
+                </span>
+              </div>
+
+              <ul
+                :if={entry.failed != []}
+                id={"process-#{entry.id}-failed"}
+                class="mx-1 mb-1.5 space-y-1"
+              >
+                <li
+                  :for={instance <- entry.failed}
+                  id={"process-instance-#{instance.id}"}
+                  class="flex items-center justify-between gap-2 rounded-xl bg-error/10 px-3 py-1.5 text-xs text-base-content"
+                >
+                  <span class="min-w-0">
+                    <span class="font-semibold">
+                      {gettext("Stopped at %{element}",
+                        element: instance.error["element"] || instance.element
+                      )}
+                    </span>
+                    <span class="text-base-content/70">
+                      · {failure_reason(instance.error["reason"])}
+                    </span>
+                  </span>
+                  <.button
+                    id={"process-instance-#{instance.id}-retry"}
+                    type="button"
+                    phx-click="retry_process_instance"
+                    phx-value-id={instance.id}
+                    size="sm"
+                  >
+                    {gettext("Take up again")}
+                  </.button>
+                </li>
+              </ul>
+
               <.role_editor
                 :if={@manage_roles?}
                 id={"process-#{entry.id}"}
@@ -428,6 +478,45 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       " · "
     )
   end
+
+  # How many instances are in each state, those under way first.
+  defp count_labels(counts) do
+    for status <- [:running, :waiting, :failed, :done, :cancelled],
+        n = Map.get(counts, status, 0),
+        n > 0,
+        do: {status, count_label(status, n)}
+  end
+
+  defp count_label(:running, n), do: gettext("Running: %{count}", count: n)
+  defp count_label(:waiting, n), do: gettext("Waiting: %{count}", count: n)
+  defp count_label(:failed, n), do: gettext("Failed: %{count}", count: n)
+  defp count_label(:done, n), do: gettext("Done: %{count}", count: n)
+  defp count_label(:cancelled, n), do: gettext("Cancelled: %{count}", count: n)
+
+  defp count_class(:running), do: "bg-primary/10 text-primary"
+  defp count_class(:waiting), do: "bg-amber-500/15 text-amber-800 dark:text-amber-200"
+  defp count_class(:failed), do: "bg-error/10 text-error"
+  defp count_class(:done), do: "bg-success/10 text-success"
+  defp count_class(:cancelled), do: "bg-base-200 text-base-content/65"
+
+  # Why an instance stopped (`Processes.Engine`), in words.
+  defp failure_reason("not_permitted"), do: gettext("the process lacks a permission")
+
+  defp failure_reason("not_a_member_of_group"),
+    do: gettext("the process is not a member of that group")
+
+  defp failure_reason("not_process_group"),
+    do: gettext("the process may not write in that group")
+
+  defp failure_reason("no_admin"), do: gettext("nobody to run the sub-group")
+  defp failure_reason("no_subgroup"), do: gettext("its sub-group is gone")
+  defp failure_reason("empty_text"), do: gettext("the text came out empty")
+  defp failure_reason("invalid_push"), do: gettext("the push text does not fit")
+  defp failure_reason("process_inactive"), do: gettext("the process was stopped")
+  defp failure_reason("loop"), do: gettext("it went round without waiting")
+  defp failure_reason("too_many_steps"), do: gettext("it took too many steps")
+  defp failure_reason("crash"), do: gettext("an unexpected error")
+  defp failure_reason(_reason), do: gettext("an error")
 
   defp missing_permissions(missing) do
     Enum.map_join(missing, ", ", &RolesTab.permission_label(String.to_existing_atom(&1)))

@@ -26,6 +26,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Notices
   alias PotokIde.Polls
+  alias PotokIde.Processes
   alias PotokIde.RateLimit
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -2474,6 +2475,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end
   end
 
+  # An editor takes up again an instance of an app's process that failed.
+  def handle_event("retry_process_instance", %{"id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    with {id, ""} <- Integer.parse(id),
+         {:ok, _process} <- Processes.retry(group, :any, access, id) do
+      {:noreply,
+       socket
+       |> put_flash(:info, gettext("The process goes on from where it stopped."))
+       |> assign_group_processes()}
+    else
+      _refused -> {:noreply, put_flash(socket, :error, gettext("Could not take it up again."))}
+    end
+  end
+
   def handle_event("toggle_member_role", %{"profile-id" => profile_id, "key" => key}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -2621,8 +2637,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
       when socket.assigns.group.id == group_id do
     socket = AppValues.announce(socket, event, payload)
 
-    # Saving an app's rules starts and stops its processes.
-    socket = if event == :config, do: assign_group_processes(socket), else: socket
+    # Saving an app's rules starts and stops its processes, and their
+    # instances move.
+    socket = if event in [:config, :process], do: assign_group_processes(socket), else: socket
 
     {:noreply, socket}
   end
@@ -4864,6 +4881,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp process_entries(group, access) do
     rows = AppProcesses.list_active(group)
     keys_by_profile = Access.role_keys_by_profile(group, Enum.map(rows, & &1.profile_id))
+    counts = rows |> Enum.map(& &1.id) |> Processes.counts()
     manage? = ValueRules.manage?(access)
 
     Enum.map(rows, fn row ->
@@ -4872,7 +4890,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
         process: row,
         profile: %{row.profile | app_process: row},
         role_keys: Map.get(keys_by_profile, row.profile_id, []),
-        warning: if(manage?, do: AppProcesses.warning(row, group))
+        warning: if(manage?, do: AppProcesses.warning(row, group)),
+        counts: Map.get(counts, row.id, %{}),
+        failed: if(manage?, do: Processes.failed(row.id), else: [])
       }
     end)
   end

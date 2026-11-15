@@ -212,7 +212,7 @@ In Roles you see whether the group has a manifest of its own or inherits one, yo
 
 ![Roles and their permissions](uloge)
 
-An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role.
+An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role. Next to each process you see how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again from there.
 
 ### All permissions {:#dozvole}
 
@@ -320,7 +320,7 @@ Some kinds of groups get a ready-made app:
 
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.
 
-Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
+Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
 
 ![Templates for a group's description](opis-sablon)
 

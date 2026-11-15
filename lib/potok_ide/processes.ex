@@ -48,6 +48,8 @@ defmodule PotokIde.Processes do
     Enum.map(instances, &present(&1, access, names))
   end
 
+  # `:any` is every app of the group, for its page's list of processes.
+  defp of_app(query, :any), do: query
   defp of_app(query, nil), do: where(query, [_i, p], is_nil(p.alt_description_id))
   defp of_app(query, alt_id), do: where(query, [_i, p], p.alt_description_id == ^alt_id)
 
@@ -83,7 +85,10 @@ defmodule PotokIde.Processes do
     end
   end
 
-  @doc "Takes up again a failed instance of this app, for its editors."
+  @doc """
+  Takes up again a failed instance of this app, for its editors; `alt`
+  `:any` takes any app of the group, as the group's list of processes does.
+  """
   def retry(%Group{} = group, alt, %Access{} = access, id) do
     with :ok <- editor(access),
          %ValueProcess{} <- of_this_app(group, alt, id) || {:error, :not_found},
@@ -110,11 +115,40 @@ defmodule PotokIde.Processes do
       on: p.id == i.app_process_id,
       where: i.id == ^id and p.group_id == ^group_id
     )
-    |> of_app(AppData.alt_id(alt))
+    |> of_app(if(alt == :any, do: :any, else: AppData.alt_id(alt)))
     |> Repo.one()
   end
 
   defp of_this_app(_group, _alt, _id), do: nil
+
+  @doc """
+  How many instances of each of `app_process_ids` are in each state, as
+  `%{app_process_id => %{running: n, waiting: n, done: n, failed: n, cancelled: n}}`,
+  with the states that have none left out.
+  """
+  def counts([]), do: %{}
+
+  def counts(app_process_ids) when is_list(app_process_ids) do
+    from(i in ValueProcess,
+      where: i.app_process_id in ^app_process_ids,
+      group_by: [i.app_process_id, i.status],
+      select: {i.app_process_id, i.status, count()}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {id, status, n}, acc ->
+      Map.update(acc, id, %{status => n}, &Map.put(&1, status, n))
+    end)
+  end
+
+  @doc "The failed instances of a process, the latest first, at most `limit`."
+  def failed(app_process_id, limit \\ 20) do
+    from(i in ValueProcess,
+      where: i.app_process_id == ^app_process_id and i.status == :failed,
+      order_by: [desc: i.updated_at, desc: i.id],
+      limit: ^limit
+    )
+    |> Repo.all()
+  end
 
   @doc """
   An instance as the app gets it: where it stands, the task it waits on and

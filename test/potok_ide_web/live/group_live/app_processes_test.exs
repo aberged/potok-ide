@@ -12,6 +12,7 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
+  alias PotokIde.Processes.{Engine, ValueProcess}
   alias PotokIde.Social.{AppData, AppProcess, ProcessActions, ProcessStep}
 
   setup do
@@ -156,6 +157,80 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
 
       save!(ctx.owner, ctx.group, %{})
       refute has_element?(lv, "#group-processes")
+    end
+  end
+
+  describe "the instances" do
+    # A process whose every value waits for a member to say it is done.
+    defp with_task do
+      graph = %{
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{
+            "id" => "odluka",
+            "type" => "userTask",
+            "role" => "everyone",
+            "outcomes" => ["gotovo"]
+          },
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "odluka"},
+          %{"from" => "odluka", "to" => "kraj", "outcome" => "gotovo"}
+        ]
+      }
+
+      put_in(with_process(), ["tasks", "process", "graph"], graph)
+    end
+
+    defp waiting!(ctx) do
+      {:ok, value, _rule} =
+        AppData.insert(ctx.member, ctx.member_account, ctx.group, nil, "tasks", %{})
+
+      instance = Repo.get_by!(ValueProcess, value_id: value.id)
+      Engine.run(instance.id)
+    end
+
+    test "are counted by state, and follow each move", ctx do
+      save!(ctx.owner, ctx.group, with_task())
+      %{profile: process} = process_of(ctx.group)
+      instance = waiting!(ctx)
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
+      assert has_element?(lv, "#process-#{process.id}-count-waiting", "Waiting: 1")
+
+      {:ok, _moved} = Engine.complete_task(ctx.member, instance.id, "odluka", "gotovo")
+      Engine.run(instance.id)
+
+      assert render(lv) =~ "Done: 1"
+      refute has_element?(lv, "#process-#{process.id}-count-waiting")
+    end
+
+    test "that failed show to the editors, who take them up again", ctx do
+      save!(ctx.owner, ctx.group, with_task())
+      %{profile: process} = process_of(ctx.group)
+      instance = waiting!(ctx)
+
+      instance
+      |> Ecto.Changeset.change(
+        status: :failed,
+        error: %{"element" => "odluka", "reason" => "not_permitted"}
+      )
+      |> Repo.update!()
+
+      {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
+      assert has_element?(member_lv, "#process-#{process.id}-count-failed", "Failed: 1")
+      refute has_element?(member_lv, "#process-#{process.id}-failed")
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/members")
+      assert has_element?(lv, "#process-instance-#{instance.id}", "Stopped at odluka")
+      assert has_element?(lv, "#process-instance-#{instance.id}", "lacks a permission")
+
+      lv |> element("#process-instance-#{instance.id}-retry") |> render_click()
+
+      refute has_element?(lv, "#process-instance-#{instance.id}")
+      assert has_element?(lv, "#process-#{process.id}-count-running", "Running: 1")
+      assert %ValueProcess{status: :running, error: nil} = Repo.get!(ValueProcess, instance.id)
     end
   end
 
