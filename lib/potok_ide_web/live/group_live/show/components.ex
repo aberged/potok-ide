@@ -749,6 +749,22 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  attr :id, :string, default: nil
+
+  @doc "The mark of a profile that signs for an app's process, not for a person."
+  def process_badge(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      title={gettext("An app's process, not a person")}
+      class="inline-flex h-5 shrink-0 items-center gap-0.5 rounded-full bg-base-200 px-1.5 text-[10px] font-semibold uppercase tracking-wide text-base-content/65"
+    >
+      <.icon name="hero-cog-6-tooth-micro" class="size-3" />
+      {gettext("Process")}
+    </span>
+    """
+  end
+
   attr :profile, :map, required: true
   attr :avatar_size, :string, default: "size-11"
   attr :text_class, :string, default: "text-sm"
@@ -836,7 +852,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             @avatar_size,
             "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
           ]}>
-            {profile_initials(@profile.username)}
+            <.icon :if={Profile.process?(@profile)} name="hero-cog-6-tooth" class="size-5" />
+            <span :if={!Profile.process?(@profile)}>{profile_initials(@profile.username)}</span>
           </div>
         <% end %>
 
@@ -858,10 +875,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <div class={[
           @text_class,
-          "truncate font-semibold text-base-content",
+          "flex min-w-0 items-center gap-1.5 font-semibold text-base-content",
           if(@me, do: "italic text-success", else: "")
         ]}>
-          {@profile.username}
+          <span class="truncate">{Profile.display_name(@profile)}</span>
+          <.process_badge :if={Profile.process?(@profile)} />
         </div>
 
         <div :if={@subtitle} class="truncate text-xs text-base-content/65">{@subtitle}</div>
@@ -881,8 +899,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  # Nobody writes to the process of an app directly.
   defp profile_identity_clickable?(profile, current_profile, direct_group_link?) do
-    direct_group_link? and
+    direct_group_link? and not Profile.process?(profile) and
       match?(%{id: current_profile_id} when current_profile_id != profile.id, current_profile)
   end
 
@@ -1563,6 +1582,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:mentions_me?, mentions_profile?(assigns.value, assigns.current_profile))
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
+      |> assign(:process?, Profile.process?(assigns.value.creator))
       |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
@@ -1591,7 +1611,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       id={@dom_id}
       data-value-id={@value.id}
       data-creator-id={@value.creator_id}
-      data-author={@value.creator.username}
+      data-author={Profile.display_name(@value.creator)}
       data-at={datetime_to_iso8601(@value.inserted_at)}
       data-mentions-me={@mentions_me? && "true"}
       data-unread-start={@unread_divider && "true"}
@@ -1633,7 +1653,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             alt={@value.creator.username}
             class="object-cover"
           />
-          <span :if={!@avatar_url}>{profile_initials(@value.creator.username)}</span>
+          <.icon :if={!@avatar_url and @process?} name="hero-cog-6-tooth" class="size-4 sm:size-5" />
+          <span :if={!@avatar_url and !@process?}>{profile_initials(@value.creator.username)}</span>
         </div>
         <span
           id={"value-creator-presence-#{@value.id}"}
@@ -1656,8 +1677,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         class="chat-header mb-0.5 flex max-w-full items-center gap-2 text-xs text-base-content/65 group-data-continued/value:hidden"
       >
         <span :if={!@mine?} class="min-w-0 truncate font-semibold text-base-content">
-          {@value.creator.username}
+          {Profile.display_name(@value.creator)}
         </span>
+        <.process_badge :if={!@mine? and @process?} id={"value-process-#{@value.id}"} />
         <span
           :if={@mentions_me?}
           id={"value-mentions-me-#{@value.id}"}
@@ -1760,7 +1782,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             data-value-action="block"
             data-confirm={
               gettext("Block %{username} in this group? A member is also removed from it.",
-                username: @value.creator.username
+                username: Profile.display_name(@value.creator)
               )
             }
             icon="hero-no-symbol"
@@ -1812,7 +1834,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             "block text-xs font-semibold",
             if(@mine?, do: "text-primary-content", else: "text-primary")
           ]}>
-            {@reply_parent.creator.username}
+            {Profile.display_name(@reply_parent.creator)}
           </span>
           <span class={[
             "line-clamp-2 wrap-break-word",

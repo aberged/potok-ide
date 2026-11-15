@@ -218,6 +218,8 @@ U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ 
 
 ![Uloge i njihove dozvole](uloge)
 
+Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom.
+
 ### Sve dozvole {:#dozvole}
 
 Grupa ima 20 dozvola. Uloga Svi na početku ima one označene u poslednjoj koloni.

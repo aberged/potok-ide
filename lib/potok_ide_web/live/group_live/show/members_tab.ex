@@ -6,6 +6,11 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   alias PotokIdeWeb.TagComponents
 
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
+
+  attr :processes, :list,
+    default: [],
+    doc: "the processes of the group's apps: `%{id, process, profile, role_keys, warning}`"
+
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
   attr :group, :map, required: true
@@ -205,26 +210,11 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                   <.icon name="hero-arrow-turn-down-right" class="size-3" />
                   {gettext("Inherited")}
                 </span>
-                <div
-                  :if={!@group.is_direct and member_roles(@assignable_roles, role_keys) != []}
-                  id={"member-#{member.id}-roles"}
-                  class="flex flex-wrap items-center gap-1"
-                >
-                  <span
-                    :for={role <- member_roles(@assignable_roles, role_keys)}
-                    id={"member-#{member.id}-role-badge-#{role.key}"}
-                    class={[
-                      "inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-semibold",
-                      if(role.key == GroupRole.admin_key(),
-                        do: "bg-amber-500/15 text-amber-800 dark:text-amber-200",
-                        else: "bg-primary/10 text-primary"
-                      )
-                    ]}
-                  >
-                    <.icon name={RolesTab.role_icon(role)} class="size-3" />
-                    {RolesTab.role_label(role)}
-                  </span>
-                </div>
+                <.role_badges
+                  :if={!@group.is_direct}
+                  id={"member-#{member.id}"}
+                  roles={member_roles(@assignable_roles, role_keys)}
+                />
                 <TagComponents.tag_chips id={"member-#{member.id}-tag-list"} tags={member.tags} />
               </div>
               <TagComponents.tag_button
@@ -260,35 +250,14 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               />
             </div>
             <%!-- Toggled on the client; stays open while the member is re-streamed. --%>
-            <div
+            <.role_editor
               :if={@manage_roles?}
-              id={"member-#{member.id}-role-editor"}
-              class="hidden flex-wrap items-center gap-1.5 border-t border-base-300/60 px-1 pt-2 pb-1 mt-1"
-            >
-              <button
-                :for={role <- @assignable_roles}
-                id={"member-#{member.id}-role-#{role.key}"}
-                type="button"
-                phx-click="toggle_member_role"
-                phx-value-profile-id={member.id}
-                phx-value-key={role.key}
-                aria-pressed={to_string(role.key in role_keys)}
-                disabled={role.key in inherited_role_keys}
-                title={
-                  if(role.key in inherited_role_keys, do: gettext("Inherited from the parent group"))
-                }
-                class={[
-                  "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold shadow-xs transition duration-150 ease-out",
-                  role_toggle_class(role.key, role_keys, inherited_role_keys)
-                ]}
-              >
-                <.icon
-                  name={role_toggle_icon(role.key, role_keys, inherited_role_keys)}
-                  class="size-3.5"
-                />
-                {RolesTab.role_label(role)}
-              </button>
-            </div>
+              id={"member-#{member.id}"}
+              profile_id={member.id}
+              roles={@assignable_roles}
+              role_keys={role_keys}
+              inherited_role_keys={inherited_role_keys}
+            />
           </li>
         </ul>
 
@@ -302,9 +271,166 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
             {gettext("Load more members")}
           </.button>
         </div>
+
+        <section :if={@processes != []} id="group-processes" class="mt-8">
+          <div class="mb-3 px-1">
+            <h4 class="flex items-center gap-1.5 text-sm font-semibold text-base-content">
+              <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/60" />
+              {gettext("Processes")}
+            </h4>
+            <p class="text-xs text-base-content/70">
+              {gettext(
+                "They act for the group's apps and are not counted among the members. An app's rules start and stop them."
+              )}
+            </p>
+          </div>
+
+          <ul id="group-processes-list" class="space-y-2">
+            <li
+              :for={entry <- @processes}
+              id={"group-process-#{entry.id}"}
+              class="rounded-2xl border border-dashed border-base-300 bg-base-100/50 px-2 py-1"
+            >
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex min-w-0 flex-1 flex-wrap items-center gap-x-3 gap-y-1">
+                  <Components.profile_identity
+                    profile={entry.profile}
+                    subtitle={process_subtitle(entry.process)}
+                    current_profile={@current_profile}
+                  />
+                  <.role_badges
+                    id={"process-#{entry.id}"}
+                    roles={member_roles(@assignable_roles, entry.role_keys)}
+                  />
+                </div>
+                <.icon_button
+                  :if={@manage_roles?}
+                  id={"process-#{entry.id}-roles-toggle"}
+                  type="button"
+                  phx-click={JS.toggle_class("hidden flex", to: "#process-#{entry.id}-role-editor")}
+                  aria-controls={"process-#{entry.id}-role-editor"}
+                  icon="hero-shield-check"
+                  label={gettext("Roles of %{username}", username: entry.process.name)}
+                />
+              </div>
+
+              <div
+                :if={entry.warning}
+                id={"process-#{entry.id}-warning"}
+                class="mx-1 mt-1 mb-1.5 space-y-0.5 rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
+              >
+                <p :if={entry.warning["missing"] != []} id={"process-#{entry.id}-missing"}>
+                  <.icon name="hero-exclamation-triangle" class="mr-1 size-3.5 align-[-2px]" />
+                  {gettext("It may not: %{permissions}.",
+                    permissions: missing_permissions(entry.warning["missing"])
+                  )}
+                </p>
+                <p :if={entry.warning["owner_left"]} id={"process-#{entry.id}-owner-left"}>
+                  <.icon name="hero-user-minus" class="mr-1 size-3.5 align-[-2px]" />
+                  {gettext(
+                    "Its owner no longer edits the app. Whoever saves its rules next takes it over."
+                  )}
+                </p>
+              </div>
+
+              <.role_editor
+                :if={@manage_roles?}
+                id={"process-#{entry.id}"}
+                profile_id={entry.id}
+                roles={@assignable_roles}
+                role_keys={entry.role_keys}
+              />
+            </li>
+          </ul>
+        </section>
       </Components.tab_body>
     </div>
     """
+  end
+
+  attr :id, :string, required: true, doc: "the prefix of the ids, such as `member-12`"
+  attr :roles, :list, required: true, doc: "the assigned roles to show"
+
+  defp role_badges(assigns) do
+    ~H"""
+    <div :if={@roles != []} id={"#{@id}-roles"} class="flex flex-wrap items-center gap-1">
+      <span
+        :for={role <- @roles}
+        id={"#{@id}-role-badge-#{role.key}"}
+        class={[
+          "inline-flex h-6 items-center gap-1 rounded-full px-2 text-[11px] font-semibold",
+          if(role.key == GroupRole.admin_key(),
+            do: "bg-amber-500/15 text-amber-800 dark:text-amber-200",
+            else: "bg-primary/10 text-primary"
+          )
+        ]}
+      >
+        <.icon name={RolesTab.role_icon(role)} class="size-3" />
+        {RolesTab.role_label(role)}
+      </span>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true, doc: "the prefix of the ids, such as `member-12`"
+  attr :profile_id, :integer, required: true
+  attr :roles, :list, required: true, doc: "the roles that may be assigned"
+  attr :role_keys, :list, required: true
+  attr :inherited_role_keys, :list, default: []
+
+  defp role_editor(assigns) do
+    ~H"""
+    <div
+      id={"#{@id}-role-editor"}
+      class="hidden flex-wrap items-center gap-1.5 border-t border-base-300/60 px-1 pt-2 pb-1 mt-1"
+    >
+      <button
+        :for={role <- @roles}
+        id={"#{@id}-role-#{role.key}"}
+        type="button"
+        phx-click="toggle_member_role"
+        phx-value-profile-id={@profile_id}
+        phx-value-key={role.key}
+        aria-pressed={to_string(role.key in @role_keys)}
+        disabled={role.key in @inherited_role_keys}
+        title={if(role.key in @inherited_role_keys, do: gettext("Inherited from the parent group"))}
+        class={[
+          "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold shadow-xs transition duration-150 ease-out",
+          role_toggle_class(role.key, @role_keys, @inherited_role_keys)
+        ]}
+      >
+        <.icon
+          name={role_toggle_icon(role.key, @role_keys, @inherited_role_keys)}
+          class="size-3.5"
+        />
+        {RolesTab.role_label(role)}
+      </button>
+    </div>
+    """
+  end
+
+  # Which collection of which app, and who owns the process.
+  defp process_subtitle(process) do
+    owner =
+      case process.owner_profile do
+        %{username: username} -> gettext("owner %{username}", username: username)
+        nil -> gettext("no owner")
+      end
+
+    app =
+      case process.alt_description do
+        %{name: name} -> [name]
+        nil -> []
+      end
+
+    Enum.join(
+      app ++ [gettext("collection %{collection}", collection: process.collection), owner],
+      " · "
+    )
+  end
+
+  defp missing_permissions(missing) do
+    Enum.map_join(missing, ", ", &RolesTab.permission_label(String.to_existing_atom(&1)))
   end
 
   # A role held through the parent is locked: it is changed there.

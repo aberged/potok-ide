@@ -22,6 +22,10 @@ defmodule PotokIde.Social.ValueRules do
   (`Value.anonymous`): its author shows to nobody but the author, whatever the
   rule says later.
 
+  A rule's `process` names the process of its collection. Potok gives it a
+  profile of its own, which signs what the process does
+  (`PotokIde.Social.AppProcesses`).
+
   Plain functions over what the caller has read, like `PotokIde.Polls.Rules`.
   """
 
@@ -40,6 +44,7 @@ defmodule PotokIde.Social.ValueRules do
   @max_upload_slots 30
   @max_files_per_slot 10
   @max_path_depth 3
+  @max_process_name 60
   @default_max_upload_bytes 10 * 1024 * 1024
 
   # What a slot for files may take. A browser reports the type, so this keeps
@@ -76,7 +81,8 @@ defmodule PotokIde.Social.ValueRules do
     closes_at: nil,
     under: nil,
     uploads: %{},
-    score: nil
+    score: nil,
+    process: nil
   }
 
   @doc "The collections Potok keeps itself."
@@ -125,6 +131,7 @@ defmodule PotokIde.Social.ValueRules do
          {:ok, under} <- path(rule["under"]),
          {:ok, uploads} <- uploads(rule["uploads"]),
          {:ok, score} <- score(rule["score"]),
+         {:ok, process} <- process(rule["process"]),
          :ok <- consistent(anonymous, uploads, score, edit_own, under) do
       {:ok,
        %{
@@ -139,7 +146,8 @@ defmodule PotokIde.Social.ValueRules do
          "closes_at" => closes_at,
          "under" => under,
          "uploads" => uploads,
-         "score" => score
+         "score" => score,
+         "process" => process
        }}
     end
   end
@@ -289,6 +297,19 @@ defmodule PotokIde.Social.ValueRules do
 
   defp score(_score), do: {:error, :invalid_rules}
 
+  # Only its name so far: the engine that runs processes adds the rest.
+  defp process(nil), do: {:ok, nil}
+
+  defp process(%{"name" => name}) when is_binary(name) do
+    name = String.trim(name)
+
+    if String.length(name) in 1..@max_process_name,
+      do: {:ok, %{"name" => name}},
+      else: {:error, :invalid_rules}
+  end
+
+  defp process(_process), do: {:error, :invalid_rules}
+
   @doc """
   The rule of `collection` among normalized `rules`, as a map with atom keys
   and `closes_at` as a `DateTime`. A collection without one gets the closed
@@ -310,7 +331,8 @@ defmodule PotokIde.Social.ValueRules do
           closes_at: parse_moment(rule["closes_at"]),
           under: rule["under"],
           uploads: rule["uploads"] || %{},
-          score: rule["score"]
+          score: rule["score"],
+          process: rule["process"]
         }
 
       _none ->

@@ -334,11 +334,16 @@ const potok = {
 
   // The app's config (its `secret` part only for its editors), its `revision`,
   // and per collection with a rule what the viewer may do there (`caps`).
+  // Editors also get `process_warnings`: per collection whose rule has a
+  // `process`, the permissions its profile lacks (`missing`) and whether its
+  // owner no longer edits the app (`owner_left`).
   getConfig: () => call("get_config"),
 
   // Saves the config, for the app's editors. Pass the revision you started
   // from (0 for the first); someone else's save in between gives
   // `{ok: false, error: "conflict", current}`. `rules` is what Potok holds to.
+  // A rule's `process: {name}` gives its collection a process with a profile
+  // of its own; the reply carries `process_warnings`, as `getConfig` does.
   saveConfig: (data, options = {}) =>
     call("save_config", {data: toData(data), revision: options.revision ?? null}),
 

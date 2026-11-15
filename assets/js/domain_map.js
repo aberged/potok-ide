@@ -50,7 +50,7 @@ const CORE = {
 const COLUMN = [26, 228, 430, 632, 834]
 const TABLES = {
   width: 1032,
-  height: 690,
+  height: 762,
   nodeWidth: 172,
   nodeHeight: 46,
   nodes: {
@@ -79,12 +79,13 @@ const TABLES = {
     ValueAttachment: [COLUMN[4], 212],
     ValueReaction: [COLUMN[3], 284],
     GroupValueRead: [COLUMN[4], 284],
-    Event: [COLUMN[3], 380],
-    Response: [COLUMN[4], 380],
-    MemberSetting: [COLUMN[4], 452],
-    Poll: [COLUMN[3], 548],
-    PollOption: [COLUMN[4], 548],
-    PollBallot: [COLUMN[4], 620],
+    AppProcess: [COLUMN[3], 356],
+    Event: [COLUMN[3], 452],
+    Response: [COLUMN[4], 452],
+    MemberSetting: [COLUMN[4], 524],
+    Poll: [COLUMN[3], 620],
+    PollOption: [COLUMN[4], 620],
+    PollBallot: [COLUMN[4], 692],
     GroupReaction: [COLUMN[1], 428],
     GroupBlock: [COLUMN[2], 428],
     Tag: [COLUMN[1], 524],
@@ -97,9 +98,9 @@ const TABLES = {
     profiles: [218, 14, 192, 158],
     joining: [420, 14, 596, 158],
     group: [218, 182, 394, 302],
-    content: [622, 182, 394, 158],
-    calendar: [622, 350, 394, 158],
-    polls: [622, 518, 394, 158],
+    content: [622, 182, 394, 230],
+    calendar: [622, 422, 394, 158],
+    polls: [622, 590, 394, 158],
     notices: [16, 446, 192, 230],
     tags: [218, 494, 394, 86],
     hosting: [218, 590, 394, 86],
@@ -120,7 +121,7 @@ const ROUTES = {
   "GroupReaction>Group": {from: "r", to: "l"},
   "GroupBlock>Group": {from: "r", to: "r", bulge: 34},
   "GroupBlock>Profile": {from: "l", to: "l", bulge: 40},
-  "Tagging>ValueAttachment": {d: "M602 534C618 512 612 345 652 345H790C812 345 818 330 818 300V262C818 252 824 248 834 247"},
+  "Tagging>ValueAttachment": {d: "M602 534C618 512 612 417 652 417H790C812 417 818 402 818 372V262C818 252 824 248 834 247"},
 }
 
 const element = (tag, attributes, parent, text) => {

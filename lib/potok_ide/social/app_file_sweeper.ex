@@ -5,6 +5,9 @@ defmodule PotokIde.Social.AppFileSweeper do
   `interval_ms` and once at start. It runs on every node; two passes at once
   delete nothing twice.
 
+  The same pass deletes the profiles of processes whose app is gone and that
+  left nothing they wrote (`PotokIde.Social.AppProcesses.sweep/0`).
+
   A failed pass is logged and the next one runs as usual, as in
   `PotokIde.Polls.Scheduler`.
   """
@@ -13,7 +16,7 @@ defmodule PotokIde.Social.AppFileSweeper do
 
   require Logger
 
-  alias PotokIde.Social.AppFiles
+  alias PotokIde.Social.{AppFiles, AppProcesses}
 
   def start_link(opts) do
     config = Application.get_env(:potok_ide, __MODULE__, [])
@@ -40,6 +43,7 @@ defmodule PotokIde.Social.AppFileSweeper do
 
   defp tick do
     AppFiles.sweep()
+    AppProcesses.sweep()
   rescue
     error ->
       Logger.error("App file sweep failed: " <> Exception.format(:error, error, __STACKTRACE__))

@@ -169,6 +169,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Profile", "profile_picture_url"), do: dgettext("domain_map", "profile picture")
   defp own_field("Profile", "sharing"), do: dgettext("domain_map", "sharing")
   defp own_field("Profile", "notice_push"), do: dgettext("domain_map", "push of notices")
+  defp own_field("Profile", "kind"), do: dgettext("domain_map", "person or process")
 
   defp own_field("Group", "group_picture_url"), do: dgettext("domain_map", "group picture")
 
@@ -287,6 +288,15 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueAttachment", "content_type"), do: dgettext("domain_map", "file type")
   defp own_field("ValueAttachment", "byte_size"), do: dgettext("domain_map", "size")
   defp own_field("ValueAttachment", "profile_id"), do: dgettext("domain_map", "who added it")
+
+  defp own_field("AppProcess", "profile_id"), do: dgettext("domain_map", "profile of the process")
+
+  defp own_field("AppProcess", "alt_description_id"),
+    do: dgettext("domain_map", "app description")
+
+  defp own_field("AppProcess", "collection"), do: dgettext("domain_map", "collection of app data")
+  defp own_field("AppProcess", "owner_profile_id"), do: dgettext("domain_map", "owner")
+  defp own_field("AppProcess", "active"), do: dgettext("domain_map", "active")
 
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
@@ -489,6 +499,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
+  def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -541,7 +552,7 @@ defmodule PotokIdeWeb.DomainCopy do
 
     dgettext(
       "domain_map",
-      "An account's face in groups: username, picture and description. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it.",
+      "An account's face in groups: username, picture and description. The code does not distinguish purposes such as business, private or club. Everything that happens in a group is signed by a profile, so %{count} of the %{total} foreign keys point at this table. A profile either belongs to one account or several accounts share it. The profile of an app's process belongs to none.",
       count: Enum.count(keys, &(&1.to == "Profile")),
       total: length(keys)
     )
@@ -636,6 +647,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "How far a profile has read a group. Everything newer than the last read value is unread. That value is kept as a plain number, with no foreign key."
+    )
+  end
+
+  defp entity_description("AppProcess", _edges) do
+    dgettext(
+      "domain_map",
+      "The process of one collection of an app, with the profile that signs what it does and its owner, the editor who saved its rule. Removing the rule makes it inactive, and its profile stays as the author of what it wrote."
     )
   end
 
@@ -870,6 +888,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("value_attachments_byte_size_check") do
     dgettext("domain_map", "The size is not negative.")
+  end
+
+  def check_text("app_processes_collection_check") do
+    dgettext("domain_map", "The collection is named as an app names its own.")
   end
 
   def check_text("values_collection_check") do
@@ -1370,6 +1392,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "An app's settings are one <Value>value</Value> of its own: the app's data, a secret part only its editors read, and the rules of its other collections, which Potok holds to on every call. A rule names the <GroupRole>roles</GroupRole> that write and those that read everything; everyone else reads only what they wrote, and those who may edit the group always read all. A collection without a rule is closed the same way. One answer per person counts one account once, as a poll does. An answer written while its collection was anonymous never shows its author to anyone but the author, though its time shows, and whoever rewrites the app's code could still get around it. Files sent with answers are values with a <ValueAttachment>file</ValueAttachment> in two sub-groups of the app's group: a closed one, whose members alone open them, and one that inherits the members. Whoever sent a file can always open it."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "An app's process signs with a profile of its own"),
+        text:
+          dgettext(
+            "domain_map",
+            "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author."
           )
       },
       %{

@@ -824,6 +824,12 @@ defmodule PotokIde.Social do
     {:error, :same_profile}
   end
 
+  # Nobody writes to a process directly; its link is open to any id.
+  def get_or_create_direct_group(%Profile{kind: kind}, %Profile{kind: other_kind})
+      when :process in [kind, other_kind] do
+    {:error, :process_profile}
+  end
+
   def get_or_create_direct_group(%Profile{} = current_profile, %Profile{} = other_profile) do
     root_group = get_root_group!()
 
@@ -2150,17 +2156,18 @@ defmodule PotokIde.Social do
   # replied-to value with its author for the quote (or its files when it has
   # no text), the value's files, its thread and the event or poll it announced.
   # A poll comes without its answers and counts: broadcasts carry these values,
-  # and `Polls.put_views/5` reads what each viewer sees.
+  # and `Polls.put_views/5` reads what each viewer sees. An author that is an
+  # app's process comes with it, for its name (`Profile.display_name/1`).
   defp value_display_preloads do
     reactions = from(r in ValueReaction, order_by: [asc: r.id])
 
     [
-      :creator,
       :thread,
       :event,
       :poll,
+      creator: :app_process,
       attachments: attachments_in_order(),
-      parent: [:creator, :event, attachments: attachments_in_order()],
+      parent: [:event, creator: :app_process, attachments: attachments_in_order()],
       reactions: {reactions, :profile}
     ]
   end
@@ -2773,7 +2780,7 @@ defmodule PotokIde.Social do
     from(v in Value,
       join: g in assoc(v, :group),
       where: v.id == ^value_id and v.is_data == false,
-      preload: [:creator, attachments: ^attachments_in_order(), group: g]
+      preload: [creator: :app_process, attachments: ^attachments_in_order(), group: g]
     )
     |> Repo.one()
     |> case do
@@ -3341,7 +3348,9 @@ defmodule PotokIde.Social do
     from(p in Profile,
       join: gm in GroupMembership,
       on: gm.profile_id == p.id,
-      where: gm.group_id == ^group.id and p.id != ^profile.id and ilike(p.username, ^pattern),
+      where:
+        gm.group_id == ^group.id and p.id != ^profile.id and p.kind == :person and
+          ilike(p.username, ^pattern),
       order_by: [asc: fragment("lower(?)", p.username)],
       limit: ^limit,
       select: %{kind: :profile, id: p.id, name: p.username, updated_at: p.updated_at}
@@ -3389,8 +3398,8 @@ defmodule PotokIde.Social do
           gi.invitee_id == p.id and gi.group_id == ^group.id and
             is_nil(gi.accepted_at),
         where:
-          p.id != ^inviter.id and is_nil(gm.profile_id) and is_nil(gi.id) and
-            ilike(p.username, ^like_search_term),
+          p.id != ^inviter.id and p.kind == :person and is_nil(gm.profile_id) and
+            is_nil(gi.id) and ilike(p.username, ^like_search_term),
         order_by: [
           asc:
             fragment(
@@ -4796,13 +4805,14 @@ defmodule PotokIde.Social do
   # with LIKE's own characters escaped.
   defp normalize_group_search_term(search_term), do: NameSearch.term(search_term)
 
+  @doc "The people among the group's members: processes of apps are not counted (`AppProcesses`)."
   def list_group_members(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
     from(p in Profile,
       join: gm in GroupMembership,
       on: gm.profile_id == p.id,
-      where: gm.group_id == ^group.id,
+      where: gm.group_id == ^group.id and p.kind == :person,
       order_by: [asc: p.username]
     )
     |> maybe_paginate(opts)
@@ -4813,7 +4823,9 @@ defmodule PotokIde.Social do
     import Ecto.Query, only: [from: 2]
 
     from(gm in GroupMembership,
-      where: gm.group_id == ^group.id,
+      join: p in Profile,
+      on: p.id == gm.profile_id,
+      where: gm.group_id == ^group.id and p.kind == :person,
       select: count(gm.profile_id)
     )
     |> Repo.one()
@@ -4825,7 +4837,7 @@ defmodule PotokIde.Social do
     from(p in Profile,
       join: gm in GroupMembership,
       on: gm.profile_id == p.id,
-      where: gm.group_id == ^group.id,
+      where: gm.group_id == ^group.id and p.kind == :person,
       limit: 3
     )
     |> Repo.all()
@@ -7417,6 +7429,11 @@ defmodule PotokIde.Social do
       {:group_deleted, group_id, parent_id}
     )
   end
+
+  # A process profile belongs to no account (`AppProcesses`): nobody logs in
+  # as it or picks it.
+  defp link_profile_to_account(_repo, %Profile{kind: :process}, %Account{}),
+    do: {:error, :process_profile}
 
   defp link_profile_to_account(repo, %Profile{} = profile, %Account{} = account) do
     case profile.sharing do

@@ -329,14 +329,18 @@ defmodule PotokIde.Social.Access do
 
   @doc """
   The access of every member of the group, as `%{profile_id => %Access{}}`.
+  Only people: the process of an app (`AppProcesses`) does not vote, count
+  towards a quorum or receive what goes to members with a permission.
   """
   def for_members(%Group{id: group_id} = group, opts \\ []) do
     manifest = Keyword.get_lazy(opts, :manifest, fn -> effective_manifest(group) end)
 
     from(gm in GroupMembership,
+      join: p in Profile,
+      on: p.id == gm.profile_id,
       left_join: r in GroupMemberRole,
       on: r.group_id == gm.group_id and r.profile_id == gm.profile_id,
-      where: gm.group_id == ^group_id,
+      where: gm.group_id == ^group_id and p.kind == :person,
       select: {gm.profile_id, r.role_key}
     )
     |> Repo.all()
@@ -356,16 +360,24 @@ defmodule PotokIde.Social.Access do
 
   @doc """
   Members of the group holding the role (every member for "everyone"). Stale
-  assignments of roles missing from the effective manifest are not counted.
+  assignments of roles missing from the effective manifest are not counted,
+  nor are processes of apps, which a mention of a role never reaches.
   """
   def profile_ids_with_role(%Group{id: group_id}, "everyone") do
-    from(gm in GroupMembership, where: gm.group_id == ^group_id, select: gm.profile_id)
+    from(gm in GroupMembership,
+      join: p in Profile,
+      on: p.id == gm.profile_id,
+      where: gm.group_id == ^group_id and p.kind == :person,
+      select: gm.profile_id
+    )
     |> Repo.all()
   end
 
   def profile_ids_with_role(%Group{id: group_id}, role_key) when is_binary(role_key) do
     from(r in GroupMemberRole,
-      where: r.group_id == ^group_id and r.role_key == ^role_key,
+      join: p in Profile,
+      on: p.id == r.profile_id,
+      where: r.group_id == ^group_id and r.role_key == ^role_key and p.kind == :person,
       select: r.profile_id
     )
     |> Repo.all()
@@ -413,10 +425,12 @@ defmodule PotokIde.Social.Access do
 
   def inherited_by_profile(%Group{}, profile_ids) when is_list(profile_ids), do: %{}
 
-  @doc "How many members of the group hold each assigned role: `%{key => count}`."
+  @doc "How many members of the group, people only, hold each assigned role: `%{key => count}`."
   def role_member_counts(%Group{id: group_id}) do
     from(r in GroupMemberRole,
-      where: r.group_id == ^group_id,
+      join: p in Profile,
+      on: p.id == r.profile_id,
+      where: r.group_id == ^group_id and p.kind == :person,
       group_by: r.role_key,
       select: {r.role_key, count()}
     )

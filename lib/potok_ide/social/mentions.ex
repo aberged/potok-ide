@@ -77,7 +77,9 @@ defmodule PotokIde.Social.Mentions do
       from(p in Profile,
         join: gm in GroupMembership,
         on: gm.profile_id == p.id,
-        where: gm.group_id == ^group.id and fragment("lower(?)", p.username) in ^handles,
+        where:
+          gm.group_id == ^group.id and p.kind == :person and
+            fragment("lower(?)", p.username) in ^handles,
         select: {fragment("lower(?)", p.username), p.id}
       )
       |> Repo.all()

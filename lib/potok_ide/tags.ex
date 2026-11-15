@@ -460,7 +460,8 @@ defmodule PotokIde.Tags do
     )
   end
 
-  defp base_query(:profile, _viewer_id), do: from(p in Profile)
+  # People only: the process of an app is not tagged or found by tags.
+  defp base_query(:profile, _viewer_id), do: from(p in Profile, where: p.kind == :person)
 
   defp base_query(:event, viewer_id) do
     from(e in Event,

@@ -9,6 +9,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.Social.{
     Access,
     AppData,
+    AppProcesses,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -19,7 +20,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupRoutes,
     Profile,
     Value,
-    ValueAttachment
+    ValueAttachment,
+    ValueRules
   }
 
   alias PotokIde.Notices
@@ -573,6 +575,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           <MembersTab.panel
             :if={@active_tab == "members"}
             members={@streams.members}
+            processes={@group_processes}
             pagination={@members_pagination}
             current_profile={@current_profile}
             group={@group}
@@ -891,6 +894,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:manifest_owner, nil)
          |> assign(:new_role_form, nil)
          |> assign(:role_member_counts, %{})
+         |> assign(:group_processes, [])
          |> assign(:editing_value, nil)
          |> assign(:edit_value_form, nil)
          |> assign(:replying_to_value, nil)
@@ -2608,7 +2612,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:app_value, group_id, event, payload}, socket)
       when socket.assigns.group.id == group_id do
-    {:noreply, AppValues.announce(socket, event, payload)}
+    socket = AppValues.announce(socket, event, payload)
+
+    # Saving an app's rules starts and stops its processes.
+    socket = if event == :config, do: assign_group_processes(socket), else: socket
+
+    {:noreply, socket}
   end
 
   def handle_info({:app_value, _group_id, _event, _payload}, socket), do: {:noreply, socket}
@@ -4826,9 +4835,39 @@ defmodule PotokIdeWeb.GroupLive.Show do
       )
       |> stream(:members, entries, reset: true)
       |> watch_presence(Enum.map(entries, & &1.id))
+      |> assign_group_processes()
     else
       socket
     end
+  end
+
+  # The processes of the group's apps stand apart from the members, and only
+  # those who edit the apps see what a process lacks.
+  defp assign_group_processes(socket) do
+    group = socket.assigns.group
+
+    processes =
+      if needs_members?(group, socket.assigns.active_tab) and not group.is_direct,
+        do: process_entries(group, socket.assigns.access),
+        else: []
+
+    assign(socket, :group_processes, processes)
+  end
+
+  defp process_entries(group, access) do
+    rows = AppProcesses.list_active(group)
+    keys_by_profile = Access.role_keys_by_profile(group, Enum.map(rows, & &1.profile_id))
+    manage? = ValueRules.manage?(access)
+
+    Enum.map(rows, fn row ->
+      %{
+        id: row.profile_id,
+        process: row,
+        profile: %{row.profile | app_process: row},
+        role_keys: Map.get(keys_by_profile, row.profile_id, []),
+        warning: if(manage?, do: AppProcesses.warning(row, group))
+      }
+    end)
   end
 
   # The first load after a `?value=` link opens the chat around that value,
@@ -5010,6 +5049,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
       case Social.get_profile(profile_id) do
         nil ->
           socket
+
+        %Profile{kind: :process} ->
+          assign_group_processes(socket)
 
         profile ->
           [entry] = member_entries([profile], group, socket.assigns.current_profile)

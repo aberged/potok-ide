@@ -66,6 +66,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     Access,
     AppData,
     AppFiles,
+    AppProcesses,
     Group,
     GroupAreas,
     GroupPins,
@@ -264,6 +265,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
          ok: true,
          config: AppData.config_payload(config, access),
          caps: caps,
+         process_warnings: process_warnings(group, alt, access),
          manage: ValueRules.manage?(access),
          can_create_groups: ValueRules.manage?(access) and Access.can?(access, :create_subgroups),
          files: files_status(config, group, access),
@@ -460,7 +462,11 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
              non_negative_integer(params["revision"])
            ) do
         {:ok, config} ->
-          {%{ok: true, config: AppData.config_payload(config, access)}, socket}
+          {%{
+             ok: true,
+             config: AppData.config_payload(config, access),
+             process_warnings: process_warnings(group, alt, access)
+           }, socket}
 
         {:error, {:conflict, current}} ->
           {%{ok: false, error: "conflict", current: AppData.config_payload(current, access)},
@@ -1142,6 +1148,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
         end),
       score: summary.score
     }
+  end
+
+  # What the editors should know about the app's processes: the permissions a
+  # process profile lacks and an owner who no longer edits the app.
+  defp process_warnings(group, alt, access) do
+    if ValueRules.manage?(access), do: AppProcesses.warnings(group, alt), else: %{}
   end
 
   # What went wrong with a value or the config, as an app can tell its viewer.

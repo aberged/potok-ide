@@ -35,6 +35,7 @@ defmodule PotokIde.Social.AppData do
     Access,
     AccountProfile,
     AppFiles,
+    AppProcesses,
     Group,
     Identity,
     Notifications,
@@ -107,7 +108,9 @@ defmodule PotokIde.Social.AppData do
   Saves the app's config. `revision` is the one the editor started from: nil
   or 0 when there is none yet. Another editor's save in between gives
   `{:error, {:conflict, current}}`, with the config as it is now (nil when it
-  was deleted). Potok keeps `files` itself, whatever comes in.
+  was deleted). Potok keeps `files` itself, whatever comes in. A rule with a
+  `process` gets its process profile in the same transaction
+  (`AppProcesses.sync/4`).
   """
   def save_config(%Profile{} = profile, %Group{} = group, alt, data, revision) do
     with {:ok, data} <- decode(data),
@@ -115,7 +118,8 @@ defmodule PotokIde.Social.AppData do
          {:ok, rules} <- ValueRules.normalize(data["rules"]) do
       Repo.transaction(fn ->
         lock_app(group, alt)
-        access = Access.for_profile(profile, Repo.get!(Group, group.id))
+        fresh_group = Repo.get!(Group, group.id)
+        access = Access.for_profile(profile, fresh_group)
 
         unless ValueRules.manage?(access), do: Repo.rollback(:not_permitted)
 
@@ -130,6 +134,7 @@ defmodule PotokIde.Social.AppData do
             {%Value{}, _revision} -> Repo.rollback({:conflict, current})
           end
 
+        AppProcesses.sync(profile, fresh_group, alt, rules)
         {saved, current}
       end)
       |> case do

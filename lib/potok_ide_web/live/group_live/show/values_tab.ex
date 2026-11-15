@@ -1,7 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   use PotokIdeWeb, :html
 
-  alias PotokIde.Social.{Access, Group, Value}
+  alias PotokIde.Social.{Access, Group, Profile, Value}
   alias PotokIde.Storage
   alias PotokIdeWeb.GroupLive.Show.{Components, PollForm}
   import PotokIdeWeb.GroupLive.Show.Components, only: [inspect_tree: 1]
@@ -73,7 +73,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
               <span class="font-semibold uppercase tracking-[0.14em]">{gettext("Thread")}</span>
               <span aria-hidden="true">·</span>
               <span class="truncate font-semibold text-base-content">
-                {@thread_origin.creator.username}
+                {Profile.display_name(@thread_origin.creator)}
               </span>
             </p>
             <p class="mt-0.5 line-clamp-2 text-sm text-base-content/75 wrap-break-word cramped:mt-0 cramped:line-clamp-1">
@@ -198,7 +198,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
             :if={@replying_to_value && !@editing_value}
             id="group-value-reply-preview"
             icon="hero-arrow-uturn-left"
-            title={gettext("Replying to %{username}", username: @replying_to_value.creator.username)}
+            title={
+              gettext("Replying to %{username}",
+                username: Profile.display_name(@replying_to_value.creator)
+              )
+            }
             text={Value.excerpt(@replying_to_value, 160)}
             cancel_id="group-value-reply-cancel"
             cancel_event="cancel_reply_value"

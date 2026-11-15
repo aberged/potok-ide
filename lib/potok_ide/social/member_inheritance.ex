@@ -6,6 +6,8 @@ defmodule PotokIde.Social.MemberInheritance do
     there. Those rows are marked `inherited` and leave with the parent
     membership or role.
   - Members and roles added in the group itself are direct and stay.
+  - The process of an app (`Profile.kind` `:process`) is never inherited: it
+    is a member only where `AppProcesses` put it.
   - A chain of inheriting groups is followed down from the parent, so a
     group below inherits what the one above holds, direct or inherited.
 
@@ -163,13 +165,15 @@ defmodule PotokIde.Social.MemberInheritance do
 
   # A direct member stays direct: the conflict leaves the row alone. New
   # members start with the group's history read, so joining a parent does
-  # not flood them with every inheriting group's past values.
+  # not flood them with every inheriting group's past values. The process of
+  # an app stays where it was put (`AppProcesses`).
   defp add_members_sql do
     """
     WITH added AS (
       INSERT INTO group_memberships (group_id, profile_id, inherited, inserted_at, updated_at)
       SELECT $1::bigint, pm.profile_id, TRUE, $4, $4
       FROM group_memberships pm
+      JOIN profiles p ON p.id = pm.profile_id AND p.kind = 'person'
       WHERE pm.group_id = $2
         AND ($3::bigint[] IS NULL OR pm.profile_id = ANY($3::bigint[]))
       ON CONFLICT (group_id, profile_id) DO NOTHING
