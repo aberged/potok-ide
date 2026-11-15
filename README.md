@@ -273,7 +273,7 @@ If your local PostgreSQL setup differs, update `config/dev.exs` and `config/test
 
 `mix phx.server` starts the Phoenix endpoint together with the configured Tailwind and esbuild watchers from `config/dev.exs`.
 
-The seed script currently only contains the default template comments, so a fresh setup gives you schema only.
+The seed script gives a fresh database an account to log in with: `dev@example.com` with the password `hello world!` at `/accounts/log-in/password`, its profile `dev` and a private group `Probna grupa`. Running it again keeps what is already there.
 
 ### Common commands
 
