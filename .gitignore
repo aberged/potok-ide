@@ -55,3 +55,6 @@ docs/ios-secrets-and-checklist.md
 
 # Pictures for the help page: Playwright for help_shots/make.exs.
 /help_shots/node_modules/
+
+# Finder's folder settings on macOS.
+.DS_Store
