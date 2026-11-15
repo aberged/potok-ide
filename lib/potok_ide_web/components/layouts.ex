@@ -66,7 +66,7 @@ defmodule PotokIdeWeb.Layouts do
       <%!-- Ignored by patches, otherwise every re-render would reset `checked` and close the drawer. --%>
       <input id="app-drawer-toggle" type="checkbox" class="drawer-toggle" phx-update="ignore" />
       <%!-- `--app-visual-height` is set where the keyboard does not shorten the page (app.js). --%>
-      <div class="drawer-content flex h-[var(--app-visual-height,100dvh)] min-w-0 flex-col overflow-hidden pt-(--app-safe-area-top) pb-(--app-safe-area-bottom) keyboard-open:pb-0">
+      <div class="drawer-content flex h-[var(--app-visual-height,100dvh)] min-w-0 flex-col overflow-hidden pt-(--app-safe-area-top) pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left) keyboard-open:pb-0">
         <nav class={[
           "relative z-100 shrink-0 keyboard-open:hidden",
           @collapse_nav && "cramped:hidden"
@@ -251,7 +251,7 @@ defmodule PotokIdeWeb.Layouts do
             aria-hidden="true"
             class="app-sidebar-glow pointer-events-none absolute inset-x-0 top-0 -z-10 h-72"
           />
-          <div class="flex h-full w-full flex-col px-3 pt-[calc(var(--app-safe-area-top)+0.875rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] lg:w-72">
+          <div class="flex h-full w-full flex-col pt-[calc(var(--app-safe-area-top)+0.875rem)] pr-3 pb-[calc(var(--app-safe-area-bottom)+1rem)] pl-[calc(var(--app-safe-area-left)+0.75rem)] lg:w-72">
             <div class="mb-3 flex shrink-0 items-center justify-between gap-3 pl-2">
               <.link
                 id="app-sidebar-home-link"
@@ -588,7 +588,7 @@ defmodule PotokIdeWeb.Layouts do
       id="guest"
       class="landing h-dvh overflow-y-auto overscroll-contain bg-base-100 text-base-content"
     >
-      <div class="relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pb-(--app-safe-area-bottom)">
+      <div class="relative isolate flex min-h-full flex-col overflow-x-clip pt-(--app-safe-area-top) pr-(--app-safe-area-right) pb-(--app-safe-area-bottom) pl-(--app-safe-area-left)">
         <div class="lp-glow absolute inset-x-0 top-0 -z-10 h-[42rem]" aria-hidden="true"></div>
 
         <header
@@ -756,6 +756,8 @@ defmodule PotokIdeWeb.Layouts do
   A drop that falls into the stream and ripples it, while the next page
   loads. It shows while `<html>` has `data-page-loading`, which
   `assets/vendor/topbar.js` sets; the motion is in `app.css`.
+  `assets/js/page_loader.js` keeps the fall going where it was when going
+  to another page renders a new top bar.
   """
   attr :id, :string, required: true, doc: "unique on the page, it names the drop's gradient"
   attr :class, :any, default: nil

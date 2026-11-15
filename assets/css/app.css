@@ -745,7 +745,10 @@
 
 /* The drop in the top bar while a page loads (`Layouts.page_loader/1`): it
    falls, splashes and ripples the water. `topbar.js` sets `data-page-loading`.
-   The motion pauses while hidden, so it costs nothing between pages. */
+   The motion pauses while hidden, so it costs nothing between pages, and
+   `page_loader.js` starts it over for each load.
+   It falls on devices that ask for less motion too: the fall is small, and
+   the drop is the only sign that a page is loading. */
 .page-loader {
   opacity: 0;
   transition: opacity 200ms ease-out;
@@ -755,10 +758,12 @@
   opacity: 1;
 }
 
+/* Each `animation` names its keyframes: the minifier of the release build
+   (`tailwind --minify`) wrote a shorthand without a name as `animation:
+   none`, so the drop stood still in production. */
 .page-loader-drop,
 .page-loader-ripple {
   transform-box: fill-box;
-  animation: 1.5s infinite both paused;
 }
 
 :root[data-page-loading] :is(.page-loader-drop, .page-loader-ripple) {
@@ -767,7 +772,7 @@
 
 .page-loader-drop {
   transform-origin: 50% 100%;
-  animation-name: page-loader-drop;
+  animation: page-loader-drop 1.5s infinite both paused;
 }
 
 .page-loader-ripple {
@@ -776,8 +781,7 @@
   stroke-width: 1.5px;
   vector-effect: non-scaling-stroke;
   transform-origin: center;
-  animation-name: page-loader-ripple;
-  animation-timing-function: cubic-bezier(0.2, 0.6, 0.35, 1);
+  animation: page-loader-ripple 1.5s cubic-bezier(0.2, 0.6, 0.35, 1) infinite both paused;
 }
 
 .page-loader-ripple + .page-loader-ripple {
@@ -822,31 +826,6 @@
   100% {
     opacity: 0;
     transform: scale(1);
-  }
-}
-
-/* Without motion the drop stands still and only breathes. */
-@media (prefers-reduced-motion: reduce) {
-  .page-loader-ripple {
-    display: none;
-  }
-
-  .page-loader-drop {
-    animation-name: page-loader-breathe;
-    animation-timing-function: ease-in-out;
-    animation-direction: alternate;
-  }
-}
-
-@keyframes page-loader-breathe {
-  from {
-    opacity: 0.4;
-    transform: translateY(6.5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(6.5px);
   }
 }
 

@@ -42,7 +42,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MediaViewer do
       aria-label={gettext("File preview")}
       class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden overscroll-contain border-0 bg-black/90 p-0 text-white opacity-0 backdrop-blur-md transition-[opacity,display,overlay] transition-discrete duration-200 ease-out [color-scheme:dark] backdrop:bg-transparent open:opacity-100 starting:open:opacity-0"
     >
-      <div class="flex size-full flex-col">
+      <div class="flex size-full flex-col pr-(--app-safe-area-right) pl-(--app-safe-area-left)">
         <div class="flex shrink-0 items-center gap-1 px-3 pt-[max(0.75rem,var(--app-safe-area-top))] pb-2 sm:px-5">
           <div class="min-w-0 flex-1 pl-1">
             <p id="media-viewer-name" class="truncate text-sm font-semibold"></p>
