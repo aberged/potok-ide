@@ -2177,6 +2177,33 @@ defmodule PotokIde.Social do
   def get_value_for_display(id) when is_integer(id) do
     from(v in Value, where: v.id == ^id, preload: ^value_display_preloads())
     |> Repo.one()
+    |> put_process_triggers()
+  end
+
+  # Who set off the step of an app's process that posted each value, for the
+  # line under its name (`Value.process_trigger`): one query for them all.
+  defp put_process_triggers(nil), do: nil
+  defp put_process_triggers(%Value{} = value), do: hd(put_process_triggers([value]))
+
+  defp put_process_triggers(values) when is_list(values) do
+    ids =
+      for %Value{managed: %{"process" => %{"triggered_by" => id}}} <- values,
+          is_integer(id),
+          uniq: true,
+          do: id
+
+    profiles =
+      if ids == [],
+        do: %{},
+        else: from(p in Profile, where: p.id in ^ids) |> Repo.all() |> Map.new(&{&1.id, &1})
+
+    Enum.map(values, fn
+      %Value{managed: %{"process" => %{"triggered_by" => id}}} = value ->
+        %{value | process_trigger: Map.get(profiles, id)}
+
+      value ->
+        value
+    end)
   end
 
   # Everything `Components.value_message/1` renders for a chat value: the
@@ -2246,6 +2273,26 @@ defmodule PotokIde.Social do
     insert_chat_value(process, group, Map.new(attrs), [], managed)
   end
 
+  @doc """
+  A push from an app's process to the members of `group` holding `role_key`
+  (`PotokIde.Social.ProcessActions`). Returns how many people it is for and
+  the function that sends it, to call once the step commits.
+  """
+  def process_push(%Profile{kind: :process} = process, %Group{} = group, role_key, text, tag)
+      when is_binary(role_key) and is_binary(text) do
+    profile_ids = Access.profile_ids_with_role(group, role_key)
+    payload_for = Notifications.process_push(process, group, text, tag)
+
+    {length(profile_ids),
+     fn ->
+       run_notification(fn ->
+         from(ap in AccountProfile, where: ap.profile_id in ^profile_ids, select: ap.account_id)
+         |> Dispatch.subscriptions_by_account()
+         |> Dispatch.deliver_localized("process push", group.id, payload_for)
+       end)
+     end}
+  end
+
   # The checks and the writes of a chat value. What its pages and devices are
   # told comes back as a function, to call once the writes are committed.
   defp insert_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments, managed) do
@@ -2298,7 +2345,7 @@ defmodule PotokIde.Social do
         |> Repo.transaction()
         |> case do
           {:ok, %{value: value}} ->
-            value = Repo.preload(value, value_display_preloads())
+            value = value |> Repo.preload(value_display_preloads()) |> put_process_triggers()
 
             {:ok, value,
              fn ->
@@ -2533,7 +2580,9 @@ defmodule PotokIde.Social do
         # preview, which is written outside of edits.
         updated_value =
           get_value_for_display(updated_value.id) ||
-            Repo.preload(updated_value, value_display_preloads(), force: true)
+            updated_value
+            |> Repo.preload(value_display_preloads(), force: true)
+            |> put_process_triggers()
 
         broadcast_value_updated(updated_value)
         broadcast_values_updated(reply_ids(updated_value))
@@ -2751,6 +2800,7 @@ defmodule PotokIde.Social do
   defp broadcast_values_updated(value_ids) do
     from(v in Value, where: v.id in ^value_ids, preload: ^value_display_preloads())
     |> Repo.all()
+    |> put_process_triggers()
     |> Enum.each(&broadcast_value_updated/1)
   end
 
@@ -4903,6 +4953,7 @@ defmodule PotokIde.Social do
     )
     |> maybe_paginate(opts)
     |> Repo.all()
+    |> put_process_triggers()
   end
 
   @doc """
@@ -4927,7 +4978,7 @@ defmodule PotokIde.Social do
           from(v in query, where: v.id > ^after_id, order_by: [asc: v.id])
           |> Repo.all()
 
-        {Enum.take(rows, limit), length(rows) > limit}
+        {rows |> Enum.take(limit) |> put_process_triggers(), length(rows) > limit}
 
       nil ->
         rows =
@@ -4935,7 +4986,8 @@ defmodule PotokIde.Social do
           |> maybe_before_id(opts[:before_id])
           |> Repo.all()
 
-        {Enum.reverse(Enum.take(rows, limit)), length(rows) > limit}
+        {rows |> Enum.take(limit) |> Enum.reverse() |> put_process_triggers(),
+         length(rows) > limit}
     end
   end
 
@@ -5005,7 +5057,7 @@ defmodule PotokIde.Social do
         {ids, more} = rows |> List.flatten() |> Enum.split(limit)
 
         by_id =
-          from(v in Value, where: v.id in ^ids, preload: :creator)
+          from(v in Value, where: v.id in ^ids, preload: [creator: :app_process])
           |> Repo.all()
           |> Map.new(&{&1.id, &1})
 

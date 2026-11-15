@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.TagLive.Index do
   use PotokIdeWeb, :live_view
 
   alias PotokIde.Social
-  alias PotokIde.Social.Value
+  alias PotokIde.Social.{Profile, Value}
   alias PotokIde.Tags
   alias PotokIde.Tags.Tag
   alias PotokIdeWeb.GroupLive.Show.Components
@@ -428,7 +428,9 @@ defmodule PotokIdeWeb.TagLive.Index do
       class="block rounded-2xl px-3 py-2.5"
     >
       <span class="flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/65">
-        <span class="font-semibold text-base-content/80">@{@item.creator.username}</span>
+        <span class="font-semibold text-base-content/80">
+          {Profile.author_label(@item.creator)}
+        </span>
         <span aria-hidden="true">·</span>
         <span class="truncate">{@item.group.name}</span>
         <span aria-hidden="true">·</span>

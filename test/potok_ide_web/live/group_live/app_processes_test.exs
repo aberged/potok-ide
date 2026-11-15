@@ -12,7 +12,7 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{AppData, AppProcess}
+  alias PotokIde.Social.{AppData, AppProcess, ProcessActions, ProcessStep}
 
   setup do
     {owner_account, owner} = account_with_profile!("ap-owner")
@@ -58,6 +58,22 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
   end
 
   defp live_as(account, path), do: build_conn() |> log_in_account(account) |> live(path)
+
+  defp step(group, triggered_by, groups \\ []) do
+    %ProcessStep{
+      process: process_of(group),
+      instance: 1,
+      element: "Task_1",
+      triggered_by: triggered_by,
+      groups: groups
+    }
+  end
+
+  defp post!(step, group, content) do
+    {:ok, value, announce} = ProcessActions.post_value(step, group, %{"content" => content})
+    ProcessActions.announce([announce])
+    value
+  end
 
   describe "the members tab" do
     test "lists the app's processes apart from the members", ctx do
@@ -137,6 +153,43 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
       assert has_element?(lv, "#value-#{value.id} .chat-header", "Prijem molbi")
       assert has_element?(lv, "#value-process-#{value.id}")
       refute has_element?(lv, "#value-#{value.id} .chat-header", process.username)
+    end
+
+    test "says who set the process going, and nobody when a timer did", ctx do
+      save!(ctx.owner, ctx.group, with_process())
+      started = post!(step(ctx.group, ctx.member.id), ctx.group, "Primljeno.")
+      timed = post!(step(ctx.group, nil), ctx.group, "Rok je istekao.")
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/values")
+
+      assert has_element?(lv, "#value-process-trigger-#{started.id}", ctx.member.username)
+      refute has_element?(lv, "#value-process-trigger-#{timed.id}")
+      assert has_element?(lv, "#value-process-#{timed.id}")
+    end
+
+    test "from a sub-group it made, the process's name leads to its app", ctx do
+      save!(ctx.owner, ctx.group, with_process())
+      at_home = post!(step(ctx.group, ctx.member.id), ctx.group, "Primljeno.")
+
+      {:ok, sub, announce} =
+        ProcessActions.create_subgroup(step(ctx.group, ctx.member.id), ctx.group, %{
+          "name" => "molba"
+        })
+
+      ProcessActions.announce([announce])
+      in_sub = post!(step(ctx.group, ctx.member.id, [sub.id]), sub, "Uzeto u rad.")
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{sub.id}/values")
+
+      assert has_element?(
+               lv,
+               ~s(#value-process-app-#{in_sub.id}[href="/groups/#{ctx.group.id}/group_home"]),
+               "Prijem molbi"
+             )
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
+      refute has_element?(lv, "#value-process-app-#{at_home.id}")
+      assert has_element?(lv, "#value-#{at_home.id} .chat-header", "Prijem molbi")
     end
 
     test "names the process on a value that arrives while the chat is open", ctx do

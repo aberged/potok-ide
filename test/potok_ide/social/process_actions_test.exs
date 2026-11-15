@@ -11,7 +11,17 @@ defmodule PotokIde.Social.ProcessActionsTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, AppData, AppProcess, Group, ProcessActions, ProcessStep, Value}
+
+  alias PotokIde.Social.{
+    Access,
+    AppData,
+    AppProcess,
+    Group,
+    ProcessActions,
+    ProcessStep,
+    Profile,
+    Value
+  }
 
   defp unique, do: System.unique_integer([:positive])
 
@@ -120,6 +130,18 @@ defmodule PotokIde.Social.ProcessActionsTest do
       refute Repo.get(Group, sub_id)
       refute_received {:value_created, _group_id, _value}
       refute_received {:child_group_changed, _group_id, _child}
+    end
+
+    test "its values come with the process, for its name where they are shown", ctx do
+      {:ok, value, _announce} =
+        ProcessActions.post_value(step(ctx), ctx.group, %{"content" => "Primljeno u roku."})
+
+      shown = Social.get_value_for_display(value.id)
+      assert Profile.display_name(shown.creator) == "Prijem"
+      assert shown.process_trigger.id == ctx.member.id
+
+      {:ok, {[found], false}} = Social.search_group_values(ctx.group, "roku")
+      assert Profile.display_name(found.creator) == "Prijem"
     end
 
     test "takes only the content, its format and the value replied to", ctx do

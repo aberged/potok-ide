@@ -11,27 +11,27 @@ msgstr ""
 "Language: en\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: lib/potok_ide/social/notifications.ex:88
+#: lib/potok_ide/social/notifications.ex:108
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:121
+#: lib/potok_ide/social/notifications.ex:141
 #, elixir-autogen, elixir-format
 msgid "%{name} accepted your shared profile invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:178
+#: lib/potok_ide/social/notifications.ex:198
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:72
+#: lib/potok_ide/social/notifications.ex:92
 #, elixir-autogen, elixir-format
 msgid "%{name} invited you to %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:90
+#: lib/potok_ide/social/notifications.ex:110
 #, elixir-autogen, elixir-format
 msgid "%{name} joined %{group}."
 msgstr ""
@@ -41,37 +41,37 @@ msgstr ""
 msgid "%{name} mentioned you in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:125
+#: lib/potok_ide/social/notifications.ex:145
 #, elixir-autogen, elixir-format
 msgid "%{name} now has access to %{profile}."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:56
+#: lib/potok_ide/social/notifications.ex:76
 #, elixir-autogen, elixir-format
 msgid "%{name} reacted %{emoji} to your message"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:105
+#: lib/potok_ide/social/notifications.ex:125
 #, elixir-autogen, elixir-format
 msgid "%{name} shared %{profile}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:168
+#: lib/potok_ide/social/notifications.ex:188
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:171
+#: lib/potok_ide/social/notifications.ex:191
 #, elixir-autogen, elixir-format
 msgid "New message in %{group}: %{excerpt}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:76
+#: lib/potok_ide/social/notifications.ex:96
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this group invitation."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:109
+#: lib/potok_ide/social/notifications.ex:129
 #, elixir-autogen, elixir-format
 msgid "Open Potok to review this shared profile invitation."
 msgstr ""
@@ -91,17 +91,17 @@ msgstr ""
 msgid "%{name} replied to you in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:150
+#: lib/potok_ide/social/notifications.ex:170
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a response."
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:146
+#: lib/potok_ide/social/notifications.ex:166
 #, elixir-autogen, elixir-format
 msgid "New response in %{group}"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:153
+#: lib/potok_ide/social/notifications.ex:173
 #, elixir-autogen, elixir-format
 msgid "Someone sent a response."
 msgstr ""
@@ -109,4 +109,9 @@ msgstr ""
 #: lib/potok_ide/notices/notifications.ex:25
 #, elixir-autogen, elixir-format
 msgid "Notice from %{group}"
+msgstr ""
+
+#: lib/potok_ide/social/notifications.ex:53
+#, elixir-autogen, elixir-format
+msgid "%{name} in %{group}"
 msgstr ""

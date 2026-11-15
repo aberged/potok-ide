@@ -21,7 +21,7 @@ defmodule PotokIde.Social.Notifications do
         value_payload(creator, group, value)
         | title:
             dgettext("notifications", "%{name} mentioned you in %{group}",
-              name: creator.username,
+              name: Profile.display_name(creator),
               group: group.name
             )
       }
@@ -34,10 +34,30 @@ defmodule PotokIde.Social.Notifications do
         value_payload(creator, group, value)
         | title:
             dgettext("notifications", "%{name} replied to you in %{group}",
-              name: creator.username,
+              name: Profile.display_name(creator),
               group: group.name
             ),
           url: "/groups/#{group.id}/values?value=#{value.id}"
+      }
+    end)
+  end
+
+  @doc """
+  What an app's process pushes to the people of a role, under its name; `tag`
+  lets a step that runs again replace its push rather than add one.
+  """
+  def process_push(%Profile{} = process, %Group{} = group, text, tag) do
+    localized(fn ->
+      %{
+        title:
+          dgettext("notifications", "%{name} in %{group}",
+            name: Profile.display_name(process),
+            group: group.name
+          ),
+        body: text,
+        tag: tag,
+        url: "/groups/#{group.id}",
+        badge: avatar_url(process)
       }
     end)
   end
@@ -175,7 +195,10 @@ defmodule PotokIde.Social.Notifications do
       end
 
     %{
-      title: dgettext("notifications", "%{name} sent a new message", name: creator.username),
+      title:
+        dgettext("notifications", "%{name} sent a new message",
+          name: Profile.display_name(creator)
+        ),
       body: body,
       tag: "group-#{group.id}-value-#{value.id}-created",
       url: "/groups/#{group.id}/values",

@@ -44,6 +44,10 @@ defmodule PotokIde.Social.Value do
     field :tags, {:array, :any}, virtual: true, default: []
     # What the viewing profile sees of the value's poll (`Polls.put_views/5`).
     field :poll_view, :any, virtual: true
+    # The person who set off the step of an app's process that posted the
+    # value, by `managed.process.triggered_by`; nil when a timer did, and for
+    # the values of people (`Social.get_value_for_display/1` and the pages).
+    field :process_trigger, :any, virtual: true
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group

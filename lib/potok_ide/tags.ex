@@ -177,7 +177,12 @@ defmodule PotokIde.Tags do
   defp load_item(:event, id), do: Repo.one(from e in Event, where: e.id == ^id, preload: :group)
 
   defp load_item(:value, id),
-    do: Repo.one(from v in Value, where: v.id == ^id, preload: [:group, :creator, :attachments])
+    do:
+      Repo.one(
+        from v in Value,
+          where: v.id == ^id,
+          preload: [:group, :attachments, creator: :app_process]
+      )
 
   defp load_item(:attachment, id),
     do: Repo.one(from a in ValueAttachment, where: a.id == ^id, preload: :group)
@@ -520,6 +525,6 @@ defmodule PotokIde.Tags do
   defp tagged_preloads(:group), do: []
   defp tagged_preloads(:profile), do: []
   defp tagged_preloads(:event), do: [:group]
-  defp tagged_preloads(:value), do: [:group, :creator, :attachments]
+  defp tagged_preloads(:value), do: [:group, :attachments, creator: :app_process]
   defp tagged_preloads(:attachment), do: [:group, :profile]
 end

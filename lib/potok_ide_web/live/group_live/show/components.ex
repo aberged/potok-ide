@@ -18,7 +18,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   alias PotokIde.LinkPreviews
   alias PotokIde.Polls.Poll
-  alias PotokIde.Social.{Group, GroupPresets, Mentions, Profile, Value, ValueAttachment}
+
+  alias PotokIde.Social.{
+    AppProcess,
+    Group,
+    GroupPresets,
+    Mentions,
+    Profile,
+    Value,
+    ValueAttachment
+  }
+
   alias PotokIde.UTF8
 
   import Phoenix.HTML, only: [raw: 1]
@@ -899,6 +909,23 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  # From a sub-group a process made, its name leads to its app; in the app's
+  # own group there is nowhere else to go.
+  defp process_app_path(%Value{
+         group_id: group_id,
+         creator: %Profile{
+           kind: :process,
+           app_process: %AppProcess{group_id: app_group_id} = process
+         }
+       })
+       when group_id != app_group_id do
+    if process.alt_description_id,
+      do: ~p"/groups/#{app_group_id}/group_home?#{[d: process.alt_description_id]}",
+      else: ~p"/groups/#{app_group_id}/group_home"
+  end
+
+  defp process_app_path(%Value{}), do: nil
+
   # Nobody writes to the process of an app directly.
   defp profile_identity_clickable?(profile, current_profile, direct_group_link?) do
     direct_group_link? and not Profile.process?(profile) and
@@ -1583,6 +1610,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
       |> assign(:process?, Profile.process?(assigns.value.creator))
+      |> assign(:process_app_path, process_app_path(assigns.value))
       |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
@@ -1677,9 +1705,24 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         class="chat-header mb-0.5 flex max-w-full items-center gap-2 text-xs text-base-content/65 group-data-continued/value:hidden"
       >
         <span :if={!@mine?} class="min-w-0 truncate font-semibold text-base-content">
-          {Profile.display_name(@value.creator)}
+          <.link
+            :if={@process_app_path}
+            id={"value-process-app-#{@value.id}"}
+            navigate={@process_app_path}
+            class="underline-offset-2 transition-colors hover:text-primary hover:underline"
+          >
+            {Profile.display_name(@value.creator)}
+          </.link>
+          <span :if={!@process_app_path}>{Profile.display_name(@value.creator)}</span>
         </span>
         <.process_badge :if={!@mine? and @process?} id={"value-process-#{@value.id}"} />
+        <span
+          :if={!@mine? and @value.process_trigger}
+          id={"value-process-trigger-#{@value.id}"}
+          class="min-w-0 truncate"
+        >
+          {gettext("started by %{username}", username: @value.process_trigger.username)}
+        </span>
         <span
           :if={@mentions_me?}
           id={"value-mentions-me-#{@value.id}"}

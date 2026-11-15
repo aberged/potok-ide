@@ -19,7 +19,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ValueSearch do
 
   alias PotokIde.Events.Format
   alias PotokIde.{PlainText, RateLimit, Social}
-  alias PotokIde.Social.{Access, NameSearch, Value}
+  alias PotokIde.Social.{Access, NameSearch, Profile, Value}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.Components
 
@@ -345,7 +345,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ValueSearch do
     />
     <span class="min-w-0 flex-1">
       <span class="flex min-w-0 items-center gap-2 text-xs leading-5">
-        <span class="truncate font-semibold text-base-content">{@value.creator.username}</span>
+        <span class="truncate font-semibold text-base-content">
+          {Profile.display_name(@value.creator)}
+        </span>
         <span
           :if={@thread}
           class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-2 font-medium text-primary"

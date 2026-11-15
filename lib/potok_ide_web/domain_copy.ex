@@ -377,6 +377,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Value", "poll_view"),
     do: dgettext("domain_map", "what the viewer sees of its poll")
 
+  defp own_field("Value", "process_trigger"),
+    do: dgettext("domain_map", "who set the process going")
+
   defp own_field("PollOption", "text"), do: dgettext("domain_map", "text")
   defp own_field("PollOption", "votes_count"), do: dgettext("domain_map", "votes")
 
@@ -1399,7 +1402,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author. It writes only in the app's group and in the sub-groups it made itself, as far as its permissions there go. In a sub-group it makes it is a plain member, and people are the admins: its owner, while the owner still edits the app, and whoever set the process going."
+            "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author. It writes only in the app's group and in the sub-groups it made itself, as far as its permissions there go. In a sub-group it makes it is a plain member, and people are the admins: its owner, while the owner still edits the app, and whoever set the process going. It pushes to the people of a role only with the right to mention roles."
           )
       },
       %{

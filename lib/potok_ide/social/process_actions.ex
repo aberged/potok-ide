@@ -17,6 +17,8 @@ defmodule PotokIde.Social.ProcessActions do
     owner, while the owner still edits the app, and whoever started the step.
     When the owner no longer edits the app, whoever started the step takes the
     owner's place.
+  - A push to the people of a role takes `mention_roles`, as a mention of
+    the role would; it writes nothing, so its announcement is all of it.
   - An error in the writes themselves aborts the whole transaction, as Ecto
     does with a nested one; the checks before them leave it alone.
   """
@@ -30,6 +32,7 @@ defmodule PotokIde.Social.ProcessActions do
   @value_attrs ~w(content content_format parent_id)
   @group_attrs ~w(name description description_format home_page is_public inherits_members has_public_chat)
   @default_admins ["owner", "triggered_by"]
+  @max_push_text 240
 
   @doc "The admins of a sub-group when the step names none: the owner and whoever started it."
   def default_admins, do: @default_admins
@@ -72,6 +75,32 @@ defmodule PotokIde.Social.ProcessActions do
     end
   end
 
+  @doc """
+  Pushes `text` to the members of `group` who hold `role_key` (`"everyone"`
+  for all of them), under the process's name. Returns how many people it is
+  for. A step that runs again replaces its push on their devices.
+  """
+  def push(%ProcessStep{} = step, %Group{} = group, role_key, text)
+      when is_binary(role_key) and is_binary(text) do
+    text = String.trim(text)
+
+    with :ok <- push_text(text),
+         {:ok, row} <- acting_process(step, group),
+         :ok <- may_mention_roles(row.profile, group) do
+      tag = "group-#{group.id}-process-#{step.instance}-#{step.element}"
+      {count, announce} = Social.process_push(row.profile, group, role_key, text, tag)
+      {:ok, count, announce}
+    end
+  end
+
+  defp push_text(text) do
+    if String.length(text) in 1..@max_push_text, do: :ok, else: {:error, :invalid_push}
+  end
+
+  defp may_mention_roles(process, group) do
+    if Access.can?(process, group, :mention_roles), do: :ok, else: {:error, :not_permitted}
+  end
+
   @doc "Tells what a committed step did, with the announcements of its actions."
   def announce(announcements) when is_list(announcements) do
     Enum.each(announcements, fn announce when is_function(announce, 0) -> announce.() end)
@@ -81,8 +110,13 @@ defmodule PotokIde.Social.ProcessActions do
   # one it writes in.
   defp acting_process(%ProcessStep{process: %AppProcess{id: id}} = step, %Group{} = group) do
     case Repo.get(AppProcess, id) do
-      %AppProcess{active: true} = row -> acting_in(Repo.preload(row, :profile), step, group)
-      _stopped_or_gone -> {:error, :process_inactive}
+      %AppProcess{active: true} = row ->
+        row = Repo.preload(row, :profile)
+        # With its process, the profile goes by the rule's name in pushes.
+        acting_in(%{row | profile: %{row.profile | app_process: row}}, step, group)
+
+      _stopped_or_gone ->
+        {:error, :process_inactive}
     end
   end
 

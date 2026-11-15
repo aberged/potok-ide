@@ -182,8 +182,8 @@ defmodule PotokIdeWeb.TagEditor do
 
   defp title(%Value{} = value) do
     case Value.excerpt(value, 80) do
-      nil -> "@" <> value.creator.username
-      excerpt -> "@#{value.creator.username}: #{excerpt}"
+      nil -> Profile.author_label(value.creator)
+      excerpt -> "#{Profile.author_label(value.creator)}: #{excerpt}"
     end
   end
 

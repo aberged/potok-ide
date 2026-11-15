@@ -73,4 +73,11 @@ defmodule PotokIde.Social.Profile do
   """
   def display_name(%__MODULE__{kind: :process, app_process: %AppProcess{name: name}}), do: name
   def display_name(%{username: username}), do: username
+
+  @doc """
+  An author as a line names it: `@username` for a person, who can be
+  mentioned so, and `display_name/1` for a process, who cannot.
+  """
+  def author_label(%__MODULE__{kind: :process} = profile), do: display_name(profile)
+  def author_label(%{username: username}), do: "@" <> username
 end
