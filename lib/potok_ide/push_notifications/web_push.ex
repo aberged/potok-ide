@@ -166,8 +166,6 @@ defmodule PotokIde.PushNotifications.WebPush do
     end
   end
 
-  defp valid_endpoint?(_endpoint), do: false
-
   defp validate_length(bytes, expected_size, _message) when byte_size(bytes) == expected_size,
     do: :ok
 

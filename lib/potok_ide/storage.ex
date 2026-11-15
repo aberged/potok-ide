@@ -56,9 +56,9 @@ defmodule PotokIde.Storage do
 
   def put_file(key, source_path), do: with_key(key, &adapter().put_file(&1, source_path))
 
-  def stat(key), do: with_key(key, &adapter().stat/1)
+  def stat(key), do: with_key(key, &adapter().stat(&1))
 
-  def delete(key), do: with_key(key, &adapter().delete/1)
+  def delete(key), do: with_key(key, &adapter().delete(&1))
 
   def download(key, filename, content_type, disposition),
     do: with_key(key, &adapter().download(&1, filename, content_type, disposition))

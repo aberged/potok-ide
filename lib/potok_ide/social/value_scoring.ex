@@ -44,7 +44,7 @@ defmodule PotokIde.Social.ValueScoring do
   the key) and `feedback`. Returns the new `managed`.
   """
   def grade(managed, patch, answers, key) when is_map(patch) and is_map(key) do
-    current = score(answers, key, managed) || %{"items" => %{}}
+    current = score(answers, key, managed)
 
     items =
       Enum.reduce(patch, current["items"], fn {question, grade}, items ->

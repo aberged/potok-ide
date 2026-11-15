@@ -15,7 +15,6 @@ defmodule PotokIdeWeb.ProfileAuth do
   # big group's members do not all recount in the same instant.
   @unread_recount_delay_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @unread_recount_spread_ms 1_000
-  @transport_gc_delay_ms Application.compile_env(:potok_ide, :transport_gc_delay_ms, 2_000)
   @transport_gc_interval_ms Application.compile_env(:potok_ide, :transport_gc_interval_ms, 20_000)
   @transport_gc_threshold_words Application.compile_env(
                                   :potok_ide,
@@ -377,7 +376,9 @@ defmodule PotokIdeWeb.ProfileAuth do
     end
   end
 
-  defp transport_gc_delay_ms, do: @transport_gc_delay_ms
+  # Read when the page mounts: tests switch it off (nil).
+  defp transport_gc_delay_ms,
+    do: Application.get_env(:potok_ide, :transport_gc_delay_ms, 2_000)
 
   defp current_profile_message?(message, socket) do
     profile_id = elem(message, 1)
@@ -556,10 +557,7 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)
 
-  defp pending_invitations_count(nil), do: 0
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
-
-  defp pending_group_join_requests_count(nil), do: 0
 
   defp pending_group_join_requests_count(profile) do
     Social.count_pending_group_join_requests_for_approver(profile)

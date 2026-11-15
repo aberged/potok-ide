@@ -21,7 +21,7 @@ defmodule PotokIdeWeb.AccountLive.Login do
         }
         invitation_note={!@current_scope}
       >
-        <div :if={local_mail_adapter?() and false} class="lp-note mb-6">
+        <div :if={@local_mail_note?} class="lp-note mb-6">
           <.icon name="hero-information-circle" class="lp-accent size-5 shrink-0" />
           <div>
             <p>{gettext("You are running the local mail adapter.")}</p>
@@ -75,7 +75,8 @@ defmodule PotokIdeWeb.AccountLive.Login do
 
     form = to_form(%{"email" => email}, as: "account")
 
-    {:ok, assign(socket, form: form)}
+    # The note about the local mail adapter is switched off for now.
+    {:ok, assign(socket, form: form, local_mail_note?: local_mail_adapter?() and false)}
   end
 
   # The form posts to `AccountSessionController.magic_link/2`, which sends the link.

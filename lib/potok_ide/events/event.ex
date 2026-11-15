@@ -310,7 +310,7 @@ defmodule PotokIde.Events.Event do
         do: put_change(changeset, :end_date, start_date),
         else: changeset
 
-    if get_field(changeset, :end_time) == nil and start_time and
+    if get_field(changeset, :end_time) == nil and start_time != nil and
          not get_field(changeset, :all_day) do
       {end_time, days} = add_hour(start_time)
 

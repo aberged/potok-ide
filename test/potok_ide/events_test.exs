@@ -91,6 +91,24 @@ defmodule PotokIde.EventsTest do
       assert %{end_time: ["must not be before the start"]} = errors_on(changeset)
     end
 
+    test "without an end it ends an hour after the start, on the next day after 23:00", ctx do
+      date = Date.add(today(), 1)
+
+      event =
+        create_event!(ctx.member, ctx.group, event_attrs(date, %{"end_time" => ""}))
+
+      assert event.ends_at == Recurrence.to_utc(date, ~T[19:00:00], zone())
+
+      late =
+        create_event!(
+          ctx.member,
+          ctx.group,
+          event_attrs(date, %{"start_time" => "23:30", "end_time" => ""})
+        )
+
+      assert late.ends_at == Recurrence.to_utc(Date.add(date, 1), ~T[00:30:00], zone())
+    end
+
     test "a weekly event always repeats on the weekday it starts on", ctx do
       # A Wednesday, repeating on Mondays and Fridays as well.
       date = next_weekday(today(), 3)

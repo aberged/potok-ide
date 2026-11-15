@@ -97,17 +97,17 @@ defmodule PotokIde.PushNotifications.Dispatch do
 
   defp deliver_payload(subscriptions, account_id, payload, context, context_id) do
     case Accounts.deliver_push_notification_to_subscriptions(subscriptions, payload) do
-      {:ok, _results} ->
+      # Every device answers on its own; an expired one is already removed.
+      {:ok, results} ->
+        for {:error, reason} <- results, reason != :expired do
+          Logger.warning(
+            "Push delivery failed for account #{account_id} (#{context}#{format_context_id(context_id)}): #{inspect(reason)}"
+          )
+        end
+
         :ok
 
       {:error, :no_push_subscriptions} ->
-        :ok
-
-      {:error, reason} ->
-        Logger.warning(
-          "Push delivery failed for account #{account_id} (#{context}#{format_context_id(context_id)}): #{inspect(reason)}"
-        )
-
         :ok
     end
   end

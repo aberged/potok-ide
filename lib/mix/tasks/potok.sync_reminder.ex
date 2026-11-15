@@ -72,7 +72,7 @@ defmodule Mix.Tasks.Potok.SyncReminder do
   def run(args) do
     paths = if args == [], do: changed_files(), else: args
 
-    paths |> reminders() |> Enum.each(&Mix.shell().info/1)
+    paths |> reminders() |> Enum.each(&Mix.shell().info(&1))
   end
 
   @doc "The lines to print for these changed files, none when nothing is left behind."
