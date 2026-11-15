@@ -856,6 +856,10 @@ const APP_FRAME_METHODS = new Set([
   "create_place",
   "show_group",
   "place_shapes",
+  "list_processes",
+  "complete_task",
+  "retry_process",
+  "cancel_process",
 ])
 
 // Calls that carry a file of the frame's, sent through the page's upload.
