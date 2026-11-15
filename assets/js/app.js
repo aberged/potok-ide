@@ -1233,13 +1233,6 @@ let pendingCapacitorRouteRestore = null
 let lastHandledCapacitorUrl = null
 let lastHandledCapacitorUrlAt = 0
 
-const readRootCssPixelValue = name => {
-  const rawValue = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim()
-  const value = Number.parseFloat(rawValue)
-
-  return Number.isFinite(value) ? value : 0
-}
-
 const editableElementFocused = () => {
   const activeElement = document.activeElement
 
@@ -1264,18 +1257,12 @@ const registerKeyboardWatcher = () => {
 
   const root = document.documentElement
   const viewport = window.visualViewport
-  const nativeIos = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios"
 
   // Scaled back, so zooming in does not read as a keyboard.
   const visibleHeight = () => (viewport ? viewport.height * viewport.scale : window.innerHeight)
 
   let keyboardOpen = false
   let stableViewportHeight = visibleHeight()
-  let stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
-
-  const applyTopInset = value => {
-    root.style.setProperty("--app-effective-safe-area-top", `${Math.max(0, value)}px`)
-  }
 
   // iOS browsers keep the page's height under the keyboard and slide the page
   // up instead, so there the shell is sized to what stays visible.
@@ -1304,26 +1291,10 @@ const registerKeyboardWatcher = () => {
     keyboardOpen = editableFocused && viewportDelta >= threshold
     root.dataset.keyboardOpen = keyboardOpen ? "true" : "false"
     fitShell(viewportHeight)
-
-    if (!nativeIos) {
-      return
-    }
-
-    if (keyboardOpen) {
-      applyTopInset(0)
-      return
-    }
-
-    stableTopInset = readRootCssPixelValue("--app-system-safe-area-top")
-    applyTopInset(stableTopInset)
   }
 
   const scheduleSyncKeyboardState = () => {
     window.requestAnimationFrame(syncKeyboardState)
-  }
-
-  if (nativeIos) {
-    applyTopInset(stableTopInset)
   }
 
   viewport?.addEventListener("resize", scheduleSyncKeyboardState)
@@ -1334,6 +1305,16 @@ const registerKeyboardWatcher = () => {
   window.addEventListener("focusout", scheduleSyncKeyboardState)
 
   scheduleSyncKeyboardState()
+}
+
+// `ios.contentInset: "always"` (capacitor.config.ts) already starts the page
+// below the status bar, yet with `viewport-fit=cover` iOS can still report the
+// bar's height in env(safe-area-inset-top), as it does after the keyboard
+// closes. Counted twice, it left an empty band above the top bar.
+const registerNativeIosTopInset = () => {
+  if (Capacitor.isNativePlatform() && Capacitor.getPlatform() === "ios") {
+    document.documentElement.style.setProperty("--app-effective-safe-area-top", "0px")
+  }
 }
 
 const recentlyHandledCapacitorMagicLinkToken = token => {
@@ -2080,6 +2061,7 @@ registerCapacitorMagicLinks()
 registerCapacitorBackButton()
 registerCapacitorPushNotifications()
 registerCapacitorRoutePersistence()
+registerNativeIosTopInset()
 registerKeyboardWatcher()
 
 window.addEventListener("DOMContentLoaded", () => {
