@@ -406,11 +406,6 @@ msgstr ""
 msgid "Everything here runs at Fly.io: the app, the database and the files. See this month so far and every month before, estimated and billed."
 msgstr ""
 
-#: lib/potok_ide_web/stack_copy.ex:90
-#, elixir-autogen, elixir-format
-msgid "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. Every quarter of an hour one more asks Fly.io what runs and writes down what that hour cost, for the costs page. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
-msgstr ""
-
 #: lib/potok_ide_web/stack_copy.ex:42
 #, elixir-autogen, elixir-format
 msgid "See the costs"
@@ -419,4 +414,9 @@ msgstr ""
 #: lib/potok_ide_web/stack_copy.ex:33
 #, elixir-autogen, elixir-format
 msgid "What Potok costs"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:90
+#, elixir-autogen, elixir-format
+msgid "Notifications go out from processes of their own, so a page does not wait for the delivery services. They wait in one line and go two at a time, so a run of posts does not start hundreds of deliveries at once. Event reminders are a process that wakes up every half minute, and so are the deadlines of polls and the steps of apps' processes, which a new answer also wakes at once. Once an hour another one deletes the files apps took in that no answer claimed. The pictures for link cards and for the avatars in notifications are drawn one at a time, each in a process of its own, and at most three link previews are fetched at once. Every quarter of an hour one more asks Fly.io what runs and writes down what that hour cost, for the costs page. None of this needs a separate job queue. One more process keeps the borders of areas and the lines of routes a map asked for, simplified, and lets go of those used longest ago."
 msgstr ""

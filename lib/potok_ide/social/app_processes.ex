@@ -13,16 +13,16 @@ defmodule PotokIde.Social.AppProcesses do
     it is left out. Members do not pass to it through inheritance.
   - It holds what `everyone` holds in the app's group, like any member, so the
     editors see what is missing (`warnings/2`).
-  - Removing the rule deactivates the process and takes it out of the group;
-    the profile stays as the author of what it wrote, and the rule coming back
-    brings the same profile back.
+  - Removing the rule deactivates the process, cancels its instances that run
+    or wait, and takes it out of the group; the profile stays as the author
+    of what it wrote, and the rule coming back brings the same profile back.
   - A profile left without its process (the app or its group was deleted) and
     without anything it wrote is deleted (`sweep/0`).
   """
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.Graph
+  alias PotokIde.Processes.{Engine, Graph}
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -115,6 +115,9 @@ defmodule PotokIde.Social.AppProcesses do
 
   defp stop!(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
     row |> Ecto.Changeset.change(active: false) |> Repo.update!()
+
+    # What it was doing stops with it.
+    Engine.cancel_all(row)
 
     # Its roles go with the membership (composite foreign key).
     Repo.delete_all(

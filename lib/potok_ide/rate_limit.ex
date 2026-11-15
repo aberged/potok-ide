@@ -57,7 +57,10 @@ defmodule PotokIde.RateLimit do
     # screen asks for a few hundred a minute.
     tile_ip: {1200, :timer.minutes(1)},
     # Tiles all of Potok fetches from OpenStreetMap, whose policy forbids heavy use.
-    tile_upstream: {600, :timer.minutes(1)}
+    tile_upstream: {600, :timer.minutes(1)},
+    # Steps one app's process takes (`Processes.Engine`): a busy day of
+    # requests fits, a graph that runs away waits for the next minute.
+    process_step: {60, :timer.minutes(1)}
   }
 
   @type name ::
@@ -77,6 +80,7 @@ defmodule PotokIde.RateLimit do
           | :group_notice
           | :tile_ip
           | :tile_upstream
+          | :process_step
 
   @type result :: :ok | {:error, :rate_limited, pos_integer()}
 

@@ -65,7 +65,7 @@ defmodule PotokIde.Processes.Graph do
         {:error, {"flows", :too_many}}
 
       true ->
-        with {:ok, nodes} <- each(nodes, "nodes", &node/2),
+        with {:ok, nodes} <- each(nodes, "nodes", &element/2),
              :ok <- unique_ids(nodes),
              ids = MapSet.new(nodes, & &1["id"]),
              {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids)),
@@ -113,6 +113,16 @@ defmodule PotokIde.Processes.Graph do
     end)
   end
 
+  @doc "The id of the graph's `startEvent`."
+  def start(%{"nodes" => nodes}),
+    do: Enum.find_value(nodes, &(&1["type"] == "startEvent" && &1["id"]))
+
+  @doc "The element of the graph with `id`, or nil."
+  def node(%{"nodes" => nodes}, id), do: Enum.find(nodes, &(&1["id"] == id))
+
+  @doc "The flows that leave the element `id`, in the order the graph lists them."
+  def out(%{"flows" => flows}, id), do: Enum.filter(flows, &(&1["from"] == id))
+
   @doc "The seconds of a duration the graph holds, such as `\"P3D\"`."
   def seconds(duration) when is_binary(duration) do
     case Regex.run(@duration_format, duration) do
@@ -149,13 +159,13 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  defp node(%{"id" => id, "type" => type} = node, path) when is_binary(id) do
+  defp element(%{"id" => id, "type" => type} = node, path) when is_binary(id) do
     if Regex.match?(@id_format, id),
       do: typed(type, node, path, %{"id" => id, "type" => type}),
       else: {:error, {path <> ".id", :invalid}}
   end
 
-  defp node(_node, path), do: {:error, {path, :invalid}}
+  defp element(_node, path), do: {:error, {path, :invalid}}
 
   defp typed(type, _node, _path, base) when type in ~w(startEvent endEvent exclusiveGateway),
     do: {:ok, base}

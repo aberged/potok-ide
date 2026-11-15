@@ -53,6 +53,7 @@ config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 
 # Tests close polls and send their reminders by calling `Polls.Deadlines`.
 config :potok_ide, PotokIde.Polls.Scheduler, enabled: false
+config :potok_ide, PotokIde.Processes.Scheduler, enabled: false
 
 # Apps' unclaimed files are swept by hand in tests, and scores computed
 # again inline, so tests can assert on them.

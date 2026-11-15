@@ -27,7 +27,7 @@ defmodule PotokIde.Social.AppData do
 
   alias Phoenix.PubSub
   alias PotokIde.Accounts.Account
-  alias PotokIde.Processes.Graph
+  alias PotokIde.Processes.{Engine, Graph, Scheduler}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Storage
@@ -235,7 +235,9 @@ defmodule PotokIde.Social.AppData do
 
   @doc """
   Writes `data` to `collection` in `profile`'s name, as its rule allows.
-  `account` is the viewer's, for `once`. Returns `{:ok, value, rule}`.
+  `account` is the viewer's, for `once`. A collection whose process has a
+  graph starts an instance on the value (`Processes.Engine.start/3`).
+  Returns `{:ok, value, rule}`.
   """
   def insert(%Profile{} = profile, %Account{} = account, %Group{} = group, alt, collection, data) do
     now = DateTime.utc_now(:second)
@@ -279,12 +281,16 @@ defmodule PotokIde.Social.AppData do
           |> Repo.insert!()
 
         AppFiles.claim(files, value)
-        {%{value | creator: profile}, rule}
+
+        # The collection's process starts on the value, in the same transaction.
+        instance = Engine.start(value, rule, profile)
+        {%{value | creator: profile}, rule, instance}
       end)
       |> case do
-        {:ok, {value, rule}} ->
+        {:ok, {value, rule, instance}} ->
           broadcast_value(group, :created, value, rule)
           notify_subscribers(group, alt, value, rule, profile)
+          if instance, do: Scheduler.nudge()
           {:ok, value, rule}
 
         {:error, reason} ->
