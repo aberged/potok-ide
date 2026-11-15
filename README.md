@@ -759,12 +759,13 @@ The config is one value of the reserved collection `config`, changed in place:
 * `under` is the path to the map of answers in each value, which `uploads`, `score` and summaries read.
 * `uploads` are the slots that take files: `target` is the app's private or public file group, `types` any of `document`, `presentation`, `spreadsheet`, `drawing`, `pdf`, `image`, `video`, `audio` (empty: any). A value names its files under its slot as `[{file: <id>, ...}]`; each must be the sender's own, sent for that slot, and belong to no other value.
 * `score` makes it a quiz: Potok scores each value by the key in `secret` and writes `managed` (`score`, `max`, `pending`, per answer `ok` and `points`). Checks: `eq` (one choice), `set` (exactly those), `text` (any of those texts, ignoring case and spaces; `others_wrong` marks the rest wrong, otherwise they wait for an editor), `rows` and `row_sets` (grids, points per right row), `manual`. A new key scores everything again, keeping editors' grades. Authors see their `managed` once released (`release: "immediate"`, or `released: true`), as `show` allows. `immediate` cannot go with `edit_own`, and nobody changes a value after release.
+* `process: {name, graph}` runs a process for every new value; see [Processes](#processes) below.
 * Limits: a value is at most 64 KB as JSON, the config 512 KB, a page 100 values. Non-members write at most 10 values a minute and send 20 files an hour; an app's files take at most 1 GB.
 
 Calls:
 
 * `getConfig()` resolves to `{ok: true, config: {id, revision, data} | null, caps, manage, can_create_groups, files, visible_role_keys, viewer}`. `caps` has, per ruled collection, what the viewer may do: `{write, write_block, read: "all" | "own", summary, edit_own, manage, open, once, anonymous, public, released, written, notify}`. `files` (editors only) says per file group `"ok"`, `"missing"` or `"exposed"`. Members get it, and anyone where a rule is public.
-* `saveConfig(data, {revision})` resolves to `{ok: true, config}`, for editors. Pass the revision you started from (0 for the first save); someone else's save in between gives `{ok: false, error: "conflict", current}`. Invalid rules give `{error: "invalid_rules", reason}`.
+* `saveConfig(data, {revision})` resolves to `{ok: true, config}`, for editors. Pass the revision you started from (0 for the first save); someone else's save in between gives `{ok: false, error: "conflict", current}`. Invalid rules give `{error: "invalid_rules", reason}`, a process's graph that cannot hold `{error: "invalid_process", collection, path, reason}`. For editors, both calls add `process_warnings` when a collection has a process.
 * `insertValue(data, {collection})` and `listValues({collection, mine, total, match, orderDir, limit, offset, beforeId, afterId})` work on a collection. A list goes by id and pages as above: `orderDir: "desc"` gives the newest first, a cursor gives the page right next to it, `total: true` adds `total`, `mine: true` keeps the viewer's own, and `match` (an object, full readers only) keeps values whose data contains it.
 * `aggregateValues({collection, match, under, groupBy, fields})` adds up numbers in a collection as above, reading at the rule's `under` unless `under` is given. Only for full readers: a sum or a lowest value over a narrow `match` can tell a single answer, so the roles in `summary` get `forbidden` and keep to `summarizeValues`.
 * `updateValue(id, data, {revision})` changes the viewer's own value; `deleteValue(id)` and `deleteValues(collection)` are for editors and take the files along.
@@ -775,7 +776,7 @@ Calls:
 * `ensureFileGroups()`: for editors who may make sub-groups, makes the app's two file groups that are missing, "Private files" (closed, not inheriting: only its members open its files, at first the editor who made it) and "Files" (inherits the app group's members), and records them in `files`.
 * `uploadFile(file, {collection, slot, onProgress})` sends a file for a slot and resolves to `{ok: true, file: {file, name, size, type}}`. It goes through the page's upload, straight to the bucket where there is one, and waits for as long as that takes. `uploadImage(file)` sends a picture of the app itself (editors, images up to 10 MB, into the public group) and its `file.url` is a signed address anyone who sees the app opens. Files nobody's value claimed are deleted after a day.
 * `fileUrl(id)` resolves to `{ok: true, url, name, type, size}`: an address valid for ten minutes, for a viewer who may open the file (a member of the group that keeps it, or whoever sent it).
-* `onValues(listener, {collection})` calls `listener(change)` for what changes in the app's collections and the viewer may see: `{event: "created" | "updated", collection, value}`, `{event: "deleted", collection, id}`, `{event: "cleared", collection}` (`null`: all of the app's data), `{event: "regraded", collection}` and `{event: "config", id, revision}`, after which the app reads the config again.
+* `onValues(listener, {collection})` calls `listener(change)` for what changes in the app's collections and the viewer may see: `{event: "created" | "updated", collection, value}`, `{event: "deleted", collection, id}`, `{event: "cleared", collection}` (`null`: all of the app's data), `{event: "regraded", collection}`, `{event: "config", id, revision}`, after which the app reads the config again, and `{event: "process", collection, id}` when an instance of a process moves (see below).
 
 An app can also keep the groups right under its own. These calls act in the viewer's name, so all of them need a viewer with the `edit_group` permission in the app's group, who could rewrite the app anyway; by default that is only an admin. Anyone else gets `forbidden`, and `can_manage_children` in `getGroup` says so in advance. They reach direct sub-groups only, as far as the viewer can see them, without threads and direct conversations. Any other group is `not_found`. See [docs/feed-i-feedcreator.md](docs/feed-i-feedcreator.md) for two apps built on them.
 
@@ -793,6 +794,38 @@ An app can also keep the groups right under its own. These calls act in the view
 * `previewDescription(description, options)` resolves to `{ok: true, html}`: what `description_html` will be for that text, with `options.descriptionFormat`. `html` is `null` for an empty text. It counts as a write for the rate limit, so call it with a pause.
 
 An app cannot set `uses_api` or anything else outside `attrs`, and there is no call that deletes a group: `openGroup(id, {tab: "settings"})` leads to the group's own page for that.
+
+#### Processes
+
+A collection's rule can run a process for every new value: `process: {name, graph}` (`PotokIde.Processes`). The first save of the rule gives the process a profile of its own, called `name` (at most 120 characters): it joins the app's group, signs whatever the process writes, and nobody logs in as it. The editor who saved the rule owns the process. The profile holds what `everyone` holds in the app's group, so an action it lacks the permission for stops the instance. Removing the rule stops the process and cancels its instances that run or wait. The Forma app builds its graph from four steps the editor picks; see [docs/forma.md](docs/forma.md).
+
+The graph is `{nodes, flows}`, its elements named as in BPMN. An instance stands on one element at a time: there are no parallel flows.
+
+* Exactly one `{id, type: "startEvent"}`, and at least one `endEvent`. Ids are lowercase letters, digits, `-` and `_`, starting with a letter, at most 40 characters. A flow is `{from, to}`.
+* `serviceTask` with an `action`:
+  * `message` writes `text` into the app's group (`in: "app"`, the default) or into a sub-group the instance made (`in`: that element's id). It needs `post_values`.
+  * `subgroup` makes a sub-group called `name`. Its `admins` are role keys, `"owner"` and `"triggered_by"`, by default the last two; while the owner no longer edits the app, `triggered_by` takes the owner's place. It needs `create_subgroups`.
+  * `push` sends `text` (at most 240 characters) to the people of `role`, as a mention of the role would. It needs `mention_roles`.
+* `userTask` waits for someone holding `role` to pick one of its `outcomes` (at most 10), each leaving by its own flow `{from, to, outcome}`. With a `deadline`, the flow marked `deadline: true` goes when the deadline passes.
+* `timer` waits a `duration`. Durations are ISO 8601 (`PT30M`, `PT1H`, `P3D`, `P1W`), from a minute to a year.
+* `exclusiveGateway` takes the first flow whose `condition` holds, else its `default: true` flow. A condition compares one field of the value, `{field, op, value}`, with `op` one of `=`, `!=`, `<`, `>`, `empty`.
+* Texts and names may hold fields of the value, such as `{{title}}` or `{{a.q1}}`, and nothing else.
+
+A rule is saved only with a graph an instance can finish: every element reachable from the start and able to reach an end, every outcome with its flow, every role key one the group has. Otherwise `saveConfig` gives `invalid_process` with the collection and the path counted from its rule, such as `process.graph.nodes.3.outcomes`, and a `reason` such as `no_flow`, `dead_end` or `unknown_role` (the full list is in `Processes.Graph`). `process_warnings` tells the editors, per collection, the permissions the profile lacks (`missing`) and whether the owner no longer edits the app (`owner_left`).
+
+Who set off a step (`triggered_by`) is the value's author at the start (nobody for an anonymous value), then whoever finished a task, and nobody after a timer or a deadline. An instance takes at most 1000 steps in its life, and a process at most 60 a minute; the rest waits for the next pass, every 30 seconds. A step that fails stops the instance, with what went wrong in `error`.
+
+* `listProcesses(collection, {ids})` resolves to `{ok: true, processes}`: the instances the viewer may see, those of the values they read in full and of their own, newest first, at most 100. `ids` keeps those of these values. Each is `{id, value_id, status, element, wake_at, error, groups, task, log}`:
+  * `status`: `running`, `waiting`, `done`, `failed` or `cancelled`
+  * `error`: `{element, reason}` for a failed instance
+  * `groups`: the sub-groups it made, by element
+  * `task`: the task it waits on, `{element, outcomes, deadline_at, can_complete}`, where `can_complete` says whether the viewer may finish it
+  * `log`: the decisions, `{at, element, outcome, comment, by: {id, username}}`
+* `completeTask(id, element, outcome, {comment})` finishes the task the instance waits on, for someone holding its role, with a comment of at most 1000 characters, and resolves to `{ok: true, process}`. A task no longer waiting gives `not_waiting`, an outcome it does not have `invalid_outcome`, a stopped process `process_inactive`.
+* `retryProcess(id)` takes a failed instance up again where it stopped (`not_failed` for any other), and `cancelProcess(id)` cancels one that runs or waits (`not_running` for any other). Both are for editors and resolve to `{ok: true, process}`.
+* The `process` event of `onValues` says only which instance moved; the app reads it again with `listProcesses`, which shows only what the viewer may see.
+
+#### Replies, errors and the frame
 
 Reply shapes:
 
@@ -837,6 +870,7 @@ Error codes (`error`):
 * From the server, with a localized `message`: `not_a_member`, `forbidden`, `invalid_value`, `invalid_description`, `invalid_group` (from `createChildren` with the `index` of the child), `rate_limited` (writes come in bursts of up to 30, refilled over 10 seconds; `summarizeValues` and `aggregateValues` together 120 a minute per viewer), `timeout` (a count or sum took over 5 seconds, a map's view over 4), and from `createChildren` `too_large` and `conflict`.
 * From the server, without a message: `stale_app` (the call came from an app that is no longer on screen), `not_found` (no such sub-group or group, or the viewer cannot see it), `invalid_emoji`, `invalid_date`, `invalid_match`, `invalid_aggregate`, `unknown_method`.
 * For collections: `closed`, `already_answered`, `released`, `too_large`, `invalid_files`, `files_missing`, `files_exposed` (with a `message`), and `conflict` (with `current`), `invalid_rules` (with `reason`), `invalid_collection`, `no_config`, `not_scored`, `invalid_summary`.
+* For processes: `invalid_process` (with `collection`, `path` and `reason`), `not_waiting`, `invalid_outcome`, `process_inactive`, `not_failed`, `not_running`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`, `cancelled` (the viewer closed the picker of `pickEmoji`), `forbidden` (the page has no picker).
 
 The frame environment:
