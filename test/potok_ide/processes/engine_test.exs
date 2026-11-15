@@ -415,6 +415,115 @@ defmodule PotokIde.Processes.EngineTest do
     end
   end
 
+  describe "a graph as Forma makes it" do
+    # What potok-forme's `processGraph` gives for a request with every step on
+    # (src/model/process.test.ts): answers under `a`, as Forma keeps them.
+    defp forma_graph(savet) do
+      %{
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{
+            "id" => "najava",
+            "type" => "serviceTask",
+            "action" => "message",
+            "in" => "app",
+            "text" => "Stigla je molba: {{a.naslov}}"
+          },
+          %{
+            "id" => "podgrupa",
+            "type" => "serviceTask",
+            "action" => "subgroup",
+            "name" => "Molba: {{a.naslov}}",
+            "admins" => ["triggered_by", savet, "owner"]
+          },
+          %{
+            "id" => "javi",
+            "type" => "serviceTask",
+            "action" => "push",
+            "role" => savet,
+            "text" => "Molba čeka odluku."
+          },
+          %{
+            "id" => "odluka",
+            "type" => "userTask",
+            "role" => savet,
+            "outcomes" => ["Odobri", "Odbij"],
+            "deadline" => "P7D"
+          },
+          %{
+            "id" => "ishod-1",
+            "type" => "serviceTask",
+            "action" => "message",
+            "in" => "podgrupa",
+            "text" => "Odobreno."
+          },
+          %{
+            "id" => "ishod-2",
+            "type" => "serviceTask",
+            "action" => "message",
+            "in" => "podgrupa",
+            "text" => "Odbijeno."
+          },
+          %{
+            "id" => "podsetnik",
+            "type" => "serviceTask",
+            "action" => "push",
+            "role" => savet,
+            "text" => "Molba još čeka odluku."
+          },
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "najava"},
+          %{"from" => "najava", "to" => "podgrupa"},
+          %{"from" => "podgrupa", "to" => "javi"},
+          %{"from" => "javi", "to" => "odluka"},
+          %{"from" => "odluka", "to" => "ishod-1", "outcome" => "Odobri"},
+          %{"from" => "ishod-1", "to" => "kraj"},
+          %{"from" => "odluka", "to" => "ishod-2", "outcome" => "Odbij"},
+          %{"from" => "ishod-2", "to" => "kraj"},
+          %{"from" => "odluka", "to" => "podsetnik", "deadline" => true},
+          %{"from" => "podsetnik", "to" => "odluka"}
+        ]
+      }
+    end
+
+    test "is taken, and runs a request from the chat to the decision", ctx do
+      save!(ctx, forma_graph(ctx.savet), %{"under" => ["a"]})
+      instance = send!(ctx, %{"v" => 1, "a" => %{"naslov" => "Klupa u parku"}})
+
+      waiting = Engine.run(instance.id)
+      assert %ValueProcess{status: :waiting, element: "odluka"} = waiting
+      assert chat(ctx.group) == ["Stigla je molba: Klupa u parku"]
+
+      sub = Repo.get!(Group, waiting.groups["podgrupa"])
+      assert sub.name == "Molba: Klupa u parku"
+
+      {:ok, _moved} =
+        Engine.complete_task(ctx.owner, instance.id, "odluka", "Odbij", "Nema mesta.")
+
+      assert %ValueProcess{status: :done} = Engine.run(instance.id)
+      assert ["Odbijeno."] = sub |> Social.list_group_values() |> Enum.map(& &1.content)
+    end
+
+    test "of an anonymous form is set off by nobody, and runs without its author", ctx do
+      graph =
+        forma_graph(ctx.savet)
+        |> put_in(["nodes", Access.at(2), "admins"], [ctx.savet, "owner"])
+
+      save!(ctx, graph, %{"under" => ["a"], "anonymous" => true})
+      instance = send!(ctx, %{"v" => 1, "a" => %{"naslov" => "Tajna"}})
+      waiting = Engine.run(instance.id)
+
+      assert %ValueProcess{status: :waiting, started_by_id: nil} = waiting
+      [announcement] = Social.list_group_values(ctx.group)
+      assert announcement.process_trigger == nil
+
+      sub = Repo.get!(Group, waiting.groups["podgrupa"])
+      refute Social.member_of_group?(ctx.member, sub)
+    end
+  end
+
   describe "run_due/1" do
     test "takes up the instances whose time has come, and only those", ctx do
       save!(ctx, chain([%{"id" => "cekaj", "type" => "timer", "duration" => "PT1H"}]))

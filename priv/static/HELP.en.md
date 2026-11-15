@@ -312,7 +312,7 @@ You turn on push notifications in your account settings, separately for each bro
 Some kinds of groups get a ready-made app:
 
 - **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them. For people without an account to read the news too, turn on "Description open to guests" both in the Feed and in `.feed`: a new story takes that choice from `.feed`.
-- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files.
+- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 

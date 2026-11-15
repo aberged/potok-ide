@@ -52,6 +52,21 @@ Onaj ko je poslao fajl uvek može da ga otvori. Ako neko otvori privatnu grupu (
 
 Urednik zadaje bodove i tačne odgovore. Potok boduje svaki odgovor po ključu iz `secret` i upisuje bodove u `managed`. Pasus, datum, vreme, skala i fajl se ocenjuju ručno. Ocene se objavljuju odmah ili posle pregleda, sve odjednom. Kad se objavljuju odmah, odgovor ne može da se menja, a posle objave ne može nikako.
 
+## Proces za svaki odgovor
+
+U podešavanjima, odeljak **Kad stigne odgovor** pokreće proces za svaki novi odgovor. Urednik bira korake, a graf ne crta: Forma ga sastavlja (`src/model/process.ts` u `potok-forme`) i čuva u `rules.responses.process`, uz ime forme. Engine iz [plana engine-a](https://claude.ai/artifact/MWkyQhGCUJjwKXjdh6FqNX) ga vodi, a poruke potpisuje profil procesa.
+
+| Korak | Šta urednik bira | Elementi grafa |
+|---|---|---|
+| Najava u razgovoru | tekst, uz odgovore | `message` u grupi forme (`najava`) |
+| Podgrupa za odgovor | ime, uz odgovore | `subgroup` (`podgrupa`); vode je autor odgovora (osim kod anonimne forme), uloga koja odlučuje i vlasnik |
+| Odluka | uloga, 2–4 ishoda, push ulozi, podsetnik posle 1–30 dana | `push` (`javi`), `userTask` (`odluka`), za rok `push` (`podsetnik`) koji se vraća na zadatak |
+| Poruka posle odluke | tekst po ishodu | `message` po ishodu (`ishod-1`…), u podgrupi ako je ima, inače u grupi forme |
+
+Odgovori ulaze u tekst kao polja vrednosti, `{{a.<id pitanja>}}`, i to samo iz kratkih i dugih odgovora, datuma i vremena: izbori se čuvaju kao id opcije. Ako Potok odbije graf (`invalid_process`), Forma po putanji elementa kaže koji korak treba proveriti. Upozorenja iz `process_warnings` (pravo koje procesu fali, vlasnik koji više ne uređuje formu) stoje u istom odeljku.
+
+Ko ima ulogu odluke, odlučuje u pojedinačnom pregledu odgovora (`completeTask`), uz komentar. Tabela ima kolonu **Stanje**, a autor posle slanja vidi stanje svog odgovora. Stanja Forma čita za odgovore na ekranu (`listProcesses` sa `ids`) i ponovo kad stigne događaj `process`. Instancu koja je zastala urednik pokreće ponovo (`retryProcess`).
+
 ## Granice
 
 - Anonimnost štiti od čitalaca i od API-ja, ne od onoga ko prepiše kod aplikacije. Id i vreme slanja se vide.

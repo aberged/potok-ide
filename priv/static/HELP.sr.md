@@ -318,7 +318,7 @@ Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregled
 Neke vrste grupa dobijaju gotovu aplikaciju:
 
 - **Feed** je niz vesti koje se listaju prevlačenjem, sa reakcijama i komentarima. Urednici ih pišu u podgrupi `.feed`, iz šablona, čuvaju kao nacrt i objavljuju. Da bi vesti čitali i oni bez naloga, uključi „Opis vidljiv i bez prijave“ i u Feedu i u `.feed`: nova vest taj izbor preuzima od `.feed`.
-- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova.
+- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova. U podešavanjima, „Kad stigne odgovor“, uključuješ proces za svaki odgovor: najavu u razgovoru, podgrupu za odgovor i odluku jedne uloge, sa podsetnikom. Ko ima tu ulogu, odlučuje pravo u pregledu odgovora.
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
 
