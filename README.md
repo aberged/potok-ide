@@ -797,11 +797,11 @@ An app cannot set `uses_api` or anything else outside `attrs`, and there is no c
 
 #### Processes
 
-A collection's rule can run a process for every new value: `process: {name, graph}` (`PotokIde.Processes`). The first save of the rule gives the process a profile of its own, called `name` (at most 120 characters): it joins the app's group, signs whatever the process writes, and nobody logs in as it. The editor who saved the rule owns the process. The profile holds what `everyone` holds in the app's group, so an action it lacks the permission for stops the instance. Removing the rule stops the process and cancels its instances that run or wait. The Forma app builds its graph from four steps the editor picks; see [docs/forma.md](docs/forma.md).
+A collection's rule can run a process for every new value: `process: {name, graph}` (`PotokIde.Processes`). The first save of the rule gives the process a profile of its own, called `name` (at most 60 characters): it joins the app's group, signs whatever the process writes, and nobody logs in as it. The editor who saved the rule owns the process. The profile holds what `everyone` holds in the app's group, so an action it lacks the permission for stops the instance. Removing the rule stops the process and cancels its instances that run or wait. The Forma app builds its graph from four steps the editor picks; see [docs/forma.md](docs/forma.md).
 
 The graph is `{nodes, flows}`, its elements named as in BPMN. An instance stands on one element at a time: there are no parallel flows.
 
-* Exactly one `{id, type: "startEvent"}`, and at least one `endEvent`. Ids are lowercase letters, digits, `-` and `_`, starting with a letter, at most 40 characters. A flow is `{from, to}`.
+* Exactly one `{id, type: "startEvent"}`, and at least one `endEvent`. Ids are lowercase letters, digits, `-` and `_`, starting with a letter, at most 40 characters. Any element may carry a `label` (at most 60 characters), its name on a drawing and where an instance waits or stopped. A flow is `{from, to}`.
 * `serviceTask` with an `action`:
   * `message` writes `text` into the app's group (`in: "app"`, the default) or into a sub-group the instance made (`in`: that element's id). It needs `post_values`.
   * `subgroup` makes a sub-group called `name`. Its `admins` are role keys, `"owner"` and `"triggered_by"`, by default the last two; while the owner no longer edits the app, `triggered_by` takes the owner's place. It needs `create_subgroups`.

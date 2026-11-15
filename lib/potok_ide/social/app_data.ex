@@ -162,19 +162,23 @@ defmodule PotokIde.Social.AppData do
 
   # The roles a process's graph names must be the group's (`Graph.role_refs/1`).
   defp unknown_process_role(rules, %Access{manifest: manifest}) do
-    keys = MapSet.new(if(manifest, do: manifest.roles, else: []), & &1.key)
+    keys = role_keys(manifest)
 
     Enum.find_value(rules, fn
       {collection, %{"process" => %{"graph" => graph}}} ->
-        Enum.find_value(Graph.role_refs(graph), fn {path, key} ->
-          if not MapSet.member?(keys, key),
-            do: {:invalid_process, collection, "process.graph." <> path, :unknown_role}
-        end)
+        case Graph.unknown_role(graph, keys) do
+          nil -> nil
+          {path, reason} -> {:invalid_process, collection, "process.graph." <> path, reason}
+        end
 
       _rule ->
         nil
     end)
   end
+
+  @doc false
+  # The role keys of a group's manifest, which a process's graph may name.
+  def role_keys(manifest), do: MapSet.new(if(manifest, do: manifest.roles, else: []), & &1.key)
 
   @doc false
   # For `AppFiles`, inside its own transaction: the sub-groups that keep the
@@ -779,8 +783,10 @@ defmodule PotokIde.Social.AppData do
 
   defp locked_value(_group, _alt, _id), do: nil
 
-  # One editor's save at a time, also before the config exists.
-  defp lock_app(%Group{id: group_id}, alt) do
+  @doc false
+  # One editor's save at a time, also before the config exists. The processes
+  # drawn in Potok for the app take it too (`DrawnProcesses`).
+  def lock_app(%Group{id: group_id}, alt) do
     Repo.query!("SELECT pg_advisory_xact_lock($1, $2)", [7_101, lock_key({group_id, alt_id(alt)})])
   end
 

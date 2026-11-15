@@ -257,6 +257,37 @@ defmodule PotokIde.Processes.GraphTest do
            ]
   end
 
+  test "keeps a label on any element, trimmed, and drops a blank one" do
+    graph =
+      molbe()
+      |> update_node("odluka", &Map.put(&1, "label", "  Savet odlučuje "))
+      |> update_node("kraj", &Map.put(&1, "label", " "))
+
+    assert {:ok, %{"nodes" => nodes}} = Graph.normalize(graph)
+    odluka = Enum.find(nodes, &(&1["id"] == "odluka"))
+    kraj = Enum.find(nodes, &(&1["id"] == "kraj"))
+
+    assert odluka["label"] == "Savet odlučuje"
+    refute Map.has_key?(kraj, "label")
+    assert Graph.label(odluka) == "Savet odlučuje"
+    assert Graph.label(kraj) == "kraj"
+
+    assert {:error, {"nodes.3.label", :invalid}} =
+             molbe()
+             |> update_node("odluka", &Map.put(&1, "label", String.duplicate("a", 61)))
+             |> Graph.normalize()
+
+    assert {:error, {"nodes.0.label", :invalid}} =
+             molbe() |> update_node("start", &Map.put(&1, "label", 7)) |> Graph.normalize()
+  end
+
+  test "finds the first role the group does not have" do
+    {:ok, graph} = Graph.normalize(molbe())
+
+    assert Graph.unknown_role(graph, MapSet.new(["savet"])) == nil
+    assert Graph.unknown_role(graph, MapSet.new(["admin"])) == {"nodes.2.admins.1", :unknown_role}
+  end
+
   test "reads durations in seconds" do
     assert Graph.seconds("PT30M") == 1_800
     assert Graph.seconds("PT1H") == 3_600

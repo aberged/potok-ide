@@ -70,7 +70,7 @@ defmodule PotokIde.Social.AppProcesses do
     end)
 
     for %AppProcess{active: true} = row <- rows, not Map.has_key?(wanted, row.collection) do
-      stop!(group, row)
+      stop(group, row)
     end
 
     :ok
@@ -90,7 +90,7 @@ defmodule PotokIde.Social.AppProcesses do
     }
     |> Repo.insert!()
 
-    join!(group, profile.id)
+    join(group, profile.id)
   end
 
   defp resume!(editor, group, %AppProcess{} = row, name) do
@@ -98,7 +98,7 @@ defmodule PotokIde.Social.AppProcesses do
     |> Ecto.Changeset.change(active: true, owner_profile_id: editor.id, name: name)
     |> Repo.update!()
 
-    join!(group, row.profile_id)
+    join(group, row.profile_id)
   end
 
   # The owner stays while they edit the app; otherwise the editor saving the
@@ -113,7 +113,10 @@ defmodule PotokIde.Social.AppProcesses do
     :ok
   end
 
-  defp stop!(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
+  @doc false
+  # Deactivates a process: for `sync/4` and for `DrawnProcesses`, inside a
+  # transaction that holds the app's lock.
+  def stop(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
     row |> Ecto.Changeset.change(active: false) |> Repo.update!()
 
     # What it was doing stops with it.
@@ -131,9 +134,10 @@ defmodule PotokIde.Social.AppProcesses do
     )
   end
 
+  @doc false
   # A direct member, never inherited, and never one that inheriting groups
   # below take in (`MemberInheritance`).
-  defp join!(%Group{id: group_id}, profile_id) do
+  def join(%Group{id: group_id}, profile_id) do
     %GroupMembership{}
     |> GroupMembership.changeset(%{group_id: group_id, profile_id: profile_id})
     |> Repo.insert!(on_conflict: :nothing, conflict_target: [:group_id, :profile_id])
