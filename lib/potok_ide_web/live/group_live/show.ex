@@ -26,7 +26,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   alias PotokIde.Notices
   alias PotokIde.Polls
-  alias PotokIde.Processes
   alias PotokIde.RateLimit
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -49,6 +48,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     PollForm,
     PollsState,
     PollsTab,
+    ProcessesState,
+    ProcessesTab,
     RolesTab,
     RootMapState,
     RootMapTab,
@@ -514,6 +515,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 icon="hero-chart-bar"
               />
               <Components.group_tab_button
+                :if={@processes_tab?}
+                id="group-tab-processes"
+                tab="processes"
+                active_tab={@active_tab}
+                label={gettext("Processes")}
+                icon="hero-arrow-path-rounded-square"
+              />
+              <Components.group_tab_button
                 :if={@group.is_root}
                 id="group-tab-sub-groups"
                 tab="sub_groups"
@@ -692,6 +701,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
             include_subgroups={@polls_include_subgroups?}
             show_groups={@polls_show_groups?}
             show_public={@polls_show_public?}
+          />
+          <ProcessesTab.panel
+            :if={@active_tab == "processes"}
+            group={@group}
+            access={@access}
+            current_profile={@current_profile}
+            apps={@processes_apps}
+            tasks={@processes_tasks}
           />
           <NoticesTab.panel
             :if={@active_tab == "notices"}
@@ -933,6 +950,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> PollForm.init()
          |> PollsState.init(params)
          |> NoticesState.init(params)
+         |> ProcessesState.init()
          |> GroupSheet.init()
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
@@ -1034,6 +1052,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("notice_" <> _ = event, params, socket),
     do: NoticesState.handle_event(event, params, socket)
+
+  def handle_event("processes_" <> _ = event, params, socket),
+    do: ProcessesState.handle_event(event, params, socket)
 
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile
@@ -2476,20 +2497,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # An editor takes up again an instance of an app's process that failed.
-  def handle_event("retry_process_instance", %{"id" => id}, socket) do
-    %{group: group, access: access} = socket.assigns
-
-    with {id, ""} <- Integer.parse(id),
-         {:ok, _process} <- Processes.retry(group, :any, access, id) do
-      {:noreply,
-       socket
-       |> put_flash(:info, gettext("The process goes on from where it stopped."))
-       |> assign_group_processes()}
-    else
-      _refused -> {:noreply, put_flash(socket, :error, gettext("Could not take it up again."))}
-    end
-  end
-
   def handle_event("toggle_member_role", %{"profile-id" => profile_id, "key" => key}, socket) do
     current_profile = socket.assigns.current_profile
     group = socket.assigns.group
@@ -2606,6 +2613,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply, follows_changed(socket, message)}
   end
 
+  def handle_info({:processes, message}, socket),
+    do: ProcessesState.handle_info(message, socket)
+
   def handle_info({:polls, message}, socket) do
     {:noreply, socket} = PollsState.handle_info(message, socket)
     {:noreply, refresh_polls_section(socket, message)}
@@ -2637,11 +2647,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
       when socket.assigns.group.id == group_id do
     socket = AppValues.announce(socket, event, payload)
 
-    # Saving an app's rules starts and stops its processes, and their
-    # instances move.
-    socket = if event in [:config, :process], do: assign_group_processes(socket), else: socket
+    # Saving an app's rules starts and stops its processes, editors draw
+    # theirs, and their instances move.
+    socket =
+      if event in [:config, :process, :drawn_process],
+        do: assign_group_processes(socket),
+        else: socket
 
-    {:noreply, socket}
+    {:noreply, ProcessesState.app_value(socket, event)}
   end
 
   def handle_info({:app_value, _group_id, _event, _payload}, socket), do: {:noreply, socket}
@@ -2823,6 +2836,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_group_location(group, active_tab)
     |> PollsState.maybe_load(group, active_tab)
     |> NoticesState.maybe_load(group, active_tab)
+    |> ProcessesState.assign_available()
+    |> ProcessesState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
@@ -4881,7 +4896,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp process_entries(group, access) do
     rows = AppProcesses.list_active(group)
     keys_by_profile = Access.role_keys_by_profile(group, Enum.map(rows, & &1.profile_id))
-    counts = rows |> Enum.map(& &1.id) |> Processes.counts()
     manage? = ValueRules.manage?(access)
 
     Enum.map(rows, fn row ->
@@ -4890,9 +4904,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
         process: row,
         profile: %{row.profile | app_process: row},
         role_keys: Map.get(keys_by_profile, row.profile_id, []),
-        warning: if(manage?, do: AppProcesses.warning(row, group)),
-        counts: Map.get(counts, row.id, %{}),
-        failed: if(manage?, do: Processes.failed(row.id), else: [])
+        warning: if(manage?, do: AppProcesses.warning(row, group))
       }
     end)
   end
@@ -5568,6 +5580,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp normalize_active_tab("polls", group, %Access{} = access) do
     if polls_tab?(group, access), do: "polls", else: default_active_tab(group)
+  end
+
+  defp normalize_active_tab("processes", group, %Access{} = access) do
+    if ProcessesState.available?(group, access), do: "processes", else: default_active_tab(group)
   end
 
   defp normalize_active_tab("files", %Group{parent_id: parent_id}, %Access{member?: true})

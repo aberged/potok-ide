@@ -265,6 +265,44 @@ defmodule PotokIde.Social.AppProcesses do
   end
 
   @doc """
+  The processes the group's Processes tab lists: the active ones, those of
+  its apps and those drawn in Potok, and for the app's editors (`manage?`)
+  the drawings that are switched off too. With their profiles, owners and
+  descriptions, the app's own first, then by name.
+  """
+  def list_for_tab(%Group{id: group_id}, manage?) do
+    query =
+      from(p in AppProcess,
+        where: p.group_id == ^group_id,
+        order_by: [asc: p.drawn, asc: p.name, asc: p.id],
+        preload: [:profile, :owner_profile, :alt_description]
+      )
+
+    query =
+      if manage?, do: where(query, [p], p.active or p.drawn), else: where(query, [p], p.active)
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Whether the group has an app or a process at all, for its Processes tab.
+  """
+  def any_app_or_process?(%Group{uses_api: true}), do: true
+
+  def any_app_or_process?(%Group{id: group_id}) do
+    %{rows: [[any?]]} =
+      Repo.query!(
+        """
+        SELECT EXISTS (SELECT 1 FROM group_alt_descriptions WHERE group_id = $1 AND uses_api)
+            OR EXISTS (SELECT 1 FROM app_processes WHERE group_id = $1)
+        """,
+        [group_id]
+      )
+
+    any?
+  end
+
+  @doc """
   Whether `profile` signs for a process of `group`'s apps, running or stopped:
   there its rule, not a person, takes it in and out, so nobody removes or
   blocks it by hand. In the sub-groups it makes, people may.

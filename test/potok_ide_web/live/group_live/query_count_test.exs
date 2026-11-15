@@ -20,10 +20,12 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
   # and its 22nd, like the first HTML's 6th, asks whether the group has a poll,
   # for the bar of sections. The chat page's 23rd, like the first HTML's 7th,
   # reads whether the group sent notices, whether the viewer follows it and
-  # how many do, for the bell and the bar (`Notices.group_state/2`).
+  # how many do, for the bell and the bar (`Notices.group_state/2`). Its 24th
+  # asks whether a group without an app of its own description has another
+  # app or a process, for the menu's Processes tab.
   @max_dead_render_queries 7
   @max_root_page_queries 11
-  @max_chat_page_queries 23
+  @max_chat_page_queries 24
 
   setup %{conn: conn} do
     account = account_fixture()

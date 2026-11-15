@@ -213,7 +213,9 @@ In Roles you see whether the group has a manifest of its own or inherits one, yo
 
 ![Roles and their permissions](uloge)
 
-An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role. Next to each process you see how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again from there.
+An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them and their roles, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role.
+
+How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there.
 
 ### All permissions {:#dozvole}
 

@@ -219,7 +219,9 @@ U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ 
 
 ![Uloge i njihove dozvole](uloge)
 
-Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces, uz ime onoga ko je proces pokrenuo, a u podgrupi koju je proces napravio njegovo ime vodi na aplikaciju. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom. Uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo.
+Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, sa svojim ulogama, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces, uz ime onoga ko je proces pokrenuo, a u podgrupi koju je proces napravio njegovo ime vodi na aplikaciju. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom.
+
+Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje.
 
 ### Sve dozvole {:#dozvole}
 

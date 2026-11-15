@@ -111,6 +111,16 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
       refute has_element?(lv, "#process-#{process.id}-roles-toggle")
     end
 
+    test "leads to the Processes tab, where the counts are", ctx do
+      save!(ctx.owner, ctx.group, with_process())
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
+
+      lv |> element("#group-processes-link") |> render_click()
+      assert_patch(lv, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#group-panel-processes")
+    end
+
     test "is quiet about processes while the apps have none", ctx do
       {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/members")
 
@@ -191,24 +201,25 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
       Engine.run(instance.id)
     end
 
-    test "are counted by state, and follow each move", ctx do
+    test "are counted by state on the Processes tab, and follow each move", ctx do
       save!(ctx.owner, ctx.group, with_task())
-      %{profile: process} = process_of(ctx.group)
+      row = process_of(ctx.group)
       instance = waiting!(ctx)
 
-      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
-      assert has_element?(lv, "#process-#{process.id}-count-waiting", "Waiting: 1")
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#process-row-#{row.id}-count-waiting", "Waiting: 1")
+      assert has_element?(lv, "#process-row-#{row.id}-kind", "from the app")
 
       {:ok, _moved} = Engine.complete_task(ctx.member, instance.id, "odluka", "gotovo")
       Engine.run(instance.id)
 
       assert render(lv) =~ "Done: 1"
-      refute has_element?(lv, "#process-#{process.id}-count-waiting")
+      refute has_element?(lv, "#process-row-#{row.id}-count-waiting")
     end
 
     test "that failed show to the editors, who take them up again", ctx do
       save!(ctx.owner, ctx.group, with_task())
-      %{profile: process} = process_of(ctx.group)
+      row = process_of(ctx.group)
       instance = waiting!(ctx)
 
       instance
@@ -218,18 +229,20 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
       )
       |> Repo.update!()
 
-      {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
-      assert has_element?(member_lv, "#process-#{process.id}-count-failed", "Failed: 1")
-      refute has_element?(member_lv, "#process-#{process.id}-failed")
+      {:ok, member_lv, _html} =
+        live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
 
-      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/members")
+      assert has_element?(member_lv, "#process-row-#{row.id}-count-failed", "Failed: 1")
+      refute has_element?(member_lv, "#process-row-#{row.id}-failed")
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
       assert has_element?(lv, "#process-instance-#{instance.id}", "Stopped at odluka")
       assert has_element?(lv, "#process-instance-#{instance.id}", "lacks a permission")
 
       lv |> element("#process-instance-#{instance.id}-retry") |> render_click()
 
       refute has_element?(lv, "#process-instance-#{instance.id}")
-      assert has_element?(lv, "#process-#{process.id}-count-running", "Running: 1")
+      assert has_element?(lv, "#process-row-#{row.id}-count-running", "Running: 1")
       assert %ValueProcess{status: :running, error: nil} = Repo.get!(ValueProcess, instance.id)
     end
   end
