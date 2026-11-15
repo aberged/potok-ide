@@ -25,10 +25,6 @@ defmodule PotokIdeWeb.Layouts do
       </Layouts.app>
 
   """
-  # The active link is marked with `aria-current` by app.js (as a sticky JS
-  # command, so LiveView patches keep it).
-  @nav_link_class "rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content aria-[current=page]:border-base-content aria-[current=page]:bg-base-content aria-[current=page]:text-base-100 aria-[current=page]:shadow-sm"
-
   attr :flash, :map, required: true, doc: "the map of flash messages"
 
   attr :current_scope, :map,
@@ -55,8 +51,6 @@ defmodule PotokIdeWeb.Layouts do
   slot :inner_block, required: true
 
   def app(assigns) do
-    assigns = assign(assigns, :nav_link_class, @nav_link_class)
-
     ~H"""
     <%!--
       App shell: one flex column per screen height. The top bar never scrolls,
@@ -78,6 +72,7 @@ defmodule PotokIdeWeb.Layouts do
           @collapse_nav && "cramped:hidden"
         ]}>
           <div class="mx-auto flex items-center justify-between gap-3 border-b border-base-300/70 bg-base-100/85 px-2 py-1.5 backdrop-blur sm:rounded-[2rem] sm:border sm:px-5 sm:py-3 sm:shadow-lg sm:shadow-primary/5">
+            <%!-- Opens the menu over the page on a phone. It comes first: the help pictures press it. --%>
             <label
               for="app-drawer-toggle"
               aria-label={gettext("Open menu")}
@@ -85,6 +80,18 @@ defmodule PotokIdeWeb.Layouts do
             >
               <.icon name="hero-bars-3" class="size-5" />
             </label>
+            <%!-- Brings back the menu hidden at the side of a wide screen. --%>
+            <button
+              :if={@current_scope}
+              id="app-sidebar-show"
+              type="button"
+              phx-click={JS.dispatch("phx:toggle-sidebar")}
+              aria-label={gettext("Open menu")}
+              title={gettext("Open menu")}
+              class={[icon_button_class("secondary", "md"), "max-lg:hidden lg:sidebar-shown:hidden"]}
+            >
+              <.icon name="hero-bars-3" class="size-5" />
+            </button>
             <.link
               id="nav-root-group-link"
               navigate={home_path(@current_scope, @current_profile)}
@@ -219,160 +226,210 @@ defmodule PotokIdeWeb.Layouts do
           aria-label={gettext("close")}
           class="drawer-overlay bg-black/25 backdrop-blur-[2px] dark:bg-black/60"
         />
+        <%!--
+          On a wide screen the menu folds to nothing (`#app-sidebar` in app.css)
+          and the page takes the room. Its content keeps its width meanwhile, so
+          nothing wraps while it folds.
+        --%>
         <aside
           id="app-sidebar"
-          class="flex h-full w-[min(18rem,calc(100vw-1.25rem))] flex-col border-r border-base-300/70 bg-base-100/95 p-4 pt-[calc(var(--app-safe-area-top)+1rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] shadow-2xl shadow-primary/10 backdrop-blur sm:w-80 lg:w-72 lg:shadow-none"
+          class={[
+            "relative isolate h-full w-[min(18rem,calc(100vw-1.25rem))] overflow-hidden bg-base-100 sm:w-80",
+            "max-lg:rounded-r-[1.75rem] max-lg:shadow-2xl max-lg:shadow-potok-deep/20",
+            "lg:w-72 lg:border-r lg:border-base-content/8"
+          ]}
         >
-          <div class="mb-4 flex items-center justify-between gap-3 border-b border-base-300/70 pb-4">
-            <div class="font-brand text-xs font-bold uppercase tracking-[0.18em] text-base-content/65">
-              Potok
+          <div
+            aria-hidden="true"
+            class="app-sidebar-glow pointer-events-none absolute inset-x-0 top-0 -z-10 h-72"
+          />
+          <div class="flex h-full w-full flex-col px-3 pt-[calc(var(--app-safe-area-top)+0.875rem)] pb-[calc(var(--app-safe-area-bottom)+1rem)] lg:w-72">
+            <div class="mb-3 flex shrink-0 items-center justify-between gap-3 pl-2">
+              <.link
+                id="app-sidebar-home-link"
+                navigate={home_path(@current_scope, @current_profile)}
+                data-drawer-close
+                aria-label="Potok"
+                class="group flex items-center gap-2.5 rounded-full focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-primary"
+              >
+                <.mark
+                  id="app-sidebar-mark"
+                  class="size-8 transition-transform duration-500 group-hover:-rotate-6"
+                />
+                <span class="font-brand text-xl font-bold text-base-content">potok</span>
+              </.link>
+
+              <label
+                for="app-drawer-toggle"
+                class={[icon_button_class("ghost", "md"), @current_scope && "lg:hidden"]}
+              >
+                <span class="sr-only">{gettext("close")}</span>
+                <.icon name="hero-x-mark" class="size-5" />
+              </label>
+              <button
+                :if={@current_scope}
+                id="app-sidebar-hide"
+                type="button"
+                phx-click={JS.dispatch("phx:toggle-sidebar")}
+                aria-label={gettext("Hide menu")}
+                title={gettext("Hide menu")}
+                class={[icon_button_class("ghost", "md"), "max-lg:hidden"]}
+              >
+                <.icon name="hero-chevron-double-left" class="size-5" />
+              </button>
             </div>
 
-            <label
-              for="app-drawer-toggle"
-              class={[icon_button_class("secondary", "md"), "lg:hidden"]}
-            >
-              <span class="sr-only">{gettext("close")}</span>
-              <.icon name="hero-x-mark" class="size-5" />
-            </label>
-          </div>
-
-          <div class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pr-1">
-            <%= if @current_scope do %>
-              <div class="mb-4 max-w-full truncate rounded-2xl border border-base-300 bg-base-200 px-4 py-3 text-sm font-medium text-base-content/70">
-                {@current_scope.account.email}
-              </div>
-            <% end %>
-
-            <div class="mb-4">
-              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
-                {gettext("Navigation")}
-              </div>
-
-              <div class="flex flex-col gap-2" data-drawer-nav>
-                <%= if @current_scope do %>
-                  <.link
-                    navigate={~p"/profiles"}
-                    data-nav-link
-                    data-nav-target="/profiles"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-users" class="size-6" /> {gettext("Profiles")}
-                  </.link>
-                  <.link
-                    navigate={~p"/groups"}
-                    data-nav-link
-                    data-nav-target="/groups"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-user-group" class="size-6" /> {gettext("Groups")}
-                  </.link>
-                  <.link
-                    navigate={~p"/notices"}
-                    data-nav-link
-                    data-nav-target="/notices"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-bell" class="size-6" /> {gettext("Notices")}
-                  </.link>
-                  <.link
-                    navigate={~p"/invitations"}
-                    data-nav-link
-                    data-nav-target="/invitations"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-inbox-arrow-down" class="size-6" /> {gettext("Invitations")}
-                  </.link>
-                  <.link
-                    navigate={~p"/requests"}
-                    data-nav-link
-                    data-nav-target="/requests"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-hand-raised" class="size-6" /> {gettext("Requests")}
-                  </.link>
-                  <.link
-                    navigate={~p"/tags"}
-                    data-nav-link
-                    data-nav-target="/tags"
-                    data-nav-match="prefix"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-hashtag" class="size-6" /> {gettext("Tags")}
-                  </.link>
+            <div class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain *:shrink-0">
+              <div
+                :if={@current_scope}
+                id="app-sidebar-account"
+                class="mb-4 flex items-center gap-3 rounded-2xl border border-primary/15 bg-base-100/70 p-2 shadow-xs shadow-potok-deep/10"
+              >
+                <%= if @current_profile do %>
+                  <img
+                    src={PotokIdeWeb.Avatars.profile_avatar_url(@current_profile)}
+                    alt=""
+                    class="size-10 shrink-0 rounded-xl object-cover"
+                  />
                 <% else %>
-                  <.link
-                    navigate={~p"/accounts/log-in"}
-                    data-nav-link
-                    data-nav-target="/accounts/log-in"
-                    data-nav-match="exact"
-                    class={@nav_link_class}
-                  >
-                    <.icon name="hero-arrow-left-end-on-rectangle" class="size-6" /> {gettext(
-                      "Log in"
-                    )}
-                  </.link>
+                  <span class="grid size-10 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary">
+                    <.icon name="hero-user" class="size-5" />
+                  </span>
                 <% end %>
-                <%!-- A page of its own, outside the app's LiveViews. --%>
-                <.link
-                  id="app-help-link"
-                  href={~p"/pomoc"}
-                  data-drawer-close
-                  class={@nav_link_class}
-                >
-                  <.icon name="hero-question-mark-circle" class="size-6" /> {gettext("Help")}
-                </.link>
-                <.link
-                  id="app-costs-link"
-                  href={~p"/troskovi"}
-                  data-drawer-close
-                  class={@nav_link_class}
-                >
-                  <.icon name="hero-banknotes" class="size-6" /> {gettext("Costs")}
-                </.link>
-              </div>
-            </div>
-
-            <%= if @current_scope do %>
-              <div class="mb-4 border-t border-base-300/70 pt-4">
-                <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
-                  {gettext("Account")}
+                <div class="min-w-0 leading-tight">
+                  <div :if={@current_profile} class="truncate text-sm font-semibold">
+                    {@current_profile.username}
+                  </div>
+                  <div class="truncate text-xs text-base-content/65">
+                    {@current_scope.account.email}
+                  </div>
                 </div>
+              </div>
 
-                <div class="flex flex-col gap-2" data-drawer-nav>
-                  <.link
+              <div class="mb-4">
+                <.sidebar_heading>{gettext("Navigation")}</.sidebar_heading>
+
+                <div class="flex flex-col gap-0.5" data-drawer-nav>
+                  <%= if @current_scope do %>
+                    <.sidebar_link
+                      icon="hero-users"
+                      navigate={~p"/profiles"}
+                      data-nav-link
+                      data-nav-target="/profiles"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Profiles")}
+                    </.sidebar_link>
+                    <.sidebar_link
+                      icon="hero-user-group"
+                      navigate={~p"/groups"}
+                      data-nav-link
+                      data-nav-target="/groups"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Groups")}
+                    </.sidebar_link>
+                    <.sidebar_link
+                      icon="hero-bell"
+                      navigate={~p"/notices"}
+                      data-nav-link
+                      data-nav-target="/notices"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Notices")}
+                    </.sidebar_link>
+                    <.sidebar_link
+                      icon="hero-inbox-arrow-down"
+                      navigate={~p"/invitations"}
+                      data-nav-link
+                      data-nav-target="/invitations"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Invitations")}
+                    </.sidebar_link>
+                    <.sidebar_link
+                      icon="hero-hand-raised"
+                      navigate={~p"/requests"}
+                      data-nav-link
+                      data-nav-target="/requests"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Requests")}
+                    </.sidebar_link>
+                    <.sidebar_link
+                      icon="hero-hashtag"
+                      navigate={~p"/tags"}
+                      data-nav-link
+                      data-nav-target="/tags"
+                      data-nav-match="prefix"
+                    >
+                      {gettext("Tags")}
+                    </.sidebar_link>
+                  <% else %>
+                    <.sidebar_link
+                      icon="hero-arrow-left-end-on-rectangle"
+                      navigate={~p"/accounts/log-in"}
+                      data-nav-link
+                      data-nav-target="/accounts/log-in"
+                      data-nav-match="exact"
+                    >
+                      {gettext("Log in")}
+                    </.sidebar_link>
+                  <% end %>
+                  <%!-- A page of its own, outside the app's LiveViews. --%>
+                  <.sidebar_link
+                    id="app-help-link"
+                    icon="hero-question-mark-circle"
+                    href={~p"/pomoc"}
+                    data-drawer-close
+                  >
+                    {gettext("Help")}
+                  </.sidebar_link>
+                  <.sidebar_link
+                    id="app-costs-link"
+                    icon="hero-banknotes"
+                    href={~p"/troskovi"}
+                    data-drawer-close
+                  >
+                    {gettext("Costs")}
+                  </.sidebar_link>
+                </div>
+              </div>
+
+              <div :if={@current_scope} class="mb-4 border-t border-base-content/8 pt-4">
+                <.sidebar_heading>{gettext("Account")}</.sidebar_heading>
+
+                <div class="flex flex-col gap-0.5" data-drawer-nav>
+                  <.sidebar_link
+                    icon="hero-cog-6-tooth"
                     navigate={~p"/accounts/settings"}
                     data-nav-link
                     data-nav-target="/accounts/settings"
                     data-nav-match="prefix"
-                    class={@nav_link_class}
                   >
-                    <.icon name="hero-cog-6-tooth" class="size-6" /> {gettext("Settings")}
-                  </.link>
-                  <.link href={~p"/accounts/log-out"} method="delete" class={@nav_link_class}>
-                    <.icon name="hero-arrow-left-start-on-rectangle" class="size-6" /> {gettext(
-                      "Log out"
-                    )}
-                  </.link>
+                    {gettext("Settings")}
+                  </.sidebar_link>
+                  <.sidebar_link
+                    icon="hero-arrow-left-start-on-rectangle"
+                    tone="danger"
+                    href={~p"/accounts/log-out"}
+                    method="delete"
+                  >
+                    {gettext("Log out")}
+                  </.sidebar_link>
                 </div>
               </div>
-            <% end %>
 
-            <div class="border-t border-base-300/70 pt-4">
-              <div class="mb-2 px-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-base-content/65">
-                {gettext("Preferences")}
-              </div>
+              <%!-- At the foot of the menu when there is room for it. --%>
+              <div class="mt-auto border-t border-base-content/8 pt-4">
+                <.sidebar_heading>{gettext("Preferences")}</.sidebar_heading>
 
-              <div class="space-y-4">
-                <.locale_switcher
-                  current_locale={@current_locale}
-                  available_locales={@available_locales}
-                /> <.theme_toggle />
+                <div class="space-y-3 px-1">
+                  <.locale_switcher
+                    current_locale={@current_locale}
+                    available_locales={@available_locales}
+                  /> <.theme_toggle />
+                </div>
               </div>
             </div>
           </div>
@@ -380,6 +437,55 @@ defmodule PotokIdeWeb.Layouts do
       </div>
     </div>
     <.flash_group flash={@flash} />
+    """
+  end
+
+  slot :inner_block, required: true
+
+  defp sidebar_heading(assigns) do
+    ~H"""
+    <div class="mb-1.5 px-2 text-[11px] font-bold uppercase tracking-[0.08em] text-primary">
+      {render_slot(@inner_block)}
+    </div>
+    """
+  end
+
+  # A row of the menu: the icon on a tile of the mark's blue, and the page the
+  # menu stands on in the mark's gradient. app.js marks that one with
+  # `aria-current` (as a sticky JS command, so LiveView patches keep it).
+  attr :icon, :string, required: true
+  attr :tone, :string, default: "default", values: ~w(default danger)
+  attr :rest, :global, include: ~w(navigate href method)
+  slot :inner_block, required: true
+
+  defp sidebar_link(assigns) do
+    ~H"""
+    <.link
+      class={[
+        "group flex items-center gap-3 rounded-2xl px-1.5 py-1 text-sm font-medium text-base-content/75",
+        "transition duration-200 active:scale-[0.98]",
+        "focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-primary",
+        if(@tone == "danger",
+          do: "hover:bg-error/8 hover:text-error",
+          else: "hover:bg-primary/8 hover:text-base-content"
+        ),
+        "aria-[current=page]:bg-linear-135 aria-[current=page]:from-potok-blue aria-[current=page]:to-potok-deep",
+        "aria-[current=page]:text-white aria-[current=page]:shadow-lg aria-[current=page]:shadow-potok-deep/25"
+      ]}
+      {@rest}
+    >
+      <span class={[
+        "grid size-8 shrink-0 place-items-center rounded-xl transition duration-200 group-hover:scale-105",
+        if(@tone == "danger",
+          do: "bg-base-content/5 text-base-content/65 group-hover:bg-error/10 group-hover:text-error",
+          else: "bg-primary/10 text-primary"
+        ),
+        "group-aria-[current=page]:bg-white/20 group-aria-[current=page]:text-white"
+      ]}>
+        <.icon name={@icon} class="size-[1.125rem]" />
+      </span>
+      <span class="min-w-0 truncate">{render_slot(@inner_block)}</span>
+    </.link>
     """
   end
 

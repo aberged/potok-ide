@@ -47,8 +47,31 @@
           setTheme(localStorage.getItem("phx:theme") || "light");
         }
         window.addEventListener("storage", (e) => e.key === "phx:theme" && setTheme(e.newValue || "light"));
-        
+
         window.addEventListener("phx:set-theme", (e) => setTheme(e.target.dataset.phxTheme));
+
+        // Whether the menu stands at the side on a wide screen, read before the
+        // first paint so a hidden menu does not flash open.
+        const showSidebar = (state) => {
+          if (state === "hidden") {
+            document.documentElement.setAttribute("data-sidebar", "hidden");
+          } else {
+            document.documentElement.removeAttribute("data-sidebar");
+          }
+        };
+        showSidebar(localStorage.getItem("phx:sidebar"));
+        window.addEventListener("storage", (e) => e.key === "phx:sidebar" && showSidebar(e.newValue));
+
+        // The button pressed disappears with the change, so the focus moves to
+        // the one that undoes it, a frame later: the buttons fade in.
+        window.addEventListener("phx:toggle-sidebar", () => {
+          const state = document.documentElement.dataset.sidebar === "hidden" ? "shown" : "hidden";
+          const next = document.getElementById(state === "hidden" ? "app-sidebar-show" : "app-sidebar-hide");
+
+          localStorage.setItem("phx:sidebar", state);
+          showSidebar(state);
+          requestAnimationFrame(() => requestAnimationFrame(() => next?.focus({ preventScroll: true })));
+        });
       })();
     </script>
   </head>

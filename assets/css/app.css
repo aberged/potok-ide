@@ -152,8 +152,13 @@
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
 
+/* The blues of the Potok mark (`Layouts.mark/1`), the same in both themes:
+   `from-potok-blue to-potok-deep` and the like. */
 @theme {
   --font-brand: "Comfortaa", ui-rounded, system-ui, sans-serif;
+  --color-potok-sky: #69cbf5;
+  --color-potok-blue: #2e8fde;
+  --color-potok-deep: #0056c4;
 }
 
 /* Add variants based on LiveView classes */
@@ -187,6 +192,43 @@
   &:where([data-keyboard-open="true"] *) {
     @slot;
   }
+}
+
+/* On wide screens the menu stands at the side until it is hidden
+   (`data-sidebar="hidden"` on <html>, kept per device by the script in
+   root.html.heex). Phones open it over the page instead. `sidebar-shown:`
+   styles what only goes with the menu at the side. */
+@custom-variant sidebar-shown (&:where(:root:not([data-sidebar="hidden"]) *));
+
+/* The hidden menu folds to nothing. Outside the layers, since daisyUI's drawer
+   sets the transition of its side in the utilities layer, with a stronger
+   selector. Folding, it turns invisible only at the end, so no link takes the
+   focus; opening, it is visible at once, so the focus can move into it. */
+@media (width >= 64rem) {
+  #app-sidebar {
+    transition: width 300ms ease-out;
+  }
+
+  :root[data-sidebar="hidden"] #app-sidebar {
+    width: 0;
+    border-right-width: 0;
+    visibility: hidden;
+    transition: width 300ms ease-out, visibility 0s 300ms;
+  }
+}
+
+@media (width >= 64rem) and (prefers-reduced-motion: reduce) {
+  #app-sidebar,
+  :root[data-sidebar="hidden"] #app-sidebar {
+    transition: none;
+  }
+}
+
+/* The light of the mark behind the top of the menu. */
+.app-sidebar-glow {
+  background:
+    radial-gradient(70% 60% at 0% 0%, color-mix(in oklab, var(--color-potok-sky) 26%, transparent), transparent 70%),
+    radial-gradient(60% 50% at 100% 10%, color-mix(in oklab, var(--color-potok-blue) 12%, transparent), transparent 70%);
 }
 
 :root {
