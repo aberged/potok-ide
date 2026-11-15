@@ -240,7 +240,8 @@ defmodule PotokIde.Social.AppData do
   @doc """
   Writes `data` to `collection` in `profile`'s name, as its rule allows.
   `account` is the viewer's, for `once`. A collection whose process has a
-  graph starts an instance on the value (`Processes.Engine.start/3`).
+  graph starts an instance on the value (`Processes.Engine.start/3`), and so
+  does every active process drawn on it in Potok (`Engine.start_drawn/3`).
   Returns `{:ok, value, rule}`.
   """
   def insert(%Profile{} = profile, %Account{} = account, %Group{} = group, alt, collection, data) do
@@ -286,15 +287,17 @@ defmodule PotokIde.Social.AppData do
 
         AppFiles.claim(files, value)
 
-        # The collection's process starts on the value, in the same transaction.
+        # The collection's processes start on the value, in the same
+        # transaction: the app's own and those drawn in Potok.
         instance = Engine.start(value, rule, profile)
-        {%{value | creator: profile}, rule, instance}
+        drawn = Engine.start_drawn(value, rule, profile)
+        {%{value | creator: profile}, rule, instance != nil or drawn != []}
       end)
       |> case do
-        {:ok, {value, rule, instance}} ->
+        {:ok, {value, rule, started?}} ->
           broadcast_value(group, :created, value, rule)
           notify_subscribers(group, alt, value, rule, profile)
-          if instance, do: Scheduler.nudge()
+          if started?, do: Scheduler.nudge()
           {:ok, value, rule}
 
         {:error, reason} ->

@@ -267,6 +267,7 @@ defmodule PotokIde.DomainMap do
       head
       |> String.split("USING btree ", parts: 2)
       |> List.last()
+      |> String.replace_suffix(" NULLS NOT DISTINCT", "")
       |> inner()
       |> String.replace(~r/lower\(\((\w+)\)::text\)/, "lower(\\1)")
       |> String.split(", ")

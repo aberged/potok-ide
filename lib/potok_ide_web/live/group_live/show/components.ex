@@ -918,8 +918,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp app_process_here?(%Value{}), do: false
 
-  # From a sub-group a process made, its name leads to its app; in the app's
-  # own group there is nowhere else to go.
+  # From a sub-group a process made, its name leads to its app, or to the
+  # group's processes when it was drawn in Potok; in the app's own group there
+  # is nowhere else to go.
+  defp process_app_path(%Value{
+         group_id: group_id,
+         creator: %Profile{
+           kind: :process,
+           app_process: %AppProcess{group_id: app_group_id, drawn: true}
+         }
+       })
+       when group_id != app_group_id,
+       do: ~p"/groups/#{app_group_id}/processes"
+
   defp process_app_path(%Value{
          group_id: group_id,
          creator: %Profile{

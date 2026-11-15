@@ -6,6 +6,11 @@ defmodule PotokIde.Social.AppProcess do
 
   An inactive one waits for its rule to come back, with the same profile, so
   what the process wrote keeps one author.
+
+  A drawn one (`drawn`) is drawn by an editor in Potok
+  (`PotokIde.Social.DrawnProcesses`) rather than written by the app: its
+  graph and where its elements stand on a wide screen live here, and the
+  app's own rules never touch it. It starts inactive, as a drawing.
   """
 
   use Ecto.Schema
@@ -21,6 +26,12 @@ defmodule PotokIde.Social.AppProcess do
     # Nil once that profile is gone: the next editor to save the rule owns it.
     belongs_to :owner_profile, PotokIde.Social.Profile
     field :active, :boolean, default: true
+    field :drawn, :boolean, default: false
+    # A drawn process's normalized graph (`Processes.Graph`); nil for an app's.
+    field :graph, :map
+    # %{"nodes" => %{id => [x, y]}}: a drawing's positions, set on a wide screen.
+    field :layout, :map, default: %{}
+    field :lock_version, :integer, default: 1
 
     timestamps(type: :utc_datetime)
   end

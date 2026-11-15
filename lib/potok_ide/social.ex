@@ -2285,12 +2285,20 @@ defmodule PotokIde.Social do
   @doc """
   A push from an app's process to the members of `group` holding `role_key`
   (`PotokIde.Social.ProcessActions`). Returns how many people it is for and
-  the function that sends it, to call once the step commits.
+  the function that sends it, to call once the step commits. `url` is where
+  the push leads, the group by default.
   """
-  def process_push(%Profile{kind: :process} = process, %Group{} = group, role_key, text, tag)
+  def process_push(
+        %Profile{kind: :process} = process,
+        %Group{} = group,
+        role_key,
+        text,
+        tag,
+        url \\ nil
+      )
       when is_binary(role_key) and is_binary(text) do
     profile_ids = Access.profile_ids_with_role(group, role_key)
-    payload_for = Notifications.process_push(process, group, text, tag)
+    payload_for = Notifications.process_push(process, group, text, tag, url)
 
     {length(profile_ids),
      fn ->

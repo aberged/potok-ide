@@ -216,8 +216,11 @@ defmodule PotokIde.Processes.Graph do
 
   defp label(label, path) when is_binary(label) do
     case String.trim(label) do
-      "" -> {:ok, nil}
-      label -> if String.length(label) <= @max_label, do: {:ok, label}, else: {:error, {path, :invalid}}
+      "" ->
+        {:ok, nil}
+
+      label ->
+        if String.length(label) <= @max_label, do: {:ok, label}, else: {:error, {path, :invalid}}
     end
   end
 

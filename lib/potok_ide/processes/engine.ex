@@ -84,16 +84,46 @@ defmodule PotokIde.Processes.Engine do
 
   def start(%Value{}, _rule, _author), do: nil
 
-  defp app_process(%Value{group_id: group_id, collection: collection} = value) do
+  defp app_process(%Value{} = value),
+    do: value |> processes_of() |> where([p], not p.drawn) |> Repo.one()
+
+  @doc """
+  Starts an instance for `value` of every active process drawn in Potok on
+  its collection (`PotokIde.Social.DrawnProcesses`), each with a copy of its
+  graph, in the transaction that writes the value. They are read `FOR SHARE`,
+  so a process being stopped waits for this write and then cancels what it
+  started. Returns the instances.
+  """
+  def start_drawn(%Value{} = value, rule, %Profile{} = author) do
+    started_by = if rule.anonymous, do: nil, else: author.id
+
+    value
+    |> processes_of()
+    |> where([p], p.drawn and p.active)
+    |> order_by([p], asc: p.id)
+    |> lock("FOR SHARE")
+    |> Repo.all()
+    |> Enum.map(fn process ->
+      Repo.insert!(%ValueProcess{
+        app_process_id: process.id,
+        value_id: value.id,
+        status: :running,
+        element: Graph.start(process.graph),
+        graph: process.graph,
+        started_by_id: started_by,
+        triggered_by_id: started_by,
+        wake_at: now()
+      })
+    end)
+  end
+
+  defp processes_of(%Value{group_id: group_id, collection: collection} = value) do
     query = from(p in AppProcess, where: p.group_id == ^group_id and p.collection == ^collection)
 
-    query =
-      case value.alt_description_id do
-        nil -> where(query, [p], is_nil(p.alt_description_id))
-        alt_id -> where(query, [p], p.alt_description_id == ^alt_id)
-      end
-
-    Repo.one(query)
+    case value.alt_description_id do
+      nil -> where(query, [p], is_nil(p.alt_description_id))
+      alt_id -> where(query, [p], p.alt_description_id == ^alt_id)
+    end
   end
 
   # ---------
@@ -149,7 +179,8 @@ defmodule PotokIde.Processes.Engine do
         AppData.broadcast(%Group{id: process.group_id}, :process, %{
           alt_id: process.alt_description_id,
           collection: process.collection,
-          id: instance.id
+          id: instance.id,
+          drawn: process.drawn
         })
 
       nil ->

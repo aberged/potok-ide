@@ -103,6 +103,11 @@ defmodule PotokIde.Social.ProcessPushTest do
     push = Notifications.process_push(process, ctx.group, "Rok ističe", "tag").(nil)
     assert push.title =~ "Prijem"
     assert push.body == "Rok ističe"
+    assert push.url == "/groups/#{ctx.group.id}"
+
+    # A process drawn in Potok leads to the group's processes, where its tasks are.
+    drawn = Notifications.process_push(process, ctx.group, "Rok", "tag", "/groups/1/processes")
+    assert drawn.(nil).url == "/groups/1/processes"
 
     {:ok, value, _announce} =
       ProcessActions.post_value(ctx.step, ctx.group, %{"content" => "Primljeno."})

@@ -18,6 +18,10 @@ defmodule PotokIde.Social.AppProcesses do
     of what it wrote, and the rule coming back brings the same profile back.
   - A profile left without its process (the app or its group was deleted) and
     without anything it wrote is deleted (`sweep/0`).
+
+  Processes drawn in Potok (`PotokIde.Social.DrawnProcesses`) have the same
+  kind of profile, but the app's rules neither start nor stop them: `sync/4`
+  and `warnings/2` look only at the app's own.
   """
 
   import Ecto.Query, warn: false
@@ -221,13 +225,17 @@ defmodule PotokIde.Social.AppProcesses do
   @doc """
   What `warnings/2` says about one process, or nil when there is nothing to
   say. `opts` may carry the group's `:manifest` and the process's `:graph`,
-  read from the app's rules otherwise.
+  read from the app's rules otherwise; a drawn process has its own.
   """
   def warning(%AppProcess{} = row, %Group{} = group, opts \\ []) do
     graph =
-      Keyword.get_lazy(opts, :graph, fn ->
-        group |> AppData.get_config(row.alt_description_id) |> AppData.rules() |> graph(row)
-      end)
+      if row.drawn do
+        row.graph
+      else
+        Keyword.get_lazy(opts, :graph, fn ->
+          group |> AppData.get_config(row.alt_description_id) |> AppData.rules() |> graph(row)
+        end)
+      end
 
     access =
       Access.for_profile(%Profile{id: row.profile_id}, group, Keyword.take(opts, [:manifest]))
@@ -295,9 +303,16 @@ defmodule PotokIde.Social.AppProcesses do
     count
   end
 
+  # The processes the app's own rules hold, never those drawn in Potok.
   defp app_query(group_id, nil),
-    do: from(p in AppProcess, where: p.group_id == ^group_id and is_nil(p.alt_description_id))
+    do:
+      from(p in AppProcess,
+        where: p.group_id == ^group_id and is_nil(p.alt_description_id) and not p.drawn
+      )
 
   defp app_query(group_id, alt_id),
-    do: from(p in AppProcess, where: p.group_id == ^group_id and p.alt_description_id == ^alt_id)
+    do:
+      from(p in AppProcess,
+        where: p.group_id == ^group_id and p.alt_description_id == ^alt_id and not p.drawn
+      )
 end
