@@ -217,6 +217,10 @@ An app in a group can also have processes, which act in the group in place of pe
 
 How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there.
 
+At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment.
+
+![The Processes tab: decisions that wait and the group's processes](procesi)
+
 ### All permissions {:#dozvole}
 
 A group has 20 permissions. At first, the role Everyone has the ones marked in the last column.
@@ -315,7 +319,7 @@ You turn on push notifications in your account settings, separately for each bro
 Some kinds of groups get a ready-made app:
 
 - **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them. For people without an account to read the news too, turn on "Description open to guests" both in the Feed and in `.feed`: a new story takes that choice from `.feed`.
-- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses.
+- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses. For a process with more steps, [draw it](#nacrtaj-proces) in Potok.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 
@@ -324,6 +328,17 @@ Some kinds of groups get a ready-made app:
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.
 
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
+
+### Draw a process {:#nacrtaj-proces}
+
+You can also draw a process without writing code, right in Potok, on any of the group's apps. Whoever edits the app may.
+
+1. In the group's menu open **Processes** and tap **Draw a process**.
+2. Pick the collection of the app that sets it going, say the answers of a form, and type the process's name.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait or a condition. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+4. Tap **Save**, then **Switch on**. From then on every new value of the collection sets the process going.
+
+On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The [tutorial](/pomoc/zadruga#proces) shows how this looks in a co-op.
 
 ![Templates for a group's description](opis-sablon)
 

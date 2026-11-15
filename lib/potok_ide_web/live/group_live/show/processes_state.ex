@@ -23,20 +23,62 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   alias PotokIde.Processes
   alias PotokIde.Processes.Graph
-  alias PotokIde.Social.{Access, AppProcesses, Group, ValueRules}
+  alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
+  alias PotokIdeWeb.GroupLive.Show.ProcessEditorState
 
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @reloading_events [:config, :process, :drawn_process, :created]
 
   ## Setup
 
-  def init(socket) do
-    assign(socket,
+  def init(socket, params) do
+    socket
+    |> assign(
       processes_tab?: false,
       processes_apps: [],
       processes_tasks: [],
+      processes_can_draw?: false,
       processes_refresh?: false
     )
+    |> ProcessEditorState.init()
+    |> assign_params(params)
+  end
+
+  @doc """
+  Takes the open drawing from the URL into assigns, without loading it:
+  `?process=new` or `?process=12`.
+  """
+  def assign_params(socket, params),
+    do: assign(socket, :processes_param, parse_param(params["process"]))
+
+  def params_changed?(socket, params),
+    do: parse_param(params["process"]) != socket.assigns.processes_param
+
+  def handle_params(socket, params) do
+    socket |> assign_params(params) |> ensure_editor()
+  end
+
+  defp parse_param("new"), do: :new
+
+  defp parse_param(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} when id > 0 -> id
+      _other -> nil
+    end
+  end
+
+  defp parse_param(_param), do: nil
+
+  # Opens the drawing the URL names, unless it is open already: the tab
+  # loads again on other people's changes, and a drawing under way stays.
+  defp ensure_editor(socket) do
+    param = socket.assigns.processes_param
+
+    case socket.assigns.process_editor do
+      %{id: nil} when param == :new -> socket
+      %{id: id} when is_integer(id) and id == param -> socket
+      _other -> ProcessEditorState.open(socket, param)
+    end
   end
 
   @doc """
@@ -56,10 +98,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     assign(socket, :processes_tab?, available?(socket.assigns.group, socket.assigns.access))
   end
 
-  def maybe_load(socket, %Group{}, "processes"), do: load(socket)
+  def maybe_load(socket, %Group{}, "processes"), do: socket |> load() |> ensure_editor()
 
-  def maybe_load(socket, %Group{}, _active_tab),
-    do: assign(socket, processes_apps: [], processes_tasks: [])
+  def maybe_load(socket, %Group{}, _active_tab) do
+    socket
+    |> assign(processes_apps: [], processes_tasks: [])
+    |> ProcessEditorState.init()
+  end
 
   defp load(socket) do
     %{group: group, access: access, current_profile: profile} = socket.assigns
@@ -83,6 +128,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     assign(socket,
       processes_apps: by_app(entries, group),
       processes_tasks: Processes.tasks_for(profile, group, access),
+      processes_can_draw?: manage? and DrawnProcesses.apps(group) != [],
       processes_refresh?: false
     )
   end

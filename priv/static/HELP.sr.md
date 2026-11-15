@@ -223,6 +223,10 @@ Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni s
 
 Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje.
 
+Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar.
+
+![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi)
+
 ### Sve dozvole {:#dozvole}
 
 Grupa ima 20 dozvola. Uloga Svi na početku ima one označene u poslednjoj koloni.
@@ -321,7 +325,7 @@ Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregled
 Neke vrste grupa dobijaju gotovu aplikaciju:
 
 - **Feed** je niz vesti koje se listaju prevlačenjem, sa reakcijama i komentarima. Urednici ih pišu u podgrupi `.feed`, iz šablona, čuvaju kao nacrt i objavljuju. Da bi vesti čitali i oni bez naloga, uključi „Opis vidljiv i bez prijave“ i u Feedu i u `.feed`: nova vest taj izbor preuzima od `.feed`.
-- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova. U podešavanjima, „Kad stigne odgovor“, uključuješ proces za svaki odgovor: najavu u razgovoru, podgrupu za odgovor i odluku jedne uloge, sa podsetnikom. Ko ima tu ulogu, odlučuje pravo u pregledu odgovora.
+- **Forma** ima pitanja raznih vrsta, pravila (ko popunjava, jednom ili više puta, do kog roka, anonimno), rezime odgovora, kviz i prilaganje fajlova. U podešavanjima, „Kad stigne odgovor“, uključuješ proces za svaki odgovor: najavu u razgovoru, podgrupu za odgovor i odluku jedne uloge, sa podsetnikom. Ko ima tu ulogu, odlučuje pravo u pregledu odgovora. Za proces sa više koraka, [nacrtaj ga](#nacrtaj-proces) u Potoku.
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
 
@@ -330,6 +334,17 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.
 
 Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
+
+### Nacrtaj proces {:#nacrtaj-proces}
+
+Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, na bilo kojoj aplikaciji grupe. To sme ko uređuje aplikaciju.
+
+1. U meniju grupe otvori **Procesi** i dodirni **Nacrtaj proces**.
+2. Izaberi kolekciju aplikacije koja ga pokreće, recimo odgovore forme, i upiši ime procesa.
+3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, push, čekanje ili uslov. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
+4. Dodirni **Sačuvaj**, pa **Uključi**. Od tada svaka nova vrednost kolekcije pokreće proces.
+
+Na širokom ekranu korake prevlačiš gde ti odgovaraju, a strelicu crtaš od tačke ispod koraka do drugog koraka. Crtež koji instanca ne bi mogla da završi ne može da se sačuva, a traka iznad crteža kaže šta fali. Aplikacija nacrtan proces ne vidi i ne menja, a njen sopstveni proces, ako ga ima, radi pored njega. Izmena važi za pokretanja posle nje. Kako to izgleda u zadruzi, pokazuje [tutorijal](/pomoc/zadruga#proces).
 
 ![Šabloni za opis grupe](opis-sablon)
 

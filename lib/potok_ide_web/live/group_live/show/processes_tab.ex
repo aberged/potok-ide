@@ -7,7 +7,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   use PotokIdeWeb, :html
 
-  alias PotokIdeWeb.GroupLive.Show.{Components, RolesTab}
+  alias PotokIde.Social.ValueRules
+  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessEditor, RolesTab}
 
   attr :group, :map, required: true
   attr :access, :any, required: true
@@ -15,8 +16,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :apps, :list, required: true, doc: "`%{id, name, entries}`, see `ProcessesState`"
   attr :tasks, :list, required: true, doc: "from `Processes.tasks_for/3`"
 
+  attr :can_draw?, :boolean,
+    default: false,
+    doc: "whether the viewer may draw, on an app the group has"
+
+  attr :editor, :map, default: nil, doc: "the drawing open over the tab (`ProcessEditorState`)"
+  attr :editor_form, :any, default: nil
+  attr :editor_meta, :any, default: nil
+
   def panel(assigns) do
-    assigns = assign(assigns, :manage?, PotokIde.Social.ValueRules.manage?(assigns.access))
+    assigns = assign(assigns, :manage?, ValueRules.manage?(assigns.access))
 
     ~H"""
     <div id="group-panel-processes" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -28,6 +37,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
               "What happens on its own when a value comes to an app: messages, sub-groups, tasks."
             )}
           </:subtitle>
+          <:actions :if={@can_draw?}>
+            <.button
+              id="processes-new"
+              patch={~p"/groups/#{@group.id}/processes?#{[process: "new"]}"}
+              variant="primary"
+              size="sm"
+            >
+              <.icon name="hero-pencil-square" class="size-4" />
+              {gettext("Draw a process")}
+            </.button>
+          </:actions>
         </.page_header>
 
         <section :if={@tasks != []} id="process-tasks" class="mb-8">
@@ -61,6 +81,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             class="mx-auto mb-2 size-8 text-base-content/30"
           />
           {gettext("No process runs in this group yet.")}
+          <p :if={@can_draw?} class="mt-1">
+            {gettext("Draw one: what happens when a new value comes in, step by step.")}
+          </p>
         </div>
 
         <section
@@ -88,11 +111,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
                 )
               ]}
             >
-              <.process_row entry={entry} manage?={@manage?} />
+              <.process_row entry={entry} manage?={@manage?} group={@group} />
             </li>
           </ul>
         </section>
       </Components.tab_body>
+
+      <ProcessEditor.editor
+        :if={@editor}
+        editor={@editor}
+        form={@editor_form}
+        meta={@editor_meta}
+        group={@group}
+        access={@access}
+      />
     </div>
     """
   end
@@ -133,16 +165,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         />
       </div>
 
-      <dl
-        :if={@task.data != []}
-        id={"process-task-#{@task.id}-data"}
-        class="grid gap-x-3 gap-y-1 sm:grid-cols-[minmax(6rem,auto)_1fr]"
-      >
-        <%= for {path, text} <- @task.data do %>
-          <dt class="truncate font-mono text-[11px] text-base-content/50">{path}</dt>
-          <dd class="min-w-0 break-words">{text}</dd>
-        <% end %>
-      </dl>
+      <details :if={@task.data != []} id={"process-task-#{@task.id}-data"} class="group">
+        <summary class="flex cursor-pointer list-none items-center gap-1 text-xs font-semibold text-base-content/70 transition hover:text-base-content">
+          <.icon
+            name="hero-chevron-right-mini"
+            class="size-4 transition-transform group-open:rotate-90"
+          />
+          {gettext("What was sent")}
+        </summary>
+        <dl class="mt-2 grid gap-x-3 gap-y-1 sm:grid-cols-[minmax(6rem,auto)_1fr]">
+          <%= for {path, text} <- @task.data do %>
+            <dt class="truncate font-mono text-[11px] text-base-content/50">{path}</dt>
+            <dd class="min-w-0 break-words">{text}</dd>
+          <% end %>
+        </dl>
+      </details>
 
       <p
         :if={!@task.reads?}
@@ -212,6 +249,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   attr :entry, :map, required: true
   attr :manage?, :boolean, required: true
+  attr :group, :map, required: true
 
   defp process_row(assigns) do
     ~H"""
@@ -241,6 +279,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         </div>
         <p class="mt-0.5 text-xs text-base-content/60">{subtitle(@entry.process)}</p>
       </div>
+      <.button
+        id={"process-row-#{@entry.id}-open"}
+        patch={~p"/groups/#{@group.id}/processes?#{[process: @entry.id]}"}
+        variant={if(@entry.process.drawn and @manage?, do: "soft", else: "ghost")}
+        size="sm"
+      >
+        <.icon
+          name={if(@entry.process.drawn and @manage?, do: "hero-pencil-square", else: "hero-eye")}
+          class="size-4"
+        />
+        {if(@entry.process.drawn and @manage?, do: gettext("Edit"), else: gettext("View"))}
+      </.button>
     </div>
 
     <div

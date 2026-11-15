@@ -463,6 +463,29 @@
     ]
   },
   {
+    "name": "procesi",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}/processes",
+    "steps": [{ "wait": "#process-tasks" }, { "pause": 600 }]
+  },
+  {
+    "name": "zadruga-proces-crtez",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}/processes?process={processes.coop_packing}",
+    "steps": [{ "wait": "#process-canvas [data-node]" }, { "pause": 1200 }]
+  },
+  {
+    "name": "zadruga-proces-korak",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}/processes?process={processes.coop_packing}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-canvas-node-pakovanje" },
+      { "wait": "#process-node-panel" },
+      { "pause": 900 }
+    ]
+  },
+  {
     "name": "zgrada-kucni-savet",
     "as": "ivana",
     "url": "/groups/{groups.building}",

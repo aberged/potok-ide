@@ -195,6 +195,10 @@
     "h": 844,
     "w": 390
   },
+  "procesi": {
+    "h": 844,
+    "w": 390
+  },
   "profil-uredi": {
     "h": 844,
     "w": 390
@@ -228,6 +232,14 @@
     "w": 390
   },
   "zadruga-preuzimanje": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-proces-crtez": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-proces-korak": {
     "h": 844,
     "w": 390
   },

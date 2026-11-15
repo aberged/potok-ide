@@ -201,7 +201,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "Every page after log-in is LiveView. The view is worked out on the server, and over a WebSocket connection the browser gets only what changed. JavaScript stays for what only a browser can do, like scrolling or uploading files. The phone apps show the same pages from the same server, so a new feature reaches every device at once."
+              "Every page after log-in is LiveView. The view is worked out on the server, and over a WebSocket connection the browser gets only what changed. JavaScript stays for what only a browser can do, like scrolling, uploading files or drawing a process, which dagre lays out and the browser loads only when a drawing opens. The phone apps show the same pages from the same server, so a new feature reaches every device at once."
             )
         },
         %{

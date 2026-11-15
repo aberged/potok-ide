@@ -11,7 +11,7 @@ Korak po korak do zadruge kakva je Zadruga Livada iz primera: privatna grupa sa 
 ## Šta pravimo {:#sta-pravimo}
 
 - **Zadruga Livada**, fascikla, privatna, sa mestom preuzimanja na mapi
-  - **Porudžbine**: forma koju svaki član popuni jednom i menja do roka
+  - **Porudžbine**: forma koju svaki član popuni jednom i menja do roka, sa procesom koji svaku porudžbinu vodi do pakovanja
   - **Dogovor**: razgovor o preuzimanju i zamenama
 
 ![Gotova Zadruga Livada: porudžbine i dogovor](primer-zadruga)
@@ -80,8 +80,25 @@ U Zadruzi Livada dodirni **+**, izaberi **Chat**, upiši „Dogovor“ i dodirni
 
 ![Preuzimanje koje se ponavlja svake subote](zadruga-preuzimanje)
 
+## 9. Proces za pakovanje {:#proces}
+
+Da nijedna porudžbina ne ostane nespakovana, nacrtaj proces na formi. Uz svaku porudžbinu otvara razgovor sa kupcem, čeka da je neko spakuje i javlja kupcu kako je prošlo.
+
+1. U Porudžbinama otvori meni grupe, izaberi **Procesi** i dodirni **Nacrtaj proces**. Upiši „Pakovanje porudžbina“; kolekcija je **responses**, odgovori forme.
+2. Dodirni **+** ispod početka i izaberi **Podgrupa**. Za ime upiši „Porudžbina za subotu“, a pod **Ko je vodi** ostavi vlasnika procesa i onoga ko ga je pokrenuo, a to je kupac.
+3. Dodirni **+** ispod podgrupe i izaberi **Odluka**. Pod **Ko odlučuje** ostavi Administratora, ishode nazovi „Spakovano“ i „Nema svega“, a za **Rok, uz podsetnik** upiši 2 dana.
+4. Dodirni **+** na strelici „Spakovano“, izaberi **Poruka** i pod **Gde** izaberi podgrupu: „Spakovano je. Čeka te u subotu od 9 do 11, u dvorištu škole.“ Isto uradi i za „Nema svega“.
+5. Dodirni **Sačuvaj**, pa **Uključi**.
+
+![Proces za pakovanje, nacrtan u Potoku](zadruga-proces-crtez) ![Odluka: ko odlučuje, ishodi i rok](zadruga-proces-korak)
+
+Od sada svaka nova porudžbina dobija svoj razgovor. Porudžbine koje čekaju pakovanje stoje na kartici Procesi, pod **Čeka tebe**: kad spakuješ jednu, dodirni **Spakovano**, a kupac to odmah čita u svom razgovoru. Ako pakovanje kasni dva dana, administratori dobijaju podsetnik na telefon.
+
+![Porudžbine koje čekaju pakovanje](procesi)
+
 ## Šta dalje {:#dalje}
 
 - [Aplikacije u grupi](/pomoc#aplikacije): sve što Forma ume.
+- [Nacrtaj proces](/pomoc#nacrtaj-proces): svi koraci koje proces može da ima.
 - [Kalendar](/pomoc#kalendar): događaji, ponavljanje i podsetnici.
 - [Praćenje, obaveštenja i push](/pomoc#obavestenja): obaveštenja na telefonu.

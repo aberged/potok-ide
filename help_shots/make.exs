@@ -35,6 +35,8 @@ end
 put.(PotokIde.Repo, database: "potok_ide_help", pool: DBConnection.ConnectionPool, pool_size: 10)
 put.(PotokIde.Storage, root: Path.join(work, "uploads"))
 Application.put_env(:potok_ide, PotokIde.MapTiles, [])
+# A browser looks: what a page moves to the body goes there (`config/test.exs`).
+Application.put_env(:potok_ide, :portals, true)
 Application.put_env(:potok_ide, PotokIde.Mailer, adapter: Swoosh.Adapters.Logger, level: :debug)
 put.(PotokIdeWeb.Endpoint, server: true, http: [ip: {127, 0, 0, 1}, port: port])
 

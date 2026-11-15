@@ -245,7 +245,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Apps in a group"),
         text:
           gettext(
-            "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
+            "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, on any of the group's apps. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
           )
       }
     ]

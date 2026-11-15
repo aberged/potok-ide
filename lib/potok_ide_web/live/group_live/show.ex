@@ -48,6 +48,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     PollForm,
     PollsState,
     PollsTab,
+    ProcessEditorState,
     ProcessesState,
     ProcessesTab,
     RolesTab,
@@ -709,6 +710,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
             apps={@processes_apps}
             tasks={@processes_tasks}
+            can_draw?={@processes_can_draw?}
+            editor={@process_editor}
+            editor_form={@process_editor_form}
+            editor_meta={@process_editor_meta}
           />
           <NoticesTab.panel
             :if={@active_tab == "notices"}
@@ -950,7 +955,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> PollForm.init()
          |> PollsState.init(params)
          |> NoticesState.init(params)
-         |> ProcessesState.init()
+         |> ProcessesState.init(params)
          |> GroupSheet.init()
          |> load_group_data(group, active_tab)
          |> sync_group_presence()}
@@ -994,6 +999,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign_new_tab_section(active_tab)
          |> CalendarState.assign_params(params)
          |> PollsState.assign_params(params)
+         |> ProcessesState.assign_params(params)
          |> NoticesState.assign_params(params)
          |> RootMapState.assign_params(params)
          |> load_group_data(socket.assigns.group, active_tab)}
@@ -1003,6 +1009,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       active_tab == "polls" and PollsState.params_changed?(socket, params) ->
         {:noreply, PollsState.handle_params(socket, params)}
+
+      active_tab == "processes" and ProcessesState.params_changed?(socket, params) ->
+        {:noreply, ProcessesState.handle_params(socket, params)}
 
       active_tab == "map" and RootMapState.params_changed?(socket, params) ->
         {:noreply, RootMapState.handle_params(socket, params)}
@@ -1055,6 +1064,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("processes_" <> _ = event, params, socket),
     do: ProcessesState.handle_event(event, params, socket)
+
+  def handle_event("process_editor_" <> _ = event, params, socket),
+    do: ProcessEditorState.handle_event(event, params, socket)
 
   def handle_event("validate_value", %{"value" => attrs}, socket) do
     current_profile = socket.assigns.current_profile

@@ -42,6 +42,8 @@ defmodule PotokIde.Social.DrawnProcesses do
   @max_name 60
   @max_coordinate 50_000
   @max_collections 50
+  @sampled_values 20
+  @max_fields 30
 
   @doc "At most how many processes may be drawn on one app."
   def max_per_app, do: @max_per_app
@@ -91,6 +93,29 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   defp of_alt(query, nil), do: where(query, [v], is_nil(v.alt_description_id))
   defp of_alt(query, alt_id), do: where(query, [v], v.alt_description_id == ^alt_id)
+
+  @doc """
+  The fields the newest values of a collection hold, such as `naslov` or
+  `a.q1`, for an editor to put into a text as `{{naslov}}`.
+  """
+  def fields(%Group{} = group, alt_id, collection) when is_binary(collection) do
+    from(v in Value,
+      where: v.group_id == ^group.id and v.is_data and v.collection == ^collection,
+      order_by: [desc: v.id],
+      limit: @sampled_values,
+      select: v.data
+    )
+    |> of_alt(alt_id)
+    |> Repo.all()
+    |> Enum.flat_map(fn data ->
+      data |> PotokIde.Processes.data_rows() |> Enum.map(&elem(&1, 0))
+    end)
+    |> Enum.uniq()
+    |> Enum.filter(&Regex.match?(~r/^[\p{L}\p{Nd}_.-]{1,64}$/u, &1))
+    |> Enum.take(@max_fields)
+  end
+
+  def fields(_group, _alt_id, _collection), do: []
 
   @doc "The processes drawn in the group, switched on or not, by name."
   def list(%Group{id: group_id}) do
