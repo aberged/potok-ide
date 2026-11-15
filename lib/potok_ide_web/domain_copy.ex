@@ -298,6 +298,25 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProcess", "owner_profile_id"), do: dgettext("domain_map", "owner")
   defp own_field("AppProcess", "active"), do: dgettext("domain_map", "active")
 
+  defp own_field("ValueProcess", "app_process_id"), do: dgettext("domain_map", "process")
+  defp own_field("ValueProcess", "value_id"), do: dgettext("domain_map", "value that started it")
+  defp own_field("ValueProcess", "status"), do: dgettext("domain_map", "status")
+
+  defp own_field("ValueProcess", "element"),
+    do: dgettext("domain_map", "where it stands in the graph")
+
+  defp own_field("ValueProcess", "graph"), do: dgettext("domain_map", "graph it started with")
+  defp own_field("ValueProcess", "groups"), do: dgettext("domain_map", "sub-groups it made")
+  defp own_field("ValueProcess", "started_by_id"), do: dgettext("domain_map", "who started it")
+
+  defp own_field("ValueProcess", "triggered_by_id"),
+    do: dgettext("domain_map", "who set off its step")
+
+  defp own_field("ValueProcess", "wake_at"), do: dgettext("domain_map", "when it wakes")
+  defp own_field("ValueProcess", "steps"), do: dgettext("domain_map", "steps taken")
+  defp own_field("ValueProcess", "error"), do: dgettext("domain_map", "why it stopped")
+  defp own_field("ValueProcess", "log"), do: dgettext("domain_map", "decisions of people")
+
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
@@ -503,6 +522,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
+  def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -650,6 +670,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "How far a profile has read a group. Everything newer than the last read value is unread. That value is kept as a plain number, with no foreign key."
+    )
+  end
+
+  defp entity_description("ValueProcess", _edges) do
+    dgettext(
+      "domain_map",
+      "One run of an app's process for one value of its collection: the graph it started with, the element it stands on and when it wakes next. A value has at most one instance of each process. Deleting the value or the process takes the instance along, and what it wrote stays."
     )
   end
 
@@ -1402,7 +1429,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author. It writes only in the app's group and in the sub-groups it made itself, as far as its permissions there go. In a sub-group it makes it is a plain member, and people are the admins: its owner, while the owner still edits the app, and whoever set the process going. It pushes to the people of a role only with the right to mention roles."
+            "Every <Value>value</Value> and every <Group>group</Group> but the root has a creator, so what an app's process does is signed by a <Profile>profile</Profile> of its own, which belongs to no <Account>account</Account>. It comes with the rule that gives a collection of the app a process, as an <AppProcess>app process</AppProcess> owned by the editor who saved that rule, and it joins the app's group with what `everyone` may do there. Nobody logs in as it or picks it, nobody mentions or invites it or opens a direct conversation with it, it is not counted among the members, and groups that inherit members do not take it in. Removing the rule makes the process inactive and takes it out of the group, and its values keep their author. It writes only in the app's group and in the sub-groups it made itself, as far as its permissions there go. In a sub-group it makes it is a plain member, and people are the admins: its owner, while the owner still edits the app, and whoever set the process going. It pushes to the people of a role only with the right to mention roles. In the app's group nobody removes or blocks it, as its rule takes it in and out; in the sub-groups it makes, people may."
           )
       },
       %{

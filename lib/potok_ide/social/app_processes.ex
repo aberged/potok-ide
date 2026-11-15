@@ -22,6 +22,7 @@ defmodule PotokIde.Social.AppProcesses do
 
   import Ecto.Query, warn: false
 
+  alias PotokIde.Processes.Graph
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -39,13 +40,6 @@ defmodule PotokIde.Social.AppProcesses do
   @username_alphabet ~c"abcdefghijkmnpqrstuvwxyz23456789"
   @username_suffix_length 6
   @username_attempts 5
-
-  # What a process may need in the app's group, until the engine narrows it
-  # to the actions of its graph.
-  @permissions [:post_values, :create_subgroups]
-
-  @doc "The permissions a process may need in the app's group."
-  def permissions, do: @permissions
 
   @doc """
   Brings the processes of an app in line with its normalized `rules`, as
@@ -195,19 +189,21 @@ defmodule PotokIde.Social.AppProcesses do
 
   @doc """
   What the editors of an app should know about its active processes, by
-  collection: the permissions of `permissions/0` the process profile lacks in
-  the app's group (`"missing"`), and whether its owner no longer edits the app
-  (`"owner_left"`). Collections with nothing to say are left out.
+  collection: the permissions the actions of its graph need that the process
+  profile lacks in the app's group (`"missing"`, `Graph.permissions/1`), and
+  whether its owner no longer edits the app (`"owner_left"`). Collections
+  with nothing to say are left out.
   """
   def warnings(%Group{} = group, alt) do
     manifest = Access.effective_manifest(group)
+    rules = group |> AppData.get_config(alt) |> AppData.rules()
 
     group.id
     |> app_query(AppData.alt_id(alt))
     |> where([p], p.active)
     |> Repo.all()
     |> Enum.flat_map(fn row ->
-      case warning(row, group, manifest: manifest) do
+      case warning(row, group, manifest: manifest, graph: graph(rules, row)) do
         nil -> []
         warning -> [{row.collection, warning}]
       end
@@ -217,11 +213,23 @@ defmodule PotokIde.Social.AppProcesses do
 
   @doc """
   What `warnings/2` says about one process, or nil when there is nothing to
-  say. `opts` may carry the group's `:manifest`.
+  say. `opts` may carry the group's `:manifest` and the process's `:graph`,
+  read from the app's rules otherwise.
   """
   def warning(%AppProcess{} = row, %Group{} = group, opts \\ []) do
-    access = Access.for_profile(%Profile{id: row.profile_id}, group, opts)
-    missing = for permission <- @permissions, not Access.can?(access, permission), do: permission
+    graph =
+      Keyword.get_lazy(opts, :graph, fn ->
+        group |> AppData.get_config(row.alt_description_id) |> AppData.rules() |> graph(row)
+      end)
+
+    access =
+      Access.for_profile(%Profile{id: row.profile_id}, group, Keyword.take(opts, [:manifest]))
+
+    missing =
+      for permission <- Graph.permissions(graph),
+          not Access.can?(access, permission),
+          do: permission
+
     owner_left? = not edits_app?(row.owner_profile_id, group)
 
     if missing != [] or owner_left?,
@@ -240,6 +248,22 @@ defmodule PotokIde.Social.AppProcesses do
     )
     |> Repo.all()
   end
+
+  @doc """
+  Whether `profile` signs for a process of `group`'s apps, running or stopped:
+  there its rule, not a person, takes it in and out, so nobody removes or
+  blocks it by hand. In the sub-groups it makes, people may.
+  """
+  def app_process_of?(%Profile{kind: :process, id: profile_id}, %Group{id: group_id}) do
+    Repo.exists?(
+      from(p in AppProcess, where: p.profile_id == ^profile_id and p.group_id == ^group_id)
+    )
+  end
+
+  def app_process_of?(_profile, _group), do: false
+
+  defp graph(rules, %AppProcess{collection: collection}),
+    do: get_in(rules, [collection, "process", "graph"])
 
   @doc "The process a process profile signs for, or nil."
   def get_by_profile(%Profile{id: profile_id}),

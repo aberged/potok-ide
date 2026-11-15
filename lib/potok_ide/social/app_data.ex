@@ -27,6 +27,7 @@ defmodule PotokIde.Social.AppData do
 
   alias Phoenix.PubSub
   alias PotokIde.Accounts.Account
+  alias PotokIde.Processes.Graph
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
   alias PotokIde.Storage
@@ -123,6 +124,11 @@ defmodule PotokIde.Social.AppData do
 
         unless ValueRules.manage?(access), do: Repo.rollback(:not_permitted)
 
+        case unknown_process_role(rules, access) do
+          nil -> :ok
+          error -> Repo.rollback(error)
+        end
+
         current = locked_config(group, alt)
         data = data |> Map.put("rules", rules) |> Map.put("files", files_of(current))
 
@@ -152,6 +158,22 @@ defmodule PotokIde.Social.AppData do
           {:error, reason}
       end
     end
+  end
+
+  # The roles a process's graph names must be the group's (`Graph.role_refs/1`).
+  defp unknown_process_role(rules, %Access{manifest: manifest}) do
+    keys = MapSet.new(if(manifest, do: manifest.roles, else: []), & &1.key)
+
+    Enum.find_value(rules, fn
+      {collection, %{"process" => %{"graph" => graph}}} ->
+        Enum.find_value(Graph.role_refs(graph), fn {path, key} ->
+          if not MapSet.member?(keys, key),
+            do: {:invalid_process, collection, "process.graph." <> path, :unknown_role}
+        end)
+
+      _rule ->
+        nil
+    end)
   end
 
   @doc false

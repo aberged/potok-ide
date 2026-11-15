@@ -909,6 +909,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  # In its app's group a process goes with its rule, not by a block.
+  defp app_process_here?(%Value{
+         group_id: group_id,
+         creator: %Profile{kind: :process, app_process: %AppProcess{group_id: group_id}}
+       }),
+       do: true
+
+  defp app_process_here?(%Value{}), do: false
+
   # From a sub-group a process made, its name leads to its app; in the app's
   # own group there is nowhere else to go.
   defp process_app_path(%Value{
@@ -1605,7 +1614,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:mine?, mine?)
       |> assign(:editing?, editing?)
       |> assign(:can_delete?, (mine? or assigns.can_delete_any) and not editing?)
-      |> assign(:can_block?, assigns.can_block and not mine?)
+      |> assign(
+        :can_block?,
+        assigns.can_block and not mine? and not app_process_here?(assigns.value)
+      )
       |> assign(:mentions_me?, mentions_profile?(assigns.value, assigns.current_profile))
       |> assign(:expandable?, value_expandable?(assigns.value))
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))

@@ -1159,6 +1159,17 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # What went wrong with a value or the config, as an app can tell its viewer.
   defp data_error(reason) do
     case reason do
+      # Where the graph of a collection's process cannot hold, as the editor
+      # wrote it: `path` runs from the rule, such as `process.graph.nodes.3`.
+      {:invalid_process, collection, path, reason} ->
+        %{
+          ok: false,
+          error: "invalid_process",
+          collection: collection,
+          path: path,
+          reason: Atom.to_string(reason)
+        }
+
       reason when reason in [:not_permitted, :role, :blocked] ->
         error("forbidden", gettext("Your roles in this group do not allow that."))
 

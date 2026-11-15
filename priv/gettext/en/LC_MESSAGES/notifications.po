@@ -21,7 +21,7 @@ msgstr ""
 msgid "%{name} accepted your shared profile invitation"
 msgstr ""
 
-#: lib/potok_ide/social/notifications.ex:198
+#: lib/potok_ide/social/notifications.ex:199
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr ""

@@ -1647,7 +1647,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
              |> put_flash(:info, gettext("Blocked in this group."))
              |> refresh_group_data()}
 
-          {:error, reason} when reason in [:not_permitted, :last_admin, :inherited_member] ->
+          {:error, reason}
+          when reason in [:not_permitted, :last_admin, :inherited_member, :process_profile] ->
             {:noreply, put_flash(socket, :error, access_error_message(reason))}
 
           {:error, _reason} ->
@@ -1684,7 +1685,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
              |> refresh_group_data()}
 
           {:error, reason}
-          when reason in [:not_permitted, :last_admin, :direct_group, :inherited_member] ->
+          when reason in [
+                 :not_permitted,
+                 :last_admin,
+                 :direct_group,
+                 :inherited_member,
+                 :process_profile
+               ] ->
             {:noreply, put_flash(socket, :error, access_error_message(reason))}
 
           {:error, :not_a_group_member} ->
@@ -5146,6 +5153,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     do: gettext("The admin and everyone roles cannot be renamed or deleted.")
 
   defp access_error_message(:role_not_found), do: gettext("Role not found.")
+
+  defp access_error_message(:process_profile),
+    do: gettext("An app's process leaves its app's group only when its rule is removed.")
 
   defp access_error_message(:inherited_member),
     do: gettext("This member comes from the parent group. Remove them there.")

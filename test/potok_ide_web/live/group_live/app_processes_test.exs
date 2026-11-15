@@ -53,6 +53,23 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
 
   defp with_process, do: %{"tasks" => %{"process" => %{"name" => "Prijem molbi"}}}
 
+  # A process whose graph opens a sub-group, and so needs the right to.
+  defp with_subgroups do
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        %{"id" => "predmet", "type" => "serviceTask", "action" => "subgroup", "name" => "Molba"},
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "predmet"},
+        %{"from" => "predmet", "to" => "kraj"}
+      ]
+    }
+
+    put_in(with_process(), ["tasks", "process", "graph"], graph)
+  end
+
   defp process_of(group) do
     AppProcess |> Repo.get_by!(group_id: group.id) |> Repo.preload(:profile)
   end
@@ -100,7 +117,7 @@ defmodule PotokIdeWeb.GroupLive.AppProcessesTest do
     end
 
     test "tells the editors what a process may not do, until an admin gives it a role", ctx do
-      save!(ctx.owner, ctx.group, with_process())
+      save!(ctx.owner, ctx.group, with_subgroups())
       %{profile: process} = process_of(ctx.group)
 
       {:ok, _role} =

@@ -26,6 +26,7 @@ defmodule PotokIde.Social do
   alias PotokIde.Social.{
     Access,
     AccountProfile,
+    AppProcesses,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -1644,6 +1645,10 @@ defmodule PotokIde.Social do
       not member_access.member? ->
         {:error, :not_a_group_member}
 
+      # Its rule takes the process of an app in and out of the app's group.
+      AppProcesses.app_process_of?(member, group) ->
+        {:error, :process_profile}
+
       # Members held through the parent are removed there.
       Map.has_key?(Access.inherited_by_profile(group, [member.id]), member.id) ->
         {:error, :inherited_member}
@@ -1704,6 +1709,10 @@ defmodule PotokIde.Social do
 
       not Access.can?(actor, group, :remove_members) ->
         {:error, :not_permitted}
+
+      # A stopped process would come back with its rule, block or not.
+      AppProcesses.app_process_of?(profile, group) ->
+        {:error, :process_profile}
 
       true ->
         with :ok <- remove_blocked_member(actor, group, profile) do

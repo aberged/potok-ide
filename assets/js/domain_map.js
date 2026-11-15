@@ -80,6 +80,7 @@ const TABLES = {
     ValueReaction: [COLUMN[3], 284],
     GroupValueRead: [COLUMN[4], 284],
     AppProcess: [COLUMN[3], 356],
+    ValueProcess: [COLUMN[4], 356],
     Event: [COLUMN[3], 452],
     Response: [COLUMN[4], 452],
     MemberSetting: [COLUMN[4], 524],
@@ -122,6 +123,8 @@ const ROUTES = {
   "GroupBlock>Group": {from: "r", to: "r", bulge: 34},
   "GroupBlock>Profile": {from: "l", to: "l", bulge: 40},
   "Tagging>ValueAttachment": {d: "M602 534C618 512 612 417 652 417H790C812 417 818 402 818 372V262C818 252 824 248 834 247"},
+  // Up the gap between the columns, then under the value, over its reactions.
+  "ValueProcess>Value": {d: "M834 368C828 368 826 364 826 356V274C826 269 822 266 816 266H796C791 266 788 263 788 258"},
 }
 
 const element = (tag, attributes, parent, text) => {

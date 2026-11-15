@@ -24,11 +24,13 @@ defmodule PotokIde.Social.ValueRules do
 
   A rule's `process` names the process of its collection. Potok gives it a
   profile of its own, which signs what the process does
-  (`PotokIde.Social.AppProcesses`).
+  (`PotokIde.Social.AppProcesses`), and its `graph` is what the process does
+  (`PotokIde.Processes.Graph`), checked here like the rest of the rule.
 
   Plain functions over what the caller has read, like `PotokIde.Polls.Rules`.
   """
 
+  alias PotokIde.Processes.Graph
   alias PotokIde.Social.{Access, Group, GroupRole, Profile}
   alias PotokIde.Storage
 
@@ -111,7 +113,12 @@ defmodule PotokIde.Social.ValueRules do
            {:ok, normalized} <- normalize_rule(rule) do
         {:cont, {:ok, Map.put(acc, collection, normalized)}}
       else
-        {:error, reason} -> {:halt, {:error, reason}}
+        # Where in the graph of the collection's process, for the app to show.
+        {:error, {:invalid_process, path, reason}} ->
+          {:halt, {:error, {:invalid_process, collection, path, reason}}}
+
+        {:error, reason} ->
+          {:halt, {:error, reason}}
       end
     end)
   end
@@ -297,18 +304,29 @@ defmodule PotokIde.Social.ValueRules do
 
   defp score(_score), do: {:error, :invalid_rules}
 
-  # Only its name so far: the engine that runs processes adds the rest.
   defp process(nil), do: {:ok, nil}
 
-  defp process(%{"name" => name}) when is_binary(name) do
+  defp process(%{"name" => name} = process) when is_binary(name) do
     name = String.trim(name)
 
-    if String.length(name) in 1..@max_process_name,
-      do: {:ok, %{"name" => name}},
-      else: {:error, :invalid_rules}
+    with true <- String.length(name) in 1..@max_process_name || {:error, :invalid_rules},
+         {:ok, graph} <- process_graph(process["graph"]) do
+      {:ok, if(graph, do: %{"name" => name, "graph" => graph}, else: %{"name" => name})}
+    end
   end
 
   defp process(_process), do: {:error, :invalid_rules}
+
+  # A process without a graph has its profile and starts no instance.
+  defp process_graph(nil), do: {:ok, nil}
+
+  defp process_graph(graph) do
+    case Graph.normalize(graph) do
+      {:ok, graph} -> {:ok, graph}
+      {:error, {"", reason}} -> {:error, {:invalid_process, "process.graph", reason}}
+      {:error, {path, reason}} -> {:error, {:invalid_process, "process.graph." <> path, reason}}
+    end
+  end
 
   @doc """
   The rule of `collection` among normalized `rules`, as a map with atom keys

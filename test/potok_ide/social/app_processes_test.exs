@@ -12,6 +12,7 @@ defmodule PotokIde.Social.AppProcessesTest do
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.{Access, AppData, AppProcess, AppProcesses, GroupRole, Profile}
+  alias PotokIde.Social.{ProcessActions, ProcessStep}
 
   defp unique, do: System.unique_integer([:positive])
 
@@ -49,6 +50,30 @@ defmodule PotokIde.Social.AppProcessesTest do
   end
 
   defp with_process(name \\ "Prijem"), do: %{"tasks" => %{"process" => %{"name" => name}}}
+
+  # A process that opens a sub-group for every value, and so needs the right to.
+  defp with_graph(graph \\ subgroup_graph()),
+    do: %{"tasks" => %{"process" => %{"name" => "Prijem", "graph" => graph}}}
+
+  defp subgroup_graph(admins \\ ["owner"]) do
+    %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        %{
+          "id" => "predmet",
+          "type" => "serviceTask",
+          "action" => "subgroup",
+          "name" => "{{naslov}}",
+          "admins" => admins
+        },
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "predmet"},
+        %{"from" => "predmet", "to" => "kraj"}
+      ]
+    }
+  end
 
   defp process_of(group, collection \\ "tasks") do
     AppProcess
@@ -204,8 +229,22 @@ defmodule PotokIde.Social.AppProcessesTest do
   end
 
   describe "warnings" do
-    test "name the permissions the process lacks in the app's group", ctx do
+    test "name what the actions of its graph need and it lacks in the app's group", ctx do
       save!(ctx.owner, ctx.group, with_process())
+
+      {:ok, _role} =
+        Social.set_group_role_permission(
+          ctx.owner,
+          ctx.group,
+          "everyone",
+          :create_subgroups,
+          :neutral
+        )
+
+      # Without a graph it does nothing, so it needs nothing.
+      assert AppProcesses.warnings(ctx.group, nil) == %{}
+
+      save!(ctx.owner, ctx.group, with_graph())
 
       {:ok, _role} =
         Social.set_group_role_permission(
@@ -218,6 +257,44 @@ defmodule PotokIde.Social.AppProcessesTest do
 
       assert %{"tasks" => %{"missing" => ["create_subgroups"], "owner_left" => false}} =
                AppProcesses.warnings(ctx.group, nil)
+
+      row = process_of(ctx.group)
+      assert AppProcesses.warning(row, ctx.group)["missing"] == ["create_subgroups"]
+    end
+  end
+
+  describe "a graph" do
+    test "is kept with the rule, checked", ctx do
+      save!(ctx.owner, ctx.group, with_graph())
+
+      assert %{"tasks" => %{"process" => %{"name" => "Prijem", "graph" => graph}}} =
+               ctx.group |> AppData.get_config(nil) |> AppData.rules()
+
+      assert [_start, %{"admins" => ["owner"]}, _end] = graph["nodes"]
+    end
+
+    test "that cannot hold is refused, saying where", ctx do
+      broken = Map.update!(subgroup_graph(), "flows", &Enum.drop(&1, -1))
+
+      assert {:error, {:invalid_process, "tasks", "process.graph.nodes.1", :one_flow}} =
+               AppData.save_config(ctx.owner, ctx.group, nil, %{"rules" => with_graph(broken)}, 0)
+
+      assert Repo.all(AppProcess) == []
+    end
+
+    test "names only roles of the app's group", ctx do
+      assert {:error,
+              {:invalid_process, "tasks", "process.graph.nodes.1.admins.0", :unknown_role}} =
+               AppData.save_config(
+                 ctx.owner,
+                 ctx.group,
+                 nil,
+                 %{"rules" => with_graph(subgroup_graph(["savet"]))},
+                 0
+               )
+
+      {:ok, savet} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "savet"})
+      save!(ctx.owner, ctx.group, with_graph(subgroup_graph([savet.key, "triggered_by"])))
     end
   end
 
@@ -276,6 +353,35 @@ defmodule PotokIde.Social.AppProcessesTest do
       refute ctx.process.id in Enum.map(Social.list_first3_group_members(ctx.group), & &1.id)
       refute Map.has_key?(Access.for_members(ctx.group), ctx.process.id)
       refute ctx.process.id in Access.profile_ids_with_role(ctx.group, "everyone")
+    end
+
+    test "leaves its app's group only with its rule, and may be removed from its sub-groups",
+         ctx do
+      assert {:error, :process_profile} =
+               Social.remove_group_member(ctx.owner, ctx.group, ctx.process.id)
+
+      assert {:error, :process_profile} =
+               Social.block_from_group(ctx.owner, ctx.group, ctx.process)
+
+      assert member?(ctx.process, ctx.group)
+
+      step = %ProcessStep{
+        process: process_of(ctx.group),
+        instance: 1,
+        element: "predmet",
+        triggered_by: ctx.member.id
+      }
+
+      {:ok, sub, _announce} =
+        ProcessActions.create_subgroup(step, ctx.group, %{"name" => "molba"})
+
+      assert {:ok, _process} = Social.remove_group_member(ctx.owner, sub, ctx.process.id)
+
+      # Stopped, it would still come back with its rule.
+      save!(ctx.owner, ctx.group, %{})
+
+      assert {:error, :process_profile} =
+               Social.block_from_group(ctx.owner, ctx.group, ctx.process)
     end
 
     test "is not taken in by groups that inherit members", ctx do

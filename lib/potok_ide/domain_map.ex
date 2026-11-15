@@ -46,7 +46,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.ValueAttachment,
        PotokIde.Social.ValueReaction,
        PotokIde.Social.GroupValueRead,
-       PotokIde.Social.AppProcess
+       PotokIde.Social.AppProcess,
+       PotokIde.Processes.ValueProcess
      ]},
     {"calendar",
      [PotokIde.Events.Event, PotokIde.Events.Response, PotokIde.Events.MemberSetting]},

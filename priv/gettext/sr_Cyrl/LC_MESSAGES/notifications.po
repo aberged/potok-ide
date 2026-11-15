@@ -21,7 +21,7 @@ msgstr "%{name}: твоја позивница је прихваћена"
 msgid "%{name} accepted your shared profile invitation"
 msgstr "%{name}: твоја позивница за дељени профил је прихваћена"
 
-#: lib/potok_ide/social/notifications.ex:198
+#: lib/potok_ide/social/notifications.ex:199
 #, elixir-autogen, elixir-format
 msgid "%{name} sent a new message"
 msgstr "%{name}: нова порука"
