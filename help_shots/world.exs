@@ -85,6 +85,8 @@ defmodule HelpShots.World do
             mz_thread: mz.thread,
             mz_map: mz.map,
             mz_pothole: mz.pothole,
+            mz_requests: mz.requests,
+            mz_request: mz.request,
             news: news,
             coop: coop.root,
             coop_orders: coop.orders,
@@ -324,10 +326,15 @@ defmodule HelpShots.World do
       files: [{pothole, photo}]
     )
 
+    requests = preset(ana, mz, "questionnaire", "Molbe")
+    request = request_form(ana, requests, council.key, p)
+
     %{
       root: mz,
       zbor: zbor,
       map: map,
+      requests: requests,
+      request: request,
       pothole: pothole,
       question: question,
       thread_origin: thread_origin,
@@ -936,6 +943,176 @@ defmodule HelpShots.World do
       {:ok, _value, _rule} =
         PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
     end
+  end
+
+  # The council's requests, as the Forma app saves them: a form whose process
+  # announces each request in the chat, opens a sub-group for it and waits for
+  # the council, reminding it after seven days. Of three requests the council
+  # granted one and turned one down; the newest waits. Returns the sub-group of
+  # the granted one.
+  defp request_form(editor, group, council, p) do
+    title_id = id()
+    text_id = id()
+    field = "{{a.#{title_id}}}"
+
+    question = fn qid, kind, title, required ->
+      %{
+        "id" => qid,
+        "key" => nil,
+        "kind" => kind,
+        "type" => "question",
+        "title" => title,
+        "description" => "",
+        "showDescription" => false,
+        "required" => required,
+        "options" => [],
+        "rows" => [],
+        "columns" => [],
+        "other" => false,
+        "points" => 0,
+        "picture" => nil,
+        "validation" => nil
+      }
+    end
+
+    process = %{
+      "enabled" => true,
+      "announce" => %{"on" => true, "text" => "Stigla je molba: #{field}"},
+      "subgroup" => %{"on" => true, "name" => "Molba: #{field}"},
+      "decision" => %{
+        "on" => true,
+        "role" => council,
+        "outcomes" => ["Odobri", "Odbij"],
+        "notify" => true,
+        "notifyText" => "Stigla je molba koja čeka odluku saveta.",
+        "deadlineDays" => 7,
+        "reminderText" => "Molba još čeka odluku saveta."
+      },
+      "after" => %{"on" => true, "texts" => ["Savet je odobrio molbu.", "Savet je odbio molbu."]}
+    }
+
+    # As potok-forme's `processGraph` makes it from `process`.
+    message = fn node_id, target, text ->
+      %{"id" => node_id, "type" => "serviceTask", "action" => "message", "in" => target, "text" => text}
+    end
+
+    push = fn node_id, text ->
+      %{"id" => node_id, "type" => "serviceTask", "action" => "push", "role" => council, "text" => text}
+    end
+
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        message.("najava", "app", "Stigla je molba: #{field}"),
+        %{
+          "id" => "podgrupa",
+          "type" => "serviceTask",
+          "action" => "subgroup",
+          "name" => "Molba: #{field}",
+          "admins" => ["triggered_by", council, "owner"]
+        },
+        push.("javi", "Stigla je molba koja čeka odluku saveta."),
+        %{
+          "id" => "odluka",
+          "type" => "userTask",
+          "role" => council,
+          "outcomes" => ["Odobri", "Odbij"],
+          "deadline" => "P7D"
+        },
+        message.("ishod-1", "podgrupa", "Savet je odobrio molbu."),
+        message.("ishod-2", "podgrupa", "Savet je odbio molbu."),
+        push.("podsetnik", "Molba još čeka odluku saveta."),
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "najava"},
+        %{"from" => "najava", "to" => "podgrupa"},
+        %{"from" => "podgrupa", "to" => "javi"},
+        %{"from" => "javi", "to" => "odluka"},
+        %{"from" => "odluka", "to" => "ishod-1", "outcome" => "Odobri"},
+        %{"from" => "ishod-1", "to" => "kraj"},
+        %{"from" => "odluka", "to" => "ishod-2", "outcome" => "Odbij"},
+        %{"from" => "ishod-2", "to" => "kraj"},
+        %{"from" => "odluka", "to" => "podsetnik", "deadline" => true},
+        %{"from" => "podsetnik", "to" => "odluka"}
+      ]
+    }
+
+    form = %{
+      "v" => 1,
+      "title" => "Molbe savetu",
+      "description" => "Piši savetu MZ: za klupu, popravku, salu ili bilo šta za kraj. Savet odgovara u roku od nedelju dana.",
+      "theme" => %{"header" => nil},
+      "startNext" => "next",
+      "items" => [
+        question.(title_id, "short", "Naslov", true),
+        question.(text_id, "paragraph", "Opis", false)
+      ],
+      "settings" => %{
+        "fill" => ["everyone"],
+        "view" => [council],
+        "once" => false,
+        "open" => true,
+        "public" => false,
+        "editOwn" => false,
+        "closesAt" => nil,
+        "anonymous" => false,
+        "published" => true,
+        "anotherLink" => true,
+        "confirmation" => "Hvala! Savet odgovara u roku od nedelju dana.",
+        "process" => process
+      }
+    }
+
+    data = %{
+      "v" => 1,
+      "form" => form,
+      "files" => %{},
+      "rules" => %{
+        "responses" => %{
+          "write" => ["everyone"],
+          "read" => [council],
+          "under" => ["a"],
+          "process" => %{"name" => "Molbe savetu", "graph" => graph}
+        }
+      },
+      "secret" => %{"keys" => %{}, "score" => %{"responses" => %{}}}
+    }
+
+    {:ok, _} = PotokIde.Social.AppData.save_config(editor, group, nil, data, nil)
+
+    send_request = fn profile, title, text ->
+      response = %{"v" => 1, "form_rev" => 1, "a" => %{title_id => title, text_id => text}, "other" => %{}}
+
+      {:ok, value, _rule} =
+        PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
+
+      instance = Repo.get_by!(PotokIde.Processes.ValueProcess, value_id: value.id)
+      PotokIde.Processes.Engine.run(instance.id)
+    end
+
+    decide = fn instance, profile, outcome, comment ->
+      {:ok, _} = PotokIde.Processes.Engine.complete_task(profile, instance.id, "odluka", outcome, comment)
+      PotokIde.Processes.Engine.run(instance.id)
+    end
+
+    granted =
+      send_request.(p.("milica"), "Klupe kod igrališta", "Kod igrališta nema gde da se sedne. Predlažem dve klupe uz stazu.")
+
+    refused =
+      send_request.(p.("nikola"), "Sala za probe hora", "Hor bi da koristi salu Doma kulture utorkom uveče.")
+
+    _waiting =
+      send_request.(p.("stefan"), "Kante za reciklažu u Ulici lipa", "U Ulici lipa nema nijedne kante za plastiku i papir.")
+
+    granted_group = Repo.get!(Group, granted.groups["podgrupa"])
+    post(p.("marko"), granted_group, "Pogledao sam mesto: ima prostora za dve klupe.", ago(0, 7, 15))
+    post(p.("milica"), granted_group, "Hvala! Deca bi bila presrećna.", ago(0, 7, 30))
+
+    decide.(granted, p.("marko"), "Odobri", "Postavljamo ih do kraja meseca.")
+    decide.(refused, p.("jelena"), "Odbij", "Sala je utorkom zauzeta. Predlažemo četvrtak.")
+
+    granted_group
   end
 
   defp id, do: :crypto.strong_rand_bytes(5) |> Base.encode32(case: :lower, padding: false)

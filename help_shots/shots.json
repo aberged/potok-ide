@@ -385,6 +385,38 @@
     ]
   },
   {
+    "name": "molbe-podesavanje",
+    "as": "ana",
+    "url": "/groups/{groups.mz_requests}",
+    "steps": [
+      { "pause": 2500 },
+      { "frameClick": ["iframe[id$='-iframe']", "#tab-settings"] },
+      { "pause": 800 },
+      { "frameShow": ["iframe[id$='-iframe']", "label:has(#setting-summary)"] },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "molbe-odluka",
+    "as": "marko",
+    "url": "/groups/{groups.mz_requests}",
+    "steps": [
+      { "pause": 2500 },
+      { "frameClick": ["iframe[id$='-iframe']", "#reader-switch"] },
+      { "pause": 1200 },
+      { "frameClick": ["iframe[id$='-iframe']", "#responses-tab-individual"] },
+      { "pause": 1500 },
+      { "frameShow": ["iframe[id$='-iframe']", ".pf-individual"] },
+      { "pause": 600 }
+    ]
+  },
+  {
+    "name": "molbe-podgrupa",
+    "as": "milica",
+    "url": "/groups/{groups.mz_request}/values",
+    "steps": [{ "pause": 1500 }]
+  },
+  {
     "name": "zadruga-mesto",
     "as": "dragan",
     "url": "/groups/{groups.coop}/edit_group",

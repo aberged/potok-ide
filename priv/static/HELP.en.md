@@ -91,6 +91,7 @@ The local community of Topolik is a public group with its area on the map, so ev
 - **MZ Topolik**, a folder, public, with an area on the map
   - **Citizens' assembly**: a chat, polls and the assembly's event in the calendar
   - **Neighbourhood map**: a map on which each problem is a group with its own pin and chat
+  - **Requests**: a form through which neighbours write to the council; each request gets a sub-group of its own, and the council decides in the form
 
 The group has a manifest of its own and the role council, which may send notices to followers, publish events and manage polls. The assembly and the map inherit members, so nobody invites anyone to them separately.
 

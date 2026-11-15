@@ -97,6 +97,7 @@ Mesna zajednica Topolik je javna grupa sa svojim područjem na mapi, pa je vidi 
 - **MZ Topolik**, fascikla, javna, sa područjem na mapi
   - **Zbor građana**: razgovor, glasanja i događaj zbora u kalendaru
   - **Mapa kraja**: mapa na kojoj je svaki problem grupa sa svojim pinom i razgovorom
+  - **Molbe**: forma kroz koju komšije pišu savetu; svaka molba dobija svoju podgrupu, a savet odlučuje u formi
 
 Grupa ima sopstveni manifest i ulogu savet, koja sme da šalje obaveštenja pratiocima, objavljuje događaje i upravlja glasanjima. Zbor i mapa nasleđuju članove, pa ih niko ne poziva posebno.
 

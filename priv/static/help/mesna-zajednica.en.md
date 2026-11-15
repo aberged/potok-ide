@@ -101,6 +101,20 @@ The council writes to the neighbours through the notices of MZ Topolik: short ne
 
 ![A new notice to the followers of MZ Topolik](mz-obavestenje)
 
+## 10. Requests to the council {:#molbe}
+
+Neighbours write requests to the council through a form: for a bench, a repair, the hall or anything else for the neighbourhood. Each request gets a sub-group of its own, and the council decides right in the form.
+
+1. In MZ Topolik, tap **+** and choose **Form**. Type "Molbe" (requests), tap **Create**, and in the form write the questions "Naslov" (title) and "Opis" (description).
+2. In the form's settings, under **Who sees all responses**, choose **savet**.
+3. Under **When a response comes in**, switch on **Run a process for every response**. Keep the post in the chat and the sub-group for each request, and under **Decision** choose **savet**, the outcomes "Odobri" (approve) and "Odbij" (reject), and a reminder after 7 days.
+
+![A process for every request](molbe-podesavanje)
+
+When a neighbour sends a request, the process posts it in the chat of Molbe and opens a sub-group for it, with whoever sent it and the council. A council member taps **View responses** in the form, then **Individual**, and picks an outcome, with a comment if they like. The decision reaches the request's sub-group, and whoever sent it also sees it in the form.
+
+![The council decides on a request](molbe-odluka) ![The decision in the request's sub-group](molbe-podgrupa)
+
 ## What next {:#dalje}
 
 - [All permissions](/pomoc#dozvole): what each permission allows.

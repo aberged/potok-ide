@@ -102,6 +102,20 @@ Savet komšijama piše kroz obaveštenja MZ Topolik: kratke vesti za sve koji je
 
 ![Novo obaveštenje pratiocima MZ Topolik](mz-obavestenje)
 
+## 10. Molbe savetu {:#molbe}
+
+Komšije savetu pišu molbe kroz formu: za klupu, popravku, salu ili bilo šta za kraj. Svaka molba dobija svoju podgrupu, a savet odlučuje u samoj formi.
+
+1. U MZ Topolik dodirni **+** i izaberi **Forma**. Upiši „Molbe“ i dodirni **Kreiraj**, pa u formi napiši pitanja **Naslov** i **Opis**.
+2. U podešavanjima forme, pod **Ko vidi sve odgovore**, izaberi **savet**.
+3. Pod **Kad stigne odgovor** uključi **Vodi proces za svaki odgovor**. Ostavi najavu u razgovoru i podgrupu za svaku molbu, a pod **Odluka** izaberi **savet**, ishode **Odobri** i **Odbij** i podsetnik posle 7 dana.
+
+![Proces za svaku molbu](molbe-podesavanje)
+
+Kad komšija pošalje molbu, proces je najavi u razgovoru Molbi i otvori podgrupu za nju, u kojoj su onaj ko je poslao molbu i savet. Član saveta u formi dodirne **Pogledaj odgovore**, pa **Pojedinačno**, i izabere ishod, uz komentar ako želi. Odluka stiže u podgrupu molbe, a ko je poslao molbu vidi je i u formi.
+
+![Savet odlučuje o molbi](molbe-odluka) ![Odluka u podgrupi molbe](molbe-podgrupa)
+
 ## Šta dalje {:#dalje}
 
 - [Sve dozvole](/pomoc#dozvole): šta koja dozvola dozvoljava.
