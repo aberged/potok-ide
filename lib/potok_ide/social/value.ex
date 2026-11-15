@@ -22,7 +22,9 @@ defmodule PotokIde.Social.Value do
     # `PotokIde.Social.AppData`, never cast: nil for chat values and for app
     # values written without one. `anonymous` is fixed when the value is
     # written, `lock_version` counts in-place updates and `managed` holds
-    # what the server and the app's editors add (a quiz score, grades).
+    # what the server and the app's editors add (a quiz score, grades). A chat
+    # value an app's process posted keeps there where it comes from
+    # (`PotokIde.Social.ProcessActions`); other chat values have none.
     field :collection, :string
     field :anonymous, :boolean, default: false
     field :lock_version, :integer, default: 0

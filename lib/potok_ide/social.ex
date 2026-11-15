@@ -761,6 +761,31 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  Makes a sub-group for an app's process, inside the transaction of the step
+  that does it (`PotokIde.Social.ProcessActions`). The process is a plain
+  member and `admin_ids`, people, are the admins: a profile without an account
+  cannot run a group. Returns `{:ok, group, announce}`: nobody hears of the
+  group until the step commits and calls `announce`.
+  """
+  def insert_process_group(
+        %Profile{kind: :process} = process,
+        %Group{} = parent,
+        attrs,
+        admin_ids
+      )
+      when is_list(admin_ids) and admin_ids != [] do
+    with {:ok, attrs} <- checked_group_attrs(process, parent, Map.new(attrs)),
+         {:ok, group, changes} <-
+           insert_group_quietly(process, parent, attrs, nil, nil, admins: admin_ids) do
+      {:ok, group,
+       fn ->
+         broadcast_group_created(process, parent, group, changes)
+         Enum.each(admin_ids, &broadcast_group_membership_changed(&1, group.id, :added))
+       end}
+    end
+  end
+
   defp insert_group_with_creator(%Profile{} = creator, %Group{} = parent, attrs) do
     with {:ok, group, changes} <- insert_group_quietly(creator, parent, attrs) do
       broadcast_group_created(creator, parent, group, changes)
@@ -783,15 +808,17 @@ defmodule PotokIde.Social do
 
   defp inherit_new(_repo, %Group{}), do: []
 
-  # The creator is a direct member and admin; an inheriting group then gets
-  # the parent's members. It tells nobody: `broadcast_group_created/4` follows.
-  # `key` is the app's own (`create_children/3`), set once like `preset`.
+  # The creator is a direct member and admin, unless `opts` name the `admins`
+  # (`insert_process_group/4`); an inheriting group then gets the parent's
+  # members. It tells nobody: `broadcast_group_created/4` follows. `key` is the
+  # app's own (`create_children/3`), set once like `preset`.
   defp insert_group_quietly(
          %Profile{} = creator,
          %Group{} = parent,
          attrs,
          preset \\ nil,
-         key \\ nil
+         key \\ nil,
+         opts \\ []
        ) do
     changeset =
       %Group{}
@@ -808,7 +835,7 @@ defmodule PotokIde.Social do
         profile_id: creator.id
       })
     end)
-    |> insert_admin_role(creator)
+    |> insert_admins(creator, Keyword.get(opts, :admins))
     |> Multi.run(:inheritance, fn repo, %{group: group} -> {:ok, inherit_new(repo, group)} end)
     |> Repo.transaction()
     |> case do
@@ -2202,6 +2229,26 @@ defmodule PotokIde.Social do
   end
 
   defp create_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments) do
+    with {:ok, value, announce} <- insert_chat_value(creator, group, attrs, attachments, nil) do
+      announce.()
+      {:ok, value}
+    end
+  end
+
+  @doc """
+  Writes a chat value signed by an app's process, inside the transaction of
+  the step that does it (`PotokIde.Social.ProcessActions`), with where it
+  comes from in `managed`. Returns `{:ok, value, announce}`: no page and no
+  device hears of the value until the step commits and calls `announce`.
+  """
+  def insert_process_value(%Profile{kind: :process} = process, %Group{} = group, attrs, managed)
+      when is_map(managed) do
+    insert_chat_value(process, group, Map.new(attrs), [], managed)
+  end
+
+  # The checks and the writes of a chat value. What its pages and devices are
+  # told comes back as a function, to call once the writes are committed.
+  defp insert_chat_value(%Profile{} = creator, %Group{} = group, attrs, attachments, managed) do
     access = Access.for_profile(creator, group)
 
     cond do
@@ -2232,7 +2279,7 @@ defmodule PotokIde.Social do
           |> Map.put("group_id", group.id)
 
         changeset =
-          %Value{}
+          %Value{managed: managed}
           |> Value.changeset(attrs, attachments?: attachments != [])
           |> limit_outsider(access)
           |> put_mentions(creator, group)
@@ -2252,11 +2299,14 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, %{value: value}} ->
             value = Repo.preload(value, value_display_preloads())
-            broadcast_value_created(group, value)
-            broadcast_group_value_unread(creator, group, value)
-            notify_group_members_of_new_value(creator, group, value, access)
-            schedule_link_preview(value)
-            {:ok, value}
+
+            {:ok, value,
+             fn ->
+               broadcast_value_created(group, value)
+               broadcast_group_value_unread(creator, group, value)
+               notify_group_members_of_new_value(creator, group, value, access)
+               schedule_link_preview(value)
+             end}
 
           {:error, _step, reason, _changes} ->
             {:error, reason}
@@ -6404,6 +6454,24 @@ defmodule PotokIde.Social do
 
   defp ensure_permission(%Profile{} = actor, %Group{} = group, permission) do
     if Access.can?(actor, group, permission), do: :ok, else: {:error, :not_permitted}
+  end
+
+  defp insert_admins(%Multi{} = multi, %Profile{} = creator, nil),
+    do: insert_admin_role(multi, creator)
+
+  # Direct members with the admin role, the creator among them or not.
+  defp insert_admins(%Multi{} = multi, %Profile{}, admin_ids) do
+    Multi.run(multi, :admins, fn repo, %{group: group} ->
+      Enum.each(admin_ids, fn profile_id ->
+        %GroupMembership{}
+        |> GroupMembership.changeset(%{group_id: group.id, profile_id: profile_id})
+        |> repo.insert!(on_conflict: :nothing, conflict_target: [:group_id, :profile_id])
+
+        repo.insert!(admin_member_role(group.id, profile_id))
+      end)
+
+      {:ok, admin_ids}
+    end)
   end
 
   # The creator of a group is its first admin. Runs after the `:group` step and

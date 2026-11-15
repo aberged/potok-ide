@@ -111,7 +111,7 @@ defmodule PotokIde.Social.AppProcesses do
   # rule takes it over. The name follows the rule.
   defp keep!(editor, group, %AppProcess{owner_profile_id: owner_id} = row, name) do
     owner_id =
-      if owner_id != editor.id and not editing?(owner_id, group), do: editor.id, else: owner_id
+      if owner_id != editor.id and not edits_app?(owner_id, group), do: editor.id, else: owner_id
 
     changeset = Ecto.Changeset.change(row, owner_profile_id: owner_id, name: name)
     if changeset.changes != %{}, do: Repo.update!(changeset)
@@ -144,9 +144,10 @@ defmodule PotokIde.Social.AppProcesses do
     :ok
   end
 
-  defp editing?(nil, _group), do: false
+  @doc "Whether the profile still edits the app of `group`: an owner who no longer does gives way."
+  def edits_app?(nil, _group), do: false
 
-  defp editing?(profile_id, %Group{} = group),
+  def edits_app?(profile_id, %Group{} = group),
     do: ValueRules.manage?(Access.for_profile(%Profile{id: profile_id}, group))
 
   @doc """
@@ -221,7 +222,7 @@ defmodule PotokIde.Social.AppProcesses do
   def warning(%AppProcess{} = row, %Group{} = group, opts \\ []) do
     access = Access.for_profile(%Profile{id: row.profile_id}, group, opts)
     missing = for permission <- @permissions, not Access.can?(access, permission), do: permission
-    owner_left? = not editing?(row.owner_profile_id, group)
+    owner_left? = not edits_app?(row.owner_profile_id, group)
 
     if missing != [] or owner_left?,
       do: %{"missing" => Enum.map(missing, &to_string/1), "owner_left" => owner_left?}

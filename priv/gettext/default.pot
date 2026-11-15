@@ -2749,7 +2749,7 @@ msgstr ""
 msgid "Inherited"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/members_tab.ex:397
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:396
 #, elixir-autogen, elixir-format
 msgid "Inherited from the parent group"
 msgstr ""
@@ -6483,17 +6483,17 @@ msgstr ""
 msgid "They act for the group's apps and are not counted among the members. An app's rules start and stop them."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/members_tab.ex:428
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:427
 #, elixir-autogen, elixir-format
 msgid "collection %{collection}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/members_tab.ex:419
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:417
 #, elixir-autogen, elixir-format
 msgid "no owner"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/members_tab.ex:418
+#: lib/potok_ide_web/live/group_live/show/members_tab.ex:416
 #, elixir-autogen, elixir-format
 msgid "owner %{username}"
 msgstr ""
