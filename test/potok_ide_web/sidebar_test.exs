@@ -30,6 +30,12 @@ defmodule PotokIdeWeb.SidebarTest do
       assert has_element?(view, "#app-sidebar a[href='/accounts/log-out'][data-method='delete']")
     end
 
+    test "the top bar holds the drop that falls while a page loads", %{conn: conn} do
+      {:ok, view, _html} = live(conn, ~p"/profiles")
+
+      assert has_element?(view, "nav #nav-page-loader.page-loader .page-loader-drop")
+      assert has_element?(view, "#nav-page-loader .page-loader-ripple")
+    end
   end
 
   test "a guest opens it over the page, with nothing to hide" do

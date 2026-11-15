@@ -8,7 +8,6 @@
   "use strict";
 
   var canvas,
-    spinner,
     currentProgress,
     showing,
     progressTimerId = null,
@@ -64,20 +63,12 @@
       if (options.className) canvas.classList.add(options.className);
       addEvent(window, "resize", repaint);
     },
-    createSpinner = function () {
-      spinner = document.createElement("span");
-      spinner.className = "loading loading-ring loading-sm";
-
-      var style = spinner.style;
-      style.position = "fixed";
-      style.top = "calc(var(--app-safe-area-top, 0px) + 0.56rem)";
-      style.left = "calc(var(--app-safe-area-left, 0px) + 6.3rem)";
-      style.zIndex = 100002;
-      style.height = style.width = "3rem";
-      style.opacity = 0.5;
-      style.display = "none";
-      style.pointerEvents = "none";
-      style.color = "var(--color-primary)";
+    // Potok: the falling drop in the top bar (`Layouts.page_loader/1`) shows
+    // while `<html>` has this attribute, from the bar's start to its fade.
+    // LiveView never patches `<html>`, so a new page keeps it.
+    setPageLoading = function (loading) {
+      if (loading) document.documentElement.setAttribute("data-page-loading", "");
+      else document.documentElement.removeAttribute("data-page-loading");
     },
     topbar = {
       config: function (opts) {
@@ -93,13 +84,11 @@
           showing = true;
           if (fadeTimerId !== null) window.cancelAnimationFrame(fadeTimerId);
           if (!canvas) createCanvas();
-          if (!spinner) createSpinner();
           if (!canvas.parentElement) document.body.appendChild(canvas);
-          if (!spinner.parentElement) document.body.appendChild(spinner);
 
           canvas.style.opacity = .5;
           canvas.style.display = "block";
-          spinner.style.display = "inline-block";
+          setPageLoading(true);
           topbar.progress(0);
           if (options.autoRun) {
             (function loop() {
@@ -137,7 +126,7 @@
             canvas.style.opacity -= 0.05;
             if (canvas.style.opacity <= 0.05) {
               canvas.style.display = "none";
-              if (spinner) spinner.style.display = "none";
+              setPageLoading(false);
               fadeTimerId = null;
               return;
             }

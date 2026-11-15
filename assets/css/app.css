@@ -743,6 +743,113 @@
   }
 }
 
+/* The drop in the top bar while a page loads (`Layouts.page_loader/1`): it
+   falls, splashes and ripples the water. `topbar.js` sets `data-page-loading`.
+   The motion pauses while hidden, so it costs nothing between pages. */
+.page-loader {
+  opacity: 0;
+  transition: opacity 200ms ease-out;
+}
+
+:root[data-page-loading] .page-loader {
+  opacity: 1;
+}
+
+.page-loader-drop,
+.page-loader-ripple {
+  transform-box: fill-box;
+  animation: 1.5s infinite both paused;
+}
+
+:root[data-page-loading] :is(.page-loader-drop, .page-loader-ripple) {
+  animation-play-state: running;
+}
+
+.page-loader-drop {
+  transform-origin: 50% 100%;
+  animation-name: page-loader-drop;
+}
+
+.page-loader-ripple {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5px;
+  vector-effect: non-scaling-stroke;
+  transform-origin: center;
+  animation-name: page-loader-ripple;
+  animation-timing-function: cubic-bezier(0.2, 0.6, 0.35, 1);
+}
+
+.page-loader-ripple + .page-loader-ripple {
+  animation-delay: 160ms;
+}
+
+@keyframes page-loader-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-9px) scale(0.8, 1);
+    animation-timing-function: cubic-bezier(0.55, 0, 1, 0.55);
+  }
+
+  15% {
+    opacity: 1;
+  }
+
+  48% {
+    opacity: 1;
+    transform: translateY(9px) scale(0.85, 1.12);
+    animation-timing-function: ease-out;
+  }
+
+  58%,
+  100% {
+    opacity: 0;
+    transform: translateY(10px) scale(1.6, 0.25);
+  }
+}
+
+@keyframes page-loader-ripple {
+  0%,
+  50% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+
+  56% {
+    opacity: 0.9;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+/* Without motion the drop stands still and only breathes. */
+@media (prefers-reduced-motion: reduce) {
+  .page-loader-ripple {
+    display: none;
+  }
+
+  .page-loader-drop {
+    animation-name: page-loader-breathe;
+    animation-timing-function: ease-in-out;
+    animation-direction: alternate;
+  }
+}
+
+@keyframes page-loader-breathe {
+  from {
+    opacity: 0.4;
+    transform: translateY(6.5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(6.5px);
+  }
+}
+
 /* Landing page for guests (`PageHTML.home`). Its blues come from the Potok
    mark, not from the theme's primary color (orange in the "system" theme).
    Layered as components so Tailwind utilities still win over these rules. */
