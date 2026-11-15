@@ -756,6 +756,8 @@ defmodule PotokIdeWeb.Layouts do
   A drop that falls into the stream and ripples it, while the next page
   loads. It shows while `<html>` has `data-page-loading`, which
   `assets/vendor/topbar.js` sets; the motion is in `app.css`.
+  `assets/js/page_loader.js` keeps the fall going where it was when going
+  to another page renders a new top bar.
   """
   attr :id, :string, required: true, doc: "unique on the page, it names the drop's gradient"
   attr :class, :any, default: nil

@@ -745,7 +745,13 @@
 
 /* The drop in the top bar while a page loads (`Layouts.page_loader/1`): it
    falls, splashes and ripples the water. `topbar.js` sets `data-page-loading`.
-   The motion pauses while hidden, so it costs nothing between pages. */
+   The motion pauses while hidden, so it costs nothing between pages, and
+   `page_loader.js` starts it over for each load.
+   It falls on devices that ask for less motion too: the fall is small, and
+   the drop is the only sign that a page is loading. Android asks for less
+   motion whenever its animations are off ("Remove animations", the developer
+   options, some battery savers), and a drop standing still there looked
+   broken. */
 .page-loader {
   opacity: 0;
   transition: opacity 200ms ease-out;
@@ -822,31 +828,6 @@
   100% {
     opacity: 0;
     transform: scale(1);
-  }
-}
-
-/* Without motion the drop stands still and only breathes. */
-@media (prefers-reduced-motion: reduce) {
-  .page-loader-ripple {
-    display: none;
-  }
-
-  .page-loader-drop {
-    animation-name: page-loader-breathe;
-    animation-timing-function: ease-in-out;
-    animation-direction: alternate;
-  }
-}
-
-@keyframes page-loader-breathe {
-  from {
-    opacity: 0.4;
-    transform: translateY(6.5px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(6.5px);
   }
 }
 

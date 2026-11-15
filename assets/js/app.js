@@ -32,6 +32,7 @@ import { KeyboardMedia } from "./keyboard_media"
 import { LocationPicker } from "./location_picker"
 import { RootMap } from "./root_map"
 import { installLongPressLinkMenu, shareLink } from "./longpress"
+import { installPageLoader } from "./page_loader"
 import { ReactionPicker } from "./reaction_picker"
 import {
   ShareComposer,
@@ -1863,6 +1864,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
 topbar.config({barColors: {0: "#29d"}, shadowColor: "rgba(0, 0, 0, .3)"})
 window.addEventListener("phx:page-loading-start", _info => topbar.show(300))
 window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
+// The drop in the top bar, while topbar.js marks the page as loading.
+installPageLoader()
 
 installPasswordToggleButtons()
 
