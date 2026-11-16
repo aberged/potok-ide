@@ -125,6 +125,17 @@ defmodule PotokIde.Processes.Triggers do
   def fields("signal", _config), do: ["from"]
   def fields(_trigger, _config), do: []
 
+  @doc """
+  The type of what a trigger with its settings hands a run, which a process
+  drawn in today's language reads under the id of its start
+  (`PotokIde.Processes.Scope`). A value of a collection and a signal may
+  hold more than Potok knows of.
+  """
+  def entry(trigger, config \\ %{})
+  def entry("value", _config), do: {:record, %{}, true}
+  def entry("signal", _config), do: {:record, %{"from" => :text, "signal" => :text}, true}
+  def entry(trigger, config), do: {:record, Map.new(fields(trigger, config), &{&1, :text}), false}
+
   # ---------
   # Messages
   # ---------

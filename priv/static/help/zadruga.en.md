@@ -102,7 +102,7 @@ Packed orders wait for Saturday. Let one process tell everyone on Saturday morni
 1. In Orders draw a process "Pick-up day", and under **When** choose **the set time comes**. On the start step choose **Every week**, the day **Sat**, at 8:00.
 2. Tap **+** under the start and choose **Send a signal**. For **Signal** type "subota", tap **Add a field**, name the field "mesto" and type "in the school yard". Save and switch it on.
 3. In "Packing orders", on the arrow under the message "It is packed…", add the step **Wait for a signal** and for **Signal** type "subota".
-4. Under it add a **Message** into the sub-group: type "Today is pick-up day, from 9 to 11, " and tap `receive-1.mesto` under the field. Tap **Save**.
+4. Under it add a **Message** into the sub-group: type "Today is pick-up day, from 9 to 11, " and tap `receive_1.mesto` under the field. Tap **Save**.
 
 ![Packing waits for the signal subota](zadruga-signal)
 

@@ -509,7 +509,7 @@
     "url": "/groups/{groups.coop_orders}/processes?process={processes.coop_packing}",
     "steps": [
       { "wait": "#process-canvas [data-node]" },
-      { "click": "#process-canvas-node-receive-1" },
+      { "click": "#process-canvas-node-receive_1" },
       { "wait": "#process-node-panel" },
       { "pause": 900 }
     ]
@@ -531,7 +531,7 @@
     "url": "/groups/{groups.building}/processes?process={processes.building_reports}",
     "steps": [
       { "wait": "#process-canvas [data-node]" },
-      { "click": "#process-canvas-node-call-1" },
+      { "click": "#process-canvas-node-call_1" },
       { "wait": "#process-node-panel" },
       { "pause": 900 }
     ]

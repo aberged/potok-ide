@@ -92,7 +92,7 @@ So that a report of a fault is not buried in the chat, make a process the reside
 
 1. In Zgrada Cvetna 12 open the group's menu, choose **Processes** and tap **Draw a process**. Type "Reporting a fault", and under **When** choose **someone starts it**.
 2. Tap the start step: under **Who may start it** leave **Everyone**.
-3. Tap **+** under the start and choose **Sub-group**. For its name type "Fault: " and tap `title` under the field. Under **Who runs it** leave the process's owner and whoever set it going.
+3. Tap **+** under the start and choose **Sub-group**. For its name type "Fault: " and tap `start.title` under the field. Under **Who runs it** leave the process's owner and whoever set it going.
 4. Tap **+** under the sub-group and choose **Decision**. Name the outcomes "Fixed" and "Calling a repairer".
 5. On the arrow of each outcome add a **Message** into the sub-group, say "It is fixed, thanks for the report."
 6. Tap **Save**, then **Switch on**.
@@ -112,8 +112,8 @@ Agreeing with a repairer has steps of its own, and other processes need it too, 
 1. Draw a process "Repairer", and under **When** choose **another process calls it**. On the start step, under **Fields it takes**, type "kvar".
 2. Add a **Decision** with the outcomes "Agreed" and "No date". Tap the arrow of the outcome "No date" and under **Leads to** choose **A new end**. Name the ends as the outcomes: tap an end and type its **Name on the drawing**.
 3. Tap **Save**, then **Switch on**.
-4. In "Reporting a fault", on the arrow under the message of the outcome "Calling a repairer", add the step **Call a process** and pick "Repairer". Under **What it gets**, for the field `kvar` tap `title`. Leave **Wait for it to end** on, and for the deadline type 7 days.
-5. Under the call add a **Condition**: the field `call-1.outcome` equal to "Agreed" leads to the message "The repairer is coming.", and **otherwise** to the message "The repairer has no date yet."
+4. In "Reporting a fault", on the arrow under the message of the outcome "Calling a repairer", add the step **Call a process** and pick "Repairer". Under **What it gets**, for the field `kvar` tap `start.title`. Leave **Wait for it to end** on, and for the deadline type 7 days.
+5. Under the call add a **Condition**. Tap its first arrow and under **Goes this way when** type `call_1.outcome = "Agreed"`: that arrow leads to the message "The repairer is coming.", and **otherwise** to the message "The repairer has no date yet."
 
 ![Reporting a fault calls the Repairer](zgrada-proces-poziv)
 

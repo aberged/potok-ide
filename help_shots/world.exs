@@ -525,10 +525,12 @@ defmodule HelpShots.World do
     end
 
     graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
       "nodes" => [
         %{"id" => "start", "type" => "startEvent", "label" => "Stanar prijavljuje kvar"},
         %{
-          "id" => "set-1",
+          "id" => "set_1",
           "type" => "serviceTask",
           "action" => "set",
           "field" => "kvarova",
@@ -540,7 +542,7 @@ defmodule HelpShots.World do
           "type" => "serviceTask",
           "action" => "subgroup",
           "label" => "Razgovor o kvaru",
-          "name" => "Kvar: {{title}}",
+          "name" => "Kvar: {{start.title}}",
           "admins" => ["owner", "triggered_by"]
         },
         %{
@@ -553,34 +555,34 @@ defmodule HelpShots.World do
         talk.("popravljeno", "Popravljeno je, hvala na prijavi. Bio je to kvar broj {{group.kvarova}}."),
         talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
         %{
-          "id" => "call-1",
+          "id" => "call_1",
           "type" => "callActivity",
           "process" => repairer.id,
           "wait" => true,
           "deadline" => "P7D",
-          "fields" => %{"kvar" => "{{title}}"}
+          "fields" => %{"kvar" => "{{start.title}}"}
         },
-        %{"id" => "gateway-1", "type" => "exclusiveGateway"},
+        %{"id" => "gateway_1", "type" => "exclusiveGateway"},
         talk.("dolazi", "Majstor dolazi."),
         talk.("nema", "Majstor još nema termin."),
         %{"id" => "kraj", "type" => "endEvent"}
       ],
       "flows" => [
-        %{"from" => "start", "to" => "set-1"},
-        %{"from" => "set-1", "to" => "razgovor"},
+        %{"from" => "start", "to" => "set_1"},
+        %{"from" => "set_1", "to" => "razgovor"},
         %{"from" => "razgovor", "to" => "odluka"},
         %{"from" => "odluka", "to" => "popravljeno", "outcome" => "Popravljeno"},
         %{"from" => "odluka", "to" => "majstor", "outcome" => "Zovemo majstora"},
         %{"from" => "popravljeno", "to" => "kraj"},
-        %{"from" => "majstor", "to" => "call-1"},
-        %{"from" => "call-1", "to" => "gateway-1"},
-        %{"from" => "call-1", "to" => "gateway-1", "deadline" => true},
+        %{"from" => "majstor", "to" => "call_1"},
+        %{"from" => "call_1", "to" => "gateway_1"},
+        %{"from" => "call_1", "to" => "gateway_1", "deadline" => true},
         %{
-          "from" => "gateway-1",
+          "from" => "gateway_1",
           "to" => "dolazi",
-          "condition" => %{"field" => "call-1.outcome", "op" => "=", "value" => "Dogovoreno"}
+          "condition" => %{"expr" => ~s|call_1.outcome = "Dogovoreno"|}
         },
-        %{"from" => "gateway-1", "to" => "nema", "default" => true},
+        %{"from" => "gateway_1", "to" => "nema", "default" => true},
         %{"from" => "dolazi", "to" => "kraj"},
         %{"from" => "nema", "to" => "kraj"}
       ]
@@ -602,22 +604,24 @@ defmodule HelpShots.World do
   # agree on a date with a repairer, or there is none.
   defp repairer(editor, group) do
     graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
       "nodes" => [
         %{"id" => "start", "type" => "startEvent"},
         %{
-          "id" => "task-1",
+          "id" => "task_1",
           "type" => "userTask",
           "label" => "Termin sa majstorom",
           "role" => "admin",
           "outcomes" => ["Dogovoreno", "Nema termina"]
         },
         %{"id" => "end", "type" => "endEvent", "label" => "Dogovoreno"},
-        %{"id" => "end-1", "type" => "endEvent", "label" => "Nema termina"}
+        %{"id" => "end_1", "type" => "endEvent", "label" => "Nema termina"}
       ],
       "flows" => [
-        %{"from" => "start", "to" => "task-1"},
-        %{"from" => "task-1", "to" => "end", "outcome" => "Dogovoreno"},
-        %{"from" => "task-1", "to" => "end-1", "outcome" => "Nema termina"}
+        %{"from" => "start", "to" => "task_1"},
+        %{"from" => "task_1", "to" => "end", "outcome" => "Dogovoreno"},
+        %{"from" => "task_1", "to" => "end_1", "outcome" => "Nema termina"}
       ]
     }
 
@@ -1105,10 +1109,12 @@ defmodule HelpShots.World do
   # day, and the packed orders waiting for it tell their buyers.
   defp pick_up_day(editor, group) do
     graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
       "nodes" => [
         %{"id" => "start", "type" => "startEvent"},
         %{
-          "id" => "signal-1",
+          "id" => "signal_1",
           "type" => "serviceTask",
           "action" => "signal",
           "name" => "subota",
@@ -1117,8 +1123,8 @@ defmodule HelpShots.World do
         %{"id" => "end", "type" => "endEvent"}
       ],
       "flows" => [
-        %{"from" => "start", "to" => "signal-1"},
-        %{"from" => "signal-1", "to" => "end"}
+        %{"from" => "start", "to" => "signal_1"},
+        %{"from" => "signal_1", "to" => "end"}
       ]
     }
 
@@ -1144,6 +1150,8 @@ defmodule HelpShots.World do
   # and the talk hears how it went.
   defp packing_process(editor, group) do
     graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
       "nodes" => [
         %{"id" => "start", "type" => "startEvent", "label" => "Stigla porudžbina"},
         %{
@@ -1183,13 +1191,13 @@ defmodule HelpShots.World do
           "in" => "razgovor",
           "text" => "Nečega od porudžbine nema. Javiću ti ovde šta stiže."
         },
-        %{"id" => "receive-1", "type" => "receiveTask", "signal" => "subota", "same_subject" => false},
+        %{"id" => "receive_1", "type" => "receiveTask", "signal" => "subota", "same_subject" => false},
         %{
           "id" => "danas",
           "type" => "serviceTask",
           "action" => "message",
           "in" => "razgovor",
-          "text" => "Danas je preuzimanje, od 9 do 11, {{receive-1.mesto}}."
+          "text" => "Danas je preuzimanje, od 9 do 11, {{receive_1.mesto}}."
         },
         %{"id" => "kraj", "type" => "endEvent"}
       ],
@@ -1200,8 +1208,8 @@ defmodule HelpShots.World do
         %{"from" => "pakovanje", "to" => "nema", "outcome" => "Nema svega"},
         %{"from" => "pakovanje", "to" => "podsetnik", "deadline" => true},
         %{"from" => "podsetnik", "to" => "pakovanje"},
-        %{"from" => "spakovano", "to" => "receive-1"},
-        %{"from" => "receive-1", "to" => "danas"},
+        %{"from" => "spakovano", "to" => "receive_1"},
+        %{"from" => "receive_1", "to" => "danas"},
         %{"from" => "danas", "to" => "kraj"},
         %{"from" => "nema", "to" => "kraj"}
       ]

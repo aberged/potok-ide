@@ -12,6 +12,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   so the canvas has no text of its own. The step or flow picked on the
   canvas is edited in a form (`process_editor_form`).
 
+  A drawing is drawn in today's language (`Graph` `"v" => 2`): one kept in
+  the first is turned into it as its editor opens it (`Graph.upgrade/1`),
+  and asks to be saved. What its texts and conditions say is checked as it
+  is drawn (`Processes.Check`), against what its trigger hands a run.
+
   `GroupLive.Show` delegates every `"process_editor_*"` event here; the URL
   (`?process=new`, `?process=12`) opens the editor (`ProcessesState`).
   """
@@ -22,7 +27,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3, push_patch: 2, put_flash: 3]
 
-  alias PotokIde.Processes.{Graph, GraphEdit, GroupFields, Triggers}
+  alias PotokIde.Processes.{Check, Graph, GraphEdit, GroupFields, Scope, Triggers}
   alias PotokIde.Repo
   alias PotokIde.Social.{AppData, AppProcess, DrawnProcesses, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.RolesTab
@@ -65,10 +70,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           collection: collection,
           apps: apps,
           collections: collections,
-          graph: GraphEdit.new(),
+          graph: Map.put(GraphEdit.new(), "zone", zone(socket)),
           layout: %{},
           revision: nil,
           dirty?: true,
+          upgraded?: false,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -94,6 +100,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     case Repo.get_by(AppProcess, id: id, group_id: group.id) do
       %AppProcess{drawn: true} = row when row.active or manage? ->
+        drawing = drawing(row, manage?, socket)
+
         editor = %{
           id: row.id,
           source: :drawn,
@@ -106,10 +114,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           collection: row.collection,
           apps: [],
           collections: [],
-          graph: GraphEdit.with_keys(row.graph),
-          layout: (row.layout || %{})["nodes"] || %{},
+          graph: drawing.graph,
+          layout: drawing.layout,
           revision: row.lock_version,
-          dirty?: false,
+          dirty?: drawing.upgraded?,
+          upgraded?: drawing.upgraded?,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -156,6 +165,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           layout: %{},
           revision: nil,
           dirty?: false,
+          upgraded?: false,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -175,6 +185,35 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp close_url(socket),
     do: socket |> init() |> push_patch(to: ~p"/groups/#{socket.assigns.group.id}/processes")
+
+  # The drawing of a saved process as its editor draws on it: in today's
+  # language (`Graph.upgrade/1`), with its steps where they stood. One kept
+  # in the first language is changed by that alone, so it asks to be saved.
+  # Whoever only looks at a drawing sees it as it is kept.
+  defp drawing(%AppProcess{} = row, true, socket) do
+    {graph, ids} = Graph.upgrade(row.graph)
+    places = (row.layout || %{})["nodes"] || %{}
+
+    %{
+      graph:
+        graph
+        |> Map.put_new("zone", row.trigger_config["time_zone"] || zone(socket))
+        |> GraphEdit.with_keys(),
+      layout: Map.new(places, fn {id, place} -> {Map.get(ids, id, id), place} end),
+      upgraded?: row.graph["v"] != 2
+    }
+  end
+
+  defp drawing(%AppProcess{} = row, false, _socket) do
+    %{
+      graph: GraphEdit.with_keys(row.graph),
+      layout: (row.layout || %{})["nodes"] || %{},
+      upgraded?: false
+    }
+  end
+
+  # The time zone a new drawing reads days and hours in: its editor's.
+  defp zone(socket), do: socket.assigns[:calendar_time_zone] || "Etc/UTC"
 
   ## Events
 
@@ -403,6 +442,29 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end
   end
 
+  # A name put into what a condition asks, which is an expression.
+  defp editing("process_editor_insert_field", %{"target" => "expr", "path" => path}, socket) do
+    case socket.assigns.process_editor.selected do
+      {:flow, key} ->
+        graph_change(
+          socket,
+          fn graph ->
+            case GraphEdit.flow(graph, key) do
+              %{"condition" => %{"expr" => current}} ->
+                GraphEdit.update_condition(graph, key, %{"expr" => put_name(current, path)})
+
+              _other ->
+                {:ok, graph}
+            end
+          end,
+          keep_selection: true
+        )
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
   defp editing("process_editor_add_signal_field", _params, socket) do
     case socket.assigns.process_editor.selected do
       {:node, id} ->
@@ -461,17 +523,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp editing("process_editor_take_theirs", _params, socket) do
     case socket.assigns.process_editor.conflict do
       %AppProcess{} = row ->
+        drawing = drawing(row, true, socket)
+
         {:noreply,
          socket
          |> update_editor(fn editor ->
            %{
              editor
              | name: row.name,
-               graph: GraphEdit.with_keys(row.graph),
-               layout: (row.layout || %{})["nodes"] || %{},
+               graph: drawing.graph,
+               layout: drawing.layout,
                revision: row.lock_version,
                active?: row.active,
-               dirty?: false,
+               dirty?: drawing.upgraded?,
+               upgraded?: drawing.upgraded?,
                conflict: nil,
                selected: nil
            }
@@ -530,6 +595,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     current = current || ""
     joiner = if current == "" or String.ends_with?(current, " "), do: "", else: " "
     current <> joiner <> "{{#{path}}}"
+  end
+
+  # In an expression a name stands as it is; it takes the place of the
+  # `true` a new condition starts with.
+  defp put_name(current, path) do
+    case String.trim(current || "") do
+      blank when blank in ["", "true"] -> path
+      current -> current <> " " <> path
+    end
   end
 
   # The fields a trigger gives, from its settings as typed so far.
@@ -831,8 +905,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     with {:ok, graph} <- retarget(graph, flow, attrs["to"]),
          {:ok, graph} <- outcome_name(graph, flow, attrs["outcome"]) do
-      if Map.has_key?(flow, "condition") and is_binary(attrs["field"]),
-        do: GraphEdit.update_condition(graph, key, attrs),
+      if Map.has_key?(flow, "condition") and is_binary(attrs["expr"]),
+        do: GraphEdit.update_condition(graph, key, %{"expr" => attrs["expr"]}),
         else: {:ok, graph}
     end
   end
@@ -876,7 +950,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       role: "admin",
       outcomes: [gettext("Approve"), gettext("Decline")],
       outcome: gettext("Outcome"),
-      field: List.first(editor.fields),
       group_field: gettext("field"),
       signal: editor.signals |> Map.keys() |> Enum.sort() |> List.first() || gettext("ready"),
       process: callee && callee.id,
@@ -924,7 +997,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       {:drawn, {:ok, row}} ->
         socket
         |> update_editor(fn editor ->
-          %{editor | name: row.name, revision: row.lock_version, dirty?: false, conflict: nil}
+          %{
+            editor
+            | name: row.name,
+              revision: row.lock_version,
+              dirty?: false,
+              upgraded?: false,
+              conflict: nil
+          }
         end)
         |> put_flash(:info, gettext("The process is saved."))
         |> refresh()
@@ -1021,11 +1101,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     with {:ok, normalized} <- Graph.normalize(graph, drawn: editor.source != :app),
          nil <- Graph.unknown_role(normalized, keys),
-         nil <- Graph.unknown_process(normalized, callable) do
+         nil <- Graph.unknown_process(normalized, callable),
+         {:ok, _checked} <- Check.run(normalized, %{entry: entry(editor)}) do
       nil
     else
       {:error, {path, reason}} -> error(graph, path, reason)
       {path, reason} -> error(graph, path, reason)
+    end
+  end
+
+  # What the trigger hands a run, from its settings as typed so far.
+  defp entry(editor) do
+    case Triggers.normalize(editor.trigger, editor.trigger_config) do
+      {:ok, config} -> Triggers.entry(editor.trigger, config)
+      {:error, _reason} -> Triggers.entry(editor.trigger)
     end
   end
 
@@ -1134,12 +1223,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def process_names(editor), do: Map.new(editor[:callable] || [], &{&1.id, &1.name})
 
   @doc """
-  The fields a step's texts and conditions may name: the trigger's, then
-  what the calls and decisions of the drawing bring back, but the step's
-  own.
+  What a step's texts and conditions may name, as an expression names it
+  (`Processes.Scope`): the fields of what set the process going, under the
+  id of its start, then what the calls, waits and decisions of the drawing
+  bring back, but the step's own, then the fields of the group.
   """
   def field_hints(editor) do
     own = with {:node, id} <- editor.selected, do: id
+    start = Graph.start(editor.graph)
 
     group =
       editor.graph["nodes"]
@@ -1149,7 +1240,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       end)
       |> Kernel.++(editor[:group_fields] || [])
       |> Enum.uniq()
-      |> Enum.map(&"group.#{&1}")
+      |> Enum.map(&Scope.path("group", &1))
 
     results =
       Enum.flat_map(editor.graph["nodes"], fn
@@ -1160,7 +1251,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           ["#{id}.outcome"]
 
         %{"type" => "receiveTask", "id" => id, "signal" => signal} ->
-          for field <- ["from" | carried(editor, signal)], do: "#{id}.#{field}"
+          for field <- ["from" | carried(editor, signal)], do: Scope.path(id, field)
 
         %{"type" => "userTask", "id" => id} ->
           ["#{id}.outcome", "#{id}.by"]
@@ -1169,7 +1260,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           []
       end)
 
-    editor.fields ++ results ++ group
+    Enum.map(editor.fields, &Scope.path(start, &1)) ++ results ++ group
   end
 
   # The fields the senders of a signal put in it, in the group and here.
@@ -1312,6 +1403,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def flow_label(%{"deadline" => true}), do: gettext("deadline passed")
   def flow_label(%{"default" => true}), do: gettext("otherwise")
 
+  def flow_label(%{"condition" => %{"expr" => expression}}) do
+    if String.length(expression) > 36,
+      do: String.slice(expression, 0, 35) <> "…",
+      else: expression
+  end
+
   def flow_label(%{"condition" => %{"op" => "empty", "field" => field}}),
     do: gettext("%{field} is empty", field: field)
 
@@ -1361,6 +1458,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         %{
           "to" => flow["to"],
           "outcome" => flow["outcome"],
+          "expr" => condition["expr"],
           "field" => condition["field"],
           "op" => condition["op"],
           "value" => condition["value"]
@@ -1432,7 +1530,47 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end
   end
 
+  # What an expression says wrong (`Processes.Expr`).
+  defp reason_text({:syntax, at}, _path),
+    do: gettext("This cannot be read from its character %{at} on.", at: at + 1)
+
+  defp reason_text({:unknown_name, name}, _path),
+    do: gettext("The process has nothing named %{name}.", name: name)
+
+  defp reason_text({:unknown_attribute, name}, _path),
+    do: gettext("There is no %{name} in that.", name: name)
+
+  defp reason_text({:unknown_function, name}, _path),
+    do: gettext("There is no function %{name}.", name: name)
+
+  defp reason_text({:arguments, name}, _path),
+    do: gettext("The function %{name} takes something else.", name: name)
+
+  defp reason_text({:mismatch, expected, got}, _path),
+    do:
+      gettext("Here goes %{expected}, and this is %{got}.",
+        expected: type_text(expected),
+        got: type_text(got)
+      )
+
+  defp reason_text(:reserved, _path), do: gettext("That name is taken by the process itself.")
   defp reason_text(_reason, _path), do: gettext("The ways on from this step are not right.")
+
+  # A type in words, as a sentence about a mistake names it.
+  defp type_text(:number), do: gettext("a number")
+  defp type_text(:text), do: gettext("a text")
+  defp type_text(:boolean), do: gettext("a yes or no")
+  defp type_text(:date), do: gettext("a date")
+  defp type_text(:datetime), do: gettext("a date and time")
+  defp type_text({:choice, _options}), do: gettext("a choice")
+  defp type_text({:entity, _id}), do: gettext("an entity")
+  defp type_text(type) when type == :list or elem(type, 0) == :list, do: gettext("a list")
+
+  defp type_text(type) when type == :record or elem(type, 0) == :record,
+    do: gettext("a set of fields")
+
+  defp type_text(:empty), do: gettext("nothing")
+  defp type_text(_any), do: gettext("something else")
 
   defp trigger_reason(:empty, "words"),
     do: gettext("Type a word, or pick a role a message mentions.")

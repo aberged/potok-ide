@@ -41,6 +41,10 @@ defmodule PotokIde.Processes.Engine do
   holds; and the active processes that start on it start, one level deeper
   and on the sender's subject, while there is depth left. A signal is not
   kept for a run that comes to wait later.
+
+  A run reads its texts and conditions in the language of the graph it
+  started with: today's (`"v" => 2`, `Expr` over the names of `Scope`) for
+  a process drawn so, the first (`Legacy`) for every other.
   """
 
   import Ecto.Query, warn: false
@@ -48,7 +52,17 @@ defmodule PotokIde.Processes.Engine do
   require Logger
 
   alias PotokIde.{RateLimit, Repo}
-  alias PotokIde.Processes.{Graph, GroupFields, Scheduler, Triggers, ValueProcess}
+
+  alias PotokIde.Processes.{
+    Expr,
+    Graph,
+    GroupFields,
+    Legacy,
+    Scheduler,
+    Scope,
+    Triggers,
+    ValueProcess
+  }
 
   alias PotokIde.Social.{
     Access,
@@ -73,7 +87,6 @@ defmodule PotokIde.Processes.Engine do
   @max_field 1_000
   @max_result 8_192
   @max_woken 100
-  @placeholder ~r/\{\{\s*([\p{L}\p{Nd}_.-]+)\s*\}\}/u
 
   # ---------
   # Starting
@@ -1057,16 +1070,32 @@ defmodule PotokIde.Processes.Engine do
   # Values
   # ---------
 
-  # What a run's texts and conditions read: the fields kept with it, or the
-  # data of its value of a collection, as it is now, and what its waits
-  # brought back (`results`), which never hide a field of either; and for a
-  # drawn process, the fields of its group under `group`.
+  # What a run's texts and conditions read, in the language of its graph.
+  #
+  # Today's (`"v" => 2`) reads by name (`Scope`): what set the run going
+  # under the id of its start, what each wait brought back under its
+  # element's id, and the fields of the group under `group`, each as its
+  # type says.
+  #
+  # The first reads the fields kept with the run, or the data of its value
+  # of a collection, as it is now, and what its waits brought back
+  # (`results`), which never hide a field of either; and for a drawn
+  # process, the fields of its group under `group`.
+  defp value_data(%ValueProcess{graph: %{"v" => 2} = graph, results: results} = instance) do
+    values =
+      (results || %{})
+      |> Map.put(Graph.start(graph), base_data(instance))
+      |> Map.put("group", GroupFields.for_process(instance.app_process_id))
+
+    {:names, Scope.load(values, graph), %{zone: graph["zone"], now: now()}}
+  end
+
   defp value_data(%ValueProcess{results: results} = instance) do
     data = Map.merge(results || %{}, base_data(instance))
 
     case GroupFields.for_process(instance.app_process_id) do
-      fields when map_size(fields) == 0 -> data
-      fields -> Map.put(data, "group", fields)
+      fields when map_size(fields) == 0 -> {:fields, data}
+      fields -> {:fields, Map.put(data, "group", fields)}
     end
   end
 
@@ -1082,67 +1111,33 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
-  # Fields of the value in a text, such as `{{naslov}}`; nothing else.
-  defp render(text, data) do
-    @placeholder
-    |> Regex.replace(text, fn _whole, field -> field_text(field(data, field)) end)
-    |> String.trim()
-  end
+  # A text with what the run holds put in. An expression that cannot be
+  # worked out, such as a division by nothing, fails the step with why.
+  defp render(text, {:fields, data}), do: Legacy.render(text, data)
 
-  defp field(data, path) do
-    path
-    |> String.split(".")
-    |> Enum.reduce(data, fn key, acc -> if is_map(acc), do: Map.get(acc, key) end)
-  end
-
-  defp field_text(value) when is_binary(value), do: value
-  defp field_text(value) when is_number(value) or is_boolean(value), do: to_string(value)
-  defp field_text(_value), do: ""
-
-  defp holds?(%{"op" => "empty", "field" => field}, data),
-    do: field(data, field) in [nil, "", [], %{}] or blank?(field(data, field))
-
-  defp holds?(%{"op" => op, "field" => field, "value" => expected}, data) do
-    actual = field(data, field)
-
-    case op do
-      "=" -> same?(actual, expected)
-      "!=" -> not same?(actual, expected)
-      "<" -> compare(actual, expected) == :lt
-      ">" -> compare(actual, expected) == :gt
+  defp render(text, {:names, data, opts}) do
+    with {:ok, parts} <- Expr.template(text),
+         {:ok, text} <- Expr.render(parts, data, opts) do
+      text
+    else
+      {:error, reason} -> Repo.rollback({:failed, nil, expression_error(reason)})
     end
   end
 
-  defp blank?(value) when is_binary(value), do: String.trim(value) == ""
-  defp blank?(_value), do: false
+  defp holds?(condition, {:fields, data}), do: Legacy.holds?(condition, data)
 
-  defp same?(actual, expected) do
-    case {number(actual), number(expected)} do
-      {a, b} when is_number(a) and is_number(b) -> a == b
-      _otherwise -> field_text(actual) |> String.trim() == field_text(expected) |> String.trim()
+  defp holds?(%{"expr" => expression}, {:names, data, opts}) do
+    with {:ok, tree} <- Expr.parse(expression),
+         {:ok, value} <- Expr.eval(tree, data, opts) do
+      value in [true, "true"]
+    else
+      {:error, reason} -> Repo.rollback({:failed, nil, expression_error(reason)})
     end
   end
 
-  defp compare(actual, expected) do
-    case {number(actual), number(expected)} do
-      {a, b} when is_number(a) and is_number(b) ->
-        if(a < b, do: :lt, else: if(a > b, do: :gt, else: :eq))
-
-      _not_numbers ->
-        nil
-    end
-  end
-
-  defp number(value) when is_number(value), do: value
-
-  defp number(value) when is_binary(value) do
-    case Float.parse(String.trim(value)) do
-      {number, ""} -> number
-      _not_a_number -> nil
-    end
-  end
-
-  defp number(_value), do: nil
+  # A graph is checked when it is saved, so only what it holds can fail it.
+  defp expression_error(reason) when is_atom(reason), do: reason
+  defp expression_error(_syntax), do: :bad_expression
 
   defp later(duration), do: DateTime.add(now(), Graph.seconds(duration), :second)
 

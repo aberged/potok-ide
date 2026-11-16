@@ -272,6 +272,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         </div>
 
         <div
+          :if={@editor[:upgraded?] && @editor.editable?}
+          id="process-editor-upgraded"
+          class="flex shrink-0 items-center gap-2 border-b border-sky-500/25 bg-sky-500/10 px-4 py-2 text-sm"
+        >
+          <.icon name="hero-sparkles" class="size-4 shrink-0 text-sky-600 dark:text-sky-300" />
+          <span class="min-w-0 flex-1">
+            {gettext(
+              "This drawing now reads what started it as %{example}, and its conditions are expressions. Look it over and save it.",
+              example: "{{#{PotokIde.Processes.Graph.start(@editor.graph)}.…}}"
+            )}
+          </span>
+        </div>
+
+        <div
           :if={@editor.error && @editor.editable?}
           id="process-editor-error"
           class="flex shrink-0 items-center gap-2 border-b border-error/20 bg-error/10 px-4 py-2 text-sm text-base-content"
@@ -844,7 +858,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               <p class="text-xs text-base-content/60">
                 {gettext(
                   "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab.",
-                  field: "{{group.#{@node["field"]}}}"
+                  field: "{{#{PotokIde.Processes.Scope.path("group", @node["field"] || "")}}}"
                 )}
               </p>
             <% "call" -> %>
@@ -1213,25 +1227,37 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             phx-debounce="400"
           />
 
-          <%= if Map.has_key?(@flow, "condition") do %>
-            <.input
-              field={@form[:field]}
-              type="text"
-              label={gettext("Field")}
-              list="process-field-list"
-              phx-debounce="400"
-            />
-            <datalist id="process-field-list">
-              <option :for={path <- ProcessEditorState.field_hints(@editor)} value={path} />
-            </datalist>
-            <.input field={@form[:op]} type="select" label={gettext("Is")} options={op_options()} />
-            <.input
-              :if={@form[:op].value != "empty"}
-              field={@form[:value]}
-              type="text"
-              label={gettext("Value")}
-              phx-debounce="400"
-            />
+          <%= case @flow["condition"] do %>
+            <% %{"expr" => _expression} -> %>
+              <.input
+                field={@form[:expr]}
+                type="textarea"
+                rows="2"
+                maxlength="1000"
+                label={gettext("Goes this way when")}
+                placeholder={~s|start.title != "" and not empty(start.text)|}
+                class="w-full textarea font-mono text-sm"
+                phx-debounce="400"
+              />
+              <.fields editor={@editor} target="expr" />
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "An expression that is true or false: compare with %{compare}, join with %{join}, and write a text between quotes.",
+                  compare: "= != < > <= >=",
+                  join: "and, or, not"
+                )}
+              </p>
+            <% %{"field" => _field} -> %>
+              <%!-- A drawing in the first language, which is only looked at. --%>
+              <.input field={@form[:field]} type="text" label={gettext("Field")} />
+              <.input field={@form[:op]} type="select" label={gettext("Is")} options={op_options()} />
+              <.input
+                :if={@form[:op].value != "empty"}
+                field={@form[:value]}
+                type="text"
+                label={gettext("Value")}
+              />
+            <% _none -> %>
           <% end %>
 
           <.input field={@form[:to]} type="select" label={gettext("Leads to")} options={@targets} />

@@ -620,8 +620,8 @@ msgstr "stranicu poštanskog sandučeta"
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:161
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:912
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:185
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:467
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:586
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:468
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:587
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:275
 #: lib/potok_ide_web/live/profile_live/new.ex:70
 #: lib/potok_ide_web/live/share_live.ex:44
@@ -662,8 +662,8 @@ msgstr "Prikaži manje"
 msgid "See more"
 msgstr "Prikaži više"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:447
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:557
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:461
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:571
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1227
 #, elixir-autogen, elixir-format
 msgid "Message"
@@ -2500,11 +2500,11 @@ msgstr "Podgrupe grupe %{name}"
 #: lib/potok_ide_web/live/group_live/show/group_sheet.ex:119
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:65
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:420
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:528
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1200
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:434
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:542
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1214
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:119
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:553
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:554
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:219
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:291
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:774
@@ -2633,7 +2633,7 @@ msgstr "Opisi"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:792
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:612
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:391
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:392
 #: lib/potok_ide_web/live/profile_live/index.ex:133
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -2841,7 +2841,7 @@ msgstr "Da li dolazite?"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:961
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:969
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1043
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1057
 #, elixir-autogen, elixir-format
 msgid "At"
 msgstr "Vreme"
@@ -3136,7 +3136,7 @@ msgid "Times are in %{zone}, the event's time zone."
 msgstr "Vremena su u zoni %{zone}, zoni događaja."
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:948
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:573
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:574
 #, elixir-autogen, elixir-format
 msgid "Title"
 msgstr "Naslov"
@@ -6487,38 +6487,38 @@ msgid "It may not: %{permissions}."
 msgstr "Ne sme: %{permissions}."
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:349
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:420
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:421
 #, elixir-autogen, elixir-format
 msgid "Its owner no longer edits the app. Whoever saves its rules next takes it over."
 msgstr "Vlasnik više ne uređuje aplikaciju. Ko sledeći sačuva njena pravila, preuzima proces."
 
 #: lib/potok_ide_web/live/group_live/show/components.ex:773
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:864
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:878
 #, elixir-autogen, elixir-format
 msgid "Process"
 msgstr "Proces"
 
 #: lib/potok_ide_web/live/group_live/show.ex:523
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:280
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:52
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:53
 #, elixir-autogen, elixir-format
 msgid "Processes"
 msgstr "Procesi"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:448
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:501
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:502
 #, elixir-autogen, elixir-format
 msgid "collection %{collection}"
 msgstr "kolekcija %{collection}"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:437
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:496
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:497
 #, elixir-autogen, elixir-format
 msgid "no owner"
 msgstr "bez vlasnika"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:436
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:495
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:496
 #, elixir-autogen, elixir-format
 msgid "owner %{username}"
 msgstr "vlasnik %{username}"
@@ -6533,7 +6533,7 @@ msgstr "pokrenuo: %{username}"
 msgid "An app's process leaves its app's group only when its rule is removed."
 msgstr "Proces aplikacije izlazi iz grupe aplikacije samo kad se ukloni njegovo pravilo."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:629
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:630
 #, elixir-autogen, elixir-format
 msgid "Cancelled: %{count}"
 msgstr "Otkazano: %{count}"
@@ -6543,27 +6543,27 @@ msgstr "Otkazano: %{count}"
 msgid "Could not take it up again."
 msgstr "Nije moglo ponovo da se pokrene."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:628
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:629
 #, elixir-autogen, elixir-format
 msgid "Done: %{count}"
 msgstr "Završeno: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:627
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:628
 #, elixir-autogen, elixir-format
 msgid "Failed: %{count}"
 msgstr "Palo: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:625
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:626
 #, elixir-autogen, elixir-format
 msgid "Running: %{count}"
 msgstr "U toku: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:453
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:454
 #, elixir-autogen, elixir-format
 msgid "Stopped at %{element}"
 msgstr "Stalo kod %{element}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:476
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:477
 #, elixir-autogen, elixir-format
 msgid "Take up again"
 msgstr "Pokreni ponovo"
@@ -6573,82 +6573,82 @@ msgstr "Pokreni ponovo"
 msgid "The process goes on from where it stopped."
 msgstr "Proces nastavlja odande gde je stao."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:626
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:627
 #, elixir-autogen, elixir-format
 msgid "Waiting: %{count}"
 msgstr "Čeka: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:662
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:668
 #, elixir-autogen, elixir-format
 msgid "an error"
 msgstr "greška"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:653
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:654
 #, elixir-autogen, elixir-format
 msgid "an unexpected error"
 msgstr "neočekivana greška"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:652
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:653
 #, elixir-autogen, elixir-format
 msgid "it took too many steps"
 msgstr "napravilo je previše koraka"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:651
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:652
 #, elixir-autogen, elixir-format
 msgid "it went round without waiting"
 msgstr "vrtelo se u krug bez čekanja"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:647
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:648
 #, elixir-autogen, elixir-format
 msgid "its sub-group is gone"
 msgstr "njegova podgrupa više ne postoji"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:646
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:647
 #, elixir-autogen, elixir-format
 msgid "nobody to run the sub-group"
 msgstr "nema ko da vodi podgrupu"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:641
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:642
 #, elixir-autogen, elixir-format
 msgid "the process is not a member of that group"
 msgstr "proces nije član te grupe"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:638
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:639
 #, elixir-autogen, elixir-format
 msgid "the process lacks a permission"
 msgstr "procesu fali pravo"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:644
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:645
 #, elixir-autogen, elixir-format
 msgid "the process may not write in that group"
 msgstr "proces ne sme da piše u toj grupi"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:650
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:651
 #, elixir-autogen, elixir-format
 msgid "the process was stopped"
 msgstr "proces je zaustavljen"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:649
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:650
 #, elixir-autogen, elixir-format
 msgid "the push text does not fit"
 msgstr "tekst push-a nije odgovarajući"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:648
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:649
 #, elixir-autogen, elixir-format
 msgid "the text came out empty"
 msgstr "tekst je ispao prazan"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:312
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:313
 #, elixir-autogen, elixir-format
 msgid "A comment, if you like"
 msgstr "Komentar, ako želiš"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:229
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:230
 #, elixir-autogen, elixir-format
 msgid "Anonymous"
 msgstr "Anonimno"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:425
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:426
 #, elixir-autogen, elixir-format
 msgid "Another process runs on the same collection too."
 msgstr "Na istoj kolekciji radi i drugi proces."
@@ -6664,7 +6664,7 @@ msgid "Could not record the decision."
 msgstr "Odluka nije zabeležena."
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:128
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:117
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:118
 #, elixir-autogen, elixir-format
 msgid "Group description"
 msgstr "Opis grupe"
@@ -6674,18 +6674,18 @@ msgstr "Opis grupe"
 msgid "How they are doing"
 msgstr "Kako im ide"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:405
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:406
 #, elixir-autogen, elixir-format
 msgid "It may not: %{permissions}. Give its profile a role under Members."
 msgstr "Ne sme: %{permissions}. Daj njegovom profilu ulogu na kartici Članovi."
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:345
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:416
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:417
 #, elixir-autogen, elixir-format
 msgid "Its owner no longer edits the app. Whoever saves the drawing next takes it over."
 msgstr "Vlasnik više ne uređuje aplikaciju. Ko sledeći sačuva crtež, preuzima ga."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:101
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:102
 #, elixir-autogen, elixir-format
 msgid "No process runs in this group yet."
 msgstr "U ovoj grupi još ne radi nijedan proces."
@@ -6705,17 +6705,17 @@ msgstr "Pokretanje je otkazano."
 msgid "They act for the group's apps and are not counted among the members. An app's rules start and stop them, or its editors on the Processes tab."
 msgstr "Rade za aplikacije grupe i ne broje se među članove. Pokreću ih i gase pravila aplikacije ili njeni urednici na kartici Procesi."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:77
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:78
 #, elixir-autogen, elixir-format
 msgid "Waiting for you"
 msgstr "Čeka tebe"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:54
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:55
 #, elixir-autogen, elixir-format
 msgid "What happens on its own when a value comes to an app: messages, sub-groups, tasks."
 msgstr "Šta se dešava samo od sebe kad u aplikaciju stigne nova vrednost: poruke, podgrupe, zadaci."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:273
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:274
 #, elixir-autogen, elixir-format
 msgid "You may decide, but not read what was sent."
 msgstr "Smeš da odlučiš, ali ne i da čitaš šta je poslato."
@@ -6725,28 +6725,28 @@ msgstr "Smeš da odlučiš, ali ne i da čitaš šta je poslato."
 msgid "Your decision is in."
 msgstr "Odluka je zabeležena."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:354
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:355
 #, elixir-autogen, elixir-format
 msgid "drawn"
 msgstr "nacrtan"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:354
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:355
 #, elixir-autogen, elixir-format
 msgid "from the app"
 msgstr "iz aplikacije"
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:173
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:361
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:362
 #, elixir-autogen, elixir-format
 msgid "off"
 msgstr "isključen"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:291
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:292
 #, elixir-autogen, elixir-format
 msgid "someone"
 msgstr "neko"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1297
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1388
 #, elixir-autogen, elixir-format
 msgid "%{count} day"
 msgid_plural "%{count} days"
@@ -6754,7 +6754,7 @@ msgstr[0] "%{count} dan"
 msgstr[1] "%{count} dana"
 msgstr[2] "%{count} dana"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1296
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1387
 #, elixir-autogen, elixir-format
 msgid "%{count} hour"
 msgid_plural "%{count} hours"
@@ -6762,7 +6762,7 @@ msgstr[0] "%{count} sat"
 msgstr[1] "%{count} sata"
 msgstr[2] "%{count} sati"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1295
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1386
 #, elixir-autogen, elixir-format
 msgid "%{count} minute"
 msgid_plural "%{count} minutes"
@@ -6770,7 +6770,7 @@ msgstr[0] "%{count} minut"
 msgstr[1] "%{count} minuta"
 msgstr[2] "%{count} minuta"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1298
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1389
 #, elixir-autogen, elixir-format
 msgid "%{count} week"
 msgid_plural "%{count} weeks"
@@ -6778,89 +6778,89 @@ msgstr[0] "%{count} nedelja"
 msgstr[1] "%{count} nedelje"
 msgstr[2] "%{count} nedelja"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1316
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1413
 #, elixir-autogen, elixir-format
 msgid "%{field} is empty"
 msgstr "%{field} je prazno"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1382
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1480
 #, elixir-autogen, elixir-format
 msgid "A condition needs a way for “otherwise”."
 msgstr "Uslov mora da ima put za „inače“."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1383
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1481
 #, elixir-autogen, elixir-format
 msgid "A condition needs at least one condition."
 msgstr "Uslov mora da ima bar jedno poređenje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:887
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:960
 #, elixir-autogen, elixir-format
 msgid "A decision is still waiting."
 msgstr "Jedna odluka još čeka."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1385
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1483
 #, elixir-autogen, elixir-format
 msgid "A drawing holds at most 100 steps."
 msgstr "Crtež ima najviše 100 koraka."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1279
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1305
 #, elixir-autogen, elixir-format
 msgid "A new end"
 msgstr "Novi kraj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:874
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:948
 #, elixir-autogen, elixir-format
 msgid "A new value came in."
 msgstr "Stigla je nova vrednost."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1550
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1688
 #, elixir-autogen, elixir-format
 msgid "A step cannot lead to itself."
 msgstr "Korak ne može da vodi sam na sebe."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1199
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1476
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1479
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1290
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1614
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1617
 #, elixir-autogen, elixir-format
 msgid "A value comes in"
 msgstr "Stiže vrednost"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:703
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:717
 #, elixir-autogen, elixir-format
 msgid "Add a condition"
 msgstr "Dodaj poređenje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:414
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:428
 #, elixir-autogen, elixir-format
 msgid "Add a step"
 msgstr "Dodaj korak"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1120
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1209
 #, elixir-autogen, elixir-format
 msgid "Add a step here"
 msgstr "Dodaj korak ovde"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:654
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:668
 #, elixir-autogen, elixir-format
 msgid "Add an outcome"
 msgstr "Dodaj ishod"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1422
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1520
 #, elixir-autogen, elixir-format
 msgid "An outcome is empty or too long."
 msgstr "Ishod je prazan ili predugačak."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1381
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1479
 #, elixir-autogen, elixir-format
 msgid "An outcome or the deadline has no way on."
 msgstr "Neki ishod ili rok nema kuda dalje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:877
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:951
 #, elixir-autogen, elixir-format
 msgid "Approve"
 msgstr "Odobri"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1183
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1197
 #, elixir-autogen, elixir-format
 msgid "Arrow"
 msgstr "Strelica"
@@ -6875,34 +6875,34 @@ msgstr "Nazad na procese"
 msgid "Collection"
 msgstr "Kolekcija"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:461
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1205
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:475
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1296
 #, elixir-autogen, elixir-format
 msgid "Condition"
 msgstr "Uslov"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:678
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:692
 #, elixir-autogen, elixir-format
 msgid "Conditions, in order"
 msgstr "Poređenja, po redu"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:457
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:519
 #, elixir-autogen, elixir-format
 msgid "Could not delete the process."
 msgstr "Brisanje procesa nije uspelo."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:658
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:672
 #, elixir-autogen, elixir-format
 msgid "Deadline, with a reminder"
 msgstr "Rok, uz podsetnik"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:453
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1234
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:467
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1325
 #, elixir-autogen, elixir-format
 msgid "Decision"
 msgstr "Odluka"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:877
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:951
 #, elixir-autogen, elixir-format
 msgid "Decline"
 msgstr "Odbij"
@@ -6917,72 +6917,72 @@ msgstr "Obriši proces"
 msgid "Delete this process with all its runs? What it wrote stays."
 msgstr "Obrisati ovaj proces sa svim pokretanjima? Ono što je napisao ostaje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:521
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:535
 #, elixir-autogen, elixir-format
 msgid "Delete this step"
 msgstr "Obriši ovaj korak"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1121
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1210
 #, elixir-autogen, elixir-format
 msgid "Drag to another step"
 msgstr "Prevuci do drugog koraka"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:66
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:67
 #, elixir-autogen, elixir-format
 msgid "Draw a process"
 msgstr "Nacrtaj proces"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:103
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:104
 #, elixir-autogen, elixir-format
 msgid "Draw one: what happens when a new value comes in, step by step."
 msgstr "Nacrtaj ga: šta se dešava kad stigne nova vrednost, korak po korak."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1202
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1293
 #, elixir-autogen, elixir-format
 msgid "End"
 msgstr "Kraj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1136
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1150
 #, elixir-autogen, elixir-format
 msgid "Every new value of the collection starts here."
 msgstr "Svaka nova vrednost kolekcije počinje ovde."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:388
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:402
 #, elixir-autogen, elixir-format
 msgid "Every new value of the collection starts the process at the top and goes along the arrows."
 msgstr "Svaka nova vrednost kolekcije pokreće proces na vrhu i ide duž strelica."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1220
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1252
 #, elixir-autogen, elixir-format
 msgid "Field"
 msgstr "Polje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1378
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1476
 #, elixir-autogen, elixir-format
 msgid "From this step there is no way to an end."
 msgstr "Od ovog koraka nema puta do kraja."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:462
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:476
 #, elixir-autogen, elixir-format
 msgid "Goes one way or another by what was sent."
 msgstr "Ide jednim ili drugim putem, po onome što je poslato."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:920
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:934
 #, elixir-autogen, elixir-format
 msgid "Here the run is done."
 msgstr "Ovde je pokretanje završeno."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:384
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:398
 #, elixir-autogen, elixir-format
 msgid "How to draw"
 msgstr "Kako se crta"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:566
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:580
 #, elixir-autogen, elixir-format
 msgid "In the app's group"
 msgstr "U grupi aplikacije"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1227
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1253
 #, elixir-autogen, elixir-format
 msgid "Is"
 msgstr "Je"
@@ -6997,7 +6997,7 @@ msgstr "Zadrži moju"
 msgid "Lay out again"
 msgstr "Rasporedi ponovo"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1237
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1263
 #, elixir-autogen, elixir-format
 msgid "Leads to"
 msgstr "Vodi do"
@@ -7007,7 +7007,7 @@ msgstr "Vodi do"
 msgid "Leave without saving the drawing?"
 msgstr "Izaći bez čuvanja crteža?"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:457
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:471
 #, elixir-autogen, elixir-format
 msgid "Lets the people of a role know on their phones."
 msgstr "Javlja ljudima jedne uloge na telefon."
@@ -7017,12 +7017,12 @@ msgstr "Javlja ljudima jedne uloge na telefon."
 msgid "Load theirs"
 msgstr "Uzmi njihovu"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1219
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1310
 #, elixir-autogen, elixir-format
 msgid "Message in %{group}"
 msgstr "Poruka u: %{group}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1208
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1299
 #, elixir-autogen, elixir-format
 msgid "Message in the group"
 msgstr "Poruka u grupi"
@@ -7032,27 +7032,27 @@ msgstr "Poruka u grupi"
 msgid "Name of the process"
 msgstr "Ime procesa"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:575
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:589
 #, elixir-autogen, elixir-format
 msgid "Name of the sub-group"
 msgstr "Ime podgrupe"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:544
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:558
 #, elixir-autogen, elixir-format
 msgid "Name on the drawing"
 msgstr "Ime na crtežu"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:61
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:66
 #, elixir-autogen, elixir-format
 msgid "New process"
 msgstr "Novi proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1222
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1313
 #, elixir-autogen, elixir-format
 msgid "New sub-group"
 msgstr "Nova podgrupa"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:875
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:949
 #, elixir-autogen, elixir-format
 msgid "New value"
 msgstr "Nova vrednost"
@@ -7062,22 +7062,22 @@ msgstr "Nova vrednost"
 msgid "No collection yet"
 msgstr "Još nema kolekcije"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1551
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1689
 #, elixir-autogen, elixir-format
 msgid "Nothing leads back to the start."
 msgstr "Ništa ne vodi nazad na početak."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1552
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1690
 #, elixir-autogen, elixir-format
 msgid "Nothing leads on from an end."
 msgstr "Od kraja ništa ne vodi dalje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1377
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1475
 #, elixir-autogen, elixir-format
 msgid "Nothing leads to this step from the start."
 msgstr "Od početka ništa ne vodi do ovog koraka."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:863
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:937
 #, elixir-autogen, elixir-format
 msgid "One step went."
 msgid_plural "%{count} steps went."
@@ -7090,74 +7090,74 @@ msgstr[2] "Uklonjeno je %{count} koraka."
 msgid "Only the app's editors change this drawing."
 msgstr "Ovaj crtež menjaju samo urednici aplikacije."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:86
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1563
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:92
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1701
 #, elixir-autogen, elixir-format
 msgid "Only the app's editors draw processes."
 msgstr "Procese crtaju samo urednici aplikacije."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:451
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:465
 #, elixir-autogen, elixir-format
 msgid "Opens a sub-group for the value, to talk it over."
 msgstr "Otvara podgrupu za vrednost, da se o njoj razgovara."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1212
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:878
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1226
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:952
 #, elixir-autogen, elixir-format
 msgid "Outcome"
 msgstr "Ishod"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:620
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:634
 #, elixir-autogen, elixir-format
 msgid "Outcomes"
 msgstr "Ishodi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1562
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1700
 #, elixir-autogen, elixir-format
 msgid "Pick a collection of the app."
 msgstr "Izaberi kolekciju aplikacije."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:456
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:470
 #, elixir-autogen, elixir-format
 msgid "Push"
 msgstr "Push"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1226
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1317
 #, elixir-autogen, elixir-format
 msgid "Push to %{role}"
 msgstr "Push za: %{role}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1149
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1163
 #, elixir-autogen, elixir-format
 msgid "Put in:"
 msgstr "Ubaci:"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:639
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:653
 #, elixir-autogen, elixir-format
 msgid "Remove the outcome"
 msgstr "Ukloni ishod"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1193
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1207
 #, elixir-autogen, elixir-format
 msgid "Remove this branch"
 msgstr "Ukloni ovu granu"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:400
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:414
 #, elixir-autogen, elixir-format
 msgid "Save a drawing, then switch it on."
 msgstr "Sačuvaj crtež, pa ga uključi."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:965
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1045
 #, elixir-autogen, elixir-format
 msgid "Save the drawing first."
 msgstr "Prvo sačuvaj crtež."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1124
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1213
 #, elixir-autogen, elixir-format
 msgid "Show it all"
 msgstr "Prikaži sve"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:291
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:305
 #, elixir-autogen, elixir-format
 msgid "Show me"
 msgstr "Pokaži"
@@ -7167,12 +7167,12 @@ msgstr "Pokaži"
 msgid "Someone else saved this process meanwhile."
 msgstr "Neko drugi je u međuvremenu sačuvao ovaj proces."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1431
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1529
 #, elixir-autogen, elixir-format
 msgid "Something here is missing."
 msgstr "Ovde nešto nedostaje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:450
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:464
 #, elixir-autogen, elixir-format
 msgid "Sub-group"
 msgstr "Podgrupa"
@@ -7192,30 +7192,30 @@ msgstr "Isključi"
 msgid "Switch on"
 msgstr "Uključi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:393
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:407
 #, elixir-autogen, elixir-format
 msgid "Tap + on an arrow to add a step, and a step or an arrow to change it."
 msgstr "Dodirni + na strelici da dodaš korak, a korak ili strelicu da ih izmeniš."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:402
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:416
 #, elixir-autogen, elixir-format
 msgid "Tap a step or an arrow to see what it does."
 msgstr "Dodirni korak ili strelicu da vidiš šta radi."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:608
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:622
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:312
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:582
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:583
 #, elixir-autogen, elixir-format
 msgid "Text"
 msgstr "Tekst"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1564
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1702
 #: lib/potok_ide_web/live/group_live/show/processes_state.ex:435
 #, elixir-autogen, elixir-format
 msgid "That did not work."
 msgstr "To nije uspelo."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:172
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:182
 #, elixir-autogen, elixir-format
 msgid "That process is not here."
 msgstr "Tog procesa ovde nema."
@@ -7225,249 +7225,249 @@ msgstr "Tog procesa ovde nema."
 msgid "The app draws this process and changes it in its own settings."
 msgstr "Ovaj proces crta aplikacija i menja ga u svojim podešavanjima."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1425
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1523
 #, elixir-autogen, elixir-format
 msgid "The condition needs a field."
 msgstr "Poređenju treba polje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:384
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:398
 #, elixir-autogen, elixir-format
 msgid "The drawing"
 msgstr "Crtež"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:949
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1029
 #, elixir-autogen, elixir-format
 msgid "The drawing is not finished yet."
 msgstr "Crtež još nije gotov."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1379
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1456
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1477
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1594
 #, elixir-autogen, elixir-format
 msgid "The group has no such role."
 msgstr "Grupa nema tu ulogu."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1547
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1685
 #, elixir-autogen, elixir-format
 msgid "The last branch stays."
 msgstr "Poslednja grana ostaje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1546
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1684
 #, elixir-autogen, elixir-format
 msgid "The last end stays."
 msgstr "Poslednji kraj ostaje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1401
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1499
 #, elixir-autogen, elixir-format
 msgid "The name is empty or too long."
 msgstr "Ime je prazno ili predugačko."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1404
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1502
 #, elixir-autogen, elixir-format
 msgid "The name on the drawing is too long."
 msgstr "Ime na crtežu je predugačko."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:451
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:513
 #, elixir-autogen, elixir-format
 msgid "The process is deleted."
 msgstr "Proces je obrisan."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:444
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:506
 #: lib/potok_ide_web/live/group_live/show/processes_state.ex:432
 #, elixir-autogen, elixir-format
 msgid "The process is off."
 msgstr "Proces je isključen."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:441
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:503
 #, elixir-autogen, elixir-format
 msgid "The process is on."
 msgstr "Proces je uključen."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:929
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1009
 #, elixir-autogen, elixir-format
 msgid "The process is saved."
 msgstr "Proces je sačuvan."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:921
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:994
 #, elixir-autogen, elixir-format
 msgid "The process is saved. Switch it on when it is ready."
 msgstr "Proces je sačuvan. Uključi ga kad bude spreman."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1554
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1692
 #, elixir-autogen, elixir-format
 msgid "The process needs a name of up to 60 characters."
 msgstr "Procesu treba ime od najviše 60 znakova."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1288
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1314
 #, elixir-autogen, elixir-format
 msgid "The process's owner"
 msgstr "Vlasnik procesa"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1545
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1683
 #, elixir-autogen, elixir-format
 msgid "The start stays."
 msgstr "Početak ostaje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1384
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1482
 #, elixir-autogen, elixir-format
 msgid "The sub-group this message goes to is gone."
 msgstr "Podgrupe u koju ide ova poruka više nema."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1398
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1496
 #, elixir-autogen, elixir-format
 msgid "The text is empty or too long."
 msgstr "Tekst je prazan ili predugačak."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1428
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1526
 #, elixir-autogen, elixir-format
 msgid "The time is from a minute to a year."
 msgstr "Vreme je od jednog minuta do godinu dana."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1435
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1557
 #, elixir-autogen, elixir-format
 msgid "The ways on from this step are not right."
 msgstr "Putevi dalje od ovog koraka nisu dobri."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1549
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1687
 #, elixir-autogen, elixir-format
 msgid "There are too many already."
 msgstr "Već ih ima previše."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1548
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1686
 #, elixir-autogen, elixir-format
 msgid "This way on is needed; send it elsewhere instead."
 msgstr "Ovaj put je potreban. Umesto toga ga usmeri drugde."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:600
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:614
 #, elixir-autogen, elixir-format
 msgid "To the people of"
 msgstr "Ljudima uloge"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1380
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1553
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1478
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1691
 #, elixir-autogen, elixir-format
 msgid "Two outcomes have the same name."
 msgstr "Dva ishoda imaju isto ime."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:840
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1232
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:854
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1258
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr "Vrednost"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:391
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:392
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr "Pogledaj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:459
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1237
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:473
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1328
 #, elixir-autogen, elixir-format
 msgid "Wait"
 msgstr "Čekaj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:671
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:685
 #, elixir-autogen, elixir-format
 msgid "Wait for"
 msgstr "Čekaj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:459
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:473
 #, elixir-autogen, elixir-format
 msgid "Waits a while before going on."
 msgstr "Čeka neko vreme pre nego što krene dalje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:454
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:468
 #, elixir-autogen, elixir-format
 msgid "Waits for someone of a role to pick an outcome."
 msgstr "Čeka da neko sa ulogom izabere ishod."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:257
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:258
 #, elixir-autogen, elixir-format
 msgid "What was sent"
 msgstr "Šta je poslato"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:564
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:578
 #, elixir-autogen, elixir-format
 msgid "Where"
 msgstr "Gde"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:616
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:630
 #, elixir-autogen, elixir-format
 msgid "Who decides"
 msgstr "Ko odlučuje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:580
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:594
 #, elixir-autogen, elixir-format
 msgid "Who runs it"
 msgstr "Ko je vodi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1288
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1314
 #, elixir-autogen, elixir-format
 msgid "Whoever set it going"
 msgstr "Ko je pokrenuo proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:448
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:462
 #, elixir-autogen, elixir-format
 msgid "Writes in the group's chat, or in a sub-group the process made."
 msgstr "Piše u razgovor grupe ili u podgrupu koju je proces napravio."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1122
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1211
 #, elixir-autogen, elixir-format
 msgid "Zoom in"
 msgstr "Uvećaj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1123
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1212
 #, elixir-autogen, elixir-format
 msgid "Zoom out"
 msgstr "Umanji"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1296
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1322
 #, elixir-autogen, elixir-format
 msgid "days"
 msgstr "dana"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1312
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1403
 #, elixir-autogen, elixir-format
 msgid "deadline passed"
 msgstr "rok je prošao"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1307
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1333
 #, elixir-autogen, elixir-format
 msgid "empty"
 msgstr "prazno"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1303
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1329
 #, elixir-autogen, elixir-format
 msgid "equal to"
 msgstr "jednako"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1295
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1321
 #, elixir-autogen, elixir-format
 msgid "hours"
 msgstr "sati"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1305
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1331
 #, elixir-autogen, elixir-format
 msgid "less than"
 msgstr "manje od"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1294
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1320
 #, elixir-autogen, elixir-format
 msgid "minutes"
 msgstr "minuta"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1306
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1332
 #, elixir-autogen, elixir-format
 msgid "more than"
 msgstr "više od"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:664
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:806
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:906
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:678
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:820
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:920
 #, elixir-autogen, elixir-format
 msgid "none"
 msgstr "bez roka"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1304
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1330
 #, elixir-autogen, elixir-format
 msgid "not equal to"
 msgstr "različito od"
@@ -7477,98 +7477,98 @@ msgstr "različito od"
 msgid "on"
 msgstr "uključen"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1313
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1404
 #, elixir-autogen, elixir-format
 msgid "otherwise"
 msgstr "inače"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1297
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1323
 #, elixir-autogen, elixir-format
 msgid "weeks"
 msgstr "nedelja"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:396
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:410
 #, elixir-autogen, elixir-format
 msgid "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
 msgstr "Klikni + na strelici da dodaš korak. Prevuci korake gde ti odgovaraju, a od tačke ispod koraka prevuci do drugog koraka da nacrtaš strelicu. Klikni korak ili strelicu da je izmeniš."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:972
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:986
 #, elixir-autogen, elixir-format
 msgid "A message a person writes in the group's chat starts it when it holds one of these words or mentions the role. Replies in threads do not count."
 msgstr "Pokreće ga poruka koju neko napiše u razgovoru grupe, kad ima neku od ovih reči ili pominje ulogu. Odgovori u niti se ne računaju."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1493
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1631
 #, elixir-autogen, elixir-format
 msgid "A message for %{role}"
 msgstr "Poruka za: %{role}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1487
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1625
 #, elixir-autogen, elixir-format
 msgid "A message with %{words} or for %{role}"
 msgstr "Poruka sa: %{words} ili za: %{role}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1129
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1143
 #, elixir-autogen, elixir-format
 msgid "A message with one of the words starts the process here."
 msgstr "Poruka sa nekom od reči ovde pokreće proces."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1490
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1628
 #, elixir-autogen, elixir-format
 msgid "A message with: %{words}"
 msgstr "Poruka sa: %{words}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1471
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1500
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1609
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1638
 #, elixir-autogen, elixir-format
 msgid "A new sub-group"
 msgstr "Nova podgrupa"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1131
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1145
 #, elixir-autogen, elixir-format
 msgid "A new sub-group starts the process here."
 msgstr "Nova podgrupa ovde pokreće proces."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1498
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1636
 #, elixir-autogen, elixir-format
 msgid "A new sub-group with a place"
 msgstr "Nova podgrupa sa mestom"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:990
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1004
 #, elixir-autogen, elixir-format
 msgid "A sub-group someone makes here starts it: by hand, from a preset, a place added on the map, or an app. Records, threads and what a process makes do not."
 msgstr "Pokreće ga podgrupa koju neko ovde napravi: ručno, iz gotove vrste, kao mesto dodato na mapi ili iz aplikacije. Zapisi, niti i ono što napravi proces ga ne pokreću."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1440
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1578
 #, elixir-autogen, elixir-format
 msgid "At most 10 words."
 msgstr "Najviše 10 reči."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1002
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1016
 #, elixir-autogen, elixir-format
 msgid "Every day"
 msgstr "Svakog dana"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1519
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1657
 #, elixir-autogen, elixir-format
 msgid "Every day at %{time}"
 msgstr "Svakog dana u %{time}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1004
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1018
 #, elixir-autogen, elixir-format
 msgid "Every month"
 msgstr "Svakog meseca"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1532
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1670
 #, elixir-autogen, elixir-format
 msgid "Every month on day %{day} at %{time}"
 msgstr "Svakog meseca, %{day}. dana u %{time}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1003
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1017
 #, elixir-autogen, elixir-format
 msgid "Every week"
 msgstr "Svake nedelje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1522
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1660
 #, elixir-autogen, elixir-format
 msgid "Every week on %{days} at %{time}"
 msgstr "Svake nedelje: %{days} u %{time}"
@@ -7578,7 +7578,7 @@ msgstr "Svake nedelje: %{days} u %{time}"
 msgid "Give it a title of up to 120 characters."
 msgstr "Upiši naslov od najviše 120 znakova."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1000
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1014
 #, elixir-autogen, elixir-format
 msgid "How often"
 msgstr "Koliko često"
@@ -7588,58 +7588,58 @@ msgstr "Koliko često"
 msgid "In the group"
 msgstr "U grupi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:969
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:983
 #, elixir-autogen, elixir-format
 msgid "No role"
 msgstr "Bez uloge"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1008
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1022
 #, elixir-autogen, elixir-format
 msgid "On"
 msgstr "Dani"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1033
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1047
 #, elixir-autogen, elixir-format
 msgid "On day"
 msgstr "Dana"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1529
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1667
 #, elixir-autogen, elixir-format
 msgid "On the last day of the month at %{time}"
 msgstr "Poslednjeg dana u mesecu u %{time}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:987
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1001
 #, elixir-autogen, elixir-format
 msgid "Only sub-groups with a place on the map"
 msgstr "Samo podgrupe sa mestom na mapi"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:240
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:241
 #, elixir-autogen, elixir-format
 msgid "Open the message"
 msgstr "Otvori poruku"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:968
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:982
 #, elixir-autogen, elixir-format
 msgid "Or a role the message mentions"
 msgstr "Ili uloga koju poruka pominje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1454
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1592
 #, elixir-autogen, elixir-format
 msgid "Pick at least one day."
 msgstr "Izaberi bar jedan dan."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:379
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:590
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:380
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:591
 #, elixir-autogen, elixir-format
 msgid "Start"
 msgstr "Pokreni"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:546
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:547
 #, elixir-autogen, elixir-format
 msgid "Start the process"
 msgstr "Pokreni proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1504
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1642
 #, elixir-autogen, elixir-format
 msgid "Started by: %{roles}"
 msgstr "Pokreće: %{roles}"
@@ -7649,7 +7649,7 @@ msgstr "Pokreće: %{roles}"
 msgid "The process is started."
 msgstr "Proces je pokrenut."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1132
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1146
 #, elixir-autogen, elixir-format
 msgid "The process starts here at the set time."
 msgstr "Proces ovde počinje u zadato vreme."
@@ -7659,27 +7659,27 @@ msgstr "Proces ovde počinje u zadato vreme."
 msgid "The text is at most 2000 characters."
 msgstr "Tekst ima najviše 2000 znakova."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1455
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1593
 #, elixir-autogen, elixir-format
 msgid "The time is written as 20:00."
 msgstr "Vreme se piše kao 20:00."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1068
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1082
 #, elixir-autogen, elixir-format
 msgid "They get a Start button on the Processes tab, with a title and a text the steps can put in."
 msgstr "Oni na kartici Procesi dobijaju dugme Pokreni, uz naslov i tekst koje koraci mogu da ubace."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1046
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1060
 #, elixir-autogen, elixir-format
 msgid "Times are in %{zone}."
 msgstr "Vreme je u zoni %{zone}."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1438
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1576
 #, elixir-autogen, elixir-format
 msgid "Type a word, or pick a role a message mentions."
 msgstr "Upiši reč ili izaberi ulogu koju poruka pominje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:950
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:964
 #, elixir-autogen, elixir-format
 msgid "What starts it"
 msgstr "Šta ga pokreće"
@@ -7689,29 +7689,29 @@ msgstr "Šta ga pokreće"
 msgid "What starts the process"
 msgstr "Šta pokreće proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:943
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1457
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1560
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1023
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1595
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1698
 #, elixir-autogen, elixir-format
 msgid "What starts the process is not set right."
 msgstr "Ono što pokreće proces nije dobro podešeno."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1050
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1064
 #, elixir-autogen, elixir-format
 msgid "Who may start it"
 msgstr "Ko sme da ga pokrene"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1133
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1147
 #, elixir-autogen, elixir-format
 msgid "Whoever starts it by hand starts here."
 msgstr "Ko ga pokrene ručno, počinje ovde."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1443
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1581
 #, elixir-autogen, elixir-format
 msgid "Words go one by one, 2 to 40 letters or digits each."
 msgstr "Reči se pišu jedna po jedna, svaka od 2 do 40 slova ili cifara."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:959
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:973
 #, elixir-autogen, elixir-format
 msgid "Words in the message"
 msgstr "Reči u poruci"
@@ -7722,243 +7722,243 @@ msgstr "Reči u poruci"
 msgid "You may not start this process."
 msgstr "Ne smeš da pokreneš ovaj proces."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1539
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1677
 #, elixir-autogen, elixir-format
 msgid "a sub-group is made"
 msgstr "nastane podgrupa"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1537
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1675
 #, elixir-autogen, elixir-format
 msgid "a value comes to an app"
 msgstr "stigne vrednost u aplikaciju"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:960
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:974
 #, elixir-autogen, elixir-format
 msgid "leak, broken, power"
 msgstr "kvar, curi, struja"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1541
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1679
 #, elixir-autogen, elixir-format
 msgid "someone starts it"
 msgstr "ga neko pokrene"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1538
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1676
 #, elixir-autogen, elixir-format
 msgid "someone writes a message"
 msgstr "neko napiše poruku"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1035
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1049
 #, elixir-autogen, elixir-format
 msgid "the last"
 msgstr "poslednjeg"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1540
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1678
 #, elixir-autogen, elixir-format
 msgid "the set time comes"
 msgstr "dođe zadato vreme"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1470
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1608
 #, elixir-autogen, elixir-format
 msgid "A message"
 msgstr "Poruka"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1472
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1610
 #, elixir-autogen, elixir-format
 msgid "On a schedule"
 msgstr "Po rasporedu"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1473
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1611
 #, elixir-autogen, elixir-format
 msgid "Started by hand"
 msgstr "Ručno pokretanje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:869
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:883
 #, elixir-autogen, elixir-format
 msgid "%{name} (off)"
 msgstr "%{name} (isključen)"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1557
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1695
 #, elixir-autogen, elixir-format
 msgid "%{process} calls this process. Change that first."
 msgstr "%{process} poziva ovaj proces. Prvo to promeni."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1134
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1148
 #, elixir-autogen, elixir-format
 msgid "A call from another process starts here."
 msgstr "Poziv iz drugog procesa počinje ovde."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1419
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1517
 #, elixir-autogen, elixir-format
 msgid "A field it hands over is too long."
 msgstr "Polje koje predaje je predugačko."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1448
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1586
 #, elixir-autogen, elixir-format
 msgid "At most 10 fields."
 msgstr "Najviše 10 polja."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1269
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1360
 #, elixir-autogen, elixir-format
 msgid "Call %{process}"
 msgstr "Pozovi: %{process}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:474
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:488
 #, elixir-autogen, elixir-format
 msgid "Call a process"
 msgstr "Pozovi proces"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:224
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:225
 #, elixir-autogen, elixir-format
 msgid "Called by"
 msgstr "Pozvao ga je"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1474
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1510
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1612
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1648
 #, elixir-autogen, elixir-format
 msgid "Called by another process"
 msgstr "Poziva ga drugi proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1507
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1645
 #, elixir-autogen, elixir-format
 msgid "Called with: %{fields}"
 msgstr "Poziva se sa: %{fields}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:900
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:914
 #, elixir-autogen, elixir-format
 msgid "Deadline, then give up on it"
 msgstr "Rok, posle kog odustaje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1452
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1590
 #, elixir-autogen, elixir-format
 msgid "Fields go one by one: letters, digits, - and _, up to 40 each."
 msgstr "Polja idu jedno po jedno: slova, cifre, - i _, do 40 znakova svako."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1097
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1111
 #, elixir-autogen, elixir-format
 msgid "Fields it takes"
 msgstr "Polja koja prima"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:856
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:870
 #, elixir-autogen, elixir-format
 msgid "No process of the group takes calls yet. Draw one that starts when another process calls it, then pick it here."
 msgstr "Nijedan proces grupe još ne prima pozive. Nacrtaj proces koji kreće kad ga pozove drugi proces, pa ga izaberi ovde."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:865
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:879
 #, elixir-autogen, elixir-format
 msgid "Pick a process"
 msgstr "Izaberi proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1388
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1486
 #, elixir-autogen, elixir-format
 msgid "Pick a process of the group that starts when another calls it."
 msgstr "Izaberi proces grupe koji kreće kad ga drugi pozove."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1407
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1505
 #, elixir-autogen, elixir-format
 msgid "Pick the process to call."
 msgstr "Izaberi proces koji se poziva."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1268
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1359
 #, elixir-autogen, elixir-format
 msgid "Start %{process}"
 msgstr "Pokreni: %{process}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:475
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:489
 #, elixir-autogen, elixir-format
 msgid "Starts another process of the group, and waits for how it ends."
 msgstr "Pokreće drugi proces grupe i čeka da vidi kako se završio."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1449
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1587
 #, elixir-autogen, elixir-format
 msgid "The names from and outcome are taken."
 msgstr "Imena from i outcome su zauzeta."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1391
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1489
 #, elixir-autogen, elixir-format
 msgid "The process called does not take this field."
 msgstr "Pozvani proces ne prima ovo polje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:913
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:927
 #, elixir-autogen, elixir-format
 msgid "The steps after it read how it ended as %{field}."
 msgstr "Koraci posle njega čitaju kako se završio kao %{field}."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:882
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:896
 #, elixir-autogen, elixir-format
 msgid "Wait for it to end"
 msgstr "Čekaj da se završi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:885
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:899
 #, elixir-autogen, elixir-format
 msgid "What it gets"
 msgstr "Šta dobija"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1264
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1355
 #, elixir-autogen, elixir-format
 msgid "a process"
 msgstr "proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1542
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1680
 #, elixir-autogen, elixir-format
 msgid "another process calls it"
 msgstr "ga pozove drugi proces"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1098
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1112
 #, elixir-autogen, elixir-format
 msgid "fault, floor"
 msgstr "kvar, sprat"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1273
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1364
 #, elixir-autogen, elixir-format
 msgid "goes on at once"
 msgstr "ide odmah dalje"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:654
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:655
 #, elixir-autogen, elixir-format
 msgid "processes called each other too deep"
 msgstr "procesi su se pozivali preduboko"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:655
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:656
 #, elixir-autogen, elixir-format
 msgid "the process called has too many runs"
 msgstr "pozvani proces ima previše pokretanja"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:656
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:657
 #, elixir-autogen, elixir-format
 msgid "the process it called was cancelled"
 msgstr "proces koji je pozvao je otkazan"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:658
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:659
 #, elixir-autogen, elixir-format
 msgid "the process it calls is gone"
 msgstr "proces koji poziva više ne postoji"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:657
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:658
 #, elixir-autogen, elixir-format
 msgid "the process it calls is off"
 msgstr "proces koji poziva je isključen"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1102
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1116
 #, elixir-autogen, elixir-format
 msgid "Another process of the group starts it with the step Call a process, which fills in these fields. When it ends, the caller learns which end it reached."
 msgstr "Pokreće ga drugi proces grupe korakom Pozovi proces, koji popunjava ova polja. Kad se završi, pozivalac saznaje do kog kraja je stigao."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1413
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1511
 #, elixir-autogen, elixir-format
 msgid "A field is named with up to 40 letters, digits, - or _."
 msgstr "Ime polja ima do 40 slova, cifara, - ili _."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1256
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1347
 #, elixir-autogen, elixir-format
 msgid "Add to %{field}"
 msgstr "Dodaj na %{field}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1393
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1491
 #, elixir-autogen, elixir-format
 msgid "Adding takes a number, or a field."
 msgstr "Dodaje se broj ili polje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:834
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:848
 #, elixir-autogen, elixir-format
 msgid "Adds to it"
 msgstr "Dodaje mu"
@@ -7968,53 +7968,53 @@ msgstr "Dodaje mu"
 msgid "Could not delete the field."
 msgstr "Polje nije moglo da se obriše."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:174
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:175
 #, elixir-autogen, elixir-format
 msgid "Delete the field"
 msgstr "Obriši polje"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:172
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:173
 #, elixir-autogen, elixir-format
 msgid "Delete this field? The processes read it as empty."
 msgstr "Obrisati ovo polje? Procesi će ga čitati kao prazno."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:845
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:859
 #, elixir-autogen, elixir-format
 msgid "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab."
 msgstr "Svaki proces grupe ga čita kao %{field}, a urednici aplikacije ga vide na kartici Procesi."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:822
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:836
 #, elixir-autogen, elixir-format
 msgid "Field of the group"
 msgstr "Polje grupe"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:140
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:141
 #, elixir-autogen, elixir-format
 msgid "Fields of the group"
 msgstr "Polja grupe"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:464
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:478
 #, elixir-autogen, elixir-format
 msgid "Group field"
 msgstr "Polje grupe"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:465
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:479
 #, elixir-autogen, elixir-format
 msgid "Keeps a value, or adds to a count, that every process of the group reads."
 msgstr "Čuva vrednost, ili dodaje na brojač, koju čita svaki proces grupe."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:840
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:854
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:313
 #, elixir-autogen, elixir-format
 msgid "Number"
 msgstr "Broj"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1260
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1351
 #, elixir-autogen, elixir-format
 msgid "Set %{field}"
 msgstr "Postavi %{field}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:834
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:848
 #, elixir-autogen, elixir-format
 msgid "Sets it to"
 msgstr "Postavlja ga na"
@@ -8024,38 +8024,33 @@ msgstr "Postavlja ga na"
 msgid "The field is deleted."
 msgstr "Polje je obrisano."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1416
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1514
 #, elixir-autogen, elixir-format
 msgid "The value is at most 1000 characters."
 msgstr "Vrednost ima najviše 1000 znakova."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:833
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:847
 #, elixir-autogen, elixir-format
 msgid "What it does"
 msgstr "Šta radi"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:143
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:144
 #, elixir-autogen, elixir-format
 msgid "What the processes keep for each other. Each reads them as {{group.name}}."
 msgstr "Ono što procesi čuvaju jedni za druge. Svaki ih čita kao {{group.ime}}."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:411
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:880
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:473
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:953
 #, elixir-autogen, elixir-format
 msgid "field"
 msgstr "polje"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:659
-#, elixir-autogen, elixir-format
-msgid "the field to add to is no number"
-msgstr "polje kome se dodaje nije broj"
-
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:661
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:667
 #, elixir-autogen, elixir-format
 msgid "the field's name is not right"
 msgstr "ime polja nije dobro"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:660
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:666
 #, elixir-autogen, elixir-format
 msgid "the group has 50 fields already"
 msgstr "grupa već ima 50 polja"
@@ -8065,139 +8060,139 @@ msgstr "grupa već ima 50 polja"
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, even in a group without an app: it can start on a message with a word you pick, on a new sub-group, at a set time, or when someone starts it. One process can also call another and wait to see how it ends, send a signal others wait for, or keep a count the others read. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
 msgstr "Opis grupe ne mora da bude samo tekst. Može da bude i mala aplikacija, na primer forma, anketa ili spisak zaduženja. Forma, ili druga aplikacija, može i da vodi proces: kad stigne zahtev, objavi ga u razgovoru, otvori podgrupu za njega i čeka onoga ko odlučuje, uz podsetnik kad kasni. Takav proces možeš i sam da nacrtaš, pravo u Potoku, čak i u grupi bez aplikacije: može da krene od poruke sa rečju koju izabereš, od nove podgrupe, u zadato vreme ili kad ga neko pokrene. Jedan proces može i da pozove drugi i sačeka da vidi kako se završio, da pošalje signal koji drugi čekaju, ili da vodi brojač koji drugi čitaju. Ili izaberi šablon, na primer vest ili događaj, i popuni polja. Opis javne grupe, zajedno sa aplikacijom, možeš da otvoriš i onima koji nemaju nalog."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1446
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1584
 #, elixir-autogen, elixir-format
 msgid "A signal is named in one word, 2 to 40 letters or digits."
 msgstr "Signal se zove jednom rečju, od 2 do 40 slova ili cifara."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:767
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:781
 #, elixir-autogen, elixir-format
 msgid "Add a field"
 msgstr "Dodaj polje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:800
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:814
 #, elixir-autogen, elixir-format
 msgid "Deadline, then go on without it"
 msgstr "Rok, posle kog ide dalje bez njega"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1087
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1101
 #, elixir-autogen, elixir-format
 msgid "Each time a process of the group sends this signal, it starts, with the fields the signal carries."
 msgstr "Svaki put kad neki proces grupe pošalje ovaj signal, ovaj proces krene, sa poljima koja signal nosi."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:771
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:785
 #, elixir-autogen, elixir-format
 msgid "It wakes the runs of the group's processes that wait for this signal right now, and starts the processes that start on it. It is not kept: a run that comes to wait later does not get it."
 msgstr "Budi pokretanja procesa grupe koja baš sada čekaju ovaj signal i pokreće procese koji kreću na njega. Signal se ne čuva: pokretanje koje kasnije stigne do čekanja ga ne dobija."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:732
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:746
 #, elixir-autogen, elixir-format
 msgid "Name of the field"
 msgstr "Ime polja"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1475
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1613
 #, elixir-autogen, elixir-format
 msgid "On a signal"
 msgstr "Na signal"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:225
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:226
 #, elixir-autogen, elixir-format
 msgid "On a signal from"
 msgstr "Na signal od"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1513
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1651
 #, elixir-autogen, elixir-format
 msgid "On the signal %{name}"
 msgstr "Na signal %{name}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:797
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:811
 #, elixir-autogen, elixir-format
 msgid "Only from a process on the same value or sub-group"
 msgstr "Samo od procesa na istoj vrednosti ili podgrupi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:744
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:758
 #, elixir-autogen, elixir-format
 msgid "Remove the field"
 msgstr "Ukloni polje"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:467
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:481
 #, elixir-autogen, elixir-format
 msgid "Send a signal"
 msgstr "Pošalji signal"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:710
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:779
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1078
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:724
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:793
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1092
 #, elixir-autogen, elixir-format
 msgid "Signal"
 msgstr "Signal"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1240
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1331
 #, elixir-autogen, elixir-format
 msgid "Signal %{name}"
 msgstr "Signal: %{name}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1410
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1508
 #, elixir-autogen, elixir-format
 msgid "Signals and their fields are named in one word: letters, digits, - or _."
 msgstr "Signali i njihova polja zovu se jednom rečju: slova, cifre, - ili _."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1135
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1149
 #, elixir-autogen, elixir-format
 msgid "The signal starts the process here."
 msgstr "Signal ovde pokreće proces."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:813
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:827
 #, elixir-autogen, elixir-format
 msgid "The steps after it read who sent the signal as %{field}, and the fields it carries the same way."
 msgstr "Koraci posle njega čitaju ko je poslao signal kao %{field}, a polja koja nosi na isti način."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1252
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1343
 #, elixir-autogen, elixir-format
 msgid "Wait for %{name}"
 msgstr "Čekaj: %{name}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:471
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:485
 #, elixir-autogen, elixir-format
 msgid "Wait for a signal"
 msgstr "Čekaj signal"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:472
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:486
 #, elixir-autogen, elixir-format
 msgid "Waits until another process of the group sends it."
 msgstr "Čeka dok ga neki drugi proces grupe ne pošalje."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:468
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:482
 #, elixir-autogen, elixir-format
 msgid "Wakes the processes of the group that wait for it, and starts those that start on it."
 msgstr "Budi procese grupe koji ga čekaju i pokreće one koji kreću na njega."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:719
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:733
 #, elixir-autogen, elixir-format
 msgid "What it carries"
 msgstr "Šta nosi"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:752
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:766
 #, elixir-autogen, elixir-format
 msgid "What it holds"
 msgstr "Šta sadrži"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1543
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1681
 #, elixir-autogen, elixir-format
 msgid "a signal is sent"
 msgstr "neko pošalje signal"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:881
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:954
 #, elixir-autogen, elixir-format
 msgid "ready"
 msgstr "spremno"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1246
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1337
 #, elixir-autogen, elixir-format
 msgid "same subject"
 msgstr "isti predmet"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1080
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1094
 #, elixir-autogen, elixir-format
 msgid "saturday"
 msgstr "subota"
@@ -8469,3 +8464,138 @@ msgstr "tekst"
 #, elixir-autogen, elixir-format
 msgid "yes or no"
 msgstr "da ili ne"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1237
+#, elixir-autogen, elixir-format
+msgid "Goes this way when"
+msgstr "Ide ovuda kada"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1551
+#, elixir-autogen, elixir-format
+msgid "Here goes %{expected}, and this is %{got}."
+msgstr "Ovde ide %{expected}, a ovo je %{got}."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1556
+#, elixir-autogen, elixir-format
+msgid "That name is taken by the process itself."
+msgstr "To ime proces čuva za sebe."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1547
+#, elixir-autogen, elixir-format
+msgid "The function %{name} takes something else."
+msgstr "Funkcija %{name} prima nešto drugo."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1538
+#, elixir-autogen, elixir-format
+msgid "The process has nothing named %{name}."
+msgstr "Proces nema ništa pod imenom %{name}."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1541
+#, elixir-autogen, elixir-format
+msgid "There is no %{name} in that."
+msgstr "Tu nema %{name}."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1544
+#, elixir-autogen, elixir-format
+msgid "There is no function %{name}."
+msgstr "Nema funkcije %{name}."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1535
+#, elixir-autogen, elixir-format
+msgid "This cannot be read from its character %{at} on."
+msgstr "Ovo ne može da se pročita od znaka %{at} nadalje."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:281
+#, elixir-autogen, elixir-format
+msgid "This drawing now reads what started it as %{example}, and its conditions are expressions. Look it over and save it."
+msgstr "Ovaj crtež sada ono što ga je pokrenulo čita kao %{example}, a uslovi su mu izrazi. Pregledaj ga i sačuvaj."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1565
+#, elixir-autogen, elixir-format
+msgid "a choice"
+msgstr "izbor"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1563
+#, elixir-autogen, elixir-format
+msgid "a date"
+msgstr "datum"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1564
+#, elixir-autogen, elixir-format
+msgid "a date and time"
+msgstr "datum i vreme"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1567
+#, elixir-autogen, elixir-format
+msgid "a list"
+msgstr "lista"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1560
+#, elixir-autogen, elixir-format
+msgid "a number"
+msgstr "broj"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:662
+#, elixir-autogen, elixir-format
+msgid "a number grew too large"
+msgstr "broj je postao prevelik"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1570
+#, elixir-autogen, elixir-format
+msgid "a set of fields"
+msgstr "skup polja"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1561
+#, elixir-autogen, elixir-format
+msgid "a text"
+msgstr "tekst"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1562
+#, elixir-autogen, elixir-format
+msgid "a yes or no"
+msgstr "da ili ne"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1566
+#, elixir-autogen, elixir-format
+msgid "an entity"
+msgstr "entitet"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:665
+#, elixir-autogen, elixir-format
+msgid "an expression could not be read"
+msgstr "izraz nije mogao da se pročita"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:660
+#, elixir-autogen, elixir-format
+msgid "it counted with what is no number"
+msgstr "računalo je sa nečim što nije broj"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:661
+#, elixir-autogen, elixir-format
+msgid "it divided by zero"
+msgstr "delilo je nulom"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:664
+#, elixir-autogen, elixir-format
+msgid "it took for a day what is none"
+msgstr "uzelo je za datum nešto što to nije"
+
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:663
+#, elixir-autogen, elixir-format
+msgid "it took for a list what is none"
+msgstr "uzelo je za listu nešto što to nije"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1572
+#, elixir-autogen, elixir-format
+msgid "nothing"
+msgstr "ništa"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1573
+#, elixir-autogen, elixir-format
+msgid "something else"
+msgstr "nešto drugo"
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1244
+#, elixir-autogen, elixir-format
+msgid "An expression that is true or false: compare with %{compare}, join with %{join}, and write a text between quotes."
+msgstr "Izraz koji je tačan ili netačan: poredi sa %{compare}, spajaj sa %{join}, a tekst piši pod navodnicima."

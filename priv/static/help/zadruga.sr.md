@@ -103,7 +103,7 @@ Spakovane porudžbine čekaju subotu. Neka u subotu ujutru jedan proces javi svi
 1. U Porudžbinama nacrtaj proces „Dan preuzimanja“, a pod **Kad** izaberi **dođe zadato vreme**. Na početnom koraku izaberi **Svake nedelje**, dan **sub**, u 8:00.
 2. Dodirni **+** ispod početka i izaberi **Pošalji signal**. Za **Signal** upiši „subota“, dodirni **Dodaj polje**, polje nazovi „mesto“ i upiši „u dvorištu škole“. Sačuvaj i uključi.
 3. U „Pakovanju porudžbina“, na strelici ispod poruke „Spakovano je…“, dodaj korak **Čekaj signal** i za **Signal** upiši „subota“.
-4. Ispod njega dodaj **Poruku** u podgrupu: upiši „Danas je preuzimanje, od 9 do 11, “ i dodirni `receive-1.mesto` ispod polja. Dodirni **Sačuvaj**.
+4. Ispod njega dodaj **Poruku** u podgrupu: upiši „Danas je preuzimanje, od 9 do 11, “ i dodirni `receive_1.mesto` ispod polja. Dodirni **Sačuvaj**.
 
 ![Pakovanje čeka signal subota](zadruga-signal)
 

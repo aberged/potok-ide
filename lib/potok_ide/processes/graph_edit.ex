@@ -9,6 +9,11 @@ defmodule PotokIde.Processes.GraphEdit do
 
   While drawing, every flow carries a `"key"` of its own, so it can be picked
   and changed although flows have no ids; `Graph.normalize/1` drops it.
+
+  It draws in today's language (`"v" => 2`): a new step's id is a name an
+  expression may use, such as `task_2`, and a condition is an expression. A
+  drawing in the first language is turned into it before it is drawn on
+  (`Graph.upgrade/1`).
   Texts that the editor sees first (a message, the outcomes of a decision)
   come from the caller, in the editor's language.
   """
@@ -37,6 +42,7 @@ defmodule PotokIde.Processes.GraphEdit do
   @doc "A graph that only starts and ends, ready to draw on."
   def new do
     %{
+      "v" => 2,
       "nodes" => [
         %{"id" => "start", "type" => "startEvent"},
         %{"id" => "end", "type" => "endEvent"}
@@ -46,13 +52,13 @@ defmodule PotokIde.Processes.GraphEdit do
   end
 
   @doc "A saved graph with a key on every flow, to draw on."
-  def with_keys(%{"nodes" => nodes, "flows" => flows}) do
+  def with_keys(%{"flows" => flows} = graph) do
     flows =
       flows
       |> Enum.with_index(1)
       |> Enum.map(fn {flow, i} -> Map.put(flow, "key", "f#{i}") end)
 
-    %{"nodes" => nodes, "flows" => flows}
+    %{graph | "flows" => flows}
   end
 
   @doc "The flow with `key`, or nil."
@@ -66,9 +72,9 @@ defmodule PotokIde.Processes.GraphEdit do
   and it leads on to where the flow led. A decision leaves by each of its
   outcomes, a condition by one condition and by default, all to that same
   place. `defaults` holds the step's first texts and role, and the process
-  a call starts with the fields it takes, and the group's field a step sets:
-  `%{text, name, role, outcomes, field, process, call_fields, group_field,
-  signal}`.
+  a call starts with the fields it takes, the group's field a step sets,
+  and what a new condition asks: `%{text, name, role, outcomes, condition,
+  process, call_fields, group_field, signal}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -165,7 +171,8 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp add_exits(graph, %{"id" => id}, to, _d), do: add_flow(graph, %{"from" => id, "to" => to})
 
-  defp condition(d), do: %{"field" => d[:field] || "field", "op" => "=", "value" => ""}
+  # A new condition holds until its editor writes what it asks.
+  defp condition(d), do: %{"expr" => d[:condition] || "true"}
 
   @doc """
   One more branch for a decision (a new `outcome`) or a condition (a new
@@ -516,19 +523,11 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp put_label(node, _label), do: Map.delete(node, "label")
 
-  @doc "Changes the condition of a condition's flow."
-  def update_condition(graph, key, %{"field" => field, "op" => op} = condition) do
+  @doc "Changes what a condition's flow asks: an expression that is true or false."
+  def update_condition(graph, key, %{"expr" => expression}) when is_binary(expression) do
     case flow(graph, key) do
       %{"condition" => _old} ->
-        condition =
-          if op == "empty",
-            do: %{"field" => String.trim(field), "op" => "empty"},
-            else: %{
-              "field" => String.trim(field),
-              "op" => op,
-              "value" => condition["value"] || ""
-            }
-
+        condition = %{"expr" => String.trim(expression)}
         {:ok, update_flow!(graph, key, &Map.put(&1, "condition", condition))}
 
       _other ->
@@ -536,17 +535,19 @@ defmodule PotokIde.Processes.GraphEdit do
     end
   end
 
+  def update_condition(_graph, _key, _condition), do: {:error, :not_a_condition}
+
   # ---------
   # Helpers
   # ---------
 
-  # A new id for a step of `kind`, such as `task-2`.
+  # A new id for a step of `kind`, such as `task_2`.
   defp fresh_id(graph, kind) do
     prefix = Map.fetch!(@prefixes, kind)
     ids = MapSet.new(graph["nodes"], & &1["id"])
 
     Stream.iterate(1, &(&1 + 1))
-    |> Stream.map(&"#{prefix}-#{&1}")
+    |> Stream.map(&"#{prefix}_#{&1}")
     |> Enum.find(&(not MapSet.member?(ids, &1)))
   end
 

@@ -66,7 +66,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     assert has_element?(lv, "#process-outline-end")
 
     insert(lv, "f1", "task")
-    assert has_element?(lv, "#process-outline-task-1")
+    assert has_element?(lv, "#process-outline-task_1")
     assert has_element?(lv, "#process-node-panel")
     assert has_element?(lv, "#process-add-outcome")
 
@@ -76,8 +76,8 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     })
     |> render_change()
 
-    assert has_element?(lv, "#process-outline-task-1", "1 week")
-    assert has_element?(lv, "#process-outline-push-1")
+    assert has_element?(lv, "#process-outline-task_1", "1 week")
+    assert has_element?(lv, "#process-outline-push_1")
 
     lv
     |> form("#process-editor-meta", %{"meta" => %{"name" => "Savet odlučuje"}})
@@ -194,7 +194,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
     lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
     insert(lv, "f1", "call")
-    assert has_element?(lv, "#process-outline-call-1", "Call Majstor")
+    assert has_element?(lv, "#process-outline-call_1", "Call Majstor")
     assert has_element?(lv, "#process-call-field-kvar")
 
     lv
@@ -213,7 +213,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     |> element("#process-field-fields\\.kvar-0")
     |> render_click()
 
-    assert has_element?(lv, "#process-outline-call-1", "3 days")
+    assert has_element?(lv, "#process-outline-call_1", "3 days")
 
     lv |> element("#process-editor-save") |> render_click()
 
@@ -242,7 +242,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     })
     |> render_change()
 
-    assert has_element?(lv, "#process-outline-set-1", "kvarova")
+    assert has_element?(lv, "#process-outline-set_1", "kvarova")
 
     insert(lv, "f2", "message")
     assert has_element?(lv, "#process-field-text-3", "group.kvarova")
@@ -276,7 +276,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     |> render_change()
 
     lv |> element("#process-field-signal_fields\\.0-0") |> render_click()
-    assert has_element?(lv, "#process-outline-signal-1", "Signal subota")
+    assert has_element?(lv, "#process-outline-signal_1", "Signal subota")
 
     lv |> element("#process-editor-save") |> render_click()
 
@@ -293,7 +293,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
     lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
     insert(lv, "f1", "receive")
-    assert has_element?(lv, "#process-outline-receive-1", "subota")
+    assert has_element?(lv, "#process-outline-receive_1", "subota")
 
     lv
     |> form("#process-element-form", %{
@@ -305,9 +305,9 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     })
     |> render_change()
 
-    assert has_element?(lv, "#process-outline-receive-1", "2 days")
+    assert has_element?(lv, "#process-outline-receive_1", "2 days")
     insert(lv, "f2", "message")
-    assert has_element?(lv, "#process-element-form button", "receive-1.mesto")
+    assert has_element?(lv, "#process-element-form button", "receive_1.mesto")
 
     # And a third starts on it.
     {:ok, lv, _html} =
@@ -347,11 +347,11 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     lv |> element("#process-add-outcome") |> render_click()
     refute has_element?(lv, "#process-editor-error")
 
-    render_hook(canvas(lv), "process_editor_select", %{"node" => "message-1"})
+    render_hook(canvas(lv), "process_editor_select", %{"node" => "message_1"})
     lv |> element("#process-node-delete") |> render_click()
 
-    refute has_element?(lv, "#process-outline-message-1")
-    assert has_element?(lv, "#process-outline-task-1")
+    refute has_element?(lv, "#process-outline-message_1")
+    assert has_element?(lv, "#process-outline-task_1")
     refute has_element?(lv, "#process-editor-error")
   end
 
@@ -399,6 +399,149 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
     second |> element("#process-editor-keep-mine") |> render_click()
     assert %AppProcess{name: "Drugi menja"} = Repo.get!(AppProcess, row.id)
+  end
+
+  describe "today's language" do
+    # A fault by hand, written before texts held expressions.
+    defp first_language do
+      %{
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{
+            "id" => "poruka-1",
+            "type" => "serviceTask",
+            "action" => "message",
+            "text" => "Kvar: {{title}}"
+          },
+          %{"id" => "uslov", "type" => "exclusiveGateway"},
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "poruka-1"},
+          %{"from" => "poruka-1", "to" => "uslov"},
+          %{
+            "from" => "uslov",
+            "to" => "kraj",
+            "condition" => %{"field" => "title", "op" => "=", "value" => "lift"}
+          },
+          %{"from" => "uslov", "to" => "kraj", "default" => true}
+        ]
+      }
+    end
+
+    test "a drawing in the first language is turned into it as its editor opens it", ctx do
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "name" => "Prijava",
+          "graph" => first_language(),
+          "layout" => %{"nodes" => %{"poruka-1" => [40, 200]}}
+        })
+
+      {:ok, row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+      path = ~p"/groups/#{ctx.group.id}/processes?process=#{row.id}"
+
+      # Whoever only looks sees it as it is kept.
+      {:ok, member_lv, _html} = live_as(ctx.member_account, path)
+      refute has_element?(member_lv, "#process-editor-upgraded")
+      assert has_element?(member_lv, "#process-outline-poruka-1", "Kvar: {{title}}")
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, path)
+      assert has_element?(lv, "#process-editor-upgraded")
+      assert has_element?(lv, "#process-outline-poruka_1", "Kvar: {{start.title}}")
+      refute has_element?(lv, "#process-editor-error")
+      refute has_element?(lv, "#process-editor-save[disabled]")
+
+      render_hook(canvas(lv), "process_editor_select", %{"flow" => "f3"})
+      assert has_element?(lv, "#process-flow-form textarea", ~s|start.title = "lift"|)
+
+      lv |> element("#process-editor-save") |> render_click()
+      refute has_element?(lv, "#process-editor-upgraded")
+
+      saved = Repo.get!(AppProcess, row.id)
+      assert %{"v" => 2} = saved.graph
+      assert Enum.map(saved.graph["nodes"], & &1["id"]) == ~w(start poruka_1 uslov kraj)
+      assert saved.layout == %{"nodes" => %{"poruka_1" => [40, 200]}}
+
+      assert %{"condition" => %{"expr" => ~s|start.title = "lift"|}} =
+               Enum.at(saved.graph["flows"], 2)
+    end
+
+    test "a condition asks an expression, which a mistake stops and a name helps to write",
+         ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+      insert(lv, "f1", "gateway")
+      refute has_element?(lv, "#process-editor-error")
+
+      render_hook(canvas(lv), "process_editor_select", %{"flow" => "f2"})
+      assert has_element?(lv, "#process-flow-form textarea", "true")
+
+      lv
+      |> form("#process-flow-form", %{"flow" => %{"expr" => "naslov > 1"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "The process has nothing named naslov.")
+      assert has_element?(lv, "#process-editor-save[disabled]")
+
+      lv
+      |> form("#process-flow-form", %{"flow" => %{"expr" => "start.title + 1 > 2"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      lv
+      |> form("#process-flow-form", %{"flow" => %{"expr" => "start.title ="}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "This cannot be read")
+
+      # The names the process has are offered, as an expression writes them.
+      lv |> form("#process-flow-form", %{"flow" => %{"expr" => "true"}}) |> render_change()
+      assert has_element?(lv, "#process-field-expr-0", "start.title")
+      lv |> element("#process-field-expr-0") |> render_click()
+      assert has_element?(lv, "#process-flow-form textarea", "start.title")
+
+      lv
+      |> form("#process-flow-form", %{"flow" => %{"expr" => ~s|start.title = "lift"|}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{graph: %{"v" => 2, "zone" => "Etc/UTC"} = graph}] = drawn(ctx.group)
+
+      assert Enum.any?(
+               graph["flows"],
+               &(&1["condition"] == %{"expr" => ~s|start.title = "lift"|})
+             )
+    end
+
+    test "a text names what the process has, and is told when it does not", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+      insert(lv, "f1", "message")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "Kvar: {{title}}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "The process has nothing named title.")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "Kvar:"}})
+      |> render_change()
+
+      # A name goes into a text between its braces.
+      assert has_element?(lv, "#process-field-text-0", "start.title")
+      lv |> element("#process-field-text-0") |> render_click()
+      assert has_element?(lv, "#process-outline-message_1", "Kvar: {{start.title}}")
+      refute has_element?(lv, "#process-editor-error")
+    end
   end
 
   test "members look at a drawing that is on, and change nothing", ctx do

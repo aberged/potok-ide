@@ -93,7 +93,7 @@ Da prijava kvara ne ostane zatrpana u razgovoru, napravi proces koji stanari pok
 
 1. U Zgradi Cvetna 12 otvori meni grupe, izaberi **Procesi** i dodirni **Nacrtaj proces**. Upiši „Prijava kvara“, a pod **Kad** izaberi **ga neko pokrene**.
 2. Dodirni početni korak: pod **Ko sme da ga pokrene** ostavi **Svi**.
-3. Dodirni **+** ispod početka i izaberi **Podgrupa**. Za ime upiši „Kvar: “ i dodirni `title` ispod polja. Pod **Ko je vodi** ostavi vlasnika procesa i onoga ko ga je pokrenuo.
+3. Dodirni **+** ispod početka i izaberi **Podgrupa**. Za ime upiši „Kvar: “ i dodirni `start.title` ispod polja. Pod **Ko je vodi** ostavi vlasnika procesa i onoga ko ga je pokrenuo.
 4. Dodirni **+** ispod podgrupe i izaberi **Odluka**. Ishode nazovi „Popravljeno“ i „Zovemo majstora“.
 5. Na strelici svakog ishoda dodaj **Poruku** u podgrupu, recimo „Popravljeno je, hvala na prijavi.“
 6. Dodirni **Sačuvaj**, pa **Uključi**.
@@ -113,8 +113,8 @@ Dogovor sa majstorom ima svoje korake, a treba i drugim procesima, ne samo prija
 1. Nacrtaj proces „Majstor“, a pod **Kad** izaberi **ga pozove drugi proces**. Na početnom koraku, pod **Polja koja prima**, upiši „kvar“.
 2. Dodaj **Odluku** sa ishodima „Dogovoreno“ i „Nema termina“. Dodirni strelicu ishoda „Nema termina“ i pod **Vodi do** izaberi **Novi kraj**. Krajeve nazovi isto kao ishode: dodirni kraj i upiši **Ime na crtežu**.
 3. Dodirni **Sačuvaj**, pa **Uključi**.
-4. U „Prijavi kvara“, na strelici ispod poruke ishoda „Zovemo majstora“, dodaj korak **Pozovi proces** i izaberi „Majstor“. Pod **Šta dobija**, za polje `kvar` dodirni `title`. Ostavi **Čekaj da se završi**, a za rok upiši 7 dana.
-5. Ispod poziva dodaj **Uslov**: polje `call-1.outcome` jednako „Dogovoreno“ vodi na poruku „Majstor dolazi.“, a **inače** na poruku „Majstor još nema termin.“
+4. U „Prijavi kvara“, na strelici ispod poruke ishoda „Zovemo majstora“, dodaj korak **Pozovi proces** i izaberi „Majstor“. Pod **Šta dobija**, za polje `kvar` dodirni `start.title`. Ostavi **Čekaj da se završi**, a za rok upiši 7 dana.
+5. Ispod poziva dodaj **Uslov**. Dodirni njegovu prvu strelicu i pod **Ide ovuda kada** upiši `call_1.outcome = "Dogovoreno"`: ta strelica vodi na poruku „Majstor dolazi.“, a **inače** na poruku „Majstor još nema termin.“
 
 ![Prijava kvara poziva Majstora](zgrada-proces-poziv)
 

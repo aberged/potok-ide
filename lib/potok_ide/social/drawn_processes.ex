@@ -17,6 +17,10 @@ defmodule PotokIde.Social.DrawnProcesses do
     roles the group has, calling only the group's drawn processes that start
     when another calls them, with the fields they take. A process another
     one calls is not deleted.
+  - A graph in today's language (`"v" => 2`) is also checked for what it
+    says (`Processes.Check`): its expressions name what the process has. One
+    in the first language is kept as it comes, as the runs that started with
+    it are.
   - A new drawing is off. Switching it on brings its profile into the app's
     group; switching it off cancels its instances that run or wait and takes
     the profile out, as removing an app's rule does (`AppProcesses.stop/2`).
@@ -25,7 +29,7 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.{Engine, Graph, Scheduler, Triggers}
+  alias PotokIde.Processes.{Check, Engine, Graph, Scheduler, Triggers}
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -161,6 +165,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     with {:ok, name} <- name(attrs["name"]),
          {:ok, graph} <- graph(attrs["graph"]),
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
+         {:ok, graph} <- checked(graph, trigger, config),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
@@ -214,6 +219,16 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
+  # What a graph of today says, checked against what its trigger hands a
+  # run, which is written into it (`Check`); one in the first language says
+  # nothing to check.
+  defp checked(graph, trigger, config) do
+    case Check.run(graph, %{entry: Triggers.entry(trigger, config)}) do
+      {:ok, graph} -> {:ok, graph}
+      {:error, {path, reason}} -> {:error, {:invalid_graph, path, reason}}
+    end
+  end
+
   @doc """
   Changes the `name`, `graph`, `layout` and the trigger's settings
   (`trigger_config`; the trigger itself stays) of a drawn process, from the
@@ -238,6 +253,12 @@ defmodule PotokIde.Social.DrawnProcesses do
           end
 
         known_trigger_roles!(row.trigger, config, access)
+
+        graph =
+          case checked(graph, row.trigger, config) do
+            {:ok, graph} -> graph
+            {:error, reason} -> Repo.rollback(reason)
+          end
 
         row
         |> Ecto.Changeset.change(

@@ -46,7 +46,24 @@ defmodule PotokIde.Processes.Graph do
 
   Errors come as `{path, reason}`, the path counted from the graph, such as
   `{"nodes.3.outcomes", :no_flow}`.
+
+  ## Two languages
+
+  A graph that names no version speaks the first language, described above
+  (`PotokIde.Processes.Legacy`): an app's own process always does. A process
+  drawn in Potok speaks today's with `"v" => 2`:
+
+  - Texts hold expressions between `{{` and `}}`, and a condition is one
+    expression, `%{"expr" => "ukupno > 10"}` (`PotokIde.Processes.Expr`).
+  - An id is a name an expression may use: small letters, digits and `_`,
+    and none of the words `PotokIde.Processes.Scope` keeps.
+  - `zone` is the time zone it reads days and hours in, and `entry` and
+    `types` are what `PotokIde.Processes.Check` wrote into it.
+
+  `upgrade/1` turns the first into today's.
   """
+
+  alias PotokIde.Processes.{Legacy, Scope}
 
   @max_nodes 100
   @max_flows 200
@@ -61,6 +78,7 @@ defmodule PotokIde.Processes.Graph do
   @min_seconds 60
   @max_seconds 366 * 24 * 3600
   @id_format ~r/^[a-z][a-z0-9_-]{0,39}$/
+  @name_id_format ~r/^[a-z][a-z0-9_]{0,39}$/
   @field_format ~r/^[\p{L}\p{Nd}_.-]{1,64}$/u
   @duration_format ~r/^P(?:(\d+)W|(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?)$/
   @ops ~w(= != < > empty)
@@ -87,7 +105,7 @@ defmodule PotokIde.Processes.Graph do
   """
   def normalize(graph, opts \\ [])
 
-  def normalize(%{"nodes" => nodes, "flows" => flows}, opts)
+  def normalize(%{"nodes" => nodes, "flows" => flows} = graph, opts)
       when is_list(nodes) and is_list(flows) do
     drawn? = Keyword.get(opts, :drawn, false)
 
@@ -102,17 +120,152 @@ defmodule PotokIde.Processes.Graph do
         {:error, {"flows", :too_many}}
 
       true ->
-        with {:ok, nodes} <- each(nodes, "nodes", &element(&1, &2, drawn?)),
+        with {:ok, version} <- version(graph, drawn?),
+             {:ok, nodes} <- each(nodes, "nodes", &element(&1, &2, drawn?, version)),
              :ok <- unique_ids(nodes),
              ids = MapSet.new(nodes, & &1["id"]),
-             {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids)),
-             :ok <- shape(nodes, flows) do
-          {:ok, %{"nodes" => nodes, "flows" => flows}}
+             {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids, version)),
+             :ok <- shape(nodes, flows),
+             {:ok, kept} <- kept(graph, version) do
+          {:ok, Map.merge(kept, %{"nodes" => nodes, "flows" => flows})}
         end
     end
   end
 
   def normalize(_graph, _opts), do: {:error, {"", :invalid}}
+
+  # Only a process drawn in Potok speaks today's language (`"v" => 2`); a
+  # graph that names no version speaks the first (`Legacy`).
+  defp version(%{"v" => 2}, true), do: {:ok, 2}
+  defp version(%{"v" => _other}, _drawn?), do: {:error, {"v", :invalid}}
+  defp version(_graph, _drawn?), do: {:ok, 1}
+
+  # What a graph of today keeps beside its elements: its version, the time
+  # zone it reads days and hours in, and what `Check.run/2` wrote into it.
+  defp kept(_graph, 1), do: {:ok, %{}}
+
+  defp kept(graph, 2) do
+    zone = Map.get(graph, "zone", "Etc/UTC")
+
+    if is_binary(zone) and match?({:ok, _now}, DateTime.now(zone)) do
+      {:ok,
+       %{"v" => 2, "zone" => zone}
+       |> put_map("entry", graph["entry"])
+       |> put_map("types", graph["types"])}
+    else
+      {:error, {"zone", :invalid}}
+    end
+  end
+
+  defp put_map(map, key, %{} = value), do: Map.put(map, key, value)
+  defp put_map(map, _key, _none), do: map
+
+  @doc """
+  A graph in today's language (`"v" => 2`, `PotokIde.Processes.Expr`), from
+  one that names no version, saying the same: a field of what set the
+  process going is now read under the id of its start (`{{naslov}}` becomes
+  `{{start.naslov}}`), a condition is an expression (`start.sprat > "2"`),
+  and the ids of its elements hold `_` where they held `-`, as an id is now
+  a name an expression may use. Flows keep the keys an editor gave them.
+
+  Returns `{graph, ids}`, `ids` being the new id of each element by its old
+  one. A graph of today comes back as it is.
+  """
+  def upgrade(%{"v" => 2, "nodes" => nodes} = graph),
+    do: {graph, Map.new(nodes, &{&1["id"], &1["id"]})}
+
+  def upgrade(%{"nodes" => nodes, "flows" => flows} = graph) do
+    ids = new_ids(nodes)
+    path = &upgrade_path(&1, ids, ids[start(graph)])
+
+    nodes = Enum.map(nodes, &upgrade_node(&1, ids, path))
+
+    flows =
+      Enum.map(flows, fn flow ->
+        flow = %{flow | "from" => ids[flow["from"]], "to" => ids[flow["to"]]}
+
+        case flow do
+          %{"condition" => condition} ->
+            %{flow | "condition" => upgrade_condition(condition, path)}
+
+          _other ->
+            flow
+        end
+      end)
+
+    {Map.merge(graph, %{"v" => 2, "nodes" => nodes, "flows" => flows}), ids}
+  end
+
+  # Each id as a name: `_` for `-`, and aside from the words expressions keep.
+  defp new_ids(nodes) do
+    Enum.reduce(nodes, %{}, fn %{"id" => id}, ids ->
+      base = String.replace(id, "-", "_")
+      base = if base in Scope.reserved(), do: base <> "_1", else: base
+      taken = ids |> Map.values() |> MapSet.new()
+
+      new =
+        Stream.iterate(1, &(&1 + 1))
+        |> Stream.map(fn
+          1 -> base
+          n -> String.slice(base, 0, 36) <> "_#{n}"
+        end)
+        |> Enum.find(&(not MapSet.member?(taken, &1)))
+
+      Map.put(ids, id, new)
+    end)
+  end
+
+  defp upgrade_node(%{"id" => id} = node, ids, path) do
+    node = %{node | "id" => ids[id]}
+    text = &Regex.replace(Legacy.placeholder(), &1, fn _whole, field -> "{{#{path.(field)}}}" end)
+
+    case node do
+      %{"action" => "message", "text" => old, "in" => target} ->
+        %{node | "text" => text.(old), "in" => Map.get(ids, target, target)}
+
+      %{"action" => action, "text" => old} when action in ~w(message push) ->
+        %{node | "text" => text.(old)}
+
+      %{"action" => "subgroup", "name" => old} ->
+        %{node | "name" => text.(old)}
+
+      %{"action" => "set", "value" => old} ->
+        %{node | "value" => text.(old)}
+
+      %{"action" => "signal", "fields" => fields} ->
+        %{node | "fields" => Enum.map(fields, &%{&1 | "value" => text.(&1["value"])})}
+
+      %{"type" => "callActivity", "fields" => fields} ->
+        %{node | "fields" => Map.new(fields, fn {name, old} -> {name, text.(old)} end)}
+
+      _other ->
+        node
+    end
+  end
+
+  # A path of the first language as an expression: under the id of an
+  # element, under `group`, or else a field of what set the process going.
+  defp upgrade_path(path, ids, start) do
+    [first | rest] = String.split(path, ".")
+
+    cond do
+      first == "group" -> Enum.reduce(rest, "group", &Scope.path(&2, &1))
+      is_map_key(ids, first) -> Enum.reduce(rest, ids[first], &Scope.path(&2, &1))
+      true -> Enum.reduce([first | rest], start, &Scope.path(&2, &1))
+    end
+  end
+
+  # The value stays a text, as it always compared: as numbers when both
+  # sides are numbers.
+  defp upgrade_condition(%{"field" => field, "op" => "empty"}, path),
+    do: %{"expr" => "empty(#{path.(field)})"}
+
+  defp upgrade_condition(%{"field" => field, "op" => op, "value" => value}, path) do
+    value = value |> to_string() |> String.replace(["\\", "\""], &("\\" <> &1))
+    %{"expr" => ~s(#{path.(field)} #{op} "#{value}")}
+  end
+
+  defp upgrade_condition(condition, _path), do: condition
 
   @doc "The permissions the graph's actions need, in a fixed order; none for nil."
   def permissions(nil), do: []
@@ -251,15 +404,27 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  defp element(%{"id" => id, "type" => type} = node, path, drawn?) when is_binary(id) do
-    with true <- Regex.match?(@id_format, id) || {:error, {path <> ".id", :invalid}},
+  defp element(%{"id" => id, "type" => type} = node, path, drawn?, version) when is_binary(id) do
+    with :ok <- id(id, path <> ".id", version),
          {:ok, element} <- typed(type, node, path, %{"id" => id, "type" => type}, drawn?),
          {:ok, label} <- label(node["label"], path <> ".label") do
       {:ok, put_some(element, "label", label)}
     end
   end
 
-  defp element(_node, path, _drawn?), do: {:error, {path, :invalid}}
+  defp element(_node, path, _drawn?, _version), do: {:error, {path, :invalid}}
+
+  # In today's language an id is a name an expression may use.
+  defp id(id, path, 1),
+    do: if(Regex.match?(@id_format, id), do: :ok, else: {:error, {path, :invalid}})
+
+  defp id(id, path, 2) do
+    cond do
+      not Regex.match?(@name_id_format, id) -> {:error, {path, :invalid}}
+      id in Scope.reserved() -> {:error, {path, :reserved}}
+      true -> :ok
+    end
+  end
 
   defp typed(type, _node, _path, base, _drawn?)
        when type in ~w(startEvent endEvent exclusiveGateway),
@@ -534,20 +699,20 @@ defmodule PotokIde.Processes.Graph do
   # Flows
   # ---------
 
-  defp flow(%{"from" => from, "to" => to} = flow, path, ids)
+  defp flow(%{"from" => from, "to" => to} = flow, path, ids, version)
        when is_binary(from) and is_binary(to) do
     cond do
       not MapSet.member?(ids, from) -> {:error, {path <> ".from", :unknown}}
       not MapSet.member?(ids, to) -> {:error, {path <> ".to", :unknown}}
-      true -> flow_kind(flow, path, %{"from" => from, "to" => to})
+      true -> flow_kind(flow, path, %{"from" => from, "to" => to}, version)
     end
   end
 
-  defp flow(_flow, path, _ids), do: {:error, {path, :invalid}}
+  defp flow(_flow, path, _ids, _version), do: {:error, {path, :invalid}}
 
   # A flow is plain, or leaves a task by an outcome or its deadline, or leaves
   # a gateway by a condition or as its default.
-  defp flow_kind(flow, path, base) do
+  defp flow_kind(flow, path, base, version) do
     case Map.take(flow, ~w(outcome deadline condition default)) do
       empty when map_size(empty) == 0 ->
         {:ok, base}
@@ -562,7 +727,7 @@ defmodule PotokIde.Processes.Graph do
         {:ok, Map.put(base, "default", true)}
 
       %{"condition" => condition} = kind when map_size(kind) == 1 ->
-        with {:ok, condition} <- condition(condition, path <> ".condition") do
+        with {:ok, condition} <- condition(condition, path <> ".condition", version) do
           {:ok, Map.put(base, "condition", condition)}
         end
 
@@ -571,16 +736,26 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  defp condition(%{"field" => field, "op" => "empty"}, path) when is_binary(field),
+  # Today a condition is one expression, which `Check` reads; in the first
+  # language it compares one field.
+  defp condition(%{"expr" => expression}, path, 2) when is_binary(expression) do
+    expression = String.trim(expression)
+
+    if String.length(expression) in 1..@max_template,
+      do: {:ok, %{"expr" => expression}},
+      else: {:error, {path, :invalid}}
+  end
+
+  defp condition(%{"field" => field, "op" => "empty"}, path, 1) when is_binary(field),
     do: field(field, path, %{"field" => field, "op" => "empty"})
 
-  defp condition(%{"field" => field, "op" => op, "value" => value}, path)
+  defp condition(%{"field" => field, "op" => op, "value" => value}, path, 1)
        when is_binary(field) and op in @ops and
               (is_binary(value) or is_number(value) or is_boolean(value)) do
     field(field, path, %{"field" => field, "op" => op, "value" => value})
   end
 
-  defp condition(_condition, path), do: {:error, {path, :invalid}}
+  defp condition(_condition, path, _version), do: {:error, {path, :invalid}}
 
   defp field(field, path, condition) do
     if Regex.match?(@field_format, field),
