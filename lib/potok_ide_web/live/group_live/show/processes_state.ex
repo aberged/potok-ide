@@ -11,7 +11,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     the drawings that are off, what a process may not do, and the failed
     instances, to take up again or cancel.
   - The people of a task's role decide it here, with the value as far as
-    they may read it.
+    they may read it. A form that waits for the viewer is listed here too,
+    and filled in in its own dialog (`ProcessForm`).
   - The app's editors define the group's entities here
     (`PotokIde.Processes.GroupEntities`), in a form over the tab
     (`processes_entity`).
@@ -27,7 +28,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   alias PotokIde.Processes
   alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
-  alias PotokIdeWeb.GroupLive.Show.ProcessEditorState
+  alias PotokIdeWeb.GroupLive.Show.{ProcessEditorState, ProcessForm}
 
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @reloading_events [:config, :process, :drawn_process, :created, :entity]
@@ -456,7 +457,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   defp start_attributes(_process), do: nil
 
   defp start_error({:invalid_field, name, reason}),
-    do: gettext("%{name}: %{problem}.", name: name, problem: field_problem(reason))
+    do: gettext("%{name}: %{problem}.", name: name, problem: ProcessForm.field_problem(reason))
 
   defp start_error(:invalid_title), do: gettext("Give it a title of up to 120 characters.")
   defp start_error(:invalid_text), do: gettext("The text is at most 2000 characters.")
@@ -464,13 +465,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   defp start_error(:not_permitted), do: gettext("You may not start this process.")
   defp start_error({:rate_limited, ms}), do: PotokIdeWeb.RateLimited.message(ms)
   defp start_error(_reason), do: gettext("That did not work.")
-
-  defp field_problem(:required), do: gettext("must be filled in")
-  defp field_problem(:not_a_number), do: gettext("takes a number")
-  defp field_problem(:not_a_date), do: gettext("takes a date")
-  defp field_problem(:not_a_datetime), do: gettext("takes a date and a time")
-  defp field_problem(:not_an_option), do: gettext("takes one of its choices")
-  defp field_problem(_reason), do: gettext("is not right")
 
   defp instance_call(socket, id, fun) do
     case Integer.parse(to_string(id)) do

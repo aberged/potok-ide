@@ -275,7 +275,7 @@ defmodule PotokIde.Processes do
         id: instance.id,
         process: process,
         element: instance.element,
-        label: Graph.label(task),
+        label: label(task, instance.graph),
         outcomes: task["outcomes"] || [],
         form?: form?,
         attributes:
@@ -296,6 +296,13 @@ defmodule PotokIde.Processes do
       })
     end)
   end
+
+  # A form with no name of its own goes by the entity it asks for.
+  defp label(%{"type" => "formTask", "entity" => id} = form, graph)
+       when not is_map_key(form, "label"),
+       do: get_in(graph, ["types", to_string(id), "name"]) || Graph.label(form)
+
+  defp label(task, _graph), do: Graph.label(task)
 
   # What set a run going, as its task card shows it. A value of a collection
   # is read by its own collection's rule, also in a run another process

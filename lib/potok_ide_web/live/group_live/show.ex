@@ -49,6 +49,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     PollsState,
     PollsTab,
     ProcessEditorState,
+    ProcessForm,
     ProcessesState,
     ProcessesTab,
     RolesTab,
@@ -812,6 +813,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <TagComponents.tag_editor editor={@tag_editor} />
       <CreateMenu.menu menu={@group_create_menu} />
       <PollForm.dialog state={@poll_form} />
+      <ProcessForm.dialog state={@process_form} />
       <ValueSearch.dialog
         state={@value_search}
         results={@streams.value_search_results}
@@ -959,6 +961,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> CalendarState.init(params)
          |> RootMapState.init()
          |> PollForm.init()
+         |> ProcessForm.init()
          |> PollsState.init(params)
          |> NoticesState.init(params)
          |> ProcessesState.init(params)
@@ -1070,6 +1073,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("processes_" <> _ = event, params, socket),
     do: ProcessesState.handle_event(event, params, socket)
+
+  def handle_event("process_form_" <> _ = event, params, socket),
+    do: ProcessForm.handle_event(event, params, socket)
 
   def handle_event("process_editor_" <> _ = event, params, socket),
     do: ProcessEditorState.handle_event(event, params, socket)
@@ -2697,6 +2703,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
       if event in [:config, :process, :drawn_process],
         do: assign_group_processes(socket),
         else: socket
+
+    # A run that came to ask the viewer a form opens it for them.
+    socket = if event == :process, do: ProcessForm.moved(socket, payload), else: socket
 
     {:noreply, ProcessesState.app_value(socket, event)}
   end

@@ -15,6 +15,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     ProcessEditor,
     ProcessEditorState,
     ProcessEntities,
+    ProcessForm,
     RolesTab
   }
 
@@ -292,12 +293,31 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
     <ol :if={@task.log != []} class="mt-2 space-y-1 px-1 text-xs text-base-content/65">
       <li :for={{entry, i} <- Enum.with_index(@task.log)} id={"process-task-#{@task.id}-log-#{i}"}>
-        <span class="font-semibold">{entry.by.username || gettext("someone")}</span> → {entry.outcome}
+        <span class="font-semibold">{entry.by.username || gettext("someone")}</span>
+        <span :if={entry.form?}>{"→ " <> gettext("form filled in")}</span>
+        <span :if={!entry.form?}>{"→ " <> to_string(entry.outcome)}</span>
         <span :if={entry.comment} class="italic">„{entry.comment}“</span>
       </li>
     </ol>
 
+    <div :if={@task.form?} class="mt-3 flex flex-wrap items-center justify-between gap-2">
+      <p class="text-xs text-base-content/60">{gettext("A form for you to fill in.")}</p>
+      <.button
+        id={"process-task-#{@task.id}-fill"}
+        type="button"
+        phx-click="process_form_open"
+        phx-value-id={@task.id}
+        variant="primary"
+        size="sm"
+        class="transition-transform active:scale-95"
+      >
+        <.icon name="hero-clipboard-document-list" class="size-4" />
+        {gettext("Fill in")}
+      </.button>
+    </div>
+
     <.form
+      :if={!@task.form?}
       for={%{}}
       as={:decision}
       id={"process-task-#{@task.id}-form"}
@@ -600,7 +620,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
               {@start.error}
             </p>
             <%= if @start.attributes do %>
-              <.start_field
+              <ProcessForm.field
                 :for={attribute <- @start.attributes}
                 attribute={attribute}
                 field={@start.form[attribute["name"]]}
@@ -651,61 +671,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         },
       }
     </script>
-    """
-  end
-
-  attr :attribute, :map, required: true, doc: "an attribute of the entity the process takes"
-  attr :field, :any, required: true
-
-  # One attribute in the Start form, asked for as its type.
-  defp start_field(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :label,
-        assigns.attribute["name"] <> if(assigns.attribute["required"] == true, do: " *", else: "")
-      )
-
-    ~H"""
-    <%= case @attribute["type"] do %>
-      <% "boolean" -> %>
-        <.input field={@field} type="checkbox" label={@label} />
-      <% "date" -> %>
-        <.input field={@field} type="date" label={@label} required={@attribute["required"] == true} />
-      <% "datetime" -> %>
-        <.input
-          field={@field}
-          type="datetime-local"
-          label={@label}
-          required={@attribute["required"] == true}
-        />
-      <% "choice" -> %>
-        <.input
-          field={@field}
-          type="select"
-          label={@label}
-          prompt={gettext("Pick one")}
-          options={@attribute["options"] || []}
-          required={@attribute["required"] == true}
-        />
-      <% "number" -> %>
-        <.input
-          field={@field}
-          type="text"
-          label={@label}
-          placeholder="0"
-          maxlength="40"
-          required={@attribute["required"] == true}
-        />
-      <% _text -> %>
-        <.input
-          field={@field}
-          type="text"
-          label={@label}
-          maxlength="1000"
-          required={@attribute["required"] == true}
-        />
-    <% end %>
     """
   end
 
