@@ -10,7 +10,8 @@ defmodule PotokIde.Processes.Scope do
     `.comment`), of a call that waits how the called process ended
     (`poziv.outcome`), and of a wait for a signal what the signal carried
     (`prijem.from`, and its fields, or the attributes of the entity the
-    wait names);
+    wait names), and of a form what was filled in (`prijava.sprat`, the
+    attributes of the entity it asks for, and `prijava.author`);
   - the id of a loop is where it stands (`petlja.index`, from 1, and
     `petlja.count`), and the name of its item is the item on hand
     (`stavka`, `stavka.naziv`), of the type the loop keeps as `of`;
@@ -82,6 +83,15 @@ defmodule PotokIde.Processes.Scope do
       _no_entity ->
         [{id, {:record, always, true}}]
     end
+  end
+
+  # A form brings what was filled in, the attributes of the entity it asks
+  # for, and who filled it in.
+  defp result(%{"type" => "formTask", "id" => id} = form, _entry, entities) do
+    attributes = (form["entity"] && Types.attributes(entities, form["entity"])) || []
+    fields = Map.new(attributes, &{&1["name"], Types.of(&1)})
+
+    [{id, {:record, Map.put(fields, "author", :text), false}}]
   end
 
   # A loop says where it stands, and names the item on hand.

@@ -24,7 +24,13 @@ defmodule PotokIde.Processes.ValueProcess do
 
   `started_by` is the author of the value, nil when the value is anonymous,
   so that nobody learns from the process who wrote it. `log` keeps who
-  finished which task with which outcome, newest last.
+  finished which task with which outcome, and who filled in which form,
+  newest last.
+
+  While it waits on a step a person finishes it keeps whom it asks: the
+  people of a role (`asks_role`), or one person (`asks_profile`), for a form
+  that whoever started it fills in. Both are written on every entry into a
+  wait, empty for one no person ends, and say nothing in any other state.
   """
 
   use Ecto.Schema
@@ -55,6 +61,9 @@ defmodule PotokIde.Processes.ValueProcess do
     field :results, :map, default: %{}
     # What its variables hold, by name, as plain JSON (`Processes.Types`).
     field :vars, :map, default: %{}
+    # Whom the wait it stands on asks, if it asks anyone.
+    field :asks_role, :string
+    belongs_to :asks_profile, PotokIde.Social.Profile
 
     timestamps(type: :utc_datetime)
   end

@@ -9,6 +9,10 @@ defmodule PotokIde.Processes do
   - A task is finished by someone holding its role (`Engine.complete_task/5`);
     a failed instance is taken up again, and one under way cancelled, by the
     app's editors (`ValueRules.manage?/1`).
+  - What waits for a person in the processes drawn in Potok, decisions and
+    forms, is the group's page's to show and count (`tasks_for/3`,
+    `waiting_count/3`), and a form is filled in by whoever it asks
+    (`Engine.complete_form/5`).
   - What moves an instance wakes this node's scheduler, so its next steps do
     not wait for the next pass.
   """
@@ -16,7 +20,7 @@ defmodule PotokIde.Processes do
   import Ecto.Query, warn: false
 
   alias PotokIde.Repo
-  alias PotokIde.Processes.{Engine, Graph, Scheduler, ValueProcess}
+  alias PotokIde.Processes.{Engine, Graph, Scheduler, Types, ValueProcess}
   alias PotokIde.Social.{Access, AppData, AppProcess, Group, Profile, Value, ValueRules}
 
   @max_list 100
@@ -84,6 +88,28 @@ defmodule PotokIde.Processes do
     with %ValueProcess{} <- of_this_app(group, alt, id) || {:error, :not_found},
          true <- (is_binary(element) and is_binary(outcome)) || {:error, :invalid_outcome},
          {:ok, instance} <- Engine.complete_task(profile, id, element, outcome, comment) do
+      Scheduler.nudge()
+      {:ok, present(instance, access)}
+    end
+  end
+
+  @doc """
+  Finishes the form instance `id` of a process drawn in `group` waits on,
+  with what `profile` filled in (`Engine.complete_form/5`). Returns `{:ok,
+  presented}` or the engine's refusal.
+  """
+  def complete_form(
+        %Profile{} = profile,
+        %Group{} = group,
+        %Access{} = access,
+        id,
+        element,
+        answers,
+        zone
+      ) do
+    with %ValueProcess{} <- of_this_app(group, :any, id) || {:error, :not_found},
+         true <- (is_binary(element) and is_map(answers)) || {:error, :invalid_form},
+         {:ok, instance} <- Engine.complete_form(profile, id, element, answers, zone) do
       Scheduler.nudge()
       {:ok, present(instance, access)}
     end
@@ -166,9 +192,14 @@ defmodule PotokIde.Processes do
 
   @doc """
   The tasks of processes drawn in Potok (`PotokIde.Social.DrawnProcesses`)
-  that wait on a role the viewer holds in `group`, the nearest deadline first,
-  at most #{@max_tasks}. The app knows nothing of these, so the group's page
-  shows them, each with what set it going (`kind`):
+  that wait for the viewer in `group`, the nearest deadline first, at most
+  #{@max_tasks}: the decisions and the forms of a role the viewer holds, and
+  the forms of the runs the viewer started that ask whoever started them
+  (`ValueProcess.asks_role`, `asks_profile`). A form comes with `form?` and
+  the `attributes` it asks for, as its process was saved with them, and
+  with whether the viewer set off the step that led to it (`by_viewer?`).
+  The app knows nothing of these, so the group's page shows them, each with
+  what set it going (`kind`):
 
   - `:value`, a value of an app's collection: its author, unless the value is
     anonymous, and its data and the sub-groups the instance made only for
@@ -181,24 +212,49 @@ defmodule PotokIde.Processes do
     started, with the fields it was given and that process's name as its
     title (a run on a value or a sub-group shows that instead).
   """
-  def tasks_for(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access)
-      when access.role_keys != [] do
+  def tasks_for(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access),
+    do: profile |> asking(group, access) |> tasks(profile, group, access)
+
+  def tasks_for(_profile, _group, _access), do: []
+
+  @doc """
+  The form instance `id` waits on, as `tasks_for/3` gives it, when it waits
+  for the viewer in `group`; nil otherwise.
+  """
+  def form_task(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access, id)
+      when is_integer(id) do
+    profile
+    |> asking(group, access)
+    |> where([i], i.id == ^id)
+    |> tasks(profile, group, access)
+    |> Enum.find(& &1.form?)
+  end
+
+  def form_task(_profile, _group, _access, _id), do: nil
+
+  @doc "How many tasks wait for the viewer in `group`, as `tasks_for/3` lists them."
+  def waiting_count(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access),
+    do: profile |> asking(group, access) |> Repo.aggregate(:count)
+
+  def waiting_count(_profile, _group, _access), do: 0
+
+  # The waiting runs of the group's drawn processes that ask the viewer.
+  defp asking(%Profile{id: profile_id}, %Group{id: group_id}, %Access{role_keys: role_keys}) do
+    from(i in ValueProcess,
+      join: p in AppProcess,
+      on: p.id == i.app_process_id,
+      where: p.group_id == ^group_id and p.drawn and p.active and i.status == :waiting,
+      where: i.asks_role in ^role_keys or i.asks_profile_id == ^profile_id
+    )
+  end
+
+  defp tasks(query, profile, group, access) do
     rows =
-      from(i in ValueProcess,
-        join: p in AppProcess,
-        on: p.id == i.app_process_id,
+      from([i, p] in query,
         left_join: v in Value,
         on: v.id == i.value_id,
         left_join: sg in Group,
         on: sg.id == i.subject_group_id,
-        where: p.group_id == ^group.id and p.drawn and p.active and i.status == :waiting,
-        where:
-          fragment(
-            "(jsonb_path_query_first(?, '$.nodes[*] \\? (@.id == $e)', jsonb_build_object('e', ?)) ->> 'role') = ANY(?)",
-            i.graph,
-            i.element,
-            type(^access.role_keys, {:array, :string})
-          ),
         order_by: [asc_nulls_last: i.wake_at, asc: i.id],
         limit: @max_tasks,
         preload: [value: {v, :creator}, subject_group: sg],
@@ -213,13 +269,18 @@ defmodule PotokIde.Processes do
     Enum.map(rows, fn {instance, process} ->
       task = Graph.node(instance.graph, instance.element)
       subject = subject(instance, process, group, profile, access, rules)
+      form? = task["type"] == "formTask"
 
       Map.merge(subject, %{
         id: instance.id,
         process: process,
         element: instance.element,
         label: Graph.label(task),
-        outcomes: task["outcomes"],
+        outcomes: task["outcomes"] || [],
+        form?: form?,
+        attributes:
+          if(form?, do: Types.attributes(instance.graph["types"] || %{}, task["entity"]) || []),
+        by_viewer?: instance.triggered_by_id == profile.id,
         deadline_at: instance.wake_at,
         groups:
           if(subject.reads?,
@@ -235,8 +296,6 @@ defmodule PotokIde.Processes do
       })
     end)
   end
-
-  def tasks_for(_profile, _group, _access), do: []
 
   # What set a run going, as its task card shows it. A value of a collection
   # is read by its own collection's rule, also in a run another process
@@ -404,6 +463,7 @@ defmodule PotokIde.Processes do
         element: entry["element"],
         outcome: entry["outcome"],
         comment: entry["comment"],
+        form?: entry["form"] == true,
         by: %{id: entry["by"], username: Map.get(names, entry["by"])}
       }
     end)

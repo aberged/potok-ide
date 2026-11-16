@@ -41,11 +41,15 @@ defmodule PotokIde.Processes.Check do
     a value of its type, and every required one a value.
   - A signal is sent with the entity those who wait for it expect, where
     someone does, and carries its attributes the same way.
+  - A form asks for an entity whose attributes are all plain, as the form
+    of a process started by hand does, and asks whoever started the run
+    only in a process someone starts: not one on a schedule.
 
   Errors come as `{path, reason}`, as the graph's do, such as
   `{"nodes.3.text", {:unknown_name, "naslov"}}`: the reasons of
   `Expr.parse/1` and `Expr.check/2`, and `:unknown_entity`, `:not_flat`,
-  `{:not_a_variable, name}`, `:required`, `:signal_entity` and `:no_list`.
+  `{:not_a_variable, name}`, `:required`, `:signal_entity`, `:no_list`,
+  `:no_entity` and `:no_starter`.
 
   A graph without a version says nothing that could be checked
   (`PotokIde.Processes.Legacy`), and comes back as it is.
@@ -64,6 +68,7 @@ defmodule PotokIde.Processes.Check do
 
       context = %{
         scope: scope,
+        trigger: env[:trigger],
         callable: Map.get(env, :callable, %{}),
         receivers: receivers(graph, env)
       }
@@ -342,6 +347,26 @@ defmodule PotokIde.Processes.Check do
           %{"name" => unknown} ->
             {:error, {path <> ".fields", {:unknown_attribute, unknown}}}
         end
+    end
+  end
+
+  # A form asks for an entity a form can fill in, and asks whoever started
+  # the run only where someone does: nobody starts a scheduled one.
+  defp step(%{"type" => "formTask"} = form, path, context) do
+    definition = form["entity"] && context.scope.entities[to_string(form["entity"])]
+
+    cond do
+      is_nil(definition) ->
+        {:error, {path <> ".entity", :no_entity}}
+
+      not flat?(definition) ->
+        {:error, {path <> ".entity", :not_flat}}
+
+      form["by"] == "starter" and context.trigger == "schedule" ->
+        {:error, {path <> ".by", :no_starter}}
+
+      true ->
+        :ok
     end
   end
 

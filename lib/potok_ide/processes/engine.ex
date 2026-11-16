@@ -69,6 +69,19 @@ defmodule PotokIde.Processes.Engine do
   starts the count of 25 elements in a row anew; after the last item the
   run goes on by the loop's plain flow, and the item is gone. A body may
   wait, call, and hold a loop of its own.
+
+  A `formTask` stops a run until a person fills in the entity it asks for
+  (`complete_form/5`) or its deadline passes: whoever started the run, or
+  someone holding its role. What was filled in is taken as the types of
+  the entity say, as the graph was saved with them, and kept under the
+  form's element (`results`) with who filled it in (`author`); a form the
+  run comes to again asks anew. One that asks whoever started a run nobody
+  started fails (`no_starter`).
+
+  While a run waits on a step a person finishes it keeps whom it asks
+  (`asks_role`, `asks_profile_id`), and says so when it tells that it
+  moved (`asks`), also once more as it leaves that wait. So a page counts
+  again what waits for its viewer only when the news is theirs.
   """
 
   import Ecto.Query, warn: false
@@ -391,7 +404,8 @@ defmodule PotokIde.Processes.Engine do
           alt_id: process.alt_description_id,
           collection: process.collection,
           id: instance.id,
-          drawn: process.drawn
+          drawn: process.drawn,
+          asks: asks(instance)
         })
 
       nil ->
@@ -400,6 +414,30 @@ defmodule PotokIde.Processes.Engine do
 
     instance
   end
+
+  # Whom the run asks, or asked on the wait it just left: the news is theirs.
+  defp asks(%ValueProcess{asks_role: nil, asks_profile_id: nil}), do: nil
+
+  defp asks(%ValueProcess{asks_role: role, asks_profile_id: profile_id}),
+    do: %{role: role, profile_id: profile_id}
+
+  # Those a wait asked hear that it asks no more, whatever the run stops on
+  # next: a later wait writes over whom this one asked.
+  defp left(%ValueProcess{asks_role: nil, asks_profile_id: nil}), do: []
+  defp left(%ValueProcess{} = instance), do: [fn -> tell(instance) end]
+
+  # Whom a wait asks: the people of a role, whoever started the run, or
+  # nobody, for a wait no person ends.
+  defp asked(%{"type" => "userTask", "role" => role}, _instance),
+    do: %{asks_role: role, asks_profile_id: nil}
+
+  defp asked(%{"type" => "formTask", "by" => "role", "role" => role}, _instance),
+    do: %{asks_role: role, asks_profile_id: nil}
+
+  defp asked(%{"type" => "formTask"}, instance),
+    do: %{asks_role: nil, asks_profile_id: instance.started_by_id}
+
+  defp asked(_element, _instance), do: %{asks_role: nil, asks_profile_id: nil}
 
   defp told({:ok, instance}), do: {:ok, tell(instance)}
   defp told(error), do: error
@@ -470,7 +508,8 @@ defmodule PotokIde.Processes.Engine do
         {:turn, move(instance, to, changes), []}
 
       {:wait, changes, announcements} ->
-        {:stop, update!(instance, Map.put(changes, :status, :waiting)), announcements}
+        changes = changes |> Map.put(:status, :waiting) |> Map.merge(asked(node, instance))
+        {:stop, update!(instance, changes), announcements}
 
       :done ->
         done = update!(instance, %{status: :done, wake_at: nil})
@@ -502,6 +541,19 @@ defmodule PotokIde.Processes.Engine do
        wake_at: receive["deadline"] && later(receive["deadline"]),
        results: Map.delete(instance.results, id)
      }, []}
+  end
+
+  # A form asks anew each time the run comes to it.
+  defp act(%{"type" => "formTask", "id" => id} = form, instance) do
+    if form["by"] == "starter" and is_nil(instance.started_by_id) do
+      {:error, :no_starter}
+    else
+      {:wait,
+       %{
+         wake_at: form["deadline"] && later(form["deadline"]),
+         results: Map.delete(instance.results, id)
+       }, []}
+    end
   end
 
   defp act(%{"type" => "callActivity", "id" => id} = call, instance) do
@@ -1002,7 +1054,7 @@ defmodule PotokIde.Processes.Engine do
     out = Graph.out(instance.graph, instance.element)
 
     case Graph.node(instance.graph, instance.element) do
-      %{"type" => "userTask"} ->
+      %{"type" => type} when type in ~w(userTask formTask) ->
         deadline(instance, Enum.find(out, & &1["deadline"]))
 
       %{"type" => "timer"} ->
@@ -1027,7 +1079,7 @@ defmodule PotokIde.Processes.Engine do
   defp deadline(_instance, nil), do: :skip
 
   defp deadline(instance, flow),
-    do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), []}
+    do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), left(instance)}
 
   # The call's deadline cancels the run it waits for, unless that run is in a
   # step of its own just now, which may end it: the next pass sees.
@@ -1170,6 +1222,92 @@ defmodule PotokIde.Processes.Engine do
   end
 
   defp comment_text(_comment), do: nil
+
+  @doc """
+  Finishes the form an instance waits on with what `profile` filled in:
+  `answers` holds the attributes of the form's entity by name, as a form
+  posts them, and `zone` is the time zone a time without one is read in.
+  Only whoever the form asks may, a member of the process's group who
+  started the run or holds the form's role, and only while the instance
+  waits on that very `element`. Whoever filled it in sets off the steps
+  that follow, and the log keeps who it was.
+
+  Returns `{:ok, instance}`, moved on and due, or `{:error, {:invalid_field,
+  name, reason}}` for an attribute that is missing or not of its type.
+  """
+  def complete_form(%Profile{} = profile, id, element, answers, zone \\ nil) do
+    Repo.transaction(fn ->
+      instance = lock(id) || Repo.rollback(:not_found)
+      form = Graph.node(instance.graph, instance.element)
+
+      if instance.status != :waiting or instance.element != element or
+           form["type"] != "formTask",
+         do: Repo.rollback(:not_waiting)
+
+      process = Repo.get!(AppProcess, instance.app_process_id)
+
+      unless process.active, do: Repo.rollback(:process_inactive)
+
+      access = Access.for_profile(profile, Repo.get!(Group, process.group_id))
+
+      unless asked?(form, instance, profile, access), do: Repo.rollback(:not_permitted)
+
+      results =
+        with {:ok, filled} <- filled_in(form, instance.graph, answers, zone),
+             results = Map.put(instance.results, element, filled),
+             :ok <- room_for(instance.vars || %{}, results) do
+          Map.update!(results, element, &Map.put(&1, "author", profile.username))
+        else
+          {:error, reason} -> Repo.rollback(reason)
+        end
+
+      entry = %{
+        "at" => DateTime.to_iso8601(now()),
+        "element" => element,
+        "by" => profile.id,
+        "form" => true
+      }
+
+      move(instance, plain_next(instance, element), %{
+        triggered_by_id: profile.id,
+        log: Enum.take(instance.log ++ [entry], -@max_log),
+        results: results
+      })
+    end)
+    |> told()
+  end
+
+  defp asked?(%{"by" => "role", "role" => role}, _instance, _profile, access),
+    do: access.member? and role in access.role_keys
+
+  defp asked?(_form, instance, profile, access),
+    do: access.member? and instance.started_by_id == profile.id
+
+  # What a form was filled in with, as the entity it asks for takes it and
+  # as plain JSON: every attribute by its type, nothing for one left blank,
+  # and an error for a required one that is.
+  defp filled_in(%{"entity" => id}, %{"types" => types}, answers, zone)
+       when is_integer(id) and is_map(answers) do
+    names = for attribute <- Types.attributes(types, id) || [], do: attribute["name"]
+
+    given =
+      for {name, answer} <- Map.take(answers, names), into: %{}, do: {name, written(answer)}
+
+    zone = if is_binary(zone), do: zone, else: "Etc/UTC"
+
+    case Types.cast(given, {:entity, id}, types, required: true, zone: zone) do
+      {:ok, value} -> {:ok, Types.dump(value)}
+      {:error, {reason, name}} -> {:error, {:invalid_field, name, reason}}
+    end
+  end
+
+  defp filled_in(_form, _graph, _answers, _zone), do: {:error, :invalid_form}
+
+  # A text a person wrote: trimmed, and no longer than a field may be.
+  defp written(answer) when is_binary(answer),
+    do: answer |> String.trim() |> String.slice(0, @max_field)
+
+  defp written(answer), do: answer
 
   @doc "Takes a failed instance up again on the element where it stopped, due at once."
   def retry(id) do

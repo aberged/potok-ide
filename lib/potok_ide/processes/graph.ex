@@ -79,6 +79,11 @@ defmodule PotokIde.Processes.Graph do
     `PotokIde.Processes.Check` wrote into it.
   - A `serviceTask` `assign` with the `op` `append` adds its `value` to the
     list its `target` holds.
+  - `formTask` waits for a person to fill in the `entity` it names, by its
+    id: whoever started the run (`by` `starter`), or someone holding `role`
+    (`by` `role`), until an optional `deadline`. What was filled in is read
+    under its id, an attribute at a time (`prijava.sprat`), with who filled
+    it in (`prijava.author`).
   - `zone` is the time zone it reads days and hours in, and `entry` and
     `types` are what `PotokIde.Processes.Check` wrote into it.
 
@@ -186,16 +191,21 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  # Only today's language sets variables and goes through lists.
+  # Only today's language sets variables, goes through lists and asks forms.
   defp of_its_language(_nodes, 2), do: :ok
 
   defp of_its_language(nodes, 1) do
     nodes
     |> Enum.with_index()
     |> Enum.find_value(:ok, fn
-      {%{"type" => "loop"}, i} -> {:error, {"nodes.#{i}.type", :invalid}}
-      {%{"action" => "assign"}, i} -> {:error, {"nodes.#{i}.action", :invalid}}
-      _other -> nil
+      {%{"type" => type}, i} when type in ~w(loop formTask) ->
+        {:error, {"nodes.#{i}.type", :invalid}}
+
+      {%{"action" => "assign"}, i} ->
+        {:error, {"nodes.#{i}.action", :invalid}}
+
+      _other ->
+        nil
     end)
   end
 
@@ -426,6 +436,9 @@ defmodule PotokIde.Processes.Graph do
       {%{"type" => "userTask", "role" => role}, i} ->
         [{"nodes.#{i}.role", role}]
 
+      {%{"type" => "formTask", "by" => "role", "role" => role}, i} ->
+        [{"nodes.#{i}.role", role}]
+
       {%{"action" => "push", "role" => role}, i} ->
         [{"nodes.#{i}.role", role}]
 
@@ -645,6 +658,24 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
+  # A form: the entity it asks for and who fills it in. One that names no
+  # entity yet is told by `Check`, as a drawing may stand so for a while.
+  defp typed("formTask", node, path, base, true) do
+    by = Map.get(node, "by", "starter")
+
+    with true <- by in ~w(starter role) || {:error, {path <> ".by", :invalid}},
+         {:ok, role} <- form_role(by, node["role"], path <> ".role"),
+         {:ok, entity} <- entity(node["entity"], path <> ".entity"),
+         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline") do
+      {:ok,
+       base
+       |> Map.put("by", by)
+       |> put_some("role", role)
+       |> put_some("entity", entity)
+       |> put_some("deadline", deadline)}
+    end
+  end
+
   defp typed("serviceTask", node, path, base, _drawn?),
     do: action(node["action"], node, path, base)
 
@@ -735,7 +766,12 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  # The entity a signal carries, by its id; none where it names none.
+  # Only a form the people of a role fill in names one.
+  defp form_role("role", role, path), do: key(role, path)
+  defp form_role(_starter, _role, _path), do: {:ok, nil}
+
+  # The entity a signal carries or a form asks for, by its id; none where it
+  # names none.
   defp entity(nil, _path), do: {:ok, nil}
   defp entity(id, _path) when is_integer(id) and id > 0, do: {:ok, id}
   defp entity(_id, path), do: {:error, {path, :invalid}}
@@ -1064,10 +1100,10 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  # A call or a wait goes on by one plain flow, and by a second when its
-  # deadline passes.
+  # A call, a wait or a form goes on by one plain flow, and by a second when
+  # its deadline passes.
   defp leaves({%{"type" => type} = element, i}, out, _into)
-       when type in ~w(callActivity receiveTask) do
+       when type in ~w(callActivity receiveTask formTask) do
     {deadlines, plain} = Enum.split_with(out, &Map.has_key?(&1, "deadline"))
 
     cond do

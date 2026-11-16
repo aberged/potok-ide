@@ -361,6 +361,12 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("ValueProcess", "vars"), do: dgettext("domain_map", "what its variables hold")
 
+  defp own_field("ValueProcess", "asks_role"),
+    do: dgettext("domain_map", "role its wait asks")
+
+  defp own_field("ValueProcess", "asks_profile_id"),
+    do: dgettext("domain_map", "person its wait asks")
+
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
