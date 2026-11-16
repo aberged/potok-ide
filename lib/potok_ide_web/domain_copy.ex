@@ -234,6 +234,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "sub_group_count"), do: dgettext("domain_map", "sub-group count")
   defp own_field("Group", "viewer_is_member"), do: dgettext("domain_map", "viewer is a member")
   defp own_field("Group", "last_value"), do: dgettext("domain_map", "newest value, for a member")
+  defp own_field("Group", "shortcut_id"), do: dgettext("domain_map", "shortcut it is listed by")
 
   defp own_field("GroupAccountInvitation", "account_id") do
     dgettext("domain_map", "invited account")
@@ -355,6 +356,8 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
+  defp own_field("GroupShortcut", "parent_id"), do: dgettext("domain_map", "group it stands in")
+  defp own_field("GroupShortcut", "target_id"), do: dgettext("domain_map", "group it opens")
 
   defp own_field("Event", "title"), do: dgettext("domain_map", "title")
   defp own_field("Event", "location"), do: dgettext("domain_map", "location")
@@ -555,6 +558,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ValueReaction"), do: dgettext("domain_map", "Reaction")
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
+  def entity_name("GroupShortcut"), do: dgettext("domain_map", "Shortcut")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
   def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
@@ -699,6 +703,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A profile a group has blocked. Until the block is lifted it does not write or react in the group's open chat, and cannot ask to join or be invited. Membership comes first: a member answers to their roles."
+    )
+  end
+
+  defp entity_description("GroupShortcut", _edges) do
+    dgettext(
+      "domain_map",
+      "A group shown among the sub-groups of another group too, as a shortcut on a computer: a tap opens it where it stands. It has no members, values or counts of its own. Deleting either group takes it along."
     )
   end
 
@@ -878,6 +889,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("groups_thread_inherits_members_check") do
     dgettext("domain_map", "A thread always inherits members.")
+  end
+
+  def check_text("group_shortcuts_not_self_check") do
+    dgettext("domain_map", "A shortcut never opens the group it stands in.")
   end
 
   def check_text("groups_location_check") do
@@ -1445,6 +1460,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out. The exception is an app withdrawing a group: the inherited members then leave and the direct ones stay."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A shortcut shows a group in one more place"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <GroupShortcut>shortcut</GroupShortcut> puts a <Group>group</Group> that stands deeper in the tree among the sub-groups of another group, the root as well, and a tap opens it where it stands. Whoever may make sub-groups there places one to a group they see, and it shows only to those who see that group, by the same rule as the other sub-groups. The row shows the group itself, with its newest value and what is unread in it, but the counts above it hold that unread once, where the group stands. It never leads to the root, a thread, a direct conversation or an app's record, nor to a group already standing there. Its author or an admin of the group it stands in removes it, which leaves the group as it is. Apps do not see shortcuts among the sub-groups."
           )
       },
       %{

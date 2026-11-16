@@ -233,17 +233,22 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
   end
 
   attr :group_id, :integer, required: true
+  attr :shortcut_id, :integer, default: nil, doc: "the shortcut the row stands in the list by"
   attr :name, :string, required: true
   attr :class, :any, default: nil
 
-  @doc "The button at the end of a row of the sub-groups tab."
+  @doc """
+  The button at the end of a row of the sub-groups tab. A shortcut's row
+  names the shortcut too, whose menu can take it away.
+  """
   def row_button(assigns) do
     ~H"""
     <button
-      id={"#{row_button_prefix()}#{@group_id}"}
+      id={row_button_id(@group_id, @shortcut_id)}
       type="button"
       phx-click="group_row_menu_open"
       phx-value-id={@group_id}
+      phx-value-shortcut={@shortcut_id}
       aria-haspopup="menu"
       aria-label={gettext("Options of the group %{name}", name: @name)}
       class={[
@@ -258,7 +263,17 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   defp row_button_prefix, do: "#{@row_prefix}-menu-button-"
 
-  attr :menu, :map, required: true, doc: "`%{group: group, access: access, sections: sections/3}`"
+  # A shortcut's row has a button of its own: its target may have a row too.
+  defp row_button_id(group_id, nil), do: "#{row_button_prefix()}#{group_id}"
+  defp row_button_id(_group_id, shortcut_id), do: "#{row_button_prefix()}shortcut-#{shortcut_id}"
+
+  defp menu_shortcut_id(%{shortcut: %{shortcut: %{id: id}}}), do: id
+  defp menu_shortcut_id(_menu), do: nil
+
+  attr :menu, :map,
+    required: true,
+    doc:
+      "`%{group: group, access: access, sections: sections/3, shortcut: nil | %{shortcut, removable?}}`"
 
   @doc """
   The menu of a row. The list scrolls and `<main>` is its own stacking context,
@@ -269,7 +284,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     assigns =
       assigns
       |> assign(:prefix, @row_prefix)
-      |> assign(:anchor, "#{row_button_prefix()}#{assigns.menu.group.id}")
+      |> assign(:shortcut, assigns.menu[:shortcut])
+      |> assign(:anchor, row_button_id(assigns.menu.group.id, menu_shortcut_id(assigns.menu)))
 
     ~H"""
     <dialog
@@ -294,6 +310,23 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
       >
         <.items group={@menu.group} access={@menu.access} id_prefix={@prefix}>
+          <button
+            :if={@shortcut && @shortcut.removable?}
+            id={"#{@prefix}-menu-remove-shortcut"}
+            type="button"
+            phx-click="group_shortcut_remove"
+            phx-value-id={@shortcut.shortcut.id}
+            class={item_class()}
+          >
+            <.icon name="hero-link-slash" class="size-4" />
+            <span class="ml-2 truncate">{gettext("Remove shortcut")}</span>
+          </button>
+          <div
+            :if={@shortcut && @shortcut.removable?}
+            class="border-t border-base-300/70"
+            aria-hidden="true"
+          >
+          </div>
           <.tab_item
             :for={section <- @menu.sections}
             id={"#{@prefix}-tab-#{section.key}"}

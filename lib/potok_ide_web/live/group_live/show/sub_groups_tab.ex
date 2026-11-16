@@ -419,6 +419,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                 <GroupMenu.row_button
                   :if={@current_profile}
                   group_id={group.id}
+                  shortcut_id={group.shortcut_id}
                   name={group.name}
                   class={row_button_class()}
                 />
@@ -483,7 +484,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   defp child_details?(group),
     do:
       group.last_value_at != nil or group.member_count != nil or group.tags != [] or
-        group.last_value != nil
+        group.last_value != nil or group.shortcut_id != nil
 
   attr :group, :map, required: true
   attr :current_profile, :map, default: nil
@@ -528,15 +529,25 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :group, :map, required: true
   attr :time_zone, :string, required: true
 
-  # The line below a sub-group's name: when it last had a value, its members
-  # and sub-groups, whether the viewer is in it (only public groups list
-  # without), and its tags, which give way when space runs out.
+  # The line below a sub-group's name: whether it stands here through a
+  # shortcut, when it last had a value, its members and sub-groups, whether
+  # the viewer is in it (only public groups list without), and its tags,
+  # which give way when space runs out.
   defp child_details(assigns) do
     ~H"""
     <div
       id={"child-group-details-#{@group.id}"}
       class="flex min-w-0 items-center gap-2 text-[11px] leading-4 text-base-content/65"
     >
+      <span
+        :if={@group.shortcut_id}
+        id={"group-shortcut-mark-#{@group.id}"}
+        data-shortcut-id={@group.shortcut_id}
+        class="inline-flex shrink-0 items-center gap-0.5 font-medium text-primary"
+      >
+        <.icon name="hero-arrow-turn-up-right-micro" class="size-3" />
+        {gettext("Shortcut")}
+      </span>
       <time
         :if={@group.last_value_at}
         id={"child-group-last-value-#{@group.id}"}
@@ -601,7 +612,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
     ~H"""
     <div
-      id={"sub-group-folder-#{@node.group.id}"}
+      id={"sub-group-folder-#{node_key(@node)}"}
       role="treeitem"
       aria-expanded={@folder? && to_string(@node.open?)}
     >
@@ -633,6 +644,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         <GroupMenu.row_button
           :if={@menu}
           group_id={@node.group.id}
+          shortcut_id={Map.get(@node.group, :shortcut_id)}
           name={@node.group.name}
           class={["ml-1", row_button_class()]}
         />
@@ -644,7 +656,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       >
         <.tree_node
           :for={child <- @node.children}
-          :key={child.group.id}
+          :key={node_key(child)}
           node={child}
           search_query={@search_query}
           menu={@menu}
@@ -690,7 +702,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
 
     ~H"""
     <.link
-      id={"sub-group-folder-link-#{@group.id}"}
+      id={"sub-group-folder-link-#{node_key(@node)}"}
       navigate={~p"/groups/#{@group.id}"}
       title={
         if(@group.member?,
@@ -713,6 +725,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           icon={if(@group.public?, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")}
           class="-bottom-1 -left-1 size-3.5 [&>span]:size-2.5"
         />
+        <Components.avatar_mark
+          :if={Map.get(@group, :shortcut_id)}
+          id={"sub-group-shortcut-mark-#{@group.shortcut_id}"}
+          icon="hero-arrow-turn-up-right-micro"
+          title={gettext("Shortcut")}
+          class="-bottom-1 -right-1 size-3.5 text-primary [&>span]:size-2.5"
+        />
       </span>
       <Components.highlighted_text
         text={@group.name}
@@ -730,13 +749,18 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       </span>
       <.count_badge
         :if={@unread_count > 0}
-        id={"sub-group-folder-unread-#{@group.id}"}
+        id={"sub-group-folder-unread-#{node_key(@node)}"}
         count={@unread_count}
         class="shrink-0"
       />
     </.link>
     """
   end
+
+  # The folder view's ids: a shortcut's leaf has its own, as its target may
+  # stand in the tree too.
+  defp node_key(%{group: %{shortcut_id: id}}) when is_integer(id), do: "shortcut-#{id}"
+  defp node_key(%{group: %{id: id}}), do: Integer.to_string(id)
 
   defp node_icon_color(%{member?: true}), do: "text-amber-500"
   defp node_icon_color(_group), do: "text-base-content/40"

@@ -94,6 +94,10 @@ defmodule PotokIde.Social.Group do
     # The newest chat value as a `PotokIde.Social.ValuePreview`, in the rows of
     # the groups whose chat the viewer reads there; nil otherwise.
     field :last_value, :map, virtual: true
+    # Set when the row stands in a sub-groups list through a shortcut
+    # (`PotokIde.Social.GroupShortcut`): the group is the shortcut's target,
+    # and this is the shortcut's id. nil for the list's own sub-groups.
+    field :shortcut_id, :integer, virtual: true
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :parent, __MODULE__

@@ -153,6 +153,24 @@
     ]
   },
   {
+    "name": "precica",
+    "as": "ana",
+    "url": "/groups",
+    "steps": [{ "wait": "#group-shortcut-mark-{groups.mz_zbor}" }, { "pause": 400 }]
+  },
+  {
+    "name": "precica-izbor",
+    "as": "ana",
+    "url": "/groups/{groups.root}",
+    "steps": [
+      { "click": "#group-sub-groups-create-fab" },
+      { "wait": "#group-create-menu" },
+      { "click": "#group-create-shortcut" },
+      { "wait": "#group-create-shortcut-results" },
+      { "pause": 500 }
+    ]
+  },
+  {
     "name": "uredi-grupu",
     "as": "ana",
     "url": "/groups/{groups.mz}/edit_group",

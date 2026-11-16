@@ -876,6 +876,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
          |> assign(:loaded_children, [])
+         |> assign(:unloaded_shortcut_targets, [])
          |> assign(:pending_refresh, MapSet.new())
          |> assign(:refresh_due_at, nil)
          |> assign(:unread_overview, nil)
@@ -2013,8 +2014,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Rights differ from group to group, so a row's menu is worked out when it
   # is opened. The id comes from the page, so the group has to be one the
-  # viewer can see.
-  def handle_event("group_row_menu_open", %{"id" => id}, socket) do
+  # viewer can see. A shortcut's row names the shortcut too, which has to
+  # lead to that group (`row_shortcut/3`).
+  def handle_event("group_row_menu_open", %{"id" => id} = params, socket) do
     profile = socket.assigns.current_profile
 
     with %Profile{} <- profile,
@@ -2028,11 +2030,36 @@ defmodule PotokIdeWeb.GroupLive.Show do
           polls?: polls_section?(group, access)
         })
 
-      menu = %{group: group, access: access, sections: sections}
+      menu = %{
+        group: group,
+        access: access,
+        sections: sections,
+        shortcut: row_shortcut(socket, group, params["shortcut"])
+      }
 
       {:noreply, assign(socket, :group_row_menu, menu)}
     else
       _invisible -> {:noreply, socket}
+    end
+  end
+
+  def handle_event("group_shortcut_remove", %{"id" => id}, socket) do
+    profile = socket.assigns.current_profile
+
+    with %Profile{} <- profile,
+         {shortcut_id, ""} <- Integer.parse(to_string(id)),
+         {:ok, _shortcut} <- Social.delete_group_shortcut(profile, shortcut_id) do
+      {:noreply,
+       socket
+       |> assign(:group_row_menu, nil)
+       |> put_flash(:info, gettext("The shortcut is gone; the group stays where it is."))
+       |> schedule_refresh(:children)}
+    else
+      _refused ->
+        {:noreply,
+         socket
+         |> assign(:group_row_menu, nil)
+         |> put_flash(:error, gettext("This shortcut can't be removed."))}
     end
   end
 
@@ -3130,8 +3157,47 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Notes the page's sub-group a value counts in: a loaded one gets the
   # value's time when the value is its own, and one that is not loaded asks
-  # for the database if the list could show it.
-  defp track_child(socket, overview, unread, {loaded, moved, unloaded?}) do
+  # for the database if the list could show it. A shortcut's row counts the
+  # values of its target, wherever that one stands.
+  defp track_child(socket, overview, unread, acc) do
+    acc = track_shortcut_child(socket, unread, acc)
+
+    track_page_child(socket, overview, unread, acc)
+  end
+
+  defp track_shortcut_child(socket, unread, {loaded, moved, unloaded?}) do
+    chain_ids = MapSet.new(unread.chain, & &1.id)
+
+    Enum.reduce(loaded, {loaded, moved, unloaded?}, fn
+      {id, %Group{shortcut_id: shortcut_id} = child}, {loaded, moved, unloaded?}
+      when is_integer(shortcut_id) ->
+        cond do
+          id == unread.group_id ->
+            child = %{child | last_value_at: unread.inserted_at}
+            {Map.put(loaded, id, child), MapSet.put(moved, id), unloaded?}
+
+          MapSet.member?(chain_ids, id) ->
+            {loaded, MapSet.put(moved, id), unloaded?}
+
+          true ->
+            {loaded, moved, unloaded?}
+        end
+
+      _child, acc ->
+        acc
+    end)
+    |> then(fn {loaded, moved, unloaded?} ->
+      # A shortcut's row that is not loaded may now belong in the list.
+      unloaded_shortcut? =
+        Enum.any?(socket.assigns.unloaded_shortcut_targets, fn target_id ->
+          MapSet.member?(chain_ids, target_id) and not Map.has_key?(loaded, target_id)
+        end)
+
+      {loaded, moved, unloaded? or unloaded_shortcut?}
+    end)
+  end
+
+  defp track_page_child(socket, overview, unread, {loaded, moved, unloaded?}) do
     case page_child(unread, overview, socket.assigns.group) do
       nil ->
         {loaded, moved, unloaded?}
@@ -4816,6 +4882,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
         socket
         |> assign(:loaded_children, entries)
+        |> assign(
+          :unloaded_shortcut_targets,
+          unloaded_shortcut_targets(group, entries, total_count)
+        )
         |> assign(:sub_group_tree, nil)
         |> assign(
           :children_pagination,
@@ -4824,6 +4894,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> assign(:thread_sub_groups_count, count_thread_children(socket))
         |> stream(:children, entries, reset: true)
     end
+  end
+
+  # A list that is not all loaded watches the targets of the group's
+  # shortcuts: a value in one may bring its row into the loaded part. A whole
+  # list holds every shortcut it shows, which costs no query.
+  defp unloaded_shortcut_targets(group, entries, total_count) do
+    if length(entries) < total_count, do: Social.list_shortcut_target_ids(group), else: []
   end
 
   # The folder view loads a level at a time (see `SubGroupTree`); a reload
@@ -5445,6 +5522,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp follows_changed(socket, _message), do: socket
 
+  # The shortcut a row's menu was opened by, when it leads to the row's group
+  # and the viewer sees the group it stands in.
+  defp row_shortcut(_socket, _group, nil), do: nil
+
+  defp row_shortcut(socket, %Group{id: group_id}, shortcut) do
+    with {shortcut_id, ""} <- Integer.parse(to_string(shortcut)),
+         %{shortcut: %{target_id: ^group_id}} = found <-
+           Social.get_group_shortcut(socket.assigns.current_profile, shortcut_id) do
+      found
+    else
+      _other -> nil
+    end
+  end
+
   defp child_on_list?(socket, child) do
     %{group: group, active_tab: active_tab, current_profile: profile} = socket.assigns
 
@@ -5465,6 +5556,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
         true
 
       child.creator_id == profile.id ->
+        true
+
+      # A shortcut to one of the viewer's groups, placed by someone else.
+      MapSet.member?(ProfileAuth.unread_groups(socket), child.id) ->
         true
 
       # The root hides the public groups the viewer is not in, but those it follows.

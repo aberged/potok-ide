@@ -44,6 +44,7 @@ defmodule PotokIde.Social do
     GroupReaction,
     GroupRole,
     GroupRoutes,
+    GroupShortcut,
     GroupValueRead,
     MemberInheritance,
     MapSql,
@@ -959,6 +960,7 @@ defmodule PotokIde.Social do
             broadcast_child_group_changed(updated_group.parent_id, updated_group, :updated)
           end
 
+          broadcast_shortcut_parents(shortcut_parent_ids(group.id), updated_group, :updated)
           broadcast_inheritance_changes(changes)
           {:ok, updated_group}
 
@@ -1013,6 +1015,7 @@ defmodule PotokIde.Social do
             broadcast_child_group_changed(withdrawn.parent_id, withdrawn, :updated)
           end
 
+          broadcast_shortcut_parents(shortcut_parent_ids(group.id), withdrawn, :updated)
           broadcast_inheritance_changes(changes)
           {:ok, withdrawn}
 
@@ -1453,6 +1456,8 @@ defmodule PotokIde.Social do
 
       true ->
         parent_id = group.parent_id
+        # Its shortcuts go with it, so the groups that hold them are read first.
+        shortcut_parent_ids = shortcut_parent_ids(group.id)
 
         # The group has no sub-groups, so its own values hold all the files
         # that go with it.
@@ -1472,12 +1477,182 @@ defmodule PotokIde.Social do
               broadcast_child_group_changed(parent_id, deleted_group, :deleted)
             end
 
+            broadcast_shortcut_parents(shortcut_parent_ids, deleted_group, :deleted)
             {:ok, deleted_group}
 
           {:error, _step, reason, _changes} ->
             {:error, reason}
         end
     end
+  end
+
+  @doc """
+  Places a shortcut to the group `target_id` in `parent`, where it stands as
+  one of its sub-groups (`GroupShortcut`). It takes what making a sub-group
+  there takes, and a target the profile sees (`shortcut_target?/2`).
+
+  Returns `{:error, :already_listed}` when `parent` already has one to it.
+  """
+  def create_group_shortcut(%Profile{} = profile, %Group{} = parent, target_id)
+      when is_integer(target_id) do
+    target = Repo.one(from(g in Visibility.plain_groups(profile), where: g.id == ^target_id))
+
+    cond do
+      parent.is_direct or not member_of_group?(profile, parent) ->
+        {:error, :not_a_member_of_parent_group}
+
+      not Access.can?(profile, parent, :create_subgroups) ->
+        {:error, :not_permitted}
+
+      not shortcut_target?(target, parent) ->
+        {:error, :invalid_target}
+
+      true ->
+        %GroupShortcut{parent_id: parent.id, target_id: target.id, creator_id: profile.id}
+        |> GroupShortcut.changeset()
+        |> Repo.insert()
+        |> case do
+          {:ok, shortcut} ->
+            broadcast_child_group_changed(parent.id, target, :created)
+            {:ok, shortcut}
+
+          {:error, %Ecto.Changeset{errors: errors}} ->
+            case errors[:target_id] do
+              {_message, opts} when is_list(opts) ->
+                if opts[:constraint] == :unique,
+                  do: {:error, :already_listed},
+                  else: {:error, :invalid_target}
+
+              nil ->
+                {:error, :invalid_target}
+            end
+        end
+    end
+  end
+
+  # What a shortcut may open: a plain group (no thread, no direct
+  # conversation) the profile sees, which is neither the root, an app's record,
+  # the group the shortcut stands in, nor already one of its sub-groups.
+  defp shortcut_target?(nil, _parent), do: false
+
+  defp shortcut_target?(%Group{} = target, %Group{} = parent),
+    do:
+      not target.is_root and is_nil(target.external_key) and target.id != parent.id and
+        target.parent_id != parent.id
+
+  @doc """
+  The shortcut `shortcut_id` when `profile` sees the group it stands in, and
+  whether it may take it away (`:removable?`); nil otherwise. A row's menu
+  reads it in the folder view too, where it may stand in any folder.
+  """
+  def get_group_shortcut(%Profile{} = profile, shortcut_id) when is_integer(shortcut_id) do
+    with %GroupShortcut{} = shortcut <- Repo.get(GroupShortcut, shortcut_id),
+         %Group{} = parent <- get_visible_group(profile, shortcut.parent_id) do
+      %{shortcut: shortcut, removable?: removes_shortcut?(profile, shortcut, parent)}
+    else
+      nil -> nil
+    end
+  end
+
+  # Its author, or an admin of the group it stands in.
+  defp removes_shortcut?(
+         %Profile{id: profile_id},
+         %GroupShortcut{creator_id: profile_id},
+         _parent
+       ),
+       do: true
+
+  defp removes_shortcut?(%Profile{} = profile, %GroupShortcut{}, %Group{} = parent),
+    do: member_of_group?(profile, parent) and Access.admin?(profile, parent)
+
+  @doc """
+  Takes the shortcut `shortcut_id` away; its target stays as it is. Its
+  author or an admin of the group it stands in may.
+  """
+  def delete_group_shortcut(%Profile{} = profile, shortcut_id) when is_integer(shortcut_id) do
+    case get_group_shortcut(profile, shortcut_id) do
+      nil ->
+        {:error, :not_found}
+
+      %{removable?: false} ->
+        {:error, :not_permitted}
+
+      %{shortcut: shortcut} ->
+        {:ok, deleted} = Repo.delete(shortcut)
+        target = Repo.get(Group, deleted.target_id)
+        if target, do: broadcast_child_group_changed(deleted.parent_id, target, :deleted)
+        {:ok, deleted}
+    end
+  end
+
+  @doc """
+  The groups a shortcut in `parent` may open for `profile`, those whose name
+  holds `search` (`NameSearch`), at most `limit`: the plain groups it sees
+  that `parent` does not hold yet, its own first. Without a search, only its
+  own: the groups it would look for in a list where they do not stand.
+
+  Each is `%{group: group, parent_name: name}`, with the name of the group it
+  stands in when the profile sees that one and it is not the root.
+  """
+  def search_shortcut_targets(%Profile{} = profile, %Group{} = parent, search, limit \\ 20) do
+    term = NameSearch.term(search)
+
+    from(g in Visibility.plain_groups(profile),
+      left_join: m in GroupMembership,
+      on: m.group_id == g.id and m.profile_id == ^profile.id,
+      left_join: p in Group,
+      on: p.id == g.parent_id,
+      left_join: pm in GroupMembership,
+      on: pm.group_id == p.id and pm.profile_id == ^profile.id,
+      where: not g.is_root and is_nil(g.external_key),
+      where: g.id != ^parent.id and g.parent_id != ^parent.id,
+      where:
+        g.id not in subquery(
+          from(s in GroupShortcut, where: s.parent_id == ^parent.id, select: s.target_id)
+        ),
+      order_by: [
+        asc: is_nil(m.group_id),
+        desc_nulls_last: g.last_value_at,
+        asc: fragment("lower(?)", g.name),
+        asc: g.id
+      ],
+      limit: ^limit,
+      select: %{
+        group: g,
+        parent_name:
+          fragment(
+            "CASE WHEN NOT ? AND (? OR ? IS NOT NULL) THEN ? END",
+            p.is_root,
+            p.is_public,
+            pm.group_id,
+            p.name
+          )
+      }
+    )
+    |> NameSearch.where_matches(term)
+    |> then(fn query ->
+      if term, do: query, else: where(query, [_g, m], not is_nil(m.group_id))
+    end)
+    |> Repo.all()
+  end
+
+  @doc """
+  The targets of the shortcuts in `parent`, whether the viewer sees them or
+  not: what a page whose list is not all loaded watches for values in.
+  """
+  def list_shortcut_target_ids(%Group{id: parent_id}) do
+    Repo.all(from(s in GroupShortcut, where: s.parent_id == ^parent_id, select: s.target_id))
+  end
+
+  # The groups that hold a shortcut to the group `target_id`.
+  defp shortcut_parent_ids(target_id) do
+    Repo.all(from(s in GroupShortcut, where: s.target_id == ^target_id, select: s.parent_id))
+  end
+
+  # The groups that show `group` through a shortcut hear of it as its own
+  # parent does, so their lists follow it.
+  defp broadcast_shortcut_parents(parent_ids, %Group{} = group, change) do
+    Enum.each(parent_ids, &broadcast_child_group_changed(&1, group, change))
   end
 
   def invite_profile_to_group(%Profile{} = inviter, %Group{} = group, %Profile{} = invitee) do
@@ -3696,6 +3871,10 @@ defmodule PotokIde.Social do
 
   The root also lists the groups no other list leads to, whose parent the
   profile cannot see (`detached_group_ids/1`), even if they are threads.
+
+  The targets of the group's shortcuts (`GroupShortcut`) stand among them
+  by the same rule, the filters taking the target, each with its
+  `shortcut_id`; a group the list holds already never stands in it twice.
   """
   def list_child_groups_for_profile(%Group{} = group, %Profile{} = profile, opts \\ []) do
     {groups, _rest} = child_group_rows(group, profile, opts, false)
@@ -4612,10 +4791,10 @@ defmodule PotokIde.Social do
 
     sql = """
     WITH page AS (
-      #{ordered_child_groups_query("vc.id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset, public?)}
+      #{ordered_child_groups_query("vc.id, vc.shortcut_id, COALESCE(uc.unread_count, 0) AS unread#{total}", limit, offset, public?)}
     )
     SELECT #{group_columns_sql(fields)},
-      details.member_count, details.sub_group_count, details.is_member#{if count?, do: ", page.total", else: ""}
+      details.member_count, details.sub_group_count, details.is_member, page.shortcut_id#{if count?, do: ", page.total", else: ""}
     FROM page
     JOIN groups g ON g.id = page.id
     #{child_group_details_sql()}
@@ -4676,7 +4855,8 @@ defmodule PotokIde.Social do
 
   # What the sub-groups list shows below each group; direct conversations get
   # NULLs. The sub-groups count by the rule of `sub_group_counts_sql/1`: the
-  # ones profile $2 can see, threads only when the page shows them ($5).
+  # ones profile $2 can see, threads only when the page shows them ($5), and
+  # the shortcuts to groups it sees that are not among them.
   defp child_group_details_sql do
     """
     LEFT JOIN LATERAL (
@@ -4690,6 +4870,15 @@ defmodule PotokIde.Social do
             AND (k.is_public OR EXISTS (
               SELECT 1 FROM group_memberships km WHERE km.group_id = k.id AND km.profile_id = $2
             ))
+        ) + (
+          SELECT COUNT(*) FROM groups k
+          WHERE k.id = ANY(#{shortcut_targets_sql("g.id")})
+            AND k.parent_id <> g.id
+            AND k.is_direct = FALSE
+            AND k.parent_value_id IS NULL
+            AND (k.is_public OR EXISTS (
+              SELECT 1 FROM group_memberships km WHERE km.group_id = k.id AND km.profile_id = $2
+            ))
         ) AS sub_group_count,
         EXISTS (
           SELECT 1 FROM group_memberships gm WHERE gm.group_id = g.id AND gm.profile_id = $2
@@ -4700,13 +4889,15 @@ defmodule PotokIde.Social do
   end
 
   defp load_child_group_row(fields, row) do
-    {group, [member_count, sub_group_count, member? | rest]} = load_group_row(fields, row)
+    {group, [member_count, sub_group_count, member?, shortcut_id | rest]} =
+      load_group_row(fields, row)
 
     {%{
        group
        | member_count: member_count,
          sub_group_count: sub_group_count,
-         viewer_is_member: member?
+         viewer_is_member: member?,
+         shortcut_id: shortcut_id
      }, rest}
   end
 
@@ -4728,9 +4919,11 @@ defmodule PotokIde.Social do
   defp ordered_child_groups_params(group, profile, opts, limit, offset) do
     # Only children with something unread below them sort by it; the counts
     # come from the overview instead of a walk down every child's sub-tree.
+    # Every group with something unread goes, not only the sub-groups: a
+    # shortcut's row is its target's, wherever that one stands.
     {unread_ids, unread_counts} =
       (opts[:unread_overview] || unread_overview(profile)).groups
-      |> Enum.filter(fn {_id, info} -> info.parent_id == group.id end)
+      |> Enum.filter(fn {_id, info} -> info.subtree > 0 end)
       |> Enum.map(fn {id, info} -> {id, info.subtree} end)
       |> Enum.unzip()
 
@@ -4780,7 +4973,7 @@ defmodule PotokIde.Social do
 
     """
     #{visible_children_head(public?)} visible_children AS (
-      SELECT g.id, g.inserted_at, g.last_value_at
+      SELECT g.id, g.inserted_at, g.last_value_at, NULL::bigint AS shortcut_id
       FROM (
         SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = $2 OFFSET 0
       ) m
@@ -4790,7 +4983,7 @@ defmodule PotokIde.Social do
 
       UNION
 
-      SELECT g.id, g.inserted_at, g.last_value_at
+      SELECT g.id, g.inserted_at, g.last_value_at, NULL::bigint
       FROM groups g
       WHERE g.parent_id = $1
         AND g.is_public = TRUE
@@ -4798,11 +4991,41 @@ defmodule PotokIde.Social do
 
       UNION
 
-      SELECT g.id, g.inserted_at, g.last_value_at
+      SELECT g.id, g.inserted_at, g.last_value_at, NULL::bigint
       FROM groups g
       WHERE g.id = ANY($6::bigint[])
         AND #{own_filters}
+
+      UNION
+
+      #{shortcut_children_sql(own_filters, public_filter)}
     )
+    """
+  end
+
+  # The fourth part of `visible_children`: the targets of $1's shortcuts that
+  # profile $2 can see, by the rule of the list's own sub-groups (a membership,
+  # or public and, with the root's switch off, on the way to one). A target
+  # the list already holds, as a sub-group or a detached group ($6), is left
+  # out, so no group stands in a list twice and its rows keep the group's id.
+  # Shortcuts never lead to threads or direct conversations, so $5 does not
+  # concern them. The targets come as `= ANY(ARRAY(...))`, which Postgres
+  # reads by the key of each: a join let a generic plan walk the whole groups
+  # key in order to find them (`shortcut_targets_sql/1`).
+  defp shortcut_children_sql(own_filters, public_filter) do
+    """
+    SELECT g.id, g.inserted_at, g.last_value_at, s.id
+    FROM groups g
+    JOIN group_shortcuts s ON s.parent_id = $1 AND s.target_id = g.id
+    WHERE g.id = ANY(#{shortcut_targets_sql("$1")})
+      AND g.parent_id <> $1
+      AND NOT (g.id = ANY($6::bigint[]))
+      AND g.is_direct = FALSE
+      AND g.parent_value_id IS NULL
+      AND #{own_filters}
+      AND (EXISTS (
+        SELECT 1 FROM group_memberships sm WHERE sm.group_id = g.id AND sm.profile_id = $2
+      ) OR (g.is_public#{public_filter}))
     """
   end
 
@@ -5307,8 +5530,10 @@ defmodule PotokIde.Social do
 
   Returns `%{parent_id => {folders, more?}}`, an entry per parent. Each
   folder is `%{id, name, thread?, public?, member?, child_count,
-  thread_child_count}`: how many sub-groups the folder view shows below it,
-  and how many of the sub-groups below it are threads, shown or not.
+  thread_child_count, shortcut_id}`: how many sub-groups the folder view
+  shows below it, its shortcuts among them, and how many of the sub-groups
+  below it are threads, shown or not. A shortcut's target comes as a leaf with
+  its `shortcut_id` and no counts: it opens where it stands.
   """
   def list_sub_group_folders(profile, parents, opts \\ [])
 
@@ -5318,14 +5543,16 @@ defmodule PotokIde.Social do
     sql = """
     WITH RECURSIVE #{sub_group_memberships_sql()}
     SELECT p.parent_id, f.id, f.name, f.is_thread, f.is_public, f.is_member,
-      counts.child_count, counts.thread_child_count
+      CASE WHEN f.shortcut_id IS NULL THEN counts.child_count ELSE 0 END,
+      CASE WHEN f.shortcut_id IS NULL THEN counts.thread_child_count ELSE 0 END,
+      f.shortcut_id
     FROM UNNEST($1::bigint[], $2::integer[], $3::text[], $4::bigint[])
       AS p(parent_id, page_limit, after_name, after_id)
     CROSS JOIN LATERAL (
-      SELECT v.id, v.name, v.is_thread, v.is_public, v.is_member
+      SELECT v.id, v.name, v.is_thread, v.is_public, v.is_member, v.shortcut_id
       FROM (
         SELECT g.id, g.name, g.parent_value_id IS NOT NULL AS is_thread, g.is_public,
-          TRUE AS is_member
+          TRUE AS is_member, NULL::bigint AS shortcut_id
         FROM mine
         JOIN groups g ON g.id = mine.group_id
         WHERE g.parent_id = p.parent_id AND #{sub_group_filter_sql("g")}
@@ -5333,7 +5560,7 @@ defmodule PotokIde.Social do
         UNION
 
         SELECT g.id, g.name, g.parent_value_id IS NOT NULL, g.is_public,
-          g.id IN (SELECT group_id FROM mine)
+          g.id IN (SELECT group_id FROM mine), NULL::bigint
         FROM groups g
         WHERE g.parent_id = p.parent_id AND #{sub_group_public_sql("g")}
           AND #{sub_group_filter_sql("g")}
@@ -5341,11 +5568,21 @@ defmodule PotokIde.Social do
         UNION
 
         SELECT g.id, g.name, g.parent_value_id IS NOT NULL, g.is_public,
-          g.id IN (SELECT group_id FROM mine)
+          g.id IN (SELECT group_id FROM mine), NULL::bigint
         FROM groups g
         WHERE g.id = ANY($8::bigint[])
           AND g.is_direct = FALSE
           AND p.parent_id = (SELECT r.id FROM groups r WHERE r.is_root)
+
+        UNION
+
+        SELECT g.id, g.name, FALSE, g.is_public, g.id IN (SELECT group_id FROM mine), s.id
+        FROM groups g
+        JOIN group_shortcuts s ON s.parent_id = p.parent_id AND s.target_id = g.id
+        WHERE g.id = ANY(#{shortcut_targets_sql("p.parent_id")})
+          AND #{shortcut_folder_sql("g", "p.parent_id")}
+          AND NOT (g.id = ANY($8::bigint[])
+            AND p.parent_id = (SELECT r.id FROM groups r WHERE r.is_root))
       ) v
       WHERE p.after_id IS NULL OR (lower(v.name), v.id) > (lower(p.after_name), p.after_id)
       ORDER BY lower(v.name), v.id
@@ -5545,13 +5782,36 @@ defmodule PotokIde.Social do
     "#{alias}.is_public AND ($7::boolean OR #{alias}.id IN (SELECT id FROM member_paths))"
   end
 
-  # Per folder: the visible sub-groups the folder view shows below it, and the
-  # threads among all of them for the threads switch.
+  # The targets of the shortcuts in the group `parent` (SQL), as an array for
+  # `= ANY(...)`: a generic plan of a join walked the whole key of `groups`
+  # to find them, in hundreds of milliseconds with JIT for a profile in
+  # thousands of groups, where this reads each by its key.
+  defp shortcut_targets_sql(parent) do
+    "ARRAY(SELECT st.target_id FROM group_shortcuts st WHERE st.parent_id = #{parent})"
+  end
+
+  # A shortcut target `alias` the folder view shows in the folder `folder`:
+  # one the profile sees by the rule of the folder's own sub-groups, and not
+  # one of them already. Shortcuts never lead to threads or direct
+  # conversations.
+  defp shortcut_folder_sql(alias, folder) do
+    "#{alias}.parent_id <> #{folder} AND #{alias}.is_direct = FALSE" <>
+      " AND #{alias}.parent_value_id IS NULL" <>
+      " AND (#{alias}.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql(alias)})"
+  end
+
+  # Per folder: the visible sub-groups the folder view shows below it, its
+  # shortcuts among them, and the threads among all of them for the threads
+  # switch.
   defp sub_group_counts_sql(folder) do
     """
     LEFT JOIN LATERAL (
       SELECT
-        COUNT(*) FILTER (WHERE $6::boolean OR k.parent_value_id IS NULL) AS child_count,
+        COUNT(*) FILTER (WHERE $6::boolean OR k.parent_value_id IS NULL) + (
+          SELECT COUNT(*) FROM groups k
+          WHERE k.id = ANY(#{shortcut_targets_sql("#{folder}.id")})
+            AND #{shortcut_folder_sql("k", "#{folder}.id")}
+        ) AS child_count,
         COUNT(*) FILTER (WHERE k.parent_value_id IS NOT NULL) AS thread_child_count
       FROM groups k
       WHERE k.parent_id = #{folder}.id
@@ -5561,7 +5821,31 @@ defmodule PotokIde.Social do
     """
   end
 
-  defp sub_group_folder([id, name, thread?, public?, member?, child_count, thread_child_count]) do
+  # A folder of the folder queries; `shortcut_id` is set for a shortcut, which
+  # the folder view shows as a leaf that opens its target.
+  defp sub_group_folder([id, name, thread?, public?, member?, child_count, thread_child_count]),
+    do:
+      sub_group_folder([
+        id,
+        name,
+        thread?,
+        public?,
+        member?,
+        child_count,
+        thread_child_count,
+        nil
+      ])
+
+  defp sub_group_folder([
+         id,
+         name,
+         thread?,
+         public?,
+         member?,
+         child_count,
+         thread_child_count,
+         shortcut_id
+       ]) do
     %{
       id: id,
       name: name,
@@ -5569,7 +5853,8 @@ defmodule PotokIde.Social do
       public?: public?,
       member?: member?,
       child_count: child_count,
-      thread_child_count: thread_child_count
+      thread_child_count: thread_child_count,
+      shortcut_id: shortcut_id
     }
   end
 

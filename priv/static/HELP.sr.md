@@ -52,6 +52,8 @@ Sve se dešava u grupama, a svaka grupa može imati svoje podgrupe, koliko god d
 
 Razgovor u četiri oka je takođe grupa, sa samo dva člana. Nit, duži razgovor otvoren iz jedne poruke, je grupa ispod one u kojoj je poruka napisana.
 
+Grupa iz dubine stabla može da stoji i na još jednom mestu, kao prečica: među podgrupama druge grupe ili na samoj početnoj strani. Dodir na prečicu otvara grupu tamo gde stoji, kao prečica na računaru.
+
 ![Podgrupe kao fascikle: Mapa kraja otvorena, sa grupom za svaki problem](podgrupe-folderi)
 
 ### Šta se deli u grupi {:#sadrzaj}
@@ -202,6 +204,14 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove. „Podesi sve ručno“ otvara pun obrazac.
 
 ![Kakva grupa ti treba?](kreiraj-podgrupu) ![Naziv, javnost i nasleđivanje članova](kreiraj-korak)
+
+### Prečice {:#precice}
+
+Na dnu istog izbora je **Prečica**. Ona ne pravi novu grupu, nego ovde stavlja grupu koja stoji negde drugde, recimo zbor građana iz mesne zajednice na početnu stranu. Bez pretrage nudi grupe u kojima si član, a pretraga po nazivu nalazi svaku grupu koju vidiš. Dodir na grupu postavlja prečicu.
+
+Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju poruku i nepročitane poruke. Brojači iznad nje ih ne broje dvaput. Prečicu vide svi koji vide i grupu u kojoj stoji i originalnu grupu, pa privatna grupa ostaje skrivena od onih koji u njoj nisu. Ukloniti je mogu onaj ko ju je postavio i admin grupe u kojoj stoji, iz menija reda, a originalna grupa ostaje kakva je.
+
+![Prečica na početnoj strani vodi do zbora u mesnoj zajednici](precica) ![Prečica: grupe u kojima si član, i pretraga po nazivu](precica-izbor)
 
 Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
 

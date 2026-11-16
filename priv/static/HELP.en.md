@@ -46,6 +46,8 @@ Everything happens in groups, and every group can have sub-groups of its own, as
 
 A one-to-one conversation is a group too, with just two members. A thread, a longer conversation opened from one message, is a group under the one where the message was written.
 
+A group from deep in the tree can also stand in one more place, as a shortcut: among the sub-groups of another group, or right on the home page. A tap on the shortcut opens the group where it stands, as a shortcut does on a computer.
+
 ![Sub-groups as folders: the neighbourhood map open, with a group for each problem](podgrupe-folderi)
 
 ### What a group shares {:#sadrzaj}
@@ -196,6 +198,14 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 In the second step you enter the name and choose whether the group is public and whether it inherits members. "Set everything up yourself" opens the full form.
 
 ![What kind of group do you need?](kreiraj-podgrupu) ![Name, public or not, and inheriting members](kreiraj-korak)
+
+### Shortcuts {:#precice}
+
+At the bottom of the same choice is **Shortcut**. It makes no new group: it puts here a group that stands somewhere else, say a local community's citizens' assembly, on the home page. Without a search it offers the groups you are in, and a search by name finds every group you see. A tap on a group places the shortcut.
+
+A shortcut has an arrow and the word Shortcut, and it shows the group itself: its newest message and its unread messages. The counters above it do not count them twice. Everyone who sees both the group it stands in and the original group sees the shortcut, so a private group stays hidden from those who are not in it. Whoever placed it and an admin of the group it stands in can remove it, from the row's menu, and the original group stays as it is.
+
+![A shortcut on the home page leads to the assembly inside the local community](precica) ![Shortcut: the groups you are in, and a search by name](precica-izbor)
 
 Edit group has everything else: name and picture, access and membership (public group, description open to guests, chat open to non-members, inheritance), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
 

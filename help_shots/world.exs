@@ -46,6 +46,9 @@ defmodule HelpShots.World do
     direct = direct(p)
     pending(p, mz)
 
+    # Ana keeps the assembly's chat on her home page too, as a shortcut.
+    {:ok, _shortcut} = Social.create_group_shortcut(p.("ana"), root, mz.zbor.id)
+
     # Ana reads everything up to yesterday evening, so today's messages are new.
     for {group, until} <- [
           {mz.zbor, :yesterday},

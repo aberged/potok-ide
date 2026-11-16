@@ -2,7 +2,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   @moduledoc """
   What opens on "Create sub-group": first the presets of `GroupPresets`, each
   said in a line, then the name and what is left to pick. The full form stays a
-  link away, for everything a preset does not ask.
+  link away, for everything a preset does not ask. Below the presets, a
+  shortcut (`PotokIde.Social.GroupShortcut`) puts a group that stands
+  elsewhere among the sub-groups, found by its name.
 
   One dialog per page, as it opens from the menu of any row as well. The host
   LiveView calls `init/1` in mount and delegates every `"group_create_menu_*"`
@@ -29,7 +31,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
          {group_id, ""} <- Integer.parse(to_string(id)),
          %Group{} = parent <- Social.get_visible_group(profile, group_id),
          true <- Access.can?(Social.get_group_access(profile, parent), :create_subgroups) do
-      menu = %{parent: parent, preset: nil, form: nil, error: nil}
+      menu = %{parent: parent, preset: nil, form: nil, error: nil, shortcut: nil}
 
       {:noreply, assign(socket, :group_create_menu, menu)}
     else
@@ -64,7 +66,53 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   def handle_event("group_create_menu_back", _params, socket) do
     menu = socket.assigns.group_create_menu
 
-    {:noreply, assign(socket, :group_create_menu, %{menu | preset: nil, form: nil, error: nil})}
+    {:noreply,
+     assign(socket, :group_create_menu, %{
+       menu
+       | preset: nil,
+         form: nil,
+         error: nil,
+         shortcut: nil
+     })}
+  end
+
+  # The shortcut's step starts on the viewer's own groups that this one does
+  # not hold yet, and a name looks among every group the viewer sees.
+  def handle_event("group_create_menu_shortcut", _params, socket),
+    do: {:noreply, search_shortcut_targets(socket, "")}
+
+  def handle_event("group_create_menu_shortcut_search", %{"shortcut" => params}, socket),
+    do: {:noreply, search_shortcut_targets(socket, params["search"] || "")}
+
+  def handle_event("group_create_menu_shortcut_pick", %{"id" => id}, socket) do
+    profile = socket.assigns.current_profile
+    menu = socket.assigns.group_create_menu
+
+    with %{} <- menu.shortcut,
+         {target_id, ""} <- Integer.parse(to_string(id)),
+         {:ok, _shortcut} <- Social.create_group_shortcut(profile, menu.parent, target_id) do
+      socket =
+        socket
+        |> init()
+        |> put_flash(
+          :info,
+          gettext("The shortcut is in place. It opens the group where it stands.")
+        )
+
+      # Opened from a row, the shortcut stands in that row's group.
+      if match?(%Group{id: id} when id == menu.parent.id, socket.assigns[:group]),
+        do: {:noreply, socket},
+        else: {:noreply, push_navigate(socket, to: ~p"/groups/#{menu.parent.id}/sub_groups")}
+    else
+      {:error, :already_listed} ->
+        {:noreply, shortcut_error(socket, gettext("This group already has that shortcut."))}
+
+      {:error, _reason} ->
+        {:noreply, shortcut_error(socket, gettext("Could not place the shortcut."))}
+
+      _not_a_step ->
+        {:noreply, socket}
+    end
   end
 
   def handle_event("group_create_menu_validate", %{"group_preset" => attrs}, socket) do
@@ -104,6 +152,25 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   end
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
+
+  defp search_shortcut_targets(socket, search) do
+    menu = socket.assigns.group_create_menu
+
+    results =
+      Social.search_shortcut_targets(socket.assigns.current_profile, menu.parent, search)
+
+    assign(socket, :group_create_menu, %{
+      menu
+      | preset: nil,
+        form: nil,
+        error: nil,
+        shortcut: %{form: to_form(%{"search" => search}, as: :shortcut), results: results}
+    })
+  end
+
+  defp shortcut_error(socket, message) do
+    update(socket, :group_create_menu, &%{&1 | error: message})
+  end
 
   defp form(socket, preset, attrs, action \\ nil) do
     parent = socket.assigns.group_create_menu.parent
@@ -277,8 +344,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
           autofocus
           class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl shadow-base-content/10 outline-none sm:max-w-md sm:rounded-3xl sm:border-b"
         >
-          <.choices :if={!@menu.preset} parent={@menu.parent} />
+          <.choices :if={!@menu.preset and !@menu.shortcut} parent={@menu.parent} />
           <.details :if={@menu.preset} menu={@menu} preset={preset(@menu.preset)} />
+          <.shortcut_step :if={@menu.shortcut} menu={@menu} />
         </section>
       </div>
     </dialog>
@@ -335,6 +403,26 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
           <span class="min-w-0 flex-1">
             <span class="block text-sm font-semibold">{preset.title}</span>
             <span class="block text-sm text-base-content/65">{preset.hint}</span>
+          </span>
+          <.icon
+            name="hero-chevron-right"
+            class="size-4 shrink-0 text-base-content/40 transition-transform duration-150 ease-out group-hover/preset:translate-x-0.5"
+          />
+        </button>
+      </li>
+      <li class="mt-1 border-t border-base-300/60 pt-1">
+        <button
+          id="group-create-shortcut"
+          type="button"
+          phx-click="group_create_menu_shortcut"
+          class="group/preset flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition duration-150 ease-out hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[.99]"
+        >
+          <.preset_icon name="hero-arrow-turn-up-right" />
+          <span class="min-w-0 flex-1">
+            <span class="block text-sm font-semibold">{gettext("Shortcut")}</span>
+            <span class="block text-sm text-base-content/65">
+              {gettext("A group that stands somewhere else.")}
+            </span>
           </span>
           <.icon
             name="hero-chevron-right"
@@ -434,6 +522,96 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         variant="primary"
       >
         {gettext("Create")}
+      </.button>
+    </.menu_footer>
+    """
+  end
+
+  attr :menu, :map, required: true
+
+  # Pick the group the shortcut opens. A tap places it: the shortcut takes
+  # nothing else, and taking it away is as easy.
+  defp shortcut_step(assigns) do
+    ~H"""
+    <.menu_header icon="hero-arrow-turn-up-right">
+      {gettext("Shortcut")}
+      <:subtitle :if={!@menu.parent.is_root}>
+        {gettext("A shortcut in %{name}.", name: @menu.parent.name)}
+      </:subtitle>
+    </.menu_header>
+
+    <div class="border-b border-base-300/60 px-5 pt-3 pb-2">
+      <.form
+        for={@menu.shortcut.form}
+        id="group-create-shortcut-form"
+        phx-change="group_create_menu_shortcut_search"
+        phx-submit="group_create_menu_shortcut_search"
+      >
+        <.input
+          field={@menu.shortcut.form[:search]}
+          id="group-create-shortcut-search"
+          type="text"
+          placeholder={gettext("Search groups by name")}
+          aria-label={gettext("Search groups by name")}
+          autocomplete="off"
+          phx-debounce="200"
+        />
+      </.form>
+      <p
+        :if={@menu.error}
+        id="group-create-menu-error"
+        role="alert"
+        class="mb-1 flex items-start gap-1.5 text-sm text-error"
+      >
+        <.icon name="hero-exclamation-circle" class="mt-0.5 size-4 shrink-0" />
+        {@menu.error}
+      </p>
+    </div>
+
+    <ul id="group-create-shortcut-results" class="min-h-40 flex-1 overflow-y-auto p-2">
+      <li :for={%{group: group, parent_name: parent_name} <- @menu.shortcut.results}>
+        <button
+          id={"group-create-shortcut-result-#{group.id}"}
+          type="button"
+          phx-click="group_create_menu_shortcut_pick"
+          phx-value-id={group.id}
+          class="flex w-full cursor-pointer items-center gap-3 rounded-2xl px-3 py-2 text-left transition duration-150 ease-out hover:bg-base-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-[.99] phx-click-loading:opacity-60"
+        >
+          <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-base-200 text-base-content/65">
+            <.icon
+              name={if(group.is_public, do: "hero-globe-alt", else: "hero-lock-closed")}
+              class="size-4"
+            />
+          </span>
+          <span class="min-w-0 flex-1">
+            <span class="block truncate text-sm font-semibold">{group.name}</span>
+            <span :if={parent_name} class="block truncate text-xs text-base-content/65">
+              {gettext("in %{name}", name: parent_name)}
+            </span>
+          </span>
+          <.icon name="hero-plus" class="size-4 shrink-0 text-base-content/40" />
+        </button>
+      </li>
+      <li
+        :if={@menu.shortcut.results == []}
+        id="group-create-shortcut-empty"
+        class="px-3 py-6 text-center text-sm text-base-content/65"
+      >
+        {if(@menu.shortcut.form[:search].value in [nil, ""],
+          do: gettext("Type the name of the group you are looking for."),
+          else: gettext("No group by that name that you see and that is not here yet.")
+        )}
+      </li>
+    </ul>
+
+    <.menu_footer class="justify-end">
+      <.button
+        id="group-create-menu-back"
+        type="button"
+        phx-click="group_create_menu_back"
+        variant="ghost"
+      >
+        {gettext("Back")}
       </.button>
     </.menu_footer>
     """

@@ -90,22 +90,23 @@ const TABLES = {
     PollBallot: [COLUMN[4], 764],
     GroupReaction: [COLUMN[1], 428],
     GroupBlock: [COLUMN[2], 428],
-    Tag: [COLUMN[1], 524],
-    Tagging: [COLUMN[2], 524],
-    CostHour: [COLUMN[1], 620],
-    Invoice: [COLUMN[2], 620],
+    GroupShortcut: [COLUMN[2], 500],
+    Tag: [COLUMN[1], 596],
+    Tagging: [COLUMN[2], 596],
+    CostHour: [COLUMN[1], 692],
+    Invoice: [COLUMN[2], 692],
   },
   clusters: {
     account: [16, 14, 192, 302],
     profiles: [218, 14, 192, 158],
     joining: [420, 14, 596, 158],
-    group: [218, 182, 394, 302],
+    group: [218, 182, 394, 374],
     content: [622, 182, 394, 302],
     calendar: [622, 494, 394, 158],
     polls: [622, 662, 394, 158],
     notices: [16, 446, 192, 230],
-    tags: [218, 494, 394, 86],
-    hosting: [218, 590, 394, 86],
+    tags: [218, 566, 394, 86],
+    hosting: [218, 662, 394, 86],
   },
 }
 
@@ -123,7 +124,10 @@ const ROUTES = {
   "GroupReaction>Group": {from: "r", to: "l"},
   "GroupBlock>Group": {from: "r", to: "r", bulge: 34},
   "GroupBlock>Profile": {from: "l", to: "l", bulge: 40},
-  "Tagging>ValueAttachment": {d: "M602 534C618 512 612 417 652 417H790C812 417 818 402 818 372V262C818 252 824 248 834 247"},
+  // Both of its keys to the group, outside the blocks' line.
+  "GroupShortcut>Group": {from: "r", to: "r", bulge: 46},
+  "GroupShortcut>Profile": {from: "l", to: "l", bulge: 50},
+  "Tagging>ValueAttachment": {d: "M602 606C618 584 612 417 652 417H790C812 417 818 402 818 372V262C818 252 824 248 834 247"},
   // Up the gap between the columns, then under the value, over its reactions.
   "ValueProcess>Value": {d: "M834 368C828 368 826 364 826 356V274C826 269 822 266 816 266H796C791 266 788 263 788 258"},
 }

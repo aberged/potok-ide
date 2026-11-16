@@ -559,9 +559,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           else: List.first(collections)
 
       fields =
-        if editor.trigger != "value" or collection != editor.collection or alt_id != editor.alt_id,
-          do: DrawnProcesses.fields(group, alt_id, collection),
-          else: editor.fields
+        if editor.trigger != "value" or collection != editor.collection or
+             alt_id != editor.alt_id,
+           do: DrawnProcesses.fields(group, alt_id, collection),
+           else: editor.fields
 
       %{
         editor

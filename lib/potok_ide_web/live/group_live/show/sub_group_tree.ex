@@ -12,7 +12,9 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
   It keeps its filters (`threads?`, `public?`) for the folders opened later.
   A node is `%{group, child_count, thread_child_count, children, more?,
   open?, unread_count}`; `children` stays nil until the folder is opened,
-  and the page keeps `unread_count` up to date.
+  and the page keeps `unread_count` up to date. A shortcut's node is a leaf
+  whose group is its target with the shortcut's `shortcut_id`: it never
+  opens, as the target opens where it stands.
   """
 
   alias PotokIde.Social
@@ -209,7 +211,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   defp new_node(folder) do
     %{
-      group: Map.take(folder, [:id, :name, :thread?, :public?, :member?]),
+      group: Map.take(folder, [:id, :name, :thread?, :public?, :member?, :shortcut_id]),
       child_count: folder.child_count,
       thread_child_count: folder.thread_child_count,
       children: nil,
@@ -222,9 +224,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
   defp update_node(tree, group_id, fun),
     do: %{tree | nodes: update_nodes(tree.nodes, group_id, fun)}
 
+  # A shortcut's leaf shares its target's id, but only the target opens.
   defp update_nodes(nodes, group_id, fun) do
     Enum.map(nodes, fn
-      %{group: %{id: ^group_id}} = node ->
+      %{group: %{id: ^group_id, shortcut_id: nil}} = node ->
         fun.(node)
 
       %{children: [_ | _] = children} = node ->
