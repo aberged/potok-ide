@@ -187,6 +187,19 @@ defmodule PotokIde.Processes.Types do
     end
   end
 
+  # So does another entity that holds each of its attributes, as the entity
+  # of one group may mirror what a process of another takes.
+  def fits?({:entity, given}, {:entity, wanted}, entities) when given != wanted do
+    case attributes(entities, given) do
+      nil ->
+        false
+
+      attributes ->
+        fields = Map.new(attributes, &{&1["name"], of(&1)})
+        fits?({:record, fields, false}, {:entity, wanted}, entities)
+    end
+  end
+
   def fits?({:list, actual}, {:list, expected}, entities), do: fits?(actual, expected, entities)
   def fits?(actual, expected, _entities), do: fits?(actual, expected)
 

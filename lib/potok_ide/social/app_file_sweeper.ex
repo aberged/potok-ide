@@ -6,7 +6,9 @@ defmodule PotokIde.Social.AppFileSweeper do
   delete nothing twice.
 
   The same pass deletes the profiles of processes whose app is gone and that
-  left nothing they wrote (`PotokIde.Social.AppProcesses.sweep/0`).
+  left nothing they wrote (`PotokIde.Social.AppProcesses.sweep/0`), and
+  fails the runs that wait for a run deleted with its process or its group
+  (`PotokIde.Processes.Engine.fail_orphaned_calls/1`).
 
   A failed pass is logged and the next one runs as usual, as in
   `PotokIde.Polls.Scheduler`.
@@ -44,6 +46,7 @@ defmodule PotokIde.Social.AppFileSweeper do
   defp tick do
     AppFiles.sweep()
     AppProcesses.sweep()
+    PotokIde.Processes.Engine.fail_orphaned_calls()
   rescue
     error ->
       Logger.error("App file sweep failed: " <> Exception.format(:error, error, __STACKTRACE__))

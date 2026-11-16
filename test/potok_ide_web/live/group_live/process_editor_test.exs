@@ -1319,6 +1319,146 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     end
   end
 
+  describe "a public process" do
+    alias PotokIde.Processes.GroupEntities
+    alias PotokIde.Social.Access
+
+    # A group under the one of the setup, with the same editor.
+    defp below!(ctx) do
+      {:ok, group} =
+        Social.create_group(ctx.owner, ctx.group, %{
+          "name" => "ispod",
+          "description" => "",
+          "description_format" => :markdown,
+          "home_page" => :chat
+        })
+
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, group)
+      Social.get_group!(group.id)
+    end
+
+    test "an editor makes a process others call public, with the drawing", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      # Only a process that others call can be.
+      lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      refute has_element?(lv, "#process-trigger-public")
+
+      lv
+      |> form("#process-editor-meta", %{"meta" => %{"trigger" => "process"}})
+      |> render_change()
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      assert has_element?(lv, "#process-trigger-public:not([checked])")
+
+      lv
+      |> form("#process-trigger-form", %{"trigger" => %{"fields" => "kvar", "public" => "true"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-trigger-public[checked]")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{id: id, is_public: true, trigger: "process"}] = drawn(ctx.group)
+
+      # The Processes tab marks it.
+      {:ok, tab, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(tab, "#process-row-#{id}-public")
+
+      # Private again, saved the same way.
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=#{id}")
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      assert has_element?(lv, "#process-trigger-public[checked]")
+
+      lv
+      |> form("#process-trigger-form", %{"trigger" => %{"fields" => "kvar", "public" => "false"}})
+      |> render_change()
+
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{is_public: false}] = drawn(ctx.group)
+
+      {:ok, tab, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(tab, "#process-row-#{id}-public")
+    end
+
+    test "a call in a group below is offered it, with what it takes", ctx do
+      {:ok, kvar} =
+        GroupEntities.create(ctx.group, Access.for_profile(ctx.owner, ctx.group), %{
+          "name" => "Kvar",
+          "attributes" => [
+            %{"name" => "naslov", "type" => "text", "required" => true},
+            %{"name" => "sprat", "type" => "number"}
+          ]
+        })
+
+      {:ok, callee} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "process",
+          "name" => "Majstor",
+          "entry_entity_id" => kvar.id,
+          "is_public" => true,
+          "graph" => PotokIde.Processes.GraphEdit.new()
+        })
+
+      {:ok, callee} = DrawnProcesses.activate(ctx.owner, ctx.group, callee.id)
+
+      {:ok, _private} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "process",
+          "name" => "Samo ovde",
+          "graph" => PotokIde.Processes.GraphEdit.new()
+        })
+
+      below = below!(ctx)
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{below.id}/processes?process=new")
+
+      lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+
+      # Its data shows what the public process takes, to read.
+      assert has_element?(lv, "#process-data-taken-#{callee.id}", "Majstor")
+      assert has_element?(lv, "#process-data-taken-#{callee.id}", "process-editor")
+      assert has_element?(lv, "#process-data-taken-#{callee.id}", "naslov")
+      assert has_element?(lv, "#process-data-taken-#{callee.id}", "number")
+
+      insert(lv, "f1", "call")
+
+      # The public one, named with its group; not the private one.
+      assert has_element?(
+               lv,
+               "#process-element-form select[name='element[process]'] option[value='#{callee.id}']",
+               "Majstor · process-editor"
+             )
+
+      refute has_element?(lv, "#process-element-form option", "Samo ovde")
+      assert has_element?(lv, "#process-call-foreign", "process-editor")
+      assert has_element?(lv, "#process-call-field-naslov")
+
+      assert has_element?(
+               lv,
+               "#process-editor-error",
+               "An attribute that must be filled in is left empty."
+             )
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"fields" => %{"naslov" => "{{start.title}}", "sprat" => "2"}}
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{graph: graph}] = drawn(below)
+      assert %{"process" => id} = Enum.find(graph["nodes"], &(&1["type"] == "callActivity"))
+      assert id == callee.id
+    end
+  end
+
   test "an app's own process shows as the app drew it", ctx do
     graph = %{
       "nodes" => [

@@ -358,6 +358,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             {if(@entry.process.drawn, do: gettext("drawn"), else: gettext("from the app"))}
           </span>
           <span
+            :if={@entry.process.is_public}
+            id={"process-row-#{@entry.id}-public"}
+            class="inline-flex h-5 items-center gap-1 rounded-full bg-sky-500/10 px-2 text-[11px] font-semibold text-sky-700 dark:text-sky-300"
+            title={gettext("The processes of the groups above and below may call it.")}
+          >
+            <.icon name="hero-globe-alt" class="size-3" />
+            {gettext("public")}
+          </span>
+          <span
             :if={!@entry.process.active}
             id={"process-row-#{@entry.id}-off"}
             class="inline-flex h-5 items-center rounded-full bg-base-200 px-2 text-[11px] font-semibold text-base-content/60"

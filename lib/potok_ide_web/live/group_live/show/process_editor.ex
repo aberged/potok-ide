@@ -430,6 +430,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       assigns
       |> assign(:data, ProcessEditorState.data(assigns.editor))
       |> assign(:entities, assigns.editor[:entities] || [])
+      # The public processes of other groups it may call, with the entity
+      # each takes: theirs, so only to be read here.
+      |> assign(
+        :taken,
+        for(p <- assigns.editor[:callable] || [], p.group && p.attributes != [], do: p)
+      )
 
     ~H"""
     <div id="process-data-panel" class="space-y-5">
@@ -511,6 +517,39 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         title={gettext("Fields of the group")}
       >
         <.names rows={@data.group} entities={@entities} />
+      </.data_section>
+
+      <.data_section
+        :if={@taken != []}
+        id="process-data-taken"
+        icon="hero-globe-alt"
+        title={gettext("What public processes take")}
+      >
+        <ul class="space-y-1.5">
+          <li
+            :for={process <- @taken}
+            id={"process-data-taken-#{process.id}"}
+            class="rounded-2xl border border-base-300/70 bg-base-100 px-3 py-2"
+          >
+            <p class="truncate text-sm font-semibold">
+              {process.name}
+              <span class="font-normal text-base-content/55">· {process.group}</span>
+            </p>
+            <p class="mt-1 flex flex-wrap gap-1">
+              <span
+                :for={attribute <- process.attributes}
+                class="inline-flex items-baseline gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px]"
+              >
+                <code class="font-mono text-violet-700 dark:text-violet-300">
+                  {attribute["name"]}
+                </code>
+                <span class="text-base-content/55">
+                  {ProcessEntities.type_words(Types.of(attribute), @entities)}
+                </span>
+              </span>
+            </p>
+          </li>
+        </ul>
       </.data_section>
 
       <.data_section
@@ -1313,12 +1352,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 type="select"
                 label={gettext("Process")}
                 prompt={if(is_nil(@callee), do: gettext("Pick a process"))}
-                options={
-                  for p <- @editor.callable,
-                      do:
-                        {if(p.active, do: p.name, else: gettext("%{name} (off)", name: p.name)), p.id}
-                }
+                options={for p <- @editor.callable, do: {callable_label(p), p.id}}
               />
+              <p
+                :if={@callee && @callee.group}
+                id="process-call-foreign"
+                class="rounded-xl bg-base-200/70 px-3 py-2 text-xs text-base-content/70"
+              >
+                <.icon name="hero-globe-alt" class="mr-1 size-3.5 align-[-2px]" />
+                {gettext(
+                  "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns only which end it reached.",
+                  group: @callee.group
+                )}
+              </p>
               <input type="hidden" name="element[wait]" value="false" />
               <label class="flex items-center gap-2 text-sm">
                 <input
@@ -1568,6 +1614,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               <.icon name="hero-cube" class="size-4" />
               {gettext("Make an entity of these fields")}
             </.button>
+            <input type="hidden" name="trigger[public]" value="false" />
+            <label class="flex items-start gap-2 text-sm">
+              <input
+                type="checkbox"
+                id="process-trigger-public"
+                name="trigger[public]"
+                value="true"
+                checked={@editor.public?}
+                class="checkbox checkbox-sm mt-0.5"
+              />
+              <span>
+                <span class="font-medium">{gettext("Public process")}</span>
+                <span class="block text-xs text-base-content/60">
+                  {gettext(
+                    "The processes of the groups above and below this one may call it too, and their editors see its name and what it takes. Left off, only the processes of this group call it."
+                  )}
+                </span>
+              </span>
+            </label>
             <p class="text-xs text-base-content/60">
               {if(@editor[:entry_entity],
                 do:
@@ -1661,6 +1726,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   defp entry_none("signal"), do: gettext("Whatever was put in it")
   defp entry_none("value"), do: gettext("As it comes")
   defp entry_none(_process), do: gettext("Plain fields")
+
+  # A process a call may start, by its name: with its group for a public
+  # one of another group.
+  defp callable_label(process) do
+    name =
+      if process.active,
+        do: process.name,
+        else: gettext("%{name} (off)", name: process.name)
+
+    if process.group, do: "#{name} · #{process.group}", else: name
+  end
 
   # What a call hands over under `name`: the name, and for an attribute of
   # the entity the called process takes, its type and whether it is required.

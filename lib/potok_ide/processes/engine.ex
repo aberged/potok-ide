@@ -38,6 +38,14 @@ defmodule PotokIde.Processes.Engine do
   a run that waits for one cancelled fails (`call_cancelled`). Locks are
   taken deeper runs first.
 
+  A call reaches a process of the caller's group, or a public one of a
+  group above or below it (`Reach`). A run started in another group gets
+  what the call hands over and nothing else: it has no subject and nobody
+  set it off, as the caller's value and people are no part of that group,
+  and the caller hears only which end it reached. A caller whose called
+  run is gone, with its process or its group, fails as one whose run was
+  cancelled (`fail_orphaned_calls/1`).
+
   A signal (`serviceTask` `signal`) is delivered in the step's transaction:
   the runs of the group's drawn processes that wait for it on a
   `receiveTask` just then get what it carries under that element and are
@@ -74,6 +82,7 @@ defmodule PotokIde.Processes.Engine do
     Graph,
     GroupFields,
     Legacy,
+    Reach,
     Scheduler,
     Scope,
     Triggers,
@@ -503,14 +512,24 @@ defmodule PotokIde.Processes.Engine do
          {:ok, callee} <- callee(call["process"], process.group_id),
          :ok <- room(callee),
          {:ok, fields} <- handed(callee, call["fields"] || %{}, value_data(instance)) do
+      # In its own group the run shares the caller's subject and people; in
+      # another it gets what is handed over and nothing else.
+      shared =
+        if callee.group_id == process.group_id do
+          [
+            value_id: instance.value_id,
+            subject_group_id: instance.subject_group_id,
+            started_by: instance.started_by_id,
+            triggered_by: instance.triggered_by_id
+          ]
+        else
+          []
+        end
+
       child =
-        start_drawn_on(callee,
-          value_id: instance.value_id,
-          subject_group_id: instance.subject_group_id,
-          started_by: instance.started_by_id,
-          triggered_by: instance.triggered_by_id,
-          depth: instance.depth + 1,
-          data: Map.put(fields, "from", process.name)
+        start_drawn_on(
+          callee,
+          shared ++ [depth: instance.depth + 1, data: Map.put(fields, "from", process.name)]
         )
 
       announcements = [fn -> Scheduler.nudge() end, fn -> tell(child) end]
@@ -873,14 +892,21 @@ defmodule PotokIde.Processes.Engine do
   # waits for this step and then cancels what it started.
   defp callee(id, group_id) when is_integer(id) do
     from(p in AppProcess,
-      where: p.id == ^id and p.group_id == ^group_id and p.drawn and p.trigger == "process",
+      where: p.id == ^id and p.drawn and p.trigger == "process",
       lock: "FOR SHARE"
     )
     |> Repo.one()
     |> case do
-      %AppProcess{active: true} = callee -> {:ok, callee}
-      %AppProcess{} -> {:error, :call_inactive}
-      nil -> {:error, :call_unknown}
+      %AppProcess{} = callee ->
+        cond do
+          # One of another group that is private again is as good as gone.
+          not Reach.callable?(callee, group_id) -> {:error, :call_unknown}
+          not callee.active -> {:error, :call_inactive}
+          true -> {:ok, callee}
+        end
+
+      nil ->
+        {:error, :call_unknown}
     end
   end
 
@@ -911,7 +937,7 @@ defmodule PotokIde.Processes.Engine do
         []
 
       caller ->
-        result = result(child, Graph.label(end_node))
+        result = result(child, Graph.label(end_node), same_group?(child, caller))
 
         caller =
           update!(caller, %{
@@ -924,9 +950,20 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
+  defp same_group?(%ValueProcess{app_process_id: a}, %ValueProcess{app_process_id: b}) do
+    groups =
+      from(p in AppProcess, where: p.id in ^[a, b], distinct: true, select: p.group_id)
+      |> Repo.all()
+
+    length(groups) == 1
+  end
+
   # What a called run ended with: the end it reached, the fields it was given
-  # and what its waits brought back, or only the end when that is too much.
-  defp result(%ValueProcess{} = child, outcome) do
+  # and what its waits brought back, or only the end when that is too much,
+  # or when the run was another group's.
+  defp result(%ValueProcess{}, outcome, false), do: %{"outcome" => outcome}
+
+  defp result(%ValueProcess{} = child, outcome, true) do
     result =
       child.data
       |> Map.merge(child.results)
@@ -1219,6 +1256,43 @@ defmodule PotokIde.Processes.Engine do
 
     fail_callers(own ++ failed)
     count
+  end
+
+  @doc """
+  Fails the runs that wait for a run that is gone, deleted with its process
+  or its group, as those whose run was cancelled do (`call_cancelled`): at
+  most `limit` in one go, skipping one another node holds. Returns how many
+  it failed.
+  """
+  def fail_orphaned_calls(limit \\ 200) do
+    {:ok, failed} =
+      Repo.transaction(fn ->
+        from(i in ValueProcess,
+          where: i.status == :waiting and is_nil(i.awaiting_id),
+          where:
+            fragment(
+              "jsonb_path_exists(?, '$.nodes[*] \\? (@.id == $e && @.type == \"callActivity\")', jsonb_build_object('e', ?))",
+              i.graph,
+              i.element
+            ),
+          # One whose run ended has heard of it, and only waits to go on.
+          where: fragment("(? -> ?) IS NULL", i.results, i.element),
+          order_by: [asc: i.id],
+          limit: ^limit,
+          lock: "FOR UPDATE SKIP LOCKED"
+        )
+        |> Repo.all()
+        |> Enum.map(fn caller ->
+          update!(caller, %{
+            status: :failed,
+            wake_at: nil,
+            error: %{"element" => caller.element, "reason" => "call_cancelled"}
+          })
+        end)
+      end)
+
+    Enum.each(failed, &tell/1)
+    length(failed)
   end
 
   defp lock_deepest_first([]), do: :ok

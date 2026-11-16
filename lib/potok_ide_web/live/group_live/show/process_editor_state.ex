@@ -92,6 +92,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           dirty?: true,
           upgraded?: false,
           stale?: false,
+          public?: false,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -142,6 +143,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           upgraded?: drawing.upgraded?,
           # Saved with things as they were: saving it again brings it in step.
           stale?: manage? and DrawnProcesses.stale?(row, group),
+          public?: row.is_public,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -195,6 +197,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           dirty?: false,
           upgraded?: false,
           stale?: false,
+          public?: false,
           selected: nil,
           inserting: nil,
           error: nil,
@@ -429,10 +432,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         do: trigger_fields(socket.assigns.group, editor.trigger, config),
         else: editor.fields
 
+    # Whether the groups above and below may call it, for one others call.
+    public? =
+      if Map.has_key?(params, "public") and editor.trigger == "process",
+        do: params["public"] == "true",
+        else: editor.public?
+
     {:noreply,
      socket
      |> update_editor(
-       &%{&1 | trigger_config: config, entry_entity: entity, fields: fields, dirty?: true}
+       &%{
+         &1
+         | trigger_config: config,
+           entry_entity: entity,
+           fields: fields,
+           public?: public?,
+           dirty?: true
+       }
      )
      |> refresh()}
   end
@@ -718,6 +734,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
                dirty?: drawing.upgraded?,
                upgraded?: drawing.upgraded?,
                stale?: DrawnProcesses.stale?(row, socket.assigns.group),
+               public?: row.is_public,
                conflict: nil,
                selected: nil
            }
@@ -1310,7 +1327,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       "graph" => editor.graph,
       "layout" => %{"nodes" => editor.layout},
       "trigger_config" => editor.trigger_config,
-      "entry_entity_id" => if(Triggers.typed?(editor.trigger), do: editor[:entry_entity])
+      "entry_entity_id" => if(Triggers.typed?(editor.trigger), do: editor[:entry_entity]),
+      "is_public" => editor.trigger == "process" and editor.public?
     }
 
     result =
@@ -2093,7 +2111,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp reason_text(:too_many, _path), do: gettext("A drawing holds at most 100 steps.")
 
   defp reason_text(:unknown_process, _path),
-    do: gettext("Pick a process of the group that starts when another calls it.")
+    do:
+      gettext(
+        "The process this step calls is gone, or no longer public. Pick one that starts when another calls it."
+      )
 
   defp reason_text(:unknown_field, _path),
     do: gettext("The process called does not take this field.")

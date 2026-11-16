@@ -28,6 +28,12 @@ defmodule PotokIde.Social.DrawnProcesses do
   - A drawing whose entities changed since it was saved, or whose calls and
     signals no longer fit those they talk to, is stale (`stale?/2`): it runs
     on as it was saved, and its editors are told to look it over.
+  - A process that others call is private, for the processes of its own
+    group, until an editor makes it public (`set_public/4`): then the
+    processes drawn in the groups above and below its group may call it
+    too (`Processes.Reach`), handing over what it takes. Those callers do
+    not keep it from being deleted or made private again: their calls then
+    fail, and their drawings are stale.
   - A new drawing is off. Switching it on brings its profile into the app's
     group; switching it off cancels its instances that run or wait and takes
     the profile out, as removing an app's rule does (`AppProcesses.stop/2`).
@@ -36,7 +42,17 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.{Check, Engine, Graph, GroupEntities, Scheduler, Triggers, Types}
+  alias PotokIde.Processes.{
+    Check,
+    Engine,
+    Graph,
+    GroupEntities,
+    Reach,
+    Scheduler,
+    Triggers,
+    Types
+  }
+
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -158,7 +174,8 @@ defmodule PotokIde.Social.DrawnProcesses do
   what sets it going (`trigger`, `trigger_config`, `Processes.Triggers`). On a
   new value (`"value"`, the default) it hangs on `attrs["collection"]` of the
   app `attrs["alt_id"]` (an integer, nil for the default description); the
-  other triggers need no app. Returns `{:ok, process}` or `{:error, reason}`:
+  other triggers need no app. One that others call is public with
+  `attrs["is_public"]` true. Returns `{:ok, process}` or `{:error, reason}`:
   `:not_permitted`, `:not_an_app`, `:unknown_collection`, `:too_many`,
   `:invalid_name`, `{:invalid_graph, path, reason}` or
   `{:invalid_trigger, path, reason}`.
@@ -201,7 +218,8 @@ defmodule PotokIde.Social.DrawnProcesses do
           layout: layout,
           trigger: trigger,
           trigger_config: config,
-          entry_entity_id: entity
+          entry_entity_id: entity,
+          is_public: trigger == "process" and attrs["is_public"] == true
         }
         |> Repo.insert!()
       end)
@@ -279,17 +297,24 @@ defmodule PotokIde.Social.DrawnProcesses do
   defp checked(graph, _trigger, _config, _group, _entity, _except), do: {:ok, graph}
 
   # What each process the graph calls takes, as that process was saved.
-  defp contracts(graph, %Group{id: group_id}) do
+  defp contracts(graph, %Group{} = group),
+    do: graph |> callees(group) |> Map.new(&{&1.id, contract(&1)})
+
+  # The processes the graph calls that a drawing of the group may call: its
+  # group's own, and the public ones of the groups above and below
+  # (`Reach`). With `lock`, they are read `FOR SHARE`.
+  defp callees(graph, %Group{id: group_id}, lock \\ false) do
     case graph |> Graph.process_refs() |> Enum.map(&elem(&1, 1)) |> Enum.uniq() do
       [] ->
-        %{}
+        []
 
       ids ->
-        from(p in AppProcess,
-          where: p.group_id == ^group_id and p.drawn and p.trigger == "process" and p.id in ^ids
-        )
+        query =
+          from(p in AppProcess, where: p.drawn and p.trigger == "process" and p.id in ^ids)
+
+        if(lock, do: lock(query, "FOR SHARE"), else: query)
         |> Repo.all()
-        |> Map.new(&{&1.id, contract(&1)})
+        |> Enum.filter(&Reach.callable?(&1, group_id))
     end
   end
 
@@ -315,14 +340,23 @@ defmodule PotokIde.Social.DrawnProcesses do
   """
   def stale?(%AppProcess{drawn: true, graph: %{"v" => 2} = graph} = row, %Group{} = group) do
     checked(graph, row.trigger, row.trigger_config, group, row.entry_entity_id, row.id) !=
-      {:ok, graph}
+      {:ok, graph} or gone_callee?(graph, group)
   end
 
   def stale?(_row, _group), do: false
 
+  # Whether the graph calls a process it may no longer call: one of another
+  # group that was deleted or made private.
+  defp gone_callee?(graph, group) do
+    callable = Map.new(contracts(graph, group), fn {id, contract} -> {id, contract.fields} end)
+    Graph.unknown_process(graph, callable) != nil
+  end
+
   @doc """
-  Changes the `name`, `graph`, `layout` and the trigger's settings
-  (`trigger_config`; the trigger itself stays) of a drawn process, from the
+  Changes the `name`, `graph`, `layout`, the trigger's settings
+  (`trigger_config`; the trigger itself stays) and, where `attrs` says so,
+  the entity it takes (`entry_entity_id`) and whether it is public
+  (`is_public`, for one that others call) of a drawn process, from the
   `revision` the editor started from; another editor's change in between
   gives `{:error, {:conflict, current}}`. Instances under way keep the graph
   they started with. The owner stays while they edit the app.
@@ -362,6 +396,11 @@ defmodule PotokIde.Social.DrawnProcesses do
             {:error, reason} -> Repo.rollback(reason)
           end
 
+        public? =
+          if Map.has_key?(attrs, "is_public"),
+            do: row.trigger == "process" and attrs["is_public"] == true,
+            else: row.is_public
+
         row
         |> Ecto.Changeset.change(
           name: name,
@@ -369,6 +408,7 @@ defmodule PotokIde.Social.DrawnProcesses do
           layout: layout,
           trigger_config: config,
           entry_entity_id: entity,
+          is_public: public?,
           next_run_at: next_run(%{row | trigger_config: config}),
           owner_profile_id: owner(row, editor, group)
         )
@@ -416,6 +456,19 @@ defmodule PotokIde.Social.DrawnProcesses do
     changing(editor, group, id, fn row, _access ->
       if row.active, do: AppProcesses.stop(group, row)
       row |> Ecto.Changeset.change(active: false, next_run_at: nil) |> Repo.update!()
+    end)
+  end
+
+  @doc """
+  Makes a process that others call public, for the processes drawn in the
+  groups above and below its group to call too, or private again, for its
+  own group's alone. Only a process that starts when another calls it can
+  be public (`{:error, :not_callable}`).
+  """
+  def set_public(%Profile{} = editor, %Group{} = group, id, public?) when is_boolean(public?) do
+    changing(editor, group, id, fn row, _access ->
+      if row.trigger != "process", do: Repo.rollback(:not_callable)
+      row |> Ecto.Changeset.change(is_public: public?) |> Repo.update!()
     end)
   end
 
@@ -596,24 +649,56 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   @doc """
-  The group's drawn processes that another may call, by name, as `%{id,
-  name, active, fields, attributes, types}`: what each takes
-  (`contract/1`), `fields` being the names a call fills in.
+  The drawn processes a process of the group may call, as `%{id, name,
+  active, public, group, fields, attributes, types}`: what each takes
+  (`contract/1`), `fields` being the names a call fills in. The group's own
+  come first, by name, with `group` nil; then the public ones of the groups
+  above and below (`Reach`), by the name of their `group`.
   """
   def callable(%Group{id: group_id}) do
-    from(p in AppProcess,
-      where: p.group_id == ^group_id and p.drawn and p.trigger == "process",
-      order_by: [asc: p.name, asc: p.id]
-    )
-    |> Repo.all()
-    |> Enum.map(&Map.merge(contract(&1), %{id: &1.id, name: &1.name, active: &1.active}))
+    own =
+      from(p in AppProcess,
+        where: p.group_id == ^group_id and p.drawn and p.trigger == "process",
+        order_by: [asc: p.name, asc: p.id]
+      )
+      |> Repo.all()
+      |> Enum.map(&offered(&1, nil))
+
+    others =
+      case Reach.public_ids(group_id) do
+        [] ->
+          []
+
+        ids ->
+          from(p in AppProcess,
+            join: g in assoc(p, :group),
+            where: p.id in ^ids and p.drawn and p.is_public and p.trigger == "process",
+            order_by: [asc: g.name, asc: p.name, asc: p.id],
+            select: {p, g.name}
+          )
+          |> Repo.all()
+          |> Enum.map(fn {process, group} -> offered(process, group) end)
+      end
+
+    own ++ others
+  end
+
+  defp offered(%AppProcess{} = process, group) do
+    Map.merge(contract(process), %{
+      id: process.id,
+      name: process.name,
+      active: process.active,
+      public: process.is_public,
+      group: group
+    })
   end
 
   @doc """
   Deletes a drawn process with its instances, unless another process of the
-  group calls it (`{:error, {:in_use, name}}`). What it wrote stays, signed
-  by its profile, which goes once nothing it wrote is left
-  (`AppProcesses.sweep/0`).
+  group calls it (`{:error, {:in_use, name}}`). Those of other groups that
+  call a public one do not keep it: their calls fail from then on. What it
+  wrote stays, signed by its profile, which goes once nothing it wrote is
+  left (`AppProcesses.sweep/0`).
   """
   def delete(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, _access ->
@@ -678,24 +763,12 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
-  # The processes the graph calls must be the group's drawn ones that start
-  # when another calls them, taking the fields it hands over. They are read
-  # `FOR SHARE`, so one being deleted waits for this save, or this save for
-  # it (`caller/2`).
-  defp known_processes!(graph, %Group{id: group_id}) do
-    ids = graph |> Graph.process_refs() |> Enum.map(&elem(&1, 1)) |> Enum.uniq()
-
-    callable =
-      if ids == [] do
-        %{}
-      else
-        from(p in AppProcess,
-          where: p.group_id == ^group_id and p.drawn and p.trigger == "process" and p.id in ^ids,
-          lock: "FOR SHARE"
-        )
-        |> Repo.all()
-        |> Map.new(&{&1.id, contract(&1).fields})
-      end
+  # The processes the graph calls must be drawn ones that start when another
+  # calls them and that a process of the group may call (`callees/3`),
+  # taking the fields it hands over. They are read `FOR SHARE`, so one being
+  # deleted waits for this save, or this save for it (`caller/2`).
+  defp known_processes!(graph, %Group{} = group) do
+    callable = graph |> callees(group, true) |> Map.new(&{&1.id, contract(&1).fields})
 
     case Graph.unknown_process(graph, callable) do
       nil -> :ok
