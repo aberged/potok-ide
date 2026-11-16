@@ -512,8 +512,11 @@ defmodule HelpShots.World do
   end
 
   # The building's process, drawn in Potok with no app: a resident starts it
-  # by hand, it opens a talk about the fault, and the admins decide.
+  # by hand, it opens a talk about the fault, and the admins decide. Calling a
+  # repairer calls the Repairer, a process of its own, and waits for it.
   defp fault_reports(editor, group) do
+    repairer = repairer(editor, group)
+
     talk = fn id, text ->
       %{"id" => id, "type" => "serviceTask", "action" => "message", "in" => "razgovor", "text" => text}
     end
@@ -538,6 +541,17 @@ defmodule HelpShots.World do
         },
         talk.("popravljeno", "Popravljeno je, hvala na prijavi."),
         talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
+        %{
+          "id" => "call-1",
+          "type" => "callActivity",
+          "process" => repairer.id,
+          "wait" => true,
+          "deadline" => "P7D",
+          "fields" => %{"kvar" => "{{title}}"}
+        },
+        %{"id" => "gateway-1", "type" => "exclusiveGateway"},
+        talk.("dolazi", "Majstor dolazi."),
+        talk.("nema", "Majstor još nema termin."),
         %{"id" => "kraj", "type" => "endEvent"}
       ],
       "flows" => [
@@ -546,7 +560,17 @@ defmodule HelpShots.World do
         %{"from" => "odluka", "to" => "popravljeno", "outcome" => "Popravljeno"},
         %{"from" => "odluka", "to" => "majstor", "outcome" => "Zovemo majstora"},
         %{"from" => "popravljeno", "to" => "kraj"},
-        %{"from" => "majstor", "to" => "kraj"}
+        %{"from" => "majstor", "to" => "call-1"},
+        %{"from" => "call-1", "to" => "gateway-1"},
+        %{"from" => "call-1", "to" => "gateway-1", "deadline" => true},
+        %{
+          "from" => "gateway-1",
+          "to" => "dolazi",
+          "condition" => %{"field" => "call-1.outcome", "op" => "=", "value" => "Dogovoreno"}
+        },
+        %{"from" => "gateway-1", "to" => "nema", "default" => true},
+        %{"from" => "dolazi", "to" => "kraj"},
+        %{"from" => "nema", "to" => "kraj"}
       ]
     }
 
@@ -555,6 +579,41 @@ defmodule HelpShots.World do
         "trigger" => "manual",
         "trigger_config" => %{"roles" => ["everyone"]},
         "name" => "Prijava kvara",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
+  end
+
+  # The Repairer: another process calls it with the fault, and the admins
+  # agree on a date with a repairer, or there is none.
+  defp repairer(editor, group) do
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        %{
+          "id" => "task-1",
+          "type" => "userTask",
+          "label" => "Termin sa majstorom",
+          "role" => "admin",
+          "outcomes" => ["Dogovoreno", "Nema termina"]
+        },
+        %{"id" => "end", "type" => "endEvent", "label" => "Dogovoreno"},
+        %{"id" => "end-1", "type" => "endEvent", "label" => "Nema termina"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "task-1"},
+        %{"from" => "task-1", "to" => "end", "outcome" => "Dogovoreno"},
+        %{"from" => "task-1", "to" => "end-1", "outcome" => "Nema termina"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "process",
+        "trigger_config" => %{"fields" => ["kvar"]},
+        "name" => "Majstor",
         "graph" => graph
       })
 

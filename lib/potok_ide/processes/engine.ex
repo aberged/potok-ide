@@ -23,6 +23,16 @@ defmodule PotokIde.Processes.Engine do
   Who set off the step on hand (`triggered_by`) is the value's author at the
   start (nobody for an anonymous value), whoever finished a task, and nobody
   after a timer or a deadline.
+
+  A process drawn in Potok calls another (`callActivity`) in the step's
+  transaction: the run it starts is one level deeper, at most 3, shares
+  the caller's subject and gets the fields the call hands over, with the
+  caller's name as `from`. A caller that waits holds the run it called
+  (`awaiting`) until that run ends, which wakes it with what it ended with
+  under the call's element (`results`), or until the call's deadline, which
+  cancels the called run. Cancelling a run cancels the run it waits for, and
+  a run that waits for one cancelled fails (`call_cancelled`). Locks are
+  taken deeper runs first.
   """
 
   import Ecto.Query, warn: false
@@ -30,7 +40,7 @@ defmodule PotokIde.Processes.Engine do
   require Logger
 
   alias PotokIde.{RateLimit, Repo}
-  alias PotokIde.Processes.{Graph, Triggers, ValueProcess}
+  alias PotokIde.Processes.{Graph, Scheduler, Triggers, ValueProcess}
 
   alias PotokIde.Social.{
     Access,
@@ -49,6 +59,11 @@ defmodule PotokIde.Processes.Engine do
   @max_comment 1_000
   @max_group_name 120
   @max_push_text 240
+  @max_depth 3
+  # Runs other processes started that run or wait, for one process at a time.
+  @max_called 200
+  @max_field 1_000
+  @max_result 8_192
   @placeholder ~r/\{\{\s*([\p{L}\p{Nd}_.-]+)\s*\}\}/u
 
   # ---------
@@ -377,11 +392,12 @@ defmodule PotokIde.Processes.Engine do
       {:next, to, changes, announcements} ->
         {:continue, move(instance, to, changes), announcements}
 
-      {:wait, changes} ->
-        {:stop, update!(instance, Map.put(changes, :status, :waiting)), []}
+      {:wait, changes, announcements} ->
+        {:stop, update!(instance, Map.put(changes, :status, :waiting)), announcements}
 
       :done ->
-        {:stop, update!(instance, %{status: :done, wake_at: nil}), []}
+        done = update!(instance, %{status: :done, wake_at: nil})
+        {:stop, done, returned(done, node)}
 
       {:error, reason} ->
         Repo.rollback({:failed, instance.element, reason})
@@ -394,10 +410,49 @@ defmodule PotokIde.Processes.Engine do
   defp act(%{"type" => "endEvent"}, _instance), do: :done
 
   defp act(%{"type" => "userTask"} = task, _instance),
-    do: {:wait, %{wake_at: task["deadline"] && later(task["deadline"])}}
+    do: {:wait, %{wake_at: task["deadline"] && later(task["deadline"])}, []}
 
   defp act(%{"type" => "timer", "duration" => duration}, _instance),
-    do: {:wait, %{wake_at: later(duration)}}
+    do: {:wait, %{wake_at: later(duration)}, []}
+
+  defp act(%{"type" => "callActivity", "id" => id} = call, instance) do
+    process = Repo.get!(AppProcess, instance.app_process_id)
+
+    with :ok <- if(process.active, do: :ok, else: {:error, :process_inactive}),
+         :ok <- if(instance.depth < @max_depth, do: :ok, else: {:error, :too_deep}),
+         {:ok, callee} <- callee(call["process"], process.group_id),
+         :ok <- room(callee) do
+      data = value_data(instance)
+
+      fields =
+        for name <- callee.trigger_config["fields"] || [], into: %{} do
+          {name, (call["fields"][name] || "") |> render(data) |> String.slice(0, @max_field)}
+        end
+
+      child =
+        start_drawn_on(callee,
+          value_id: instance.value_id,
+          subject_group_id: instance.subject_group_id,
+          started_by: instance.started_by_id,
+          triggered_by: instance.triggered_by_id,
+          depth: instance.depth + 1,
+          data: Map.put(fields, "from", process.name)
+        )
+
+      announcements = [fn -> Scheduler.nudge() end, fn -> tell(child) end]
+
+      if call["wait"] == false do
+        {:next, plain_next(instance, id), %{}, announcements}
+      else
+        {:wait,
+         %{
+           wake_at: call["deadline"] && later(call["deadline"]),
+           awaiting_id: child.id,
+           results: Map.delete(instance.results, id)
+         }, announcements}
+      end
+    end
+  end
 
   defp act(%{"type" => "exclusiveGateway", "id" => id}, instance) do
     data = value_data(instance)
@@ -450,6 +505,73 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
+  # The process a call starts, read `FOR SHARE`, so one being switched off
+  # waits for this step and then cancels what it started.
+  defp callee(id, group_id) when is_integer(id) do
+    from(p in AppProcess,
+      where: p.id == ^id and p.group_id == ^group_id and p.drawn and p.trigger == "process",
+      lock: "FOR SHARE"
+    )
+    |> Repo.one()
+    |> case do
+      %AppProcess{active: true} = callee -> {:ok, callee}
+      %AppProcess{} -> {:error, :call_inactive}
+      nil -> {:error, :call_unknown}
+    end
+  end
+
+  defp callee(_id, _group_id), do: {:error, :call_unknown}
+
+  defp room(%AppProcess{id: id}) do
+    running =
+      from(i in ValueProcess,
+        where: i.app_process_id == ^id and i.status in [:running, :waiting] and i.depth > 0
+      )
+      |> Repo.aggregate(:count)
+
+    if running < @max_called, do: :ok, else: {:error, :too_many_runs}
+  end
+
+  # A run another started has ended: the run that waits for it, if any, hears
+  # what it ended with, in the same transaction.
+  defp returned(%ValueProcess{depth: 0}, _end), do: []
+
+  defp returned(%ValueProcess{} = child, end_node) do
+    from(i in ValueProcess,
+      where: i.awaiting_id == ^child.id and i.status == :waiting,
+      lock: "FOR UPDATE"
+    )
+    |> Repo.one()
+    |> case do
+      nil ->
+        []
+
+      caller ->
+        result = result(child, Graph.label(end_node))
+
+        caller =
+          update!(caller, %{
+            results: Map.put(caller.results, caller.element, result),
+            awaiting_id: nil,
+            wake_at: now()
+          })
+
+        [fn -> Scheduler.nudge() end, fn -> tell(caller) end]
+    end
+  end
+
+  # What a called run ended with: the end it reached, the fields it was given
+  # and what its waits brought back, or only the end when that is too much.
+  defp result(%ValueProcess{} = child, outcome) do
+    result =
+      child.data
+      |> Map.merge(child.results)
+      |> Map.delete("from")
+      |> Map.put("outcome", outcome)
+
+    if byte_size(JSON.encode!(result)) <= @max_result, do: result, else: %{"outcome" => outcome}
+  end
+
   # A message goes to the app's group or to a sub-group the instance made.
   defp target("app", group, _instance), do: {:ok, group}
 
@@ -473,23 +595,65 @@ defmodule PotokIde.Processes.Engine do
   end
 
   # A deadline or a timer is due: the instance goes on, set off by nobody.
+  # A call goes on by its plain flow once the run it called has ended, set
+  # off by whoever set off the call.
   defp wake(%ValueProcess{} = instance) do
-    flow =
-      case Graph.node(instance.graph, instance.element) do
-        %{"type" => "userTask"} ->
-          Enum.find(Graph.out(instance.graph, instance.element), & &1["deadline"])
+    out = Graph.out(instance.graph, instance.element)
 
-        %{"type" => "timer"} ->
-          hd(Graph.out(instance.graph, instance.element))
+    case Graph.node(instance.graph, instance.element) do
+      %{"type" => "userTask"} ->
+        deadline(instance, Enum.find(out, & &1["deadline"]))
 
-        _other ->
-          nil
-      end
+      %{"type" => "timer"} ->
+        deadline(instance, hd(out))
 
-    if flow,
-      do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), []},
-      else: :skip
+      %{"type" => "callActivity", "id" => id} ->
+        if Map.has_key?(instance.results, id),
+          do: {:continue, move(instance, plain(out)["to"], %{}), []},
+          else: call_deadline(instance, Enum.find(out, & &1["deadline"]))
+
+      _other ->
+        :skip
+    end
   end
+
+  defp deadline(_instance, nil), do: :skip
+
+  defp deadline(instance, flow),
+    do: {:continue, move(instance, flow["to"], %{triggered_by_id: nil}), []}
+
+  # The call's deadline cancels the run it waits for, unless that run is in a
+  # step of its own just now, which may end it: the next pass sees.
+  defp call_deadline(_instance, nil), do: :skip
+
+  defp call_deadline(instance, flow) do
+    case cancel_awaited(instance) do
+      {:ok, cancelled} ->
+        moved = move(instance, flow["to"], %{triggered_by_id: nil, awaiting_id: nil})
+        {:continue, moved, Enum.map(cancelled, fn run -> fn -> tell(run) end end)}
+
+      :busy ->
+        :skip
+    end
+  end
+
+  # The runs `instance` waits for, down the chain, cancelled without waiting
+  # for a lock; `:busy` when one is held.
+  defp cancel_awaited(%ValueProcess{awaiting_id: nil}), do: {:ok, []}
+
+  defp cancel_awaited(%ValueProcess{awaiting_id: id}) do
+    chain = awaited_chain(id)
+
+    locked =
+      from(i in ValueProcess, where: i.id in ^chain, lock: "FOR UPDATE SKIP LOCKED")
+      |> Repo.all()
+
+    if length(locked) == length(chain),
+      do: {:ok, Enum.map(locked, &cancelled!/1)},
+      else: :busy
+  end
+
+  defp plain(flows), do: Enum.find(flows, &(not Map.has_key?(&1, "deadline")))
 
   defp plain_next(%ValueProcess{graph: graph}, id), do: hd(Graph.out(graph, id))["to"]
 
@@ -575,7 +739,13 @@ defmodule PotokIde.Processes.Engine do
 
           move(instance, flow["to"], %{
             triggered_by_id: profile.id,
-            log: Enum.take(instance.log ++ [entry], -@max_log)
+            log: Enum.take(instance.log ++ [entry], -@max_log),
+            results:
+              Map.put(instance.results, element, %{
+                "outcome" => outcome,
+                "comment" => entry["comment"],
+                "by" => profile.username
+              })
           })
       end
     end)
@@ -605,30 +775,132 @@ defmodule PotokIde.Processes.Engine do
     |> told()
   end
 
-  @doc "Cancels an instance that runs, waits or has failed."
+  @doc """
+  Cancels an instance that runs, waits or has failed, with the runs it waits
+  for; a run that waits for it fails (`call_cancelled`).
+  """
   def cancel(id) do
     Repo.transaction(fn ->
+      # Deeper runs first, as a run that ends locks the one waiting for it.
+      chain = id |> awaiting_of() |> awaited_chain()
+      Enum.each(Enum.reverse(chain), &lock/1)
+
       case lock(id) do
         %ValueProcess{status: status} = instance when status in [:running, :waiting, :failed] ->
-          update!(instance, %{status: :cancelled, wake_at: nil})
+          below = Enum.flat_map(chain, &List.wrap(cancel_live(&1)))
+          instance = cancelled!(instance)
+          {instance, below ++ fail_callers([instance.id])}
 
         _other ->
           Repo.rollback(:not_running)
       end
     end)
-    |> told()
+    |> case do
+      {:ok, {instance, others}} ->
+        Enum.each(others, &tell/1)
+        {:ok, tell(instance)}
+
+      error ->
+        error
+    end
   end
 
   @doc """
   Cancels every instance of a process that runs or waits, as its rule goes
-  (`PotokIde.Social.AppProcesses`). Returns how many.
+  (`PotokIde.Social.AppProcesses`), with the runs they wait for; the runs
+  that wait for one of its instances fail (`call_cancelled`), also for one
+  that had failed. Returns how many of its own it cancelled.
   """
   def cancel_all(%AppProcess{id: id}) do
-    {count, _} =
-      from(i in ValueProcess, where: i.app_process_id == ^id and i.status in [:running, :waiting])
-      |> Repo.update_all(set: [status: :cancelled, wake_at: nil, updated_at: now()])
+    own =
+      from(i in ValueProcess,
+        where: i.app_process_id == ^id and i.status in [:running, :waiting],
+        select: i.id
+      )
+      |> Repo.all()
 
+    below = own |> Enum.flat_map(&(&1 |> awaiting_of() |> awaited_chain())) |> Enum.uniq()
+    below = below -- own
+    lock_deepest_first(below)
+    lock_deepest_first(own)
+
+    from(i in ValueProcess,
+      where: i.id in ^below and i.status in [:running, :waiting, :failed]
+    )
+    |> Repo.update_all(
+      set: [status: :cancelled, wake_at: nil, awaiting_id: nil, updated_at: now()]
+    )
+
+    {count, _} =
+      from(i in ValueProcess, where: i.id in ^own and i.status in [:running, :waiting])
+      |> Repo.update_all(
+        set: [status: :cancelled, wake_at: nil, awaiting_id: nil, updated_at: now()]
+      )
+
+    failed =
+      from(i in ValueProcess,
+        where: i.app_process_id == ^id and i.status == :failed,
+        select: i.id
+      )
+      |> Repo.all()
+
+    fail_callers(own ++ failed)
     count
+  end
+
+  defp lock_deepest_first([]), do: :ok
+
+  defp lock_deepest_first(ids) do
+    from(i in ValueProcess,
+      where: i.id in ^ids,
+      order_by: [desc: i.depth, asc: i.id],
+      lock: "FOR UPDATE",
+      select: i.id
+    )
+    |> Repo.all()
+
+    :ok
+  end
+
+  defp awaiting_of(id),
+    do: from(i in ValueProcess, where: i.id == ^id, select: i.awaiting_id) |> Repo.one()
+
+  # The run `id` and those it waits for in turn, the nearest first.
+  defp awaited_chain(id, depth \\ 0)
+  defp awaited_chain(nil, _depth), do: []
+  defp awaited_chain(_id, depth) when depth > @max_depth, do: []
+  defp awaited_chain(id, depth), do: [id | awaited_chain(awaiting_of(id), depth + 1)]
+
+  # A locked run, cancelled when it still runs, waits or has failed.
+  defp cancel_live(id) do
+    case Repo.get(ValueProcess, id) do
+      %ValueProcess{status: status} = run when status in [:running, :waiting, :failed] ->
+        cancelled!(run)
+
+      _done_or_gone ->
+        nil
+    end
+  end
+
+  defp cancelled!(%ValueProcess{} = run),
+    do: update!(run, %{status: :cancelled, wake_at: nil, awaiting_id: nil})
+
+  # The runs that wait for one of `ids` fail where they wait.
+  defp fail_callers(ids) do
+    from(i in ValueProcess,
+      where: i.awaiting_id in ^ids and i.status == :waiting,
+      order_by: [desc: i.depth, asc: i.id],
+      lock: "FOR UPDATE"
+    )
+    |> Repo.all()
+    |> Enum.map(fn caller ->
+      update!(caller, %{
+        status: :failed,
+        wake_at: nil,
+        awaiting_id: nil,
+        error: %{"element" => caller.element, "reason" => "call_cancelled"}
+      })
+    end)
   end
 
   # ---------

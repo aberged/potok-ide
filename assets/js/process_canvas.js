@@ -53,6 +53,7 @@ const TONES = {
   push: "bg-rose-500/10 text-rose-600 dark:text-rose-300",
   task: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   timer: "bg-teal-500/10 text-teal-600 dark:text-teal-300",
+  call: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
 }
 
 const PILLS = new Set(["start", "end", "gateway"])

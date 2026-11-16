@@ -497,6 +497,17 @@
     ]
   },
   {
+    "name": "zgrada-proces-poziv",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes?process={processes.building_reports}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-canvas-node-call-1" },
+      { "wait": "#process-node-panel" },
+      { "pause": 900 }
+    ]
+  },
+  {
     "name": "zgrada-pokreni",
     "as": "tamara",
     "url": "/groups/{groups.building}/processes",

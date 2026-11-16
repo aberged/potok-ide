@@ -71,6 +71,15 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     assert has_element?(lv, "#process-add-outcome")
 
     lv
+    |> form("#process-element-form", %{
+      "element" => %{"deadline_amount" => "7", "deadline_unit" => "days"}
+    })
+    |> render_change()
+
+    assert has_element?(lv, "#process-outline-task-1", "1 week")
+    assert has_element?(lv, "#process-outline-push-1")
+
+    lv
     |> form("#process-editor-meta", %{"meta" => %{"name" => "Savet odlučuje"}})
     |> render_change()
 
@@ -78,7 +87,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
     assert [%AppProcess{name: "Savet odlučuje", active: false} = row] = drawn(ctx.group)
     assert_patch(lv, ~p"/groups/#{ctx.group.id}/processes?process=#{row.id}")
-    assert Enum.any?(row.graph["nodes"], &(&1["type"] == "userTask"))
+    assert Enum.any?(row.graph["nodes"], &(&1["type"] == "userTask" and &1["deadline"] == "P7D"))
 
     lv |> element("#process-editor-activate") |> render_click()
 
@@ -145,6 +154,79 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
 
     assert [%{data: %{"title" => "Lift stoji"}}] =
              Repo.all(PotokIde.Processes.ValueProcess)
+  end
+
+  test "a process takes calls on the fields its editor names", ctx do
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "process"}}) |> render_change()
+    render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+
+    lv
+    |> form("#process-trigger-form", %{"trigger" => %{"fields" => "kvar, from"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-editor-error", "from and outcome are taken")
+
+    lv
+    |> form("#process-trigger-form", %{"trigger" => %{"fields" => "kvar, sprat"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-outline-start", "Called with: kvar, sprat")
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [%AppProcess{trigger: "process", trigger_config: %{"fields" => ["kvar", "sprat"]}}] =
+             drawn(ctx.group)
+  end
+
+  test "a call starts a process of the group with the fields it takes", ctx do
+    {:ok, callee} =
+      DrawnProcesses.create(ctx.owner, ctx.group, %{
+        "trigger" => "process",
+        "trigger_config" => %{"fields" => ["kvar"]},
+        "name" => "Majstor",
+        "graph" => PotokIde.Processes.GraphEdit.new()
+      })
+
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+    insert(lv, "f1", "call")
+    assert has_element?(lv, "#process-outline-call-1", "Call Majstor")
+    assert has_element?(lv, "#process-call-field-kvar")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{
+        "process" => to_string(callee.id),
+        "wait" => "true",
+        "fields" => %{"kvar" => "Kvar: "},
+        "deadline_amount" => "3",
+        "deadline_unit" => "days"
+      }
+    })
+    |> render_change()
+
+    lv
+    |> element("#process-field-fields\\.kvar-0")
+    |> render_click()
+
+    assert has_element?(lv, "#process-outline-call-1", "3 days")
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [_callee, %AppProcess{graph: graph}] = Enum.sort_by(drawn(ctx.group), & &1.id)
+
+    assert %{"process" => id, "wait" => true, "deadline" => "P3D", "fields" => fields} =
+             Enum.find(graph["nodes"], &(&1["type"] == "callActivity"))
+
+    assert id == callee.id
+    assert fields["kvar"] =~ "Kvar: {{"
+
+    assert {:error, {:in_use, "New process"}} =
+             DrawnProcesses.delete(ctx.owner, ctx.group, callee.id)
   end
 
   test "an unfinished drawing says what is wrong and is not saved", ctx do

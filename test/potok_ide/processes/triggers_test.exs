@@ -80,6 +80,25 @@ defmodule PotokIde.Processes.TriggersTest do
       assert {:error, {"", :invalid}} = Triggers.normalize("comet", %{})
     end
 
+    test "a process another calls names the fields it takes" do
+      assert {:ok, %{"fields" => ["kvar", "sprat"]}} =
+               Triggers.normalize("process", %{"fields" => " kvar, sprat,,kvar "})
+
+      assert {:ok, %{"fields" => []}} = Triggers.normalize("process", %{})
+
+      assert {:error, {"fields", :reserved}} =
+               Triggers.normalize("process", %{"fields" => "from"})
+
+      assert {:error, {"fields", :invalid}} =
+               Triggers.normalize("process", %{"fields" => "dve reči"})
+
+      assert {:error, {"fields", :too_many}} =
+               Triggers.normalize("process", %{"fields" => Enum.map(1..11, &"f#{&1}")})
+
+      assert Triggers.fields("process", %{"fields" => ["kvar"]}) == ["kvar", "from"]
+      assert Triggers.fields("manual") == ~w(title text author)
+    end
+
     test "names the roles its settings hold" do
       assert Triggers.role_refs("message", %{"words" => [], "role" => "savet"}) == [
                {"role", "savet"}

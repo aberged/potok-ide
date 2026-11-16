@@ -73,7 +73,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           inserting: nil,
           error: nil,
           conflict: nil,
-          fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection)
+          fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection),
+          callable: DrawnProcesses.callable(group)
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -118,10 +119,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
                   group,
                   row.trigger,
                   row.alt_description_id,
-                  row.collection
+                  row.collection,
+                  row.trigger_config
                 ),
               else: []
-            )
+            ),
+          callable: DrawnProcesses.callable(group)
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -153,7 +156,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           inserting: nil,
           error: nil,
           conflict: nil,
-          fields: []
+          fields: [],
+          callable: []
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -319,9 +323,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     editor = socket.assigns.process_editor
     config = trigger_params(editor.trigger, params, editor.trigger_config)
 
+    fields =
+      if editor.trigger == "process",
+        do: trigger_fields("process", config),
+        else: editor.fields
+
     {:noreply,
      socket
-     |> update_editor(&%{&1 | trigger_config: config, dirty?: true})
+     |> update_editor(&%{&1 | trigger_config: config, fields: fields, dirty?: true})
      |> refresh()}
   end
 
@@ -331,8 +340,31 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       {:node, id} ->
         graph_change(socket, fn graph ->
           current = Graph.node(graph, id)[target] || ""
-          joiner = if current == "" or String.ends_with?(current, " "), do: "", else: " "
-          GraphEdit.update_node(graph, id, %{target => current <> joiner <> "{{#{path}}}"})
+          GraphEdit.update_node(graph, id, %{target => put_field(current, path)})
+        end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
+  # A field put into one of the fields a call hands over.
+  defp editing(
+         "process_editor_insert_field",
+         %{"target" => "fields." <> name, "path" => path},
+         socket
+       ) do
+    case socket.assigns.process_editor.selected do
+      {:node, id} ->
+        graph_change(socket, fn graph ->
+          fields = Graph.node(graph, id)["fields"] || %{}
+
+          if Map.has_key?(fields, name),
+            do:
+              GraphEdit.update_node(graph, id, %{
+                "fields" => Map.put(fields, name, put_field(fields[name], path))
+              }),
+            else: {:ok, graph}
         end)
 
       _other ->
@@ -354,6 +386,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     case editor.id && DrawnProcesses.delete(profile, group, editor.id) do
       {:ok, _row} ->
         {:noreply, socket |> put_flash(:info, gettext("The process is deleted.")) |> close_url()}
+
+      {:error, {:in_use, _name} = reason} ->
+        {:noreply, put_flash(socket, :error, refusal(reason))}
 
       _refused ->
         {:noreply, put_flash(socket, :error, gettext("Could not delete the process."))}
@@ -420,10 +455,26 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_params("manual", params, _config),
     do: %{"roles" => List.wrap(params["roles"]) |> Enum.reject(&(&1 == ""))}
 
+  defp trigger_params("process", params, _config), do: %{"fields" => params["fields"] || ""}
+
   defp trigger_params(_trigger, _params, config), do: config
 
   defp blank_nil(""), do: nil
   defp blank_nil(value), do: value
+
+  defp put_field(current, path) do
+    current = current || ""
+    joiner = if current == "" or String.ends_with?(current, " "), do: "", else: " "
+    current <> joiner <> "{{#{path}}}"
+  end
+
+  # The fields a trigger gives, from its settings as typed so far.
+  defp trigger_fields(trigger, config) do
+    case Triggers.normalize(trigger, config) do
+      {:ok, config} -> Triggers.fields(trigger, config)
+      {:error, _reason} -> Triggers.fields(trigger, %{})
+    end
+  end
 
   # What a new process starts on, as its editor picks: the trigger, and for a
   # new value the app and its collection.
@@ -469,7 +520,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           trigger_config: config,
           alt_id: nil,
           collection: nil,
-          fields: Triggers.fields(trigger)
+          fields: trigger_fields(trigger, config)
       }
     end
   end
@@ -487,6 +538,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def default_config("message", _socket), do: %{"words" => "", "role" => nil}
   def default_config("subgroup", _socket), do: %{"placed" => false}
   def default_config("manual", _socket), do: %{"roles" => ["everyone"]}
+  def default_config("process", _socket), do: %{"fields" => []}
 
   def default_config("schedule", socket) do
     %{
@@ -549,19 +601,49 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end)
   end
 
-  defp change_node(graph, id, attrs, socket) do
+  # The deadline is read from the form as it came, as it is no key of the step.
+  defp change_node(graph, id, params, socket) do
     node = Graph.node(graph, id)
 
     attrs =
-      attrs
+      params
       |> Map.take(~w(label text in name role))
-      |> maybe_put("admins", admins(attrs))
-      |> maybe_put("duration", duration(attrs["duration_amount"], attrs["duration_unit"]))
+      |> maybe_put("admins", admins(params))
+      |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
+      |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
-      deadline(graph, node, attrs, socket)
+      deadline(graph, Graph.node(graph, id), params, socket)
     end
   end
+
+  # The process a call starts, whether it waits, and the fields it hands
+  # over: those the process takes, keeping what was typed for the same name.
+  defp call_attrs(%{"type" => "callActivity"} = call, attrs, callable) do
+    process = parse_id(attrs["process"]) || call["process"]
+    typed = if is_map(attrs["fields"]), do: attrs["fields"], else: %{}
+    kept = Map.merge(call["fields"] || %{}, typed)
+
+    fields =
+      case Enum.find(callable, &(&1.id == process)) do
+        %{fields: names} -> Map.new(names, &{&1, Map.get(kept, &1, "")})
+        nil -> kept
+      end
+
+    %{"process" => process, "fields" => fields}
+    |> maybe_put("wait", if(is_binary(attrs["wait"]), do: attrs["wait"] == "true"))
+  end
+
+  defp call_attrs(_node, _attrs, _callable), do: %{}
+
+  defp parse_id(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {id, ""} when id > 0 -> id
+      _other -> nil
+    end
+  end
+
+  defp parse_id(_value), do: nil
 
   defp admins(%{"admins" => admins}) when is_list(admins),
     do: admins |> Enum.reject(&(&1 == "")) |> Enum.uniq()
@@ -581,6 +663,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     else
       {:ok, graph}
     end
+  end
+
+  defp deadline(graph, %{"type" => "callActivity", "wait" => true, "id" => id} = call, attrs, _s) do
+    wanted = duration(attrs["deadline_amount"], attrs["deadline_unit"])
+
+    if not Map.has_key?(attrs, "deadline_amount") or wanted == call["deadline"],
+      do: {:ok, graph},
+      else: GraphEdit.set_deadline(graph, id, wanted)
   end
 
   defp deadline(graph, _node, _attrs, _socket), do: {:ok, graph}
@@ -661,6 +751,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   # The first texts of a new step, in the editor's language.
   defp defaults(socket) do
     editor = socket.assigns.process_editor
+    callee = List.first(editor.callable)
 
     %{
       text: gettext("A new value came in."),
@@ -668,7 +759,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       role: "admin",
       outcomes: [gettext("Approve"), gettext("Decline")],
       outcome: gettext("Outcome"),
-      field: List.first(editor.fields)
+      field: List.first(editor.fields),
+      process: callee && callee.id,
+      call_fields: if(callee, do: Map.new(callee.fields, &{&1, ""}), else: %{})
     }
   end
 
@@ -778,7 +871,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     editor = %{
       editor
       | error:
-          check(editor.graph, socket.assigns.access) ||
+          check(editor, socket.assigns.access) ||
             check_trigger(editor, socket.assigns.access)
     }
 
@@ -803,11 +896,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp app_value(nil), do: "default"
   defp app_value(id), do: Integer.to_string(id)
 
-  defp check(graph, access) do
+  defp check(%{graph: graph} = editor, access) do
     keys = AppData.role_keys(access.manifest)
+    callable = Map.new(editor.callable, &{&1.id, &1.fields})
 
-    with {:ok, normalized} <- Graph.normalize(graph),
-         nil <- Graph.unknown_role(normalized, keys) do
+    with {:ok, normalized} <- Graph.normalize(graph, drawn: editor.source != :app),
+         nil <- Graph.unknown_role(normalized, keys),
+         nil <- Graph.unknown_process(normalized, callable) do
       nil
     else
       {:error, {path, reason}} -> error(graph, path, reason)
@@ -877,7 +972,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       nodes:
         Enum.map(editor.graph["nodes"], fn node ->
           {kind, icon, title, detail} =
-            describe(node, editor.graph, roles, start: start_title(editor, roles))
+            describe(node, editor.graph, roles,
+              start: start_title(editor, roles),
+              processes: process_names(editor)
+            )
 
           %{
             id: node["id"],
@@ -912,6 +1010,28 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp selected_value({:node, id}), do: "node:" <> id
   defp selected_value({:flow, key}), do: "flow:" <> key
   defp selected_value(nil), do: nil
+
+  @doc "The names of the processes a call may start, by id."
+  def process_names(editor), do: Map.new(editor[:callable] || [], &{&1.id, &1.name})
+
+  @doc """
+  The fields a step's texts and conditions may name: the trigger's, then
+  what the calls and decisions of the drawing bring back, but the step's
+  own.
+  """
+  def field_hints(editor) do
+    own = with {:node, id} <- editor.selected, do: id
+
+    results =
+      Enum.flat_map(editor.graph["nodes"], fn
+        %{"id" => ^own} -> []
+        %{"type" => "callActivity", "wait" => true, "id" => id} -> ["#{id}.outcome"]
+        %{"type" => "userTask", "id" => id} -> ["#{id}.outcome", "#{id}.by"]
+        _other -> []
+      end)
+
+    editor.fields ++ results
+  end
 
   @doc "The roles of the group by key, with their names."
   def role_labels(access) do
@@ -966,6 +1086,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       %{"type" => "timer"} ->
         {"timer", "hero-clock", label || gettext("Wait"), duration_text(node["duration"])}
+
+      %{"type" => "callActivity"} ->
+        process = Map.get(opts[:processes] || %{}, node["process"]) || gettext("a process")
+
+        title =
+          if node["wait"] == false,
+            do: gettext("Start %{process}", process: process),
+            else: gettext("Call %{process}", process: process)
+
+        detail =
+          cond do
+            node["wait"] == false -> gettext("goes on at once")
+            node["deadline"] -> duration_text(node["deadline"])
+            true -> nil
+          end
+
+        {"call", "hero-arrow-top-right-on-square", label || title, detail}
 
       _other ->
         {"message", "hero-question-mark-circle", label || node["id"], nil}
@@ -1025,12 +1162,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         {deadline_amount, deadline_unit} = amount(node["deadline"])
 
         node
-        |> Map.take(~w(label text in name role admins))
+        |> Map.take(~w(label text in name role admins fields))
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
           "deadline_amount" => deadline_amount,
-          "deadline_unit" => deadline_unit
+          "deadline_unit" => deadline_unit,
+          "process" => node["process"] && to_string(node["process"]),
+          "wait" => to_string(node["wait"] != false)
         })
         |> to_form(as: :element, id: "process-element-#{id}")
     end
@@ -1070,6 +1209,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp reason_text(:unknown, _path), do: gettext("The sub-group this message goes to is gone.")
   defp reason_text(:too_many, _path), do: gettext("A drawing holds at most 100 steps.")
 
+  defp reason_text(:unknown_process, _path),
+    do: gettext("Pick a process of the group that starts when another calls it.")
+
+  defp reason_text(:unknown_field, _path),
+    do: gettext("The process called does not take this field.")
+
   defp reason_text(:invalid, path) do
     cond do
       String.ends_with?(path, ".text") ->
@@ -1080,6 +1225,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       String.ends_with?(path, ".label") ->
         gettext("The name on the drawing is too long.")
+
+      String.ends_with?(path, ".process") ->
+        gettext("Pick the process to call.")
+
+      String.contains?(path, ".fields") ->
+        gettext("A field it hands over is too long.")
 
       String.contains?(path, ".outcomes") ->
         gettext("An outcome is empty or too long.")
@@ -1105,6 +1256,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_reason(:invalid, "words"),
     do: gettext("Words go one by one, 2 to 40 letters or digits each.")
 
+  defp trigger_reason(:too_many, "fields"), do: gettext("At most 10 fields.")
+  defp trigger_reason(:reserved, "fields"), do: gettext("The names from and outcome are taken.")
+
+  defp trigger_reason(:invalid, "fields"),
+    do: gettext("Fields go one by one: letters, digits, - and _, up to 40 each.")
+
   defp trigger_reason(:empty, "weekdays"), do: gettext("Pick at least one day.")
   defp trigger_reason(:invalid, "time"), do: gettext("The time is written as 20:00.")
   defp trigger_reason(:unknown_role, _field), do: gettext("The group has no such role.")
@@ -1125,6 +1282,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_title("subgroup"), do: gettext("A new sub-group")
   defp trigger_title("schedule"), do: gettext("On a schedule")
   defp trigger_title("manual"), do: gettext("Started by hand")
+  defp trigger_title("process"), do: gettext("Called by another process")
   defp trigger_title(_value), do: gettext("A value comes in")
 
   @doc "A trigger with its settings in words."
@@ -1155,6 +1313,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def trigger_summary("manual", %{"roles" => keys}, _collection, roles),
     do: gettext("Started by: %{roles}", roles: Enum.map_join(keys, ", ", &Map.get(roles, &1, &1)))
 
+  def trigger_summary("process", %{"fields" => [_ | _] = fields}, _collection, _roles),
+    do: gettext("Called with: %{fields}", fields: Enum.join(fields, ", "))
+
+  def trigger_summary("process", _config, _collection, _roles),
+    do: gettext("Called by another process")
+
   def trigger_summary(trigger, _config, _collection, _roles), do: trigger_name(trigger)
 
   @doc "A schedule in words, such as `Every week on Thu at 20:00`."
@@ -1182,6 +1346,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def trigger_name("subgroup"), do: gettext("a sub-group is made")
   def trigger_name("schedule"), do: gettext("the set time comes")
   def trigger_name("manual"), do: gettext("someone starts it")
+  def trigger_name("process"), do: gettext("another process calls it")
 
   defp refusal(:start), do: gettext("The start stays.")
   defp refusal(:last_end), do: gettext("The last end stays.")
@@ -1193,6 +1358,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp refusal(:from_end), do: gettext("Nothing leads on from an end.")
   defp refusal(:duplicate), do: gettext("Two outcomes have the same name.")
   defp refusal(:invalid_name), do: gettext("The process needs a name of up to 60 characters.")
+
+  defp refusal({:in_use, name}),
+    do: gettext("%{process} calls this process. Change that first.", process: name)
 
   defp refusal({:invalid_trigger, _path, _reason}),
     do: gettext("What starts the process is not set right.")

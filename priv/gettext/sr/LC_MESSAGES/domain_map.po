@@ -29,7 +29,7 @@ msgstr "%{field}, bez obzira na veličinu slova"
 msgid "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
 msgstr "<Account>Nalog</Account> je identitet: imejl i lozinka. Sve u grupama radi <Profile>profil</Profile>. Jedan nalog može da ima više profila, recimo poslovni, privatni i klupski. Kod ih ne razlikuje po nameni, nego samo jedinstvene od deljenih. Deljeni profil koriste svi nalozi koji prihvate <ProfileInvitation>pozivnicu za profil</ProfileInvitation>."
 
-#: lib/potok_ide_web/domain_copy.ex:1521
+#: lib/potok_ide_web/domain_copy.ex:1529
 #, elixir-autogen, elixir-format
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupom, profilom, događajem, vrednošću ili fajlom, i to proverava baza. Tag bez vlasnika je javan. Tag sa vlasnikom vidi samo taj profil."
@@ -39,7 +39,7 @@ msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupo
 msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
 msgstr "<Group>Grupa</Group> otvorena iz <Value>vrednosti</Value> je nit. Jedna vrednost ima najviše jednu nit, a nit uvek nasleđuje članove. Koren je jedan, bez roditelja i bez autora. Sve ostale grupe imaju oboje, pa i direktni razgovori, koji stoje odmah ispod korena."
 
-#: lib/potok_ide_web/domain_copy.ex:1529
+#: lib/potok_ide_web/domain_copy.ex:1537
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
 msgstr "<GroupInvitation>Pozivnica u grupu</GroupInvitation> ide od profila do profila. Ako pozvani nalog još nema profil, čuva se <GroupAccountInvitation>pozivnica za nalog</GroupAccountInvitation>, koja postaje obična pozivnica čim nalog dobije prvi profil. <GroupJoinRequest>Zahtev za ulazak</GroupJoinRequest> ide u drugom smeru. Kad se prihvati, briše se, a ostaje <GroupJoinRequestApproval>odobren zahtev</GroupJoinRequestApproval> sa imenom onoga ko je primio člana."
@@ -199,7 +199,7 @@ msgstr "Sve tabele domena po celinama, sa spoljnim ključevima i mekim vezama."
 msgid "Alt. description"
 msgstr "Alternativni opis"
 
-#: lib/potok_ide_web/domain_copy.ex:1537
+#: lib/potok_ide_web/domain_copy.ex:1545
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event> keeps the repeat rule. A single occurrence is named by its local start date, so an <Response>event response</Response> carries that date, and cancelled occurrences are listed on the event."
 msgstr "<Event>Događaj</Event> čuva pravilo ponavljanja. Pojedinačno pojavljivanje se imenuje lokalnim datumom početka, pa <Response>odgovor na događaj</Response> nosi taj datum, a otkazana pojavljivanja su zapisana na događaju."
@@ -244,7 +244,7 @@ msgstr "Reakcija jednog profila na vrednost. Isti profil ne može dvaput istim e
 msgid "An event in a group's calendar, once or repeating. The start and the end are those of the first occurrence, and repeats keep the local time of the event's time zone. A value can announce an event. Its place is words, and on a map the place of a group or a point, an area or a route of its own."
 msgstr "Događaj u kalendaru grupe, jednom ili sa ponavljanjem. Početak i kraj važe za prvo pojavljivanje, a ponavljanja čuvaju lokalno vreme vremenske zone događaja. Događaj može da najavi vrednost. Mesto su mu reči, a na mapi mesto neke grupe ili njegova sopstvena tačka, područje ili ruta."
 
-#: lib/potok_ide_web/domain_copy.ex:1535
+#: lib/potok_ide_web/domain_copy.ex:1543
 #, elixir-autogen, elixir-format
 msgid "An event's occurrence has no row of its own"
 msgstr "Pojavljivanje događaja nema svoj red"
@@ -374,7 +374,7 @@ msgstr "Dokle je profil pročitao grupu. Nepročitano je sve novije od poslednje
 msgid "How permissions come about"
 msgstr "Kako nastaju dozvole"
 
-#: lib/potok_ide_web/domain_copy.ex:1527
+#: lib/potok_ide_web/domain_copy.ex:1535
 #, elixir-autogen, elixir-format
 msgid "How to get into a group"
 msgstr "Kako se ulazi u grupu"
@@ -464,7 +464,7 @@ msgstr "Jedan uređaj ili pregledač koji prima obaveštenja, preko veb pusha il
 msgid "One tag on one item. Exactly one of the five target columns is set, and the database checks that."
 msgstr "Jedan tag na jednoj stavci. Popunjena je tačno jedna od pet kolona sa metom, što proverava baza."
 
-#: lib/potok_ide_web/domain_copy.ex:1519
+#: lib/potok_ide_web/domain_copy.ex:1527
 #, elixir-autogen, elixir-format
 msgid "One tag, five kinds of items"
 msgstr "Jedan tag, pet vrsta stavki"
@@ -1628,12 +1628,12 @@ msgstr "Skuplja reakcije i komentare"
 msgid "Group reaction"
 msgstr "Reakcija na grupu"
 
-#: lib/potok_ide_web/domain_copy.ex:1513
+#: lib/potok_ide_web/domain_copy.ex:1521
 #, elixir-autogen, elixir-format
 msgid "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description."
 msgstr "Sliku koju šablon opisa uzme sa uređaja čuva <Value>vrednost</Value> u chatu grupe, sa svojim <ValueAttachment>fajlom</ValueAttachment>, pa slika ostaje među fajlovima grupe. Opis vidi više ljudi nego chat, zato je adresa slike potpisana i ne traži prijavu. Brisanje te vrednosti uklanja sliku i iz opisa."
 
-#: lib/potok_ide_web/domain_copy.ex:1511
+#: lib/potok_ide_web/domain_copy.ex:1519
 #, elixir-autogen, elixir-format
 msgid "A picture in a description is a file in the chat"
 msgstr "Slika u opisu je fajl u chatu"
@@ -2131,12 +2131,12 @@ msgstr "zapadna ivica rute"
 msgid "width of the route on a map"
 msgstr "širina rute na mapi"
 
-#: lib/potok_ide_web/domain_copy.ex:1545
+#: lib/potok_ide_web/domain_copy.ex:1553
 #, elixir-autogen, elixir-format
 msgid "An <Event>event</Event>'s place is words, and it can also stand on the map: at the place of a <Group>group</Group> or at a place of its own, never both. A place of its own is a point, an area or a route, as a group's is, drawn the same way, and an area or a route keeps its pin. Only a group with a place that the author sees can be picked, and the event then stands where the group stands, even after the group moves. Whoever does not see that group sees only the words, and deleting the group leaves the words as well. A link from a group or from an event opens the root's map on its place, which stands out whatever the filters, and an event shows a card of its own there."
 msgstr "Mesto <Event>događaja</Event> su reči, a može da stoji i na mapi: na mestu neke <Group>grupe</Group> ili na svom mestu, nikad oboje. Svoje mesto je tačka, područje ili ruta, kao kod grupe, i crta se na isti način, a područje ili ruta zadržava svoj pin. Može da se izabere samo grupa sa mestom koju autor vidi, i događaj onda stoji gde i grupa, i kad se ona pomeri. Ko tu grupu ne vidi, vidi samo reči, a i brisanje grupe ostavlja reči. Link sa grupe ili sa događaja otvara mapu korena na tom mestu, koje se ističe kakvi god da su filteri, a događaj tamo pokazuje i svoju karticu."
 
-#: lib/potok_ide_web/domain_copy.ex:1543
+#: lib/potok_ide_web/domain_copy.ex:1551
 #, elixir-autogen, elixir-format
 msgid "An event can take place at a group"
 msgstr "Događaj može da se održava u grupi"
@@ -2386,7 +2386,7 @@ msgstr "Račun"
 msgid "Neither the cost nor the amount is negative."
 msgstr "Ni trošak ni količina nisu negativni."
 
-#: lib/potok_ide_web/domain_copy.ex:1551
+#: lib/potok_ide_web/domain_copy.ex:1559
 #, elixir-autogen, elixir-format
 msgid "Potok estimates what it costs"
 msgstr "Potok procenjuje koliko košta"
@@ -2401,7 +2401,7 @@ msgstr "Iznos nije negativan, a napomena ima najviše 500 znakova."
 msgid "What `Fly.io` actually billed for one month, copied from the invoice, so the estimate of that month stands next to the real sum."
 msgstr "Koliko je `Fly.io` zaista naplatio za jedan mesec, prepisano sa računa, da procena tog meseca stoji pored pravog iznosa."
 
-#: lib/potok_ide_web/domain_copy.ex:1553
+#: lib/potok_ide_web/domain_copy.ex:1561
 #, elixir-autogen, elixir-format
 msgid "`Fly.io` gives no way to read its bills, so Potok estimates them itself. Every quarter of an hour it reads which machines run and how big they are, how big the database and the stored files are and how much data went out, and writes what each <CostHour>hour</CostHour> cost by the price list. The hours it missed, back to the start of the month, are filled in from `Fly.io`'s own metrics of those hours, which go back about ten days, and the rest from what runs now. Once a month is billed, one of the people who run Potok copies the sum from the <Invoice>invoice</Invoice>, and only they may. Anyone sees both on the costs page, even without an account."
 msgstr "`Fly.io` ne daje način da se pročitaju njegovi računi, pa ih Potok sam procenjuje. Na svakih petnaest minuta pročita koje mašine rade i koliko su velike, koliko su veliki baza i sačuvani fajlovi i koliko je podataka poslato, pa upiše koliko je svaki <CostHour>sat</CostHour> koštao po cenovniku. Sate koje je propustio, sve do početka meseca, popuni iz metrika samog `Fly.io` za te sate, koje sežu desetak dana unazad, a ostalo iz onoga što radi sada. Kad mesec bude naplaćen, neko od onih koji vode Potok prepiše iznos sa <Invoice>računa</Invoice>, i to smeju samo oni. Oboje svako vidi na strani sa troškovima, i bez naloga."
@@ -2646,11 +2646,6 @@ msgstr "podgrupa koja ga pokreće"
 msgid "what starts it"
 msgstr "šta ga pokreće"
 
-#: lib/potok_ide_web/domain_copy.ex:1505
-#, elixir-autogen, elixir-format
-msgid "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, or when someone holding its role starts it by hand with a title and a text. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
-msgstr "Pored procesa koji aplikacija upisuje u svoja pravila, urednici grupe mogu u Potoku da nacrtaju i svoje procese, kao <AppProcess>procese aplikacije</AppProcess> čiji graf stoji van podešavanja bilo koje aplikacije. Takav proces počinje na novoj vrednosti u kolekciji aplikacije, na poruci člana u razgovoru koja ima neku od njegovih reči ili pominje njegovu ulogu, na podgrupi napravljenoj jedna po jedna (ne na zapisu, niti ni onome što napravi proces), po rasporedu, ili kad ga neko sa njegovom ulogom pokrene ručno, uz naslov i tekst. Aplikacija pri čuvanju zameni cela podešavanja, pa crtež tamo ne bi bio bezbedan. Ovako ga aplikacija ne vidi i ne može da ga pregazi, a njen proces radi pored nacrtanih. Čuva se samo crtež koji instanca može da završi, sa ulogama koje grupa ima, i nastaje isključen. Kad se uključi, njegov profil ulazi u grupu, a svaki od tih događaja pokreće njegovu <ValueProcess>instancu procesa</ValueProcess>. Izmena važi za instance koje krenu posle nje, a isključivanje otkazuje one koje rade ili čekaju. Aplikacija ne zna za njihove zadatke, pa ih ljudi sa ulogom zadatka završavaju na kartici Procesi u grupi, gde <Value>vrednost</Value> vide samo koliko smeju da je čitaju. Brisanje aplikacije briše i procese nacrtane na njenim kolekcijama."
-
 #: lib/potok_ide_web/domain_copy.ex:967
 #, elixir-autogen, elixir-format
 msgid "A process starts on a value, a message, a sub-group, a schedule, by hand, when another process calls it or on a signal."
@@ -2685,3 +2680,18 @@ msgstr "šta su čekanja donela"
 #, elixir-autogen, elixir-format
 msgid "where %{field} is %{value}"
 msgstr "gde je %{field} %{value}"
+
+#: lib/potok_ide_web/domain_copy.ex:1505
+#, elixir-autogen, elixir-format
+msgid "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, when someone holding its role starts it by hand with a title and a text, or when another process drawn in the group calls it. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
+msgstr "Pored procesa koji aplikacija upisuje u svoja pravila, urednici grupe mogu u Potoku da nacrtaju i svoje procese, kao <AppProcess>procese aplikacije</AppProcess> čiji graf stoji van podešavanja bilo koje aplikacije. Takav proces počinje na novoj vrednosti u kolekciji aplikacije, na poruci člana u razgovoru koja ima neku od njegovih reči ili pominje njegovu ulogu, na podgrupi napravljenoj jedna po jedna (ne na zapisu, niti ni onome što napravi proces), po rasporedu, kad ga neko sa njegovom ulogom pokrene ručno, uz naslov i tekst, ili kad ga pozove drugi proces nacrtan u grupi. Aplikacija pri čuvanju zameni cela podešavanja, pa crtež tamo ne bi bio bezbedan. Ovako ga aplikacija ne vidi i ne može da ga pregazi, a njen proces radi pored nacrtanih. Čuva se samo crtež koji instanca može da završi, sa ulogama koje grupa ima, i nastaje isključen. Kad se uključi, njegov profil ulazi u grupu, a svaki od tih događaja pokreće njegovu <ValueProcess>instancu procesa</ValueProcess>. Izmena važi za instance koje krenu posle nje, a isključivanje otkazuje one koje rade ili čekaju. Aplikacija ne zna za njihove zadatke, pa ih ljudi sa ulogom zadatka završavaju na kartici Procesi u grupi, gde <Value>vrednost</Value> vide samo koliko smeju da je čitaju. Brisanje aplikacije briše i procese nacrtane na njenim kolekcijama."
+
+#: lib/potok_ide_web/domain_copy.ex:1511
+#, elixir-autogen, elixir-format
+msgid "Processes talk to each other only on purpose"
+msgstr "Procesi razgovaraju samo namerno"
+
+#: lib/potok_ide_web/domain_copy.ex:1513
+#, elixir-autogen, elixir-format
+msgid "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> of the same group that starts when another calls it, and hands over the fields it takes; the <ValueProcess>run</ValueProcess> it starts shares the caller's subject and is one level deeper. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. Runs go at most three processes deep, and a process another one calls cannot be deleted."
+msgstr "Ono što proces napiše ne pokreće druge procese: njegove poruke i podgrupe koje napravi ne pokreću ništa, pa dva procesa nikad ne teraju jedan drugi slučajno. Nacrtan proces razgovara sa drugim samo korakom nacrtanim za to. Poziv pokreće nacrtan <AppProcess>proces</AppProcess> iste grupe koji kreće kad ga drugi pozove i predaje mu polja koja on prima; <ValueProcess>pokretanje</ValueProcess> koje tako krene ima isti predmet kao pozivalac i jedan je nivo dublje. Pozivalac koji čeka ide dalje kad se to pokretanje završi, znajući do kog kraja je stiglo, ili na roku odustaje i otkazuje ga. Otkazivanje pokretanja otkazuje i ono koje ono čeka, a pokretanje čiji je pozvani proces otkazan staje, dok ga urednik ne pokrene ponovo, i tada poziva iznova. Pokretanja idu najviše tri procesa duboko, a proces koji drugi poziva ne može da se obriše."

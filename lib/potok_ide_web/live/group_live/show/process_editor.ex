@@ -340,7 +340,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
         <ol id="process-outline" class="sr-only">
           <li :for={node <- @editor.graph["nodes"]} id={"process-outline-#{node["id"]}"}>
-            {elem(ProcessEditorState.describe(node, @editor.graph, @roles, start: @start_title), 2)}
+            <% {_kind, _icon, title, detail} =
+              ProcessEditorState.describe(node, @editor.graph, @roles,
+                start: @start_title,
+                processes: ProcessEditorState.process_names(@editor)
+              ) %>
+            {title}<span :if={detail}> · {detail}</span>
           </li>
         </ol>
       </div>
@@ -455,7 +460,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
        "bg-teal-500/10 text-teal-600 dark:text-teal-300"},
       {"gateway", "hero-arrows-right-left", gettext("Condition"),
        gettext("Goes one way or another by what was sent."),
-       "bg-amber-500/10 text-amber-700 dark:text-amber-300"}
+       "bg-amber-500/10 text-amber-700 dark:text-amber-300"},
+      {"call", "hero-arrow-top-right-on-square", gettext("Call a process"),
+       gettext("Starts another process of the group, and waits for how it ends."),
+       "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"}
     ]
   end
 
@@ -471,7 +479,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
     {kind, icon, title, _detail} =
       ProcessEditorState.describe(node, assigns.editor.graph, assigns.roles,
-        start: assigns.start_title
+        start: assigns.start_title,
+        processes: ProcessEditorState.process_names(assigns.editor)
       )
 
     assigns =
@@ -482,6 +491,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         for(%{"action" => "subgroup"} = n <- assigns.editor.graph["nodes"], do: n)
       )
       |> assign(:outcome_flows, outcome_flows(assigns.editor.graph, node))
+      |> assign(:callee, Enum.find(assigns.editor.callable, &(&1.id == node["process"])))
       |> assign(:condition_flows, condition_flows(assigns.editor.graph, node))
 
     ~H"""
@@ -683,6 +693,73 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {gettext("Add a condition")}
                 </.button>
               </div>
+            <% "call" -> %>
+              <p
+                :if={@editor.callable == []}
+                id="process-call-none"
+                class="rounded-xl bg-base-200/70 px-3 py-2 text-sm text-base-content/70"
+              >
+                {gettext(
+                  "No process of the group takes calls yet. Draw one that starts when another process calls it, then pick it here."
+                )}
+              </p>
+              <.input
+                :if={@editor.callable != []}
+                field={@form[:process]}
+                type="select"
+                label={gettext("Process")}
+                prompt={if(is_nil(@callee), do: gettext("Pick a process"))}
+                options={
+                  for p <- @editor.callable,
+                      do:
+                        {if(p.active, do: p.name, else: gettext("%{name} (off)", name: p.name)), p.id}
+                }
+              />
+              <input type="hidden" name="element[wait]" value="false" />
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="process-call-wait"
+                  name="element[wait]"
+                  value="true"
+                  checked={@node["wait"] != false}
+                  class="checkbox checkbox-sm"
+                />
+                {gettext("Wait for it to end")}
+              </label>
+              <div :if={@callee && @callee.fields != []} id="process-call-fields" class="space-y-2">
+                <p class="label">{gettext("What it gets")}</p>
+                <div :for={name <- @callee.fields} class="space-y-1">
+                  <.input
+                    type="text"
+                    id={"process-call-field-#{name}"}
+                    name={"element[fields][#{name}]"}
+                    value={(@node["fields"] || %{})[name] || ""}
+                    label={name}
+                    maxlength="1000"
+                    phx-debounce="300"
+                  />
+                  <.fields editor={@editor} target={"fields.#{name}"} />
+                </div>
+              </div>
+              <div :if={@node["wait"] != false}>
+                <p class="label mb-1">{gettext("Deadline, then give up on it")}</p>
+                <div class="flex gap-2">
+                  <.input
+                    field={@form[:deadline_amount]}
+                    type="number"
+                    min="1"
+                    placeholder={gettext("none")}
+                    phx-debounce="400"
+                  />
+                  <.input field={@form[:deadline_unit]} type="select" options={unit_options()} />
+                </div>
+              </div>
+              <p :if={@node["wait"] != false} class="text-xs text-base-content/60">
+                {gettext("The steps after it read how it ended as %{field}.",
+                  field: "{{#{@node["id"]}.outcome}}"
+                )}
+              </p>
             <% "start" -> %>
               <p class="text-sm text-base-content/65">{trigger_hint(@editor.trigger)}</p>
             <% _end -> %>
@@ -838,6 +915,21 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 "They get a Start button on the Processes tab, with a title and a text the steps can put in."
               )}
             </p>
+          <% "process" -> %>
+            <.input
+              type="text"
+              id="process-trigger-fields"
+              name="trigger[fields]"
+              value={words_value(@config["fields"])}
+              label={gettext("Fields it takes")}
+              placeholder={gettext("fault, floor")}
+              phx-debounce="400"
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Another process of the group starts it with the step Call a process, which fills in these fields. When it ends, the caller learns which end it reached."
+              )}
+            </p>
           <% _value -> %>
         <% end %>
       </fieldset>
@@ -856,6 +948,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   defp trigger_icon("subgroup"), do: "hero-folder-plus"
   defp trigger_icon("schedule"), do: "hero-calendar-days"
   defp trigger_icon("manual"), do: "hero-hand-raised"
+  defp trigger_icon("process"), do: "hero-arrow-down-on-square"
   defp trigger_icon(_value), do: "hero-inbox-arrow-down"
 
   defp trigger_hint("message"),
@@ -864,20 +957,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   defp trigger_hint("subgroup"), do: gettext("A new sub-group starts the process here.")
   defp trigger_hint("schedule"), do: gettext("The process starts here at the set time.")
   defp trigger_hint("manual"), do: gettext("Whoever starts it by hand starts here.")
+  defp trigger_hint("process"), do: gettext("A call from another process starts here.")
   defp trigger_hint(_value), do: gettext("Every new value of the collection starts here.")
 
   attr :editor, :map, required: true
   attr :target, :string, required: true
 
   defp fields(assigns) do
+    assigns = assign(assigns, :hints, ProcessEditorState.field_hints(assigns.editor))
+
     ~H"""
     <div
-      :if={@editor.editable? and @editor.fields != []}
+      :if={@editor.editable? and @hints != []}
       class="-mt-1 flex flex-wrap items-center gap-1"
     >
       <span class="text-[11px] text-base-content/50">{gettext("Put in:")}</span>
       <button
-        :for={{path, i} <- Enum.with_index(@editor.fields)}
+        :for={{path, i} <- Enum.with_index(@hints)}
         id={"process-field-#{@target}-#{i}"}
         type="button"
         phx-click="process_editor_insert_field"
@@ -951,7 +1047,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               phx-debounce="400"
             />
             <datalist id="process-field-list">
-              <option :for={path <- @editor.fields} value={path} />
+              <option :for={path <- ProcessEditorState.field_hints(@editor)} value={path} />
             </datalist>
             <.input field={@form[:op]} type="select" label={gettext("Is")} options={op_options()} />
             <.input

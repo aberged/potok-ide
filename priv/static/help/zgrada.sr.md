@@ -106,6 +106,20 @@ Stanar na kartici Procesi dodirne **Pokreni**, upiše šta je u kvaru i potvrdi.
 
 Isto može i bez dugmeta: pod **Kad** izaberi **neko napiše poruku** i upiši reči „kvar“ i „curi“. Svaka poruka u razgovoru zgrade sa nekom od njih pokreće proces.
 
+## 10. Majstor, proces za sebe {:#majstor}
+
+Dogovor sa majstorom ima svoje korake, a treba i drugim procesima, ne samo prijavi kvara. Zato ga nacrtaj kao proces za sebe, a prijava kvara neka ga pozove i sačeka.
+
+1. Nacrtaj proces „Majstor“, a pod **Kad** izaberi **ga pozove drugi proces**. Na početnom koraku, pod **Polja koja prima**, upiši „kvar“.
+2. Dodaj **Odluku** sa ishodima „Dogovoreno“ i „Nema termina“. Dodirni strelicu ishoda „Nema termina“ i pod **Vodi do** izaberi **Novi kraj**. Krajeve nazovi isto kao ishode: dodirni kraj i upiši **Ime na crtežu**.
+3. Dodirni **Sačuvaj**, pa **Uključi**.
+4. U „Prijavi kvara“, na strelici ispod poruke ishoda „Zovemo majstora“, dodaj korak **Pozovi proces** i izaberi „Majstor“. Pod **Šta dobija**, za polje `kvar` dodirni `title`. Ostavi **Čekaj da se završi**, a za rok upiši 7 dana.
+5. Ispod poziva dodaj **Uslov**: polje `call-1.outcome` jednako „Dogovoreno“ vodi na poruku „Majstor dolazi.“, a **inače** na poruku „Majstor još nema termin.“
+
+![Prijava kvara poziva Majstora](zgrada-proces-poziv)
+
+Kad odlučiš „Zovemo majstora“, prijava kvara pokrene Majstora i čeka. Odluka Majstora te čeka na kartici Procesi, uz ime procesa koji ga je pozvao i kvar. Čim izabereš ishod, prijava kvara ide dalje i javlja u podgrupi kvara kako je prošlo. Ako za 7 dana niko ne odluči, prijava kvara odustaje, a Majstor se otkazuje.
+
 ## Klub, hor ili ekipa {:#klub}
 
 Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one koji ga vode i deljeni profil kad treba da govore jednim glasom. Treninzi i probe su događaji koji se ponavljaju: pod **Ponavljanje** izaberi **Svake nedelje**.
@@ -113,6 +127,6 @@ Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one ko
 ## Šta dalje {:#dalje}
 
 - [Profili](/pomoc#profili): jedinstveni i deljeni profili.
-- [Nacrtaj proces](/pomoc#nacrtaj-proces): sve što može da pokrene proces.
+- [Nacrtaj proces](/pomoc#nacrtaj-proces): sve što može da pokrene proces, i kako procesi pozivaju jedan drugi.
 - [Poruke](/pomoc#poruke): odgovori, niti, reakcije i pominjanja.
 - [Fajlovi i tagovi](/pomoc#fajlovi-i-tagovi): sve iz razgovora na jednom mestu.

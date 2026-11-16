@@ -13,8 +13,10 @@ defmodule PotokIde.Social.DrawnProcesses do
   - Only the app's editors (`ValueRules.manage?/1`) draw, change, switch on
     and off and delete. Every change takes the app's lock, as a save of its
     config does, and checks the revision the editor started from.
-  - Only a graph an instance can finish is kept (`Graph.normalize/1`), with
-    roles the group has.
+  - Only a graph an instance can finish is kept (`Graph.normalize/2`), with
+    roles the group has, calling only the group's drawn processes that start
+    when another calls them, with the fields they take. A process another
+    one calls is not deleted.
   - A new drawing is off. Switching it on brings its profile into the app's
     group; switching it off cancels its instances that run or wait and takes
     the profile out, as removing an app's rule does (`AppProcesses.stop/2`).
@@ -167,6 +169,7 @@ defmodule PotokIde.Social.DrawnProcesses do
         access = editor_access!(editor, group)
         known_roles!(graph, access)
         known_trigger_roles!(trigger, config, access)
+        known_processes!(graph, group)
 
         if count(group, alt_id) >= @max_per_app, do: Repo.rollback(:too_many)
 
@@ -226,6 +229,7 @@ defmodule PotokIde.Social.DrawnProcesses do
       changing(editor, group, id, fn row, access ->
         if row.lock_version != revision, do: Repo.rollback({:conflict, row})
         known_roles!(graph, access)
+        known_processes!(graph, group)
 
         config =
           case trigger_config(row.trigger, attrs["trigger_config"] || row.trigger_config) do
@@ -264,6 +268,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     changing(editor, group, id, fn row, access ->
       known_roles!(row.graph, access)
       known_trigger_roles!(row.trigger, row.trigger_config, access)
+      known_processes!(row.graph, group)
 
       row =
         row
@@ -360,23 +365,62 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   @doc """
-  The fields a process's texts may name: those of its trigger, or for one
-  on a collection, those the collection's newest values hold.
+  The fields a process's texts may name: those of its trigger with its
+  settings (`config`), or for one on a collection, those the collection's
+  newest values hold.
   """
-  def fields_for(%Group{} = group, "value", alt_id, collection),
+  def fields_for(group, trigger, alt_id, collection, config \\ %{})
+
+  def fields_for(%Group{} = group, "value", alt_id, collection, _config),
     do: fields(group, alt_id, collection)
 
-  def fields_for(_group, trigger, _alt_id, _collection), do: Triggers.fields(trigger)
+  def fields_for(_group, trigger, _alt_id, _collection, config),
+    do: Triggers.fields(trigger, config || %{})
 
   @doc """
-  Deletes a drawn process with its instances. What it wrote stays, signed by
-  its profile, which goes once nothing it wrote is left (`AppProcesses.sweep/0`).
+  The group's drawn processes that another may call, by name, as
+  `%{id, name, fields, active}`, `fields` being the names each takes.
+  """
+  def callable(%Group{id: group_id}) do
+    from(p in AppProcess,
+      where: p.group_id == ^group_id and p.drawn and p.trigger == "process",
+      order_by: [asc: p.name, asc: p.id],
+      select: %{id: p.id, name: p.name, fields: p.trigger_config, active: p.active}
+    )
+    |> Repo.all()
+    |> Enum.map(&%{&1 | fields: &1.fields["fields"] || []})
+  end
+
+  @doc """
+  Deletes a drawn process with its instances, unless another process of the
+  group calls it (`{:error, {:in_use, name}}`). What it wrote stays, signed
+  by its profile, which goes once nothing it wrote is left
+  (`AppProcesses.sweep/0`).
   """
   def delete(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, _access ->
+      if name = caller(group, row), do: Repo.rollback({:in_use, name})
       if row.active, do: AppProcesses.stop(group, row)
       Repo.delete!(row)
     end)
+  end
+
+  # The name of a drawn process of the group, other than `row`, that calls it.
+  # One saved meanwhile waits for the lock on `row` (`known_processes!/2`).
+  defp caller(%Group{id: group_id}, %AppProcess{id: id}) do
+    from(p in AppProcess,
+      where:
+        p.group_id == ^group_id and p.drawn and p.id != ^id and
+          fragment(
+            "jsonb_path_exists(?, '$.nodes[*] \\? (@.type == \"callActivity\" && @.process == $id)', jsonb_build_object('id', ?::bigint))",
+            p.graph,
+            ^id
+          ),
+      order_by: [asc: p.name],
+      limit: 1,
+      select: p.name
+    )
+    |> Repo.one()
   end
 
   # Runs `fun` on the locked row, for an editor of its app, under the app's lock.
@@ -411,6 +455,32 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   defp known_roles!(graph, %Access{manifest: manifest}) do
     case Graph.unknown_role(graph, AppData.role_keys(manifest)) do
+      nil -> :ok
+      {path, reason} -> Repo.rollback({:invalid_graph, path, reason})
+    end
+  end
+
+  # The processes the graph calls must be the group's drawn ones that start
+  # when another calls them, taking the fields it hands over. They are read
+  # `FOR SHARE`, so one being deleted waits for this save, or this save for
+  # it (`caller/2`).
+  defp known_processes!(graph, %Group{id: group_id}) do
+    ids = graph |> Graph.process_refs() |> Enum.map(&elem(&1, 1)) |> Enum.uniq()
+
+    callable =
+      if ids == [] do
+        %{}
+      else
+        from(p in AppProcess,
+          where: p.group_id == ^group_id and p.drawn and p.trigger == "process" and p.id in ^ids,
+          lock: "FOR SHARE",
+          select: {p.id, p.trigger_config}
+        )
+        |> Repo.all()
+        |> Map.new(fn {id, config} -> {id, config["fields"] || []} end)
+      end
+
+    case Graph.unknown_process(graph, callable) do
       nil -> :ok
       {path, reason} -> Repo.rollback({:invalid_graph, path, reason})
     end
@@ -464,7 +534,7 @@ defmodule PotokIde.Social.DrawnProcesses do
   defp name(_name), do: {:error, :invalid_name}
 
   defp graph(graph) do
-    case Graph.normalize(graph) do
+    case Graph.normalize(graph, drawn: true) do
       {:ok, graph} -> {:ok, graph}
       {:error, {path, reason}} -> {:error, {:invalid_graph, path, reason}}
     end

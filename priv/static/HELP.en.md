@@ -337,7 +337,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait or a condition. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition or a call to another process. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:
@@ -346,9 +346,12 @@ A process can start on:
 - **a message** in the group's chat holding one of the words you type, say "leak", or mentioning a role. Replies in threads and a process's own messages do not count;
 - **a new sub-group**, say a place added on the map, and if you like only one with a place. Records and threads do not count;
 - **a set time**: every day, every week on the days you pick or every month, at the hour you pick;
-- **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text.
+- **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text;
+- **another process** of the group, with the step **Call a process**: on the start step, under **Fields it takes**, you type what the caller hands over.
 
 A step's text can put in fields of what started the process, say a message's text or the title of a run started by hand: they are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
+
+The steps after a decision read its outcome as `{{odluka.outcome}}`, and who decided as `{{odluka.by}}`, where `odluka` is the step's name on the drawing; these are offered under the text field too. In the same way the step **Call a process** starts another drawn process of the group and hands it fields. If you leave **Wait for it to end** on, the process waits until the one it called reaches an end, and the steps after the call read the name of that end on the drawing as `{{poziv.outcome}}`, so a condition can branch on it. A deadline says how long it waits at most: when it passes, it gives up and cancels the process it called. What a process writes starts no other process, so processes talk only when you draw them that way. Processes call each other at most three levels deep, and a process another one calls cannot be deleted. The [building](/pomoc/zgrada#majstor) shows how this looks.
 
 ### Sharing into Potok {:#deljenje}
 

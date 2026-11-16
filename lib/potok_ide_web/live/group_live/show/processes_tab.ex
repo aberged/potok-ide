@@ -159,6 +159,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     <div class="mt-3 rounded-2xl bg-base-100/80 p-3 text-sm shadow-xs">
       <div class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/60">
         <.icon name={subject_icon(@task.kind)} class="size-3.5" />
+        <span :if={@task.kind == :call}>{gettext("Called by")}</span>
         <span :if={@task.author_name} class="font-semibold text-base-content/80">
           {@task.author_name}
         </span>
@@ -420,6 +421,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp subject_icon(:message), do: "hero-chat-bubble-left-ellipsis"
   defp subject_icon(:group), do: "hero-folder-plus"
   defp subject_icon(:data), do: "hero-play-circle"
+  defp subject_icon(:call), do: "hero-arrow-top-right-on-square"
   defp subject_icon(_value), do: "hero-inbox-arrow-down"
 
   # What starts the process (its collection, for an app's), and who owns it.
@@ -585,6 +587,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp failure_reason("loop"), do: gettext("it went round without waiting")
   defp failure_reason("too_many_steps"), do: gettext("it took too many steps")
   defp failure_reason("crash"), do: gettext("an unexpected error")
+  defp failure_reason("too_deep"), do: gettext("processes called each other too deep")
+  defp failure_reason("too_many_runs"), do: gettext("the process called has too many runs")
+  defp failure_reason("call_cancelled"), do: gettext("the process it called was cancelled")
+  defp failure_reason("call_inactive"), do: gettext("the process it calls is off")
+  defp failure_reason("call_unknown"), do: gettext("the process it calls is gone")
   defp failure_reason(_reason), do: gettext("an error")
 
   @doc "The permissions a process lacks, in words."

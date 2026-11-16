@@ -171,6 +171,55 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     assert %ValueProcess{status: :cancelled} = Repo.get!(ValueProcess, instance.id)
   end
 
+  test "a run another process called shows who called it, and why a caller stopped", ctx do
+    {:ok, callee} =
+      DrawnProcesses.create(ctx.owner, ctx.group, %{
+        "trigger" => "process",
+        "trigger_config" => %{"fields" => ["kvar"]},
+        "name" => "Majstor",
+        "graph" => graph(ctx.savet)
+      })
+
+    {:ok, callee} = DrawnProcesses.activate(ctx.owner, ctx.group, callee.id)
+
+    {:ok, caller} =
+      DrawnProcesses.create(ctx.owner, ctx.group, %{
+        "trigger" => "manual",
+        "name" => "Prijava",
+        "graph" => %{
+          "nodes" => [
+            %{"id" => "start", "type" => "startEvent"},
+            %{
+              "id" => "majstor",
+              "type" => "callActivity",
+              "process" => callee.id,
+              "fields" => %{"kvar" => "{{title}}"}
+            },
+            %{"id" => "kraj", "type" => "endEvent"}
+          ],
+          "flows" => [
+            %{"from" => "start", "to" => "majstor"},
+            %{"from" => "majstor", "to" => "kraj"}
+          ]
+        }
+      })
+
+    {:ok, caller} = DrawnProcesses.activate(ctx.owner, ctx.group, caller.id)
+    {:ok, run} = DrawnProcesses.start(ctx.owner, ctx.group, caller.id, %{"title" => "Lift"})
+    Engine.run(run.id)
+    child = Repo.get_by!(ValueProcess, app_process_id: callee.id)
+    Engine.run(child.id)
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    assert has_element?(lv, "#process-task-#{child.id}", "Called by")
+    assert has_element?(lv, "#process-task-#{child.id}-subject", "Prijava")
+    assert has_element?(lv, "#process-task-#{child.id}-data", "Lift")
+
+    {:ok, _cancelled} = Engine.cancel(child.id)
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    assert has_element?(lv, "#process-instance-#{run.id}", "the process it called was cancelled")
+  end
+
   test "a drawing that is off shows to the app's editors only", ctx do
     row = draw!(ctx, false)
 

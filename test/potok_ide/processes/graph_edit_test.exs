@@ -14,11 +14,13 @@ defmodule PotokIde.Processes.GraphEditTest do
     role: "admin",
     outcomes: ["Odobri", "Odbij"],
     outcome: "Ishod",
-    field: "naslov"
+    field: "naslov",
+    process: 7,
+    call_fields: %{"kvar" => ""}
   }
 
   defp valid!(graph) do
-    assert {:ok, _normalized} = Graph.normalize(graph)
+    assert {:ok, _normalized} = Graph.normalize(graph, drawn: true)
     graph
   end
 
@@ -87,6 +89,29 @@ defmodule PotokIde.Processes.GraphEditTest do
     {:ok, graph} = GraphEdit.set_deadline(graph, "task-1", nil)
     valid!(graph)
     refute "push-1" in ids(graph)
+  end
+
+  test "a call's deadline goes where the call goes on, and goes when it stops waiting" do
+    graph = insert!(GraphEdit.new(), "f1", "call")
+
+    assert %{"process" => 7, "wait" => true, "fields" => %{"kvar" => ""}} =
+             Graph.node(graph, "call-1")
+
+    {:ok, graph} = GraphEdit.set_deadline(graph, "call-1", "P7D")
+    valid!(graph)
+    assert [%{"to" => "end"}, %{"to" => "end", "deadline" => true}] = Graph.out(graph, "call-1")
+
+    # Drawing an arrow from it moves its way on, not its deadline.
+    graph = insert!(graph, first_key(graph), "message")
+    {:ok, graph} = GraphEdit.connect(graph, "call-1", "end")
+    valid!(graph)
+    assert [%{"to" => "end"}, %{"to" => "end", "deadline" => true}] = Graph.out(graph, "call-1")
+
+    {:ok, graph} = GraphEdit.update_node(graph, "call-1", %{"wait" => false, "role" => "x"})
+    valid!(graph)
+    assert [%{"to" => "end"}] = Graph.out(graph, "call-1")
+    refute Map.has_key?(Graph.node(graph, "call-1"), "deadline")
+    refute Map.has_key?(Graph.node(graph, "call-1"), "role")
   end
 
   test "an outcome is renamed with its flow, and the last one stays" do

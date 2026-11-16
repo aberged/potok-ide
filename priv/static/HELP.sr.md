@@ -343,7 +343,7 @@ Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, i u grupi bez apl
 
 1. U meniju grupe otvori **Procesi**, dodirni **Nacrtaj proces** i upiši ime procesa.
 2. Pod **Kad** izaberi šta ga pokreće, a na početnom koraku crteža ga podesi.
-3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, push, čekanje ili uslov. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
+3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, push, čekanje, uslov ili poziv drugog procesa. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
 4. Dodirni **Sačuvaj**, pa **Uključi**.
 
 Proces može da pokrene:
@@ -352,9 +352,12 @@ Proces može da pokrene:
 - **poruka** u razgovoru grupe sa nekom od reči koje upišeš, recimo „kvar“, ili koja pominje ulogu. Odgovori u niti i poruke procesa se ne računaju;
 - **nova podgrupa**, recimo mesto dodato na mapi, a po želji samo ona sa mestom. Zapisi i niti se ne računaju;
 - **zadato vreme**: svakog dana, svake nedelje u izabrane dane ili svakog meseca, u satu koji izabereš;
-- **neko ručno**: oni kojima to dozvoliš dobijaju na kartici Procesi dugme **Pokreni**, uz naslov i tekst.
+- **neko ručno**: oni kojima to dozvoliš dobijaju na kartici Procesi dugme **Pokreni**, uz naslov i tekst;
+- **drugi proces** grupe, korakom **Pozovi proces**: na početnom koraku, pod **Polja koja prima**, upišeš šta mu pozivalac predaje.
 
 Tekst koraka može da ubaci polja onoga što je proces pokrenulo, recimo tekst poruke ili naslov ručnog pokretanja: nude se ispod polja za tekst. Na širokom ekranu korake prevlačiš gde ti odgovaraju, a strelicu crtaš od tačke ispod koraka do drugog koraka. Crtež koji instanca ne bi mogla da završi ne može da se sačuva, a traka iznad crteža kaže šta fali. Aplikacija nacrtan proces ne vidi i ne menja, a njen sopstveni proces, ako ga ima, radi pored njega. Izmena važi za pokretanja posle nje. Kako to izgleda, pokazuju tutorijali za [zadrugu](/pomoc/zadruga#proces) i [zgradu](/pomoc/zgrada#kvar).
+
+Ishod odluke koraci posle nje čitaju kao `{{odluka.outcome}}`, a ko je odlučio kao `{{odluka.by}}`, gde je `odluka` ime koraka sa crteža; i to se nudi ispod polja za tekst. Tako i korak **Pozovi proces** pokreće drugi nacrtani proces grupe i predaje mu polja. Ako ostaviš **Čekaj da se završi**, proces čeka dok pozvani ne stigne do kraja, a ime tog kraja na crtežu koraci posle poziva čitaju kao `{{poziv.outcome}}`, pa po njemu može da grana uslov. Rok kaže koliko najviše čeka: kad prođe, odustaje i otkazuje pozvani proces. Ono što proces napiše ne pokreće druge procese, pa razgovaraju samo kad ih tako nacrtaš. Procesi se pozivaju najviše tri nivoa duboko, a proces koji drugi poziva ne može da se obriše. Kako to izgleda, pokazuje [zgrada](/pomoc/zgrada#majstor).
 
 ### Deljenje u Potok {:#deljenje}
 

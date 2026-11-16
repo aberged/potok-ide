@@ -244,6 +244,78 @@ defmodule PotokIde.Processes.GraphTest do
     end
   end
 
+  describe "a call" do
+    defp calling(call, extra_flows \\ []) do
+      %{
+        "nodes" =>
+          [
+            %{"id" => "start", "type" => "startEvent"},
+            Map.merge(%{"id" => "poziv", "type" => "callActivity", "process" => 7}, call),
+            %{"id" => "kraj", "type" => "endEvent"}
+          ] ++ if(extra_flows == [], do: [], else: [%{"id" => "rok", "type" => "endEvent"}]),
+        "flows" =>
+          [%{"from" => "start", "to" => "poziv"}, %{"from" => "poziv", "to" => "kraj"}] ++
+            extra_flows
+      }
+    end
+
+    test "is only for a process drawn in Potok, waiting unless told not to" do
+      assert {:error, {"nodes.1.type", :invalid}} = Graph.normalize(calling(%{}))
+
+      assert {:ok, %{"nodes" => [_, call | _]}} =
+               Graph.normalize(calling(%{"fields" => %{"kvar" => " {{title}} "}}), drawn: true)
+
+      assert call == %{
+               "id" => "poziv",
+               "type" => "callActivity",
+               "process" => 7,
+               "wait" => true,
+               "fields" => %{"kvar" => "{{title}}"}
+             }
+    end
+
+    test "names a process, the fields it hands over, and a deadline only while it waits" do
+      for {call, path} <- [
+            {%{"process" => "7"}, "nodes.1.process"},
+            {%{"process" => 0}, "nodes.1.process"},
+            {%{"wait" => "da"}, "nodes.1.wait"},
+            {%{"fields" => %{"dve reči" => ""}}, "nodes.1.fields.dve reči"},
+            {%{"fields" => %{"kvar" => 1}}, "nodes.1.fields.kvar"},
+            {%{"fields" => Map.new(1..11, &{"f#{&1}", ""})}, "nodes.1.fields"},
+            {%{"wait" => false, "deadline" => "PT1H"}, "nodes.1.deadline"}
+          ] do
+        assert {:error, {^path, :invalid}} = Graph.normalize(calling(call), drawn: true)
+      end
+    end
+
+    test "goes on by one flow, and by a second when its deadline passes" do
+      deadline = [%{"from" => "poziv", "to" => "rok", "deadline" => true}]
+
+      assert {:ok, _graph} =
+               Graph.normalize(calling(%{"deadline" => "P1D"}, deadline), drawn: true)
+
+      assert {:error, {"nodes.1.deadline", :no_flow}} =
+               Graph.normalize(calling(%{"deadline" => "P1D"}), drawn: true)
+
+      assert {:error, {"nodes.1.deadline", :no_flow}} =
+               Graph.normalize(calling(%{}, deadline), drawn: true)
+
+      assert {:error, {"nodes.1", :one_flow}} =
+               Graph.normalize(calling(%{}, [%{"from" => "poziv", "to" => "rok"}]), drawn: true)
+    end
+
+    test "reaches only processes that take calls, with the fields they take" do
+      {:ok, graph} = Graph.normalize(calling(%{"fields" => %{"kvar" => "x"}}), drawn: true)
+
+      assert Graph.process_refs(graph) == [{"nodes.1", 7, ["kvar"]}]
+      assert Graph.unknown_process(graph, %{7 => ["kvar", "sprat"]}) == nil
+      assert Graph.unknown_process(graph, %{7 => []}) == {"nodes.1.fields.kvar", :unknown_field}
+
+      assert Graph.unknown_process(graph, %{8 => ["kvar"]}) ==
+               {"nodes.1.process", :unknown_process}
+    end
+  end
+
   test "names what the actions need and the roles they name" do
     {:ok, graph} = Graph.normalize(molbe())
 

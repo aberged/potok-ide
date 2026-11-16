@@ -105,6 +105,20 @@ A resident taps **Start** on the Processes tab, types what is broken and confirm
 
 It also works without the button: under **When** choose **someone writes a message** and type the words "leak" and "broken". Every message in the building's chat with one of them starts the process.
 
+## 10. The repairer, a process of its own {:#majstor}
+
+Agreeing with a repairer has steps of its own, and other processes need it too, not only the fault report. So draw it as a process of its own, and let the fault report call it and wait.
+
+1. Draw a process "Repairer", and under **When** choose **another process calls it**. On the start step, under **Fields it takes**, type "kvar".
+2. Add a **Decision** with the outcomes "Agreed" and "No date". Tap the arrow of the outcome "No date" and under **Leads to** choose **A new end**. Name the ends as the outcomes: tap an end and type its **Name on the drawing**.
+3. Tap **Save**, then **Switch on**.
+4. In "Reporting a fault", on the arrow under the message of the outcome "Calling a repairer", add the step **Call a process** and pick "Repairer". Under **What it gets**, for the field `kvar` tap `title`. Leave **Wait for it to end** on, and for the deadline type 7 days.
+5. Under the call add a **Condition**: the field `call-1.outcome` equal to "Agreed" leads to the message "The repairer is coming.", and **otherwise** to the message "The repairer has no date yet."
+
+![Reporting a fault calls the Repairer](zgrada-proces-poziv)
+
+When you decide "Calling a repairer", the fault report starts the Repairer and waits. The Repairer's decision waits for you on the Processes tab, with the name of the process that called it and the fault. As soon as you pick an outcome, the fault report goes on and tells the fault's sub-group how it went. If nobody decides within 7 days, the fault report gives up, and the Repairer is cancelled.
+
 ## A club, a choir or a team {:#klub}
 
 A club is put together the same way: one chat for everyone, a sub-group without inherited members for those who run it and a shared profile when they should speak with one voice. Training sessions and rehearsals are events that repeat: under **Repeats**, choose **Weekly**.
@@ -112,6 +126,6 @@ A club is put together the same way: one chat for everyone, a sub-group without 
 ## What next {:#dalje}
 
 - [Profiles](/pomoc#profili): unique and shared profiles.
-- [Draw a process](/pomoc#nacrtaj-proces): everything that can start a process.
+- [Draw a process](/pomoc#nacrtaj-proces): everything that can start a process, and how processes call each other.
 - [Messages](/pomoc#poruke): replies, threads, reactions and mentions.
 - [Files and tags](/pomoc#fajlovi-i-tagovi): everything from a chat in one place.

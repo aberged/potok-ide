@@ -16,6 +16,15 @@ defmodule PotokIde.Processes.Graph do
     its `default` flow.
   - `endEvent`: the instance is done.
 
+  Only a process drawn in Potok (`normalize(graph, drawn: true)`) may also
+  talk to the group's other drawn processes:
+
+  - `callActivity`: starts the drawn `process` (its id) that starts when
+    another process calls it, with `fields` (the names it takes, each a text
+    as above), and waits for it to end unless `wait` is false, until an
+    optional `deadline`. What it ended with comes back as
+    `{{element.outcome}}`, with its fields and results.
+
   Any element may carry a `label`, the name it shows on a drawing and where
   an instance waits or stopped; its `id` stands in for it otherwise.
 
@@ -45,6 +54,9 @@ defmodule PotokIde.Processes.Graph do
   @duration_format ~r/^P(?:(\d+)W|(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?)$/
   @ops ~w(= != < > empty)
   @default_admins ["owner", "triggered_by"]
+  @max_call_fields 10
+  @max_template 1_000
+  @name_format ~r/^[\p{L}\p{Nd}_-]{1,40}$/u
 
   # What each action needs the process profile to hold in the app's group.
   @action_permissions %{
@@ -55,9 +67,15 @@ defmodule PotokIde.Processes.Graph do
 
   @doc """
   The graph as Potok keeps it: known keys only, defaults filled in, and every
-  element able to reach an end. `{:error, {path, reason}}` otherwise.
+  element able to reach an end. `{:error, {path, reason}}` otherwise. With
+  `drawn: true`, for a process drawn in Potok, it may call another.
   """
-  def normalize(%{"nodes" => nodes, "flows" => flows}) when is_list(nodes) and is_list(flows) do
+  def normalize(graph, opts \\ [])
+
+  def normalize(%{"nodes" => nodes, "flows" => flows}, opts)
+      when is_list(nodes) and is_list(flows) do
+    drawn? = Keyword.get(opts, :drawn, false)
+
     cond do
       nodes == [] ->
         {:error, {"nodes", :empty}}
@@ -69,7 +87,7 @@ defmodule PotokIde.Processes.Graph do
         {:error, {"flows", :too_many}}
 
       true ->
-        with {:ok, nodes} <- each(nodes, "nodes", &element/2),
+        with {:ok, nodes} <- each(nodes, "nodes", &element(&1, &2, drawn?)),
              :ok <- unique_ids(nodes),
              ids = MapSet.new(nodes, & &1["id"]),
              {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids)),
@@ -79,7 +97,7 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  def normalize(_graph), do: {:error, {"", :invalid}}
+  def normalize(_graph, _opts), do: {:error, {"", :invalid}}
 
   @doc "The permissions the graph's actions need, in a fixed order; none for nil."
   def permissions(nil), do: []
@@ -124,6 +142,36 @@ defmodule PotokIde.Processes.Graph do
   def unknown_role(graph, %MapSet{} = keys) do
     Enum.find_value(role_refs(graph), fn {path, key} ->
       if not MapSet.member?(keys, key), do: {path, :unknown_role}
+    end)
+  end
+
+  @doc """
+  The drawn processes the graph calls, as `{path, id, names}`: the path of
+  the element, the process's id and the names of the fields it hands over.
+  """
+  def process_refs(%{"nodes" => nodes}) do
+    for {%{"type" => "callActivity"} = call, i} <- Enum.with_index(nodes),
+        do: {"nodes.#{i}", call["process"], Map.keys(call["fields"])}
+  end
+
+  @doc """
+  The first call of the graph to a process that is not among `callable` (a
+  map of the ids of the group's processes that another may call to the
+  names of the fields each takes), as `{path, :unknown_process}`, or to a
+  field that process does not take, as `{path, :unknown_field}`; or nil.
+  """
+  def unknown_process(graph, callable) when is_map(callable) do
+    Enum.find_value(process_refs(graph), fn {path, id, names} ->
+      case Map.fetch(callable, id) do
+        {:ok, taken} ->
+          case Enum.find(names, &(&1 not in taken)) do
+            nil -> nil
+            name -> {"#{path}.fields.#{name}", :unknown_field}
+          end
+
+        :error ->
+          {path <> ".process", :unknown_process}
+      end
     end)
   end
 
@@ -177,22 +225,24 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  defp element(%{"id" => id, "type" => type} = node, path) when is_binary(id) do
+  defp element(%{"id" => id, "type" => type} = node, path, drawn?) when is_binary(id) do
     with true <- Regex.match?(@id_format, id) || {:error, {path <> ".id", :invalid}},
-         {:ok, element} <- typed(type, node, path, %{"id" => id, "type" => type}),
+         {:ok, element} <- typed(type, node, path, %{"id" => id, "type" => type}, drawn?),
          {:ok, label} <- label(node["label"], path <> ".label") do
       {:ok, put_some(element, "label", label)}
     end
   end
 
-  defp element(_node, path), do: {:error, {path, :invalid}}
+  defp element(_node, path, _drawn?), do: {:error, {path, :invalid}}
 
-  defp typed(type, _node, _path, base) when type in ~w(startEvent endEvent exclusiveGateway),
-    do: {:ok, base}
+  defp typed(type, _node, _path, base, _drawn?)
+       when type in ~w(startEvent endEvent exclusiveGateway),
+       do: {:ok, base}
 
-  defp typed("serviceTask", node, path, base), do: action(node["action"], node, path, base)
+  defp typed("serviceTask", node, path, base, _drawn?),
+    do: action(node["action"], node, path, base)
 
-  defp typed("userTask", node, path, base) do
+  defp typed("userTask", node, path, base, _drawn?) do
     with {:ok, role} <- key(node["role"], path <> ".role"),
          {:ok, outcomes} <- outcomes(node["outcomes"], path <> ".outcomes"),
          {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline") do
@@ -203,13 +253,50 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  defp typed("timer", node, path, base) do
+  defp typed("timer", node, path, base, _drawn?) do
     with {:ok, duration} <- duration(node["duration"], path <> ".duration") do
       {:ok, Map.put(base, "duration", duration)}
     end
   end
 
-  defp typed(_type, _node, path, _base), do: {:error, {path <> ".type", :invalid}}
+  defp typed("callActivity", node, path, base, true) do
+    wait = Map.get(node, "wait", true)
+
+    with {:ok, process} <- process_id(node["process"], path <> ".process"),
+         true <- is_boolean(wait) || {:error, {path <> ".wait", :invalid}},
+         {:ok, fields} <- call_fields(Map.get(node, "fields", %{}), path <> ".fields"),
+         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline"),
+         true <- (wait or is_nil(deadline)) || {:error, {path <> ".deadline", :invalid}} do
+      {:ok,
+       base
+       |> Map.merge(%{"process" => process, "wait" => wait, "fields" => fields})
+       |> put_some("deadline", deadline)}
+    end
+  end
+
+  defp typed(_type, _node, path, _base, _drawn?), do: {:error, {path <> ".type", :invalid}}
+
+  defp process_id(id, _path) when is_integer(id) and id > 0, do: {:ok, id}
+  defp process_id(_id, path), do: {:error, {path, :invalid}}
+
+  # The fields a call hands over, by the names the called process takes, each
+  # a text that may be empty.
+  defp call_fields(fields, path) when is_map(fields) and map_size(fields) <= @max_call_fields do
+    Enum.reduce_while(fields, {:ok, %{}}, fn {name, text}, {:ok, acc} ->
+      cond do
+        not (is_binary(name) and Regex.match?(@name_format, name)) ->
+          {:halt, {:error, {"#{path}.#{name}", :invalid}}}
+
+        not (is_binary(text) and String.length(text) <= @max_template) ->
+          {:halt, {:error, {"#{path}.#{name}", :invalid}}}
+
+        true ->
+          {:cont, {:ok, Map.put(acc, name, String.trim(text))}}
+      end
+    end)
+  end
+
+  defp call_fields(_fields, path), do: {:error, {path, :invalid}}
 
   # A blank label is no label.
   defp label(nil, _path), do: {:ok, nil}
@@ -445,6 +532,23 @@ defmodule PotokIde.Processes.Graph do
         {:error, {"nodes.#{i}.outcomes", :no_flow}}
 
       deadlines != if(task["deadline"], do: 1, else: 0) ->
+        {:error, {"nodes.#{i}.deadline", :no_flow}}
+
+      true ->
+        :ok
+    end
+  end
+
+  # A call or a wait goes on by one plain flow, and by a second when its
+  # deadline passes.
+  defp leaves({%{"type" => "callActivity"} = element, i}, out, _into) do
+    {deadlines, plain} = Enum.split_with(out, &Map.has_key?(&1, "deadline"))
+
+    cond do
+      not plain_one?(plain) ->
+        {:error, {"nodes.#{i}", :one_flow}}
+
+      length(deadlines) != if(element["deadline"], do: 1, else: 0) ->
         {:error, {"nodes.#{i}.deadline", :no_flow}}
 
       true ->

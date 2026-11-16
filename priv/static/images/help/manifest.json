@@ -258,5 +258,9 @@
   "zgrada-proces-okidac": {
     "h": 844,
     "w": 390
+  },
+  "zgrada-proces-poziv": {
+    "h": 844,
+    "w": 390
   }
 }
