@@ -416,6 +416,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
             </div>
           </button>
 
+          <%!-- What the group's processes wait for the viewer to decide or fill
+               in, from every tab but the one that lists it. --%>
+          <button
+            :if={@processes_waiting > 0 and @active_tab != "processes"}
+            id="group-waiting"
+            type="button"
+            phx-click="switch_tab"
+            phx-value-tab="processes"
+            aria-label={gettext("Waiting for you: %{count}", count: @processes_waiting)}
+            title={gettext("Waiting for you: %{count}", count: @processes_waiting)}
+            class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-900 shadow-xs transition duration-150 hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 active:scale-95 dark:text-amber-100"
+          >
+            <span class="relative flex size-2 shrink-0">
+              <span class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-60 motion-reduce:hidden" />
+              <span class="relative inline-flex size-2 rounded-full bg-amber-500" />
+            </span>
+            <span class="max-sm:hidden">{gettext("Waiting for you")}</span>
+            <span id="group-waiting-count" class="tabular-nums">{@processes_waiting}</span>
+          </button>
+
           <%!-- Following the group, for its notices: one tap follows, and a
                followed group's bell opens what can be changed. --%>
           <.icon_button
@@ -523,6 +543,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 active_tab={@active_tab}
                 label={gettext("Processes")}
                 icon="hero-arrow-path-rounded-square"
+                badge={@processes_waiting}
+                badge_id="group-tab-processes-waiting"
               />
               <Components.group_tab_button
                 :if={@group.is_root}
@@ -2707,7 +2729,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     # A run that came to ask the viewer a form opens it for them.
     socket = if event == :process, do: ProcessForm.moved(socket, payload), else: socket
 
-    {:noreply, ProcessesState.app_value(socket, event)}
+    {:noreply, ProcessesState.app_value(socket, event, payload)}
   end
 
   def handle_info({:app_value, _group_id, _event, _payload}, socket), do: {:noreply, socket}
@@ -2890,6 +2912,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> PollsState.maybe_load(group, active_tab)
     |> NoticesState.maybe_load(group, active_tab)
     |> ProcessesState.assign_available()
+    |> ProcessesState.assign_waiting()
     |> ProcessesState.maybe_load(group, active_tab)
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)

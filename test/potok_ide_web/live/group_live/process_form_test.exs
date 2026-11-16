@@ -73,13 +73,15 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
     %{"v" => 2, "nodes" => nodes, "flows" => flows}
   end
 
-  defp draw!(ctx, steps) do
+  defp draw!(ctx, steps) when is_list(steps), do: draw!(ctx, chain(steps))
+
+  defp draw!(ctx, graph) do
     {:ok, row} =
       DrawnProcesses.create(ctx.owner, ctx.group, %{
         "trigger" => "message",
         "trigger_config" => %{"words" => "kvar"},
         "name" => "Prijava kvara",
-        "graph" => chain(steps)
+        "graph" => graph
       })
 
     {:ok, row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
@@ -281,5 +283,111 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
              )
 
     refute has_element?(lv, "#process-form-dialog")
+  end
+
+  describe "what waits for the viewer" do
+    test "is counted in the page's header, on every tab but the one that lists it", ctx do
+      row = draw!(ctx, [form_step("prijava", ctx.kvar)])
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
+      {:ok, owner_lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/values")
+      refute has_element?(lv, "#group-waiting")
+      refute has_element?(lv, "#group-tab-processes-waiting")
+
+      run = report!(ctx, row)
+
+      assert has_element?(lv, "#group-waiting-count", "1")
+      assert has_element?(lv, "#group-waiting[aria-label='Waiting for you: 1']")
+      assert has_element?(lv, "#group-tab-processes-waiting", "1")
+      # It is nobody else's.
+      refute has_element?(owner_lv, "#group-waiting")
+
+      lv |> element("#process-form-later") |> render_click()
+      lv |> element("#group-waiting") |> render_click()
+
+      assert_patch(lv, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#process-task-#{run.id}-fill")
+      refute has_element?(lv, "#group-waiting")
+      assert has_element?(lv, "#group-tab-processes-waiting", "1")
+
+      # A page opened later counts it too, and stops once the form is sent.
+      {:ok, later_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/members")
+      assert has_element?(later_lv, "#group-waiting-count", "1")
+
+      lv |> element("#process-task-#{run.id}-fill") |> render_click()
+      lv |> form("#process-form", %{"answers" => %{"naslov" => "Lift"}}) |> render_submit()
+
+      refute has_element?(later_lv, "#group-waiting")
+      refute has_element?(lv, "#group-tab-processes-waiting")
+    end
+
+    test "counts the decisions of the viewer's roles, and nobody else's", ctx do
+      row =
+        draw!(ctx, %{
+          "v" => 2,
+          "nodes" => [
+            %{"id" => "start", "type" => "startEvent"},
+            %{
+              "id" => "odluka",
+              "type" => "userTask",
+              "role" => "admin",
+              "outcomes" => ["Primljeno"]
+            },
+            %{"id" => "kraj", "type" => "endEvent"}
+          ],
+          "flows" => [
+            %{"from" => "start", "to" => "odluka"},
+            %{"from" => "odluka", "to" => "kraj", "outcome" => "Primljeno"}
+          ]
+        })
+
+      {:ok, owner_lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/values")
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
+
+      run = report!(ctx, row)
+      second = report_again!(ctx, row)
+
+      assert has_element?(owner_lv, "#group-waiting-count", "2")
+      refute has_element?(lv, "#group-waiting")
+
+      access = Access.for_profile(ctx.owner, ctx.group)
+
+      assert {:ok, _presented} =
+               Processes.complete_task(
+                 ctx.owner,
+                 ctx.group,
+                 :any,
+                 access,
+                 run.id,
+                 "odluka",
+                 "Primljeno",
+                 nil
+               )
+
+      assert has_element?(owner_lv, "#group-waiting-count", "1")
+
+      # A process switched off asks nobody.
+      {:ok, _off} = DrawnProcesses.deactivate(ctx.owner, ctx.group, row.id)
+      refute has_element?(owner_lv, "#group-waiting")
+      assert Repo.get!(ValueProcess, second.id).status == :cancelled
+    end
+  end
+
+  # One more message with the word, and its run taken as far as it goes.
+  defp report_again!(ctx, row) do
+    {:ok, value} =
+      Social.create_value(ctx.member, ctx.group, %{
+        "content" => "još jedan kvar",
+        "content_format" => :markdown
+      })
+
+    run =
+      Repo.one!(
+        from(i in ValueProcess,
+          where: i.app_process_id == ^row.id and i.value_id == ^value.id
+        )
+      )
+
+    Engine.run(run.id)
   end
 end

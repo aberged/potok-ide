@@ -109,6 +109,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :label, :string, required: true
   attr :icon, :string, default: nil
   attr :icon_class, :string, default: "size-4"
+  attr :badge, :integer, default: 0, doc: "how much waits for the viewer there"
+  attr :badge_id, :string, default: nil
 
   def group_tab_button(assigns) do
     ~H"""
@@ -129,6 +131,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     >
       <.icon :if={@icon} name={@icon} class={@icon_class} />
       <span :if={@label != nil and @label != ""} class="ml-2 truncate">{@label}</span>
+      <.count_badge
+        :if={@badge > 0}
+        id={@badge_id}
+        count={@badge}
+        tone={:attention}
+        class="ml-auto shrink-0"
+      />
     </button>
     """
   end

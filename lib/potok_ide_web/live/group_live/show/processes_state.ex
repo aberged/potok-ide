@@ -18,6 +18,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     (`processes_entity`).
   - Other people's changes (`{:app_value, ...}`) reload the tab after a short
     wait, so a burst of moves loads it once.
+  - How many tasks wait for the viewer (`processes_waiting`) is kept on every
+    tab, for the mark in the page's header, and counted again only on news
+    that is the viewer's (`theirs?/3`).
   """
 
   use Gettext, backend: PotokIdeWeb.Gettext
@@ -46,7 +49,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_entity: nil,
       processes_can_draw?: false,
       processes_refresh?: false,
-      processes_start: nil
+      processes_start: nil,
+      processes_waiting: 0,
+      processes_recount?: false
     )
     |> ProcessEditorState.init()
     |> assign_params(params)
@@ -104,6 +109,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   @doc "Sets `processes_tab?` for the group on screen."
   def assign_available(socket) do
     assign(socket, :processes_tab?, available?(socket.assigns.group, socket.assigns.access))
+  end
+
+  @doc """
+  Counts what waits for the viewer in the group on screen, decisions and
+  forms (`Processes.waiting_count/3`), for the mark in the page's header and
+  on the tab's item in the menu. A group without the tab has nothing to
+  count.
+  """
+  def assign_waiting(socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    count =
+      if profile && socket.assigns.processes_tab?,
+        do: Processes.waiting_count(profile, group, access),
+        else: 0
+
+    assign(socket, processes_waiting: count, processes_recount?: false)
   end
 
   def maybe_load(socket, %Group{}, "processes"), do: socket |> load() |> ensure_editor()
@@ -477,14 +499,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   @doc """
   What an `{:app_value, ...}` of the group means for the tab: whether the
-  group has it, and a reload when it is on screen.
+  group has it, what waits for the viewer there, and a reload when it is on
+  screen.
   """
-  def app_value(socket, event) when event in @reloading_events do
+  def app_value(socket, event, payload \\ %{})
+
+  def app_value(socket, event, payload) when event in @reloading_events do
     socket =
       if event in [:config, :drawn_process], do: assign_available(socket), else: socket
 
     # A drawing that is open is checked against the entities as they are now.
     socket = if event == :entity, do: ProcessEditorState.entities_changed(socket), else: socket
+
+    socket = if theirs?(socket, event, payload), do: recount(socket), else: socket
 
     cond do
       socket.assigns.active_tab != "processes" ->
@@ -503,11 +530,45 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     end
   end
 
-  def app_value(socket, _event), do: socket
+  def app_value(socket, _event, _payload), do: socket
+
+  # Whether the news may change what waits for the viewer: a run that asks
+  # them, or just stopped asking them, as one of a role or as the one who
+  # started it (`Processes.Engine`), or the group's processes themselves
+  # changing. Every other move of a run is someone else's, and costs no
+  # count.
+  defp theirs?(socket, :process, %{asks: %{role: role, profile_id: profile_id}}) do
+    case socket.assigns do
+      %{current_profile: %{id: viewer}, access: access} ->
+        profile_id == viewer or (is_binary(role) and role in access.role_keys)
+
+      _guest ->
+        false
+    end
+  end
+
+  defp theirs?(_socket, event, _payload), do: event in [:config, :drawn_process]
+
+  # Counts again after a short wait, so a burst of moves counts once.
+  defp recount(socket) do
+    cond do
+      @debounce_ms == 0 ->
+        assign_waiting(socket)
+
+      socket.assigns.processes_recount? ->
+        socket
+
+      true ->
+        Process.send_after(self(), {:processes, :recount}, @debounce_ms)
+        assign(socket, :processes_recount?, true)
+    end
+  end
 
   def handle_info(:refresh, socket) do
     if socket.assigns.active_tab == "processes",
       do: {:noreply, load(socket)},
       else: {:noreply, assign(socket, :processes_refresh?, false)}
   end
+
+  def handle_info(:recount, socket), do: {:noreply, assign_waiting(socket)}
 end
