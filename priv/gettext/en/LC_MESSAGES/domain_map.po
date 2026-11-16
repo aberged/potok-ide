@@ -2676,11 +2676,6 @@ msgstr ""
 msgid "where %{field} is %{value}"
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1525
-#, elixir-autogen, elixir-format, fuzzy
-msgid "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, when someone holding its role starts it by hand with a title and a text, or when another process drawn in the group calls it. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
-msgstr ""
-
 #: lib/potok_ide_web/domain_copy.ex:1531
 #, elixir-autogen, elixir-format
 msgid "Processes talk to each other only on purpose"
@@ -2706,11 +2701,6 @@ msgstr ""
 msgid "The text has at most 1,000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/domain_copy.ex:1533
-#, elixir-autogen, elixir-format, fuzzy
-msgid "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> of the same group that starts when another calls it, and hands over the fields it takes; the <ValueProcess>run</ValueProcess> it starts shares the caller's subject and is one level deeper. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads; adding to one takes its lock, so two runs never lose each other's count. Runs go at most three processes deep, and a process another one calls cannot be deleted."
-msgstr ""
-
 #: lib/potok_ide_web/domain_copy.ex:347
 #, elixir-autogen, elixir-format
 msgid "process that wrote it last"
@@ -2719,4 +2709,14 @@ msgstr ""
 #: lib/potok_ide_web/domain_copy.ex:344
 #, elixir-autogen, elixir-format
 msgid "text it keeps"
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:1525
+#, elixir-autogen, elixir-format, fuzzy
+msgid "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, when someone holding its role starts it by hand with a title and a text, when another process drawn in the group calls it, or on a signal one sends. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
+msgstr ""
+
+#: lib/potok_ide_web/domain_copy.ex:1533
+#, elixir-autogen, elixir-format, fuzzy
+msgid "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> of the same group that starts when another calls it, and hands over the fields it takes; the <ValueProcess>run</ValueProcess> it starts shares the caller's subject and is one level deeper. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads; adding to one takes its lock, so two runs never lose each other's count. A signal wakes the runs of the group's drawn processes that wait for it just then, at most 100, and starts the processes that start on it; nothing keeps it for a run that comes to wait later, and a wait may take only a signal sent on its own subject. Runs go at most three processes deep, and a process another one calls cannot be deleted."
 msgstr ""

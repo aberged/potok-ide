@@ -351,6 +351,63 @@ defmodule PotokIde.Processes.GraphTest do
     end
   end
 
+  test "a signal is sent with its fields, and waited for, only when drawn" do
+    graph = fn step, extra_flows ->
+      %{
+        "nodes" =>
+          [%{"id" => "start", "type" => "startEvent"}, Map.put(step, "id", "korak")] ++
+            [%{"id" => "kraj", "type" => "endEvent"}] ++
+            if(extra_flows == [], do: [], else: [%{"id" => "rok", "type" => "endEvent"}]),
+        "flows" =>
+          [%{"from" => "start", "to" => "korak"}, %{"from" => "korak", "to" => "kraj"}] ++
+            extra_flows
+      }
+    end
+
+    send = %{
+      "type" => "serviceTask",
+      "action" => "signal",
+      "name" => " Subota ",
+      "fields" => [%{"name" => "mesto", "value" => " dvorište "}]
+    }
+
+    assert {:error, {"nodes.1.action", :invalid}} = Graph.normalize(graph.(send, []))
+    assert {:ok, %{"nodes" => [_, sent | _]}} = Graph.normalize(graph.(send, []), drawn: true)
+    assert %{"name" => "subota", "fields" => [%{"name" => "mesto", "value" => "dvorište"}]} = sent
+
+    for {fields, path} <- [
+          {[%{"name" => "from", "value" => ""}], "nodes.1.fields.0.name"},
+          {[%{"name" => "a", "value" => ""}, %{"name" => "a", "value" => ""}],
+           "nodes.1.fields.1.name"},
+          {[%{"name" => "a", "value" => String.duplicate("x", 1_001)}], "nodes.1.fields.0.value"},
+          {[%{"name" => "a"}], "nodes.1.fields.0"},
+          {Enum.map(1..11, &%{"name" => "f#{&1}", "value" => ""}), "nodes.1.fields"}
+        ] do
+      assert {:error, {^path, :invalid}} =
+               Graph.normalize(graph.(%{send | "fields" => fields}, []), drawn: true)
+    end
+
+    assert {:error, {"nodes.1.name", :invalid}} =
+             Graph.normalize(graph.(%{send | "name" => "a"}, []), drawn: true)
+
+    wait = %{"type" => "receiveTask", "signal" => "subota"}
+    assert {:error, {"nodes.1.type", :invalid}} = Graph.normalize(graph.(wait, []))
+
+    assert {:ok, %{"nodes" => [_, %{"same_subject" => false, "signal" => "subota"} | _]}} =
+             Graph.normalize(graph.(wait, []), drawn: true)
+
+    deadline = [%{"from" => "korak", "to" => "rok", "deadline" => true}]
+
+    assert {:ok, _graph} =
+             Graph.normalize(graph.(Map.put(wait, "deadline", "P1D"), deadline), drawn: true)
+
+    assert {:error, {"nodes.1.deadline", :no_flow}} =
+             Graph.normalize(graph.(Map.put(wait, "deadline", "P1D"), []), drawn: true)
+
+    assert {:error, {"nodes.1.same_subject", :invalid}} =
+             Graph.normalize(graph.(Map.put(wait, "same_subject", "da"), []), drawn: true)
+  end
+
   test "names what the actions need and the roles they name" do
     {:ok, graph} = Graph.normalize(molbe())
 

@@ -374,8 +374,48 @@ defmodule PotokIde.Social.DrawnProcesses do
   def fields_for(%Group{} = group, "value", alt_id, collection, _config),
     do: fields(group, alt_id, collection)
 
+  def fields_for(%Group{} = group, "signal", _alt_id, _collection, config) do
+    carried =
+      case Graph.signal_name((config || %{})["name"]) do
+        {:ok, name} -> Map.get(signals(group), name, [])
+        :error -> []
+      end
+
+    carried ++ Triggers.fields("signal", config)
+  end
+
   def fields_for(_group, trigger, _alt_id, _collection, config),
     do: Triggers.fields(trigger, config || %{})
+
+  @doc """
+  The signals the group's drawn processes send, wait for or start on, by
+  name, each with the names of the fields its senders put in it.
+  """
+  def signals(%Group{id: group_id}) do
+    from(p in AppProcess,
+      where: p.group_id == ^group_id and p.drawn,
+      select: {p.graph, p.trigger, p.trigger_config}
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn {graph, trigger, config} ->
+      started = if trigger == "signal", do: [{config["name"], []}], else: []
+
+      started ++
+        Enum.flat_map(graph["nodes"] || [], fn
+          %{"action" => "signal", "name" => name} = step ->
+            [{name, Enum.map(step["fields"] || [], & &1["name"])}]
+
+          %{"type" => "receiveTask", "signal" => name} ->
+            [{name, []}]
+
+          _other ->
+            []
+        end)
+    end)
+    |> Enum.reduce(%{}, fn {name, fields}, acc ->
+      if is_binary(name), do: Map.update(acc, name, fields, &Enum.uniq(&1 ++ fields)), else: acc
+    end)
+  end
 
   @doc """
   The group's drawn processes that another may call, by name, as

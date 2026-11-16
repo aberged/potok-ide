@@ -207,6 +207,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
       <div class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/60">
         <.icon name={subject_icon(@task.kind)} class="size-3.5" />
         <span :if={@task.kind == :call}>{gettext("Called by")}</span>
+        <span :if={@task.kind == :signal}>{gettext("On a signal from")}</span>
         <span :if={@task.author_name} class="font-semibold text-base-content/80">
           {@task.author_name}
         </span>
@@ -469,6 +470,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp subject_icon(:group), do: "hero-folder-plus"
   defp subject_icon(:data), do: "hero-play-circle"
   defp subject_icon(:call), do: "hero-arrow-top-right-on-square"
+  defp subject_icon(:signal), do: "hero-signal"
   defp subject_icon(_value), do: "hero-inbox-arrow-down"
 
   # What starts the process (its collection, for an app's), and who owns it.

@@ -255,6 +255,74 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
              Enum.find(graph["nodes"], &(&1["action"] == "set"))
   end
 
+  test "a process sends a signal with fields, and another waits for it or starts on it",
+       ctx do
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+    insert(lv, "f1", "signal")
+
+    lv
+    |> form("#process-element-form", %{"element" => %{"name" => " Subota "}})
+    |> render_change()
+
+    lv |> element("#process-add-signal-field") |> render_click()
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{"signal_fields" => %{"0" => %{"name" => "mesto", "value" => "Dvorište "}}}
+    })
+    |> render_change()
+
+    lv |> element("#process-field-signal_fields\\.0-0") |> render_click()
+    assert has_element?(lv, "#process-outline-signal-1", "Signal subota")
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+
+    assert %{"name" => "subota", "fields" => [%{"name" => "mesto", "value" => value}]} =
+             Enum.find(graph["nodes"], &(&1["action"] == "signal"))
+
+    assert value =~ "Dvorište {{"
+
+    # Another process waits for it, and offers what it carries.
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+    insert(lv, "f1", "receive")
+    assert has_element?(lv, "#process-outline-receive-1", "subota")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{
+        "same_subject" => "true",
+        "deadline_amount" => "2",
+        "deadline_unit" => "days"
+      }
+    })
+    |> render_change()
+
+    assert has_element?(lv, "#process-outline-receive-1", "2 days")
+    insert(lv, "f2", "message")
+    assert has_element?(lv, "#process-element-form button", "receive-1.mesto")
+
+    # And a third starts on it.
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "signal"}}) |> render_change()
+    render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+
+    lv
+    |> form("#process-trigger-form", %{"trigger" => %{"name" => "subota"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-outline-start", "On the signal subota")
+  end
+
   test "an unfinished drawing says what is wrong and is not saved", ctx do
     {:ok, lv, _html} =
       live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")

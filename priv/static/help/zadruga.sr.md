@@ -96,6 +96,19 @@ Od sada svaka nova porudžbina dobija svoj razgovor. Porudžbine koje čekaju pa
 
 ![Porudžbine koje čekaju pakovanje](procesi)
 
+## 10. Dan preuzimanja {:#subota}
+
+Spakovane porudžbine čekaju subotu. Neka u subotu ujutru jedan proces javi svima da je dan preuzimanja, a pakovanje neka sačeka taj signal i podseti kupca.
+
+1. U Porudžbinama nacrtaj proces „Dan preuzimanja“, a pod **Kad** izaberi **dođe zadato vreme**. Na početnom koraku izaberi **Svake nedelje**, dan **sub**, u 8:00.
+2. Dodirni **+** ispod početka i izaberi **Pošalji signal**. Za **Signal** upiši „subota“, dodirni **Dodaj polje**, polje nazovi „mesto“ i upiši „u dvorištu škole“. Sačuvaj i uključi.
+3. U „Pakovanju porudžbina“, na strelici ispod poruke „Spakovano je…“, dodaj korak **Čekaj signal** i za **Signal** upiši „subota“.
+4. Ispod njega dodaj **Poruku** u podgrupu: upiši „Danas je preuzimanje, od 9 do 11, “ i dodirni `receive-1.mesto` ispod polja. Dodirni **Sačuvaj**.
+
+![Pakovanje čeka signal subota](zadruga-signal)
+
+Svaka spakovana porudžbina sada čeka subotu. U subotu u 8:00 Dan preuzimanja pošalje signal, i svaki kupac čija porudžbina čeka dobije poruku u svom razgovoru. Porudžbina spakovana posle toga čeka sledeću subotu.
+
 ## Šta dalje {:#dalje}
 
 - [Aplikacije u grupi](/pomoc#aplikacije): sve što Forma ume.

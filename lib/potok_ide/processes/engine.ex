@@ -33,6 +33,14 @@ defmodule PotokIde.Processes.Engine do
   cancels the called run. Cancelling a run cancels the run it waits for, and
   a run that waits for one cancelled fails (`call_cancelled`). Locks are
   taken deeper runs first.
+
+  A signal (`serviceTask` `signal`) is delivered in the step's transaction:
+  the runs of the group's drawn processes that wait for it on a
+  `receiveTask` just then get what it carries under that element and are
+  due at once, at most 100, the oldest first, skipping one another node
+  holds; and the active processes that start on it start, one level deeper
+  and on the sender's subject, while there is depth left. A signal is not
+  kept for a run that comes to wait later.
   """
 
   import Ecto.Query, warn: false
@@ -64,6 +72,7 @@ defmodule PotokIde.Processes.Engine do
   @max_called 200
   @max_field 1_000
   @max_result 8_192
+  @max_woken 100
   @placeholder ~r/\{\{\s*([\p{L}\p{Nd}_.-]+)\s*\}\}/u
 
   # ---------
@@ -415,6 +424,14 @@ defmodule PotokIde.Processes.Engine do
   defp act(%{"type" => "timer", "duration" => duration}, _instance),
     do: {:wait, %{wake_at: later(duration)}, []}
 
+  defp act(%{"type" => "receiveTask", "id" => id} = receive, instance) do
+    {:wait,
+     %{
+       wake_at: receive["deadline"] && later(receive["deadline"]),
+       results: Map.delete(instance.results, id)
+     }, []}
+  end
+
   defp act(%{"type" => "callActivity", "id" => id} = call, instance) do
     process = Repo.get!(AppProcess, instance.app_process_id)
 
@@ -505,6 +522,32 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
+  # A signal: the runs waiting for it in the group wake, and the processes
+  # that start on it start.
+  defp service("signal", task, step, group, instance, data) do
+    if step.process.active do
+      name = task["name"]
+
+      fields =
+        for %{"name" => field, "value" => value} <- task["fields"] || [], into: %{} do
+          {field, value |> render(data) |> String.slice(0, @max_field)}
+        end
+
+      carried = Map.merge(fields, %{"from" => step.process.name, "signal" => name})
+      woken = wake_receivers(group, instance, name, carried)
+      started = start_on_signal(group, instance, name, carried)
+
+      {:ok, %{},
+       fn ->
+         Scheduler.nudge()
+         Enum.each(woken, &tell(Repo.get(ValueProcess, &1)))
+         Enum.each(started, &tell/1)
+       end}
+    else
+      {:error, :process_inactive}
+    end
+  end
+
   # A field of the group, which every drawn process of it reads.
   defp service("set", task, step, _group, _instance, data) do
     value = render(task["value"], data)
@@ -522,6 +565,89 @@ defmodule PotokIde.Processes.Engine do
       {:error, _reason} = error -> error
     end
   end
+
+  # The runs of the group's drawn processes that wait for the signal now:
+  # those that wait for it on the same subject only when the sender has one.
+  # Their rows are taken without waiting, so a run in a step of its own just
+  # now misses it, as one that comes to wait later does.
+  defp wake_receivers(%Group{id: group_id}, %ValueProcess{} = sender, name, carried) do
+    same_subject =
+      cond do
+        sender.value_id -> dynamic([i], i.value_id == ^sender.value_id)
+        sender.subject_group_id -> dynamic([i], i.subject_group_id == ^sender.subject_group_id)
+        true -> false
+      end
+
+    any_subject =
+      dynamic(
+        [i],
+        not fragment(
+          "jsonb_path_exists(?, '$.nodes[*] \\? (@.id == $e && @.same_subject == true)', jsonb_build_object('e', ?))",
+          i.graph,
+          i.element
+        )
+      )
+
+    ids =
+      from(i in ValueProcess,
+        join: p in AppProcess,
+        on: p.id == i.app_process_id,
+        where:
+          p.group_id == ^group_id and p.drawn and p.active and i.status == :waiting and
+            i.id != ^sender.id,
+        where:
+          fragment(
+            "jsonb_path_exists(?, '$.nodes[*] \\? (@.id == $e && @.type == \"receiveTask\" && @.signal == $s)', jsonb_build_object('e', ?, 's', ?::text))",
+            i.graph,
+            i.element,
+            ^name
+          ),
+        where: fragment("(? -> ?) IS NULL", i.results, i.element),
+        where: ^dynamic([i], ^any_subject or ^same_subject),
+        order_by: [asc: i.id],
+        limit: @max_woken,
+        lock: "FOR UPDATE OF v0 SKIP LOCKED",
+        select: i.id
+      )
+      |> Repo.all()
+
+    now = now()
+
+    from(i in ValueProcess,
+      where: i.id in ^ids,
+      update: [
+        set: [
+          results:
+            fragment("? || jsonb_build_object(?, ?::jsonb)", i.results, i.element, ^carried),
+          wake_at: ^now,
+          updated_at: ^now
+        ]
+      ]
+    )
+    |> Repo.update_all([])
+
+    ids
+  end
+
+  # The active processes of the group that start on the signal, each a run
+  # one level deeper on the sender's subject, while there is depth and room.
+  defp start_on_signal(group, %ValueProcess{depth: depth} = sender, name, carried)
+       when depth < @max_depth do
+    for process <- drawn_on(group, "signal"),
+        process.trigger_config["name"] == name,
+        room(process) == :ok do
+      start_drawn_on(process,
+        value_id: sender.value_id,
+        subject_group_id: sender.subject_group_id,
+        started_by: sender.started_by_id,
+        triggered_by: sender.triggered_by_id,
+        depth: depth + 1,
+        data: carried
+      )
+    end
+  end
+
+  defp start_on_signal(_group, _sender, _name, _carried), do: []
 
   # The process a call starts, read `FOR SHARE`, so one being switched off
   # waits for this step and then cancels what it started.
@@ -629,6 +755,12 @@ defmodule PotokIde.Processes.Engine do
         if Map.has_key?(instance.results, id),
           do: {:continue, move(instance, plain(out)["to"], %{}), []},
           else: call_deadline(instance, Enum.find(out, & &1["deadline"]))
+
+      # A signal came, set off by no one person.
+      %{"type" => "receiveTask", "id" => id} ->
+        if Map.has_key?(instance.results, id),
+          do: {:continue, move(instance, plain(out)["to"], %{triggered_by_id: nil}), []},
+          else: deadline(instance, Enum.find(out, & &1["deadline"]))
 
       _other ->
         :skip

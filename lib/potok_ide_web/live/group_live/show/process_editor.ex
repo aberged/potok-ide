@@ -464,6 +464,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"set", "hero-pencil-square", gettext("Group field"),
        gettext("Keeps a value, or adds to a count, that every process of the group reads."),
        "bg-lime-500/10 text-lime-700 dark:text-lime-300"},
+      {"signal", "hero-megaphone", gettext("Send a signal"),
+       gettext(
+         "Wakes the processes of the group that wait for it, and starts those that start on it."
+       ), "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300"},
+      {"receive", "hero-signal", gettext("Wait for a signal"),
+       gettext("Waits until another process of the group sends it."),
+       "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300"},
       {"call", "hero-arrow-top-right-on-square", gettext("Call a process"),
        gettext("Starts another process of the group, and waits for how it ends."),
        "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"}
@@ -696,6 +703,118 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {gettext("Add a condition")}
                 </.button>
               </div>
+            <% "signal" -> %>
+              <.input
+                field={@form[:name]}
+                type="text"
+                label={gettext("Signal")}
+                list="process-signal-list"
+                maxlength="40"
+                phx-debounce="400"
+              />
+              <datalist id="process-signal-list">
+                <option :for={name <- Map.keys(@editor.signals)} value={name} />
+              </datalist>
+              <div id="process-signal-fields" class="space-y-2">
+                <p class="label">{gettext("What it carries")}</p>
+                <div
+                  :for={{field, i} <- Enum.with_index(@node["fields"] || [])}
+                  id={"process-signal-field-#{i}"}
+                  class="space-y-1 rounded-2xl border border-base-300/70 bg-base-100 p-2"
+                >
+                  <div class="flex items-start gap-1.5">
+                    <div class="min-w-0 flex-1">
+                      <.input
+                        type="text"
+                        id={"process-signal-field-#{i}-name"}
+                        name={"element[signal_fields][#{i}][name]"}
+                        value={field["name"]}
+                        aria-label={gettext("Name of the field")}
+                        maxlength="40"
+                        phx-debounce="400"
+                      />
+                    </div>
+                    <.icon_button
+                      :if={@editor.editable?}
+                      id={"process-signal-field-#{i}-remove"}
+                      type="button"
+                      phx-click="process_editor_remove_signal_field"
+                      phx-value-index={i}
+                      icon="hero-minus-circle"
+                      label={gettext("Remove the field")}
+                    />
+                  </div>
+                  <.input
+                    type="text"
+                    id={"process-signal-field-#{i}-value"}
+                    name={"element[signal_fields][#{i}][value]"}
+                    value={field["value"]}
+                    aria-label={gettext("What it holds")}
+                    maxlength="1000"
+                    phx-debounce="300"
+                  />
+                  <.fields editor={@editor} target={"signal_fields.#{i}"} />
+                </div>
+                <.button
+                  :if={@editor.editable? and length(@node["fields"] || []) < 10}
+                  id="process-add-signal-field"
+                  type="button"
+                  phx-click="process_editor_add_signal_field"
+                  variant="ghost"
+                  size="sm"
+                >
+                  <.icon name="hero-plus" class="size-4" />
+                  {gettext("Add a field")}
+                </.button>
+              </div>
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "It wakes the runs of the group's processes that wait for this signal right now, and starts the processes that start on it. It is not kept: a run that comes to wait later does not get it."
+                )}
+              </p>
+            <% "receive" -> %>
+              <.input
+                field={@form[:signal]}
+                type="text"
+                label={gettext("Signal")}
+                list="process-signal-list"
+                maxlength="40"
+                phx-debounce="400"
+              />
+              <datalist id="process-signal-list">
+                <option :for={name <- Map.keys(@editor.signals)} value={name} />
+              </datalist>
+              <input type="hidden" name="element[same_subject]" value="false" />
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="process-receive-same-subject"
+                  name="element[same_subject]"
+                  value="true"
+                  checked={@node["same_subject"] == true}
+                  class="checkbox checkbox-sm"
+                />
+                {gettext("Only from a process on the same value or sub-group")}
+              </label>
+              <div>
+                <p class="label mb-1">{gettext("Deadline, then go on without it")}</p>
+                <div class="flex gap-2">
+                  <.input
+                    field={@form[:deadline_amount]}
+                    type="number"
+                    min="1"
+                    placeholder={gettext("none")}
+                    phx-debounce="400"
+                  />
+                  <.input field={@form[:deadline_unit]} type="select" options={unit_options()} />
+                </div>
+              </div>
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "The steps after it read who sent the signal as %{field}, and the fields it carries the same way.",
+                  field: "{{#{@node["id"]}.from}}"
+                )}
+              </p>
             <% "set" -> %>
               <.input
                 field={@form[:field]}
@@ -950,6 +1069,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 "They get a Start button on the Processes tab, with a title and a text the steps can put in."
               )}
             </p>
+          <% "signal" -> %>
+            <.input
+              type="text"
+              id="process-trigger-signal"
+              name="trigger[name]"
+              value={@config["name"]}
+              label={gettext("Signal")}
+              list="process-trigger-signal-list"
+              placeholder={gettext("saturday")}
+              phx-debounce="400"
+            />
+            <datalist id="process-trigger-signal-list">
+              <option :for={name <- Map.keys(@editor.signals)} value={name} />
+            </datalist>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "Each time a process of the group sends this signal, it starts, with the fields the signal carries."
+              )}
+            </p>
           <% "process" -> %>
             <.input
               type="text"
@@ -984,6 +1122,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   defp trigger_icon("schedule"), do: "hero-calendar-days"
   defp trigger_icon("manual"), do: "hero-hand-raised"
   defp trigger_icon("process"), do: "hero-arrow-down-on-square"
+  defp trigger_icon("signal"), do: "hero-signal"
   defp trigger_icon(_value), do: "hero-inbox-arrow-down"
 
   defp trigger_hint("message"),
@@ -993,6 +1132,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   defp trigger_hint("schedule"), do: gettext("The process starts here at the set time.")
   defp trigger_hint("manual"), do: gettext("Whoever starts it by hand starts here.")
   defp trigger_hint("process"), do: gettext("A call from another process starts here.")
+  defp trigger_hint("signal"), do: gettext("The signal starts the process here.")
   defp trigger_hint(_value), do: gettext("Every new value of the collection starts here.")
 
   attr :editor, :map, required: true

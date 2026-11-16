@@ -19,6 +19,8 @@ defmodule PotokIde.Processes.Triggers do
     Processes tab, with a title and a text.
   - `"process"`: another process drawn in the group calls it
     (`callActivity`), handing over the `fields` it names.
+  - `"signal"`: a process drawn in the group sends the signal `name`, and
+    what it carries becomes the run's fields.
 
   Each gives its texts and conditions fields (`fields/2`): a message's
   `text`, a sub-group's `name`, the `title` of a form, a scheduled `date`,
@@ -29,7 +31,7 @@ defmodule PotokIde.Processes.Triggers do
   alias PotokIde.Events.Recurrence
   alias PotokIde.Social.Value
 
-  @triggers ~w(value message subgroup schedule manual process)
+  @triggers ~w(value message subgroup schedule manual process signal)
   @max_words 10
   @max_fields 10
   @field_format ~r/^[\p{L}\p{Nd}_-]{1,40}$/u
@@ -91,6 +93,13 @@ defmodule PotokIde.Processes.Triggers do
     end
   end
 
+  def normalize("signal", config) when is_map(config) do
+    case PotokIde.Processes.Graph.signal_name(config["name"]) do
+      {:ok, name} -> {:ok, %{"name" => name}}
+      :error -> {:error, {"name", :invalid}}
+    end
+  end
+
   def normalize(trigger, _config) when trigger in @triggers, do: normalize(trigger, %{})
   def normalize(_trigger, _config), do: {:error, {"", :invalid}}
 
@@ -113,6 +122,7 @@ defmodule PotokIde.Processes.Triggers do
   def fields("manual", _config), do: ~w(title text author)
   def fields("process", %{"fields" => fields}) when is_list(fields), do: fields ++ ["from"]
   def fields("process", _config), do: ["from"]
+  def fields("signal", _config), do: ["from"]
   def fields(_trigger, _config), do: []
 
   # ---------

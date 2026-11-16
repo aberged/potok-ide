@@ -28,6 +28,13 @@ defmodule PotokIde.Processes.Graph do
     `value` (a text as above), or adds it as a number with `op` `add`, for
     every drawn process of the group to read as `{{group.field}}`
     (`PotokIde.Processes.GroupFields`).
+  - `serviceTask` with the `action` `signal`: sends the signal `name` in the
+    group, with `fields` (`[%{"name", "value"}]`, each value a text as
+    above). It wakes the runs waiting for it there and starts the drawn
+    processes that start on it.
+  - `receiveTask`: waits for the `signal`, from a run on the same subject
+    only when `same_subject`, until an optional `deadline`. What came is
+    `{{element.from}}` and the fields it carried, as `{{element.field}}`.
 
   Any element may carry a `label`, the name it shows on a drawing and where
   an instance waits or stopped; its `id` stands in for it otherwise.
@@ -61,6 +68,10 @@ defmodule PotokIde.Processes.Graph do
   @max_call_fields 10
   @max_template 1_000
   @name_format ~r/^[\p{L}\p{Nd}_-]{1,40}$/u
+  @signal_format ~r/^[\p{L}\p{Nd}_-]{2,40}$/u
+  @max_signal_fields 10
+  # What a signal always carries besides its fields.
+  @signal_reserved ~w(from signal)
 
   # What each action needs the process profile to hold in the app's group.
   @action_permissions %{
@@ -179,6 +190,17 @@ defmodule PotokIde.Processes.Graph do
     end)
   end
 
+  @doc """
+  A signal's name as Potok keeps it: trimmed and in small letters, 2 to 40
+  letters, digits, `-` or `_`. `:error` otherwise.
+  """
+  def signal_name(name) when is_binary(name) do
+    name = name |> String.trim() |> String.downcase()
+    if Regex.match?(@signal_format, name), do: {:ok, name}, else: :error
+  end
+
+  def signal_name(_name), do: :error
+
   @doc "The label of an element, or its id when it has none."
   def label(%{"label" => label}) when is_binary(label), do: label
   def label(%{"id" => id}), do: id
@@ -246,6 +268,26 @@ defmodule PotokIde.Processes.Graph do
   defp typed("serviceTask", %{"action" => "set"} = node, path, base, true),
     do: set_field(node, path, base)
 
+  defp typed("serviceTask", %{"action" => "signal"} = node, path, base, true) do
+    with {:ok, name} <- signal(node["name"], path <> ".name"),
+         {:ok, fields} <- signal_fields(Map.get(node, "fields", []), path <> ".fields") do
+      {:ok, Map.merge(base, %{"action" => "signal", "name" => name, "fields" => fields})}
+    end
+  end
+
+  defp typed("receiveTask", node, path, base, true) do
+    same_subject = Map.get(node, "same_subject", false)
+
+    with {:ok, signal} <- signal(node["signal"], path <> ".signal"),
+         true <- is_boolean(same_subject) || {:error, {path <> ".same_subject", :invalid}},
+         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline") do
+      {:ok,
+       base
+       |> Map.merge(%{"signal" => signal, "same_subject" => same_subject})
+       |> put_some("deadline", deadline)}
+    end
+  end
+
   defp typed("serviceTask", node, path, base, _drawn?),
     do: action(node["action"], node, path, base)
 
@@ -312,6 +354,47 @@ defmodule PotokIde.Processes.Graph do
          })}
     end
   end
+
+  defp signal(name, path) do
+    case signal_name(name) do
+      {:ok, name} -> {:ok, name}
+      :error -> {:error, {path, :invalid}}
+    end
+  end
+
+  # The fields a signal carries, in order, each name once.
+  defp signal_fields(fields, path)
+       when is_list(fields) and length(fields) <= @max_signal_fields do
+    fields
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, [], MapSet.new()}, fn
+      {%{"name" => name, "value" => value}, i}, {:ok, acc, seen}
+      when is_binary(name) and is_binary(value) ->
+        name = String.trim(name)
+
+        cond do
+          not Regex.match?(@name_format, name) or name in @signal_reserved or
+              MapSet.member?(seen, name) ->
+            {:halt, {:error, {"#{path}.#{i}.name", :invalid}}}
+
+          String.length(value) > @max_template ->
+            {:halt, {:error, {"#{path}.#{i}.value", :invalid}}}
+
+          true ->
+            field = %{"name" => name, "value" => String.trim(value)}
+            {:cont, {:ok, [field | acc], MapSet.put(seen, name)}}
+        end
+
+      {_field, i}, _acc ->
+        {:halt, {:error, {"#{path}.#{i}", :invalid}}}
+    end)
+    |> case do
+      {:ok, fields, _seen} -> {:ok, Enum.reverse(fields)}
+      error -> error
+    end
+  end
+
+  defp signal_fields(_fields, path), do: {:error, {path, :invalid}}
 
   defp number_or_field?(text) do
     String.contains?(text, "{{") or
@@ -584,7 +667,8 @@ defmodule PotokIde.Processes.Graph do
 
   # A call or a wait goes on by one plain flow, and by a second when its
   # deadline passes.
-  defp leaves({%{"type" => "callActivity"} = element, i}, out, _into) do
+  defp leaves({%{"type" => type} = element, i}, out, _into)
+       when type in ~w(callActivity receiveTask) do
     {deadlines, plain} = Enum.split_with(out, &Map.has_key?(&1, "deadline"))
 
     cond do

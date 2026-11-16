@@ -95,6 +95,19 @@ From now on every new order gets a talk of its own. The orders waiting to be pac
 
 ![Orders waiting to be packed](procesi)
 
+## 10. Pick-up day {:#subota}
+
+Packed orders wait for Saturday. Let one process tell everyone on Saturday morning that it is pick-up day, and let packing wait for that signal and remind the buyer.
+
+1. In Orders draw a process "Pick-up day", and under **When** choose **the set time comes**. On the start step choose **Every week**, the day **Sat**, at 8:00.
+2. Tap **+** under the start and choose **Send a signal**. For **Signal** type "subota", tap **Add a field**, name the field "mesto" and type "in the school yard". Save and switch it on.
+3. In "Packing orders", on the arrow under the message "It is packed…", add the step **Wait for a signal** and for **Signal** type "subota".
+4. Under it add a **Message** into the sub-group: type "Today is pick-up day, from 9 to 11, " and tap `receive-1.mesto` under the field. Tap **Save**.
+
+![Packing waits for the signal subota](zadruga-signal)
+
+Every packed order now waits for Saturday. On Saturday at 8:00 Pick-up day sends the signal, and every buyer whose order waits gets a message in their talk. An order packed after that waits for the next Saturday.
+
 ## What next {:#dalje}
 
 - [Apps in a group](/pomoc#aplikacije): everything Form can do.

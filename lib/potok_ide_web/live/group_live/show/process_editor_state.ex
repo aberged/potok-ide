@@ -75,7 +75,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           conflict: nil,
           fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection),
           callable: DrawnProcesses.callable(group),
-          group_fields: GroupFields.names(group)
+          group_fields: GroupFields.names(group),
+          signals: DrawnProcesses.signals(group)
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -126,7 +127,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
               else: []
             ),
           callable: DrawnProcesses.callable(group),
-          group_fields: if(manage?, do: GroupFields.names(group), else: [])
+          group_fields: if(manage?, do: GroupFields.names(group), else: []),
+          signals: if(manage?, do: DrawnProcesses.signals(group), else: %{})
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -160,7 +162,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           conflict: nil,
           fields: [],
           callable: [],
-          group_fields: []
+          group_fields: [],
+          signals: %{}
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -327,8 +330,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     config = trigger_params(editor.trigger, params, editor.trigger_config)
 
     fields =
-      if editor.trigger == "process",
-        do: trigger_fields("process", config),
+      if editor.trigger in ~w(process signal),
+        do: trigger_fields(socket.assigns.group, editor.trigger, config),
         else: editor.fields
 
     {:noreply,
@@ -348,6 +351,31 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       _other ->
         {:noreply, socket}
+    end
+  end
+
+  # A field put into the value of one of the fields a signal carries.
+  defp editing(
+         "process_editor_insert_field",
+         %{"target" => "signal_fields." <> index, "path" => path},
+         socket
+       ) do
+    with {:node, id} <- socket.assigns.process_editor.selected,
+         {i, ""} <- Integer.parse(index) do
+      graph_change(socket, fn graph ->
+        fields = Graph.node(graph, id)["fields"] || []
+
+        case Enum.at(fields, i) do
+          %{} = field ->
+            field = Map.put(field, "value", put_field(field["value"], path))
+            GraphEdit.update_node(graph, id, %{"fields" => List.replace_at(fields, i, field)})
+
+          nil ->
+            {:ok, graph}
+        end
+      end)
+    else
+      _other -> {:noreply, socket}
     end
   end
 
@@ -372,6 +400,38 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       _other ->
         {:noreply, socket}
+    end
+  end
+
+  defp editing("process_editor_add_signal_field", _params, socket) do
+    case socket.assigns.process_editor.selected do
+      {:node, id} ->
+        graph_change(socket, fn graph ->
+          fields = Graph.node(graph, id)["fields"] || []
+          name = "#{gettext("field")}#{length(fields) + 1}"
+
+          if length(fields) < 10,
+            do:
+              GraphEdit.update_node(graph, id, %{
+                "fields" => fields ++ [%{"name" => name, "value" => ""}]
+              }),
+            else: {:error, :too_many}
+        end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
+  defp editing("process_editor_remove_signal_field", %{"index" => index}, socket) do
+    with {:node, id} <- socket.assigns.process_editor.selected,
+         {i, ""} <- Integer.parse(to_string(index)) do
+      graph_change(socket, fn graph ->
+        fields = Graph.node(graph, id)["fields"] || []
+        GraphEdit.update_node(graph, id, %{"fields" => List.delete_at(fields, i)})
+      end)
+    else
+      _other -> {:noreply, socket}
     end
   end
 
@@ -459,6 +519,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     do: %{"roles" => List.wrap(params["roles"]) |> Enum.reject(&(&1 == ""))}
 
   defp trigger_params("process", params, _config), do: %{"fields" => params["fields"] || ""}
+  defp trigger_params("signal", params, _config), do: %{"name" => params["name"] || ""}
 
   defp trigger_params(_trigger, _params, config), do: config
 
@@ -472,9 +533,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   # The fields a trigger gives, from its settings as typed so far.
-  defp trigger_fields(trigger, config) do
+  defp trigger_fields(group, trigger, config) do
     case Triggers.normalize(trigger, config) do
-      {:ok, config} -> Triggers.fields(trigger, config)
+      {:ok, config} -> DrawnProcesses.fields_for(group, trigger, nil, nil, config)
       {:error, _reason} -> Triggers.fields(trigger, %{})
     end
   end
@@ -523,7 +584,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           trigger_config: config,
           alt_id: nil,
           collection: nil,
-          fields: trigger_fields(trigger, config)
+          fields: trigger_fields(group, trigger, config)
       }
     end
   end
@@ -542,6 +603,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def default_config("subgroup", _socket), do: %{"placed" => false}
   def default_config("manual", _socket), do: %{"roles" => ["everyone"]}
   def default_config("process", _socket), do: %{"fields" => []}
+  def default_config("signal", _socket), do: %{"name" => ""}
 
   def default_config("schedule", socket) do
     %{
@@ -614,6 +676,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       |> maybe_put("admins", admins(params))
       |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
+      |> Map.merge(signal_attrs(node, params))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
@@ -638,6 +701,48 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp call_attrs(_node, _attrs, _callable), do: %{}
+
+  # A signal's name in small letters, and the fields it carries in the order
+  # of the form; a wait's signal, and whether it is only for its subject.
+  defp signal_attrs(%{"action" => "signal"}, params) do
+    fields =
+      case params["signal_fields"] do
+        rows when is_map(rows) ->
+          rows
+          |> Enum.flat_map(fn {i, row} ->
+            case Integer.parse(i) do
+              {i, ""} when is_map(row) ->
+                [{i, %{"name" => row["name"] || "", "value" => row["value"] || ""}}]
+
+              _other ->
+                []
+            end
+          end)
+          |> Enum.sort_by(&elem(&1, 0))
+          |> Enum.map(&elem(&1, 1))
+
+        _none ->
+          nil
+      end
+
+    %{}
+    |> maybe_put("name", signal_text(params["name"]))
+    |> maybe_put("fields", fields)
+  end
+
+  defp signal_attrs(%{"type" => "receiveTask"}, params) do
+    %{}
+    |> maybe_put("signal", signal_text(params["signal"]))
+    |> maybe_put(
+      "same_subject",
+      if(is_binary(params["same_subject"]), do: params["same_subject"] == "true")
+    )
+  end
+
+  defp signal_attrs(_node, _params), do: %{}
+
+  defp signal_text(text) when is_binary(text), do: text |> String.trim() |> String.downcase()
+  defp signal_text(_text), do: nil
 
   defp parse_id(value) when is_binary(value) do
     case Integer.parse(value) do
@@ -666,6 +771,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     else
       {:ok, graph}
     end
+  end
+
+  defp deadline(graph, %{"type" => "receiveTask", "id" => id} = wait, attrs, _socket) do
+    wanted = duration(attrs["deadline_amount"], attrs["deadline_unit"])
+
+    if not Map.has_key?(attrs, "deadline_amount") or wanted == wait["deadline"],
+      do: {:ok, graph},
+      else: GraphEdit.set_deadline(graph, id, wanted)
   end
 
   defp deadline(graph, %{"type" => "callActivity", "wait" => true, "id" => id} = call, attrs, _s) do
@@ -764,6 +877,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       outcome: gettext("Outcome"),
       field: List.first(editor.fields),
       group_field: gettext("field"),
+      signal: editor.signals |> Map.keys() |> Enum.sort() |> List.first() || gettext("ready"),
       process: callee && callee.id,
       call_fields: if(callee, do: Map.new(callee.fields, &{&1, ""}), else: %{})
     }
@@ -1038,13 +1152,33 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     results =
       Enum.flat_map(editor.graph["nodes"], fn
-        %{"id" => ^own} -> []
-        %{"type" => "callActivity", "wait" => true, "id" => id} -> ["#{id}.outcome"]
-        %{"type" => "userTask", "id" => id} -> ["#{id}.outcome", "#{id}.by"]
-        _other -> []
+        %{"id" => ^own} ->
+          []
+
+        %{"type" => "callActivity", "wait" => true, "id" => id} ->
+          ["#{id}.outcome"]
+
+        %{"type" => "receiveTask", "id" => id, "signal" => signal} ->
+          for field <- ["from" | carried(editor, signal)], do: "#{id}.#{field}"
+
+        %{"type" => "userTask", "id" => id} ->
+          ["#{id}.outcome", "#{id}.by"]
+
+        _other ->
+          []
       end)
 
     editor.fields ++ results ++ group
+  end
+
+  # The fields the senders of a signal put in it, in the group and here.
+  defp carried(editor, signal) do
+    here =
+      for %{"action" => "signal", "name" => ^signal} = step <- editor.graph["nodes"],
+          field <- step["fields"] || [],
+          do: field["name"]
+
+    Enum.uniq(Map.get(editor[:signals] || %{}, signal, []) ++ here)
   end
 
   @doc "The roles of the group by key, with their names."
@@ -1100,6 +1234,22 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       %{"type" => "timer"} ->
         {"timer", "hero-clock", label || gettext("Wait"), duration_text(node["duration"])}
+
+      %{"action" => "signal"} ->
+        {"signal", "hero-megaphone", label || gettext("Signal %{name}", name: node["name"]),
+         node["fields"] |> List.wrap() |> Enum.map_join(", ", & &1["name"])}
+
+      %{"type" => "receiveTask"} ->
+        detail =
+          [
+            node["same_subject"] && gettext("same subject"),
+            node["deadline"] && duration_text(node["deadline"])
+          ]
+          |> Enum.reject(&(&1 in [nil, false]))
+          |> Enum.join(" · ")
+
+        {"receive", "hero-signal", label || gettext("Wait for %{name}", name: node["signal"]),
+         if(detail == "", do: nil, else: detail)}
 
       %{"action" => "set", "op" => "add"} ->
         {"set", "hero-pencil-square", label || gettext("Add to %{field}", field: node["field"]),
@@ -1191,7 +1341,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           "deadline_amount" => deadline_amount,
           "deadline_unit" => deadline_unit,
           "process" => node["process"] && to_string(node["process"]),
-          "wait" => to_string(node["wait"] != false)
+          "wait" => to_string(node["wait"] != false),
+          "signal" => node["signal"],
+          "same_subject" => to_string(node["same_subject"] == true)
         })
         |> to_form(as: :element, id: "process-element-#{id}")
     end
@@ -1253,6 +1405,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       String.ends_with?(path, ".process") ->
         gettext("Pick the process to call.")
 
+      String.ends_with?(path, ".signal") or String.contains?(path, ".fields.") ->
+        gettext("Signals and their fields are named in one word: letters, digits, - or _.")
+
       String.ends_with?(path, ".field") ->
         gettext("A field is named with up to 40 letters, digits, - or _.")
 
@@ -1286,6 +1441,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_reason(:invalid, "words"),
     do: gettext("Words go one by one, 2 to 40 letters or digits each.")
 
+  defp trigger_reason(:invalid, "name"),
+    do: gettext("A signal is named in one word, 2 to 40 letters or digits.")
+
   defp trigger_reason(:too_many, "fields"), do: gettext("At most 10 fields.")
   defp trigger_reason(:reserved, "fields"), do: gettext("The names from and outcome are taken.")
 
@@ -1313,6 +1471,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_title("schedule"), do: gettext("On a schedule")
   defp trigger_title("manual"), do: gettext("Started by hand")
   defp trigger_title("process"), do: gettext("Called by another process")
+  defp trigger_title("signal"), do: gettext("On a signal")
   defp trigger_title(_value), do: gettext("A value comes in")
 
   @doc "A trigger with its settings in words."
@@ -1349,6 +1508,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def trigger_summary("process", _config, _collection, _roles),
     do: gettext("Called by another process")
 
+  def trigger_summary("signal", %{"name" => name}, _collection, _roles),
+    do: gettext("On the signal %{name}", name: name)
+
   def trigger_summary(trigger, _config, _collection, _roles), do: trigger_name(trigger)
 
   @doc "A schedule in words, such as `Every week on Thu at 20:00`."
@@ -1377,6 +1539,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def trigger_name("schedule"), do: gettext("the set time comes")
   def trigger_name("manual"), do: gettext("someone starts it")
   def trigger_name("process"), do: gettext("another process calls it")
+  def trigger_name("signal"), do: gettext("a signal is sent")
 
   defp refusal(:start), do: gettext("The start stays.")
   defp refusal(:last_end), do: gettext("The last end stays.")

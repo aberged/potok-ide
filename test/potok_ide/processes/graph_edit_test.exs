@@ -17,7 +17,8 @@ defmodule PotokIde.Processes.GraphEditTest do
     field: "naslov",
     process: 7,
     call_fields: %{"kvar" => ""},
-    group_field: "polje"
+    group_field: "polje",
+    signal: "subota"
   }
 
   defp valid!(graph) do
@@ -113,6 +114,20 @@ defmodule PotokIde.Processes.GraphEditTest do
     assert [%{"to" => "end"}] = Graph.out(graph, "call-1")
     refute Map.has_key?(Graph.node(graph, "call-1"), "deadline")
     refute Map.has_key?(Graph.node(graph, "call-1"), "role")
+  end
+
+  test "a wait for a signal gets a deadline where it goes on" do
+    graph = insert!(GraphEdit.new(), "f1", "receive")
+    assert %{"signal" => "subota", "same_subject" => false} = Graph.node(graph, "receive-1")
+
+    {:ok, graph} = GraphEdit.set_deadline(graph, "receive-1", "P1D")
+    valid!(graph)
+
+    assert [%{"to" => "end"}, %{"to" => "end", "deadline" => true}] =
+             Graph.out(graph, "receive-1")
+
+    {:ok, graph} = GraphEdit.set_deadline(graph, "receive-1", nil)
+    assert [%{"to" => "end"}] = Graph.out(valid!(graph), "receive-1")
   end
 
   test "an outcome is renamed with its flow, and the last one stays" do

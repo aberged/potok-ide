@@ -1060,6 +1060,7 @@ defmodule HelpShots.World do
     }
 
     {:ok, _} = PotokIde.Social.AppData.save_config(editor, group, nil, data, nil)
+    pick_up_day(editor, group)
     packing = packing_process(editor, group)
 
     for {profile, chosen, litres, who, text} <- answers do
@@ -1095,6 +1096,44 @@ defmodule HelpShots.World do
     PotokIde.Processes.Engine.run(milica.id)
 
     packing
+  end
+
+  # Every Saturday morning the co-op tells its processes that it is pick-up
+  # day, and the packed orders waiting for it tell their buyers.
+  defp pick_up_day(editor, group) do
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        %{
+          "id" => "signal-1",
+          "type" => "serviceTask",
+          "action" => "signal",
+          "name" => "subota",
+          "fields" => [%{"name" => "mesto", "value" => "u dvorištu škole"}]
+        },
+        %{"id" => "end", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "signal-1"},
+        %{"from" => "signal-1", "to" => "end"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "schedule",
+        "trigger_config" => %{
+          "every" => "week",
+          "weekdays" => [6],
+          "time" => "08:00",
+          "time_zone" => "Europe/Belgrade"
+        },
+        "name" => "Dan preuzimanja",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   # The co-op's process, drawn in Potok rather than by the form: a talk with
@@ -1141,6 +1180,14 @@ defmodule HelpShots.World do
           "in" => "razgovor",
           "text" => "Nečega od porudžbine nema. Javiću ti ovde šta stiže."
         },
+        %{"id" => "receive-1", "type" => "receiveTask", "signal" => "subota", "same_subject" => false},
+        %{
+          "id" => "danas",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "razgovor",
+          "text" => "Danas je preuzimanje, od 9 do 11, {{receive-1.mesto}}."
+        },
         %{"id" => "kraj", "type" => "endEvent"}
       ],
       "flows" => [
@@ -1150,7 +1197,9 @@ defmodule HelpShots.World do
         %{"from" => "pakovanje", "to" => "nema", "outcome" => "Nema svega"},
         %{"from" => "pakovanje", "to" => "podsetnik", "deadline" => true},
         %{"from" => "podsetnik", "to" => "pakovanje"},
-        %{"from" => "spakovano", "to" => "kraj"},
+        %{"from" => "spakovano", "to" => "receive-1"},
+        %{"from" => "receive-1", "to" => "danas"},
+        %{"from" => "danas", "to" => "kraj"},
         %{"from" => "nema", "to" => "kraj"}
       ]
     }

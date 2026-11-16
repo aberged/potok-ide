@@ -25,9 +25,11 @@ defmodule PotokIde.Processes.GraphEdit do
     "gateway" => "gateway",
     "call" => "call",
     "set" => "set",
+    "signal" => "signal",
+    "receive" => "receive",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task timer gateway call set)
+  @kinds ~w(message subgroup push task timer gateway call set signal receive)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -65,7 +67,8 @@ defmodule PotokIde.Processes.GraphEdit do
   outcomes, a condition by one condition and by default, all to that same
   place. `defaults` holds the step's first texts and role, and the process
   a call starts with the fields it takes, and the group's field a step sets:
-  `%{text, name, role, outcomes, field, process, call_fields, group_field}`.
+  `%{text, name, role, outcomes, field, process, call_fields, group_field,
+  signal}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -128,6 +131,18 @@ defmodule PotokIde.Processes.GraphEdit do
       "op" => "set",
       "value" => ""
     }
+
+  defp step("signal", id, d),
+    do: %{
+      "id" => id,
+      "type" => "serviceTask",
+      "action" => "signal",
+      "name" => d[:signal],
+      "fields" => []
+    }
+
+  defp step("receive", id, d),
+    do: %{"id" => id, "type" => "receiveTask", "signal" => d[:signal], "same_subject" => false}
 
   defp step("call", id, d),
     do: %{
@@ -197,15 +212,15 @@ defmodule PotokIde.Processes.GraphEdit do
   end
 
   @doc """
-  Gives a decision or a call a deadline, or takes it away with `nil`. A new
-  deadline of a decision reminds the people of the task's role and comes
-  back to the task (`defaults[:text]`), as Forma does; a call's goes where
-  the call goes on. A deadline it already has only changes its duration.
+  Gives a decision, a call or a wait for a signal a deadline, or takes it
+  away with `nil`. A new deadline of a decision reminds the people of the
+  task's role and comes back to the task (`defaults[:text]`), as Forma does;
+  a call's or a wait's goes where it goes on. A deadline it already has only changes its duration.
   Taking it away drops what only the deadline reached.
   """
   def set_deadline(graph, id, duration, defaults \\ %{}) do
     case Graph.node(graph, id) do
-      %{"type" => type} = element when type in ~w(userTask callActivity) ->
+      %{"type" => type} = element when type in ~w(userTask callActivity receiveTask) ->
         {:ok, deadline(graph, element, duration, defaults)}
 
       _other ->
@@ -223,7 +238,8 @@ defmodule PotokIde.Processes.GraphEdit do
   defp deadline(graph, %{"deadline" => _old} = task, duration, _defaults),
     do: put_node(graph, %{task | "deadline" => duration})
 
-  defp deadline(graph, %{"type" => "callActivity", "id" => id} = call, duration, _defaults) do
+  defp deadline(graph, %{"type" => type, "id" => id} = call, duration, _defaults)
+       when type in ~w(callActivity receiveTask) do
     to = graph |> Graph.out(id) |> Enum.find(&(not Map.has_key?(&1, "deadline")))
 
     graph
@@ -480,6 +496,11 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp editable_keys(%{"type" => "serviceTask", "action" => "set"}),
     do: ~w(label field op value)
+
+  defp editable_keys(%{"type" => "serviceTask", "action" => "signal"}),
+    do: ~w(label name fields)
+
+  defp editable_keys(%{"type" => "receiveTask"}), do: ~w(label signal same_subject)
 
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)

@@ -337,7 +337,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition, a group field or a call to another process. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition, a group field, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:
@@ -347,13 +347,16 @@ A process can start on:
 - **a new sub-group**, say a place added on the map, and if you like only one with a place. Records and threads do not count;
 - **a set time**: every day, every week on the days you pick or every month, at the hour you pick;
 - **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text;
-- **another process** of the group, with the step **Call a process**: on the start step, under **Fields it takes**, you type what the caller hands over.
+- **another process** of the group, with the step **Call a process**: on the start step, under **Fields it takes**, you type what the caller hands over;
+- **a signal** a process of the group sends, with the fields the signal carries.
 
 A step's text can put in fields of what started the process, say a message's text or the title of a run started by hand: they are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
 
 The steps after a decision read its outcome as `{{odluka.outcome}}`, and who decided as `{{odluka.by}}`, where `odluka` is the step's name on the drawing; these are offered under the text field too. In the same way the step **Call a process** starts another drawn process of the group and hands it fields. If you leave **Wait for it to end** on, the process waits until the one it called reaches an end, and the steps after the call read the name of that end on the drawing as `{{poziv.outcome}}`, so a condition can branch on it. A deadline says how long it waits at most: when it passes, it gives up and cancels the process it called. What a process writes starts no other process, so processes talk only when you draw them that way. Processes call each other at most three levels deep, and a process another one calls cannot be deleted. The [building](/pomoc/zgrada#majstor) shows how this looks.
 
 The step **Group field** keeps a value every process of the group reads: under **What it does** you pick whether it sets the field to a value, say the last fault reported, or adds a number to it, as a count. The other steps, in other processes too, read the field `kvarova` as `{{group.kvarova}}`, and a condition can branch on it, say when it passes 10. The [building](/pomoc/zgrada#brojac) counts its faults.
+
+The step **Send a signal** tells all the group's processes that something happened, say that it is Saturday, with fields you type. A process that is on the step **Wait for a signal** with the same name just then goes on, and reads who sent the signal and what it carries as `{{prijem.from}}` and `{{prijem.mesto}}`. A signal also starts the processes whose trigger is that signal. A signal is not kept: a process that comes to the wait only later waits for the next one. With **Only from a process on the same value or sub-group** the wait takes only a signal sent about the same subject, say a payment for that very order. The [co-op](/pomoc/zadruga#subota) tells its buyers that way that it is pick-up day.
 
 ### Sharing into Potok {:#deljenje}
 

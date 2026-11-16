@@ -486,6 +486,17 @@
     ]
   },
   {
+    "name": "zadruga-signal",
+    "as": "dragan",
+    "url": "/groups/{groups.coop_orders}/processes?process={processes.coop_packing}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-canvas-node-receive-1" },
+      { "wait": "#process-node-panel" },
+      { "pause": 900 }
+    ]
+  },
+  {
     "name": "zgrada-proces-okidac",
     "as": "ivana",
     "url": "/groups/{groups.building}/processes?process={processes.building_reports}",

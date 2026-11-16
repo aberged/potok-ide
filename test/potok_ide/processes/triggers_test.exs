@@ -99,6 +99,13 @@ defmodule PotokIde.Processes.TriggersTest do
       assert Triggers.fields("manual") == ~w(title text author)
     end
 
+    test "a signal names the signal it starts on" do
+      assert {:ok, %{"name" => "subota"}} = Triggers.normalize("signal", %{"name" => " Subota "})
+      assert {:error, {"name", :invalid}} = Triggers.normalize("signal", %{"name" => "x"})
+      assert {:error, {"name", :invalid}} = Triggers.normalize("signal", %{})
+      assert Triggers.fields("signal", %{"name" => "subota"}) == ["from"]
+    end
+
     test "names the roles its settings hold" do
       assert Triggers.role_refs("message", %{"words" => [], "role" => "savet"}) == [
                {"role", "savet"}

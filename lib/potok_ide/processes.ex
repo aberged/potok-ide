@@ -177,9 +177,9 @@ defmodule PotokIde.Processes do
   - `:message`, a chat message of the group, which its members read;
   - `:group`, a new sub-group, with a link to it;
   - `:data`, a run started by hand or by a schedule, with what it was given;
-  - `:call`, a run another process called, with the fields it handed over
-    and that process's name as its title (a run called on a value or a
-    sub-group shows that instead).
+  - `:call`, a run another process called, and `:signal`, one a signal
+    started, with the fields it was given and that process's name as its
+    title (a run on a value or a sub-group shows that instead).
   """
   def tasks_for(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access)
       when access.role_keys != [] do
@@ -298,7 +298,8 @@ defmodule PotokIde.Processes do
     }
   end
 
-  # A run another process called on nothing but the fields it handed over.
+  # A run another process called, or started by a signal, on nothing but the
+  # fields it was given.
   defp subject(
          %ValueProcess{depth: depth} = instance,
          _process,
@@ -309,14 +310,14 @@ defmodule PotokIde.Processes do
        )
        when depth > 0 do
     %{
-      kind: :call,
+      kind: if(instance.data["signal"], do: :signal, else: :call),
       reads?: true,
       sent_at: instance.inserted_at,
       author_name: nil,
       title: instance.data["from"],
       text: nil,
       link: nil,
-      data: data_rows(Map.delete(instance.data, "from"))
+      data: data_rows(Map.drop(instance.data, ["from", "signal"]))
     }
   end
 
