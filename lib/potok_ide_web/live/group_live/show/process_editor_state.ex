@@ -1010,11 +1010,30 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
       |> Map.merge(signal_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(assign_attrs(node, params, socket.assigns.process_editor))
+      |> Map.merge(form_attrs(node, params))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
     end
   end
+
+  # The entity a form asks for, and who fills it in: whoever started the
+  # run, or the people of a role, which its form names as `role:<key>`.
+  defp form_attrs(%{"type" => "formTask"} = node, params) do
+    entity =
+      if Map.has_key?(params, "entity"), do: parse_id(params["entity"]), else: node["entity"]
+
+    who =
+      case params["who"] do
+        "role:" <> role when role != "" -> %{"by" => "role", "role" => role}
+        "starter" -> %{"by" => "starter", "role" => nil}
+        _as_it_is -> %{}
+      end
+
+    Map.put(who, "entity", entity)
+  end
+
+  defp form_attrs(_node, _params), do: %{}
 
   # A step adds to a list only while what it sets is one: with another
   # target picked, it sets again.
@@ -1192,7 +1211,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end
   end
 
-  defp deadline(graph, %{"type" => "receiveTask", "id" => id} = wait, attrs, _socket) do
+  defp deadline(graph, %{"type" => type, "id" => id} = wait, attrs, _socket)
+       when type in ~w(receiveTask formTask) do
     wanted = duration(attrs["deadline_amount"], attrs["deadline_unit"])
 
     if not Map.has_key?(attrs, "deadline_amount") or wanted == wait["deadline"],
@@ -1307,6 +1327,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       group_field: gettext("field"),
       signal: signal,
       signal_entity: signal_entity,
+      # A form asks for the first entity a form can fill in, if there is one.
+      form_entity: editor |> form_entities() |> List.first() |> then(&(&1 && &1.id)),
       # A loop starts on the first list the drawing keeps, if it keeps one.
       loop_list: List.first(for(%{"name" => name, "list" => true} <- variables, do: name)) || "",
       loop_item: gettext("item"),
@@ -1521,6 +1543,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def data(editor) do
     start = Graph.start(editor.graph)
     names = Scope.names(told(editor))
+    definitions = GroupEntities.definitions(editor[:entities] || [])
 
     entry =
       case entry(editor) do
@@ -1547,6 +1570,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         %{"type" => "userTask", "id" => id} ->
           [{"#{id}.outcome", :text}, {"#{id}.by", :text}, {"#{id}.comment", :text}]
 
+        %{"type" => "formTask"} = form ->
+          form_results(form, definitions)
+
         %{"type" => "callActivity", "wait" => true, "id" => id} ->
           [{"#{id}.outcome", :text}]
 
@@ -1567,6 +1593,22 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       group: for(name <- group_field_names(editor), do: {Scope.path("group", name), :any}),
       variables: editor.graph["variables"] || []
     }
+  end
+
+  # What a form brings back: the attributes of the entity it asks for, in
+  # their order, and who filled it in.
+  defp form_results(%{"id" => id} = form, definitions) do
+    attributes = (form["entity"] && Types.attributes(definitions, form["entity"])) || []
+
+    for(attribute <- attributes, do: {Scope.path(id, attribute["name"]), Types.of(attribute)}) ++
+      [{"#{id}.author", :text}]
+  end
+
+  @doc "The group's entities a form can fill in: those of plain attributes only."
+  def form_entities(editor) do
+    for entity <- editor[:entities] || [],
+        Enum.all?(entity.attributes, &(&1.type != "entity" and not &1.list)),
+        do: entity
   end
 
   # The drawing as far as its names can be told just now: with the group's
@@ -1850,6 +1892,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         %{"type" => "userTask", "id" => id} ->
           ["#{id}.outcome", "#{id}.by", "#{id}.comment"]
 
+        %{"type" => "formTask"} = form ->
+          for {path, _type} <- form_results(form, definitions), do: path
+
         %{"type" => "loop", "id" => id, "item" => item} ->
           held =
             case Map.get(names, item) do
@@ -1926,6 +1971,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           |> Enum.join(" · ")
 
         {"task", "hero-hand-raised", label || gettext("Decision"), detail}
+
+      %{"type" => "formTask"} ->
+        who =
+          if node["by"] == "role",
+            do: role_name(roles, node["role"]),
+            else: gettext("whoever started it")
+
+        detail =
+          [who, node["deadline"] && duration_text(node["deadline"])]
+          |> Enum.reject(&is_nil/1)
+          |> Enum.join(" · ")
+
+        {"form", "hero-clipboard-document-list", label || gettext("Form"), detail}
 
       %{"type" => "timer"} ->
         {"timer", "hero-clock", label || gettext("Wait"), duration_text(node["duration"])}
@@ -2069,7 +2127,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           "wait" => to_string(node["wait"] != false),
           "signal" => node["signal"],
           "entity" => node["entity"] && to_string(node["entity"]),
-          "same_subject" => to_string(node["same_subject"] == true)
+          "same_subject" => to_string(node["same_subject"] == true),
+          # Who fills in a form, as its select names them.
+          "who" => if(node["by"] == "role", do: "role:#{node["role"]}", else: "starter")
         })
         |> to_form(as: :element, id: "process-element-#{id}")
     end
@@ -2151,6 +2211,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:unknown_entity, _path),
     do: gettext("The group no longer has that entity, or one it holds.")
+
+  defp reason_text(:no_entity, _path), do: gettext("Pick the entity the form asks for.")
+
+  defp reason_text(:not_flat, _path),
+    do:
+      gettext(
+        "A form fills in plain attributes only: pick an entity that holds no other entity and no list."
+      )
+
+  defp reason_text(:no_starter, _path),
+    do: gettext("Nobody starts a process on a schedule, so its form asks the people of a role.")
 
   defp reason_text({:not_a_variable, ""}, _path),
     do: gettext("A step sets a variable, or an attribute of one.")

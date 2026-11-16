@@ -26,6 +26,7 @@ defmodule PotokIde.Processes.GraphEdit do
     "subgroup" => "subgroup",
     "push" => "push",
     "task" => "task",
+    "form" => "form",
     "timer" => "timer",
     "gateway" => "gateway",
     "call" => "call",
@@ -36,7 +37,7 @@ defmodule PotokIde.Processes.GraphEdit do
     "loop" => "loop",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task timer gateway call set assign signal receive loop)
+  @kinds ~w(message subgroup push task form timer gateway call set assign signal receive loop)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -78,9 +79,10 @@ defmodule PotokIde.Processes.GraphEdit do
   the step's first texts and role, and the process a call starts with the
   fields it takes, the group's field a step sets, what a new condition
   asks, the variable a step sets, the entity its signal is waited for with,
-  and the list a loop goes through with the word for its item: `%{text,
-  name, role, outcomes, condition, process, call_fields, group_field,
-  signal, signal_entity, variable, loop_list, loop_item}`.
+  the entity a form asks for, and the list a loop goes through with the
+  word for its item: `%{text, name, role, outcomes, condition, process,
+  call_fields, group_field, signal, signal_entity, form_entity, variable,
+  loop_list, loop_item}`. A form asks whoever started the run.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -130,6 +132,9 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp step("task", id, d),
     do: %{"id" => id, "type" => "userTask", "role" => d[:role], "outcomes" => d[:outcomes]}
+
+  defp step("form", id, d),
+    do: with_entity(%{"id" => id, "type" => "formTask", "by" => "starter"}, d[:form_entity])
 
   defp step("timer", id, _d), do: %{"id" => id, "type" => "timer", "duration" => "P1D"}
   defp step("gateway", id, _d), do: %{"id" => id, "type" => "exclusiveGateway"}
@@ -194,7 +199,8 @@ defmodule PotokIde.Processes.GraphEdit do
     }
   end
 
-  # The entity a signal is sent or waited for with, where it has one.
+  # The entity a signal is sent or waited for with, or a form asks for,
+  # where it has one.
   defp with_entity(step, nil), do: step
   defp with_entity(step, entity), do: Map.put(step, "entity", entity)
 
@@ -269,15 +275,17 @@ defmodule PotokIde.Processes.GraphEdit do
   end
 
   @doc """
-  Gives a decision, a call or a wait for a signal a deadline, or takes it
-  away with `nil`. A new deadline of a decision reminds the people of the
-  task's role and comes back to the task (`defaults[:text]`), as Forma does;
-  a call's or a wait's goes where it goes on. A deadline it already has only changes its duration.
-  Taking it away drops what only the deadline reached.
+  Gives a decision, a call, a wait for a signal or a form a deadline, or
+  takes it away with `nil`. A new deadline of a decision reminds the people
+  of the task's role and comes back to the task (`defaults[:text]`), as
+  Forma does; a call's, a wait's or a form's goes where it goes on. A
+  deadline it already has only changes its duration. Taking it away drops
+  what only the deadline reached.
   """
   def set_deadline(graph, id, duration, defaults \\ %{}) do
     case Graph.node(graph, id) do
-      %{"type" => type} = element when type in ~w(userTask callActivity receiveTask) ->
+      %{"type" => type} = element
+      when type in ~w(userTask callActivity receiveTask formTask) ->
         {:ok, deadline(graph, element, duration, defaults)}
 
       _other ->
@@ -296,7 +304,7 @@ defmodule PotokIde.Processes.GraphEdit do
     do: put_node(graph, %{task | "deadline" => duration})
 
   defp deadline(graph, %{"type" => type, "id" => id} = call, duration, _defaults)
-       when type in ~w(callActivity receiveTask) do
+       when type in ~w(callActivity receiveTask formTask) do
     to = graph |> Graph.out(id) |> Enum.find(&(not Map.has_key?(&1, "deadline")))
 
     graph
@@ -534,8 +542,10 @@ defmodule PotokIde.Processes.GraphEdit do
   Changes what an editor may change on a step: its `label`, and per type its
   texts, target, sub-group name and admins, role, duration, or the process
   a call starts, whether it waits and the fields it hands over, or the
-  entity a signal is sent or waited for with (none with `nil`). A blank
-  label is none, and a call that no longer waits has no deadline.
+  entity a signal is sent or waited for with (none with `nil`), or the
+  entity a form asks for and who fills it in (`by`, with the `role` when it
+  is one's people, and none with `nil`). A blank label is none, and a call
+  that no longer waits has no deadline.
   """
   def update_node(graph, id, attrs) do
     case Graph.node(graph, id) do
@@ -550,6 +560,8 @@ defmodule PotokIde.Processes.GraphEdit do
             {"label", label}, node -> put_label(node, label)
             # A signal with no entity names none.
             {"entity", nil}, node -> Map.delete(node, "entity")
+            # Nor does a form whoever started the run fills in name a role.
+            {"role", nil}, node -> Map.delete(node, "role")
             {key, value}, node -> Map.put(node, key, value)
           end)
 
@@ -584,6 +596,7 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "receiveTask"}), do: ~w(label signal same_subject entity)
 
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
+  defp editable_keys(%{"type" => "formTask"}), do: ~w(label by role entity)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
   defp editable_keys(%{"type" => "loop"}), do: ~w(label list item)

@@ -1118,6 +1118,154 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       assert id == uplata.id
       assert %{"entity" => ^id} = PotokIde.Processes.Graph.node(saved.graph, "receive_1")
     end
+
+    test "a form asks for an entity, whoever started the run or the people of a role", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "message")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      start_form(lv, %{"words" => "kvar"})
+
+      # With no entity to ask for, the step says what it lacks.
+      insert(lv, "f1", "form")
+      assert has_element?(lv, "#process-outline-form_1", "whoever started it")
+      assert has_element?(lv, "#process-form-no-entity")
+      assert has_element?(lv, "#process-editor-error", "Pick the entity the form asks for.")
+      lv |> element("#process-node-delete") |> render_click()
+
+      kvar = kvar!(ctx)
+      # A form cannot fill in a list, so this one is not offered.
+      entity!(ctx, "Obilazak", [%{"name" => "kvarovi", "type" => "text", "list" => true}])
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "message")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      start_form(lv, %{"words" => "kvar"})
+
+      # A new form asks for the first entity it can.
+      insert(lv, "f1", "form")
+      refute has_element?(lv, "#process-editor-error")
+
+      assert has_element?(
+               lv,
+               "#process-element-form select[name='element[entity]'] option[selected]",
+               "Kvar"
+             )
+
+      refute has_element?(
+               lv,
+               "#process-element-form select[name='element[entity]'] option",
+               "Obilazak"
+             )
+
+      assert has_element?(lv, "#process-form-reads", "{{form_1.naslov}}")
+      assert has_element?(lv, "#process-form-where", "opens by itself")
+
+      # What it brings back is there for the steps after it, each of its type.
+      render_hook(canvas(lv), "process_editor_select", %{})
+      assert has_element?(lv, "#process-data-results", "form_1.naslov")
+      assert has_element?(lv, "#process-data-results li", "form_1.sprat")
+      assert has_element?(lv, "#process-data-results", "form_1.author")
+
+      # The form's way on is the second flow of the drawing.
+      insert(lv, "f2", "message")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"text" => "{{form_1.naslov}}, sprat {{form_1.sprat + 1}}"}
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{form_1.naslov + 1}}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{form_1.naslov}}"}})
+      |> render_change()
+
+      # The people of a role fill it in, with a deadline that goes on.
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "form_1"})
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"who" => "role:admin", "deadline_amount" => "2", "deadline_unit" => "days"}
+      })
+      |> render_change()
+
+      assert has_element?(lv, "#process-outline-form_1", "2 days")
+      refute has_element?(lv, "#process-outline-push_1")
+      assert has_element?(lv, "#process-form-where", "people of the role")
+
+      lv |> element("#process-editor-save") |> render_click()
+      [saved] = drawn(ctx.group)
+
+      assert PotokIde.Processes.Graph.node(saved.graph, "form_1") == %{
+               "id" => "form_1",
+               "type" => "formTask",
+               "by" => "role",
+               "role" => "admin",
+               "entity" => kvar.id,
+               "deadline" => "P2D"
+             }
+
+      assert Map.keys(saved.graph["types"]) == [to_string(kvar.id)]
+
+      # And whoever started it again.
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "form_1"})
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"who" => "starter"}})
+      |> render_change()
+
+      lv |> element("#process-editor-save") |> render_click()
+      [saved] = drawn(ctx.group)
+      form = PotokIde.Processes.Graph.node(saved.graph, "form_1")
+      assert form["by"] == "starter"
+      refute Map.has_key?(form, "role")
+    end
+
+    test "a member reads what a form asks for, as the drawing was saved", ctx do
+      kvar = kvar!(ctx)
+
+      graph = %{
+        "v" => 2,
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{"id" => "prijava", "type" => "formTask", "entity" => kvar.id},
+          %{"id" => "end", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "prijava"},
+          %{"from" => "prijava", "to" => "end"}
+        ]
+      }
+
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "message",
+          "trigger_config" => %{"words" => "kvar"},
+          "name" => "Prijava kvara",
+          "graph" => graph
+        })
+
+      {:ok, _row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+
+      {:ok, lv, _html} =
+        live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes?process=#{row.id}")
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "prijava"})
+      assert has_element?(lv, "#process-form-asks", "Kvar")
+      assert has_element?(lv, "#process-form-reads", "{{prijava.naslov}}")
+      refute has_element?(lv, "#process-form-no-entity")
+    end
   end
 
   test "members look at a drawing that is on, and change nothing", ctx do

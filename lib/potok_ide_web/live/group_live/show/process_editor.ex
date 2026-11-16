@@ -827,6 +827,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"task", "hero-hand-raised", gettext("Decision"),
        gettext("Waits for someone of a role to pick an outcome."),
        "bg-amber-500/15 text-amber-700 dark:text-amber-300"},
+      {"form", "hero-clipboard-document-list", gettext("Form"),
+       gettext("Waits for someone to fill in an entity, an attribute at a time."),
+       "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"},
       {"push", "hero-bell-alert", gettext("Push"),
        gettext("Lets the people of a role know on their phones."),
        "bg-rose-500/10 text-rose-600 dark:text-rose-300"},
@@ -894,6 +897,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         ProcessEditorState.textual_target?(assigns.editor, node["target"], node["op"])
       )
       |> assign(:list_target?, ProcessEditorState.list_target?(assigns.editor, node["target"]))
+      |> assign(:form_entities, ProcessEditorState.form_entities(assigns.editor))
+      |> assign(:asked, asked_entity(assigns.editor, node))
 
     ~H"""
     <div id="process-node-panel">
@@ -1058,6 +1063,68 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   <.input field={@form[:deadline_unit]} type="select" options={unit_options()} />
                 </div>
               </div>
+            <% "form" -> %>
+              <.input
+                :if={@editor.editable? and @form_entities != []}
+                field={@form[:entity]}
+                type="select"
+                label={gettext("What it asks for")}
+                prompt={gettext("Pick an entity")}
+                options={for(entity <- @form_entities, do: {entity.name, entity.id})}
+              />
+              <p
+                :if={@editor.editable? and @form_entities == []}
+                id="process-form-no-entity"
+                class="rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
+              >
+                {gettext(
+                  "A form asks for an entity of plain attributes. Define one under Data first."
+                )}
+              </p>
+              <p :if={!@editor.editable? and @asked} id="process-form-asks" class="text-sm">
+                {gettext("It asks for %{entity}.", entity: @asked["name"])}
+              </p>
+              <.input
+                field={@form[:who]}
+                type="select"
+                label={gettext("Who fills it in")}
+                options={
+                  [{gettext("Whoever started the run"), "starter"}] ++
+                    for({label, key} <- @role_options, do: {label, "role:" <> key})
+                }
+              />
+              <div>
+                <p class="label mb-1">{gettext("Deadline, then go on without it")}</p>
+                <div class="flex gap-2">
+                  <.input
+                    field={@form[:deadline_amount]}
+                    type="number"
+                    min="1"
+                    placeholder={gettext("none")}
+                    phx-debounce="400"
+                  />
+                  <.input field={@form[:deadline_unit]} type="select" options={unit_options()} />
+                </div>
+              </div>
+              <p id="process-form-reads" class="text-xs text-base-content/60">
+                {gettext(
+                  "The steps after it read what was filled in an attribute at a time, as %{field}, and who filled it in as %{author}.",
+                  field: "{{#{asked_path(@node, @asked)}}}",
+                  author: "{{#{@node["id"]}.author}}"
+                )}
+              </p>
+              <p id="process-form-where" class="text-xs text-base-content/60">
+                {if(@node["by"] == "role",
+                  do:
+                    gettext(
+                      "It waits for the people of the role on the Processes tab, under Waiting for you."
+                    ),
+                  else:
+                    gettext(
+                      "It opens by itself for whoever started the run, when they have just done what led to it. Otherwise it waits on the Processes tab, under Waiting for you."
+                    )
+                )}
+              </p>
             <% "timer" -> %>
               <p class="label mb-1">{gettext("Wait for")}</p>
               <div class="flex gap-2">
@@ -1709,13 +1776,32 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   end
 
   # A form fills in plain attributes only.
-  defp takeable(%{trigger: "manual"} = editor) do
-    for entity <- editor[:entities] || [],
-        Enum.all?(entity.attributes, &(&1.type != "entity" and not &1.list)),
-        do: entity
+  defp takeable(%{trigger: "manual"} = editor), do: ProcessEditorState.form_entities(editor)
+  defp takeable(editor), do: editor[:entities] || []
+
+  # The entity a form asks for, as its name and attributes: as the group
+  # has it now for its editors, and as the drawing was saved for the rest.
+  defp asked_entity(editor, %{"type" => "formTask", "entity" => id}) when is_integer(id) do
+    case Enum.find(editor[:entities] || [], &(&1.id == id)) do
+      nil ->
+        get_in(editor.graph, ["types", to_string(id)])
+
+      entity ->
+        %{
+          "name" => entity.name,
+          "attributes" => Enum.map(entity.attributes, &%{"name" => &1.name})
+        }
+    end
   end
 
-  defp takeable(editor), do: editor[:entities] || []
+  defp asked_entity(_editor, _node), do: nil
+
+  # How a step after a form names one of its answers: its first attribute,
+  # or a word for one while it asks for nothing yet.
+  defp asked_path(%{"id" => id}, %{"attributes" => [%{"name" => name} | _rest]}),
+    do: PotokIde.Processes.Scope.path(id, name)
+
+  defp asked_path(%{"id" => id}, _none), do: "#{id}.#{gettext("attribute")}"
 
   defp entry_label("manual"), do: gettext("What its form asks for")
   defp entry_label("signal"), do: gettext("What the signal carries")

@@ -149,6 +149,53 @@ defmodule PotokIde.Processes.GraphEditTest do
     assert [%{"to" => "end"}] = Graph.out(valid!(graph), "receive_1")
   end
 
+  test "a form asks whoever started the run, or a role, and gets a deadline where it goes on" do
+    graph = insert!(GraphEdit.new(), "f1", "form")
+
+    assert Graph.node(graph, "form_1") == %{
+             "id" => "form_1",
+             "type" => "formTask",
+             "by" => "starter"
+           }
+
+    {:ok, graph} =
+      GraphEdit.insert(GraphEdit.new(), "f1", "form", Map.put(@defaults, :form_entity, 12))
+
+    assert %{"entity" => 12, "by" => "starter"} = Graph.node(graph, "form_1")
+
+    {:ok, graph} =
+      GraphEdit.update_node(graph, "form_1", %{
+        "by" => "role",
+        "role" => "savet",
+        "entity" => 14,
+        "outcomes" => ["Da"]
+      })
+
+    assert Graph.node(valid!(graph), "form_1") ==
+             %{
+               "id" => "form_1",
+               "type" => "formTask",
+               "by" => "role",
+               "role" => "savet",
+               "entity" => 14
+             }
+
+    # One whoever started the run fills in names no role, and may name no entity yet.
+    {:ok, graph} =
+      GraphEdit.update_node(graph, "form_1", %{"by" => "starter", "role" => nil, "entity" => nil})
+
+    assert Graph.node(valid!(graph), "form_1") ==
+             %{"id" => "form_1", "type" => "formTask", "by" => "starter"}
+
+    {:ok, graph} = GraphEdit.set_deadline(graph, "form_1", "P2D")
+    valid!(graph)
+    assert [%{"to" => "end"}, %{"to" => "end", "deadline" => true}] = Graph.out(graph, "form_1")
+    refute "push_1" in ids(graph)
+
+    {:ok, graph} = GraphEdit.set_deadline(graph, "form_1", nil)
+    assert [%{"to" => "end"}] = Graph.out(valid!(graph), "form_1")
+  end
+
   test "an outcome is renamed with its flow, and the last one stays" do
     graph = insert!(GraphEdit.new(), "f1", "task")
     {:ok, graph} = GraphEdit.rename_outcome(graph, "task_1", "Odbij", "Vrati")
