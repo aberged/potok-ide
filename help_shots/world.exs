@@ -106,7 +106,13 @@ defmodule HelpShots.World do
         zbor_photo: mz.photo.id
       },
       polls: %{zbor: mz.poll.id, building: building.poll.id},
-      processes: %{coop_packing: coop.packing.id, building_reports: building.reports.id},
+      processes: %{
+        coop_packing: coop.packing.id,
+        building_reports: building.reports.id,
+        building_urgent: building.urgent.id,
+        building_round: building.round.id
+      },
+      entities: %{building_fault: building.fault.id},
       events: %{zbor: mz.event.id},
       shared_profile_id: shared.id,
       # For the date fields of forms, which take it as written.
@@ -511,7 +517,143 @@ defmodule HelpShots.World do
 
     PotokIde.Processes.Engine.run(report.id)
 
-    %{root: building, council: council, poll: poll, reports: reports}
+    fault = fault_entity(ivana, building)
+    urgent = urgent_fault(ivana, building, fault)
+    round = building_round(ivana, building)
+
+    %{
+      root: building,
+      council: council,
+      poll: poll,
+      reports: reports,
+      fault: fault,
+      urgent: urgent,
+      round: round
+    }
+  end
+
+  # What a fault is, as the building's processes take it: an entity of the
+  # group, each attribute with its type.
+  defp fault_entity(editor, group) do
+    {:ok, entity} =
+      PotokIde.Processes.GroupEntities.create(
+        group,
+        PotokIde.Social.Access.for_profile(editor, group),
+        %{
+          "name" => "Kvar",
+          "attributes" => [
+            %{"name" => "naslov", "type" => "text", "required" => true},
+            %{"name" => "sprat", "type" => "number"},
+            %{"name" => "hitno", "type" => "boolean"}
+          ]
+        }
+      )
+
+    entity
+  end
+
+  # An urgent fault: started by hand with a form that asks for the entity's
+  # attributes; an urgent one rings the admins' phones first.
+  defp urgent_fault(editor, group, fault) do
+    graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Stanar prijavljuje"},
+        %{"id" => "gateway_1", "type" => "exclusiveGateway", "label" => "Hitno?"},
+        %{
+          "id" => "push_1",
+          "type" => "serviceTask",
+          "action" => "push",
+          "role" => "admin",
+          "text" => "Hitan kvar: {{start.naslov}}, sprat {{start.sprat}}"
+        },
+        %{
+          "id" => "message_1",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "app",
+          "text" => "{{start.author}} prijavljuje: {{start.naslov}}, sprat {{start.sprat}}."
+        },
+        %{"id" => "end", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "gateway_1"},
+        %{"from" => "gateway_1", "to" => "push_1", "condition" => %{"expr" => "start.hitno"}},
+        %{"from" => "gateway_1", "to" => "message_1", "default" => true},
+        %{"from" => "push_1", "to" => "message_1"},
+        %{"from" => "message_1", "to" => "end"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["everyone"]},
+        "entry_entity_id" => fault.id,
+        "name" => "Hitan kvar",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
+  end
+
+  # The round of the building: an admin notes what they found, one finding
+  # at a time, in a list the run keeps; then each finding is told in the chat.
+  defp building_round(editor, group) do
+    graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
+      "variables" => [%{"name" => "nalazi", "type" => "text", "list" => true}],
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Počinje obilazak"},
+        %{
+          "id" => "task_1",
+          "type" => "userTask",
+          "label" => "Šta si našao",
+          "role" => "admin",
+          "outcomes" => ["Dodaj nalaz", "Gotovo"]
+        },
+        %{
+          "id" => "assign_1",
+          "type" => "serviceTask",
+          "action" => "assign",
+          "target" => "nalazi",
+          "op" => "append",
+          "value" => "{{task_1.comment}}"
+        },
+        %{"id" => "loop_1", "type" => "loop", "list" => "nalazi", "item" => "nalaz"},
+        %{
+          "id" => "message_1",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "app",
+          "text" => "Nalaz {{loop_1.index}} od {{loop_1.count}}: {{nalaz}}"
+        },
+        %{"id" => "end", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "task_1"},
+        %{"from" => "task_1", "to" => "assign_1", "outcome" => "Dodaj nalaz"},
+        %{"from" => "task_1", "to" => "loop_1", "outcome" => "Gotovo"},
+        %{"from" => "assign_1", "to" => "task_1"},
+        %{"from" => "loop_1", "to" => "message_1", "each" => true},
+        %{"from" => "message_1", "to" => "loop_1"},
+        %{"from" => "loop_1", "to" => "end"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["admin"]},
+        "name" => "Obilazak zgrade",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   # The building's process, drawn in Potok with no app: a resident starts it

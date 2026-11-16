@@ -132,6 +132,42 @@ Every report adds one, and how many there were you see at the bottom of the Proc
 
 ![The group's fields on the Processes tab](zgrada-polja)
 
+## 12. A fault as an entity {:#entitet}
+
+A title and a text are enough to begin with. When you want a report to always say the floor too, and whether it is urgent, describe a fault as an **entity**: a name and attributes, each with its type.
+
+1. On the Processes tab, under **Entities**, tap **New entity** and type "Kvar".
+2. Add the attributes: `naslov` as **Text**, with **Must be filled in**, `sprat` as a **Number** and `hitno` as **Yes or no**. Tap **Save**.
+3. Draw a process "Hitan kvar", and under **When** pick **someone starts it**. Tap the start step and under **What its form asks for** pick "Kvar".
+4. Add a **Condition** and on its first arrow, under **Goes this way when**, type `start.hitno`. On that arrow add a **Push** for the Administrator: type "Hitan kvar: " and tap `start.naslov`.
+5. Under it add a **Message** in the building's chat, with `start.naslov` and `start.sprat`, then tap **Save** and **Switch on**.
+
+![The entity Kvar: attributes and their types](zgrada-entitet)
+
+A resident who taps **Start** now gets a form with a field for each attribute: the floor takes a number only, and the title must be typed. The steps read it as `{{start.naslov}}` and `{{start.sprat}}`, and Potok checks as you draw that you do not add a text up as a number.
+
+![An urgent fault: the form asks for the entity's attributes](zgrada-hitan-kvar)
+
+A process others call, like the Repairer, can take the same entity: the step **Call a process** then asks for a value for each attribute. If the House council needs the Repairer too, tick **Public process** on its start step: then the processes of the groups above and below the building call it as well.
+
+## 13. A round of the building {:#obilazak}
+
+Once a month someone from the council goes round the building and notes what they found. The process keeps the findings in a **list**, and in the end writes a message for each.
+
+1. Draw a process "Obilazak zgrade", and under **When** pick **someone starts it**. On the start step, under **Who may start it**, leave the Administrator only.
+2. While nothing on the drawing is picked, open the **Data of the process**, on a phone with the cube button. Tap **Add a variable**, type "nalazi", leave **Text** and tick **A list**.
+3. Add a **Decision** with the outcomes "Dodaj nalaz" and "Gotovo".
+4. On the arrow "Dodaj nalaz" add **Set a value**: under **What it sets** pick `nalazi`, under **What it does** pick **Adds an item to its end**, and for the value tap `task_1.comment`. Send the arrow under that step back to the decision: tap it and under **Leads to** pick the decision.
+5. On the arrow "Gotovo" add **For each**. Under **List it goes through** tap `nalazi`, and for the **Name of an item** type "nalaz".
+6. The step on the arrow **for each** is a message: type "Nalaz " and tap `loop_1.index`, then " od " and `loop_1.count`, then ": " and `nalaz`.
+7. Tap **Save**, then **Switch on**.
+
+![A round of the building: a decision fills the list, and For each goes through it](zgrada-obilazak)
+
+Whoever goes round types a comment for each finding on the Processes tab and taps **Dodaj nalaz**, and in the end **Gotovo**. The process then goes through the list and writes each finding in the building's chat, with its number. All that the process has, with names and types, stands under the **Data of the process**.
+
+![Data of the process: the list nalazi, the item and the counters](zgrada-podaci)
+
 ## A club, a choir or a team {:#klub}
 
 A club is put together the same way: one chat for everyone, a sub-group without inherited members for those who run it and a shared profile when they should speak with one voice. Training sessions and rehearsals are events that repeat: under **Repeats**, choose **Weekly**.

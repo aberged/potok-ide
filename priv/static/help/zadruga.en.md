@@ -108,6 +108,8 @@ Packed orders wait for Saturday. Let one process tell everyone on Saturday morni
 
 Every packed order now waits for Saturday. On Saturday at 8:00 Pick-up day sends the signal, and every buyer whose order waits gets a message in their talk. An order packed after that waits for the next Saturday.
 
+If a signal should carry more than one text, define an entity on the Processes tab and pick it under **Entity it carries**: whoever waits for the signal says what it waits for, and whoever sends it fills in its attributes, each as its type.
+
 ## What next {:#dalje}
 
 - [Apps in a group](/pomoc#aplikacije): everything Form can do.

@@ -554,6 +554,47 @@
     ]
   },
   {
+    "name": "zgrada-entitet",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "wait": "#group-entities" },
+      { "click": "#group-entity-{entities.building_fault}-edit" },
+      { "wait": "#entity-dialog[open]" },
+      { "pause": 700 }
+    ]
+  },
+  {
+    "name": "zgrada-hitan-kvar",
+    "as": "tamara",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "click": "#process-row-{processes.building_urgent}-start" },
+      { "wait": "#process-start-form" },
+      { "type": ["#process-start-form input[name='start[naslov]']", "Curi voda u podrumu"] },
+      { "type": ["#process-start-form input[name='start[sprat]']", "0"] },
+      { "click": "#process-start-form input[type='checkbox'][name='start[hitno]']" },
+      { "pause": 700 }
+    ]
+  },
+  {
+    "name": "zgrada-obilazak",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes?process={processes.building_round}",
+    "steps": [{ "wait": "#process-canvas [data-node]" }, { "pause": 1200 }]
+  },
+  {
+    "name": "zgrada-podaci",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes?process={processes.building_round}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-editor-data" },
+      { "wait": "#process-data-panel" },
+      { "pause": 900 }
+    ]
+  },
+  {
     "name": "zgrada-kucni-savet",
     "as": "ivana",
     "url": "/groups/{groups.building}",

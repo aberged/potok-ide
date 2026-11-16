@@ -133,6 +133,42 @@ Svaka prijava doda jedan, a koliko ih je bilo vidiš na dnu kartice Procesi, pod
 
 ![Polja grupe na kartici Procesi](zgrada-polja)
 
+## 12. Kvar kao entitet {:#entitet}
+
+Naslov i tekst su dovoljni za početak. Kad hoćeš da prijava uvek kaže i sprat, i da li je hitno, opiši kvar kao **entitet**: ime i atributi, svaki sa svojim tipom.
+
+1. Na kartici Procesi, pod **Entiteti**, dodirni **Novi entitet** i upiši „Kvar“.
+2. Dodaj atribute: `naslov` kao **Tekst**, uz **Mora biti popunjen**, `sprat` kao **Broj** i `hitno` kao **Da ili ne**. Dodirni **Sačuvaj**.
+3. Nacrtaj proces „Hitan kvar“, a pod **Kad** izaberi **ga neko pokrene**. Dodirni početni korak i pod **Šta njegova forma traži** izaberi „Kvar“.
+4. Dodaj **Uslov** i na njegovoj prvoj strelici, pod **Ide ovuda kada**, upiši `start.hitno`. Na tu strelicu dodaj **Push** za Administratora: upiši „Hitan kvar: “ i dodirni `start.naslov`.
+5. Ispod toga dodaj **Poruku** u razgovor zgrade, sa `start.naslov` i `start.sprat`, pa dodirni **Sačuvaj** i **Uključi**.
+
+![Entitet Kvar: atributi i njihovi tipovi](zgrada-entitet)
+
+Stanar sada na **Pokreni** dobija formu sa poljem za svaki atribut: sprat prima samo broj, a naslov mora biti upisan. Koraci to čitaju kao `{{start.naslov}}` i `{{start.sprat}}`, a Potok dok crtaš proverava da tekst ne sabiraš kao broj.
+
+![Hitan kvar: forma traži atribute entiteta](zgrada-hitan-kvar)
+
+Isti entitet može da primi i proces koji drugi pozivaju, kao Majstor: korak **Pozovi proces** tada traži vrednost za svaki atribut. Ako Majstor treba i Kućnom savetu, na njegovom početnom koraku uključi **Javan proces**: tada ga pozivaju i procesi grupa iznad i ispod zgrade.
+
+## 13. Obilazak zgrade {:#obilazak}
+
+Jednom mesečno neko iz saveta obiđe zgradu i zapiše šta je našao. Proces pamti nalaze u **listi** i na kraju za svaki napiše poruku.
+
+1. Nacrtaj proces „Obilazak zgrade“, a pod **Kad** izaberi **ga neko pokrene**. Na početnom koraku, pod **Ko sme da ga pokrene**, ostavi samo Administratora.
+2. Dok na crtežu ništa nije izabrano, otvori **Podaci procesa**, na telefonu dugmetom sa kockom. Dodirni **Dodaj varijablu**, upiši „nalazi“, ostavi **Tekst** i uključi **Lista**.
+3. Dodaj **Odluku** sa ishodima „Dodaj nalaz“ i „Gotovo“.
+4. Na strelicu „Dodaj nalaz“ dodaj **Postavi vrednost**: pod **Šta postavlja** izaberi `nalazi`, pod **Šta radi** izaberi **Dodaje stavku na kraj**, a za vrednost dodirni `task_1.comment`. Strelicu ispod tog koraka vrati na odluku: dodirni je i pod **Vodi do** izaberi odluku.
+5. Na strelicu „Gotovo“ dodaj **Za svaki**. Pod **Lista kroz koju prolazi** dodirni `nalazi`, a za **Ime stavke** upiši „nalaz“.
+6. Korak na strelici **za svaki** je poruka: upiši „Nalaz “ i dodirni `loop_1.index`, pa „ od “ i `loop_1.count`, pa „: “ i `nalaz`.
+7. Dodirni **Sačuvaj**, pa **Uključi**.
+
+![Obilazak zgrade: odluka puni listu, a Za svaki je prolazi](zgrada-obilazak)
+
+Ko obilazi, na kartici Procesi za svaki nalaz upiše komentar i dodirne **Dodaj nalaz**, a na kraju **Gotovo**. Proces tada prođe kroz listu i u razgovoru zgrade napiše svaki nalaz, uz njegov redni broj. Sve čime proces raspolaže, sa imenima i tipovima, stoji pod **Podaci procesa**.
+
+![Podaci procesa: lista nalazi, stavka i brojači](zgrada-podaci)
+
 ## Klub, hor ili ekipa {:#klub}
 
 Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one koji ga vode i deljeni profil kad treba da govore jednim glasom. Treninzi i probe su događaji koji se ponavljaju: pod **Ponavljanje** izaberi **Svake nedelje**.
@@ -140,6 +176,6 @@ Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one ko
 ## Šta dalje {:#dalje}
 
 - [Profili](/pomoc#profili): jedinstveni i deljeni profili.
-- [Nacrtaj proces](/pomoc#nacrtaj-proces): sve što može da pokrene proces, i kako procesi pozivaju jedan drugi.
+- [Nacrtaj proces](/pomoc#nacrtaj-proces): sve što može da pokrene proces, kako procesi pozivaju jedan drugi, i entiteti, varijable i liste.
 - [Poruke](/pomoc#poruke): odgovori, niti, reakcije i pominjanja.
 - [Fajlovi i tagovi](/pomoc#fajlovi-i-tagovi): sve iz razgovora na jednom mestu.

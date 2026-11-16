@@ -1848,7 +1848,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           for field <- ["from" | carried(editor, signal)], do: Scope.path(id, field)
 
         %{"type" => "userTask", "id" => id} ->
-          ["#{id}.outcome", "#{id}.by"]
+          ["#{id}.outcome", "#{id}.by", "#{id}.comment"]
 
         %{"type" => "loop", "id" => id, "item" => item} ->
           held =

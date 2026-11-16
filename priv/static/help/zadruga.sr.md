@@ -109,6 +109,8 @@ Spakovane porudžbine čekaju subotu. Neka u subotu ujutru jedan proces javi svi
 
 Svaka spakovana porudžbina sada čeka subotu. U subotu u 8:00 Dan preuzimanja pošalje signal, i svaki kupac čija porudžbina čeka dobije poruku u svom razgovoru. Porudžbina spakovana posle toga čeka sledeću subotu.
 
+Ako signal treba da nosi više od jednog teksta, definiši entitet na kartici Procesi i izaberi ga pod **Entitet koji nosi**: ko čeka signal kaže šta čeka, a ko ga šalje popunjava njegove atribute, svaki kao njegov tip.
+
 ## Šta dalje {:#dalje}
 
 - [Aplikacije u grupi](/pomoc#aplikacije): sve što Forma ume.
