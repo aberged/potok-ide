@@ -9,7 +9,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   alias PotokIde.Social.ValueRules
   alias PotokIde.Social.DrawnProcesses
-  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessEditor, ProcessEditorState, RolesTab}
+
+  alias PotokIdeWeb.GroupLive.Show.{
+    Components,
+    ProcessEditor,
+    ProcessEditorState,
+    ProcessEntities,
+    RolesTab
+  }
 
   attr :group, :map, required: true
   attr :access, :any, required: true
@@ -20,6 +27,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :fields, :list,
     default: [],
     doc: "the group's fields its processes keep, for the app's editors (`GroupFields`)"
+
+  attr :entities, :list,
+    default: [],
+    doc: "the group's entities, for the app's editors (`GroupEntities`)"
+
+  attr :entity, :map, default: nil, doc: "`%{entity, form}` while an editor defines an entity"
 
   attr :can_draw?, :boolean,
     default: false,
@@ -164,9 +177,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             </li>
           </ul>
         </section>
+
+        <ProcessEntities.section :if={@can_draw?} entities={@entities} />
       </Components.tab_body>
 
       <.start_dialog start={@start} />
+      <ProcessEntities.dialog entity={@entity} entities={@entities} />
 
       <ProcessEditor.editor
         :if={@editor}

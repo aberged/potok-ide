@@ -166,3 +166,30 @@ msgstr ""
 
 msgid "That group has no place you can see."
 msgstr ""
+
+msgid "is a word processes keep for themselves"
+msgstr ""
+
+msgid "must start with a letter and hold only letters, digits and _"
+msgstr ""
+
+msgid "has too many options"
+msgstr ""
+
+msgid "has an option that is too long"
+msgstr ""
+
+msgid "An entity needs at least one attribute."
+msgstr ""
+
+msgid "An entity has at most 30 attributes."
+msgstr ""
+
+msgid "Two attributes have the same name."
+msgstr ""
+
+msgid "An entity cannot come to hold itself."
+msgstr ""
+
+msgid "Entities nest at most 4 deep."
+msgstr ""

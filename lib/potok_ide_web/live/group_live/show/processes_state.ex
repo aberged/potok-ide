@@ -12,6 +12,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     instances, to take up again or cancel.
   - The people of a task's role decide it here, with the value as far as
     they may read it.
+  - The app's editors define the group's entities here
+    (`PotokIde.Processes.GroupEntities`), in a form over the tab
+    (`processes_entity`).
   - Other people's changes (`{:app_value, ...}`) reload the tab after a short
     wait, so a burst of moves loads it once.
   """
@@ -22,12 +25,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Processes
-  alias PotokIde.Processes.{Graph, GroupFields}
+  alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.ProcessEditorState
 
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
-  @reloading_events [:config, :process, :drawn_process, :created]
+  @reloading_events [:config, :process, :drawn_process, :created, :entity]
 
   ## Setup
 
@@ -38,6 +41,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_apps: [],
       processes_tasks: [],
       processes_fields: [],
+      processes_entities: [],
+      processes_entity: nil,
       processes_can_draw?: false,
       processes_refresh?: false,
       processes_start: nil
@@ -104,7 +109,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   def maybe_load(socket, %Group{}, _active_tab) do
     socket
-    |> assign(processes_apps: [], processes_tasks: [], processes_fields: [])
+    |> assign(
+      processes_apps: [],
+      processes_tasks: [],
+      processes_fields: [],
+      processes_entities: [],
+      processes_entity: nil
+    )
     |> ProcessEditorState.init()
   end
 
@@ -131,6 +142,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_apps: by_app(entries, group),
       processes_tasks: Processes.tasks_for(profile, group, access),
       processes_fields: if(manage?, do: GroupFields.list(group), else: []),
+      processes_entities: if(manage?, do: GroupEntities.list(group), else: []),
       processes_can_draw?: manage?,
       processes_refresh?: false
     )
@@ -303,6 +315,117 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
         {:noreply, put_flash(socket, :error, gettext("Could not cancel it."))}
     end
   end
+
+  def handle_event("processes_entity_new", _params, socket) do
+    if socket.assigns.processes_can_draw? do
+      # A new entity starts with one attribute to fill in.
+      {:noreply, open_entity(socket, %GroupEntity{}, %{"attributes" => %{"0" => %{}}})}
+    else
+      {:noreply, socket}
+    end
+  end
+
+  def handle_event("processes_entity_edit", %{"id" => id}, socket) do
+    with true <- socket.assigns.processes_can_draw?,
+         {id, ""} <- Integer.parse(to_string(id)),
+         %GroupEntity{} = entity <- GroupEntities.get(socket.assigns.group, id) do
+      {:noreply, open_entity(socket, entity, %{})}
+    else
+      _gone -> {:noreply, put_flash(socket, :error, gettext("That entity is not here."))}
+    end
+  end
+
+  def handle_event("processes_entity_close", _params, socket),
+    do: {:noreply, assign(socket, :processes_entity, nil)}
+
+  def handle_event("processes_entity_validate", %{"entity" => params}, socket) do
+    case socket.assigns.processes_entity do
+      nil ->
+        {:noreply, socket}
+
+      %{entity: entity} = state ->
+        changeset =
+          entity
+          |> GroupEntities.change(params, socket.assigns.processes_entities)
+          |> Map.put(:action, :validate)
+
+        {:noreply, assign(socket, :processes_entity, %{state | form: entity_form(changeset)})}
+    end
+  end
+
+  def handle_event("processes_entity_save", %{"entity" => params}, socket) do
+    %{group: group, access: access, processes_entity: state} = socket.assigns
+
+    result =
+      case state do
+        nil -> nil
+        %{entity: %GroupEntity{id: nil}} -> GroupEntities.create(group, access, params)
+        %{entity: entity} -> GroupEntities.update(group, access, entity, params)
+      end
+
+    case result do
+      nil ->
+        {:noreply, socket}
+
+      {:ok, _entity} ->
+        {:noreply,
+         socket
+         |> assign(:processes_entity, nil)
+         |> put_flash(:info, gettext("The entity is saved."))
+         |> load()}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, assign(socket, :processes_entity, %{state | form: entity_form(changeset)})}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, entity_error(reason))}
+    end
+  end
+
+  def handle_event("processes_entity_delete", %{"id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    result =
+      case Integer.parse(to_string(id)) do
+        {id, ""} -> GroupEntities.delete(group, access, id)
+        _invalid -> {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _entity} ->
+        {:noreply,
+         socket
+         |> assign(:processes_entity, nil)
+         |> put_flash(:info, gettext("The entity is deleted."))
+         |> load()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, entity_error(reason))}
+    end
+  end
+
+  # The form of an entity over the tab, among the group's entities as they
+  # stand now.
+  defp open_entity(socket, %GroupEntity{} = entity, params) do
+    entities = GroupEntities.list(socket.assigns.group)
+    changeset = GroupEntities.change(entity, params, entities)
+
+    socket
+    |> assign(:processes_entities, entities)
+    |> assign(:processes_entity, %{entity: entity, form: entity_form(changeset)})
+  end
+
+  defp entity_form(changeset), do: to_form(changeset, as: :entity)
+
+  defp entity_error({:in_use, names}),
+    do:
+      gettext("It is held by %{names}. Take it out of there first.",
+        names: Enum.join(names, ", ")
+      )
+
+  defp entity_error(:too_many), do: gettext("A group has at most 50 entities.")
+  defp entity_error(:not_found), do: gettext("That entity is not here.")
+  defp entity_error(_reason), do: gettext("Only the app's editors define entities.")
 
   defp start_error(:invalid_title), do: gettext("Give it a title of up to 120 characters.")
   defp start_error(:invalid_text), do: gettext("The text is at most 2000 characters.")

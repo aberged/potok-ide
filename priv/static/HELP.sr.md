@@ -231,7 +231,7 @@ U Ulogama vidiš da li grupa ima sopstveni manifest ili ga nasleđuje, dodaješ 
 
 Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni su na dnu kartice Članovi, u odeljku Procesi, pod imenom koje im daje aplikacija, sa svojim ulogama, i ne broje se među članove. U porukama ih prepoznaješ po oznaci Proces, uz ime onoga ko je proces pokrenuo, a u podgrupi koju je proces napravio njegovo ime vodi na aplikaciju. Ko uređuje aplikaciju, tu vidi koja prava procesu fale, a administrator mu ih daje ulogom.
 
-Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje. Na dnu kartice vidi i polja grupe koja procesi čuvaju, ko ih je poslednji upisao i kada, i može da ih obriše.
+Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje. Na dnu kartice vidi i polja grupe koja procesi čuvaju, ko ih je poslednji upisao i kada, i može da ih obriše. Ispod njih su entiteti, kojima urednik opisuje podatke procesa: entitet ima ime i atribute, a svaki atribut tip, i to tekst, broj, da ili ne, datum, datum i vreme, izbor iz liste ili drugi entitet grupe. Atribut može da bude i lista, i može da bude obavezan.
 
 Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar.
 

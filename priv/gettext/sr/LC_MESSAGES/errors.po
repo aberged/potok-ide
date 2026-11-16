@@ -158,3 +158,30 @@ msgstr "Mesto događaja je grupa ili tačka na mapi, ne oboje."
 
 msgid "That group has no place you can see."
 msgstr "Ta grupa nema mesto koje vidiš."
+
+msgid "is a word processes keep for themselves"
+msgstr "je reč koju procesi čuvaju za sebe"
+
+msgid "must start with a letter and hold only letters, digits and _"
+msgstr "mora da počne slovom i da sadrži samo slova, cifre i _"
+
+msgid "has too many options"
+msgstr "ima previše izbora"
+
+msgid "has an option that is too long"
+msgstr "ima predugačak izbor"
+
+msgid "An entity needs at least one attribute."
+msgstr "Entitetu treba bar jedan atribut."
+
+msgid "An entity has at most 30 attributes."
+msgstr "Entitet ima najviše 30 atributa."
+
+msgid "Two attributes have the same name."
+msgstr "Dva atributa imaju isto ime."
+
+msgid "An entity cannot come to hold itself."
+msgstr "Entitet ne može da sadrži sam sebe, ni preko drugih."
+
+msgid "Entities nest at most 4 deep."
+msgstr "Entiteti se ugnežđuju najviše 4 nivoa duboko."

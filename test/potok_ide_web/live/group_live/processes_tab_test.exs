@@ -239,6 +239,172 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     refute has_element?(lv, "#group-fields")
   end
 
+  describe "entities" do
+    alias PotokIde.Processes.GroupEntities
+    alias PotokIde.Social.Access
+
+    defp entity!(ctx, name, attributes) do
+      access = Access.for_profile(ctx.owner, ctx.group)
+
+      {:ok, entity} =
+        GroupEntities.create(ctx.group, access, %{"name" => name, "attributes" => attributes})
+
+      entity
+    end
+
+    test "only the app's editors see them", ctx do
+      entity = entity!(ctx, "Stan", [%{"name" => "broj", "type" => "number"}])
+
+      {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(member_lv, "#group-entities")
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#group-entity-#{entity.id}", "Stan")
+      assert has_element?(lv, "#group-entity-#{entity.id}", "broj")
+      assert has_element?(lv, "#group-entity-#{entity.id}", "number")
+    end
+
+    test "an editor defines one, row by row", ctx do
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(lv, "#entity-dialog")
+
+      lv |> element("#group-entity-new") |> render_click()
+      assert has_element?(lv, "#entity-dialog #entity-attribute-0")
+
+      # A second row, and the first one becomes a choice.
+      lv
+      |> form("#entity-form")
+      |> render_change(%{
+        "entity" => %{
+          "name" => "Prijava kvara",
+          "attributes" => %{"0" => %{"name" => "vrsta", "type" => "choice"}},
+          "attributes_sort" => ["0", "new"]
+        }
+      })
+
+      assert has_element?(lv, "#entity-attribute-0 input[name='entity[attributes][0][options]']")
+      assert has_element?(lv, "#entity-attribute-1")
+
+      lv
+      |> form("#entity-form")
+      |> render_submit(%{
+        "entity" => %{
+          "name" => "Prijava kvara",
+          "attributes" => %{
+            "0" => %{"name" => "vrsta", "type" => "choice", "options" => "voda, struja"},
+            "1" => %{"name" => "sprat", "type" => "number", "required" => "true"}
+          }
+        }
+      })
+
+      refute has_element?(lv, "#entity-dialog")
+
+      assert [%{name: "Prijava kvara", attributes: [vrsta, sprat]}] =
+               GroupEntities.list(ctx.group)
+
+      assert %{name: "vrsta", type: "choice", options: ["voda", "struja"]} = vrsta
+      assert %{name: "sprat", type: "number", required: true} = sprat
+      assert has_element?(lv, "#group-entities-list", "Prijava kvara")
+    end
+
+    test "what is wrong shows in the form", ctx do
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      lv |> element("#group-entity-new") |> render_click()
+
+      lv
+      |> form("#entity-form")
+      |> render_submit(%{
+        "entity" => %{
+          "name" => "Stan",
+          "attributes" => %{
+            "0" => %{"name" => "broj", "type" => "number"},
+            "1" => %{"name" => "broj", "type" => "text"}
+          },
+          "attributes_sort" => ["0", "1"]
+        }
+      })
+
+      assert has_element?(lv, "#entity-dialog .entity-form-error")
+      assert GroupEntities.list(ctx.group) == []
+    end
+
+    test "an editor changes one, holds another in it and deletes it", ctx do
+      stan = entity!(ctx, "Stan", [%{"name" => "broj", "type" => "number"}])
+      zgrada = entity!(ctx, "Zgrada", [%{"name" => "adresa", "type" => "text"}])
+      [adresa] = zgrada.attributes
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      lv |> element("#group-entity-#{zgrada.id}-edit") |> render_click()
+      assert has_element?(lv, "#entity-dialog", "Zgrada")
+
+      lv
+      |> form("#entity-form")
+      |> render_change(%{
+        "entity" => %{
+          "attributes" => %{"0" => %{"id" => adresa.id, "name" => "adresa", "type" => "text"}},
+          "attributes_sort" => ["0", "new"]
+        }
+      })
+
+      lv
+      |> form("#entity-form")
+      |> render_change(%{
+        "entity" => %{
+          "attributes" => %{
+            "0" => %{"id" => adresa.id, "name" => "adresa", "type" => "text"},
+            "1" => %{"name" => "stanovi", "type" => "entity"}
+          },
+          "attributes_sort" => ["0", "1"]
+        }
+      })
+
+      assert has_element?(
+               lv,
+               "#entity-attribute-1 select[name='entity[attributes][1][entity_id]']"
+             )
+
+      lv
+      |> form("#entity-form")
+      |> render_submit(%{
+        "entity" => %{
+          "attributes" => %{
+            "0" => %{"id" => adresa.id, "name" => "adresa", "type" => "text"},
+            "1" => %{
+              "name" => "stanovi",
+              "type" => "entity",
+              "entity_id" => to_string(stan.id),
+              "list" => "true"
+            }
+          },
+          "attributes_sort" => ["0", "1"]
+        }
+      })
+
+      refute has_element?(lv, "#entity-dialog")
+      assert has_element?(lv, "#group-entity-#{zgrada.id}", "list of Stan")
+
+      # What another holds stays.
+      lv |> element("#group-entity-#{stan.id}-edit") |> render_click()
+      lv |> element("#entity-delete") |> render_click()
+      assert GroupEntities.get(ctx.group, stan.id)
+
+      lv |> element("#entity-dialog-close") |> render_click()
+      lv |> element("#group-entity-#{zgrada.id}-edit") |> render_click()
+      lv |> element("#entity-delete") |> render_click()
+      refute has_element?(lv, "#group-entity-#{zgrada.id}")
+      refute GroupEntities.get(ctx.group, zgrada.id)
+    end
+
+    test "follows what another editor defines", ctx do
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(lv, "#group-entities-list")
+
+      entity = entity!(ctx, "Stan", [%{"name" => "broj", "type" => "number"}])
+
+      assert has_element?(lv, "#group-entity-#{entity.id}")
+    end
+  end
+
   test "a drawing that is off shows to the app's editors only", ctx do
     row = draw!(ctx, false)
 

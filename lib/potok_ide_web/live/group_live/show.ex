@@ -711,6 +711,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             apps={@processes_apps}
             tasks={@processes_tasks}
             fields={@processes_fields}
+            entities={@processes_entities}
+            entity={@processes_entity}
             can_draw?={@processes_can_draw?}
             editor={@process_editor}
             editor_form={@process_editor_form}

@@ -82,6 +82,7 @@ const TABLES = {
     AppProcess: [COLUMN[3], 356],
     ValueProcess: [COLUMN[4], 356],
     GroupField: [COLUMN[3], 428],
+    GroupEntity: [COLUMN[4], 428],
     Event: [COLUMN[3], 524],
     Response: [COLUMN[4], 524],
     MemberSetting: [COLUMN[4], 596],

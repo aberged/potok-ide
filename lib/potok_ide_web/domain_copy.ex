@@ -347,6 +347,11 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupField", "app_process_id"),
     do: dgettext("domain_map", "process that wrote it last")
 
+  defp own_field("GroupEntity", "attributes"),
+    do: dgettext("domain_map", "attributes and their types")
+
+  defp own_field("GroupEntity", "lock_version"), do: dgettext("domain_map", "revision")
+
   defp own_field("ValueProcess", "depth"),
     do: dgettext("domain_map", "how many processes deep")
 
@@ -563,6 +568,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
   def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
   def entity_name("GroupField"), do: dgettext("domain_map", "Group field")
+  def entity_name("GroupEntity"), do: dgettext("domain_map", "Entity definition")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -731,6 +737,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A field the processes drawn in a group keep for each other: a step sets it, or adds a number to it, and every drawn process of the group reads it. A group has at most 50, each name once. Deleting the group takes them along, and the process that wrote one last may go first."
+    )
+  end
+
+  defp entity_description("GroupEntity", _edges) do
+    dgettext(
+      "domain_map",
+      "What the data of the processes drawn in a group looks like, as its editors define it: a name and up to 30 attributes, each with the type of what it holds. An attribute holds a text, a number, a yes or no, a date, a date and time, one of the choices it lists, or another entity of the group, and may be a list of them. Entities nest at most four deep and never in a circle. A group has at most 50, each name once in any letter case, and one that another holds cannot be deleted. Deleting the group takes them along."
     )
   end
 
@@ -1003,6 +1016,14 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("group_fields_value_check") do
     dgettext("domain_map", "The text has at most 1,000 characters.")
+  end
+
+  def check_text("group_entities_name_check") do
+    dgettext("domain_map", "The name has 1 to 40 characters.")
+  end
+
+  def check_text("group_entities_attributes_check") do
+    dgettext("domain_map", "The attributes are kept as a list.")
   end
 
   def check_text("value_processes_depth_check") do

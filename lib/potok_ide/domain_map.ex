@@ -49,7 +49,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupValueRead,
        PotokIde.Social.AppProcess,
        PotokIde.Processes.ValueProcess,
-       PotokIde.Processes.GroupField
+       PotokIde.Processes.GroupField,
+       PotokIde.Processes.GroupEntity
      ]},
     {"calendar",
      [PotokIde.Events.Event, PotokIde.Events.Response, PotokIde.Events.MemberSetting]},
@@ -191,6 +192,8 @@ defmodule PotokIde.DomainMap do
     "enum(" <> Enum.map_join(mappings, " | ", fn {value, _} -> value end) <> ")"
   end
 
+  # Embedded rows (`GroupEntity.attributes`) are a list of maps in one column.
+  defp type_name({:parameterized, {Ecto.Embedded, %{cardinality: :many}}}), do: "map[]"
   defp type_name({:array, type}), do: type_name(type) <> "[]"
   # A PostGIS column (`Group.area`), by the database's name for it.
   defp type_name(Geo.PostGIS.Geometry), do: "geometry"
