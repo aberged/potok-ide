@@ -13,6 +13,7 @@ defmodule PotokIde.Social do
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Presence
+  alias PotokIde.Processes.Engine
   alias PotokIde.Polls
   alias PotokIde.Polls.Poll
   alias PotokIde.PushNotifications.Dispatch
@@ -496,9 +497,20 @@ defmodule PotokIde.Social do
   end
 
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
-    with {:ok, attrs} <- checked_group_attrs(creator, parent, Map.new(attrs)) do
-      insert_group_with_creator(creator, parent, attrs)
+    with {:ok, attrs} <- checked_group_attrs(creator, parent, Map.new(attrs)),
+         {:ok, group} <- insert_group_with_creator(creator, parent, attrs) do
+      start_subgroup_processes(group, parent, creator)
+      {:ok, group}
     end
+  end
+
+  # A sub-group made one at a time starts the processes drawn in its parent
+  # on new sub-groups (`Processes.Engine.start_on_subgroup/3`); records,
+  # threads, an app's file groups and a process's sub-groups never come here.
+  defp start_subgroup_processes(group, parent, creator) do
+    {:ok, started} = Repo.transaction(fn -> Engine.start_on_subgroup(group, parent, creator) end)
+    if started != [], do: PotokIde.Processes.Scheduler.nudge()
+    started
   end
 
   @doc """
@@ -519,14 +531,15 @@ defmodule PotokIde.Social do
         %Group{} = parent,
         preset,
         choices,
-        place \\ %{}
+        place \\ %{},
+        opts \\ []
       ) do
     if GroupPresets.allowed?(preset, parent),
-      do: insert_from_preset(creator, parent, preset, choices, place),
+      do: insert_from_preset(creator, parent, preset, choices, place, opts),
       else: {:error, :preset_not_allowed}
   end
 
-  defp insert_from_preset(creator, parent, preset, choices, place) do
+  defp insert_from_preset(creator, parent, preset, choices, place, opts) do
     attrs =
       preset
       |> GroupPresets.attrs(choices)
@@ -542,17 +555,24 @@ defmodule PotokIde.Social do
                GroupPresets.preset(preset)
              ),
            {:ok, feed, feed_created} <- insert_preset_feed(creator, group, preset) do
-        {group, feed, created ++ feed_created}
+        # An import (`opts[:processes]` false) starts none.
+        started =
+          if Keyword.get(opts, :processes, true),
+            do: Engine.start_on_subgroup(group, parent, creator),
+            else: []
+
+        {group, feed, created ++ feed_created, started}
       else
         {:error, reason} -> Repo.rollback(reason)
       end
     end)
     |> case do
-      {:ok, {group, feed, created}} ->
+      {:ok, {group, feed, created, started}} ->
         Enum.each(created, fn {parent, group, changes} ->
           broadcast_group_created(creator, parent, group, changes)
         end)
 
+        if started != [], do: PotokIde.Processes.Scheduler.nudge()
         {:ok, %{group: group, feed: feed}}
 
       {:error, reason} ->
@@ -2359,9 +2379,14 @@ defmodule PotokIde.Social do
         |> Multi.run(:group_last_value_at, fn repo, %{value: value} ->
           {:ok, set_group_last_value_at(repo, group.id, value.inserted_at)}
         end)
+        # A member's message starts the processes drawn on messages it holds
+        # the words of (`Processes.Engine.start_on_message/3`).
+        |> Multi.run(:processes, fn _repo, %{value: value} ->
+          {:ok, if(access.member?, do: Engine.start_on_message(value, group, creator), else: [])}
+        end)
         |> Repo.transaction()
         |> case do
-          {:ok, %{value: value}} ->
+          {:ok, %{value: value, processes: started}} ->
             value = value |> Repo.preload(value_display_preloads()) |> put_process_triggers()
 
             {:ok, value,
@@ -2370,6 +2395,7 @@ defmodule PotokIde.Social do
                broadcast_group_value_unread(creator, group, value)
                notify_group_members_of_new_value(creator, group, value, access)
                schedule_link_preview(value)
+               if started != [], do: PotokIde.Processes.Scheduler.nudge()
              end}
 
           {:error, _step, reason, _changes} ->
