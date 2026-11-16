@@ -68,6 +68,15 @@ defmodule PotokIdeWeb.GroupLive.DetachedGroupsTest do
     assert has_element?(lv, "#group-back-link[href='/groups']")
   end
 
+  test "the way up from its sub-groups is the root, in the same view", ctx do
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+    assert has_element?(
+             lv,
+             "#group-parent-sub-groups[href='/groups/#{ctx.root.id}/sub_groups?sub_groups_kind=other&view=tree']"
+           )
+  end
+
   defp account_with_profile!(username) do
     account = account_fixture()
 

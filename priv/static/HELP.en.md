@@ -156,6 +156,8 @@ At the top of a group are its name, the path to it and the tabs: Messages, Files
 
 The group's menu has the group's description, sharing a public group's link, tags, notices, roles, creating a sub-group, inviting and editing the group. Which of these you see depends on your permissions.
 
+On the Sub-groups tab, the left arrow at the top left goes one level up: it opens the sub-groups of the group this one sits in, in the same view, as a list or as folders.
+
 A group's description can be a text, a page from a template or an app. Under it are the reactions to the group and the group's place on the map.
 
 ![The group's menu](grupa-meni) ![A group's description, reactions and area on the map](o-grupi)

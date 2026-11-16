@@ -162,6 +162,8 @@ Na vrhu grupe su njen naziv, putanja do nje i kartice: Poruke, Fajlovi, Kalendar
 
 Meni grupe ima opis grupe, deljenje linka javne grupe, tagove, obaveštenja, uloge, pravljenje podgrupe, pozivanje i uređivanje grupe. Šta od toga vidiš, zavisi od tvojih dozvola.
 
+Na kartici Podgrupe, strelica ulevo, gore levo, vodi jedan nivo iznad: otvara podgrupe grupe u kojoj ova stoji, u istom prikazu, kao spisak ili kao fascikle.
+
 Opis grupe može biti tekst, stranica iz šablona ili aplikacija. Ispod njega su reakcije na grupu i mesto grupe na mapi.
 
 ![Meni grupe](grupa-meni) ![Opis grupe, reakcije i područje na mapi](o-grupi)

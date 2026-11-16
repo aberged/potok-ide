@@ -2702,14 +2702,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   defp group_identity_picture_url(group, _current_profile), do: group_picture_url(group)
 
-  defp group_identity_name(%{is_direct: true} = group, current_profile) do
+  @doc """
+  The name a group goes by for the profile: a direct conversation is named
+  after the other side.
+  """
+  def group_identity_name(%{is_direct: true} = group, current_profile) do
     case direct_group_other_member(group, current_profile) do
       %{username: username} when is_binary(username) and username != "" -> username
       _ -> group.name
     end
   end
 
-  defp group_identity_name(group, _current_profile), do: group.name
+  def group_identity_name(group, _current_profile), do: group.name
 
   defp highlighted_text_segments(text, query)
 

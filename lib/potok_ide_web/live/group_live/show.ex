@@ -580,6 +580,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             thread_sub_groups_unread_count={@thread_sub_groups_unread_count}
             show_public_sub_groups={@show_public_sub_groups}
             sub_groups_view={@sub_groups_view}
+            parent={parent_sub_groups(@group, @group_path, @sub_groups_view, @current_profile)}
             tree={@sub_group_tree}
             row_menu={@group_row_menu}
           />
@@ -5668,6 +5669,33 @@ defmodule PotokIdeWeb.GroupLive.Show do
       not Enum.any?(path, &(&1.id == parent_id)) -> ~p"/groups"
       value_id -> ~p"/groups/#{parent_id}/values"
       true -> ~p"/groups/#{parent_id}/sub_groups"
+    end
+  end
+
+  # Where the arrow of the sub-groups panel leads: one level up, to the
+  # sub-groups of the parent in the view this page shows. The root stands in
+  # for a parent the profile cannot see, as in `back_path/2`.
+  defp parent_sub_groups(%Group{parent_id: nil}, _path, _view, _profile), do: nil
+
+  defp parent_sub_groups(%Group{parent_id: parent_id}, path, view, profile) do
+    case Enum.find(path, &(&1.id == parent_id)) || Enum.find(path, & &1.is_root) do
+      nil ->
+        %{path: ~p"/groups", label: gettext("Groups")}
+
+      %Group{is_root: true} = root ->
+        %{
+          path: group_tab_path(root, "sub_groups", sub_groups_view: view),
+          label: gettext("Groups")
+        }
+
+      %Group{} = parent ->
+        %{
+          path: group_tab_path(parent, "sub_groups", sub_groups_view: view),
+          label:
+            gettext("Sub-groups of %{name}",
+              name: Components.group_identity_name(parent, profile)
+            )
+        }
     end
   end
 

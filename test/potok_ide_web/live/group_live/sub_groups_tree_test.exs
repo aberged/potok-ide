@@ -204,6 +204,43 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsTreeTest do
            )
   end
 
+  test "the way up opens the parent's sub-groups in the same view", ctx do
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.child.id}/sub_groups")
+
+    assert has_element?(
+             lv,
+             "#group-children-filters > #group-parent-sub-groups[href='/groups/#{ctx.group.id}/sub_groups']"
+           )
+
+    lv |> element("#group-children-view-tree") |> render_click()
+
+    assert has_element?(
+             lv,
+             "#group-parent-sub-groups[href='/groups/#{ctx.group.id}/sub_groups?view=tree']"
+           )
+
+    {:ok, parent_lv, _html} =
+      lv |> element("#group-parent-sub-groups") |> render_click() |> follow_redirect(ctx.conn)
+
+    assert has_element?(parent_lv, "#group-children-tree #sub-group-folder-#{ctx.child.id}")
+  end
+
+  test "the way up from a top group is the root, which has none", ctx do
+    root = Social.get_root_group!()
+
+    {:ok, lv, _html} = live(ctx.conn, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+    assert has_element?(
+             lv,
+             "#group-parent-sub-groups[href='/groups/#{root.id}/sub_groups?sub_groups_kind=other&view=tree']"
+           )
+
+    {:ok, root_lv, _html} = live(ctx.conn, ~p"/groups/#{root.id}/sub_groups?view=tree")
+
+    assert has_element?(root_lv, "#group-children-filters")
+    refute has_element?(root_lv, "#group-parent-sub-groups")
+  end
+
   test "direct conversations on the root group stay a list", %{conn: conn} do
     root_group = Social.get_root_group!()
 

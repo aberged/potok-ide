@@ -39,6 +39,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
     doc: "whether the root shows the public groups the viewer is not in and does not follow"
 
   attr :sub_groups_view, :string, default: "list", doc: "\"list\" or \"tree\""
+
+  attr :parent, :map,
+    default: nil,
+    doc: "the `path` and `label` of the way one level up, nil in the root"
+
   attr :tree, :map, default: nil, doc: "the `SubGroupTree` of the group"
   attr :time_zone, :string, required: true, doc: "the viewer's, for when sub-groups were active"
   attr :row_menu, :map, default: nil, doc: "the open menu of a row (`GroupMenu.row_menu/1`)"
@@ -90,9 +95,24 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         phx-mounted={JS.ignore_attributes(["data-collapsed"])}
         class="group/filters relative z-45 flex shrink-0 items-start justify-end gap-2 px-2 pb-1"
       >
+        <%!-- One level up, to the parent's sub-groups in this same view. It
+             is no filter, so it stays when the bar is folded. --%>
+        <.link
+          :if={@parent}
+          id="group-parent-sub-groups"
+          navigate={@parent.path}
+          aria-label={@parent.label}
+          title={@parent.label}
+          class="mr-auto mt-1 inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-gray-500/50 bg-base-100 text-base-content/70 shadow-xs transition duration-150 ease-out hover:-translate-y-px hover:text-base-content active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 max-sm:group-has-[input:focus]/filters:hidden"
+        >
+          <.icon name="hero-arrow-left" class="size-4" />
+        </.link>
+        <%!-- Where a narrow phone has no room for all of them, the last
+             controls take a second row instead of pushing the bar off the
+             screen. --%>
         <div
           id="group-children-filters-body"
-          class="flex items-start gap-2 group-data-collapsed/filters:hidden"
+          class="flex min-w-0 flex-wrap items-start justify-end gap-2 group-data-collapsed/filters:hidden"
         >
           <%!-- List or folder tree; direct conversations are always a list.
              Phones get one button that flips to the other view, so the
