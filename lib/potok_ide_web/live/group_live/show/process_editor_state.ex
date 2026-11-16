@@ -486,6 +486,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     end
   end
 
+  # The list a loop goes through, picked by its name.
+  defp editing("process_editor_insert_field", %{"target" => "list_expr", "path" => path}, socket) do
+    case socket.assigns.process_editor.selected do
+      {:node, id} ->
+        graph_change(socket, &GraphEdit.update_node(&1, id, %{"list" => path}))
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
   # A name put into what a step sets, where that is an expression.
   defp editing("process_editor_insert_field", %{"target" => "value_expr", "path" => path}, socket) do
     case socket.assigns.process_editor.selected do
@@ -976,16 +987,27 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     attrs =
       params
-      |> Map.take(~w(label text in name role field op value target))
+      |> Map.take(~w(label text in name role field op value target list item))
       |> maybe_put("admins", admins(params))
       |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
       |> Map.merge(signal_attrs(node, params, socket.assigns.process_editor))
+      |> Map.merge(assign_attrs(node, params, socket.assigns.process_editor))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
     end
   end
+
+  # A step adds to a list only while what it sets is one: with another
+  # target picked, it sets again.
+  defp assign_attrs(%{"action" => "assign"} = node, params, editor) do
+    target = params["target"] || node["target"]
+    op = params["op"] || node["op"]
+    %{"op" => if(op == "append" and list_target?(editor, target), do: "append", else: "set")}
+  end
+
+  defp assign_attrs(_node, _params, _editor), do: %{}
 
   # The process a call starts, whether it waits, and the fields it hands
   # over: those the process takes, keeping what was typed for the same name.
@@ -1248,6 +1270,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp defaults(socket) do
     editor = socket.assigns.process_editor
     callee = List.first(editor.callable)
+    variables = Map.get(editor.graph, "variables", [])
     signal = editor.signals |> Map.keys() |> Enum.sort() |> List.first() || gettext("ready")
 
     # The entity those who wait for that signal expect, where they agree.
@@ -1263,11 +1286,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       role: "admin",
       outcomes: [gettext("Approve"), gettext("Decline")],
       outcome: gettext("Outcome"),
-      variable:
-        editor.graph |> Map.get("variables", []) |> List.first() |> then(&(&1 && &1["name"])),
+      variable: variables |> List.first() |> then(&(&1 && &1["name"])),
       group_field: gettext("field"),
       signal: signal,
       signal_entity: signal_entity,
+      # A loop starts on the first list the drawing keeps, if it keeps one.
+      loop_list: List.first(for(%{"name" => name, "list" => true} <- variables, do: name)) || "",
+      loop_item: gettext("item"),
       process: callee && callee.id,
       call_fields: if(callee, do: Map.new(callee.fields, &{&1, ""}), else: %{})
     }
@@ -1477,6 +1502,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   """
   def data(editor) do
     start = Graph.start(editor.graph)
+    names = Scope.names(told(editor))
 
     entry =
       case entry(editor) do
@@ -1510,6 +1536,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           [{"#{id}.from", :text}] ++
             for(field <- carried(editor, signal), do: {Scope.path(id, field), :any})
 
+        %{"type" => "loop", "id" => id, "item" => item} ->
+          [{item, Map.get(names, item, :any)}, {"#{id}.index", :number}, {"#{id}.count", :number}]
+
         _other ->
           []
       end)
@@ -1522,22 +1551,87 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     }
   end
 
+  # The drawing as far as its names can be told just now: with the group's
+  # entities, what its trigger hands a run, and what an item of each loop is.
+  defp told(editor) do
+    graph =
+      editor.graph
+      |> Map.put("types", GroupEntities.definitions(editor[:entities] || []))
+      |> Map.put("entry", Types.json(entry(editor)))
+
+    {:ok, graph} = Check.items(graph, loose: true)
+    graph
+  end
+
   @doc """
   Whether what a step sets is written as a text, which may hold expressions
-  in braces, rather than as one expression: a text or a choice is.
+  in braces, rather than as one expression: a text or a choice is, and so
+  is an item of a list of them for a step that adds to the list (`op`).
   """
-  def textual_target?(editor, target) when is_binary(target) do
+  def textual_target?(editor, target, op \\ "set") do
+    case target_type(editor, target) do
+      {:list, item} when op == "append" -> Types.textual?(item)
+      nil -> false
+      type -> Types.textual?(type)
+    end
+  end
+
+  @doc "Whether what a step sets holds a list, which it may also add to."
+  def list_target?(editor, target), do: match?({:list, _item}, target_type(editor, target))
+
+  defp target_type(editor, target) when is_binary(target) do
     graph = Map.put(editor.graph, "types", GroupEntities.definitions(editor[:entities] || []))
 
     with {:ok, tree} <- PotokIde.Processes.Expr.parse(target),
          {:ok, type} <- PotokIde.Processes.Expr.check(tree, Scope.scope(graph)) do
-      PotokIde.Processes.Types.textual?(type)
+      type
     else
-      _unknown -> false
+      _unknown -> nil
     end
   end
 
-  def textual_target?(_editor, _target), do: false
+  defp target_type(_editor, _target), do: nil
+
+  @doc """
+  The lists a loop may go through, as an expression names them: the lists
+  among the names of the process, and those their entities hold, but not
+  what the loop on hand hands out itself.
+  """
+  def list_hints(editor) do
+    graph = told(editor)
+    entities = graph["types"]
+
+    own =
+      with {:node, id} <- editor.selected,
+           %{"item" => item} when is_binary(item) <- Graph.node(editor.graph, id) do
+        item
+      else
+        _no_loop -> nil
+      end
+
+    for {name, type} <- Enum.sort(Scope.names(graph)),
+        is_binary(name) and name not in ["", own],
+        path <- lists(name, type, entities, 2),
+        do: path
+  end
+
+  defp lists(name, {:list, _item}, _entities, _depth), do: [name]
+  defp lists(_name, _type, _entities, 0), do: []
+
+  defp lists(name, {:entity, id}, entities, depth) do
+    for attribute <- Types.attributes(entities, id) || [],
+        path <-
+          lists(Scope.path(name, attribute["name"]), Types.of(attribute), entities, depth - 1),
+        do: path
+  end
+
+  defp lists(name, {:record, fields, _open?}, entities, depth) do
+    for {field, type} <- Enum.sort(fields),
+        path <- lists(Scope.path(name, field), type, entities, depth - 1),
+        do: path
+  end
+
+  defp lists(_name, _type, _entities, _depth), do: []
 
   @doc """
   What a step may set, as it names it: each variable, and for one that holds
@@ -1690,7 +1784,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
             from: flow["from"],
             to: flow["to"],
             kind: flow_kind(flow),
-            label: flow_label(flow),
+            label: flow_label(flow) || exit_label(editor.graph, flow),
             invalid: invalid == {:flow, flow["key"]}
           }
         end),
@@ -1721,6 +1815,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def field_hints(editor) do
     own = with {:node, id} <- editor.selected, do: id
     group = Enum.map(group_field_names(editor), &Scope.path("group", &1))
+    names = Scope.names(told(editor))
+    definitions = GroupEntities.definitions(editor[:entities] || [])
 
     results =
       Enum.flat_map(editor.graph["nodes"], fn
@@ -1735,6 +1831,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
         %{"type" => "userTask", "id" => id} ->
           ["#{id}.outcome", "#{id}.by"]
+
+        %{"type" => "loop", "id" => id, "item" => item} ->
+          held =
+            case Map.get(names, item) do
+              {:entity, entity} -> attribute_paths(item, entity, definitions, 2)
+              _plain -> []
+            end
+
+          [item | held] ++ ["#{id}.index"]
 
         _other ->
           []
@@ -1826,7 +1931,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       %{"action" => "assign"} ->
         target = if node["target"] in [nil, ""], do: gettext("a variable"), else: node["target"]
 
-        {"assign", "hero-variable", label || gettext("Set %{name}", name: target), node["value"]}
+        title =
+          if node["op"] == "append",
+            do: gettext("Add to list %{name}", name: target),
+            else: gettext("Set %{name}", name: target)
+
+        {"assign", "hero-variable", label || title, node["value"]}
+
+      %{"type" => "loop"} ->
+        {"loop", "hero-arrow-path", label || gettext("For each %{item}", item: node["item"]),
+         node["list"]}
 
       %{"action" => "set", "op" => "add"} ->
         {"set", "hero-pencil-square", label || gettext("Add to %{field}", field: node["field"]),
@@ -1873,8 +1987,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp unit_text(n, "days"), do: ngettext("%{count} day", "%{count} days", n)
   defp unit_text(n, "weeks"), do: ngettext("%{count} week", "%{count} weeks", n)
 
+  # The plain flow of a loop is the way on after its last item.
+  defp exit_label(graph, %{"from" => from}) do
+    case Graph.node(graph, from) do
+      %{"type" => "loop"} -> gettext("after the last")
+      _other -> nil
+    end
+  end
+
   defp flow_kind(flow) do
     cond do
+      Map.has_key?(flow, "each") -> "each"
       Map.has_key?(flow, "outcome") -> "outcome"
       Map.has_key?(flow, "deadline") -> "deadline"
       Map.has_key?(flow, "default") -> "default"
@@ -1887,6 +2010,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def flow_label(%{"outcome" => outcome}), do: outcome
   def flow_label(%{"deadline" => true}), do: gettext("deadline passed")
   def flow_label(%{"default" => true}), do: gettext("otherwise")
+  def flow_label(%{"each" => true}), do: gettext("for each")
 
   def flow_label(%{"condition" => %{"expr" => expression}}) do
     if String.length(expression) > 36,
@@ -1917,7 +2041,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         {deadline_amount, deadline_unit} = amount(node["deadline"])
 
         node
-        |> Map.take(~w(label text in name role admins fields field op value target))
+        |> Map.take(~w(label text in name role admins fields field op value target list item))
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
@@ -1976,6 +2100,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:not_a_number, _path), do: gettext("Adding takes a number, or a field.")
 
+  defp reason_text(:no_list, _path), do: gettext("Say which list the loop goes through.")
+
+  defp reason_text(:loop_flows, _path),
+    do: gettext("A loop needs one way into its own steps and one way on.")
+
+  defp reason_text(:loop_empty, _path), do: gettext("A loop needs a step of its own.")
+
+  defp reason_text(:loop_open, _path),
+    do: gettext("The steps of a loop lead back to the loop, not to an end.")
+
+  defp reason_text(:loop_entered, _path),
+    do: gettext("Only the loop itself leads into its own steps.")
+
+  defp reason_text(:invalid, "nodes." <> rest = path) do
+    if String.ends_with?(rest, ".item"),
+      do: gettext("An item is named in one word: letters, digits and _, starting with a letter."),
+      else: invalid_text(path)
+  end
+
   defp reason_text(:required, _path),
     do: gettext("An attribute that must be filled in is left empty.")
 
@@ -2016,7 +2159,36 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp reason_text(:too_many, "variables" <> _rest),
     do: gettext("A drawing keeps at most 30 variables.")
 
-  defp reason_text(:invalid, path) do
+  defp reason_text(:invalid, path), do: invalid_text(path)
+
+  # What an expression says wrong (`Processes.Expr`).
+  defp reason_text({:syntax, at}, _path),
+    do: gettext("This cannot be read from its character %{at} on.", at: at + 1)
+
+  defp reason_text({:unknown_name, name}, _path),
+    do: gettext("The process has nothing named %{name}.", name: name)
+
+  defp reason_text({:unknown_attribute, name}, _path),
+    do: gettext("There is no %{name} in that.", name: name)
+
+  defp reason_text({:unknown_function, name}, _path),
+    do: gettext("There is no function %{name}.", name: name)
+
+  defp reason_text({:arguments, name}, _path),
+    do: gettext("The function %{name} takes something else.", name: name)
+
+  defp reason_text({:mismatch, expected, got}, _path),
+    do:
+      gettext("Here goes %{expected}, and this is %{got}.",
+        expected: type_text(expected),
+        got: type_text(got)
+      )
+
+  defp reason_text(:reserved, _path), do: gettext("That name is taken by the process itself.")
+  defp reason_text(_reason, _path), do: gettext("The ways on from this step are not right.")
+
+  # What is missing or too long, by where it stands.
+  defp invalid_text(path) do
     cond do
       String.ends_with?(path, ".target") ->
         gettext("Pick what the step sets: a variable, or an attribute of one.")
@@ -2058,32 +2230,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         gettext("Something here is missing.")
     end
   end
-
-  # What an expression says wrong (`Processes.Expr`).
-  defp reason_text({:syntax, at}, _path),
-    do: gettext("This cannot be read from its character %{at} on.", at: at + 1)
-
-  defp reason_text({:unknown_name, name}, _path),
-    do: gettext("The process has nothing named %{name}.", name: name)
-
-  defp reason_text({:unknown_attribute, name}, _path),
-    do: gettext("There is no %{name} in that.", name: name)
-
-  defp reason_text({:unknown_function, name}, _path),
-    do: gettext("There is no function %{name}.", name: name)
-
-  defp reason_text({:arguments, name}, _path),
-    do: gettext("The function %{name} takes something else.", name: name)
-
-  defp reason_text({:mismatch, expected, got}, _path),
-    do:
-      gettext("Here goes %{expected}, and this is %{got}.",
-        expected: type_text(expected),
-        got: type_text(got)
-      )
-
-  defp reason_text(:reserved, _path), do: gettext("That name is taken by the process itself.")
-  defp reason_text(_reason, _path), do: gettext("The ways on from this step are not right.")
 
   # A type in words, as a sentence about a mistake names it.
   defp type_text(:number), do: gettext("a number")
@@ -2222,6 +2368,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp refusal(:start), do: gettext("The start stays.")
   defp refusal(:last_end), do: gettext("The last end stays.")
   defp refusal(:last_branch), do: gettext("The last branch stays.")
+  defp refusal(:last_in_loop), do: gettext("A loop keeps at least one step of its own.")
   defp refusal(:needed), do: gettext("This way on is needed; send it elsewhere instead.")
   defp refusal(:too_many), do: gettext("There are too many already.")
   defp refusal(:self), do: gettext("A step cannot lead to itself.")

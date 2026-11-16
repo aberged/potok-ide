@@ -68,6 +68,17 @@ defmodule PotokIde.Processes.Graph do
     signal carries, by its id: the wait then brings its attributes, and the
     signal's `fields` are its attributes, each a text for a text and an
     expression for anything else.
+  - `loop` goes through a list an item at a time: `list` is an expression
+    that gives the list, and `item` the name each item is read by while its
+    turn lasts. It leaves by two flows: one with `"each" => true` into its
+    body, taken once for every item, and a plain one, taken after the last.
+    The body is closed: it comes back to the loop and nowhere else, reaches
+    no end, and nothing but the loop leads into it (`body/2`). The loop's
+    own id reads where it stands (`petlja.index`, from 1, and
+    `petlja.count`). `of` is the type of an item, which
+    `PotokIde.Processes.Check` wrote into it.
+  - A `serviceTask` `assign` with the `op` `append` adds its `value` to the
+    list its `target` holds.
   - `zone` is the time zone it reads days and hours in, and `entry` and
     `types` are what `PotokIde.Processes.Check` wrote into it.
 
@@ -141,8 +152,9 @@ defmodule PotokIde.Processes.Graph do
              ids = MapSet.new(nodes, & &1["id"]),
              {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids, version)),
              :ok <- of_its_language(nodes, version),
+             {:ok, names} <- with_items(nodes, ids),
              :ok <- shape(nodes, flows),
-             {:ok, kept} <- kept(graph, version, ids) do
+             {:ok, kept} <- kept(graph, version, names) do
           {:ok, Map.merge(kept, %{"nodes" => nodes, "flows" => flows})}
         end
     end
@@ -174,14 +186,33 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
-  # Only today's language sets variables.
+  # Only today's language sets variables and goes through lists.
   defp of_its_language(_nodes, 2), do: :ok
 
   defp of_its_language(nodes, 1) do
-    case Enum.find_index(nodes, &(&1["action"] == "assign")) do
-      nil -> :ok
-      i -> {:error, {"nodes.#{i}.action", :invalid}}
-    end
+    nodes
+    |> Enum.with_index()
+    |> Enum.find_value(:ok, fn
+      {%{"type" => "loop"}, i} -> {:error, {"nodes.#{i}.type", :invalid}}
+      {%{"action" => "assign"}, i} -> {:error, {"nodes.#{i}.action", :invalid}}
+      _other -> nil
+    end)
+  end
+
+  # The names the steps take: their ids, and the item of each loop, which
+  # no step and no other loop may share.
+  defp with_items(nodes, ids) do
+    nodes
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, ids}, fn
+      {%{"type" => "loop", "item" => item}, i}, {:ok, taken} ->
+        if MapSet.member?(taken, item),
+          do: {:halt, {:error, {"nodes.#{i}.item", :taken}}},
+          else: {:cont, {:ok, MapSet.put(taken, item)}}
+
+      _other, acc ->
+        {:cont, acc}
+    end)
   end
 
   # What a run keeps for itself: each a name no step and no other variable
@@ -473,6 +504,30 @@ defmodule PotokIde.Processes.Graph do
   @doc "The flows that leave the element `id`, in the order the graph lists them."
   def out(%{"flows" => flows}, id), do: Enum.filter(flows, &(&1["from"] == id))
 
+  @doc """
+  The ids of the steps in the body of the loop `id`: what its `each` flow
+  reaches before coming back to the loop. None for a loop whose flow leads
+  nowhere but to itself.
+  """
+  def body(%{"flows" => flows} = graph, id) do
+    next = Enum.group_by(flows, & &1["from"], & &1["to"])
+
+    case Enum.find(out(graph, id), &(&1["each"] == true)) do
+      %{"to" => ^id} ->
+        []
+
+      %{"to" => first} ->
+        [first]
+        |> walk(MapSet.new([first, id]), &Map.get(next, &1, []))
+        |> MapSet.delete(id)
+        |> MapSet.to_list()
+        |> Enum.sort()
+
+      nil ->
+        []
+    end
+  end
+
   @doc "The seconds of a duration the graph holds, such as `\"P3D\"`."
   def seconds(duration) when is_binary(duration) do
     case Regex.run(@duration_format, duration) do
@@ -547,7 +602,7 @@ defmodule PotokIde.Processes.Graph do
       not (is_binary(target) and Regex.match?(@target_format, String.trim(target))) ->
         {:error, {path <> ".target", :invalid}}
 
-      op not in ~w(set) ->
+      op not in ~w(set append) ->
         {:error, {path <> ".op", :invalid}}
 
       not (is_binary(value) and String.length(value) <= @max_template) ->
@@ -607,6 +662,29 @@ defmodule PotokIde.Processes.Graph do
   defp typed("timer", node, path, base, _drawn?) do
     with {:ok, duration} <- duration(node["duration"], path <> ".duration") do
       {:ok, Map.put(base, "duration", duration)}
+    end
+  end
+
+  # A loop: the list it goes through, as an expression `Check` reads, and
+  # the name of an item. A blank list is told by `Check`, as a drawing may
+  # stand so for a while.
+  defp typed("loop", node, path, base, true) do
+    list = node["list"]
+    item = node["item"]
+
+    cond do
+      not (is_binary(list) and String.length(list) <= @max_template) ->
+        {:error, {path <> ".list", :invalid}}
+
+      not (is_binary(item) and Types.name?(String.trim(item))) or
+          String.trim(item) in Scope.reserved() ->
+        {:error, {path <> ".item", :invalid}}
+
+      true ->
+        {:ok,
+         base
+         |> Map.merge(%{"list" => String.trim(list), "item" => String.trim(item)})
+         |> put_map("of", node["of"])}
     end
   end
 
@@ -853,9 +931,9 @@ defmodule PotokIde.Processes.Graph do
   defp flow(_flow, path, _ids, _version), do: {:error, {path, :invalid}}
 
   # A flow is plain, or leaves a task by an outcome or its deadline, or leaves
-  # a gateway by a condition or as its default.
+  # a gateway by a condition or as its default, or a loop into its body.
   defp flow_kind(flow, path, base, version) do
-    case Map.take(flow, ~w(outcome deadline condition default)) do
+    case Map.take(flow, ~w(outcome deadline condition default each)) do
       empty when map_size(empty) == 0 ->
         {:ok, base}
 
@@ -867,6 +945,9 @@ defmodule PotokIde.Processes.Graph do
 
       %{"default" => true} = kind when map_size(kind) == 1 ->
         {:ok, Map.put(base, "default", true)}
+
+      %{"each" => true} = kind when map_size(kind) == 1 ->
+        {:ok, Map.put(base, "each", true)}
 
       %{"condition" => condition} = kind when map_size(kind) == 1 ->
         with {:ok, condition} <- condition(condition, path <> ".condition", version) do
@@ -919,7 +1000,8 @@ defmodule PotokIde.Processes.Graph do
          :ok <- each_ok(indexed, &leaves(&1, Map.get(out, elem(&1, 0)["id"], []), into)),
          :ok <- each_ok(indexed, &subgroup_target(&1, nodes)),
          :ok <- reachable(indexed, out),
-         :ok <- finishes(indexed, into) do
+         :ok <- finishes(indexed, into),
+         :ok <- each_ok(indexed, &closed_body(&1, nodes, flows)) do
       :ok
     end
   end
@@ -1016,8 +1098,43 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
+  # A loop goes into its body by one flow and on by one plain flow.
+  defp leaves({%{"type" => "loop"}, i}, out, _into) do
+    {body, others} = Enum.split_with(out, &Map.has_key?(&1, "each"))
+
+    if length(body) == 1 and plain_one?(others),
+      do: :ok,
+      else: {:error, {"nodes.#{i}", :loop_flows}}
+  end
+
   defp plain_one?([flow]), do: Map.keys(flow) -- ["from", "to"] == []
   defp plain_one?(_flows), do: false
+
+  # The body of a loop is closed: it has a step, reaches no end, and is
+  # entered through the loop alone, so every turn comes back to the loop.
+  defp closed_body({%{"type" => "loop", "id" => id}, i}, nodes, flows) do
+    body = body(%{"nodes" => nodes, "flows" => flows}, id)
+    types = Map.new(nodes, &{&1["id"], &1["type"]})
+
+    cond do
+      body == [] ->
+        {:error, {"nodes.#{i}", :loop_empty}}
+
+      Enum.any?(body, &(types[&1] == "endEvent")) ->
+        {:error, {"nodes.#{i}", :loop_open}}
+
+      Enum.any?(flows, fn flow ->
+        flow["to"] in body and flow["from"] not in body and
+            not (flow["from"] == id and flow["each"] == true)
+      end) ->
+        {:error, {"nodes.#{i}", :loop_entered}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp closed_body(_indexed, _nodes, _flows), do: :ok
 
   # A message goes to the app's group or to a sub-group the graph makes.
   defp subgroup_target({%{"action" => "message", "in" => "app"}, _i}, _nodes), do: :ok

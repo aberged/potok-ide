@@ -33,9 +33,10 @@ defmodule PotokIde.Processes.GraphEdit do
     "assign" => "assign",
     "signal" => "signal",
     "receive" => "receive",
+    "loop" => "loop",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task timer gateway call set assign signal receive)
+  @kinds ~w(message subgroup push task timer gateway call set assign signal receive loop)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -72,11 +73,14 @@ defmodule PotokIde.Processes.GraphEdit do
   Puts a new step of `kind` into the flow `key`: the flow now leads to it,
   and it leads on to where the flow led. A decision leaves by each of its
   outcomes, a condition by one condition and by default, all to that same
-  place. `defaults` holds the step's first texts and role, and the process
-  a call starts with the fields it takes, the group's field a step sets,
-  what a new condition asks, the variable a step sets, and the entity its
-  signal is waited for with: `%{text, name, role, outcomes, condition,
-  process, call_fields, group_field, signal, signal_entity, variable}`.
+  place. A loop comes with a body of one step, a message, that leads back
+  to it, and goes on to that place after its last item. `defaults` holds
+  the step's first texts and role, and the process a call starts with the
+  fields it takes, the group's field a step sets, what a new condition
+  asks, the variable a step sets, the entity its signal is waited for with,
+  and the list a loop goes through with the word for its item: `%{text,
+  name, role, outcomes, condition, process, call_fields, group_field,
+  signal, signal_entity, variable, loop_list, loop_item}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -85,7 +89,7 @@ defmodule PotokIde.Processes.GraphEdit do
 
       %{"to" => to} ->
         id = fresh_id(graph, kind)
-        node = step(kind, id, defaults)
+        node = step(kind, id, Map.put(defaults, :names, names(graph)))
 
         graph
         |> update_flow!(key, &Map.put(&1, "to", id))
@@ -180,6 +184,16 @@ defmodule PotokIde.Processes.GraphEdit do
       "fields" => d[:call_fields] || %{}
     }
 
+  # A loop through a list, each item under a name nothing else has.
+  defp step("loop", id, d) do
+    %{
+      "id" => id,
+      "type" => "loop",
+      "list" => d[:loop_list] || "",
+      "item" => fresh_name(d[:loop_item] || "item", d[:names] || MapSet.new())
+    }
+  end
+
   # The entity a signal is sent or waited for with, where it has one.
   defp with_entity(step, nil), do: step
   defp with_entity(step, entity), do: Map.put(step, "entity", entity)
@@ -192,6 +206,17 @@ defmodule PotokIde.Processes.GraphEdit do
     graph
     |> add_flow(%{"from" => id, "to" => to, "condition" => condition(d)})
     |> add_flow(%{"from" => id, "to" => to, "default" => true})
+  end
+
+  # A loop goes into a body of one step, which comes back to it, and on.
+  defp add_exits(graph, %{"type" => "loop", "id" => id}, to, d) do
+    body = step("message", fresh_id(graph, "message"), d)
+
+    graph
+    |> add_node(body)
+    |> add_flow(%{"from" => id, "to" => body["id"], "each" => true})
+    |> add_flow(%{"from" => body["id"], "to" => id})
+    |> add_flow(%{"from" => id, "to" => to})
   end
 
   defp add_exits(graph, %{"id" => id}, to, _d), do: add_flow(graph, %{"from" => id, "to" => to})
@@ -388,13 +413,17 @@ defmodule PotokIde.Processes.GraphEdit do
     end
   end
 
-  # A call's deadline keeps where it goes.
+  # A call's deadline keeps where it goes, and a loop its body.
   defp retarget_only_exit(graph, from, to) do
-    case graph |> Graph.out(from) |> Enum.reject(&Map.has_key?(&1, "deadline")) do
+    case graph |> Graph.out(from) |> Enum.filter(&way_on?/1) do
       [%{"key" => key}] -> retarget(graph, key, to)
       _none_or_more -> {:error, :no_flow}
     end
   end
+
+  # The flow a step goes on by: not its deadline's, nor the one into a
+  # loop's body.
+  defp way_on?(flow), do: not Map.has_key?(flow, "deadline") and not Map.has_key?(flow, "each")
 
   defp branch_to(graph, from, to, defaults) do
     with {:ok, graph} <- add_branch(graph, from, defaults) do
@@ -443,7 +472,8 @@ defmodule PotokIde.Processes.GraphEdit do
   @doc """
   Deletes a step. A step with one way on gives its place to what follows; a
   decision or a condition keeps its first branch; an end sends what reached
-  it to another end. The start and the last end stay. What no longer can be
+  it to another end; a loop goes with its body. The start and the last end
+  stay, and so does the last step in a loop's body. What no longer can be
   reached from the start goes too, and the ids of all that went come back.
   """
   def delete_node(graph, id) do
@@ -459,6 +489,9 @@ defmodule PotokIde.Processes.GraphEdit do
 
       node["type"] == "endEvent" and ends == 1 ->
         {:error, :last_end}
+
+      last_in_body?(graph, node) ->
+        {:error, :last_in_loop}
 
       true ->
         next = next_of(graph, node)
@@ -483,8 +516,18 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp next_of(graph, %{"id" => id}) do
     out = Graph.out(graph, id)
-    first = Enum.find(out, &(not Map.has_key?(&1, "deadline"))) || hd(out)
+    first = Enum.find(out, &way_on?/1) || hd(out)
     first["to"]
+  end
+
+  # Whether a loop's body would be left with no step: the step is the one
+  # the loop goes into, and it gives its place back to the loop.
+  defp last_in_body?(graph, %{"type" => "endEvent"}) when is_map(graph), do: false
+
+  defp last_in_body?(graph, %{"id" => id} = node) do
+    Enum.any?(graph["flows"], fn flow ->
+      flow["each"] == true and flow["to"] == id and next_of(graph, node) == flow["from"]
+    end)
   end
 
   @doc """
@@ -543,6 +586,7 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
+  defp editable_keys(%{"type" => "loop"}), do: ~w(label list item)
   defp editable_keys(_node), do: ~w(label)
 
   defp put_label(node, label) when is_binary(label) do
@@ -587,6 +631,25 @@ defmodule PotokIde.Processes.GraphEdit do
     Stream.iterate(1, &(&1 + 1))
     |> Stream.map(&"#{prefix}_#{&1}")
     |> Enum.find(&(not MapSet.member?(ids, &1)))
+  end
+
+  # The names the drawing has given: its steps, its variables and the items
+  # of its loops.
+  defp names(graph) do
+    ids = Enum.map(graph["nodes"], & &1["id"])
+    items = for %{"type" => "loop", "item" => item} <- graph["nodes"], do: item
+    variables = for %{"name" => name} <- graph["variables"] || [], do: name
+    MapSet.new(ids ++ items ++ variables)
+  end
+
+  # `base`, or `base_2` and so on, whichever nothing has yet.
+  defp fresh_name(base, taken) do
+    Stream.iterate(1, &(&1 + 1))
+    |> Stream.map(fn
+      1 -> base
+      n -> "#{base}_#{n}"
+    end)
+    |> Enum.find(&(not MapSet.member?(taken, &1)))
   end
 
   defp fresh_key(%{"flows" => flows}) do

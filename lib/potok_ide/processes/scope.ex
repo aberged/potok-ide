@@ -11,6 +11,9 @@ defmodule PotokIde.Processes.Scope do
     (`poziv.outcome`), and of a wait for a signal what the signal carried
     (`prijem.from`, and its fields, or the attributes of the entity the
     wait names);
+  - the id of a loop is where it stands (`petlja.index`, from 1, and
+    `petlja.count`), and the name of its item is the item on hand
+    (`stavka`, `stavka.naziv`), of the type the loop keeps as `of`;
   - `group` holds the fields of the group (`group.kvarova`);
   - each variable of the graph is its own name (`ukupno`, `prijava.sprat`).
 
@@ -79,6 +82,14 @@ defmodule PotokIde.Processes.Scope do
       _no_entity ->
         [{id, {:record, always, true}}]
     end
+  end
+
+  # A loop says where it stands, and names the item on hand.
+  defp result(%{"type" => "loop", "id" => id, "item" => item} = loop, _entry, _entities) do
+    [
+      {id, {:record, %{"index" => :number, "count" => :number}, false}},
+      {item, Types.of(loop["of"] || %{})}
+    ]
   end
 
   defp result(_step, _entry, _entities), do: []

@@ -14,11 +14,15 @@ defmodule PotokIde.Processes.Engine do
     it is due. `run_due/1` takes forward those whose time has come.
   - An action that fails rolls back its element and leaves the instance
     failed, with the element and the reason, for an editor to `retry/1`.
-  - At most 25 elements in one run without waiting and 1,000 in an
-    instance's life, so a loop stops; at most what `RateLimit` lets one
-    process take in a minute, the rest waiting for the next pass. A step
-    that raises leaves the instance failed (`crash`) rather than tried again
-    on every pass.
+  - At most 25 elements in a row without waiting and 5,000 in an
+    instance's life, so a drawing that runs in a circle stops (`loop`,
+    `too_many_steps`). After 100 elements `run/1` leaves the instance due
+    and asks the scheduler for a pass, so one long run gives way to the
+    others. The steps that write outside the run (a message, a sub-group, a
+    push, a field of the group, a signal, a call) are at most what
+    `RateLimit` lets one process take in a minute, the rest waiting for the
+    next pass. A step that raises leaves the instance failed (`crash`)
+    rather than tried again on every pass.
 
   Who set off the step on hand (`triggered_by`) is the value's author at the
   start (nobody for an anonymous value), whoever finished a task, and nobody
@@ -48,7 +52,15 @@ defmodule PotokIde.Processes.Engine do
   run keeps variables (`vars`): those that start with a value get it on the
   start element, and a `serviceTask` `assign` sets one, or an attribute of
   one, to what an expression gives, as the type of the target takes it
-  (`Types.cast/4`). Variables and results together hold at most 64 KB.
+  (`Types.cast/4`), or adds it to the list the target holds (`append`).
+  Variables and results together hold at most 64 KB.
+
+  A `loop` reads its list once, on the way in, and keeps it with where it
+  stands under its own element (`results`): at most 200 items. Each turn
+  hands the body the next item, as a variable by the loop's `item`, and
+  starts the count of 25 elements in a row anew; after the last item the
+  run goes on by the loop's plain flow, and the item is gone. A body may
+  wait, call, and hold a loop of its own.
   """
 
   import Ecto.Query, warn: false
@@ -81,7 +93,9 @@ defmodule PotokIde.Processes.Engine do
   }
 
   @max_run 25
-  @max_steps 1_000
+  # Elements one call of `run/1` takes before it gives way to other runs.
+  @max_pass 100
+  @max_steps 5_000
   @max_log 200
   @max_comment 1_000
   @max_group_name 120
@@ -324,13 +338,18 @@ defmodule PotokIde.Processes.Engine do
   waits on a task or a timer, ends or fails. Returns the instance as it then
   stands, or nil when another node holds it, it is gone, or nothing was due.
   """
-  def run(id) when is_integer(id), do: run(id, @max_run, nil)
+  def run(id) when is_integer(id), do: run(id, @max_run, nil, @max_pass)
 
-  defp run(id, budget, last) do
+  defp run(id, budget, last, left) do
     case guarded(id, budget) do
-      {:ok, {:continue, _instance, announcements}} ->
+      {:ok, {:continue, instance, announcements}} ->
         ProcessActions.announce(announcements)
-        run(id, budget - 1, :moved)
+        again(instance, budget - 1, left - 1)
+
+      # A loop took a turn: its body has a run of elements of its own.
+      {:ok, {:turn, instance, announcements}} ->
+        ProcessActions.announce(announcements)
+        again(instance, @max_run, left - 1)
 
       {:ok, {:stop, instance, announcements}} ->
         ProcessActions.announce(announcements)
@@ -343,6 +362,15 @@ defmodule PotokIde.Processes.Engine do
         id |> fail(element, reason) |> tell()
     end
   end
+
+  # A run that has gone long without a wait stays due and gives way: the
+  # scheduler takes it up again in a pass of its own, after the others.
+  defp again(%ValueProcess{} = instance, _budget, left) when left <= 0 do
+    Scheduler.nudge()
+    tell(instance)
+  end
+
+  defp again(%ValueProcess{id: id}, budget, left), do: run(id, budget, :moved, left)
 
   # The app's open pages hear that an instance moved, and read it again.
   defp tell(nil), do: nil
@@ -410,9 +438,17 @@ defmodule PotokIde.Processes.Engine do
 
   defp lock(id), do: from(i in ValueProcess, where: i.id == ^id, lock: "FOR UPDATE") |> Repo.one()
 
-  # Over its share of steps, the process waits for the next pass.
-  defp held_back?(%ValueProcess{app_process_id: id}),
-    do: match?({:error, :rate_limited, _}, RateLimit.hit(:process_step, id))
+  # Over its share of steps that write outside the run, the process waits
+  # for the next pass. What a run does to itself (a condition, a variable
+  # set, a turn of a loop) is not counted.
+  defp held_back?(%ValueProcess{app_process_id: id} = instance) do
+    writes?(Graph.node(instance.graph, instance.element)) and
+      match?({:error, :rate_limited, _}, RateLimit.hit(:process_step, id))
+  end
+
+  defp writes?(%{"type" => "serviceTask", "action" => action}), do: action != "assign"
+  defp writes?(%{"type" => "callActivity"}), do: true
+  defp writes?(_element), do: false
 
   defp execute(%ValueProcess{} = instance) do
     node = Graph.node(instance.graph, instance.element)
@@ -420,6 +456,9 @@ defmodule PotokIde.Processes.Engine do
     case act(node, instance) do
       {:next, to, changes, announcements} ->
         {:continue, move(instance, to, changes), announcements}
+
+      {:turn, to, changes} ->
+        {:turn, move(instance, to, changes), []}
 
       {:wait, changes, announcements} ->
         {:stop, update!(instance, Map.put(changes, :status, :waiting)), announcements}
@@ -485,6 +524,32 @@ defmodule PotokIde.Processes.Engine do
            awaiting_id: child.id,
            results: Map.delete(instance.results, id)
          }, announcements}
+      end
+    end
+  end
+
+  # A loop: on the way in it reads its list, each turn it hands its body
+  # the next item, and after the last it goes on.
+  defp act(%{"type" => "loop", "id" => id, "item" => name} = loop, instance) do
+    out = Graph.out(instance.graph, id)
+    vars = instance.vars || %{}
+
+    with {:ok, items, at} <- standing(loop, instance) do
+      count = length(items)
+
+      if at < count do
+        vars = Map.put(vars, name, Enum.at(items, at))
+        state = %{"items" => items, "index" => at + 1, "count" => count}
+        results = Map.put(instance.results, id, state)
+
+        with :ok <- room_for(vars, results) do
+          {:turn, Enum.find(out, & &1["each"])["to"], %{vars: vars, results: results}}
+        end
+      else
+        done = %{"index" => count, "count" => count}
+
+        {:next, plain(out)["to"],
+         %{vars: Map.delete(vars, name), results: Map.put(instance.results, id, done)}, []}
       end
     end
   end
@@ -564,11 +629,14 @@ defmodule PotokIde.Processes.Engine do
   # gives, as the type of the target takes it.
   defp service("assign", task, _step, _group, instance, {:names, data, opts}) do
     graph = instance.graph
+    op = task["op"]
 
     with {:ok, target} <- Expr.parse(task["target"]),
          {:ok, type} <- Expr.check(target, Scope.scope(graph)),
+         {:ok, type} <- written_as(op, type),
          {:ok, value} <- worked_out(task["value"], type, data, opts),
          {:ok, value} <- Types.cast(value, type, graph["types"] || %{}, zone: opts.zone),
+         {:ok, value} <- placed(op, target, value, data, opts),
          vars = put_path(instance.vars || %{}, path(target), Types.dump(value)),
          :ok <- room_for(vars, instance.results) do
       {:ok, %{vars: vars}, fn -> :ok end}
@@ -595,6 +663,53 @@ defmodule PotokIde.Processes.Engine do
       {:ok, _field} -> {:ok, %{}, fn -> :ok end}
       {:error, %Ecto.Changeset{}} -> {:error, :invalid_field}
       {:error, _reason} = error -> error
+    end
+  end
+
+  # What the value of a step that sets is taken as: what the target holds,
+  # or an item of the list for a step that adds to one.
+  defp written_as("append", {:list, item}), do: {:ok, item}
+  defp written_as("append", :any), do: {:ok, :any}
+  defp written_as("append", _other), do: {:error, :not_a_list}
+  defp written_as(_set, type), do: {:ok, type}
+
+  # What the target then holds: the value, or the list with it at its end.
+  defp placed("append", target, value, data, opts) do
+    with {:ok, held} <- Expr.eval(target, data, opts) do
+      cond do
+        not (is_list(held) or is_nil(held)) -> {:error, :not_a_list}
+        length(held || []) >= Types.max_items() -> {:error, :too_many_items}
+        true -> {:ok, (held || []) ++ [value]}
+      end
+    end
+  end
+
+  defp placed(_set, _target, value, _data, _opts), do: {:ok, value}
+
+  # Where a loop stands: the items it goes through and how many it has
+  # handed out. On the way in it reads its list, once; what the body does to
+  # the list after that changes no turn.
+  defp standing(%{"id" => id} = loop, instance) do
+    case instance.results[id] do
+      %{"items" => items, "index" => at} when is_list(items) and is_integer(at) ->
+        {:ok, items, at}
+
+      _on_the_way_in ->
+        with {:ok, items} <- listed(loop, instance), do: {:ok, items, 0}
+    end
+  end
+
+  defp listed(%{"list" => list} = loop, instance) do
+    {:names, data, opts} = value_data(instance)
+    type = {:list, Types.of(loop["of"] || %{})}
+    entities = instance.graph["types"] || %{}
+
+    with {:ok, tree} <- Expr.parse(list),
+         {:ok, value} <- Expr.eval(tree, data, opts),
+         {:ok, items} <- Types.cast(value, type, entities, zone: opts.zone) do
+      {:ok, Types.dump(items || [])}
+    else
+      {:error, reason} -> {:error, expression_error(reason)}
     end
   end
 
@@ -908,9 +1023,12 @@ defmodule PotokIde.Processes.Engine do
       else: :busy
   end
 
-  defp plain(flows), do: Enum.find(flows, &(not Map.has_key?(&1, "deadline")))
+  # The flow an element goes on by when nothing else takes it: not its
+  # deadline's, and not the one into a loop's body.
+  defp plain(flows),
+    do: Enum.find(flows, &(not Map.has_key?(&1, "deadline") and not Map.has_key?(&1, "each")))
 
-  defp plain_next(%ValueProcess{graph: graph}, id), do: hd(Graph.out(graph, id))["to"]
+  defp plain_next(%ValueProcess{graph: graph}, id), do: plain(Graph.out(graph, id))["to"]
 
   defp move(%ValueProcess{} = instance, to, changes) do
     update!(

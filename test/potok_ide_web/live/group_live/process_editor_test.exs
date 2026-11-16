@@ -1139,6 +1139,186 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     refute has_element?(lv, "#processes-new")
   end
 
+  describe "a loop" do
+    alias PotokIde.Processes.Graph
+
+    defp with_list(lv) do
+      lv
+      |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}})
+      |> render_change()
+
+      lv |> element("#process-variable-add") |> render_click()
+      lv |> element("#process-variable-add") |> render_click()
+
+      lv
+      |> form("#process-variables-form", %{
+        "variables" => %{
+          "0" => %{"name" => "brojevi", "type" => "number", "list" => "true"},
+          "1" => %{"name" => "ukupno", "type" => "number", "list" => "false", "initial" => "0"}
+        }
+      })
+      |> render_change()
+    end
+
+    test "an editor draws a loop over a list the drawing keeps", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      with_list(lv)
+      insert(lv, "f1", "loop")
+
+      # It starts on the first list there is, with a body of one step.
+      assert has_element?(
+               lv,
+               "#process-element-form input[name='element[list]'][value='brojevi']"
+             )
+
+      assert has_element?(lv, "#process-element-form input[name='element[item]'][value='item']")
+      assert has_element?(lv, "#process-node-panel", "{{loop_1.index}}")
+      refute has_element?(lv, "#process-editor-error")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"item" => "broj"}})
+      |> render_change()
+
+      # The body reads the item by its type.
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "message_1"})
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{upper(broj)}}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a text, and this is a number.")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"text" => "{{broj * 2}} ({{loop_1.index}}/{{loop_1.count}})"}
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      # The data of the process names the item and where the loop stands.
+      render_hook(canvas(lv), "process_editor_select", %{})
+      assert has_element?(lv, "#process-data-results li", "broj")
+      assert has_element?(lv, "#process-data-results", "loop_1.index")
+      assert has_element?(lv, "#process-data-results", "loop_1.count")
+
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+
+      assert %{"list" => "brojevi", "item" => "broj", "of" => %{"type" => "number"}} =
+               Graph.node(graph, "loop_1")
+
+      assert %{"from" => "loop_1", "to" => "message_1", "each" => true} in graph["flows"]
+      assert %{"from" => "message_1", "to" => "loop_1"} in graph["flows"]
+      assert %{"from" => "loop_1", "to" => "end"} in graph["flows"]
+    end
+
+    test "a loop says what it lacks, and offers the lists of the drawing", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      lv
+      |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}})
+      |> render_change()
+
+      insert(lv, "f1", "loop")
+      assert has_element?(lv, "#process-editor-error", "Say which list the loop goes through.")
+      refute has_element?(lv, "#process-field-list_expr-0")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"list" => "start.title"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a list, and this is a text.")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"list" => "nema", "item" => "moj broj"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "An item is named in one word")
+
+      render_hook(canvas(lv), "process_editor_select", %{})
+      with_list(lv)
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "loop_1"})
+
+      # Only the lists are offered for a list.
+      assert has_element?(lv, "#process-field-list_expr-0", "brojevi")
+      refute has_element?(lv, "#process-field-list_expr-1")
+
+      lv |> element("#process-field-list_expr-0") |> render_click()
+
+      assert has_element?(
+               lv,
+               "#process-element-form input[name='element[list]'][value='brojevi']"
+             )
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"item" => "broj"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+    end
+
+    test "the last step of a loop's body stays, and a loop goes with its body", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      with_list(lv)
+      insert(lv, "f1", "loop")
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "message_1"})
+      html = lv |> element("#process-node-delete") |> render_click()
+      assert html =~ "A loop keeps at least one step of its own."
+      assert has_element?(lv, "#process-outline-message_1")
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "loop_1"})
+      lv |> element("#process-node-delete") |> render_click()
+      refute has_element?(lv, "#process-outline-loop_1")
+      refute has_element?(lv, "#process-outline-message_1")
+    end
+
+    test "a step adds to a list, while what it sets is one", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      with_list(lv)
+      insert(lv, "f1", "assign")
+
+      # The first variable is the list: it may be set whole or added to.
+      assert has_element?(lv, "#process-element-form select[name='element[op]']")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"op" => "append", "value" => ~s("tri")}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"value" => "ukupno + 1"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+      assert %{"target" => "brojevi", "op" => "append"} = Graph.node(graph, "assign_1")
+
+      # With a plain variable picked, it sets again.
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "assign_1"})
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"target" => "ukupno"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-element-form select[name='element[op]']")
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+      assert %{"target" => "ukupno", "op" => "set"} = Graph.node(graph, "assign_1")
+    end
+  end
+
   test "an app's own process shows as the app drew it", ctx do
     graph = %{
       "nodes" => [

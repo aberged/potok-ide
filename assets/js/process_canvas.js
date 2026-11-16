@@ -58,6 +58,7 @@ const TONES = {
   assign: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   signal: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300",
   receive: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+  loop: "bg-orange-500/10 text-orange-700 dark:text-orange-300",
 }
 
 const PILLS = new Set(["start", "end", "gateway"])
@@ -124,9 +125,14 @@ const throughPoints = points => {
 // the top, otherwise around a side, as a flow back up does. The "+" stands
 // half-way, or past the flow's label when it has one. `spread` moves flows
 // between the same two steps apart, so each shows with its label and "+".
+// `labelPos` is how far along the flow its label stands.
 const SPREAD = 56
 
-const between = (a, b, labelled = false, spread = 0) => {
+// The way into a loop's body is short, as its first step stands right under
+// the loop: its label stands nearer the loop, clear of the "+".
+const labelAt = flow => (flow.kind === "each" ? 0.3 : 0.5)
+
+const between = (a, b, labelled = false, spread = 0, labelPos = 0.5) => {
   const plusAt = labelled ? 0.78 : 0.5
   const [aw, ah] = a.size
   const [bw, bh] = b.size
@@ -139,7 +145,7 @@ const between = (a, b, labelled = false, spread = 0) => {
     const c2 = {x: t.x + off, y: t.y - dy}
     return {
       d: `M${s.x},${s.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${t.x},${t.y}`,
-      mid: bezier(s, c1, c2, t, 0.5),
+      mid: bezier(s, c1, c2, t, labelPos),
       plus: bezier(s, c1, c2, t, plusAt),
     }
   }
@@ -256,12 +262,12 @@ export const ProcessCanvas = {
       const b = {...this.places[flow.to], size: sizeOf(this.node(flow.to))}
       // A step that was dragged has no route from dagre; one that was not keeps it.
       if (wide && !(unmoved(flow.from) && unmoved(flow.to))) {
-        routes[flow.key] = between(a, b, Boolean(flow.label), spreads[flow.key])
+        routes[flow.key] = between(a, b, Boolean(flow.label), spreads[flow.key], labelAt(flow))
       } else {
         const points = g.edge({v: flow.from, w: flow.to, name: flow.key}).points
         routes[flow.key] = {
           d: throughPoints(points),
-          mid: along(points, 0.5),
+          mid: along(points, labelAt(flow)),
           plus: along(points, flow.label ? 0.8 : 0.5),
         }
       }

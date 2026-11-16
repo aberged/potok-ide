@@ -31,7 +31,12 @@ defmodule PotokIde.Processes.Check do
   - A variable, a wait for a signal and a signal sent hold entities the
     group has; a process started by hand takes one whose attributes are
     all plain, as a form fills it in.
-  - A step that sets names a variable, or an attribute of one.
+  - A step that sets names a variable, or an attribute of one; one that
+    adds to a list names a list, and gives what the list holds.
+  - A loop goes through a list: its `list` gives one, and what an item of
+    it is gets written into the loop (`of`), so the steps of its body read
+    the item by its type. A loop may go through what an outer loop's item
+    holds.
   - A call hands the process it calls what its entity takes: each attribute
     a value of its type, and every required one a value.
   - A signal is sent with the entity those who wait for it expect, where
@@ -40,7 +45,7 @@ defmodule PotokIde.Processes.Check do
   Errors come as `{path, reason}`, as the graph's do, such as
   `{"nodes.3.text", {:unknown_name, "naslov"}}`: the reasons of
   `Expr.parse/1` and `Expr.check/2`, and `:unknown_entity`, `:not_flat`,
-  `{:not_a_variable, name}`, `:required` and `:signal_entity`.
+  `{:not_a_variable, name}`, `:required`, `:signal_entity` and `:no_list`.
 
   A graph without a version says nothing that could be checked
   (`PotokIde.Processes.Legacy`), and comes back as it is.
@@ -48,12 +53,13 @@ defmodule PotokIde.Processes.Check do
 
   alias PotokIde.Processes.{Expr, Scope, Triggers, Types}
 
-  def run(%{"v" => 2, "nodes" => nodes, "flows" => flows} = graph, env) when is_map(env) do
+  def run(%{"v" => 2, "flows" => flows} = graph, env) when is_map(env) do
     variables = graph["variables"] || []
 
     with {:ok, types} <- types(graph, env),
-         {:ok, entry} <- entry(env, types) do
-      graph = graph |> Map.put("entry", Types.json(entry)) |> Map.put("types", types)
+         {:ok, entry} <- entry(env, types),
+         graph = graph |> Map.put("entry", Types.json(entry)) |> Map.put("types", types),
+         {:ok, %{"nodes" => nodes} = graph} <- items(graph) do
       scope = Scope.scope(graph)
 
       context = %{
@@ -71,6 +77,71 @@ defmodule PotokIde.Processes.Check do
   end
 
   def run(graph, _env), do: {:ok, graph}
+
+  @doc """
+  The graph with what an item of each loop is written into the loop (`of`),
+  from the list it goes through: `{:ok, graph}`, or `{:error, {path,
+  reason}}` for the first loop whose list cannot be told. A loop inside
+  another may go through what the outer item holds, so they are read until
+  no more can be.
+
+  `loose: true` never fails: a loop that cannot be told yet reads its item
+  as anything, for a drawing in the making.
+  """
+  def items(%{"nodes" => nodes} = graph, opts \\ []) do
+    # What a kept graph said about its items says nothing about this one.
+    nodes = Enum.map(nodes, &Map.delete(&1, "of"))
+    loops = for {%{"type" => "loop"}, i} <- Enum.with_index(nodes), do: i
+
+    case told(%{graph | "nodes" => nodes}, loops) do
+      {graph, []} -> {:ok, graph}
+      {graph, [_ | _]} when opts == [loose: true] -> {:ok, graph}
+      {_graph, [{i, reason} | _rest]} -> {:error, {"nodes.#{i}.list", reason}}
+    end
+  end
+
+  # Loops are told while one more can be: each pass reads those left against
+  # the names the earlier passes gave.
+  defp told(graph, []), do: {graph, []}
+
+  defp told(graph, left) do
+    # The item of a loop not told yet is no name: a list that goes through
+    # it waits for the pass after its loop's.
+    pending = for i <- left, do: Enum.at(graph["nodes"], i)["item"]
+    scope = Map.update!(Scope.scope(graph), :names, &Map.drop(&1, pending))
+
+    {graph, failed} =
+      Enum.reduce(left, {graph, []}, fn i, {graph, failed} ->
+        case item(Enum.at(graph["nodes"], i), scope) do
+          {:ok, type} ->
+            nodes = List.update_at(graph["nodes"], i, &Map.put(&1, "of", Types.json(type)))
+            {%{graph | "nodes" => nodes}, failed}
+
+          {:error, reason} ->
+            {graph, failed ++ [{i, reason}]}
+        end
+      end)
+
+    if length(failed) < length(left),
+      do: told(graph, Enum.map(failed, &elem(&1, 0))),
+      else: {graph, failed}
+  end
+
+  # What an item of the list a loop goes through is.
+  defp item(%{"list" => list}, scope) do
+    if String.trim(list) == "" do
+      {:error, :no_list}
+    else
+      with {:ok, tree} <- Expr.parse(list),
+           {:ok, type} <- Expr.check(tree, scope) do
+        case type do
+          {:list, item} -> {:ok, item}
+          any when any in [:any, :empty] -> {:ok, :any}
+          other -> {:error, {:mismatch, :list, other}}
+        end
+      end
+    end
+  end
 
   defp each(items, path, fun) do
     items
@@ -211,10 +282,13 @@ defmodule PotokIde.Processes.Check do
 
   # A step that sets: its target is a variable, or an attribute of one, and
   # its value gives what the target holds.
-  defp step(%{"action" => "assign", "target" => target, "value" => value}, path, %{scope: scope}) do
+  defp step(%{"action" => "assign", "target" => target, "value" => value} = step, path, context) do
+    scope = context.scope
+
     with {:ok, tree} <- Expr.parse(target),
          :ok <- variable?(tree, scope),
-         {:ok, type} <- Expr.check(tree, scope) do
+         {:ok, type} <- Expr.check(tree, scope),
+         {:ok, type} <- taken(step["op"], type) do
       case written(value, type, scope) do
         :ok -> :ok
         {:error, reason} -> {:error, {path <> ".value", reason}}
@@ -272,6 +346,13 @@ defmodule PotokIde.Processes.Check do
   end
 
   defp step(step, path, %{scope: scope}), do: texts(own_texts(step), path, scope)
+
+  # What the value of a step that sets must give: what the target holds,
+  # or an item of it for a step that adds to a list.
+  defp taken("append", {:list, item}), do: {:ok, item}
+  defp taken("append", any) when any in [:any, :empty], do: {:ok, :any}
+  defp taken("append", other), do: {:error, {:mismatch, :list, other}}
+  defp taken(_set, type), do: {:ok, type}
 
   # The texts of a step that may hold expressions, each with where it stands.
   defp own_texts(%{"action" => "message", "text" => text}), do: [{"text", text}]

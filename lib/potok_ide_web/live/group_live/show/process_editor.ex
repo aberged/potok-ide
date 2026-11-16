@@ -796,6 +796,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"gateway", "hero-arrows-right-left", gettext("Condition"),
        gettext("Goes one way or another by what was sent."),
        "bg-amber-500/10 text-amber-700 dark:text-amber-300"},
+      {"loop", "hero-arrow-path", gettext("For each"),
+       gettext("Goes through a list an item at a time, with steps of its own for each."),
+       "bg-orange-500/10 text-orange-700 dark:text-orange-300"},
       {"set", "hero-pencil-square", gettext("Group field"),
        gettext("Keeps a value, or adds to a count, that every process of the group reads."),
        "bg-lime-500/10 text-lime-700 dark:text-lime-300"},
@@ -847,7 +850,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         :signal_entity,
         Enum.find(assigns.editor[:entities] || [], &(&1.id == node["entity"]))
       )
-      |> assign(:textual?, ProcessEditorState.textual_target?(assigns.editor, node["target"]))
+      |> assign(
+        :textual?,
+        ProcessEditorState.textual_target?(assigns.editor, node["target"], node["op"])
+      )
+      |> assign(:list_target?, ProcessEditorState.list_target?(assigns.editor, node["target"]))
 
     ~H"""
     <div id="process-node-panel">
@@ -1224,6 +1231,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 options={@targets}
               />
               <.input
+                :if={@list_target?}
+                field={@form[:op]}
+                type="select"
+                label={gettext("What it does")}
+                options={[
+                  {gettext("Sets the whole list"), "set"},
+                  {gettext("Adds an item to its end"), "append"}
+                ]}
+              />
+              <.input
                 field={@form[:value]}
                 type="textarea"
                 rows="2"
@@ -1247,6 +1264,37 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                       example: "#{@node["target"] || "x"} + 1",
                       empty: "empty"
                     )
+                )}
+              </p>
+            <% "loop" -> %>
+              <.input
+                field={@form[:list]}
+                type="text"
+                label={gettext("List it goes through")}
+                placeholder={gettext("a list, such as a variable that keeps one")}
+                maxlength="1000"
+                class="w-full input font-mono text-sm"
+                phx-debounce="300"
+              />
+              <.fields
+                editor={@editor}
+                target="list_expr"
+                hints={ProcessEditorState.list_hints(@editor)}
+              />
+              <.input
+                field={@form[:item]}
+                type="text"
+                label={gettext("Name of an item")}
+                maxlength="40"
+                class="w-full input font-mono text-sm"
+                phx-debounce="400"
+              />
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "Its own steps run once for each item of the list, and read the item on hand as %{item} and its place as %{index} of %{count}. After the last item it goes on. A list holds 200 items at most.",
+                  item: "{{#{@node["item"]}}}",
+                  index: "{{#{@node["id"]}.index}}",
+                  count: "{{#{@node["id"]}.count}}"
                 )}
               </p>
             <% "call" -> %>
@@ -1668,9 +1716,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   attr :editor, :map, required: true
   attr :target, :string, required: true
+  attr :hints, :list, default: nil, doc: "the names to offer, where not all of them fit"
 
   defp fields(assigns) do
-    assigns = assign(assigns, :hints, ProcessEditorState.field_hints(assigns.editor))
+    assigns =
+      assign(assigns, :hints, assigns.hints || ProcessEditorState.field_hints(assigns.editor))
 
     ~H"""
     <div

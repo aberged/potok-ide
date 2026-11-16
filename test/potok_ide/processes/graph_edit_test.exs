@@ -61,7 +61,8 @@ defmodule PotokIde.Processes.GraphEditTest do
   test "every kind of step goes into a flow and leaves where it led" do
     for kind <- GraphEdit.kinds() do
       graph = insert!(GraphEdit.new(), "f1", kind)
-      assert length(graph["nodes"]) == 3, kind
+      # A loop comes with the first step of its body.
+      assert length(graph["nodes"]) == if(kind == "loop", do: 4, else: 3), kind
     end
   end
 
