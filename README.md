@@ -797,11 +797,11 @@ An app cannot set `uses_api` or anything else outside `attrs`, and there is no c
 
 #### Processes
 
-A collection's rule can run a process for every new value: `process: {name, graph}` (`PotokIde.Processes`). The first save of the rule gives the process a profile of its own, called `name` (at most 120 characters): it joins the app's group, signs whatever the process writes, and nobody logs in as it. The editor who saved the rule owns the process. The profile holds what `everyone` holds in the app's group, so an action it lacks the permission for stops the instance. Removing the rule stops the process and cancels its instances that run or wait. The Forma app builds its graph from four steps the editor picks; see [docs/forma.md](docs/forma.md).
+A collection's rule can run a process for every new value: `process: {name, graph}` (`PotokIde.Processes`). The first save of the rule gives the process a profile of its own, called `name` (at most 60 characters): it joins the app's group, signs whatever the process writes, and nobody logs in as it. The editor who saved the rule owns the process. The profile holds what `everyone` holds in the app's group, so an action it lacks the permission for stops the instance. Removing the rule stops the process and cancels its instances that run or wait. The Forma app builds its graph from four steps the editor picks; see [docs/forma.md](docs/forma.md).
 
 The graph is `{nodes, flows}`, its elements named as in BPMN. An instance stands on one element at a time: there are no parallel flows.
 
-* Exactly one `{id, type: "startEvent"}`, and at least one `endEvent`. Ids are lowercase letters, digits, `-` and `_`, starting with a letter, at most 40 characters. A flow is `{from, to}`.
+* Exactly one `{id, type: "startEvent"}`, and at least one `endEvent`. Ids are lowercase letters, digits, `-` and `_`, starting with a letter, at most 40 characters. Any element may carry a `label` (at most 60 characters), its name on a drawing and where an instance waits or stopped. A flow is `{from, to}`.
 * `serviceTask` with an `action`:
   * `message` writes `text` into the app's group (`in: "app"`, the default) or into a sub-group the instance made (`in`: that element's id). It needs `post_values`.
   * `subgroup` makes a sub-group called `name`. Its `admins` are role keys, `"owner"` and `"triggered_by"`, by default the last two; while the owner no longer edits the app, `triggered_by` takes the owner's place. It needs `create_subgroups`.
@@ -824,6 +824,7 @@ Who set off a step (`triggered_by`) is the value's author at the start (nobody f
 * `completeTask(id, element, outcome, {comment})` finishes the task the instance waits on, for someone holding its role, with a comment of at most 1000 characters, and resolves to `{ok: true, process}`. A task no longer waiting gives `not_waiting`, an outcome it does not have `invalid_outcome`, a stopped process `process_inactive`.
 * `retryProcess(id)` takes a failed instance up again where it stopped (`not_failed` for any other), and `cancelProcess(id)` cancels one that runs or waits (`not_running` for any other). Both are for editors and resolve to `{ok: true, process}`.
 * The `process` event of `onValues` says only which instance moved; the app reads it again with `listProcesses`, which shows only what the viewer may see.
+* Processes that the group's editors draw in Potok on the same collection are none of the app's: `listProcesses` leaves their instances out, `completeTask`, `retryProcess` and `cancelProcess` answer `not_found` for them, and their moves send no `process` event. Their tasks are finished on the group's Processes tab. A drawn process may also start on a chat message, a new sub-group, a schedule or by hand, none of which reaches the app.
 
 #### Replies, errors and the frame
 

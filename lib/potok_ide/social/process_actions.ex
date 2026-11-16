@@ -88,7 +88,9 @@ defmodule PotokIde.Social.ProcessActions do
          {:ok, row} <- acting_process(step, group),
          :ok <- may_mention_roles(row.profile, group) do
       tag = "group-#{group.id}-process-#{step.instance}-#{step.element}"
-      {count, announce} = Social.process_push(row.profile, group, role_key, text, tag)
+      # A process drawn in Potok has its tasks on the group's Processes tab.
+      url = if row.drawn, do: "/groups/#{row.group_id}/processes"
+      {count, announce} = Social.process_push(row.profile, group, role_key, text, tag, url)
       {:ok, count, announce}
     end
   end

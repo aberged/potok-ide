@@ -141,7 +141,8 @@ defmodule PotokIdeWeb.GroupLive.GroupRowMenuTest do
     sections = ~w(tab-values tab-files tab-calendar tab-subgroups tab-members)
 
     assert own != ["actions-menu"]
-    assert row -- sections == own -- ["actions-menu", "tab-polls"]
+    # Polls and processes are offered from the open group's page only.
+    assert row -- sections == own -- ["actions-menu", "tab-polls", "tab-processes"]
   end
 
   test "it leads to the sections of the group's bar", ctx do

@@ -20,6 +20,10 @@ defmodule PotokIde.Processes do
   alias PotokIde.Social.{Access, AppData, AppProcess, Group, Profile, Value, ValueRules}
 
   @max_list 100
+  @max_tasks 50
+  @max_rows 30
+  @max_depth 3
+  @max_cell 200
 
   @doc """
   The instances of `collection` the viewer may see, newest first, at most
@@ -34,7 +38,7 @@ defmodule PotokIde.Processes do
         on: p.id == i.app_process_id,
         join: v in Value,
         on: v.id == i.value_id,
-        where: p.group_id == ^group.id and p.collection == ^collection,
+        where: p.group_id == ^group.id and p.collection == ^collection and not p.drawn,
         order_by: [desc: i.id],
         limit: @max_list
       )
@@ -109,13 +113,23 @@ defmodule PotokIde.Processes do
 
   defp editor(access), do: if(ValueRules.manage?(access), do: :ok, else: {:error, :not_permitted})
 
-  defp of_this_app(%Group{id: group_id}, alt, id) when is_integer(id) do
+  # An app reaches only its own process's instances; the group's page, any.
+  defp of_this_app(%Group{id: group_id}, :any, id) when is_integer(id) do
     from(i in ValueProcess,
       join: p in AppProcess,
       on: p.id == i.app_process_id,
       where: i.id == ^id and p.group_id == ^group_id
     )
-    |> of_app(if(alt == :any, do: :any, else: AppData.alt_id(alt)))
+    |> Repo.one()
+  end
+
+  defp of_this_app(%Group{id: group_id}, alt, id) when is_integer(id) do
+    from(i in ValueProcess,
+      join: p in AppProcess,
+      on: p.id == i.app_process_id,
+      where: i.id == ^id and p.group_id == ^group_id and not p.drawn
+    )
+    |> of_app(AppData.alt_id(alt))
     |> Repo.one()
   end
 
@@ -151,6 +165,217 @@ defmodule PotokIde.Processes do
   end
 
   @doc """
+  The tasks of processes drawn in Potok (`PotokIde.Social.DrawnProcesses`)
+  that wait on a role the viewer holds in `group`, the nearest deadline first,
+  at most #{@max_tasks}. The app knows nothing of these, so the group's page
+  shows them, each with what set it going (`kind`):
+
+  - `:value`, a value of an app's collection: its author, unless the value is
+    anonymous, and its data and the sub-groups the instance made only for
+    those who may read the value in full, or wrote it
+    (`ValueRules.full_reader?/2`);
+  - `:message`, a chat message of the group, which its members read;
+  - `:group`, a new sub-group, with a link to it;
+  - `:data`, a run started by hand or by a schedule, with what it was given.
+  """
+  def tasks_for(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access)
+      when access.role_keys != [] do
+    rows =
+      from(i in ValueProcess,
+        join: p in AppProcess,
+        on: p.id == i.app_process_id,
+        left_join: v in Value,
+        on: v.id == i.value_id,
+        left_join: sg in Group,
+        on: sg.id == i.subject_group_id,
+        where: p.group_id == ^group.id and p.drawn and p.active and i.status == :waiting,
+        where:
+          fragment(
+            "(jsonb_path_query_first(?, '$.nodes[*] \\? (@.id == $e)', jsonb_build_object('e', ?)) ->> 'role') = ANY(?)",
+            i.graph,
+            i.element,
+            type(^access.role_keys, {:array, :string})
+          ),
+        order_by: [asc_nulls_last: i.wake_at, asc: i.id],
+        limit: @max_tasks,
+        preload: [value: {v, :creator}, subject_group: sg],
+        select: {i, p}
+      )
+      |> Repo.all()
+
+    rules = rules_by_app(group, Enum.filter(rows, fn {_i, p} -> p.trigger == "value" end))
+    names = names(Enum.flat_map(rows, fn {i, _p} -> Enum.map(i.log, & &1["by"]) end))
+    group_names = group_names(Enum.flat_map(rows, fn {i, _p} -> Map.values(i.groups) end))
+
+    Enum.map(rows, fn {instance, process} ->
+      task = Graph.node(instance.graph, instance.element)
+      subject = subject(instance, process, group, profile, access, rules)
+
+      Map.merge(subject, %{
+        id: instance.id,
+        process: process,
+        element: instance.element,
+        label: Graph.label(task),
+        outcomes: task["outcomes"],
+        deadline_at: instance.wake_at,
+        groups:
+          if(subject.reads?,
+            do:
+              for(
+                {_element, id} <- instance.groups,
+                name = Map.get(group_names, id),
+                do: %{id: id, name: name}
+              ),
+            else: []
+          ),
+        log: log(instance, names)
+      })
+    end)
+  end
+
+  def tasks_for(_profile, _group, _access), do: []
+
+  # What set a run going, as its task card shows it.
+  defp subject(
+         %ValueProcess{value: %Value{} = value},
+         %AppProcess{trigger: "value"} = process,
+         _group,
+         profile,
+         access,
+         rules
+       ) do
+    rule = Map.fetch!(rules, {process.alt_description_id, process.collection})
+    reads? = ValueRules.full_reader?(rule, access) or value.creator_id == profile.id
+
+    %{
+      kind: :value,
+      reads?: reads?,
+      sent_at: value.inserted_at,
+      author_name: if(value.anonymous, do: nil, else: value.creator.username),
+      title: nil,
+      text: nil,
+      link: nil,
+      data: if(reads?, do: data_rows(value.data), else: [])
+    }
+  end
+
+  defp subject(%ValueProcess{value: %Value{} = value}, _process, group, _profile, _access, _rules) do
+    %{
+      kind: :message,
+      reads?: true,
+      sent_at: value.inserted_at,
+      author_name: value.creator.username,
+      title: nil,
+      text: value.content,
+      link: "/groups/#{group.id}/values?value=#{value.id}",
+      data: []
+    }
+  end
+
+  defp subject(
+         %ValueProcess{subject_group: %Group{} = sub} = instance,
+         _process,
+         _group,
+         _profile,
+         _access,
+         _rules
+       ) do
+    %{
+      kind: :group,
+      reads?: true,
+      sent_at: instance.inserted_at,
+      author_name: instance.data["author"],
+      title: sub.name,
+      text: instance.data["description"],
+      link: "/groups/#{sub.id}",
+      data: []
+    }
+  end
+
+  defp subject(%ValueProcess{} = instance, _process, _group, _profile, _access, _rules) do
+    %{
+      kind: :data,
+      reads?: true,
+      sent_at: instance.inserted_at,
+      author_name: instance.data["author"],
+      title: instance.data["title"] || instance.data["date"],
+      text: instance.data["text"],
+      link: nil,
+      data: []
+    }
+  end
+
+  defp rules_by_app(group, rows) do
+    rows
+    |> Enum.map(fn {_i, p} -> {p.alt_description_id, p.collection} end)
+    |> Enum.uniq()
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.flat_map(fn {alt_id, collections} ->
+      config = AppData.get_config(group, alt_id)
+      for collection <- collections, do: {{alt_id, collection}, AppData.rule(config, collection)}
+    end)
+    |> Map.new()
+  end
+
+  defp group_names(ids) do
+    case ids |> Enum.filter(&is_integer/1) |> Enum.uniq() do
+      [] ->
+        %{}
+
+      ids ->
+        from(g in Group, where: g.id in ^ids, select: {g.id, g.name}) |> Repo.all() |> Map.new()
+    end
+  end
+
+  @doc """
+  A value's data as rows of `{path, text}` a person can read, such as
+  `{"a.q1", "Da"}`: at most #{@max_rows}, #{@max_depth} levels deep, long
+  texts cut short.
+  """
+  def data_rows(data) when is_map(data) do
+    data
+    |> flatten([], 1)
+    |> Enum.take(@max_rows)
+  end
+
+  def data_rows(_data), do: []
+
+  defp flatten(map, path, depth) when is_map(map) and depth <= @max_depth do
+    map
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.flat_map(fn {key, value} -> flatten(value, path ++ [to_string(key)], depth + 1) end)
+  end
+
+  defp flatten(list, path, depth) when is_list(list) do
+    if Enum.all?(list, &(is_binary(&1) or is_number(&1) or is_boolean(&1))),
+      do: [{Enum.join(path, "."), list |> Enum.map_join(", ", &to_string/1) |> cell()}],
+      else: flatten(list |> Enum.with_index() |> Map.new(fn {v, i} -> {i, v} end), path, depth)
+  end
+
+  defp flatten(value, path, _depth)
+       when is_binary(value) or is_number(value) or is_boolean(value),
+       do: [{Enum.join(path, "."), value |> to_string() |> cell()}]
+
+  defp flatten(nil, _path, _depth), do: []
+  defp flatten(_deeper, path, _depth), do: [{Enum.join(path, "."), "…"}]
+
+  defp cell(text) do
+    if String.length(text) > @max_cell, do: String.slice(text, 0, @max_cell) <> "…", else: text
+  end
+
+  defp log(instance, names) do
+    Enum.map(instance.log, fn entry ->
+      %{
+        at: entry["at"],
+        element: entry["element"],
+        outcome: entry["outcome"],
+        comment: entry["comment"],
+        by: %{id: entry["by"], username: Map.get(names, entry["by"])}
+      }
+    end)
+  end
+
+  @doc """
   An instance as the app gets it: where it stands, the task it waits on and
   whether the viewer may finish it, the sub-groups it made, and who decided
   what so far.
@@ -167,16 +392,7 @@ defmodule PotokIde.Processes do
       error: instance.error,
       groups: instance.groups,
       task: task(instance, access),
-      log:
-        Enum.map(instance.log, fn entry ->
-          %{
-            at: entry["at"],
-            element: entry["element"],
-            outcome: entry["outcome"],
-            comment: entry["comment"],
-            by: %{id: entry["by"], username: Map.get(names, entry["by"])}
-          }
-        end)
+      log: log(instance, names)
     }
   end
 

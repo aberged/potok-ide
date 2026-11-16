@@ -2,15 +2,14 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.{Access, GroupRole}
-  alias PotokIdeWeb.GroupLive.Show.{Components, RolesTab}
+  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessesTab, RolesTab}
   alias PotokIdeWeb.TagComponents
 
   attr :members, :any, required: true, doc: "stream of `%{id, profile, role_keys}`"
 
   attr :processes, :list,
     default: [],
-    doc:
-      "the processes of the group's apps: `%{id, process, profile, role_keys, warning, counts, failed}`"
+    doc: "the processes of the group's apps: `%{id, process, profile, role_keys, warning}`"
 
   attr :pagination, :map, required: true
   attr :current_profile, :map, required: true
@@ -274,16 +273,29 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         </div>
 
         <section :if={@processes != []} id="group-processes" class="mt-8">
-          <div class="mb-3 px-1">
-            <h4 class="flex items-center gap-1.5 text-sm font-semibold text-base-content">
-              <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/60" />
-              {gettext("Processes")}
-            </h4>
-            <p class="text-xs text-base-content/70">
-              {gettext(
-                "They act for the group's apps and are not counted among the members. An app's rules start and stop them."
-              )}
-            </p>
+          <div class="mb-3 flex items-start justify-between gap-3 px-1">
+            <div>
+              <h4 class="flex items-center gap-1.5 text-sm font-semibold text-base-content">
+                <.icon name="hero-cog-6-tooth" class="size-4 text-base-content/60" />
+                {gettext("Processes")}
+              </h4>
+              <p class="text-xs text-base-content/70">
+                {gettext(
+                  "They act for the group's apps and are not counted among the members. An app's rules start and stop them, or its editors on the Processes tab."
+                )}
+              </p>
+            </div>
+            <.button
+              id="group-processes-link"
+              type="button"
+              phx-click="switch_tab"
+              phx-value-tab="processes"
+              variant="soft"
+              size="sm"
+            >
+              {gettext("How they are doing")}
+              <.icon name="hero-arrow-right" class="size-3.5" />
+            </.button>
           </div>
 
           <ul id="group-processes-list" class="space-y-2">
@@ -323,65 +335,23 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 <p :if={entry.warning["missing"] != []} id={"process-#{entry.id}-missing"}>
                   <.icon name="hero-exclamation-triangle" class="mr-1 size-3.5 align-[-2px]" />
                   {gettext("It may not: %{permissions}.",
-                    permissions: missing_permissions(entry.warning["missing"])
+                    permissions: ProcessesTab.missing_permissions(entry.warning["missing"])
                   )}
                 </p>
                 <p :if={entry.warning["owner_left"]} id={"process-#{entry.id}-owner-left"}>
                   <.icon name="hero-user-minus" class="mr-1 size-3.5 align-[-2px]" />
-                  {gettext(
-                    "Its owner no longer edits the app. Whoever saves its rules next takes it over."
+                  {if(entry.process.drawn,
+                    do:
+                      gettext(
+                        "Its owner no longer edits the app. Whoever saves the drawing next takes it over."
+                      ),
+                    else:
+                      gettext(
+                        "Its owner no longer edits the app. Whoever saves its rules next takes it over."
+                      )
                   )}
                 </p>
               </div>
-
-              <div
-                :if={entry.counts != %{}}
-                id={"process-#{entry.id}-counts"}
-                class="mx-1 mb-1.5 flex flex-wrap gap-1.5"
-              >
-                <span
-                  :for={{status, label} <- count_labels(entry.counts)}
-                  id={"process-#{entry.id}-count-#{status}"}
-                  class={[
-                    "inline-flex h-6 items-center rounded-full px-2 text-[11px] font-semibold",
-                    count_class(status)
-                  ]}
-                >
-                  {label}
-                </span>
-              </div>
-
-              <ul
-                :if={entry.failed != []}
-                id={"process-#{entry.id}-failed"}
-                class="mx-1 mb-1.5 space-y-1"
-              >
-                <li
-                  :for={instance <- entry.failed}
-                  id={"process-instance-#{instance.id}"}
-                  class="flex items-center justify-between gap-2 rounded-xl bg-error/10 px-3 py-1.5 text-xs text-base-content"
-                >
-                  <span class="min-w-0">
-                    <span class="font-semibold">
-                      {gettext("Stopped at %{element}",
-                        element: instance.error["element"] || instance.element
-                      )}
-                    </span>
-                    <span class="text-base-content/70">
-                      · {failure_reason(instance.error["reason"])}
-                    </span>
-                  </span>
-                  <.button
-                    id={"process-instance-#{instance.id}-retry"}
-                    type="button"
-                    phx-click="retry_process_instance"
-                    phx-value-id={instance.id}
-                    size="sm"
-                  >
-                    {gettext("Take up again")}
-                  </.button>
-                </li>
-              </ul>
 
               <.role_editor
                 :if={@manage_roles?}
@@ -473,53 +443,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         nil -> []
       end
 
-    Enum.join(
-      app ++ [gettext("collection %{collection}", collection: process.collection), owner],
-      " · "
-    )
-  end
+    collection =
+      if process.collection,
+        do: [gettext("collection %{collection}", collection: process.collection)],
+        else: []
 
-  # How many instances are in each state, those under way first.
-  defp count_labels(counts) do
-    for status <- [:running, :waiting, :failed, :done, :cancelled],
-        n = Map.get(counts, status, 0),
-        n > 0,
-        do: {status, count_label(status, n)}
-  end
-
-  defp count_label(:running, n), do: gettext("Running: %{count}", count: n)
-  defp count_label(:waiting, n), do: gettext("Waiting: %{count}", count: n)
-  defp count_label(:failed, n), do: gettext("Failed: %{count}", count: n)
-  defp count_label(:done, n), do: gettext("Done: %{count}", count: n)
-  defp count_label(:cancelled, n), do: gettext("Cancelled: %{count}", count: n)
-
-  defp count_class(:running), do: "bg-primary/10 text-primary"
-  defp count_class(:waiting), do: "bg-amber-500/15 text-amber-800 dark:text-amber-200"
-  defp count_class(:failed), do: "bg-error/10 text-error"
-  defp count_class(:done), do: "bg-success/10 text-success"
-  defp count_class(:cancelled), do: "bg-base-200 text-base-content/65"
-
-  # Why an instance stopped (`Processes.Engine`), in words.
-  defp failure_reason("not_permitted"), do: gettext("the process lacks a permission")
-
-  defp failure_reason("not_a_member_of_group"),
-    do: gettext("the process is not a member of that group")
-
-  defp failure_reason("not_process_group"),
-    do: gettext("the process may not write in that group")
-
-  defp failure_reason("no_admin"), do: gettext("nobody to run the sub-group")
-  defp failure_reason("no_subgroup"), do: gettext("its sub-group is gone")
-  defp failure_reason("empty_text"), do: gettext("the text came out empty")
-  defp failure_reason("invalid_push"), do: gettext("the push text does not fit")
-  defp failure_reason("process_inactive"), do: gettext("the process was stopped")
-  defp failure_reason("loop"), do: gettext("it went round without waiting")
-  defp failure_reason("too_many_steps"), do: gettext("it took too many steps")
-  defp failure_reason("crash"), do: gettext("an unexpected error")
-  defp failure_reason(_reason), do: gettext("an error")
-
-  defp missing_permissions(missing) do
-    Enum.map_join(missing, ", ", &RolesTab.permission_label(String.to_existing_atom(&1)))
+    Enum.join(app ++ collection ++ [owner], " · ")
   end
 
   # A role held through the parent is locked: it is changed there.

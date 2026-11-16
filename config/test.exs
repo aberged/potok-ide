@@ -19,6 +19,10 @@ config :potok_ide, guest_recheck_ms: 0
 # take `:garbage_collect` (this also leaves the LiveView's own collection off).
 config :potok_ide, transport_gc_delay_ms: nil
 
+# LiveViewTest does not look into portals, so what a page would move to the
+# body (the process editor) stays where it is drawn; help_shots moves it.
+config :potok_ide, portals: false
+
 # Link previews are fetched inline, uncached, from `Req.Test` stubs; test
 # hosts resolve to a public documentation address without the network.
 config :potok_ide, PotokIde.LinkPreviews,

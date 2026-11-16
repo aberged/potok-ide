@@ -18,6 +18,10 @@ defmodule PotokIde.Social.AppProcesses do
     of what it wrote, and the rule coming back brings the same profile back.
   - A profile left without its process (the app or its group was deleted) and
     without anything it wrote is deleted (`sweep/0`).
+
+  Processes drawn in Potok (`PotokIde.Social.DrawnProcesses`) have the same
+  kind of profile, but the app's rules neither start nor stop them: `sync/4`
+  and `warnings/2` look only at the app's own.
   """
 
   import Ecto.Query, warn: false
@@ -70,7 +74,7 @@ defmodule PotokIde.Social.AppProcesses do
     end)
 
     for %AppProcess{active: true} = row <- rows, not Map.has_key?(wanted, row.collection) do
-      stop!(group, row)
+      stop(group, row)
     end
 
     :ok
@@ -90,7 +94,7 @@ defmodule PotokIde.Social.AppProcesses do
     }
     |> Repo.insert!()
 
-    join!(group, profile.id)
+    join(group, profile.id)
   end
 
   defp resume!(editor, group, %AppProcess{} = row, name) do
@@ -98,7 +102,7 @@ defmodule PotokIde.Social.AppProcesses do
     |> Ecto.Changeset.change(active: true, owner_profile_id: editor.id, name: name)
     |> Repo.update!()
 
-    join!(group, row.profile_id)
+    join(group, row.profile_id)
   end
 
   # The owner stays while they edit the app; otherwise the editor saving the
@@ -113,7 +117,10 @@ defmodule PotokIde.Social.AppProcesses do
     :ok
   end
 
-  defp stop!(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
+  @doc false
+  # Deactivates a process: for `sync/4` and for `DrawnProcesses`, inside a
+  # transaction that holds the app's lock.
+  def stop(%Group{id: group_id}, %AppProcess{profile_id: profile_id} = row) do
     row |> Ecto.Changeset.change(active: false) |> Repo.update!()
 
     # What it was doing stops with it.
@@ -131,9 +138,10 @@ defmodule PotokIde.Social.AppProcesses do
     )
   end
 
+  @doc false
   # A direct member, never inherited, and never one that inheriting groups
   # below take in (`MemberInheritance`).
-  defp join!(%Group{id: group_id}, profile_id) do
+  def join(%Group{id: group_id}, profile_id) do
     %GroupMembership{}
     |> GroupMembership.changeset(%{group_id: group_id, profile_id: profile_id})
     |> Repo.insert!(on_conflict: :nothing, conflict_target: [:group_id, :profile_id])
@@ -217,13 +225,17 @@ defmodule PotokIde.Social.AppProcesses do
   @doc """
   What `warnings/2` says about one process, or nil when there is nothing to
   say. `opts` may carry the group's `:manifest` and the process's `:graph`,
-  read from the app's rules otherwise.
+  read from the app's rules otherwise; a drawn process has its own.
   """
   def warning(%AppProcess{} = row, %Group{} = group, opts \\ []) do
     graph =
-      Keyword.get_lazy(opts, :graph, fn ->
-        group |> AppData.get_config(row.alt_description_id) |> AppData.rules() |> graph(row)
-      end)
+      if row.drawn do
+        row.graph
+      else
+        Keyword.get_lazy(opts, :graph, fn ->
+          group |> AppData.get_config(row.alt_description_id) |> AppData.rules() |> graph(row)
+        end)
+      end
 
     access =
       Access.for_profile(%Profile{id: row.profile_id}, group, Keyword.take(opts, [:manifest]))
@@ -250,6 +262,44 @@ defmodule PotokIde.Social.AppProcesses do
       preload: [:profile, :owner_profile, :alt_description]
     )
     |> Repo.all()
+  end
+
+  @doc """
+  The processes the group's Processes tab lists: the active ones, those of
+  its apps and those drawn in Potok, and for the app's editors (`manage?`)
+  the drawings that are switched off too. With their profiles, owners and
+  descriptions, the app's own first, then by name.
+  """
+  def list_for_tab(%Group{id: group_id}, manage?) do
+    query =
+      from(p in AppProcess,
+        where: p.group_id == ^group_id,
+        order_by: [asc: p.drawn, asc: p.name, asc: p.id],
+        preload: [:profile, :owner_profile, :alt_description]
+      )
+
+    query =
+      if manage?, do: where(query, [p], p.active or p.drawn), else: where(query, [p], p.active)
+
+    Repo.all(query)
+  end
+
+  @doc """
+  Whether the group has an app or a process at all, for its Processes tab.
+  """
+  def any_app_or_process?(%Group{uses_api: true}), do: true
+
+  def any_app_or_process?(%Group{id: group_id}) do
+    %{rows: [[any?]]} =
+      Repo.query!(
+        """
+        SELECT EXISTS (SELECT 1 FROM group_alt_descriptions WHERE group_id = $1 AND uses_api)
+            OR EXISTS (SELECT 1 FROM app_processes WHERE group_id = $1)
+        """,
+        [group_id]
+      )
+
+    any?
   end
 
   @doc """
@@ -291,9 +341,16 @@ defmodule PotokIde.Social.AppProcesses do
     count
   end
 
+  # The processes the app's own rules hold, never those drawn in Potok.
   defp app_query(group_id, nil),
-    do: from(p in AppProcess, where: p.group_id == ^group_id and is_nil(p.alt_description_id))
+    do:
+      from(p in AppProcess,
+        where: p.group_id == ^group_id and is_nil(p.alt_description_id) and not p.drawn
+      )
 
   defp app_query(group_id, alt_id),
-    do: from(p in AppProcess, where: p.group_id == ^group_id and p.alt_description_id == ^alt_id)
+    do:
+      from(p in AppProcess,
+        where: p.group_id == ^group_id and p.alt_description_id == ^alt_id and not p.drawn
+      )
 end

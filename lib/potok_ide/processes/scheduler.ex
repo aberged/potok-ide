@@ -3,7 +3,9 @@ defmodule PotokIde.Processes.Scheduler do
   Takes forward the instances of apps' processes that are due
   (`PotokIde.Processes.Engine.run_due/1`): every `interval_ms`, once at start
   so that what fell due during a deploy goes on, and whenever a commit made
-  one due (`nudge/0`), so a first step does not wait for the next pass.
+  one due (`nudge/0`), so a first step does not wait for the next pass. Each
+  regular pass first starts the scheduled processes whose time has come
+  (`Engine.start_scheduled/1`), and their first steps go in the same pass.
 
   It runs on every node; an instance one node holds is skipped by the others.
   A failed pass is logged and the next one runs as usual, as in
@@ -43,6 +45,7 @@ defmodule PotokIde.Processes.Scheduler do
 
   @impl true
   def handle_continue(:tick, interval_ms) do
+    start_scheduled()
     tick()
     Process.send_after(self(), :tick, interval_ms)
     {:noreply, interval_ms}
@@ -55,6 +58,20 @@ defmodule PotokIde.Processes.Scheduler do
   def handle_info(:nudge, interval_ms) do
     tick()
     {:noreply, interval_ms}
+  end
+
+  defp start_scheduled do
+    Engine.start_scheduled(@batch)
+  rescue
+    error ->
+      Logger.error(
+        "Scheduled processes failed: " <> Exception.format(:error, error, __STACKTRACE__)
+      )
+  catch
+    kind, reason ->
+      Logger.error(
+        "Scheduled processes failed: " <> Exception.format(kind, reason, __STACKTRACE__)
+      )
   end
 
   defp tick do

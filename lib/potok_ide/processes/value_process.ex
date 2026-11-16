@@ -1,7 +1,11 @@
 defmodule PotokIde.Processes.ValueProcess do
   @moduledoc """
-  One run of an app's process for one value of its collection: a value has at
-  most one instance of each process.
+  One run of a process. Its subject is a value of a collection (or a chat
+  message, `value`), a new sub-group (`subject_group`), or nothing, for a
+  scheduled or a hand-started run (`PotokIde.Processes.Triggers`); a value or
+  a sub-group has at most one instance of each process. `data` keeps the
+  fields its texts and conditions read when the subject is no value of a
+  collection, whose own data they read otherwise.
 
   An instance keeps a copy of the graph it started with (`graph`), so a rule
   saved later changes only the instances that start after it. It stands on
@@ -22,6 +26,8 @@ defmodule PotokIde.Processes.ValueProcess do
   schema "value_processes" do
     belongs_to :app_process, PotokIde.Social.AppProcess
     belongs_to :value, PotokIde.Social.Value
+    belongs_to :subject_group, PotokIde.Social.Group
+    field :data, :map, default: %{}
     field :status, Ecto.Enum, values: @statuses, default: :running
     field :element, :string
     field :graph, :map

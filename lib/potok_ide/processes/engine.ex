@@ -30,7 +30,7 @@ defmodule PotokIde.Processes.Engine do
   require Logger
 
   alias PotokIde.{RateLimit, Repo}
-  alias PotokIde.Processes.{Graph, ValueProcess}
+  alias PotokIde.Processes.{Graph, Triggers, ValueProcess}
 
   alias PotokIde.Social.{
     Access,
@@ -84,16 +84,174 @@ defmodule PotokIde.Processes.Engine do
 
   def start(%Value{}, _rule, _author), do: nil
 
-  defp app_process(%Value{group_id: group_id, collection: collection} = value) do
+  defp app_process(%Value{} = value),
+    do: value |> processes_of() |> where([p], not p.drawn) |> Repo.one()
+
+  @doc """
+  Starts an instance for `value` of every active process drawn in Potok on
+  its collection (`PotokIde.Social.DrawnProcesses`), each with a copy of its
+  graph, in the transaction that writes the value. They are read `FOR SHARE`,
+  so a process being stopped waits for this write and then cancels what it
+  started. Returns the instances.
+  """
+  def start_drawn(%Value{} = value, rule, %Profile{} = author) do
+    started_by = if rule.anonymous, do: nil, else: author.id
+
+    value
+    |> processes_of()
+    |> where([p], p.drawn and p.active and p.trigger == "value")
+    |> order_by([p], asc: p.id)
+    |> lock("FOR SHARE")
+    |> Repo.all()
+    |> Enum.map(&start_drawn_on(&1, value_id: value.id, started_by: started_by))
+  end
+
+  @doc """
+  Starts an instance of the drawn `process` on its subject, in the caller's
+  transaction: `attrs` holds `:value_id` or `:subject_group_id`, the `:data`
+  its texts read when the subject is no value of a collection, and who set
+  it going (`:started_by`, nil for a schedule).
+  """
+  def start_drawn_on(%AppProcess{drawn: true} = process, attrs) do
+    Repo.insert!(%ValueProcess{
+      app_process_id: process.id,
+      value_id: attrs[:value_id],
+      subject_group_id: attrs[:subject_group_id],
+      data: attrs[:data] || %{},
+      status: :running,
+      element: Graph.start(process.graph),
+      graph: process.graph,
+      started_by_id: attrs[:started_by],
+      triggered_by_id: attrs[:started_by],
+      wake_at: now()
+    })
+  end
+
+  @doc """
+  Starts the processes drawn in `group` on chat messages that `value`, just
+  written by a person, sets going (`Triggers.matches_message?/3`), in the
+  transaction that writes it. A reply in a thread, the root's chat and what
+  a process writes start nothing. Returns the instances.
+  """
+  def start_on_message(
+        %Value{parent_id: nil} = value,
+        %Group{is_root: false} = group,
+        %Profile{kind: :person} = author
+      ) do
+    case drawn_on(group, "message") do
+      [] ->
+        []
+
+      processes ->
+        manifest = Access.effective_manifest(group)
+
+        role_keys =
+          Map.new(if(manifest, do: manifest.roles, else: []), &{String.downcase(&1.name), &1.key})
+
+        for process <- processes,
+            Triggers.matches_message?(process.trigger_config, value, role_keys) do
+          start_drawn_on(process,
+            value_id: value.id,
+            started_by: author.id,
+            data: %{"text" => value.content || "", "author" => author.username}
+          )
+        end
+    end
+  end
+
+  def start_on_message(_value, _group, _author), do: []
+
+  @doc """
+  Starts the processes drawn in `parent` on new sub-groups for `child`, just
+  made by a person or an app in the transaction that makes it. Returns the
+  instances.
+  """
+  def start_on_subgroup(%Group{} = child, %Group{} = parent, %Profile{kind: :person} = creator) do
+    for process <- drawn_on(parent, "subgroup"),
+        not process.trigger_config["placed"] or not is_nil(child.latitude) do
+      start_drawn_on(process,
+        subject_group_id: child.id,
+        started_by: creator.id,
+        data: %{
+          "name" => child.name,
+          "description" => plain_text(child.description),
+          "author" => creator.username
+        }
+      )
+    end
+  end
+
+  def start_on_subgroup(_child, _parent, _creator), do: []
+
+  @doc """
+  Starts the scheduled processes whose time has come, at most `limit`, each
+  once, and sets when each starts next. A run more than a day late, after the
+  servers were down, is skipped. Rows are taken `FOR UPDATE SKIP LOCKED`, so
+  two servers never start one twice. Returns how many started.
+  """
+  def start_scheduled(limit \\ 200) do
+    now = now()
+
+    {:ok, started} =
+      Repo.transaction(fn ->
+        from(p in AppProcess,
+          where:
+            p.drawn and p.active and p.trigger == "schedule" and not is_nil(p.next_run_at) and
+              p.next_run_at <= ^now,
+          order_by: [asc: p.next_run_at],
+          limit: ^limit,
+          lock: "FOR UPDATE SKIP LOCKED"
+        )
+        |> Repo.all()
+        |> Enum.count(fn process ->
+          due = process.next_run_at
+          fresh? = DateTime.diff(now, due) < 86_400
+
+          if fresh?,
+            do: start_drawn_on(process, data: Triggers.schedule_data(process.trigger_config, due))
+
+          process
+          |> Ecto.Changeset.change(next_run_at: Triggers.next_run(process.trigger_config, now))
+          |> Repo.update!()
+
+          fresh?
+        end)
+      end)
+
+    started
+  end
+
+  # The active processes drawn in a group on a trigger, read `FOR SHARE`, so
+  # one being switched off waits for this write and then cancels what it
+  # started.
+  defp drawn_on(%Group{id: group_id}, trigger) do
+    from(p in AppProcess,
+      where: p.group_id == ^group_id and p.drawn and p.active and p.trigger == ^trigger,
+      order_by: [asc: p.id],
+      lock: "FOR SHARE"
+    )
+    |> Repo.all()
+  end
+
+  # A description's text without its markup, cut short, for a text's field.
+  defp plain_text(nil), do: ""
+
+  defp plain_text(text) do
+    text
+    |> String.replace(~r/<[^>]*>/, " ")
+    |> String.replace(~r/[#*_>`\[\]]/, "")
+    |> String.replace(~r/\s+/, " ")
+    |> String.trim()
+    |> String.slice(0, 500)
+  end
+
+  defp processes_of(%Value{group_id: group_id, collection: collection} = value) do
     query = from(p in AppProcess, where: p.group_id == ^group_id and p.collection == ^collection)
 
-    query =
-      case value.alt_description_id do
-        nil -> where(query, [p], is_nil(p.alt_description_id))
-        alt_id -> where(query, [p], p.alt_description_id == ^alt_id)
-      end
-
-    Repo.one(query)
+    case value.alt_description_id do
+      nil -> where(query, [p], is_nil(p.alt_description_id))
+      alt_id -> where(query, [p], p.alt_description_id == ^alt_id)
+    end
   end
 
   # ---------
@@ -149,7 +307,8 @@ defmodule PotokIde.Processes.Engine do
         AppData.broadcast(%Group{id: process.group_id}, :process, %{
           alt_id: process.alt_description_id,
           collection: process.collection,
-          id: instance.id
+          id: instance.id,
+          drawn: process.drawn
         })
 
       nil ->
@@ -473,6 +632,11 @@ defmodule PotokIde.Processes.Engine do
   # ---------
   # Values
   # ---------
+
+  # What a run's texts and conditions read: the fields kept with it, or the
+  # data of its value of a collection, as it is now.
+  defp value_data(%ValueProcess{data: data}) when is_map(data) and map_size(data) > 0, do: data
+  defp value_data(%ValueProcess{value_id: nil}), do: %{}
 
   defp value_data(%ValueProcess{value_id: value_id}) do
     case Repo.get(Value, value_id) do

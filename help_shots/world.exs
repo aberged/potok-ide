@@ -103,6 +103,7 @@ defmodule HelpShots.World do
         zbor_photo: mz.photo.id
       },
       polls: %{zbor: mz.poll.id, building: building.poll.id},
+      processes: %{coop_packing: coop.packing.id, building_reports: building.reports.id},
       events: %{zbor: mz.event.id},
       shared_profile_id: shared.id,
       # For the date fields of forms, which take it as written.
@@ -407,12 +408,16 @@ defmodule HelpShots.World do
     members(dragan, coop, ~w(ana ivana milica sara) |> Enum.map(p))
 
     orders = preset(dragan, coop, "questionnaire", "Porudžbine")
-    order_form(dragan, orders, [
-      {p.("ivana"), [0, 1], "2", 1, "Preuzima Sara."},
-      {p.("milica"), [0, 2, 3], "3", 0, ""},
-      {p.("sara"), [1, 3], "", 0, "Preuzimam i za Ivanu."},
-      {dragan, [0, 2], "1", 0, ""}
-    ])
+
+    # The packing of each order, drawn in Potok on the form's answers: it
+    # starts on the answers that come after it.
+    packing =
+      order_form(dragan, orders, [
+        {p.("ivana"), [0, 1], "2", 1, "Preuzima Sara."},
+        {p.("milica"), [0, 2, 3], "3", 0, ""},
+        {p.("sara"), [1, 3], "", 0, "Preuzimam i za Ivanu."},
+        {dragan, [0, 2], "1", 0, ""}
+      ])
     chat = preset(dragan, coop, "chat", "Dogovor")
 
     # The week's news goes to those who follow the co-op. Ana does not, so her
@@ -434,7 +439,7 @@ defmodule HelpShots.World do
       "recurrence_weekdays" => ["6"]
     })
 
-    %{root: coop, orders: orders, chat: chat}
+    %{root: coop, orders: orders, chat: chat, packing: packing}
   end
 
   # A building ----------------------------------------------------------------
@@ -493,7 +498,68 @@ defmodule HelpShots.World do
 
     post(shared, building, "Ključ od podruma je kod Petra, u stanu 7. Vreće za otpad donosi savet.", ago(0, 11, 30))
 
-    %{root: building, council: council, poll: poll}
+    reports = fault_reports(ivana, building)
+
+    {:ok, report} =
+      PotokIde.Social.DrawnProcesses.start(p.("tamara"), building, reports.id, %{
+        "title" => "Ne radi svetlo u ulazu",
+        "text" => "Od juče uveče, na sva tri sprata."
+      })
+
+    PotokIde.Processes.Engine.run(report.id)
+
+    %{root: building, council: council, poll: poll, reports: reports}
+  end
+
+  # The building's process, drawn in Potok with no app: a resident starts it
+  # by hand, it opens a talk about the fault, and the admins decide.
+  defp fault_reports(editor, group) do
+    talk = fn id, text ->
+      %{"id" => id, "type" => "serviceTask", "action" => "message", "in" => "razgovor", "text" => text}
+    end
+
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Stanar prijavljuje kvar"},
+        %{
+          "id" => "razgovor",
+          "type" => "serviceTask",
+          "action" => "subgroup",
+          "label" => "Razgovor o kvaru",
+          "name" => "Kvar: {{title}}",
+          "admins" => ["owner", "triggered_by"]
+        },
+        %{
+          "id" => "odluka",
+          "type" => "userTask",
+          "label" => "Šta radimo",
+          "role" => "admin",
+          "outcomes" => ["Popravljeno", "Zovemo majstora"]
+        },
+        talk.("popravljeno", "Popravljeno je, hvala na prijavi."),
+        talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "razgovor"},
+        %{"from" => "razgovor", "to" => "odluka"},
+        %{"from" => "odluka", "to" => "popravljeno", "outcome" => "Popravljeno"},
+        %{"from" => "odluka", "to" => "majstor", "outcome" => "Zovemo majstora"},
+        %{"from" => "popravljeno", "to" => "kraj"},
+        %{"from" => "majstor", "to" => "kraj"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["everyone"]},
+        "name" => "Prijava kvara",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   defp direct(p) do
@@ -926,6 +992,7 @@ defmodule HelpShots.World do
     }
 
     {:ok, _} = PotokIde.Social.AppData.save_config(editor, group, nil, data, nil)
+    packing = packing_process(editor, group)
 
     for {profile, chosen, litres, who, text} <- answers do
       response = %{
@@ -943,6 +1010,93 @@ defmodule HelpShots.World do
       {:ok, _value, _rule} =
         PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
     end
+
+    # Each order gets its talk; one of them is packed already, the rest wait.
+    instances =
+      Repo.all(
+        from(i in PotokIde.Processes.ValueProcess,
+          where: i.app_process_id == ^packing.id,
+          order_by: [asc: i.id]
+        )
+      )
+
+    for instance <- instances, do: PotokIde.Processes.Engine.run(instance.id)
+
+    milica = Enum.at(instances, 1)
+    {:ok, _} = PotokIde.Processes.Engine.complete_task(editor, milica.id, "pakovanje", "Spakovano", nil)
+    PotokIde.Processes.Engine.run(milica.id)
+
+    packing
+  end
+
+  # The co-op's process, drawn in Potok rather than by the form: a talk with
+  # whoever ordered, then the admins pack the order, reminded after two days,
+  # and the talk hears how it went.
+  defp packing_process(editor, group) do
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Stigla porudžbina"},
+        %{
+          "id" => "razgovor",
+          "type" => "serviceTask",
+          "action" => "subgroup",
+          "label" => "Razgovor sa kupcem",
+          "name" => "Porudžbina za subotu",
+          "admins" => ["owner", "triggered_by"]
+        },
+        %{
+          "id" => "pakovanje",
+          "type" => "userTask",
+          "label" => "Spakuj porudžbinu",
+          "role" => "admin",
+          "outcomes" => ["Spakovano", "Nema svega"],
+          "deadline" => "P2D"
+        },
+        %{
+          "id" => "podsetnik",
+          "type" => "serviceTask",
+          "action" => "push",
+          "role" => "admin",
+          "text" => "Jedna porudžbina još čeka pakovanje."
+        },
+        %{
+          "id" => "spakovano",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "razgovor",
+          "text" => "Spakovano je. Čeka te u subotu od 9 do 11, u dvorištu škole."
+        },
+        %{
+          "id" => "nema",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "razgovor",
+          "text" => "Nečega od porudžbine nema. Javiću ti ovde šta stiže."
+        },
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "razgovor"},
+        %{"from" => "razgovor", "to" => "pakovanje"},
+        %{"from" => "pakovanje", "to" => "spakovano", "outcome" => "Spakovano"},
+        %{"from" => "pakovanje", "to" => "nema", "outcome" => "Nema svega"},
+        %{"from" => "pakovanje", "to" => "podsetnik", "deadline" => true},
+        %{"from" => "podsetnik", "to" => "pakovanje"},
+        %{"from" => "spakovano", "to" => "kraj"},
+        %{"from" => "nema", "to" => "kraj"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "alt_id" => nil,
+        "collection" => "responses",
+        "name" => "Pakovanje porudžbina",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   # The council's requests, as the Forma app saves them: a form whose process

@@ -104,6 +104,9 @@ defmodule PotokIdeWeb.DomainCopy do
       [column] ->
         dgettext("domain_map", "when this holds: %{field}", field: label(entity, column))
 
+      ["NOT", column] ->
+        dgettext("domain_map", "unless this holds: %{field}", field: label(entity, column))
+
       _other ->
         nil
     end
@@ -297,9 +300,24 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProcess", "collection"), do: dgettext("domain_map", "collection of app data")
   defp own_field("AppProcess", "owner_profile_id"), do: dgettext("domain_map", "owner")
   defp own_field("AppProcess", "active"), do: dgettext("domain_map", "active")
+  defp own_field("AppProcess", "drawn"), do: dgettext("domain_map", "drawn in Potok")
+  defp own_field("AppProcess", "graph"), do: dgettext("domain_map", "graph of a drawn process")
+  defp own_field("AppProcess", "layout"), do: dgettext("domain_map", "places on the drawing")
+  defp own_field("AppProcess", "lock_version"), do: dgettext("domain_map", "revision")
+  defp own_field("AppProcess", "trigger"), do: dgettext("domain_map", "what starts it")
+
+  defp own_field("AppProcess", "trigger_config"),
+    do: dgettext("domain_map", "settings of what starts it")
+
+  defp own_field("AppProcess", "next_run_at"), do: dgettext("domain_map", "next scheduled start")
 
   defp own_field("ValueProcess", "app_process_id"), do: dgettext("domain_map", "process")
   defp own_field("ValueProcess", "value_id"), do: dgettext("domain_map", "value that started it")
+
+  defp own_field("ValueProcess", "subject_group_id"),
+    do: dgettext("domain_map", "sub-group that started it")
+
+  defp own_field("ValueProcess", "data"), do: dgettext("domain_map", "fields for its texts")
   defp own_field("ValueProcess", "status"), do: dgettext("domain_map", "status")
 
   defp own_field("ValueProcess", "element"),
@@ -676,14 +694,14 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("ValueProcess", _edges) do
     dgettext(
       "domain_map",
-      "One run of an app's process for one value of its collection: the graph it started with, the element it stands on and when it wakes next. A value has at most one instance of each process. Deleting the value or the process takes the instance along, and what it wrote stays."
+      "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A value or a sub-group has at most one instance of each process. Deleting it or the process takes the instance along, and what it wrote stays."
     )
   end
 
   defp entity_description("AppProcess", _edges) do
     dgettext(
       "domain_map",
-      "The process of one collection of an app, with the profile that signs what it does and its owner, the editor who saved its rule. Removing the rule makes it inactive, and its profile stays as the author of what it wrote."
+      "The process of one collection of an app, with the profile that signs what it does and its owner, the editor who saved its rule. Removing the rule makes it inactive, and its profile stays as the author of what it wrote. A process an editor drew in Potok keeps its graph and the places of its steps here, where no save of the app reaches it; a collection has at most one process of the app's own, and may have drawn ones beside it."
     )
   end
 
@@ -924,6 +942,21 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "The collection is named as an app names its own.")
   end
 
+  def check_text("app_processes_drawn_graph_check") do
+    dgettext("domain_map", "Only a process drawn in Potok keeps a graph here.")
+  end
+
+  def check_text("app_processes_trigger_collection_check") do
+    dgettext("domain_map", "Only a process that starts on a new value hangs on a collection.")
+  end
+
+  def check_text("app_processes_trigger_check") do
+    dgettext(
+      "domain_map",
+      "A process starts on a value, a message, a sub-group, a schedule or by hand."
+    )
+  end
+
   def check_text("values_collection_check") do
     dgettext(
       "domain_map",
@@ -1151,7 +1184,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "A collection's rule can carry the graph of a process, which Potok checks as the app saves it and runs for every new <Value>value</Value>: messages, sub-groups and pushes signed by the process's own <Profile>profile</Profile>, tasks for the people of a role, deadlines and timers. The app lists the <ValueProcess>instances</ValueProcess> of the values its viewer may read, lets whoever holds a task's role finish it, and lets its editors take a failed one up again or cancel one. Each move reaches the app live."
+              "A collection's rule can carry the graph of a process, which Potok checks as the app saves it and runs for every new <Value>value</Value>: messages, sub-groups and pushes signed by the process's own <Profile>profile</Profile>, tasks for the people of a role, deadlines and timers. The app lists the <ValueProcess>instances</ValueProcess> of the values its viewer may read, lets whoever holds a task's role finish it, and lets its editors take a failed one up again or cancel one. Each move reaches the app live. Processes the group's editors draw in Potok on the same collection stay out of the app's sight: it neither lists nor finishes their instances."
             )
         },
         %{
@@ -1447,6 +1480,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. Nobody learns from a process who wrote an anonymous value."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "Editors can draw a process in Potok"),
+        text:
+          dgettext(
+            "domain_map",
+            "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, or when someone holding its role starts it by hand with a title and a text. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
           )
       },
       %{

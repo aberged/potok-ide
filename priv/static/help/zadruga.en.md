@@ -10,7 +10,7 @@ Step by step to a co-op like Zadruga Livada in the example: a private group with
 ## What we build {:#sta-pravimo}
 
 - **Zadruga Livada**, a folder, private, with the pick-up place on the map
-  - **Orders**: a form each member fills in once and changes until the deadline
+  - **Orders**: a form each member fills in once and changes until the deadline, with a process that takes every order to packing
   - **Arrangements**: a chat about picking up and swaps
 
 ![Zadruga Livada, finished: orders and arrangements](primer-zadruga)
@@ -79,8 +79,25 @@ Members get a reminder before every pick-up, and anyone can choose reminders of 
 
 ![A pick-up that repeats every Saturday](zadruga-preuzimanje)
 
+## 9. A process for packing {:#proces}
+
+So that no order is left unpacked, draw a process on the form. For every order it opens a talk with the buyer, waits for someone to pack it and tells the buyer how it went.
+
+1. In Orders open the group's menu, choose **Processes** and tap **Draw a process**. Type "Packing orders"; the collection is **responses**, the form's answers.
+2. Tap **+** under the start and choose **Sub-group**. For its name type "Order for Saturday", and under **Who runs it** leave the process's owner and whoever set it going, which is the buyer.
+3. Tap **+** under the sub-group and choose **Decision**. Under **Who decides** leave Admin, name the outcomes "Packed" and "Something is missing", and for **Deadline, with a reminder** type 2 days.
+4. Tap **+** on the arrow "Packed", choose **Message** and under **Where** pick the sub-group: "It is packed. It waits for you on Saturday from 9 to 11, in the school yard." Do the same for "Something is missing".
+5. Tap **Save**, then **Switch on**.
+
+![The packing process, drawn in Potok](zadruga-proces-crtez) ![A decision: who decides, the outcomes and the deadline](zadruga-proces-korak)
+
+From now on every new order gets a talk of its own. The orders waiting to be packed are on the Processes tab, under **Waiting for you**: when you pack one, tap **Packed**, and the buyer reads it at once in their talk. If packing is two days late, the admins get a reminder on their phones.
+
+![Orders waiting to be packed](procesi)
+
 ## What next {:#dalje}
 
 - [Apps in a group](/pomoc#aplikacije): everything Form can do.
+- [Draw a process](/pomoc#nacrtaj-proces): all the steps a process can have.
 - [Calendar](/pomoc#kalendar): events, repeating and reminders.
 - [Following, notices and push](/pomoc#obavestenja): notifications on the phone.

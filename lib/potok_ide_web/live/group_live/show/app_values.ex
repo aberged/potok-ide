@@ -37,6 +37,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppValues do
     do: %{event: "regraded", collection: payload.collection}
 
   # Only which instance moved: the app reads it with what the viewer may see.
+  # A process drawn in Potok is none of the app's business.
+  defp message(:process, %{drawn: true}, _assigns), do: nil
+
   defp message(:process, payload, _assigns),
     do: %{event: "process", collection: payload.collection, id: payload.id}
 

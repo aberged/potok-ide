@@ -213,7 +213,13 @@ In Roles you see whether the group has a manifest of its own or inherits one, yo
 
 ![Roles and their permissions](uloge)
 
-An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role. Next to each process you see how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again from there.
+An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them and their roles, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role.
+
+How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there.
+
+At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment.
+
+![The Processes tab: decisions that wait and the group's processes](procesi)
 
 ### All permissions {:#dozvole}
 
@@ -313,7 +319,7 @@ You turn on push notifications in your account settings, separately for each bro
 Some kinds of groups get a ready-made app:
 
 - **Feed** is a row of news you swipe through, with reactions and comments. Its editors write them in the sub-group `.feed`, from templates, keep them as drafts and publish them. For people without an account to read the news too, turn on "Description open to guests" both in the Feed and in `.feed`: a new story takes that choice from `.feed`.
-- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses.
+- **Form** has questions of many kinds, rules (who fills it in, once or more often, until when, anonymously), a summary of the answers, a quiz and attached files. In its settings, "When a response comes in", you switch on a process for every response: a post in the chat, a sub-group for the response and a decision by one role, with a reminder. Whoever holds that role decides right in the responses. For a process with more steps, [draw it](#nacrtaj-proces) in Potok.
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 
@@ -324,6 +330,25 @@ You can write any group's description from a template: news, photo, quote, event
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
 
 ![Templates for a group's description](opis-sablon)
+
+### Draw a process {:#nacrtaj-proces}
+
+You can also draw a process without writing code, right in Potok, even in a group without an app. Whoever may edit the group may.
+
+1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
+2. Under **When** pick what starts it, and set it on the drawing's start step.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait or a condition. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+4. Tap **Save**, then **Switch on**.
+
+A process can start on:
+
+- **a new value in an app**, say an answer to a form;
+- **a message** in the group's chat holding one of the words you type, say "leak", or mentioning a role. Replies in threads and a process's own messages do not count;
+- **a new sub-group**, say a place added on the map, and if you like only one with a place. Records and threads do not count;
+- **a set time**: every day, every week on the days you pick or every month, at the hour you pick;
+- **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text.
+
+A step's text can put in fields of what started the process, say a message's text or the title of a run started by hand: they are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
 
 ### Sharing into Potok {:#deljenje}
 

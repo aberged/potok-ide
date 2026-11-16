@@ -9,7 +9,7 @@ Step by step to a building like Cvetna 12 in the example: one chat for all the r
 
 ## What we build {:#sta-pravimo}
 
-- **Zgrada Cvetna 12**, a chat, private
+- **Zgrada Cvetna 12**, a chat, private, with a process for reporting a fault
   - **House council**: a chat for the council only
 
 ![Zgrada Cvetna 12, finished: minutes, a poll and an event in the same chat](primer-zgrada)
@@ -86,6 +86,25 @@ The announcement arrives in the chat, and residents answer with Going, Maybe or 
 
 ![A new event](dogadjaj-forma)
 
+## 9. Reporting a fault {:#kvar}
+
+So that a report of a fault is not buried in the chat, make a process the residents start themselves. It needs no app.
+
+1. In Zgrada Cvetna 12 open the group's menu, choose **Processes** and tap **Draw a process**. Type "Reporting a fault", and under **When** choose **someone starts it**.
+2. Tap the start step: under **Who may start it** leave **Everyone**.
+3. Tap **+** under the start and choose **Sub-group**. For its name type "Fault: " and tap `title` under the field. Under **Who runs it** leave the process's owner and whoever set it going.
+4. Tap **+** under the sub-group and choose **Decision**. Name the outcomes "Fixed" and "Calling a repairer".
+5. On the arrow of each outcome add a **Message** into the sub-group, say "It is fixed, thanks for the report."
+6. Tap **Save**, then **Switch on**.
+
+![Reporting a fault: who may start it](zgrada-proces-okidac)
+
+A resident taps **Start** on the Processes tab, types what is broken and confirms. The process opens a sub-group for that fault, with the resident and you in it, and the decision waits for you on the Processes tab, under **Waiting for you**.
+
+![Reporting a fault from the Processes tab](zgrada-pokreni)
+
+It also works without the button: under **When** choose **someone writes a message** and type the words "leak" and "broken". Every message in the building's chat with one of them starts the process.
+
 ## A club, a choir or a team {:#klub}
 
 A club is put together the same way: one chat for everyone, a sub-group without inherited members for those who run it and a shared profile when they should speak with one voice. Training sessions and rehearsals are events that repeat: under **Repeats**, choose **Weekly**.
@@ -93,5 +112,6 @@ A club is put together the same way: one chat for everyone, a sub-group without 
 ## What next {:#dalje}
 
 - [Profiles](/pomoc#profili): unique and shared profiles.
+- [Draw a process](/pomoc#nacrtaj-proces): everything that can start a process.
 - [Messages](/pomoc#poruke): replies, threads, reactions and mentions.
 - [Files and tags](/pomoc#fajlovi-i-tagovi): everything from a chat in one place.

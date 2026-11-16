@@ -16,6 +16,9 @@ defmodule PotokIde.Processes.Graph do
     its `default` flow.
   - `endEvent`: the instance is done.
 
+  Any element may carry a `label`, the name it shows on a drawing and where
+  an instance waits or stopped; its `id` stands in for it otherwise.
+
   There are no parallel flows: an instance stands on one element at a time.
   Durations are ISO 8601 (`PT30M`, `PT1H`, `P3D`, `P1W`). Texts may hold
   fields of the value, as `{{naslov}}`, and nothing else. A condition compares
@@ -30,6 +33,7 @@ defmodule PotokIde.Processes.Graph do
   @max_text 1_000
   @max_push_text 240
   @max_name 120
+  @max_label 60
   @max_outcome 40
   @max_outcomes 10
   @max_admins 10
@@ -113,6 +117,20 @@ defmodule PotokIde.Processes.Graph do
     end)
   end
 
+  @doc """
+  The first role the graph names that is not among `keys` (the role keys of
+  the app's group), as `{path, :unknown_role}`, or nil.
+  """
+  def unknown_role(graph, %MapSet{} = keys) do
+    Enum.find_value(role_refs(graph), fn {path, key} ->
+      if not MapSet.member?(keys, key), do: {path, :unknown_role}
+    end)
+  end
+
+  @doc "The label of an element, or its id when it has none."
+  def label(%{"label" => label}) when is_binary(label), do: label
+  def label(%{"id" => id}), do: id
+
   @doc "The id of the graph's `startEvent`."
   def start(%{"nodes" => nodes}),
     do: Enum.find_value(nodes, &(&1["type"] == "startEvent" && &1["id"]))
@@ -160,9 +178,11 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp element(%{"id" => id, "type" => type} = node, path) when is_binary(id) do
-    if Regex.match?(@id_format, id),
-      do: typed(type, node, path, %{"id" => id, "type" => type}),
-      else: {:error, {path <> ".id", :invalid}}
+    with true <- Regex.match?(@id_format, id) || {:error, {path <> ".id", :invalid}},
+         {:ok, element} <- typed(type, node, path, %{"id" => id, "type" => type}),
+         {:ok, label} <- label(node["label"], path <> ".label") do
+      {:ok, put_some(element, "label", label)}
+    end
   end
 
   defp element(_node, path), do: {:error, {path, :invalid}}
@@ -190,6 +210,21 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp typed(_type, _node, path, _base), do: {:error, {path <> ".type", :invalid}}
+
+  # A blank label is no label.
+  defp label(nil, _path), do: {:ok, nil}
+
+  defp label(label, path) when is_binary(label) do
+    case String.trim(label) do
+      "" ->
+        {:ok, nil}
+
+      label ->
+        if String.length(label) <= @max_label, do: {:ok, label}, else: {:error, {path, :invalid}}
+    end
+  end
+
+  defp label(_label, path), do: {:error, {path, :invalid}}
 
   defp action("message", node, path, base) do
     with {:ok, text} <- text(node["text"], @max_text, path <> ".text"),

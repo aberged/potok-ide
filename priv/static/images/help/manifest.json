@@ -195,6 +195,10 @@
     "h": 844,
     "w": 390
   },
+  "procesi": {
+    "h": 844,
+    "w": 390
+  },
   "profil-uredi": {
     "h": 844,
     "w": 390
@@ -231,11 +235,27 @@
     "h": 844,
     "w": 390
   },
+  "zadruga-proces-crtez": {
+    "h": 844,
+    "w": 390
+  },
+  "zadruga-proces-korak": {
+    "h": 844,
+    "w": 390
+  },
   "zgrada-deljeni-profil": {
     "h": 844,
     "w": 390
   },
   "zgrada-kucni-savet": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-pokreni": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-proces-okidac": {
     "h": 844,
     "w": 390
   }

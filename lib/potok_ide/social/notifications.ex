@@ -46,7 +46,7 @@ defmodule PotokIde.Social.Notifications do
   What an app's process pushes to the people of a role, under its name; `tag`
   lets a step that runs again replace its push rather than add one.
   """
-  def process_push(%Profile{} = process, %Group{} = group, text, tag) do
+  def process_push(%Profile{} = process, %Group{} = group, text, tag, url \\ nil) do
     localized(fn ->
       %{
         title:
@@ -56,7 +56,7 @@ defmodule PotokIde.Social.Notifications do
           ),
         body: text,
         tag: tag,
-        url: "/groups/#{group.id}",
+        url: url || "/groups/#{group.id}",
         badge: avatar_url(process)
       }
     end)

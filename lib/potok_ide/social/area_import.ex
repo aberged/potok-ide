@@ -288,7 +288,10 @@ defmodule PotokIde.Social.AreaImport do
       nil ->
         choices = %{"name" => name, "is_public" => true, "inherits_members" => false}
 
-        case Social.create_group_from_preset(profile, parent, @preset, choices) do
+        # Thousands of places at once start no process.
+        case Social.create_group_from_preset(profile, parent, @preset, choices, %{},
+               processes: false
+             ) do
           {:ok, %{group: group}} -> {:ok, group, false, true}
           {:error, reason} -> {:error, reason}
         end

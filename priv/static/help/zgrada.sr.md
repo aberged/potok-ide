@@ -10,7 +10,7 @@ Korak po korak do zgrade kakva je Cvetna 12 iz primera: jedan razgovor za sve st
 
 ## Šta pravimo {:#sta-pravimo}
 
-- **Zgrada Cvetna 12**, razgovor, privatna
+- **Zgrada Cvetna 12**, razgovor, privatna, sa procesom za prijavu kvara
   - **Kućni savet**: razgovor samo za savet
 
 ![Gotova Zgrada Cvetna 12: zapisnik, glasanje i događaj u istom razgovoru](primer-zgrada)
@@ -87,6 +87,25 @@ Najava stiže u razgovor, a stanari odgovaraju sa Dolazim, Možda ili Ne dolazim
 
 ![Novi događaj](dogadjaj-forma)
 
+## 9. Prijava kvara {:#kvar}
+
+Da prijava kvara ne ostane zatrpana u razgovoru, napravi proces koji stanari pokreću sami. Za to ne treba nikakva aplikacija.
+
+1. U Zgradi Cvetna 12 otvori meni grupe, izaberi **Procesi** i dodirni **Nacrtaj proces**. Upiši „Prijava kvara“, a pod **Kad** izaberi **ga neko pokrene**.
+2. Dodirni početni korak: pod **Ko sme da ga pokrene** ostavi **Svi**.
+3. Dodirni **+** ispod početka i izaberi **Podgrupa**. Za ime upiši „Kvar: “ i dodirni `title` ispod polja. Pod **Ko je vodi** ostavi vlasnika procesa i onoga ko ga je pokrenuo.
+4. Dodirni **+** ispod podgrupe i izaberi **Odluka**. Ishode nazovi „Popravljeno“ i „Zovemo majstora“.
+5. Na strelici svakog ishoda dodaj **Poruku** u podgrupu, recimo „Popravljeno je, hvala na prijavi.“
+6. Dodirni **Sačuvaj**, pa **Uključi**.
+
+![Prijava kvara: ko sme da je pokrene](zgrada-proces-okidac)
+
+Stanar na kartici Procesi dodirne **Pokreni**, upiše šta je u kvaru i potvrdi. Proces otvori podgrupu za taj kvar, u kojoj su stanar i ti, a odluka te čeka na kartici Procesi, pod **Čeka tebe**.
+
+![Prijava kvara sa kartice Procesi](zgrada-pokreni)
+
+Isto može i bez dugmeta: pod **Kad** izaberi **neko napiše poruku** i upiši reči „kvar“ i „curi“. Svaka poruka u razgovoru zgrade sa nekom od njih pokreće proces.
+
 ## Klub, hor ili ekipa {:#klub}
 
 Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one koji ga vode i deljeni profil kad treba da govore jednim glasom. Treninzi i probe su događaji koji se ponavljaju: pod **Ponavljanje** izaberi **Svake nedelje**.
@@ -94,5 +113,6 @@ Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one ko
 ## Šta dalje {:#dalje}
 
 - [Profili](/pomoc#profili): jedinstveni i deljeni profili.
+- [Nacrtaj proces](/pomoc#nacrtaj-proces): sve što može da pokrene proces.
 - [Poruke](/pomoc#poruke): odgovori, niti, reakcije i pominjanja.
 - [Fajlovi i tagovi](/pomoc#fajlovi-i-tagovi): sve iz razgovora na jednom mestu.

@@ -162,19 +162,23 @@ defmodule PotokIde.Social.AppData do
 
   # The roles a process's graph names must be the group's (`Graph.role_refs/1`).
   defp unknown_process_role(rules, %Access{manifest: manifest}) do
-    keys = MapSet.new(if(manifest, do: manifest.roles, else: []), & &1.key)
+    keys = role_keys(manifest)
 
     Enum.find_value(rules, fn
       {collection, %{"process" => %{"graph" => graph}}} ->
-        Enum.find_value(Graph.role_refs(graph), fn {path, key} ->
-          if not MapSet.member?(keys, key),
-            do: {:invalid_process, collection, "process.graph." <> path, :unknown_role}
-        end)
+        case Graph.unknown_role(graph, keys) do
+          nil -> nil
+          {path, reason} -> {:invalid_process, collection, "process.graph." <> path, reason}
+        end
 
       _rule ->
         nil
     end)
   end
+
+  @doc false
+  # The role keys of a group's manifest, which a process's graph may name.
+  def role_keys(manifest), do: MapSet.new(if(manifest, do: manifest.roles, else: []), & &1.key)
 
   @doc false
   # For `AppFiles`, inside its own transaction: the sub-groups that keep the
@@ -236,7 +240,8 @@ defmodule PotokIde.Social.AppData do
   @doc """
   Writes `data` to `collection` in `profile`'s name, as its rule allows.
   `account` is the viewer's, for `once`. A collection whose process has a
-  graph starts an instance on the value (`Processes.Engine.start/3`).
+  graph starts an instance on the value (`Processes.Engine.start/3`), and so
+  does every active process drawn on it in Potok (`Engine.start_drawn/3`).
   Returns `{:ok, value, rule}`.
   """
   def insert(%Profile{} = profile, %Account{} = account, %Group{} = group, alt, collection, data) do
@@ -282,15 +287,17 @@ defmodule PotokIde.Social.AppData do
 
         AppFiles.claim(files, value)
 
-        # The collection's process starts on the value, in the same transaction.
+        # The collection's processes start on the value, in the same
+        # transaction: the app's own and those drawn in Potok.
         instance = Engine.start(value, rule, profile)
-        {%{value | creator: profile}, rule, instance}
+        drawn = Engine.start_drawn(value, rule, profile)
+        {%{value | creator: profile}, rule, instance != nil or drawn != []}
       end)
       |> case do
-        {:ok, {value, rule, instance}} ->
+        {:ok, {value, rule, started?}} ->
           broadcast_value(group, :created, value, rule)
           notify_subscribers(group, alt, value, rule, profile)
-          if instance, do: Scheduler.nudge()
+          if started?, do: Scheduler.nudge()
           {:ok, value, rule}
 
         {:error, reason} ->
@@ -779,8 +786,10 @@ defmodule PotokIde.Social.AppData do
 
   defp locked_value(_group, _alt, _id), do: nil
 
-  # One editor's save at a time, also before the config exists.
-  defp lock_app(%Group{id: group_id}, alt) do
+  @doc false
+  # One editor's save at a time, also before the config exists. The processes
+  # drawn in Potok for the app take it too (`DrawnProcesses`).
+  def lock_app(%Group{id: group_id}, alt) do
     Repo.query!("SELECT pg_advisory_xact_lock($1, $2)", [7_101, lock_key({group_id, alt_id(alt)})])
   end
 
