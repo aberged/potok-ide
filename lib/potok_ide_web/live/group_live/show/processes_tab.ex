@@ -248,9 +248,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         <% else %>
           <p :if={@task.title} class="font-semibold">{@task.title}</p>
         <% end %>
-        <p :if={@task.text} class="line-clamp-4 whitespace-pre-line break-words text-base-content/80">
-          {@task.text}
-        </p>
+        <%!-- On one line: the text keeps its own line breaks, and gets none of the template's. --%>
+        <p
+          :if={@task.text}
+          class="line-clamp-4 whitespace-pre-line break-words text-base-content/80"
+          phx-no-format
+        >{@task.text}</p>
       </div>
 
       <details :if={@task.data != []} id={"process-task-#{@task.id}-data"} class="group">

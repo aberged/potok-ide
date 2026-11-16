@@ -188,13 +188,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
           </header>
 
           <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+            <%!-- On one line: the text keeps its own line breaks, and gets none of the template's. --%>
             <p
               :if={@state.task.text not in [nil, ""]}
               id="process-form-subject"
               class="mb-3 line-clamp-3 whitespace-pre-line break-words rounded-2xl bg-base-200/60 px-3 py-2 text-sm text-base-content/75"
-            >
-              {@state.task.text}
-            </p>
+              phx-no-format
+            >{@state.task.text}</p>
             <.form
               for={@state.form}
               id="process-form"
