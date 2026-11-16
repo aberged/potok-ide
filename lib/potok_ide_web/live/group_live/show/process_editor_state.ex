@@ -15,7 +15,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   A drawing is drawn in today's language (`Graph` `"v" => 2`): one kept in
   the first is turned into it as its editor opens it (`Graph.upgrade/1`),
   and asks to be saved. What its texts and conditions say is checked as it
-  is drawn (`Processes.Check`), against what its trigger hands a run.
+  is drawn (`Processes.Check`), against what its trigger hands a run and
+  the entities of the group.
+
+  With nothing picked, the panel shows the data of the process (`data/1`):
+  what set it going, its variables, which are listed and changed there,
+  what its steps bring back, and the entities of the group.
 
   `GroupLive.Show` delegates every `"process_editor_*"` event here; the URL
   (`?process=new`, `?process=12`) opens the editor (`ProcessesState`).
@@ -27,7 +32,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3, push_patch: 2, put_flash: 3]
 
-  alias PotokIde.Processes.{Check, Graph, GraphEdit, GroupFields, Scope, Triggers}
+  alias PotokIde.Processes.{Check, Graph, GraphEdit, GroupEntities, GroupFields, Scope, Triggers}
   alias PotokIde.Repo
   alias PotokIde.Social.{AppData, AppProcess, DrawnProcesses, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.RolesTab
@@ -82,7 +87,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection),
           callable: DrawnProcesses.callable(group),
           group_fields: GroupFields.names(group),
-          signals: DrawnProcesses.signals(group)
+          signals: DrawnProcesses.signals(group),
+          entities: GroupEntities.list(group),
+          data?: false
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -137,7 +144,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
             ),
           callable: DrawnProcesses.callable(group),
           group_fields: if(manage?, do: GroupFields.names(group), else: []),
-          signals: if(manage?, do: DrawnProcesses.signals(group), else: %{})
+          signals: if(manage?, do: DrawnProcesses.signals(group), else: %{}),
+          entities: if(manage?, do: GroupEntities.list(group), else: []),
+          data?: false
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -173,7 +182,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           fields: [],
           callable: [],
           group_fields: [],
-          signals: %{}
+          signals: %{},
+          entities: [],
+          data?: false
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -230,11 +241,27 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         true -> nil
       end
 
-    {:noreply, socket |> update_editor(&%{&1 | selected: selected, inserting: nil}) |> refresh()}
+    {:noreply,
+     socket
+     |> update_editor(&%{&1 | selected: selected, inserting: nil, data?: false})
+     |> refresh()}
   end
 
-  def handle_event("process_editor_deselect", _params, socket),
-    do: {:noreply, socket |> update_editor(&%{&1 | selected: nil, inserting: nil}) |> refresh()}
+  def handle_event("process_editor_deselect", _params, socket) do
+    {:noreply,
+     socket
+     |> update_editor(&%{&1 | selected: nil, inserting: nil, data?: false})
+     |> refresh()}
+  end
+
+  # The data of the process, which a wide screen shows beside the drawing
+  # whenever nothing is picked, as a sheet on a phone.
+  def handle_event("process_editor_data", _params, socket) do
+    {:noreply,
+     socket
+     |> update_editor(&%{&1 | selected: nil, inserting: nil, data?: true})
+     |> refresh()}
+  end
 
   def handle_event(event, params, %{assigns: %{process_editor: %{editable?: true}}} = socket),
     do: editing(event, params, socket)
@@ -379,6 +406,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
      |> refresh()}
   end
 
+  # A name put into what a step sets, where that is an expression.
+  defp editing("process_editor_insert_field", %{"target" => "value_expr", "path" => path}, socket) do
+    case socket.assigns.process_editor.selected do
+      {:node, id} ->
+        graph_change(socket, fn graph ->
+          current = Graph.node(graph, id)["value"]
+          GraphEdit.update_node(graph, id, %{"value" => put_name(current, path)})
+        end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
   defp editing("process_editor_insert_field", %{"target" => target, "path" => path}, socket)
        when target in ["text", "name", "value"] do
     case socket.assigns.process_editor.selected do
@@ -436,6 +477,38 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
               }),
             else: {:ok, graph}
         end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
+  # The variables as their form lists them, kept as typed: the drawing's
+  # check says what is wrong with one.
+  defp editing("process_editor_variables", %{"variables" => rows}, socket) when is_map(rows) do
+    graph_change(socket, &{:ok, GraphEdit.put_variables(&1, variable_rows(rows))})
+  end
+
+  defp editing("process_editor_var_add", _params, socket) do
+    graph_change(socket, fn graph ->
+      variables = graph["variables"] || []
+
+      if length(variables) < 30 do
+        variable = %{"name" => fresh_variable(graph), "type" => "text", "list" => false}
+        {:ok, GraphEdit.put_variables(graph, variables ++ [variable])}
+      else
+        {:error, :too_many}
+      end
+    end)
+  end
+
+  defp editing("process_editor_var_remove", %{"index" => index}, socket) do
+    case Integer.parse(to_string(index)) do
+      {i, ""} ->
+        graph_change(
+          socket,
+          &{:ok, GraphEdit.put_variables(&1, List.delete_at(&1["variables"] || [], i))}
+        )
 
       _other ->
         {:noreply, socket}
@@ -597,6 +670,53 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     current <> joiner <> "{{#{path}}}"
   end
 
+  # The rows of the variables' form, in its order. Options come as one
+  # text, as an entity's attribute takes them.
+  defp variable_rows(rows) do
+    rows
+    |> Enum.flat_map(fn {i, row} ->
+      case Integer.parse(i) do
+        {i, ""} when is_map(row) -> [{i, variable_row(row)}]
+        _other -> []
+      end
+    end)
+    |> Enum.sort_by(&elem(&1, 0))
+    |> Enum.map(&elem(&1, 1))
+  end
+
+  defp variable_row(row) do
+    %{
+      "name" => row["name"] || "",
+      "type" => row["type"] || "text",
+      "list" => row["list"] == "true"
+    }
+    |> maybe_put("options", row["options"] && split_options(row["options"]))
+    |> maybe_put("entity", parse_id(row["entity"]))
+    |> maybe_put("initial", row["initial"])
+  end
+
+  defp split_options(text) do
+    text
+    |> String.split(~r/[,\n]/)
+    |> Enum.map(&String.trim/1)
+    |> Enum.reject(&(&1 == ""))
+    |> Enum.uniq()
+  end
+
+  # A name no step and no variable of the drawing has yet.
+  defp fresh_variable(graph) do
+    taken =
+      MapSet.new(
+        Enum.map(graph["nodes"], & &1["id"]) ++ Enum.map(graph["variables"] || [], & &1["name"])
+      )
+
+    base = gettext("variable")
+
+    Stream.iterate(1, &(&1 + 1))
+    |> Stream.map(&"#{base}#{&1}")
+    |> Enum.find(&(not MapSet.member?(taken, &1)))
+  end
+
   # In an expression a name stands as it is; it takes the place of the
   # `true` a new condition starts with.
   defp put_name(current, path) do
@@ -747,7 +867,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     attrs =
       params
-      |> Map.take(~w(label text in name role field op value))
+      |> Map.take(~w(label text in name role field op value target))
       |> maybe_put("admins", admins(params))
       |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
@@ -950,6 +1070,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       role: "admin",
       outcomes: [gettext("Approve"), gettext("Decline")],
       outcome: gettext("Outcome"),
+      variable:
+        editor.graph |> Map.get("variables", []) |> List.first() |> then(&(&1 && &1["name"])),
       group_field: gettext("field"),
       signal: editor.signals |> Map.keys() |> Enum.sort() |> List.first() || gettext("ready"),
       process: callee && callee.id,
@@ -1102,12 +1224,141 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     with {:ok, normalized} <- Graph.normalize(graph, drawn: editor.source != :app),
          nil <- Graph.unknown_role(normalized, keys),
          nil <- Graph.unknown_process(normalized, callable),
-         {:ok, _checked} <- Check.run(normalized, %{entry: entry(editor)}) do
+         {:ok, _checked} <-
+           Check.run(normalized, %{
+             entry: entry(editor),
+             entities: GroupEntities.definitions(editor[:entities] || [])
+           }) do
       nil
     else
       {:error, {path, reason}} -> error(graph, path, reason)
       {path, reason} -> error(graph, path, reason)
     end
+  end
+
+  @doc """
+  Reads the group's entities again and checks the drawing against them, as
+  one of them changed while the drawing is open.
+  """
+  def entities_changed(%{assigns: %{process_editor: %{editable?: true}}} = socket) do
+    entities = GroupEntities.list(socket.assigns.group)
+    socket |> update_editor(&%{&1 | entities: entities}) |> refresh()
+  end
+
+  def entities_changed(socket), do: socket
+
+  @doc """
+  The data of the process, for its panel: what set it going (`entry`), what
+  its steps bring back (`results`) and the fields of the group (`group`),
+  each as `{path, type}` with the path an expression names it by, and its
+  variables as their form lists them.
+  """
+  def data(editor) do
+    start = Graph.start(editor.graph)
+
+    entry =
+      case entry(editor) do
+        {:record, fields, _open?} when map_size(fields) > 0 ->
+          known = for name <- editor.fields, is_map_key(fields, name), do: name
+
+          for name <- known ++ (Map.keys(fields) -- known),
+              do: {Scope.path(start, name), fields[name]}
+
+        _open_or_unknown ->
+          for name <- editor.fields, do: {Scope.path(start, name), :any}
+      end
+
+    results =
+      Enum.flat_map(editor.graph["nodes"], fn
+        %{"type" => "userTask", "id" => id} ->
+          [{"#{id}.outcome", :text}, {"#{id}.by", :text}, {"#{id}.comment", :text}]
+
+        %{"type" => "callActivity", "wait" => true, "id" => id} ->
+          [{"#{id}.outcome", :text}]
+
+        %{"type" => "receiveTask", "id" => id, "signal" => signal} ->
+          [{"#{id}.from", :text}] ++
+            for(field <- carried(editor, signal), do: {Scope.path(id, field), :any})
+
+        _other ->
+          []
+      end)
+
+    %{
+      entry: entry,
+      results: results,
+      group: for(name <- group_field_names(editor), do: {Scope.path("group", name), :any}),
+      variables: editor.graph["variables"] || []
+    }
+  end
+
+  @doc """
+  Whether what a step sets is written as a text, which may hold expressions
+  in braces, rather than as one expression: a text or a choice is.
+  """
+  def textual_target?(editor, target) when is_binary(target) do
+    graph = Map.put(editor.graph, "types", GroupEntities.definitions(editor[:entities] || []))
+
+    with {:ok, tree} <- PotokIde.Processes.Expr.parse(target),
+         {:ok, type} <- PotokIde.Processes.Expr.check(tree, Scope.scope(graph)) do
+      PotokIde.Processes.Types.textual?(type)
+    else
+      _unknown -> false
+    end
+  end
+
+  def textual_target?(_editor, _target), do: false
+
+  @doc """
+  What a step may set, as it names it: each variable, and for one that holds
+  an entity its attributes, and theirs.
+  """
+  def assign_targets(editor) do
+    definitions = GroupEntities.definitions(editor[:entities] || [])
+
+    Enum.flat_map(editor.graph["variables"] || [], fn
+      %{"name" => name, "type" => "entity", "entity" => id, "list" => false}
+      when is_binary(name) ->
+        [name | attribute_paths(name, id, definitions, 2)]
+
+      %{"name" => name} when is_binary(name) and name != "" ->
+        [name]
+
+      _unnamed ->
+        []
+    end)
+  end
+
+  # The attributes of an entity as paths under `name`, down to `depth` levels.
+  defp attribute_paths(_name, _id, _definitions, 0), do: []
+
+  defp attribute_paths(name, id, definitions, depth) do
+    case definitions[to_string(id)] do
+      %{"attributes" => attributes} ->
+        Enum.flat_map(attributes, fn
+          %{"name" => attribute, "type" => "entity", "entity" => held, "list" => false} ->
+            path = "#{name}.#{attribute}"
+            [path | attribute_paths(path, held, definitions, depth - 1)]
+
+          %{"name" => attribute} ->
+            ["#{name}.#{attribute}"]
+        end)
+
+      _unknown ->
+        []
+    end
+  end
+
+  # The fields of the group the drawing may read: those kept, and those its
+  # own steps set.
+  defp group_field_names(editor) do
+    editor.graph["nodes"]
+    |> Enum.flat_map(fn
+      %{"action" => "set", "field" => field} when is_binary(field) -> [field]
+      _other -> []
+    end)
+    |> Kernel.++(editor[:group_fields] || [])
+    |> Enum.uniq()
   end
 
   # What the trigger hands a run, from its settings as typed so far.
@@ -1226,21 +1477,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   What a step's texts and conditions may name, as an expression names it
   (`Processes.Scope`): the fields of what set the process going, under the
   id of its start, then what the calls, waits and decisions of the drawing
-  bring back, but the step's own, then the fields of the group.
+  bring back, but the step's own, then the fields of the group; and its
+  variables, with the attributes of those that hold an entity.
   """
   def field_hints(editor) do
     own = with {:node, id} <- editor.selected, do: id
     start = Graph.start(editor.graph)
 
-    group =
-      editor.graph["nodes"]
-      |> Enum.flat_map(fn
-        %{"action" => "set", "field" => field} when is_binary(field) -> [field]
-        _other -> []
-      end)
-      |> Kernel.++(editor[:group_fields] || [])
-      |> Enum.uniq()
-      |> Enum.map(&Scope.path("group", &1))
+    group = Enum.map(group_field_names(editor), &Scope.path("group", &1))
 
     results =
       Enum.flat_map(editor.graph["nodes"], fn
@@ -1260,7 +1504,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           []
       end)
 
-    Enum.map(editor.fields, &Scope.path(start, &1)) ++ results ++ group
+    Enum.map(editor.fields, &Scope.path(start, &1)) ++ assign_targets(editor) ++ results ++ group
   end
 
   # The fields the senders of a signal put in it, in the group and here.
@@ -1342,6 +1586,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
         {"receive", "hero-signal", label || gettext("Wait for %{name}", name: node["signal"]),
          if(detail == "", do: nil, else: detail)}
+
+      %{"action" => "assign"} ->
+        target = if node["target"] in [nil, ""], do: gettext("a variable"), else: node["target"]
+
+        {"assign", "hero-variable", label || gettext("Set %{name}", name: target), node["value"]}
 
       %{"action" => "set", "op" => "add"} ->
         {"set", "hero-pencil-square", label || gettext("Add to %{field}", field: node["field"]),
@@ -1432,7 +1681,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         {deadline_amount, deadline_unit} = amount(node["deadline"])
 
         node
-        |> Map.take(~w(label text in name role admins fields field op value))
+        |> Map.take(~w(label text in name role admins fields field op value target))
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
@@ -1490,8 +1739,45 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:not_a_number, _path), do: gettext("Adding takes a number, or a field.")
 
+  defp reason_text(:taken, _path),
+    do: gettext("A step or another variable has that name already.")
+
+  defp reason_text(:unknown_entity, _path),
+    do: gettext("The group no longer has that entity, or one it holds.")
+
+  defp reason_text({:not_a_variable, ""}, _path),
+    do: gettext("A step sets a variable, or an attribute of one.")
+
+  defp reason_text({:not_a_variable, name}, _path),
+    do: gettext("%{name} is no variable, so no step can set it.", name: name)
+
+  defp reason_text(:invalid, "variables" <> _rest = path) do
+    cond do
+      String.ends_with?(path, ".name") ->
+        gettext("A variable is named in one word: letters, digits and _, starting with a letter.")
+
+      String.ends_with?(path, ".options") ->
+        gettext("A choice lists what it may be, each once.")
+
+      String.ends_with?(path, ".entity") ->
+        gettext("Pick the entity the variable holds.")
+
+      String.ends_with?(path, ".initial") ->
+        gettext("What the variable starts with is too long.")
+
+      true ->
+        gettext("A variable is not set right.")
+    end
+  end
+
+  defp reason_text(:too_many, "variables" <> _rest),
+    do: gettext("A drawing keeps at most 30 variables.")
+
   defp reason_text(:invalid, path) do
     cond do
+      String.ends_with?(path, ".target") ->
+        gettext("Pick what the step sets: a variable, or an attribute of one.")
+
       String.ends_with?(path, ".text") ->
         gettext("The text is empty or too long.")
 

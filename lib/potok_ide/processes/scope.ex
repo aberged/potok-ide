@@ -10,7 +10,8 @@ defmodule PotokIde.Processes.Scope do
     `.comment`), of a call that waits how the called process ended
     (`poziv.outcome`), and of a wait for a signal what the signal carried
     (`prijem.from`, and its fields);
-  - `group` holds the fields of the group (`group.kvarova`).
+  - `group` holds the fields of the group (`group.kvarova`);
+  - each variable of the graph is its own name (`ukupno`, `prijava.sprat`).
 
   A graph is self-contained: with the `entry` and `types` it was saved with
   (`PotokIde.Processes.Check`), its names are known with no look elsewhere,
@@ -30,14 +31,27 @@ defmodule PotokIde.Processes.Scope do
   def names(%{"nodes" => nodes} = graph) do
     entry = Types.of(graph["entry"] || %{})
 
+    variables =
+      for variable <- graph["variables"] || [], do: {variable["name"], Types.of(variable)}
+
     nodes
     |> Enum.flat_map(&result(&1, entry))
+    |> Kernel.++(variables)
     |> Map.new()
     |> Map.put("group", {:record, %{}, true})
   end
 
-  @doc "What `Expr.check/2` checks an expression of the graph against."
-  def scope(graph), do: %{names: names(graph), entities: graph["types"] || %{}}
+  @doc """
+  What `Expr.check/2` checks an expression of the graph against, with the
+  names of its variables, which alone a step may set.
+  """
+  def scope(graph) do
+    %{
+      names: names(graph),
+      entities: graph["types"] || %{},
+      variables: for(variable <- graph["variables"] || [], do: variable["name"])
+    }
+  end
 
   defp result(%{"type" => "startEvent", "id" => id}, entry), do: [{id, entry}]
 

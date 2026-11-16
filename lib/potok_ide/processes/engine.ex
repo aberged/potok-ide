@@ -44,7 +44,11 @@ defmodule PotokIde.Processes.Engine do
 
   A run reads its texts and conditions in the language of the graph it
   started with: today's (`"v" => 2`, `Expr` over the names of `Scope`) for
-  a process drawn so, the first (`Legacy`) for every other.
+  a process drawn so, the first (`Legacy`) for every other. In today's a
+  run keeps variables (`vars`): those that start with a value get it on the
+  start element, and a `serviceTask` `assign` sets one, or an attribute of
+  one, to what an expression gives, as the type of the target takes it
+  (`Types.cast/4`). Variables and results together hold at most 64 KB.
   """
 
   import Ecto.Query, warn: false
@@ -61,6 +65,7 @@ defmodule PotokIde.Processes.Engine do
     Scheduler,
     Scope,
     Triggers,
+    Types,
     ValueProcess
   }
 
@@ -86,6 +91,8 @@ defmodule PotokIde.Processes.Engine do
   @max_called 200
   @max_field 1_000
   @max_result 8_192
+  # What a run keeps in its variables and its results together, in bytes.
+  @max_data 65_536
   @max_woken 100
 
   # ---------
@@ -426,8 +433,12 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
-  defp act(%{"type" => "startEvent", "id" => id}, instance),
-    do: {:next, plain_next(instance, id), %{}, []}
+  # The start: the variables that start with a value get it.
+  defp act(%{"type" => "startEvent", "id" => id}, instance) do
+    with {:ok, changes} <- initial_vars(instance) do
+      {:next, plain_next(instance, id), changes, []}
+    end
+  end
 
   defp act(%{"type" => "endEvent"}, _instance), do: :done
 
@@ -560,6 +571,26 @@ defmodule PotokIde.Processes.Engine do
       {:error, :process_inactive}
     end
   end
+
+  # A variable of the run, or an attribute of one, set to what its value
+  # gives, as the type of the target takes it.
+  defp service("assign", task, _step, _group, instance, {:names, data, opts}) do
+    graph = instance.graph
+
+    with {:ok, target} <- Expr.parse(task["target"]),
+         {:ok, type} <- Expr.check(target, Scope.scope(graph)),
+         {:ok, value} <- worked_out(task["value"], type, data, opts),
+         {:ok, value} <- Types.cast(value, type, graph["types"] || %{}, zone: opts.zone),
+         vars = put_path(instance.vars || %{}, path(target), Types.dump(value)),
+         :ok <- room_for(vars, instance.results) do
+      {:ok, %{vars: vars}, fn -> :ok end}
+    else
+      {:error, reason} -> {:error, expression_error(reason)}
+    end
+  end
+
+  # Only a graph of today sets variables.
+  defp service("assign", _task, _step, _group, _instance, _data), do: {:error, :bad_expression}
 
   # A field of the group, which every drawn process of it reads.
   defp service("set", task, step, _group, _instance, data) do
@@ -1083,7 +1114,8 @@ defmodule PotokIde.Processes.Engine do
   # process, the fields of its group under `group`.
   defp value_data(%ValueProcess{graph: %{"v" => 2} = graph, results: results} = instance) do
     values =
-      (results || %{})
+      (instance.vars || %{})
+      |> Map.merge(results || %{})
       |> Map.put(Graph.start(graph), base_data(instance))
       |> Map.put("group", GroupFields.for_process(instance.app_process_id))
 
@@ -1135,9 +1167,72 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
-  # A graph is checked when it is saved, so only what it holds can fail it.
+  # A graph is checked when it is saved, so only what it holds can fail it:
+  # a number that is none, or a value its type does not take.
   defp expression_error(reason) when is_atom(reason), do: reason
+  defp expression_error({reason, path}) when is_atom(reason) and is_binary(path), do: reason
   defp expression_error(_syntax), do: :bad_expression
+
+  # What a text or an expression gives: a text for what is written as one.
+  defp worked_out(text, type, data, opts) do
+    if Types.textual?(type) do
+      with {:ok, parts} <- Expr.template(text), do: Expr.render(parts, data, opts)
+    else
+      with {:ok, tree} <- Expr.parse(text), do: Expr.eval(tree, data, opts)
+    end
+  end
+
+  # The variables of a graph of today that start with a value, each worked
+  # out in turn, so one may start from another before it.
+  defp initial_vars(
+         %ValueProcess{graph: %{"v" => 2, "variables" => [_ | _] = variables} = graph} = instance
+       ) do
+    {:names, data, opts} = value_data(instance)
+    entities = graph["types"] || %{}
+
+    variables
+    |> Enum.filter(&is_binary(&1["initial"]))
+    |> Enum.reduce_while({:ok, instance.vars || %{}, data}, fn variable, {:ok, vars, data} ->
+      %{"name" => name, "initial" => initial} = variable
+      type = Types.of(variable)
+
+      with {:ok, value} <- worked_out(initial, type, data, opts),
+           {:ok, value} <- Types.cast(value, type, entities, zone: opts.zone) do
+        {:cont, {:ok, Map.put(vars, name, Types.dump(value)), Map.put(data, name, value)}}
+      else
+        {:error, reason} -> {:halt, {:error, expression_error(reason)}}
+      end
+    end)
+    |> case do
+      {:ok, vars, _data} -> {:ok, %{vars: vars}}
+      {:error, _reason} = error -> error
+    end
+  end
+
+  defp initial_vars(_instance), do: {:ok, %{}}
+
+  # The names of a target, the variable first: `prijava.sprat`.
+  defp path({:name, name}), do: [name]
+  defp path({:attribute, tree, name}), do: path(tree) ++ [name]
+
+  # Sets what stands at the path, making the entities on the way to it.
+  defp put_path(held, [name], value), do: Map.put(fields_of(held), name, value)
+
+  defp put_path(held, [name | rest], value) do
+    held = fields_of(held)
+    Map.put(held, name, put_path(Map.get(held, name), rest, value))
+  end
+
+  # What an entity holds so far; nothing yet where there is none.
+  defp fields_of(%{} = held) when not is_struct(held), do: held
+  defp fields_of(_nothing), do: %{}
+
+  # A run keeps so much and no more, in its variables and what its waits
+  # brought back.
+  defp room_for(vars, results) do
+    size = byte_size(JSON.encode!(vars)) + byte_size(JSON.encode!(results || %{}))
+    if size <= @max_data, do: :ok, else: {:error, :too_much_data}
+  end
 
   defp later(duration), do: DateTime.add(now(), Graph.seconds(duration), :second)
 

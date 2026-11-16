@@ -18,7 +18,8 @@ defmodule PotokIde.Processes.GraphEditTest do
     process: 7,
     call_fields: %{"kvar" => ""},
     group_field: "polje",
-    signal: "subota"
+    signal: "subota",
+    variable: "ukupno"
   }
 
   defp valid!(graph) do

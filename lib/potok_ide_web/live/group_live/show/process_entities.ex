@@ -297,6 +297,28 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEntities do
     if attribute.list, do: gettext("list of %{type}", type: label), else: label
   end
 
+  @doc """
+  A type as a term (`PotokIde.Processes.Types`) in words, with `entities`,
+  the group's own, to name the entity it holds.
+  """
+  def type_words({:list, type}, entities),
+    do: gettext("list of %{type}", type: type_words(type, entities))
+
+  def type_words({:entity, id}, entities) do
+    case Enum.find(entities, &(&1.id == id)) do
+      %GroupEntity{name: name} -> name
+      nil -> gettext("entity")
+    end
+  end
+
+  def type_words({:choice, _options}, _entities), do: type_name("choice")
+  def type_words({:record, _fields, _open?}, _entities), do: gettext("fields")
+
+  def type_words(type, _entities) when type in [:text, :number, :boolean, :date, :datetime],
+    do: type_name(Atom.to_string(type))
+
+  def type_words(_any, _entities), do: gettext("anything")
+
   @doc "The name of a plain type, in small letters."
   def type_name("text"), do: gettext("text")
   def type_name("number"), do: gettext("number")
@@ -306,8 +328,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEntities do
   def type_name("choice"), do: gettext("choice")
   def type_name(_type), do: gettext("entity")
 
-  # Another entity can be held only where the group has one.
-  defp type_options(others) do
+  @doc """
+  The types to pick from. An entity can be held only where the group has
+  one; `entity` is what that choice is called, "Another entity" for an
+  attribute of one.
+  """
+  def type_options(others, entity \\ gettext("Another entity")) do
     [
       {gettext("Text"), "text"},
       {gettext("Number"), "number"},
@@ -315,7 +341,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEntities do
       {gettext("Date"), "date"},
       {gettext("Date and time"), "datetime"},
       {gettext("Choice from a list"), "choice"}
-    ] ++ if(others == [], do: [], else: [{gettext("Another entity"), "entity"}])
+    ] ++ if(others == [], do: [], else: [{entity, "entity"}])
   end
 
   defp others(entities, %GroupEntity{id: id}), do: Enum.reject(entities, &(&1.id == id))

@@ -3,13 +3,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   The process editor over the Processes tab (`ProcessEditorState`): a bar
   with the name and the actions, the canvas (`ProcessCanvas`), and a panel
   with the step or flow picked on it, a sheet on a phone and a column beside
-  the canvas on a wide screen.
+  the canvas on a wide screen. With nothing picked the panel holds the data
+  of the process: what set it going, its variables, what its steps bring
+  back and the entities of the group.
   """
 
   use PotokIdeWeb, :html
 
   alias PotokIde.Processes.{Graph, GraphEdit}
-  alias PotokIdeWeb.GroupLive.Show.ProcessEditorState
+  alias PotokIdeWeb.GroupLive.Show.{ProcessEditorState, ProcessEntities}
 
   attr :editor, :map, required: true
   attr :form, :any, required: true
@@ -29,7 +31,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         :canvas_state,
         Jason.encode!(ProcessEditorState.canvas_state(assigns.editor, assigns.access))
       )
-      |> assign(:panel?, assigns.editor.selected != nil or assigns.editor.inserting != nil)
+      |> assign(
+        :panel?,
+        assigns.editor.selected != nil or assigns.editor.inserting != nil or
+          assigns.editor[:data?] == true
+      )
 
     ~H"""
     <%!-- Out of the page's column, which holds fixed elements, and above the menu. --%>
@@ -175,6 +181,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             <% end %>
 
             <span class="flex-1" />
+
+            <%!-- An icon alone: the row holds the state and the switch beside it on a phone. --%>
+            <.icon_button
+              :if={@editor.editable?}
+              id="process-editor-data"
+              type="button"
+              phx-click="process_editor_data"
+              icon="hero-cube"
+              label={gettext("Data of the process")}
+              class="lg:hidden"
+            />
 
             <.button
               :if={@editor.editable?}
@@ -345,6 +362,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   />
                 <% match?({:flow, _}, @editor.selected) and @form -> %>
                   <.flow_panel editor={@editor} form={@form} />
+                <% @editor.editable? -> %>
+                  <.data_panel editor={@editor} />
                 <% true -> %>
                   <.hint editor={@editor} />
               <% end %>
@@ -391,30 +410,319 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   attr :editor, :map, required: true
 
+  # The data of the process: every name its texts and conditions may use,
+  # with the type of what it stands for, and the entities of the group.
+  defp data_panel(assigns) do
+    assigns =
+      assigns
+      |> assign(:data, ProcessEditorState.data(assigns.editor))
+      |> assign(:entities, assigns.editor[:entities] || [])
+
+    ~H"""
+    <div id="process-data-panel" class="space-y-5">
+      <div class="flex items-start justify-between gap-2">
+        <div class="min-w-0">
+          <h2 class="flex items-center gap-2 text-base font-semibold">
+            <.icon name="hero-cube" class="size-5 shrink-0 text-base-content/60" />
+            {gettext("Data of the process")}
+          </h2>
+          <p class="mt-0.5 text-xs text-base-content/60">
+            {gettext("What its texts and conditions may name, and what each holds.")}
+          </p>
+        </div>
+        <.icon_button
+          id="process-panel-close"
+          type="button"
+          phx-click="process_editor_deselect"
+          icon="hero-x-mark"
+          label={gettext("Close")}
+          class="lg:hidden"
+        />
+      </div>
+
+      <.data_section
+        :if={@data.entry != []}
+        id="process-data-entry"
+        icon="hero-play-circle"
+        title={gettext("What starts it")}
+      >
+        <.names rows={@data.entry} entities={@entities} />
+      </.data_section>
+
+      <.data_section id="process-data-variables" icon="hero-variable" title={gettext("Variables")}>
+        <p class="mb-2 text-xs text-base-content/60">
+          {gettext("What a run keeps for itself: a step sets them, and every step after reads them.")}
+        </p>
+        <.form
+          :if={@data.variables != []}
+          for={%{}}
+          as={:variables}
+          id="process-variables-form"
+          phx-change="process_editor_variables"
+          class="space-y-2"
+        >
+          <.variable_row
+            :for={{variable, i} <- Enum.with_index(@data.variables)}
+            variable={variable}
+            index={i}
+            entities={@entities}
+          />
+        </.form>
+        <.button
+          :if={length(@data.variables) < 30}
+          id="process-variable-add"
+          type="button"
+          phx-click="process_editor_var_add"
+          variant="ghost"
+          size="sm"
+          class="mt-1"
+        >
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("Add a variable")}
+        </.button>
+      </.data_section>
+
+      <.data_section
+        :if={@data.results != []}
+        id="process-data-results"
+        icon="hero-arrow-uturn-left"
+        title={gettext("What its steps bring back")}
+      >
+        <.names rows={@data.results} entities={@entities} />
+      </.data_section>
+
+      <.data_section
+        :if={@data.group != []}
+        id="process-data-group"
+        icon="hero-pencil-square"
+        title={gettext("Fields of the group")}
+      >
+        <.names rows={@data.group} entities={@entities} />
+      </.data_section>
+
+      <.data_section
+        id="process-data-entities"
+        icon="hero-cube"
+        title={gettext("Entities of the group")}
+      >
+        <p :if={@entities == []} class="text-xs text-base-content/60">
+          {gettext(
+            "None yet. An entity says what a variable holds: a name, and attributes with their types."
+          )}
+        </p>
+        <ul :if={@entities != []} class="space-y-1.5">
+          <li
+            :for={entity <- @entities}
+            id={"process-data-entity-#{entity.id}"}
+            class="flex items-start gap-2 rounded-2xl border border-base-300/70 bg-base-100 px-3 py-2"
+          >
+            <div class="min-w-0 flex-1">
+              <p class="truncate text-sm font-semibold">{entity.name}</p>
+              <p class="mt-1 flex flex-wrap gap-1">
+                <span
+                  :for={attribute <- entity.attributes}
+                  class="inline-flex items-baseline gap-1 rounded-full bg-violet-500/10 px-2 py-0.5 text-[11px]"
+                >
+                  <code class="font-mono text-violet-700 dark:text-violet-300">{attribute.name}</code>
+                  <span class="text-base-content/55">
+                    {ProcessEntities.type_label(attribute, @entities)}
+                  </span>
+                </span>
+              </p>
+            </div>
+            <.icon_button
+              id={"process-data-entity-#{entity.id}-edit"}
+              type="button"
+              phx-click="processes_entity_edit"
+              phx-value-id={entity.id}
+              icon="hero-pencil-square"
+              label={gettext("Change the entity")}
+            />
+          </li>
+        </ul>
+        <.button
+          id="process-data-entity-new"
+          type="button"
+          phx-click="processes_entity_new"
+          variant="ghost"
+          size="sm"
+          class="mt-1"
+        >
+          <.icon name="hero-plus" class="size-4" />
+          {gettext("New entity")}
+        </.button>
+      </.data_section>
+
+      <details class="group rounded-2xl border border-base-300/70 px-3 py-2 text-sm text-base-content/70">
+        <summary class="flex cursor-pointer list-none items-center gap-2 font-semibold text-base-content">
+          <.icon
+            name="hero-chevron-right"
+            class="size-4 transition-transform duration-200 group-open:rotate-90"
+          />
+          {gettext("How to draw")}
+        </summary>
+        <div class="mt-2 space-y-2">
+          <p class="lg:hidden">
+            {gettext("Tap + on an arrow to add a step, and a step or an arrow to change it.")}
+          </p>
+          <p class="max-lg:hidden">
+            {gettext(
+              "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
+            )}
+          </p>
+          <p>{gettext("Save a drawing, then switch it on.")}</p>
+        </div>
+      </details>
+    </div>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :icon, :string, required: true
+  attr :title, :string, required: true
+  slot :inner_block, required: true
+
+  defp data_section(assigns) do
+    ~H"""
+    <section id={@id}>
+      <h3 class="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+        <.icon name={@icon} class="size-3.5" />
+        {@title}
+      </h3>
+      {render_slot(@inner_block)}
+    </section>
+    """
+  end
+
+  attr :rows, :list, required: true, doc: "`{path, type}`, the type as a term"
+  attr :entities, :list, required: true
+
+  # Names as an expression writes them, each with what it holds.
+  defp names(assigns) do
+    ~H"""
+    <ul class="flex flex-wrap gap-1">
+      <li
+        :for={{path, type} <- @rows}
+        class="inline-flex items-baseline gap-1 rounded-full bg-base-200 px-2 py-0.5 text-[11px]"
+      >
+        <code class="font-mono text-base-content/80">{path}</code>
+        <span class="text-base-content/50">{ProcessEntities.type_words(type, @entities)}</span>
+      </li>
+    </ul>
+    """
+  end
+
+  attr :variable, :map, required: true
+  attr :index, :integer, required: true
+  attr :entities, :list, required: true
+
+  # One variable: its name, the type of what it holds, and what it starts with.
+  defp variable_row(assigns) do
+    assigns =
+      assigns
+      |> assign(:name, "variables[#{assigns.index}]")
+      |> assign(:type, assigns.variable["type"] || "text")
+      |> assign(:list?, assigns.variable["list"] == true)
+
+    ~H"""
+    <div
+      id={"process-variable-#{@index}"}
+      class="space-y-2 rounded-2xl border border-base-300/70 bg-base-100 p-2.5 transition-shadow duration-200 focus-within:shadow-sm"
+    >
+      <div class="flex items-start gap-1.5">
+        <div class="grid min-w-0 flex-1 grid-cols-2 gap-1.5">
+          <input
+            type="text"
+            id={"process-variable-#{@index}-name"}
+            name={"#{@name}[name]"}
+            value={@variable["name"]}
+            maxlength="40"
+            phx-debounce="400"
+            aria-label={gettext("Name of the variable")}
+            class="input input-sm w-full font-mono"
+          />
+          <select
+            id={"process-variable-#{@index}-type"}
+            name={"#{@name}[type]"}
+            aria-label={gettext("Type")}
+            class="select select-sm w-full"
+          >
+            {Phoenix.HTML.Form.options_for_select(
+              ProcessEntities.type_options(@entities, gettext("Entity")),
+              @type
+            )}
+          </select>
+        </div>
+        <.icon_button
+          id={"process-variable-#{@index}-remove"}
+          type="button"
+          phx-click="process_editor_var_remove"
+          phx-value-index={@index}
+          icon="hero-minus-circle"
+          label={gettext("Remove the variable")}
+        />
+      </div>
+      <select
+        :if={@type == "entity"}
+        id={"process-variable-#{@index}-entity"}
+        name={"#{@name}[entity]"}
+        aria-label={gettext("Which entity")}
+        class="select select-sm w-full"
+      >
+        <option value="">{gettext("Pick an entity")}</option>
+        {Phoenix.HTML.Form.options_for_select(
+          for(entity <- @entities, do: {entity.name, entity.id}),
+          @variable["entity"]
+        )}
+      </select>
+      <input
+        :if={@type == "choice"}
+        type="text"
+        id={"process-variable-#{@index}-options"}
+        name={"#{@name}[options]"}
+        value={Enum.join(@variable["options"] || [], ", ")}
+        placeholder={gettext("low, medium, high")}
+        phx-debounce="400"
+        aria-label={gettext("What it may be")}
+        class="input input-sm w-full"
+      />
+      <div class="flex items-center gap-2">
+        <input type="hidden" name={"#{@name}[list]"} value="false" />
+        <label class="flex shrink-0 items-center gap-1.5 text-xs">
+          <input
+            type="checkbox"
+            id={"process-variable-#{@index}-list"}
+            name={"#{@name}[list]"}
+            value="true"
+            checked={@list?}
+            class="checkbox checkbox-xs"
+          />
+          {gettext("A list")}
+        </label>
+        <input
+          :if={@type != "entity" and not @list?}
+          type="text"
+          id={"process-variable-#{@index}-initial"}
+          name={"#{@name}[initial]"}
+          value={@variable["initial"]}
+          maxlength="1000"
+          placeholder={gettext("starts with")}
+          phx-debounce="400"
+          aria-label={gettext("What it starts with")}
+          class="input input-sm min-w-0 flex-1 font-mono"
+        />
+      </div>
+    </div>
+    """
+  end
+
+  attr :editor, :map, required: true
+
   defp hint(assigns) do
     ~H"""
     <div id="process-panel-hint" class="space-y-3 text-sm text-base-content/70">
-      <h2 class="text-base font-semibold text-base-content">
-        {if(@editor.editable?, do: gettext("How to draw"), else: gettext("The drawing"))}
-      </h2>
-      <%= if @editor.editable? do %>
-        <p>
-          {gettext(
-            "Every new value of the collection starts the process at the top and goes along the arrows."
-          )}
-        </p>
-        <p class="lg:hidden">
-          {gettext("Tap + on an arrow to add a step, and a step or an arrow to change it.")}
-        </p>
-        <p class="max-lg:hidden">
-          {gettext(
-            "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
-          )}
-        </p>
-        <p>{gettext("Save a drawing, then switch it on.")}</p>
-      <% else %>
-        <p>{gettext("Tap a step or an arrow to see what it does.")}</p>
-      <% end %>
+      <h2 class="text-base font-semibold text-base-content">{gettext("The drawing")}</h2>
+      <p>{gettext("Tap a step or an arrow to see what it does.")}</p>
     </div>
     """
   end
@@ -478,6 +786,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"set", "hero-pencil-square", gettext("Group field"),
        gettext("Keeps a value, or adds to a count, that every process of the group reads."),
        "bg-lime-500/10 text-lime-700 dark:text-lime-300"},
+      {"assign", "hero-variable", gettext("Set a value"),
+       gettext(
+         "Sets a variable of the process, or an attribute of one, to what an expression gives."
+       ), "bg-violet-500/10 text-violet-700 dark:text-violet-300"},
       {"signal", "hero-megaphone", gettext("Send a signal"),
        gettext(
          "Wakes the processes of the group that wait for it, and starts those that start on it."
@@ -517,6 +829,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       |> assign(:outcome_flows, outcome_flows(assigns.editor.graph, node))
       |> assign(:callee, Enum.find(assigns.editor.callable, &(&1.id == node["process"])))
       |> assign(:condition_flows, condition_flows(assigns.editor.graph, node))
+      |> assign(:targets, ProcessEditorState.assign_targets(assigns.editor))
+      |> assign(:textual?, ProcessEditorState.textual_target?(assigns.editor, node["target"]))
 
     ~H"""
     <div id="process-node-panel">
@@ -859,6 +1173,50 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 {gettext(
                   "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab.",
                   field: "{{#{PotokIde.Processes.Scope.path("group", @node["field"] || "")}}}"
+                )}
+              </p>
+            <% "assign" -> %>
+              <p
+                :if={@targets == []}
+                id="process-assign-none"
+                class="rounded-xl bg-base-200/70 px-3 py-2 text-sm text-base-content/70"
+              >
+                {gettext(
+                  "The process has no variable yet. Close this step and add one under Variables, then pick it here."
+                )}
+              </p>
+              <.input
+                :if={@targets != []}
+                field={@form[:target]}
+                type="select"
+                label={gettext("What it sets")}
+                prompt={if(@node["target"] not in @targets, do: gettext("Pick a variable"))}
+                options={@targets}
+              />
+              <.input
+                field={@form[:value]}
+                type="textarea"
+                rows="2"
+                maxlength="1000"
+                label={gettext("What it gets")}
+                class="w-full textarea font-mono text-sm"
+                phx-debounce="300"
+              />
+              <.fields editor={@editor} target={if(@textual?, do: "value", else: "value_expr")} />
+              <p class="text-xs text-base-content/60">
+                {if(@textual?,
+                  do:
+                    gettext(
+                      "A text, which may hold names and expressions between %{open} and %{close}.",
+                      open: "{{",
+                      close: "}}"
+                    ),
+                  else:
+                    gettext(
+                      "An expression, such as %{example}. Write %{empty} to leave it without a value.",
+                      example: "#{@node["target"] || "x"} + 1",
+                      empty: "empty"
+                    )
                 )}
               </p>
             <% "call" -> %>

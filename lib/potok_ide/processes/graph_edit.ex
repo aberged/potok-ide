@@ -30,11 +30,12 @@ defmodule PotokIde.Processes.GraphEdit do
     "gateway" => "gateway",
     "call" => "call",
     "set" => "set",
+    "assign" => "assign",
     "signal" => "signal",
     "receive" => "receive",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task timer gateway call set signal receive)
+  @kinds ~w(message subgroup push task timer gateway call set assign signal receive)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -73,8 +74,9 @@ defmodule PotokIde.Processes.GraphEdit do
   outcomes, a condition by one condition and by default, all to that same
   place. `defaults` holds the step's first texts and role, and the process
   a call starts with the fields it takes, the group's field a step sets,
-  and what a new condition asks: `%{text, name, role, outcomes, condition,
-  process, call_fields, group_field, signal}`.
+  what a new condition asks, and the variable a step sets: `%{text, name,
+  role, outcomes, condition, process, call_fields, group_field, signal,
+  variable}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -134,6 +136,17 @@ defmodule PotokIde.Processes.GraphEdit do
       "type" => "serviceTask",
       "action" => "set",
       "field" => d[:group_field],
+      "op" => "set",
+      "value" => ""
+    }
+
+  # A step that sets a variable, the first one the drawing has.
+  defp step("assign", id, d),
+    do: %{
+      "id" => id,
+      "type" => "serviceTask",
+      "action" => "assign",
+      "target" => d[:variable] || "",
       "op" => "set",
       "value" => ""
     }
@@ -504,6 +517,9 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "serviceTask", "action" => "set"}),
     do: ~w(label field op value)
 
+  defp editable_keys(%{"type" => "serviceTask", "action" => "assign"}),
+    do: ~w(label target op value)
+
   defp editable_keys(%{"type" => "serviceTask", "action" => "signal"}),
     do: ~w(label name fields)
 
@@ -522,6 +538,13 @@ defmodule PotokIde.Processes.GraphEdit do
   end
 
   defp put_label(node, _label), do: Map.delete(node, "label")
+
+  @doc """
+  Sets the variables of the drawing, what a run keeps for itself, as its
+  editor lists them; `Graph.normalize/2` says what is wrong with one.
+  """
+  def put_variables(graph, variables) when is_list(variables),
+    do: Map.put(graph, "variables", variables)
 
   @doc "Changes what a condition's flow asks: an expression that is true or false."
   def update_condition(graph, key, %{"expr" => expression}) when is_binary(expression) do

@@ -55,6 +55,7 @@ const TONES = {
   timer: "bg-teal-500/10 text-teal-600 dark:text-teal-300",
   call: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
   set: "bg-lime-500/10 text-lime-700 dark:text-lime-300",
+  assign: "bg-violet-500/10 text-violet-700 dark:text-violet-300",
   signal: "bg-fuchsia-500/10 text-fuchsia-600 dark:text-fuchsia-300",
   receive: "bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
 }

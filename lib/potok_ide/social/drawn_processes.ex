@@ -29,7 +29,7 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.{Check, Engine, Graph, Scheduler, Triggers}
+  alias PotokIde.Processes.{Check, Engine, Graph, GroupEntities, Scheduler, Triggers}
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -165,7 +165,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     with {:ok, name} <- name(attrs["name"]),
          {:ok, graph} <- graph(attrs["graph"]),
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
-         {:ok, graph} <- checked(graph, trigger, config),
+         {:ok, graph} <- checked(graph, trigger, config, group),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
@@ -220,10 +220,12 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   # What a graph of today says, checked against what its trigger hands a
-  # run, which is written into it (`Check`); one in the first language says
-  # nothing to check.
-  defp checked(graph, trigger, config) do
-    case Check.run(graph, %{entry: Triggers.entry(trigger, config)}) do
+  # run and the entities of its group, which are written into it (`Check`);
+  # one in the first language says nothing to check.
+  defp checked(graph, trigger, config, group) do
+    entities = if graph["v"] == 2, do: GroupEntities.definitions(group), else: %{}
+
+    case Check.run(graph, %{entry: Triggers.entry(trigger, config), entities: entities}) do
       {:ok, graph} -> {:ok, graph}
       {:error, {path, reason}} -> {:error, {:invalid_graph, path, reason}}
     end
@@ -255,7 +257,7 @@ defmodule PotokIde.Social.DrawnProcesses do
         known_trigger_roles!(row.trigger, config, access)
 
         graph =
-          case checked(graph, row.trigger, config) do
+          case checked(graph, row.trigger, config, group) do
             {:ok, graph} -> graph
             {:error, reason} -> Repo.rollback(reason)
           end

@@ -167,6 +167,15 @@ defmodule PotokIde.Processes.Types do
   def fits?({:list, actual}, {:list, expected}), do: fits?(actual, expected)
   def fits?(_actual, _expected), do: false
 
+  @doc """
+  Whether a value of the type is written as a text, which may hold
+  expressions between `{{` and `}}`; every other is written as one
+  expression.
+  """
+  def textual?(:text), do: true
+  def textual?({:choice, _options}), do: true
+  def textual?(_type), do: false
+
   # ---------
   # Values
   # ---------

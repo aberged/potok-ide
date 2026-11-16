@@ -544,6 +544,268 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     end
   end
 
+  describe "the data of the process" do
+    alias PotokIde.Processes.GroupEntities
+    alias PotokIde.Social.Access
+
+    defp manual(lv),
+      do:
+        lv
+        |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}})
+        |> render_change()
+
+    defp variables(lv, rows),
+      do: lv |> form("#process-variables-form", %{"variables" => rows}) |> render_change()
+
+    test "shows what the drawing may name, with what each holds", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      manual(lv)
+      insert(lv, "f1", "task")
+      render_hook(canvas(lv), "process_editor_select", %{})
+
+      assert has_element?(lv, "#process-data-panel")
+      assert has_element?(lv, "#process-data-entry", "start.title")
+      assert has_element?(lv, "#process-data-entry", "text")
+      assert has_element?(lv, "#process-data-results", "task_1.outcome")
+      refute has_element?(lv, "#process-variables-form")
+      assert has_element?(lv, "#process-data-entities")
+    end
+
+    test "an editor lists the variables, and the drawing keeps them", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      manual(lv)
+      lv |> element("#process-variable-add") |> render_click()
+      assert has_element?(lv, "#process-variable-0-name[value='variable1']")
+
+      lv |> element("#process-variable-add") |> render_click()
+
+      variables(lv, %{
+        "0" => %{"name" => "ukupno", "type" => "number", "list" => "false", "initial" => "0"},
+        "1" => %{"name" => "vrsta", "type" => "choice", "list" => "false"}
+      })
+
+      # A choice says what it may be.
+      assert has_element?(lv, "#process-editor-error", "A choice lists what it may be")
+      assert has_element?(lv, "#process-variable-1-options")
+
+      variables(lv, %{
+        "0" => %{"name" => "ukupno", "type" => "number", "list" => "false", "initial" => "0"},
+        "1" => %{
+          "name" => "vrsta",
+          "type" => "choice",
+          "list" => "false",
+          "options" => "voda, struja",
+          "initial" => "voda"
+        }
+      })
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{graph: %{"variables" => saved}}] = drawn(ctx.group)
+
+      assert saved == [
+               %{"name" => "ukupno", "type" => "number", "list" => false, "initial" => "0"},
+               %{
+                 "name" => "vrsta",
+                 "type" => "choice",
+                 "list" => false,
+                 "options" => ["voda", "struja"],
+                 "initial" => "voda"
+               }
+             ]
+
+      lv |> element("#process-variable-0-remove") |> render_click()
+      refute has_element?(lv, "#process-variable-1")
+      assert has_element?(lv, "#process-variable-0-name[value='vrsta']")
+    end
+
+    test "a variable that is not right is told", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      manual(lv)
+      lv |> element("#process-variable-add") |> render_click()
+
+      variables(lv, %{"0" => %{"name" => "broj stana", "type" => "number", "list" => "false"}})
+      assert has_element?(lv, "#process-editor-error", "A variable is named in one word")
+
+      variables(lv, %{"0" => %{"name" => "start", "type" => "number", "list" => "false"}})
+      assert has_element?(lv, "#process-editor-error", "has that name already")
+
+      variables(lv, %{
+        "0" => %{
+          "name" => "ukupno",
+          "type" => "number",
+          "list" => "false",
+          "initial" => "start.title"
+        }
+      })
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+      assert has_element?(lv, "#process-editor-save[disabled]")
+    end
+
+    test "a step sets a variable to what an expression gives", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      manual(lv)
+
+      # Without a variable there is nothing to set.
+      insert(lv, "f1", "assign")
+      assert has_element?(lv, "#process-assign-none")
+      assert has_element?(lv, "#process-editor-error", "Pick what the step sets")
+
+      render_hook(canvas(lv), "process_editor_select", %{})
+      lv |> element("#process-variable-add") |> render_click()
+      lv |> element("#process-variable-add") |> render_click()
+
+      variables(lv, %{
+        "0" => %{"name" => "ukupno", "type" => "number", "list" => "false", "initial" => "1"},
+        "1" => %{"name" => "opis", "type" => "text", "list" => "false"}
+      })
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "assign_1"})
+      refute has_element?(lv, "#process-assign-none")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"target" => "ukupno", "value" => "start.title"}
+      })
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      # A name goes into an expression as it is, and into a text in braces.
+      lv
+      |> form("#process-element-form", %{"element" => %{"target" => "ukupno", "value" => ""}})
+      |> render_change()
+
+      lv |> element("[id^='process-field-value_expr-']", "ukupno") |> render_click()
+      assert has_element?(lv, "#process-outline-assign_1", "Set ukupno · ukupno")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"target" => "ukupno", "value" => "ukupno + 1"}
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"target" => "opis", "value" => "Kvar:"}})
+      |> render_change()
+
+      lv |> element("[id^='process-field-value-']", "start.title") |> render_click()
+      assert has_element?(lv, "#process-outline-assign_1", "Set opis · Kvar: {{start.title}}")
+      refute has_element?(lv, "#process-editor-error")
+
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+
+      assert %{"action" => "assign", "target" => "opis", "value" => "Kvar: {{start.title}}"} =
+               PotokIde.Processes.Graph.node(graph, "assign_1")
+    end
+
+    test "a variable holds an entity of the group, defined without leaving the drawing", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      manual(lv)
+      assert has_element?(lv, "#process-data-entities", "None yet")
+
+      lv |> element("#process-data-entity-new") |> render_click()
+      assert has_element?(lv, "#entity-dialog")
+
+      lv
+      |> form("#entity-form")
+      |> render_submit(%{
+        "entity" => %{
+          "name" => "Prijava",
+          "attributes" => %{
+            "0" => %{"name" => "naslov", "type" => "text"},
+            "1" => %{"name" => "sprat", "type" => "number"}
+          },
+          "attributes_sort" => ["0", "1"]
+        }
+      })
+
+      refute has_element?(lv, "#entity-dialog")
+      [entity] = GroupEntities.list(ctx.group)
+      assert has_element?(lv, "#process-data-entity-#{entity.id}", "Prijava")
+
+      lv |> element("#process-variable-add") |> render_click()
+
+      # Picking the type brings the choice of the entity.
+      variables(lv, %{"0" => %{"name" => "prijava", "type" => "entity", "list" => "false"}})
+      assert has_element?(lv, "#process-editor-error", "Pick the entity the variable holds.")
+
+      variables(lv, %{
+        "0" => %{
+          "name" => "prijava",
+          "type" => "entity",
+          "list" => "false",
+          "entity" => "#{entity.id}"
+        }
+      })
+
+      refute has_element?(lv, "#process-editor-error")
+
+      # Its attributes can be set, each as its type takes it.
+      insert(lv, "f1", "assign")
+
+      assert has_element?(
+               lv,
+               "#process-element-form select[name='element[target]'] option[value='prijava.sprat']"
+             )
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"target" => "prijava.sprat", "value" => "3"}
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+      assert Map.keys(graph["types"]) == [to_string(entity.id)]
+
+      # An entity changed under an open drawing is checked again at once.
+      access = Access.for_profile(ctx.owner, ctx.group)
+
+      {:ok, _changed} =
+        GroupEntities.update(ctx.group, access, entity, %{
+          "attributes" => [%{"name" => "naslov", "type" => "text"}]
+        })
+
+      assert has_element?(lv, "#process-editor-error", "There is no sprat in that.")
+    end
+
+    test "is for the app's editors: a member sees the drawing only", ctx do
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "name" => "Prijava",
+          "graph" => PotokIde.Processes.GraphEdit.new()
+        })
+
+      {:ok, _row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+
+      {:ok, lv, _html} =
+        live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes?process=#{row.id}")
+
+      refute has_element?(lv, "#process-data-panel")
+      refute has_element?(lv, "#process-editor-data")
+      assert has_element?(lv, "#process-panel-hint")
+    end
+  end
+
   test "members look at a drawing that is on, and change nothing", ctx do
     {:ok, row} =
       DrawnProcesses.create(ctx.owner, ctx.group, %{

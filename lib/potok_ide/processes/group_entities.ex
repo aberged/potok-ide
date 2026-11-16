@@ -9,7 +9,8 @@ defmodule PotokIde.Processes.GroupEntities do
   - Only the app's editors write them, on the group's Processes tab. A write
     takes the group's lock, so two never make a circle or pass the limit
     together, and a change made from an older copy is refused.
-  - One that another entity holds cannot be deleted.
+  - One that another entity holds, or a drawn process of the group keeps a
+    variable of, cannot be deleted.
 
   The group's pages hear of a change (`{:app_value, group_id, :entity, _}`).
   """
@@ -18,7 +19,7 @@ defmodule PotokIde.Processes.GroupEntities do
 
   alias PotokIde.Processes.GroupEntity
   alias PotokIde.Repo
-  alias PotokIde.Social.{Access, AppData, Group, ValueRules}
+  alias PotokIde.Social.{Access, AppData, AppProcess, Group, ValueRules}
 
   @max_entities 50
 
@@ -82,7 +83,7 @@ defmodule PotokIde.Processes.GroupEntities do
     writing(group, access, fn entities ->
       entity = Enum.find(entities, &(&1.id == id)) || Repo.rollback(:not_found)
 
-      case in_use(entity, entities) do
+      case in_use(entity, entities) ++ drawn_with(group, entity) do
         [] -> Repo.delete(entity)
         names -> Repo.rollback({:in_use, names})
       end
@@ -91,9 +92,53 @@ defmodule PotokIde.Processes.GroupEntities do
 
   def delete(_group, _access, _id), do: {:error, :not_found}
 
+  @doc """
+  The group's entities as a graph keeps them (`Processes.Check`), by id as
+  a text: `%{"12" => %{"name" => _, "attributes" => [_]}}`.
+  """
+  def definitions(%Group{} = group), do: definitions(list(group))
+
+  def definitions(entities) when is_list(entities),
+    do: Map.new(entities, &{to_string(&1.id), definition(&1)})
+
+  @doc "One entity as a graph keeps it: its name and its attributes with their types."
+  def definition(%GroupEntity{name: name, attributes: attributes}) do
+    %{
+      "name" => name,
+      "attributes" =>
+        Enum.map(attributes, fn attribute ->
+          base = %{
+            "name" => attribute.name,
+            "type" => attribute.type,
+            "list" => attribute.list,
+            "required" => attribute.required
+          }
+
+          case attribute.type do
+            "choice" -> Map.put(base, "options", attribute.options)
+            "entity" -> Map.put(base, "entity", attribute.entity_id)
+            _plain -> base
+          end
+        end)
+    }
+  end
+
   @doc "The names of what holds the entity, among the group's `entities`."
   def in_use(%GroupEntity{id: id}, entities) do
     for other <- entities, other.id != id, id in GroupEntity.held(other), do: other.name
+  end
+
+  # The names of the group's drawn processes that were saved with the entity
+  # among those their variables hold (`Processes.Check`).
+  defp drawn_with(%Group{id: group_id}, %GroupEntity{id: id}) do
+    from(p in AppProcess,
+      where:
+        p.group_id == ^group_id and p.drawn and
+          fragment("jsonb_exists(? -> 'types', ?)", p.graph, ^to_string(id)),
+      order_by: [asc: p.name],
+      select: p.name
+    )
+    |> Repo.all()
   end
 
   defp others(entities, %GroupEntity{id: id}), do: Enum.reject(entities, &(&1.id == id))

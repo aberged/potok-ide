@@ -372,7 +372,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
          socket
          |> assign(:processes_entity, nil)
          |> put_flash(:info, gettext("The entity is saved."))
-         |> load()}
+         |> load()
+         |> ProcessEditorState.entities_changed()}
 
       {:error, %Ecto.Changeset{} = changeset} ->
         {:noreply, assign(socket, :processes_entity, %{state | form: entity_form(changeset)})}
@@ -397,7 +398,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
          socket
          |> assign(:processes_entity, nil)
          |> put_flash(:info, gettext("The entity is deleted."))
-         |> load()}
+         |> load()
+         |> ProcessEditorState.entities_changed()}
 
       {:error, reason} ->
         {:noreply, put_flash(socket, :error, entity_error(reason))}
@@ -450,6 +452,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   def app_value(socket, event) when event in @reloading_events do
     socket =
       if event in [:config, :drawn_process], do: assign_available(socket), else: socket
+
+    # A drawing that is open is checked against the entities as they are now.
+    socket = if event == :entity, do: ProcessEditorState.entities_changed(socket), else: socket
 
     cond do
       socket.assigns.active_tab != "processes" ->

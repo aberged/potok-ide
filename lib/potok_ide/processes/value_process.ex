@@ -12,7 +12,8 @@ defmodule PotokIde.Processes.ValueProcess do
   it was given. A caller that waits for the run it called holds it in
   `awaiting`. What a wait brought back (a called run's end, a signal, a
   person's decision) stays in `results` under the element that waited, for
-  the texts and conditions that follow, as `{{element.field}}`.
+  the texts and conditions that follow, as `{{element.field}}`. The variables
+  its process declares are kept in `vars`, each run its own.
 
   An instance keeps a copy of the graph it started with (`graph`), so a rule
   saved later changes only the instances that start after it. It stands on
@@ -52,6 +53,8 @@ defmodule PotokIde.Processes.ValueProcess do
     belongs_to :awaiting, __MODULE__
     field :depth, :integer, default: 0
     field :results, :map, default: %{}
+    # What its variables hold, by name, as plain JSON (`Processes.Types`).
+    field :vars, :map, default: %{}
 
     timestamps(type: :utc_datetime)
   end

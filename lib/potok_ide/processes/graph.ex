@@ -57,13 +57,20 @@ defmodule PotokIde.Processes.Graph do
     expression, `%{"expr" => "ukupno > 10"}` (`PotokIde.Processes.Expr`).
   - An id is a name an expression may use: small letters, digits and `_`,
     and none of the words `PotokIde.Processes.Scope` keeps.
+  - `variables` are what a run keeps for itself, each a name with the type
+    of what it holds (`PotokIde.Processes.Types`), as an attribute of an
+    entity has, and for a plain one an `initial` value: a text for a text,
+    an expression for anything else.
+  - `serviceTask` with the `action` `assign` sets its `target`, a variable
+    or an attribute of one (`prijava.sprat`), to its `value`: a text for a
+    text, an expression for anything else.
   - `zone` is the time zone it reads days and hours in, and `entry` and
     `types` are what `PotokIde.Processes.Check` wrote into it.
 
   `upgrade/1` turns the first into today's.
   """
 
-  alias PotokIde.Processes.{Legacy, Scope}
+  alias PotokIde.Processes.{Legacy, Scope, Types}
 
   @max_nodes 100
   @max_flows 200
@@ -79,6 +86,10 @@ defmodule PotokIde.Processes.Graph do
   @max_seconds 366 * 24 * 3600
   @id_format ~r/^[a-z][a-z0-9_-]{0,39}$/
   @name_id_format ~r/^[a-z][a-z0-9_]{0,39}$/
+  @target_format ~r/^[\p{L}_][\p{L}\p{Nd}_]*(\.[\p{L}_][\p{L}\p{Nd}_]*)*$/u
+  @max_variables 30
+  @max_options 30
+  @max_option 60
   @field_format ~r/^[\p{L}\p{Nd}_.-]{1,64}$/u
   @duration_format ~r/^P(?:(\d+)W|(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?)?)$/
   @ops ~w(= != < > empty)
@@ -125,8 +136,9 @@ defmodule PotokIde.Processes.Graph do
              :ok <- unique_ids(nodes),
              ids = MapSet.new(nodes, & &1["id"]),
              {:ok, flows} <- each(flows, "flows", &flow(&1, &2, ids, version)),
+             :ok <- of_its_language(nodes, version),
              :ok <- shape(nodes, flows),
-             {:ok, kept} <- kept(graph, version) do
+             {:ok, kept} <- kept(graph, version, ids) do
           {:ok, Map.merge(kept, %{"nodes" => nodes, "flows" => flows})}
         end
     end
@@ -142,18 +154,107 @@ defmodule PotokIde.Processes.Graph do
 
   # What a graph of today keeps beside its elements: its version, the time
   # zone it reads days and hours in, and what `Check.run/2` wrote into it.
-  defp kept(_graph, 1), do: {:ok, %{}}
+  defp kept(_graph, 1, _ids), do: {:ok, %{}}
 
-  defp kept(graph, 2) do
+  defp kept(graph, 2, ids) do
     zone = Map.get(graph, "zone", "Etc/UTC")
 
-    if is_binary(zone) and match?({:ok, _now}, DateTime.now(zone)) do
+    with true <-
+           (is_binary(zone) and match?({:ok, _now}, DateTime.now(zone))) ||
+             {:error, {"zone", :invalid}},
+         {:ok, variables} <- variables(Map.get(graph, "variables", []), ids) do
       {:ok,
-       %{"v" => 2, "zone" => zone}
+       %{"v" => 2, "zone" => zone, "variables" => variables}
        |> put_map("entry", graph["entry"])
        |> put_map("types", graph["types"])}
-    else
-      {:error, {"zone", :invalid}}
+    end
+  end
+
+  # Only today's language sets variables.
+  defp of_its_language(_nodes, 2), do: :ok
+
+  defp of_its_language(nodes, 1) do
+    case Enum.find_index(nodes, &(&1["action"] == "assign")) do
+      nil -> :ok
+      i -> {:error, {"nodes.#{i}.action", :invalid}}
+    end
+  end
+
+  # What a run keeps for itself: each a name no step and no other variable
+  # has, with the type of what it holds.
+  defp variables(variables, ids)
+       when is_list(variables) and length(variables) <= @max_variables do
+    variables
+    |> Enum.with_index()
+    |> Enum.reduce_while({:ok, [], ids}, fn {variable, i}, {:ok, acc, taken} ->
+      case variable(variable, "variables.#{i}", taken) do
+        {:ok, variable} -> {:cont, {:ok, [variable | acc], MapSet.put(taken, variable["name"])}}
+        error -> {:halt, error}
+      end
+    end)
+    |> case do
+      {:ok, variables, _taken} -> {:ok, Enum.reverse(variables)}
+      error -> error
+    end
+  end
+
+  defp variables(variables, _ids) when is_list(variables), do: {:error, {"variables", :too_many}}
+  defp variables(_variables, _ids), do: {:error, {"variables", :invalid}}
+
+  defp variable(%{"name" => name, "type" => type} = variable, path, taken) when is_binary(name) do
+    name = String.trim(name)
+    list = Map.get(variable, "list", false)
+
+    cond do
+      not Types.name?(name) or name in Scope.reserved() -> {:error, {path <> ".name", :invalid}}
+      MapSet.member?(taken, name) -> {:error, {path <> ".name", :taken}}
+      type not in Types.kinds() -> {:error, {path <> ".type", :invalid}}
+      not is_boolean(list) -> {:error, {path <> ".list", :invalid}}
+      true -> held(%{"name" => name, "type" => type, "list" => list}, variable, path)
+    end
+  end
+
+  defp variable(_variable, path, _taken), do: {:error, {path, :invalid}}
+
+  defp held(%{"type" => "choice"} = base, variable, path) do
+    case variable["options"] do
+      [_ | _] = options when length(options) <= @max_options ->
+        if Enum.all?(options, &(is_binary(&1) and String.length(&1) in 1..@max_option)) and
+             options == Enum.uniq(options),
+           do: initial(Map.put(base, "options", options), variable, path),
+           else: {:error, {path <> ".options", :invalid}}
+
+      _none_or_too_many ->
+        {:error, {path <> ".options", :invalid}}
+    end
+  end
+
+  defp held(%{"type" => "entity"} = base, variable, path) do
+    case variable["entity"] do
+      id when is_integer(id) and id > 0 -> {:ok, Map.put(base, "entity", id)}
+      _other -> {:error, {path <> ".entity", :invalid}}
+    end
+  end
+
+  defp held(base, variable, path), do: initial(base, variable, path)
+
+  # A plain variable may start with a value; a list starts empty.
+  defp initial(%{"list" => true} = base, _variable, _path), do: {:ok, base}
+
+  defp initial(base, variable, path) do
+    case variable["initial"] do
+      nil ->
+        {:ok, base}
+
+      text when is_binary(text) ->
+        case String.trim(text) do
+          "" -> {:ok, base}
+          text when byte_size(text) <= @max_template -> {:ok, Map.put(base, "initial", text)}
+          _too_long -> {:error, {path <> ".initial", :invalid}}
+        end
+
+      _other ->
+        {:error, {path <> ".initial", :invalid}}
     end
   end
 
@@ -432,6 +533,32 @@ defmodule PotokIde.Processes.Graph do
 
   defp typed("serviceTask", %{"action" => "set"} = node, path, base, true),
     do: set_field(node, path, base)
+
+  defp typed("serviceTask", %{"action" => "assign"} = node, path, base, true) do
+    target = node["target"]
+    value = node["value"]
+    op = Map.get(node, "op", "set")
+
+    cond do
+      not (is_binary(target) and Regex.match?(@target_format, String.trim(target))) ->
+        {:error, {path <> ".target", :invalid}}
+
+      op not in ~w(set) ->
+        {:error, {path <> ".op", :invalid}}
+
+      not (is_binary(value) and String.length(value) <= @max_template) ->
+        {:error, {path <> ".value", :invalid}}
+
+      true ->
+        {:ok,
+         Map.merge(base, %{
+           "action" => "assign",
+           "target" => String.trim(target),
+           "op" => op,
+           "value" => String.trim(value)
+         })}
+    end
+  end
 
   defp typed("serviceTask", %{"action" => "signal"} = node, path, base, true) do
     with {:ok, name} <- signal(node["name"], path <> ".name"),
