@@ -7,6 +7,9 @@ defmodule PotokIde.Social.AppProcess do
   An inactive one waits for its rule to come back, with the same profile, so
   what the process wrote keeps one author.
 
+  `collection` is nil for a drawn process that starts on something else
+  than a value of a collection (`trigger`).
+
   A drawn one (`drawn`) is drawn by an editor in Potok
   (`PotokIde.Social.DrawnProcesses`) rather than written by the app: its
   graph and where its elements stand on a wide screen live here, and the
@@ -32,6 +35,13 @@ defmodule PotokIde.Social.AppProcess do
     # %{"nodes" => %{id => [x, y]}}: a drawing's positions, set on a wide screen.
     field :layout, :map, default: %{}
     field :lock_version, :integer, default: 1
+    # What sets an instance going (`PotokIde.Processes.Triggers`): a new value
+    # of `collection` ("value", always for an app's own process), a chat
+    # message, a new sub-group, a schedule, or someone by hand.
+    field :trigger, :string, default: "value"
+    field :trigger_config, :map, default: %{}
+    # The next start of a scheduled process, nil for every other trigger.
+    field :next_run_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

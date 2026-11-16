@@ -304,9 +304,20 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProcess", "graph"), do: dgettext("domain_map", "graph of a drawn process")
   defp own_field("AppProcess", "layout"), do: dgettext("domain_map", "places on the drawing")
   defp own_field("AppProcess", "lock_version"), do: dgettext("domain_map", "revision")
+  defp own_field("AppProcess", "trigger"), do: dgettext("domain_map", "what starts it")
+
+  defp own_field("AppProcess", "trigger_config"),
+    do: dgettext("domain_map", "settings of what starts it")
+
+  defp own_field("AppProcess", "next_run_at"), do: dgettext("domain_map", "next scheduled start")
 
   defp own_field("ValueProcess", "app_process_id"), do: dgettext("domain_map", "process")
   defp own_field("ValueProcess", "value_id"), do: dgettext("domain_map", "value that started it")
+
+  defp own_field("ValueProcess", "subject_group_id"),
+    do: dgettext("domain_map", "sub-group that started it")
+
+  defp own_field("ValueProcess", "data"), do: dgettext("domain_map", "fields for its texts")
   defp own_field("ValueProcess", "status"), do: dgettext("domain_map", "status")
 
   defp own_field("ValueProcess", "element"),
@@ -933,6 +944,17 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("app_processes_drawn_graph_check") do
     dgettext("domain_map", "Only a process drawn in Potok keeps a graph here.")
+  end
+
+  def check_text("app_processes_trigger_collection_check") do
+    dgettext("domain_map", "Only a process that starts on a new value hangs on a collection.")
+  end
+
+  def check_text("app_processes_trigger_check") do
+    dgettext(
+      "domain_map",
+      "A process starts on a value, a message, a sub-group, a schedule or by hand."
+    )
   end
 
   def check_text("values_collection_check") do

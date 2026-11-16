@@ -443,10 +443,12 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         nil -> []
       end
 
-    Enum.join(
-      app ++ [gettext("collection %{collection}", collection: process.collection), owner],
-      " · "
-    )
+    collection =
+      if process.collection,
+        do: [gettext("collection %{collection}", collection: process.collection)],
+        else: []
+
+    Enum.join(app ++ collection ++ [owner], " · ")
   end
 
   # A role held through the parent is locked: it is changed there.

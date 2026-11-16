@@ -18,7 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   use Gettext, backend: PotokIdeWeb.Gettext
 
-  import Phoenix.Component, only: [assign: 2, assign: 3]
+  import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Processes
@@ -38,7 +38,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_apps: [],
       processes_tasks: [],
       processes_can_draw?: false,
-      processes_refresh?: false
+      processes_refresh?: false,
+      processes_start: nil
     )
     |> ProcessEditorState.init()
     |> assign_params(params)
@@ -88,8 +89,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   def available?(%Group{is_root: true}, _access), do: false
   def available?(%Group{is_direct: true}, _access), do: false
 
-  def available?(%Group{} = group, %Access{member?: true}),
-    do: AppProcesses.any_app_or_process?(group)
+  def available?(%Group{} = group, %Access{member?: true} = access),
+    do: ValueRules.manage?(access) or AppProcesses.any_app_or_process?(group)
 
   def available?(_group, _access), do: false
 
@@ -128,7 +129,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     assign(socket,
       processes_apps: by_app(entries, group),
       processes_tasks: Processes.tasks_for(profile, group, access),
-      processes_can_draw?: manage? and DrawnProcesses.apps(group) != [],
+      processes_can_draw?: manage?,
       processes_refresh?: false
     )
   end
@@ -136,7 +137,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   # The collections on which more than one process runs.
   defp shared_collections(rows) do
     rows
-    |> Enum.filter(& &1.active)
+    |> Enum.filter(&(&1.active and &1.trigger == "value"))
     |> Enum.frequencies_by(&{&1.alt_description_id, &1.collection})
     |> Enum.filter(fn {_key, n} -> n > 1 end)
     |> MapSet.new(&elem(&1, 0))
@@ -157,19 +158,26 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     end
   end
 
-  # The default description's app first, then the others in their order.
+  # The group's own processes (on messages, sub-groups, a schedule or by
+  # hand) first, then the default description's app, then the others.
   defp by_app(entries, group) do
     entries
-    |> Enum.group_by(& &1.process.alt_description_id)
-    |> Enum.map(fn {alt_id, entries} ->
-      alt = hd(entries).process.alt_description
+    |> Enum.group_by(fn %{process: p} ->
+      if p.trigger == "value", do: {:app, p.alt_description_id}, else: :group
+    end)
+    |> Enum.map(fn
+      {:group, entries} ->
+        %{id: "group", name: gettext("In the group"), position: {0, 0, 0}, entries: entries}
 
-      %{
-        id: alt_id || "default",
-        name: if(alt, do: alt.name, else: group.description_name),
-        position: if(alt, do: {1, alt.position, alt.id}, else: {0, 0, 0}),
-        entries: entries
-      }
+      {{:app, alt_id}, entries} ->
+        alt = hd(entries).process.alt_description
+
+        %{
+          id: alt_id || "default",
+          name: if(alt, do: alt.name, else: group.description_name),
+          position: if(alt, do: {2, alt.position, alt.id}, else: {1, 0, 0}),
+          entries: entries
+        }
     end)
     |> Enum.sort_by(& &1.position)
   end
@@ -203,6 +211,56 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     end
   end
 
+  def handle_event("processes_start_open", %{"id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    with {id, ""} <- Integer.parse(to_string(id)),
+         %{} = process <- DrawnProcesses.get(group, id),
+         true <- process.active and DrawnProcesses.may_start?(process, access) do
+      form = to_form(%{"title" => "", "text" => ""}, as: :start)
+      {:noreply, assign(socket, :processes_start, %{process: process, form: form, error: nil})}
+    else
+      _other -> {:noreply, put_flash(socket, :error, gettext("You may not start this process."))}
+    end
+  end
+
+  def handle_event("processes_start_close", _params, socket),
+    do: {:noreply, assign(socket, :processes_start, nil)}
+
+  def handle_event("processes_start_validate", %{"start" => params}, socket) do
+    case socket.assigns.processes_start do
+      nil ->
+        {:noreply, socket}
+
+      start ->
+        {:noreply, assign(socket, :processes_start, %{start | form: to_form(params, as: :start)})}
+    end
+  end
+
+  def handle_event("processes_start_save", %{"start" => params}, socket) do
+    %{group: group, current_profile: profile, processes_start: start} = socket.assigns
+
+    case start && DrawnProcesses.start(profile, group, start.process.id, params) do
+      {:ok, _instance} ->
+        {:noreply,
+         socket
+         |> assign(:processes_start, nil)
+         |> put_flash(:info, gettext("The process is started."))
+         |> load()}
+
+      {:error, reason} ->
+        {:noreply,
+         assign(socket, :processes_start, %{
+           start
+           | form: to_form(params, as: :start),
+             error: start_error(reason)
+         })}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
   def handle_event("processes_retry", %{"id" => id}, socket) do
     case instance_call(socket, id, &Processes.retry/4) do
       {:ok, _instance} ->
@@ -225,6 +283,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
         {:noreply, put_flash(socket, :error, gettext("Could not cancel it."))}
     end
   end
+
+  defp start_error(:invalid_title), do: gettext("Give it a title of up to 120 characters.")
+  defp start_error(:invalid_text), do: gettext("The text is at most 2000 characters.")
+  defp start_error(:process_inactive), do: gettext("The process is off.")
+  defp start_error(:not_permitted), do: gettext("You may not start this process.")
+  defp start_error({:rate_limited, ms}), do: PotokIdeWeb.RateLimited.message(ms)
+  defp start_error(_reason), do: gettext("That did not work.")
 
   defp instance_call(socket, id, fun) do
     case Integer.parse(to_string(id)) do

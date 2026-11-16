@@ -168,9 +168,15 @@ defmodule PotokIde.Processes do
   The tasks of processes drawn in Potok (`PotokIde.Social.DrawnProcesses`)
   that wait on a role the viewer holds in `group`, the nearest deadline first,
   at most #{@max_tasks}. The app knows nothing of these, so the group's page
-  shows them, each with its value: the author, unless the value is anonymous,
-  and its data and the sub-groups the instance made only for those who may
-  read the value in full, or wrote it (`ValueRules.full_reader?/2`).
+  shows them, each with what set it going (`kind`):
+
+  - `:value`, a value of an app's collection: its author, unless the value is
+    anonymous, and its data and the sub-groups the instance made only for
+    those who may read the value in full, or wrote it
+    (`ValueRules.full_reader?/2`);
+  - `:message`, a chat message of the group, which its members read;
+  - `:group`, a new sub-group, with a link to it;
+  - `:data`, a run started by hand or by a schedule, with what it was given.
   """
   def tasks_for(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access)
       when access.role_keys != [] do
@@ -178,8 +184,10 @@ defmodule PotokIde.Processes do
       from(i in ValueProcess,
         join: p in AppProcess,
         on: p.id == i.app_process_id,
-        join: v in Value,
+        left_join: v in Value,
         on: v.id == i.value_id,
+        left_join: sg in Group,
+        on: sg.id == i.subject_group_id,
         where: p.group_id == ^group.id and p.drawn and p.active and i.status == :waiting,
         where:
           fragment(
@@ -190,34 +198,28 @@ defmodule PotokIde.Processes do
           ),
         order_by: [asc_nulls_last: i.wake_at, asc: i.id],
         limit: @max_tasks,
-        preload: [value: {v, :creator}],
+        preload: [value: {v, :creator}, subject_group: sg],
         select: {i, p}
       )
       |> Repo.all()
 
-    rules = rules_by_app(group, rows)
+    rules = rules_by_app(group, Enum.filter(rows, fn {_i, p} -> p.trigger == "value" end))
     names = names(Enum.flat_map(rows, fn {i, _p} -> Enum.map(i.log, & &1["by"]) end))
     group_names = group_names(Enum.flat_map(rows, fn {i, _p} -> Map.values(i.groups) end))
 
     Enum.map(rows, fn {instance, process} ->
-      value = instance.value
-      rule = Map.fetch!(rules, {process.alt_description_id, process.collection})
-      reads? = ValueRules.full_reader?(rule, access) or value.creator_id == profile.id
       task = Graph.node(instance.graph, instance.element)
+      subject = subject(instance, process, group, profile, access, rules)
 
-      %{
+      Map.merge(subject, %{
         id: instance.id,
         process: process,
         element: instance.element,
         label: Graph.label(task),
         outcomes: task["outcomes"],
         deadline_at: instance.wake_at,
-        value: value,
-        author: if(value.anonymous, do: nil, else: value.creator),
-        reads?: reads?,
-        data: if(reads?, do: data_rows(value.data), else: []),
         groups:
-          if(reads?,
+          if(subject.reads?,
             do:
               for(
                 {_element, id} <- instance.groups,
@@ -227,11 +229,81 @@ defmodule PotokIde.Processes do
             else: []
           ),
         log: log(instance, names)
-      }
+      })
     end)
   end
 
   def tasks_for(_profile, _group, _access), do: []
+
+  # What set a run going, as its task card shows it.
+  defp subject(
+         %ValueProcess{value: %Value{} = value},
+         %AppProcess{trigger: "value"} = process,
+         _group,
+         profile,
+         access,
+         rules
+       ) do
+    rule = Map.fetch!(rules, {process.alt_description_id, process.collection})
+    reads? = ValueRules.full_reader?(rule, access) or value.creator_id == profile.id
+
+    %{
+      kind: :value,
+      reads?: reads?,
+      sent_at: value.inserted_at,
+      author_name: if(value.anonymous, do: nil, else: value.creator.username),
+      title: nil,
+      text: nil,
+      link: nil,
+      data: if(reads?, do: data_rows(value.data), else: [])
+    }
+  end
+
+  defp subject(%ValueProcess{value: %Value{} = value}, _process, group, _profile, _access, _rules) do
+    %{
+      kind: :message,
+      reads?: true,
+      sent_at: value.inserted_at,
+      author_name: value.creator.username,
+      title: nil,
+      text: value.content,
+      link: "/groups/#{group.id}/values?value=#{value.id}",
+      data: []
+    }
+  end
+
+  defp subject(
+         %ValueProcess{subject_group: %Group{} = sub} = instance,
+         _process,
+         _group,
+         _profile,
+         _access,
+         _rules
+       ) do
+    %{
+      kind: :group,
+      reads?: true,
+      sent_at: instance.inserted_at,
+      author_name: instance.data["author"],
+      title: sub.name,
+      text: instance.data["description"],
+      link: "/groups/#{sub.id}",
+      data: []
+    }
+  end
+
+  defp subject(%ValueProcess{} = instance, _process, _group, _profile, _access, _rules) do
+    %{
+      kind: :data,
+      reads?: true,
+      sent_at: instance.inserted_at,
+      author_name: instance.data["author"],
+      title: instance.data["title"] || instance.data["date"],
+      text: instance.data["text"],
+      link: nil,
+      data: []
+    }
+  end
 
   defp rules_by_app(group, rows) do
     rows

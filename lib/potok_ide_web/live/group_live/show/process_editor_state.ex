@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3, push_patch: 2, put_flash: 3]
 
-  alias PotokIde.Processes.{Graph, GraphEdit}
+  alias PotokIde.Processes.{Graph, GraphEdit, Triggers}
   alias PotokIde.Repo
   alias PotokIde.Social.{AppData, AppProcess, DrawnProcesses, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.RolesTab
@@ -42,8 +42,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     %{group: group, access: access} = socket.assigns
 
     case {ValueRules.manage?(access), DrawnProcesses.apps(group)} do
-      {true, [app | _] = apps} ->
-        collections = DrawnProcesses.collections(group, app.alt_id)
+      {true, apps} ->
+        # On a new value of an app, where the group has one; by hand otherwise.
+        {trigger, alt_id} =
+          case apps do
+            [app | _] -> {"value", app.alt_id}
+            [] -> {"manual", nil}
+          end
+
+        collections = if apps == [], do: [], else: DrawnProcesses.collections(group, alt_id)
         collection = List.first(collections)
 
         editor = %{
@@ -52,7 +59,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           editable?: true,
           active?: false,
           name: gettext("New process"),
-          alt_id: app.alt_id,
+          trigger: trigger,
+          trigger_config: default_config(trigger, socket),
+          alt_id: alt_id,
           collection: collection,
           apps: apps,
           collections: collections,
@@ -64,13 +73,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           inserting: nil,
           error: nil,
           conflict: nil,
-          fields: DrawnProcesses.fields(group, app.alt_id, collection)
+          fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection)
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
-
-      {true, []} ->
-        socket |> put_flash(:error, gettext("The group needs an app first.")) |> close_url()
 
       {false, _apps} ->
         socket
@@ -91,6 +97,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           editable?: manage?,
           active?: row.active,
           name: row.name,
+          trigger: row.trigger,
+          trigger_config: row.trigger_config,
           alt_id: row.alt_description_id,
           collection: row.collection,
           apps: [],
@@ -105,7 +113,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           conflict: nil,
           fields:
             if(manage?,
-              do: DrawnProcesses.fields(group, row.alt_description_id, row.collection),
+              do:
+                DrawnProcesses.fields_for(
+                  group,
+                  row.trigger,
+                  row.alt_description_id,
+                  row.collection
+                ),
               else: []
             )
         }
@@ -125,6 +139,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           editable?: false,
           active?: true,
           name: row.name,
+          trigger: "value",
+          trigger_config: %{},
           alt_id: row.alt_description_id,
           collection: row.collection,
           apps: [],
@@ -271,30 +287,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     name = meta["name"] || editor.name
 
     editor =
-      if editor.source == :new do
-        alt_id = parse_alt(meta["app"], editor.apps, editor.alt_id)
-        collections = DrawnProcesses.collections(group, alt_id)
-
-        collection =
-          if meta["collection"] in collections,
-            do: meta["collection"],
-            else: List.first(collections)
-
-        fields =
-          if collection != editor.collection or alt_id != editor.alt_id,
-            do: DrawnProcesses.fields(group, alt_id, collection),
-            else: editor.fields
-
-        %{
-          editor
-          | alt_id: alt_id,
-            collections: collections,
-            collection: collection,
-            fields: fields
-        }
-      else
-        editor
-      end
+      if editor.source == :new,
+        do: new_target(editor, meta, group, socket),
+        else: editor
 
     {:noreply,
      socket
@@ -318,6 +313,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       {:flow, key} -> graph_change(socket, &change_flow(&1, key, attrs), keep_selection: true)
       _other -> {:noreply, socket}
     end
+  end
+
+  defp editing("process_editor_trigger", %{"trigger" => params}, socket) when is_map(params) do
+    editor = socket.assigns.process_editor
+    config = trigger_params(editor.trigger, params, editor.trigger_config)
+
+    {:noreply,
+     socket
+     |> update_editor(&%{&1 | trigger_config: config, dirty?: true})
+     |> refresh()}
   end
 
   defp editing("process_editor_insert_field", %{"target" => target, "path" => path}, socket)
@@ -394,6 +399,106 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp editing(_event, _params, socket), do: {:noreply, socket}
+
+  # The trigger's settings from its form, kept as typed until a save
+  # normalizes them (`Triggers.normalize/2`); the time zone stays.
+  defp trigger_params("message", params, _config),
+    do: %{"words" => params["words"] || "", "role" => blank_nil(params["role"])}
+
+  defp trigger_params("subgroup", params, _config), do: %{"placed" => params["placed"] == "true"}
+
+  defp trigger_params("schedule", params, config) do
+    %{
+      "every" => params["every"] || config["every"],
+      "weekdays" => List.wrap(params["weekdays"]) |> Enum.reject(&(&1 == "")),
+      "day" => params["day"] || config["day"],
+      "time" => params["time"] || config["time"],
+      "time_zone" => config["time_zone"]
+    }
+  end
+
+  defp trigger_params("manual", params, _config),
+    do: %{"roles" => List.wrap(params["roles"]) |> Enum.reject(&(&1 == ""))}
+
+  defp trigger_params(_trigger, _params, config), do: config
+
+  defp blank_nil(""), do: nil
+  defp blank_nil(value), do: value
+
+  # What a new process starts on, as its editor picks: the trigger, and for a
+  # new value the app and its collection.
+  defp new_target(editor, meta, group, socket) do
+    trigger = parse_trigger(meta["trigger"], editor)
+
+    if trigger == "value" do
+      alt_id =
+        if editor.trigger == "value",
+          do: parse_alt(meta["app"], editor.apps, editor.alt_id),
+          else: hd(editor.apps).alt_id
+
+      collections = DrawnProcesses.collections(group, alt_id)
+
+      collection =
+        if meta["collection"] in collections,
+          do: meta["collection"],
+          else: List.first(collections)
+
+      fields =
+        if editor.trigger != "value" or collection != editor.collection or alt_id != editor.alt_id,
+          do: DrawnProcesses.fields(group, alt_id, collection),
+          else: editor.fields
+
+      %{
+        editor
+        | trigger: "value",
+          trigger_config: %{},
+          alt_id: alt_id,
+          collections: collections,
+          collection: collection,
+          fields: fields
+      }
+    else
+      config =
+        if trigger == editor.trigger,
+          do: editor.trigger_config,
+          else: default_config(trigger, socket)
+
+      %{
+        editor
+        | trigger: trigger,
+          trigger_config: config,
+          alt_id: nil,
+          collection: nil,
+          fields: Triggers.fields(trigger)
+      }
+    end
+  end
+
+  # A trigger the editor may pick: on a new value only where the group has an app.
+  defp parse_trigger("value", %{apps: []} = editor), do: editor.trigger
+
+  defp parse_trigger(trigger, editor) when is_binary(trigger),
+    do: if(trigger in Triggers.all(), do: trigger, else: editor.trigger)
+
+  defp parse_trigger(_trigger, editor), do: editor.trigger
+
+  @doc false
+  # The first settings of a trigger: a schedule in the editor's time zone.
+  def default_config("message", _socket), do: %{"words" => "", "role" => nil}
+  def default_config("subgroup", _socket), do: %{"placed" => false}
+  def default_config("manual", _socket), do: %{"roles" => ["everyone"]}
+
+  def default_config("schedule", socket) do
+    %{
+      "every" => "week",
+      "weekdays" => [1],
+      "day" => 1,
+      "time" => "09:00",
+      "time_zone" => socket.assigns[:calendar_time_zone] || "Etc/UTC"
+    }
+  end
+
+  def default_config(_trigger, _socket), do: %{}
 
   defp parse_alt("default", _apps, _current), do: nil
 
@@ -577,7 +682,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     attrs = %{
       "name" => editor.name,
       "graph" => editor.graph,
-      "layout" => %{"nodes" => editor.layout}
+      "layout" => %{"nodes" => editor.layout},
+      "trigger_config" => editor.trigger_config
     }
 
     result =
@@ -586,7 +692,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           DrawnProcesses.create(
             profile,
             group,
-            Map.merge(attrs, %{"alt_id" => editor.alt_id, "collection" => editor.collection})
+            Map.merge(attrs, %{
+              "trigger" => editor.trigger,
+              "alt_id" => editor.alt_id,
+              "collection" => editor.collection
+            })
           )
 
         :drawn ->
@@ -609,6 +719,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       {_source, {:error, {:conflict, row}}} ->
         socket |> update_editor(&%{&1 | conflict: row}) |> refresh()
+
+      {_source, {:error, {:invalid_trigger, path, reason}}} ->
+        socket
+        |> update_editor(
+          &%{
+            &1
+            | error: trigger_error("trigger." <> path, reason, {:node, Graph.start(&1.graph)})
+          }
+        )
+        |> put_flash(:error, gettext("What starts the process is not set right."))
+        |> refresh()
 
       {_source, {:error, {:invalid_graph, path, reason}}} ->
         socket
@@ -653,7 +774,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   # Checks the drawing as a save would, builds the forms and tells the canvas.
   defp refresh(socket, opts \\ []) do
     editor = socket.assigns.process_editor
-    editor = %{editor | error: check(editor.graph, socket.assigns.access)}
+
+    editor = %{
+      editor
+      | error:
+          check(editor.graph, socket.assigns.access) ||
+            check_trigger(editor, socket.assigns.access)
+    }
 
     socket
     |> assign(:process_editor, editor)
@@ -663,6 +790,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       to_form(
         %{
           "name" => editor.name,
+          "trigger" => editor.trigger,
           "app" => app_value(editor.alt_id),
           "collection" => editor.collection
         },
@@ -686,6 +814,28 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       {path, reason} -> error(graph, path, reason)
     end
   end
+
+  # The trigger's settings, checked as a save would, pinned on the start.
+  defp check_trigger(editor, access) do
+    keys = AppData.role_keys(access.manifest)
+    start = {:node, Graph.start(editor.graph)}
+
+    case Triggers.normalize(editor.trigger, editor.trigger_config) do
+      {:ok, config} ->
+        case Enum.find(Triggers.role_refs(editor.trigger, config), fn {_path, key} ->
+               not MapSet.member?(keys, key)
+             end) do
+          nil -> nil
+          {path, _key} -> trigger_error("trigger." <> path, :unknown_role, start)
+        end
+
+      {:error, {path, reason}} ->
+        trigger_error("trigger." <> path, reason, start)
+    end
+  end
+
+  defp trigger_error(path, reason, target),
+    do: %{path: path, reason: reason, target: target, message: reason_text(reason, path)}
 
   defp error(graph, path, reason) do
     target =
@@ -726,7 +876,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       layout: editor.layout,
       nodes:
         Enum.map(editor.graph["nodes"], fn node ->
-          {kind, icon, title, detail} = describe(node, editor.graph, roles)
+          {kind, icon, title, detail} =
+            describe(node, editor.graph, roles, start: start_title(editor, roles))
 
           %{
             id: node["id"],
@@ -771,12 +922,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   @doc """
   How a step shows on the canvas and in lists: `{kind, icon, title, detail}`.
   """
-  def describe(node, graph, roles) do
+  def describe(node, graph, roles, opts \\ []) do
     label = node["label"]
 
     case node do
       %{"type" => "startEvent"} ->
-        {"start", "hero-play-circle", label || gettext("A value comes in"), nil}
+        {"start", "hero-play-circle", label || opts[:start] || gettext("A value comes in"), nil}
 
       %{"type" => "endEvent"} ->
         {"end", "hero-flag", label || gettext("End"), nil}
@@ -908,6 +1059,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   ## Words
 
+  defp reason_text(reason, "trigger." <> field), do: trigger_reason(reason, field)
   defp reason_text(:unreachable, _path), do: gettext("Nothing leads to this step from the start.")
   defp reason_text(:dead_end, _path), do: gettext("From this step there is no way to an end.")
   defp reason_text(:unknown_role, _path), do: gettext("The group has no such role.")
@@ -945,6 +1097,85 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(_reason, _path), do: gettext("The ways on from this step are not right.")
 
+  defp trigger_reason(:empty, "words"),
+    do: gettext("Type a word, or pick a role a message mentions.")
+
+  defp trigger_reason(:too_many, "words"), do: gettext("At most 10 words.")
+
+  defp trigger_reason(:invalid, "words"),
+    do: gettext("Words go one by one, 2 to 40 letters or digits each.")
+
+  defp trigger_reason(:empty, "weekdays"), do: gettext("Pick at least one day.")
+  defp trigger_reason(:invalid, "time"), do: gettext("The time is written as 20:00.")
+  defp trigger_reason(:unknown_role, _field), do: gettext("The group has no such role.")
+  defp trigger_reason(_reason, _field), do: gettext("What starts the process is not set right.")
+
+  ## The trigger in words
+
+  @doc "What starts a process, in words, for its start and its row on the tab."
+  def start_title(%{trigger: trigger, trigger_config: config} = editor, roles) do
+    case Triggers.normalize(trigger, config) do
+      {:ok, config} -> trigger_summary(trigger, config, editor[:collection], roles)
+      {:error, _reason} -> trigger_name(trigger)
+    end
+  end
+
+  @doc "A trigger with its settings in words."
+  def trigger_summary("value", _config, _collection, _roles), do: gettext("A value comes in")
+
+  def trigger_summary("message", %{"words" => words, "role" => role}, _collection, roles) do
+    words = Enum.join(words, ", ")
+    role = role && Map.get(roles, role, role)
+
+    cond do
+      words != "" and role ->
+        gettext("A message with %{words} or for %{role}", words: words, role: role)
+
+      words != "" ->
+        gettext("A message with: %{words}", words: words)
+
+      true ->
+        gettext("A message for %{role}", role: role)
+    end
+  end
+
+  def trigger_summary("subgroup", %{"placed" => true}, _collection, _roles),
+    do: gettext("A new sub-group with a place")
+
+  def trigger_summary("subgroup", _config, _collection, _roles), do: gettext("A new sub-group")
+  def trigger_summary("schedule", config, _collection, _roles), do: schedule_text(config)
+
+  def trigger_summary("manual", %{"roles" => keys}, _collection, roles),
+    do: gettext("Started by: %{roles}", roles: Enum.map_join(keys, ", ", &Map.get(roles, &1, &1)))
+
+  def trigger_summary(trigger, _config, _collection, _roles), do: trigger_name(trigger)
+
+  @doc "A schedule in words, such as `Every week on Thu at 20:00`."
+  def schedule_text(%{"every" => "day", "time" => time}),
+    do: gettext("Every day at %{time}", time: time)
+
+  def schedule_text(%{"every" => "week", "weekdays" => days, "time" => time}) do
+    gettext("Every week on %{days} at %{time}",
+      days: Enum.map_join(days, ", ", &PotokIde.Events.Format.weekday_short/1),
+      time: time
+    )
+  end
+
+  def schedule_text(%{"every" => "month", "day" => "last", "time" => time}),
+    do: gettext("On the last day of the month at %{time}", time: time)
+
+  def schedule_text(%{"every" => "month", "day" => day, "time" => time}),
+    do: gettext("Every month on day %{day} at %{time}", day: day, time: time)
+
+  def schedule_text(_config), do: trigger_name("schedule")
+
+  @doc "A trigger's name, as the editor offers it after “When”."
+  def trigger_name("value"), do: gettext("a value comes to an app")
+  def trigger_name("message"), do: gettext("someone writes a message")
+  def trigger_name("subgroup"), do: gettext("a sub-group is made")
+  def trigger_name("schedule"), do: gettext("the set time comes")
+  def trigger_name("manual"), do: gettext("someone starts it")
+
   defp refusal(:start), do: gettext("The start stays.")
   defp refusal(:last_end), do: gettext("The last end stays.")
   defp refusal(:last_branch), do: gettext("The last branch stays.")
@@ -955,6 +1186,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp refusal(:from_end), do: gettext("Nothing leads on from an end.")
   defp refusal(:duplicate), do: gettext("Two outcomes have the same name.")
   defp refusal(:invalid_name), do: gettext("The process needs a name of up to 60 characters.")
+
+  defp refusal({:invalid_trigger, _path, _reason}),
+    do: gettext("What starts the process is not set right.")
+
   defp refusal(:unknown_collection), do: gettext("Pick a collection of the app.")
   defp refusal(:not_permitted), do: gettext("Only the app's editors draw processes.")
   defp refusal(_reason), do: gettext("That did not work.")

@@ -23,7 +23,7 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.Graph
+  alias PotokIde.Processes.{Engine, Graph, Scheduler, Triggers}
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -43,6 +43,8 @@ defmodule PotokIde.Social.DrawnProcesses do
   @max_coordinate 50_000
   @max_collections 50
   @sampled_values 20
+  @max_title 120
+  @max_start_text 2_000
   @max_fields 30
 
   @doc "At most how many processes may be drawn on one app."
@@ -139,26 +141,32 @@ defmodule PotokIde.Social.DrawnProcesses do
   def get(_group, _id), do: nil
 
   @doc """
-  Draws a new process, switched off, on `attrs["collection"]` of the app
-  `attrs["alt_id"]` (an integer, nil for the default description), with its `name`,
-  `graph` and `layout`. Returns `{:ok, process}` or `{:error, reason}`:
+  Draws a new process, switched off, with its `name`, `graph`, `layout` and
+  what sets it going (`trigger`, `trigger_config`, `Processes.Triggers`). On a
+  new value (`"value"`, the default) it hangs on `attrs["collection"]` of the
+  app `attrs["alt_id"]` (an integer, nil for the default description); the
+  other triggers need no app. Returns `{:ok, process}` or `{:error, reason}`:
   `:not_permitted`, `:not_an_app`, `:unknown_collection`, `:too_many`,
-  `:invalid_name` or `{:invalid_graph, path, reason}`.
+  `:invalid_name`, `{:invalid_graph, path, reason}` or
+  `{:invalid_trigger, path, reason}`.
   """
   def create(%Profile{} = editor, %Group{} = group, attrs) when is_map(attrs) do
-    alt_id = attrs["alt_id"]
-    collection = attrs["collection"]
+    trigger = attrs["trigger"] || "value"
+
+    {alt_id, collection} =
+      if trigger == "value", do: {attrs["alt_id"], attrs["collection"]}, else: {nil, nil}
 
     with {:ok, name} <- name(attrs["name"]),
          {:ok, graph} <- graph(attrs["graph"]),
-         true <- Enum.any?(apps(group), &(&1.alt_id == alt_id)) || {:error, :not_an_app},
-         true <- collection in collections(group, alt_id) || {:error, :unknown_collection} do
+         {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
+         :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
       Repo.transaction(fn ->
         AppData.lock_app(group, alt_id)
         access = editor_access!(editor, group)
         known_roles!(graph, access)
+        known_trigger_roles!(trigger, config, access)
 
         if count(group, alt_id) >= @max_per_app, do: Repo.rollback(:too_many)
 
@@ -174,7 +182,9 @@ defmodule PotokIde.Social.DrawnProcesses do
           active: false,
           drawn: true,
           graph: graph,
-          layout: layout
+          layout: layout,
+          trigger: trigger,
+          trigger_config: config
         }
         |> Repo.insert!()
       end)
@@ -182,8 +192,28 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
+  defp on_collection(group, "value", alt_id, collection) do
+    cond do
+      not Enum.any?(apps(group), &(&1.alt_id == alt_id)) -> {:error, :not_an_app}
+      collection not in collections(group, alt_id) -> {:error, :unknown_collection}
+      true -> :ok
+    end
+  end
+
+  defp on_collection(_group, trigger, _alt_id, _collection) do
+    if trigger in Triggers.all(), do: :ok, else: {:error, {:invalid_trigger, "", :invalid}}
+  end
+
+  defp trigger_config(trigger, config) do
+    case Triggers.normalize(trigger, config || %{}) do
+      {:ok, config} -> {:ok, config}
+      {:error, {path, reason}} -> {:error, {:invalid_trigger, path, reason}}
+    end
+  end
+
   @doc """
-  Changes the `name`, `graph` and `layout` of a drawn process, from the
+  Changes the `name`, `graph`, `layout` and the trigger's settings
+  (`trigger_config`; the trigger itself stays) of a drawn process, from the
   `revision` the editor started from; another editor's change in between
   gives `{:error, {:conflict, current}}`. Instances under way keep the graph
   they started with. The owner stays while they edit the app.
@@ -197,11 +227,21 @@ defmodule PotokIde.Social.DrawnProcesses do
         if row.lock_version != revision, do: Repo.rollback({:conflict, row})
         known_roles!(graph, access)
 
+        config =
+          case trigger_config(row.trigger, attrs["trigger_config"] || row.trigger_config) do
+            {:ok, config} -> config
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        known_trigger_roles!(row.trigger, config, access)
+
         row
         |> Ecto.Changeset.change(
           name: name,
           graph: graph,
           layout: layout,
+          trigger_config: config,
+          next_run_at: next_run(%{row | trigger_config: config}),
           owner_profile_id: owner(row, editor, group)
         )
         |> Ecto.Changeset.optimistic_lock(:lock_version)
@@ -210,6 +250,12 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
+  # When a scheduled process that is on starts next; nil for every other.
+  defp next_run(%AppProcess{active: true, trigger: "schedule", trigger_config: config}),
+    do: Triggers.next_run(config, DateTime.utc_now(:second))
+
+  defp next_run(_process), do: nil
+
   @doc """
   Switches a drawn process on: its profile joins the app's group, and the
   editor owns it. Its next new value starts an instance.
@@ -217,10 +263,15 @@ defmodule PotokIde.Social.DrawnProcesses do
   def activate(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, access ->
       known_roles!(row.graph, access)
+      known_trigger_roles!(row.trigger, row.trigger_config, access)
 
       row =
         row
-        |> Ecto.Changeset.change(active: true, owner_profile_id: editor.id)
+        |> Ecto.Changeset.change(
+          active: true,
+          owner_profile_id: editor.id,
+          next_run_at: next_run(%{row | active: true})
+        )
         |> Repo.update!()
 
       AppProcesses.join(group, row.profile_id)
@@ -235,9 +286,87 @@ defmodule PotokIde.Social.DrawnProcesses do
   def deactivate(%Profile{} = editor, %Group{} = group, id) do
     changing(editor, group, id, fn row, _access ->
       if row.active, do: AppProcesses.stop(group, row)
-      %{row | active: false}
+      row |> Ecto.Changeset.change(active: false, next_run_at: nil) |> Repo.update!()
     end)
   end
+
+  @doc """
+  Starts a run of a process that starts by hand, for someone holding one of
+  its roles (the app's editors always may), with a `title` and a `text` its
+  texts read. At most #{elem(PotokIde.RateLimit.limit(:process_manual_start), 0)} an hour per
+  person and process. Returns `{:ok, instance}` or `{:error, reason}`:
+  `:not_found`, `:invalid_title`, `:process_inactive`, `:not_permitted` or
+  `{:rate_limited, retry_after_ms}`.
+  """
+  def start(%Profile{} = profile, %Group{} = group, id, attrs) when is_map(attrs) do
+    with {:ok, title} <- start_text(attrs["title"], 1..@max_title, :invalid_title),
+         {:ok, text} <- start_text(attrs["text"] || "", 0..@max_start_text, :invalid_text),
+         %AppProcess{trigger: "manual"} <- get(group, id) || {:error, :not_found},
+         :ok <- rate(profile, id) do
+      Repo.transaction(fn ->
+        process =
+          from(p in AppProcess, where: p.id == ^id and p.group_id == ^group.id, lock: "FOR SHARE")
+          |> Repo.one()
+
+        unless process.active, do: Repo.rollback(:process_inactive)
+        access = Access.for_profile(profile, Repo.get!(Group, group.id))
+        unless may_start?(process, access), do: Repo.rollback(:not_permitted)
+
+        Engine.start_drawn_on(process,
+          started_by: profile.id,
+          data: %{"title" => title, "text" => text, "author" => profile.username}
+        )
+      end)
+      |> case do
+        {:ok, instance} ->
+          Scheduler.nudge()
+
+          AppData.broadcast(group, :process, %{
+            alt_id: nil,
+            collection: nil,
+            id: instance.id,
+            drawn: true
+          })
+
+          {:ok, instance}
+
+        error ->
+          error
+      end
+    end
+  end
+
+  @doc "Whether the holder of `access` may start the process by hand."
+  def may_start?(%AppProcess{trigger: "manual", trigger_config: config}, %Access{} = access) do
+    access.member? and
+      (ValueRules.manage?(access) or
+         Enum.any?(config["roles"] || ["everyone"], &(&1 in access.role_keys)))
+  end
+
+  def may_start?(_process, _access), do: false
+
+  defp start_text(text, range, reason) when is_binary(text) do
+    text = String.trim(text)
+    if String.length(text) in range, do: {:ok, text}, else: {:error, reason}
+  end
+
+  defp start_text(_text, _range, reason), do: {:error, reason}
+
+  defp rate(profile, id) do
+    case PotokIde.RateLimit.hit(:process_manual_start, {id, profile.id}) do
+      :ok -> :ok
+      {:error, :rate_limited, retry_after} -> {:error, {:rate_limited, retry_after}}
+    end
+  end
+
+  @doc """
+  The fields a process's texts may name: those of its trigger, or for one
+  on a collection, those the collection's newest values hold.
+  """
+  def fields_for(%Group{} = group, "value", alt_id, collection),
+    do: fields(group, alt_id, collection)
+
+  def fields_for(_group, trigger, _alt_id, _collection), do: Triggers.fields(trigger)
 
   @doc """
   Deletes a drawn process with its instances. What it wrote stays, signed by
@@ -284,6 +413,17 @@ defmodule PotokIde.Social.DrawnProcesses do
     case Graph.unknown_role(graph, AppData.role_keys(manifest)) do
       nil -> :ok
       {path, reason} -> Repo.rollback({:invalid_graph, path, reason})
+    end
+  end
+
+  defp known_trigger_roles!(trigger, config, %Access{manifest: manifest}) do
+    keys = AppData.role_keys(manifest)
+
+    case Enum.find(Triggers.role_refs(trigger, config), fn {_path, key} ->
+           not MapSet.member?(keys, key)
+         end) do
+      nil -> :ok
+      {path, _key} -> Repo.rollback({:invalid_trigger, path, :unknown_role})
     end
   end
 

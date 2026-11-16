@@ -60,7 +60,9 @@ defmodule PotokIde.RateLimit do
     tile_upstream: {600, :timer.minutes(1)},
     # Steps one app's process takes (`Processes.Engine`): a busy day of
     # requests fits, a graph that runs away waits for the next minute.
-    process_step: {60, :timer.minutes(1)}
+    process_step: {60, :timer.minutes(1)},
+    # Runs one person starts of one process by hand (`Social.DrawnProcesses`).
+    process_manual_start: {10, :timer.hours(1)}
   }
 
   @type name ::
@@ -81,6 +83,7 @@ defmodule PotokIde.RateLimit do
           | :tile_ip
           | :tile_upstream
           | :process_step
+          | :process_manual_start
 
   @type result :: :ok | {:error, :rate_limited, pos_integer()}
 

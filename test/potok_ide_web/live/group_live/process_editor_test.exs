@@ -86,6 +86,67 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     assert has_element?(lv, "#process-editor-state", "on")
   end
 
+  test "a new process starts on what its editor picks, set on its start step", ctx do
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    assert has_element?(lv, "#process-editor-collection")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "message"}}) |> render_change()
+    refute has_element?(lv, "#process-editor-collection")
+
+    # Without a word or a role a message would start it every time.
+    assert has_element?(lv, "#process-editor-error", "Type a word")
+    assert has_element?(lv, "#process-editor-save[disabled]")
+
+    render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+    assert has_element?(lv, "#process-trigger-form")
+
+    lv
+    |> form("#process-trigger-form", %{"trigger" => %{"words" => "kvar, curi"}})
+    |> render_change()
+
+    refute has_element?(lv, "#process-editor-error")
+    assert has_element?(lv, "#process-outline-start", "A message with: kvar, curi")
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [%AppProcess{trigger: "message", collection: nil} = row] = drawn(ctx.group)
+    assert row.trigger_config == %{"words" => ["kvar", "curi"], "role" => nil}
+  end
+
+  test "a process started by hand gets a Start button and a form", ctx do
+    {:ok, row} =
+      DrawnProcesses.create(ctx.owner, ctx.group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["everyone"]},
+        "name" => "Prijava kvara",
+        "graph" => PotokIde.Processes.GraphEdit.new()
+      })
+
+    {:ok, _row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+    assert has_element?(lv, "#process-row-#{row.id}", "Started by:")
+
+    lv |> element("#process-row-#{row.id}-start") |> render_click()
+    assert has_element?(lv, "#process-start-form")
+
+    lv |> form("#process-start-form", %{"start" => %{"title" => " "}}) |> render_submit()
+    assert has_element?(lv, "#process-start-error")
+
+    lv
+    |> form("#process-start-form", %{
+      "start" => %{"title" => "Lift stoji", "text" => "Od jutros."}
+    })
+    |> render_submit()
+
+    refute has_element?(lv, "#process-start-form")
+
+    assert [%{data: %{"title" => "Lift stoji"}}] =
+             Repo.all(PotokIde.Processes.ValueProcess)
+  end
+
   test "an unfinished drawing says what is wrong and is not saved", ctx do
     {:ok, lv, _html} =
       live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")

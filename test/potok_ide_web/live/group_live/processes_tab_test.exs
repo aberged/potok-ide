@@ -108,7 +108,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     assert has_element?(lv, "#group-processes-empty")
   end
 
-  test "a group without an app has none", ctx do
+  test "a group without an app has it for its editors, who may draw there", ctx do
     {:ok, plain} =
       Social.create_group(ctx.owner, Social.get_root_group!(), %{
         "name" => "plain",
@@ -117,10 +117,16 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
         "home_page" => :chat
       })
 
-    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{plain.id}/processes")
+    {:ok, invitation} = Social.invite_profile_to_group(ctx.owner, plain, ctx.member)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, ctx.member)
 
-    refute has_element?(lv, "#group-tab-processes")
-    refute has_element?(lv, "#group-panel-processes")
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{plain.id}/processes")
+    assert has_element?(lv, "#group-tab-processes")
+    assert has_element?(lv, "#processes-new")
+
+    {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{plain.id}/processes")
+    refute has_element?(member_lv, "#group-tab-processes")
+    refute has_element?(member_lv, "#group-panel-processes")
   end
 
   test "the people of a drawn task's role decide it here, with the value", ctx do

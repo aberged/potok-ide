@@ -714,6 +714,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             editor={@process_editor}
             editor_form={@process_editor_form}
             editor_meta={@process_editor_meta}
+            start={@processes_start}
           />
           <NoticesTab.panel
             :if={@active_tab == "notices"}

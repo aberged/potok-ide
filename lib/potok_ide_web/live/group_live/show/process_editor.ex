@@ -23,6 +23,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     assigns =
       assigns
       |> assign(:roles, roles)
+      |> assign(:start_title, ProcessEditorState.start_title(assigns.editor, roles))
       |> assign(:role_options, role_options(assigns.access))
       |> assign(
         :canvas_state,
@@ -79,7 +80,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               id="process-editor-save"
               type="button"
               phx-click="process_editor_save"
-              disabled={@editor.error != nil or not @editor.dirty? or @editor.collection == nil}
+              disabled={
+                @editor.error != nil or not @editor.dirty? or
+                  (@editor.trigger == "value" and @editor.collection == nil)
+              }
               variant="primary"
               size="sm"
             >
@@ -90,8 +94,26 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
           <div class="mt-1 flex flex-wrap items-center gap-1.5 pl-1 sm:pl-11">
             <%= if @editor.source == :new do %>
+              <label class="inline-flex items-center gap-1.5 text-xs text-base-content/60">
+                {gettext("When")}
+                <select
+                  id="process-editor-trigger"
+                  form="process-editor-meta"
+                  name={@meta[:trigger].name}
+                  aria-label={gettext("What starts the process")}
+                  class="select select-sm w-auto max-w-60 rounded-xl"
+                >
+                  <option
+                    :for={trigger <- trigger_options(@editor)}
+                    value={trigger}
+                    selected={trigger == @editor.trigger}
+                  >
+                    {ProcessEditorState.trigger_name(trigger)}
+                  </option>
+                </select>
+              </label>
               <select
-                :if={length(@editor.apps) > 1}
+                :if={@editor.trigger == "value" and length(@editor.apps) > 1}
                 id="process-editor-app"
                 form="process-editor-meta"
                 name={@meta[:app].name}
@@ -106,8 +128,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {app.name || gettext("Group description")}
                 </option>
               </select>
-              <label class="inline-flex items-center gap-1.5 text-xs text-base-content/60">
-                {gettext("When a value comes to")}
+              <label
+                :if={@editor.trigger == "value"}
+                class="inline-flex items-center gap-1.5 text-xs text-base-content/60"
+              >
                 <select
                   id="process-editor-collection"
                   form="process-editor-meta"
@@ -124,9 +148,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 </select>
               </label>
             <% else %>
-              <span class="inline-flex h-7 items-center gap-1 rounded-full bg-base-200 px-2.5 text-xs text-base-content/70">
-                <.icon name="hero-inbox-arrow-down" class="size-3.5" />
-                {@editor.collection}
+              <span
+                id="process-editor-trigger-summary"
+                class="inline-flex h-7 min-w-0 items-center gap-1 rounded-full bg-base-200 px-2.5 text-xs text-base-content/70"
+              >
+                <.icon name={trigger_icon(@editor.trigger)} class="size-3.5 shrink-0" />
+                <span class="truncate">
+                  {@start_title}{if(@editor.collection, do: " · #{@editor.collection}")}
+                </span>
               </span>
               <span
                 id="process-editor-state"
@@ -299,6 +328,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                     form={@form}
                     roles={@roles}
                     role_options={@role_options}
+                    start_title={@start_title}
                   />
                 <% match?({:flow, _}, @editor.selected) and @form -> %>
                   <.flow_panel editor={@editor} form={@form} />
@@ -311,7 +341,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
         <ol id="process-outline" class="sr-only">
           <li :for={node <- @editor.graph["nodes"]} id={"process-outline-#{node["id"]}"}>
-            {elem(ProcessEditorState.describe(node, @editor.graph, @roles), 2)}
+            {elem(ProcessEditorState.describe(node, @editor.graph, @roles, start: @start_title), 2)}
           </li>
         </ol>
       </div>
@@ -434,13 +464,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   attr :form, :any, required: true
   attr :roles, :map, required: true
   attr :role_options, :list, required: true
+  attr :start_title, :string, required: true
 
   defp node_panel(assigns) do
     {:node, id} = assigns.editor.selected
     node = Graph.node(assigns.editor.graph, id)
 
     {kind, icon, title, _detail} =
-      ProcessEditorState.describe(node, assigns.editor.graph, assigns.roles)
+      ProcessEditorState.describe(node, assigns.editor.graph, assigns.roles,
+        start: assigns.start_title
+      )
 
     assigns =
       assigns
@@ -651,19 +684,188 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {gettext("Add a condition")}
                 </.button>
               </div>
-            <% _start_or_end -> %>
-              <p class="text-sm text-base-content/65">
-                {if(@kind == "start",
-                  do: gettext("Every new value of the collection starts here."),
-                  else: gettext("Here the run is done.")
-                )}
-              </p>
+            <% "start" -> %>
+              <p class="text-sm text-base-content/65">{trigger_hint(@editor.trigger)}</p>
+            <% _end -> %>
+              <p class="text-sm text-base-content/65">{gettext("Here the run is done.")}</p>
           <% end %>
         </fieldset>
       </.form>
+
+      <.trigger_form
+        :if={@kind == "start" and @editor.trigger != "value"}
+        editor={@editor}
+        role_options={@role_options}
+      />
     </div>
     """
   end
+
+  attr :editor, :map, required: true
+  attr :role_options, :list, required: true
+
+  # What starts the process, set on its start step.
+  defp trigger_form(assigns) do
+    assigns = assign(assigns, :config, assigns.editor.trigger_config)
+
+    ~H"""
+    <.form
+      for={%{}}
+      as={:trigger}
+      id="process-trigger-form"
+      phx-change="process_editor_trigger"
+      class="mt-4 space-y-3 border-t border-base-300/70 pt-4"
+    >
+      <fieldset disabled={!@editor.editable?} class="space-y-3">
+        <h3 class="text-sm font-semibold">{gettext("What starts it")}</h3>
+
+        <%= case @editor.trigger do %>
+          <% "message" -> %>
+            <.input
+              type="text"
+              id="process-trigger-words"
+              name="trigger[words]"
+              value={words_value(@config["words"])}
+              label={gettext("Words in the message")}
+              placeholder={gettext("leak, broken, power")}
+              phx-debounce="400"
+            />
+            <.input
+              type="select"
+              id="process-trigger-role"
+              name="trigger[role]"
+              value={@config["role"] || ""}
+              label={gettext("Or a role the message mentions")}
+              options={[{gettext("No role"), ""}] ++ @role_options}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "A message a person writes in the group's chat starts it when it holds one of these words or mentions the role. Replies in threads do not count."
+              )}
+            </p>
+          <% "subgroup" -> %>
+            <input type="hidden" name="trigger[placed]" value="false" />
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                id="process-trigger-placed"
+                name="trigger[placed]"
+                value="true"
+                checked={@config["placed"] in [true, "true"]}
+                class="checkbox checkbox-sm"
+              />
+              {gettext("Only sub-groups with a place on the map")}
+            </label>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "A sub-group someone makes here starts it: by hand, from a preset, a place added on the map, or an app. Records, threads and what a process makes do not."
+              )}
+            </p>
+          <% "schedule" -> %>
+            <.input
+              type="select"
+              id="process-trigger-every"
+              name="trigger[every]"
+              value={@config["every"]}
+              label={gettext("How often")}
+              options={[
+                {gettext("Every day"), "day"},
+                {gettext("Every week"), "week"},
+                {gettext("Every month"), "month"}
+              ]}
+            />
+            <div :if={@config["every"] == "week"} id="process-trigger-weekdays">
+              <p class="label mb-1">{gettext("On")}</p>
+              <input type="hidden" name="trigger[weekdays][]" value="" />
+              <div class="flex flex-wrap gap-1.5">
+                <label
+                  :for={day <- 1..7}
+                  class="cursor-pointer rounded-full border border-base-300 px-2.5 py-1 text-xs font-semibold transition has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content"
+                >
+                  <input
+                    type="checkbox"
+                    id={"process-trigger-weekday-#{day}"}
+                    name="trigger[weekdays][]"
+                    value={day}
+                    checked={to_string(day) in Enum.map(List.wrap(@config["weekdays"]), &to_string/1)}
+                    class="sr-only"
+                  />
+                  {PotokIde.Events.Format.weekday_short(day)}
+                </label>
+              </div>
+            </div>
+            <.input
+              :if={@config["every"] == "month"}
+              type="select"
+              id="process-trigger-day"
+              name="trigger[day]"
+              value={to_string(@config["day"])}
+              label={gettext("On day")}
+              options={
+                for(d <- 1..28, do: {to_string(d), to_string(d)}) ++ [{gettext("the last"), "last"}]
+              }
+            />
+            <.input
+              type="time"
+              id="process-trigger-time"
+              name="trigger[time]"
+              value={@config["time"]}
+              label={gettext("At")}
+            />
+            <p class="text-xs text-base-content/60">
+              {gettext("Times are in %{zone}.", zone: @config["time_zone"])}
+            </p>
+          <% "manual" -> %>
+            <div>
+              <p class="label mb-1">{gettext("Who may start it")}</p>
+              <input type="hidden" name="trigger[roles][]" value="" />
+              <label
+                :for={{label, key} <- @role_options}
+                class="flex items-center gap-2 py-0.5 text-sm"
+              >
+                <input
+                  type="checkbox"
+                  id={"process-trigger-role-#{key}"}
+                  name="trigger[roles][]"
+                  value={key}
+                  checked={key in List.wrap(@config["roles"])}
+                  class="checkbox checkbox-sm"
+                />
+                {label}
+              </label>
+            </div>
+            <p class="text-xs text-base-content/60">
+              {gettext(
+                "They get a Start button on the Processes tab, with a title and a text the steps can put in."
+              )}
+            </p>
+          <% _value -> %>
+        <% end %>
+      </fieldset>
+    </.form>
+    """
+  end
+
+  defp words_value(words) when is_list(words), do: Enum.join(words, ", ")
+  defp words_value(words) when is_binary(words), do: words
+  defp words_value(_words), do: ""
+
+  defp trigger_options(%{apps: []}), do: PotokIde.Processes.Triggers.all() -- ["value"]
+  defp trigger_options(_editor), do: PotokIde.Processes.Triggers.all()
+
+  defp trigger_icon("message"), do: "hero-chat-bubble-left-ellipsis"
+  defp trigger_icon("subgroup"), do: "hero-folder-plus"
+  defp trigger_icon("schedule"), do: "hero-calendar-days"
+  defp trigger_icon("manual"), do: "hero-hand-raised"
+  defp trigger_icon(_value), do: "hero-inbox-arrow-down"
+
+  defp trigger_hint("message"),
+    do: gettext("A message with one of the words starts the process here.")
+
+  defp trigger_hint("subgroup"), do: gettext("A new sub-group starts the process here.")
+  defp trigger_hint("schedule"), do: gettext("The process starts here at the set time.")
+  defp trigger_hint("manual"), do: gettext("Whoever starts it by hand starts here.")
+  defp trigger_hint(_value), do: gettext("Every new value of the collection starts here.")
 
   attr :editor, :map, required: true
   attr :target, :string, required: true

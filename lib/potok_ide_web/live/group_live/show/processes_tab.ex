@@ -8,7 +8,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.ValueRules
-  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessEditor, RolesTab}
+  alias PotokIde.Social.DrawnProcesses
+  alias PotokIdeWeb.GroupLive.Show.{Components, ProcessEditor, ProcessEditorState, RolesTab}
 
   attr :group, :map, required: true
   attr :access, :any, required: true
@@ -23,6 +24,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :editor, :map, default: nil, doc: "the drawing open over the tab (`ProcessEditorState`)"
   attr :editor_form, :any, default: nil
   attr :editor_meta, :any, default: nil
+  attr :start, :map, default: nil, doc: "`%{process, form, error}` while someone starts a process"
 
   def panel(assigns) do
     assigns = assign(assigns, :manage?, ValueRules.manage?(assigns.access))
@@ -111,11 +113,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
                 )
               ]}
             >
-              <.process_row entry={entry} manage?={@manage?} group={@group} />
+              <.process_row entry={entry} manage?={@manage?} group={@group} access={@access} />
             </li>
           </ul>
         </section>
       </Components.tab_body>
+
+      <.start_dialog start={@start} />
 
       <ProcessEditor.editor
         :if={@editor}
@@ -154,15 +158,30 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
     <div class="mt-3 rounded-2xl bg-base-100/80 p-3 text-sm shadow-xs">
       <div class="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/60">
-        <span :if={@task.author} class="font-semibold text-base-content/80">
-          {@task.author.username}
+        <.icon name={subject_icon(@task.kind)} class="size-3.5" />
+        <span :if={@task.author_name} class="font-semibold text-base-content/80">
+          {@task.author_name}
         </span>
-        <span :if={!@task.author}>{gettext("Anonymous")}</span>
-        <span>·</span>
-        <Components.local_time
-          id={"process-task-#{@task.id}-sent"}
-          datetime={@task.value.inserted_at}
-        />
+        <span :if={!@task.author_name and @task.kind == :value}>{gettext("Anonymous")}</span>
+        <span :if={@task.author_name || @task.kind == :value}>·</span>
+        <Components.local_time id={"process-task-#{@task.id}-sent"} datetime={@task.sent_at} />
+      </div>
+
+      <div :if={@task.title || @task.text} id={"process-task-#{@task.id}-subject"} class="space-y-1">
+        <%= if @task.link do %>
+          <.link
+            navigate={@task.link}
+            class="inline-flex items-center gap-1 font-semibold text-primary transition hover:underline"
+          >
+            {@task.title || gettext("Open the message")}
+            <.icon name="hero-arrow-up-right-mini" class="size-4" />
+          </.link>
+        <% else %>
+          <p :if={@task.title} class="font-semibold">{@task.title}</p>
+        <% end %>
+        <p :if={@task.text} class="line-clamp-4 whitespace-pre-line break-words text-base-content/80">
+          {@task.text}
+        </p>
       </div>
 
       <details :if={@task.data != []} id={"process-task-#{@task.id}-data"} class="group">
@@ -250,6 +269,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :entry, :map, required: true
   attr :manage?, :boolean, required: true
   attr :group, :map, required: true
+  attr :access, :any, required: true
 
   defp process_row(assigns) do
     ~H"""
@@ -277,8 +297,23 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             {gettext("off")}
           </span>
         </div>
-        <p class="mt-0.5 text-xs text-base-content/60">{subtitle(@entry.process)}</p>
+        <p class="mt-0.5 text-xs text-base-content/60">{subtitle(@entry.process, @access)}</p>
       </div>
+      <.button
+        :if={
+          @entry.process.trigger == "manual" and @entry.process.active and
+            DrawnProcesses.may_start?(@entry.process, @access)
+        }
+        id={"process-row-#{@entry.id}-start"}
+        type="button"
+        phx-click="processes_start_open"
+        phx-value-id={@entry.id}
+        variant="primary"
+        size="sm"
+      >
+        <.icon name="hero-play" class="size-4" />
+        {gettext("Start")}
+      </.button>
       <.button
         id={"process-row-#{@entry.id}-open"}
         patch={~p"/groups/#{@group.id}/processes?#{[process: @entry.id]}"}
@@ -382,15 +417,135 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     """
   end
 
-  # The collection, and who owns the process.
-  defp subtitle(process) do
+  defp subject_icon(:message), do: "hero-chat-bubble-left-ellipsis"
+  defp subject_icon(:group), do: "hero-folder-plus"
+  defp subject_icon(:data), do: "hero-play-circle"
+  defp subject_icon(_value), do: "hero-inbox-arrow-down"
+
+  # What starts the process (its collection, for an app's), and who owns it.
+  defp subtitle(process, access) do
     owner =
       case process.owner_profile do
         %{username: username} -> gettext("owner %{username}", username: username)
         nil -> gettext("no owner")
       end
 
-    Enum.join([gettext("collection %{collection}", collection: process.collection), owner], " · ")
+    start =
+      if process.trigger == "value",
+        do: gettext("collection %{collection}", collection: process.collection),
+        else:
+          ProcessEditorState.trigger_summary(
+            process.trigger,
+            process.trigger_config,
+            nil,
+            ProcessEditorState.role_labels(access)
+          )
+
+    Enum.join([start, owner], " · ")
+  end
+
+  attr :start, :map, default: nil, doc: "`%{process, form, error}` while someone starts a process"
+
+  # Starting a process by hand: a title and a text its steps can put in.
+  defp start_dialog(assigns) do
+    ~H"""
+    <dialog
+      :if={@start}
+      id="process-start-dialog"
+      phx-hook=".ProcessStartDialog"
+      phx-mounted={JS.ignore_attributes(["open"])}
+      aria-labelledby="process-start-title"
+      class="fixed inset-0 m-0 size-full max-h-none max-w-none overflow-hidden bg-transparent p-0 backdrop:bg-transparent"
+    >
+      <div class="flex size-full items-end justify-center sm:items-center sm:p-4">
+        <div
+          class="absolute inset-0 bg-black/30 backdrop-blur-[2px] dark:bg-black/60"
+          phx-click="processes_start_close"
+          aria-hidden="true"
+        >
+        </div>
+        <section
+          tabindex="-1"
+          autofocus
+          class="relative flex max-h-[85dvh] w-full flex-col overflow-hidden rounded-t-3xl border border-b-0 border-base-300/70 bg-base-100 text-base-content shadow-2xl sm:max-w-lg sm:rounded-3xl sm:border-b"
+        >
+          <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-5 pb-4">
+            <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+              <.icon name="hero-play" class="size-5" />
+            </span>
+            <div class="min-w-0 flex-1">
+              <h2 id="process-start-title" class="text-base font-semibold">
+                {@start.process.name}
+              </h2>
+              <p class="text-xs text-base-content/60">{gettext("Start the process")}</p>
+            </div>
+            <.icon_button
+              id="process-start-close"
+              type="button"
+              phx-click="processes_start_close"
+              icon="hero-x-mark"
+              label={gettext("Close")}
+            />
+          </header>
+          <.form
+            for={@start.form}
+            id="process-start-form"
+            phx-change="processes_start_validate"
+            phx-submit="processes_start_save"
+            class="space-y-3 overflow-y-auto px-5 py-4"
+          >
+            <p
+              :if={@start.error}
+              id="process-start-error"
+              class="rounded-xl bg-error/10 px-3 py-2 text-sm text-error"
+            >
+              {@start.error}
+            </p>
+            <.input
+              field={@start.form[:title]}
+              type="text"
+              label={gettext("Title")}
+              maxlength="120"
+              required
+            />
+            <.input
+              field={@start.form[:text]}
+              type="textarea"
+              rows="4"
+              maxlength="2000"
+              label={gettext("Text")}
+            />
+            <div class="flex justify-end gap-2 pt-1">
+              <.button type="button" phx-click="processes_start_close" variant="ghost" size="sm">
+                {gettext("Cancel")}
+              </.button>
+              <.button id="process-start-submit" type="submit" variant="primary" size="sm">
+                <.icon name="hero-play" class="size-4" />
+                {gettext("Start")}
+              </.button>
+            </div>
+          </.form>
+        </section>
+      </div>
+    </dialog>
+    <script :type={Phoenix.LiveView.ColocatedHook} name=".ProcessStartDialog">
+      export default {
+        mounted() {
+          // Escape and Android's back button close it through the server.
+          this.el.addEventListener("cancel", event => {
+            event.preventDefault()
+            this.pushEvent("processes_start_close", {})
+          })
+
+          this.el.showModal()
+        },
+
+        updated() {
+          if (!this.el.open) this.el.showModal()
+        },
+      }
+    </script>
+    """
   end
 
   # How many instances are in each state, those under way first.

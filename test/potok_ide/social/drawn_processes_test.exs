@@ -377,11 +377,130 @@ defmodule PotokIde.Social.DrawnProcessesTest do
       assert task.id == instance.id
       assert task.label == "Savet odlučuje"
       assert task.outcomes == ["odobri", "odbij"]
-      assert task.author.id == ctx.member.id
+      assert task.kind == :value
+      assert task.author_name == ctx.member.username
       assert {"a.q1", "Da"} in task.data
       assert {"naslov", "Kanalizacija"} in task.data
 
       assert Processes.tasks_for(ctx.member, ctx.group, member_access) == []
+    end
+  end
+
+  describe "started by hand" do
+    # A report comes in by hand: the chat hears of it and the council decides.
+    defp report_graph(savet) do
+      %{
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{
+            "id" => "najava",
+            "type" => "serviceTask",
+            "action" => "message",
+            "text" => "Prijava: {{title}} ({{author}})"
+          },
+          %{"id" => "odluka", "type" => "userTask", "role" => savet, "outcomes" => ["Primljeno"]},
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "najava"},
+          %{"from" => "najava", "to" => "odluka"},
+          %{"from" => "odluka", "to" => "kraj", "outcome" => "Primljeno"}
+        ]
+      }
+    end
+
+    defp manual!(ctx, roles) do
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "trigger_config" => %{"roles" => roles},
+          "name" => "Prijava kvara",
+          "graph" => report_graph(ctx.savet)
+        })
+
+      {:ok, row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+      row
+    end
+
+    test "needs no app or collection, and puts what it was given in its texts", ctx do
+      row = manual!(ctx, ["everyone"])
+      assert %AppProcess{trigger: "manual", collection: nil, alt_description_id: nil} = row
+
+      assert {:ok, instance} =
+               DrawnProcesses.start(ctx.member, ctx.group, row.id, %{
+                 "title" => " Lift stoji ",
+                 "text" => "Od jutros."
+               })
+
+      assert instance.value_id == nil
+
+      assert instance.data == %{
+               "title" => "Lift stoji",
+               "text" => "Od jutros.",
+               "author" => ctx.member.username
+             }
+
+      assert instance.started_by_id == ctx.member.id
+
+      Engine.run(instance.id)
+
+      assert Enum.any?(
+               Social.list_group_values(ctx.group),
+               &(&1.content == "Prijava: Lift stoji (#{ctx.member.username})")
+             )
+
+      owner_access = Access.for_profile(ctx.owner, ctx.group)
+
+      assert [%{kind: :data, title: "Lift stoji", text: "Od jutros."}] =
+               Processes.tasks_for(ctx.owner, ctx.group, owner_access)
+    end
+
+    test "is for its roles, and the app's editors, while it is on", ctx do
+      row = manual!(ctx, [ctx.savet])
+
+      assert {:error, :not_permitted} =
+               DrawnProcesses.start(ctx.member, ctx.group, row.id, %{"title" => "Lift"})
+
+      assert {:ok, _instance} =
+               DrawnProcesses.start(ctx.owner, ctx.group, row.id, %{"title" => "Lift"})
+
+      assert {:error, :invalid_title} =
+               DrawnProcesses.start(ctx.owner, ctx.group, row.id, %{"title" => " "})
+
+      {:ok, _off} = DrawnProcesses.deactivate(ctx.owner, ctx.group, row.id)
+
+      assert {:error, :process_inactive} =
+               DrawnProcesses.start(ctx.owner, ctx.group, row.id, %{"title" => "Lift"})
+    end
+
+    test "takes at most ten runs an hour from one person", ctx do
+      row = manual!(ctx, ["everyone"])
+
+      for i <- 1..10 do
+        assert {:ok, _} =
+                 DrawnProcesses.start(ctx.member, ctx.group, row.id, %{"title" => "Kvar #{i}"})
+      end
+
+      assert {:error, {:rate_limited, _ms}} =
+               DrawnProcesses.start(ctx.member, ctx.group, row.id, %{"title" => "Još jedan"})
+    end
+
+    test "a trigger's roles must be the group's", ctx do
+      assert {:error, {:invalid_trigger, "roles.0", :unknown_role}} =
+               DrawnProcesses.create(ctx.owner, ctx.group, %{
+                 "trigger" => "manual",
+                 "trigger_config" => %{"roles" => ["nema"]},
+                 "name" => "Prijava",
+                 "graph" => report_graph(ctx.savet)
+               })
+
+      assert {:error, {:invalid_trigger, "words", :empty}} =
+               DrawnProcesses.create(ctx.owner, ctx.group, %{
+                 "trigger" => "message",
+                 "trigger_config" => %{"words" => ""},
+                 "name" => "Prijava",
+                 "graph" => report_graph(ctx.savet)
+               })
     end
   end
 
