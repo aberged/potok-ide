@@ -10,7 +10,7 @@
 //   (`layout`), a step without a place gets one from dagre next to what
 //   comes before it, a flow is drawn from a step's handle to another step,
 //   and the canvas pans (drag the background, the wheel) and zooms (pinch,
-//   ctrl + wheel, the buttons).
+//   ctrl + wheel, the buttons). The "+" on a flow puts a step into it here too.
 //
 // Events to the server: process_editor_select {node} | {flow} | {},
 // process_editor_insert_menu {flow}, process_editor_move {positions},
@@ -116,18 +116,26 @@ const throughPoints = points => {
 }
 
 // A curve between two boxes on the free canvas: downwards from the bottom to
-// the top, otherwise around the right side, as a flow back up does.
-const between = (a, b) => {
+// the top, otherwise around a side, as a flow back up does. The "+" stands
+// half-way, or past the flow's label when it has one. `spread` moves flows
+// between the same two steps apart, so each shows with its label and "+".
+const SPREAD = 56
+
+const between = (a, b, labelled = false, spread = 0) => {
+  const plusAt = labelled ? 0.78 : 0.5
   const [aw, ah] = a.size
   const [bw, bh] = b.size
+  const off = spread * SPREAD
   if (b.y - bh / 2 > a.y + ah / 2 + 12) {
     const s = {x: a.x, y: a.y + ah / 2}
     const t = {x: b.x, y: b.y - bh / 2}
     const dy = Math.max(30, (t.y - s.y) / 2)
+    const c1 = {x: s.x + off, y: s.y + dy}
+    const c2 = {x: t.x + off, y: t.y - dy}
     return {
-      d: `M${s.x},${s.y} C${s.x},${s.y + dy} ${t.x},${t.y - dy} ${t.x},${t.y}`,
-      mid: bezier(s, {x: s.x, y: s.y + dy}, {x: t.x, y: t.y - dy}, t, 0.5),
-      plus: bezier(s, {x: s.x, y: s.y + dy}, {x: t.x, y: t.y - dy}, t, 0.78),
+      d: `M${s.x},${s.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${t.x},${t.y}`,
+      mid: bezier(s, c1, c2, t, 0.5),
+      plus: bezier(s, c1, c2, t, plusAt),
     }
   }
   // Back up, round the side the source stands on, so it passes no step.
@@ -135,14 +143,14 @@ const between = (a, b) => {
   const side = left ? -1 : 1
   const s = {x: a.x + (side * aw) / 2, y: a.y}
   const t = {x: b.x + (side * bw) / 2, y: b.y}
-  const dx = Math.max(60, Math.abs(t.y - s.y) / 3)
+  const dx = Math.max(60, Math.abs(t.y - s.y) / 3) + Math.abs(off)
   const edge = left ? Math.min(s.x, t.x) - dx : Math.max(s.x, t.x) + dx
   const c1 = {x: edge, y: s.y}
   const c2 = {x: edge, y: t.y}
   return {
     d: `M${s.x},${s.y} C${c1.x},${c1.y} ${c2.x},${c2.y} ${t.x},${t.y}`,
     mid: bezier(s, c1, c2, t, 0.5),
-    plus: bezier(s, c1, c2, t, 0.78),
+    plus: bezier(s, c1, c2, t, plusAt),
   }
 }
 
@@ -212,7 +220,7 @@ export const ProcessCanvas = {
     const g = new graphlib.Graph({multigraph: true})
     g.setGraph(
       this.wide.matches
-        ? {rankdir: "TB", nodesep: 28, ranksep: 48, edgesep: 18, marginx: 0, marginy: 0}
+        ? {rankdir: "TB", nodesep: 28, ranksep: 64, edgesep: 18, marginx: 0, marginy: 0}
         : {rankdir: "TB", nodesep: 16, ranksep: 40, edgesep: 12, marginx: 0, marginy: 0},
     )
     g.setDefaultEdgeLabel(() => ({}))
@@ -236,11 +244,14 @@ export const ProcessCanvas = {
     this.places = wide ? this.freePlaces(auto) : auto
 
     const routes = {}
+    const spreads = this.spreads()
+    const unmoved = id => this.places[id].x === auto[id].x && this.places[id].y === auto[id].y
     for (const flow of state.flows) {
       const a = {...this.places[flow.from], size: sizeOf(this.node(flow.from))}
       const b = {...this.places[flow.to], size: sizeOf(this.node(flow.to))}
-      if (wide) {
-        routes[flow.key] = between(a, b)
+      // A step that was dragged has no route from dagre; one that was not keeps it.
+      if (wide && !(unmoved(flow.from) && unmoved(flow.to))) {
+        routes[flow.key] = between(a, b, Boolean(flow.label), spreads[flow.key])
       } else {
         const points = g.edge({v: flow.from, w: flow.to, name: flow.key}).points
         routes[flow.key] = {
@@ -256,6 +267,18 @@ export const ProcessCanvas = {
 
   node(id) {
     return this.state.nodes.find(node => node.id === id)
+  },
+
+  // For each flow, how far it stands from the middle of the flows between the
+  // same two steps: 0 alone, -0.5 and 0.5 for two, and so on.
+  spreads() {
+    const groups = {}
+    for (const flow of this.state.flows) (groups[`${flow.from}>${flow.to}`] ||= []).push(flow.key)
+    const spreads = {}
+    for (const keys of Object.values(groups)) {
+      keys.forEach((key, i) => (spreads[key] = i - (keys.length - 1) / 2))
+    }
+    return spreads
   },
 
   // Saved places where there are any; elsewhere dagre's, moved along with
@@ -457,7 +480,7 @@ export const ProcessCanvas = {
         this.flowEls.push(label)
       }
 
-      if (state.editable && !wide) {
+      if (state.editable) {
         const at = this.at(route.plus)
         const plus = el("button", {
           type: "button",
@@ -636,10 +659,13 @@ export const ProcessCanvas = {
     this.frame = requestAnimationFrame(() => {
       this.frame = null
       const routes = {}
+      const spreads = this.spreads()
       for (const flow of this.state.flows) {
         routes[flow.key] = between(
           {...this.places[flow.from], size: sizeOf(this.node(flow.from))},
           {...this.places[flow.to], size: sizeOf(this.node(flow.to))},
+          Boolean(flow.label),
+          spreads[flow.key],
         )
       }
       for (const old of this.flowEls) old.remove()

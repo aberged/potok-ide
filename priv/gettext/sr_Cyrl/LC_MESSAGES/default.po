@@ -618,7 +618,7 @@ msgstr "страницу поштанског сандучета"
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1327
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:161
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:912
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:361
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:368
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:275
 #: lib/potok_ide_web/live/profile_live/new.ex:70
 #: lib/potok_ide_web/live/share_live.ex:44
@@ -659,8 +659,8 @@ msgstr "Прикажи мање"
 msgid "See more"
 msgstr "Прикажи више"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:380
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:467
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:413
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:505
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1227
 #, elixir-autogen, elixir-format
 msgid "Message"
@@ -2223,7 +2223,7 @@ msgid "Roles of %{username}"
 msgstr "Улоге корисника %{username}"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1335
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:84
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:87
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:212
 #: lib/potok_ide_web/live/tag_live/index.ex:303
 #, elixir-autogen, elixir-format
@@ -2496,9 +2496,9 @@ msgstr "Подгрупе групе %{name}"
 #: lib/potok_ide_web/live/group_live/show/group_sheet.ex:119
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:64
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:65
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:353
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:438
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:673
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:386
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:476
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:728
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:219
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:291
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:774
@@ -2580,7 +2580,7 @@ msgstr "Други опис већ користи име тренутног по
 #: lib/potok_ide_web/live/group_live/show/choice_menus.ex:43
 #: lib/potok_ide_web/live/group_live/show/components.ex:1088
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1119
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:95
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:98
 #: lib/potok_ide_web/pin_icons.ex:159
 #, elixir-autogen, elixir-format
 msgid "App"
@@ -2626,7 +2626,7 @@ msgstr "Описи"
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:792
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:612
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:285
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:292
 #: lib/potok_ide_web/live/profile_live/index.ex:133
 #, elixir-autogen, elixir-format
 msgid "Edit"
@@ -6476,7 +6476,7 @@ msgid "It may not: %{permissions}."
 msgstr "Не сме: %{permissions}."
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:349
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:314
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:321
 #, elixir-autogen, elixir-format
 msgid "Its owner no longer edits the app. Whoever saves its rules next takes it over."
 msgstr "Власник више не уређује апликацију. Ко следећи сачува њена правила, преузима процес."
@@ -6488,25 +6488,25 @@ msgstr "Процес"
 
 #: lib/potok_ide_web/live/group_live/show.ex:523
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:280
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:30
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:34
 #, elixir-autogen, elixir-format
 msgid "Processes"
 msgstr "Процеси"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:447
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:386
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:393
 #, elixir-autogen, elixir-format
 msgid "collection %{collection}"
 msgstr "колекција %{collection}"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:437
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:383
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:390
 #, elixir-autogen, elixir-format
 msgid "no owner"
 msgstr "без власника"
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:436
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:382
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:389
 #, elixir-autogen, elixir-format
 msgid "owner %{username}"
 msgstr "власник %{username}"
@@ -6521,7 +6521,7 @@ msgstr "покренуо: %{username}"
 msgid "An app's process leaves its app's group only when its rule is removed."
 msgstr "Процес апликације излази из групе апликације само кад се уклони његово правило."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:401
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:408
 #, elixir-autogen, elixir-format
 msgid "Cancelled: %{count}"
 msgstr "Отказано: %{count}"
@@ -6531,27 +6531,27 @@ msgstr "Отказано: %{count}"
 msgid "Could not take it up again."
 msgstr "Није могло поново да се покрене."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:400
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:407
 #, elixir-autogen, elixir-format
 msgid "Done: %{count}"
 msgstr "Завршено: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:399
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:406
 #, elixir-autogen, elixir-format
 msgid "Failed: %{count}"
 msgstr "Пало: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:397
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:404
 #, elixir-autogen, elixir-format
 msgid "Running: %{count}"
 msgstr "У току: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:347
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:354
 #, elixir-autogen, elixir-format
 msgid "Stopped at %{element}"
 msgstr "Стало код %{element}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:370
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:377
 #, elixir-autogen, elixir-format
 msgid "Take up again"
 msgstr "Покрени поново"
@@ -6561,82 +6561,82 @@ msgstr "Покрени поново"
 msgid "The process goes on from where it stopped."
 msgstr "Процес наставља оданде где је стао."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:398
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:405
 #, elixir-autogen, elixir-format
 msgid "Waiting: %{count}"
 msgstr "Чека: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:426
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:433
 #, elixir-autogen, elixir-format
 msgid "an error"
 msgstr "грешка"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:425
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:432
 #, elixir-autogen, elixir-format
 msgid "an unexpected error"
 msgstr "неочекивана грешка"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:424
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:431
 #, elixir-autogen, elixir-format
 msgid "it took too many steps"
 msgstr "направило је превише корака"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:423
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:430
 #, elixir-autogen, elixir-format
 msgid "it went round without waiting"
 msgstr "вртело се у круг без чекања"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:419
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:426
 #, elixir-autogen, elixir-format
 msgid "its sub-group is gone"
 msgstr "његова подгрупа више не постоји"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:418
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:425
 #, elixir-autogen, elixir-format
 msgid "nobody to run the sub-group"
 msgstr "нема ко да води подгрупу"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:413
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:420
 #, elixir-autogen, elixir-format
 msgid "the process is not a member of that group"
 msgstr "процес није члан те групе"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:410
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:417
 #, elixir-autogen, elixir-format
 msgid "the process lacks a permission"
 msgstr "процесу фали право"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:416
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:423
 #, elixir-autogen, elixir-format
 msgid "the process may not write in that group"
 msgstr "процес не сме да пише у тој групи"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:422
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:429
 #, elixir-autogen, elixir-format
 msgid "the process was stopped"
 msgstr "процес је заустављен"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:421
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:428
 #, elixir-autogen, elixir-format
 msgid "the push text does not fit"
 msgstr "текст пуш-а није одговарајући"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:420
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:427
 #, elixir-autogen, elixir-format
 msgid "the text came out empty"
 msgstr "текст је испао празан"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:222
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:229
 #, elixir-autogen, elixir-format
 msgid "A comment, if you like"
 msgstr "Коментар, ако желиш"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:156
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:160
 #, elixir-autogen, elixir-format
 msgid "Anonymous"
 msgstr "Анонимно"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:319
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:326
 #, elixir-autogen, elixir-format
 msgid "Another process runs on the same collection too."
 msgstr "На истој колекцији ради и други процес."
@@ -6651,8 +6651,8 @@ msgstr "Отказивање није успело."
 msgid "Could not record the decision."
 msgstr "Одлука није забележена."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:103
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:95
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:106
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:99
 #, elixir-autogen, elixir-format
 msgid "Group description"
 msgstr "Опис групе"
@@ -6662,18 +6662,18 @@ msgstr "Опис групе"
 msgid "How they are doing"
 msgstr "Како им иде"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:299
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:306
 #, elixir-autogen, elixir-format
 msgid "It may not: %{permissions}. Give its profile a role under Members."
 msgstr "Не сме: %{permissions}. Дај његовом профилу улогу на картици Чланови."
 
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:345
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:310
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:317
 #, elixir-autogen, elixir-format
 msgid "Its owner no longer edits the app. Whoever saves the drawing next takes it over."
 msgstr "Власник више не уређује апликацију. Ко следећи сачува цртеж, преузима га."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:79
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:83
 #, elixir-autogen, elixir-format
 msgid "No process runs in this group yet."
 msgstr "У овој групи још не ради ниједан процес."
@@ -6693,17 +6693,17 @@ msgstr "Покретање је отказано."
 msgid "They act for the group's apps and are not counted among the members. An app's rules start and stop them, or its editors on the Processes tab."
 msgstr "Раде за апликације групе и не броје се међу чланове. Покрећу их и гасе правила апликације или њени уредници на картици Процеси."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:55
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:59
 #, elixir-autogen, elixir-format
 msgid "Waiting for you"
 msgstr "Чека тебе"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:32
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:36
 #, elixir-autogen, elixir-format
 msgid "What happens on its own when a value comes to an app: messages, sub-groups, tasks."
 msgstr "Шта се дешава само од себе кад у апликацију стигне нова вредност: поруке, подгрупе, задаци."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:183
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:190
 #, elixir-autogen, elixir-format
 msgid "You may decide, but not read what was sent."
 msgstr "Смеш да одлучиш, али не и да читаш шта је послато."
@@ -6713,28 +6713,28 @@ msgstr "Смеш да одлучиш, али не и да читаш шта је
 msgid "Your decision is in."
 msgstr "Одлука је забележена."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:263
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:270
 #, elixir-autogen, elixir-format
 msgid "drawn"
 msgstr "нацртан"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:263
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:270
 #, elixir-autogen, elixir-format
 msgid "from the app"
 msgstr "из апликације"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:140
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:270
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:145
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:277
 #, elixir-autogen, elixir-format
 msgid "off"
 msgstr "искључен"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:201
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:208
 #, elixir-autogen, elixir-format
 msgid "someone"
 msgstr "неко"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:796
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:836
 #, elixir-autogen, elixir-format
 msgid "%{count} day"
 msgid_plural "%{count} days"
@@ -6742,7 +6742,7 @@ msgstr[0] "%{count} дан"
 msgstr[1] "%{count} дана"
 msgstr[2] "%{count} дана"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:795
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:835
 #, elixir-autogen, elixir-format
 msgid "%{count} hour"
 msgid_plural "%{count} hours"
@@ -6750,7 +6750,7 @@ msgstr[0] "%{count} сат"
 msgstr[1] "%{count} сата"
 msgstr[2] "%{count} сати"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:794
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:834
 #, elixir-autogen, elixir-format
 msgid "%{count} minute"
 msgid_plural "%{count} minutes"
@@ -6758,7 +6758,7 @@ msgstr[0] "%{count} минут"
 msgstr[1] "%{count} минута"
 msgstr[2] "%{count} минута"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:797
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:837
 #, elixir-autogen, elixir-format
 msgid "%{count} week"
 msgid_plural "%{count} weeks"
@@ -6766,269 +6766,264 @@ msgstr[0] "%{count} недеља"
 msgstr[1] "%{count} недеље"
 msgstr[2] "%{count} недеља"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:815
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:855
 #, elixir-autogen, elixir-format
 msgid "%{field} is empty"
 msgstr "%{field} је празно"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:876
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:916
 #, elixir-autogen, elixir-format
 msgid "A condition needs a way for “otherwise”."
 msgstr "Услов мора да има пут за „иначе“."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:877
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:917
 #, elixir-autogen, elixir-format
 msgid "A condition needs at least one condition."
 msgstr "Услов мора да има бар једно поређење."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:541
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:570
 #, elixir-autogen, elixir-format
 msgid "A decision is still waiting."
 msgstr "Једна одлука још чека."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:879
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:919
 #, elixir-autogen, elixir-format
 msgid "A drawing holds at most 100 steps."
 msgstr "Цртеж има највише 100 корака."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:745
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:807
 #, elixir-autogen, elixir-format
 msgid "A new end"
 msgstr "Нови крај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:532
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:561
 #, elixir-autogen, elixir-format
 msgid "A new value came in."
 msgstr "Стигла је нова вредност."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:903
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:953
 #, elixir-autogen, elixir-format
 msgid "A step cannot lead to itself."
 msgstr "Корак не може да води сам на себе."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:739
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:779
 #, elixir-autogen, elixir-format
 msgid "A value comes in"
 msgstr "Стиже вредност"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:600
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:651
 #, elixir-autogen, elixir-format
 msgid "Add a condition"
 msgstr "Додај поређење"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:347
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:380
 #, elixir-autogen, elixir-format
 msgid "Add a step"
 msgstr "Додај корак"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:712
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:752
 #, elixir-autogen, elixir-format
 msgid "Add a step here"
 msgstr "Додај корак овде"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:551
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:602
 #, elixir-autogen, elixir-format
 msgid "Add an outcome"
 msgstr "Додај исход"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:886
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:933
 #, elixir-autogen, elixir-format
 msgid "An outcome is empty or too long."
 msgstr "Исход је празан или предугачак."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:875
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:915
 #, elixir-autogen, elixir-format
 msgid "An outcome or the deadline has no way on."
 msgstr "Неки исход или рок нема куда даље."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:535
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:564
 #, elixir-autogen, elixir-format
 msgid "Approve"
 msgstr "Одобри"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:656
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:711
 #, elixir-autogen, elixir-format
 msgid "Arrow"
 msgstr "Стрелица"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:52
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:55
 #, elixir-autogen, elixir-format
 msgid "Back to the processes"
 msgstr "Назад на процесе"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:112
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:115
 #, elixir-autogen, elixir-format
 msgid "Collection"
 msgstr "Колекција"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:394
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:745
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:427
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:785
 #, elixir-autogen, elixir-format
 msgid "Condition"
 msgstr "Услов"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:575
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:626
 #, elixir-autogen, elixir-format
 msgid "Conditions, in order"
 msgstr "Поређења, по реду"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:339
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:354
 #, elixir-autogen, elixir-format
 msgid "Could not delete the process."
 msgstr "Брисање процеса није успело."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:555
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:606
 #, elixir-autogen, elixir-format
 msgid "Deadline, with a reminder"
 msgstr "Рок, уз подсетник"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:386
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:774
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:419
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:814
 #, elixir-autogen, elixir-format
 msgid "Decision"
 msgstr "Одлука"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:535
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:564
 #, elixir-autogen, elixir-format
 msgid "Decline"
 msgstr "Одбиј"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:190
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:195
 #, elixir-autogen, elixir-format
 msgid "Delete the process"
 msgstr "Обриши процес"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:188
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:193
 #, elixir-autogen, elixir-format
 msgid "Delete this process with all its runs? What it wrote stays."
 msgstr "Обрисати овај процес са свим покретањима? Оно што је написао остаје."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:431
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:469
 #, elixir-autogen, elixir-format
 msgid "Delete this step"
 msgstr "Обриши овај корак"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:331
-#, elixir-autogen, elixir-format
-msgid "Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
-msgstr "Превуци кораке где ти одговарају, а од тачке испод корака превуци до другог корака да нацрташ стрелицу. Кликни корак или стрелицу да је измениш."
-
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:713
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:753
 #, elixir-autogen, elixir-format
 msgid "Drag to another step"
 msgstr "Превуци до другог корака"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:44
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:48
 #, elixir-autogen, elixir-format
 msgid "Draw a process"
 msgstr "Нацртај процес"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:81
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:85
 #, elixir-autogen, elixir-format
 msgid "Draw one: what happens when a new value comes in, step by step."
 msgstr "Нацртај га: шта се дешава кад стигне нова вредност, корак по корак."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:742
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:782
 #, elixir-autogen, elixir-format
 msgid "End"
 msgstr "Крај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:606
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:657
 #, elixir-autogen, elixir-format
 msgid "Every new value of the collection starts here."
 msgstr "Свака нова вредност колекције почиње овде."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:328
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:354
 #, elixir-autogen, elixir-format
 msgid "Every new value of the collection starts the process at the top and goes along the arrows."
 msgstr "Свака нова вредност колекције покреће процес на врху и иде дуж стрелица."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:693
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:748
 #, elixir-autogen, elixir-format
 msgid "Field"
 msgstr "Поље"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:872
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:912
 #, elixir-autogen, elixir-format
 msgid "From this step there is no way to an end."
 msgstr "Од овог корака нема пута до краја."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:395
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:428
 #, elixir-autogen, elixir-format
 msgid "Goes one way or another by what was sent."
 msgstr "Иде једним или другим путем, по ономе што је послато."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:607
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:658
 #, elixir-autogen, elixir-format
 msgid "Here the run is done."
 msgstr "Овде је покретање завршено."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:325
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:350
 #, elixir-autogen, elixir-format
 msgid "How to draw"
 msgstr "Како се црта"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:475
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:514
 #, elixir-autogen, elixir-format
 msgid "In the app's group"
 msgstr "У групи апликације"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:700
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:755
 #, elixir-autogen, elixir-format
 msgid "Is"
 msgstr "Је"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:225
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:242
 #, elixir-autogen, elixir-format
 msgid "Keep mine"
 msgstr "Задржи моју"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:156
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:161
 #, elixir-autogen, elixir-format
 msgid "Lay out again"
 msgstr "Распореди поново"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:710
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:765
 #, elixir-autogen, elixir-format
 msgid "Leads to"
 msgstr "Води до"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:48
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:51
 #, elixir-autogen, elixir-format
 msgid "Leave without saving the drawing?"
 msgstr "Изаћи без чувања цртежа?"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:390
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:423
 #, elixir-autogen, elixir-format
 msgid "Lets the people of a role know on their phones."
 msgstr "Јавља људима једне улоге на телефон."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:222
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:233
 #, elixir-autogen, elixir-format
 msgid "Load theirs"
 msgstr "Узми њихову"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:759
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:799
 #, elixir-autogen, elixir-format
 msgid "Message in %{group}"
 msgstr "Порука у: %{group}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:748
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:788
 #, elixir-autogen, elixir-format
 msgid "Message in the group"
 msgstr "Порука у групи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:69
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:72
 #, elixir-autogen, elixir-format
 msgid "Name of the process"
 msgstr "Име процеса"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:482
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:523
 #, elixir-autogen, elixir-format
 msgid "Name of the sub-group"
 msgstr "Име подгрупе"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:454
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:492
 #, elixir-autogen, elixir-format
 msgid "Name on the drawing"
 msgstr "Име на цртежу"
@@ -7038,37 +7033,37 @@ msgstr "Име на цртежу"
 msgid "New process"
 msgstr "Нови процес"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:762
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:802
 #, elixir-autogen, elixir-format
 msgid "New sub-group"
 msgstr "Нова подгрупа"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:533
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:562
 #, elixir-autogen, elixir-format
 msgid "New value"
 msgstr "Нова вредност"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:115
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:119
 #, elixir-autogen, elixir-format
 msgid "No collection yet"
 msgstr "Још нема колекције"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:904
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:954
 #, elixir-autogen, elixir-format
 msgid "Nothing leads back to the start."
 msgstr "Ништа не води назад на почетак."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:905
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:955
 #, elixir-autogen, elixir-format
 msgid "Nothing leads on from an end."
 msgstr "Од краја ништа не води даље."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:871
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:911
 #, elixir-autogen, elixir-format
 msgid "Nothing leads to this step from the start."
 msgstr "Од почетка ништа не води до овог корака."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:523
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:551
 #, elixir-autogen, elixir-format
 msgid "One step went."
 msgid_plural "%{count} steps went."
@@ -7076,159 +7071,159 @@ msgstr[0] "Уклоњен је %{count} корак."
 msgstr[1] "Уклоњена су %{count} корака."
 msgstr[2] "Уклоњено је %{count} корака."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:211
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:216
 #, elixir-autogen, elixir-format
 msgid "Only the app's editors change this drawing."
 msgstr "Овај цртеж мењају само уредници апликације."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:76
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:909
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:77
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:959
 #, elixir-autogen, elixir-format
 msgid "Only the app's editors draw processes."
 msgstr "Процесе цртају само уредници апликације."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:384
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:417
 #, elixir-autogen, elixir-format
 msgid "Opens a sub-group for the value, to talk it over."
 msgstr "Отвара подгрупу за вредност, да се о њој разговара."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:685
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:536
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:740
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:565
 #, elixir-autogen, elixir-format
 msgid "Outcome"
 msgstr "Исход"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:517
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:568
 #, elixir-autogen, elixir-format
 msgid "Outcomes"
 msgstr "Исходи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:908
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:958
 #, elixir-autogen, elixir-format
 msgid "Pick a collection of the app."
 msgstr "Изабери колекцију апликације."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:389
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:422
 #, elixir-autogen, elixir-format
 msgid "Push"
 msgstr "Пуш"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:766
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:806
 #, elixir-autogen, elixir-format
 msgid "Push to %{role}"
 msgstr "Пуш за: %{role}"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:622
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:677
 #, elixir-autogen, elixir-format
 msgid "Put in:"
 msgstr "Убаци:"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:536
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:587
 #, elixir-autogen, elixir-format
 msgid "Remove the outcome"
 msgstr "Уклони исход"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:666
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:721
 #, elixir-autogen, elixir-format
 msgid "Remove this branch"
 msgstr "Уклони ову грану"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:333
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:366
 #, elixir-autogen, elixir-format
 msgid "Save a drawing, then switch it on."
 msgstr "Сачувај цртеж, па га укључи."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:598
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:632
 #, elixir-autogen, elixir-format
 msgid "Save the drawing first."
 msgstr "Прво сачувај цртеж."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:716
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:756
 #, elixir-autogen, elixir-format
 msgid "Show it all"
 msgstr "Прикажи све"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:246
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:263
 #, elixir-autogen, elixir-format
 msgid "Show me"
 msgstr "Покажи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:220
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:225
 #, elixir-autogen, elixir-format
 msgid "Someone else saved this process meanwhile."
 msgstr "Неко други је у међувремену сачувао овај процес."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:892
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:942
 #, elixir-autogen, elixir-format
 msgid "Something here is missing."
 msgstr "Овде нешто недостаје."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:383
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:416
 #, elixir-autogen, elixir-format
 msgid "Sub-group"
 msgstr "Подгрупа"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:177
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:182
 #, elixir-autogen, elixir-format
 msgid "Switch it off? What runs or waits is cancelled."
 msgstr "Искључити га? Оно што ради или чека биће отказано."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:182
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:187
 #, elixir-autogen, elixir-format
 msgid "Switch off"
 msgstr "Искључи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:170
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:175
 #, elixir-autogen, elixir-format
 msgid "Switch on"
 msgstr "Укључи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:329
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:359
 #, elixir-autogen, elixir-format
 msgid "Tap + on an arrow to add a step, and a step or an arrow to change it."
 msgstr "Додирни + на стрелици да додаш корак, а корак или стрелицу да их измениш."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:335
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:368
 #, elixir-autogen, elixir-format
 msgid "Tap a step or an arrow to see what it does."
 msgstr "Додирни корак или стрелицу да видиш шта ради."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:510
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:556
 #, elixir-autogen, elixir-format
 msgid "Text"
 msgstr "Текст"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:910
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:960
 #, elixir-autogen, elixir-format
 msgid "That did not work."
 msgstr "То није успело."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:144
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:146
 #, elixir-autogen, elixir-format
 msgid "That process is not here."
 msgstr "Тог процеса овде нема."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:202
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:207
 #, elixir-autogen, elixir-format
 msgid "The app draws this process and changes it in its own settings."
 msgstr "Овај процес црта апликација и мења га у својим подешавањима."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:887
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:936
 #, elixir-autogen, elixir-format
 msgid "The condition needs a field."
 msgstr "Поређењу треба поље."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:325
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:350
 #, elixir-autogen, elixir-format
 msgid "The drawing"
 msgstr "Цртеж"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:582
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:616
 #, elixir-autogen, elixir-format
 msgid "The drawing is not finished yet."
 msgstr "Цртеж још није готов."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:873
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:913
 #, elixir-autogen, elixir-format
 msgid "The group has no such role."
 msgstr "Група нема ту улогу."
@@ -7238,244 +7233,244 @@ msgstr "Група нема ту улогу."
 msgid "The group needs an app first."
 msgstr "Групи прво треба апликација."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:900
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:950
 #, elixir-autogen, elixir-format
 msgid "The last branch stays."
 msgstr "Последња грана остаје."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:899
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:949
 #, elixir-autogen, elixir-format
 msgid "The last end stays."
 msgstr "Последњи крај остаје."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:884
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:927
 #, elixir-autogen, elixir-format
 msgid "The name is empty or too long."
 msgstr "Име је празно или предугачко."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:885
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:930
 #, elixir-autogen, elixir-format
 msgid "The name on the drawing is too long."
 msgstr "Име на цртежу је предугачко."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:336
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:351
 #, elixir-autogen, elixir-format
 msgid "The process is deleted."
 msgstr "Процес је обрисан."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:329
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:344
 #, elixir-autogen, elixir-format
 msgid "The process is off."
 msgstr "Процес је искључен."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:326
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:341
 #, elixir-autogen, elixir-format
 msgid "The process is on."
 msgstr "Процес је укључен."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:573
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:607
 #, elixir-autogen, elixir-format
 msgid "The process is saved."
 msgstr "Процес је сачуван."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:565
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:599
 #, elixir-autogen, elixir-format
 msgid "The process is saved. Switch it on when it is ready."
 msgstr "Процес је сачуван. Укључи га кад буде спреман."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:907
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:957
 #, elixir-autogen, elixir-format
 msgid "The process needs a name of up to 60 characters."
 msgstr "Процесу треба име од највише 60 знакова."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:754
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:816
 #, elixir-autogen, elixir-format
 msgid "The process's owner"
 msgstr "Власник процеса"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:898
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:948
 #, elixir-autogen, elixir-format
 msgid "The start stays."
 msgstr "Почетак остаје."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:878
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:918
 #, elixir-autogen, elixir-format
 msgid "The sub-group this message goes to is gone."
 msgstr "Подгрупе у коју иде ова порука више нема."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:883
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:924
 #, elixir-autogen, elixir-format
 msgid "The text is empty or too long."
 msgstr "Текст је празан или предугачак."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:889
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:939
 #, elixir-autogen, elixir-format
 msgid "The time is from a minute to a year."
 msgstr "Време је од једног минута до годину дана."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:896
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:946
 #, elixir-autogen, elixir-format
 msgid "The ways on from this step are not right."
 msgstr "Путеви даље од овог корака нису добри."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:902
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:952
 #, elixir-autogen, elixir-format
 msgid "There are too many already."
 msgstr "Већ их има превише."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:901
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:951
 #, elixir-autogen, elixir-format
 msgid "This way on is needed; send it elsewhere instead."
 msgstr "Овај пут је потребан. Уместо тога га усмери другде."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:504
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:548
 #, elixir-autogen, elixir-format
 msgid "To the people of"
 msgstr "Људима улоге"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:874
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:906
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:914
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:956
 #, elixir-autogen, elixir-format
 msgid "Two outcomes have the same name."
 msgstr "Два исхода имају исто име."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:705
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:760
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr "Вредност"
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:285
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:292
 #, elixir-autogen, elixir-format
 msgid "View"
 msgstr "Погледај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:392
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:777
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:425
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:817
 #, elixir-autogen, elixir-format
 msgid "Wait"
 msgstr "Чекај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:568
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:619
 #, elixir-autogen, elixir-format
 msgid "Wait for"
 msgstr "Чекај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:392
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:425
 #, elixir-autogen, elixir-format
 msgid "Waits a while before going on."
 msgstr "Чека неко време пре него што крене даље."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:387
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:420
 #, elixir-autogen, elixir-format
 msgid "Waits for someone of a role to pick an outcome."
 msgstr "Чека да неко са улогом изабере исход."
 
-#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:167
+#: lib/potok_ide_web/live/group_live/show/processes_tab.ex:174
 #, elixir-autogen, elixir-format
 msgid "What was sent"
 msgstr "Шта је послато"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:107
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:110
 #, elixir-autogen, elixir-format
 msgid "When a value comes to"
 msgstr "Кад стигне вредност у"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:474
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:512
 #, elixir-autogen, elixir-format
 msgid "Where"
 msgstr "Где"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:515
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:564
 #, elixir-autogen, elixir-format
 msgid "Who decides"
 msgstr "Ко одлучује"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:487
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:528
 #, elixir-autogen, elixir-format
 msgid "Who runs it"
 msgstr "Ко је води"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:754
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:816
 #, elixir-autogen, elixir-format
 msgid "Whoever set it going"
 msgstr "Ко је покренуо процес"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:381
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:414
 #, elixir-autogen, elixir-format
 msgid "Writes in the group's chat, or in a sub-group the process made."
 msgstr "Пише у разговор групе или у подгрупу коју је процес направио."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:714
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:754
 #, elixir-autogen, elixir-format
 msgid "Zoom in"
 msgstr "Увећај"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:715
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:755
 #, elixir-autogen, elixir-format
 msgid "Zoom out"
 msgstr "Умањи"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:762
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:824
 #, elixir-autogen, elixir-format
 msgid "days"
 msgstr "дана"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:811
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:851
 #, elixir-autogen, elixir-format
 msgid "deadline passed"
 msgstr "рок је прошао"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:773
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:835
 #, elixir-autogen, elixir-format
 msgid "empty"
 msgstr "празно"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:769
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:831
 #, elixir-autogen, elixir-format
 msgid "equal to"
 msgstr "једнако"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:761
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:823
 #, elixir-autogen, elixir-format
 msgid "hours"
 msgstr "сати"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:771
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:833
 #, elixir-autogen, elixir-format
 msgid "less than"
 msgstr "мање од"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:760
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:822
 #, elixir-autogen, elixir-format
 msgid "minutes"
 msgstr "минута"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:772
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:834
 #, elixir-autogen, elixir-format
 msgid "more than"
 msgstr "више од"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:561
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:612
 #, elixir-autogen, elixir-format
 msgid "none"
 msgstr "без рока"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:770
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:832
 #, elixir-autogen, elixir-format
 msgid "not equal to"
 msgstr "различито од"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:140
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:145
 #, elixir-autogen, elixir-format
 msgid "on"
 msgstr "укључен"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:812
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:852
 #, elixir-autogen, elixir-format
 msgid "otherwise"
 msgstr "иначе"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:763
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:825
 #, elixir-autogen, elixir-format
 msgid "weeks"
 msgstr ""
@@ -7484,3 +7479,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, on any of the group's apps. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
 msgstr "Опис групе не мора да буде само текст. Може да буде и мала апликација, на пример форма, анкета или списак задужења. Форма, или друга апликација, може и да води процес: кад стигне захтев, објави га у разговору, отвори подгрупу за њега и чека онога ко одлучује, уз подсетник кад касни. Такав процес можеш и сам да нацрташ, право у Потоку, на било којој апликацији групе. Или изабери шаблон, на пример вест или догађај, и попуни поља. Опис јавне групе, заједно са апликацијом, можеш да отвориш и онима који немају налог."
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:362
+#, elixir-autogen, elixir-format
+msgid "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
+msgstr "Кликни + на стрелици да додаш корак. Превуци кораке где ти одговарају, а од тачке испод корака превуци до другог корака да нацрташ стрелицу. Кликни корак или стрелицу да је измениш."

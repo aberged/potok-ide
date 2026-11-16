@@ -243,11 +243,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     socket =
       if event in [:config, :drawn_process], do: assign_available(socket), else: socket
 
-    if socket.assigns.active_tab == "processes" and not socket.assigns.processes_refresh? do
-      Process.send_after(self(), {:processes, :refresh}, @debounce_ms)
-      assign(socket, :processes_refresh?, true)
-    else
-      socket
+    cond do
+      socket.assigns.active_tab != "processes" ->
+        socket
+
+      # Tests wait for nothing (`config/test.exs`), as the calendar and polls.
+      @debounce_ms == 0 ->
+        load(socket)
+
+      socket.assigns.processes_refresh? ->
+        socket
+
+      true ->
+        Process.send_after(self(), {:processes, :refresh}, @debounce_ms)
+        assign(socket, :processes_refresh?, true)
     end
   end
 

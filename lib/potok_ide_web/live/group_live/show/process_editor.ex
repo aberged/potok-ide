@@ -360,7 +360,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         </p>
         <p class="max-lg:hidden">
           {gettext(
-            "Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
+            "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
           )}
         </p>
         <p>{gettext("Save a drawing, then switch it on.")}</p>
