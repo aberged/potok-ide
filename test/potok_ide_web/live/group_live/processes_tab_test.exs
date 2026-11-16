@@ -153,6 +153,24 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
              Repo.get!(ValueProcess, instance.id)
   end
 
+  test "an editor cancels a run that stopped", ctx do
+    draw!(ctx)
+    instance = waiting!(ctx)
+
+    instance
+    |> Ecto.Changeset.change(
+      status: :failed,
+      error: %{"element" => "odluka", "reason" => "crash"}
+    )
+    |> Repo.update!()
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#process-instance-#{instance.id}-cancel") |> render_click()
+
+    refute has_element?(lv, "#process-instance-#{instance.id}")
+    assert %ValueProcess{status: :cancelled} = Repo.get!(ValueProcess, instance.id)
+  end
+
   test "a drawing that is off shows to the app's editors only", ctx do
     row = draw!(ctx, false)
 

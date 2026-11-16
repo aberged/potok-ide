@@ -384,6 +384,83 @@ defmodule PotokIde.Social.DrawnProcessesTest do
 
       assert Processes.tasks_for(ctx.member, ctx.group, member_access) == []
     end
+
+    test "of a run another process started read its value by the value's own rule", ctx do
+      {:ok, kasa} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "kasa"})
+
+      {:ok, _role} =
+        Social.assign_group_member_role(ctx.owner, ctx.group, ctx.member.id, kasa.key)
+
+      save_rules!(ctx.owner, ctx.group, %{
+        "molbe" => %{"anonymous" => true, "read" => [ctx.savet]}
+      })
+
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "name" => "Kasa",
+          "graph" => odluka(kasa.key)
+        })
+
+      {:ok, row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+
+      {:ok, value, _rule} =
+        AppData.insert(ctx.owner, ctx.owner_account, ctx.group, nil, "molbe", %{
+          "naslov" => "Tajna"
+        })
+
+      {:ok, instance} =
+        Repo.transaction(fn ->
+          Engine.start_drawn_on(row, value_id: value.id, depth: 1, data: %{"from" => "Prijem"})
+        end)
+
+      Engine.run(instance.id)
+      group = Social.get_group!(ctx.group.id)
+
+      assert [%{kind: :value, reads?: false, author_name: nil, data: []}] =
+               Processes.tasks_for(ctx.member, group, Access.for_profile(ctx.member, group))
+    end
+  end
+
+  describe "runs" do
+    test "a subject has one run of a process its trigger started, and any number deeper", ctx do
+      row = drawn_on!(ctx)
+      value = send!(ctx)
+      assert [_started] = instances(value)
+
+      for _ <- 1..2 do
+        {:ok, _deeper} =
+          Repo.transaction(fn -> Engine.start_drawn_on(row, value_id: value.id, depth: 1) end)
+      end
+
+      assert length(instances(value)) == 3
+
+      assert_raise Ecto.ConstraintError, fn ->
+        Engine.start_drawn_on(row, value_id: value.id)
+      end
+    end
+
+    test "start only on a trigger Potok knows", ctx do
+      row = draw!(ctx)
+
+      assert_raise Ecto.ConstraintError, ~r/app_processes_trigger_check/, fn ->
+        row |> Ecto.Changeset.change(trigger: "bogus") |> Repo.update!()
+      end
+    end
+
+    test "a failed one can be cancelled", ctx do
+      row = drawn_on!(ctx, %{"graph" => message_graph()})
+
+      {:ok, _role} =
+        Social.set_group_role_permission(ctx.owner, ctx.group, "everyone", :post_values, :neutral)
+
+      [instance] = instances(send!(ctx))
+      assert %ValueProcess{status: :failed} = Engine.run(instance.id)
+      assert row.id == instance.app_process_id
+
+      assert {:ok, %ValueProcess{status: :cancelled}} = Engine.cancel(instance.id)
+      assert {:error, :not_running} = Engine.cancel(instance.id)
+    end
   end
 
   describe "started by hand" do

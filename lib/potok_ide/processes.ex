@@ -203,7 +203,7 @@ defmodule PotokIde.Processes do
       )
       |> Repo.all()
 
-    rules = rules_by_app(group, Enum.filter(rows, fn {_i, p} -> p.trigger == "value" end))
+    rules = rules_by_app(group, for({%ValueProcess{value: %Value{} = v}, _p} <- rows, do: v))
     names = names(Enum.flat_map(rows, fn {i, _p} -> Enum.map(i.log, & &1["by"]) end))
     group_names = group_names(Enum.flat_map(rows, fn {i, _p} -> Map.values(i.groups) end))
 
@@ -235,16 +235,19 @@ defmodule PotokIde.Processes do
 
   def tasks_for(_profile, _group, _access), do: []
 
-  # What set a run going, as its task card shows it.
+  # What set a run going, as its task card shows it. A value of a collection
+  # is read by its own collection's rule, also in a run another process
+  # started on it.
   defp subject(
-         %ValueProcess{value: %Value{} = value},
-         %AppProcess{trigger: "value"} = process,
+         %ValueProcess{value: %Value{collection: collection} = value},
+         _process,
          _group,
          profile,
          access,
          rules
-       ) do
-    rule = Map.fetch!(rules, {process.alt_description_id, process.collection})
+       )
+       when is_binary(collection) do
+    rule = Map.fetch!(rules, {value.alt_description_id, collection})
     reads? = ValueRules.full_reader?(rule, access) or value.creator_id == profile.id
 
     %{
@@ -305,9 +308,10 @@ defmodule PotokIde.Processes do
     }
   end
 
-  defp rules_by_app(group, rows) do
-    rows
-    |> Enum.map(fn {_i, p} -> {p.alt_description_id, p.collection} end)
+  defp rules_by_app(group, values) do
+    values
+    |> Enum.filter(&is_binary(&1.collection))
+    |> Enum.map(&{&1.alt_description_id, &1.collection})
     |> Enum.uniq()
     |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
     |> Enum.flat_map(fn {alt_id, collections} ->

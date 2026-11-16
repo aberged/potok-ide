@@ -95,6 +95,13 @@ defmodule PotokIdeWeb.DomainCopyTest do
     assert %{columns: "name, in any letter case", condition: "while this is empty: owner"} in entities[
              "Tag"
            ].unique
+
+    assert %{
+             columns: "process + value that started it",
+             condition: "where how many processes deep is 0"
+           } in entities[
+             "ValueProcess"
+           ].unique
   end
 
   test "says how many permissions a role has" do

@@ -107,6 +107,12 @@ defmodule PotokIdeWeb.DomainCopy do
       ["NOT", column] ->
         dgettext("domain_map", "unless this holds: %{field}", field: label(entity, column))
 
+      [column, "=", value] ->
+        dgettext("domain_map", "where %{field} is %{value}",
+          field: label(entity, column),
+          value: value
+        )
+
       _other ->
         nil
     end
@@ -334,6 +340,13 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueProcess", "steps"), do: dgettext("domain_map", "steps taken")
   defp own_field("ValueProcess", "error"), do: dgettext("domain_map", "why it stopped")
   defp own_field("ValueProcess", "log"), do: dgettext("domain_map", "decisions of people")
+  defp own_field("ValueProcess", "awaiting_id"), do: dgettext("domain_map", "run it waits for")
+
+  defp own_field("ValueProcess", "depth"),
+    do: dgettext("domain_map", "how many processes deep")
+
+  defp own_field("ValueProcess", "results"),
+    do: dgettext("domain_map", "what its waits brought back")
 
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
@@ -694,7 +707,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("ValueProcess", _edges) do
     dgettext(
       "domain_map",
-      "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A value or a sub-group has at most one instance of each process. Deleting it or the process takes the instance along, and what it wrote stays."
+      "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A run another process started, by a call or a signal, is one level deeper than that one, shares its subject and keeps the fields it was given; a caller that waits for it points at it, and what each wait brought back stays with the run that waited. A value or a sub-group has at most one instance of each process that its trigger started. Deleting it or the process takes the instance along, and what it wrote stays."
     )
   end
 
@@ -953,8 +966,12 @@ defmodule PotokIdeWeb.DomainCopy do
   def check_text("app_processes_trigger_check") do
     dgettext(
       "domain_map",
-      "A process starts on a value, a message, a sub-group, a schedule or by hand."
+      "A process starts on a value, a message, a sub-group, a schedule, by hand, when another process calls it or on a signal."
     )
+  end
+
+  def check_text("value_processes_depth_check") do
+    dgettext("domain_map", "A run is never less than zero processes deep.")
   end
 
   def check_text("values_collection_check") do

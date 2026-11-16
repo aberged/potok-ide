@@ -110,7 +110,8 @@ defmodule PotokIde.Processes.Engine do
   Starts an instance of the drawn `process` on its subject, in the caller's
   transaction: `attrs` holds `:value_id` or `:subject_group_id`, the `:data`
   its texts read when the subject is no value of a collection, and who set
-  it going (`:started_by`, nil for a schedule).
+  it going (`:started_by`, nil for a schedule, and `:triggered_by`, the same
+  unless given). A run another process starts is `:depth` levels deep.
   """
   def start_drawn_on(%AppProcess{drawn: true} = process, attrs) do
     Repo.insert!(%ValueProcess{
@@ -122,7 +123,8 @@ defmodule PotokIde.Processes.Engine do
       element: Graph.start(process.graph),
       graph: process.graph,
       started_by_id: attrs[:started_by],
-      triggered_by_id: attrs[:started_by],
+      triggered_by_id: Keyword.get(attrs, :triggered_by, attrs[:started_by]),
+      depth: attrs[:depth] || 0,
       wake_at: now()
     })
   end
@@ -603,11 +605,11 @@ defmodule PotokIde.Processes.Engine do
     |> told()
   end
 
-  @doc "Cancels an instance that runs or waits."
+  @doc "Cancels an instance that runs, waits or has failed."
   def cancel(id) do
     Repo.transaction(fn ->
       case lock(id) do
-        %ValueProcess{status: status} = instance when status in [:running, :waiting] ->
+        %ValueProcess{status: status} = instance when status in [:running, :waiting, :failed] ->
           update!(instance, %{status: :cancelled, wake_at: nil})
 
         _other ->
@@ -634,11 +636,17 @@ defmodule PotokIde.Processes.Engine do
   # ---------
 
   # What a run's texts and conditions read: the fields kept with it, or the
-  # data of its value of a collection, as it is now.
-  defp value_data(%ValueProcess{data: data}) when is_map(data) and map_size(data) > 0, do: data
-  defp value_data(%ValueProcess{value_id: nil}), do: %{}
+  # data of its value of a collection, as it is now, and what its waits
+  # brought back (`results`), which never hide a field of either.
+  defp value_data(%ValueProcess{results: results} = instance),
+    do: Map.merge(results || %{}, base_data(instance))
 
-  defp value_data(%ValueProcess{value_id: value_id}) do
+  # A run another process started reads only the fields it was given.
+  defp base_data(%ValueProcess{depth: depth, data: data}) when depth > 0, do: data || %{}
+  defp base_data(%ValueProcess{data: data}) when is_map(data) and map_size(data) > 0, do: data
+  defp base_data(%ValueProcess{value_id: nil}), do: %{}
+
+  defp base_data(%ValueProcess{value_id: value_id}) do
     case Repo.get(Value, value_id) do
       %Value{data: data} when is_map(data) -> data
       _none -> %{}

@@ -3,9 +3,16 @@ defmodule PotokIde.Processes.ValueProcess do
   One run of a process. Its subject is a value of a collection (or a chat
   message, `value`), a new sub-group (`subject_group`), or nothing, for a
   scheduled or a hand-started run (`PotokIde.Processes.Triggers`); a value or
-  a sub-group has at most one instance of each process. `data` keeps the
-  fields its texts and conditions read when the subject is no value of a
-  collection, whose own data they read otherwise.
+  a sub-group has at most one instance of each process that its trigger
+  started. `data` keeps the fields its texts and conditions read when the
+  subject is no value of a collection, whose own data they read otherwise.
+
+  A run another process started, by a call or a signal, is one level deeper
+  than that one (`depth`), shares its subject and keeps in `data` the fields
+  it was given. A caller that waits for the run it called holds it in
+  `awaiting`. What a wait brought back (a called run's end, a signal, a
+  person's decision) stays in `results` under the element that waited, for
+  the texts and conditions that follow, as `{{element.field}}`.
 
   An instance keeps a copy of the graph it started with (`graph`), so a rule
   saved later changes only the instances that start after it. It stands on
@@ -42,6 +49,9 @@ defmodule PotokIde.Processes.ValueProcess do
     # `%{"element" => ..., "reason" => ...}` once it has failed.
     field :error, :map
     field :log, {:array, :map}, default: []
+    belongs_to :awaiting, __MODULE__
+    field :depth, :integer, default: 0
+    field :results, :map, default: %{}
 
     timestamps(type: :utc_datetime)
   end
