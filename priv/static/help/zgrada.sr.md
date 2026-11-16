@@ -120,6 +120,19 @@ Dogovor sa majstorom ima svoje korake, a treba i drugim procesima, ne samo prija
 
 Kad odlučiš „Zovemo majstora“, prijava kvara pokrene Majstora i čeka. Odluka Majstora te čeka na kartici Procesi, uz ime procesa koji ga je pozvao i kvar. Čim izabereš ishod, prijava kvara ide dalje i javlja u podgrupi kvara kako je prošlo. Ako za 7 dana niko ne odluči, prijava kvara odustaje, a Majstor se otkazuje.
 
+## 11. Brojač kvarova {:#brojac}
+
+Da znaš koliko je kvarova bilo, neka ih prijava kvara broji, u polju grupe koje čitaju svi procesi zgrade.
+
+1. U „Prijavi kvara“ dodirni **+** ispod početka i izaberi **Polje grupe**.
+2. Za **Polje grupe** upiši „kvarova“, pod **Šta radi** izaberi **Dodaje mu**, a za **Broj** upiši 1.
+3. Ako želiš, poruci „Popravljeno je, hvala na prijavi.“ dodaj „ Bio je to kvar broj “ i dodirni `group.kvarova` ispod polja.
+4. Dodirni **Sačuvaj**.
+
+Svaka prijava doda jedan, a koliko ih je bilo vidiš na dnu kartice Procesi, pod **Polja grupe**. Isto polje može da pročita i proces po rasporedu, recimo za mesečni izveštaj u razgovoru zgrade.
+
+![Polja grupe na kartici Procesi](zgrada-polja)
+
 ## Klub, hor ili ekipa {:#klub}
 
 Klub se slaže isto: jedan razgovor za sve, podgrupa bez nasleđivanja za one koji ga vode i deljeni profil kad treba da govore jednim glasom. Treninzi i probe su događaji koji se ponavljaju: pod **Ponavljanje** izaberi **Svake nedelje**.

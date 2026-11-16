@@ -54,6 +54,7 @@ const TONES = {
   task: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
   timer: "bg-teal-500/10 text-teal-600 dark:text-teal-300",
   call: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300",
+  set: "bg-lime-500/10 text-lime-700 dark:text-lime-300",
 }
 
 const PILLS = new Set(["start", "end", "gateway"])

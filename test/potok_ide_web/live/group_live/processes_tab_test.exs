@@ -220,6 +220,25 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     assert has_element?(lv, "#process-instance-#{run.id}", "the process it called was cancelled")
   end
 
+  test "the app's editors see the fields of the group, and delete them", ctx do
+    field =
+      Repo.insert!(%PotokIde.Processes.GroupField{
+        group_id: ctx.group.id,
+        name: "kvarova",
+        value: "3"
+      })
+
+    {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+    refute has_element?(member_lv, "#group-fields")
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    assert has_element?(lv, "#group-field-#{field.id}", "kvarova")
+    assert has_element?(lv, "#group-field-#{field.id}", "3")
+
+    lv |> element("#group-field-#{field.id}-delete") |> render_click()
+    refute has_element?(lv, "#group-fields")
+  end
+
   test "a drawing that is off shows to the app's editors only", ctx do
     row = draw!(ctx, false)
 

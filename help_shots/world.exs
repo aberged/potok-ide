@@ -525,6 +525,14 @@ defmodule HelpShots.World do
       "nodes" => [
         %{"id" => "start", "type" => "startEvent", "label" => "Stanar prijavljuje kvar"},
         %{
+          "id" => "set-1",
+          "type" => "serviceTask",
+          "action" => "set",
+          "field" => "kvarova",
+          "op" => "add",
+          "value" => "1"
+        },
+        %{
           "id" => "razgovor",
           "type" => "serviceTask",
           "action" => "subgroup",
@@ -539,7 +547,7 @@ defmodule HelpShots.World do
           "role" => "admin",
           "outcomes" => ["Popravljeno", "Zovemo majstora"]
         },
-        talk.("popravljeno", "Popravljeno je, hvala na prijavi."),
+        talk.("popravljeno", "Popravljeno je, hvala na prijavi. Bio je to kvar broj {{group.kvarova}}."),
         talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
         %{
           "id" => "call-1",
@@ -555,7 +563,8 @@ defmodule HelpShots.World do
         %{"id" => "kraj", "type" => "endEvent"}
       ],
       "flows" => [
-        %{"from" => "start", "to" => "razgovor"},
+        %{"from" => "start", "to" => "set-1"},
+        %{"from" => "set-1", "to" => "razgovor"},
         %{"from" => "razgovor", "to" => "odluka"},
         %{"from" => "odluka", "to" => "popravljeno", "outcome" => "Popravljeno"},
         %{"from" => "odluka", "to" => "majstor", "outcome" => "Zovemo majstora"},

@@ -119,6 +119,19 @@ Agreeing with a repairer has steps of its own, and other processes need it too, 
 
 When you decide "Calling a repairer", the fault report starts the Repairer and waits. The Repairer's decision waits for you on the Processes tab, with the name of the process that called it and the fault. As soon as you pick an outcome, the fault report goes on and tells the fault's sub-group how it went. If nobody decides within 7 days, the fault report gives up, and the Repairer is cancelled.
 
+## 11. Counting the faults {:#brojac}
+
+To know how many faults there were, let the fault report count them, in a field of the group every process of the building reads.
+
+1. In "Reporting a fault" tap **+** under the start and choose **Group field**.
+2. For **Field of the group** type "kvarova", under **What it does** choose **Adds to it**, and for **Number** type 1.
+3. If you like, add " It was fault number " to the message "It is fixed, thanks for the report." and tap `group.kvarova` under the field.
+4. Tap **Save**.
+
+Every report adds one, and how many there were you see at the bottom of the Processes tab, under **Fields of the group**. A process on a schedule can read the same field, say for a monthly report in the building's chat.
+
+![The group's fields on the Processes tab](zgrada-polja)
+
 ## A club, a choir or a team {:#klub}
 
 A club is put together the same way: one chat for everyone, a sub-group without inherited members for those who run it and a shared profile when they should speak with one voice. Training sessions and rehearsals are events that repeat: under **Repeats**, choose **Weekly**.

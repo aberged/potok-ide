@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   import Phoenix.Component, only: [assign: 2, assign: 3, to_form: 2]
   import Phoenix.LiveView, only: [push_event: 3, push_patch: 2, put_flash: 3]
 
-  alias PotokIde.Processes.{Graph, GraphEdit, Triggers}
+  alias PotokIde.Processes.{Graph, GraphEdit, GroupFields, Triggers}
   alias PotokIde.Repo
   alias PotokIde.Social.{AppData, AppProcess, DrawnProcesses, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.RolesTab
@@ -74,7 +74,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           error: nil,
           conflict: nil,
           fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection),
-          callable: DrawnProcesses.callable(group)
+          callable: DrawnProcesses.callable(group),
+          group_fields: GroupFields.names(group)
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -124,7 +125,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
                 ),
               else: []
             ),
-          callable: DrawnProcesses.callable(group)
+          callable: DrawnProcesses.callable(group),
+          group_fields: if(manage?, do: GroupFields.names(group), else: [])
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -157,7 +159,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           error: nil,
           conflict: nil,
           fields: [],
-          callable: []
+          callable: [],
+          group_fields: []
         }
 
         socket |> assign(:process_editor, editor) |> refresh(reset: true)
@@ -335,7 +338,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp editing("process_editor_insert_field", %{"target" => target, "path" => path}, socket)
-       when target in ["text", "name"] do
+       when target in ["text", "name", "value"] do
     case socket.assigns.process_editor.selected do
       {:node, id} ->
         graph_change(socket, fn graph ->
@@ -607,7 +610,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
     attrs =
       params
-      |> Map.take(~w(label text in name role))
+      |> Map.take(~w(label text in name role field op value))
       |> maybe_put("admins", admins(params))
       |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
@@ -760,6 +763,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       outcomes: [gettext("Approve"), gettext("Decline")],
       outcome: gettext("Outcome"),
       field: List.first(editor.fields),
+      group_field: gettext("field"),
       process: callee && callee.id,
       call_fields: if(callee, do: Map.new(callee.fields, &{&1, ""}), else: %{})
     }
@@ -1022,6 +1026,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def field_hints(editor) do
     own = with {:node, id} <- editor.selected, do: id
 
+    group =
+      editor.graph["nodes"]
+      |> Enum.flat_map(fn
+        %{"action" => "set", "field" => field} when is_binary(field) -> [field]
+        _other -> []
+      end)
+      |> Kernel.++(editor[:group_fields] || [])
+      |> Enum.uniq()
+      |> Enum.map(&"group.#{&1}")
+
     results =
       Enum.flat_map(editor.graph["nodes"], fn
         %{"id" => ^own} -> []
@@ -1030,7 +1044,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         _other -> []
       end)
 
-    editor.fields ++ results
+    editor.fields ++ results ++ group
   end
 
   @doc "The roles of the group by key, with their names."
@@ -1086,6 +1100,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       %{"type" => "timer"} ->
         {"timer", "hero-clock", label || gettext("Wait"), duration_text(node["duration"])}
+
+      %{"action" => "set", "op" => "add"} ->
+        {"set", "hero-pencil-square", label || gettext("Add to %{field}", field: node["field"]),
+         node["value"]}
+
+      %{"action" => "set"} ->
+        {"set", "hero-pencil-square", label || gettext("Set %{field}", field: node["field"]),
+         node["value"]}
 
       %{"type" => "callActivity"} ->
         process = Map.get(opts[:processes] || %{}, node["process"]) || gettext("a process")
@@ -1162,7 +1184,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         {deadline_amount, deadline_unit} = amount(node["deadline"])
 
         node
-        |> Map.take(~w(label text in name role admins fields))
+        |> Map.take(~w(label text in name role admins fields field op value))
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
@@ -1215,6 +1237,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp reason_text(:unknown_field, _path),
     do: gettext("The process called does not take this field.")
 
+  defp reason_text(:not_a_number, _path), do: gettext("Adding takes a number, or a field.")
+
   defp reason_text(:invalid, path) do
     cond do
       String.ends_with?(path, ".text") ->
@@ -1228,6 +1252,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       String.ends_with?(path, ".process") ->
         gettext("Pick the process to call.")
+
+      String.ends_with?(path, ".field") ->
+        gettext("A field is named with up to 40 letters, digits, - or _.")
+
+      String.ends_with?(path, ".value") ->
+        gettext("The value is at most 1000 characters.")
 
       String.contains?(path, ".fields") ->
         gettext("A field it hands over is too long.")

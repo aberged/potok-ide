@@ -215,7 +215,7 @@ In Roles you see whether the group has a manifest of its own or inherits one, yo
 
 An app in a group can also have processes, which act in the group in place of people. They are at the bottom of the Members tab, under Processes, with the name the app gives them and their roles, and they are not counted among the members. In messages you know them by the mark Process, with the name of whoever set the process going, and in a sub-group a process made, its name leads to the app. Whoever edits the app sees there which permissions a process lacks, and an administrator gives them with a role.
 
-How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there.
+How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there. At the bottom of the tab they also see the group's fields the processes keep, who wrote each last and when, and may delete them.
 
 At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment.
 
@@ -337,7 +337,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition or a call to another process. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition, a group field or a call to another process. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:
@@ -352,6 +352,8 @@ A process can start on:
 A step's text can put in fields of what started the process, say a message's text or the title of a run started by hand: they are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
 
 The steps after a decision read its outcome as `{{odluka.outcome}}`, and who decided as `{{odluka.by}}`, where `odluka` is the step's name on the drawing; these are offered under the text field too. In the same way the step **Call a process** starts another drawn process of the group and hands it fields. If you leave **Wait for it to end** on, the process waits until the one it called reaches an end, and the steps after the call read the name of that end on the drawing as `{{poziv.outcome}}`, so a condition can branch on it. A deadline says how long it waits at most: when it passes, it gives up and cancels the process it called. What a process writes starts no other process, so processes talk only when you draw them that way. Processes call each other at most three levels deep, and a process another one calls cannot be deleted. The [building](/pomoc/zgrada#majstor) shows how this looks.
+
+The step **Group field** keeps a value every process of the group reads: under **What it does** you pick whether it sets the field to a value, say the last fault reported, or adds a number to it, as a count. The other steps, in other processes too, read the field `kvarova` as `{{group.kvarova}}`, and a condition can branch on it, say when it passes 10. The [building](/pomoc/zgrada#brojac) counts its faults.
 
 ### Sharing into Potok {:#deljenje}
 

@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Processes
-  alias PotokIde.Processes.Graph
+  alias PotokIde.Processes.{Graph, GroupFields}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
   alias PotokIdeWeb.GroupLive.Show.ProcessEditorState
 
@@ -37,6 +37,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       processes_tab?: false,
       processes_apps: [],
       processes_tasks: [],
+      processes_fields: [],
       processes_can_draw?: false,
       processes_refresh?: false,
       processes_start: nil
@@ -103,7 +104,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   def maybe_load(socket, %Group{}, _active_tab) do
     socket
-    |> assign(processes_apps: [], processes_tasks: [])
+    |> assign(processes_apps: [], processes_tasks: [], processes_fields: [])
     |> ProcessEditorState.init()
   end
 
@@ -129,6 +130,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     assign(socket,
       processes_apps: by_app(entries, group),
       processes_tasks: Processes.tasks_for(profile, group, access),
+      processes_fields: if(manage?, do: GroupFields.list(group), else: []),
       processes_can_draw?: manage?,
       processes_refresh?: false
     )
@@ -271,6 +273,24 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
       _refused ->
         {:noreply, put_flash(socket, :error, gettext("Could not take it up again."))}
+    end
+  end
+
+  def handle_event("processes_delete_field", %{"id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    result =
+      case Integer.parse(to_string(id)) do
+        {id, ""} -> GroupFields.delete(group, access, id)
+        _invalid -> {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _field} ->
+        {:noreply, socket |> put_flash(:info, gettext("The field is deleted.")) |> load()}
+
+      _refused ->
+        {:noreply, put_flash(socket, :error, gettext("Could not delete the field."))}
     end
   end
 

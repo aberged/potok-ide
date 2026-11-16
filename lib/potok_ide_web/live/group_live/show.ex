@@ -710,6 +710,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             current_profile={@current_profile}
             apps={@processes_apps}
             tasks={@processes_tasks}
+            fields={@processes_fields}
             can_draw?={@processes_can_draw?}
             editor={@process_editor}
             editor_form={@process_editor_form}

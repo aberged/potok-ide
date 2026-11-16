@@ -316,6 +316,41 @@ defmodule PotokIde.Processes.GraphTest do
     end
   end
 
+  test "a group's field is set, or added to with a number or a field, only when drawn" do
+    graph = fn set ->
+      %{
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          Map.merge(%{"id" => "polje", "type" => "serviceTask", "action" => "set"}, set),
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [%{"from" => "start", "to" => "polje"}, %{"from" => "polje", "to" => "kraj"}]
+      }
+    end
+
+    ok = %{"field" => "kvarova", "op" => "add", "value" => " 1 "}
+
+    assert {:error, {"nodes.1.action", :invalid}} = Graph.normalize(graph.(ok))
+    assert {:ok, %{"nodes" => [_, set, _]}} = Graph.normalize(graph.(ok), drawn: true)
+    assert set["value"] == "1"
+
+    assert {:ok, %{"nodes" => [_, %{"op" => "set", "value" => ""}, _]}} =
+             Graph.normalize(graph.(%{"field" => "zadnji", "value" => ""}), drawn: true)
+
+    assert {:ok, _graph} =
+             Graph.normalize(graph.(%{ok | "value" => "{{iznos}}"}), drawn: true)
+
+    for {set, path, reason} <- [
+          {%{ok | "field" => "dve reči"}, "nodes.1.field", :invalid},
+          {%{ok | "field" => "group.x"}, "nodes.1.field", :invalid},
+          {%{ok | "op" => "times"}, "nodes.1.op", :invalid},
+          {%{ok | "value" => String.duplicate("1", 1_001)}, "nodes.1.value", :invalid},
+          {%{ok | "value" => "puno"}, "nodes.1.value", :not_a_number}
+        ] do
+      assert {:error, {^path, ^reason}} = Graph.normalize(graph.(set), drawn: true)
+    end
+  end
+
   test "names what the actions need and the roles they name" do
     {:ok, graph} = Graph.normalize(molbe())
 

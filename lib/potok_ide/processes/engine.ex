@@ -40,7 +40,7 @@ defmodule PotokIde.Processes.Engine do
   require Logger
 
   alias PotokIde.{RateLimit, Repo}
-  alias PotokIde.Processes.{Graph, Scheduler, Triggers, ValueProcess}
+  alias PotokIde.Processes.{Graph, GroupFields, Scheduler, Triggers, ValueProcess}
 
   alias PotokIde.Social.{
     Access,
@@ -505,6 +505,24 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
+  # A field of the group, which every drawn process of it reads.
+  defp service("set", task, step, _group, _instance, data) do
+    value = render(task["value"], data)
+
+    result =
+      cond do
+        not step.process.active -> {:error, :process_inactive}
+        task["op"] == "add" -> GroupFields.add(step.process, task["field"], value)
+        true -> GroupFields.put(step.process, task["field"], value)
+      end
+
+    case result do
+      {:ok, _field} -> {:ok, %{}, fn -> :ok end}
+      {:error, %Ecto.Changeset{}} -> {:error, :invalid_field}
+      {:error, _reason} = error -> error
+    end
+  end
+
   # The process a call starts, read `FOR SHARE`, so one being switched off
   # waits for this step and then cancels what it started.
   defp callee(id, group_id) when is_integer(id) do
@@ -909,9 +927,16 @@ defmodule PotokIde.Processes.Engine do
 
   # What a run's texts and conditions read: the fields kept with it, or the
   # data of its value of a collection, as it is now, and what its waits
-  # brought back (`results`), which never hide a field of either.
-  defp value_data(%ValueProcess{results: results} = instance),
-    do: Map.merge(results || %{}, base_data(instance))
+  # brought back (`results`), which never hide a field of either; and for a
+  # drawn process, the fields of its group under `group`.
+  defp value_data(%ValueProcess{results: results} = instance) do
+    data = Map.merge(results || %{}, base_data(instance))
+
+    case GroupFields.for_process(instance.app_process_id) do
+      fields when map_size(fields) == 0 -> data
+      fields -> Map.put(data, "group", fields)
+    end
+  end
 
   # A run another process started reads only the fields it was given.
   defp base_data(%ValueProcess{depth: depth, data: data}) when depth > 0, do: data || %{}

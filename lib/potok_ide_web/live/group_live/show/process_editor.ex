@@ -461,6 +461,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       {"gateway", "hero-arrows-right-left", gettext("Condition"),
        gettext("Goes one way or another by what was sent."),
        "bg-amber-500/10 text-amber-700 dark:text-amber-300"},
+      {"set", "hero-pencil-square", gettext("Group field"),
+       gettext("Keeps a value, or adds to a count, that every process of the group reads."),
+       "bg-lime-500/10 text-lime-700 dark:text-lime-300"},
       {"call", "hero-arrow-top-right-on-square", gettext("Call a process"),
        gettext("Starts another process of the group, and waits for how it ends."),
        "bg-indigo-500/10 text-indigo-600 dark:text-indigo-300"}
@@ -693,6 +696,38 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {gettext("Add a condition")}
                 </.button>
               </div>
+            <% "set" -> %>
+              <.input
+                field={@form[:field]}
+                type="text"
+                label={gettext("Field of the group")}
+                list="process-group-field-list"
+                maxlength="40"
+                phx-debounce="400"
+              />
+              <datalist id="process-group-field-list">
+                <option :for={name <- @editor.group_fields} value={name} />
+              </datalist>
+              <.input
+                field={@form[:op]}
+                type="select"
+                label={gettext("What it does")}
+                options={[{gettext("Sets it to"), "set"}, {gettext("Adds to it"), "add"}]}
+              />
+              <.input
+                field={@form[:value]}
+                type="text"
+                maxlength="1000"
+                label={if(@node["op"] == "add", do: gettext("Number"), else: gettext("Value"))}
+                phx-debounce="300"
+              />
+              <.fields editor={@editor} target="value" />
+              <p class="text-xs text-base-content/60">
+                {gettext(
+                  "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab.",
+                  field: "{{group.#{@node["field"]}}}"
+                )}
+              </p>
             <% "call" -> %>
               <p
                 :if={@editor.callable == []}

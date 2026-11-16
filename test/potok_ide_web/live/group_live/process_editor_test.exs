@@ -229,6 +229,32 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
              DrawnProcesses.delete(ctx.owner, ctx.group, callee.id)
   end
 
+  test "a step keeps a field of the group, which every process reads", ctx do
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+    insert(lv, "f1", "set")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{"field" => "kvarova", "op" => "add", "value" => "1"}
+    })
+    |> render_change()
+
+    assert has_element?(lv, "#process-outline-set-1", "kvarova")
+
+    insert(lv, "f2", "message")
+    assert has_element?(lv, "#process-field-text-3", "group.kvarova")
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+
+    assert %{"field" => "kvarova", "op" => "add", "value" => "1"} =
+             Enum.find(graph["nodes"], &(&1["action"] == "set"))
+  end
+
   test "an unfinished drawing says what is wrong and is not saved", ctx do
     {:ok, lv, _html} =
       live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")

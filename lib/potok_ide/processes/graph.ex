@@ -24,6 +24,10 @@ defmodule PotokIde.Processes.Graph do
     as above), and waits for it to end unless `wait` is false, until an
     optional `deadline`. What it ended with comes back as
     `{{element.outcome}}`, with its fields and results.
+  - `serviceTask` with the `action` `set`: sets the group's `field` to
+    `value` (a text as above), or adds it as a number with `op` `add`, for
+    every drawn process of the group to read as `{{group.field}}`
+    (`PotokIde.Processes.GroupFields`).
 
   Any element may carry a `label`, the name it shows on a drawing and where
   an instance waits or stopped; its `id` stands in for it otherwise.
@@ -239,6 +243,9 @@ defmodule PotokIde.Processes.Graph do
        when type in ~w(startEvent endEvent exclusiveGateway),
        do: {:ok, base}
 
+  defp typed("serviceTask", %{"action" => "set"} = node, path, base, true),
+    do: set_field(node, path, base)
+
   defp typed("serviceTask", node, path, base, _drawn?),
     do: action(node["action"], node, path, base)
 
@@ -275,6 +282,42 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp typed(_type, _node, path, _base, _drawn?), do: {:error, {path <> ".type", :invalid}}
+
+  # A field of the group, set or added to. Adding needs a number, or a text
+  # that may come out as one.
+  defp set_field(node, path, base) do
+    op = Map.get(node, "op", "set")
+    value = node["value"]
+
+    cond do
+      not (is_binary(node["field"]) and Regex.match?(@name_format, node["field"])) ->
+        {:error, {path <> ".field", :invalid}}
+
+      op not in ~w(set add) ->
+        {:error, {path <> ".op", :invalid}}
+
+      not (is_binary(value) and String.length(value) <= @max_template) ->
+        {:error, {path <> ".value", :invalid}}
+
+      op == "add" and not number_or_field?(String.trim(value)) ->
+        {:error, {path <> ".value", :not_a_number}}
+
+      true ->
+        {:ok,
+         Map.merge(base, %{
+           "action" => "set",
+           "field" => node["field"],
+           "op" => op,
+           "value" => String.trim(value)
+         })}
+    end
+  end
+
+  defp number_or_field?(text) do
+    String.contains?(text, "{{") or
+      match?({_n, ""}, Float.parse(String.replace(text, ",", "."))) or
+      match?({_n, ""}, Integer.parse(text))
+  end
 
   defp process_id(id, _path) when is_integer(id) and id > 0, do: {:ok, id}
   defp process_id(_id, path), do: {:error, {path, :invalid}}

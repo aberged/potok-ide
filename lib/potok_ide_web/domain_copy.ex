@@ -341,6 +341,10 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueProcess", "error"), do: dgettext("domain_map", "why it stopped")
   defp own_field("ValueProcess", "log"), do: dgettext("domain_map", "decisions of people")
   defp own_field("ValueProcess", "awaiting_id"), do: dgettext("domain_map", "run it waits for")
+  defp own_field("GroupField", "value"), do: dgettext("domain_map", "text it keeps")
+
+  defp own_field("GroupField", "app_process_id"),
+    do: dgettext("domain_map", "process that wrote it last")
 
   defp own_field("ValueProcess", "depth"),
     do: dgettext("domain_map", "how many processes deep")
@@ -554,6 +558,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
   def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
+  def entity_name("GroupField"), do: dgettext("domain_map", "Group field")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -708,6 +713,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A run another process started, by a call or a signal, is one level deeper than that one, shares its subject and keeps the fields it was given; a caller that waits for it points at it, and what each wait brought back stays with the run that waited. A value or a sub-group has at most one instance of each process that its trigger started. Deleting it or the process takes the instance along, and what it wrote stays."
+    )
+  end
+
+  defp entity_description("GroupField", _edges) do
+    dgettext(
+      "domain_map",
+      "A field the processes drawn in a group keep for each other: a step sets it, or adds a number to it, and every drawn process of the group reads it. A group has at most 50, each name once. Deleting the group takes them along, and the process that wrote one last may go first."
     )
   end
 
@@ -968,6 +980,14 @@ defmodule PotokIdeWeb.DomainCopy do
       "domain_map",
       "A process starts on a value, a message, a sub-group, a schedule, by hand, when another process calls it or on a signal."
     )
+  end
+
+  def check_text("group_fields_name_check") do
+    dgettext("domain_map", "The name has 1 to 40 characters.")
+  end
+
+  def check_text("group_fields_value_check") do
+    dgettext("domain_map", "The text has at most 1,000 characters.")
   end
 
   def check_text("value_processes_depth_check") do
@@ -1512,7 +1532,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> of the same group that starts when another calls it, and hands over the fields it takes; the <ValueProcess>run</ValueProcess> it starts shares the caller's subject and is one level deeper. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. Runs go at most three processes deep, and a process another one calls cannot be deleted."
+            "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> of the same group that starts when another calls it, and hands over the fields it takes; the <ValueProcess>run</ValueProcess> it starts shares the caller's subject and is one level deeper. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads; adding to one takes its lock, so two runs never lose each other's count. Runs go at most three processes deep, and a process another one calls cannot be deleted."
           )
       },
       %{

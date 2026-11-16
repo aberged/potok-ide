@@ -17,6 +17,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :apps, :list, required: true, doc: "`%{id, name, entries}`, see `ProcessesState`"
   attr :tasks, :list, required: true, doc: "from `Processes.tasks_for/3`"
 
+  attr :fields, :list,
+    default: [],
+    doc: "the group's fields its processes keep, for the app's editors (`GroupFields`)"
+
   attr :can_draw?, :boolean,
     default: false,
     doc: "whether the viewer may draw, on an app the group has"
@@ -114,6 +118,49 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
               ]}
             >
               <.process_row entry={entry} manage?={@manage?} group={@group} access={@access} />
+            </li>
+          </ul>
+        </section>
+
+        <section :if={@fields != []} id="group-fields" class="mb-6">
+          <h2 class="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
+            <.icon name="hero-pencil-square" class="size-3.5" />
+            {gettext("Fields of the group")}
+          </h2>
+          <p class="mb-2 px-1 text-xs text-base-content/60">
+            {gettext("What the processes keep for each other. Each reads them as {{group.name}}.")}
+          </p>
+          <ul class="divide-y divide-base-300/60 overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/80 shadow-sm">
+            <li
+              :for={field <- @fields}
+              id={"group-field-#{field.id}"}
+              class="flex items-center gap-3 px-4 py-2.5 transition-colors duration-150 hover:bg-base-200/40"
+            >
+              <div class="min-w-0 flex-1">
+                <p class="flex min-w-0 items-baseline gap-2 text-sm">
+                  <code class="shrink-0 rounded-full bg-lime-500/10 px-2 py-0.5 font-mono text-[11px] text-lime-700 dark:text-lime-300">
+                    {field.name}
+                  </code>
+                  <span class="truncate font-semibold">{field.value}</span>
+                </p>
+                <p class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55">
+                  <span :if={field.app_process}>{field.app_process.name}</span>
+                  <span :if={field.app_process}>·</span>
+                  <Components.local_time
+                    id={"group-field-#{field.id}-at"}
+                    datetime={field.updated_at}
+                  />
+                </p>
+              </div>
+              <.icon_button
+                id={"group-field-#{field.id}-delete"}
+                type="button"
+                phx-click="processes_delete_field"
+                phx-value-id={field.id}
+                data-confirm={gettext("Delete this field? The processes read it as empty.")}
+                icon="hero-trash"
+                label={gettext("Delete the field")}
+              />
             </li>
           </ul>
         </section>
@@ -592,6 +639,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   defp failure_reason("call_cancelled"), do: gettext("the process it called was cancelled")
   defp failure_reason("call_inactive"), do: gettext("the process it calls is off")
   defp failure_reason("call_unknown"), do: gettext("the process it calls is gone")
+  defp failure_reason("not_a_number"), do: gettext("the field to add to is no number")
+  defp failure_reason("too_many_fields"), do: gettext("the group has 50 fields already")
+  defp failure_reason("invalid_field"), do: gettext("the field's name is not right")
   defp failure_reason(_reason), do: gettext("an error")
 
   @doc "The permissions a process lacks, in words."

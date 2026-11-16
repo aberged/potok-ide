@@ -24,9 +24,10 @@ defmodule PotokIde.Processes.GraphEdit do
     "timer" => "timer",
     "gateway" => "gateway",
     "call" => "call",
+    "set" => "set",
     "end" => "end"
   }
-  @kinds ~w(message subgroup push task timer gateway call)
+  @kinds ~w(message subgroup push task timer gateway call set)
 
   @doc "The kinds of step `insert/4` makes."
   def kinds, do: @kinds
@@ -63,8 +64,8 @@ defmodule PotokIde.Processes.GraphEdit do
   and it leads on to where the flow led. A decision leaves by each of its
   outcomes, a condition by one condition and by default, all to that same
   place. `defaults` holds the step's first texts and role, and the process
-  a call starts with the fields it takes:
-  `%{text, name, role, outcomes, field, process, call_fields}`.
+  a call starts with the fields it takes, and the group's field a step sets:
+  `%{text, name, role, outcomes, field, process, call_fields, group_field}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -117,6 +118,16 @@ defmodule PotokIde.Processes.GraphEdit do
 
   defp step("timer", id, _d), do: %{"id" => id, "type" => "timer", "duration" => "P1D"}
   defp step("gateway", id, _d), do: %{"id" => id, "type" => "exclusiveGateway"}
+
+  defp step("set", id, d),
+    do: %{
+      "id" => id,
+      "type" => "serviceTask",
+      "action" => "set",
+      "field" => d[:group_field],
+      "op" => "set",
+      "value" => ""
+    }
 
   defp step("call", id, d),
     do: %{
@@ -466,6 +477,10 @@ defmodule PotokIde.Processes.GraphEdit do
     do: ~w(label name admins)
 
   defp editable_keys(%{"type" => "serviceTask", "action" => "push"}), do: ~w(label role text)
+
+  defp editable_keys(%{"type" => "serviceTask", "action" => "set"}),
+    do: ~w(label field op value)
+
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
