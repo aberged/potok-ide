@@ -10,7 +10,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   use PotokIdeWeb, :html
 
-  alias PotokIde.Processes.{Graph, GraphEdit}
+  alias PotokIde.Processes.{Graph, GraphEdit, Triggers, Types}
   alias PotokIdeWeb.GroupLive.Show.{ProcessEditorState, ProcessEntities}
 
   attr :editor, :map, required: true
@@ -87,7 +87,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               type="button"
               phx-click="process_editor_save"
               disabled={
-                @editor.error != nil or not @editor.dirty? or
+                @editor.error != nil or not (@editor.dirty? or @editor.stale?) or
                   (@editor.trigger == "value" and @editor.collection == nil)
               }
               variant="primary"
@@ -298,6 +298,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             {gettext(
               "This drawing now reads what started it as %{example}, and its conditions are expressions. Look it over and save it.",
               example: "{{#{PotokIde.Processes.Graph.start(@editor.graph)}.…}}"
+            )}
+          </span>
+        </div>
+
+        <div
+          :if={@editor.stale? && @editor.editable?}
+          id="process-editor-stale"
+          class="flex shrink-0 items-center gap-2 border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-sm"
+        >
+          <.icon name="hero-arrow-path" class="size-4 shrink-0 text-amber-600 dark:text-amber-300" />
+          <span class="min-w-0 flex-1">
+            {gettext(
+              "What this drawing was saved with has changed: an entity, a process it calls or a signal. Look it over and save it."
             )}
           </span>
         </div>
@@ -830,6 +843,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       |> assign(:callee, Enum.find(assigns.editor.callable, &(&1.id == node["process"])))
       |> assign(:condition_flows, condition_flows(assigns.editor.graph, node))
       |> assign(:targets, ProcessEditorState.assign_targets(assigns.editor))
+      |> assign(
+        :signal_entity,
+        Enum.find(assigns.editor[:entities] || [], &(&1.id == node["entity"]))
+      )
       |> assign(:textual?, ProcessEditorState.textual_target?(assigns.editor, node["target"]))
 
     ~H"""
@@ -1043,6 +1060,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               <datalist id="process-signal-list">
                 <option :for={name <- Map.keys(@editor.signals)} value={name} />
               </datalist>
+              <.signal_entity editor={@editor} form={@form} />
               <div id="process-signal-fields" class="space-y-2">
                 <p class="label">{gettext("What it carries")}</p>
                 <div
@@ -1050,7 +1068,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   id={"process-signal-field-#{i}"}
                   class="space-y-1 rounded-2xl border border-base-300/70 bg-base-100 p-2"
                 >
-                  <div class="flex items-start gap-1.5">
+                  <%!-- With an entity the signal carries its attributes, as they are named. --%>
+                  <div :if={@signal_entity}>
+                    <input
+                      type="hidden"
+                      name={"element[signal_fields][#{i}][name]"}
+                      value={field["name"]}
+                    />
+                    <p class="label">
+                      {signal_field_label(@signal_entity, field["name"], @editor[:entities] || [])}
+                    </p>
+                  </div>
+                  <div :if={!@signal_entity} class="flex items-start gap-1.5">
                     <div class="min-w-0 flex-1">
                       <.input
                         type="text"
@@ -1084,7 +1113,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   <.fields editor={@editor} target={"signal_fields.#{i}"} />
                 </div>
                 <.button
-                  :if={@editor.editable? and length(@node["fields"] || []) < 10}
+                  :if={@editor.editable? and !@signal_entity and length(@node["fields"] || []) < 10}
                   id="process-add-signal-field"
                   type="button"
                   phx-click="process_editor_add_signal_field"
@@ -1112,6 +1141,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               <datalist id="process-signal-list">
                 <option :for={name <- Map.keys(@editor.signals)} value={name} />
               </datalist>
+              <.signal_entity editor={@editor} form={@form} />
               <input type="hidden" name="element[same_subject]" value="false" />
               <label class="flex items-center gap-2 text-sm">
                 <input
@@ -1261,7 +1291,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                     id={"process-call-field-#{name}"}
                     name={"element[fields][#{name}]"}
                     value={(@node["fields"] || %{})[name] || ""}
-                    label={name}
+                    label={call_field_label(@callee, name, @editor[:entities] || [])}
                     maxlength="1000"
                     phx-debounce="300"
                   />
@@ -1294,11 +1324,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         </fieldset>
       </.form>
 
-      <.trigger_form
-        :if={@kind == "start" and @editor.trigger != "value"}
-        editor={@editor}
-        role_options={@role_options}
-      />
+      <.trigger_form :if={@kind == "start"} editor={@editor} role_options={@role_options} />
     </div>
     """
   end
@@ -1320,6 +1346,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     >
       <fieldset disabled={!@editor.editable?} class="space-y-3">
         <h3 class="text-sm font-semibold">{gettext("What starts it")}</h3>
+
+        <.entry_entity :if={Triggers.typed?(@editor.trigger)} editor={@editor} />
 
         <%= case @editor.trigger do %>
           <% "message" -> %>
@@ -1437,8 +1465,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               </label>
             </div>
             <p class="text-xs text-base-content/60">
-              {gettext(
-                "They get a Start button on the Processes tab, with a title and a text the steps can put in."
+              {if(@editor[:entry_entity],
+                do:
+                  gettext(
+                    "They get a Start button on the Processes tab, with a form that asks for the attributes of the entity."
+                  ),
+                else:
+                  gettext(
+                    "They get a Start button on the Processes tab, with a title and a text the steps can put in."
+                  )
               )}
             </p>
           <% "signal" -> %>
@@ -1462,6 +1497,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             </p>
           <% "process" -> %>
             <.input
+              :if={is_nil(@editor[:entry_entity])}
               type="text"
               id="process-trigger-fields"
               name="trigger[fields]"
@@ -1470,16 +1506,139 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
               placeholder={gettext("fault, floor")}
               phx-debounce="400"
             />
+            <.button
+              :if={
+                @editor.editable? and is_nil(@editor[:entry_entity]) and
+                  words_value(@config["fields"]) != ""
+              }
+              id="process-trigger-entity-from-fields"
+              type="button"
+              phx-click="process_editor_entity_from_fields"
+              variant="ghost"
+              size="sm"
+            >
+              <.icon name="hero-cube" class="size-4" />
+              {gettext("Make an entity of these fields")}
+            </.button>
             <p class="text-xs text-base-content/60">
-              {gettext(
-                "Another process of the group starts it with the step Call a process, which fills in these fields. When it ends, the caller learns which end it reached."
+              {if(@editor[:entry_entity],
+                do:
+                  gettext(
+                    "Another process of the group starts it with the step Call a process, which fills in the attributes of the entity, each as its type. When it ends, the caller learns which end it reached."
+                  ),
+                else:
+                  gettext(
+                    "Another process of the group starts it with the step Call a process, which fills in these fields. When it ends, the caller learns which end it reached."
+                  )
               )}
             </p>
-          <% _value -> %>
+          <% "value" -> %>
+            <p :if={@editor[:entry_entity]} class="text-xs text-base-content/60">
+              {gettext(
+                "Each attribute reads the field of the same name in the value, as its type. What else the value holds is read as it comes."
+              )}
+            </p>
+          <% _other -> %>
         <% end %>
       </fieldset>
     </.form>
     """
+  end
+
+  attr :editor, :map, required: true
+  attr :form, :any, required: true
+
+  # The entity a signal is sent or waited for with, of the group's own.
+  defp signal_entity(assigns) do
+    assigns = assign(assigns, :entities, assigns.editor[:entities] || [])
+
+    ~H"""
+    <.input
+      :if={@entities != []}
+      field={@form[:entity]}
+      type="select"
+      label={gettext("Entity it carries")}
+      options={
+        [{gettext("No entity, plain fields"), ""}] ++
+          for(entity <- @entities, do: {entity.name, entity.id})
+      }
+    />
+    """
+  end
+
+  attr :editor, :map, required: true
+
+  # The entity the process takes when it starts, of the group's own.
+  defp entry_entity(assigns) do
+    assigns = assign(assigns, :entities, takeable(assigns.editor))
+
+    ~H"""
+    <div id="process-trigger-entity-field">
+      <.input
+        :if={@entities != []}
+        type="select"
+        id="process-trigger-entity"
+        name="trigger[entity]"
+        value={@editor[:entry_entity] || ""}
+        label={entry_label(@editor.trigger)}
+        options={
+          [{entry_none(@editor.trigger), ""}] ++
+            for(entity <- @entities, do: {entity.name, entity.id})
+        }
+      />
+      <p :if={@entities == []} class="text-xs text-base-content/60">
+        {gettext(
+          "It takes plain texts. Define an entity under Data, and it can take that instead, each attribute as its type."
+        )}
+      </p>
+    </div>
+    """
+  end
+
+  # A form fills in plain attributes only.
+  defp takeable(%{trigger: "manual"} = editor) do
+    for entity <- editor[:entities] || [],
+        Enum.all?(entity.attributes, &(&1.type != "entity" and not &1.list)),
+        do: entity
+  end
+
+  defp takeable(editor), do: editor[:entities] || []
+
+  defp entry_label("manual"), do: gettext("What its form asks for")
+  defp entry_label("signal"), do: gettext("What the signal carries")
+  defp entry_label("value"), do: gettext("How a value reads")
+  defp entry_label(_process), do: gettext("What it takes")
+
+  defp entry_none("manual"), do: gettext("A title and a text")
+  defp entry_none("signal"), do: gettext("Whatever was put in it")
+  defp entry_none("value"), do: gettext("As it comes")
+  defp entry_none(_process), do: gettext("Plain fields")
+
+  # What a call hands over under `name`: the name, and for an attribute of
+  # the entity the called process takes, its type and whether it is required.
+  defp call_field_label(callee, name, entities) do
+    case Enum.find(callee.attributes, &(&1["name"] == name)) do
+      nil ->
+        name
+
+      attribute ->
+        type = ProcessEntities.type_words(Types.of(attribute), entities)
+        required = if attribute["required"] == true, do: " *", else: ""
+        "#{name} · #{type}#{required}"
+    end
+  end
+
+  # The same for an attribute of the entity a signal carries.
+  defp signal_field_label(entity, name, entities) do
+    case entity && Enum.find(entity.attributes, &(&1.name == name)) do
+      nil ->
+        name
+
+      attribute ->
+        type = ProcessEntities.type_label(attribute, entities)
+        required = if attribute.required, do: " *", else: ""
+        "#{name} · #{type}#{required}"
+    end
   end
 
   defp words_value(words) when is_list(words), do: Enum.join(words, ", ")

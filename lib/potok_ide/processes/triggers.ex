@@ -22,6 +22,11 @@ defmodule PotokIde.Processes.Triggers do
   - `"signal"`: a process drawn in the group sends the signal `name`, and
     what it carries becomes the run's fields.
 
+  A process that starts on a value, by hand, on a call or on a signal may
+  take an entity of its group (`typed?/1`, `AppProcess.entry_entity`): how
+  the value reads, what the form of its Start button asks, what its caller
+  hands it, or what the signal carries (`entry/3`).
+
   Each gives its texts and conditions fields (`fields/2`): a message's
   `text`, a sub-group's `name`, the `title` of a form, a scheduled `date`,
   the fields a call hands over and the name of the process that called
@@ -29,9 +34,12 @@ defmodule PotokIde.Processes.Triggers do
   """
 
   alias PotokIde.Events.Recurrence
+  alias PotokIde.Processes.Types
   alias PotokIde.Social.Value
 
   @triggers ~w(value message subgroup schedule manual process signal)
+  # Those whose process may take an entity.
+  @typed ~w(value manual process signal)
   @max_words 10
   @max_fields 10
   @field_format ~r/^[\p{L}\p{Nd}_-]{1,40}$/u
@@ -125,16 +133,38 @@ defmodule PotokIde.Processes.Triggers do
   def fields("signal", _config), do: ["from"]
   def fields(_trigger, _config), do: []
 
+  @doc "Whether a process on the trigger may take an entity when it starts."
+  def typed?(trigger), do: trigger in @typed
+
   @doc """
   The type of what a trigger with its settings hands a run, which a process
   drawn in today's language reads under the id of its start
-  (`PotokIde.Processes.Scope`). A value of a collection and a signal may
-  hold more than Potok knows of.
+  (`PotokIde.Processes.Scope`).
+
+  With `definition`, the entity the process takes (as
+  `GroupEntities.definition/1` gives it), that is its attributes, each of
+  its type, beside what the trigger always says: who called (`from`), who
+  started it (`author`), which signal it was (`signal`). Without one, a
+  value of a collection and a signal may hold more than Potok knows of,
+  and every other trigger hands over texts.
   """
-  def entry(trigger, config \\ %{})
-  def entry("value", _config), do: {:record, %{}, true}
-  def entry("signal", _config), do: {:record, %{"from" => :text, "signal" => :text}, true}
-  def entry(trigger, config), do: {:record, Map.new(fields(trigger, config), &{&1, :text}), false}
+  def entry(trigger, config \\ %{}, definition \\ nil)
+
+  def entry(trigger, _config, %{"attributes" => attributes}) when trigger in @typed do
+    fields = Map.new(attributes, &{&1["name"], Types.of(&1)})
+    {:record, Map.merge(fields, always(trigger)), trigger == "value"}
+  end
+
+  def entry("value", _config, _none), do: {:record, %{}, true}
+  def entry("signal", _config, _none), do: {:record, always("signal"), true}
+
+  def entry(trigger, config, _none),
+    do: {:record, Map.new(fields(trigger, config), &{&1, :text}), false}
+
+  defp always("process"), do: %{"from" => :text}
+  defp always("manual"), do: %{"author" => :text}
+  defp always("signal"), do: %{"from" => :text, "signal" => :text}
+  defp always(_value), do: %{}
 
   # ---------
   # Messages

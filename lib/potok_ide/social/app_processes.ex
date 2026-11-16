@@ -246,9 +246,13 @@ defmodule PotokIde.Social.AppProcesses do
           do: permission
 
     owner_left? = not edits_app?(row.owner_profile_id, group)
+    # Only a drawing can fall out of step with what it was saved with.
+    stale? = row.drawn and PotokIde.Social.DrawnProcesses.stale?(row, group)
 
-    if missing != [] or owner_left?,
-      do: %{"missing" => Enum.map(missing, &to_string/1), "owner_left" => owner_left?}
+    if missing != [] or owner_left? or stale? do
+      warning = %{"missing" => Enum.map(missing, &to_string/1), "owner_left" => owner_left?}
+      if row.drawn, do: Map.put(warning, "stale", stale?), else: warning
+    end
   end
 
   @doc """
@@ -275,7 +279,7 @@ defmodule PotokIde.Social.AppProcesses do
       from(p in AppProcess,
         where: p.group_id == ^group_id,
         order_by: [asc: p.drawn, asc: p.name, asc: p.id],
-        preload: [:profile, :owner_profile, :alt_description]
+        preload: [:profile, :owner_profile, :alt_description, :entry_entity]
       )
 
     query =

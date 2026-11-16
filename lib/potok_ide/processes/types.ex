@@ -168,6 +168,29 @@ defmodule PotokIde.Processes.Types do
   def fits?(_actual, _expected), do: false
 
   @doc """
+  The same, knowing the `entities` the types name: an entity also takes
+  what holds each of its attributes, such as what set a run going, whatever
+  else that holds.
+  """
+  def fits?({:record, fields, _open?}, {:entity, id}, entities) do
+    case attributes(entities, id) do
+      nil ->
+        false
+
+      attributes ->
+        Enum.all?(attributes, fn %{"name" => name} = attribute ->
+          case Map.fetch(fields, name) do
+            {:ok, type} -> fits?(type, of(attribute), entities)
+            :error -> false
+          end
+        end)
+    end
+  end
+
+  def fits?({:list, actual}, {:list, expected}, entities), do: fits?(actual, expected, entities)
+  def fits?(actual, expected, _entities), do: fits?(actual, expected)
+
+  @doc """
   Whether a value of the type is written as a text, which may hold
   expressions between `{{` and `}}`; every other is written as one
   expression.

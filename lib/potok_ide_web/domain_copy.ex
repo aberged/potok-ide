@@ -317,6 +317,7 @@ defmodule PotokIdeWeb.DomainCopy do
     do: dgettext("domain_map", "settings of what starts it")
 
   defp own_field("AppProcess", "next_run_at"), do: dgettext("domain_map", "next scheduled start")
+  defp own_field("AppProcess", "entry_entity_id"), do: dgettext("domain_map", "entity it takes")
 
   defp own_field("ValueProcess", "app_process_id"), do: dgettext("domain_map", "process")
   defp own_field("ValueProcess", "value_id"), do: dgettext("domain_map", "value that started it")
@@ -1571,6 +1572,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, when someone holding its role starts it by hand with a title and a text, when another process drawn in the group calls it, or on a signal one sends. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. What its texts and conditions say are expressions over the names it has, such as what set it going and what a decision ended with, checked when it is kept, so a drawing that names what is not there is refused. One kept before expressions is turned into them when its editor opens it, and an instance reads the language of the graph it started with. A drawing may also declare variables, each with the type of what it holds, a plain one or an <GroupEntity>entity</GroupEntity> of the group: a step sets one to what an expression gives, every instance keeps its own, and the drawing is kept with the entities as they were then, so an instance under way reads them the same after one changes. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "What a process takes is an entity"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <AppProcess>process</AppProcess> drawn in Potok that starts on a call, on a signal, by hand or on a value may take an <GroupEntity>entity</GroupEntity> of its group. A call then hands it that entity's attributes, each a value of its type and every required one a value, checked when the caller is saved and again when the call is made, against the entity as the called process was saved with it; a call that does not fit fails where it stands and starts nothing. A process started by hand asks for the attributes in a form, which is why it takes only an entity of plain attributes. A signal is waited for with an entity, and a process sends it only with the entity those who wait for it expect, where someone does: whoever waits says what it waits for. A drawing whose entity changed since it was saved, or whose calls and signals no longer fit those they talk to, runs on as it was saved, and its editors are told to look it over."
           )
       },
       %{

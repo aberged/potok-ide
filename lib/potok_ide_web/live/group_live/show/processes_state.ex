@@ -231,8 +231,24 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     with {id, ""} <- Integer.parse(to_string(id)),
          %{} = process <- DrawnProcesses.get(group, id),
          true <- process.active and DrawnProcesses.may_start?(process, access) do
-      form = to_form(%{"title" => "", "text" => ""}, as: :start)
-      {:noreply, assign(socket, :processes_start, %{process: process, form: form, error: nil})}
+      # A process that takes an entity asks for its attributes; another for
+      # a title and a text.
+      attributes = start_attributes(process)
+
+      fields =
+        case attributes do
+          nil -> %{"title" => "", "text" => ""}
+          attributes -> Map.new(attributes, &{&1["name"], ""})
+        end
+
+      start = %{
+        process: process,
+        form: to_form(fields, as: :start),
+        attributes: attributes,
+        error: nil
+      }
+
+      {:noreply, assign(socket, :processes_start, start)}
     else
       _other -> {:noreply, put_flash(socket, :error, gettext("You may not start this process."))}
     end
@@ -254,7 +270,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   def handle_event("processes_start_save", %{"start" => params}, socket) do
     %{group: group, current_profile: profile, processes_start: start} = socket.assigns
 
-    case start && DrawnProcesses.start(profile, group, start.process.id, params) do
+    # A time typed into the form is the starter's own.
+    zoned = Map.put(params, "time_zone", socket.assigns[:calendar_time_zone])
+
+    case start && DrawnProcesses.start(profile, group, start.process.id, zoned) do
       {:ok, _instance} ->
         {:noreply,
          socket
@@ -429,12 +448,29 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   defp entity_error(:not_found), do: gettext("That entity is not here.")
   defp entity_error(_reason), do: gettext("Only the app's editors define entities.")
 
+  # The attributes a Start form asks for, as the process was saved with
+  # them, or nil for one that takes a title and a text.
+  defp start_attributes(%{entry_entity_id: id, graph: %{"types" => types}}) when is_integer(id),
+    do: PotokIde.Processes.Types.attributes(types, id)
+
+  defp start_attributes(_process), do: nil
+
+  defp start_error({:invalid_field, name, reason}),
+    do: gettext("%{name}: %{problem}.", name: name, problem: field_problem(reason))
+
   defp start_error(:invalid_title), do: gettext("Give it a title of up to 120 characters.")
   defp start_error(:invalid_text), do: gettext("The text is at most 2000 characters.")
   defp start_error(:process_inactive), do: gettext("The process is off.")
   defp start_error(:not_permitted), do: gettext("You may not start this process.")
   defp start_error({:rate_limited, ms}), do: PotokIdeWeb.RateLimited.message(ms)
   defp start_error(_reason), do: gettext("That did not work.")
+
+  defp field_problem(:required), do: gettext("must be filled in")
+  defp field_problem(:not_a_number), do: gettext("takes a number")
+  defp field_problem(:not_a_date), do: gettext("takes a date")
+  defp field_problem(:not_a_datetime), do: gettext("takes a date and a time")
+  defp field_problem(:not_an_option), do: gettext("takes one of its choices")
+  defp field_problem(_reason), do: gettext("is not right")
 
   defp instance_call(socket, id, fun) do
     case Integer.parse(to_string(id)) do

@@ -462,14 +462,8 @@ defmodule PotokIde.Processes.Engine do
     with :ok <- if(process.active, do: :ok, else: {:error, :process_inactive}),
          :ok <- if(instance.depth < @max_depth, do: :ok, else: {:error, :too_deep}),
          {:ok, callee} <- callee(call["process"], process.group_id),
-         :ok <- room(callee) do
-      data = value_data(instance)
-
-      fields =
-        for name <- callee.trigger_config["fields"] || [], into: %{} do
-          {name, (call["fields"][name] || "") |> render(data) |> String.slice(0, @max_field)}
-        end
-
+         :ok <- room(callee),
+         {:ok, fields} <- handed(callee, call["fields"] || %{}, value_data(instance)) do
       child =
         start_drawn_on(callee,
           value_id: instance.value_id,
@@ -549,14 +543,10 @@ defmodule PotokIde.Processes.Engine do
   # A signal: the runs waiting for it in the group wake, and the processes
   # that start on it start.
   defp service("signal", task, step, group, instance, data) do
-    if step.process.active do
-      name = task["name"]
+    name = task["name"]
 
-      fields =
-        for %{"name" => field, "value" => value} <- task["fields"] || [], into: %{} do
-          {field, value |> render(data) |> String.slice(0, @max_field)}
-        end
-
+    with :ok <- if(step.process.active, do: :ok, else: {:error, :process_inactive}),
+         {:ok, fields} <- carried(task, instance.graph, data) do
       carried = Map.merge(fields, %{"from" => step.process.name, "signal" => name})
       woken = wake_receivers(group, instance, name, carried)
       started = start_on_signal(group, instance, name, carried)
@@ -567,8 +557,6 @@ defmodule PotokIde.Processes.Engine do
          Enum.each(woken, &tell(Repo.get(ValueProcess, &1)))
          Enum.each(started, &tell/1)
        end}
-    else
-      {:error, :process_inactive}
     end
   end
 
@@ -609,6 +597,79 @@ defmodule PotokIde.Processes.Engine do
       {:error, _reason} = error -> error
     end
   end
+
+  # What a signal carries: the attributes of the entity it names, each
+  # worked out and taken as its type, or texts where it names none.
+  defp carried(%{"entity" => id, "fields" => fields}, %{"types" => types}, data)
+       when is_integer(id) do
+    case Types.attributes(types, id) do
+      nil ->
+        {:error, :unknown_entity}
+
+      attributes ->
+        filled(attributes, id, types, Map.new(fields, &{&1["name"], &1["value"]}), data)
+    end
+  end
+
+  defp carried(task, _graph, data) do
+    {:ok,
+     for %{"name" => field, "value" => value} <- task["fields"] || [], into: %{} do
+       {field, value |> render(data) |> String.slice(0, @max_field)}
+     end}
+  end
+
+  # What a call hands the process it starts: the attributes of the entity
+  # that process takes, as it was saved, or texts for the fields of one
+  # that takes no entity.
+  defp handed(%AppProcess{entry_entity_id: id, graph: %{"types" => types}}, given, data)
+       when is_integer(id) do
+    case Types.attributes(types, id) do
+      nil -> {:error, :call_unknown}
+      attributes -> filled(attributes, id, types, given, data)
+    end
+  end
+
+  defp handed(%AppProcess{} = callee, given, data) do
+    {:ok,
+     for name <- callee.trigger_config["fields"] || [], into: %{} do
+       {name, (given[name] || "") |> render(data) |> String.slice(0, @max_field)}
+     end}
+  end
+
+  # An entity filled in from what is written for each attribute, kept as
+  # plain JSON: nothing for an attribute left blank, and an error when a
+  # required one is, or when a value is not of its type.
+  defp filled(attributes, id, types, given, data) do
+    worked =
+      Enum.reduce_while(attributes, {:ok, %{}}, fn %{"name" => name} = attribute, {:ok, held} ->
+        case given |> Map.get(name, "") |> to_string() |> String.trim() do
+          "" ->
+            {:cont, {:ok, held}}
+
+          written ->
+            case attribute_value(written, Types.of(attribute), data) do
+              {:ok, value} -> {:cont, {:ok, Map.put(held, name, value)}}
+              {:error, reason} -> {:halt, {:error, reason}}
+            end
+        end
+      end)
+
+    with {:ok, held} <- worked,
+         {:ok, value} <- Types.cast(held, {:entity, id}, types, required: true, zone: zone(data)) do
+      {:ok, Types.dump(value)}
+    else
+      {:error, reason} -> {:error, expression_error(reason)}
+    end
+  end
+
+  # A run in the first language hands over texts, which the type then reads.
+  defp attribute_value(written, type, {:names, data, opts}),
+    do: worked_out(written, type, data, opts)
+
+  defp attribute_value(written, _type, {:fields, data}), do: {:ok, Legacy.render(written, data)}
+
+  defp zone({:names, _data, opts}), do: opts.zone
+  defp zone(_fields), do: "Etc/UTC"
 
   # The runs of the group's drawn processes that wait for the signal now:
   # those that wait for it on the same subject only when the sender has one.

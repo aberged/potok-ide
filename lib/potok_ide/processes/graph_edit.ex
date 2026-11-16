@@ -74,9 +74,9 @@ defmodule PotokIde.Processes.GraphEdit do
   outcomes, a condition by one condition and by default, all to that same
   place. `defaults` holds the step's first texts and role, and the process
   a call starts with the fields it takes, the group's field a step sets,
-  what a new condition asks, and the variable a step sets: `%{text, name,
-  role, outcomes, condition, process, call_fields, group_field, signal,
-  variable}`.
+  what a new condition asks, the variable a step sets, and the entity its
+  signal is waited for with: `%{text, name, role, outcomes, condition,
+  process, call_fields, group_field, signal, signal_entity, variable}`.
   """
   def insert(graph, key, kind, defaults) when kind in @kinds do
     case flow(graph, key) do
@@ -151,17 +151,25 @@ defmodule PotokIde.Processes.GraphEdit do
       "value" => ""
     }
 
-  defp step("signal", id, d),
-    do: %{
-      "id" => id,
-      "type" => "serviceTask",
-      "action" => "signal",
-      "name" => d[:signal],
-      "fields" => []
-    }
+  defp step("signal", id, d) do
+    with_entity(
+      %{
+        "id" => id,
+        "type" => "serviceTask",
+        "action" => "signal",
+        "name" => d[:signal],
+        "fields" => []
+      },
+      d[:signal_entity]
+    )
+  end
 
-  defp step("receive", id, d),
-    do: %{"id" => id, "type" => "receiveTask", "signal" => d[:signal], "same_subject" => false}
+  defp step("receive", id, d) do
+    with_entity(
+      %{"id" => id, "type" => "receiveTask", "signal" => d[:signal], "same_subject" => false},
+      d[:signal_entity]
+    )
+  end
 
   defp step("call", id, d),
     do: %{
@@ -171,6 +179,10 @@ defmodule PotokIde.Processes.GraphEdit do
       "wait" => true,
       "fields" => d[:call_fields] || %{}
     }
+
+  # The entity a signal is sent or waited for with, where it has one.
+  defp with_entity(step, nil), do: step
+  defp with_entity(step, entity), do: Map.put(step, "entity", entity)
 
   defp add_exits(graph, %{"type" => "userTask", "id" => id, "outcomes" => outcomes}, to, _d) do
     Enum.reduce(outcomes, graph, &add_flow(&2, %{"from" => id, "to" => to, "outcome" => &1}))
@@ -478,7 +490,8 @@ defmodule PotokIde.Processes.GraphEdit do
   @doc """
   Changes what an editor may change on a step: its `label`, and per type its
   texts, target, sub-group name and admins, role, duration, or the process
-  a call starts, whether it waits and the fields it hands over. A blank
+  a call starts, whether it waits and the fields it hands over, or the
+  entity a signal is sent or waited for with (none with `nil`). A blank
   label is none, and a call that no longer waits has no deadline.
   """
   def update_node(graph, id, attrs) do
@@ -492,6 +505,8 @@ defmodule PotokIde.Processes.GraphEdit do
           |> Map.take(editable_keys(node))
           |> Enum.reduce(node, fn
             {"label", label}, node -> put_label(node, label)
+            # A signal with no entity names none.
+            {"entity", nil}, node -> Map.delete(node, "entity")
             {key, value}, node -> Map.put(node, key, value)
           end)
 
@@ -521,9 +536,9 @@ defmodule PotokIde.Processes.GraphEdit do
     do: ~w(label target op value)
 
   defp editable_keys(%{"type" => "serviceTask", "action" => "signal"}),
-    do: ~w(label name fields)
+    do: ~w(label name fields entity)
 
-  defp editable_keys(%{"type" => "receiveTask"}), do: ~w(label signal same_subject)
+  defp editable_keys(%{"type" => "receiveTask"}), do: ~w(label signal same_subject entity)
 
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)

@@ -42,6 +42,9 @@ defmodule PotokIde.Social.AppProcess do
     field :trigger_config, :map, default: %{}
     # The next start of a scheduled process, nil for every other trigger.
     field :next_run_at, :utc_datetime
+    # The entity a drawn process takes when it starts, where its trigger lets
+    # it take one (`Processes.Triggers.typed?/1`); nil for one that takes none.
+    belongs_to :entry_entity, PotokIde.Processes.GroupEntity
 
     timestamps(type: :utc_datetime)
   end

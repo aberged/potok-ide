@@ -806,6 +806,320 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     end
   end
 
+  describe "what a process takes" do
+    alias PotokIde.Processes.GroupEntities
+    alias PotokIde.Social.Access
+
+    defp entity!(ctx, name, attributes) do
+      {:ok, entity} =
+        GroupEntities.create(ctx.group, Access.for_profile(ctx.owner, ctx.group), %{
+          "name" => name,
+          "attributes" => attributes
+        })
+
+      entity
+    end
+
+    defp kvar!(ctx) do
+      entity!(ctx, "Kvar", [
+        %{"name" => "naslov", "type" => "text", "required" => true},
+        %{"name" => "sprat", "type" => "number"}
+      ])
+    end
+
+    defp trigger(lv, name),
+      do: lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => name}}) |> render_change()
+
+    defp start_form(lv, params),
+      do: lv |> form("#process-trigger-form", %{"trigger" => params}) |> render_change()
+
+    test "a process that takes calls takes an entity instead of plain fields", ctx do
+      kvar = kvar!(ctx)
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "process")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      assert has_element?(lv, "#process-trigger-fields")
+      assert has_element?(lv, "#process-trigger-entity option", "Kvar")
+
+      start_form(lv, %{"entity" => "#{kvar.id}"})
+      refute has_element?(lv, "#process-trigger-fields")
+
+      # What it takes is what its start holds, each attribute of its type.
+      render_hook(canvas(lv), "process_editor_select", %{})
+      assert has_element?(lv, "#process-data-entry", "start.naslov")
+      assert has_element?(lv, "#process-data-entry li", "start.sprat")
+      assert has_element?(lv, "#process-data-entry", "number")
+      assert has_element?(lv, "#process-data-entry", "start.from")
+
+      insert(lv, "f1", "message")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{start.sprat + 1}}"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{start.naslov + 1}}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{start.naslov}}"}})
+      |> render_change()
+
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{entry_entity_id: id, trigger_config: %{"fields" => []}}] =
+               drawn(ctx.group)
+
+      assert id == kvar.id
+    end
+
+    test "a drawing whose entity changed opens ready to be saved again", ctx do
+      kvar = kvar!(ctx)
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "process")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      start_form(lv, %{"entity" => "#{kvar.id}"})
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{id: id}] = drawn(ctx.group)
+
+      # Saved a moment ago, it is in step: nothing to save.
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=#{id}")
+
+      refute has_element?(lv, "#process-editor-stale")
+      assert has_element?(lv, "#process-editor-save[disabled]")
+
+      {:ok, _entity} =
+        GroupEntities.update(ctx.group, Access.for_profile(ctx.owner, ctx.group), kvar, %{
+          "attributes" => [
+            %{"name" => "naslov", "type" => "text", "required" => true},
+            %{"name" => "sprat", "type" => "number"},
+            %{"name" => "hitno", "type" => "boolean"}
+          ]
+        })
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=#{id}")
+
+      assert has_element?(lv, "#process-editor-stale")
+      refute has_element?(lv, "#process-editor-save[disabled]")
+
+      lv |> element("#process-editor-save") |> render_click()
+      refute has_element?(lv, "#process-editor-stale")
+      assert has_element?(lv, "#process-editor-save[disabled]")
+
+      assert [%AppProcess{graph: %{"types" => types}} = row] = drawn(ctx.group)
+      assert length(types["#{kvar.id}"]["attributes"]) == 3
+      refute DrawnProcesses.stale?(row, ctx.group)
+    end
+
+    test "the fields a process takes become an entity of the group", ctx do
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "process")
+      lv |> form("#process-editor-meta", %{"meta" => %{"name" => "Majstor"}}) |> render_change()
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      refute has_element?(lv, "#process-trigger-entity-from-fields")
+
+      start_form(lv, %{"fields" => "kvar, sprat"})
+      lv |> element("#process-trigger-entity-from-fields") |> render_click()
+
+      assert [
+               %{name: "Majstor", attributes: [%{name: "kvar", type: "text"}, %{name: "sprat"}]} =
+                 entity
+             ] =
+               GroupEntities.list(ctx.group)
+
+      refute has_element?(lv, "#process-trigger-fields")
+      assert has_element?(lv, "#process-trigger-entity option[selected]", "Majstor")
+
+      lv |> element("#process-editor-save") |> render_click()
+      assert [%AppProcess{entry_entity_id: id}] = drawn(ctx.group)
+      assert id == entity.id
+    end
+
+    test "a form fills in plain attributes only", ctx do
+      stan = entity!(ctx, "Stan", [%{"name" => "broj", "type" => "number"}])
+      entity!(ctx, "Zgrada", [%{"name" => "stan", "type" => "entity", "entity_id" => stan.id}])
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "manual")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      assert has_element?(lv, "#process-trigger-entity option", "Stan")
+      refute has_element?(lv, "#process-trigger-entity option", "Zgrada")
+
+      # A trigger that hands over texts takes no entity.
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "message")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      refute has_element?(lv, "#process-trigger-entity")
+    end
+
+    test "a call hands over the attributes of the entity, each as its type", ctx do
+      kvar = kvar!(ctx)
+
+      {:ok, callee} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "process",
+          "name" => "Majstor",
+          "graph" => PotokIde.Processes.GraphEdit.new(),
+          "entry_entity_id" => kvar.id
+        })
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "manual")
+      insert(lv, "f1", "call")
+
+      assert has_element?(lv, "#process-call-fields", "naslov · text *")
+      assert has_element?(lv, "#process-call-fields", "sprat · number")
+      assert has_element?(lv, "#process-editor-error", "must be filled in is left empty")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{
+          "process" => "#{callee.id}",
+          "fields" => %{"naslov" => "Kvar:", "sprat" => "start.title"}
+        }
+      })
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      # A name goes into a text in braces, and into an expression as it is.
+      lv |> element("[id^='process-field-fields.naslov-']", "start.title") |> render_click()
+      assert has_element?(lv, "#process-call-field-naslov[value='Kvar: {{start.title}}']")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"fields" => %{"naslov" => "Kvar: {{start.title}}", "sprat" => ""}}
+      })
+      |> render_change()
+
+      lv |> element("[id^='process-field-fields.sprat-']", "start.title") |> render_click()
+      assert has_element?(lv, "#process-call-field-sprat[value='start.title']")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{
+          "fields" => %{"naslov" => "Kvar: {{start.title}}", "sprat" => "length(start.title)"}
+        }
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [_callee, %AppProcess{graph: graph}] = Enum.sort_by(drawn(ctx.group), & &1.id)
+
+      assert %{
+               "fields" => %{
+                 "naslov" => "Kvar: {{start.title}}",
+                 "sprat" => "length(start.title)"
+               }
+             } =
+               PotokIde.Processes.Graph.node(graph, "call_1")
+    end
+
+    test "a signal is sent and waited for with an entity", ctx do
+      uplata =
+        entity!(ctx, "Uplata", [%{"name" => "iznos", "type" => "number", "required" => true}])
+
+      # Someone waits for it with the entity.
+      {:ok, _waits} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "signal",
+          "trigger_config" => %{"name" => "uplata"},
+          "name" => "Knjizenje",
+          "graph" => PotokIde.Processes.GraphEdit.new(),
+          "entry_entity_id" => uplata.id
+        })
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "manual")
+      insert(lv, "f1", "signal")
+
+      # Naming the signal brings the entity those who wait for it expect.
+      lv
+      |> form("#process-element-form", %{"element" => %{"name" => "uplata"}})
+      |> render_change()
+
+      assert has_element?(
+               lv,
+               "#process-element-form select[name='element[entity]'] option[selected]",
+               "Uplata"
+             )
+
+      assert has_element?(lv, "#process-signal-field-0", "iznos · number *")
+      refute has_element?(lv, "#process-add-signal-field")
+      assert has_element?(lv, "#process-editor-error", "must be filled in is left empty")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{
+          "signal_fields" => %{"0" => %{"name" => "iznos", "value" => "length(start.title)"}}
+        }
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      # With another entity, or none, nobody would hear it as they expect.
+      lv |> form("#process-element-form", %{"element" => %{"entity" => ""}}) |> render_change()
+      assert has_element?(lv, "#process-editor-error", "expect it with another entity")
+      assert has_element?(lv, "#process-add-signal-field")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"entity" => "#{uplata.id}"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      # A wait brings the attributes of the entity it names.
+      insert(lv, "f1", "receive")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"signal" => "uplata"}})
+      |> render_change()
+
+      assert has_element?(
+               lv,
+               "#process-element-form select[name='element[entity]'] option[selected]",
+               "Uplata"
+             )
+
+      render_hook(canvas(lv), "process_editor_select", %{})
+      assert has_element?(lv, "#process-data-results", "receive_1.iznos")
+
+      lv |> element("#process-editor-save") |> render_click()
+      [saved] = Enum.filter(drawn(ctx.group), &(&1.trigger == "manual"))
+
+      assert %{"entity" => id, "fields" => [%{"name" => "iznos"}]} =
+               PotokIde.Processes.Graph.node(saved.graph, "signal_1")
+
+      assert id == uplata.id
+      assert %{"entity" => ^id} = PotokIde.Processes.Graph.node(saved.graph, "receive_1")
+    end
+  end
+
   test "members look at a drawing that is on, and change nothing", ctx do
     {:ok, row} =
       DrawnProcesses.create(ctx.owner, ctx.group, %{

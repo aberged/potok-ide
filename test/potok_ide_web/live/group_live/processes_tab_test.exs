@@ -405,6 +405,101 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     end
   end
 
+  describe "a process that takes an entity" do
+    alias PotokIde.Processes.{GraphEdit, GroupEntities}
+    alias PotokIde.Social.Access
+
+    setup ctx do
+      {:ok, kvar} =
+        GroupEntities.create(ctx.group, Access.for_profile(ctx.owner, ctx.group), %{
+          "name" => "Kvar",
+          "attributes" => [
+            %{"name" => "naslov", "type" => "text", "required" => true},
+            %{"name" => "sprat", "type" => "number"},
+            %{"name" => "hitno", "type" => "boolean"},
+            %{"name" => "dan", "type" => "date"},
+            %{"name" => "vrsta", "type" => "choice", "options" => "voda, struja"}
+          ]
+        })
+
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "trigger_config" => %{"roles" => ["everyone"]},
+          "name" => "Prijava kvara",
+          "graph" => GraphEdit.new(),
+          "entry_entity_id" => kvar.id
+        })
+
+      {:ok, row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+      %{kvar: kvar, row: row}
+    end
+
+    test "is started with a form that asks for its attributes", ctx do
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+      assert has_element?(lv, "#process-row-#{ctx.row.id}", "takes Kvar")
+
+      lv |> element("#process-row-#{ctx.row.id}-start") |> render_click()
+      refute has_element?(lv, "#process-start-form input[name='start[title]']")
+      assert has_element?(lv, "#process-start-form input[name='start[naslov]'][required]")
+      assert has_element?(lv, "#process-start-form input[name='start[sprat]']")
+      assert has_element?(lv, "#process-start-form input[type='checkbox'][name='start[hitno]']")
+      assert has_element?(lv, "#process-start-form input[type='date'][name='start[dan]']")
+      assert has_element?(lv, "#process-start-form select[name='start[vrsta]'] option", "struja")
+
+      lv
+      |> form("#process-start-form", %{"start" => %{"naslov" => "Lift", "sprat" => "treći"}})
+      |> render_submit()
+
+      assert has_element?(lv, "#process-start-error", "sprat: takes a number.")
+
+      lv
+      |> form("#process-start-form", %{
+        "start" => %{
+          "naslov" => "Lift",
+          "sprat" => "3",
+          "hitno" => "true",
+          "dan" => "2026-11-16",
+          "vrsta" => "voda"
+        }
+      })
+      |> render_submit()
+
+      refute has_element?(lv, "#process-start-form")
+
+      assert [%{data: data}] = Repo.all(ValueProcess)
+
+      assert data == %{
+               "naslov" => "Lift",
+               "sprat" => "3",
+               "hitno" => true,
+               "dan" => "2026-11-16",
+               "vrsta" => "voda",
+               "author" => ctx.member.username
+             }
+    end
+
+    test "tells its editors when what it was saved with has changed", ctx do
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(lv, "#process-row-#{ctx.row.id}-stale")
+
+      {:ok, _changed} =
+        GroupEntities.update(ctx.group, Access.for_profile(ctx.owner, ctx.group), ctx.kvar, %{
+          "attributes" => [%{"name" => "naslov", "type" => "text"}]
+        })
+
+      assert has_element?(lv, "#process-row-#{ctx.row.id}-stale")
+
+      # It still asks for what it was saved with.
+      lv |> element("#process-row-#{ctx.row.id}-start") |> render_click()
+      assert has_element?(lv, "#process-start-form input[name='start[sprat]']")
+
+      # A member is told nothing: it is the editors' to look over.
+      {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+      refute has_element?(member_lv, "#process-row-#{ctx.row.id}-stale")
+    end
+  end
+
   test "a drawing that is off shows to the app's editors only", ctx do
     row = draw!(ctx, false)
 

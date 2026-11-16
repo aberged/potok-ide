@@ -64,6 +64,10 @@ defmodule PotokIde.Processes.Graph do
   - `serviceTask` with the `action` `assign` sets its `target`, a variable
     or an attribute of one (`prijava.sprat`), to its `value`: a text for a
     text, an expression for anything else.
+  - A `receiveTask` and a `serviceTask` `signal` may name the `entity` the
+    signal carries, by its id: the wait then brings its attributes, and the
+    signal's `fields` are its attributes, each a text for a text and an
+    expression for anything else.
   - `zone` is the time zone it reads days and hours in, and `entry` and
     `types` are what `PotokIde.Processes.Check` wrote into it.
 
@@ -562,8 +566,12 @@ defmodule PotokIde.Processes.Graph do
 
   defp typed("serviceTask", %{"action" => "signal"} = node, path, base, true) do
     with {:ok, name} <- signal(node["name"], path <> ".name"),
-         {:ok, fields} <- signal_fields(Map.get(node, "fields", []), path <> ".fields") do
-      {:ok, Map.merge(base, %{"action" => "signal", "name" => name, "fields" => fields})}
+         {:ok, fields} <- signal_fields(Map.get(node, "fields", []), path <> ".fields"),
+         {:ok, entity} <- entity(node["entity"], path <> ".entity") do
+      {:ok,
+       base
+       |> Map.merge(%{"action" => "signal", "name" => name, "fields" => fields})
+       |> put_some("entity", entity)}
     end
   end
 
@@ -572,11 +580,13 @@ defmodule PotokIde.Processes.Graph do
 
     with {:ok, signal} <- signal(node["signal"], path <> ".signal"),
          true <- is_boolean(same_subject) || {:error, {path <> ".same_subject", :invalid}},
-         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline") do
+         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline"),
+         {:ok, entity} <- entity(node["entity"], path <> ".entity") do
       {:ok,
        base
        |> Map.merge(%{"signal" => signal, "same_subject" => same_subject})
-       |> put_some("deadline", deadline)}
+       |> put_some("deadline", deadline)
+       |> put_some("entity", entity)}
     end
   end
 
@@ -646,6 +656,11 @@ defmodule PotokIde.Processes.Graph do
          })}
     end
   end
+
+  # The entity a signal carries, by its id; none where it names none.
+  defp entity(nil, _path), do: {:ok, nil}
+  defp entity(id, _path) when is_integer(id) and id > 0, do: {:ok, id}
+  defp entity(_id, path), do: {:error, {path, :invalid}}
 
   defp signal(name, path) do
     case signal_name(name) do

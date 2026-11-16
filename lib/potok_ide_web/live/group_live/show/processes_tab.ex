@@ -41,7 +41,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :editor, :map, default: nil, doc: "the drawing open over the tab (`ProcessEditorState`)"
   attr :editor_form, :any, default: nil
   attr :editor_meta, :any, default: nil
-  attr :start, :map, default: nil, doc: "`%{process, form, error}` while someone starts a process"
+
+  attr :start, :map,
+    default: nil,
+    doc: "`%{process, form, attributes, error}` while someone starts a process"
 
   def panel(assigns) do
     assigns = assign(assigns, :manage?, ValueRules.manage?(assigns.access))
@@ -421,6 +424,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             gettext("Its owner no longer edits the app. Whoever saves its rules next takes it over.")
         )}
       </p>
+      <p
+        :if={@entry.warning && @entry.warning["stale"]}
+        id={"process-row-#{@entry.id}-stale"}
+      >
+        <.icon name="hero-arrow-path" class="mr-1 size-3.5 align-[-2px]" />
+        {gettext(
+          "What it was saved with has changed: an entity, a process it calls or a signal. It runs on as it was saved. Open it, look it over and save it."
+        )}
+      </p>
       <p :if={@entry.shared?} id={"process-row-#{@entry.id}-shared"}>
         <.icon name="hero-square-2-stack" class="mr-1 size-3.5 align-[-2px]" />
         {gettext("Another process runs on the same collection too.")}
@@ -508,12 +520,22 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             ProcessEditorState.role_labels(access)
           )
 
-    Enum.join([start, owner], " · ")
+    # The entity it takes when it starts, where it takes one.
+    takes =
+      case process.entry_entity do
+        %{name: name} -> gettext("takes %{entity}", entity: name)
+        _none -> nil
+      end
+
+    [start, takes, owner] |> Enum.reject(&is_nil/1) |> Enum.join(" · ")
   end
 
-  attr :start, :map, default: nil, doc: "`%{process, form, error}` while someone starts a process"
+  attr :start, :map,
+    default: nil,
+    doc: "`%{process, form, attributes, error}` while someone starts a process"
 
-  # Starting a process by hand: a title and a text its steps can put in.
+  # Starting a process by hand: a title and a text its steps can put in, or
+  # the attributes of the entity it takes, each asked for as its type.
   defp start_dialog(assigns) do
     ~H"""
     <dialog
@@ -568,20 +590,28 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
             >
               {@start.error}
             </p>
-            <.input
-              field={@start.form[:title]}
-              type="text"
-              label={gettext("Title")}
-              maxlength="120"
-              required
-            />
-            <.input
-              field={@start.form[:text]}
-              type="textarea"
-              rows="4"
-              maxlength="2000"
-              label={gettext("Text")}
-            />
+            <%= if @start.attributes do %>
+              <.start_field
+                :for={attribute <- @start.attributes}
+                attribute={attribute}
+                field={@start.form[attribute["name"]]}
+              />
+            <% else %>
+              <.input
+                field={@start.form[:title]}
+                type="text"
+                label={gettext("Title")}
+                maxlength="120"
+                required
+              />
+              <.input
+                field={@start.form[:text]}
+                type="textarea"
+                rows="4"
+                maxlength="2000"
+                label={gettext("Text")}
+              />
+            <% end %>
             <div class="flex justify-end gap-2 pt-1">
               <.button type="button" phx-click="processes_start_close" variant="ghost" size="sm">
                 {gettext("Cancel")}
@@ -612,6 +642,61 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         },
       }
     </script>
+    """
+  end
+
+  attr :attribute, :map, required: true, doc: "an attribute of the entity the process takes"
+  attr :field, :any, required: true
+
+  # One attribute in the Start form, asked for as its type.
+  defp start_field(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :label,
+        assigns.attribute["name"] <> if(assigns.attribute["required"] == true, do: " *", else: "")
+      )
+
+    ~H"""
+    <%= case @attribute["type"] do %>
+      <% "boolean" -> %>
+        <.input field={@field} type="checkbox" label={@label} />
+      <% "date" -> %>
+        <.input field={@field} type="date" label={@label} required={@attribute["required"] == true} />
+      <% "datetime" -> %>
+        <.input
+          field={@field}
+          type="datetime-local"
+          label={@label}
+          required={@attribute["required"] == true}
+        />
+      <% "choice" -> %>
+        <.input
+          field={@field}
+          type="select"
+          label={@label}
+          prompt={gettext("Pick one")}
+          options={@attribute["options"] || []}
+          required={@attribute["required"] == true}
+        />
+      <% "number" -> %>
+        <.input
+          field={@field}
+          type="text"
+          label={@label}
+          placeholder="0"
+          maxlength="40"
+          required={@attribute["required"] == true}
+        />
+      <% _text -> %>
+        <.input
+          field={@field}
+          type="text"
+          label={@label}
+          maxlength="1000"
+          required={@attribute["required"] == true}
+        />
+    <% end %>
     """
   end
 

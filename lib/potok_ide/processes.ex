@@ -321,16 +321,20 @@ defmodule PotokIde.Processes do
     }
   end
 
-  defp subject(%ValueProcess{} = instance, _process, _group, _profile, _access, _rules) do
+  defp subject(%ValueProcess{data: data} = instance, _process, _group, _profile, _access, _rules) do
+    # A run started by hand with a title, or on a schedule with its date;
+    # one whose process takes an entity shows what was filled in.
+    titled? = is_map_key(data, "title") or is_map_key(data, "date")
+
     %{
       kind: :data,
       reads?: true,
       sent_at: instance.inserted_at,
-      author_name: instance.data["author"],
-      title: instance.data["title"] || instance.data["date"],
-      text: instance.data["text"],
+      author_name: data["author"],
+      title: data["title"] || data["date"],
+      text: data["text"],
       link: nil,
-      data: []
+      data: if(titled?, do: [], else: data_rows(Map.delete(data, "author")))
     }
   end
 

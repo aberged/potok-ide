@@ -9,7 +9,8 @@ defmodule PotokIde.Processes.Scope do
   - the id of a decision is what it ended with (`odluka.outcome`, `.by`,
     `.comment`), of a call that waits how the called process ended
     (`poziv.outcome`), and of a wait for a signal what the signal carried
-    (`prijem.from`, and its fields);
+    (`prijem.from`, and its fields, or the attributes of the entity the
+    wait names);
   - `group` holds the fields of the group (`group.kvarova`);
   - each variable of the graph is its own name (`ukupno`, `prijava.sprat`).
 
@@ -30,12 +31,13 @@ defmodule PotokIde.Processes.Scope do
   @doc "The types of the names of a graph, by name."
   def names(%{"nodes" => nodes} = graph) do
     entry = Types.of(graph["entry"] || %{})
+    entities = graph["types"] || %{}
 
     variables =
       for variable <- graph["variables"] || [], do: {variable["name"], Types.of(variable)}
 
     nodes
-    |> Enum.flat_map(&result(&1, entry))
+    |> Enum.flat_map(&result(&1, entry, entities))
     |> Kernel.++(variables)
     |> Map.new()
     |> Map.put("group", {:record, %{}, true})
@@ -53,21 +55,33 @@ defmodule PotokIde.Processes.Scope do
     }
   end
 
-  defp result(%{"type" => "startEvent", "id" => id}, entry), do: [{id, entry}]
+  defp result(%{"type" => "startEvent", "id" => id}, entry, _entities), do: [{id, entry}]
 
-  defp result(%{"type" => "userTask", "id" => id}, _entry),
+  defp result(%{"type" => "userTask", "id" => id}, _entry, _entities),
     do: [{id, {:record, %{"outcome" => :text, "comment" => :text, "by" => :text}, false}}]
 
-  defp result(%{"type" => "callActivity", "wait" => false}, _entry), do: []
+  defp result(%{"type" => "callActivity", "wait" => false}, _entry, _entities), do: []
 
   # A call brings back how it ended, and may bring more.
-  defp result(%{"type" => "callActivity", "id" => id}, _entry),
+  defp result(%{"type" => "callActivity", "id" => id}, _entry, _entities),
     do: [{id, {:record, %{"outcome" => :text}, true}}]
 
-  defp result(%{"type" => "receiveTask", "id" => id}, _entry),
-    do: [{id, {:record, %{"from" => :text, "signal" => :text}, true}}]
+  # A wait brings what the signal carried: the attributes of the entity it
+  # names, or whatever came where it names none.
+  defp result(%{"type" => "receiveTask", "id" => id} = wait, _entry, entities) do
+    always = %{"from" => :text, "signal" => :text}
 
-  defp result(_step, _entry), do: []
+    case wait["entity"] && Types.attributes(entities, wait["entity"]) do
+      attributes when is_list(attributes) ->
+        fields = Map.new(attributes, &{&1["name"], Types.of(&1)})
+        [{id, {:record, Map.merge(fields, always), false}}]
+
+      _no_entity ->
+        [{id, {:record, always, true}}]
+    end
+  end
+
+  defp result(_step, _entry, _entities), do: []
 
   @doc """
   The values of a run, as it keeps them by name, as a step works on them:

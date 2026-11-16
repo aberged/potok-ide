@@ -21,6 +21,13 @@ defmodule PotokIde.Social.DrawnProcesses do
     says (`Processes.Check`): its expressions name what the process has. One
     in the first language is kept as it comes, as the runs that started with
     it are.
+  - A process that starts on a value, by hand, on a call or on a signal may
+    take an entity of the group (`entry_entity_id`): a caller then hands it
+    that entity's attributes, each of its type, as the process was saved
+    with them, and a Start button asks for them in a form.
+  - A drawing whose entities changed since it was saved, or whose calls and
+    signals no longer fit those they talk to, is stale (`stale?/2`): it runs
+    on as it was saved, and its editors are told to look it over.
   - A new drawing is off. Switching it on brings its profile into the app's
     group; switching it off cancels its instances that run or wait and takes
     the profile out, as removing an app's rule does (`AppProcesses.stop/2`).
@@ -29,7 +36,7 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   import Ecto.Query, warn: false
 
-  alias PotokIde.Processes.{Check, Engine, Graph, GroupEntities, Scheduler, Triggers}
+  alias PotokIde.Processes.{Check, Engine, Graph, GroupEntities, Scheduler, Triggers, Types}
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -165,7 +172,8 @@ defmodule PotokIde.Social.DrawnProcesses do
     with {:ok, name} <- name(attrs["name"]),
          {:ok, graph} <- graph(attrs["graph"]),
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
-         {:ok, graph} <- checked(graph, trigger, config, group),
+         {:ok, entity} <- entry_entity(group, trigger, attrs["entry_entity_id"]),
+         {:ok, graph} <- checked(graph, trigger, config, group, entity, nil),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
@@ -192,7 +200,8 @@ defmodule PotokIde.Social.DrawnProcesses do
           graph: graph,
           layout: layout,
           trigger: trigger,
-          trigger_config: config
+          trigger_config: config,
+          entry_entity_id: entity
         }
         |> Repo.insert!()
       end)
@@ -219,17 +228,97 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
-  # What a graph of today says, checked against what its trigger hands a
-  # run and the entities of its group, which are written into it (`Check`);
-  # one in the first language says nothing to check.
-  defp checked(graph, trigger, config, group) do
-    entities = if graph["v"] == 2, do: GroupEntities.definitions(group), else: %{}
+  # The entity a process takes when it starts, of the group's own, where its
+  # trigger lets it take one.
+  defp entry_entity(_group, _trigger, none) when none in [nil, ""], do: {:ok, nil}
 
-    case Check.run(graph, %{entry: Triggers.entry(trigger, config), entities: entities}) do
+  defp entry_entity(%Group{} = group, trigger, id) do
+    id = if is_binary(id), do: parse_id(id), else: id
+
+    cond do
+      not Triggers.typed?(trigger) ->
+        {:error, {:invalid_trigger, "entity", :invalid}}
+
+      is_nil(GroupEntities.get(group, id)) ->
+        {:error, {:invalid_trigger, "entity", :unknown_entity}}
+
+      true ->
+        {:ok, id}
+    end
+  end
+
+  defp parse_id(text) do
+    case Integer.parse(text) do
+      {id, ""} -> id
+      _other -> nil
+    end
+  end
+
+  # What a graph of today says, checked against what its trigger hands a
+  # run, the entities of its group, the processes it calls and those that
+  # wait for its signals, which is written into it (`Check`); one in the
+  # first language says nothing to check. `except` is the process itself,
+  # which is not among those its own signals are checked against.
+  defp checked(%{"v" => 2} = graph, trigger, config, group, entity, except) do
+    env = %{
+      trigger: trigger,
+      config: config,
+      entry_entity: entity,
+      entities: GroupEntities.definitions(group),
+      callable: contracts(graph, group),
+      signals: signal_entities(group, except)
+    }
+
+    case Check.run(graph, env) do
       {:ok, graph} -> {:ok, graph}
+      {:error, {"entry", reason}} -> {:error, {:invalid_trigger, "entity", reason}}
       {:error, {path, reason}} -> {:error, {:invalid_graph, path, reason}}
     end
   end
+
+  defp checked(graph, _trigger, _config, _group, _entity, _except), do: {:ok, graph}
+
+  # What each process the graph calls takes, as that process was saved.
+  defp contracts(graph, %Group{id: group_id}) do
+    case graph |> Graph.process_refs() |> Enum.map(&elem(&1, 1)) |> Enum.uniq() do
+      [] ->
+        %{}
+
+      ids ->
+        from(p in AppProcess,
+          where: p.group_id == ^group_id and p.drawn and p.trigger == "process" and p.id in ^ids
+        )
+        |> Repo.all()
+        |> Map.new(&{&1.id, contract(&1)})
+    end
+  end
+
+  @doc """
+  What a process that others call takes, as it was saved: the `attributes`
+  of its entity with the entities those name (`types`), none for one that
+  takes plain fields; and `fields`, the names of either.
+  """
+  def contract(%AppProcess{entry_entity_id: id, graph: %{"types" => types}})
+      when is_integer(id) do
+    attributes = Types.attributes(types, id) || []
+    %{attributes: attributes, types: types, fields: Enum.map(attributes, & &1["name"])}
+  end
+
+  def contract(%AppProcess{trigger_config: config}),
+    do: %{attributes: [], types: %{}, fields: config["fields"] || []}
+
+  @doc """
+  Whether a drawing no longer fits what it was saved with: an entity it
+  names changed or went, a process it calls takes something else now, or
+  those who wait for a signal it sends expect another entity. It runs on
+  as it was saved; saving it again checks it against things as they are.
+  """
+  def stale?(%AppProcess{drawn: true, graph: %{"v" => 2} = graph} = row, %Group{} = group) do
+    checked(graph, row.trigger, row.trigger_config, group, row.entry_entity_id, row.id) !=
+      {:ok, graph}
+  end
+
+  def stale?(_row, _group), do: false
 
   @doc """
   Changes the `name`, `graph`, `layout` and the trigger's settings
@@ -256,8 +345,19 @@ defmodule PotokIde.Social.DrawnProcesses do
 
         known_trigger_roles!(row.trigger, config, access)
 
+        # The entity it takes stays unless the editor names another, or none.
+        entity =
+          if Map.has_key?(attrs, "entry_entity_id") do
+            case entry_entity(group, row.trigger, attrs["entry_entity_id"]) do
+              {:ok, entity} -> entity
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          else
+            row.entry_entity_id
+          end
+
         graph =
-          case checked(graph, row.trigger, config, group) do
+          case checked(graph, row.trigger, config, group, entity, row.id) do
             {:ok, graph} -> graph
             {:error, reason} -> Repo.rollback(reason)
           end
@@ -268,6 +368,7 @@ defmodule PotokIde.Social.DrawnProcesses do
           graph: graph,
           layout: layout,
           trigger_config: config,
+          entry_entity_id: entity,
           next_run_at: next_run(%{row | trigger_config: config}),
           owner_profile_id: owner(row, editor, group)
         )
@@ -320,16 +421,18 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   @doc """
   Starts a run of a process that starts by hand, for someone holding one of
-  its roles (the app's editors always may), with a `title` and a `text` its
-  texts read. At most #{elem(PotokIde.RateLimit.limit(:process_manual_start), 0)} an hour per
-  person and process. Returns `{:ok, instance}` or `{:error, reason}`:
-  `:not_found`, `:invalid_title`, `:process_inactive`, `:not_permitted` or
-  `{:rate_limited, retry_after_ms}`.
+  its roles (the app's editors always may): with a `title` and a `text` its
+  texts read, or, for a process that takes an entity, with a value for each
+  of its attributes, read as the attribute's type (a time without an offset
+  in `attrs["time_zone"]`). At most
+  #{elem(PotokIde.RateLimit.limit(:process_manual_start), 0)} an hour per person and
+  process. Returns `{:ok, instance}` or `{:error, reason}`: `:not_found`,
+  `:invalid_title`, `:invalid_text`, `{:invalid_field, name, reason}`,
+  `:process_inactive`, `:not_permitted` or `{:rate_limited, retry_after_ms}`.
   """
   def start(%Profile{} = profile, %Group{} = group, id, attrs) when is_map(attrs) do
-    with {:ok, title} <- start_text(attrs["title"], 1..@max_title, :invalid_title),
-         {:ok, text} <- start_text(attrs["text"] || "", 0..@max_start_text, :invalid_text),
-         %AppProcess{trigger: "manual"} <- get(group, id) || {:error, :not_found},
+    with %AppProcess{trigger: "manual"} = drawn <- get(group, id) || {:error, :not_found},
+         {:ok, data} <- start_data(drawn, attrs),
          :ok <- rate(profile, id) do
       Repo.transaction(fn ->
         process =
@@ -342,7 +445,7 @@ defmodule PotokIde.Social.DrawnProcesses do
 
         Engine.start_drawn_on(process,
           started_by: profile.id,
-          data: %{"title" => title, "text" => text, "author" => profile.username}
+          data: Map.put(data, "author", profile.username)
         )
       end)
       |> case do
@@ -372,6 +475,26 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   def may_start?(_process, _access), do: false
+
+  # What a run started by hand starts with: the attributes of the entity
+  # the process takes, as it was saved, or a title and a text.
+  defp start_data(%AppProcess{entry_entity_id: id, graph: %{"types" => types}}, attrs)
+       when is_integer(id) do
+    names = for attribute <- Types.attributes(types, id) || [], do: attribute["name"]
+    zone = if is_binary(attrs["time_zone"]), do: attrs["time_zone"], else: "Etc/UTC"
+
+    case Types.cast(Map.take(attrs, names), {:entity, id}, types, required: true, zone: zone) do
+      {:ok, value} -> {:ok, Types.dump(value)}
+      {:error, {reason, name}} -> {:error, {:invalid_field, name, reason}}
+    end
+  end
+
+  defp start_data(%AppProcess{}, attrs) do
+    with {:ok, title} <- start_text(attrs["title"], 1..@max_title, :invalid_title),
+         {:ok, text} <- start_text(attrs["text"] || "", 0..@max_start_text, :invalid_text) do
+      {:ok, %{"title" => title, "text" => text}}
+    end
+  end
 
   defp start_text(text, range, reason) when is_binary(text) do
     text = String.trim(text)
@@ -412,24 +535,29 @@ defmodule PotokIde.Social.DrawnProcesses do
 
   @doc """
   The signals the group's drawn processes send, wait for or start on, by
-  name, each with the names of the fields its senders put in it.
+  name, each with the names of the fields its senders put in it, or of the
+  attributes of the entity it is waited for with.
   """
   def signals(%Group{id: group_id}) do
     from(p in AppProcess,
       where: p.group_id == ^group_id and p.drawn,
-      select: {p.graph, p.trigger, p.trigger_config}
+      select: {p.graph, p.trigger, p.trigger_config, p.entry_entity_id}
     )
     |> Repo.all()
-    |> Enum.flat_map(fn {graph, trigger, config} ->
-      started = if trigger == "signal", do: [{config["name"], []}], else: []
+    |> Enum.flat_map(fn {graph, trigger, config, entry} ->
+      names = fn id ->
+        for attribute <- Types.attributes(graph["types"] || %{}, id) || [], do: attribute["name"]
+      end
+
+      started = if trigger == "signal", do: [{config["name"], names.(entry)}], else: []
 
       started ++
         Enum.flat_map(graph["nodes"] || [], fn
           %{"action" => "signal", "name" => name} = step ->
             [{name, Enum.map(step["fields"] || [], & &1["name"])}]
 
-          %{"type" => "receiveTask", "signal" => name} ->
-            [{name, []}]
+          %{"type" => "receiveTask", "signal" => name} = wait ->
+            [{name, names.(wait["entity"])}]
 
           _other ->
             []
@@ -441,17 +569,44 @@ defmodule PotokIde.Social.DrawnProcesses do
   end
 
   @doc """
-  The group's drawn processes that another may call, by name, as
-  `%{id, name, fields, active}`, `fields` being the names each takes.
+  The entities the group's drawn processes wait for each signal with, by
+  the signal's name: the id of an entity, or nil for a wait that names
+  none. `except` leaves one process out, which checks its own signals
+  against the others.
+  """
+  def signal_entities(%Group{id: group_id}, except \\ nil) do
+    from(p in AppProcess,
+      where: p.group_id == ^group_id and p.drawn,
+      select: {p.id, p.graph, p.trigger, p.trigger_config, p.entry_entity_id}
+    )
+    |> Repo.all()
+    |> Enum.reject(&(elem(&1, 0) == except))
+    |> Enum.flat_map(fn {_id, graph, trigger, config, entry} ->
+      started = if trigger == "signal", do: [{config["name"], entry}], else: []
+
+      started ++
+        for(
+          %{"type" => "receiveTask", "signal" => name} = wait <- graph["nodes"] || [],
+          do: {name, wait["entity"]}
+        )
+    end)
+    |> Enum.filter(&is_binary(elem(&1, 0)))
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Map.new(fn {name, entities} -> {name, Enum.uniq(entities)} end)
+  end
+
+  @doc """
+  The group's drawn processes that another may call, by name, as `%{id,
+  name, active, fields, attributes, types}`: what each takes
+  (`contract/1`), `fields` being the names a call fills in.
   """
   def callable(%Group{id: group_id}) do
     from(p in AppProcess,
       where: p.group_id == ^group_id and p.drawn and p.trigger == "process",
-      order_by: [asc: p.name, asc: p.id],
-      select: %{id: p.id, name: p.name, fields: p.trigger_config, active: p.active}
+      order_by: [asc: p.name, asc: p.id]
     )
     |> Repo.all()
-    |> Enum.map(&%{&1 | fields: &1.fields["fields"] || []})
+    |> Enum.map(&Map.merge(contract(&1), %{id: &1.id, name: &1.name, active: &1.active}))
   end
 
   @doc """
@@ -536,11 +691,10 @@ defmodule PotokIde.Social.DrawnProcesses do
       else
         from(p in AppProcess,
           where: p.group_id == ^group_id and p.drawn and p.trigger == "process" and p.id in ^ids,
-          lock: "FOR SHARE",
-          select: {p.id, p.trigger_config}
+          lock: "FOR SHARE"
         )
         |> Repo.all()
-        |> Map.new(fn {id, config} -> {id, config["fields"] || []} end)
+        |> Map.new(&{&1.id, contract(&1).fields})
       end
 
     case Graph.unknown_process(graph, callable) do
