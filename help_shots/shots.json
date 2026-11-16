@@ -486,6 +486,28 @@
     ]
   },
   {
+    "name": "zgrada-proces-okidac",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes?process={processes.building_reports}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-canvas-node-start" },
+      { "wait": "#process-trigger-form" },
+      { "pause": 900 }
+    ]
+  },
+  {
+    "name": "zgrada-pokreni",
+    "as": "tamara",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "click": "#process-row-{processes.building_reports}-start" },
+      { "wait": "#process-start-form" },
+      { "type": ["#process-start-form input[name='start[title]']", "Curi voda u podrumu"] },
+      { "pause": 700 }
+    ]
+  },
+  {
     "name": "zgrada-kucni-savet",
     "as": "ivana",
     "url": "/groups/{groups.building}",

@@ -250,5 +250,13 @@
   "zgrada-kucni-savet": {
     "h": 844,
     "w": 390
+  },
+  "zgrada-pokreni": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-proces-okidac": {
+    "h": 844,
+    "w": 390
   }
 }

@@ -824,7 +824,7 @@ Who set off a step (`triggered_by`) is the value's author at the start (nobody f
 * `completeTask(id, element, outcome, {comment})` finishes the task the instance waits on, for someone holding its role, with a comment of at most 1000 characters, and resolves to `{ok: true, process}`. A task no longer waiting gives `not_waiting`, an outcome it does not have `invalid_outcome`, a stopped process `process_inactive`.
 * `retryProcess(id)` takes a failed instance up again where it stopped (`not_failed` for any other), and `cancelProcess(id)` cancels one that runs or waits (`not_running` for any other). Both are for editors and resolve to `{ok: true, process}`.
 * The `process` event of `onValues` says only which instance moved; the app reads it again with `listProcesses`, which shows only what the viewer may see.
-* Processes that the group's editors draw in Potok on the same collection are none of the app's: `listProcesses` leaves their instances out, `completeTask`, `retryProcess` and `cancelProcess` answer `not_found` for them, and their moves send no `process` event. Their tasks are finished on the group's Processes tab.
+* Processes that the group's editors draw in Potok on the same collection are none of the app's: `listProcesses` leaves their instances out, `completeTask`, `retryProcess` and `cancelProcess` answer `not_found` for them, and their moves send no `process` event. Their tasks are finished on the group's Processes tab. A drawn process may also start on a chat message, a new sub-group, a schedule or by hand, none of which reaches the app.
 
 #### Replies, errors and the frame
 

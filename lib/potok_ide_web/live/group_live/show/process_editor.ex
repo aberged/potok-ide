@@ -150,12 +150,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             <% else %>
               <span
                 id="process-editor-trigger-summary"
-                class="inline-flex h-7 min-w-0 items-center gap-1 rounded-full bg-base-200 px-2.5 text-xs text-base-content/70"
+                class="inline-flex h-7 min-w-0 max-w-60 items-center gap-1 rounded-full bg-base-200 px-2.5 text-xs text-base-content/70"
+                title={@start_title}
               >
                 <.icon name={trigger_icon(@editor.trigger)} class="size-3.5 shrink-0" />
-                <span class="truncate">
-                  {@start_title}{if(@editor.collection, do: " · #{@editor.collection}")}
-                </span>
+                <span class="truncate">{@editor.collection || @start_title}</span>
               </span>
               <span
                 id="process-editor-state"

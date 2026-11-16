@@ -694,7 +694,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("ValueProcess", _edges) do
     dgettext(
       "domain_map",
-      "One run of an app's process for one value of its collection: the graph it started with, the element it stands on and when it wakes next. A value has at most one instance of each process. Deleting the value or the process takes the instance along, and what it wrote stays."
+      "One run of a process: the graph it started with, the element it stands on and when it wakes next. What set it going is a value of a collection or a chat message, a new sub-group, or nothing for a run started by hand or by a schedule, which keeps the fields its texts read. A value or a sub-group has at most one instance of each process. Deleting it or the process takes the instance along, and what it wrote stays."
     )
   end
 
@@ -1487,7 +1487,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "Besides the process an app writes into its rules, the editors of an app can draw processes of their own in Potok, on any of its collections, as <AppProcess>app processes</AppProcess> that keep their graph outside the app's settings. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the app's group and every new <Value>value</Value> starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see the value only as far as they may read it. Deleting the app takes its drawn processes along."
+            "Besides the process an app writes into its rules, the editors of a group can draw processes of their own in Potok, as <AppProcess>app processes</AppProcess> that keep their graph outside any app's settings. One starts on a new value of a collection of an app, on a member's chat message holding one of its words or mentioning its role, on a sub-group made one at a time (not a record, a thread or what a process makes), on a schedule, or when someone holding its role starts it by hand with a title and a text. An app replaces its settings whole when it saves them, so it could never keep a drawing safe; this way it neither sees nor overwrites them, and its own process runs beside them. A drawing is kept only when an instance could finish it, with roles the group has, and starts switched off. Switched on, its profile joins the group and each of these starts a <ValueProcess>process instance</ValueProcess> of it; a change applies to the instances that start after it, and switching it off cancels those that run or wait. The app knows nothing of their tasks, so the people of a task's role finish them on the group's Processes tab, where they see a <Value>value</Value> only as far as they may read it. Deleting the app takes the processes drawn on its collections along."
           )
       },
       %{

@@ -335,18 +335,26 @@ Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, doga�
 
 Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
 
+![Šabloni za opis grupe](opis-sablon)
+
 ### Nacrtaj proces {:#nacrtaj-proces}
 
-Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, na bilo kojoj aplikaciji grupe. To sme ko uređuje aplikaciju.
+Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, i u grupi bez aplikacije. To sme ko sme da uređuje grupu.
 
-1. U meniju grupe otvori **Procesi** i dodirni **Nacrtaj proces**.
-2. Izaberi kolekciju aplikacije koja ga pokreće, recimo odgovore forme, i upiši ime procesa.
+1. U meniju grupe otvori **Procesi**, dodirni **Nacrtaj proces** i upiši ime procesa.
+2. Pod **Kad** izaberi šta ga pokreće, a na početnom koraku crteža ga podesi.
 3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, push, čekanje ili uslov. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
-4. Dodirni **Sačuvaj**, pa **Uključi**. Od tada svaka nova vrednost kolekcije pokreće proces.
+4. Dodirni **Sačuvaj**, pa **Uključi**.
 
-Na širokom ekranu korake prevlačiš gde ti odgovaraju, a strelicu crtaš od tačke ispod koraka do drugog koraka. Crtež koji instanca ne bi mogla da završi ne može da se sačuva, a traka iznad crteža kaže šta fali. Aplikacija nacrtan proces ne vidi i ne menja, a njen sopstveni proces, ako ga ima, radi pored njega. Izmena važi za pokretanja posle nje. Kako to izgleda u zadruzi, pokazuje [tutorijal](/pomoc/zadruga#proces).
+Proces može da pokrene:
 
-![Šabloni za opis grupe](opis-sablon)
+- **nova vrednost u aplikaciji**, recimo odgovor na formu;
+- **poruka** u razgovoru grupe sa nekom od reči koje upišeš, recimo „kvar“, ili koja pominje ulogu. Odgovori u niti i poruke procesa se ne računaju;
+- **nova podgrupa**, recimo mesto dodato na mapi, a po želji samo ona sa mestom. Zapisi i niti se ne računaju;
+- **zadato vreme**: svakog dana, svake nedelje u izabrane dane ili svakog meseca, u satu koji izabereš;
+- **neko ručno**: oni kojima to dozvoliš dobijaju na kartici Procesi dugme **Pokreni**, uz naslov i tekst.
+
+Tekst koraka može da ubaci polja onoga što je proces pokrenulo, recimo tekst poruke ili naslov ručnog pokretanja: nude se ispod polja za tekst. Na širokom ekranu korake prevlačiš gde ti odgovaraju, a strelicu crtaš od tačke ispod koraka do drugog koraka. Crtež koji instanca ne bi mogla da završi ne može da se sačuva, a traka iznad crteža kaže šta fali. Aplikacija nacrtan proces ne vidi i ne menja, a njen sopstveni proces, ako ga ima, radi pored njega. Izmena važi za pokretanja posle nje. Kako to izgleda, pokazuju tutorijali za [zadrugu](/pomoc/zadruga#proces) i [zgradu](/pomoc/zgrada#kvar).
 
 ### Deljenje u Potok {:#deljenje}
 

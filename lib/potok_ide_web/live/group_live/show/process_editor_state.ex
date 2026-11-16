@@ -1116,9 +1116,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   def start_title(%{trigger: trigger, trigger_config: config} = editor, roles) do
     case Triggers.normalize(trigger, config) do
       {:ok, config} -> trigger_summary(trigger, config, editor[:collection], roles)
-      {:error, _reason} -> trigger_name(trigger)
+      {:error, _reason} -> trigger_title(trigger)
     end
   end
+
+  # A trigger's title on the start step, before its settings are whole.
+  defp trigger_title("message"), do: gettext("A message")
+  defp trigger_title("subgroup"), do: gettext("A new sub-group")
+  defp trigger_title("schedule"), do: gettext("On a schedule")
+  defp trigger_title("manual"), do: gettext("Started by hand")
+  defp trigger_title(_value), do: gettext("A value comes in")
 
   @doc "A trigger with its settings in words."
   def trigger_summary("value", _config, _collection, _roles), do: gettext("A value comes in")

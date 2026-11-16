@@ -329,18 +329,26 @@ You can write any group's description from a template: news, photo, quote, event
 
 Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
 
+![Templates for a group's description](opis-sablon)
+
 ### Draw a process {:#nacrtaj-proces}
 
-You can also draw a process without writing code, right in Potok, on any of the group's apps. Whoever edits the app may.
+You can also draw a process without writing code, right in Potok, even in a group without an app. Whoever may edit the group may.
 
-1. In the group's menu open **Processes** and tap **Draw a process**.
-2. Pick the collection of the app that sets it going, say the answers of a form, and type the process's name.
+1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
+2. Under **When** pick what starts it, and set it on the drawing's start step.
 3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait or a condition. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
-4. Tap **Save**, then **Switch on**. From then on every new value of the collection sets the process going.
+4. Tap **Save**, then **Switch on**.
 
-On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The [tutorial](/pomoc/zadruga#proces) shows how this looks in a co-op.
+A process can start on:
 
-![Templates for a group's description](opis-sablon)
+- **a new value in an app**, say an answer to a form;
+- **a message** in the group's chat holding one of the words you type, say "leak", or mentioning a role. Replies in threads and a process's own messages do not count;
+- **a new sub-group**, say a place added on the map, and if you like only one with a place. Records and threads do not count;
+- **a set time**: every day, every week on the days you pick or every month, at the hour you pick;
+- **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text.
+
+A step's text can put in fields of what started the process, say a message's text or the title of a run started by hand: they are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
 
 ### Sharing into Potok {:#deljenje}
 

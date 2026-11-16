@@ -103,7 +103,7 @@ defmodule HelpShots.World do
         zbor_photo: mz.photo.id
       },
       polls: %{zbor: mz.poll.id, building: building.poll.id},
-      processes: %{coop_packing: coop.packing.id},
+      processes: %{coop_packing: coop.packing.id, building_reports: building.reports.id},
       events: %{zbor: mz.event.id},
       shared_profile_id: shared.id,
       # For the date fields of forms, which take it as written.
@@ -498,7 +498,68 @@ defmodule HelpShots.World do
 
     post(shared, building, "Ključ od podruma je kod Petra, u stanu 7. Vreće za otpad donosi savet.", ago(0, 11, 30))
 
-    %{root: building, council: council, poll: poll}
+    reports = fault_reports(ivana, building)
+
+    {:ok, report} =
+      PotokIde.Social.DrawnProcesses.start(p.("tamara"), building, reports.id, %{
+        "title" => "Ne radi svetlo u ulazu",
+        "text" => "Od juče uveče, na sva tri sprata."
+      })
+
+    PotokIde.Processes.Engine.run(report.id)
+
+    %{root: building, council: council, poll: poll, reports: reports}
+  end
+
+  # The building's process, drawn in Potok with no app: a resident starts it
+  # by hand, it opens a talk about the fault, and the admins decide.
+  defp fault_reports(editor, group) do
+    talk = fn id, text ->
+      %{"id" => id, "type" => "serviceTask", "action" => "message", "in" => "razgovor", "text" => text}
+    end
+
+    graph = %{
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Stanar prijavljuje kvar"},
+        %{
+          "id" => "razgovor",
+          "type" => "serviceTask",
+          "action" => "subgroup",
+          "label" => "Razgovor o kvaru",
+          "name" => "Kvar: {{title}}",
+          "admins" => ["owner", "triggered_by"]
+        },
+        %{
+          "id" => "odluka",
+          "type" => "userTask",
+          "label" => "Šta radimo",
+          "role" => "admin",
+          "outcomes" => ["Popravljeno", "Zovemo majstora"]
+        },
+        talk.("popravljeno", "Popravljeno je, hvala na prijavi."),
+        talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
+        %{"id" => "kraj", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "razgovor"},
+        %{"from" => "razgovor", "to" => "odluka"},
+        %{"from" => "odluka", "to" => "popravljeno", "outcome" => "Popravljeno"},
+        %{"from" => "odluka", "to" => "majstor", "outcome" => "Zovemo majstora"},
+        %{"from" => "popravljeno", "to" => "kraj"},
+        %{"from" => "majstor", "to" => "kraj"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["everyone"]},
+        "name" => "Prijava kvara",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   defp direct(p) do
