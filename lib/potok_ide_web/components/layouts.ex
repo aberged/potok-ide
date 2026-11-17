@@ -48,6 +48,11 @@ defmodule PotokIdeWeb.Layouts do
     default: false,
     doc: "drops the top bar on short screens, for pages with a header of their own to go back by"
 
+  attr :group_sidebar, :boolean,
+    default: false,
+    doc:
+      "widens the page on a wide screen while it shows the column of the viewer's groups (`GroupSidebar`)"
+
   slot :inner_block, required: true
 
   def app(assigns) do
@@ -221,7 +226,8 @@ defmodule PotokIdeWeb.Layouts do
           id="main-content"
           class={[
             "relative z-0 mx-auto flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain",
-            !@full_width && "max-w-6xl"
+            !@full_width && "max-w-6xl",
+            !@full_width && @group_sidebar && "xl:group-sidebar-shown:max-w-[91rem]"
           ]}
         >
           {render_slot(@inner_block)}

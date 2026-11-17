@@ -39,6 +39,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     FilesTab,
     GroupDescriptionTab,
     GroupMenu,
+    GroupSidebar,
     InviteProfileTab,
     MediaViewer,
     MembersTab,
@@ -140,6 +141,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       root_group_unread_count={@root_group_unread_count}
       unread_notices_count={@unread_notices_count}
       collapse_nav
+      group_sidebar={!@group.is_root and not is_nil(@current_profile)}
     >
       <%!-- Online indicators are toggled by this rule set instead of re-rendering streamed items. --%>
       <style id="group-presence-style">
@@ -154,689 +156,713 @@ defmodule PotokIdeWeb.GroupLive.Show do
         <%= Components.poll_tally_css(@poll_tallies) %>
       </style>
 
-      <%!-- The back link, the name and the menu share a row; on narrower screens the sections
-           take a row of their own. On phones the header is flat and the sections are
+      <%!-- On a wide screen the viewer's groups stand beside the page (`GroupSidebar`). --%>
+      <div id="group-page" class="flex min-h-0 flex-1 xl:gap-3">
+        <GroupSidebar.panel
+          :if={!@group.is_root and @current_profile}
+          sidebar={@sidebar}
+          current_profile={@current_profile}
+        />
+        <div id="group-page-main" class="flex min-h-0 min-w-0 flex-1 flex-col">
+          <%!-- The back link, the name and the menu share a row; in a narrower header (a narrower
+           screen, or the column of groups beside it) the sections take a row of their own. On phones the header is flat and the sections are
            equal columns, and neither they nor the path stay while typing. A flat header
            starts at the top of <main>, which cuts what stands above it, so the counts on
            the avatar stay inside the row. --%>
-      <div
-        id="group-header"
-        class="relative z-50 shrink-0 border-b border-base-300/70 bg-base-100/85 backdrop-blur sm:mt-1 sm:rounded-4xl sm:border sm:px-3 sm:py-1.5 sm:shadow-lg sm:shadow-primary/5"
-      >
-        <div class="flex flex-wrap items-center gap-x-1 px-1 sm:gap-x-2 sm:px-0">
-          <div :if={!@group.is_root and @group.parent_id} class="shrink-0">
-            <%!-- Goes back like the browser does. With no page of this site
+          <div
+            id="group-header"
+            class="@container relative z-50 shrink-0 border-b border-base-300/70 bg-base-100/85 backdrop-blur sm:mt-1 sm:rounded-4xl sm:border sm:px-3 sm:py-1.5 sm:shadow-lg sm:shadow-primary/5"
+          >
+            <div class="flex flex-wrap items-center gap-x-1 px-1 sm:gap-x-2 sm:px-0">
+              <button
+                :if={!@group.is_root and @current_profile}
+                id="group-sidebar-show"
+                type="button"
+                phx-click={JS.dispatch("phx:toggle-group-sidebar")}
+                aria-label={gettext("Show your groups")}
+                title={gettext("Show your groups")}
+                class="hidden size-11 shrink-0 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 xl:group-sidebar-hidden:inline-flex"
+              >
+                <.icon name="hero-queue-list" class="size-5" />
+              </button>
+              <div :if={!@group.is_root and @group.parent_id} class="shrink-0">
+                <%!-- Goes back like the browser does. With no page of this site
                  behind (opened from a notification, a link or a new tab) it
                  goes to the parent; a thread to the chat it was started from. --%>
-            <.link
-              id="group-back-link"
-              phx-hook=".HistoryBack"
-              navigate={back_path(@group, @group_path)}
-              aria-label={gettext("Back")}
-              class="inline-flex size-11 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cramped:size-9"
-            >
-              <.icon name="hero-chevron-left" class="size-5" />
-            </.link>
-            <script :type={Phoenix.LiveView.ColocatedHook} name=".HistoryBack">
-              const hasAppPageBehind = () => {
-                // The Navigation API lists only this site's entries in this tab.
-                if (window.navigation) return window.navigation.canGoBack
-                if (window.history.length < 2) return false
-                // LiveView numbers the entries of a tab from 0, the first page.
-                if ((window.history.state?.position ?? 0) > 0) return true
+                <.link
+                  id="group-back-link"
+                  phx-hook=".HistoryBack"
+                  navigate={back_path(@group, @group_path)}
+                  aria-label={gettext("Back")}
+                  class="inline-flex size-11 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 cramped:size-9"
+                >
+                  <.icon name="hero-chevron-left" class="size-5" />
+                </.link>
+                <script :type={Phoenix.LiveView.ColocatedHook} name=".HistoryBack">
+                  const hasAppPageBehind = () => {
+                    // The Navigation API lists only this site's entries in this tab.
+                    if (window.navigation) return window.navigation.canGoBack
+                    if (window.history.length < 2) return false
+                    // LiveView numbers the entries of a tab from 0, the first page.
+                    if ((window.history.state?.position ?? 0) > 0) return true
 
-                // A full page load that this site opened in the same tab.
-                try {
-                  return new URL(document.referrer).origin === window.location.origin
-                } catch (_error) {
-                  return false
-                }
-              }
+                    // A full page load that this site opened in the same tab.
+                    try {
+                      return new URL(document.referrer).origin === window.location.origin
+                    } catch (_error) {
+                      return false
+                    }
+                  }
 
-              export default {
-                mounted() {
-                  this.el.addEventListener("click", event => {
-                    const newTab =
-                      event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
+                  export default {
+                    mounted() {
+                      this.el.addEventListener("click", event => {
+                        const newTab =
+                          event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey
 
-                    if (newTab || !hasAppPageBehind()) return
+                        if (newTab || !hasAppPageBehind()) return
 
-                    event.preventDefault()
-                    // LiveView's own link handler on window ignores defaultPrevented.
-                    event.stopPropagation()
-                    window.history.back()
-                  })
-                },
-              }
-            </script>
-          </div>
-
-          <div class="min-w-0 flex-1 py-1 cramped:py-0.5">
-            <div :if={!@group.is_root} class="flex items-center gap-3">
-              <Components.group_identity
-                group={@group}
-                current_profile={@current_profile}
-                avatar_size="size-9 sm:size-10"
-                badge_top="-top-1 sm:-top-2 cramped:-top-0.5"
-                text_class="text-sm sm:text-base"
-                pending_join_requests_count={@pending_join_requests_count}
-                unread_count={Map.get(@group_unread_counts, @group.id, 0)}
-                muted?={not is_nil(@group_muted_until)}
-              >
-                <:subtitle>
-                  <div class="flex min-w-0 items-center gap-2 cramped:hidden">
-                    <Components.group_path
-                      path={@group_path}
-                      group={@group}
-                      current_profile={@current_profile}
-                    />
-                    <TagComponents.tag_chips
-                      id="group-tag-list"
-                      tags={@group_tags}
-                      size={:sm}
-                      max={3}
-                      class="max-sm:hidden"
-                    />
-                    <TagComponents.tag_count
-                      id="group-tag-count"
-                      tags={@group_tags}
-                      kind={:group}
-                      item_id={@group.id}
-                      class="shrink-0 sm:hidden"
-                    />
-                  </div>
-                </:subtitle>
-              </Components.group_identity>
-            </div>
-
-            <div
-              :if={@group.is_root}
-              id="group-sub-groups-kind-tabs"
-              class="inline-flex w-fit max-w-full items-center gap-0.5 rounded-full border border-base-300 bg-base-200/70 p-0.5"
-            >
-              <button
-                id="group-sub-groups-kind-direct"
-                type="button"
-                phx-click="switch_sub_groups_kind"
-                phx-value-kind="direct"
-                aria-pressed={to_string(@sub_groups_kind == "direct")}
-                class={root_kind_class(@sub_groups_kind == "direct")}
-              >
-                <.icon name="hero-users" class="size-4 shrink-0" />
-                {gettext("Conversations")}
-                <.count_badge
-                  :if={@direct_sub_groups_unread_count > 0}
-                  id="group-sub-groups-kind-direct-unread-badge"
-                  count={@direct_sub_groups_unread_count}
-                />
-              </button>
-              <button
-                id="group-sub-groups-kind-other"
-                type="button"
-                phx-click="switch_sub_groups_kind"
-                phx-value-kind="other"
-                aria-pressed={to_string(@sub_groups_kind == "other")}
-                class={root_kind_class(@sub_groups_kind == "other")}
-              >
-                <.icon name="hero-user-group" class="size-4 shrink-0" />
-                {gettext("Groups")}
-                <.count_badge
-                  :if={@other_sub_groups_unread_count > 0}
-                  id="group-sub-groups-kind-other-unread-badge"
-                  count={@other_sub_groups_unread_count}
-                />
-              </button>
-            </div>
-          </div>
-
-          <%!-- On phones only the icon, a circle like the bell's, so it fits in
-               the row next to the name; the words stay for screen readers. --%>
-          <div
-            :if={!@group.is_root and !@is_member and !@access.blocked?}
-            id="group-join-request-callout"
-            class="flex shrink-0 items-center"
-          >
-            <.button
-              :if={is_nil(@pending_join_request)}
-              id="group-request-access"
-              type="button"
-              phx-click="request_join"
-              variant="soft"
-              class="max-sm:w-10 max-sm:px-0"
-            >
-              <.icon name="hero-hand-raised" class="size-5 sm:hidden" />
-              <span class="max-sm:sr-only">{gettext("Request access")}</span>
-            </.button>
-            <div
-              :if={!is_nil(@pending_join_request)}
-              id="group-request-access-pending"
-              title={gettext("Access request pending")}
-              class="inline-flex items-center justify-center rounded-full bg-sky-900 text-sm font-medium text-sky-50 max-sm:size-10 sm:px-3 sm:py-2"
-            >
-              <.icon name="hero-clock" class="size-5 sm:hidden" />
-              <span class="max-sm:sr-only">{gettext("Access request pending")}</span>
-            </div>
-          </div>
-
-          <Components.group_tabs
-            tabs={
-              header_tabs(
-                @group,
-                @is_member,
-                @active_tab,
-                %{
-                  calendar?: @calendar_tab?,
-                  polls?: @polls_section?,
-                  notices?: @notice_state.notices?
-                },
-                {@current_group_unread_count, @sub_groups_unread_count, @pending_join_requests_count}
-              )
-            }
-            class="max-[87.5rem]:order-last max-[87.5rem]:basis-full cramped:hidden"
-          />
-
-          <button
-            :if={@calendar_tab? and @group.is_root}
-            id="group-calendar-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="calendar"
-            aria-label={gettext("Open calendar tab")}
-            aria-current={@active_tab == "calendar" && "true"}
-            class={header_shortcut_class(@active_tab == "calendar")}
-          >
-            <.icon name="hero-calendar-days" class="size-6 shrink-0" />
-          </button>
-          <button
-            :if={@group.is_root}
-            id="group-map-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="map"
-            aria-label={gettext("Open the map of groups")}
-            aria-current={@active_tab == "map" && "true"}
-            class={header_shortcut_class(@active_tab == "map")}
-          >
-            <.icon name="hero-map" class="size-6 shrink-0" />
-          </button>
-          <button
-            :if={@group.is_root and @group.is_public}
-            id="group-subgroups-summary"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="sub_groups"
-            aria-label={gettext("Open sub-groups tab")}
-            aria-current={needs_children?(@group, @active_tab) && "true"}
-            class={header_shortcut_class(needs_children?(@group, @active_tab))}
-          >
-            <.icon name="hero-folder-open" class="size-6 shrink-0" />
-            <.count_badge
-              :if={@sub_groups_unread_count > 0}
-              id="group-sub-groups-unread-badge"
-              count={@sub_groups_unread_count}
-              class="absolute right-0 top-0"
-            />
-          </button>
-          <button
-            :if={@group.parent_id == nil && @is_member}
-            id="group-invite-account"
-            type="button"
-            phx-click="invite_account"
-            aria-label={gettext("Open invite account tab")}
-            class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
-          >
-            <.icon
-              name="hero-user-plus"
-              class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
-            />
-          </button>
-
-          <%!-- Faces of the members where there is room for them; phones have the section. --%>
-          <button
-            :if={@group.parent_id != nil && @is_member}
-            id="group-members-stack"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="members"
-            aria-label={gettext("Members")}
-            class="avatar-group relative hidden -space-x-6 cursor-pointer rounded-full transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
-          >
-            <div :for={m <- @first3_members} class="">
-              <Components.profile_identity
-                profile={m}
-                avatar_size="size-6"
-                text_class="hidden"
-                sharing_badge_text_class="hidden"
-              />
-            </div>
-
-            <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
-              <div class="bg-neutral text-neutral-content size-5 text-xs">
-                <span>+{@members_count - length(@first3_members)}</span>
+                        event.preventDefault()
+                        // LiveView's own link handler on window ignores defaultPrevented.
+                        event.stopPropagation()
+                        window.history.back()
+                      })
+                    },
+                  }
+                </script>
               </div>
-            </div>
-          </button>
 
-          <%!-- What the group's processes wait for the viewer to decide or fill
-               in, from every tab but the one that lists it. --%>
-          <button
-            :if={@processes_waiting > 0 and @active_tab != "processes"}
-            id="group-waiting"
-            type="button"
-            phx-click="switch_tab"
-            phx-value-tab="processes"
-            aria-label={gettext("Waiting for you: %{count}", count: @processes_waiting)}
-            title={gettext("Waiting for you: %{count}", count: @processes_waiting)}
-            class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-900 shadow-xs transition duration-150 hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 active:scale-95 dark:text-amber-100"
-          >
-            <span class="relative flex size-2 shrink-0">
-              <span class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-60 motion-reduce:hidden" />
-              <span class="relative inline-flex size-2 rounded-full bg-amber-500" />
-            </span>
-            <span class="max-sm:hidden">{gettext("Waiting for you")}</span>
-            <span id="group-waiting-count" class="tabular-nums">{@processes_waiting}</span>
-          </button>
+              <div class="min-w-0 flex-1 py-1 cramped:py-0.5">
+                <div :if={!@group.is_root} class="flex items-center gap-3">
+                  <Components.group_identity
+                    group={@group}
+                    current_profile={@current_profile}
+                    avatar_size="size-9 sm:size-10"
+                    badge_top="-top-1 sm:-top-2 cramped:-top-0.5"
+                    text_class="text-sm sm:text-base"
+                    pending_join_requests_count={@pending_join_requests_count}
+                    unread_count={Map.get(@group_unread_counts, @group.id, 0)}
+                    muted?={not is_nil(@group_muted_until)}
+                  >
+                    <:subtitle>
+                      <div class="flex min-w-0 items-center gap-2 cramped:hidden">
+                        <Components.group_path
+                          path={@group_path}
+                          group={@group}
+                          current_profile={@current_profile}
+                        />
+                        <TagComponents.tag_chips
+                          id="group-tag-list"
+                          tags={@group_tags}
+                          size={:sm}
+                          max={3}
+                          class="max-sm:hidden"
+                        />
+                        <TagComponents.tag_count
+                          id="group-tag-count"
+                          tags={@group_tags}
+                          kind={:group}
+                          item_id={@group.id}
+                          class="shrink-0 sm:hidden"
+                        />
+                      </div>
+                    </:subtitle>
+                  </Components.group_identity>
+                </div>
 
-          <%!-- Following the group, for its notices: one tap follows, and a
-               followed group's bell opens what can be changed. --%>
-          <.icon_button
-            :if={@can_follow_group? and !@notice_state.following?}
-            id="group-follow-button"
-            type="button"
-            phx-click="notice_follow"
-            icon="hero-bell"
-            label={gettext("Follow the group")}
-          />
-          <Layouts.drop_down_menu
-            :if={@can_follow_group? and @notice_state.following?}
-            id="group-follow-menu"
-            icon={
-              if(@notice_state.push? and @current_profile.notice_push,
-                do: "hero-bell-solid",
-                else: "hero-bell-slash"
-              )
-            }
-            label={gettext("You follow the group")}
-          >
-            <div class="flex min-w-56 flex-col gap-2">
-              <p class="px-1 text-sm font-semibold text-base-content">
-                {gettext("You follow the group")}
-              </p>
-              <NoticeComponents.push_switch
-                id="group-follow-push"
-                checked={@notice_state.push?}
-                disabled={!@current_profile.notice_push}
-                label={gettext("Push notifications")}
-                class="px-1"
-                phx-click="notice_follow_push"
-                phx-value-push={to_string(!@notice_state.push?)}
-              />
-              <NoticeComponents.push_off_note
-                :if={!@current_profile.notice_push}
-                id="group-follow-push-off"
-              />
-              <Components.group_tab_button
-                id="group-follow-notices"
-                tab="notices"
-                active_tab={@active_tab}
-                label={gettext("Notices")}
-                icon="hero-bell-alert"
-              />
-              <button
-                id="group-unfollow"
-                type="button"
-                data-dropdown-close
-                phx-click="notice_unfollow"
-                class="flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                <div
+                  :if={@group.is_root}
+                  id="group-sub-groups-kind-tabs"
+                  class="inline-flex w-fit max-w-full items-center gap-0.5 rounded-full border border-base-300 bg-base-200/70 p-0.5"
+                >
+                  <button
+                    id="group-sub-groups-kind-direct"
+                    type="button"
+                    phx-click="switch_sub_groups_kind"
+                    phx-value-kind="direct"
+                    aria-pressed={to_string(@sub_groups_kind == "direct")}
+                    class={root_kind_class(@sub_groups_kind == "direct")}
+                  >
+                    <.icon name="hero-users" class="size-4 shrink-0" />
+                    {gettext("Conversations")}
+                    <.count_badge
+                      :if={@direct_sub_groups_unread_count > 0}
+                      id="group-sub-groups-kind-direct-unread-badge"
+                      count={@direct_sub_groups_unread_count}
+                    />
+                  </button>
+                  <button
+                    id="group-sub-groups-kind-other"
+                    type="button"
+                    phx-click="switch_sub_groups_kind"
+                    phx-value-kind="other"
+                    aria-pressed={to_string(@sub_groups_kind == "other")}
+                    class={root_kind_class(@sub_groups_kind == "other")}
+                  >
+                    <.icon name="hero-user-group" class="size-4 shrink-0" />
+                    {gettext("Groups")}
+                    <.count_badge
+                      :if={@other_sub_groups_unread_count > 0}
+                      id="group-sub-groups-kind-other-unread-badge"
+                      count={@other_sub_groups_unread_count}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              <%!-- On phones only the icon, a circle like the bell's, so it fits in
+               the row next to the name; the words stay for screen readers. --%>
+              <div
+                :if={!@group.is_root and !@is_member and !@access.blocked?}
+                id="group-join-request-callout"
+                class="flex shrink-0 items-center"
               >
-                <.icon name="hero-bell-slash" class="size-4" />
-                <span class="ml-2 truncate">{gettext("Stop following")}</span>
-              </button>
-            </div>
-          </Layouts.drop_down_menu>
+                <.button
+                  :if={is_nil(@pending_join_request)}
+                  id="group-request-access"
+                  type="button"
+                  phx-click="request_join"
+                  variant="soft"
+                  class="max-sm:w-10 max-sm:px-0"
+                >
+                  <.icon name="hero-hand-raised" class="size-5 sm:hidden" />
+                  <span class="max-sm:sr-only">{gettext("Request access")}</span>
+                </.button>
+                <div
+                  :if={!is_nil(@pending_join_request)}
+                  id="group-request-access-pending"
+                  title={gettext("Access request pending")}
+                  class="inline-flex items-center justify-center rounded-full bg-sky-900 text-sm font-medium text-sky-50 max-sm:size-10 sm:px-3 sm:py-2"
+                >
+                  <.icon name="hero-clock" class="size-5 sm:hidden" />
+                  <span class="max-sm:sr-only">{gettext("Access request pending")}</span>
+                </div>
+              </div>
 
-          <.icon_button
-            :if={ValueSearch.available?(@group, @active_tab, @access)}
-            id="group-search-messages"
-            type="button"
-            phx-click="value_search_open"
-            icon="hero-magnifying-glass"
-            label={gettext("Search messages")}
-          />
-
-          <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
-            <GroupMenu.items
-              group={@group}
-              access={@access}
-              active_tab={@active_tab}
-              mute={GroupMenu.mute_state(@group, @is_member, @group_muted_until)}
-            >
-              <%!-- The root has no bar of sections. --%>
-              <Components.group_tab_button
-                :if={@group.is_root and @calendar_tab?}
-                id="group-tab-calendar"
-                tab="calendar"
-                active_tab={@active_tab}
-                label={gettext("My calendar")}
-                icon="hero-calendar-days"
-              />
-              <Components.group_tab_button
-                :if={@group.is_root}
-                id="group-tab-map"
-                tab="map"
-                active_tab={@active_tab}
-                label={gettext("Map of groups")}
-                icon="hero-map"
-              />
-              <%!-- Sections come with a group's first poll; this leads to starting one. --%>
-              <Components.group_tab_button
-                :if={@is_member and !@group.is_direct}
-                id="group-tab-polls"
-                tab="polls"
-                active_tab={@active_tab}
-                label={
-                  if(@group.is_root,
-                    do: dgettext("polls", "My polls"),
-                    else: dgettext("polls", "Polls")
+              <Components.group_tabs
+                tabs={
+                  header_tabs(
+                    @group,
+                    @is_member,
+                    @active_tab,
+                    %{
+                      calendar?: @calendar_tab?,
+                      polls?: @polls_section?,
+                      notices?: @notice_state.notices?
+                    },
+                    {@current_group_unread_count, @sub_groups_unread_count,
+                     @pending_join_requests_count}
                   )
                 }
-                icon="hero-chart-bar"
+                class="@max-[70rem]:order-last @max-[70rem]:basis-full cramped:hidden"
               />
-              <Components.group_tab_button
-                :if={@processes_tab?}
-                id="group-tab-processes"
-                tab="processes"
-                active_tab={@active_tab}
-                label={gettext("Processes")}
-                icon="hero-arrow-path-rounded-square"
-                badge={@processes_waiting}
-                badge_id="group-tab-processes-waiting"
-              />
-              <Components.group_tab_button
+
+              <button
+                :if={@calendar_tab? and @group.is_root}
+                id="group-calendar-summary"
+                type="button"
+                phx-click="switch_tab"
+                phx-value-tab="calendar"
+                aria-label={gettext("Open calendar tab")}
+                aria-current={@active_tab == "calendar" && "true"}
+                class={header_shortcut_class(@active_tab == "calendar")}
+              >
+                <.icon name="hero-calendar-days" class="size-6 shrink-0" />
+              </button>
+              <button
                 :if={@group.is_root}
-                id="group-tab-sub-groups"
-                tab="sub_groups"
-                active_tab={@active_tab}
-                label={gettext("Sub-groups")}
-                icon="hero-folder-open"
+                id="group-map-summary"
+                type="button"
+                phx-click="switch_tab"
+                phx-value-tab="map"
+                aria-label={gettext("Open the map of groups")}
+                aria-current={@active_tab == "map" && "true"}
+                class={header_shortcut_class(@active_tab == "map")}
+              >
+                <.icon name="hero-map" class="size-6 shrink-0" />
+              </button>
+              <button
+                :if={@group.is_root and @group.is_public}
+                id="group-subgroups-summary"
+                type="button"
+                phx-click="switch_tab"
+                phx-value-tab="sub_groups"
+                aria-label={gettext("Open sub-groups tab")}
+                aria-current={needs_children?(@group, @active_tab) && "true"}
+                class={header_shortcut_class(needs_children?(@group, @active_tab))}
+              >
+                <.icon name="hero-folder-open" class="size-6 shrink-0" />
+                <.count_badge
+                  :if={@sub_groups_unread_count > 0}
+                  id="group-sub-groups-unread-badge"
+                  count={@sub_groups_unread_count}
+                  class="absolute right-0 top-0"
+                />
+              </button>
+              <button
+                :if={@group.parent_id == nil && @is_member}
+                id="group-invite-account"
+                type="button"
+                phx-click="invite_account"
+                aria-label={gettext("Open invite account tab")}
+                class="cursor-pointer rounded-full transition-opacity hover:opacity-85 focus:outline-none focus:ring-2 focus:ring-primary/40"
+              >
+                <.icon
+                  name="hero-user-plus"
+                  class="size-6 shrink-0 rounded-full border p-1 shadow-sm"
+                />
+              </button>
+
+              <%!-- Faces of the members where there is room for them; phones have the section. --%>
+              <button
+                :if={@group.parent_id != nil && @is_member}
+                id="group-members-stack"
+                type="button"
+                phx-click="switch_tab"
+                phx-value-tab="members"
+                aria-label={gettext("Members")}
+                class="avatar-group relative hidden -space-x-6 cursor-pointer rounded-full transition hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 sm:inline-flex"
+              >
+                <div :for={m <- @first3_members} class="">
+                  <Components.profile_identity
+                    profile={m}
+                    avatar_size="size-6"
+                    text_class="hidden"
+                    sharing_badge_text_class="hidden"
+                  />
+                </div>
+
+                <div :if={@members_count > 3} class="avatar avatar-placeholder border-3">
+                  <div class="bg-neutral text-neutral-content size-5 text-xs">
+                    <span>+{@members_count - length(@first3_members)}</span>
+                  </div>
+                </div>
+              </button>
+
+              <%!-- What the group's processes wait for the viewer to decide or fill
+               in, from every tab but the one that lists it. --%>
+              <button
+                :if={@processes_waiting > 0 and @active_tab != "processes"}
+                id="group-waiting"
+                type="button"
+                phx-click="switch_tab"
+                phx-value-tab="processes"
+                aria-label={gettext("Waiting for you: %{count}", count: @processes_waiting)}
+                title={gettext("Waiting for you: %{count}", count: @processes_waiting)}
+                class="inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/15 px-2.5 text-xs font-semibold text-amber-900 shadow-xs transition duration-150 hover:bg-amber-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/50 active:scale-95 dark:text-amber-100"
+              >
+                <span class="relative flex size-2 shrink-0">
+                  <span class="absolute inline-flex size-full animate-ping rounded-full bg-amber-400 opacity-60 motion-reduce:hidden" />
+                  <span class="relative inline-flex size-2 rounded-full bg-amber-500" />
+                </span>
+                <span class="max-sm:hidden">{gettext("Waiting for you")}</span>
+                <span id="group-waiting-count" class="tabular-nums">{@processes_waiting}</span>
+              </button>
+
+              <%!-- Following the group, for its notices: one tap follows, and a
+               followed group's bell opens what can be changed. --%>
+              <.icon_button
+                :if={@can_follow_group? and !@notice_state.following?}
+                id="group-follow-button"
+                type="button"
+                phx-click="notice_follow"
+                icon="hero-bell"
+                label={gettext("Follow the group")}
               />
-            </GroupMenu.items>
-          </Layouts.drop_down_menu>
-        </div>
-      </div>
+              <Layouts.drop_down_menu
+                :if={@can_follow_group? and @notice_state.following?}
+                id="group-follow-menu"
+                icon={
+                  if(@notice_state.push? and @current_profile.notice_push,
+                    do: "hero-bell-solid",
+                    else: "hero-bell-slash"
+                  )
+                }
+                label={gettext("You follow the group")}
+              >
+                <div class="flex min-w-56 flex-col gap-2">
+                  <p class="px-1 text-sm font-semibold text-base-content">
+                    {gettext("You follow the group")}
+                  </p>
+                  <NoticeComponents.push_switch
+                    id="group-follow-push"
+                    checked={@notice_state.push?}
+                    disabled={!@current_profile.notice_push}
+                    label={gettext("Push notifications")}
+                    class="px-1"
+                    phx-click="notice_follow_push"
+                    phx-value-push={to_string(!@notice_state.push?)}
+                  />
+                  <NoticeComponents.push_off_note
+                    :if={!@current_profile.notice_push}
+                    id="group-follow-push-off"
+                  />
+                  <Components.group_tab_button
+                    id="group-follow-notices"
+                    tab="notices"
+                    active_tab={@active_tab}
+                    label={gettext("Notices")}
+                    icon="hero-bell-alert"
+                  />
+                  <button
+                    id="group-unfollow"
+                    type="button"
+                    data-dropdown-close
+                    phx-click="notice_unfollow"
+                    class="flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+                  >
+                    <.icon name="hero-bell-slash" class="size-4" />
+                    <span class="ml-2 truncate">{gettext("Stop following")}</span>
+                  </button>
+                </div>
+              </Layouts.drop_down_menu>
 
-      <%!-- The root's own pages lead back to its overview from here. --%>
-      <Components.group_path
-        :if={@group.is_root and !needs_children?(@group, @active_tab)}
-        path={@group_path}
-        group={@group}
-        current_profile={@current_profile}
-        class="shrink-0 px-4 py-2 text-sm"
-      />
+              <.icon_button
+                :if={ValueSearch.available?(@group, @active_tab, @access)}
+                id="group-search-messages"
+                type="button"
+                phx-click="value_search_open"
+                icon="hero-magnifying-glass"
+                label={gettext("Search messages")}
+              />
 
-      <div class="flex min-h-0 flex-1 flex-col overflow-clip">
-        <%!-- The first HTML only carries the header; the panel arrives once the socket connects. --%>
-        <div
-          :if={!@loaded?}
-          id="group-panel-loading"
-          aria-busy="true"
-          class="flex min-h-0 flex-1 flex-col gap-3 p-2"
-        >
-          <span class="sr-only">{gettext("Loading…")}</span>
-          <div :for={_row <- 1..4} class="h-14 animate-pulse rounded-3xl bg-base-200/70" />
-        </div>
+              <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
+                <GroupMenu.items
+                  group={@group}
+                  access={@access}
+                  active_tab={@active_tab}
+                  mute={GroupMenu.mute_state(@group, @is_member, @group_muted_until)}
+                >
+                  <%!-- The root has no bar of sections. --%>
+                  <Components.group_tab_button
+                    :if={@group.is_root and @calendar_tab?}
+                    id="group-tab-calendar"
+                    tab="calendar"
+                    active_tab={@active_tab}
+                    label={gettext("My calendar")}
+                    icon="hero-calendar-days"
+                  />
+                  <Components.group_tab_button
+                    :if={@group.is_root}
+                    id="group-tab-map"
+                    tab="map"
+                    active_tab={@active_tab}
+                    label={gettext("Map of groups")}
+                    icon="hero-map"
+                  />
+                  <%!-- Sections come with a group's first poll; this leads to starting one. --%>
+                  <Components.group_tab_button
+                    :if={@is_member and !@group.is_direct}
+                    id="group-tab-polls"
+                    tab="polls"
+                    active_tab={@active_tab}
+                    label={
+                      if(@group.is_root,
+                        do: dgettext("polls", "My polls"),
+                        else: dgettext("polls", "Polls")
+                      )
+                    }
+                    icon="hero-chart-bar"
+                  />
+                  <Components.group_tab_button
+                    :if={@processes_tab?}
+                    id="group-tab-processes"
+                    tab="processes"
+                    active_tab={@active_tab}
+                    label={gettext("Processes")}
+                    icon="hero-arrow-path-rounded-square"
+                    badge={@processes_waiting}
+                    badge_id="group-tab-processes-waiting"
+                  />
+                  <Components.group_tab_button
+                    :if={@group.is_root}
+                    id="group-tab-sub-groups"
+                    tab="sub_groups"
+                    active_tab={@active_tab}
+                    label={gettext("Sub-groups")}
+                    icon="hero-folder-open"
+                  />
+                </GroupMenu.items>
+              </Layouts.drop_down_menu>
+            </div>
+          </div>
 
-        <div :if={@loaded?} class="flex min-h-0 flex-1 flex-col gap-2">
-          <SubGroupsTab.panel
-            :if={@active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")}
+          <%!-- The root's own pages lead back to its overview from here. --%>
+          <Components.group_path
+            :if={@group.is_root and !needs_children?(@group, @active_tab)}
+            path={@group_path}
             group={@group}
             current_profile={@current_profile}
-            children={@streams.children}
-            pagination={@children_pagination}
-            pending_join_request_counts={@child_pending_join_request_counts}
-            unread_counts={@group_unread_counts}
-            muted_unread_counts={@group_muted_unread_counts}
-            muted_group_ids={@muted_group_ids}
-            waiting_counts={@group_waiting_counts}
-            time_zone={@calendar_time_zone}
-            is_member={@is_member}
-            can_create_subgroups={Access.can?(@access, :create_subgroups)}
-            sub_groups_kind={@sub_groups_kind}
-            direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
-            other_sub_groups_unread_count={@other_sub_groups_unread_count}
-            children_search_query={@children_search_query}
-            children_preset={@children_preset}
-            children_relation={@children_relation}
-            show_thread_sub_groups={@show_thread_sub_groups}
-            thread_sub_groups_count={@thread_sub_groups_count}
-            thread_sub_groups_unread_count={@thread_sub_groups_unread_count}
-            show_public_sub_groups={@show_public_sub_groups}
-            sub_groups_view={@sub_groups_view}
-            parent={parent_sub_groups(@group, @group_path, @sub_groups_view, @current_profile)}
-            tree={@sub_group_tree}
-            row_menu={@group_row_menu}
+            class="shrink-0 px-4 py-2 text-sm"
           />
-          <MembersTab.panel
-            :if={@active_tab == "members"}
-            members={@streams.members}
-            processes={@group_processes}
-            pagination={@members_pagination}
-            current_profile={@current_profile}
-            group={@group}
-            access={@access}
-            join_requests={@pending_join_requests}
-            pending_join_requests_count={@pending_join_requests_count}
-            blocks={@group_blocks}
-          />
-          <ValuesTab.panel
-            :if={
-              @active_tab == "values" and @group.parent_id != nil and
-                Access.can_read_chat?(@access, @group)
-            }
-            values={@streams.values}
-            has_more={@values_has_more?}
-            has_newer={@values_has_newer?}
-            group={@group}
-            current_profile={@current_profile}
-            editing_value_id={@editing_value && @editing_value.id}
-            editing_value={@editing_value}
-            edit_value_form={@edit_value_form}
-            new_value_form={@new_value_form}
-            replying_to_value={@replying_to_value}
-            thread_origin={@thread_origin}
-            focus_value_id={@focus_value_id}
-            unread_divider={@unread_divider}
-            is_member={@is_member}
-            access={@access}
-            attachments={@uploads.attachments}
-            can_attach={can_attach?(@access)}
-            keyboard_media={
-              if(can_send_keyboard_media?(@current_profile, @group, @access),
-                do: @uploads.keyboard_media
-              )
-            }
-            share_id={@share_id}
-          />
-          <FilesTab.panel
-            :if={@active_tab == "files"}
-            group={@group}
-            files={@streams.files}
-            files_view={@files_view}
-            has_more={@files_has_more?}
-            tree={@file_tree}
-            tree_truncated={@file_tree_truncated?}
-          />
-          <RootMapTab.panel
-            :if={@active_tab == "map"}
-            filters={@root_map_filters}
-            show_public={@show_public_sub_groups}
-            extent={@root_map_extent}
-            empty_closed={@root_map_empty_closed?}
-            total={@root_map_total}
-            truncated={@root_map_truncated?}
-            spot={@root_map_spot}
-            error={@root_map_error?}
-            range_form={@root_map_range_form}
-            layers={@root_map_layers}
-            here={@root_map_here}
-            area_options={@root_map_area_options || []}
-            area_query={@root_map_area_query}
-            area_chosen={@root_map_area_chosen}
-            focus={@root_map_focus}
-            focus_card={@root_map_focus_card?}
-            time_zone={@calendar_time_zone}
-          />
-          <CalendarTab.panel
-            :if={@active_tab == "calendar"}
-            group={@group}
-            current_profile={@current_profile}
-            access={@access}
-            time_zone={@calendar_time_zone}
-            month={@calendar_month}
-            mode={@calendar_mode}
-            weeks={@calendar_weeks}
-            by_day={@calendar_by_day}
-            occurrences={@streams.calendar_occurrences}
-            occurrences_empty={@calendar_occurrences_empty?}
-            selected_date={@calendar_selected_date}
-            include_subgroups={@calendar_include_subgroups?}
-            show_groups={@calendar_show_groups?}
-            show_public={@calendar_show_public?}
-            event={@calendar_event}
-            occurrence={@calendar_occurrence}
-            occurrence_cancelled={@calendar_occurrence_cancelled?}
-            summary={@calendar_summary}
-            can_manage={@calendar_can_manage?}
-            event_member={@calendar_event_member?}
-            my_reminders={@calendar_my_reminders}
-            form={@calendar_form}
-            form_values={@calendar_form_values}
-            announce={@calendar_announce?}
-            notify={@calendar_notify?}
-            place_group={@calendar_place_group}
-            place_map={@calendar_place_map?}
-            place_center={@calendar_place_center}
-            place_options={@calendar_place_options}
-            place_query={@calendar_place_query}
-            place_mode={@calendar_place_mode}
-            place_start={@calendar_place_start}
-            event_place={@calendar_event_place}
-            event_map_path={@calendar_event_map_path}
-          />
-          <PollsTab.panel
-            :if={@active_tab == "polls"}
-            group={@group}
-            access={@access}
-            status={@polls_status}
-            rows={@streams.polls}
-            empty={@polls_empty?}
-            more={@polls_more?}
-            detail={@polls_detail}
-            include_subgroups={@polls_include_subgroups?}
-            show_groups={@polls_show_groups?}
-            show_public={@polls_show_public?}
-          />
-          <ProcessesTab.panel
-            :if={@active_tab == "processes"}
-            group={@group}
-            access={@access}
-            current_profile={@current_profile}
-            apps={@processes_apps}
-            tasks={@processes_tasks}
-            fields={@processes_fields}
-            entities={@processes_entities}
-            entity={@processes_entity}
-            can_draw?={@processes_can_draw?}
-            editor={@process_editor}
-            editor_form={@process_editor_form}
-            editor_meta={@process_editor_meta}
-            start={@processes_start}
-          />
-          <NoticesTab.panel
-            :if={@active_tab == "notices"}
-            group={@group}
-            access={@access}
-            current_profile={@current_profile}
-            state={@notice_state}
-            can_follow={@can_follow_group?}
-            can_send={@can_send_notices?}
-            form={@notice_form}
-            notices={@streams.group_notices}
-            empty={@notices_empty?}
-            more={@notices_more?}
-            focus_id={@notice_focus_id}
-          />
-          <GroupDescriptionTab.panel
-            :if={
-              @active_tab == "group_home" or
-                (@active_tab == "values" and @group.parent_id != nil and
-                   !Access.can_read_chat?(@access, @group))
-            }
-            group={@group}
-            current_profile={@current_profile}
-            is_member={@is_member}
-            viewer_roles={Enum.join(@access.role_keys, ",")}
-            pending_join_request={@pending_join_request}
-            alt_descriptions={@visible_alt_descriptions}
-            active_alt_description={@active_alt_description}
-            can_edit={Access.can?(@access, :edit_group) and !@group.is_root}
-            reactions={@group_reactions}
-            can_react={@can_react_to_group}
-            app_upload={if(@current_profile, do: @uploads.app_file)}
-            host="page"
-            location={@group_location}
-          />
-          <CreateGroupTab.panel
-            :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
-            section={@create_group_section}
-            new_group_form={@new_group_form}
-            format_options={@format_options}
-            home_page_options={@home_page_options}
-            value_parent_options={@value_parent_options}
-            group={@group}
-          />
-          <EditGroupTab.panel
-            :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
-            edit_group_form={@edit_group_form}
-            link_card={@link_card}
-            location_mode={location_mode(@edit_group_form, @edit_group_location_mode)}
-            location_within={@edit_group_location_within}
-            shape_error={@edit_group_shape_error}
-            dirty={edit_group_dirty?(@edit_group_form)}
-            section={@edit_group_section}
-            inherits_members_option={@inherits_members_option?}
-            can_delete_group={@access.admin?}
-            description_details_open={@description_details_open}
-            format_options={@format_options}
-            home_page_options={@home_page_options}
-            group={@group}
-            alt_descriptions={@alt_descriptions}
-            alt_description_form={@alt_description_form}
-            editing_alt_description={@editing_alt_description}
-            roles={if(@access.manifest, do: @access.manifest.roles, else: [])}
-            max_alt_descriptions={Social.max_alt_descriptions()}
-            template_list={@template_list}
-            picture_upload={
-              if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
-            }
-            everyone_can_post={Access.everyone_can?(@access, :post_values)}
-          />
-          <InviteProfileTab.panel
-            :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
-            invite_form={@invite_form}
-            invite_form_version={@invite_form_version}
-            invite_profile_suggestions={@invite_profile_suggestions}
-            group={@group}
-          />
-          <RolesTab.panel
-            :if={@is_member and !@group.is_direct and @active_tab == "roles"}
-            group={@group}
-            access={@access}
-            manifest_owner={@manifest_owner}
-            new_role_form={@new_role_form}
-            role_member_counts={@role_member_counts}
-            members_count={@members_count}
-          />
+
+          <div class="flex min-h-0 flex-1 flex-col overflow-clip">
+            <%!-- The first HTML only carries the header; the panel arrives once the socket connects. --%>
+            <div
+              :if={!@loaded?}
+              id="group-panel-loading"
+              aria-busy="true"
+              class="flex min-h-0 flex-1 flex-col gap-3 p-2"
+            >
+              <span class="sr-only">{gettext("Loading…")}</span>
+              <div :for={_row <- 1..4} class="h-14 animate-pulse rounded-3xl bg-base-200/70" />
+            </div>
+
+            <div :if={@loaded?} class="flex min-h-0 flex-1 flex-col gap-2">
+              <SubGroupsTab.panel
+                :if={
+                  @active_tab == "sub_groups" or (@group.parent_id == nil and @active_tab == "values")
+                }
+                group={@group}
+                current_profile={@current_profile}
+                children={@streams.children}
+                pagination={@children_pagination}
+                pending_join_request_counts={@child_pending_join_request_counts}
+                unread_counts={@group_unread_counts}
+                muted_unread_counts={@group_muted_unread_counts}
+                muted_group_ids={@muted_group_ids}
+                waiting_counts={@group_waiting_counts}
+                time_zone={@calendar_time_zone}
+                is_member={@is_member}
+                can_create_subgroups={Access.can?(@access, :create_subgroups)}
+                sub_groups_kind={@sub_groups_kind}
+                direct_sub_groups_unread_count={@direct_sub_groups_unread_count}
+                other_sub_groups_unread_count={@other_sub_groups_unread_count}
+                children_search_query={@children_search_query}
+                children_preset={@children_preset}
+                children_relation={@children_relation}
+                show_thread_sub_groups={@show_thread_sub_groups}
+                thread_sub_groups_count={@thread_sub_groups_count}
+                thread_sub_groups_unread_count={@thread_sub_groups_unread_count}
+                show_public_sub_groups={@show_public_sub_groups}
+                sub_groups_view={@sub_groups_view}
+                parent={parent_sub_groups(@group, @group_path, @sub_groups_view, @current_profile)}
+                tree={@sub_group_tree}
+                row_menu={@group_row_menu}
+              />
+              <MembersTab.panel
+                :if={@active_tab == "members"}
+                members={@streams.members}
+                processes={@group_processes}
+                pagination={@members_pagination}
+                current_profile={@current_profile}
+                group={@group}
+                access={@access}
+                join_requests={@pending_join_requests}
+                pending_join_requests_count={@pending_join_requests_count}
+                blocks={@group_blocks}
+              />
+              <ValuesTab.panel
+                :if={
+                  @active_tab == "values" and @group.parent_id != nil and
+                    Access.can_read_chat?(@access, @group)
+                }
+                values={@streams.values}
+                has_more={@values_has_more?}
+                has_newer={@values_has_newer?}
+                group={@group}
+                current_profile={@current_profile}
+                editing_value_id={@editing_value && @editing_value.id}
+                editing_value={@editing_value}
+                edit_value_form={@edit_value_form}
+                new_value_form={@new_value_form}
+                replying_to_value={@replying_to_value}
+                thread_origin={@thread_origin}
+                focus_value_id={@focus_value_id}
+                unread_divider={@unread_divider}
+                is_member={@is_member}
+                access={@access}
+                attachments={@uploads.attachments}
+                can_attach={can_attach?(@access)}
+                keyboard_media={
+                  if(can_send_keyboard_media?(@current_profile, @group, @access),
+                    do: @uploads.keyboard_media
+                  )
+                }
+                share_id={@share_id}
+              />
+              <FilesTab.panel
+                :if={@active_tab == "files"}
+                group={@group}
+                files={@streams.files}
+                files_view={@files_view}
+                has_more={@files_has_more?}
+                tree={@file_tree}
+                tree_truncated={@file_tree_truncated?}
+              />
+              <RootMapTab.panel
+                :if={@active_tab == "map"}
+                filters={@root_map_filters}
+                show_public={@show_public_sub_groups}
+                extent={@root_map_extent}
+                empty_closed={@root_map_empty_closed?}
+                total={@root_map_total}
+                truncated={@root_map_truncated?}
+                spot={@root_map_spot}
+                error={@root_map_error?}
+                range_form={@root_map_range_form}
+                layers={@root_map_layers}
+                here={@root_map_here}
+                area_options={@root_map_area_options || []}
+                area_query={@root_map_area_query}
+                area_chosen={@root_map_area_chosen}
+                focus={@root_map_focus}
+                focus_card={@root_map_focus_card?}
+                time_zone={@calendar_time_zone}
+              />
+              <CalendarTab.panel
+                :if={@active_tab == "calendar"}
+                group={@group}
+                current_profile={@current_profile}
+                access={@access}
+                time_zone={@calendar_time_zone}
+                month={@calendar_month}
+                mode={@calendar_mode}
+                weeks={@calendar_weeks}
+                by_day={@calendar_by_day}
+                occurrences={@streams.calendar_occurrences}
+                occurrences_empty={@calendar_occurrences_empty?}
+                selected_date={@calendar_selected_date}
+                include_subgroups={@calendar_include_subgroups?}
+                show_groups={@calendar_show_groups?}
+                show_public={@calendar_show_public?}
+                event={@calendar_event}
+                occurrence={@calendar_occurrence}
+                occurrence_cancelled={@calendar_occurrence_cancelled?}
+                summary={@calendar_summary}
+                can_manage={@calendar_can_manage?}
+                event_member={@calendar_event_member?}
+                my_reminders={@calendar_my_reminders}
+                form={@calendar_form}
+                form_values={@calendar_form_values}
+                announce={@calendar_announce?}
+                notify={@calendar_notify?}
+                place_group={@calendar_place_group}
+                place_map={@calendar_place_map?}
+                place_center={@calendar_place_center}
+                place_options={@calendar_place_options}
+                place_query={@calendar_place_query}
+                place_mode={@calendar_place_mode}
+                place_start={@calendar_place_start}
+                event_place={@calendar_event_place}
+                event_map_path={@calendar_event_map_path}
+              />
+              <PollsTab.panel
+                :if={@active_tab == "polls"}
+                group={@group}
+                access={@access}
+                status={@polls_status}
+                rows={@streams.polls}
+                empty={@polls_empty?}
+                more={@polls_more?}
+                detail={@polls_detail}
+                include_subgroups={@polls_include_subgroups?}
+                show_groups={@polls_show_groups?}
+                show_public={@polls_show_public?}
+              />
+              <ProcessesTab.panel
+                :if={@active_tab == "processes"}
+                group={@group}
+                access={@access}
+                current_profile={@current_profile}
+                apps={@processes_apps}
+                tasks={@processes_tasks}
+                fields={@processes_fields}
+                entities={@processes_entities}
+                entity={@processes_entity}
+                can_draw?={@processes_can_draw?}
+                editor={@process_editor}
+                editor_form={@process_editor_form}
+                editor_meta={@process_editor_meta}
+                start={@processes_start}
+              />
+              <NoticesTab.panel
+                :if={@active_tab == "notices"}
+                group={@group}
+                access={@access}
+                current_profile={@current_profile}
+                state={@notice_state}
+                can_follow={@can_follow_group?}
+                can_send={@can_send_notices?}
+                form={@notice_form}
+                notices={@streams.group_notices}
+                empty={@notices_empty?}
+                more={@notices_more?}
+                focus_id={@notice_focus_id}
+              />
+              <GroupDescriptionTab.panel
+                :if={
+                  @active_tab == "group_home" or
+                    (@active_tab == "values" and @group.parent_id != nil and
+                       !Access.can_read_chat?(@access, @group))
+                }
+                group={@group}
+                current_profile={@current_profile}
+                is_member={@is_member}
+                viewer_roles={Enum.join(@access.role_keys, ",")}
+                pending_join_request={@pending_join_request}
+                alt_descriptions={@visible_alt_descriptions}
+                active_alt_description={@active_alt_description}
+                can_edit={Access.can?(@access, :edit_group) and !@group.is_root}
+                reactions={@group_reactions}
+                can_react={@can_react_to_group}
+                app_upload={if(@current_profile, do: @uploads.app_file)}
+                host="page"
+                location={@group_location}
+              />
+              <CreateGroupTab.panel
+                :if={Access.can?(@access, :create_subgroups) and @active_tab == "create_group"}
+                section={@create_group_section}
+                new_group_form={@new_group_form}
+                format_options={@format_options}
+                home_page_options={@home_page_options}
+                value_parent_options={@value_parent_options}
+                group={@group}
+              />
+              <EditGroupTab.panel
+                :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
+                edit_group_form={@edit_group_form}
+                link_card={@link_card}
+                location_mode={location_mode(@edit_group_form, @edit_group_location_mode)}
+                location_within={@edit_group_location_within}
+                shape_error={@edit_group_shape_error}
+                dirty={edit_group_dirty?(@edit_group_form)}
+                section={@edit_group_section}
+                inherits_members_option={@inherits_members_option?}
+                can_delete_group={@access.admin?}
+                description_details_open={@description_details_open}
+                format_options={@format_options}
+                home_page_options={@home_page_options}
+                group={@group}
+                alt_descriptions={@alt_descriptions}
+                alt_description_form={@alt_description_form}
+                editing_alt_description={@editing_alt_description}
+                roles={if(@access.manifest, do: @access.manifest.roles, else: [])}
+                max_alt_descriptions={Social.max_alt_descriptions()}
+                template_list={@template_list}
+                picture_upload={
+                  if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
+                }
+                everyone_can_post={Access.everyone_can?(@access, :post_values)}
+              />
+              <InviteProfileTab.panel
+                :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
+                invite_form={@invite_form}
+                invite_form_version={@invite_form_version}
+                invite_profile_suggestions={@invite_profile_suggestions}
+                group={@group}
+              />
+              <RolesTab.panel
+                :if={@is_member and !@group.is_direct and @active_tab == "roles"}
+                group={@group}
+                access={@access}
+                manifest_owner={@manifest_owner}
+                new_role_form={@new_role_form}
+                role_member_counts={@role_member_counts}
+                members_count={@members_count}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -911,6 +937,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> AppHost.allow("page")
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
+         |> GroupSidebar.init()
          |> assign(:muted_group_ids, MapSet.new())
          |> assign(:group_muted_until, nil)
          |> assign(:group_muted_unread_counts, %{})
@@ -2117,6 +2144,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("group_row_menu_close", _params, socket),
     do: {:noreply, assign(socket, :group_row_menu, nil)}
 
+  def handle_event("group_sidebar_load", _params, socket),
+    do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket))}
+
   # Silences a group (the open one, or a row's) for a while, or lets it speak
   # again ("off"). The pages of the profile hear of it and count again.
   def handle_event("group_mute", %{"id" => id, "for" => duration}, socket) do
@@ -2869,6 +2899,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> note_child_last_value(unread.group_id, unread[:preview], unread.inserted_at)
+     |> GroupSidebar.noted(unread.group_id, unread[:preview], unread.inserted_at)
      |> schedule_refresh(:child_previews)}
   end
 
@@ -2876,6 +2907,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> note_child_last_value(unread.group_id, unread[:preview], unread.inserted_at)
+     |> GroupSidebar.noted(unread.group_id, unread[:preview], unread.inserted_at)
      |> update(:pending_unread_values, &[unread | &1])
      |> schedule_refresh(:unread_values)}
   end
@@ -2884,6 +2916,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     {:noreply,
      socket
      |> note_child_last_value(group_id, preview, last_value_at)
+     |> GroupSidebar.noted(group_id, preview, last_value_at)
      |> schedule_refresh(:child_previews)}
   end
 
@@ -5592,6 +5625,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:direct_sub_groups_unread_count, direct_sub_groups_unread_count)
     |> assign(:other_sub_groups_unread_count, other_sub_groups_unread_count)
     |> put_sub_group_tree_unread_counts()
+    |> GroupSidebar.counted(overview)
   end
 
   # Each folder carries its own unread count instead of the folder view

@@ -62,6 +62,30 @@
         showSidebar(localStorage.getItem("phx:sidebar"));
         window.addEventListener("storage", (e) => e.key === "phx:sidebar" && showSidebar(e.newValue));
 
+        // The same for the column of one's groups beside a group's page
+        // (`GroupSidebar`), which loads once it shows.
+        const showGroupSidebar = (state) => {
+          if (state === "hidden") {
+            document.documentElement.setAttribute("data-group-sidebar", "hidden");
+          } else {
+            document.documentElement.removeAttribute("data-group-sidebar");
+            window.dispatchEvent(new Event("potok:group-sidebar-shown"));
+          }
+        };
+        try {
+          showGroupSidebar(localStorage.getItem("potok:group-sidebar"));
+        } catch (_error) {}
+        window.addEventListener("phx:toggle-group-sidebar", () => {
+          const state = document.documentElement.dataset.groupSidebar === "hidden" ? "shown" : "hidden";
+          const next = document.getElementById(state === "hidden" ? "group-sidebar-show" : "group-sidebar-hide");
+
+          try {
+            localStorage.setItem("potok:group-sidebar", state);
+          } catch (_error) {}
+          showGroupSidebar(state);
+          requestAnimationFrame(() => requestAnimationFrame(() => next?.focus({ preventScroll: true })));
+        });
+
         // The button pressed disappears with the change, so the focus moves to
         // the one that undoes it, a frame later: the buttons fade in.
         window.addEventListener("phx:toggle-sidebar", () => {

@@ -4781,6 +4781,33 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
+  @doc """
+  The profile's groups for the column beside a conversation on a wide screen
+  (`PotokIdeWeb.GroupLive.Show.GroupSidebar`): every membership but the root,
+  threads and records, those with something unread (`unread_ids`) first,
+  then by their newest value, each with its newest value's preview.
+  """
+  def list_sidebar_groups(%Profile{id: profile_id}, unread_ids, limit \\ 60)
+      when is_list(unread_ids) do
+    groups =
+      from(g in Group,
+        join: gm in GroupMembership,
+        on: gm.group_id == g.id and gm.profile_id == ^profile_id,
+        where: not g.is_root and is_nil(g.parent_value_id) and is_nil(g.external_key),
+        order_by: [
+          desc: fragment("? = ANY(?)", g.id, type(^unread_ids, {:array, :integer})),
+          desc_nulls_last: g.last_value_at,
+          desc: g.id
+        ],
+        limit: ^limit
+      )
+      |> Repo.all()
+      |> maybe_preload_group_members()
+
+    previews = last_chat_previews(Enum.map(groups, & &1.id))
+    Enum.map(groups, &%{&1 | last_value: Map.get(previews, &1.id), viewer_is_member: true})
+  end
+
   defp filter_share_targets(query, _profile, nil), do: query
 
   defp filter_share_targets(query, %Profile{id: profile_id}, search) do

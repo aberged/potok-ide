@@ -1012,6 +1012,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     doc: "unread values of a group the viewer silenced, shown in grey when nothing else is"
 
   attr :muted?, :boolean, default: false, doc: "whether the viewer silenced the group"
+
+  attr :id_prefix, :string,
+    default: "group",
+    doc: "starts the ids of its marks, for a group shown twice on a page"
+
   attr :badge_top, :string, default: "-top-2", doc: "how far the counts stand over the avatar"
   attr :current_profile, :map, default: nil
   attr :highlight_query, :string, default: ""
@@ -1063,7 +1068,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <%= if mark = group_kind_mark(@group) do %>
           <.avatar_mark
-            id={"group-kind-mark-#{@group.id}"}
+            id={"#{@id_prefix}-kind-mark-#{@group.id}"}
             data-kind={mark.kind}
             icon={mark.icon}
             title={mark.title}
@@ -1073,20 +1078,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         <.count_badge
           :if={!@group.is_root and @pending_join_requests_count > 0}
-          id={"group-pending-join-requests-badge-#{@group.id}"}
+          id={"#{@id_prefix}-pending-join-requests-badge-#{@group.id}"}
           count={@pending_join_requests_count}
           tone={:attention}
           class={["absolute -left-2", @badge_top]}
         />
         <.count_badge
           :if={!@group.is_root and @unread_count > 0}
-          id={"group-unread-badge-#{@group.id}"}
+          id={"#{@id_prefix}-unread-badge-#{@group.id}"}
           count={@unread_count}
           class={["absolute -right-2", @badge_top]}
         />
         <.count_badge
           :if={!@group.is_root and @unread_count == 0 and @muted_unread_count > 0}
-          id={"group-muted-unread-badge-#{@group.id}"}
+          id={"#{@id_prefix}-muted-unread-badge-#{@group.id}"}
           count={@muted_unread_count}
           tone={:muted}
           class={["absolute -right-2", @badge_top]}
@@ -1115,7 +1120,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </div>
           <span
             :if={@muted?}
-            id={"group-muted-#{@group.id}"}
+            id={"#{@id_prefix}-muted-#{@group.id}"}
             title={gettext("Muted")}
             class="inline-flex shrink-0 text-base-content/50"
           >
@@ -1124,7 +1129,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           </span>
           <span
             :if={thread_group?(@group)}
-            id={"group-thread-badge-#{@group.id}"}
+            id={"#{@id_prefix}-thread-badge-#{@group.id}"}
             title={gettext("Thread")}
             class="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold uppercase leading-none tracking-wide text-primary"
           >

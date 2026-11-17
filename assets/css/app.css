@@ -200,6 +200,12 @@
    styles what only goes with the menu at the side. */
 @custom-variant sidebar-shown (&:where(:root:not([data-sidebar="hidden"]) *));
 
+/* The column of the viewer's groups beside a group's page, on a wide screen,
+   until it is hidden (`data-group-sidebar="hidden"` on <html>, kept per device
+   by the script in root.html.heex; see `GroupSidebar`). */
+@custom-variant group-sidebar-shown (&:where(:root:not([data-group-sidebar="hidden"]) *));
+@custom-variant group-sidebar-hidden (&:where(:root[data-group-sidebar="hidden"] *));
+
 /* The hidden menu folds to nothing. Outside the layers, since daisyUI's drawer
    sets the transition of its side in the utilities layer, with a stronger
    selector. Folding, it turns invisible only at the end, so no link takes the
