@@ -59,6 +59,9 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :time_zone, :string, required: true, doc: "the viewer's, for when sub-groups were active"
   attr :row_menu, :map, default: nil, doc: "the open menu of a row (`GroupMenu.row_menu/1`)"
 
+  slot :before_list,
+    doc: "what stands above the rows and scrolls with them, such as the root's pinned groups"
+
   def panel(assigns) do
     # Direct conversations have no kind and are all the viewer's own (see
     # `children_filters/1` of the page).
@@ -341,6 +344,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       </div>
 
       <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain p-2 pb-24">
+        {render_slot(@before_list)}
         <p
           :if={@pagination.loaded_count == 0}
           id="group-children-empty"

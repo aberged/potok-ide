@@ -33,6 +33,12 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     lv
   end
 
+  # What the header's button of a narrower screen asks for; the page as it
+  # stood right after, before the column loads.
+  defp open_sheet(lv, params \\ %{"open" => []}) do
+    lv |> element("#group-sidebar") |> render_hook("group_sidebar_sheet", params)
+  end
+
   # A public building the member is not in, with an entrance the member is in.
   defp building(ctx) do
     building =
@@ -221,6 +227,95 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
 
     refute has_element?(lv, "#group-sidebar")
     refute has_element?(lv, "#group-sidebar-show")
+    refute has_element?(lv, "#group-sidebar-sheet-show")
+  end
+
+  describe "the panel of a narrower screen" do
+    test "opens at once, loads, and holds what the column would", ctx do
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+
+      assert has_element?(lv, "#group-sidebar-sheet-show")
+      refute has_element?(lv, "#group-sidebar-sheet")
+
+      # The panel shows its skeleton before the column has loaded.
+      html = open_sheet(lv)
+
+      assert html
+             |> LazyHTML.from_fragment()
+             |> LazyHTML.query("#group-sidebar-sheet #group-sidebar-loading")
+             |> Enum.any?()
+
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-tree")
+
+      assert has_element?(
+               lv,
+               "#group-sidebar-sheet #group-sidebar-link-#{ctx.lift.id}[aria-current=page]"
+             )
+
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-unread-#{ctx.garden.id}", "1")
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-search-form")
+
+      # Its contents moved: nothing of them stands twice on the page.
+      refute has_element?(lv, "#group-sidebar #group-sidebar-tree")
+      refute has_element?(lv, "#group-sidebar #group-sidebar-search-form")
+      assert has_element?(lv, "#group-sidebar #group-sidebar-scroll")
+    end
+
+    test "closing puts the contents back, and opening again needs no loading", ctx do
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      open_sheet(lv)
+
+      lv |> element("#group-sidebar-sheet-close") |> render_click()
+
+      refute has_element?(lv, "#group-sidebar-sheet")
+      assert has_element?(lv, "#group-sidebar #group-sidebar-tree")
+
+      html = open_sheet(lv)
+
+      document = LazyHTML.from_fragment(html)
+      assert document |> LazyHTML.query("#group-sidebar-sheet #group-sidebar-tree") |> Enum.any?()
+      refute document |> LazyHTML.query("#group-sidebar-loading") |> Enum.any?()
+
+      # Escape, Android's back button or a window grown wide enough.
+      lv |> element("#group-sidebar") |> render_hook("group_sidebar_sheet_close", %{})
+      refute has_element?(lv, "#group-sidebar-sheet")
+    end
+
+    test "keeps the folders the browser remembers, and opens and searches as the column does",
+         ctx do
+      {building, entrance} = building(ctx)
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      open_sheet(lv, %{"open" => [building.id]})
+
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-node-#{entrance.id}")
+
+      lv |> element("#group-sidebar-toggle-#{building.id}") |> render_click()
+
+      refute has_element?(lv, "#group-sidebar-node-#{entrance.id}")
+      assert_push_event(lv, "group_sidebar_open", %{ids: []})
+
+      lv
+      |> form("#group-sidebar-search-form", %{"group_sidebar_search" => %{"q" => "garden"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-node-#{ctx.garden.id}")
+      refute has_element?(lv, "#group-sidebar-node-#{ctx.lift.id}")
+    end
+
+    test "unpins from the panel", ctx do
+      :ok = Social.pin_group(ctx.member, ctx.garden.id)
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      open_sheet(lv)
+
+      assert has_element?(lv, "#group-sidebar-sheet #group-sidebar-pin-#{ctx.garden.id}")
+
+      lv |> element("#group-sidebar-unpin-#{ctx.garden.id}") |> render_click()
+
+      refute has_element?(lv, "#group-sidebar-pin-#{ctx.garden.id}")
+      refute Social.group_pinned?(ctx.member, ctx.garden.id)
+    end
   end
 
   describe "pinned groups" do

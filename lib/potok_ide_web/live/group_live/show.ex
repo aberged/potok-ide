@@ -46,6 +46,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     MembersTab,
     NoticesState,
     NoticesTab,
+    PinnedStrip,
     PollCard,
     PollForm,
     PollsState,
@@ -157,10 +158,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
         <%= Components.poll_tally_css(@poll_tallies) %>
       </style>
 
-      <%!-- On a wide screen the viewer's groups stand beside the page (`GroupSidebar`). --%>
+      <%!-- On a wide screen the viewer's groups stand beside the page (`GroupSidebar`);
+       a narrower one opens them in a panel from the header. --%>
       <div id="group-page" class="flex min-h-0 flex-1 xl:gap-3">
         <GroupSidebar.panel
           :if={!@group.is_root and @current_profile}
+          sidebar={@sidebar}
+          current_profile={@current_profile}
+          group_id={@group.id}
+          sheet?={@sidebar_sheet?}
+        />
+        <GroupSidebar.sheet
+          :if={!@group.is_root and @current_profile}
+          open?={@sidebar_sheet?}
           sidebar={@sidebar}
           current_profile={@current_profile}
           group_id={@group.id}
@@ -184,6 +194,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 aria-label={gettext("Show your groups")}
                 title={gettext("Show your groups")}
                 class="hidden size-11 shrink-0 items-center justify-center rounded-full text-base-content/70 transition-colors duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 xl:group-sidebar-hidden:inline-flex"
+              >
+                <.icon name="hero-queue-list" class="size-5" />
+              </button>
+              <%!-- A narrower screen has no room for the column: the same opens in a panel. --%>
+              <button
+                :if={!@group.is_root and @current_profile}
+                id="group-sidebar-sheet-show"
+                type="button"
+                phx-click={JS.dispatch("potok:group-sidebar-sheet")}
+                aria-label={gettext("Show your groups")}
+                aria-haspopup="dialog"
+                title={gettext("Show your groups")}
+                class="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-base-content/70 transition duration-150 hover:bg-base-200 hover:text-base-content focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 active:scale-95 cramped:size-9 xl:hidden"
               >
                 <.icon name="hero-queue-list" class="size-5" />
               </button>
@@ -642,7 +665,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 parent={parent_sub_groups(@group, @group_path, @sub_groups_view, @current_profile)}
                 tree={@sub_group_tree}
                 row_menu={@group_row_menu}
-              />
+              >
+                <:before_list :if={
+                  @group.is_root and @sub_groups_kind != "direct" and @root_pins not in [nil, []] and
+                    String.trim(@children_search_query) == ""
+                }>
+                  <PinnedStrip.strip
+                    pins={@root_pins}
+                    unread_counts={@group_unread_counts}
+                    muted_unread_counts={@group_muted_unread_counts}
+                    muted_group_ids={@muted_group_ids}
+                    waiting_counts={@group_waiting_counts}
+                  />
+                </:before_list>
+              </SubGroupsTab.panel>
               <MembersTab.panel
                 :if={@active_tab == "members"}
                 members={@streams.members}
@@ -981,6 +1017,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
            normalize_sub_groups_view(Map.get(params, "view"), sub_groups_kind)
          )
          |> assign(:sub_group_tree, nil)
+         |> assign(:root_pins, nil)
          |> assign(:members_count, 0)
          |> assign(:first3_members, [])
          |> assign(:online_profile_ids, MapSet.new())
@@ -2186,6 +2223,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("group_sidebar_load", params, socket),
     do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket), params)}
 
+  # A narrower screen opens the column's contents in a panel, with the same
+  # folders open.
+  def handle_event("group_sidebar_sheet", params, socket),
+    do: {:noreply, GroupSidebar.open_sheet(socket, params)}
+
+  def handle_event("group_sidebar_sheet_close", _params, socket),
+    do: {:noreply, GroupSidebar.close_sheet(socket)}
+
   def handle_event("group_sidebar_toggle", %{"id" => id}, socket) do
     case Integer.parse(id) do
       {group_id, ""} -> {:noreply, GroupSidebar.toggle(socket, group_id)}
@@ -2973,10 +3018,15 @@ defmodule PotokIdeWeb.GroupLive.Show do
      socket
      |> put_private(:pinned_group_ids, Social.pinned_group_ids(socket.assigns.current_profile))
      |> assign_pinned(socket.assigns.group)
+     |> reload_root_pins()
      |> GroupSidebar.pins_changed()}
   end
 
   def handle_info({:group_pins_changed, _profile_id}, socket), do: {:noreply, socket}
+
+  # The panel opened before the column had loaded (`GroupSidebar.open_sheet/2`).
+  def handle_info({:group_sidebar_load, params}, socket),
+    do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket), params)}
 
   # An app on the page hears of it too, and reads what waits again.
   def handle_info({:profile_waiting_updated, _profile_id}, socket) do
@@ -3111,6 +3161,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:loaded?, true)
     |> assign_mutes(group)
     |> assign_pinned(group)
+    |> load_root_pins(group)
     |> put_unread_overview(overview)
     |> assign(:group_waiting_counts, waiting_overview(socket))
     |> load_member_summary(group)
@@ -4939,6 +4990,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp assign_pinned(socket, _group), do: assign(socket, :group_pinned?, false)
 
+  # The root's strip of pinned groups (`PinnedStrip`), read once per page and
+  # again when the pins change. The header's counts say whether there are
+  # any, so a profile with none asks nothing more.
+  defp load_root_pins(%{assigns: %{root_pins: pins}} = socket, %{is_root: true})
+       when is_list(pins),
+       do: socket
+
+  defp load_root_pins(socket, %{is_root: true}),
+    do: assign(socket, :root_pins, read_root_pins(socket))
+
+  defp load_root_pins(socket, _group), do: assign(socket, :root_pins, [])
+
+  defp reload_root_pins(%{assigns: %{group: %{is_root: true}}} = socket) do
+    socket
+    |> assign(:root_pins, read_root_pins(socket))
+    |> assign_group_unread_counts()
+  end
+
+  defp reload_root_pins(socket), do: socket
+
+  defp read_root_pins(%{assigns: %{current_profile: %Profile{} = profile}} = socket) do
+    if socket.private[:pinned_group_ids] == [], do: [], else: Social.list_pinned_groups(profile)
+  end
+
+  defp read_root_pins(_socket), do: []
+
   defp assign_mutes(socket, group) do
     muted_ids = ProfileAuth.muted_groups(socket)
 
@@ -5767,8 +5844,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
         nil -> []
       end
 
+    # The root's pinned groups count too, for their strip.
+    pin_ids = for %{group: %{id: id}} <- Map.get(socket.assigns, :root_pins) || [], do: id
+
     group_ids =
-      [group.id | Enum.map(Map.get(socket.assigns, :loaded_children, []), & &1.id)] ++ tree_ids
+      [group.id | Enum.map(Map.get(socket.assigns, :loaded_children, []), & &1.id)] ++
+        tree_ids ++ pin_ids
 
     group_unread_counts = Social.unread_counts_for(overview, group_ids)
     current_group_unread_count = get_in(overview.groups, [group.id, :own]) || 0
