@@ -19,6 +19,7 @@ const pendingCalls = new Map()
 // listener -> whether it gets the values of every app in the group.
 const newValueListeners = new Map()
 const pollListeners = new Set()
+const waitingListeners = new Set()
 const subgroupListeners = new Set()
 const sheetListeners = new Set()
 // listener -> the collection it follows (null: all of them).
@@ -187,6 +188,17 @@ window.addEventListener("message", event => {
     sheetListeners.forEach(listener => {
       try {
         listener(message.id)
+      } catch (error) {
+        console.error(error)
+      }
+    })
+    return
+  }
+
+  if (message.event === "waiting_changed") {
+    waitingListeners.forEach(listener => {
+      try {
+        listener()
       } catch (error) {
         console.error(error)
       }
@@ -445,6 +457,34 @@ const potok = {
   // someone finished first gives `{ok: false, error: "not_waiting"}`.
   completeTask: (id, element, outcome, options = {}) =>
     call("complete_task", {id, element, outcome, comment: options.comment ?? null}),
+
+  // What waits for the viewer in the group, of the processes drawn in it: a
+  // `kind` "form" to fill in (its `attributes`) or "decision" (its
+  // `outcomes`), with its `process`, `label`, `title`, `deadline_at` and
+  // whether the viewer started its run (`started_by_viewer`).
+  listWaiting: () => call("list_waiting"),
+
+  // Opens Potok's dialog of a form that waits for the viewer, over the app.
+  // A decision is finished with `completeTask(id, element, outcome)`.
+  openProcessForm: id => call("open_process_form", {id}),
+
+  // The processes drawn in the group the viewer may start by hand: `takes`
+  // "entity" (its `attributes`) or "text" (a title and a text).
+  listStartable: () => call("list_startable"),
+
+  // Opens Potok's Start dialog of such a process, over the app, with
+  // `prefill` (by attribute) already written in for the viewer to change.
+  openProcessStart: (id, options = {}) =>
+    call("open_process_start", {id, prefill: options.prefill ?? null}),
+
+  // Calls `listener` when what waits for the viewer changed; read it again
+  // with `listWaiting`.
+  onWaiting(listener) {
+    if (typeof listener !== "function") return () => {}
+
+    waitingListeners.add(listener)
+    return () => waitingListeners.delete(listener)
+  },
 
   // For the app's editors: takes a failed instance up again where it stopped,
   // or cancels one that runs or waits.

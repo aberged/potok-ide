@@ -68,6 +68,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     AppData,
     AppFiles,
     AppProcesses,
+    DrawnProcesses,
     Group,
     GroupAreas,
     GroupPins,
@@ -87,6 +88,8 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     GroupSheet,
     PollForm,
     PollsState,
+    ProcessForm,
+    ProcessesState,
     RolesTab
   }
 
@@ -111,6 +114,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     set_notifications ensure_file_groups file_url prepare_upload
     map_config list_places list_places_at create_place show_group place_shapes
     list_processes complete_task retry_process cancel_process
+    list_waiting open_process_form list_startable open_process_start
   )
 
   # What a guest may call of those: reads, with a guest's sight (`Social`
@@ -569,6 +573,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
     with {:ok, id} <- id_param(params),
          {:ok, socket} <- take_write_token(socket) do
+      # Beside its own process's, a decision of a process drawn in the group
+      # that waits for the viewer (`list_waiting`).
+      alt = if Processes.waits_for?(profile, group, access, id), do: :any, else: alt
+
       case Processes.complete_task(
              profile,
              group,
@@ -599,6 +607,70 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       end
     else
       {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # What waits for the viewer in the group: the forms and decisions of the
+  # processes drawn in it, as the Processes tab lists them.
+  defp run("list_waiting", _params, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    with :ok <-
+           require_member(socket, gettext("Only the group's members are asked by its processes.")),
+         :ok <- heavy_read(socket) do
+      tasks = Processes.tasks_for(profile, group, access)
+      {%{ok: true, tasks: Enum.map(tasks, &task_payload/1)}, socket}
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  # A form that waits for the viewer opens in Potok's own dialog, over the
+  # app: an app reads a form and never fills one in.
+  defp run("open_process_form", params, socket) do
+    with {:ok, id} <- id_param(params),
+         :ok <- page_dialogs(socket, :process_form),
+         {:ok, socket} <- ProcessForm.open_task(socket, id) do
+      {%{ok: true}, socket}
+    else
+      {:error, reply} when is_map(reply) -> {reply, socket}
+      _not_waiting -> {error("not_found", nil), socket}
+    end
+  end
+
+  # The processes drawn in the group that the viewer may start by hand, with
+  # what each asks for.
+  defp run("list_startable", _params, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    case require_member(socket, gettext("Only the group's members start its processes.")) do
+      :ok ->
+        processes =
+          for process <- DrawnProcesses.list(group),
+              process.active and DrawnProcesses.may_start?(process, access),
+              do: startable_payload(process)
+
+        {%{ok: true, processes: processes}, socket}
+
+      {:error, reply} ->
+        {reply, socket}
+    end
+  end
+
+  # The Start form of such a process opens in Potok's own dialog, with what
+  # the app filled in for the viewer to see and change.
+  defp run("open_process_start", params, socket) do
+    %{group: group, access: access} = socket.assigns
+    prefill = if is_map(params["prefill"]), do: params["prefill"], else: %{}
+
+    with {:ok, id} <- id_param(params),
+         :ok <- page_dialogs(socket, :processes_start),
+         %{} = process <- DrawnProcesses.get(group, id),
+         true <- process.active and DrawnProcesses.may_start?(process, access) do
+      {%{ok: true}, ProcessesState.open_start(socket, process, prefill)}
+    else
+      {:error, reply} when is_map(reply) -> {reply, socket}
+      _not_startable -> {error("not_found", nil), socket}
     end
   end
 
@@ -1763,6 +1835,50 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   defp description_source(%{active_alt_description: nil, group: group}), do: group
   defp description_source(%{active_alt_description: alt}), do: alt
+
+  # Potok's dialogs of a process stand on the group's page only, not in a
+  # sheet over another page.
+  defp page_dialogs(socket, key) do
+    if Map.has_key?(socket.assigns, key),
+      do: :ok,
+      else: {:error, error("not_here", gettext("Open the group's page to do that."))}
+  end
+
+  # A task as an app reads it: what it is, of which process, until when, and
+  # what a person picks (a decision) or fills in (a form).
+  defp task_payload(task) do
+    %{
+      id: task.id,
+      process: %{id: task.process.id, name: task.process.name},
+      element: task.element,
+      label: task.label,
+      kind: if(task.form?, do: "form", else: "decision"),
+      title: task[:title],
+      text: task[:text],
+      deadline_at: task.deadline_at,
+      outcomes: if(task.form?, do: [], else: task.outcomes),
+      attributes: if(task.form?, do: task.attributes, else: []),
+      started_by_viewer: task.by_viewer?
+    }
+  end
+
+  defp startable_payload(process) do
+    attributes =
+      case process do
+        %{entry_entity_id: id, graph: %{"types" => types}} when is_integer(id) ->
+          PotokIde.Processes.Types.attributes(types, id) || []
+
+        _plain ->
+          nil
+      end
+
+    %{
+      id: process.id,
+      name: process.name,
+      takes: if(attributes, do: "entity", else: "text"),
+      attributes: attributes || []
+    }
+  end
 
   defp require_member(socket, message) do
     if socket.assigns.is_member, do: :ok, else: {:error, error("not_a_member", message)}

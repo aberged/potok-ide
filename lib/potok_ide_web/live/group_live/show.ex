@@ -2868,8 +2868,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_mute_changed, _profile_id, _group_id}, socket), do: {:noreply, socket}
 
-  def handle_info({:profile_waiting_updated, _profile_id}, socket),
-    do: {:noreply, refresh_group_waiting_counts(socket)}
+  # An app on the page hears of it too, and reads what waits again.
+  def handle_info({:profile_waiting_updated, _profile_id}, socket) do
+    {:noreply,
+     socket
+     |> refresh_group_waiting_counts()
+     |> AppHost.push("app_waiting_changed", %{})}
+  end
 
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}

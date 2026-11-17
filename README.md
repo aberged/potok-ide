@@ -824,7 +824,14 @@ Who set off a step (`triggered_by`) is the value's author at the start (nobody f
 * `completeTask(id, element, outcome, {comment})` finishes the task the instance waits on, for someone holding its role, with a comment of at most 1000 characters, and resolves to `{ok: true, process}`. A task no longer waiting gives `not_waiting`, an outcome it does not have `invalid_outcome`, a stopped process `process_inactive`.
 * `retryProcess(id)` takes a failed instance up again where it stopped (`not_failed` for any other), and `cancelProcess(id)` cancels one that runs or waits (`not_running` for any other). Both are for editors and resolve to `{ok: true, process}`.
 * The `process` event of `onValues` says only which instance moved; the app reads it again with `listProcesses`, which shows only what the viewer may see.
-* Processes that the group's editors draw in Potok on the same collection are none of the app's: `listProcesses` leaves their instances out, `completeTask`, `retryProcess` and `cancelProcess` answer `not_found` for them, and their moves send no `process` event. Their tasks are finished on the group's Processes tab. A drawn process may also start on a chat message, a new sub-group, a schedule or by hand, none of which reaches the app.
+* Processes that the group's editors draw in Potok are not the app's to list or run: `listProcesses` leaves their instances out, `retryProcess` and `cancelProcess` answer `not_found` for them, and their moves send no `process` event. A drawn process may start on a chat message, a new sub-group, a schedule or by hand, none of which reaches the app. What of them asks the viewer is the app's to see, and Potok's own dialogs fill it in:
+  * `listWaiting()` resolves to `{ok: true, tasks}`: what waits for the viewer in the group, as the Processes tab lists it under Waiting for you, the nearest deadline first. Each is `{id, process: {id, name}, element, label, kind, title, text, deadline_at, outcomes, attributes, started_by_viewer}`, with `kind` `"form"` (its entity's `attributes`, each `{name, type, list, required, options | entity}`) or `"decision"` (its `outcomes`). Members only.
+  * `openProcessForm(id)` opens Potok's dialog of such a form over the app (`not_found` once it no longer waits for the viewer); the app never fills one in itself.
+  * `completeTask(id, element, outcome, {comment})` also finishes a drawn decision that waits for the viewer.
+  * `listStartable()` resolves to `{ok: true, processes}`: the drawn processes the viewer may start by hand, `{id, name, takes, attributes}`, where `takes` is `"entity"` (its `attributes`) or `"text"` (a title and a text).
+  * `openProcessStart(id, {prefill})` opens Potok's Start dialog of one over the app, with `prefill` (by attribute, or `title` and `text`) written in for the viewer to see and change.
+  * `onWaiting(listener)` calls `listener` when what waits for the viewer changed; the app reads it again with `listWaiting`.
+  * Potok's dialogs stand on the group's page: in a sheet over another page (`showGroup`) the two `open…` calls answer `not_here`.
 
 #### Replies, errors and the frame
 

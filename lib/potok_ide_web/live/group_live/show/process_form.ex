@@ -100,6 +100,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
 
   def open_from_params(socket, _params), do: socket
 
+  @doc """
+  Opens the form run `id` waits for the viewer to fill in, for an app that
+  asks (`AppApi`): `{:ok, socket}`, or `:error` when it waits for nobody
+  here.
+  """
+  def open_task(socket, id) do
+    case socket.assigns[:current_profile] && task(socket, id) do
+      %{} = task -> {:ok, open(socket, task)}
+      _not_waiting -> :error
+    end
+  end
+
   def handle_event("process_form_open", %{"id" => id}, socket) do
     with %{} <- socket.assigns.current_profile,
          {id, ""} <- Integer.parse(to_string(id)),

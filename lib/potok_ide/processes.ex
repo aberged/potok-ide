@@ -248,6 +248,17 @@ defmodule PotokIde.Processes do
 
   def form_task(_profile, _group, _access, _id), do: nil
 
+  @doc "Whether the instance `id` waits for the viewer in `group`, as `tasks_for/3` lists it."
+  def waits_for?(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access, id)
+      when is_integer(id) do
+    profile
+    |> asking(group, access)
+    |> where([i], i.id == ^id)
+    |> Repo.exists?()
+  end
+
+  def waits_for?(_profile, _group, _access, _id), do: false
+
   @doc "How many tasks wait for the viewer in `group`, as `tasks_for/3` lists them."
   def waiting_count(%Profile{} = profile, %Group{} = group, %Access{member?: true} = access),
     do: profile |> asking(group, access) |> Repo.aggregate(:count)

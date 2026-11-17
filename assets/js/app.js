@@ -863,6 +863,10 @@ const APP_FRAME_METHODS = new Set([
   "complete_task",
   "retry_process",
   "cancel_process",
+  "list_waiting",
+  "open_process_form",
+  "list_startable",
+  "open_process_start",
 ])
 
 // Calls that carry a file of the frame's, sent through the page's upload.
@@ -978,6 +982,11 @@ const GroupAppFrame = {
     // The sheet the app opened (`showGroup`) closed.
     this.handleEvent("group_sheet_closed", own(({id}) => {
       this.post({potok: 1, event: "group_sheet_closed", id})
+    }))
+
+    // What waits for the viewer in the group's processes changed.
+    this.handleEvent("app_waiting_changed", own(() => {
+      this.post({potok: 1, event: "waiting_changed"})
     }))
   },
 
