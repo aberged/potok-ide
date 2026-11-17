@@ -4781,33 +4781,6 @@ defmodule PotokIde.Social do
     |> maybe_preload_group_members()
   end
 
-  @doc """
-  The profile's groups for the column beside a conversation on a wide screen
-  (`PotokIdeWeb.GroupLive.Show.GroupSidebar`): every membership but the root,
-  threads and records, those with something unread (`unread_ids`) first,
-  then by their newest value, each with its newest value's preview.
-  """
-  def list_sidebar_groups(%Profile{id: profile_id}, unread_ids, limit \\ 60)
-      when is_list(unread_ids) do
-    groups =
-      from(g in Group,
-        join: gm in GroupMembership,
-        on: gm.group_id == g.id and gm.profile_id == ^profile_id,
-        where: not g.is_root and is_nil(g.parent_value_id) and is_nil(g.external_key),
-        order_by: [
-          desc: fragment("? = ANY(?)", g.id, type(^unread_ids, {:array, :integer})),
-          desc_nulls_last: g.last_value_at,
-          desc: g.id
-        ],
-        limit: ^limit
-      )
-      |> Repo.all()
-      |> maybe_preload_group_members()
-
-    previews = last_chat_previews(Enum.map(groups, & &1.id))
-    Enum.map(groups, &%{&1 | last_value: Map.get(previews, &1.id), viewer_is_member: true})
-  end
-
   defp filter_share_targets(query, _profile, nil), do: query
 
   defp filter_share_targets(query, %Profile{id: profile_id}, search) do
@@ -5595,6 +5568,7 @@ defmodule PotokIde.Social do
 
   @sub_group_search_max_groups 5000
   @sub_group_search_max_matches 100
+  @sub_group_search_timeout_ms 3_000
 
   @doc """
   A page of the sub-groups below each of `parents` the profile can see, for
@@ -5789,15 +5763,26 @@ defmodule PotokIde.Social do
       filters.relation
     ]
 
-    %{rows: [[truncated? | _] | _] = rows} =
-      Repo.query!(sql, params, cache_statement: "social_search_sub_group_folders")
+    # Postgres would compile the walk (seconds on a big tree: 2.3 s for a
+    # profile in 102 groups on the dev database, 0.45 s without), and a walk
+    # that still takes too long shows nothing found instead of holding the page.
+    Repo.with_statement_timeout(
+      @sub_group_search_timeout_ms,
+      fn -> Repo.query!(sql, params, cache_statement: "social_search_sub_group_folders") end,
+      jit: false
+    )
+    |> case do
+      {:ok, %{rows: [[truncated? | _] | _] = rows}} ->
+        folders =
+          for [_truncated?, parent_id | folder] <- rows, parent_id != nil do
+            folder |> sub_group_folder() |> Map.put(:parent_id, parent_id)
+          end
 
-    folders =
-      for [_truncated?, parent_id | folder] <- rows, parent_id != nil do
-        folder |> sub_group_folder() |> Map.put(:parent_id, parent_id)
-      end
+        {folders, truncated?}
 
-    {folders, truncated?}
+      {:error, :timeout} ->
+        {[], true}
+    end
   end
 
   # The folder queries take the profile as $5 (nil sees no memberships),

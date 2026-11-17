@@ -4,7 +4,7 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
   import Phoenix.LiveViewTest
   import PotokIde.EventsFixtures
 
-  alias PotokIde.Social
+  alias PotokIde.{Notices, Social}
 
   setup do
     {owner_account, owner} = account_with_profile!("side-owner")
@@ -26,53 +26,148 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
 
   defp live_as(account, path), do: build_conn() |> log_in_account(account) |> live(path)
 
-  defp load(lv) do
-    lv |> element("#group-sidebar") |> render_hook("group_sidebar_load", %{})
+  defp load(lv, params \\ %{}) do
+    lv |> element("#group-sidebar") |> render_hook("group_sidebar_load", params)
     lv
   end
 
-  defp row_ids(lv) do
-    lv
-    |> render()
-    |> LazyHTML.from_fragment()
-    |> LazyHTML.query("#group-sidebar-list > li[id^=group-sidebar-row-]")
-    |> Enum.map(&(LazyHTML.attribute(&1, "id") |> List.first()))
+  # A public building the member is not in, with an entrance the member is in.
+  defp building(ctx) do
+    building =
+      group_with_members!(ctx.owner, [], %{"name" => "side-building", "is_public" => true})
+
+    entrance =
+      group_with_members!(ctx.owner, [ctx.member], %{
+        :parent => building,
+        "name" => "side-entrance"
+      })
+
+    {:ok, _} = Social.create_value(ctx.owner, entrance, %{"content" => "the door is open"})
+    {building, entrance}
   end
 
-  test "it waits for the browser before it loads, then lists the viewer's groups", ctx do
+  test "it waits for the browser before it loads, then shows the viewer's groups", ctx do
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
 
     assert has_element?(lv, "#group-sidebar #group-sidebar-loading")
-    refute has_element?(lv, "#group-sidebar-list")
+    refute has_element?(lv, "#group-sidebar-tree")
 
     load(lv)
 
-    assert has_element?(lv, "#group-sidebar-row-#{ctx.lift.id}[aria-current=page]")
-    assert has_element?(lv, "#group-sidebar-row-#{ctx.garden.id}", "side-garden")
-    assert has_element?(lv, "#sidebar-group-last-value-#{ctx.garden.id}", "we plant on Sunday")
-    assert has_element?(lv, "#sidebar-group-draft-#{ctx.garden.id}[phx-hook=DraftMark]")
+    assert has_element?(lv, "#group-sidebar-link-#{ctx.lift.id}[aria-current=page]")
+    assert has_element?(lv, "#group-sidebar-node-#{ctx.garden.id}", "side-garden")
 
     # The garden has something unread; the open lift was just read.
-    assert has_element?(lv, "#sidebar-group-unread-badge-#{ctx.garden.id}:not([hidden])", "1")
-    refute has_element?(lv, "#sidebar-group-unread-badge-#{ctx.lift.id}:not([hidden])")
-    assert List.first(row_ids(lv)) == "group-sidebar-row-#{ctx.garden.id}"
+    assert has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])", "1")
+    refute has_element?(lv, "#group-sidebar-unread-#{ctx.lift.id}:not([hidden])")
   end
 
-  test "a new value elsewhere counts and lifts its group's row", ctx do
-    other = group_with_members!(ctx.owner, [ctx.member], %{"name" => "side-other"})
+  test "a folder on the way to a membership counts its sub-tree until it opens", ctx do
+    {building, entrance} = building(ctx)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv)
+
+    # Not a member of the building: a folder on the way, closed, with the
+    # entrance's unread value on it.
+    assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=false]")
+    assert has_element?(lv, "#group-sidebar-unread-#{building.id}:not([hidden])", "1")
+    refute has_element?(lv, "#group-sidebar-node-#{entrance.id}")
+
+    lv |> element("#group-sidebar-toggle-#{building.id}") |> render_click()
+
+    assert_push_event(lv, "group_sidebar_open", %{ids: [building_id]})
+    assert building_id == building.id
+    assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=true]")
+    assert has_element?(lv, "#group-sidebar-node-#{entrance.id}", "side-entrance")
+    assert has_element?(lv, "#group-sidebar-unread-#{entrance.id}:not([hidden])", "1")
+    refute has_element?(lv, "#group-sidebar-unread-#{building.id}:not([hidden])")
+
+    lv |> element("#group-sidebar-toggle-#{building.id}") |> render_click()
+    assert_push_event(lv, "group_sidebar_open", %{ids: []})
+  end
+
+  test "the way to the page's group comes open, and so do the folders the browser keeps", ctx do
+    {building, entrance} = building(ctx)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{entrance.id}/values")
+    load(lv)
+
+    assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=true]")
+    assert has_element?(lv, "#group-sidebar-link-#{entrance.id}[aria-current=page]")
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv, %{"open" => [building.id, "not-an-id", -3]})
+
+    assert has_element?(lv, "#group-sidebar-node-#{entrance.id}")
+  end
+
+  test "a followed public group stands in the tree, a public group not followed does not",
+       ctx do
+    followed = group_with_members!(ctx.owner, [], %{"name" => "side-news", "is_public" => true})
+    other = group_with_members!(ctx.owner, [], %{"name" => "side-other", "is_public" => true})
+    {:ok, _follow} = Notices.follow(ctx.member, followed)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv)
+
+    assert has_element?(lv, "#group-sidebar-node-#{followed.id}", "side-news")
+    refute has_element?(lv, "#group-sidebar-node-#{other.id}")
+  end
+
+  test "a search shows the matches with the way to them, and clearing it brings the tree back",
+       ctx do
+    {building, entrance} = building(ctx)
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv)
+
+    lv
+    |> form("#group-sidebar-search-form", %{"group_sidebar_search" => %{"q" => "ENTRANCE"}})
+    |> render_change()
+
+    assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=true]")
+    assert has_element?(lv, "#group-sidebar-link-#{entrance.id}", "side-entrance")
+    refute has_element?(lv, "#group-sidebar-node-#{ctx.garden.id}")
+
+    lv
+    |> form("#group-sidebar-search-form", %{"group_sidebar_search" => %{"q" => "nothing-here"}})
+    |> render_change()
+
+    assert has_element?(lv, "#group-sidebar-no-match")
+
+    lv |> element("#group-sidebar-search-reset") |> render_click()
+
+    assert has_element?(lv, "#group-sidebar-node-#{ctx.garden.id}")
+    assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=false]")
+    refute has_element?(lv, "#group-sidebar-no-match")
+  end
+
+  test "direct conversations stand apart, with their newest message", ctx do
+    {:ok, direct} = Social.get_or_create_direct_group(ctx.owner, ctx.member)
+    {:ok, _} = Social.create_value(ctx.owner, direct, %{"content" => "are you home?"})
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv)
+
+    assert has_element?(lv, "#group-sidebar-directs #group-sidebar-direct-#{direct.id}")
+    assert has_element?(lv, "#sidebar-group-last-value-#{direct.id}", "are you home?")
+    assert has_element?(lv, "#sidebar-group-unread-badge-#{direct.id}:not([hidden])", "1")
+    refute has_element?(lv, "#group-sidebar-tree #group-sidebar-node-#{direct.id}")
+  end
+
+  test "a new value elsewhere counts on its row", ctx do
     Social.mark_group_values_read(ctx.member, ctx.garden)
 
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
     load(lv)
-    refute has_element?(lv, "#sidebar-group-unread-badge-#{other.id}:not([hidden])")
+    refute has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])")
 
-    {:ok, _} = Social.create_value(ctx.owner, other, %{"content" => "news from elsewhere"})
+    {:ok, _} = Social.create_value(ctx.owner, ctx.garden, %{"content" => "news from the garden"})
     _ = render(lv)
     _ = render(lv)
 
-    assert has_element?(lv, "#sidebar-group-last-value-#{other.id}", "news from elsewhere")
-    assert has_element?(lv, "#sidebar-group-unread-badge-#{other.id}:not([hidden])", "1")
-    assert List.first(row_ids(lv)) == "group-sidebar-row-#{other.id}"
+    assert has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])", "1")
   end
 
   test "a silenced group counts in grey", ctx do
@@ -80,14 +175,9 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
     load(lv)
 
-    assert has_element?(
-             lv,
-             "#sidebar-group-muted-unread-badge-#{ctx.garden.id}:not([hidden])",
-             "1"
-           )
-
-    assert has_element?(lv, "#sidebar-group-muted-#{ctx.garden.id}")
-    refute has_element?(lv, "#sidebar-group-unread-badge-#{ctx.garden.id}:not([hidden])")
+    assert has_element?(lv, "#group-sidebar-muted-unread-#{ctx.garden.id}:not([hidden])", "1")
+    assert has_element?(lv, "#group-sidebar-muted-#{ctx.garden.id}")
+    refute has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])")
   end
 
   test "the root has no column: it is the list", ctx do

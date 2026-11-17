@@ -32,8 +32,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   Without any of these filters, the folders open in `previous` (the tree
   this one replaces) are loaded again as far as they were and stay open, so
-  a reload keeps the view as it was. A filter opens the folders on the way
-  to its matches, and the tree after it starts closed again.
+  a reload keeps the view as it was, and so are the folders named in
+  `open:` (ids, such as those a browser remembers), those of them that the
+  open ones lead to. A filter opens the folders on the way to its matches,
+  and the tree after it starts closed again.
   """
   def load(%Group{} = group, profile, previous, opts \\ []) do
     search = if opts[:search] in [nil, ""], do: nil, else: opts[:search]
@@ -59,9 +61,15 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     previous = if previous && previous.group_id == group.id, do: previous
 
     tree
-    |> load_nodes(group, profile, previous)
+    |> load_nodes(group, profile, previous, List.wrap(opts[:open]))
     |> refresh()
   end
+
+  @doc """
+  The ids of the open folders a reader can reach from the top, for `open:`
+  of a later `load/4`: a folder inside a closed one is left out.
+  """
+  def open_ids(tree), do: tree.nodes |> open_folders() |> Enum.map(& &1.group.id)
 
   @doc """
   Opens or closes the folder `group_id`. Opening one for the first time
@@ -104,7 +112,13 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     |> refresh()
   end
 
-  defp load_nodes(%{search: nil, preset: nil, relation: nil} = tree, group, profile, previous) do
+  defp load_nodes(
+         %{search: nil, preset: nil, relation: nil} = tree,
+         group,
+         profile,
+         previous,
+         open_ids
+       ) do
     {top_limit, open} =
       case previous do
         %{search: nil, preset: nil, relation: nil, nodes: nodes} ->
@@ -114,10 +128,21 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
           {@page_size, []}
       end
 
+    open_pages = Enum.map(open, &{&1.group.id, page_limit(&1), nil})
+    asked = MapSet.new([group.id | Enum.map(open_pages, &elem(&1, 0))])
+
+    # All in the one statement: a folder the open ones never reach is not
+    # shown, and a leaf comes back with no sub-groups.
+    named_pages =
+      for id <- Enum.uniq(open_ids),
+          is_integer(id),
+          not MapSet.member?(asked, id),
+          do: {id, @page_size, nil}
+
     pages =
       Social.list_sub_group_folders(
         profile,
-        [{group.id, top_limit, nil} | Enum.map(open, &{&1.group.id, page_limit(&1), nil})],
+        [{group.id, top_limit, nil} | open_pages ++ named_pages],
         folder_filters(tree)
       )
 
@@ -125,7 +150,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     %{tree | nodes: nodes, more?: more?}
   end
 
-  defp load_nodes(tree, group, profile, previous) do
+  defp load_nodes(tree, group, profile, previous, _open_ids) do
     {folders, truncated?} =
       Social.search_sub_group_folders(
         group,
@@ -154,13 +179,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   defp page_limit(node), do: max(length(node.children), @page_size)
 
-  # Every folder with a page in `pages` comes back open with its children.
+  # Every folder with a page in `pages` comes back open with its children; a
+  # shortcut's leaf shares its target's id but never opens.
   defp build_level(parent_id, pages) do
     {folders, more?} = Map.get(pages, parent_id, {[], false})
 
     nodes =
       Enum.map(folders, fn folder ->
-        if Map.has_key?(pages, folder.id) do
+        if Map.has_key?(pages, folder.id) and is_nil(Map.get(folder, :shortcut_id)) do
           {children, more?} = build_level(folder.id, pages)
           %{new_node(folder) | children: children, more?: more?, open?: true}
         else

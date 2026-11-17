@@ -162,6 +162,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           :if={!@group.is_root and @current_profile}
           sidebar={@sidebar}
           current_profile={@current_profile}
+          group_id={@group.id}
         />
         <div id="group-page-main" class="flex min-h-0 min-w-0 flex-1 flex-col">
           <%!-- The back link, the name and the menu share a row; in a narrower header (a narrower
@@ -2177,8 +2178,32 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_event("group_row_menu_close", _params, socket),
     do: {:noreply, assign(socket, :group_row_menu, nil)}
 
-  def handle_event("group_sidebar_load", _params, socket),
-    do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket))}
+  # The browser sends the folders of the column it remembers open.
+  def handle_event("group_sidebar_load", params, socket),
+    do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket), params)}
+
+  def handle_event("group_sidebar_toggle", %{"id" => id}, socket) do
+    case Integer.parse(id) do
+      {group_id, ""} -> {:noreply, GroupSidebar.toggle(socket, group_id)}
+      _invalid -> {:noreply, socket}
+    end
+  end
+
+  # Without an id, the next page of the column's top level.
+  def handle_event("group_sidebar_more", params, socket) do
+    case Integer.parse(Map.get(params, "id", "")) do
+      {group_id, ""} -> {:noreply, GroupSidebar.more(socket, group_id)}
+      _top_level -> {:noreply, GroupSidebar.more(socket, nil)}
+    end
+  end
+
+  def handle_event("group_sidebar_search", %{"group_sidebar_search" => %{"q" => query}}, socket),
+    do: {:noreply, GroupSidebar.search(socket, query)}
+
+  def handle_event("group_sidebar_search", _params, socket), do: {:noreply, socket}
+
+  def handle_event("clear_group_sidebar_search", _params, socket),
+    do: {:noreply, GroupSidebar.search(socket, "")}
 
   # Silences a group (the open one, or a row's) for a while, or lets it speak
   # again ("off"). The pages of the profile hear of it and count again.
@@ -3463,12 +3488,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
     previous = socket.assigns.group_waiting_counts
     counts = waiting_overview(socket)
 
-    socket = assign(socket, :group_waiting_counts, counts)
+    socket =
+      socket
+      |> assign(:group_waiting_counts, counts)
+      |> sidebar_counted(previous != counts)
 
     socket.assigns.loaded_children
     |> Enum.filter(&(Map.get(previous, &1.id, 0) != Map.get(counts, &1.id, 0)))
     |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
   end
+
+  # The column counts what waits too, so it counts again when that changed.
+  defp sidebar_counted(%{assigns: %{sidebar: %{}}} = socket, true),
+    do: GroupSidebar.counted(socket, current_unread_overview(socket))
+
+  defp sidebar_counted(socket, _changed?), do: socket
 
   # Online dots are driven by the `#group-presence-style` rule set, so a
   # presence change only re-renders that one element instead of streamed

@@ -331,6 +331,38 @@ defmodule PotokIde.Social.SubGroupTreeTest do
     end
   end
 
+  describe "load/4 with open:" do
+    test "opens the folders named that the open ones reach, and tells them back", ctx do
+      # alpha → alpha-nested → deep-leaf; beta is not asked for.
+      tree =
+        SubGroupTree.load(ctx.group, ctx.owner, nil,
+          open: [ctx.nested.id, ctx.alpha.id, ctx.deep.id, ctx.private_child.id, 0]
+        )
+
+      [alpha, beta, _public] = tree.nodes
+      assert alpha.open?
+      refute beta.open?
+      assert [%{group: %{id: nested_id}, open?: true, children: [deep]}] = alpha.children
+      assert nested_id == ctx.nested.id
+      assert deep.group.id == ctx.deep.id
+
+      # A leaf opened has nothing to show and is not one to remember.
+      assert SubGroupTree.open_ids(tree) == [ctx.alpha.id, ctx.nested.id]
+
+      # A folder inside a closed one is not reached: not open, not remembered.
+      tree = SubGroupTree.load(ctx.group, ctx.owner, nil, open: [ctx.nested.id])
+      assert [%{open?: false, children: nil} | _] = tree.nodes
+      assert SubGroupTree.open_ids(tree) == []
+    end
+
+    test "is left aside while searching", ctx do
+      tree = SubGroupTree.load(ctx.group, ctx.owner, nil, open: [ctx.beta.id], search: "deep")
+
+      assert [%{group: %{id: alpha_id}, open?: true}] = tree.nodes
+      assert alpha_id == ctx.alpha.id
+    end
+  end
+
   test "leaves out direct conversations below the root group" do
     owner = profile!("subtree-dm-owner")
     other = profile!("subtree-dm-other")
