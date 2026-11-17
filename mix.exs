@@ -43,7 +43,7 @@ defmodule PotokIde.MixProject do
       {:pbkdf2_elixir, "~> 2.0"},
       {:phoenix, "~> 1.8.3"},
       {:phoenix_ecto, "~> 4.5"},
-      {:ecto_sql, "~> 3.13"},
+      {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},
       {:geo_postgis, "~> 3.7"},
       {:phoenix_html, "~> 4.1"},
