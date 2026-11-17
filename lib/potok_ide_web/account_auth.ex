@@ -321,7 +321,8 @@ defmodule PotokIdeWeb.AccountAuth do
   The unread count's `as_of` goes to the socket's private
   `:root_unread_as_of`, for `PotokIdeWeb.ProfileAuth` to add later values (the
   notices' to `:unread_notices_as_of`, for the same), and the profile's groups
-  to `:member_group_ids`, for it to subscribe to; a view
+  to `:member_group_ids`, for it to subscribe to (the silenced ones also to
+  `:muted_group_ids`, which leave the badge); a view
   that counts unread values itself
   (`PotokIdeWeb.ProfileAuth.counts_unread_itself?/1`) gets no unread count.
   """
@@ -351,6 +352,7 @@ defmodule PotokIdeWeb.AccountAuth do
       socket
       |> put_root_unread_as_of(counts)
       |> Phoenix.LiveView.put_private(:member_group_ids, counts.member_group_ids)
+      |> Phoenix.LiveView.put_private(:muted_group_ids, counts.muted_group_ids)
       |> Phoenix.LiveView.put_private(:unread_notices_as_of, counts.unread_notices_as_of)
       |> Phoenix.Component.assign_new(:pending_invitations_count, fn ->
         counts.pending_invitations

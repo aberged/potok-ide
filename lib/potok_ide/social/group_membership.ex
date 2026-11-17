@@ -9,6 +9,9 @@ defmodule PotokIde.Social.GroupMembership do
     belongs_to :profile, PotokIde.Social.Profile
     # Held only through the parent group (see `Social.MemberInheritance`).
     field :inherited, :boolean, default: false
+    # Until when the member silenced the group (`Social.GroupMutes`); never
+    # cast, set by `GroupMutes.set/3`.
+    field :muted_until, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

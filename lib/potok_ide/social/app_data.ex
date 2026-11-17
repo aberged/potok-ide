@@ -38,6 +38,7 @@ defmodule PotokIde.Social.AppData do
     AppFiles,
     AppProcesses,
     Group,
+    GroupMutes,
     Identity,
     Notifications,
     Profile,
@@ -682,7 +683,8 @@ defmodule PotokIde.Social.AppData do
   end
 
   # A push to those who asked for one and may still read the value, never to
-  # its author, and without a name when it is anonymous.
+  # its author nor to those who silenced the group, and without a name when
+  # it is anonymous.
   defp notify_subscribers(group, alt, %Value{} = value, rule, %Profile{} = author) do
     run_notification(fn ->
       subscriber_ids =
@@ -690,6 +692,7 @@ defmodule PotokIde.Social.AppData do
         |> collection_query(alt, @notify)
         |> where([v], fragment("? ->> 'collection' = ?", v.data, ^value.collection))
         |> where([v], v.creator_id != ^author.id)
+        |> where([v], v.creator_id not in subquery(GroupMutes.muted_profile_ids(group)))
         |> select([v], v.creator_id)
         |> Repo.all()
 

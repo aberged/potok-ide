@@ -17,7 +17,7 @@ defmodule PotokIde.Polls.Notifications do
   alias PotokIde.Polls.{Poll, PollBallot}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
-  alias PotokIde.Social.{AccountProfile, Group, Profile}
+  alias PotokIde.Social.{AccountProfile, Group, GroupMutes, Profile}
 
   def created(%Profile{} = creator, %Group{} = group, %Poll{} = poll) do
     localized(fn ->
@@ -60,9 +60,9 @@ defmodule PotokIde.Polls.Notifications do
   end
 
   @doc """
-  Reminds those who may vote and have not. Goes by account, and past one that
-  voted with another of its profiles, while the lists on the page stay by
-  profile.
+  Reminds those who may vote and have not, unless they silenced the group.
+  Goes by account, and past one that voted with another of its profiles,
+  while the lists on the page stay by profile.
   """
   def deliver_reminder(%Poll{} = poll, %Group{} = group) do
     Dispatch.run(fn ->
@@ -104,6 +104,7 @@ defmodule PotokIde.Polls.Notifications do
       where:
         ap.profile_id in ^profile_ids and ap.profile_id not in subquery(voted_profiles) and
           ap.account_id not in subquery(voted_accounts),
+      where: ap.profile_id not in subquery(GroupMutes.muted_profile_ids(group)),
       select: ap.account_id
     )
   end

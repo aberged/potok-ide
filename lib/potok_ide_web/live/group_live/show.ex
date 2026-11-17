@@ -221,6 +221,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 text_class="text-sm sm:text-base"
                 pending_join_requests_count={@pending_join_requests_count}
                 unread_count={Map.get(@group_unread_counts, @group.id, 0)}
+                muted?={not is_nil(@group_muted_until)}
               >
                 <:subtitle>
                   <div class="flex min-w-0 items-center gap-2 cramped:hidden">
@@ -504,7 +505,12 @@ defmodule PotokIdeWeb.GroupLive.Show do
           />
 
           <Layouts.drop_down_menu id="group-actions-menu" icon="hero-ellipsis-horizontal">
-            <GroupMenu.items group={@group} access={@access} active_tab={@active_tab}>
+            <GroupMenu.items
+              group={@group}
+              access={@access}
+              active_tab={@active_tab}
+              mute={GroupMenu.mute_state(@group, @is_member, @group_muted_until)}
+            >
               <%!-- The root has no bar of sections. --%>
               <Components.group_tab_button
                 :if={@group.is_root and @calendar_tab?}
@@ -589,6 +595,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pagination={@children_pagination}
             pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
+            muted_unread_counts={@group_muted_unread_counts}
+            muted_group_ids={@muted_group_ids}
             waiting_counts={@group_waiting_counts}
             time_zone={@calendar_time_zone}
             is_member={@is_member}
@@ -903,6 +911,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> AppHost.allow("page")
          |> assign(:template_list, nil)
          |> assign(:group_row_menu, nil)
+         |> assign(:muted_group_ids, MapSet.new())
+         |> assign(:group_muted_until, nil)
+         |> assign(:group_muted_unread_counts, %{})
          |> assign(:loaded_children, [])
          |> assign(:unloaded_shortcut_targets, [])
          |> assign(:pending_refresh, MapSet.new())
@@ -2073,7 +2084,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         group: group,
         access: access,
         sections: sections,
-        shortcut: row_shortcut(socket, group, params["shortcut"])
+        shortcut: row_shortcut(socket, group, params["shortcut"]),
+        mute: GroupMenu.mute_state(group, access.member?, muted_until(socket, group))
       }
 
       {:noreply, assign(socket, :group_row_menu, menu)}
@@ -2104,6 +2116,31 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("group_row_menu_close", _params, socket),
     do: {:noreply, assign(socket, :group_row_menu, nil)}
+
+  # Silences a group (the open one, or a row's) for a while, or lets it speak
+  # again ("off"). The pages of the profile hear of it and count again.
+  def handle_event("group_mute", %{"id" => id, "for" => duration}, socket) do
+    profile = socket.assigns.current_profile
+    duration = if duration == "off", do: nil, else: duration
+
+    with %Profile{} <- profile,
+         {group_id, ""} <- Integer.parse(to_string(id)),
+         %Group{} = group <- Social.get_visible_group(profile, group_id),
+         {:ok, until} <- Social.set_group_mute(profile, group, duration) do
+      message =
+        if until,
+          do: gettext("The group is muted."),
+          else: gettext("The group's notifications are on again.")
+
+      {:noreply, socket |> assign(:group_row_menu, nil) |> put_flash(:info, message)}
+    else
+      _refused ->
+        {:noreply,
+         socket
+         |> assign(:group_row_menu, nil)
+         |> put_flash(:error, gettext("Only the group's members can mute it."))}
+    end
+  end
 
   def handle_event("toggle_template_list", %{"workspace" => workspace}, socket) do
     open = if socket.assigns.template_list != workspace, do: workspace
@@ -2788,6 +2825,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # What waits for the viewer in some group's processes changed: the rows of
   # the groups it stands in show it again.
+  def handle_info(
+        {:group_mute_changed, profile_id, _group_id},
+        %{assigns: %{current_profile: %{id: profile_id}}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> assign_mutes(socket.assigns.group)
+     |> refresh_unread_counts()
+     |> reload_children()}
+  end
+
+  def handle_info({:group_mute_changed, _profile_id, _group_id}, socket), do: {:noreply, socket}
+
   def handle_info({:profile_waiting_updated, _profile_id}, socket),
     do: {:noreply, refresh_group_waiting_counts(socket)}
 
@@ -2911,6 +2961,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     socket
     |> assign(:loaded?, true)
+    |> assign_mutes(group)
     |> put_unread_overview(overview)
     |> assign(:group_waiting_counts, waiting_overview(socket))
     |> load_member_summary(group)
@@ -3138,13 +3189,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp add_unread_values(socket) do
     %{unread_overview: overview, pending_unread_values: pending} = socket.assigns
     member_ids = ProfileAuth.unread_groups(socket)
+    muted_ids = ProfileAuth.muted_groups(socket)
     socket = assign(socket, :pending_unread_values, [])
 
     pending
     |> Enum.reverse()
     |> Enum.reject(&shown_chat_value?(socket, &1))
     |> Enum.reduce({overview, []}, fn unread, {overview, added} ->
-      case Social.add_unread_value(overview, unread, member_ids) do
+      case Social.add_unread_value(overview, unread, member_ids, muted_ids) do
         :counted -> {overview, added}
         {:ok, overview} -> {overview, [unread | added]}
       end
@@ -4699,6 +4751,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
     }
   end
 
+  # The groups the profile silenced, and until when the open one is. Only a
+  # silenced group costs a query.
+  defp assign_mutes(socket, group) do
+    muted_ids = ProfileAuth.muted_groups(socket)
+
+    socket
+    |> assign(:muted_group_ids, muted_ids)
+    |> assign(:group_muted_until, muted_until(socket, group, muted_ids))
+  end
+
+  defp muted_until(socket, group, muted_ids \\ nil) do
+    muted_ids = muted_ids || socket.assigns.muted_group_ids
+
+    if MapSet.member?(muted_ids, group.id),
+      do: Social.group_muted_until(socket.assigns.current_profile, group)
+  end
+
   defp reload_children(socket) do
     socket
     |> maybe_load_children(
@@ -5503,6 +5572,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
     group_unread_counts = Social.unread_counts_for(overview, group_ids)
     current_group_unread_count = get_in(overview.groups, [group.id, :own]) || 0
+    group_muted_unread_counts = Social.muted_unread_counts(overview, group_ids)
 
     sub_groups_unread_count =
       max(Map.get(group_unread_counts, group.id, 0) - current_group_unread_count, 0)
@@ -5516,6 +5586,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:thread_unread_counts, thread_unread_counts)
     |> assign(:thread_sub_groups_unread_count, thread_unread_counts |> Map.values() |> Enum.sum())
     |> assign(:group_unread_counts, group_unread_counts)
+    |> assign(:group_muted_unread_counts, group_muted_unread_counts)
     |> assign(:current_group_unread_count, current_group_unread_count)
     |> assign(:sub_groups_unread_count, sub_groups_unread_count)
     |> assign(:direct_sub_groups_unread_count, direct_sub_groups_unread_count)

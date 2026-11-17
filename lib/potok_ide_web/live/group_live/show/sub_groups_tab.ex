@@ -12,6 +12,12 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :pending_join_request_counts, :map, required: true
   attr :unread_counts, :map, required: true
 
+  attr :muted_unread_counts, :map,
+    default: %{},
+    doc: "unread values of the silenced groups, shown in grey (`Social.muted_unread_counts/2`)"
+
+  attr :muted_group_ids, :any, default: MapSet.new(), doc: "the groups the viewer silenced"
+
   attr :waiting_counts, :map,
     default: %{},
     doc: "what waits for the viewer at or below each group (`Social.waiting_overview/1`)"
@@ -422,6 +428,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                     highlight_query={@children_search_query}
                     pending_join_requests_count={Map.get(@pending_join_request_counts, group.id, 0)}
                     unread_count={Map.get(@unread_counts, group.id, 0)}
+                    muted_unread_count={Map.get(@muted_unread_counts, group.id, 0)}
+                    muted?={MapSet.member?(@muted_group_ids, group.id)}
                   >
                     <:subtitle :if={child_details?(group)}>
                       <div class="flex w-full min-w-0 flex-col gap-0.5">

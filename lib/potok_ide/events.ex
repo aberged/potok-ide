@@ -896,7 +896,8 @@ defmodule PotokIde.Events do
   end
 
   # Members other than `actor`, with `{event_id, date}` not those who
-  # declined that occurrence, and the `followers` (profile ids).
+  # declined that occurrence, nor those who silenced the group, and the
+  # `followers` (profile ids).
   defp notify_members(group, actor, declined, followers, context, payload_for) do
     Dispatch.run(fn ->
       group
@@ -925,6 +926,7 @@ defmodule PotokIde.Events do
         join: ap in AccountProfile,
         on: ap.profile_id == gm.profile_id,
         where: gm.group_id == ^group.id and gm.profile_id != ^actor.id,
+        where: gm.profile_id not in subquery(Social.GroupMutes.muted_profile_ids(group)),
         select: ap.account_id
       )
 

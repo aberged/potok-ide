@@ -367,6 +367,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueProcess", "asks_profile_id"),
     do: dgettext("domain_map", "person its wait asks")
 
+  defp own_field("GroupMembership", "muted_until"),
+    do: dgettext("domain_map", "until when the member silenced it")
+
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
@@ -1486,6 +1489,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A member can silence a group"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <GroupMembership>membership</GroupMembership> remembers until when its member silenced the group: an hour, eight hours, a week or until they turn it on again. Until then nothing that goes to everyone reaches them as a push: new values, polls, events, an app's notices, a process's push to everyone. What is meant for them still does: a mention, an answer to their value, a reaction, a process asking them or their role. The group's unread values leave the home badge and the sums of the groups above it, while its own row still shows them, in grey. The threads of a silenced group are silent too."
           )
       },
       %{

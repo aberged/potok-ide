@@ -160,6 +160,20 @@ defmodule PotokIdeWeb.ProfileAuth do
           {:profile_waiting_updated, _profile_id}, socket ->
             {:halt, socket}
 
+          # The profile silenced a group or let it speak again: the badge leaves
+          # it out or takes it back. A view that counts itself counts again too.
+          {:group_mute_changed, _profile_id, _group_id} = message, socket ->
+            if current_profile_message?(message, socket) do
+              socket =
+                put_muted_groups(socket, Social.muted_group_ids(socket.assigns.current_profile))
+
+              if counts_unread_itself?(socket),
+                do: {:cont, socket},
+                else: {:halt, schedule_unread_recount(socket)}
+            else
+              {:halt, socket}
+            end
+
           # Halted here, as no view knows it: a page follows its profile's groups.
           {:group_membership_changed, _profile_id, group_id, change} = message, socket ->
             if current_profile_message?(message, socket),
@@ -303,16 +317,29 @@ defmodule PotokIdeWeb.ProfileAuth do
         socket
 
       nil ->
-        put_unread_groups(socket, MapSet.new())
+        socket
+        |> put_unread_groups(MapSet.new())
+        |> put_muted_groups([])
 
       current_profile ->
         group_ids = socket.private[:member_group_ids] || Social.member_group_ids(current_profile)
+        muted_ids = socket.private[:muted_group_ids] || Social.muted_group_ids(current_profile)
 
         socket
         |> put_private(:member_group_ids, nil)
         |> put_unread_groups(MapSet.new(group_ids))
+        |> put_muted_groups(muted_ids)
     end
   end
+
+  defp put_muted_groups(socket, group_ids),
+    do: put_private(socket, :muted_set, MapSet.new(group_ids))
+
+  @doc """
+  The groups the page's profile silenced (`PotokIde.Social.GroupMutes`):
+  their values stay out of the badge and the sums above them.
+  """
+  def muted_groups(socket), do: socket.private[:muted_set] || MapSet.new()
 
   defp change_unread_group(socket, group_id, :added),
     do: put_unread_groups(socket, MapSet.put(unread_groups(socket), group_id))
@@ -334,9 +361,11 @@ defmodule PotokIdeWeb.ProfileAuth do
   def unread_groups(socket), do: socket.private[:unread_group_ids] || MapSet.new()
 
   # Not the profile's own value, nor one on its way from a group it just left.
+  # One in a silenced group stays out of the badge, but its row counts it.
   defp unread_value_counts?(%{creator_id: creator_id, group_id: group_id}, socket) do
     not match?(%{id: ^creator_id}, socket.assigns[:current_profile]) and
-      MapSet.member?(unread_groups(socket), group_id)
+      MapSet.member?(unread_groups(socket), group_id) and
+      (counts_unread_itself?(socket) or not MapSet.member?(muted_groups(socket), group_id))
   end
 
   defp own_value_listed?(%{creator_id: creator_id, group_id: group_id}, socket) do

@@ -568,7 +568,7 @@ defmodule PotokIdeWeb.CoreComponents do
   """
   attr :id, :string, default: nil
   attr :count, :integer, required: true
-  attr :tone, :atom, default: :unread, values: [:unread, :attention]
+  attr :tone, :atom, default: :unread, values: [:unread, :attention, :muted]
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(hidden)
 
@@ -578,7 +578,7 @@ defmodule PotokIdeWeb.CoreComponents do
       id={@id}
       class={[
         "inline-flex min-w-5 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold leading-none tabular-nums shadow-sm",
-        if(@tone == :attention, do: "bg-amber-500 text-amber-950", else: "bg-red-600 text-white"),
+        badge_tone_class(@tone),
         @class
       ]}
       {@rest}
@@ -587,6 +587,11 @@ defmodule PotokIdeWeb.CoreComponents do
     </span>
     """
   end
+
+  # A silenced group's count stays grey: it is out of every sum.
+  defp badge_tone_class(:attention), do: "bg-amber-500 text-amber-950"
+  defp badge_tone_class(:muted), do: "bg-base-300 text-base-content/75"
+  defp badge_tone_class(:unread), do: "bg-red-600 text-white"
 
   @doc """
   A search box that opens wide while it has the focus, and clears with its

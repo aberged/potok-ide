@@ -1006,6 +1006,12 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :text_class, :string, default: "text-sm"
   attr :pending_join_requests_count, :integer, default: 0
   attr :unread_count, :integer, default: 0
+
+  attr :muted_unread_count, :integer,
+    default: 0,
+    doc: "unread values of a group the viewer silenced, shown in grey when nothing else is"
+
+  attr :muted?, :boolean, default: false, doc: "whether the viewer silenced the group"
   attr :badge_top, :string, default: "-top-2", doc: "how far the counts stand over the avatar"
   attr :current_profile, :map, default: nil
   attr :highlight_query, :string, default: ""
@@ -1078,6 +1084,13 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           count={@unread_count}
           class={["absolute -right-2", @badge_top]}
         />
+        <.count_badge
+          :if={!@group.is_root and @unread_count == 0 and @muted_unread_count > 0}
+          id={"group-muted-unread-badge-#{@group.id}"}
+          count={@muted_unread_count}
+          tone={:muted}
+          class={["absolute -right-2", @badge_top]}
+        />
       </div>
 
       <.link
@@ -1100,6 +1113,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               query={@highlight_query}
             />
           </div>
+          <span
+            :if={@muted?}
+            id={"group-muted-#{@group.id}"}
+            title={gettext("Muted")}
+            class="inline-flex shrink-0 text-base-content/50"
+          >
+            <.icon name="hero-speaker-x-mark" class="size-4" />
+            <span class="sr-only">{gettext("Muted")}</span>
+          </span>
           <span
             :if={thread_group?(@group)}
             id={"group-thread-badge-#{@group.id}"}

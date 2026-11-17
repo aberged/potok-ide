@@ -39,6 +39,7 @@ defmodule PotokIde.Social do
     GroupManifest,
     GroupMemberRole,
     GroupMembership,
+    GroupMutes,
     GroupPins,
     GroupPresets,
     GroupReaction,
@@ -2104,7 +2105,8 @@ defmodule PotokIde.Social do
       root_unread_as_of: nil,
       unread_notices: 0,
       unread_notices_as_of: nil,
-      member_group_ids: nil
+      member_group_ids: nil,
+      muted_group_ids: nil
     }
 
   def nav_counts(%Profile{id: profile_id} = profile, opts) do
@@ -2124,6 +2126,7 @@ defmodule PotokIde.Social do
            AND v.id > COALESCE(gvr.last_read_value_id, 0)
           WHERE gm.profile_id = $1
             AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+            AND NOT #{GroupMutes.muted_sql()}
         ),
         #{CountMark.ids_sql("values")}
         """
@@ -2150,13 +2153,18 @@ defmodule PotokIde.Social do
         JOIN groups g ON g.id = gm.group_id
         WHERE gm.profile_id = $1 AND NOT g.is_root AND g.external_key IS NULL
       ),
+      (
+        SELECT COALESCE(array_agg(gm.group_id), '{}')
+        FROM group_memberships gm
+        WHERE gm.profile_id = $1 AND #{GroupMutes.muted_sql()}
+      ),
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
       #{Notices.notice_mark_sql()},
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v5_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v6_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -2164,6 +2172,7 @@ defmodule PotokIde.Social do
              invitations,
              join_request_counts,
              member_group_ids,
+             muted_group_ids,
              unread,
              unread_as_of,
              unread_notices,
@@ -2183,13 +2192,20 @@ defmodule PotokIde.Social do
           root_unread_as_of: CountMark.from_ids(unread_as_of),
           unread_notices: unread_notices,
           unread_notices_as_of: CountMark.from_ids(unread_notices_as_of),
-          member_group_ids: member_group_ids
+          member_group_ids: member_group_ids,
+          muted_group_ids: muted_group_ids
         }
 
       {:error, _reason} ->
         nav_counts(nil, opts)
     end
   end
+
+  @doc "The groups the profile silenced, their threads included (`GroupMutes`)."
+  defdelegate muted_group_ids(profile), to: GroupMutes
+
+  @doc "Until when the profile silenced `group` (or a thread's conversation); nil if not."
+  defdelegate group_muted_until(profile, group), to: GroupMutes, as: :muted_until
 
   @doc """
   The groups whose values count as unread for the profile: its memberships,
@@ -2487,7 +2503,8 @@ defmodule PotokIde.Social do
   A push from an app's process to the members of `group` holding `role_key`
   (`PotokIde.Social.ProcessActions`). Returns how many people it is for and
   the function that sends it, to call once the step commits. `url` is where
-  the push leads, the group by default.
+  the push leads, the group by default. A push to everyone passes by those
+  who silenced the group; one to a role reaches them.
   """
   def process_push(
         %Profile{kind: :process} = process,
@@ -2498,7 +2515,7 @@ defmodule PotokIde.Social do
         url \\ nil
       )
       when is_binary(role_key) and is_binary(text) do
-    profile_ids = Access.profile_ids_with_role(group, role_key)
+    profile_ids = Access.profile_ids_with_role(group, role_key) -- muted_for(group, role_key)
     payload_for = Notifications.process_push(process, group, text, tag, url)
 
     {length(profile_ids),
@@ -2510,6 +2527,9 @@ defmodule PotokIde.Social do
        end)
      end}
   end
+
+  defp muted_for(group, "everyone"), do: Repo.all(GroupMutes.muted_profile_ids(group))
+  defp muted_for(_group, _role_key), do: []
 
   # The checks and the writes of a chat value. What its pages and devices are
   # told comes back as a function, to call once the writes are committed.
@@ -6311,11 +6331,12 @@ defmodule PotokIde.Social do
          AND v.id > COALESCE(gvr.last_read_value_id, 0)
         WHERE gm.profile_id = $1
           AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
+          AND NOT #{GroupMutes.muted_sql()}
       ),
       #{CountMark.ids_sql("values")}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count_v2") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count_v3") do
       {:ok, %{rows: [[count, ids]]}} -> %{count: count, as_of: CountMark.from_ids(ids)}
       {:error, _reason} -> %{count: 0, as_of: nil}
     end
@@ -6354,10 +6375,10 @@ defmodule PotokIde.Social do
   def unread_overview(nil), do: %{total: 0, as_of: CountMark.from_ids([]), groups: %{}}
 
   def unread_overview(%Profile{id: profile_id}) do
-    {own, as_of} = own_unread_counts(profile_id)
+    {own, muted, as_of} = own_unread_counts(profile_id)
 
     groups =
-      case Map.keys(own) do
+      case Map.keys(own) ++ Map.keys(muted) do
         [] -> %{}
         group_ids -> profile_id |> group_chain(group_ids) |> hang_from_root()
       end
@@ -6369,13 +6390,21 @@ defmodule PotokIde.Social do
         |> Enum.reduce(acc, &Map.update(&2, &1, count, fn sum -> sum + count end))
       end)
 
+    # A silenced group keeps its own count, for its row, out of every sum.
+    shown =
+      Enum.uniq(Map.keys(subtree) ++ Enum.filter(Map.keys(muted), &Map.has_key?(groups, &1)))
+
     %{
       total: own |> Map.values() |> Enum.sum(),
       as_of: as_of,
       groups:
-        Map.new(subtree, fn {group_id, count} ->
+        Map.new(shown, fn group_id ->
           {group_id,
-           Map.merge(groups[group_id], %{subtree: count, own: Map.get(own, group_id, 0)})}
+           Map.merge(groups[group_id], %{
+             subtree: Map.get(subtree, group_id, 0),
+             own: Map.get(own, group_id, 0),
+             muted: Map.get(muted, group_id, 0)
+           })}
         end)
     }
   end
@@ -6386,11 +6415,12 @@ defmodule PotokIde.Social do
   # both. (Folding
   # `group_chain/2` into it saves a round trip but measured slower.)
   defp own_unread_counts(profile_id) do
+    # Whether a group is silenced is asked once per group, past the count.
     sql = """
-    SELECT hw.ids, c.group_id, c.unread
+    SELECT hw.ids, c.group_id, c.unread, #{GroupMutes.muted_sql("c")}
     FROM (SELECT #{CountMark.ids_sql("values")} AS ids) hw
     LEFT JOIN LATERAL (
-      SELECT gm.group_id, COUNT(v.id)::bigint AS unread
+      SELECT gm.group_id, gm.profile_id, gm.muted_until, COUNT(v.id)::bigint AS unread
       FROM group_memberships gm
       LEFT JOIN group_value_reads gvr
         ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
@@ -6400,17 +6430,20 @@ defmodule PotokIde.Social do
        AND v.id > COALESCE(gvr.last_read_value_id, 0)
       WHERE gm.profile_id = $1
         AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
-      GROUP BY gm.group_id
+      GROUP BY gm.group_id, gm.profile_id, gm.muted_until
     ) c ON TRUE
     """
 
     %{rows: [[ids | _] | _] = rows} =
-      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v2")
+      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v3")
 
-    own =
-      for [_ids, group_id, count] <- rows, group_id != nil, into: %{}, do: {group_id, count}
+    {own, muted} =
+      for [_ids, group_id, count, muted?] <- rows, group_id != nil, reduce: {%{}, %{}} do
+        {own, muted} when muted? == true -> {own, Map.put(muted, group_id, count)}
+        {own, muted} -> {Map.put(own, group_id, count), muted}
+      end
 
-    {own, CountMark.from_ids(ids)}
+    {own, muted, CountMark.from_ids(ids)}
   end
 
   # `group_ids` and all their ancestors with what the overview needs about
@@ -6515,28 +6548,61 @@ defmodule PotokIde.Social do
   which with the value's chain tell what `unread_overview/1` asks the database:
   which of the groups above the value the profile can see.
   """
-  def add_unread_value(%{as_of: as_of} = overview, %{value_id: value_id} = unread, member_ids) do
-    if CountMark.counted?(as_of, value_id),
-      do: :counted,
-      else: count_unread_value(overview, unread, member_ids)
+  def add_unread_value(
+        %{as_of: as_of} = overview,
+        %{value_id: value_id} = unread,
+        member_ids,
+        muted_ids \\ MapSet.new()
+      ) do
+    cond do
+      CountMark.counted?(as_of, value_id) ->
+        :counted
+
+      MapSet.member?(muted_ids, unread.group_id) ->
+        count_muted_value(overview, unread, member_ids)
+
+      true ->
+        count_unread_value(overview, unread, member_ids)
+    end
   end
 
-  defp count_unread_value(overview, %{group_id: group_id, chain: chain}, member_ids) do
-    shown =
-      chain
-      |> Map.new(fn node ->
-        visible? = node.public? or node.id == group_id or node.id in member_ids
+  defp count_muted_value(overview, %{group_id: group_id} = unread, member_ids) do
+    case shown_chain(unread, member_ids) do
+      %{^group_id => node} ->
+        entry =
+          Map.get_lazy(overview.groups, group_id, fn ->
+            Map.merge(node, %{subtree: 0, own: 0, muted: 0})
+          end)
 
-        {node.id,
-         node |> Map.take([:parent_id, :direct?, :thread?]) |> Map.put(:visible?, visible?)}
-      end)
-      |> hang_from_root()
+        groups = Map.put(overview.groups, group_id, Map.update(entry, :muted, 1, &(&1 + 1)))
+        {:ok, %{overview | groups: groups}}
+
+      _hidden ->
+        {:ok, overview}
+    end
+  end
+
+  defp shown_chain(%{group_id: group_id, chain: chain}, member_ids) do
+    chain
+    |> Map.new(fn node ->
+      visible? = node.public? or node.id == group_id or node.id in member_ids
+
+      {node.id,
+       node |> Map.take([:parent_id, :direct?, :thread?]) |> Map.put(:visible?, visible?)}
+    end)
+    |> hang_from_root()
+  end
+
+  defp count_unread_value(overview, %{group_id: group_id} = unread, member_ids) do
+    shown = shown_chain(unread, member_ids)
 
     groups =
       group_id
       |> self_and_ancestor_ids(shown)
       |> Enum.reduce(overview.groups, fn id, groups ->
-        entry = Map.get_lazy(groups, id, fn -> Map.merge(shown[id], %{subtree: 0, own: 0}) end)
+        entry =
+          Map.get_lazy(groups, id, fn -> Map.merge(shown[id], %{subtree: 0, own: 0, muted: 0}) end)
+
         own = if id == group_id, do: entry.own + 1, else: entry.own
         Map.put(groups, id, %{entry | subtree: entry.subtree + 1, own: own})
       end)
@@ -6586,14 +6652,27 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  The unread values of the silenced groups among `group_ids`, which their
+  rows show apart, as `%{group_id => n}` (only those with some), from
+  `unread_overview/1`.
+  """
+  def muted_unread_counts(%{groups: groups}, group_ids) do
+    for group_id <- group_ids,
+        count = get_in(groups, [group_id, :muted]),
+        is_integer(count) and count > 0,
+        into: %{},
+        do: {group_id, count}
+  end
+
+  @doc """
   The threads directly below `parent_ids` with something unread, as
   `%{thread_id => n}`, from `unread_overview/1`.
   """
   def thread_unread_counts(%{groups: groups}, parent_ids) do
-    for {id, %{thread?: true, parent_id: parent_id, subtree: count}} <- groups,
+    for {id, %{thread?: true, parent_id: parent_id, subtree: count} = entry} <- groups,
         parent_id in parent_ids,
         into: %{},
-        do: {id, count}
+        do: {id, count + Map.get(entry, :muted, 0)}
   end
 
   @doc "`child_group_unread_summary/2` from an `unread_overview/1` result."
@@ -7385,7 +7464,13 @@ defmodule PotokIde.Social do
         |> MapSet.new()
 
       group
-      |> value_push_account_ids(creator, member?, mentioned_account_ids, replied_account_ids)
+      |> value_push_account_ids(
+        creator,
+        member?,
+        mentioned_account_ids,
+        replied_account_ids,
+        own_profile_ids(value)
+      )
       |> Dispatch.subscriptions_by_account()
       |> Dispatch.deliver_each(group.id, fn [%PushSubscription{account_id: account_id} | _] ->
         cond do
@@ -7423,14 +7508,26 @@ defmodule PotokIde.Social do
 
   defp replied_profile_ids_to_push(_value, _group, _creator, _member?), do: []
 
-  defp value_push_account_ids(group, creator, true = _member?, _mentioned, replied) do
+  defp value_push_account_ids(group, creator, true = _member?, _mentioned, replied, own) do
     if MapSet.size(replied) == 0,
-      do: group_value_account_ids(group, creator),
-      else: union(group_value_account_ids(group, creator), ^accounts_query(replied))
+      do: group_value_account_ids(group, creator, own),
+      else: union(group_value_account_ids(group, creator, own), ^accounts_query(replied))
   end
 
-  defp value_push_account_ids(_group, _creator, false = _member?, mentioned, replied) do
+  defp value_push_account_ids(_group, _creator, false = _member?, mentioned, replied, _own) do
     accounts_query(MapSet.union(mentioned, replied))
+  end
+
+  # The members a value speaks to, whom a muted group still reaches: those
+  # it mentions and the author of the value it answers.
+  defp own_profile_ids(%Value{mentioned_profile_ids: mentioned} = value) do
+    case value do
+      %Value{parent: %Value{creator_id: author_id}} when is_integer(author_id) ->
+        [author_id | mentioned || []]
+
+      _value ->
+        mentioned || []
+    end
   end
 
   defp accounts_query(%MapSet{} = account_ids) do
@@ -7550,15 +7647,20 @@ defmodule PotokIde.Social do
   # every member's account and then its subscriptions took a query per member.
   defp push_subscriptions_for_group_value(%Group{} = group, %Profile{} = creator) do
     group
-    |> group_value_account_ids(creator)
+    |> group_value_account_ids(creator, [])
     |> Dispatch.subscriptions_by_account()
   end
 
-  defp group_value_account_ids(%Group{} = group, %Profile{} = creator) do
+  # Members who silenced the group are left out (`GroupMutes`), unless the
+  # value speaks to them (`own`).
+  defp group_value_account_ids(%Group{} = group, %Profile{} = creator, own) do
     from(ap in AccountProfile,
       join: gm in GroupMembership,
       on: gm.profile_id == ap.profile_id,
       where: gm.group_id == ^group.id and gm.profile_id != ^creator.id,
+      where:
+        gm.profile_id in ^own or
+          gm.profile_id not in subquery(GroupMutes.muted_profile_ids(group)),
       select: ap.account_id
     )
   end
@@ -7662,6 +7764,24 @@ defmodule PotokIde.Social do
       profile_topic(profile_id),
       {:pending_invitations_count_updated, profile_id, count_pending_invitations(profile)}
     )
+  end
+
+  @doc """
+  Silences `group` for the profile for one of `GroupMutes.durations/0`, or
+  lets it speak again with `nil`, and tells the profile's pages, which count
+  its unread values again (`{:group_mute_changed, profile_id, group_id}`).
+  Returns `{:ok, until}` or `{:error, reason}`.
+  """
+  def set_group_mute(%Profile{id: profile_id} = profile, %Group{id: group_id} = group, duration) do
+    with {:ok, until} <- GroupMutes.set(profile, group, duration) do
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        profile_topic(profile_id),
+        {:group_mute_changed, profile_id, group_id}
+      )
+
+      {:ok, until}
+    end
   end
 
   @doc """

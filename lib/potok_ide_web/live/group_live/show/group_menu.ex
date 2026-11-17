@@ -90,6 +90,11 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     default: nil,
     doc: "the tab on screen when `group` is the open group; without it the items lead there"
 
+  attr :mute, :map,
+    default: nil,
+    doc:
+      "`%{until: nil | DateTime}` when the viewer may silence the group (`mute_state/3`), nil otherwise"
+
   slot :inner_block, doc: "what only this menu offers, before the rest"
 
   def items(assigns) do
@@ -98,6 +103,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     ~H"""
     <div class="flex min-w-56 flex-col gap-2 z-100">
       {render_slot(@inner_block)}
+      <.mute_item :if={@mute} group={@group} mute={@mute} id_prefix={@id_prefix} row?={@row?} />
       <.tab_item
         :if={!@group.is_root}
         id={"#{@id_prefix}-tab-group-home"}
@@ -190,6 +196,87 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
       />
     </div>
     """
+  end
+
+  @doc """
+  What the menu of `group` offers to silence it: its members can, in any
+  group but the root and a thread, which follows its conversation.
+  `muted_until` is the viewer's (`Social.group_muted_until/2`).
+  """
+  def mute_state(%Group{is_root: true}, _member?, _muted_until), do: nil
+  def mute_state(%Group{parent_value_id: id}, _member?, _muted_until) when not is_nil(id), do: nil
+  def mute_state(%Group{}, true = _member?, muted_until), do: %{until: muted_until}
+  def mute_state(%Group{}, _member?, _muted_until), do: nil
+
+  attr :group, :map, required: true
+  attr :mute, :map, required: true
+  attr :id_prefix, :string, required: true
+  attr :row?, :boolean, required: true
+
+  # Silences the group for a while, or lets it speak again. The lengths open
+  # below the item, inside the same menu.
+  defp mute_item(%{mute: %{until: nil}} = assigns) do
+    ~H"""
+    <details id={"#{@id_prefix}-mute"} class="group/mute">
+      <summary class={[item_class(), "cursor-pointer list-none [&::-webkit-details-marker]:hidden"]}>
+        <.icon name="hero-speaker-x-mark" class="size-4" />
+        <span class="ml-2 truncate">{gettext("Mute")}</span>
+        <.icon
+          name="hero-chevron-down"
+          class="ml-auto size-4 transition-transform duration-150 group-open/mute:rotate-180"
+        />
+      </summary>
+      <div class="mt-1 flex flex-col gap-1 pl-6">
+        <button
+          :for={{duration, label} <- mute_choices()}
+          id={"#{@id_prefix}-mute-#{duration}"}
+          type="button"
+          data-dropdown-close
+          phx-click={mute_click(@group, duration, @row?)}
+          class={[item_class(), "py-1.5"]}
+        >
+          {label}
+        </button>
+      </div>
+    </details>
+    """
+  end
+
+  defp mute_item(assigns) do
+    ~H"""
+    <button
+      id={"#{@id_prefix}-unmute"}
+      type="button"
+      data-dropdown-close
+      phx-click={mute_click(@group, "off", @row?)}
+      class={[item_class(), "flex-wrap"]}
+    >
+      <.icon name="hero-speaker-wave" class="size-4" />
+      <span class="ml-2 truncate">{gettext("Turn notifications on")}</span>
+      <span class="basis-full pl-6 text-xs font-normal text-base-content/60">
+        <%= if PotokIde.Social.GroupMutes.forever?(@mute.until) do %>
+          {gettext("Muted until you turn them on")}
+        <% else %>
+          {gettext("Muted until")}
+          <Components.local_time id={"#{@id_prefix}-muted-until"} datetime={@mute.until} />
+        <% end %>
+      </span>
+    </button>
+    """
+  end
+
+  defp mute_choices do
+    [
+      {"hour", gettext("For an hour")},
+      {"eight_hours", gettext("For 8 hours")},
+      {"week", gettext("For a week")},
+      {"forever", gettext("Until I turn them on")}
+    ]
+  end
+
+  defp mute_click(group, duration, row?) do
+    js = if row?, do: JS.push("group_row_menu_close"), else: %JS{}
+    JS.push(js, "group_mute", value: %{id: group.id, for: duration})
   end
 
   attr :id, :string, required: true
@@ -309,7 +396,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         autofocus
         class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
       >
-        <.items group={@menu.group} access={@menu.access} id_prefix={@prefix}>
+        <.items group={@menu.group} access={@menu.access} id_prefix={@prefix} mute={@menu[:mute]}>
           <button
             :if={@shortcut && @shortcut.removable?}
             id={"#{@prefix}-menu-remove-shortcut"}
