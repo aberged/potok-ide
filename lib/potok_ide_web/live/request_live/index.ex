@@ -1,12 +1,13 @@
 defmodule PotokIdeWeb.RequestLive.Index do
   use PotokIdeWeb, :live_view
 
+  alias PotokIde.Processes
   alias PotokIde.Social
   alias PotokIdeWeb.GroupLive.Show.Components
   alias PotokIdeWeb.ProfileAuth
   @approved_requests_per_page 10
   @created_requests_per_page 10
-  @sections ~w(pending approved created)
+  @sections ~w(pending processes approved created)
 
   @impl true
   def render(assigns) do
@@ -34,7 +35,9 @@ defmodule PotokIdeWeb.RequestLive.Index do
         <.page_header id="requests-header" icon="hero-hand-raised">
           {gettext("Requests")}
           <:subtitle>
-            {gettext("Group access requests you can approve, and the ones you made.")}
+            {gettext(
+              "Group access requests you can approve, the ones you made, and the forms and decisions of processes that wait for you."
+            )}
           </:subtitle>
         </.page_header>
 
@@ -47,6 +50,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
           counts={
             %{
               "pending" => length(@requests),
+              "processes" => @waiting_count,
               "approved" => @approved_requests_pagination.total_count,
               "created" => @created_requests_pagination.total_count
             }
@@ -166,6 +170,85 @@ defmodule PotokIdeWeb.RequestLive.Index do
                   </.button>
                 </div>
               </div>
+            </div>
+          </div>
+        </Components.settings_card>
+
+        <%!-- What the processes of the profile's groups wait for it to do, by group. --%>
+        <Components.settings_card
+          id="requests-processes"
+          tab_id="requests-tab-processes"
+          active={@section == "processes"}
+          icon="hero-arrow-path-rounded-square"
+          title={gettext("Waiting for you")}
+          subtitle={
+            gettext(
+              "Forms and decisions of the processes in your groups that wait for you, the nearest deadline first."
+            )
+          }
+        >
+          <div
+            :if={@waiting_groups == []}
+            id="requests-processes-empty"
+            class="rounded-2xl border border-base-300/60 bg-base-100/70 px-4 py-3 text-sm text-base-content/70"
+          >
+            {gettext("Nothing waits for you.")}
+          </div>
+
+          <div :if={@waiting_groups != []} class="space-y-3">
+            <div
+              :for={%{group: group, tasks: tasks} <- @waiting_groups}
+              id={"waiting-group-#{group.id}"}
+              class="space-y-3 rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/10 to-base-100 p-4"
+            >
+              <Components.group_identity
+                group={group}
+                current_profile={@current_profile}
+                avatar_size="size-10"
+                text_class="text-sm"
+              />
+              <ul class="space-y-1.5">
+                <li :for={task <- tasks} id={"waiting-task-#{task.id}"}>
+                  <.link
+                    navigate={waiting_path(group, task)}
+                    class="group/task flex items-center gap-3 rounded-2xl bg-base-100/85 px-3 py-2.5 shadow-xs transition hover:bg-base-100 hover:shadow-sm active:scale-[0.99]"
+                  >
+                    <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-amber-500/15 text-amber-800 dark:text-amber-200">
+                      <.icon
+                        name={
+                          if(task.form?,
+                            do: "hero-clipboard-document-list",
+                            else: "hero-hand-raised"
+                          )
+                        }
+                        class="size-5"
+                      />
+                    </span>
+                    <span class="min-w-0 flex-1">
+                      <span class="block truncate text-sm font-semibold">{task.label}</span>
+                      <span class="block truncate text-xs text-base-content/60">
+                        {task.process.name <>
+                          " · " <>
+                          if(task.form?, do: gettext("form"), else: gettext("decision"))}
+                      </span>
+                    </span>
+                    <span
+                      :if={task.deadline_at}
+                      class="hidden shrink-0 items-center gap-1 text-xs text-base-content/60 sm:inline-flex"
+                    >
+                      <.icon name="hero-clock" class="size-3.5" />
+                      <Components.local_time
+                        id={"waiting-task-#{task.id}-deadline"}
+                        datetime={task.deadline_at}
+                      />
+                    </span>
+                    <.icon
+                      name="hero-chevron-right"
+                      class="size-4 shrink-0 text-base-content/40 transition-transform group-hover/task:translate-x-0.5"
+                    />
+                  </.link>
+                </li>
+              </ul>
             </div>
           </div>
         </Components.settings_card>
@@ -340,19 +423,32 @@ defmodule PotokIdeWeb.RequestLive.Index do
   end
 
   @impl true
-  def mount(_params, _session, socket) do
+  def mount(params, _session, socket) do
     socket =
       socket
       |> put_private(:previous_current_profile, socket.assigns.current_profile)
       |> assign(:requests_search_query, "")
-      |> assign(:section, "pending")
+      |> assign(:section, if(params["section"] in @sections, do: params["section"], else: nil))
+      |> assign(:waiting_groups, [])
+      |> assign(:waiting_count, 0)
       |> assign(:approved_requests_pagination, default_approved_requests_pagination())
       |> stream(:approved_requests, [], reset: true)
       |> assign(:created_requests_pagination, default_created_requests_pagination())
       |> stream(:created_requests, [], reset: true)
       |> ProfileAuth.sync_profile_subscription()
 
-    {:ok, assign_requests(socket, socket.assigns.current_profile)}
+    socket = assign_requests(socket, socket.assigns.current_profile)
+
+    # The hand counts what waits in processes too: with nothing to approve,
+    # the page opens on that.
+    section =
+      socket.assigns.section ||
+        if(socket.assigns.requests == [] and socket.assigns.waiting_count > 0,
+          do: "processes",
+          else: "pending"
+        )
+
+    {:ok, socket |> assign(:section, section) |> refresh_waiting(socket.assigns.current_profile)}
   end
 
   @impl true
@@ -364,6 +460,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
     {:noreply,
      case section do
        "pending" -> socket
+       "processes" -> refresh_waiting(socket, profile)
        "approved" -> refresh_approved_requests(socket, profile)
        "created" -> refresh_created_requests(socket, profile)
      end}
@@ -494,6 +591,10 @@ defmodule PotokIdeWeb.RequestLive.Index do
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
+  # What waits for the profile in some group's processes changed.
+  def handle_info({:profile_waiting_updated, _profile_id}, socket),
+    do: {:noreply, refresh_waiting(socket, socket.assigns.current_profile)}
+
   def handle_info({:profile_invitations_updated, _profile_id}, socket), do: {:noreply, socket}
 
   def handle_info({:profile_share_invitations_updated, _profile_id}, socket),
@@ -539,6 +640,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
   defp assign_requests(socket, nil) do
     socket
     |> assign(:requests, [])
+    |> assign(waiting_groups: [], waiting_count: 0)
     |> assign(:approved_requests_pagination, default_approved_requests_pagination())
     |> stream(:approved_requests, [], reset: true)
     |> assign(:created_requests_pagination, default_created_requests_pagination())
@@ -548,6 +650,7 @@ defmodule PotokIdeWeb.RequestLive.Index do
   defp assign_requests(socket, profile) do
     socket
     |> assign(:requests, Social.list_pending_group_join_requests_for_approver(profile))
+    |> refresh_waiting(profile)
     |> refresh_approved_requests(profile)
     |> refresh_created_requests(profile)
   end
@@ -631,10 +734,31 @@ defmodule PotokIdeWeb.RequestLive.Index do
     end
   end
 
+  # What waits for the profile in its groups' processes: the count always,
+  # for the tab, and the list while the tab is on screen.
+  defp refresh_waiting(socket, nil), do: assign(socket, waiting_groups: [], waiting_count: 0)
+
+  defp refresh_waiting(socket, profile) do
+    if socket.assigns.section == "processes" do
+      groups = Processes.waiting_across(profile)
+      count = groups |> Enum.map(&length(&1.tasks)) |> Enum.sum()
+      assign(socket, waiting_groups: groups, waiting_count: count)
+    else
+      assign(socket, waiting_groups: [], waiting_count: Processes.waiting_total(profile))
+    end
+  end
+
+  # A form opens in its group's page at once; a decision waits on its tab.
+  defp waiting_path(group, %{form?: true, id: id}),
+    do: ~p"/groups/#{group.id}/processes?#{[form: id]}"
+
+  defp waiting_path(group, _decision), do: ~p"/groups/#{group.id}/processes"
+
   # The tabs, in order: `{key, panel id, label, danger?}`.
   defp sections do
     [
       {"pending", "requests-pending", pgettext("requests tab", "To approve"), false},
+      {"processes", "requests-processes", pgettext("requests tab", "Processes"), false},
       {"approved", "requests-approved", pgettext("requests tab", "Approved"), false},
       {"created", "requests-created", pgettext("requests tab", "My requests"), false}
     ]

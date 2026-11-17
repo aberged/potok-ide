@@ -24,7 +24,7 @@ Potok runs in the browser, on a computer and on a phone, and there is an app for
 
 ### Finding your way {:#snalazenje}
 
-The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and access requests. Your picture leads to your profiles.
+The top bar is always the same. The house leads to the home page and counts your unread messages. The bell leads to the notices of the groups you follow, # to tags, and the two icons right of it to invitations and requests. The hand counts the access requests you can approve and all that waits for you in your groups' processes. Your picture leads to your profiles.
 
 The button with three lines opens the menu: every part of the app, your account settings, the language (Serbian in Latin or Cyrillic, or English), the light or dark theme, this help and what Potok costs. On a wide screen the menu stands on the left, with no need to open it. The two arrows at its top put it away when you need more room, and the three lines bring it back.
 
@@ -229,9 +229,9 @@ An app in a group can also have processes, which act in the group in place of pe
 
 How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there. At the bottom of the tab they also see the group's fields the processes keep, who wrote each last and when, and may delete them. Below those are the entities, with which an editor describes the data of the processes: an entity has a name and attributes, and each attribute a type, which is a text, a number, a yes or no, a date, a date and time, a choice from a list or another entity of the group. An attribute may also be a list, and may be required. An entity that another entity holds, or a variable of some process, cannot be deleted.
 
-At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment. The forms a process asks of you, or of your role, are there too: **Fill in** opens them. How much of this waits for you is also said in the group's header, from every other tab, and beside Processes in the group's menu.
+At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment. The forms a process asks of you, or of your role, are there too: **Fill in** opens them. How much of this waits for you is also said in the group's header, from every other tab, and beside Processes in the group's menu. Outside the group the hand in the top bar counts it: on the **Requests** page, under the **Processes** tab, are all the forms and decisions that wait for you, by group, and a form opens from there at once. In the lists of groups an amber dot with a number shows where something waits for you, also in the groups below.
 
-![The Processes tab: decisions that wait and the group's processes](procesi) ![The Waiting for you mark in a group's header](zgrada-ceka-tebe)
+![The Processes tab: decisions that wait and the group's processes](procesi) ![The Waiting for you mark in a group's header](zgrada-ceka-tebe) ![Requests: the forms and decisions that wait for you, by group](zahtevi-procesi)
 
 ### All permissions {:#dozvole}
 

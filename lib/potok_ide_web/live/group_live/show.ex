@@ -589,6 +589,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
             pagination={@children_pagination}
             pending_join_request_counts={@child_pending_join_request_counts}
             unread_counts={@group_unread_counts}
+            waiting_counts={@group_waiting_counts}
             time_zone={@calendar_time_zone}
             is_member={@is_member}
             can_create_subgroups={Access.can?(@access, :create_subgroups)}
@@ -918,6 +919,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:other_sub_groups_unread_count, 0)
          |> assign(:thread_unread_counts, %{})
          |> assign(:thread_sub_groups_unread_count, 0)
+         |> assign(:group_waiting_counts, %{})
          |> assign(:children_search_query, "")
          |> assign(:children_preset, nil)
          |> assign(:children_relation, nil)
@@ -1000,7 +1002,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   @impl true
-  def handle_params(params, _uri, socket) do
+  def handle_params(params, uri, socket) do
+    # A link from the Requests page opens a form that waits for the viewer.
+    {:noreply, socket} = route_params(params, uri, socket)
+    {:noreply, ProcessForm.open_from_params(socket, params)}
+  end
+
+  defp route_params(params, _uri, socket) do
     active_tab =
       normalize_active_tab(Map.get(params, "tab"), socket.assigns.group, socket.assigns.access)
 
@@ -2778,6 +2786,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:profile_group_join_requests_updated, _profile_id}, socket),
     do: {:noreply, socket}
 
+  # What waits for the viewer in some group's processes changed: the rows of
+  # the groups it stands in show it again.
+  def handle_info({:profile_waiting_updated, _profile_id}, socket),
+    do: {:noreply, refresh_group_waiting_counts(socket)}
+
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
@@ -2899,6 +2912,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket
     |> assign(:loaded?, true)
     |> put_unread_overview(overview)
+    |> assign(:group_waiting_counts, waiting_overview(socket))
     |> load_member_summary(group)
     |> load_join_request_data(group, active_tab)
     |> maybe_load_children(group, active_tab, overview)
@@ -3309,6 +3323,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       socket
     end
+  end
+
+  # What waits for the viewer, by group. The bar's hand counts it with the
+  # join requests (`ProfileAuth`, recounted before any news of it reaches
+  # the page), so where the hand shows nothing there is nothing to ask for.
+  defp waiting_overview(%{assigns: %{pending_group_join_requests_count: count}})
+       when count in [nil, 0],
+       do: %{}
+
+  defp waiting_overview(socket), do: Social.waiting_overview(socket.assigns.current_profile)
+
+  # Streamed rows only change when they are sent again: those whose count
+  # changed are.
+  defp refresh_group_waiting_counts(socket) do
+    previous = socket.assigns.group_waiting_counts
+    counts = waiting_overview(socket)
+
+    socket = assign(socket, :group_waiting_counts, counts)
+
+    socket.assigns.loaded_children
+    |> Enum.filter(&(Map.get(previous, &1.id, 0) != Map.get(counts, &1.id, 0)))
+    |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
   end
 
   # Online dots are driven by the `#group-presence-style` rule set, so a

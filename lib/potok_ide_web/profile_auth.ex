@@ -8,6 +8,7 @@ defmodule PotokIdeWeb.ProfileAuth do
   alias PotokIde.Accounts
   alias PotokIde.CountMark
   alias PotokIde.Notices
+  alias PotokIde.Processes
   alias PotokIde.Social
 
   # Same debounce as the group page's refreshes; 0 (the test config) recounts
@@ -134,10 +135,30 @@ defmodule PotokIdeWeb.ProfileAuth do
           {:pending_group_join_requests_count_updated, profile_id, count},
           %{assigns: %{current_profile: current_profile}} = socket
           when not is_nil(current_profile) and current_profile.id == profile_id ->
+            # The hand counts what waits in processes beside join requests.
+            count = count + Processes.waiting_total(current_profile)
+
             {:cont,
              socket
              |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
              |> push_pending_group_join_requests_count_updated(count)}
+
+          # What waits for the profile in some group's processes changed: the
+          # hand counts again, and a view that shows it itself hears of it too.
+          {:profile_waiting_updated, profile_id},
+          %{assigns: %{current_profile: current_profile}} = socket
+          when not is_nil(current_profile) and current_profile.id == profile_id ->
+            count = pending_group_join_requests_count(current_profile)
+
+            socket =
+              socket
+              |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
+              |> push_pending_group_join_requests_count_updated(count)
+
+            if shows_waiting_itself?(socket), do: {:cont, socket}, else: {:halt, socket}
+
+          {:profile_waiting_updated, _profile_id}, socket ->
+            {:halt, socket}
 
           # Halted here, as no view knows it: a page follows its profile's groups.
           {:group_membership_changed, _profile_id, group_id, change} = message, socket ->
@@ -234,6 +255,11 @@ defmodule PotokIdeWeb.ProfileAuth do
   without the unread count.
   """
   def counts_unread_itself?(socket), do: socket.view in @unread_counting_views
+
+  # The views that show what waits for the profile beside the hand: the rows
+  # of groups, and the Requests page's list.
+  defp shows_waiting_itself?(socket),
+    do: socket.view in [PotokIdeWeb.GroupLive.Show, PotokIdeWeb.RequestLive.Index]
 
   def handle_current_profile_change(socket, on_present, on_missing)
       when is_function(on_present, 2) and is_function(on_missing, 1) do
@@ -559,7 +585,10 @@ defmodule PotokIdeWeb.ProfileAuth do
 
   defp pending_invitations_count(profile), do: Social.count_pending_invitations(profile)
 
+  # What the hand counts: join requests the profile may approve, and the
+  # tasks of drawn processes that wait for it (`Social.nav_counts/2`).
   defp pending_group_join_requests_count(profile) do
-    Social.count_pending_group_join_requests_for_approver(profile)
+    Social.count_pending_group_join_requests_for_approver(profile) +
+      Processes.waiting_total(profile)
   end
 end

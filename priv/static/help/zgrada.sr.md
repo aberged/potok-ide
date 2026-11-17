@@ -182,7 +182,7 @@ Stanar ne mora ni da traži dugme: dovoljno je da u razgovoru zgrade napiše „
 
 Čim stanar pošalje poruku sa rečju „kvar“, otvara mu se forma. Naslov je već popunjen tekstom njegove poruke, pa ga samo proveri, a sprat prima samo broj. Kad dodirne **Pošalji**, proces ide dalje i u razgovoru javlja šta je prijavljeno.
 
-Ako formu zatvori sa **Kasnije**, ona ga čeka. U zaglavlju zgrade tada stoji oznaka **Čeka tebe** sa brojem: vodi na karticu Procesi, gde formu otvara **Popuni**. Istu oznaku vidiš i ti kad te čeka odluka.
+Ako formu zatvori sa **Kasnije**, ona ga čeka. U zaglavlju zgrade tada stoji oznaka **Čeka tebe** sa brojem: vodi na karticu Procesi, gde formu otvara **Popuni**. Van zgrade je broji ruka u gornjoj traci, a na stranici **Zahtevi**, pod karticom **Procesi**, forma se otvara jednim dodirom. Istu oznaku vidiš i ti kad te čeka odluka.
 
 ![Oznaka Čeka tebe u zaglavlju zgrade](zgrada-ceka-tebe)
 

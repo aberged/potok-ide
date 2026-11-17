@@ -409,6 +409,173 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
     end
   end
 
+  describe "what waits for the viewer, outside the group" do
+    defp fill_in!(ctx, run, answers \\ %{"naslov" => "Lift"}) do
+      {:ok, _presented} =
+        Processes.complete_form(
+          ctx.member,
+          ctx.group,
+          Access.for_profile(ctx.member, ctx.group),
+          run.id,
+          "prijava",
+          answers,
+          nil
+        )
+
+      Engine.run(run.id)
+    end
+
+    test "is counted on the hand in the bar, on every page, as it comes and goes", ctx do
+      row = draw!(ctx, [form_step("prijava", ctx.kvar)])
+
+      {:ok, tags, _html} = live_as(ctx.member_account, ~p"/tags")
+      assert has_element?(tags, "#nav-requests-count-badge[hidden]")
+
+      run = report!(ctx, row)
+
+      assert Processes.waiting_by_group(ctx.member) == %{ctx.group.id => 1}
+      assert Social.nav_counts(ctx.member).pending_group_join_requests == 1
+
+      # A page open elsewhere hears of it and counts again.
+      render(tags)
+      refute has_element?(tags, "#nav-requests-count-badge[hidden]")
+      assert has_element?(tags, "#nav-requests-count-badge", "1")
+
+      fill_in!(ctx, run)
+      render(tags)
+      assert has_element?(tags, "#nav-requests-count-badge[hidden]")
+      assert Social.nav_counts(ctx.member).pending_group_join_requests == 0
+    end
+
+    test "is listed under Requests, where a form opens in its group at once", ctx do
+      row = draw!(ctx, [form_step("prijava", ctx.kvar, %{"label" => "Prijavi kvar"})])
+      run = report!(ctx, row)
+
+      # With nothing to approve, the page opens on what waits.
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/requests")
+      assert has_element?(lv, "#requests-tab-processes[aria-selected='true']")
+      assert has_element?(lv, "#waiting-group-#{ctx.group.id}")
+      assert has_element?(lv, "#waiting-task-#{run.id}", "Prijavi kvar")
+
+      path = ~p"/groups/#{ctx.group.id}/processes?#{[form: run.id]}"
+      assert has_element?(lv, "#waiting-task-#{run.id} a[href='#{path}']")
+
+      {:ok, group_lv, _html} = live_as(ctx.member_account, path)
+      assert has_element?(group_lv, "#process-form-dialog")
+      assert has_element?(group_lv, "#process-form-title", "Prijavi kvar")
+
+      # Filled in elsewhere, it goes from the list.
+      fill_in!(ctx, run)
+      render(lv)
+      refute has_element?(lv, "#waiting-task-#{run.id}")
+      assert has_element?(lv, "#requests-processes-empty")
+    end
+
+    test "the decisions of a role are listed under Requests too, and lead to their tab", ctx do
+      graph = %{
+        "v" => 2,
+        "nodes" => [
+          %{"id" => "start", "type" => "startEvent"},
+          %{"id" => "odluka", "type" => "userTask", "role" => "admin", "outcomes" => ["Da"]},
+          %{"id" => "kraj", "type" => "endEvent"}
+        ],
+        "flows" => [
+          %{"from" => "start", "to" => "odluka"},
+          %{"from" => "odluka", "to" => "kraj", "outcome" => "Da"}
+        ]
+      }
+
+      run = report!(ctx, draw!(ctx, graph))
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/requests?section=processes")
+      assert has_element?(lv, "#waiting-task-#{run.id}", "decision")
+
+      assert has_element?(
+               lv,
+               "#waiting-task-#{run.id} a[href='/groups/#{ctx.group.id}/processes']"
+             )
+
+      {:ok, member_lv, _html} = live_as(ctx.member_account, ~p"/requests?section=processes")
+      assert has_element?(member_lv, "#requests-processes-empty")
+    end
+
+    test "marks the rows of the groups it waits in, and those above them", ctx do
+      {:ok, child} =
+        Social.create_group(ctx.owner, ctx.group, %{
+          "name" => "Ulaz A",
+          "description" => "",
+          "description_format" => :markdown,
+          "home_page" => :chat
+        })
+
+      {:ok, invitation} = Social.invite_profile_to_group(ctx.owner, child, ctx.member)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, ctx.member)
+      child = Social.get_group!(child.id)
+
+      {:ok, kvar} =
+        GroupEntities.create(child, Access.for_profile(ctx.owner, child), %{
+          "name" => "Kvar",
+          "attributes" => [%{"name" => "naslov", "type" => "text", "required" => true}]
+        })
+
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, child, %{
+          "trigger" => "message",
+          "trigger_config" => %{"words" => "kvar"},
+          "name" => "Kvar u ulazu",
+          "graph" => chain([form_step("prijava", kvar.id)])
+        })
+
+      {:ok, row} = DrawnProcesses.activate(ctx.owner, child, row.id)
+
+      {:ok, list, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/sub_groups")
+      refute has_element?(list, "#child-group-waiting-#{child.id}")
+
+      {:ok, _value} =
+        Social.create_value(ctx.member, child, %{
+          "content" => "kvar na vratima",
+          "content_format" => :markdown
+        })
+
+      run = Repo.one!(from(i in ValueProcess, where: i.app_process_id == ^row.id))
+      run = Engine.run(run.id)
+
+      # Up the tree to the root, as unread values add up.
+      root = Social.get_root_group!()
+
+      assert Social.waiting_overview(ctx.member) ==
+               %{child.id => 1, ctx.group.id => 1, root.id => 1}
+
+      # The open list hears of it, and the folder view shows it on every level.
+      render(list)
+      assert has_element?(list, "#child-group-waiting-#{child.id}", "1")
+
+      {:ok, tree, _html} =
+        live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/sub_groups?view=tree")
+
+      assert has_element?(tree, "#sub-group-folder-waiting-#{child.id}", "1")
+
+      {:ok, home, _html} = live_as(ctx.member_account, ~p"/groups/#{root.id}")
+      assert has_element?(home, "#child-group-waiting-#{ctx.group.id}", "1")
+
+      {:ok, _presented} =
+        Processes.complete_form(
+          ctx.member,
+          child,
+          Access.for_profile(ctx.member, child),
+          run.id,
+          "prijava",
+          %{"naslov" => "Vrata"},
+          nil
+        )
+
+      render(list)
+      refute has_element?(list, "#child-group-waiting-#{child.id}")
+      render(home)
+      refute has_element?(home, "#child-group-waiting-#{ctx.group.id}")
+    end
+  end
+
   # One more message with the word, and its run taken as far as it goes.
   defp report_again!(ctx, row) do
     {:ok, value} =

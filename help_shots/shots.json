@@ -589,6 +589,12 @@
     ]
   },
   {
+    "name": "zahtevi-procesi",
+    "as": "tamara",
+    "url": "/requests?section=processes",
+    "steps": [{ "wait": "#requests-processes" }, { "pause": 500 }]
+  },
+  {
     "name": "zgrada-ceka-tebe",
     "as": "tamara",
     "url": "/groups/{groups.building}/members",

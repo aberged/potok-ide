@@ -2079,12 +2079,15 @@ defmodule PotokIde.Social do
   end
 
   @doc """
-  The header badges in one query: pending invitations, join requests the
-  profile may approve, unread values (the root group's count) and unread
-  notices. The same numbers as `count_pending_invitations/1`,
-  `count_pending_group_join_requests_for_approver/1`,
-  `count_root_group_unread_values/1` and `PotokIde.Notices.unread_snapshot/1`;
-  the approver's groups are only loaded when some of them have join requests.
+  The header badges in one query: pending invitations, what waits for the
+  profile under Requests (join requests it may approve, and the tasks of
+  drawn processes that wait for it, `PotokIde.Processes.waiting_sql/1`),
+  unread values (the root group's count) and unread notices. The same
+  numbers as `count_pending_invitations/1`,
+  `count_pending_group_join_requests_for_approver/1` with
+  `PotokIde.Processes.waiting_total/1`, `count_root_group_unread_values/1`
+  and `PotokIde.Notices.unread_snapshot/1`; the approver's groups are only
+  loaded when some of them have join requests.
   `root_unread_as_of` and `unread_notices_as_of` are what the counts hold
   (`PotokIde.CountMark`, see `root_group_unread_snapshot/1`).
 
@@ -2149,10 +2152,11 @@ defmodule PotokIde.Social do
       ),
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
-      #{Notices.notice_mark_sql()}
+      #{Notices.notice_mark_sql()},
+      (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v4_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v5_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -2163,7 +2167,8 @@ defmodule PotokIde.Social do
              unread,
              unread_as_of,
              unread_notices,
-             unread_notices_as_of
+             unread_notices_as_of,
+             waiting
            ]
          ]
        }} ->
@@ -2172,7 +2177,8 @@ defmodule PotokIde.Social do
           pending_group_join_requests:
             join_request_counts
             |> Enum.map(fn [group_id, count] -> {group_id, count} end)
-            |> approvable_join_request_total(profile),
+            |> approvable_join_request_total(profile)
+            |> Kernel.+(waiting),
           root_unread: unread,
           root_unread_as_of: CountMark.from_ids(unread_as_of),
           unread_notices: unread_notices,
@@ -6548,6 +6554,30 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  What waits for the profile in its groups' processes, at or below each
+  group, as the sub-groups lists show it: `%{group_id => count}`, the groups
+  the profile cannot see hanging from the root, as in `unread_overview/1`.
+  Groups with nothing are left out.
+  """
+  def waiting_overview(nil), do: %{}
+
+  def waiting_overview(%Profile{id: profile_id} = profile) do
+    case PotokIde.Processes.waiting_by_group(profile) do
+      own when map_size(own) == 0 ->
+        %{}
+
+      own ->
+        groups = profile_id |> group_chain(Map.keys(own)) |> hang_from_root()
+
+        Enum.reduce(own, %{}, fn {group_id, count}, acc ->
+          group_id
+          |> self_and_ancestor_ids(groups)
+          |> Enum.reduce(acc, &Map.update(&2, &1, count, fn sum -> sum + count end))
+        end)
+    end
+  end
+
   @doc "Unread values at or below each of `group_ids`, from `unread_overview/1`."
   def unread_counts_for(%{groups: groups}, group_ids) do
     Map.new(group_ids, fn group_id ->
@@ -7632,6 +7662,20 @@ defmodule PotokIde.Social do
       profile_topic(profile_id),
       {:pending_invitations_count_updated, profile_id, count_pending_invitations(profile)}
     )
+  end
+
+  @doc """
+  Tells each of the profiles that what waits for it in some group's
+  processes changed (`PotokIde.Processes.Engine`), so its pages count again.
+  """
+  def broadcast_profile_waiting_updated(profile_ids) when is_list(profile_ids) do
+    Enum.each(profile_ids, fn profile_id ->
+      Phoenix.PubSub.broadcast(
+        PotokIde.PubSub,
+        profile_topic(profile_id),
+        {:profile_waiting_updated, profile_id}
+      )
+    end)
   end
 
   defp broadcast_profile_group_join_requests_updated(%Profile{id: profile_id}) do

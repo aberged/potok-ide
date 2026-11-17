@@ -30,7 +30,7 @@ Potok radi u pregledaču, na računaru i na telefonu, a postoji i aplikacija za 
 
 ### Snalaženje {:#snalazenje}
 
-Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve za pristup. Tvoja slika vodi na profile.
+Gornja traka je uvek ista. Kućica vodi na početnu stranu i broji nepročitane poruke. Zvono vodi na obaveštenja grupa koje pratiš, # na tagove, a dve ikone desno od njega na pozivnice i zahteve. Ruka broji zahteve za pristup koje možeš da odobriš i sve što te čeka u procesima tvojih grupa. Tvoja slika vodi na profile.
 
 Dugme sa tri crte otvara meni: svi delovi aplikacije, podešavanja naloga, jezik (latinica, ćirilica ili engleski), svetla ili tamna tema, ova pomoć i koliko Potok košta. Na širokom ekranu meni stoji levo i ne treba ga otvarati. Dve strelice na njegovom vrhu ga sklanjaju kad ti treba više mesta, a tri crte ga vraćaju.
 
@@ -235,9 +235,9 @@ Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni s
 
 Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje. Na dnu kartice vidi i polja grupe koja procesi čuvaju, ko ih je poslednji upisao i kada, i može da ih obriše. Ispod njih su entiteti, kojima urednik opisuje podatke procesa: entitet ima ime i atribute, a svaki atribut tip, i to tekst, broj, da ili ne, datum, datum i vreme, izbor iz liste ili drugi entitet grupe. Atribut može da bude i lista, i može da bude obavezan. Entitet koji drži neki drugi entitet ili varijabla nekog procesa ne može da se obriše.
 
-Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar. Tu su i forme koje neki proces traži od tebe ili od tvoje uloge: otvaraš ih sa **Popuni**. Koliko te toga čeka, piše i u zaglavlju grupe, sa svake druge kartice, i uz Procesi u meniju grupe.
+Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar. Tu su i forme koje neki proces traži od tebe ili od tvoje uloge: otvaraš ih sa **Popuni**. Koliko te toga čeka, piše i u zaglavlju grupe, sa svake druge kartice, i uz Procesi u meniju grupe. Van grupe to broji ruka u gornjoj traci: na stranici **Zahtevi**, pod karticom **Procesi**, stoje sve forme i odluke koje te čekaju, po grupama, i forma se odatle odmah otvara. U listama grupa ćilibarna tačka sa brojem pokazuje gde te nešto čeka, i u grupama ispod.
 
-![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi) ![Oznaka Čeka tebe u zaglavlju grupe](zgrada-ceka-tebe)
+![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi) ![Oznaka Čeka tebe u zaglavlju grupe](zgrada-ceka-tebe) ![Zahtevi: forme i odluke koje te čekaju, po grupama](zahtevi-procesi)
 
 ### Sve dozvole {:#dozvole}
 

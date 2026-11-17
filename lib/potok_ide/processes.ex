@@ -21,10 +21,24 @@ defmodule PotokIde.Processes do
 
   alias PotokIde.Repo
   alias PotokIde.Processes.{Engine, Graph, Scheduler, Types, ValueProcess}
-  alias PotokIde.Social.{Access, AppData, AppProcess, Group, Profile, Value, ValueRules}
+
+  alias PotokIde.Social.{
+    Access,
+    AppData,
+    AppProcess,
+    Group,
+    GroupMemberRole,
+    GroupMembership,
+    Profile,
+    Value,
+    ValueRules
+  }
 
   @max_list 100
   @max_tasks 50
+  @max_waiting_groups 30
+  # The people of a role a waiting run tells one by one that it asks them.
+  @max_told 500
   @max_rows 30
   @max_depth 3
   @max_cell 200
@@ -239,6 +253,129 @@ defmodule PotokIde.Processes do
     do: profile |> asking(group, access) |> Repo.aggregate(:count)
 
   def waiting_count(_profile, _group, _access), do: 0
+
+  @doc """
+  The SQL of what waits for the profile `$profile` in the groups it is a
+  member of, a row a task, with the group's id as `group_id`: a run of an
+  active drawn process waiting on a step that asks the profile, or a role it
+  holds there ("everyone" for every member). As `waiting_count/3` counts,
+  a group at a time, from its access; here for all the profile's groups in
+  one statement, for `Social.nav_counts/2` and `waiting_by_group/1`.
+  """
+  def waiting_sql(profile) do
+    """
+    SELECT gm.group_id
+    FROM group_memberships gm
+    JOIN app_processes p
+      ON p.group_id = gm.group_id AND p.drawn AND p.active
+    JOIN value_processes i
+      ON i.app_process_id = p.id AND i.status = 'waiting'
+    WHERE gm.profile_id = #{profile}
+      AND (
+        i.asks_profile_id = #{profile}
+        OR i.asks_role = 'everyone'
+        OR EXISTS (
+          SELECT 1 FROM group_member_roles r
+          WHERE r.group_id = gm.group_id AND r.profile_id = #{profile}
+            AND r.role_key = i.asks_role
+        )
+      )
+    """
+  end
+
+  @doc "How many tasks wait for the profile in each of its groups, leaving out groups with none."
+  def waiting_by_group(%Profile{id: profile_id}) do
+    sql = """
+    SELECT w.group_id, COUNT(*)::bigint
+    FROM (#{waiting_sql("$1")}) w
+    GROUP BY w.group_id
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, [profile_id], cache_statement: "processes_waiting_by_group")
+
+    Map.new(rows, fn [group_id, count] -> {group_id, count} end)
+  end
+
+  def waiting_by_group(_profile), do: %{}
+
+  @doc "How many tasks wait for the profile in all its groups together."
+  def waiting_total(%Profile{} = profile),
+    do: profile |> waiting_by_group() |> Map.values() |> Enum.sum()
+
+  def waiting_total(_profile), do: 0
+
+  @doc """
+  What waits for the profile in all its groups, the groups with the nearest
+  deadline first, each with its tasks as `tasks_for/3` lists them: at most
+  #{@max_waiting_groups} groups. For the Requests page.
+  """
+  def waiting_across(%Profile{} = profile) do
+    case profile |> waiting_by_group() |> Map.keys() do
+      [] ->
+        []
+
+      group_ids ->
+        groups =
+          from(g in Group, where: g.id in ^group_ids, order_by: [asc: g.name])
+          |> Repo.all()
+
+        accesses = Access.for_profile_in_groups(profile, groups)
+
+        groups
+        |> Enum.map(&%{group: &1, tasks: tasks_for(profile, &1, accesses[&1.id])})
+        |> Enum.reject(&(&1.tasks == []))
+        |> Enum.sort_by(&nearest_deadline/1)
+        |> Enum.take(@max_waiting_groups)
+    end
+  end
+
+  def waiting_across(_profile), do: []
+
+  # Groups whose tasks have a deadline first, the nearest first; then by name.
+  defp nearest_deadline(%{group: group, tasks: tasks}) do
+    case tasks |> Enum.map(& &1.deadline_at) |> Enum.reject(&is_nil/1) do
+      [] -> {1, 0, group.name}
+      deadlines -> {0, deadlines |> Enum.min(DateTime) |> DateTime.to_unix(), group.name}
+    end
+  end
+
+  @doc """
+  The profiles a waiting run asks, so their pages can count again: whoever
+  the form asks, or the people of the role, as long as they are few enough
+  to tell one by one. Beyond #{@max_told} the pages learn it on their next
+  load. Persons only, as only persons fill in and decide.
+  """
+  def asked_profile_ids(_group_id, %{asks_profile_id: id}) when is_integer(id), do: [id]
+
+  def asked_profile_ids(group_id, %{asks_role: "everyone"}) do
+    from(gm in GroupMembership,
+      join: p in Profile,
+      on: p.id == gm.profile_id,
+      where: gm.group_id == ^group_id and p.kind == :person,
+      limit: ^(@max_told + 1),
+      select: gm.profile_id
+    )
+    |> Repo.all()
+    |> few_enough()
+  end
+
+  def asked_profile_ids(group_id, %{asks_role: role}) when is_binary(role) do
+    from(r in GroupMemberRole,
+      join: p in Profile,
+      on: p.id == r.profile_id,
+      where: r.group_id == ^group_id and r.role_key == ^role and p.kind == :person,
+      limit: ^(@max_told + 1),
+      select: r.profile_id
+    )
+    |> Repo.all()
+    |> few_enough()
+  end
+
+  def asked_profile_ids(_group_id, _asks), do: []
+
+  defp few_enough(ids) when length(ids) > @max_told, do: []
+  defp few_enough(ids), do: ids
 
   # The waiting runs of the group's drawn processes that ask the viewer.
   defp asking(%Profile{id: profile_id}, %Group{id: group_id}, %Access{role_keys: role_keys}) do

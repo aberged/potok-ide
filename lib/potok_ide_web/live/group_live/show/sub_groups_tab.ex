@@ -11,6 +11,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :pagination, :map, required: true
   attr :pending_join_request_counts, :map, required: true
   attr :unread_counts, :map, required: true
+
+  attr :waiting_counts, :map,
+    default: %{},
+    doc: "what waits for the viewer at or below each group (`Social.waiting_overview/1`)"
+
   attr :is_member, :boolean, required: true
   attr :can_create_subgroups, :boolean, default: false
   attr :sub_groups_kind, :string, required: true
@@ -390,6 +395,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
               node={node}
               search_query={@children_search_query}
               menu={@current_profile != nil}
+              waiting={@waiting_counts}
             />
             <.tree_more_button :if={@tree.more?} id="group-children-tree-more" />
           </div>
@@ -430,6 +436,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                     </:subtitle>
                   </Components.group_identity>
                 </div>
+                <.waiting_mark
+                  id={"child-group-waiting-#{group.id}"}
+                  count={Map.get(@waiting_counts, group.id, 0)}
+                />
                 <TagComponents.tag_button
                   id={"child-group-tags-#{group.id}"}
                   kind={:group}
@@ -618,6 +628,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   attr :node, :map, required: true, doc: "a `SubGroupTree` node"
   attr :search_query, :string, default: ""
   attr :menu, :boolean, default: false, doc: "whether the rows offer `GroupMenu`"
+  attr :waiting, :map, default: %{}, doc: "what waits for the viewer, by group"
 
   # The chevron opens and closes a folder; the name opens the group. The
   # server keeps which folders are open, so a reload keeps them as they were,
@@ -661,6 +672,10 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           <span class="size-8 shrink-0" aria-hidden="true"></span>
         <% end %>
         <.tree_node_link node={@node} search_query={@search_query} />
+        <.waiting_mark
+          id={"sub-group-folder-waiting-#{node_key(@node)}"}
+          count={Map.get(@waiting, @node.group.id, 0)}
+        />
         <GroupMenu.row_button
           :if={@menu}
           group_id={@node.group.id}
@@ -680,6 +695,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
           node={child}
           search_query={@search_query}
           menu={@menu}
+          waiting={@waiting}
         />
         <.tree_more_button
           :if={@node.more?}
@@ -774,6 +790,26 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         class="shrink-0"
       />
     </.link>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :count, :integer, required: true
+
+  # What waits for the viewer in a group and below it, beside its row: the
+  # amber of the group's own Waiting for you mark.
+  defp waiting_mark(assigns) do
+    ~H"""
+    <span
+      :if={@count > 0}
+      id={@id}
+      title={gettext("Waiting for you: %{count}", count: @count)}
+      aria-label={gettext("Waiting for you: %{count}", count: @count)}
+      class="inline-flex h-6 shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-2 text-[11px] font-semibold tabular-nums text-amber-900 dark:text-amber-100"
+    >
+      <span class="size-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+      {@count}
+    </span>
     """
   end
 

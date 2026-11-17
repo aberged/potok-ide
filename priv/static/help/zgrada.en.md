@@ -181,7 +181,7 @@ A resident need not even look for a button: it is enough to write "kvar" in the 
 
 As soon as a resident sends a message with the word "kvar", the form opens for them. The title already holds the text of their message, so they only check it, and the floor takes a number only. When they tap **Send**, the process goes on and says in the chat what was reported.
 
-If they close the form with **Later**, it waits for them. The building's header then has a **Waiting for you** mark with a number: it leads to the Processes tab, where **Fill in** opens the form. You see the same mark when a decision waits for you.
+If they close the form with **Later**, it waits for them. The building's header then has a **Waiting for you** mark with a number: it leads to the Processes tab, where **Fill in** opens the form. Outside the building the hand in the top bar counts it, and on the **Requests** page, under the **Processes** tab, the form opens with one tap. You see the same mark when a decision waits for you.
 
 ![The Waiting for you mark in the building's header](zgrada-ceka-tebe)
 

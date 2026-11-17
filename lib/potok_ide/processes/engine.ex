@@ -408,11 +408,23 @@ defmodule PotokIde.Processes.Engine do
           asks: asks(instance)
         })
 
+        if process.drawn, do: tell_asked(process.group_id, instance)
+
       nil ->
         :ok
     end
 
     instance
+  end
+
+  # Those a wait asks, or asked, count again on every page they have open,
+  # in any group: the bar's hand and the rows of their groups.
+  defp tell_asked(_group_id, %ValueProcess{asks_role: nil, asks_profile_id: nil}), do: :ok
+
+  defp tell_asked(group_id, %ValueProcess{} = instance) do
+    group_id
+    |> PotokIde.Processes.asked_profile_ids(instance)
+    |> PotokIde.Social.broadcast_profile_waiting_updated()
   end
 
   # Whom the run asks, or asked on the wait it just left: the news is theirs.

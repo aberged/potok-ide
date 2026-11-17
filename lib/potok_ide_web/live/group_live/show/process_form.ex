@@ -92,6 +92,25 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
 
   defp input_value(value, _type, _zone), do: to_string(value)
 
+  @doc """
+  Opens the form a link names (`?form=<run id>`, from the Requests page),
+  when it still waits for the viewer; nothing otherwise, and nothing before
+  the page is connected.
+  """
+  def open_from_params(socket, %{"form" => id}) do
+    with true <- Phoenix.LiveView.connected?(socket),
+         %{} <- socket.assigns[:current_profile],
+         nil <- socket.assigns.process_form,
+         {id, ""} <- Integer.parse(to_string(id)),
+         %{} = task <- task(socket, id) do
+      open(socket, task)
+    else
+      _not_now -> socket
+    end
+  end
+
+  def open_from_params(socket, _params), do: socket
+
   def handle_event("process_form_open", %{"id" => id}, socket) do
     with %{} <- socket.assigns.current_profile,
          {id, ""} <- Integer.parse(to_string(id)),
