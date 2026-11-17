@@ -42,8 +42,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   attr :format, :string,
     default: "datetime",
-    values: ~w(datetime time),
-    doc: "`time` shows only the hour, with the date as its tooltip"
+    values: ~w(datetime time label),
+    doc:
+      "`time` shows only the hour, with the date as its tooltip; `label` shows `label`, with the date as its tooltip"
+
+  attr :label, :string, default: nil
 
   def local_time(assigns) do
     assigns = assign(assigns, :iso8601, datetime_to_iso8601(assigns.datetime))
@@ -57,10 +60,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       data-format={@format}
       class={@class}
     >
-      {Calendar.strftime(
-        datetime_to_utc_datetime(@datetime),
-        if(@format == "time", do: "%H:%M", else: "%Y-%m-%d %H:%M UTC")
-      )}
+      <%= if @format == "label" do %>
+        {@label}
+      <% else %>
+        {Calendar.strftime(
+          datetime_to_utc_datetime(@datetime),
+          if(@format == "time", do: "%H:%M", else: "%Y-%m-%d %H:%M UTC")
+        )}
+      <% end %>
     </time>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".LocalTime">
       // Intl writes a bare `sr` in Cyrillic, while the app's `sr` is Latin.
@@ -84,6 +91,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
         if (el.dataset.format === "time") {
           el.textContent = clock.format(date)
+          el.title = full
+        } else if (el.dataset.format === "label") {
           el.title = full
         } else {
           el.textContent = full
@@ -2134,16 +2143,36 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :value, :map, required: true
   attr :class, :any, default: nil
 
+  # An edit moves `updated_at`, and nothing else written to a message does:
+  # a link preview, a poll or a reaction is written past it.
   defp value_time(assigns) do
+    assigns = assign(assigns, :edited?, edited?(assigns.value))
+
     ~H"""
-    <.local_time
-      id={"value-inserted-at-#{@value.id}"}
-      datetime={@value.inserted_at}
-      format="time"
-      class={["text-[11px] leading-4 tabular-nums opacity-80", @class]}
-    />
+    <span class={["text-[11px] leading-4 tabular-nums opacity-80", @class]}>
+      <.local_time
+        :if={@edited?}
+        id={"value-edited-#{@value.id}"}
+        datetime={@value.updated_at}
+        format="label"
+        label={gettext("edited")}
+        class="mr-1 italic"
+      />
+      <.local_time id={"value-inserted-at-#{@value.id}"} datetime={@value.inserted_at} format="time" />
+    </span>
     """
   end
+
+  defp edited?(%{inserted_at: %DateTime{} = inserted, updated_at: %DateTime{} = updated}),
+    do: DateTime.after?(updated, inserted)
+
+  defp edited?(%{
+         inserted_at: %NaiveDateTime{} = inserted,
+         updated_at: %NaiveDateTime{} = updated
+       }),
+       do: NaiveDateTime.after?(updated, inserted)
+
+  defp edited?(_value), do: false
 
   # A preview fetched by `Social` once the value was posted (`PotokIde.LinkPreviews`).
   defp value_link_preview(%Value{link_preview: %{"url" => url} = preview}) when is_binary(url),

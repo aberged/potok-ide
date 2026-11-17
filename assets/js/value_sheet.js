@@ -90,7 +90,12 @@ export const ValueSheet = {
 
     this.title.textContent = value.dataset.author
     // The value's own time: a card in it can hold others, like a poll's deadline.
-    this.time.textContent = value.querySelector("time[id^=value-inserted-at-]")?.title || ""
+    // An edited one says when, after it.
+    const posted = value.querySelector("time[id^=value-inserted-at-]")?.title
+    const edited = value.querySelector("time[id^=value-edited-]")
+    this.time.textContent = [posted, edited && `${edited.textContent.trim()} ${edited.title}`]
+      .filter(Boolean)
+      .join(" · ")
     this.text.textContent = text
     this.text.hidden = text === ""
     this.copy.hidden = text === ""

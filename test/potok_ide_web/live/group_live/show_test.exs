@@ -1,9 +1,10 @@
 defmodule PotokIdeWeb.GroupLive.ShowTest do
   use PotokIdeWeb.ConnCase, async: true
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
   import PotokIde.AccountsFixtures
-  import PotokIde.EventsFixtures, only: [account_with_profile!: 1]
+  import PotokIde.EventsFixtures, only: [account_with_profile!: 1, add_member!: 3]
 
   alias PotokIde.Accounts
   alias PotokIde.Repo
@@ -2982,6 +2983,42 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-value-form")
       assert render(lv) =~ "edited liveview value"
       refute render(lv) =~ "original liveview value"
+    end
+
+    test "marks an edited value as edited, for everyone on the page", %{conn: conn} do
+      {author_account, author} = account_with_profile!("edited-author")
+      {reader_account, reader} = account_with_profile!("edited-reader")
+      group = create_child_group!(author, "edited-mark-group")
+      add_member!(author, group, reader)
+
+      {:ok, edited} = Social.create_value(author, group, %{"content" => "before the edit"})
+      {:ok, reacted} = Social.create_value(author, group, %{"content" => "only reacted to"})
+
+      # Posted a minute ago: an edit in the second a value was posted leaves no mark.
+      minute_ago = DateTime.utc_now() |> DateTime.add(-60) |> DateTime.truncate(:second)
+
+      Repo.update_all(from(v in Value, where: v.id in ^[edited.id, reacted.id]),
+        set: [inserted_at: minute_ago, updated_at: minute_ago]
+      )
+
+      {:ok, author_lv, _html} =
+        conn |> log_in_account(author_account) |> live(~p"/groups/#{group.id}/values")
+
+      {:ok, reader_lv, _html} =
+        build_conn() |> log_in_account(reader_account) |> live(~p"/groups/#{group.id}/values")
+
+      refute has_element?(reader_lv, "#value-edited-#{edited.id}")
+
+      {:ok, _} = Social.toggle_value_reaction(reader, group, reacted, "👍")
+      author_lv |> element("#value-edit-#{edited.id}") |> render_click()
+
+      author_lv
+      |> form("#edit-value-form-#{edited.id}", value: %{content: "after the edit"})
+      |> render_submit()
+
+      assert has_element?(author_lv, "#value-edited-#{edited.id}")
+      assert has_element?(reader_lv, "#value-edited-#{edited.id}")
+      refute has_element?(reader_lv, "#value-edited-#{reacted.id}")
     end
 
     test "edits a value in the composer, with its text and without new files", %{conn: conn} do
