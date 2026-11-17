@@ -2971,6 +2971,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       ) do
     {:noreply,
      socket
+     |> put_private(:pinned_group_ids, Social.pinned_group_ids(socket.assigns.current_profile))
      |> assign_pinned(socket.assigns.group)
      |> GroupSidebar.pins_changed()}
   end
@@ -4922,8 +4923,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # The groups the profile silenced, and until when the open one is. Only a
   # silenced group costs a query.
-  defp assign_pinned(%{assigns: %{current_profile: %Profile{} = profile}} = socket, group),
-    do: assign(socket, :group_pinned?, Social.group_pinned?(profile, group.id))
+  # The pins come with the header's counts (`AccountAuth.mount_nav_counts/1`),
+  # so the menu asks nothing more; a group no one can pin needs none.
+  defp assign_pinned(%{assigns: %{current_profile: %Profile{} = profile}} = socket, group) do
+    pinned? =
+      cond do
+        not PinnedGroups.pinnable?(group) -> false
+        is_list(socket.private[:pinned_group_ids]) -> group.id in socket.private.pinned_group_ids
+        connected?(socket) -> Social.group_pinned?(profile, group.id)
+        true -> false
+      end
+
+    assign(socket, :group_pinned?, pinned?)
+  end
 
   defp assign_pinned(socket, _group), do: assign(socket, :group_pinned?, false)
 

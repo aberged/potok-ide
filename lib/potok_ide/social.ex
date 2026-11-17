@@ -2107,7 +2107,8 @@ defmodule PotokIde.Social do
       unread_notices: 0,
       unread_notices_as_of: nil,
       member_group_ids: nil,
-      muted_group_ids: nil
+      muted_group_ids: nil,
+      pinned_group_ids: nil
     }
 
   def nav_counts(%Profile{id: profile_id} = profile, opts) do
@@ -2159,13 +2160,14 @@ defmodule PotokIde.Social do
         FROM group_memberships gm
         WHERE gm.profile_id = $1 AND #{GroupMutes.muted_sql()}
       ),
+      (SELECT COALESCE(array_agg(p.group_id), '{}') FROM pinned_groups p WHERE p.profile_id = $1),
       #{unread_sql},
       #{Notices.unread_count_sql("$1")},
       #{Notices.notice_mark_sql()},
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v6_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v7_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -2174,6 +2176,7 @@ defmodule PotokIde.Social do
              join_request_counts,
              member_group_ids,
              muted_group_ids,
+             pinned_group_ids,
              unread,
              unread_as_of,
              unread_notices,
@@ -2194,7 +2197,8 @@ defmodule PotokIde.Social do
           unread_notices: unread_notices,
           unread_notices_as_of: CountMark.from_ids(unread_notices_as_of),
           member_group_ids: member_group_ids,
-          muted_group_ids: muted_group_ids
+          muted_group_ids: muted_group_ids,
+          pinned_group_ids: pinned_group_ids
         }
 
       {:error, _reason} ->
@@ -7849,6 +7853,7 @@ defmodule PotokIde.Social do
 
   defdelegate list_pinned_groups(profile), to: PinnedGroups, as: :list
   defdelegate group_pinned?(profile, group_id), to: PinnedGroups, as: :pinned?
+  defdelegate pinned_group_ids(profile), to: PinnedGroups, as: :ids
 
   defp broadcast_group_pins_changed(profile_id) do
     Phoenix.PubSub.broadcast(

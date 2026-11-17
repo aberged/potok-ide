@@ -65,6 +65,12 @@ defmodule PotokIde.Social.PinnedGroups do
 
   def pinned?(_profile, _group_id), do: false
 
+  @doc "The ids of the groups the profile pinned, seen or not."
+  def ids(%Profile{id: profile_id}) do
+    from(p in PinnedGroup, where: p.profile_id == ^profile_id, select: p.group_id)
+    |> Repo.all()
+  end
+
   @doc """
   The pinned groups the profile sees, in the order it pinned them, each as
   `%{group: %Group{}, path: [name]}`: the names of the groups above it it
