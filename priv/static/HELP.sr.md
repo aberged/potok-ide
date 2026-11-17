@@ -156,7 +156,7 @@ Na početnoj su i Moj kalendar, sa događajima svih tvojih grupa, Mapa grupa i M
 
 ## Stranica grupe {:#grupa}
 
-Na vrhu grupe su njen naziv, putanja do nje i kartice: Poruke, Fajlovi, Kalendar, Glasanja, Obaveštenja, Podgrupe i Članovi. Glasanja se pojave sa prvim glasanjem, a kad za sve nema mesta, Obaveštenja su u meniju grupe. Desno su zvono za praćenje, pretraga poruka i meni grupe.
+Na vrhu grupe su njen naziv, putanja do nje i kartice: Poruke, Fajlovi, Kalendar, Glasanja, Obaveštenja, Podgrupe i Članovi. Glasanja se pojave sa prvim glasanjem, a kad za sve nema mesta, Obaveštenja su u meniju grupe. Desno su zvono za praćenje, pretraga poruka i meni grupe. Kad te u grupi čeka odluka ili forma nekog procesa, uz njih stoji i oznaka **Čeka tebe** sa brojem, koja vodi na karticu Procesi.
 
 ![Zaglavlje grupe sa karticama](grupa-zaglavlje)
 
@@ -235,9 +235,9 @@ Aplikacija u grupi može da ima i procese, koji u grupi rade umesto ljudi. Oni s
 
 Kako procesima ide, vidiš na kartici Procesi, u meniju grupe: uz svaki proces piše koliko njegovih pokretanja radi, čeka, završeno je ili je palo. Urednik aplikacije vidi i gde je i zašto pokretanje palo, i odatle ga pokreće ponovo ili otkazuje. Na dnu kartice vidi i polja grupe koja procesi čuvaju, ko ih je poslednji upisao i kada, i može da ih obriše. Ispod njih su entiteti, kojima urednik opisuje podatke procesa: entitet ima ime i atribute, a svaki atribut tip, i to tekst, broj, da ili ne, datum, datum i vreme, izbor iz liste ili drugi entitet grupe. Atribut može da bude i lista, i može da bude obavezan. Entitet koji drži neki drugi entitet ili varijabla nekog procesa ne može da se obriše.
 
-Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar.
+Na vrhu kartice, pod Čeka tebe, stoje odluke koje čekaju neku od tvojih uloga, iz procesa nacrtanih u Potoku: vidiš ko je poslao vrednost i kada, a i podgrupu koju je proces za nju otvorio. Izabereš ishod i, ako želiš, dodaš komentar. Tu su i forme koje neki proces traži od tebe ili od tvoje uloge: otvaraš ih sa **Popuni**. Koliko te toga čeka, piše i u zaglavlju grupe, sa svake druge kartice, i uz Procesi u meniju grupe.
 
-![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi)
+![Kartica Procesi: odluke koje čekaju i procesi grupe](procesi) ![Oznaka Čeka tebe u zaglavlju grupe](zgrada-ceka-tebe)
 
 ### Sve dozvole {:#dozvole}
 
@@ -355,7 +355,7 @@ Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, i u grupi bez apl
 
 1. U meniju grupe otvori **Procesi**, dodirni **Nacrtaj proces** i upiši ime procesa.
 2. Pod **Kad** izaberi šta ga pokreće, a na početnom koraku crteža ga podesi.
-3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
+3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, formu, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
 4. Dodirni **Sačuvaj**, pa **Uključi**.
 
 Proces može da pokrene:
@@ -381,6 +381,10 @@ Varijabla može da drži i **listu**: u njenom redu uključi **Lista**. Korak **
 Kad proces prima entitet, ono što dobija ima tipove, i čitaš ga kao `{{start.sprat}}`. Korak **Pozovi proces** tada za svaki atribut traži vrednost njegovog tipa, a obavezni atributi moraju biti popunjeni: Potok to proverava dok crtaš, i još jednom kad se poziv desi. Ručno pokretanje sa entitetom daje formu sa poljem za svaki atribut, pa takav entitet sme da ima samo obične atribute, bez drugih entiteta i lista. Signal se čeka sa entitetom: ko čeka, kaže šta čeka, a proces koji signal šalje mora da ga pošalje sa tim entitetom. Ako se entitet posle promeni, proces radi kako je sačuvan, a urednici na kartici Procesi vide da crtež treba pregledati i sačuvati ponovo.
 
 Ishod odluke koraci posle nje čitaju kao `{{odluka.outcome}}`, a ko je odlučio kao `{{odluka.by}}`, gde je `odluka` ime koraka sa crteža; i to se nudi ispod polja za tekst. Tako i korak **Pozovi proces** pokreće drugi nacrtani proces grupe i predaje mu polja. Ako ostaviš **Čekaj da se završi**, proces čeka dok pozvani ne stigne do kraja, a ime tog kraja na crtežu koraci posle poziva čitaju kao `{{poziv.outcome}}`, pa po njemu može da grana uslov. Rok kaže koliko najviše čeka: kad prođe, odustaje i otkazuje pozvani proces. Ono što proces napiše ne pokreće druge procese, pa razgovaraju samo kad ih tako nacrtaš. Procesi se pozivaju najviše tri nivoa duboko, a proces koji drugi poziva ne može da se obriše. Kako to izgleda, pokazuje [zgrada](/pomoc/zgrada#majstor).
+
+Korak **Forma** usred procesa pita čoveka ono što procesu fali. Pod **Šta traži** izabereš entitet, a pod **Ko popunjava** onoga ko je proces pokrenuo ili ljude neke uloge. Forma ima polje za svaki atribut, pa entitet sme da ima samo obične atribute, bez drugih entiteta i lista. Onome ko je proces pokrenuo forma se otvara sama, na kojoj god kartici grupe da je, kad je baš on upravo uradio ono što je do nje dovelo: napisao poruku, dodirnuo **Pokreni** ili poslao prethodnu formu. Ako je zatvori sa **Kasnije**, ili forma stigne posle čekanja ili tuđe odluke, čeka ga na kartici Procesi, pod **Čeka tebe**. Forma za ulogu se nikome ne otvara sama: čeka ljude te uloge na istom mestu, i popunjava je jedan od njih. Koraci posle forme čitaju popunjeno atribut po atribut, kao `{{form_1.sprat}}`, a ko je popunio kao `{{form_1.author}}`, gde je `form_1` ime koraka sa crteža; ceo odgovor staje i u varijablu koja drži isti entitet. Uz rok, proces posle njega ide dalje bez odgovora, strelicom **rok je prošao**. Proces po rasporedu niko ne pokreće, pa njegova forma pita ulogu. Kako poruka sa rečju „kvar“ otvara formu, pokazuje [zgrada](/pomoc/zgrada#forma).
+
+![Forma koju proces otvara onome ko je napisao poruku](zgrada-forma)
 
 Proces koji drugi pozivaju je **privatan**: pozivaju ga samo procesi iste grupe. Ako na njegovom početnom koraku uključiš **Javan proces** i sačuvaš crtež, mogu da ga pozovu i procesi grupa iznad i ispod tvoje, ali ne i onih pored. Njihovi urednici ga u koraku **Pozovi proces** vide uz ime grupe, a pod **Podaci procesa** i šta prima. Takvo pokretanje radi u grupi pozvanog procesa i dobija samo ono što mu poziv preda: ne zna na kojoj je poruci ili podgrupi pozivalac radio ni ko ga je pokrenuo, a pozivalac saznaje samo do kog kraja je stiglo. Ako javan proces obrišeš ili ga vratiš na privatan, pozivi iz drugih grupa padaju, a njihovi urednici na kartici Procesi vide da crtež treba pregledati.
 

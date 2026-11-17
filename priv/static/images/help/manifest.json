@@ -255,11 +255,19 @@
     "h": 844,
     "w": 390
   },
+  "zgrada-ceka-tebe": {
+    "h": 89,
+    "w": 390
+  },
   "zgrada-deljeni-profil": {
     "h": 844,
     "w": 390
   },
   "zgrada-entitet": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-forma": {
     "h": 844,
     "w": 390
   },

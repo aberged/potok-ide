@@ -578,6 +578,25 @@
     ]
   },
   {
+    "name": "zgrada-forma",
+    "as": "tamara",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "click": "#process-task-{runs.building_form}-fill" },
+      { "wait": "#process-form-dialog[open]" },
+      { "type": ["#process-form input[name='answers[naslov]']", "Ne radi interfon"] },
+      { "type": ["#process-form input[name='answers[sprat]']", "2"] },
+      { "pause": 700 }
+    ]
+  },
+  {
+    "name": "zgrada-ceka-tebe",
+    "as": "tamara",
+    "url": "/groups/{groups.building}/members",
+    "steps": [{ "wait": "#group-waiting" }, { "pause": 500 }],
+    "clip": "#group-header"
+  },
+  {
     "name": "zgrada-obilazak",
     "as": "ivana",
     "url": "/groups/{groups.building}/processes?process={processes.building_round}",

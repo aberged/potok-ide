@@ -103,7 +103,7 @@ A resident taps **Start** on the Processes tab, types what is broken and confirm
 
 ![Reporting a fault from the Processes tab](zgrada-pokreni)
 
-It also works without the button: under **When** choose **someone writes a message** and type the words "leak" and "broken". Every message in the building's chat with one of them starts the process.
+It also works without the button: under **When** choose **someone writes a message** and type the words "leak" and "broken". Every message in the building's chat with one of them starts the process. [Step 14](#forma) shows how such a process asks the resident for the rest.
 
 ## 10. The repairer, a process of its own {:#majstor}
 
@@ -167,6 +167,25 @@ Once a month someone from the council goes round the building and notes what the
 Whoever goes round types a comment for each finding on the Processes tab and taps **Dodaj nalaz**, and in the end **Gotovo**. The process then goes through the list and writes each finding in the building's chat, with its number. All that the process has, with names and types, stands under the **Data of the process**.
 
 ![Data of the process: the list nalazi, the item and the counters](zgrada-podaci)
+
+## 14. A fault from the chat, with a form {:#forma}
+
+A resident need not even look for a button: it is enough to write "kvar" in the building's chat, and the process asks them for the rest, in a form that asks for the entity Kvar of step 12.
+
+1. Draw a process "Kvar iz razgovora", and under **When** pick **someone writes a message**. Tap the start step and type the word "kvar".
+2. Tap **+** under the start and pick **Form**. For **Name on the drawing** type "Prijavi kvar", under **What it asks for** pick "Kvar", and under **Who fills it in** leave **Whoever started the run**.
+3. Under the form add a **Message** in the building's chat: type "Prijavljen kvar: " and tap `form_1.naslov`, then ", sprat " and `form_1.sprat`.
+4. Tap **Save**, then **Switch on**.
+
+![The form opens for whoever wrote the message](zgrada-forma)
+
+As soon as a resident sends a message with the word "kvar", the form opens for them: the title must be typed, and the floor takes a number only. When they tap **Send**, the process goes on and says in the chat what was reported.
+
+If they close the form with **Later**, it waits for them. The building's header then has a **Waiting for you** mark with a number: it leads to the Processes tab, where **Fill in** opens the form. You see the same mark when a decision waits for you.
+
+![The Waiting for you mark in the building's header](zgrada-ceka-tebe)
+
+Someone else can fill the form in too: under **Who fills it in** pick a role, say the Administrator. Such a form opens by itself for nobody, and waits for the people of that role under **Waiting for you**.
 
 ## A club, a choir or a team {:#klub}
 

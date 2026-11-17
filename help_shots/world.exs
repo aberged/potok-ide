@@ -110,8 +110,11 @@ defmodule HelpShots.World do
         coop_packing: coop.packing.id,
         building_reports: building.reports.id,
         building_urgent: building.urgent.id,
-        building_round: building.round.id
+        building_round: building.round.id,
+        building_chat_fault: building.chat_fault.id
       },
+      # Runs that wait for someone, for the pictures of what waits.
+      runs: %{building_form: building.form_run.id},
       entities: %{building_fault: building.fault.id},
       events: %{zbor: mz.event.id},
       shared_profile_id: shared.id,
@@ -521,6 +524,15 @@ defmodule HelpShots.World do
     urgent = urgent_fault(ivana, building, fault)
     round = building_round(ivana, building)
 
+    # A message with the word starts it, and its form waits for whoever wrote.
+    chat_fault = fault_from_chat(ivana, building, fault)
+    post(p.("tamara"), building, "Kvar na interfonu, ne čuje se zvono.", ago(0, 11, 40))
+
+    form_run =
+      PotokIde.Repo.get_by!(PotokIde.Processes.ValueProcess, app_process_id: chat_fault.id)
+
+    PotokIde.Processes.Engine.run(form_run.id)
+
     %{
       root: building,
       council: council,
@@ -528,8 +540,53 @@ defmodule HelpShots.World do
       reports: reports,
       fault: fault,
       urgent: urgent,
-      round: round
+      round: round,
+      chat_fault: chat_fault,
+      form_run: form_run
     }
+  end
+
+  # A fault told in the chat: a message with the word starts the process,
+  # which asks whoever wrote it the rest, in a form of the entity.
+  defp fault_from_chat(editor, group, fault) do
+    graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent"},
+        %{
+          "id" => "form_1",
+          "type" => "formTask",
+          "label" => "Prijavi kvar",
+          "entity" => fault.id,
+          "by" => "starter"
+        },
+        %{
+          "id" => "message_1",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "app",
+          "text" => "Prijavljen kvar: {{form_1.naslov}}, sprat {{form_1.sprat}}."
+        },
+        %{"id" => "end", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "form_1"},
+        %{"from" => "form_1", "to" => "message_1"},
+        %{"from" => "message_1", "to" => "end"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "message",
+        "trigger_config" => %{"words" => "kvar"},
+        "name" => "Kvar iz razgovora",
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   # What a fault is, as the building's processes take it: an entity of the

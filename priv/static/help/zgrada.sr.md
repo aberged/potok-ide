@@ -104,7 +104,7 @@ Stanar na kartici Procesi dodirne **Pokreni**, upiše šta je u kvaru i potvrdi.
 
 ![Prijava kvara sa kartice Procesi](zgrada-pokreni)
 
-Isto može i bez dugmeta: pod **Kad** izaberi **neko napiše poruku** i upiši reči „kvar“ i „curi“. Svaka poruka u razgovoru zgrade sa nekom od njih pokreće proces.
+Isto može i bez dugmeta: pod **Kad** izaberi **neko napiše poruku** i upiši reči „kvar“ i „curi“. Svaka poruka u razgovoru zgrade sa nekom od njih pokreće proces. Kako takav proces da pita stanara i ostalo, pokazuje [korak 14](#forma).
 
 ## 10. Majstor, proces za sebe {:#majstor}
 
@@ -168,6 +168,25 @@ Jednom mesečno neko iz saveta obiđe zgradu i zapiše šta je našao. Proces pa
 Ko obilazi, na kartici Procesi za svaki nalaz upiše komentar i dodirne **Dodaj nalaz**, a na kraju **Gotovo**. Proces tada prođe kroz listu i u razgovoru zgrade napiše svaki nalaz, uz njegov redni broj. Sve čime proces raspolaže, sa imenima i tipovima, stoji pod **Podaci procesa**.
 
 ![Podaci procesa: lista nalazi, stavka i brojači](zgrada-podaci)
+
+## 14. Kvar iz razgovora, uz formu {:#forma}
+
+Stanar ne mora ni da traži dugme: dovoljno je da u razgovoru zgrade napiše „kvar“, a proces ga pita ostalo, formom koja traži entitet Kvar iz koraka 12.
+
+1. Nacrtaj proces „Kvar iz razgovora“, a pod **Kad** izaberi **neko napiše poruku**. Dodirni početni korak i upiši reč „kvar“.
+2. Dodirni **+** ispod početka i izaberi **Forma**. Za **Ime na crtežu** upiši „Prijavi kvar“, pod **Šta traži** izaberi „Kvar“, a pod **Ko popunjava** ostavi **Ko je pokrenuo proces**.
+3. Ispod forme dodaj **Poruku** u razgovor zgrade: upiši „Prijavljen kvar: “ i dodirni `form_1.naslov`, pa „, sprat “ i `form_1.sprat`.
+4. Dodirni **Sačuvaj**, pa **Uključi**.
+
+![Forma se otvara onome ko je napisao poruku](zgrada-forma)
+
+Čim stanar pošalje poruku sa rečju „kvar“, otvara mu se forma: naslov mora da upiše, a sprat prima samo broj. Kad dodirne **Pošalji**, proces ide dalje i u razgovoru javlja šta je prijavljeno.
+
+Ako formu zatvori sa **Kasnije**, ona ga čeka. U zaglavlju zgrade tada stoji oznaka **Čeka tebe** sa brojem: vodi na karticu Procesi, gde formu otvara **Popuni**. Istu oznaku vidiš i ti kad te čeka odluka.
+
+![Oznaka Čeka tebe u zaglavlju zgrade](zgrada-ceka-tebe)
+
+Formu može da popuni i neko drugi: pod **Ko popunjava** izaberi ulogu, recimo Administratora. Takva forma se nikome ne otvara sama, nego čeka ljude te uloge pod **Čeka tebe**.
 
 ## Klub, hor ili ekipa {:#klub}
 

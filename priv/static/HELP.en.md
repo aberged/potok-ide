@@ -150,7 +150,7 @@ The home page also has My calendar, with the events of all your groups, the Map 
 
 ## A group's page {:#grupa}
 
-At the top of a group are its name, the path to it and the tabs: Messages, Files, Calendar, Polls, Notices, Sub-groups and Members. Polls appear with the first poll, and when there is no room for all of them, Notices are in the group's menu. On the right are the bell for following, the message search and the group's menu.
+At the top of a group are its name, the path to it and the tabs: Messages, Files, Calendar, Polls, Notices, Sub-groups and Members. Polls appear with the first poll, and when there is no room for all of them, Notices are in the group's menu. On the right are the bell for following, the message search and the group's menu. When a decision or a form of some process waits for you in the group, a **Waiting for you** mark with a number stands beside them, and leads to the Processes tab.
 
 ![A group's header with its tabs](grupa-zaglavlje)
 
@@ -229,9 +229,9 @@ An app in a group can also have processes, which act in the group in place of pe
 
 How the processes are doing you see on the Processes tab, in the group's menu: next to each process, how many of its runs are going, waiting, done or failed. Whoever edits the app also sees where and why a run failed, and takes it up again or cancels it from there. At the bottom of the tab they also see the group's fields the processes keep, who wrote each last and when, and may delete them. Below those are the entities, with which an editor describes the data of the processes: an entity has a name and attributes, and each attribute a type, which is a text, a number, a yes or no, a date, a date and time, a choice from a list or another entity of the group. An attribute may also be a list, and may be required. An entity that another entity holds, or a variable of some process, cannot be deleted.
 
-At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment.
+At the top of the tab, under Waiting for you, are the decisions that wait on one of your roles, from processes drawn in Potok: you see who sent the value and when, and the sub-group the process opened for it. You pick an outcome and, if you like, add a comment. The forms a process asks of you, or of your role, are there too: **Fill in** opens them. How much of this waits for you is also said in the group's header, from every other tab, and beside Processes in the group's menu.
 
-![The Processes tab: decisions that wait and the group's processes](procesi)
+![The Processes tab: decisions that wait and the group's processes](procesi) ![The Waiting for you mark in a group's header](zgrada-ceka-tebe)
 
 ### All permissions {:#dozvole}
 
@@ -349,7 +349,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a form, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:
@@ -375,6 +375,10 @@ A variable can also hold a **list**: tick **A list** in its row. The step **Set 
 When a process takes an entity, what it gets has types, and you read it as `{{start.sprat}}`. The step **Call a process** then asks for a value of its type for each attribute, and the required ones must be filled in: Potok checks that as you draw, and once more when the call is made. A start by hand with an entity gives a form with a field for each attribute, so such an entity may hold plain attributes only, no other entities and no lists. A signal is waited for with an entity: whoever waits says what it waits for, and a process that sends the signal must send it with that entity. If the entity changes later, the process runs on as it was saved, and its editors see on the Processes tab that the drawing should be looked over and saved again.
 
 The steps after a decision read its outcome as `{{odluka.outcome}}`, and who decided as `{{odluka.by}}`, where `odluka` is the step's name on the drawing; these are offered under the text field too. In the same way the step **Call a process** starts another drawn process of the group and hands it fields. If you leave **Wait for it to end** on, the process waits until the one it called reaches an end, and the steps after the call read the name of that end on the drawing as `{{poziv.outcome}}`, so a condition can branch on it. A deadline says how long it waits at most: when it passes, it gives up and cancels the process it called. What a process writes starts no other process, so processes talk only when you draw them that way. Processes call each other at most three levels deep, and a process another one calls cannot be deleted. The [building](/pomoc/zgrada#majstor) shows how this looks.
+
+The step **Form** asks a person, in the middle of a process, for what the process lacks. Under **What it asks for** you pick an entity, and under **Who fills it in** whoever started the process, or the people of a role. The form has a field for each attribute, so the entity may have plain attributes only, with no other entities and no lists. For whoever started the process the form opens by itself, on whichever tab of the group they are, when it was they who just did what led to it: wrote the message, tapped **Start** or sent the form before it. If they close it with **Later**, or the form comes after a wait or someone else's decision, it waits for them on the Processes tab, under **Waiting for you**. A form of a role opens by itself for nobody: it waits for the people of that role in the same place, and one of them fills it in. The steps after a form read what was filled in an attribute at a time, as `{{form_1.sprat}}`, and who filled it in as `{{form_1.author}}`, where `form_1` is the step's name on the drawing; the whole answer also fits a variable that holds the same entity. With a deadline, the process goes on without an answer once it passes, by the arrow **deadline passed**. Nobody starts a process on a schedule, so its form asks a role. The [building](/pomoc/zgrada#forma) shows how a message with the word "kvar" opens a form.
+
+![The form a process opens for whoever wrote the message](zgrada-forma)
 
 A process that others call is **private**: only the processes of its own group call it. If you tick **Public process** on its start step and save the drawing, the processes of the groups above and below yours may call it too, but not those beside it. Their editors see it in the step **Call a process** with the name of its group, and what it takes under **Data of the process**. Such a run works in the group of the called process and gets only what the call hands it: it knows neither the message or sub-group the caller worked on nor who started it, and the caller learns only which end it reached. If you delete a public process or make it private again, the calls from other groups fail, and their editors see on the Processes tab that the drawing should be looked over.
 
