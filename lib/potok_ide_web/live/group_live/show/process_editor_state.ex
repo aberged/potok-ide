@@ -1723,12 +1723,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       [{"#{id}.author", :text}]
   end
 
-  @doc "The group's entities a form can fill in: those of plain attributes only."
-  def form_entities(editor) do
-    for entity <- editor[:entities] || [],
-        Enum.all?(entity.attributes, &(&1.type != "entity" and not &1.list)),
-        do: entity
-  end
+  @doc """
+  The group's entities a form can fill in: every one, as a form asks for
+  lists and the entities an entity holds too (`EntityFields`).
+  """
+  def form_entities(editor), do: editor[:entities] || []
 
   # The drawing as far as its names can be told just now: with the group's
   # entities, what its trigger hands a run, and what an item of each loop is.
@@ -2341,12 +2340,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:no_entity, _path), do: gettext("Pick the entity the form asks for.")
 
-  defp reason_text(:not_flat, _path),
-    do:
-      gettext(
-        "A form fills in plain attributes only: pick an entity that holds no other entity and no list."
-      )
-
   defp reason_text(:no_starter, _path),
     do: gettext("Nobody starts a process on a schedule, so its form asks the people of a role.")
 
@@ -2492,12 +2485,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp trigger_reason(:empty, "weekdays"), do: gettext("Pick at least one day.")
   defp trigger_reason(:invalid, "time"), do: gettext("The time is written as 20:00.")
   defp trigger_reason(:unknown_role, _field), do: gettext("The group has no such role.")
-
-  defp trigger_reason(:not_flat, "entity"),
-    do:
-      gettext(
-        "A form fills in plain attributes only: pick an entity that holds no other entity and no list."
-      )
 
   defp trigger_reason(_reason, "entity"),
     do: gettext("The group no longer has the entity this process takes.")

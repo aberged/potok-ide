@@ -176,12 +176,12 @@ defmodule PotokIde.Processes.FormsTest do
       assert {:ok, _checked} = check(chain([form("prijava", 7), set], variables))
     end
 
-    test "a form names an entity the group has, of plain attributes" do
+    test "a form names an entity the group has, which may hold others" do
       assert {:error, {"nodes.1.entity", :no_entity}} =
                check(chain([%{"id" => "prijava", "type" => "formTask"}]))
 
       assert {:error, {"nodes.1.entity", :unknown_entity}} = check(chain([form("prijava", 99)]))
-      assert {:error, {"nodes.1.entity", :not_flat}} = check(chain([form("prijava", 8)]))
+      assert {:ok, _checked} = check(chain([form("prijava", 8)]))
     end
 
     test "what a form says first and starts with names what is there, of its type" do

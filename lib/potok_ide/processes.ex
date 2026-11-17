@@ -420,6 +420,7 @@ defmodule PotokIde.Processes do
         form?: form?,
         attributes:
           if(form?, do: Types.attributes(instance.graph["types"] || %{}, task["entity"]) || []),
+        types: if(form?, do: instance.graph["types"] || %{}, else: %{}),
         intro: view && view.intro,
         prefill: (view && view.values) || %{},
         by_viewer?: instance.triggered_by_id == profile.id,

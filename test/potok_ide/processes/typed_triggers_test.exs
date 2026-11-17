@@ -234,13 +234,16 @@ defmodule PotokIde.Processes.TypedTriggersTest do
       assert types == %{}
     end
 
-    test "a process started by hand takes an entity a form can fill in" do
+    test "a process started by hand takes an entity its form fills in, lists and all" do
       graph = chain([message("poruka", "{{start.iznos}} od {{start.author}}")])
       assert {:ok, _graph} = check(graph, %{trigger: "manual", entry_entity: 9})
 
-      # One that holds another entity is no form.
-      assert check(chain([message("poruka", "x")]), %{trigger: "manual", entry_entity: 7}) ==
-               {:error, {"entry", :not_flat}}
+      # One that holds another entity: the form asks for that one in a group.
+      assert {:ok, _graph} =
+               check(chain([message("poruka", "{{start.stan.broj}}")]), %{
+                 trigger: "manual",
+                 entry_entity: 7
+               })
 
       listed = %{
         "3" => %{
@@ -249,12 +252,12 @@ defmodule PotokIde.Processes.TypedTriggersTest do
         }
       }
 
-      assert check(chain([message("poruka", "x")]), %{
-               trigger: "manual",
-               entry_entity: 3,
-               entities: listed
-             }) ==
-               {:error, {"entry", :not_flat}}
+      assert {:ok, _graph} =
+               check(chain([message("poruka", "{{length(start.slike)}}")]), %{
+                 trigger: "manual",
+                 entry_entity: 3,
+                 entities: listed
+               })
     end
 
     test "a call hands the process it calls what its entity takes" do
@@ -478,7 +481,8 @@ defmodule PotokIde.Processes.TypedTriggersTest do
                  "entry_entity_id" => 0
                })
 
-      assert {:error, {:invalid_trigger, "entity", :not_flat}} =
+      # A Start form asks for an entity that holds another too.
+      assert {:ok, %AppProcess{}} =
                DrawnProcesses.create(ctx.owner, ctx.group, %{
                  "trigger" => "manual",
                  "name" => "Forma",

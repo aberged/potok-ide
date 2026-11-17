@@ -1078,9 +1078,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 id="process-form-no-entity"
                 class="rounded-xl bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-100"
               >
-                {gettext(
-                  "A form asks for an entity of plain attributes. Define one under Data first."
-                )}
+                {gettext("A form asks for an entity. Define one under Data first.")}
               </p>
               <p :if={!@editor.editable? and @asked} id="process-form-asks" class="text-sm">
                 {gettext("It asks for %{entity}.", entity: @asked["name"])}
@@ -1905,8 +1903,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   defp returned_name(_callee), do: ""
 
-  # A form fills in plain attributes only.
-  defp takeable(%{trigger: "manual"} = editor), do: ProcessEditorState.form_entities(editor)
   defp takeable(editor), do: editor[:entities] || []
 
   # The entity a form asks for, as its name and attributes: as the group

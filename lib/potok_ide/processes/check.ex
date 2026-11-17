@@ -34,8 +34,8 @@ defmodule PotokIde.Processes.Check do
   What it checks beside the expressions:
 
   - A variable, a wait for a signal and a signal sent hold entities the
-    group has; a process started by hand takes one whose attributes are
-    all plain, as a form fills it in.
+    group has; a process started by hand takes one too, which its form
+    fills in, lists and entities it holds included.
   - A step that sets names a variable, or an attribute of one; one that
     adds to a list names a list, and gives what the list holds.
   - A loop goes through a list: its `list` gives one, and what an item of
@@ -48,14 +48,14 @@ defmodule PotokIde.Processes.Check do
     the same way.
   - A signal is sent with the entity those who wait for it expect, where
     someone does, and carries its attributes the same way.
-  - A form asks for an entity whose attributes are all plain, as the form
-    of a process started by hand does, and asks whoever started the run
-    only in a process someone starts: not one on a schedule. What it starts
-    with in an attribute gives a value of the attribute's type.
+  - A form asks for an entity, as the form of a process started by hand
+    does, and asks whoever started the run only in a process someone
+    starts: not one on a schedule. What it starts with in an attribute
+    gives a value of the attribute's type.
 
   Errors come as `{path, reason}`, as the graph's do, such as
   `{"nodes.3.text", {:unknown_name, "naslov"}}`: the reasons of
-  `Expr.parse/1` and `Expr.check/2`, and `:unknown_entity`, `:not_flat`,
+  `Expr.parse/1` and `Expr.check/2`, and `:unknown_entity`,
   `{:not_a_variable, name}`, `:required`, `:signal_entity`, `:no_list`,
   `:no_entity` and `:no_starter`.
 
@@ -271,17 +271,11 @@ defmodule PotokIde.Processes.Check do
       id ->
         definition = Map.fetch!(types, to_string(id))
 
-        cond do
-          not Triggers.typed?(trigger) -> {:error, {"entry", :invalid}}
-          trigger == "manual" and not flat?(definition) -> {:error, {"entry", :not_flat}}
-          true -> {:ok, Triggers.entry(trigger, config, definition)}
-        end
+        if Triggers.typed?(trigger),
+          do: {:ok, Triggers.entry(trigger, config, definition)},
+          else: {:error, {"entry", :invalid}}
     end
   end
-
-  # Whether a form can fill the entity in: plain attributes only.
-  defp flat?(%{"attributes" => attributes}),
-    do: Enum.all?(attributes, &(&1["type"] != "entity" and &1["list"] != true))
 
   # The entities those who wait for each signal expect it with: the waits
   # of this graph, its own start, and the other processes of the group.
@@ -403,17 +397,14 @@ defmodule PotokIde.Processes.Check do
   defp step(%{"type" => "endEvent"} = node, path, %{returns: [_ | _] = attributes} = context),
     do: handed(attributes, node["values"] || %{}, %{}, path <> ".values", context.scope)
 
-  # A form asks for an entity a form can fill in, and asks whoever started
-  # the run only where someone does: nobody starts a scheduled one.
+  # A form asks for an entity, and asks whoever started the run only where
+  # someone does: nobody starts a scheduled one.
   defp step(%{"type" => "formTask"} = form, path, context) do
     definition = form["entity"] && context.scope.entities[to_string(form["entity"])]
 
     cond do
       is_nil(definition) ->
         {:error, {path <> ".entity", :no_entity}}
-
-      not flat?(definition) ->
-        {:error, {path <> ".entity", :not_flat}}
 
       form["by"] == "starter" and context.trigger == "schedule" ->
         {:error, {path <> ".by", :no_starter}}

@@ -774,7 +774,6 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 editor={@process_editor}
                 editor_form={@process_editor_form}
                 editor_meta={@process_editor_meta}
-                start={@processes_start}
               />
               <NoticesTab.panel
                 :if={@active_tab == "notices"}
@@ -871,6 +870,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <CreateMenu.menu menu={@group_create_menu} />
       <PollForm.dialog state={@poll_form} />
       <ProcessForm.dialog state={@process_form} />
+      <ProcessesTab.start_dialog start={@processes_start} />
       <ValueSearch.dialog
         state={@value_search}
         results={@streams.value_search_results}

@@ -1041,7 +1041,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       assert id == entity.id
     end
 
-    test "a form fills in plain attributes only", ctx do
+    test "a Start form asks for any entity, the entities it holds too", ctx do
       stan = entity!(ctx, "Stan", [%{"name" => "broj", "type" => "number"}])
       entity!(ctx, "Zgrada", [%{"name" => "stan", "type" => "entity", "entity_id" => stan.id}])
 
@@ -1051,7 +1051,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       trigger(lv, "manual")
       render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
       assert has_element?(lv, "#process-trigger-entity option", "Stan")
-      refute has_element?(lv, "#process-trigger-entity option", "Zgrada")
+      assert has_element?(lv, "#process-trigger-entity option", "Zgrada")
 
       # A trigger that hands over texts takes no entity.
       {:ok, lv, _html} =
@@ -1227,7 +1227,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       lv |> element("#process-node-delete") |> render_click()
 
       kvar = kvar!(ctx)
-      # A form cannot fill in a list, so this one is not offered.
+      # A form fills in a list too.
       entity!(ctx, "Obilazak", [%{"name" => "kvarovi", "type" => "text", "list" => true}])
 
       {:ok, lv, _html} =
@@ -1247,7 +1247,7 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
                "Kvar"
              )
 
-      refute has_element?(
+      assert has_element?(
                lv,
                "#process-element-form select[name='element[entity]'] option",
                "Obilazak"

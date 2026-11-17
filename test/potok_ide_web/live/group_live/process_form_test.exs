@@ -593,4 +593,146 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
 
     Engine.run(run.id)
   end
+
+  describe "an entity that holds a list and another entity" do
+    setup ctx do
+      access = Access.for_profile(ctx.owner, ctx.group)
+
+      {:ok, stan} =
+        GroupEntities.create(ctx.group, access, %{
+          "name" => "Stan",
+          "attributes" => [%{"name" => "broj", "type" => "number", "required" => true}]
+        })
+
+      {:ok, stavka} =
+        GroupEntities.create(ctx.group, access, %{
+          "name" => "Stavka",
+          "attributes" => [
+            %{"name" => "naziv", "type" => "text", "required" => true},
+            %{"name" => "komada", "type" => "number"}
+          ]
+        })
+
+      {:ok, narudzbina} =
+        GroupEntities.create(ctx.group, access, %{
+          "name" => "Narudžbina",
+          "attributes" => [
+            %{"name" => "stan", "type" => "entity", "entity_id" => stan.id},
+            %{"name" => "stavke", "type" => "entity", "entity_id" => stavka.id, "list" => true},
+            %{"name" => "napomene", "type" => "text", "list" => true}
+          ]
+        })
+
+      %{order: narudzbina.id}
+    end
+
+    test "asks for it item by item, adds and takes out items, and says where one is wrong",
+         ctx do
+      row =
+        draw!(ctx, [
+          form_step("prijava", ctx.order),
+          %{
+            "id" => "poruka",
+            "type" => "serviceTask",
+            "action" => "message",
+            "text" => "{{length(prijava.stavke)}} za stan {{prijava.stan.broj}}"
+          }
+        ])
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
+      run = report!(ctx, row)
+
+      # Each list starts with one item; the entity it holds is a group of its own.
+      assert has_element?(lv, "#process-form input[name='answers[stan][broj]']")
+      assert has_element?(lv, "#process-form input[name='answers[stavke][0][naziv]']")
+      assert has_element?(lv, "#process-form input[name='answers[napomene][0]']")
+
+      lv |> element("#process-form-field-stavke-add") |> render_click()
+      lv |> element("#process-form-field-stavke-add") |> render_click()
+      assert has_element?(lv, "#process-form input[name='answers[stavke][2][naziv]']")
+
+      lv |> element("#process-form-field-stavke-1-remove") |> render_click()
+      refute has_element?(lv, "#process-form input[name='answers[stavke][1][naziv]']")
+
+      answers = %{
+        "stan" => %{"broj" => "12"},
+        "stavke" => %{
+          "0" => %{"naziv" => "Mleko", "komada" => "2"},
+          "2" => %{"naziv" => "Jaja", "komada" => "deset"}
+        },
+        "napomene" => %{"0" => "  "}
+      }
+
+      lv |> form("#process-form", %{"answers" => answers}) |> render_submit()
+
+      # The second item sent is the one keyed 2: its input says what is wrong.
+      assert has_element?(lv, "#process-form-error", "stavke.1.komada: takes a number.")
+      assert has_element?(lv, "#process-form-field-stavke-2-komada.input-error")
+      refute has_element?(lv, "#process-form-field-stavke-0-komada.input-error")
+
+      answers = put_in(answers, ["stavke", "2", "komada"], "10")
+      lv |> form("#process-form", %{"answers" => answers}) |> render_submit()
+      refute has_element?(lv, "#process-form-dialog")
+
+      assert %ValueProcess{results: %{"prijava" => filled}} = Repo.get!(ValueProcess, run.id)
+
+      assert filled == %{
+               "stan" => %{"broj" => "12"},
+               "stavke" => [
+                 %{"naziv" => "Mleko", "komada" => "2"},
+                 %{"naziv" => "Jaja", "komada" => "10"}
+               ],
+               "napomene" => [],
+               "author" => ctx.member.username
+             }
+
+      Engine.run(run.id)
+      assert "2 za stan 12" in chat(ctx.group)
+    end
+
+    test "a Start form asks for it the same way", ctx do
+      {:ok, row} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "manual",
+          "name" => "Narudžba",
+          "entry_entity_id" => ctx.order,
+          "graph" =>
+            chain([
+              %{
+                "id" => "poruka",
+                "type" => "serviceTask",
+                "action" => "message",
+                "text" => "{{start.stavke[0].naziv}}, stan {{start.stan.broj}}"
+              }
+            ])
+        })
+
+      {:ok, _row} = DrawnProcesses.activate(ctx.owner, ctx.group, row.id)
+
+      {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/values")
+      render_click(lv, "processes_start_open", %{"id" => to_string(row.id)})
+
+      # On the page, wherever the viewer is.
+      assert has_element?(lv, "#process-start-form input[name='start[stavke][0][naziv]']")
+      lv |> element("#process-start-field-napomene-add") |> render_click()
+      assert has_element?(lv, "#process-start-form input[name='start[napomene][1]']")
+
+      lv
+      |> form("#process-start-form", %{
+        "start" => %{
+          "stan" => %{"broj" => "4"},
+          "stavke" => %{"0" => %{"naziv" => "Hleb", "komada" => ""}},
+          "napomene" => %{"0" => "", "1" => "brzo"}
+        }
+      })
+      |> render_submit()
+
+      refute has_element?(lv, "#process-start-dialog")
+      [run] = Repo.all(from(i in ValueProcess, where: i.app_process_id == ^row.id))
+
+      assert run.data["stavke"] == [%{"naziv" => "Hleb", "komada" => nil}]
+      assert run.data["napomene"] == ["brzo"]
+      assert run.data["stan"] == %{"broj" => "4"}
+    end
+  end
 end

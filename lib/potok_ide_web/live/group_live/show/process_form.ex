@@ -12,8 +12,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
   decision, and a form of a role, wait on the Processes tab, where "Fill in"
   opens the same dialog.
 
-  It also holds the one input of an attribute (`field/1`), which the Start
-  form of a process started by hand shares.
+  Its inputs are `EntityFields`', which the Start form of a process started
+  by hand shares: lists and entities that hold others too.
   """
 
   use PotokIdeWeb, :html
@@ -21,6 +21,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Processes
+  alias PotokIdeWeb.GroupLive.Show.EntityFields
 
   def init(socket), do: assign(socket, :process_form, nil)
 
@@ -65,32 +66,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
 
   defp open(socket, task) do
     zone = socket.assigns[:calendar_time_zone] || "Etc/UTC"
-    prefill = Map.get(task, :prefill, %{})
+    task = Map.put_new(task, :types, %{})
+    params = EntityFields.params(task.attributes, task.types, Map.get(task, :prefill, %{}), zone)
 
-    fields =
-      Map.new(task.attributes, fn %{"name" => name} = attribute ->
-        {name, input_value(prefill[name], attribute["type"], zone)}
-      end)
-
-    assign(socket, :process_form, %{task: task, form: to_form(fields, as: :answers), error: nil})
+    assign(socket, :process_form, %{
+      task: task,
+      params: params,
+      form: to_form(params, as: :answers),
+      error: nil,
+      error_at: nil
+    })
   end
 
-  # What a field starts with, as its input takes it: a time in the viewer's
-  # own zone, as they read it and as the form sends it back.
-  defp input_value(nil, _type, _zone), do: ""
-  defp input_value(true, _type, _zone), do: "true"
-  defp input_value(false, _type, _zone), do: ""
-
-  defp input_value(value, "datetime", zone) when is_binary(value) do
-    with {:ok, instant, _offset} <- DateTime.from_iso8601(value),
-         {:ok, local} <- DateTime.shift_zone(instant, zone) do
-      Calendar.strftime(local, "%Y-%m-%dT%H:%M")
-    else
-      _unreadable -> ""
-    end
-  end
-
-  defp input_value(value, _type, _zone), do: to_string(value)
+  defp put_params(state, params),
+    do: %{state | params: params, form: to_form(params, as: :answers)}
 
   @doc """
   Opens the form a link names (`?form=<run id>`, from the Requests page),
@@ -128,7 +117,19 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
 
   def handle_event("process_form_validate", %{"answers" => answers}, socket) do
     state = socket.assigns.process_form
-    {:noreply, assign(socket, :process_form, %{state | form: to_form(answers, as: :answers)})}
+    {:noreply, assign(socket, :process_form, put_params(state, answers))}
+  end
+
+  def handle_event("process_form_add", %{"path" => path}, socket) do
+    %{task: task, params: params} = state = socket.assigns.process_form
+    params = EntityFields.add(params, EntityFields.parse_path(path), task.attributes, task.types)
+    {:noreply, assign(socket, :process_form, put_params(state, params))}
+  end
+
+  def handle_event("process_form_remove", %{"path" => path, "index" => index}, socket) do
+    %{params: params} = state = socket.assigns.process_form
+    params = EntityFields.remove(params, EntityFields.parse_path(path), index)
+    {:noreply, assign(socket, :process_form, put_params(state, params))}
   end
 
   def handle_event("process_form_save", %{"answers" => answers}, socket) do
@@ -138,13 +139,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
     # A time typed into the form is the viewer's own.
     zone = socket.assigns[:calendar_time_zone]
 
+    filled = EntityFields.value(state.task.attributes, state.task.types, answers)
+
     case Processes.complete_form(
            profile,
            group,
            access,
            state.task.id,
            state.task.element,
-           answers,
+           filled,
            zone
          ) do
       {:ok, _instance} ->
@@ -156,14 +159,27 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
       {:error, reason} ->
         {:noreply,
          assign(socket, :process_form, %{
-           state
-           | form: to_form(answers, as: :answers),
-             error: error_text(reason)
+           put_params(state, answers)
+           | error: error_text(reason),
+             error_at: error_at(reason, state.task, answers)
          })}
     end
   end
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
+
+  @doc """
+  Where an error of a form stands, as `EntityFields` reads it: `{path,
+  text}` for the attribute that is not right, nil for an error of the whole.
+  """
+  def error_at({:invalid_field, name, reason}, %{attributes: attributes, types: types}, params) do
+    case EntityFields.error_path(attributes, types, params, name) do
+      nil -> nil
+      path -> {path, field_problem(reason)}
+    end
+  end
+
+  def error_at(_reason, _form, _params), do: nil
 
   defp error_text({:invalid_field, name, reason}),
     do: gettext("%{name}: %{problem}.", name: name, problem: field_problem(reason))
@@ -179,6 +195,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
   def field_problem(:not_a_date), do: gettext("takes a date")
   def field_problem(:not_a_datetime), do: gettext("takes a date and a time")
   def field_problem(:not_an_option), do: gettext("takes one of its choices")
+  def field_problem(:too_many_items), do: gettext("holds too many items")
   def field_problem(_reason), do: gettext("is not right")
 
   attr :state, :map, default: nil, doc: "the `@process_form` assign"
@@ -252,10 +269,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
               phx-submit="process_form_save"
               class="space-y-3"
             >
-              <.field
-                :for={attribute <- @state.task.attributes}
-                attribute={attribute}
-                field={@state.form[attribute["name"]]}
+              <EntityFields.fields
+                prefix="answers"
+                id_prefix="process-form-field"
+                attributes={@state.task.attributes}
+                types={@state.task.types}
+                params={@state.params}
+                error={@state.error_at}
+                add="process_form_add"
+                remove="process_form_remove"
               />
               <p
                 :if={@state.error}
@@ -313,61 +335,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
         },
       }
     </script>
-    """
-  end
-
-  attr :attribute, :map, required: true, doc: "an attribute of the entity a form asks for"
-  attr :field, :any, required: true
-
-  @doc "One attribute in a form, asked for as its type."
-  def field(assigns) do
-    assigns =
-      assign(
-        assigns,
-        :label,
-        assigns.attribute["name"] <> if(assigns.attribute["required"] == true, do: " *", else: "")
-      )
-
-    ~H"""
-    <%= case @attribute["type"] do %>
-      <% "boolean" -> %>
-        <.input field={@field} type="checkbox" label={@label} />
-      <% "date" -> %>
-        <.input field={@field} type="date" label={@label} required={@attribute["required"] == true} />
-      <% "datetime" -> %>
-        <.input
-          field={@field}
-          type="datetime-local"
-          label={@label}
-          required={@attribute["required"] == true}
-        />
-      <% "choice" -> %>
-        <.input
-          field={@field}
-          type="select"
-          label={@label}
-          prompt={gettext("Pick one")}
-          options={@attribute["options"] || []}
-          required={@attribute["required"] == true}
-        />
-      <% "number" -> %>
-        <.input
-          field={@field}
-          type="text"
-          label={@label}
-          placeholder="0"
-          maxlength="40"
-          required={@attribute["required"] == true}
-        />
-      <% _text -> %>
-        <.input
-          field={@field}
-          type="text"
-          label={@label}
-          maxlength="1000"
-          required={@attribute["required"] == true}
-        />
-    <% end %>
     """
   end
 end

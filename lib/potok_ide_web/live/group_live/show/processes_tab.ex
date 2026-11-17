@@ -12,10 +12,10 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   alias PotokIdeWeb.GroupLive.Show.{
     Components,
+    EntityFields,
     ProcessEditor,
     ProcessEditorState,
     ProcessEntities,
-    ProcessForm,
     RolesTab
   }
 
@@ -42,10 +42,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   attr :editor, :map, default: nil, doc: "the drawing open over the tab (`ProcessEditorState`)"
   attr :editor_form, :any, default: nil
   attr :editor_meta, :any, default: nil
-
-  attr :start, :map,
-    default: nil,
-    doc: "`%{process, form, attributes, error}` while someone starts a process"
 
   def panel(assigns) do
     assigns = assign(assigns, :manage?, ValueRules.manage?(assigns.access))
@@ -185,7 +181,6 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
         <ProcessEntities.section :if={@can_draw?} entities={@entities} />
       </Components.tab_body>
 
-      <.start_dialog start={@start} />
       <ProcessEntities.dialog entity={@entity} entities={@entities} />
 
       <ProcessEditor.editor
@@ -572,11 +567,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
 
   attr :start, :map,
     default: nil,
-    doc: "`%{process, form, attributes, error}` while someone starts a process"
+    doc:
+      "`%{process, params, form, attributes, types, error, error_at}` while someone starts a process"
 
-  # Starting a process by hand: a title and a text its steps can put in, or
-  # the attributes of the entity it takes, each asked for as its type.
-  defp start_dialog(assigns) do
+  @doc """
+  Starting a process by hand: a title and a text its steps can put in, or
+  the attributes of the entity it takes, each asked for as its type. On the
+  page, beside the form a step asks for, so an app can open it too.
+  """
+  def start_dialog(assigns) do
     ~H"""
     <dialog
       :if={@start}
@@ -631,10 +630,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
               {@start.error}
             </p>
             <%= if @start.attributes do %>
-              <ProcessForm.field
-                :for={attribute <- @start.attributes}
-                attribute={attribute}
-                field={@start.form[attribute["name"]]}
+              <EntityFields.fields
+                prefix="start"
+                id_prefix="process-start-field"
+                attributes={@start.attributes}
+                types={@start.types}
+                params={@start.params}
+                error={@start.error_at}
+                add="processes_start_add"
+                remove="processes_start_remove"
               />
             <% else %>
               <.input

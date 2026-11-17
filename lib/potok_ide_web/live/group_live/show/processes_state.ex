@@ -31,7 +31,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   alias PotokIde.Processes
   alias PotokIde.Processes.{Graph, GroupEntities, GroupEntity, GroupFields}
   alias PotokIde.Social.{Access, AppProcesses, DrawnProcesses, Group, ValueRules}
-  alias PotokIdeWeb.GroupLive.Show.{ProcessEditorState, ProcessForm}
+  alias PotokIdeWeb.GroupLive.Show.{EntityFields, ProcessEditorState, ProcessForm}
 
   @debounce_ms Application.compile_env(:potok_ide, :live_refresh_debounce_ms, 100)
   @reloading_events [:config, :process, :drawn_process, :created, :entity]
@@ -254,24 +254,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     with {id, ""} <- Integer.parse(to_string(id)),
          %{} = process <- DrawnProcesses.get(group, id),
          true <- process.active and DrawnProcesses.may_start?(process, access) do
-      # A process that takes an entity asks for its attributes; another for
-      # a title and a text.
-      attributes = start_attributes(process)
-
-      fields =
-        case attributes do
-          nil -> %{"title" => "", "text" => ""}
-          attributes -> Map.new(attributes, &{&1["name"], ""})
-        end
-
-      start = %{
-        process: process,
-        form: to_form(fields, as: :start),
-        attributes: attributes,
-        error: nil
-      }
-
-      {:noreply, assign(socket, :processes_start, start)}
+      {:noreply, open_start(socket, process, %{})}
     else
       _other -> {:noreply, put_flash(socket, :error, gettext("You may not start this process."))}
     end
@@ -282,11 +265,30 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
 
   def handle_event("processes_start_validate", %{"start" => params}, socket) do
     case socket.assigns.processes_start do
+      nil -> {:noreply, socket}
+      start -> {:noreply, assign(socket, :processes_start, start_params(start, params))}
+    end
+  end
+
+  def handle_event("processes_start_add", %{"path" => path}, socket) do
+    case socket.assigns.processes_start do
+      %{attributes: [_ | _] = attributes, types: types, params: params} = start ->
+        params = EntityFields.add(params, EntityFields.parse_path(path), attributes, types)
+        {:noreply, assign(socket, :processes_start, start_params(start, params))}
+
+      _plain_or_none ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("processes_start_remove", %{"path" => path, "index" => index}, socket) do
+    case socket.assigns.processes_start do
+      %{params: params} = start ->
+        params = EntityFields.remove(params, EntityFields.parse_path(path), index)
+        {:noreply, assign(socket, :processes_start, start_params(start, params))}
+
       nil ->
         {:noreply, socket}
-
-      start ->
-        {:noreply, assign(socket, :processes_start, %{start | form: to_form(params, as: :start)})}
     end
   end
 
@@ -294,7 +296,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
     %{group: group, current_profile: profile, processes_start: start} = socket.assigns
 
     # A time typed into the form is the starter's own.
-    zoned = Map.put(params, "time_zone", socket.assigns[:calendar_time_zone])
+    zoned =
+      case start do
+        %{attributes: [_ | _] = attributes, types: types} ->
+          attributes
+          |> EntityFields.value(types, params)
+          |> Map.put("time_zone", socket.assigns[:calendar_time_zone])
+
+        _plain ->
+          Map.put(params, "time_zone", socket.assigns[:calendar_time_zone])
+      end
 
     case start && DrawnProcesses.start(profile, group, start.process.id, zoned) do
       {:ok, _instance} ->
@@ -305,11 +316,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
          |> load()}
 
       {:error, reason} ->
+        error_at =
+          if start.attributes,
+            do: PotokIdeWeb.GroupLive.Show.ProcessForm.error_at(reason, start, params)
+
         {:noreply,
          assign(socket, :processes_start, %{
-           start
-           | form: to_form(params, as: :start),
-             error: start_error(reason)
+           start_params(start, params)
+           | error: start_error(reason),
+             error_at: error_at
          })}
 
       nil ->
@@ -470,6 +485,38 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   defp entity_error(:too_many), do: gettext("A group has at most 50 entities.")
   defp entity_error(:not_found), do: gettext("That entity is not here.")
   defp entity_error(_reason), do: gettext("Only the app's editors define entities.")
+
+  @doc """
+  Opens the Start form of a process started by hand, for the page's dialog:
+  the attributes of the entity it takes, starting with `prefill` (by
+  attribute, as a run keeps values), or a title and a text.
+  """
+  def open_start(socket, process, prefill) do
+    attributes = start_attributes(process)
+    types = (process.graph || %{})["types"] || %{}
+    zone = socket.assigns[:calendar_time_zone] || "Etc/UTC"
+
+    params =
+      case attributes do
+        nil -> %{"title" => prefill["title"] || "", "text" => prefill["text"] || ""}
+        attributes -> EntityFields.params(attributes, types, prefill, zone)
+      end
+
+    start = %{
+      process: process,
+      params: params,
+      form: to_form(params, as: :start),
+      attributes: attributes,
+      types: types,
+      error: nil,
+      error_at: nil
+    }
+
+    assign(socket, :processes_start, start)
+  end
+
+  defp start_params(start, params),
+    do: %{start | params: params, form: to_form(params, as: :start)}
 
   # The attributes a Start form asks for, as the process was saved with
   # them, or nil for one that takes a title and a text.
