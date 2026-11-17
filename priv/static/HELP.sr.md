@@ -160,9 +160,9 @@ Na vrhu grupe su njen naziv, putanja do nje i kartice: Poruke, Fajlovi, Kalendar
 
 ![Zaglavlje grupe sa karticama](grupa-zaglavlje)
 
-Meni grupe ima utišavanje, opis grupe, deljenje linka javne grupe, tagove, obaveštenja, uloge, pravljenje podgrupe, pozivanje i uređivanje grupe. Šta od toga vidiš, zavisi od tvojih dozvola.
+Meni grupe ima utišavanje, prikačivanje u kolonu tvojih grupa, opis grupe, deljenje linka javne grupe, tagove, obaveštenja, uloge, pravljenje podgrupe, pozivanje i uređivanje grupe. Šta od toga vidiš, zavisi od tvojih dozvola.
 
-Na širokom ekranu, levo od grupe stoji kolona tvojih grupa: prvo one u kojima ima nepročitanih, pa po poslednjoj poruci, sa brojem i poslednjom porukom. Dodirom prelaziš u drugu grupu bez povratka na početnu. Strelice na vrhu kolone je sklanjaju, a dugme sa linijama u zaglavlju grupe je vraća.
+Na širokom ekranu, levo od grupe stoji kolona tvojih grupa, kao stablo foldera: grupe u kojima si član, javne grupe koje pratiš i grupe na putu do njih. Putanja do grupe u kojoj si je otvorena, a strelica pored foldera ga otvara i zatvara; pregledač pamti koje si otvorio. Zatvoren folder pokazuje broj nepročitanih poruka u svemu ispod sebe, pa uvek znaš gde da tražiš. Polje na vrhu traži tvoje grupe po imenu i pokazuje put do svake koju nađe. Grupe do kojih često ideš prikačiš na vrh kolone iz menija grupe, **Prikači u Tvoje grupe**, najviše 20, a direktni razgovori stoje u svojoj listi na dnu. Dodirom prelaziš u drugu grupu bez povratka na početnu. Strelice na vrhu kolone je sklanjaju, a dugme sa linijama u zaglavlju grupe je vraća.
 
 Na kartici Podgrupe, strelica ulevo, gore levo, vodi jedan nivo iznad: otvara podgrupe grupe u kojoj ova stoji, u istom prikazu, kao spisak ili kao fascikle.
 
