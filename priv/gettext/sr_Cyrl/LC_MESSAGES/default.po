@@ -9168,12 +9168,12 @@ msgstr "Изабери ентитет који форма тражи."
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:1110
 #, elixir-autogen, elixir-format
 msgid "The steps after it read what was filled in an attribute at a time, as %{field}, and who filled it in as %{author}."
-msgstr "Кораци после ње читају попуњено атрибут по атрибут, као %{field}, а ко је попунио као %{author}."
+msgstr "Кораци после ње читају оно што је попуњено, атрибут по атрибут, као %{field}, а ко је попунио као %{author}."
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:831
 #, elixir-autogen, elixir-format
 msgid "Waits for someone to fill in an entity, an attribute at a time."
-msgstr "Чека да неко попуни ентитет, атрибут по атрибут."
+msgstr "Чека да неко попуни форму са атрибутима ентитета."
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:1071
 #, elixir-autogen, elixir-format
@@ -9240,7 +9240,7 @@ msgstr "То је више него што процес може да чува."
 #: lib/potok_ide_web/live/group_live/show/process_form.ex:128
 #, elixir-autogen, elixir-format
 msgid "This form is not yours to fill in."
-msgstr "Ову форму не попуњаваш ти."
+msgstr "Ова форма не чека тебе."
 
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:307
 #, elixir-autogen, elixir-format
