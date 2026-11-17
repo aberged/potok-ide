@@ -186,4 +186,75 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     refute has_element?(lv, "#group-sidebar")
     refute has_element?(lv, "#group-sidebar-show")
   end
+
+  describe "pinned groups" do
+    test "the group's menu pins it on top of the column, with the way to it", ctx do
+      {building, entrance} = building(ctx)
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{entrance.id}/values")
+      load(lv)
+      refute has_element?(lv, "#group-sidebar-pinned")
+
+      lv |> element("#group-pin") |> render_click()
+
+      assert render(lv) =~ "The group is pinned to your groups."
+      assert has_element?(lv, "#group-sidebar-pin-#{entrance.id}", "side-entrance")
+      assert has_element?(lv, "#group-sidebar-pin-path-#{entrance.id}", "side-building")
+      assert has_element?(lv, "#group-sidebar-pin-link-#{entrance.id}[aria-current=page]")
+      assert has_element?(lv, "#group-sidebar-pin-unread-#{entrance.id}[hidden]")
+      assert has_element?(lv, "#group-unpin")
+      refute has_element?(lv, "#group-sidebar-pin-#{building.id}")
+
+      lv |> element("#group-sidebar-unpin-#{entrance.id}") |> render_click()
+
+      refute has_element?(lv, "#group-sidebar-pinned")
+      assert has_element?(lv, "#group-pin")
+    end
+
+    test "a row's menu pins too, and a pin on another page shows here", ctx do
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      load(lv)
+
+      :ok = Social.pin_group(ctx.member, ctx.garden.id)
+
+      assert has_element?(lv, "#group-sidebar-pin-#{ctx.garden.id}")
+      assert has_element?(lv, "#group-sidebar-pin-unread-#{ctx.garden.id}:not([hidden])", "1")
+
+      {:ok, root_lv, _html} =
+        live_as(ctx.member_account, ~p"/groups/#{Social.get_root_group!().id}/sub_groups")
+
+      root_lv |> element("#group-row-menu-button-#{ctx.lift.id}") |> render_click()
+      root_lv |> element("#group-row-pin") |> render_click()
+
+      assert has_element?(lv, "#group-sidebar-pin-#{ctx.lift.id}")
+    end
+
+    test "says when the pins are full", ctx do
+      for n <- 1..Social.PinnedGroups.max() do
+        group = group_with_members!(ctx.owner, [ctx.member], %{"name" => "side-pin-#{n}"})
+        :ok = Social.pin_group(ctx.member, group.id)
+      end
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      lv |> element("#group-pin") |> render_click()
+
+      assert render(lv) =~ "You can pin up to 20 groups."
+      refute Social.group_pinned?(ctx.member, ctx.lift.id)
+    end
+
+    test "a search keeps the pinned groups whose name holds it", ctx do
+      :ok = Social.pin_group(ctx.member, ctx.garden.id)
+      :ok = Social.pin_group(ctx.member, ctx.lift.id)
+
+      {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+      load(lv)
+
+      lv
+      |> form("#group-sidebar-search-form", %{"group_sidebar_search" => %{"q" => "garden"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-sidebar-pin-#{ctx.garden.id}")
+      refute has_element?(lv, "#group-sidebar-pin-#{ctx.lift.id}")
+    end
+  end
 end

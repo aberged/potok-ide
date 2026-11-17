@@ -39,7 +39,8 @@ defmodule PotokIde.DomainMap do
        PotokIde.Social.GroupAltDescription,
        PotokIde.Social.GroupReaction,
        PotokIde.Social.GroupBlock,
-       PotokIde.Social.GroupShortcut
+       PotokIde.Social.GroupShortcut,
+       PotokIde.Social.PinnedGroup
      ]},
     {"content",
      [

@@ -92,6 +92,7 @@ const TABLES = {
     GroupReaction: [COLUMN[1], 428],
     GroupBlock: [COLUMN[2], 428],
     GroupShortcut: [COLUMN[2], 500],
+    PinnedGroup: [COLUMN[1], 500],
     Tag: [COLUMN[1], 596],
     Tagging: [COLUMN[2], 596],
     CostHour: [COLUMN[1], 692],
@@ -128,6 +129,9 @@ const ROUTES = {
   // Both of its keys to the group, outside the blocks' line.
   "GroupShortcut>Group": {from: "r", to: "r", bulge: 46},
   "GroupShortcut>Profile": {from: "l", to: "l", bulge: 50},
+  // Up the left of the group's column to the profile, up the gap to the group.
+  "PinnedGroup>Profile": {from: "l", to: "l", bulge: 32},
+  "PinnedGroup>Group": {from: "r", to: "l"},
   "Tagging>ValueAttachment": {d: "M602 606C618 584 612 417 652 417H790C812 417 818 402 818 372V262C818 252 824 248 834 247"},
   // Up the gap between the columns, then under the value, over its reactions.
   "ValueProcess>Value": {d: "M834 368C828 368 826 364 826 356V274C826 269 822 266 816 266H796C791 266 788 263 788 258"},

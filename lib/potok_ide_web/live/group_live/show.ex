@@ -18,6 +18,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupPresets,
     GroupRole,
     GroupRoutes,
+    PinnedGroups,
     Profile,
     Value,
     ValueAttachment,
@@ -533,6 +534,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   access={@access}
                   active_tab={@active_tab}
                   mute={GroupMenu.mute_state(@group, @is_member, @group_muted_until)}
+                  pin={GroupMenu.pin_state(@group, @current_profile, @group_pinned?)}
                 >
                   <%!-- The root has no bar of sections. --%>
                   <Components.group_tab_button
@@ -948,6 +950,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> GroupSidebar.init()
          |> assign(:muted_group_ids, MapSet.new())
          |> assign(:group_muted_until, nil)
+         |> assign(:group_pinned?, false)
          |> assign(:group_muted_unread_counts, %{})
          |> assign(:loaded_children, [])
          |> assign(:unloaded_shortcut_targets, [])
@@ -2146,7 +2149,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         access: access,
         sections: sections,
         shortcut: row_shortcut(socket, group, params["shortcut"]),
-        mute: GroupMenu.mute_state(group, access.member?, muted_until(socket, group))
+        mute: GroupMenu.mute_state(group, access.member?, muted_until(socket, group)),
+        pin: GroupMenu.pin_state(group, profile, Social.group_pinned?(profile, group.id))
       }
 
       {:noreply, assign(socket, :group_row_menu, menu)}
@@ -2204,6 +2208,40 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("clear_group_sidebar_search", _params, socket),
     do: {:noreply, GroupSidebar.search(socket, "")}
+
+  # Pins a group (the open one, a row's, or one of the column) at the top of
+  # the viewer's column of groups, or takes the pin off. The pages of the
+  # profile hear of it (`{:group_pins_changed, _}`).
+  def handle_event("group_pin", %{"id" => id, "pin" => pin}, socket) do
+    profile = socket.assigns.current_profile
+    socket = assign(socket, :group_row_menu, nil)
+
+    with %Profile{} <- profile,
+         {group_id, ""} <- Integer.parse(to_string(id)) do
+      if pin in [true, "true"] do
+        case Social.pin_group(profile, group_id) do
+          :ok ->
+            {:noreply, put_flash(socket, :info, gettext("The group is pinned to your groups."))}
+
+          {:error, :too_many} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               gettext("You can pin up to %{count} groups.", count: PinnedGroups.max())
+             )}
+
+          {:error, _refused} ->
+            {:noreply, socket}
+        end
+      else
+        :ok = Social.unpin_group(profile, group_id)
+        {:noreply, put_flash(socket, :info, gettext("The group is unpinned from your groups."))}
+      end
+    else
+      _invalid -> {:noreply, socket}
+    end
+  end
 
   # Silences a group (the open one, or a row's) for a while, or lets it speak
   # again ("off"). The pages of the profile hear of it and count again.
@@ -2926,6 +2964,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_mute_changed, _profile_id, _group_id}, socket), do: {:noreply, socket}
 
+  # The profile pinned or unpinned a group, here or on another page.
+  def handle_info(
+        {:group_pins_changed, profile_id},
+        %{assigns: %{current_profile: %{id: profile_id}}} = socket
+      ) do
+    {:noreply,
+     socket
+     |> assign_pinned(socket.assigns.group)
+     |> GroupSidebar.pins_changed()}
+  end
+
+  def handle_info({:group_pins_changed, _profile_id}, socket), do: {:noreply, socket}
+
   # An app on the page hears of it too, and reads what waits again.
   def handle_info({:profile_waiting_updated, _profile_id}, socket) do
     {:noreply,
@@ -3058,6 +3109,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket
     |> assign(:loaded?, true)
     |> assign_mutes(group)
+    |> assign_pinned(group)
     |> put_unread_overview(overview)
     |> assign(:group_waiting_counts, waiting_overview(socket))
     |> load_member_summary(group)
@@ -4870,6 +4922,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # The groups the profile silenced, and until when the open one is. Only a
   # silenced group costs a query.
+  defp assign_pinned(%{assigns: %{current_profile: %Profile{} = profile}} = socket, group),
+    do: assign(socket, :group_pinned?, Social.group_pinned?(profile, group.id))
+
+  defp assign_pinned(socket, _group), do: assign(socket, :group_pinned?, false)
+
   defp assign_mutes(socket, group) do
     muted_ids = ProfileAuth.muted_groups(socket)
 

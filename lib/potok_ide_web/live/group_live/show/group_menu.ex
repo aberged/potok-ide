@@ -95,6 +95,11 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     doc:
       "`%{until: nil | DateTime}` when the viewer may silence the group (`mute_state/3`), nil otherwise"
 
+  attr :pin, :map,
+    default: nil,
+    doc:
+      "`%{pinned?: boolean}` when the viewer may pin the group in its column (`pin_state/3`), nil otherwise"
+
   slot :inner_block, doc: "what only this menu offers, before the rest"
 
   def items(assigns) do
@@ -104,6 +109,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     <div class="flex min-w-56 flex-col gap-2 z-100">
       {render_slot(@inner_block)}
       <.mute_item :if={@mute} group={@group} mute={@mute} id_prefix={@id_prefix} row?={@row?} />
+      <.pin_item :if={@pin} group={@group} pin={@pin} id_prefix={@id_prefix} row?={@row?} />
       <.tab_item
         :if={!@group.is_root}
         id={"#{@id_prefix}-tab-group-home"}
@@ -265,6 +271,50 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     """
   end
 
+  @doc """
+  What the menu of `group` offers to pin it at the top of the viewer's column
+  of groups: any group a signed-in viewer sees but the root and a direct
+  conversation (`PinnedGroups.pinnable?/1`). `pinned?` is the viewer's.
+  """
+  def pin_state(_group, nil = _profile, _pinned?), do: nil
+
+  def pin_state(%Group{} = group, _profile, pinned?) do
+    if PotokIde.Social.PinnedGroups.pinnable?(group), do: %{pinned?: pinned? == true}
+  end
+
+  attr :group, :map, required: true
+  attr :pin, :map, required: true
+  attr :id_prefix, :string, required: true
+  attr :row?, :boolean, required: true
+
+  defp pin_item(assigns) do
+    ~H"""
+    <button
+      id={"#{@id_prefix}-#{if(@pin.pinned?, do: "unpin", else: "pin")}"}
+      type="button"
+      data-dropdown-close
+      phx-click={pin_click(@group, !@pin.pinned?, @row?)}
+      class={item_class()}
+    >
+      <.icon
+        name={if(@pin.pinned?, do: "hero-bookmark-slash", else: "hero-bookmark")}
+        class="size-4"
+      />
+      <span class="ml-2 truncate">
+        {if(@pin.pinned?,
+          do: gettext("Unpin from your groups"),
+          else: gettext("Pin to your groups")
+        )}
+      </span>
+    </button>
+    """
+  end
+
+  defp pin_click(group, pin?, row?) do
+    js = if row?, do: JS.push("group_row_menu_close"), else: %JS{}
+    JS.push(js, "group_pin", value: %{id: group.id, pin: pin?})
+  end
+
   defp mute_choices do
     [
       {"hour", gettext("For an hour")},
@@ -396,7 +446,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         autofocus
         class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
       >
-        <.items group={@menu.group} access={@menu.access} id_prefix={@prefix} mute={@menu[:mute]}>
+        <.items
+          group={@menu.group}
+          access={@menu.access}
+          id_prefix={@prefix}
+          mute={@menu[:mute]}
+          pin={@menu[:pin]}
+        >
           <button
             :if={@shortcut && @shortcut.removable?}
             id={"#{@prefix}-menu-remove-shortcut"}

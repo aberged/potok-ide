@@ -52,6 +52,7 @@ defmodule PotokIde.Social do
     Mentions,
     NameSearch,
     Notifications,
+    PinnedGroups,
     Profile,
     ProfileInvitation,
     Value,
@@ -7825,6 +7826,36 @@ defmodule PotokIde.Social do
 
       {:ok, until}
     end
+  end
+
+  @doc """
+  Pins the group `group_id` at the top of the profile's column of groups
+  (`PinnedGroups`) when the profile sees it, and tells the profile's pages
+  (`{:group_pins_changed, profile_id}`). Returns `:ok`, `{:error, :too_many}`,
+  `{:error, :not_pinnable}` or `{:error, :not_found}`.
+  """
+  def pin_group(%Profile{id: profile_id} = profile, group_id) when is_integer(group_id) do
+    with %Group{} = group <- get_visible_group(profile, group_id) || {:error, :not_found},
+         :ok <- PinnedGroups.pin(profile, group) do
+      broadcast_group_pins_changed(profile_id)
+    end
+  end
+
+  @doc "Takes the profile's pin off the group and tells its pages."
+  def unpin_group(%Profile{id: profile_id} = profile, group_id) when is_integer(group_id) do
+    :ok = PinnedGroups.unpin(profile, group_id)
+    broadcast_group_pins_changed(profile_id)
+  end
+
+  defdelegate list_pinned_groups(profile), to: PinnedGroups, as: :list
+  defdelegate group_pinned?(profile, group_id), to: PinnedGroups, as: :pinned?
+
+  defp broadcast_group_pins_changed(profile_id) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      profile_topic(profile_id),
+      {:group_pins_changed, profile_id}
+    )
   end
 
   @doc """

@@ -4,8 +4,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   (from 80rem, `xl`), to move between groups and sub-groups without the
   root's list. The root has none: its page is that list.
 
-  It holds, top down: a search, the tree of the viewer's groups and a list of
-  its direct conversations. The tree is the root's folder view without the
+  It holds, top down: a search, the groups the viewer pinned
+  (`Social.list_pinned_groups/1`), the tree of its groups and a list of its
+  direct conversations. The tree is the root's folder view without the
   public groups the viewer is not in (`SubGroupTree` with `public?: false`):
   its memberships, the public groups it follows and the folders on the way
   to them, threads left out. The folders on the way to the page's group come
@@ -31,7 +32,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
 
   import Phoenix.LiveView, only: [push_event: 3]
 
-  alias PotokIde.Social
+  alias PotokIde.{Social, TextFold}
   alias PotokIdeWeb.GroupLive.Show.{Components, SubGroupTree}
 
   @directs_limit 20
@@ -60,7 +61,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
       open: open,
       tree: load_tree(root, profile, open, ""),
       directs: load_directs(root, profile, overview, ""),
-      direct_rows: []
+      direct_rows: [],
+      pins: Social.list_pinned_groups(profile),
+      pin_rows: []
     }
 
     socket
@@ -69,6 +72,17 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   end
 
   def load(socket, _overview, _params), do: socket
+
+  @doc "The profile pinned or unpinned a group: the pinned rows again."
+  def pins_changed(%{assigns: %{sidebar: %{} = sidebar}} = socket) do
+    pins = Social.list_pinned_groups(socket.assigns.current_profile)
+
+    socket
+    |> assign(:sidebar, %{sidebar | pins: pins})
+    |> recount()
+  end
+
+  def pins_changed(socket), do: socket
 
   @doc "Opens or closes a folder of the tree; the browser remembers the open ones."
   def toggle(%{assigns: %{sidebar: %{tree: tree} = sidebar}} = socket, group_id) do
@@ -143,7 +157,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     assign(socket, :sidebar, %{
       sidebar
       | tree: tree,
-        direct_rows: direct_rows(sidebar.directs, overview, counts.muted_ids)
+        direct_rows: direct_rows(sidebar.directs, overview, counts.muted_ids),
+        pin_rows: pin_rows(sidebar.pins, sidebar.search, counts)
     })
   end
 
@@ -264,6 +279,26 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
 
   defp shortcut?(node), do: is_integer(Map.get(node.group, :shortcut_id))
 
+  # A pinned group stands out of its place in the tree, so it counts all
+  # that is below it, as a closed folder does. A search keeps those whose
+  # name holds it.
+  defp pin_rows(pins, search, counts) do
+    term = TextFold.fold(search)
+
+    for %{group: group, path: path} <- pins,
+        term == "" or String.contains?(TextFold.fold(group.name), term) do
+      %{
+        id: group.id,
+        group: group,
+        path: path,
+        unread: Map.get(counts.unread, group.id, 0),
+        muted_unread: Map.get(counts.muted, group.id, 0),
+        waiting: Map.get(counts.waiting, group.id, 0),
+        muted?: MapSet.member?(counts.muted_ids, group.id)
+      }
+    end
+  end
+
   # A conversation's own unread values, a silenced one's apart, unread ones
   # first, then the newest.
   defp direct_rows(directs, overview, muted_ids) do
@@ -370,6 +405,28 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
         </div>
 
         <%= if @sidebar do %>
+          <section
+            :if={@sidebar.pin_rows != []}
+            id="group-sidebar-pinned"
+            aria-labelledby="group-sidebar-pinned-title"
+            class="mb-3"
+          >
+            <h3
+              id="group-sidebar-pinned-title"
+              class="py-1 pl-3 text-xs font-semibold uppercase tracking-[0.14em] text-base-content/60"
+            >
+              {gettext("Pinned")}
+            </h3>
+            <ul id="group-sidebar-pin-list" class="space-y-px">
+              <.pin_row
+                :for={row <- @sidebar.pin_rows}
+                :key={row.id}
+                row={row}
+                group_id={@group_id}
+                search={@sidebar.search}
+              />
+            </ul>
+          </section>
           <div id="group-sidebar-tree" role="tree" aria-label={gettext("Your groups")}>
             <.sidebar_node
               :for={node <- @sidebar.tree.nodes}
@@ -388,7 +445,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
             {gettext("You are not in any group yet.")}
           </p>
           <p
-            :if={@sidebar.search != "" and @sidebar.tree.nodes == [] and @sidebar.direct_rows == []}
+            :if={
+              @sidebar.search != "" and @sidebar.tree.nodes == [] and @sidebar.direct_rows == [] and
+                @sidebar.pin_rows == []
+            }
             id="group-sidebar-no-match"
             class="px-3 py-4 text-sm text-base-content/60"
           >
@@ -700,6 +760,101 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
         />
       </div>
     </div>
+    """
+  end
+
+  attr :row, :map, required: true
+  attr :group_id, :integer, required: true
+  attr :search, :string, required: true
+
+  # A pinned group with the way to it under its name, and its pin to take off.
+  defp pin_row(assigns) do
+    assigns = assign(assigns, :current?, assigns.row.id == assigns.group_id)
+
+    ~H"""
+    <li
+      id={"group-sidebar-pin-#{@row.id}"}
+      class={[
+        "group/pin flex items-center gap-1 rounded-xl pr-1 pl-1.5 transition-colors duration-150",
+        if(@current?, do: "bg-primary/10", else: "hover:bg-base-200/70")
+      ]}
+    >
+      <.link
+        id={"group-sidebar-pin-link-#{@row.id}"}
+        navigate={~p"/groups/#{@row.id}"}
+        aria-current={@current? && "page"}
+        title={Enum.join(@row.path ++ [@row.group.name], " › ")}
+        class="flex min-w-0 flex-1 items-center gap-2 py-1.5"
+      >
+        <span class="relative shrink-0">
+          <.icon
+            name={
+              if(@row.group.parent_value_id, do: "hero-chat-bubble-left-right", else: "hero-folder")
+            }
+            class="size-5 text-amber-500"
+          />
+          <Components.avatar_mark
+            icon="hero-bookmark-solid"
+            class="-bottom-1 -left-1 size-3.5 text-primary [&>span]:size-2.5"
+          />
+        </span>
+        <span class="min-w-0 flex-1">
+          <Components.highlighted_text
+            text={@row.group.name}
+            query={@search}
+            class={[
+              "block truncate text-sm",
+              if(@current?, do: "font-semibold text-base-content", else: "font-medium")
+            ]}
+          />
+          <span
+            :if={@row.path != []}
+            id={"group-sidebar-pin-path-#{@row.id}"}
+            class="block truncate text-[11px] leading-4 text-base-content/55"
+          >
+            {Enum.join(@row.path, " › ")}
+          </span>
+        </span>
+        <.icon
+          :if={@row.muted?}
+          name="hero-bell-slash-micro"
+          class="size-3.5 shrink-0 text-base-content/45"
+        />
+      </.link>
+      <span
+        id={"group-sidebar-pin-waiting-#{@row.id}"}
+        hidden={@row.waiting == 0}
+        title={gettext("Waiting for you: %{count}", count: @row.waiting)}
+        aria-label={gettext("Waiting for you: %{count}", count: @row.waiting)}
+        class="inline-flex h-5 shrink-0 items-center gap-1 rounded-full bg-amber-500/15 px-1.5 text-[11px] font-semibold tabular-nums text-amber-900 dark:text-amber-100"
+      >
+        <span class="size-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
+        {@row.waiting}
+      </span>
+      <.count_badge
+        id={"group-sidebar-pin-unread-#{@row.id}"}
+        count={@row.unread}
+        hidden={@row.unread == 0}
+        class="shrink-0"
+      />
+      <.count_badge
+        id={"group-sidebar-pin-muted-unread-#{@row.id}"}
+        count={@row.muted_unread}
+        tone={:muted}
+        hidden={@row.unread > 0 or @row.muted_unread == 0}
+        class="shrink-0"
+      />
+      <button
+        id={"group-sidebar-unpin-#{@row.id}"}
+        type="button"
+        phx-click={JS.push("group_pin", value: %{id: @row.id, pin: false})}
+        aria-label={gettext("Unpin %{name}", name: @row.group.name)}
+        title={gettext("Unpin")}
+        class="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-base-content/50 opacity-0 transition duration-150 hover:bg-base-300 hover:text-base-content focus-visible:opacity-100 group-hover/pin:opacity-100 phx-click-loading:animate-pulse"
+      >
+        <.icon name="hero-x-mark-micro" class="size-4" />
+      </button>
+    </li>
     """
   end
 

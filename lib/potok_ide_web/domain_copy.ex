@@ -382,6 +382,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
   defp own_field("GroupShortcut", "parent_id"), do: dgettext("domain_map", "group it stands in")
   defp own_field("GroupShortcut", "target_id"), do: dgettext("domain_map", "group it opens")
+  defp own_field("PinnedGroup", "profile_id"), do: dgettext("domain_map", "who pinned it")
 
   defp own_field("Event", "title"), do: dgettext("domain_map", "title")
   defp own_field("Event", "location"), do: dgettext("domain_map", "location")
@@ -583,6 +584,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("GroupReaction"), do: dgettext("domain_map", "Group reaction")
   def entity_name("GroupBlock"), do: dgettext("domain_map", "Block")
   def entity_name("GroupShortcut"), do: dgettext("domain_map", "Shortcut")
+  def entity_name("PinnedGroup"), do: dgettext("domain_map", "Pinned group")
   def entity_name("GroupValueRead"), do: dgettext("domain_map", "Read marker")
   def entity_name("AppProcess"), do: dgettext("domain_map", "App process")
   def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
@@ -735,6 +737,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "A group shown among the sub-groups of another group too, as a shortcut on a computer: a tap opens it where it stands. It has no members, values or counts of its own. Deleting either group takes it along."
+    )
+  end
+
+  defp entity_description("PinnedGroup", _edges) do
+    dgettext(
+      "domain_map",
+      "A group a profile keeps at the top of its column of groups. Only that profile sees it. Deleting the group or the profile takes it along."
     )
   end
 
@@ -1520,6 +1529,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <GroupShortcut>shortcut</GroupShortcut> puts a <Group>group</Group> that stands deeper in the tree among the sub-groups of another group, the root as well, and a tap opens it where it stands. Whoever may make sub-groups there places one to a group they see, and it shows only to those who see that group, by the same rule as the other sub-groups. The row shows the group itself, with its newest value and what is unread in it, but the counts above it hold that unread once, where the group stands. It never leads to the root, a thread, a direct conversation or an app's record, nor to a group already standing there. Its author or an admin of the group it stands in removes it, which leaves the group as it is. Apps do not see shortcuts among the sub-groups."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "The column of your groups is a tree"),
+        text:
+          dgettext(
+            "domain_map",
+            "Beside a group's page, a wide screen shows the profile's groups as a tree: its <GroupMembership>memberships</GroupMembership>, the public groups it <GroupFollow>follows</GroupFollow> and the <Group>groups</Group> on the way to them, without threads; direct conversations stand in a list of their own below it. A closed folder counts everything unread below it, an open one only what its open sub-groups do not show, so every unread value can be followed down to its group. Above the tree stand the <PinnedGroup>pinned groups</PinnedGroup>: up to 20 groups the profile sees, never the root or a direct conversation, in the order it pinned them. Nobody else sees them, and a group it no longer sees drops out of the list."
           )
       },
       %{
