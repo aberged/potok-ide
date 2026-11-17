@@ -59,7 +59,8 @@ defmodule PotokIde.JobQueueTest do
       JobQueue.run(queue, fn -> raise "boom" end)
       JobQueue.run(queue, fn -> raise "boom" end)
       JobQueue.run(queue, job(self(), :after_crashes))
-      assert_receive {:started, :after_crashes, _pid}, 1_000
+      # Two crash reports go through the logger first, slow on a busy machine.
+      assert_receive {:started, :after_crashes, _pid}, 5_000
     end)
   end
 end

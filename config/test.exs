@@ -12,6 +12,11 @@ config :potok_ide, live_refresh_debounce_ms: 0
 # A chat page writes its read marker as each value arrives.
 config :potok_ide, read_marker_delay_ms: 0
 
+# An app's page gets back the writes it spent only after an hour, not one
+# every third of a second, so a test that runs into the limit meets it at
+# the same write however slow the machine is.
+config :potok_ide, app_write_window_ms: :timer.hours(1)
+
 # A guest's app asks on every call whether guests still read the description.
 config :potok_ide, guest_recheck_ms: 0
 
@@ -87,7 +92,13 @@ config :potok_ide, PotokIde.Repo,
   port: String.to_integer(System.get_env("PGPORT") || "5432"),
   database: "potok_ide_test#{System.get_env("MIX_TEST_PARTITION")}",
   pool: Ecto.Adapters.SQL.Sandbox,
-  pool_size: System.schedulers_online() * 2
+  pool_size: System.schedulers_online() * 2,
+  # A test, the pages it opens and their preloads, which Ecto runs in tasks
+  # of their own, take turns on the one connection the sandbox gives the
+  # test. The sandbox drops a turn that waits more than twice this, 100 ms
+  # by default, which a busy machine reaches and production, with a pool,
+  # never meets this way.
+  queue_target: 5_000
 
 # We don't run a server during test. If one is required,
 # you can enable the server option below.

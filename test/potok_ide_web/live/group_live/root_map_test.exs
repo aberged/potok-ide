@@ -125,9 +125,10 @@ defmodule PotokIdeWeb.GroupLive.RootMapTest do
     assert_push_event(lv, "root_map_data", data)
     assert place_ids(data) == [ctx.open.id]
 
-    # Unfollowed on another page: the map is read again.
+    # Unfollowed on another page: the map is read again, when the page has
+    # heard of it, which takes its own while on a busy machine.
     :ok = Notices.unfollow(ctx.viewer, ctx.open.id)
-    assert_push_event(lv, "root_map_data", %{places: [], total: 0})
+    assert_push_event(lv, "root_map_data", %{places: [], total: 0}, 5_000)
   end
 
   test "far out, groups gather into clusters", ctx do

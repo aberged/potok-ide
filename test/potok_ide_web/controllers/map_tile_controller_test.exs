@@ -89,10 +89,20 @@ defmodule PotokIdeWeb.MapTileControllerTest do
 
     # Counted in fixed windows: fill until the limit holds, so a window that
     # ends in between starts the count again and is filled too.
-    Stream.repeatedly(fn -> RateLimit.hit(:tile_ip, RateLimit.ip_key(ip)) end)
-    |> Enum.find(&match?({:error, :rate_limited, _retry_after}, &1))
+    asked = fn ->
+      Stream.repeatedly(fn -> RateLimit.hit(:tile_ip, RateLimit.ip_key(ip)) end)
+      |> Enum.find(&match?({:error, :rate_limited, _retry_after}, &1))
 
-    conn = get(%{conn | remote_ip: ip}, path(tile()))
+      get(%{conn | remote_ip: ip}, path(tile()))
+    end
+
+    # A window that ends between the filling and the request lets it through
+    # in a new one: once a minute at most, so the next one holds.
+    conn =
+      case asked.() do
+        %{status: 200} -> asked.()
+        conn -> conn
+      end
 
     assert response(conn, 429) == ""
     assert [_seconds] = get_resp_header(conn, "retry-after")

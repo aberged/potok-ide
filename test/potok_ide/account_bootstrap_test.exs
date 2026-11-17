@@ -74,7 +74,8 @@ defmodule PotokIde.AccountBootstrapTest do
       pid = start_supervised!(AccountBootstrap)
       ref = Process.monitor(pid)
 
-      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}
+      # It hashes a password and writes the account first.
+      assert_receive {:DOWN, ^ref, :process, ^pid, :normal}, 5_000
       assert Accounts.get_account_by_email_and_password(email, password)
     end
   end

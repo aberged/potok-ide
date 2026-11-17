@@ -3152,7 +3152,8 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
 
       {:ok, _updated_account} = Accounts.set_current_profile(account, second_profile)
 
-      assert_redirect(lv, ~p"/groups")
+      # The page hears of it by a broadcast, in its own time.
+      assert_redirect(lv, ~p"/groups", 5_000)
     end
 
     test "paginates members with streams", %{conn: conn} do

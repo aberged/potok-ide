@@ -95,7 +95,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   # Token bucket for writes: bursts of up to @write_burst, refilled over @write_window_ms.
   @write_burst 30
-  @write_window_ms 10_000
+  @write_window_ms Application.compile_env(:potok_ide, :app_write_window_ms, 10_000)
 
   @max_list_limit 200
 
