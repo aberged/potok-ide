@@ -34,6 +34,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   import Phoenix.LiveView, only: [push_event: 3]
 
   alias PotokIde.{Social, TextFold}
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.{Components, SubGroupTree}
 
   @directs_limit 20
@@ -64,11 +65,12 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
       directs: load_directs(root, profile, overview, ""),
       direct_rows: [],
       pins: Social.list_pinned_groups(profile),
-      pin_rows: []
+      pin_rows: [],
+      looks: %{}
     }
 
     socket
-    |> assign(:sidebar, sidebar)
+    |> assign(:sidebar, with_looks(sidebar))
     |> counted(overview)
   end
 
@@ -90,7 +92,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     tree = SubGroupTree.toggle(tree, group_id, socket.assigns.current_profile)
 
     socket
-    |> assign(:sidebar, %{sidebar | tree: tree})
+    |> assign(:sidebar, with_looks(%{sidebar | tree: tree}))
     |> recount()
     |> remember_open()
   end
@@ -102,7 +104,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     tree = SubGroupTree.load_more(tree, group_id, socket.assigns.current_profile)
 
     socket
-    |> assign(:sidebar, %{sidebar | tree: tree})
+    |> assign(:sidebar, with_looks(%{sidebar | tree: tree}))
     |> recount()
   end
 
@@ -134,7 +136,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
       }
 
       socket
-      |> assign(:sidebar, sidebar)
+      |> assign(:sidebar, with_looks(sidebar))
       |> recount()
     end
   end
@@ -147,6 +149,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   """
   def counted(%{assigns: %{sidebar: %{} = sidebar}} = socket, %{} = overview) do
     counts = %{
+      looks: sidebar.looks,
       unread: subtree_counts(overview),
       muted: muted_counts(overview),
       waiting: socket.assigns[:group_waiting_counts] || %{},
@@ -185,6 +188,13 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   def noted(socket, _group_id, _preview, _at), do: socket
 
   defp recount(socket), do: counted(socket, current_overview(socket))
+
+  # What the avatars of the tree need (`Social.group_avatar_facts/1`), read
+  # once for each group the tree loads.
+  defp with_looks(%{tree: tree, looks: looks} = sidebar) do
+    missing = Enum.reject(tree.ids, &Map.has_key?(looks, &1))
+    %{sidebar | looks: Map.merge(looks, Social.group_avatar_facts(missing))}
+  end
 
   defp current_overview(socket),
     do: socket.assigns[:unread_overview] || Social.unread_overview(socket.assigns.current_profile)
@@ -271,6 +281,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
       |> Map.put(:waiting_count, visible(counts.waiting, id, shown))
       |> Map.put(:muted_unread, Map.get(counts.muted, id, 0))
       |> Map.put(:muted?, MapSet.member?(counts.muted_ids, id))
+      |> Map.put(:look, Map.get(counts.looks, id))
     end)
   end
 
@@ -677,29 +688,27 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
               else: gettext("You are not a member of %{name}", name: @node.group.name)
             )
           }
-          class="flex min-w-0 flex-1 items-center gap-2 py-1.5"
+          class="flex min-w-0 flex-1 items-center gap-2 py-1"
         >
-          <span class="relative shrink-0">
-            <.icon
-              name={node_icon(@node)}
-              class={[
-                "size-5",
-                if(@node.group.member?, do: "text-amber-500", else: "text-base-content/40")
-              ]}
-            />
-            <Components.avatar_mark
-              icon={
-                if(@node.group.public?, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")
+          <.mini_avatar
+            group={
+              %{
+                id: @node.group.id,
+                updated_at: @node[:look] && @node.look.updated_at,
+                preset: @node[:look] && @node.look.preset,
+                uses_api: @node[:look] && @node.look.uses_api,
+                is_public: @node.group.public?
               }
-              class="-bottom-1 -left-1 size-3.5 [&>span]:size-2.5"
-            />
+            }
+            faded={!@node.group.member?}
+          >
             <Components.avatar_mark
               :if={shortcut?(@node)}
               icon="hero-arrow-turn-up-right-micro"
               title={gettext("Shortcut")}
-              class="-bottom-1 -right-1 size-3.5 text-primary [&>span]:size-2.5"
+              class="-top-0.5 -right-0.5 size-3.5 text-primary [&>span]:size-2.5"
             />
-          </span>
+          </.mini_avatar>
           <Components.highlighted_text
             text={@node.group.name}
             query={@search}
@@ -777,7 +786,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     <li
       id={"group-sidebar-pin-#{@row.id}"}
       class={[
-        "group/pin flex items-center gap-1 rounded-xl pr-1 pl-1.5 transition-colors duration-150",
+        "group/pin flex items-center gap-1 rounded-xl pr-1 pl-2 transition-colors duration-150",
         if(@current?, do: "bg-primary/10", else: "hover:bg-base-200/70")
       ]}
     >
@@ -786,20 +795,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
         navigate={~p"/groups/#{@row.id}"}
         aria-current={@current? && "page"}
         title={Enum.join(@row.path ++ [@row.group.name], " › ")}
-        class="flex min-w-0 flex-1 items-center gap-2 py-1.5"
+        class="flex min-w-0 flex-1 items-center gap-2 py-1"
       >
-        <span class="relative shrink-0">
-          <.icon
-            name={
-              if(@row.group.parent_value_id, do: "hero-chat-bubble-left-right", else: "hero-folder")
-            }
-            class="size-5 text-amber-500"
-          />
+        <.mini_avatar group={@row.group}>
           <Components.avatar_mark
             icon="hero-bookmark-solid"
-            class="-bottom-1 -left-1 size-3.5 text-primary [&>span]:size-2.5"
+            title={gettext("Pinned")}
+            class="-top-0.5 -right-0.5 size-3.5 text-primary [&>span]:size-2.5"
           />
-        </span>
+        </.mini_avatar>
         <span class="min-w-0 flex-1">
           <Components.highlighted_text
             text={@row.group.name}
@@ -878,9 +882,45 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     """
   end
 
-  defp node_icon(%{group: %{thread?: true}}), do: "hero-chat-bubble-left-right"
-  defp node_icon(%{open?: true}), do: "hero-folder-open"
-  defp node_icon(_node), do: "hero-folder"
+  attr :group, :map,
+    required: true,
+    doc: "`id`, `is_public`, and `updated_at`, `preset`, `uses_api` once known"
+
+  attr :faded, :boolean, default: false, doc: "a folder on the way, not one of the viewer's"
+  slot :inner_block, doc: "a mark more over the avatar"
+
+  # The group's own avatar, small, with its public or private mark and its
+  # kind in the corners, as in the lists of groups.
+  defp mini_avatar(assigns) do
+    assigns =
+      assign(
+        assigns,
+        :kind,
+        Components.group_kind_mark(Map.merge(%{is_direct: false}, assigns.group))
+      )
+
+    ~H"""
+    <span class={["relative shrink-0", @faded && "opacity-60"]}>
+      <img
+        src={Avatars.group_avatar_url(@group)}
+        alt=""
+        loading="lazy"
+        class="size-8 rounded-full border border-base-300 object-cover shadow-sm"
+      />
+      <Components.avatar_mark
+        icon={if(@group.is_public, do: "hero-globe-alt-micro", else: "hero-lock-closed-micro")}
+        class="-bottom-0.5 -left-0.5 size-3.5 [&>span]:size-2.5"
+      />
+      <Components.avatar_mark
+        :if={@kind}
+        icon={@kind.icon}
+        title={@kind.title}
+        class="-bottom-0.5 -right-0.5 size-3.5 [&>span]:size-2.5"
+      />
+      {render_slot(@inner_block)}
+    </span>
+    """
+  end
 
   # A shortcut's leaf has its own id, as its target may stand in the tree too.
   defp node_key(%{group: %{shortcut_id: id}}) when is_integer(id), do: "shortcut-#{id}"

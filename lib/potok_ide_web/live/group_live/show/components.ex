@@ -1150,12 +1150,15 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
-  # The corner says what kind of group it is: the preset it was made from while
-  # it still fits, or an app for any other group that has one.
-  defp group_kind_mark(%{is_direct: true}), do: nil
-  defp group_kind_mark(%{is_root: true}), do: nil
+  @doc """
+  What the corner of a group's avatar says about its kind: the preset it was
+  made from while it still fits, or an app for any other group that has one;
+  nil for a direct conversation, the root or a plain group.
+  """
+  def group_kind_mark(%{is_direct: true}), do: nil
+  def group_kind_mark(%{is_root: true}), do: nil
 
-  defp group_kind_mark(group) do
+  def group_kind_mark(group) do
     cond do
       preset = GroupPresets.shown(group) ->
         Map.put(CreateMenu.mark(preset), :kind, preset)

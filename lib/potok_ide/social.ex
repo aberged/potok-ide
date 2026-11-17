@@ -7891,6 +7891,22 @@ defmodule PotokIde.Social do
   defdelegate group_pinned?(profile, group_id), to: PinnedGroups, as: :pinned?
   defdelegate pinned_group_ids(profile), to: PinnedGroups, as: :ids
 
+  @doc """
+  What a group's avatar needs beyond its id, for each of `group_ids`: when
+  it last changed (the picture's address carries it) and its preset and app
+  for the kind mark. `%{group_id => %{updated_at, preset, uses_api}}`.
+  """
+  def group_avatar_facts([]), do: %{}
+
+  def group_avatar_facts(group_ids) when is_list(group_ids) do
+    from(g in Group,
+      where: g.id in ^group_ids,
+      select: {g.id, %{updated_at: g.updated_at, preset: g.preset, uses_api: g.uses_api}}
+    )
+    |> Repo.all()
+    |> Map.new()
+  end
+
   defp broadcast_group_pins_changed(profile_id) do
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,

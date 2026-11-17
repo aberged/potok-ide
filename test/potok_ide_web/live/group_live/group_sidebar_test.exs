@@ -59,6 +59,12 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     assert has_element?(lv, "#group-sidebar-link-#{ctx.lift.id}[aria-current=page]")
     assert has_element?(lv, "#group-sidebar-node-#{ctx.garden.id}", "side-garden")
 
+    # Each row shows the group's own avatar.
+    assert has_element?(
+             lv,
+             ~s(#group-sidebar-link-#{ctx.garden.id} img[src^="/avatar/group/#{ctx.garden.id}?"])
+           )
+
     # The garden has something unread; the open lift was just read.
     assert has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])", "1")
     refute has_element?(lv, "#group-sidebar-unread-#{ctx.lift.id}:not([hidden])")
@@ -82,6 +88,7 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     assert building_id == building.id
     assert has_element?(lv, "#group-sidebar-node-#{building.id}[aria-expanded=true]")
     assert has_element?(lv, "#group-sidebar-node-#{entrance.id}", "side-entrance")
+    assert has_element?(lv, "#group-sidebar-link-#{entrance.id} img[src*='v=']")
     assert has_element?(lv, "#group-sidebar-unread-#{entrance.id}:not([hidden])", "1")
     refute has_element?(lv, "#group-sidebar-unread-#{building.id}:not([hidden])")
 
@@ -228,6 +235,7 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
 
       assert render(lv) =~ "The group is pinned to your groups."
       assert has_element?(lv, "#group-sidebar-pin-#{entrance.id}", "side-entrance")
+      assert has_element?(lv, "#group-sidebar-pin-link-#{entrance.id} img")
       assert has_element?(lv, "#group-sidebar-pin-path-#{entrance.id}", "side-building")
       assert has_element?(lv, "#group-sidebar-pin-link-#{entrance.id}[aria-current=page]")
       assert has_element?(lv, "#group-sidebar-pin-unread-#{entrance.id}[hidden]")
