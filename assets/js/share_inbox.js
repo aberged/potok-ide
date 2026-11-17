@@ -374,8 +374,10 @@ export const ShareComposer = {
     const textarea = document.getElementById("group-value-content")
     const text = shareText(share)
 
-    if (textarea && text && textarea.value.trim() === "") {
-      textarea.value = text
+    // Below a draft the composer brought back (`assets/js/drafts.js`).
+    if (textarea && text) {
+      const draft = textarea.value.trimEnd()
+      textarea.value = draft === "" ? text : `${draft}\n\n${text}`
       textarea.dispatchEvent(new Event("input", {bubbles: true}))
     }
 

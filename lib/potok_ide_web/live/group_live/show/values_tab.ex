@@ -292,6 +292,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
                 class={composer_form_class()}
                 phx-change="validate_value"
                 phx-submit="create_value"
+                phx-hook="ComposerDraft"
+                data-draft-key={Components.draft_key(@current_profile, @group)}
                 phx-drop-target={@can_attach && @attachments.ref}
               >
                 <div

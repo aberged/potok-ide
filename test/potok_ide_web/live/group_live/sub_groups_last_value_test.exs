@@ -50,6 +50,25 @@ defmodule PotokIdeWeb.GroupLive.SubGroupsLastValueTest do
     assert has_element?(lv, "#child-group-last-value-#{ctx.child.id}[datetime]")
   end
 
+  test "a row and the composer carry this browser's draft, per profile and group", ctx do
+    post!(ctx.owner, ctx.child, "hello")
+    key = "potok:draft:#{ctx.viewer.id}:#{ctx.child.id}"
+
+    {:ok, lv, _html} = live_as(ctx.viewer_account, ~p"/groups/#{ctx.parent.id}/sub_groups")
+
+    assert has_element?(
+             lv,
+             ~s(#child-group-draft-#{ctx.child.id}[phx-hook="DraftMark"][data-draft-key="#{key}"])
+           )
+
+    {:ok, chat, _html} = live_as(ctx.viewer_account, ~p"/groups/#{ctx.child.id}/values")
+
+    assert has_element?(
+             chat,
+             ~s(#group-value-form[phx-hook="ComposerDraft"][data-draft-key="#{key}"])
+           )
+  end
+
   test "the viewer's own message is marked as theirs", ctx do
     post!(ctx.viewer, ctx.child, "mine")
 

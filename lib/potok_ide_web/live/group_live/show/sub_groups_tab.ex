@@ -425,6 +425,11 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
                   >
                     <:subtitle :if={child_details?(group)}>
                       <div class="flex w-full min-w-0 flex-col gap-0.5">
+                        <Components.draft_mark
+                          id={"child-group-draft-#{group.id}"}
+                          current_profile={@current_profile}
+                          group={group}
+                        />
                         <.child_last_value
                           :if={group.last_value && group.last_value.text}
                           group={group}
@@ -544,7 +549,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
       id={"child-group-last-value-text-#{@group.id}"}
       data-mine={@mine? && "true"}
       class={[
-        "truncate text-xs leading-4",
+        "truncate text-xs leading-4 group-has-[[data-draft-text]]/child:hidden",
         if(@unread, do: "text-base-content/85", else: "text-base-content/65")
       ]}
     >

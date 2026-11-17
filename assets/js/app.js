@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
+import { ComposerDraft, DraftMark, clearAllDrafts } from "./drafts"
 import { KeyboardMedia } from "./keyboard_media"
 import { LocationPicker } from "./location_picker"
 import { ProcessCanvas } from "./process_canvas"
@@ -1861,6 +1862,8 @@ const liveSocket = new LiveSocket("/live", Socket, {
     KeyboardMedia,
     ShareComposer,
     SharePreview,
+    ComposerDraft,
+    DraftMark,
     ...colocatedHooks,
   },
   uploaders: Uploaders,
@@ -1874,6 +1877,11 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 installPageLoader()
 
 installPasswordToggleButtons()
+
+// Drafts stay in this browser, which may be a shared one: logging out drops them.
+document.addEventListener("click", event => {
+  if (event.target.closest?.("[data-clear-drafts]")) clearAllDrafts()
+})
 
 // Inside a LiveView the attribute is set through a JS command: those are
 // sticky, while plain DOM changes would be undone by the next patch.

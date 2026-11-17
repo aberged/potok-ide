@@ -36,6 +36,37 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   @max_group_picture_upload_size 5 * 1024 * 1024
   @max_group_picture_dimension 200
 
+  @doc """
+  Where this browser keeps the profile's draft of a message in the group
+  (`assets/js/drafts.js`); none without a profile.
+  """
+  def draft_key(%{id: profile_id}, %{id: group_id}), do: "potok:draft:#{profile_id}:#{group_id}"
+  def draft_key(_profile, _group), do: nil
+
+  attr :id, :string, required: true
+  attr :current_profile, :map, default: nil
+  attr :group, :map, required: true
+
+  @doc """
+  "Draft: …" on a group's row while this browser holds a draft for it
+  (`DraftMark` in `assets/js/drafts.js`). Patches leave it alone, and the row
+  hides its last message meanwhile.
+  """
+  def draft_mark(assigns) do
+    ~H"""
+    <span
+      :if={@current_profile}
+      id={@id}
+      phx-hook="DraftMark"
+      phx-update="ignore"
+      data-draft-key={draft_key(@current_profile, @group)}
+      data-label={gettext("Draft:")}
+      class="contents"
+    >
+    </span>
+    """
+  end
+
   attr :id, :string, required: true
   attr :datetime, :any, required: true
   attr :class, :any, default: nil

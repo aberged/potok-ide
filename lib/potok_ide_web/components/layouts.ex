@@ -422,6 +422,7 @@ defmodule PotokIdeWeb.Layouts do
                     tone="danger"
                     href={~p"/accounts/log-out"}
                     method="delete"
+                    data-clear-drafts
                   >
                     {gettext("Log out")}
                   </.sidebar_link>
