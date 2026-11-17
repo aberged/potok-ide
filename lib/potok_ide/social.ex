@@ -5429,7 +5429,8 @@ defmodule PotokIde.Social do
   Keyset page of the files attached in the group, newest first, with their
   uploaders and enough of their values to tell a chat message from an app's
   data value (`attachment_value_query/0`). Returns `{attachments, more?}` like
-  `list_group_values_page/2`.
+  `list_group_values_page/2`. `search` and `kind` narrow the files
+  (`filter_attachments/2`).
   """
   def list_group_attachments(%Group{} = group, opts \\ []) do
     limit = Keyword.get(opts, :limit, 30)
@@ -5442,18 +5443,45 @@ defmodule PotokIde.Social do
         preload: [:profile, value: ^attachment_value_query()]
       )
       |> maybe_before_id(opts[:before_id])
+      |> filter_attachments(opts)
       |> Repo.all()
 
     {Enum.take(rows, limit), length(rows) > limit}
   end
 
-  @doc "A file of the group with its uploader, as `list_group_attachments/2` lists it."
-  def get_group_attachment(%Group{id: group_id}, attachment_id) when is_integer(attachment_id) do
+  @doc """
+  A file of the group with its uploader, as `list_group_attachments/2` lists
+  it with the same `opts`: nil when the file is not among them.
+  """
+  def get_group_attachment(%Group{id: group_id}, attachment_id, opts \\ [])
+      when is_integer(attachment_id) do
     from(a in ValueAttachment,
       where: a.id == ^attachment_id and a.group_id == ^group_id,
       preload: [:profile, value: ^attachment_value_query()]
     )
+    |> filter_attachments(opts)
     |> Repo.one()
+  end
+
+  # The files whose name holds `search`, folded as the other searches, and of
+  # one `kind` (`ValueAttachment.kind/1`). The name is folded once, in
+  # `filename_folded`, and the search here (`TextFold.fold/1`, the same as
+  # `potok_fold/1`), so no row is folded per search. `strpos` rather than
+  # LIKE, so `_` and `%` in a name are only themselves.
+  defp filter_attachments(query, opts) do
+    query =
+      case opts[:search] && PotokIde.TextFold.fold(opts[:search]) do
+        search when is_binary(search) and search != "" ->
+          where(query, [a], fragment("strpos(?, ?) > 0", a.filename_folded, ^search))
+
+        _none ->
+          query
+      end
+
+    case opts[:kind] do
+      nil -> query
+      kind -> where(query, ^ValueAttachment.kind_condition(kind))
+    end
   end
 
   # A file's value as the Files tab needs it: whether it is a chat message,
@@ -5922,9 +5950,11 @@ defmodule PotokIde.Social do
   children: [...], file_count: n, byte_size: n}`. The walk stops at
   #{@group_tree_max_depth} levels and #{@group_tree_max_groups} groups,
   and only the newest #{@attachment_tree_max_files} files are placed;
-  `{tree, truncated?}` tells whether anything was cut.
+  `{tree, truncated?}` tells whether anything was cut. `search` and `kind`
+  narrow the files as in `list_group_attachments/2`, so only the folders that
+  hold a match stay.
   """
-  def attachment_tree(%Group{} = group, %Profile{} = profile) do
+  def attachment_tree(%Group{} = group, %Profile{} = profile, opts \\ []) do
     {folders, groups_truncated?} = visible_group_tree_rows(group, profile.id)
 
     member_group_ids = for folder <- folders, folder.member?, do: folder.id
@@ -5936,6 +5966,7 @@ defmodule PotokIde.Social do
         limit: ^(@attachment_tree_max_files + 1),
         preload: [value: ^attachment_value_query()]
       )
+      |> filter_attachments(opts)
       |> Repo.all()
 
     files_truncated? = length(files) > @attachment_tree_max_files

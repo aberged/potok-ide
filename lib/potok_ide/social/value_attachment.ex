@@ -7,6 +7,7 @@ defmodule PotokIde.Social.ValueAttachment do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Ecto.Query, only: [dynamic: 2]
 
   @max_filename_length 255
   @fallback_content_type "application/octet-stream"
@@ -18,11 +19,28 @@ defmodule PotokIde.Social.ValueAttachment do
   @audio_types ~w(audio/mpeg audio/mp3 audio/mp4 audio/x-m4a audio/aac audio/ogg audio/opus
                   audio/wav audio/x-wav audio/wave audio/webm audio/flac audio/x-flac)
 
+  # What a file is to someone looking for it (`kind/1`). The lists are
+  # disjoint; `text/csv` is a table, other `text/*` a document.
+  @sheet_types ~w(text/csv application/vnd.ms-excel
+                  application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+                  application/vnd.oasis.opendocument.spreadsheet)
+  @archive_types ~w(application/zip application/gzip application/x-7z-compressed
+                    application/x-rar-compressed application/x-tar application/vnd.rar)
+  @document_types ~w(application/pdf application/rtf application/msword
+                     application/vnd.openxmlformats-officedocument.wordprocessingml.document
+                     application/vnd.oasis.opendocument.text application/vnd.ms-powerpoint
+                     application/vnd.openxmlformats-officedocument.presentationml.presentation
+                     application/vnd.oasis.opendocument.presentation)
+  @kinds [:image, :video, :audio, :document, :sheet, :archive, :other]
+
   schema "value_attachments" do
     field :storage_key, :string
     field :filename, :string
     field :content_type, :string
     field :byte_size, :integer
+    # The name as the files tab's search compares it (`potok_fold/1`), kept by
+    # Postgres.
+    field :filename_folded, :string, load_in_query: false, writable: :never
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
@@ -97,4 +115,51 @@ defmodule PotokIde.Social.ValueAttachment do
   def media_kind(_type), do: nil
 
   def previewable?(attachment), do: media_kind(attachment) != nil
+
+  @doc """
+  What the file is to someone looking for it, by its type: `:image`,
+  `:video`, `:audio`, `:document`, `:sheet`, `:archive` or `:other`. The Files
+  tab narrows by it (`kind_condition/1`) and the file's icon shows it.
+  """
+  def kind(%__MODULE__{content_type: type}), do: kind(type)
+  def kind("image/" <> _subtype), do: :image
+  def kind("video/" <> _subtype), do: :video
+  def kind("audio/" <> _subtype), do: :audio
+  def kind(type) when type in @sheet_types, do: :sheet
+  def kind(type) when type in @archive_types, do: :archive
+  def kind(type) when type in @document_types, do: :document
+  def kind("text/" <> _subtype), do: :document
+  def kind(_type), do: :other
+
+  def kinds, do: @kinds
+
+  @doc "The kind a client names (`\"image\"`), nil for any other text."
+  def parse_kind(param) when is_binary(param),
+    do: Enum.find(@kinds, &(Atom.to_string(&1) == param))
+
+  def parse_kind(_param), do: nil
+
+  @doc """
+  `kind/1` as a condition on a query whose first binding is the attachment:
+  the same rule, so a list of one kind holds the files with its icon.
+  """
+  def kind_condition(:image), do: dynamic([a], like(a.content_type, "image/%"))
+  def kind_condition(:video), do: dynamic([a], like(a.content_type, "video/%"))
+  def kind_condition(:audio), do: dynamic([a], like(a.content_type, "audio/%"))
+  def kind_condition(:sheet), do: dynamic([a], a.content_type in ^@sheet_types)
+  def kind_condition(:archive), do: dynamic([a], a.content_type in ^@archive_types)
+
+  def kind_condition(:document) do
+    dynamic(
+      [a],
+      a.content_type in ^@document_types or
+        (like(a.content_type, "text/%") and a.content_type not in ^@sheet_types)
+    )
+  end
+
+  def kind_condition(:other) do
+    Enum.reduce(@kinds -- [:other], dynamic([], true), fn kind, condition ->
+      dynamic([a], ^condition and not (^kind_condition(kind)))
+    end)
+  end
 end

@@ -2,17 +2,26 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.Social.{Value, ValueAttachment}
-  alias PotokIdeWeb.GroupLive.Show.{Components, MediaViewer}
+  alias PotokIdeWeb.GroupLive.Show.{ChoiceMenus, Components, MediaViewer}
   alias PotokIdeWeb.TagComponents
 
   attr :group, :map, required: true
   attr :files, :any, required: true, doc: "stream of the group's attachments, newest first"
   attr :files_view, :string, required: true, doc: "\"list\" or \"tree\""
+  attr :files_count, :integer, default: 0, doc: "how many files the list holds"
+  attr :search_query, :string, default: "", doc: "what the file names must hold"
+  attr :kind, :atom, default: nil, doc: "the kind of files shown (`ValueAttachment.kind/1`)"
   attr :has_more, :boolean, default: false
-  attr :tree, :map, default: nil, doc: "`Social.attachment_tree/2` of the group"
+  attr :tree, :map, default: nil, doc: "`Social.attachment_tree/3` of the group"
   attr :tree_truncated, :boolean, default: false
 
   def panel(assigns) do
+    assigns =
+      assigns
+      |> assign(:search_form, to_form(%{"q" => assigns.search_query}, as: :files_search))
+      |> assign(:kind_key, assigns.kind && Atom.to_string(assigns.kind))
+      |> assign(:filtered?, assigns.search_query != "" or assigns.kind != nil)
+
     ~H"""
     <div id="group-panel-files" class="card flex min-h-0 flex-1 flex-col px-2">
       <Components.tab_body>
@@ -23,32 +32,62 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
               do: gettext("Files of this group and its sub-groups, folder by folder."),
               else: gettext("Files attached to messages in this group, newest first.")}
           </:subtitle>
-          <:actions>
-            <div
-              id="group-files-view"
-              role="group"
-              aria-label={gettext("Show files as")}
-              class="inline-flex shrink-0 rounded-full border border-base-300 bg-base-200/70 p-0.5"
-            >
-              <Components.view_toggle_button
-                id="group-files-view-list"
-                event="set_files_view"
-                view="list"
-                active={@files_view == "list"}
-                icon="hero-list-bullet"
-                label={gettext("List")}
-              />
-              <Components.view_toggle_button
-                id="group-files-view-tree"
-                event="set_files_view"
-                view="tree"
-                active={@files_view == "tree"}
-                icon="hero-folder"
-                label={gettext("Folders")}
-              />
-            </div>
-          </:actions>
         </.page_header>
+
+        <%!-- A row of its own, so the search opens wide without pushing the
+             title around; phones give it the whole row while it has focus. --%>
+        <div
+          id="group-files-filters"
+          class="group/filters mb-3 flex flex-wrap items-start justify-end gap-2"
+        >
+          <ChoiceMenus.choice_toggle
+            id="group-files-kind"
+            choices={ChoiceMenus.file_kind_choices()}
+            selected={@kind_key}
+            idle_label={gettext("Kind")}
+            title={gettext("Show one kind of files")}
+            label={gettext("Kind of files")}
+          />
+          <.form
+            for={@search_form}
+            id="group-files-search-form"
+            phx-change="search_files"
+            phx-submit="search_files"
+          >
+            <.search_field
+              id="group-files-search-input"
+              field={@search_form[:q]}
+              reset_id="group-files-search-reset"
+              reset_event="clear_files_search"
+              placeholder={gettext("Search by name")}
+            />
+          </.form>
+          <div
+            id="group-files-view"
+            role="group"
+            aria-label={gettext("Show files as")}
+            class="mt-1 inline-flex h-10 shrink-0 items-center rounded-full border border-gray-500/50 bg-base-100 p-0.5 shadow-xs max-sm:group-has-[input:focus]/filters:hidden"
+          >
+            <Components.view_toggle_button
+              id="group-files-view-list"
+              event="set_files_view"
+              view="list"
+              active={@files_view == "list"}
+              icon="hero-list-bullet"
+              label={gettext("List")}
+              label_class="max-sm:sr-only"
+            />
+            <Components.view_toggle_button
+              id="group-files-view-tree"
+              event="set_files_view"
+              view="tree"
+              active={@files_view == "tree"}
+              icon="hero-folder"
+              label={gettext("Folders")}
+              label_class="max-sm:sr-only"
+            />
+          </div>
+        </div>
 
         <%= if @files_view == "tree" do %>
           <div
@@ -56,13 +95,14 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             id="group-files-tree"
             class="rounded-3xl border border-base-300/70 bg-base-100/70 p-2 shadow-sm"
           >
-            <.tree_folder node={@tree} root={true} />
+            <.tree_folder node={@tree} root={true} filtered={@filtered?} />
           </div>
           <.empty_state
-            :if={@tree && @tree.file_count == 0}
+            :if={(@tree && @tree.file_count == 0) and !@filtered?}
             id="group-files-tree-empty"
             text={gettext("No files in this group or its sub-groups yet.")}
           />
+          <.no_match :if={(@tree && @tree.file_count == 0) and @filtered?} />
           <p
             :if={@tree_truncated}
             id="group-files-tree-truncated"
@@ -72,12 +112,15 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
             {gettext("Only the newest files are shown. Open a sub-group to see all of its files.")}
           </p>
         <% else %>
+          <%!-- Empty states stand outside the stream: the list knows its count
+               (`files_count`), and a search that finds nothing says so. --%>
+          <.empty_state
+            :if={@files_count == 0 and !@filtered?}
+            id="group-files-empty"
+            text={gettext("No files yet. Attach one to a message with the paper clip.")}
+          />
+          <.no_match :if={@files_count == 0 and @filtered?} />
           <ul id="group-files-list" class="space-y-2" phx-update="stream">
-            <li id="group-files-empty" class="hidden only:block">
-              <.empty_state text={
-                gettext("No files yet. Attach one to a message with the paper clip.")
-              } />
-            </li>
             <li
               :for={{dom_id, file} <- @files}
               id={dom_id}
@@ -128,20 +171,53 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
           </div>
         <% end %>
       </Components.tab_body>
+
+      <ChoiceMenus.choice_menu
+        id="group-files-kind"
+        choices={ChoiceMenus.file_kind_choices()}
+        selected={@kind_key}
+        event="filter_files_kind"
+        param="kind"
+        label={gettext("Kind of files")}
+      />
+    </div>
+    """
+  end
+
+  # A search or a kind that leaves no file, with the way back to all of them.
+  defp no_match(assigns) do
+    ~H"""
+    <div
+      id="group-files-no-match"
+      class="flex min-h-48 flex-col items-center justify-center gap-3 rounded-3xl border border-dashed border-base-300 bg-base-100/70 px-6 text-center text-sm text-base-content/65"
+    >
+      <.icon name="hero-magnifying-glass" class="size-6 text-base-content/35" />
+      {gettext("No files match the search.")}
+      <.button
+        id="group-files-clear-filters"
+        type="button"
+        phx-click="clear_files_filters"
+        size="sm"
+      >
+        {gettext("Clear filters")}
+      </.button>
     </div>
     """
   end
 
   attr :node, :map, required: true
   attr :root, :boolean, default: false
+  attr :filtered, :boolean, default: false
 
   # A folder is a group: its sub-groups first, then its own files. `open` is
   # left to the browser after mount, so re-renders keep folders as they were.
+  # A search or a kind gives the folders other ids: they mount anew, all
+  # open, so the files found are in sight.
   defp tree_folder(assigns) do
     ~H"""
     <details
-      id={"files-folder-#{@node.group.id}"}
-      open={@root}
+      id={"files-#{if(@filtered, do: "match-")}folder-#{@node.group.id}"}
+      open={@root or @filtered}
       phx-mounted={JS.ignore_attributes(["open"])}
     >
       <summary class="flex cursor-pointer list-none items-center gap-2 rounded-xl px-2 py-1.5 transition-colors hover:bg-base-200 [&::-webkit-details-marker]:hidden">
@@ -181,7 +257,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
         />
       </summary>
       <div class="ml-[1.05rem] space-y-0.5 border-l border-base-300/70 pl-2">
-        <.tree_folder :for={child <- @node.children} node={child} />
+        <.tree_folder :for={child <- @node.children} node={child} filtered={@filtered} />
         <div :for={file <- @node.files} class="flex items-center gap-1">
           <.file_link
             file={file}

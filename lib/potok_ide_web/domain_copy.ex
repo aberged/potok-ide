@@ -295,6 +295,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("ValueAttachment", "storage_key"), do: dgettext("domain_map", "place in storage")
   defp own_field("ValueAttachment", "filename"), do: dgettext("domain_map", "file name")
+
+  defp own_field("ValueAttachment", "filename_folded"),
+    do: dgettext("domain_map", "file name as a search reads it, in Latin and without diacritics")
+
   defp own_field("ValueAttachment", "content_type"), do: dgettext("domain_map", "file type")
   defp own_field("ValueAttachment", "byte_size"), do: dgettext("domain_map", "size")
   defp own_field("ValueAttachment", "profile_id"), do: dgettext("domain_map", "who added it")

@@ -2,12 +2,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
   @moduledoc """
   The menus of a bar of filters: a round button (`choice_toggle/1`) that opens
   its menu of choices (`choice_menu/1`) on the client, one pick at a time. The
-  sub-groups tab narrows by membership and kind with them, and the root's map
-  by the same and by time.
+  sub-groups tab narrows by membership and kind with them, the root's map by
+  the same and by time, and the files tab by the kind of file.
   """
   use PotokIdeWeb, :html
 
-  alias PotokIdeWeb.GroupLive.Show.CreateMenu
+  alias PotokIde.Social.ValueAttachment
+  alias PotokIdeWeb.GroupLive.Show.{Components, CreateMenu}
 
   # "" is every group; the others are `Social.child_group_relations/0`.
   def relation_choices do
@@ -44,6 +45,26 @@ defmodule PotokIdeWeb.GroupLive.Show.ChoiceMenus do
         %{key: "none", icon: "hero-minus-circle", title: gettext("No kind")}
       ]
   end
+
+  # "" is every file; the others are `ValueAttachment.kinds/0`, each with the
+  # icon its files carry.
+  def file_kind_choices do
+    [%{key: "", icon: "hero-squares-2x2", title: gettext("All kinds")}] ++
+      Enum.map(ValueAttachment.kinds(), fn kind ->
+        Map.merge(
+          %{key: Atom.to_string(kind), icon: Components.kind_icon(kind), divider: kind == :other},
+          file_kind_titles(kind)
+        )
+      end)
+  end
+
+  defp file_kind_titles(:image), do: %{title: gettext("Pictures")}
+  defp file_kind_titles(:video), do: %{title: gettext("Videos")}
+  defp file_kind_titles(:audio), do: %{title: gettext("Sound")}
+  defp file_kind_titles(:document), do: %{title: gettext("Documents")}
+  defp file_kind_titles(:sheet), do: %{title: gettext("Spreadsheets")}
+  defp file_kind_titles(:archive), do: %{title: gettext("Archives")}
+  defp file_kind_titles(:other), do: %{title: gettext("Other files"), short: gettext("Other")}
 
   defp chosen?(choice, selected), do: choice.key == (selected || "")
 

@@ -2562,33 +2562,20 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
-  @doc "A heroicon name for a file of the given content type."
-  def file_icon(type)
-      when type in [
-             "application/zip",
-             "application/gzip",
-             "application/x-7z-compressed",
-             "application/x-rar-compressed",
-             "application/x-tar",
-             "application/vnd.rar"
-           ],
-      do: "hero-archive-box"
+  @doc """
+  A heroicon name for a file of the given content type: the icon of its kind
+  (`ValueAttachment.kind/1`), which the Files tab also narrows by.
+  """
+  def file_icon(type), do: kind_icon(ValueAttachment.kind(type))
 
-  def file_icon(type)
-      when type in [
-             "text/csv",
-             "application/vnd.ms-excel",
-             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-             "application/vnd.oasis.opendocument.spreadsheet"
-           ],
-      do: "hero-table-cells"
-
-  def file_icon("image/" <> _subtype), do: "hero-photo"
-  def file_icon("video/" <> _subtype), do: "hero-film"
-  def file_icon("audio/" <> _subtype), do: "hero-musical-note"
-  def file_icon("text/" <> _subtype), do: "hero-document-text"
-  def file_icon("application/pdf"), do: "hero-document-text"
-  def file_icon(_type), do: "hero-document"
+  @doc "The icon of a kind of file (`ValueAttachment.kind/1`)."
+  def kind_icon(:image), do: "hero-photo"
+  def kind_icon(:video), do: "hero-film"
+  def kind_icon(:audio), do: "hero-musical-note"
+  def kind_icon(:document), do: "hero-document-text"
+  def kind_icon(:sheet), do: "hero-table-cells"
+  def kind_icon(:archive), do: "hero-archive-box"
+  def kind_icon(:other), do: "hero-document"
 
   @doc "A byte count in decimal units: `840 B`, `2.4 MB`, `100 MB`."
   def format_bytes(bytes) when is_integer(bytes) and bytes < 1000, do: "#{bytes} B"

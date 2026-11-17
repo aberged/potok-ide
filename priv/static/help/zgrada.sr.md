@@ -63,7 +63,7 @@ Kad pišeš u ime saveta, na stranici Profili izabereš profil saveta, a kad pi�
 1. U razgovoru zgrade dodirni **+** pored polja za pisanje, pa **Dodaj fajlove**, i izaberi zapisnik ili pravila kućnog reda.
 2. Dopiši poruku i pošalji.
 
-Svi fajlovi iz razgovora skupljaju se na kartici **Fajlovi**, pa se pravila kućnog reda nađu i posle mnogo poruka.
+Svi fajlovi iz razgovora skupljaju se na kartici **Fajlovi**, pa se pravila kućnog reda nađu i posle mnogo poruka, a pretraga po imenu ih nađe odmah.
 
 ![Fajlovi i glasanje ispod dugmeta +](prilozi) ![Fajlovi zgrade](fajlovi)
 

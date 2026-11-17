@@ -296,6 +296,137 @@ defmodule PotokIdeWeb.GroupLive.FilesTest do
       refute has_element?(lv, "#group-files-summary")
     end
 
+    test "finds files by name and kind in the list and in the folders", %{
+      conn: conn,
+      profile: profile,
+      group: group
+    } do
+      {:ok, child} =
+        Social.create_group(profile, group, %{
+          "name" => "files-find-child",
+          "description" => "",
+          "description_format" => :markdown,
+          "is_public" => false
+        })
+
+      {:ok, %{attachments: [minutes, photo]}} =
+        Social.create_value(profile, group, %{"content" => "files"}, [
+          stored_file!(group, "Zapisnik.pdf", "application/pdf"),
+          stored_file!(group, "photo.png", "image/png")
+        ])
+
+      {:ok, %{attachments: [nested]}} =
+        Social.create_value(profile, child, %{}, [
+          stored_file!(child, "nested-photo.png", "image/png")
+        ])
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
+
+      assert has_element?(lv, "#group-files-kind-option-all[aria-checked=true]")
+
+      lv
+      |> form("#group-files-search-form", %{"files_search" => %{"q" => "ZAPIS"}})
+      |> render_change()
+
+      assert has_element?(lv, "#file-#{minutes.id}")
+      refute has_element?(lv, "#file-#{photo.id}")
+
+      lv |> element("#group-files-search-reset") |> render_click()
+
+      assert has_element?(lv, "#file-#{photo.id}")
+      refute has_element?(lv, "#group-files-search-reset")
+
+      lv |> element("#group-files-kind-option-image") |> render_click()
+
+      assert has_element?(lv, "#group-files-kind-option-image[aria-checked=true]")
+      assert has_element?(lv, "#file-#{photo.id}")
+      refute has_element?(lv, "#file-#{minutes.id}")
+
+      # The kind holds in the folders, which open on what they found.
+      lv |> element("#group-files-view-tree") |> render_click()
+
+      assert has_element?(
+               lv,
+               "#files-match-folder-#{child.id}[open] #files-tree-file-#{nested.id}"
+             )
+
+      assert has_element?(lv, "#files-tree-file-#{photo.id}")
+      refute has_element?(lv, "#files-tree-file-#{minutes.id}")
+
+      lv
+      |> form("#group-files-search-form", %{"files_search" => %{"q" => "no-such-file"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-files-no-match")
+      refute has_element?(lv, "#group-files-tree")
+
+      lv |> element("#group-files-clear-filters") |> render_click()
+
+      assert has_element?(lv, "#files-folder-#{child.id} #files-tree-file-#{nested.id}")
+      assert has_element?(lv, "#files-tree-file-#{minutes.id}")
+      assert has_element?(lv, "#group-files-kind-option-all[aria-checked=true]")
+    end
+
+    test "says when a search finds no file in the list", %{
+      conn: conn,
+      profile: profile,
+      group: group
+    } do
+      {:ok, %{attachments: [file]}} =
+        Social.create_value(profile, group, %{}, [stored_file!(group, "notes.txt")])
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
+
+      lv |> element("#group-files-kind-option-archive") |> render_click()
+
+      assert has_element?(lv, "#group-files-no-match")
+      refute has_element?(lv, "#group-files-empty")
+      refute has_element?(lv, "#file-#{file.id}")
+
+      # A tag changed on a file the kind leaves out does not bring it back.
+      send(lv.pid, {:tags_changed, :attachment, file.id})
+
+      refute has_element?(lv, "#file-#{file.id}")
+
+      lv |> element("#group-files-clear-filters") |> render_click()
+
+      assert has_element?(lv, "#file-#{file.id}")
+      refute has_element?(lv, "#group-files-no-match")
+    end
+
+    test "opens in the view the browser remembers and tells it the new one", %{
+      conn: conn,
+      profile: profile,
+      group: group
+    } do
+      {:ok, %{attachments: [file]}} =
+        Social.create_value(profile, group, %{}, [stored_file!(group, "kept.txt")])
+
+      {:ok, lv, _html} =
+        conn
+        |> put_connect_params(%{"files_view" => "tree"})
+        |> live(~p"/groups/#{group.id}/files")
+
+      assert has_element?(lv, "#group-files-view-tree[aria-pressed=true]")
+      assert has_element?(lv, "#files-tree-file-#{file.id}")
+
+      lv |> element("#group-files-view-list") |> render_click()
+
+      assert_push_event(lv, "files_view", %{view: "list"})
+      assert has_element?(lv, "#file-#{file.id}")
+
+      lv |> element("#group-files-view-tree") |> render_click()
+
+      assert_push_event(lv, "files_view", %{view: "tree"})
+
+      {:ok, list_lv, _html} =
+        conn
+        |> put_connect_params(%{"files_view" => "anything"})
+        |> live(~p"/groups/#{group.id}/files")
+
+      assert has_element?(list_lv, "#group-files-view-list[aria-pressed=true]")
+    end
+
     test "shows a new file while the list is open", %{conn: conn, profile: profile, group: group} do
       {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/files")
 

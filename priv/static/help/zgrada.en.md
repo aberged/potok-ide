@@ -62,7 +62,7 @@ When you write on the council's behalf, you choose the council's profile on the 
 1. In the building's chat, tap **+** next to the message field, then **Add files**, and choose the minutes or the house rules.
 2. Add a message and send it.
 
-All the files of the chat gather on the **Files** tab, so the house rules can be found even after many messages.
+All the files of the chat gather on the **Files** tab, so the house rules can be found even after many messages, and a search by name finds them at once.
 
 ![Files and a poll under the + button](prilozi) ![The building's files](fajlovi)
 

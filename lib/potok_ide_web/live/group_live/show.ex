@@ -686,6 +686,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 group={@group}
                 files={@streams.files}
                 files_view={@files_view}
+                files_count={@files_loaded_count}
+                search_query={@files_search_query}
+                kind={@files_kind}
                 has_more={@files_has_more?}
                 tree={@file_tree}
                 tree_truncated={@file_tree_truncated?}
@@ -925,7 +928,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:focus_value_id, parse_focus_value_id(Map.get(params, "value")))
          |> assign(:unread_divider, nil)
          |> ValueSearch.init()
-         |> assign(:files_view, "list")
+         # Empty until the list loads: the tab may open on the folders.
+         |> stream(:files, [])
+         |> assign(:files_view, connect_files_view(socket))
+         |> assign(:files_search_query, "")
+         |> assign(:files_kind, nil)
          |> assign(:files_has_more?, false)
          |> assign(:files_loaded_count, 0)
          |> assign(:oldest_file_id, nil)
@@ -1293,16 +1300,42 @@ defmodule PotokIdeWeb.GroupLive.Show do
      push_patch(socket, to: ~p"/groups/#{socket.assigns.group.id}/#{socket.assigns.active_tab}")}
   end
 
+  # The browser keeps the view for the next pages (`files_view` in app.js).
   def handle_event("set_files_view", %{"view" => view}, socket) when view in ["list", "tree"] do
     {:noreply,
      socket
      |> assign(:files_view, view)
-     |> assign(:files_loaded_count, 0)
-     |> maybe_load_files(socket.assigns.group, socket.assigns.active_tab)}
+     |> reload_files()
+     |> push_event("files_view", %{view: view})}
   end
 
   def handle_event("load_more_files", _params, socket) do
     {:noreply, load_more_files(socket)}
+  end
+
+  # The search and the kind hold only while the viewer stays on the group,
+  # in both views, like the search of sub-groups.
+  def handle_event("search_files", %{"files_search" => %{"q" => query}}, socket) do
+    query = normalize_children_search_query(query)
+
+    if query == socket.assigns.files_search_query,
+      do: {:noreply, socket},
+      else: {:noreply, socket |> assign(:files_search_query, query) |> reload_files()}
+  end
+
+  def handle_event("search_files", _params, socket), do: {:noreply, socket}
+
+  def handle_event("clear_files_search", _params, socket) do
+    {:noreply, socket |> assign(:files_search_query, "") |> reload_files()}
+  end
+
+  def handle_event("filter_files_kind", %{"kind" => kind}, socket) do
+    {:noreply, socket |> assign(:files_kind, ValueAttachment.parse_kind(kind)) |> reload_files()}
+  end
+
+  def handle_event("clear_files_filters", _params, socket) do
+    {:noreply,
+     socket |> assign(:files_search_query, "") |> assign(:files_kind, nil) |> reload_files()}
   end
 
   # Single entry point for the sandboxed app frame (see `AppApi`). The client
@@ -3613,11 +3646,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
          :attachment,
          attachment_id
        ) do
-    # The list holds the newest files down to `oldest_file_id`.
+    # The list holds the newest files down to `oldest_file_id` that pass its
+    # search and kind.
     with oldest_id when is_integer(oldest_id) and attachment_id >= oldest_id <-
            socket.assigns.oldest_file_id,
          %ValueAttachment{} = file <-
-           Social.get_group_attachment(socket.assigns.group, attachment_id) do
+           Social.get_group_attachment(
+             socket.assigns.group,
+             attachment_id,
+             files_filter_opts(socket)
+           ) do
       stream_insert(
         socket,
         :files,
@@ -4743,6 +4781,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp connect_show_public_groups?(socket),
     do: connected?(socket) and (get_connect_params(socket) || %{})["show_public_groups"] == true
 
+  # The files tab opens in the view the viewer last picked in this browser.
+  defp connect_files_view(socket) do
+    if connected?(socket) and (get_connect_params(socket) || %{})["files_view"] == "tree",
+      do: "tree",
+      else: "list"
+  end
+
   # Hidden threads are filtered out; shown ones mix with the other sub-groups.
   # The root leaves out the public groups the viewer is not in until shown,
   # but those it follows and those on the way to one of its groups or follows. Direct conversations have no
@@ -5289,7 +5334,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp maybe_load_files(socket, group, "files") do
     case socket.assigns.files_view do
       "tree" ->
-        {tree, truncated?} = Social.attachment_tree(group, socket.assigns.current_profile)
+        {tree, truncated?} =
+          Social.attachment_tree(group, socket.assigns.current_profile, files_filter_opts(socket))
 
         socket
         |> assign(:file_tree, tree)
@@ -5297,7 +5343,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
       _list ->
         limit = max(socket.assigns.files_loaded_count, @files_page_size)
-        {files, has_more?} = Social.list_group_attachments(group, limit: limit)
+
+        {files, has_more?} =
+          Social.list_group_attachments(group, [limit: limit] ++ files_filter_opts(socket))
+
         files = Tags.put_tags(files, socket.assigns.current_profile, :attachment)
 
         socket
@@ -5310,12 +5359,22 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp maybe_load_files(socket, _group, _active_tab), do: socket
 
+  # The files again from the first page, after the view, search or kind changed.
+  defp reload_files(socket) do
+    socket
+    |> assign(:files_loaded_count, 0)
+    |> maybe_load_files(socket.assigns.group, socket.assigns.active_tab)
+  end
+
+  defp files_filter_opts(socket),
+    do: [search: socket.assigns.files_search_query, kind: socket.assigns.files_kind]
+
   defp load_more_files(%{assigns: %{files_has_more?: true, oldest_file_id: before_id}} = socket)
        when is_integer(before_id) do
     {files, has_more?} =
-      Social.list_group_attachments(socket.assigns.group,
-        limit: @files_page_size,
-        before_id: before_id
+      Social.list_group_attachments(
+        socket.assigns.group,
+        [limit: @files_page_size, before_id: before_id] ++ files_filter_opts(socket)
       )
 
     files = Tags.put_tags(files, socket.assigns.current_profile, :attachment)

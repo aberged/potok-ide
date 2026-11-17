@@ -312,7 +312,7 @@ For the pin you choose one of 33 icons or the group's picture, and the pin's cor
 
 ## Files and tags {:#fajlovi-i-tagovi}
 
-The Files tab gathers all files from the group's messages, as a list or in folders of sub-groups, and from each file you can go to the message it came with. Only members download files, apart from pictures in a group's description and files from an open chat.
+The Files tab gathers all files from the group's messages, as a list or in folders of sub-groups, and from each file you can go to the message it came with. You find a file by its name, and the **Kind** button keeps only pictures, videos, sound, documents, spreadsheets, archives or other files. Potok remembers on that device whether you chose **List** or **Folders**. Only members download files, apart from pictures in a group's description and files from an open chat.
 
 You put a tag on groups, profiles, events, messages and files, with the # button. A public tag is seen by everyone who sees the thing it is on, and a private one, with a lock, only by you. One thing carries up to 10 public and 10 private tags. On the Tags page you choose one or more tags and see everything that carries them.
 

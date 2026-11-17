@@ -137,6 +137,52 @@ defmodule PotokIde.Social.AttachmentsTest do
       assert a.filename == "a.txt"
     end
 
+    test "narrows the files by name and kind, page by page" do
+      owner = profile!("att-find-owner")
+      group = group!(owner, "att-find-group")
+
+      files = [
+        typed_file!(group, "Ćevapi meni.pdf", "application/pdf"),
+        typed_file!(group, "cevapi.png", "image/png"),
+        typed_file!(group, "budget_2026.xlsx", "application/vnd.ms-excel"),
+        typed_file!(group, "budgetX2026.csv", "text/csv"),
+        typed_file!(group, "slides.key", "application/octet-stream")
+      ]
+
+      for file <- files, do: {:ok, _} = Social.create_value(owner, group, %{}, [file])
+
+      names = fn opts ->
+        {rows, _more?} = Social.list_group_attachments(group, opts)
+        Enum.map(rows, & &1.filename)
+      end
+
+      # Folded as the other searches: no case, no marks.
+      assert names.(search: "CEVAPI") == ["cevapi.png", "Ćevapi meni.pdf"]
+      assert names.(search: "ćevapi", kind: :document) == ["Ćevapi meni.pdf"]
+      # `_` is only itself, not any one letter.
+      assert names.(search: "budget_") == ["budget_2026.xlsx"]
+      assert names.(kind: :sheet) == ["budgetX2026.csv", "budget_2026.xlsx"]
+      assert names.(kind: :image) == ["cevapi.png"]
+      assert names.(kind: :other) == ["slides.key"]
+      assert names.(kind: :archive) == []
+      assert names.(search: "", kind: nil) |> length() == 5
+
+      assert {[newer], true} = Social.list_group_attachments(group, limit: 1, search: "cevapi")
+      assert newer.filename == "cevapi.png"
+
+      assert {[older], false} =
+               Social.list_group_attachments(group,
+                 limit: 1,
+                 search: "cevapi",
+                 before_id: newer.id
+               )
+
+      assert older.filename == "Ćevapi meni.pdf"
+
+      assert Social.get_group_attachment(group, older.id, kind: :document).id == older.id
+      assert Social.get_group_attachment(group, older.id, kind: :image) == nil
+    end
+
     test "only members of the file's group may download it" do
       owner = profile!("att-dl-owner")
       outsider = profile!("att-dl-outsider")
@@ -198,6 +244,28 @@ defmodule PotokIde.Social.AttachmentsTest do
       assert nested_id == nested.id
     end
 
+    test "a search keeps only the folders that hold a match" do
+      owner = profile!("tree-find-owner")
+      group = group!(owner, "tree-find-root")
+      {:ok, _} = Social.create_value(owner, group, %{}, [stored_file!(group, "root.txt")])
+
+      found = child!(owner, group, "tree-find-found")
+      {:ok, _} = Social.create_value(owner, found, %{}, [stored_file!(found, "Zapisnik.txt")])
+
+      other = child!(owner, group, "tree-find-other")
+      {:ok, _} = Social.create_value(owner, other, %{}, [stored_file!(other, "other.txt")])
+
+      assert {tree, false} = Social.attachment_tree(group, owner, search: "zapisnik")
+
+      assert tree.files == []
+      assert tree.file_count == 1
+      assert [%{group: %{id: found_id}, files: [%{filename: "Zapisnik.txt"}]}] = tree.children
+      assert found_id == found.id
+
+      assert {%{file_count: 0, children: []}, false} =
+               Social.attachment_tree(group, owner, kind: :image)
+    end
+
     test "an empty group is a tree without files" do
       owner = profile!("tree-empty-owner")
       group = group!(owner, "tree-empty-root")
@@ -236,6 +304,36 @@ defmodule PotokIde.Social.AttachmentsTest do
     end
   end
 
+  describe "ValueAttachment.kind/1" do
+    test "sorts files as someone looking for them would" do
+      kinds = %{
+        "image/svg+xml" => :image,
+        "image/heic" => :image,
+        "video/x-msvideo" => :video,
+        "audio/mpeg" => :audio,
+        "application/pdf" => :document,
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => :document,
+        "text/plain" => :document,
+        "text/markdown" => :document,
+        "text/csv" => :sheet,
+        "application/vnd.oasis.opendocument.spreadsheet" => :sheet,
+        "application/zip" => :archive,
+        "application/octet-stream" => :other,
+        "application/json" => :other
+      }
+
+      for {type, kind} <- kinds do
+        assert ValueAttachment.kind(type) == kind, type
+        assert ValueAttachment.kind(%ValueAttachment{content_type: type}) == kind
+      end
+
+      assert ValueAttachment.kind(nil) == :other
+      assert ValueAttachment.parse_kind("sheet") == :sheet
+      assert ValueAttachment.parse_kind("anything") == nil
+      assert ValueAttachment.parse_kind(nil) == nil
+    end
+  end
+
   describe "Storage.content_disposition/2" do
     test "has an ASCII fallback and the full UTF-8 name" do
       assert Storage.content_disposition(:attachment, ~s(Ćevapi "menu".pdf)) ==
@@ -252,6 +350,9 @@ defmodule PotokIde.Social.AttachmentsTest do
 
     %{storage_key: key, filename: name, content_type: "text/plain", byte_size: byte_size(content)}
   end
+
+  defp typed_file!(group, name, content_type),
+    do: %{stored_file!(group, name) | content_type: content_type}
 
   defp profile!(username) do
     {:ok, profile} =

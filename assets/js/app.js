@@ -1835,6 +1835,24 @@ window.addEventListener("phx:calendar_filters", ({detail}) => {
   } catch (_error) {}
 })
 
+// The files tab's view, a list or folders, kept in this browser for every
+// group; the server says when it changes.
+const FILES_VIEW_KEY = "potok:files-view"
+
+function storedFilesView() {
+  try {
+    return window.localStorage.getItem(FILES_VIEW_KEY) === "tree" ? "tree" : "list"
+  } catch (_error) {
+    return "list"
+  }
+}
+
+window.addEventListener("phx:files_view", ({detail}) => {
+  try {
+    window.localStorage.setItem(FILES_VIEW_KEY, detail.view === "tree" ? "tree" : "list")
+  } catch (_error) {}
+})
+
 // After a deploy every page reconnects at once. Phoenix retries after 10,
 // 50, 100 ms...; a random part spreads those retries over a few seconds, and
 // pages fall back to long polling (a request per poll, heavier for the
@@ -1856,6 +1874,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     show_public_groups: storedShowPublicGroups(),
     calendar_filters: storedCalendarFilters(),
     polls_filters: storedPollsFilters(),
+    files_view: storedFilesView(),
   }),
   hooks: {
     HeaderDrawer,
