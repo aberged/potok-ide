@@ -80,6 +80,17 @@
     "steps": [{ "click": "#group-actions-menu" }, { "pause": 400 }]
   },
   {
+    "name": "grupa-utisaj",
+    "as": "ana",
+    "url": "/groups/{groups.building}/values",
+    "steps": [
+      { "click": "#group-actions-menu" },
+      { "click": "#group-mute summary" },
+      { "wait": "#group-mute-hour" },
+      { "pause": 400 }
+    ]
+  },
+  {
     "name": "o-grupi",
     "as": "ana",
     "url": "/groups/{groups.mz}/group_home"
@@ -534,6 +545,32 @@
       { "click": "#process-canvas-node-call_1" },
       { "wait": "#process-node-panel" },
       { "pause": 900 }
+    ]
+  },
+  {
+    "name": "zgrada-vraca",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes?process={processes.building_repairer}",
+    "steps": [
+      { "wait": "#process-canvas [data-node]" },
+      { "click": "#process-canvas-node-end" },
+      { "wait": "#process-end-values" },
+      { "pause": 900 }
+    ]
+  },
+  {
+    "name": "zgrada-nabavka",
+    "as": "ivana",
+    "url": "/groups/{groups.building}/processes",
+    "steps": [
+      { "click": "#process-row-{processes.building_purchase}-start" },
+      { "wait": "#process-start-form" },
+      { "type": ["#process-start-form input[name='start[stavke][0][naziv]']", "Vreće za otpad"] },
+      { "type": ["#process-start-form input[name='start[stavke][0][komada]']", "20"] },
+      { "click": "#process-start-field-stavke-add" },
+      { "wait": "#process-start-form input[name='start[stavke][1][naziv]']" },
+      { "type": ["#process-start-form input[name='start[stavke][1][naziv]']", "Rukavice"] },
+      { "pause": 700 }
     ]
   },
   {

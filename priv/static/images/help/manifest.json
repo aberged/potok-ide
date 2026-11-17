@@ -43,6 +43,10 @@
     "h": 844,
     "w": 390
   },
+  "grupa-utisaj": {
+    "h": 844,
+    "w": 390
+  },
   "grupa-zaglavlje": {
     "h": 95,
     "w": 390
@@ -283,6 +287,10 @@
     "h": 844,
     "w": 390
   },
+  "zgrada-nabavka": {
+    "h": 844,
+    "w": 390
+  },
   "zgrada-obilazak": {
     "h": 844,
     "w": 390
@@ -304,6 +312,10 @@
     "w": 390
   },
   "zgrada-proces-poziv": {
+    "h": 844,
+    "w": 390
+  },
+  "zgrada-vraca": {
     "h": 844,
     "w": 390
   }

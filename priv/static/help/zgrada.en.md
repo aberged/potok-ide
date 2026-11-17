@@ -110,14 +110,16 @@ It also works without the button: under **When** choose **someone writes a messa
 Agreeing with a repairer has steps of its own, and other processes need it too, not only the fault report. So draw it as a process of its own, and let the fault report call it and wait.
 
 1. Draw a process "Repairer", and under **When** choose **another process calls it**. On the start step, under **Fields it takes**, type "kvar".
-2. Add a **Decision** with the outcomes "Agreed" and "No date". Tap the arrow of the outcome "No date" and under **Leads to** choose **A new end**. Name the ends as the outcomes: tap an end and type its **Name on the drawing**.
-3. Tap **Save**, then **Switch on**.
-4. In "Reporting a fault", on the arrow under the message of the outcome "Calling a repairer", add the step **Call a process** and pick "Repairer". Under **What it gets**, for the field `kvar` tap `start.title`. Leave **Wait for it to end** on, and for the deadline type 7 days.
-5. Under the call add a **Condition**. Tap its first arrow and under **Goes this way when** type `call_1.outcome = "Agreed"`: that arrow leads to the message "The repairer is coming.", and **otherwise** to the message "The repairer has no date yet."
+2. Under **Data** make an entity "Termin" with an attribute `napomena`, of the type text. On the Repairer's start step, under **What it hands back**, pick "Termin".
+3. Add a **Decision** with the outcomes "Agreed" and "No date". Tap the arrow of the outcome "No date" and under **Leads to** choose **A new end**. Name the ends as the outcomes: tap an end and type its **Name on the drawing**.
+4. Tap the end "Agreed" and under **What it hands back to the process that called it**, for `napomena`, tap `task_1.comment`: what the council writes with the decision.
+5. Tap **Save**, then **Switch on**.
+6. In "Reporting a fault", on the arrow under the message of the outcome "Calling a repairer", add the step **Call a process** and pick "Repairer". Under **What it gets**, for the field `kvar` tap `start.title`. Leave **Wait for it to end** on, and for the deadline type 7 days.
+7. Under the call add a **Condition**. Tap its first arrow and under **Goes this way when** type `call_1.outcome = "Agreed"`: that arrow leads to the message "The repairer is coming. " with `call_1.napomena` at its end, and **otherwise** to the message "The repairer has no date yet."
 
-![Reporting a fault calls the Repairer](zgrada-proces-poziv)
+![The Repairer's end hands a Termin back to the process that called it](zgrada-vraca) ![Reporting a fault calls the Repairer](zgrada-proces-poziv)
 
-When you decide "Calling a repairer", the fault report starts the Repairer and waits. The Repairer's decision waits for you on the Processes tab, with the name of the process that called it and the fault. As soon as you pick an outcome, the fault report goes on and tells the fault's sub-group how it went. If nobody decides within 7 days, the fault report gives up, and the Repairer is cancelled.
+When you decide "Calling a repairer", the fault report starts the Repairer and waits. The Repairer's decision waits for you on the Processes tab, with the name of the process that called it and the fault. As soon as you pick an outcome, the fault report goes on and tells the fault's sub-group how it went, and "The repairer is coming." carries what the council wrote with the decision, say "Wednesday after 5 pm". If nobody decides within 7 days, the fault report gives up, and the Repairer is cancelled.
 
 ## 11. Counting the faults {:#brojac}
 
@@ -164,7 +166,7 @@ Once a month someone from the council goes round the building and notes what the
 
 ![A round of the building: a decision fills the list, and For each goes through it](zgrada-obilazak)
 
-Whoever goes round types a comment for each finding on the Processes tab and taps **Dodaj nalaz**, and in the end **Gotovo**. The process then goes through the list and writes each finding in the building's chat, with its number. All that the process has, with names and types, stands under the **Data of the process**.
+Whoever goes round types a comment for each finding on the Processes tab and taps **Dodaj nalaz**, and in the end **Gotovo**. The process then goes through the list and writes each finding in the building's chat, with its number. All that the process has, with names and types, stands under the **Data of the process**. A form can also write the findings, all at once: an entity with an attribute that is a list gives a form with a row for each item and an **Add** button (see [Draw a process](/pomoc#nacrtaj-proces)).
 
 ![Data of the process: the list nalazi, the item and the counters](zgrada-podaci)
 

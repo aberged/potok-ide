@@ -111,7 +111,9 @@ defmodule HelpShots.World do
         building_reports: building.reports.id,
         building_urgent: building.urgent.id,
         building_round: building.round.id,
-        building_chat_fault: building.chat_fault.id
+        building_chat_fault: building.chat_fault.id,
+        building_repairer: building.repairer.id,
+        building_purchase: building.purchase.id
       },
       # Runs that wait for someone, for the pictures of what waits.
       runs: %{building_form: building.form_run.id},
@@ -175,7 +177,12 @@ defmodule HelpShots.World do
       - Problem u kraju? Dodaj ga na **Mapu kraja**, sa slikom.
       """)
 
-    {:ok, mz} = Social.update_group(ana, mz, %{"area" => area(@mz_area), "pin_icon" => "local_community", "description_for_guests" => true})
+    {:ok, mz} =
+      Social.update_group(ana, mz, %{
+        "area" => area(@mz_area),
+        "pin_icon" => "local_community",
+        "description_for_guests" => true
+      })
 
     members(ana, mz, ~w(marko jelena stefan milica nikola ivana dragan tamara) |> Enum.map(p))
 
@@ -261,22 +268,41 @@ defmodule HelpShots.World do
 
     # The assembly's chat: yesterday evening and this morning.
     question =
-      post(p.("stefan"), zbor, """
-      Da li neko zna kad počinje popravka Ulice lipa? Rupa kod broja 12 je sve veća.
-      """, ago(1, 18, 4))
+      post(
+        p.("stefan"),
+        zbor,
+        """
+        Da li neko zna kad počinje popravka Ulice lipa? Rupa kod broja 12 je sve veća.
+        """,
+        ago(1, 18, 4)
+      )
 
-    post(p.("marko"), zbor, "Prijavio sam je komunalnom. Kažu da je na spisku za ovaj mesec.", ago(1, 18, 11),
+    post(
+      p.("marko"),
+      zbor,
+      "Prijavio sam je komunalnom. Kažu da je na spisku za ovaj mesec.",
+      ago(1, 18, 11),
       parent: question
     )
 
     post(p.("milica"), zbor, "Stavila sam je i na mapu kraja, sa slikom.", ago(1, 18, 20))
 
     thread_origin =
-      post(p.("jelena"), zbor, """
-      Predlažem da na zboru tražimo ležeće policajce u Ulici lipa. Deca tuda idu u školu.
-      """, ago(1, 19, 2))
+      post(
+        p.("jelena"),
+        zbor,
+        """
+        Predlažem da na zboru tražimo ležeće policajce u Ulici lipa. Deca tuda idu u školu.
+        """,
+        ago(1, 19, 2)
+      )
 
-    react(zbor, thread_origin, [{"stefan", "👍"}, {"milica", "👍"}, {"nikola", "👍"}, {"ana", "❤️"}], p)
+    react(
+      zbor,
+      thread_origin,
+      [{"stefan", "👍"}, {"milica", "👍"}, {"nikola", "👍"}, {"ana", "❤️"}],
+      p
+    )
 
     # Only Ana sees her own tags.
     Tags.add_tag(ana, :value, question.id, "za-zbor", :private)
@@ -287,7 +313,13 @@ defmodule HelpShots.World do
         "name" => "Ležeći policajci u Ulici lipa"
       })
 
-    post(p.("dragan"), thread, "Slažem se. Može li neko da proveri koliko ih treba?", ago(1, 19, 15))
+    post(
+      p.("dragan"),
+      thread,
+      "Slažem se. Može li neko da proveri koliko ih treba?",
+      ago(1, 19, 15)
+    )
+
     post(p.("jelena"), thread, "Pitaću u opštini koja su pravila.", ago(1, 19, 22))
     post(p.("stefan"), thread, "Ja mogu da izmerim dužinu ulice ovog vikenda.", ago(0, 8, 40))
 
@@ -295,22 +327,36 @@ defmodule HelpShots.World do
     post(ana, zbor, "Može, evo ga.", ago(0, 9, 10))
 
     poll =
-      poll(ana, zbor, %{
-        "question" => "Da li da na zboru tražimo ležeće policajce u Ulici lipa?",
-        "options" => options(["Za", "Protiv", "Uzdržan"]),
-        "majority" => "simple",
-        "quorum_percent" => "30",
-        "closes_local" => local_in(3 * 24)
-      }, ago(0, 9, 12))
+      poll(
+        ana,
+        zbor,
+        %{
+          "question" => "Da li da na zboru tražimo ležeće policajce u Ulici lipa?",
+          "options" => options(["Za", "Protiv", "Uzdržan"]),
+          "majority" => "simple",
+          "quorum_percent" => "30",
+          "closes_local" => local_in(3 * 24)
+        },
+        ago(0, 9, 12)
+      )
 
-    for {name, choice} <- [{"jelena", 0}, {"stefan", 0}, {"milica", 0}, {"dragan", 1}, {"nikola", 0}] do
+    for {name, choice} <- [
+          {"jelena", 0},
+          {"stefan", 0},
+          {"milica", 0},
+          {"dragan", 1},
+          {"nikola", 0}
+        ] do
       vote(p.(name), poll, choice)
     end
 
     photo = pothole(files_dir, "lipa-12.jpg")
 
     photo_value =
-      post(p.("milica"), zbor, "Ovako izgleda danas posle kiše.", ago(0, 9, 31), files: [{zbor, photo}])
+      post(p.("milica"), zbor, "Ovako izgleda danas posle kiše.", ago(0, 9, 31),
+        files: [{zbor, photo}]
+      )
+
     post(p.("ivana"), zbor, "Strašno. Ja ću doneti potpise stanara sa broja 14.", ago(0, 9, 44))
 
     event =
@@ -381,7 +427,11 @@ defmodule HelpShots.World do
         Social.create_group(luka, desk, %{
           "name" => title,
           "description" =>
-            PostTemplates.render("article", %{"kicker" => kicker, "title" => title, "lead" => lead}),
+            PostTemplates.render("article", %{
+              "kicker" => kicker,
+              "title" => title,
+              "lead" => lead
+            }),
           "description_format" => :html,
           "home_page" => :description
         })
@@ -394,7 +444,11 @@ defmodule HelpShots.World do
       {:ok, _} = Notices.follow(p.(name), news)
     end
 
-    send_notice(luka, news, "Nova vest: staza uz kanal je gotova. Otvaranje je u nedelju u 11 časova, kod mosta.")
+    send_notice(
+      luka,
+      news,
+      "Nova vest: staza uz kanal je gotova. Otvaranje je u nedelju u 11 časova, kod mosta."
+    )
 
     news
   end
@@ -430,6 +484,7 @@ defmodule HelpShots.World do
         {p.("sara"), [1, 3], "", 0, "Preuzimam i za Ivanu."},
         {dragan, [0, 2], "1", 0, ""}
       ])
+
     chat = preset(dragan, coop, "chat", "Dogovor")
 
     # The week's news goes to those who follow the co-op. Ana does not, so her
@@ -438,7 +493,12 @@ defmodule HelpShots.World do
       {:ok, _} = Notices.follow(p.(name), coop)
     end
 
-    send_notice(dragan, coop, "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova.")
+    send_notice(
+      dragan,
+      coop,
+      "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova."
+    )
+
     post(p.("ivana"), chat, "Može li neko da preuzme i za mene? Radim u subotu.", ago(0, 7, 50))
     post(p.("sara"), chat, "Mogu ja, ostavi mi spisak.", ago(0, 8, 5))
 
@@ -481,11 +541,16 @@ defmodule HelpShots.World do
     post(p.("petar"), building, "Ja, u stanu 7.", ago(1, 20, 40))
 
     poll =
-      poll(ivana, building, %{
-        "question" => "Koje boje da okrečimo ulaz?",
-        "options" => options(["Bela", "Bež", "Svetlo siva"]),
-        "closes_local" => local_in(48)
-      }, ago(1, 20, 50))
+      poll(
+        ivana,
+        building,
+        %{
+          "question" => "Koje boje da okrečimo ulaz?",
+          "options" => options(["Bela", "Bež", "Svetlo siva"]),
+          "closes_local" => local_in(48)
+        },
+        ago(1, 20, 50)
+      )
 
     for {name, choice} <- [{"marko", 1}, {"petar", 2}, {"tamara", 1}] do
       vote(p.(name), poll, choice)
@@ -508,7 +573,12 @@ defmodule HelpShots.World do
       "end_time" => "12:00"
     })
 
-    post(shared, building, "Ključ od podruma je kod Petra, u stanu 7. Vreće za otpad donosi savet.", ago(0, 11, 30))
+    post(
+      shared,
+      building,
+      "Ključ od podruma je kod Petra, u stanu 7. Vreće za otpad donosi savet.",
+      ago(0, 11, 30)
+    )
 
     reports = fault_reports(ivana, building)
 
@@ -520,7 +590,11 @@ defmodule HelpShots.World do
 
     PotokIde.Processes.Engine.run(report.id)
 
+    repairer =
+      PotokIde.Repo.get_by!(PotokIde.Social.AppProcess, group_id: building.id, name: "Majstor")
+
     fault = fault_entity(ivana, building)
+    purchase = purchase(ivana, building)
     urgent = urgent_fault(ivana, building, fault)
     round = building_round(ivana, building)
 
@@ -542,8 +616,66 @@ defmodule HelpShots.World do
       urgent: urgent,
       round: round,
       chat_fault: chat_fault,
-      form_run: form_run
+      form_run: form_run,
+      repairer: repairer,
+      purchase: purchase
     }
+  end
+
+  # A purchase for the cellar, started by hand: its form asks for a list of
+  # items, each a name and how many.
+  defp purchase(editor, group) do
+    access = PotokIde.Social.Access.for_profile(editor, group)
+
+    {:ok, item} =
+      PotokIde.Processes.GroupEntities.create(group, access, %{
+        "name" => "Stavka",
+        "attributes" => [
+          %{"name" => "naziv", "type" => "text", "required" => true},
+          %{"name" => "komada", "type" => "number"}
+        ]
+      })
+
+    {:ok, order} =
+      PotokIde.Processes.GroupEntities.create(group, access, %{
+        "name" => "Nabavka",
+        "attributes" => [
+          %{"name" => "stavke", "type" => "entity", "entity_id" => item.id, "list" => true},
+          %{"name" => "napomena", "type" => "text"}
+        ]
+      })
+
+    graph = %{
+      "v" => 2,
+      "zone" => "Europe/Belgrade",
+      "nodes" => [
+        %{"id" => "start", "type" => "startEvent", "label" => "Spisak za nabavku"},
+        %{
+          "id" => "message_1",
+          "type" => "serviceTask",
+          "action" => "message",
+          "in" => "app",
+          "text" => "Nabavka: {{length(start.stavke)}} stavke. {{start.napomena}}"
+        },
+        %{"id" => "end", "type" => "endEvent"}
+      ],
+      "flows" => [
+        %{"from" => "start", "to" => "message_1"},
+        %{"from" => "message_1", "to" => "end"}
+      ]
+    }
+
+    {:ok, row} =
+      PotokIde.Social.DrawnProcesses.create(editor, group, %{
+        "trigger" => "manual",
+        "trigger_config" => %{"roles" => ["admin"]},
+        "name" => "Nabavka za podrum",
+        "entry_entity_id" => order.id,
+        "graph" => graph
+      })
+
+    {:ok, row} = PotokIde.Social.DrawnProcesses.activate(editor, group, row.id)
+    row
   end
 
   # A fault told in the chat: a message with the word starts the process,
@@ -722,7 +854,13 @@ defmodule HelpShots.World do
     repairer = repairer(editor, group)
 
     talk = fn id, text ->
-      %{"id" => id, "type" => "serviceTask", "action" => "message", "in" => "razgovor", "text" => text}
+      %{
+        "id" => id,
+        "type" => "serviceTask",
+        "action" => "message",
+        "in" => "razgovor",
+        "text" => text
+      }
     end
 
     graph = %{
@@ -753,7 +891,10 @@ defmodule HelpShots.World do
           "role" => "admin",
           "outcomes" => ["Popravljeno", "Zovemo majstora"]
         },
-        talk.("popravljeno", "Popravljeno je, hvala na prijavi. Bio je to kvar broj {{group.kvarova}}."),
+        talk.(
+          "popravljeno",
+          "Popravljeno je, hvala na prijavi. Bio je to kvar broj {{group.kvarova}}."
+        ),
         talk.("majstor", "Zvali smo majstora, javljamo ovde kad dolazi."),
         %{
           "id" => "call_1",
@@ -764,7 +905,7 @@ defmodule HelpShots.World do
           "fields" => %{"kvar" => "{{start.title}}"}
         },
         %{"id" => "gateway_1", "type" => "exclusiveGateway"},
-        talk.("dolazi", "Majstor dolazi."),
+        talk.("dolazi", "Majstor dolazi. {{call_1.napomena}}"),
         talk.("nema", "Majstor još nema termin."),
         %{"id" => "kraj", "type" => "endEvent"}
       ],
@@ -802,8 +943,16 @@ defmodule HelpShots.World do
   end
 
   # The Repairer: another process calls it with the fault, and the admins
-  # agree on a date with a repairer, or there is none.
+  # agree on a date with a repairer, or there is none. It hands back a Termin,
+  # what the admin wrote with the decision.
   defp repairer(editor, group) do
+    {:ok, appointment} =
+      PotokIde.Processes.GroupEntities.create(
+        group,
+        PotokIde.Social.Access.for_profile(editor, group),
+        %{"name" => "Termin", "attributes" => [%{"name" => "napomena", "type" => "text"}]}
+      )
+
     graph = %{
       "v" => 2,
       "zone" => "Europe/Belgrade",
@@ -816,7 +965,12 @@ defmodule HelpShots.World do
           "role" => "admin",
           "outcomes" => ["Dogovoreno", "Nema termina"]
         },
-        %{"id" => "end", "type" => "endEvent", "label" => "Dogovoreno"},
+        %{
+          "id" => "end",
+          "type" => "endEvent",
+          "label" => "Dogovoreno",
+          "values" => %{"napomena" => "{{task_1.comment}}"}
+        },
         %{"id" => "end_1", "type" => "endEvent", "label" => "Nema termina"}
       ],
       "flows" => [
@@ -831,6 +985,7 @@ defmodule HelpShots.World do
         "trigger" => "process",
         "trigger_config" => %{"fields" => ["kvar"]},
         "name" => "Majstor",
+        "return_entity_id" => appointment.id,
         "graph" => graph
       })
 
@@ -840,7 +995,14 @@ defmodule HelpShots.World do
 
   defp direct(p) do
     {:ok, direct} = Social.get_or_create_direct_group(p.("marko"), p.("ana"))
-    post(p.("marko"), direct, "Možeš li da pogledaš obaveštenje pre nego što ga pošaljem?", ago(0, 10, 30))
+
+    post(
+      p.("marko"),
+      direct,
+      "Možeš li da pogledaš obaveštenje pre nego što ga pošaljem?",
+      ago(0, 10, 30)
+    )
+
     direct
   end
 
@@ -858,7 +1020,9 @@ defmodule HelpShots.World do
         sharing: :shared
       })
 
-    {:ok, invitation} = Social.invite_profile_to_profile(ana.account, ana.profile, profile, marko.profile)
+    {:ok, invitation} =
+      Social.invite_profile_to_profile(ana.account, ana.profile, profile, marko.profile)
+
     {:ok, _} = Social.accept_profile_invitation(invitation, marko.profile, marko.account)
 
     profile
@@ -890,7 +1054,9 @@ defmodule HelpShots.World do
   defp preset_full(creator, parent, preset, name, opts) do
     choices =
       %{"name" => name, "inherits_members" => Keyword.get(opts, :inherits, not parent.is_root)}
-      |> then(&if Keyword.has_key?(opts, :public), do: Map.put(&1, "is_public", opts[:public]), else: &1)
+      |> then(
+        &if Keyword.has_key?(opts, :public), do: Map.put(&1, "is_public", opts[:public]), else: &1
+      )
 
     {:ok, result} = Social.create_group_from_preset(creator, parent, preset, choices)
     result
@@ -904,7 +1070,9 @@ defmodule HelpShots.World do
   end
 
   defp area(ring), do: elem(GroupAreas.decode(%{"type" => "Polygon", "coordinates" => [ring]}), 1)
-  defp route(points), do: elem(GroupRoutes.decode(%{"type" => "LineString", "coordinates" => points}), 1)
+
+  defp route(points),
+    do: elem(GroupRoutes.decode(%{"type" => "LineString", "coordinates" => points}), 1)
 
   # A message written at `at`, as if then: the same time for both stamps, so it
   # does not read as edited.
@@ -939,14 +1107,18 @@ defmodule HelpShots.World do
   defp backdate(nil, _group, _at), do: :ok
 
   defp backdate(value_id, group, at) do
-    Repo.update_all(from(v in Value, where: v.id == ^value_id), set: [inserted_at: at, updated_at: at])
+    Repo.update_all(from(v in Value, where: v.id == ^value_id),
+      set: [inserted_at: at, updated_at: at]
+    )
 
     Repo.update_all(from(a in PotokIde.Social.ValueAttachment, where: a.value_id == ^value_id),
       set: [inserted_at: at]
     )
 
     Repo.update_all(
-      from(g in Group, where: g.id == ^group.id and (is_nil(g.last_value_at) or g.last_value_at < ^at)),
+      from(g in Group,
+        where: g.id == ^group.id and (is_nil(g.last_value_at) or g.last_value_at < ^at)
+      ),
       set: [last_value_at: at]
     )
   end
@@ -964,7 +1136,12 @@ defmodule HelpShots.World do
   defp assembly_notice(p, mz) do
     url = "#{PotokIdeWeb.Endpoint.url()}/groups/#{mz.zbor.id}/calendar?event=#{mz.event.id}"
     date = mz.event.starts_at |> DateTime.shift_zone!(@zone) |> DateTime.to_date()
-    day = Enum.at(~w(ponedeljak utorak sredu četvrtak petak subotu nedelju), Date.day_of_week(date) - 1)
+
+    day =
+      Enum.at(
+        ~w(ponedeljak utorak sredu četvrtak petak subotu nedelju),
+        Date.day_of_week(date) - 1
+      )
 
     send_notice(p.("marko"), mz.root, """
     Zbor građana je u #{day} u 18 časova u Domu kulture. Dođite! [Zbor u kalendaru](#{url})
@@ -987,7 +1164,9 @@ defmodule HelpShots.World do
   end
 
   defp options(texts) do
-    texts |> Enum.with_index() |> Map.new(fn {text, i} -> {Integer.to_string(i), %{"text" => text}} end)
+    texts
+    |> Enum.with_index()
+    |> Map.new(fn {text, i} -> {Integer.to_string(i), %{"text" => text}} end)
   end
 
   defp vote(profile, poll, index) do
@@ -1198,7 +1377,11 @@ defmodule HelpShots.World do
       items = [
         question.("checkbox", "Šta poručuješ?", %{
           "required" => true,
-          "options" => Enum.map(["Mleko, 1 l", "Domaći sir, 500 g", "Jaja, 10 komada", "Paket povrća"], option)
+          "options" =>
+            Enum.map(
+              ["Mleko, 1 l", "Domaći sir, 500 g", "Jaja, 10 komada", "Paket povrća"],
+              option
+            )
         }),
         question.("short", "Koliko litara mleka?", %{}),
         question.("choice", "Ko preuzima?", %{
@@ -1211,7 +1394,8 @@ defmodule HelpShots.World do
     form = %{
       "v" => 1,
       "title" => "Porudžbine za subotu",
-      "description" => "Poruči do četvrtka u 20 časova. Preuzimanje je u subotu od 9 do 11, u dvorištu škole.",
+      "description" =>
+        "Poruči do četvrtka u 20 časova. Preuzimanje je u subotu od 9 do 11, u dvorištu škole.",
       "theme" => %{"header" => nil},
       "startNext" => "next",
       "items" => items,
@@ -1285,7 +1469,14 @@ defmodule HelpShots.World do
       }
 
       {:ok, _value, _rule} =
-        PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
+        PotokIde.Social.AppData.insert(
+          profile,
+          profile_account(profile),
+          group,
+          nil,
+          "responses",
+          response
+        )
     end
 
     # Each order gets its talk; one of them is packed already, the rest wait.
@@ -1300,7 +1491,10 @@ defmodule HelpShots.World do
     for instance <- instances, do: PotokIde.Processes.Engine.run(instance.id)
 
     milica = Enum.at(instances, 1)
-    {:ok, _} = PotokIde.Processes.Engine.complete_task(editor, milica.id, "pakovanje", "Spakovano", nil)
+
+    {:ok, _} =
+      PotokIde.Processes.Engine.complete_task(editor, milica.id, "pakovanje", "Spakovano", nil)
+
     PotokIde.Processes.Engine.run(milica.id)
 
     packing
@@ -1392,7 +1586,12 @@ defmodule HelpShots.World do
           "in" => "razgovor",
           "text" => "Nečega od porudžbine nema. Javiću ti ovde šta stiže."
         },
-        %{"id" => "receive_1", "type" => "receiveTask", "signal" => "subota", "same_subject" => false},
+        %{
+          "id" => "receive_1",
+          "type" => "receiveTask",
+          "signal" => "subota",
+          "same_subject" => false
+        },
         %{
           "id" => "danas",
           "type" => "serviceTask",
@@ -1476,11 +1675,23 @@ defmodule HelpShots.World do
 
     # As potok-forme's `processGraph` makes it from `process`.
     message = fn node_id, target, text ->
-      %{"id" => node_id, "type" => "serviceTask", "action" => "message", "in" => target, "text" => text}
+      %{
+        "id" => node_id,
+        "type" => "serviceTask",
+        "action" => "message",
+        "in" => target,
+        "text" => text
+      }
     end
 
     push = fn node_id, text ->
-      %{"id" => node_id, "type" => "serviceTask", "action" => "push", "role" => council, "text" => text}
+      %{
+        "id" => node_id,
+        "type" => "serviceTask",
+        "action" => "push",
+        "role" => council,
+        "text" => text
+      }
     end
 
     graph = %{
@@ -1524,7 +1735,8 @@ defmodule HelpShots.World do
     form = %{
       "v" => 1,
       "title" => "Molbe savetu",
-      "description" => "Piši savetu MZ: za klupu, popravku, salu ili bilo šta za kraj. Savet odgovara u roku od nedelju dana.",
+      "description" =>
+        "Piši savetu MZ: za klupu, popravku, salu ili bilo šta za kraj. Savet odgovara u roku od nedelju dana.",
       "theme" => %{"header" => nil},
       "startNext" => "next",
       "items" => [
@@ -1565,31 +1777,64 @@ defmodule HelpShots.World do
     {:ok, _} = PotokIde.Social.AppData.save_config(editor, group, nil, data, nil)
 
     send_request = fn profile, title, text ->
-      response = %{"v" => 1, "form_rev" => 1, "a" => %{title_id => title, text_id => text}, "other" => %{}}
+      response = %{
+        "v" => 1,
+        "form_rev" => 1,
+        "a" => %{title_id => title, text_id => text},
+        "other" => %{}
+      }
 
       {:ok, value, _rule} =
-        PotokIde.Social.AppData.insert(profile, profile_account(profile), group, nil, "responses", response)
+        PotokIde.Social.AppData.insert(
+          profile,
+          profile_account(profile),
+          group,
+          nil,
+          "responses",
+          response
+        )
 
       instance = Repo.get_by!(PotokIde.Processes.ValueProcess, value_id: value.id)
       PotokIde.Processes.Engine.run(instance.id)
     end
 
     decide = fn instance, profile, outcome, comment ->
-      {:ok, _} = PotokIde.Processes.Engine.complete_task(profile, instance.id, "odluka", outcome, comment)
+      {:ok, _} =
+        PotokIde.Processes.Engine.complete_task(profile, instance.id, "odluka", outcome, comment)
+
       PotokIde.Processes.Engine.run(instance.id)
     end
 
     granted =
-      send_request.(p.("milica"), "Klupe kod igrališta", "Kod igrališta nema gde da se sedne. Predlažem dve klupe uz stazu.")
+      send_request.(
+        p.("milica"),
+        "Klupe kod igrališta",
+        "Kod igrališta nema gde da se sedne. Predlažem dve klupe uz stazu."
+      )
 
     refused =
-      send_request.(p.("nikola"), "Sala za probe hora", "Hor bi da koristi salu Doma kulture utorkom uveče.")
+      send_request.(
+        p.("nikola"),
+        "Sala za probe hora",
+        "Hor bi da koristi salu Doma kulture utorkom uveče."
+      )
 
     _waiting =
-      send_request.(p.("stefan"), "Kante za reciklažu u Ulici lipa", "U Ulici lipa nema nijedne kante za plastiku i papir.")
+      send_request.(
+        p.("stefan"),
+        "Kante za reciklažu u Ulici lipa",
+        "U Ulici lipa nema nijedne kante za plastiku i papir."
+      )
 
     granted_group = Repo.get!(Group, granted.groups["podgrupa"])
-    post(p.("marko"), granted_group, "Pogledao sam mesto: ima prostora za dve klupe.", ago(0, 7, 15))
+
+    post(
+      p.("marko"),
+      granted_group,
+      "Pogledao sam mesto: ima prostora za dve klupe.",
+      ago(0, 7, 15)
+    )
+
     post(p.("milica"), granted_group, "Hvala! Deca bi bila presrećna.", ago(0, 7, 30))
 
     decide.(granted, p.("marko"), "Odobri", "Postavljamo ih do kraja meseca.")

@@ -111,14 +111,16 @@ Isto može i bez dugmeta: pod **Kad** izaberi **neko napiše poruku** i upiši r
 Dogovor sa majstorom ima svoje korake, a treba i drugim procesima, ne samo prijavi kvara. Zato ga nacrtaj kao proces za sebe, a prijava kvara neka ga pozove i sačeka.
 
 1. Nacrtaj proces „Majstor“, a pod **Kad** izaberi **ga pozove drugi proces**. Na početnom koraku, pod **Polja koja prima**, upiši „kvar“.
-2. Dodaj **Odluku** sa ishodima „Dogovoreno“ i „Nema termina“. Dodirni strelicu ishoda „Nema termina“ i pod **Vodi do** izaberi **Novi kraj**. Krajeve nazovi isto kao ishode: dodirni kraj i upiši **Ime na crtežu**.
-3. Dodirni **Sačuvaj**, pa **Uključi**.
-4. U „Prijavi kvara“, na strelici ispod poruke ishoda „Zovemo majstora“, dodaj korak **Pozovi proces** i izaberi „Majstor“. Pod **Šta dobija**, za polje `kvar` dodirni `start.title`. Ostavi **Čekaj da se završi**, a za rok upiši 7 dana.
-5. Ispod poziva dodaj **Uslov**. Dodirni njegovu prvu strelicu i pod **Ide ovuda kada** upiši `call_1.outcome = "Dogovoreno"`: ta strelica vodi na poruku „Majstor dolazi.“, a **inače** na poruku „Majstor još nema termin.“
+2. Pod **Podaci** napravi entitet „Termin“ sa atributom `napomena`, tipa tekst. Na početnom koraku Majstora, pod **Šta vraća**, izaberi „Termin“.
+3. Dodaj **Odluku** sa ishodima „Dogovoreno“ i „Nema termina“. Dodirni strelicu ishoda „Nema termina“ i pod **Vodi do** izaberi **Novi kraj**. Krajeve nazovi isto kao ishode: dodirni kraj i upiši **Ime na crtežu**.
+4. Dodirni kraj „Dogovoreno“ i pod **Šta vraća procesu koji ga je pozvao**, za `napomena`, dodirni `task_1.comment`: ono što savet upiše uz odluku.
+5. Dodirni **Sačuvaj**, pa **Uključi**.
+6. U „Prijavi kvara“, na strelici ispod poruke ishoda „Zovemo majstora“, dodaj korak **Pozovi proces** i izaberi „Majstor“. Pod **Šta dobija**, za polje `kvar` dodirni `start.title`. Ostavi **Čekaj da se završi**, a za rok upiši 7 dana.
+7. Ispod poziva dodaj **Uslov**. Dodirni njegovu prvu strelicu i pod **Ide ovuda kada** upiši `call_1.outcome = "Dogovoreno"`: ta strelica vodi na poruku „Majstor dolazi. “ sa `call_1.napomena` na kraju, a **inače** na poruku „Majstor još nema termin.“
 
-![Prijava kvara poziva Majstora](zgrada-proces-poziv)
+![Kraj Majstora vraća Termin procesu koji ga je pozvao](zgrada-vraca) ![Prijava kvara poziva Majstora](zgrada-proces-poziv)
 
-Kad odlučiš „Zovemo majstora“, prijava kvara pokrene Majstora i čeka. Odluka Majstora te čeka na kartici Procesi, uz ime procesa koji ga je pozvao i kvar. Čim izabereš ishod, prijava kvara ide dalje i javlja u podgrupi kvara kako je prošlo. Ako za 7 dana niko ne odluči, prijava kvara odustaje, a Majstor se otkazuje.
+Kad odlučiš „Zovemo majstora“, prijava kvara pokrene Majstora i čeka. Odluka Majstora te čeka na kartici Procesi, uz ime procesa koji ga je pozvao i kvar. Čim izabereš ishod, prijava kvara ide dalje i javlja u podgrupi kvara kako je prošlo, a uz „Majstor dolazi.“ stoji i ono što je savet upisao uz odluku, recimo „u sredu posle 17h“. Ako za 7 dana niko ne odluči, prijava kvara odustaje, a Majstor se otkazuje.
 
 ## 11. Brojač kvarova {:#brojac}
 
@@ -165,7 +167,7 @@ Jednom mesečno neko iz saveta obiđe zgradu i zapiše šta je našao. Proces pa
 
 ![Obilazak zgrade: odluka puni listu, a Za svaki je prolazi](zgrada-obilazak)
 
-Ko obilazi, na kartici Procesi za svaki nalaz upiše komentar i dodirne **Dodaj nalaz**, a na kraju **Gotovo**. Proces tada prođe kroz listu i u razgovoru zgrade napiše svaki nalaz, uz njegov redni broj. Sve čime proces raspolaže, sa imenima i tipovima, stoji pod **Podaci procesa**.
+Ko obilazi, na kartici Procesi za svaki nalaz upiše komentar i dodirne **Dodaj nalaz**, a na kraju **Gotovo**. Proces tada prođe kroz listu i u razgovoru zgrade napiše svaki nalaz, uz njegov redni broj. Sve čime proces raspolaže, sa imenima i tipovima, stoji pod **Podaci procesa**. Nalaze može da upiše i forma, odjednom: entitet sa atributom koji je lista daje formu sa redom za svaku stavku i dugmetom **Dodaj** (vidi [Nacrtaj proces](/pomoc#nacrtaj-proces)).
 
 ![Podaci procesa: lista nalazi, stavka i brojači](zgrada-podaci)
 
