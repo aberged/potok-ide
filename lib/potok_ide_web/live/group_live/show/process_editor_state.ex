@@ -528,12 +528,38 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp editing("process_editor_insert_field", %{"target" => target, "path" => path}, socket)
-       when target in ["text", "name", "value"] do
+       when target in ["text", "name", "value", "intro"] do
     case socket.assigns.process_editor.selected do
       {:node, id} ->
         graph_change(socket, fn graph ->
           current = Graph.node(graph, id)[target] || ""
           GraphEdit.update_node(graph, id, %{target => put_field(current, path)})
+        end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
+  # A name put into what a form starts with in one attribute: in braces where
+  # that is written as a text.
+  defp editing(
+         "process_editor_insert_field",
+         %{"target" => "form_values." <> name, "path" => path},
+         socket
+       ) do
+    editor = socket.assigns.process_editor
+
+    case editor.selected do
+      {:node, id} ->
+        graph_change(socket, fn graph ->
+          node = Graph.node(graph, id)
+          values = node["values"] || %{}
+          put = if form_value_textual?(editor, node, name), do: &put_field/2, else: &put_name/2
+
+          GraphEdit.update_node(graph, id, %{
+            "values" => Map.put(values, name, put.(values[name], path))
+          })
         end)
 
       _other ->
@@ -1010,16 +1036,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
       |> Map.merge(signal_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(assign_attrs(node, params, socket.assigns.process_editor))
-      |> Map.merge(form_attrs(node, params))
+      |> Map.merge(form_attrs(node, params, socket.assigns.process_editor))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
     end
   end
 
-  # The entity a form asks for, and who fills it in: whoever started the
-  # run, or the people of a role, which its form names as `role:<key>`.
-  defp form_attrs(%{"type" => "formTask"} = node, params) do
+  # The entity a form asks for, who fills it in (whoever started the run, or
+  # the people of a role, which its form names as `role:<key>`), what it
+  # says first, and what it starts with in each attribute of that entity.
+  defp form_attrs(%{"type" => "formTask"} = node, params, editor) do
     entity =
       if Map.has_key?(params, "entity"), do: parse_id(params["entity"]), else: node["entity"]
 
@@ -1030,10 +1057,27 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         _as_it_is -> %{}
       end
 
-    Map.put(who, "entity", entity)
+    written =
+      case params["form_values"] do
+        values when is_map(values) -> Map.merge(node["values"] || %{}, values)
+        _none -> node["values"] || %{}
+      end
+
+    # Another entity has other attributes: what was written for those that
+    # share a name stays.
+    written =
+      case Enum.find(editor[:entities] || [], &(&1.id == entity)) do
+        %GroupEntity{attributes: attributes} -> Map.take(written, Enum.map(attributes, & &1.name))
+        nil -> written
+      end
+
+    who
+    |> Map.put("entity", entity)
+    |> maybe_put("intro", if(is_binary(params["intro"]), do: params["intro"]))
+    |> Map.put("values", written)
   end
 
-  defp form_attrs(_node, _params), do: %{}
+  defp form_attrs(_node, _params, _editor), do: %{}
 
   # A step adds to a list only while what it sets is one: with another
   # target picked, it sets again.
@@ -1157,6 +1201,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp textual_field?(_editor, _node, _name), do: true
+
+  # Whether what a form starts with in an attribute is written as a text.
+  defp form_value_textual?(editor, %{"entity" => id}, name) when is_integer(id) do
+    case GroupEntities.definitions(editor[:entities] || [])[to_string(id)] do
+      %{"attributes" => attributes} -> textual_attribute?(attributes, name)
+      _unknown -> true
+    end
+  end
+
+  defp form_value_textual?(_editor, _node, _name), do: true
 
   defp textual_attribute?(attributes, name) do
     case Enum.find(attributes, &(&1["name"] == name)) do
@@ -2117,7 +2171,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         {deadline_amount, deadline_unit} = amount(node["deadline"])
 
         node
-        |> Map.take(~w(label text in name role admins fields field op value target list item))
+        |> Map.take(
+          ~w(label text in name role admins fields field op value target list item intro)
+        )
         |> Map.merge(%{
           "duration_amount" => duration_amount,
           "duration_unit" => duration_unit,
@@ -2284,6 +2340,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     cond do
       String.ends_with?(path, ".target") ->
         gettext("Pick what the step sets: a variable, or an attribute of one.")
+
+      String.ends_with?(path, ".intro") ->
+        gettext("What the form says first is at most 1000 characters.")
+
+      String.contains?(path, ".values.") ->
+        gettext("What the form starts with is at most 1000 characters.")
 
       String.ends_with?(path, ".text") ->
         gettext("The text is empty or too long.")

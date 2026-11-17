@@ -559,7 +559,9 @@ defmodule HelpShots.World do
           "type" => "formTask",
           "label" => "Prijavi kvar",
           "entity" => fault.id,
-          "by" => "starter"
+          "by" => "starter",
+          "intro" => "Hvala! Proveri naslov i dodaj sprat.",
+          "values" => %{"naslov" => "{{start.text}}"}
         },
         %{
           "id" => "message_1",

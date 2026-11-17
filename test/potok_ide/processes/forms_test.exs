@@ -106,6 +106,42 @@ defmodule PotokIde.Processes.FormsTest do
       assert {:error, {"nodes.1.type", :invalid}} = Graph.normalize(first, drawn: true)
       assert {:error, {"nodes.1.type", :invalid}} = Graph.normalize(first)
     end
+
+    test "keeps what a form says first and starts with, and drops what is blank" do
+      graph =
+        chain([
+          form("prijava", 7, %{
+            "intro" => "  Javi nam šta je u kvaru.  ",
+            "values" => %{"naslov" => " {{start.text}} ", "sprat" => "  "}
+          })
+        ])
+
+      assert {:ok, %{"nodes" => [_start, prijava, _end]}} = Graph.normalize(graph, drawn: true)
+      assert prijava["intro"] == "Javi nam šta je u kvaru."
+      assert prijava["values"] == %{"naslov" => "{{start.text}}"}
+
+      # Nothing to start with is no values at all, and a blank text no intro.
+      assert {:ok, %{"nodes" => [_start, bare, _end]}} =
+               Graph.normalize(
+                 chain([form("prijava", 7, %{"intro" => " ", "values" => %{"sprat" => ""}})]),
+                 drawn: true
+               )
+
+      refute Map.has_key?(bare, "intro")
+      refute Map.has_key?(bare, "values")
+
+      assert {:error, {"nodes.1.values.ne valja", :invalid}} =
+               Graph.normalize(
+                 chain([form("prijava", 7, %{"values" => %{"ne valja" => "1"}})]),
+                 drawn: true
+               )
+
+      assert {:error, {"nodes.1.intro", :invalid}} =
+               Graph.normalize(
+                 chain([form("prijava", 7, %{"intro" => String.duplicate("a", 1001)})]),
+                 drawn: true
+               )
+    end
   end
 
   describe "Check.run/2" do
@@ -146,6 +182,24 @@ defmodule PotokIde.Processes.FormsTest do
 
       assert {:error, {"nodes.1.entity", :unknown_entity}} = check(chain([form("prijava", 99)]))
       assert {:error, {"nodes.1.entity", :not_flat}} = check(chain([form("prijava", 8)]))
+    end
+
+    test "what a form says first and starts with names what is there, of its type" do
+      start_with = fn values -> chain([form("prijava", 7, %{"values" => values})]) end
+
+      assert {:ok, _checked} =
+               check(
+                 start_with.(%{"naslov" => "{{start.text}}", "sprat" => "length(start.text)"})
+               )
+
+      assert {:error, {"nodes.1.values.sprat", {:mismatch, :number, :text}}} =
+               check(start_with.(%{"sprat" => "start.text"}))
+
+      assert {:error, {"nodes.1.values.stan", {:unknown_attribute, "stan"}}} =
+               check(start_with.(%{"stan" => "1"}))
+
+      assert {:error, {"nodes.1.intro", {:unknown_name, "naslov"}}} =
+               check(chain([form("prijava", 7, %{"intro" => "Javi {{naslov}}"})]))
     end
 
     test "nobody starts a scheduled process, so its form asks a role" do
@@ -488,6 +542,61 @@ defmodule PotokIde.Processes.FormsTest do
                  "name" => "Jutarnji obilazak",
                  "graph" => chain([form("prijava", ctx.kvar)])
                })
+    end
+
+    test "says first and starts with what the run holds when it asks", ctx do
+      row =
+        draw!(
+          ctx,
+          chain([
+            form("prijava", ctx.kvar, %{
+              "intro" => "Javi nam još nešto o ovome: „{{start.text}}“",
+              "values" => %{
+                "naslov" => "{{upper(start.text)}}",
+                "sprat" => "1 + 2",
+                "hitno" => "contains(start.text, \"lift\")"
+              }
+            })
+          ])
+        )
+
+      run = reported!(ctx, row)
+
+      assert Engine.form_view(run) == %{
+               intro: "Javi nam još nešto o ovome: „kvar u liftu“",
+               values: %{"naslov" => "KVAR U LIFTU", "sprat" => "3", "hitno" => true}
+             }
+
+      assert [%{intro: "Javi nam još nešto o ovome: „kvar u liftu“", prefill: prefill}] =
+               Processes.tasks_for(ctx.member, ctx.group, access(ctx, ctx.member))
+
+      assert prefill["sprat"] == "3"
+
+      # What it starts with is only a start: what is sent counts.
+      assert {:ok, _presented} =
+               fill(ctx, ctx.member, run, %{"naslov" => "Lift stoji", "sprat" => "4"})
+
+      done = Engine.run(run.id)
+      assert %{"naslov" => "Lift stoji", "sprat" => "4"} = done.results["prijava"]
+      assert Engine.form_view(done) == nil
+    end
+
+    test "starts empty where what it starts with cannot be worked out", ctx do
+      row =
+        draw!(
+          ctx,
+          chain([
+            form("prijava", ctx.kvar, %{
+              "intro" => "{{start.text}}",
+              "values" => %{"naslov" => "{{start.text}}", "sprat" => "length(start.text) / 0"}
+            })
+          ])
+        )
+
+      run = reported!(ctx, row)
+
+      assert %{intro: "kvar u liftu", values: values} = Engine.form_view(run)
+      assert values == %{"naslov" => "kvar u liftu"}
     end
 
     test "a decision keeps the role it asks, as a form does", ctx do

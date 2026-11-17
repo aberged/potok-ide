@@ -1232,6 +1232,60 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       refute Map.has_key?(form, "role")
     end
 
+    test "a form says something first and starts with what the run holds", ctx do
+      kvar = kvar!(ctx)
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "message")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      start_form(lv, %{"words" => "kvar"})
+      insert(lv, "f1", "form")
+
+      # One row for each attribute of the entity it asks for.
+      assert has_element?(lv, "#process-form-value-naslov", "naslov · ")
+      assert has_element?(lv, "#process-form-value-sprat", "sprat · ")
+
+      # A name tapped in goes in braces where the attribute is a text, bare
+      # where it is an expression.
+      lv |> element("#process-field-intro-0", "start.text") |> render_click()
+
+      lv
+      |> element("[id='process-field-form_values.naslov-0']", "start.text")
+      |> render_click()
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"form_values" => %{"sprat" => "start.text"}}
+      })
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "Here goes a number, and this is a text.")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{
+          "intro" => "Javi nam još: {{start.text}}",
+          "form_values" => %{"sprat" => "length(start.text)"}
+        }
+      })
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      lv |> element("#process-editor-save") |> render_click()
+      [saved] = drawn(ctx.group)
+
+      assert %{
+               "entity" => entity,
+               "intro" => "Javi nam još: {{start.text}}",
+               "values" => %{"naslov" => "{{start.text}}", "sprat" => "length(start.text)"}
+             } = PotokIde.Processes.Graph.node(saved.graph, "form_1")
+
+      assert entity == kvar.id
+    end
+
     test "a member reads what a form asks for, as the drawing was saved", ctx do
       kvar = kvar!(ctx)
 

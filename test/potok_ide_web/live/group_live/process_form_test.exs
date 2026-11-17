@@ -162,6 +162,42 @@ defmodule PotokIdeWeb.GroupLive.ProcessFormTest do
     refute has_element?(lv, "#process-form-dialog")
   end
 
+  test "says what its process put first, and starts with what the message said", ctx do
+    row =
+      draw!(ctx, [
+        form_step("prijava", ctx.kvar, %{
+          "intro" => "Hvala! Još samo sprat, ako znaš.",
+          "values" => %{"naslov" => "{{start.text}}", "hitno" => "true"}
+        })
+      ])
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/values")
+    run = report!(ctx, row)
+
+    assert has_element?(lv, "#process-form-intro", "Hvala! Još samo sprat, ako znaš.")
+    assert has_element?(lv, "#process-form input[name='answers[naslov]'][value='kvar u liftu']")
+    assert has_element?(lv, "#process-form input[name='answers[sprat]'][value='']")
+
+    assert has_element?(
+             lv,
+             "#process-form input[type='checkbox'][name='answers[hitno]'][checked]"
+           )
+
+    lv
+    |> form("#process-form", %{"answers" => %{"naslov" => "kvar u liftu", "sprat" => "2"}})
+    |> render_submit()
+
+    assert %{"naslov" => "kvar u liftu", "sprat" => "2", "hitno" => true} =
+             Repo.get!(ValueProcess, run.id).results["prijava"]
+
+    # Left for later, the card on the tab says it too.
+    run = report_again!(ctx, row)
+    lv |> element("#process-form-later") |> render_click()
+
+    {:ok, tab, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.group.id}/processes")
+    assert has_element?(tab, "#process-task-#{run.id}-intro", "Hvala! Još samo sprat")
+  end
+
   test "left for later, it waits on the Processes tab, where Fill in opens it", ctx do
     row = draw!(ctx, [form_step("prijava", ctx.kvar, %{"label" => "Prijava kvara u zgradi"})])
 

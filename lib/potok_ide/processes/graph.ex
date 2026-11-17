@@ -81,7 +81,10 @@ defmodule PotokIde.Processes.Graph do
     list its `target` holds.
   - `formTask` waits for a person to fill in the `entity` it names, by its
     id: whoever started the run (`by` `starter`), or someone holding `role`
-    (`by` `role`), until an optional `deadline`. What was filled in is read
+    (`by` `role`), until an optional `deadline`. It may say something first
+    (`intro`, a text) and start with something in some attributes
+    (`values`, by name, each a text for a text and an expression for
+    anything else), which the person may change. What was filled in is read
     under its id, an attribute at a time (`prijava.sprat`), with who filled
     it in (`prijava.author`).
   - `zone` is the time zone it reads days and hours in, and `entry` and
@@ -119,6 +122,8 @@ defmodule PotokIde.Processes.Graph do
   @name_format ~r/^[\p{L}\p{Nd}_-]{1,40}$/u
   @signal_format ~r/^[\p{L}\p{Nd}_-]{2,40}$/u
   @max_signal_fields 10
+  # The attributes a form may start with something in.
+  @max_form_values 50
   # What a signal always carries besides its fields.
   @signal_reserved ~w(from signal)
 
@@ -666,13 +671,17 @@ defmodule PotokIde.Processes.Graph do
     with true <- by in ~w(starter role) || {:error, {path <> ".by", :invalid}},
          {:ok, role} <- form_role(by, node["role"], path <> ".role"),
          {:ok, entity} <- entity(node["entity"], path <> ".entity"),
-         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline") do
+         {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline"),
+         {:ok, intro} <- optional_template(node["intro"], path <> ".intro"),
+         {:ok, values} <- form_values(Map.get(node, "values", %{}), path <> ".values") do
       {:ok,
        base
        |> Map.put("by", by)
        |> put_some("role", role)
        |> put_some("entity", entity)
-       |> put_some("deadline", deadline)}
+       |> put_some("deadline", deadline)
+       |> put_some("intro", intro)
+       |> put_some("values", if(values == %{}, do: nil, else: values))}
     end
   end
 
@@ -735,6 +744,41 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp typed(_type, _node, path, _base, _drawn?), do: {:error, {path <> ".type", :invalid}}
+
+  # A text that may be left out: blank is none.
+  defp optional_template(nil, _path), do: {:ok, nil}
+
+  defp optional_template(text, path) when is_binary(text) do
+    case String.trim(text) do
+      "" -> {:ok, nil}
+      text when byte_size(text) <= @max_template -> {:ok, text}
+      _too_long -> {:error, {path, :invalid}}
+    end
+  end
+
+  defp optional_template(_text, path), do: {:error, {path, :invalid}}
+
+  # What a form starts with, by the name of an attribute, each a text or an
+  # expression as `Check` reads it; one left blank starts empty.
+  defp form_values(values, path) when is_map(values) and map_size(values) <= @max_form_values do
+    Enum.reduce_while(values, {:ok, %{}}, fn {name, written}, {:ok, acc} ->
+      cond do
+        not (is_binary(name) and Types.name?(name)) ->
+          {:halt, {:error, {"#{path}.#{name}", :invalid}}}
+
+        not (is_binary(written) and String.length(written) <= @max_template) ->
+          {:halt, {:error, {"#{path}.#{name}", :invalid}}}
+
+        String.trim(written) == "" ->
+          {:cont, {:ok, acc}}
+
+        true ->
+          {:cont, {:ok, Map.put(acc, name, String.trim(written))}}
+      end
+    end)
+  end
+
+  defp form_values(_values, path), do: {:error, {path, :invalid}}
 
   # A field of the group, set or added to. Adding needs a number, or a text
   # that may come out as one.

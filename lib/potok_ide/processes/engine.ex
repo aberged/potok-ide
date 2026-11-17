@@ -1277,6 +1277,63 @@ defmodule PotokIde.Processes.Engine do
     |> told()
   end
 
+  @doc """
+  What the form an instance waits on shows its person, worked out from what
+  the run holds just now: its `intro`, the form's text with that put in,
+  and the `values` it starts with, by the name of an attribute, each taken
+  as the attribute's type and kept as plain JSON. One that cannot be worked
+  out, or is no value of its type, starts empty, and an intro that cannot be
+  read is left out, as the person fills in the rest. Nil for an instance
+  that waits on no form.
+  """
+  def form_view(%ValueProcess{status: :waiting, graph: %{"v" => 2} = graph} = instance) do
+    case Graph.node(graph, instance.element) do
+      %{"type" => "formTask"} = form ->
+        {:names, data, opts} = value_data(instance)
+        types = graph["types"] || %{}
+        written = form["values"] || %{}
+
+        values =
+          for attribute <- Types.attributes(types, form["entity"]) || [],
+              text = written[attribute["name"]],
+              is_binary(text),
+              {:ok, value} <- [start_value(text, attribute, types, data, opts)],
+              value not in [nil, ""],
+              into: %{},
+              do: {attribute["name"], value}
+
+        %{intro: intro(form["intro"], data, opts), values: values}
+
+      _other ->
+        nil
+    end
+  end
+
+  def form_view(_instance), do: nil
+
+  defp start_value(text, attribute, types, data, opts) do
+    type = Types.of(attribute)
+
+    with {:ok, value} <- worked_out(text, type, data, opts),
+         {:ok, value} <- Types.cast(value, type, types, zone: opts.zone) do
+      {:ok, Types.dump(value)}
+    else
+      _cannot -> :error
+    end
+  end
+
+  defp intro(nil, _data, _opts), do: nil
+
+  defp intro(text, data, opts) do
+    with {:ok, parts} <- Expr.template(text),
+         {:ok, rendered} <- Expr.render(parts, data, opts),
+         rendered when rendered != "" <- String.trim(rendered) do
+      rendered
+    else
+      _cannot -> nil
+    end
+  end
+
   defp asked?(%{"by" => "role", "role" => role}, _instance, _profile, access),
     do: access.member? and role in access.role_keys
 

@@ -174,13 +174,13 @@ Ko obilazi, na kartici Procesi za svaki nalaz upiše komentar i dodirne **Dodaj 
 Stanar ne mora ni da traži dugme: dovoljno je da u razgovoru zgrade napiše „kvar“, a proces ga pita ostalo, formom koja traži entitet Kvar iz koraka 12.
 
 1. Nacrtaj proces „Kvar iz razgovora“, a pod **Kad** izaberi **neko napiše poruku**. Dodirni početni korak i upiši reč „kvar“.
-2. Dodirni **+** ispod početka i izaberi **Forma**. Za **Ime na crtežu** upiši „Prijavi kvar“, pod **Šta traži** izaberi „Kvar“, a pod **Ko popunjava** ostavi **Ko je pokrenuo proces**.
+2. Dodirni **+** ispod početka i izaberi **Forma**. Za **Ime na crtežu** upiši „Prijavi kvar“, pod **Šta traži** izaberi „Kvar“, a pod **Ko popunjava** ostavi **Ko je pokrenuo proces**. Za **Šta prvo kaže** upiši „Hvala! Proveri naslov i dodaj sprat.“, a pod **Šta je već upisano**, kod `naslov`, dodirni `start.text`.
 3. Ispod forme dodaj **Poruku** u razgovor zgrade: upiši „Prijavljen kvar: “ i dodirni `form_1.naslov`, pa „, sprat “ i `form_1.sprat`.
 4. Dodirni **Sačuvaj**, pa **Uključi**.
 
 ![Forma se otvara onome ko je napisao poruku](zgrada-forma)
 
-Čim stanar pošalje poruku sa rečju „kvar“, otvara mu se forma: naslov mora da upiše, a sprat prima samo broj. Kad dodirne **Pošalji**, proces ide dalje i u razgovoru javlja šta je prijavljeno.
+Čim stanar pošalje poruku sa rečju „kvar“, otvara mu se forma. Naslov je već popunjen tekstom njegove poruke, pa ga samo proveri, a sprat prima samo broj. Kad dodirne **Pošalji**, proces ide dalje i u razgovoru javlja šta je prijavljeno.
 
 Ako formu zatvori sa **Kasnije**, ona ga čeka. U zaglavlju zgrade tada stoji oznaka **Čeka tebe** sa brojem: vodi na karticu Procesi, gde formu otvara **Popuni**. Istu oznaku vidiš i ti kad te čeka odluka.
 

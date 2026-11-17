@@ -304,7 +304,15 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
     </ol>
 
     <div :if={@task.form?} class="mt-3 flex flex-wrap items-center justify-between gap-2">
-      <p class="text-xs text-base-content/60">{gettext("A form for you to fill in.")}</p>
+      <p
+        :if={@task[:intro]}
+        id={"process-task-#{@task.id}-intro"}
+        class="line-clamp-2 min-w-0 flex-1 whitespace-pre-line break-words text-sm text-base-content/80"
+        phx-no-format
+      >{@task.intro}</p>
+      <p :if={!@task[:intro]} class="text-xs text-base-content/60">
+        {gettext("A form for you to fill in.")}
+      </p>
       <.button
         id={"process-task-#{@task.id}-fill"}
         type="button"

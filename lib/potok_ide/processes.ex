@@ -196,8 +196,10 @@ defmodule PotokIde.Processes do
   #{@max_tasks}: the decisions and the forms of a role the viewer holds, and
   the forms of the runs the viewer started that ask whoever started them
   (`ValueProcess.asks_role`, `asks_profile`). A form comes with `form?` and
-  the `attributes` it asks for, as its process was saved with them, and
-  with whether the viewer set off the step that led to it (`by_viewer?`).
+  the `attributes` it asks for, as its process was saved with them, what it
+  says first (`intro`) and starts with (`prefill`, `Engine.form_view/1`),
+  and with whether the viewer set off the step that led to it
+  (`by_viewer?`).
   The app knows nothing of these, so the group's page shows them, each with
   what set it going (`kind`):
 
@@ -270,6 +272,7 @@ defmodule PotokIde.Processes do
       task = Graph.node(instance.graph, instance.element)
       subject = subject(instance, process, group, profile, access, rules)
       form? = task["type"] == "formTask"
+      view = if form?, do: Engine.form_view(instance)
 
       Map.merge(subject, %{
         id: instance.id,
@@ -280,6 +283,8 @@ defmodule PotokIde.Processes do
         form?: form?,
         attributes:
           if(form?, do: Types.attributes(instance.graph["types"] || %{}, task["entity"]) || []),
+        intro: view && view.intro,
+        prefill: (view && view.values) || %{},
         by_viewer?: instance.triggered_by_id == profile.id,
         deadline_at: instance.wake_at,
         groups:

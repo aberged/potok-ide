@@ -1093,6 +1093,44 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                     for({label, key} <- @role_options, do: {label, "role:" <> key})
                 }
               />
+              <.input
+                field={@form[:intro]}
+                type="textarea"
+                rows="2"
+                maxlength="1000"
+                label={gettext("What it says first")}
+                placeholder={gettext("Tell us what broke, and we will send someone.")}
+                phx-debounce="300"
+              />
+              <.fields editor={@editor} target="intro" />
+              <div :if={@asked} id="process-form-values" class="space-y-2">
+                <p class="label">{gettext("Already filled in")}</p>
+                <div
+                  :for={%{"name" => name} <- @asked["attributes"] || []}
+                  id={"process-form-value-#{name}"}
+                  class="space-y-1 rounded-2xl border border-base-300/70 bg-base-100 p-2"
+                >
+                  <p class="label">
+                    {signal_field_label(@signal_entity, name, @editor[:entities] || [])}
+                  </p>
+                  <.input
+                    type="text"
+                    id={"process-form-value-#{name}-input"}
+                    name={"element[form_values][#{name}]"}
+                    value={(@node["values"] || %{})[name] || ""}
+                    aria-label={gettext("Already filled in")}
+                    placeholder={gettext("empty")}
+                    maxlength="1000"
+                    phx-debounce="300"
+                  />
+                  <.fields editor={@editor} target={"form_values.#{name}"} />
+                </div>
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "Whoever fills it in sees this already written, and may change it. Leave an attribute empty to have it asked."
+                  )}
+                </p>
+              </div>
               <div>
                 <p class="label mb-1">{gettext("Deadline, then go on without it")}</p>
                 <div class="flex gap-2">

@@ -596,7 +596,7 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "receiveTask"}), do: ~w(label signal same_subject entity)
 
   defp editable_keys(%{"type" => "userTask"}), do: ~w(label role)
-  defp editable_keys(%{"type" => "formTask"}), do: ~w(label by role entity)
+  defp editable_keys(%{"type" => "formTask"}), do: ~w(label by role entity intro values)
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
   defp editable_keys(%{"type" => "loop"}), do: ~w(label list item)

@@ -64,9 +64,33 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
   end
 
   defp open(socket, task) do
-    fields = Map.new(task.attributes, &{&1["name"], ""})
+    zone = socket.assigns[:calendar_time_zone] || "Etc/UTC"
+    prefill = Map.get(task, :prefill, %{})
+
+    fields =
+      Map.new(task.attributes, fn %{"name" => name} = attribute ->
+        {name, input_value(prefill[name], attribute["type"], zone)}
+      end)
+
     assign(socket, :process_form, %{task: task, form: to_form(fields, as: :answers), error: nil})
   end
+
+  # What a field starts with, as its input takes it: a time in the viewer's
+  # own zone, as they read it and as the form sends it back.
+  defp input_value(nil, _type, _zone), do: ""
+  defp input_value(true, _type, _zone), do: "true"
+  defp input_value(false, _type, _zone), do: ""
+
+  defp input_value(value, "datetime", zone) when is_binary(value) do
+    with {:ok, instant, _offset} <- DateTime.from_iso8601(value),
+         {:ok, local} <- DateTime.shift_zone(instant, zone) do
+      Calendar.strftime(local, "%Y-%m-%dT%H:%M")
+    else
+      _unreadable -> ""
+    end
+  end
+
+  defp input_value(value, _type, _zone), do: to_string(value)
 
   def handle_event("process_form_open", %{"id" => id}, socket) do
     with %{} <- socket.assigns.current_profile,
@@ -188,6 +212,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessForm do
           </header>
 
           <div class="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+            <%!-- What the form says first, as its process put it. --%>
+            <p
+              :if={@state.task[:intro]}
+              id="process-form-intro"
+              class="mb-3 whitespace-pre-line break-words text-sm leading-relaxed text-base-content"
+              phx-no-format
+            >{@state.task.intro}</p>
             <%!-- On one line: the text keeps its own line breaks, and gets none of the template's. --%>
             <p
               :if={@state.task.text not in [nil, ""]}

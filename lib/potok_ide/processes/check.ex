@@ -43,7 +43,8 @@ defmodule PotokIde.Processes.Check do
     someone does, and carries its attributes the same way.
   - A form asks for an entity whose attributes are all plain, as the form
     of a process started by hand does, and asks whoever started the run
-    only in a process someone starts: not one on a schedule.
+    only in a process someone starts: not one on a schedule. What it starts
+    with in an attribute gives a value of the attribute's type.
 
   Errors come as `{path, reason}`, as the graph's do, such as
   `{"nodes.3.text", {:unknown_name, "naslov"}}`: the reasons of
@@ -366,7 +367,9 @@ defmodule PotokIde.Processes.Check do
         {:error, {path <> ".by", :no_starter}}
 
       true ->
-        :ok
+        with :ok <- texts([{"intro", form["intro"] || ""}], path, context.scope) do
+          started(definition["attributes"], form["values"] || %{}, path, context.scope)
+        end
     end
   end
 
@@ -418,6 +421,27 @@ defmodule PotokIde.Processes.Check do
       case result do
         :ok -> {:cont, :ok}
         {:error, reason} -> {:halt, {:error, {"#{path}.#{name}", reason}}}
+      end
+    end)
+  end
+
+  # What a form starts with: an attribute it asks for, each a value of its
+  # type. None has to be there: the person fills in what is left.
+  defp started(attributes, values, path, scope) do
+    by_name = Map.new(attributes, &{&1["name"], &1})
+
+    values
+    |> Enum.sort()
+    |> Enum.reduce_while(:ok, fn {name, written}, :ok ->
+      result =
+        case Map.fetch(by_name, name) do
+          {:ok, attribute} -> written(written, Types.of(attribute), scope)
+          :error -> {:error, {:unknown_attribute, name}}
+        end
+
+      case result do
+        :ok -> {:cont, :ok}
+        {:error, reason} -> {:halt, {:error, {"#{path}.values.#{name}", reason}}}
       end
     end)
   end
