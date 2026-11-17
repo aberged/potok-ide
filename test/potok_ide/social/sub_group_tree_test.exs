@@ -331,6 +331,29 @@ defmodule PotokIde.Social.SubGroupTreeTest do
     end
   end
 
+  test "records?: false leaves out the records apps keep as groups, as folders too", ctx do
+    from(g in Group, where: g.id == ^ctx.deep.id) |> Repo.update_all(set: [external_key: "r-1"])
+    alpha_id = ctx.alpha.id
+    nested_id = ctx.nested.id
+
+    # With records, as before: alpha-nested holds its record.
+    assert %{^nested_id => {[%{id: deep_id}], false}} =
+             Social.list_sub_group_folders(ctx.owner, [{nested_id, 10, nil}])
+
+    assert deep_id == ctx.deep.id
+
+    pages =
+      Social.list_sub_group_folders(ctx.owner, [{alpha_id, 10, nil}, {nested_id, 10, nil}],
+        records?: false
+      )
+
+    assert {[%{id: ^nested_id, child_count: 0}], false} = pages[alpha_id]
+    assert pages[nested_id] == {[], false}
+
+    assert {[], false} =
+             Social.search_sub_group_folders(ctx.group, ctx.owner, "deep-leaf", records?: false)
+  end
+
   describe "load/4 with open:" do
     test "opens the folders named that the open ones reach, and tells them back", ctx do
       # alpha → alpha-nested → deep-leaf; beta is not asked for.

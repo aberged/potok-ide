@@ -9,7 +9,8 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
   direct conversations. The tree is the root's folder view without the
   public groups the viewer is not in (`SubGroupTree` with `public?: false`):
   its memberships, the public groups it follows and the folders on the way
-  to them, threads left out. The folders on the way to the page's group come
+  to them, threads and the records apps keep as groups left out, as on the
+  map of groups. The folders on the way to the page's group come
   open, and so do those this browser remembers (`potok:group-sidebar-open`).
 
   A row counts what is unread where the reader cannot see it otherwise: a
@@ -199,6 +200,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupSidebar do
     SubGroupTree.load(root, profile, nil,
       public?: false,
       threads?: false,
+      records?: false,
       open: open,
       search: search
     )

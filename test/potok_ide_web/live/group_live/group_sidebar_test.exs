@@ -1,10 +1,12 @@
 defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
   use PotokIdeWeb.ConnCase, async: true
 
+  import Ecto.Query, only: [from: 2]
   import Phoenix.LiveViewTest
   import PotokIde.EventsFixtures
 
-  alias PotokIde.{Notices, Social}
+  alias PotokIde.{Notices, Repo, Social}
+  alias PotokIde.Social.Group
 
   setup do
     {owner_account, owner} = account_with_profile!("side-owner")
@@ -178,6 +180,33 @@ defmodule PotokIdeWeb.GroupLive.GroupSidebarTest do
     assert has_element?(lv, "#group-sidebar-muted-unread-#{ctx.garden.id}:not([hidden])", "1")
     assert has_element?(lv, "#group-sidebar-muted-#{ctx.garden.id}")
     refute has_element?(lv, "#group-sidebar-unread-#{ctx.garden.id}:not([hidden])")
+  end
+
+  test "the records an app keeps as groups stay out of the tree", ctx do
+    log = group_with_members!(ctx.owner, [ctx.member], %{"name" => "side-log"})
+
+    record =
+      group_with_members!(ctx.owner, [ctx.member], %{:parent => log, "name" => "side-record"})
+
+    loose = group_with_members!(ctx.owner, [ctx.member], %{"name" => "side-loose-record"})
+
+    from(g in Group, where: g.id in ^[record.id, loose.id])
+    |> Repo.update_all(set: [external_key: "accident"])
+
+    {:ok, lv, _html} = live_as(ctx.member_account, ~p"/groups/#{ctx.lift.id}/values")
+    load(lv, %{"open" => [log.id]})
+
+    # The log is no folder any more: nothing but records is below it.
+    assert has_element?(lv, "#group-sidebar-node-#{log.id}", "side-log")
+    refute has_element?(lv, "#group-sidebar-toggle-#{log.id}")
+    refute has_element?(lv, "#group-sidebar-node-#{record.id}")
+    refute has_element?(lv, "#group-sidebar-node-#{loose.id}")
+
+    lv
+    |> form("#group-sidebar-search-form", %{"group_sidebar_search" => %{"q" => "record"}})
+    |> render_change()
+
+    assert has_element?(lv, "#group-sidebar-no-match")
   end
 
   test "the root has no column: it is the list", ctx do

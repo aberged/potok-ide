@@ -24,7 +24,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
 
   @doc """
   The tree of `group`. Options: `threads?: false` leaves out threads,
-  `public?: false` the public groups the profile is not in (see
+  `public?: false` the public groups the profile is not in and `records?:
+  false` the records apps keep as groups (see
   `Social.list_sub_group_folders/3`), `search:` shows the matches of a term,
   `preset:` the groups of one kind and `relation:` the profile's memberships
   or own groups (as `Social.search_sub_group_folders/4` takes them), and
@@ -46,6 +47,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
       group_id: group.id,
       threads?: Keyword.get(opts, :threads?, true),
       public?: Keyword.get(opts, :public?, true),
+      records?: Keyword.get(opts, :records?, true),
       search: search,
       preset: preset,
       relation: relation,
@@ -233,7 +235,8 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupTree do
     {nodes, more?}
   end
 
-  defp folder_filters(tree), do: [threads?: tree.threads?, public?: tree.public?]
+  defp folder_filters(tree),
+    do: [threads?: tree.threads?, public?: tree.public?, records?: tree.records?]
 
   defp new_node(folder) do
     %{

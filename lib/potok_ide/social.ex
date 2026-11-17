@@ -5103,8 +5103,10 @@ defmodule PotokIde.Social do
   # invited straight into a sub-group, or removed from a private parent, leaves
   # such a group, and only the root can list it. They are the groups
   # `hang_from_root/1` moves, so the lists and the unread counts agree.
-  defp detached_group_ids(%Profile{id: profile_id}) do
-    groups = member_group_chain(profile_id)
+  # Without records (`records?: false`) the walk starts from the
+  # memberships that are not records apps keep as groups.
+  defp detached_group_ids(%Profile{id: profile_id}, records? \\ true) do
+    groups = member_group_chain(profile_id, records?)
 
     for {id, group} <- hang_from_root(groups), group.parent_id != groups[id].parent_id, do: id
   end
@@ -5586,7 +5588,9 @@ defmodule PotokIde.Social do
   for the first page. Options: `threads?: false` leaves out threads, and
   `public?: false` the public groups the profile is not in, but those it
   follows and those with one of its memberships or followed groups below
-  them.
+  them, and `records?: false` the records apps keep as groups
+  (`external_key`), also as memberships, so a folder of nothing but records
+  shows none.
 
   Returns `%{parent_id => {folders, more?}}`, an entry per parent. Each
   folder is `%{id, name, thread?, public?, member?, child_count,
@@ -5600,8 +5604,10 @@ defmodule PotokIde.Social do
   def list_sub_group_folders(_profile, [], _opts), do: %{}
 
   def list_sub_group_folders(profile, parents, opts) do
+    records? = Keyword.get(opts, :records?, true)
+
     sql = """
-    WITH RECURSIVE #{sub_group_memberships_sql()}
+    WITH RECURSIVE #{sub_group_memberships_sql("$5", records?)}
     SELECT p.parent_id, f.id, f.name, f.is_thread, f.is_public, f.is_member,
       CASE WHEN f.shortcut_id IS NULL THEN counts.child_count ELSE 0 END,
       CASE WHEN f.shortcut_id IS NULL THEN counts.thread_child_count ELSE 0 END,
@@ -5615,7 +5621,7 @@ defmodule PotokIde.Social do
           TRUE AS is_member, NULL::bigint AS shortcut_id
         FROM mine
         JOIN groups g ON g.id = mine.group_id
-        WHERE g.parent_id = p.parent_id AND #{sub_group_filter_sql("g")}
+        WHERE g.parent_id = p.parent_id AND #{sub_group_filter_sql("g", records?)}
 
         UNION
 
@@ -5623,7 +5629,7 @@ defmodule PotokIde.Social do
           g.id IN (SELECT group_id FROM mine), NULL::bigint
         FROM groups g
         WHERE g.parent_id = p.parent_id AND #{sub_group_public_sql("g")}
-          AND #{sub_group_filter_sql("g")}
+          AND #{sub_group_filter_sql("g", records?)}
 
         UNION
 
@@ -5631,7 +5637,7 @@ defmodule PotokIde.Social do
           g.id IN (SELECT group_id FROM mine), NULL::bigint
         FROM groups g
         WHERE g.id = ANY($8::bigint[])
-          AND g.is_direct = FALSE
+          AND g.is_direct = FALSE#{record_filter_sql("g", records?)}
           AND p.parent_id = (SELECT r.id FROM groups r WHERE r.is_root)
 
         UNION
@@ -5648,7 +5654,7 @@ defmodule PotokIde.Social do
       ORDER BY lower(v.name), v.id
       LIMIT p.page_limit + 1
     ) f
-    #{sub_group_counts_sql("f")}
+    #{sub_group_counts_sql("f", records?)}
     ORDER BY p.parent_id, lower(f.name), f.id
     """
 
@@ -5660,10 +5666,12 @@ defmodule PotokIde.Social do
       profile && profile.id,
       Keyword.get(opts, :threads?, true),
       Keyword.get(opts, :public?, true),
-      detached_ids_below(profile, Enum.map(parents, &elem(&1, 0)))
+      detached_ids_below(profile, Enum.map(parents, &elem(&1, 0)), records?)
     ]
 
-    %{rows: rows} = Repo.query!(sql, params, cache_statement: "social_sub_group_folders")
+    %{rows: rows} =
+      Repo.query!(sql, params, cache_statement: "social_sub_group_folders_#{records?}")
+
     folders_by_parent = Enum.group_by(rows, &hd/1, &sub_group_folder(tl(&1)))
 
     Map.new(parents, fn {parent_id, limit, _after} ->
@@ -5697,14 +5705,16 @@ defmodule PotokIde.Social do
   end
 
   defp run_sub_group_search(group, profile, filters, opts) do
+    records? = Keyword.get(opts, :records?, true)
+
     visible =
-      "#{sub_group_filter_sql("g")}" <>
+      "#{sub_group_filter_sql("g", records?)}" <>
         " AND (g.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("g")})"
 
     kind = shown_kind_sql("g")
 
     sql = """
-    WITH RECURSIVE #{sub_group_memberships_sql()},
+    WITH RECURSIVE #{sub_group_memberships_sql("$5", records?)},
     tree AS (
       SELECT g.id, g.parent_id, g.name, g.name_folded, g.parent_value_id, g.is_public,
         #{kind} AS kind, g.creator_id, ARRAY[g.id] AS path
@@ -5716,7 +5726,7 @@ defmodule PotokIde.Social do
       SELECT g.id, $1::bigint, g.name, g.name_folded, g.parent_value_id, g.is_public, #{kind},
         g.creator_id, ARRAY[g.id]
       FROM groups g
-      WHERE g.id = ANY($8::bigint[]) AND g.is_direct = FALSE
+      WHERE g.id = ANY($8::bigint[]) AND g.is_direct = FALSE#{record_filter_sql("g", records?)}
 
       UNION ALL
 
@@ -5751,7 +5761,7 @@ defmodule PotokIde.Social do
       FROM walked w
       JOIN shown s ON s.id = w.id
     ) f ON TRUE
-    #{sub_group_counts_sql("f")}
+    #{sub_group_counts_sql("f", records?)}
     ORDER BY lower(f.name), f.id
     """
 
@@ -5763,7 +5773,7 @@ defmodule PotokIde.Social do
       profile && profile.id,
       Keyword.get(opts, :threads?, true),
       Keyword.get(opts, :public?, true),
-      detached_ids_below(profile, [group.id]),
+      detached_ids_below(profile, [group.id], records?),
       filters.preset,
       filters.relation
     ]
@@ -5773,7 +5783,9 @@ defmodule PotokIde.Social do
     # that still takes too long shows nothing found instead of holding the page.
     Repo.with_statement_timeout(
       @sub_group_search_timeout_ms,
-      fn -> Repo.query!(sql, params, cache_statement: "social_search_sub_group_folders") end,
+      fn ->
+        Repo.query!(sql, params, cache_statement: "social_search_sub_group_folders_#{records?}")
+      end,
       jit: false
     )
     |> case do
@@ -5796,10 +5808,19 @@ defmodule PotokIde.Social do
   # follower filter: a follow outlives the right to see its group, so it is
   # checked again here. `member_paths` (`member_paths_sql/2`) are needed only
   # when $7 is false. The groups the root adds (`detached_ids_below/2`) are $8.
-  defp sub_group_memberships_sql(profile_param \\ "$5") do
+  # Without records (`records?: false`) the memberships leave out what apps
+  # keep as groups, so no path leads to them either.
+  defp sub_group_memberships_sql(profile_param, records? \\ true) do
+    memberships =
+      if records?,
+        do: "SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = #{profile_param}",
+        else:
+          "SELECT gm.group_id FROM group_memberships gm JOIN groups rg ON rg.id = gm.group_id" <>
+            " WHERE gm.profile_id = #{profile_param} AND rg.external_key IS NULL"
+
     """
     mine AS MATERIALIZED (
-      SELECT gm.group_id FROM group_memberships gm WHERE gm.profile_id = #{profile_param}
+      #{memberships}
     ),
     followed AS (
       SELECT f.group_id FROM group_follows f JOIN groups g ON g.id = f.group_id
@@ -5835,17 +5856,22 @@ defmodule PotokIde.Social do
     """
   end
 
-  defp detached_ids_below(nil, _parent_ids), do: []
+  defp detached_ids_below(nil, _parent_ids, _records?), do: []
 
-  defp detached_ids_below(%Profile{} = profile, parent_ids) do
+  defp detached_ids_below(%Profile{} = profile, parent_ids, records?) do
     if Repo.exists?(from(g in Group, where: g.id in ^parent_ids and g.is_root)),
-      do: detached_group_ids(profile),
+      do: detached_group_ids(profile, records?),
       else: []
   end
 
-  defp sub_group_filter_sql(alias) do
-    "#{alias}.is_direct = FALSE AND ($6::boolean OR #{alias}.parent_value_id IS NULL)"
+  defp sub_group_filter_sql(alias, records?) do
+    "#{alias}.is_direct = FALSE AND ($6::boolean OR #{alias}.parent_value_id IS NULL)" <>
+      record_filter_sql(alias, records?)
   end
+
+  # Leaves out the records apps keep as groups, for `records?: false`.
+  defp record_filter_sql(_alias, true), do: ""
+  defp record_filter_sql(alias, false), do: " AND #{alias}.external_key IS NULL"
 
   # The public groups the folder view shows, members or not: all of them, or
   # only the followed ones and those on the way to a membership or a follow.
@@ -5874,7 +5900,7 @@ defmodule PotokIde.Social do
   # Per folder: the visible sub-groups the folder view shows below it, its
   # shortcuts among them, and the threads among all of them for the threads
   # switch.
-  defp sub_group_counts_sql(folder) do
+  defp sub_group_counts_sql(folder, records?) do
     """
     LEFT JOIN LATERAL (
       SELECT
@@ -5886,7 +5912,7 @@ defmodule PotokIde.Social do
         COUNT(*) FILTER (WHERE k.parent_value_id IS NOT NULL) AS thread_child_count
       FROM groups k
       WHERE k.parent_id = #{folder}.id
-        AND k.is_direct = FALSE
+        AND k.is_direct = FALSE#{record_filter_sql("k", records?)}
         AND (k.id IN (SELECT group_id FROM mine) OR #{sub_group_public_sql("k")})
     ) counts ON TRUE
     """
@@ -6503,11 +6529,21 @@ defmodule PotokIde.Social do
   # The same for all of the profile's memberships. As an array, like the ids
   # above: the planner reads `IN (SELECT ...)` as a walk over a quarter million
   # rows and JIT-compiles the statement, some 150 ms for any profile.
-  defp member_group_chain(profile_id) do
+  defp member_group_chain(profile_id, true) do
     query_group_chain(
       "g.id = ANY(ARRAY(SELECT m.group_id FROM group_memberships m WHERE m.profile_id = $1))",
       [profile_id],
       "social_member_group_chain"
+    )
+  end
+
+  defp member_group_chain(profile_id, false) do
+    query_group_chain(
+      "g.id = ANY(ARRAY(SELECT m.group_id FROM group_memberships m" <>
+        " JOIN groups rg ON rg.id = m.group_id" <>
+        " WHERE m.profile_id = $1 AND rg.external_key IS NULL))",
+      [profile_id],
+      "social_member_group_chain_without_records"
     )
   end
 
