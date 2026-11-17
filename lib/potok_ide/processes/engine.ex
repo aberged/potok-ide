@@ -127,6 +127,8 @@ defmodule PotokIde.Processes.Engine do
   @max_called 200
   @max_field 1_000
   @max_result 8_192
+  # What a process may hand back to its caller, as JSON.
+  @max_return 16_384
   # What a run keeps in its variables and its results together, in bytes.
   @max_data 65_536
   @max_woken 100
@@ -527,6 +529,10 @@ defmodule PotokIde.Processes.Engine do
         done = update!(instance, %{status: :done, wake_at: nil})
         {:stop, done, returned(done, node)}
 
+      {:done, changes} ->
+        done = update!(instance, Map.merge(changes, %{status: :done, wake_at: nil}))
+        {:stop, done, returned(done, node)}
+
       {:error, reason} ->
         Repo.rollback({:failed, instance.element, reason})
     end
@@ -539,7 +545,19 @@ defmodule PotokIde.Processes.Engine do
     end
   end
 
-  defp act(%{"type" => "endEvent"}, _instance), do: :done
+  # An end of a process that hands an entity back fills it in, kept under
+  # the end's id for the caller to read.
+  defp act(%{"type" => "endEvent", "id" => id} = node, instance) do
+    case instance.graph do
+      %{"v" => 2, "returns" => entity_id, "types" => types} when is_integer(entity_id) ->
+        with {:ok, values} <- handing_back(node, entity_id, types, instance) do
+          {:done, %{results: Map.put(instance.results || %{}, id, values)}}
+        end
+
+      _hands_back_nothing ->
+        :done
+    end
+  end
 
   defp act(%{"type" => "userTask"} = task, _instance),
     do: {:wait, %{wake_at: task["deadline"] && later(task["deadline"])}, []}
@@ -834,6 +852,19 @@ defmodule PotokIde.Processes.Engine do
      end}
   end
 
+  # What an end hands back: the entity its process hands back, filled in as
+  # the end says, within `@max_return`.
+  defp handing_back(node, entity_id, types, instance) do
+    with attributes when is_list(attributes) <-
+           Types.attributes(types, entity_id) || {:error, :return_unknown},
+         {:ok, values} <-
+           filled(attributes, entity_id, types, node["values"] || %{}, value_data(instance)) do
+      if byte_size(JSON.encode!(values)) <= @max_return,
+        do: {:ok, values},
+        else: {:error, :return_too_big}
+    end
+  end
+
   # An entity filled in from what is written for each attribute, kept as
   # plain JSON: nothing for an attribute left blank, and an error when a
   # required one is, or when a value is not of its type.
@@ -1001,7 +1032,7 @@ defmodule PotokIde.Processes.Engine do
         []
 
       caller ->
-        result = result(child, Graph.label(end_node), same_group?(child, caller))
+        result = result(child, end_node, same_group?(child, caller))
 
         caller =
           update!(caller, %{
@@ -1022,12 +1053,24 @@ defmodule PotokIde.Processes.Engine do
     length(groups) == 1
   end
 
-  # What a called run ended with: the end it reached, the fields it was given
-  # and what its waits brought back, or only the end when that is too much,
-  # or when the run was another group's.
-  defp result(%ValueProcess{}, outcome, false), do: %{"outcome" => outcome}
+  # What a called run ended with: the end it reached and what that end filled
+  # in of the entity its process hands back, to a caller of any group. Of a
+  # process that hands nothing back, the end, with the fields it was given
+  # and what its waits brought back to a caller of its own group, unless
+  # that is too much.
+  defp result(%ValueProcess{graph: %{"returns" => entity_id}} = child, end_node, _same_group?)
+       when is_integer(entity_id) do
+    child.results
+    |> Kernel.||(%{})
+    |> Map.get(end_node["id"], %{})
+    |> Map.put("outcome", Graph.label(end_node))
+  end
 
-  defp result(%ValueProcess{} = child, outcome, true) do
+  defp result(%ValueProcess{}, end_node, false), do: %{"outcome" => Graph.label(end_node)}
+
+  defp result(%ValueProcess{} = child, end_node, true) do
+    outcome = Graph.label(end_node)
+
     result =
       child.data
       |> Map.merge(child.results)

@@ -12,19 +12,24 @@ defmodule PotokIde.Processes.Check do
     (`PotokIde.Processes.Triggers`), and `:entry_entity`, the id of the
     entity it takes then, if it takes one. A test may give `:entry`, the
     type of what the trigger hands a run, instead of the three.
+  - `:return_entity`: the id of the entity it hands back to the process
+    that called it, if it hands one back; each of its ends fills it in.
   - `:entities`: the entities of its group, by id
     (`PotokIde.Processes.GroupEntities.definitions/1`).
   - `:callable`: the processes it may call, by id, each as `%{attributes:
     [_], types: %{}}`: the attributes of the entity it takes, with the
     entities those name, as that process was saved. One that takes fields
-    with no entity has no attributes.
+    with no entity has no attributes. `returns` is the id of the entity it
+    hands back, if any, among those `types`.
   - `:signals`: the entities the other processes of the group wait for a
     signal with, by the signal's name (nil for one that names none).
 
   It returns the graph as it is kept, with that written into it (`entry`,
-  and `types`: the entities the graph names and those nest, as they are
-  just now), so a run reads its names with no look elsewhere, and goes on
-  reading them so after an entity changed.
+  `returns`, and `types`: the entities the graph names and those nest, as
+  they are just now, with those the processes it calls hand back), so a run
+  reads its names with no look elsewhere, and goes on reading them so after
+  an entity changed. A call that waits for a process that hands an entity
+  back keeps that entity's id as `returns`.
 
   What it checks beside the expressions:
 
@@ -39,6 +44,8 @@ defmodule PotokIde.Processes.Check do
     holds.
   - A call hands the process it calls what its entity takes: each attribute
     a value of its type, and every required one a value.
+  - Each end of a process that hands an entity back gives its attributes
+    the same way.
   - A signal is sent with the entity those who wait for it expect, where
     someone does, and carries its attributes the same way.
   - A form asks for an entity whose attributes are all plain, as the form
@@ -63,7 +70,12 @@ defmodule PotokIde.Processes.Check do
 
     with {:ok, types} <- types(graph, env),
          {:ok, entry} <- entry(env, types),
-         graph = graph |> Map.put("entry", Types.json(entry)) |> Map.put("types", types),
+         {graph, types} = calls_returning(graph, env, types),
+         graph =
+           graph
+           |> Map.put("entry", Types.json(entry))
+           |> Map.put("types", types)
+           |> put_returns(env[:return_entity]),
          {:ok, %{"nodes" => nodes} = graph} <- items(graph) do
       scope = Scope.scope(graph)
 
@@ -71,7 +83,8 @@ defmodule PotokIde.Processes.Check do
         scope: scope,
         trigger: env[:trigger],
         callable: Map.get(env, :callable, %{}),
-        receivers: receivers(graph, env)
+        receivers: receivers(graph, env),
+        returns: (graph["returns"] && Types.attributes(types, graph["returns"])) || []
       }
 
       with :ok <- each(variables, "variables", &variable(&1, &2, scope)),
@@ -179,7 +192,8 @@ defmodule PotokIde.Processes.Check do
           is_integer(id),
           do: {id, "nodes.#{i}.entity"}
         ) ++
-        for(id <- List.wrap(env[:entry_entity]), do: {id, "entry"})
+        for(id <- List.wrap(env[:entry_entity]), do: {id, "entry"}) ++
+        for(id <- List.wrap(env[:return_entity]), do: {id, "returns"})
 
     Enum.reduce_while(named, {:ok, %{}}, fn {id, path}, {:ok, types} ->
       case nested(to_string(id), entities, types) do
@@ -209,6 +223,39 @@ defmodule PotokIde.Processes.Check do
         :error
     end
   end
+
+  # A call that waits for a process that hands an entity back keeps that
+  # entity's id, and the graph keeps the entity as that process was saved
+  # (a group's own as it is now wins), so the steps after it read what came
+  # back by its type.
+  defp calls_returning(%{"nodes" => nodes} = graph, env, types) do
+    callable = Map.get(env, :callable, %{})
+
+    {nodes, types} =
+      Enum.map_reduce(nodes, types, fn
+        %{"type" => "callActivity", "process" => id} = node, types ->
+          node = Map.delete(node, "returns")
+
+          case callable[id] do
+            %{returns: returns, types: theirs} when is_integer(returns) ->
+              case node["wait"] != false && nested(to_string(returns), theirs, %{}) do
+                {:ok, handed} -> {Map.put(node, "returns", returns), Map.merge(handed, types)}
+                _not_waiting_or_unknown -> {node, types}
+              end
+
+            _hands_back_nothing ->
+              {node, types}
+          end
+
+        node, types ->
+          {node, types}
+      end)
+
+    {%{graph | "nodes" => nodes}, types}
+  end
+
+  defp put_returns(graph, id) when is_integer(id), do: Map.put(graph, "returns", id)
+  defp put_returns(graph, _none), do: Map.delete(graph, "returns")
 
   # What the trigger hands a run: as given, or worked out from the trigger
   # and the entity it takes.
@@ -350,6 +397,11 @@ defmodule PotokIde.Processes.Check do
         end
     end
   end
+
+  # An end of a process that hands an entity back fills it in: each
+  # attribute a value of its type, and every required one a value.
+  defp step(%{"type" => "endEvent"} = node, path, %{returns: [_ | _] = attributes} = context),
+    do: handed(attributes, node["values"] || %{}, %{}, path <> ".values", context.scope)
 
   # A form asks for an entity a form can fill in, and asks whoever started
   # the run only where someone does: nobody starts a scheduled one.

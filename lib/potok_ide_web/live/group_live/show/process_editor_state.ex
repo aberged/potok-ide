@@ -103,6 +103,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           signals: DrawnProcesses.signals(group),
           entities: GroupEntities.list(group),
           entry_entity: nil,
+          return_entity: nil,
           signal_entities: DrawnProcesses.signal_entities(group),
           data?: false
         }
@@ -165,6 +166,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           signals: if(manage?, do: DrawnProcesses.signals(group), else: %{}),
           entities: if(manage?, do: GroupEntities.list(group), else: []),
           entry_entity: row.entry_entity_id,
+          return_entity: row.return_entity_id,
           signal_entities:
             if(manage?, do: DrawnProcesses.signal_entities(group, row.id), else: %{}),
           data?: false
@@ -208,6 +210,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           signals: %{},
           entities: [],
           entry_entity: nil,
+          return_entity: nil,
           signal_entities: %{},
           data?: false
         }
@@ -427,6 +430,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         do: parse_id(params["entity"]),
         else: editor.entry_entity
 
+    # The entity it hands back, for one others call.
+    returns =
+      if Map.has_key?(params, "returns") and editor.trigger == "process",
+        do: parse_id(params["returns"]),
+        else: editor[:return_entity]
+
     fields =
       if editor.trigger in ~w(process signal),
         do: trigger_fields(socket.assigns.group, editor.trigger, config),
@@ -445,6 +454,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
          &1
          | trigger_config: config,
            entry_entity: entity,
+           return_entity: returns,
            fields: fields,
            public?: public?,
            dirty?: true
@@ -556,6 +566,33 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           node = Graph.node(graph, id)
           values = node["values"] || %{}
           put = if form_value_textual?(editor, node, name), do: &put_field/2, else: &put_name/2
+
+          GraphEdit.update_node(graph, id, %{
+            "values" => Map.put(values, name, put.(values[name], path))
+          })
+        end)
+
+      _other ->
+        {:noreply, socket}
+    end
+  end
+
+  # A name put into what an end hands back in one attribute: in braces where
+  # that is written as a text.
+  defp editing(
+         "process_editor_insert_field",
+         %{"target" => "end_values." <> name, "path" => path},
+         socket
+       ) do
+    editor = socket.assigns.process_editor
+
+    case {editor.selected, return_entity(editor)} do
+      {{:node, id}, %GroupEntity{} = entity} ->
+        textual? = textual_attribute?(GroupEntities.definition(entity)["attributes"], name)
+
+        graph_change(socket, fn graph ->
+          values = Graph.node(graph, id)["values"] || %{}
+          put = if textual?, do: &put_field/2, else: &put_name/2
 
           GraphEdit.update_node(graph, id, %{
             "values" => Map.put(values, name, put.(values[name], path))
@@ -1037,6 +1074,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       |> Map.merge(signal_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(assign_attrs(node, params, socket.assigns.process_editor))
       |> Map.merge(form_attrs(node, params, socket.assigns.process_editor))
+      |> Map.merge(end_attrs(node, params, socket.assigns.process_editor))
 
     with {:ok, graph} <- GraphEdit.update_node(graph, id, attrs) do
       deadline(graph, Graph.node(graph, id), params, socket)
@@ -1078,6 +1116,31 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   end
 
   defp form_attrs(_node, _params, _editor), do: %{}
+
+  # What an end hands back, attribute by attribute of the entity the process
+  # hands back: only those it has.
+  defp end_attrs(%{"type" => "endEvent"} = node, params, editor) do
+    case {return_entity(editor), params["end_values"]} do
+      {%GroupEntity{attributes: attributes}, values} when is_map(values) ->
+        written = Map.merge(node["values"] || %{}, values)
+        %{"values" => Map.take(written, Enum.map(attributes, & &1.name))}
+
+      _nothing_typed ->
+        %{}
+    end
+  end
+
+  defp end_attrs(_node, _params, _editor), do: %{}
+
+  @doc "The entity the process hands back to its caller, as the group has it, or nil."
+  def return_entity(editor) do
+    with "process" <- editor.trigger,
+         id when is_integer(id) <- editor[:return_entity] do
+      Enum.find(editor[:entities] || [], &(&1.id == id))
+    else
+      _hands_back_nothing -> nil
+    end
+  end
 
   # A step adds to a list only while what it sets is one: with another
   # target picked, it sets again.
@@ -1404,6 +1467,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       "layout" => %{"nodes" => editor.layout},
       "trigger_config" => editor.trigger_config,
       "entry_entity_id" => if(Triggers.typed?(editor.trigger), do: editor[:entry_entity]),
+      "return_entity_id" => if(editor.trigger == "process", do: editor[:return_entity]),
       "is_public" => editor.trigger == "process" and editor.public?
     }
 
@@ -1561,8 +1625,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       trigger: editor.trigger,
       config: trigger_config(editor),
       entry_entity: if(Triggers.typed?(editor.trigger), do: editor[:entry_entity]),
+      return_entity: if(editor.trigger == "process", do: editor[:return_entity]),
       entities: GroupEntities.definitions(editor[:entities] || []),
-      callable: Map.new(editor.callable, &{&1.id, Map.take(&1, [:attributes, :types])}),
+      callable: Map.new(editor.callable, &{&1.id, Map.take(&1, [:attributes, :types, :returns])}),
       signals: editor[:signal_entities] || %{}
     })
   end
@@ -1937,8 +2002,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
         %{"id" => ^own} ->
           []
 
-        %{"type" => "callActivity", "wait" => true, "id" => id} ->
-          ["#{id}.outcome"]
+        %{"type" => "callActivity", "wait" => true, "id" => id} = call ->
+          returned =
+            case Enum.find(editor.callable, &(&1.id == call["process"])) do
+              %{returned: [_ | _] = attributes} -> Enum.map(attributes, & &1["name"])
+              _hands_back_nothing -> []
+            end
+
+          ["#{id}.outcome" | Enum.map(returned, &Scope.path(id, &1))]
 
         %{"type" => "receiveTask", "id" => id, "signal" => signal} ->
           for field <- ["from" | carried(editor, signal)], do: Scope.path(id, field)
@@ -2430,6 +2501,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp trigger_reason(_reason, "entity"),
     do: gettext("The group no longer has the entity this process takes.")
+
+  defp trigger_reason(_reason, "returns"),
+    do: gettext("The group no longer has the entity this process hands back.")
 
   defp trigger_reason(_reason, _field), do: gettext("What starts the process is not set right.")
 

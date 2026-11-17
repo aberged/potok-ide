@@ -87,6 +87,11 @@ defmodule PotokIde.Processes.Graph do
     anything else), which the person may change. What was filled in is read
     under its id, an attribute at a time (`prijava.sprat`), with who filled
     it in (`prijava.author`).
+  - An `endEvent` of a process that hands an entity back to its caller
+    says what each attribute is (`values`, as a `formTask` starts with
+    them); the graph keeps that entity's id as `returns`, and a
+    `callActivity` that waits keeps the id of the entity its process hands
+    back as `returns` too, both written by `PotokIde.Processes.Check`.
   - `zone` is the time zone it reads days and hours in, and `entry` and
     `types` are what `PotokIde.Processes.Check` wrote into it.
 
@@ -192,7 +197,8 @@ defmodule PotokIde.Processes.Graph do
       {:ok,
        %{"v" => 2, "zone" => zone, "variables" => variables}
        |> put_map("entry", graph["entry"])
-       |> put_map("types", graph["types"])}
+       |> put_map("types", graph["types"])
+       |> put_id("returns", graph["returns"])}
     end
   end
 
@@ -310,6 +316,9 @@ defmodule PotokIde.Processes.Graph do
 
   defp put_map(map, key, %{} = value), do: Map.put(map, key, value)
   defp put_map(map, _key, _none), do: map
+
+  defp put_id(map, key, id) when is_integer(id), do: Map.put(map, key, id)
+  defp put_id(map, _key, _none), do: map
 
   @doc """
   A graph in today's language (`"v" => 2`, `PotokIde.Processes.Expr`), from
@@ -604,6 +613,14 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
+  # An end of a process that hands an entity back to its caller says what
+  # each attribute is (`values`, as a form starts with them).
+  defp typed("endEvent", node, path, base, true) do
+    with {:ok, values} <- form_values(Map.get(node, "values", %{}), path <> ".values") do
+      {:ok, put_some(base, "values", if(values == %{}, do: nil, else: values))}
+    end
+  end
+
   defp typed(type, _node, _path, base, _drawn?)
        when type in ~w(startEvent endEvent exclusiveGateway),
        do: {:ok, base}
@@ -739,7 +756,8 @@ defmodule PotokIde.Processes.Graph do
       {:ok,
        base
        |> Map.merge(%{"process" => process, "wait" => wait, "fields" => fields})
-       |> put_some("deadline", deadline)}
+       |> put_some("deadline", deadline)
+       |> put_id("returns", node["returns"])}
     end
   end
 

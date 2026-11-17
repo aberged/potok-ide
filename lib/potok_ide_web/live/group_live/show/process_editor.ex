@@ -899,6 +899,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
       |> assign(:list_target?, ProcessEditorState.list_target?(assigns.editor, node["target"]))
       |> assign(:form_entities, ProcessEditorState.form_entities(assigns.editor))
       |> assign(:asked, asked_entity(assigns.editor, node))
+      |> assign(:returned, ProcessEditorState.return_entity(assigns.editor))
 
     ~H"""
     <div id="process-node-panel">
@@ -1465,10 +1466,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 class="rounded-xl bg-base-200/70 px-3 py-2 text-xs text-base-content/70"
               >
                 <.icon name="hero-globe-alt" class="mr-1 size-3.5 align-[-2px]" />
-                {gettext(
-                  "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns only which end it reached.",
-                  group: @callee.group
-                )}
+                <%= if @callee.returned != [] do %>
+                  {gettext(
+                    "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns which end it reached and what that end hands back.",
+                    group: @callee.group
+                  )}
+                <% else %>
+                  {gettext(
+                    "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns only which end it reached.",
+                    group: @callee.group
+                  )}
+                <% end %>
               </p>
               <input type="hidden" name="element[wait]" value="false" />
               <label class="flex items-center gap-2 text-sm">
@@ -1510,15 +1518,65 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   <.input field={@form[:deadline_unit]} type="select" options={unit_options()} />
                 </div>
               </div>
-              <p :if={@node["wait"] != false} class="text-xs text-base-content/60">
-                {gettext("The steps after it read how it ended as %{field}.",
-                  field: "{{#{@node["id"]}.outcome}}"
+              <p
+                :if={(@node["wait"] != false and @callee) && @callee.returned != []}
+                id="process-call-returns"
+                class="rounded-xl bg-base-200/70 px-3 py-2 text-xs text-base-content/70"
+              >
+                <.icon name="hero-arrow-uturn-left" class="mr-1 size-3.5 align-[-2px]" />
+                {gettext("It hands back %{entity}: %{attributes}.",
+                  entity: returned_name(@callee),
+                  attributes: Enum.map_join(@callee.returned, ", ", & &1["name"])
                 )}
+              </p>
+              <p :if={@node["wait"] != false} class="text-xs text-base-content/60">
+                <%= if @callee && @callee.returned != [] do %>
+                  {gettext(
+                    "The steps after it read how it ended as %{field}, and what it hands back as %{example}.",
+                    field: "{{#{@node["id"]}.outcome}}",
+                    example:
+                      "{{#{PotokIde.Processes.Scope.path(@node["id"], hd(@callee.returned)["name"])}}}"
+                  )}
+                <% else %>
+                  {gettext("The steps after it read how it ended as %{field}.",
+                    field: "{{#{@node["id"]}.outcome}}"
+                  )}
+                <% end %>
               </p>
             <% "start" -> %>
               <p class="text-sm text-base-content/65">{trigger_hint(@editor.trigger)}</p>
             <% _end -> %>
               <p class="text-sm text-base-content/65">{gettext("Here the run is done.")}</p>
+              <div :if={@returned} id="process-end-values" class="space-y-2">
+                <p class="label">
+                  {gettext("What it hands back to the process that called it")}
+                </p>
+                <div
+                  :for={attribute <- @returned.attributes}
+                  id={"process-end-value-#{attribute.name}"}
+                  class="space-y-1 rounded-2xl border border-base-300/70 bg-base-100 p-2"
+                >
+                  <p class="label">
+                    {signal_field_label(@returned, attribute.name, @editor[:entities] || [])}
+                  </p>
+                  <.input
+                    type="text"
+                    id={"process-end-value-#{attribute.name}-input"}
+                    name={"element[end_values][#{attribute.name}]"}
+                    value={(@node["values"] || %{})[attribute.name] || ""}
+                    aria-label={attribute.name}
+                    placeholder={gettext("empty")}
+                    maxlength="1000"
+                    phx-debounce="300"
+                  />
+                  <.fields editor={@editor} target={"end_values.#{attribute.name}"} />
+                </div>
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "A text is written as a text, with names in double braces; anything else is an expression of its type."
+                  )}
+                </p>
+              </div>
           <% end %>
         </fieldset>
       </.form>
@@ -1547,6 +1605,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
         <h3 class="text-sm font-semibold">{gettext("What starts it")}</h3>
 
         <.entry_entity :if={Triggers.typed?(@editor.trigger)} editor={@editor} />
+        <.return_entity_field :if={@editor.trigger == "process"} editor={@editor} />
 
         <%= case @editor.trigger do %>
           <% "message" -> %>
@@ -1812,6 +1871,39 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     </div>
     """
   end
+
+  attr :editor, :map, required: true
+
+  # The entity a process others call hands back, which each of its ends
+  # fills in.
+  defp return_entity_field(assigns) do
+    ~H"""
+    <div :if={(@editor[:entities] || []) != []} id="process-trigger-returns-field">
+      <.input
+        type="select"
+        id="process-trigger-returns"
+        name="trigger[returns]"
+        value={@editor[:return_entity] || ""}
+        label={gettext("What it hands back")}
+        options={
+          [{gettext("Only the end it reached"), ""}] ++
+            for(entity <- @editor[:entities] || [], do: {entity.name, entity.id})
+        }
+      />
+      <p :if={@editor[:return_entity]} class="mt-1 text-xs text-base-content/60">
+        {gettext(
+          "Each end fills it in, and the process that called it reads it, in its own group or in another."
+        )}
+      </p>
+    </div>
+    """
+  end
+
+  # The name of the entity a process hands back, as it was saved.
+  defp returned_name(%{returns: id, types: types}) when is_integer(id),
+    do: get_in(types, [to_string(id), "name"]) || ""
+
+  defp returned_name(_callee), do: ""
 
   # A form fills in plain attributes only.
   defp takeable(%{trigger: "manual"} = editor), do: ProcessEditorState.form_entities(editor)

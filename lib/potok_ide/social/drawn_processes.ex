@@ -175,7 +175,9 @@ defmodule PotokIde.Social.DrawnProcesses do
   new value (`"value"`, the default) it hangs on `attrs["collection"]` of the
   app `attrs["alt_id"]` (an integer, nil for the default description); the
   other triggers need no app. One that others call is public with
-  `attrs["is_public"]` true. Returns `{:ok, process}` or `{:error, reason}`:
+  `attrs["is_public"]` true, and hands an entity of the group back to its
+  caller with `attrs["return_entity_id"]`, which each of its ends fills in.
+  Returns `{:ok, process}` or `{:error, reason}`:
   `:not_permitted`, `:not_an_app`, `:unknown_collection`, `:too_many`,
   `:invalid_name`, `{:invalid_graph, path, reason}` or
   `{:invalid_trigger, path, reason}`.
@@ -190,7 +192,8 @@ defmodule PotokIde.Social.DrawnProcesses do
          {:ok, graph} <- graph(attrs["graph"]),
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
          {:ok, entity} <- entry_entity(group, trigger, attrs["entry_entity_id"]),
-         {:ok, graph} <- checked(graph, trigger, config, group, entity, nil),
+         {:ok, returns} <- return_entity(group, trigger, attrs["return_entity_id"]),
+         {:ok, graph} <- checked(graph, trigger, config, group, {entity, returns}, nil),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
@@ -219,6 +222,7 @@ defmodule PotokIde.Social.DrawnProcesses do
           trigger: trigger,
           trigger_config: config,
           entry_entity_id: entity,
+          return_entity_id: returns,
           is_public: trigger == "process" and attrs["is_public"] == true
         }
         |> Repo.insert!()
@@ -265,6 +269,25 @@ defmodule PotokIde.Social.DrawnProcesses do
     end
   end
 
+  # The entity a process hands back to its caller, of the group's own: only
+  # one that others call hands anything back.
+  defp return_entity(_group, _trigger, none) when none in [nil, ""], do: {:ok, nil}
+
+  defp return_entity(%Group{} = group, trigger, id) do
+    id = if is_binary(id), do: parse_id(id), else: id
+
+    cond do
+      trigger != "process" ->
+        {:error, {:invalid_trigger, "returns", :invalid}}
+
+      is_nil(GroupEntities.get(group, id)) ->
+        {:error, {:invalid_trigger, "returns", :unknown_entity}}
+
+      true ->
+        {:ok, id}
+    end
+  end
+
   defp parse_id(text) do
     case Integer.parse(text) do
       {id, ""} -> id
@@ -277,11 +300,12 @@ defmodule PotokIde.Social.DrawnProcesses do
   # wait for its signals, which is written into it (`Check`); one in the
   # first language says nothing to check. `except` is the process itself,
   # which is not among those its own signals are checked against.
-  defp checked(%{"v" => 2} = graph, trigger, config, group, entity, except) do
+  defp checked(%{"v" => 2} = graph, trigger, config, group, {entity, returns}, except) do
     env = %{
       trigger: trigger,
       config: config,
       entry_entity: entity,
+      return_entity: returns,
       entities: GroupEntities.definitions(group),
       callable: contracts(graph, group),
       signals: signal_entities(group, except)
@@ -290,6 +314,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     case Check.run(graph, env) do
       {:ok, graph} -> {:ok, graph}
       {:error, {"entry", reason}} -> {:error, {:invalid_trigger, "entity", reason}}
+      {:error, {"returns", reason}} -> {:error, {:invalid_trigger, "returns", reason}}
       {:error, {path, reason}} -> {:error, {:invalid_graph, path, reason}}
     end
   end
@@ -321,16 +346,36 @@ defmodule PotokIde.Social.DrawnProcesses do
   @doc """
   What a process that others call takes, as it was saved: the `attributes`
   of its entity with the entities those name (`types`), none for one that
-  takes plain fields; and `fields`, the names of either.
+  takes plain fields; and `fields`, the names of either. `returns` is the
+  id of the entity it hands back (among `types`), nil for none, and
+  `returned` its attributes.
   """
-  def contract(%AppProcess{entry_entity_id: id, graph: %{"types" => types}})
+  def contract(%AppProcess{entry_entity_id: id, graph: %{"types" => types}} = process)
       when is_integer(id) do
     attributes = Types.attributes(types, id) || []
-    %{attributes: attributes, types: types, fields: Enum.map(attributes, & &1["name"])}
+
+    Map.merge(
+      %{attributes: attributes, types: types, fields: Enum.map(attributes, & &1["name"])},
+      handed_back(process)
+    )
   end
 
-  def contract(%AppProcess{trigger_config: config}),
-    do: %{attributes: [], types: %{}, fields: config["fields"] || []}
+  def contract(%AppProcess{trigger_config: config} = process) do
+    Map.merge(
+      %{
+        attributes: [],
+        types: (process.graph || %{})["types"] || %{},
+        fields: config["fields"] || []
+      },
+      handed_back(process)
+    )
+  end
+
+  # What a process hands back, as it was saved.
+  defp handed_back(%AppProcess{graph: %{"returns" => id, "types" => types}}) when is_integer(id),
+    do: %{returns: id, returned: Types.attributes(types, id) || []}
+
+  defp handed_back(_process), do: %{returns: nil, returned: []}
 
   @doc """
   Whether a drawing no longer fits what it was saved with: an entity it
@@ -339,7 +384,14 @@ defmodule PotokIde.Social.DrawnProcesses do
   as it was saved; saving it again checks it against things as they are.
   """
   def stale?(%AppProcess{drawn: true, graph: %{"v" => 2} = graph} = row, %Group{} = group) do
-    checked(graph, row.trigger, row.trigger_config, group, row.entry_entity_id, row.id) !=
+    checked(
+      graph,
+      row.trigger,
+      row.trigger_config,
+      group,
+      {row.entry_entity_id, row.return_entity_id},
+      row.id
+    ) !=
       {:ok, graph} or gone_callee?(graph, group)
   end
 
@@ -357,7 +409,8 @@ defmodule PotokIde.Social.DrawnProcesses do
   (`trigger_config`; the trigger itself stays) and, where `attrs` says so,
   the entity it takes (`entry_entity_id`) and whether it is public
   (`is_public`, for one that others call) of a drawn process, from the
-  `revision` the editor started from; another editor's change in between
+  `revision` the editor started from (and so `return_entity_id`, what it
+  hands back to its caller); another editor's change in between
   gives `{:error, {:conflict, current}}`. Instances under way keep the graph
   they started with. The owner stays while they edit the app.
   """
@@ -390,8 +443,18 @@ defmodule PotokIde.Social.DrawnProcesses do
             row.entry_entity_id
           end
 
+        returns =
+          if Map.has_key?(attrs, "return_entity_id") do
+            case return_entity(group, row.trigger, attrs["return_entity_id"]) do
+              {:ok, returns} -> returns
+              {:error, reason} -> Repo.rollback(reason)
+            end
+          else
+            row.return_entity_id
+          end
+
         graph =
-          case checked(graph, row.trigger, config, group, entity, row.id) do
+          case checked(graph, row.trigger, config, group, {entity, returns}, row.id) do
             {:ok, graph} -> graph
             {:error, reason} -> Repo.rollback(reason)
           end
@@ -408,6 +471,7 @@ defmodule PotokIde.Social.DrawnProcesses do
           layout: layout,
           trigger_config: config,
           entry_entity_id: entity,
+          return_entity_id: returns,
           is_public: public?,
           next_run_at: next_run(%{row | trigger_config: config}),
           owner_profile_id: owner(row, editor, group)

@@ -880,6 +880,98 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
       assert id == kvar.id
     end
 
+    test "a process that takes calls hands an entity back, which each end fills in", ctx do
+      ponuda =
+        entity!(ctx, "Ponuda", [
+          %{"name" => "iznos", "type" => "number", "required" => true},
+          %{"name" => "napomena", "type" => "text"}
+        ])
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "process")
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+      assert has_element?(lv, "#process-trigger-returns option", "Ponuda")
+      start_form(lv, %{"returns" => "#{ponuda.id}"})
+
+      render_hook(canvas(lv), "process_editor_select", %{"node" => "end"})
+      assert has_element?(lv, "#process-end-values", "iznos · number *")
+      assert has_element?(lv, "#process-editor-error", "must be filled in is left empty")
+
+      lv
+      |> form("#process-element-form", %{
+        "element" => %{"end_values" => %{"iznos" => "42", "napomena" => "Za "}}
+      })
+      |> render_change()
+
+      lv |> element("#process-field-end_values\\.napomena-0") |> render_click()
+      refute has_element?(lv, "#process-editor-error")
+
+      lv |> element("#process-editor-save") |> render_click()
+
+      assert [%AppProcess{return_entity_id: id, graph: graph}] = drawn(ctx.group)
+      assert id == ponuda.id
+      assert graph["returns"] == ponuda.id
+
+      assert %{"values" => %{"iznos" => "42", "napomena" => "Za {{" <> _rest}} =
+               PotokIde.Processes.Graph.node(graph, "end")
+    end
+
+    test "a call says what its process hands back, which the steps after read", ctx do
+      ponuda =
+        entity!(ctx, "Ponuda", [
+          %{"name" => "iznos", "type" => "number", "required" => true},
+          %{"name" => "napomena", "type" => "text"}
+        ])
+
+      graph = PotokIde.Processes.GraphEdit.new()
+
+      graph = %{
+        graph
+        | "nodes" =>
+            Enum.map(graph["nodes"], fn
+              %{"type" => "endEvent"} = node -> Map.put(node, "values", %{"iznos" => "7"})
+              node -> node
+            end)
+      }
+
+      {:ok, callee} =
+        DrawnProcesses.create(ctx.owner, ctx.group, %{
+          "trigger" => "process",
+          "name" => "Procena",
+          "graph" => graph,
+          "return_entity_id" => ponuda.id
+        })
+
+      {:ok, lv, _html} =
+        live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+      trigger(lv, "manual")
+      insert(lv, "f1", "call")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"process" => "#{callee.id}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-call-returns", "Ponuda: iznos, napomena")
+      assert has_element?(lv, "#process-node-panel", "{{call_1.iznos}}")
+
+      insert(lv, "f1", "message")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{call_1.iznos + 1}}"}})
+      |> render_change()
+
+      refute has_element?(lv, "#process-editor-error")
+
+      lv
+      |> form("#process-element-form", %{"element" => %{"text" => "{{call_1.nema}}"}})
+      |> render_change()
+
+      assert has_element?(lv, "#process-editor-error", "There is no nema in that.")
+    end
+
     test "a drawing whose entity changed opens ready to be saved again", ctx do
       kvar = kvar!(ctx)
 

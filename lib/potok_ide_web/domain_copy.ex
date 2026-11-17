@@ -319,6 +319,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProcess", "next_run_at"), do: dgettext("domain_map", "next scheduled start")
   defp own_field("AppProcess", "entry_entity_id"), do: dgettext("domain_map", "entity it takes")
 
+  defp own_field("AppProcess", "return_entity_id"),
+    do: dgettext("domain_map", "entity it hands back")
+
   defp own_field("ValueProcess", "app_process_id"), do: dgettext("domain_map", "process")
   defp own_field("ValueProcess", "value_id"), do: dgettext("domain_map", "value that started it")
 
@@ -1601,6 +1604,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "A <AppProcess>process</AppProcess> drawn in Potok that starts on a call, on a signal, by hand or on a value may take an <GroupEntity>entity</GroupEntity> of its group. A call then hands it that entity's attributes, each a value of its type and every required one a value, checked when the caller is saved and again when the call is made, against the entity as the called process was saved with it; a call that does not fit fails where it stands and starts nothing. A process started by hand asks for the attributes in a form, which is why it takes only an entity of plain attributes. A signal is waited for with an entity, and a process sends it only with the entity those who wait for it expect, where someone does: whoever waits says what it waits for. A drawing whose entity changed since it was saved, or whose calls and signals no longer fit those they talk to, runs on as it was saved, and its editors are told to look it over."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A called process can hand an entity back"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <AppProcess>process</AppProcess> that others call may name an <GroupEntity>entity</GroupEntity> of its group that it hands back. Each of its ends then fills it in, an attribute at a time, checked when the process is saved, and the caller reads it under the call's id, in its own group or in another: the process hands over exactly that and nothing else. One that names none hands back only the end it reached, and to a caller of its own group what it was given and what its waits brought back. An end whose values do not fit when the run gets there fails that run, and the caller waits for it as for any run it called."
           )
       },
       %{

@@ -39,19 +39,19 @@ msgid "Account confirmed successfully."
 msgstr ""
 
 #: lib/potok_ide_web/components/core_components.ex:767
-#: lib/potok_ide_web/components/layouts.ex:956
-#: lib/potok_ide_web/components/layouts.ex:959
+#: lib/potok_ide_web/components/layouts.ex:962
+#: lib/potok_ide_web/components/layouts.ex:965
 #, elixir-autogen, elixir-format
 msgid "Actions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2512
+#: lib/potok_ide_web/live/group_live/show.ex:2513
 #, elixir-autogen, elixir-format
 msgid "An invitation is already pending."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:825
-#: lib/potok_ide_web/components/layouts.ex:840
+#: lib/potok_ide_web/components/layouts.ex:831
+#: lib/potok_ide_web/components/layouts.ex:846
 #, elixir-autogen, elixir-format
 msgid "Attempting to reconnect"
 msgstr ""
@@ -82,18 +82,18 @@ msgstr ""
 msgid "Could not accept invitation."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1942
+#: lib/potok_ide_web/live/group_live/show.ex:1943
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:150
 #, elixir-autogen, elixir-format
 msgid "Could not create group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1215
+#: lib/potok_ide_web/live/group_live/show.ex:1216
 #, elixir-autogen, elixir-format
 msgid "Could not create message."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2515
+#: lib/potok_ide_web/live/group_live/show.ex:2516
 #, elixir-autogen, elixir-format
 msgid "Could not send invitation."
 msgstr ""
@@ -129,8 +129,8 @@ msgstr ""
 msgid "Current profile:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2377
-#: lib/potok_ide_web/live/group_live/show.ex:5764
+#: lib/potok_ide_web/live/group_live/show.ex:2378
+#: lib/potok_ide_web/live/group_live/show.ex:5765
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1251
 #: lib/potok_ide_web/live/group_live/show/components.ex:1450
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:116
@@ -174,25 +174,25 @@ msgstr ""
 msgid "Enter your email and we'll send you a sign-in link."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1926
+#: lib/potok_ide_web/live/group_live/show.ex:1927
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:206
 #, elixir-autogen, elixir-format
 msgid "Group created."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:98
-#: lib/potok_ide_web/components/layouts.ex:99
-#: lib/potok_ide_web/components/layouts.ex:338
-#: lib/potok_ide_web/live/group_live/show.ex:302
-#: lib/potok_ide_web/live/group_live/show.ex:5855
-#: lib/potok_ide_web/live/group_live/show.ex:5860
+#: lib/potok_ide_web/components/layouts.ex:103
+#: lib/potok_ide_web/components/layouts.ex:104
+#: lib/potok_ide_web/components/layouts.ex:344
+#: lib/potok_ide_web/live/group_live/show.ex:303
+#: lib/potok_ide_web/live/group_live/show.ex:5856
+#: lib/potok_ide_web/live/group_live/show.ex:5861
 #: lib/potok_ide_web/live/group_live/show/components.ex:650
 #: lib/potok_ide_web/live/profile_live/index.ex:143
 #, elixir-autogen, elixir-format
 msgid "Groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:994
+#: lib/potok_ide_web/live/group_live/show.ex:995
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1120
 #: lib/potok_ide_web/live/profile_live/components.ex:378
 #, elixir-autogen, elixir-format
@@ -229,16 +229,16 @@ msgstr ""
 msgid "Invitation not found."
 msgstr "Invitation not found."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4648
-#: lib/potok_ide_web/live/group_live/show.ex:4679
-#: lib/potok_ide_web/live/group_live/show.ex:4693
+#: lib/potok_ide_web/live/group_live/show.ex:4649
+#: lib/potok_ide_web/live/group_live/show.ex:4680
+#: lib/potok_ide_web/live/group_live/show.ex:4694
 #, elixir-autogen, elixir-format
 msgid "Invitation sent."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:148
-#: lib/potok_ide_web/components/layouts.ex:150
-#: lib/potok_ide_web/components/layouts.ex:356
+#: lib/potok_ide_web/components/layouts.ex:153
+#: lib/potok_ide_web/components/layouts.ex:155
+#: lib/potok_ide_web/components/layouts.ex:362
 #: lib/potok_ide_web/live/invitation_live/index.ex:35
 #, elixir-autogen, elixir-format
 msgid "Invitations"
@@ -312,12 +312,12 @@ msgstr ""
 msgid "Keep me logged in on this device"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:915
+#: lib/potok_ide_web/components/layouts.ex:921
 #, elixir-autogen, elixir-format
 msgid "Language selector"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:384
+#: lib/potok_ide_web/components/layouts.ex:390
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:12
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:118
 #: lib/potok_ide_web/controllers/page_html/public_event.html.heex:31
@@ -342,7 +342,7 @@ msgstr ""
 msgid "Log me in only this time"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:427
+#: lib/potok_ide_web/components/layouts.ex:433
 #, elixir-autogen, elixir-format
 msgid "Log out"
 msgstr ""
@@ -369,14 +369,14 @@ msgstr ""
 msgid "Manage your account email address and password settings"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:994
+#: lib/potok_ide_web/live/group_live/show.ex:995
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1121
 #: lib/potok_ide_web/live/profile_live/components.ex:377
 #, elixir-autogen, elixir-format
 msgid "Markdown"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:422
+#: lib/potok_ide_web/live/group_live/show.ex:423
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:73
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:42
 #, elixir-autogen, elixir-format
@@ -422,7 +422,7 @@ msgstr ""
 msgid "No sent invitations match your search."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2494
+#: lib/potok_ide_web/live/group_live/show.ex:2495
 #, elixir-autogen, elixir-format
 msgid "No profile found with that username."
 msgstr ""
@@ -462,7 +462,7 @@ msgstr ""
 msgid "Profile selected."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:329
+#: lib/potok_ide_web/components/layouts.ex:335
 #: lib/potok_ide_web/live/profile_live/edit.ex:46
 #: lib/potok_ide_web/live/profile_live/index.ex:26
 #, elixir-autogen, elixir-format
@@ -487,7 +487,7 @@ msgstr ""
 msgid "Saving..."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:418
+#: lib/potok_ide_web/components/layouts.ex:424
 #, elixir-autogen, elixir-format
 msgid "Settings"
 msgstr ""
@@ -504,8 +504,8 @@ msgstr ""
 msgid "Sharing"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:581
-#: lib/potok_ide_web/live/group_live/show.ex:5766
+#: lib/potok_ide_web/live/group_live/show.ex:582
+#: lib/potok_ide_web/live/group_live/show.ex:5767
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:66
 #, elixir-autogen, elixir-format
 msgid "Sub-groups"
@@ -551,7 +551,7 @@ msgstr ""
 msgid "Welcome back!"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:193
+#: lib/potok_ide_web/components/layouts.ex:198
 #: lib/potok_ide_web/live/account_live/confirmation.ex:18
 #, elixir-autogen
 msgid "Welcome!"
@@ -562,31 +562,31 @@ msgstr "Welcome!"
 msgid "You are running the local mail adapter."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2500
+#: lib/potok_ide_web/live/group_live/show.ex:2501
 #, elixir-autogen, elixir-format
 msgid "You cannot invite yourself."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1036
-#: lib/potok_ide_web/live/group_live/show.ex:2940
-#: lib/potok_ide_web/live/group_live/show.ex:3190
+#: lib/potok_ide_web/live/group_live/show.ex:1037
+#: lib/potok_ide_web/live/group_live/show.ex:2941
+#: lib/potok_ide_web/live/group_live/show.ex:3191
 #, elixir-autogen, elixir-format
 msgid "You do not have access to that group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1915
+#: lib/potok_ide_web/live/group_live/show.ex:1916
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to create sub-groups."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1173
-#: lib/potok_ide_web/live/group_live/show.ex:1402
+#: lib/potok_ide_web/live/group_live/show.ex:1174
+#: lib/potok_ide_web/live/group_live/show.ex:1403
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to post messages."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2464
-#: lib/potok_ide_web/live/group_live/show.ex:2497
+#: lib/potok_ide_web/live/group_live/show.ex:2465
+#: lib/potok_ide_web/live/group_live/show.ex:2498
 #, elixir-autogen, elixir-format
 msgid "You must be a member to invite."
 msgstr ""
@@ -614,8 +614,8 @@ msgid "Your profiles"
 msgstr ""
 
 #: lib/potok_ide_web/components/core_components.ex:86
-#: lib/potok_ide_web/components/layouts.ex:234
-#: lib/potok_ide_web/components/layouts.ex:274
+#: lib/potok_ide_web/components/layouts.ex:240
+#: lib/potok_ide_web/components/layouts.ex:280
 #, elixir-autogen, elixir-format
 msgid "close"
 msgstr ""
@@ -673,7 +673,7 @@ msgid "See more"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:821
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:953
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:954
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1229
 #, elixir-autogen, elixir-format
 msgid "Message"
@@ -689,17 +689,17 @@ msgstr ""
 msgid "Group picture URL"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:408
+#: lib/potok_ide_web/components/layouts.ex:414
 #, elixir-autogen, elixir-format
 msgid "Account"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:318
+#: lib/potok_ide_web/components/layouts.ex:324
 #, elixir-autogen, elixir-format
 msgid "Navigation"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:434
+#: lib/potok_ide_web/components/layouts.ex:440
 #: lib/potok_ide_web/live/account_live/settings.ex:357
 #, elixir-autogen, elixir-format
 msgid "Preferences"
@@ -710,7 +710,7 @@ msgstr ""
 msgid "Are you sure you want to delete this message?"
 msgstr "Are you sure you want to delete this message?"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1460
+#: lib/potok_ide_web/live/group_live/show.ex:1461
 #, elixir-autogen, elixir-format
 msgid "Could not delete message."
 msgstr "Could not delete message."
@@ -720,28 +720,28 @@ msgstr "Could not delete message."
 msgid "Delete message"
 msgstr "Delete message"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1452
+#: lib/potok_ide_web/live/group_live/show.ex:1453
 #, elixir-autogen, elixir-format
 msgid "Message deleted."
 msgstr "Message deleted."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1326
-#: lib/potok_ide_web/live/group_live/show.ex:1363
-#: lib/potok_ide_web/live/group_live/show.ex:1415
-#: lib/potok_ide_web/live/group_live/show.ex:1445
-#: lib/potok_ide_web/live/group_live/show.ex:1472
-#: lib/potok_ide_web/live/group_live/show.ex:1507
-#: lib/potok_ide_web/live/group_live/show.ex:1753
+#: lib/potok_ide_web/live/group_live/show.ex:1327
+#: lib/potok_ide_web/live/group_live/show.ex:1364
+#: lib/potok_ide_web/live/group_live/show.ex:1416
+#: lib/potok_ide_web/live/group_live/show.ex:1446
+#: lib/potok_ide_web/live/group_live/show.ex:1473
+#: lib/potok_ide_web/live/group_live/show.ex:1508
+#: lib/potok_ide_web/live/group_live/show.ex:1754
 #, elixir-autogen, elixir-format
 msgid "Message not found."
 msgstr "Message not found."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1457
+#: lib/potok_ide_web/live/group_live/show.ex:1458
 #, elixir-autogen, elixir-format
 msgid "You can only delete your own messages."
 msgstr "You can only delete your own messages."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1386
+#: lib/potok_ide_web/live/group_live/show.ex:1387
 #, elixir-autogen, elixir-format
 msgid "Could not update message."
 msgstr "Could not update message."
@@ -751,18 +751,18 @@ msgstr "Could not update message."
 msgid "Edit message"
 msgstr "Edit message"
 
-#: lib/potok_ide_web/live/group_live/show.ex:389
+#: lib/potok_ide_web/live/group_live/show.ex:390
 #, elixir-autogen, elixir-format
 msgid "Open sub-groups tab"
 msgstr "Open sub-groups tab"
 
-#: lib/potok_ide_web/live/group_live/show.ex:1370
+#: lib/potok_ide_web/live/group_live/show.ex:1371
 #, elixir-autogen, elixir-format
 msgid "Message updated."
 msgstr "Message updated."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1329
-#: lib/potok_ide_web/live/group_live/show.ex:1376
+#: lib/potok_ide_web/live/group_live/show.ex:1330
+#: lib/potok_ide_web/live/group_live/show.ex:1377
 #, elixir-autogen, elixir-format
 msgid "You can only edit your own messages."
 msgstr "You can only edit your own messages."
@@ -947,19 +947,19 @@ msgstr ""
 msgid "You cannot invite your own profile."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1834
+#: lib/potok_ide_web/live/group_live/show.ex:1835
 #: lib/potok_ide_web/live/request_live/index.ex:563
 #, elixir-autogen, elixir-format
 msgid "Access request accepted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1740
+#: lib/potok_ide_web/live/group_live/show.ex:1741
 #, elixir-autogen, elixir-format
 msgid "Access request already pending."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6020
-#: lib/potok_ide_web/live/group_live/show.ex:6030
+#: lib/potok_ide_web/live/group_live/show.ex:6021
+#: lib/potok_ide_web/live/group_live/show.ex:6031
 #: lib/potok_ide_web/live/request_live/index.ex:852
 #: lib/potok_ide_web/live/request_live/index.ex:863
 #: lib/potok_ide_web/live/request_live/index.ex:879
@@ -967,19 +967,19 @@ msgstr ""
 msgid "Access request not found."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:333
-#: lib/potok_ide_web/live/group_live/show.ex:337
+#: lib/potok_ide_web/live/group_live/show.ex:334
+#: lib/potok_ide_web/live/group_live/show.ex:338
 #, elixir-autogen, elixir-format
 msgid "Access request pending"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1843
+#: lib/potok_ide_web/live/group_live/show.ex:1844
 #: lib/potok_ide_web/live/request_live/index.ex:572
 #, elixir-autogen, elixir-format
 msgid "Access request rejected."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1718
+#: lib/potok_ide_web/live/group_live/show.ex:1719
 #, elixir-autogen, elixir-format
 msgid "Access request sent."
 msgstr ""
@@ -999,23 +999,23 @@ msgstr "Are you sure you want to delete this value?"
 msgid "Choose another profile to open a direct group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2274
+#: lib/potok_ide_web/live/group_live/show.ex:2275
 #, elixir-autogen, elixir-format
 msgid "Could not delete group."
 msgstr "Could not delete value."
 
-#: lib/potok_ide_web/live/group_live/show.ex:1821
+#: lib/potok_ide_web/live/group_live/show.ex:1822
 #, elixir-autogen, elixir-format
 msgid "Could not remove member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1743
+#: lib/potok_ide_web/live/group_live/show.ex:1744
 #, elixir-autogen, elixir-format
 msgid "Could not send access request."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:6023
-#: lib/potok_ide_web/live/group_live/show.ex:6026
+#: lib/potok_ide_web/live/group_live/show.ex:6024
+#: lib/potok_ide_web/live/group_live/show.ex:6027
 #: lib/potok_ide_web/live/request_live/index.ex:874
 #, elixir-autogen, elixir-format
 msgid "Could not update access request."
@@ -1027,7 +1027,7 @@ msgstr "Could not update value."
 msgid "Could not update group description."
 msgstr "Could not update value."
 
-#: lib/potok_ide_web/live/group_live/show.ex:4489
+#: lib/potok_ide_web/live/group_live/show.ex:4490
 #, elixir-autogen, elixir-format
 msgid "Could not update group."
 msgstr "Could not update value."
@@ -1052,7 +1052,7 @@ msgstr ""
 msgid "Delete group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2270
+#: lib/potok_ide_web/live/group_live/show.ex:2271
 #, elixir-autogen, elixir-format
 msgid "Delete this group's sub-groups before deleting the group."
 msgstr ""
@@ -1068,13 +1068,13 @@ msgstr ""
 msgid "Editor"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2252
-#: lib/potok_ide_web/live/group_live/show.ex:2829
+#: lib/potok_ide_web/live/group_live/show.ex:2253
+#: lib/potok_ide_web/live/group_live/show.ex:2830
 #, elixir-autogen, elixir-format
 msgid "Group deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4473
+#: lib/potok_ide_web/live/group_live/show.ex:4474
 #, elixir-autogen, elixir-format
 msgid "Group updated."
 msgstr ""
@@ -1084,7 +1084,7 @@ msgstr ""
 msgid "Live preview"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1797
+#: lib/potok_ide_web/live/group_live/show.ex:1798
 #, elixir-autogen, elixir-format
 msgid "Member removed."
 msgstr ""
@@ -1099,12 +1099,12 @@ msgstr ""
 msgid "No pending approval requests."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1723
+#: lib/potok_ide_web/live/group_live/show.ex:1724
 #, elixir-autogen, elixir-format
 msgid "Only public groups accept access requests."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:406
+#: lib/potok_ide_web/live/group_live/show.ex:407
 #, elixir-autogen, elixir-format
 msgid "Open invite account tab"
 msgstr ""
@@ -1131,9 +1131,9 @@ msgstr ""
 msgid "Preview"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1814
-#: lib/potok_ide_web/live/group_live/show.ex:1825
-#: lib/potok_ide_web/live/group_live/show.ex:2655
+#: lib/potok_ide_web/live/group_live/show.ex:1815
+#: lib/potok_ide_web/live/group_live/show.ex:1826
+#: lib/potok_ide_web/live/group_live/show.ex:2656
 #: lib/potok_ide_web/live/profile_live/direct.ex:35
 #, elixir-autogen, elixir-format
 msgid "Profile not found."
@@ -1153,8 +1153,8 @@ msgstr ""
 msgid "Public group"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:817
-#: lib/potok_ide_web/components/layouts.ex:832
+#: lib/potok_ide_web/components/layouts.ex:823
+#: lib/potok_ide_web/components/layouts.ex:838
 #, elixir-autogen, elixir-format
 msgid "Reconnecting"
 msgstr ""
@@ -1175,7 +1175,7 @@ msgstr ""
 msgid "Remove %{username} from this group?"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:328
+#: lib/potok_ide_web/live/group_live/show.ex:329
 #, elixir-autogen, elixir-format
 msgid "Request access"
 msgstr ""
@@ -1192,9 +1192,9 @@ msgstr ""
 msgid "Requester"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:164
-#: lib/potok_ide_web/components/layouts.ex:166
-#: lib/potok_ide_web/components/layouts.ex:365
+#: lib/potok_ide_web/components/layouts.ex:169
+#: lib/potok_ide_web/components/layouts.ex:171
+#: lib/potok_ide_web/components/layouts.ex:371
 #: lib/potok_ide_web/live/request_live/index.ex:36
 #, elixir-autogen, elixir-format
 msgid "Requests"
@@ -1205,7 +1205,7 @@ msgstr ""
 msgid "Review this access request for the selected group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1818
+#: lib/potok_ide_web/live/group_live/show.ex:1819
 #, elixir-autogen, elixir-format
 msgid "Root group members cannot be removed."
 msgstr ""
@@ -1220,13 +1220,13 @@ msgstr ""
 msgid "Start typing to preview the description."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1811
-#: lib/potok_ide_web/live/group_live/show.ex:5462
+#: lib/potok_ide_web/live/group_live/show.ex:1812
+#: lib/potok_ide_web/live/group_live/show.ex:5463
 #, elixir-autogen, elixir-format
 msgid "That profile is not a group member."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2256
+#: lib/potok_ide_web/live/group_live/show.ex:2257
 #, elixir-autogen, elixir-format
 msgid "The root group cannot be deleted."
 msgstr ""
@@ -1241,12 +1241,12 @@ msgstr ""
 msgid "Unable to open a direct group right now."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1733
+#: lib/potok_ide_web/live/group_live/show.ex:1734
 #, elixir-autogen, elixir-format
 msgid "You already have a pending invitation to this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1726
+#: lib/potok_ide_web/live/group_live/show.ex:1727
 #, elixir-autogen, elixir-format
 msgid "You are already a group member."
 msgstr ""
@@ -1261,13 +1261,13 @@ msgstr ""
 msgid "You must be a group member to access group data values."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2246
-#: lib/potok_ide_web/live/group_live/show.ex:2260
+#: lib/potok_ide_web/live/group_live/show.ex:2247
+#: lib/potok_ide_web/live/group_live/show.ex:2261
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to delete this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4676
+#: lib/potok_ide_web/live/group_live/show.ex:4677
 #, elixir-autogen, elixir-format
 msgid "Account invitation email sent."
 msgstr ""
@@ -1321,7 +1321,7 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1228
+#: lib/potok_ide_web/live/group_live/show.ex:1229
 #: lib/potok_ide_web/live/group_live/show/components.ex:241
 #: lib/potok_ide_web/live/profile_live/components.ex:135
 #, elixir-autogen, elixir-format
@@ -1353,7 +1353,7 @@ msgstr ""
 msgid "Clear search"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2235
+#: lib/potok_ide_web/live/group_live/show.ex:2236
 #, elixir-autogen, elixir-format
 msgid "Could not delete data values."
 msgstr "Could not delete value."
@@ -1370,8 +1370,8 @@ msgstr ""
 msgid "Delete Data Values"
 msgstr "Delete Data Values"
 
-#: lib/potok_ide_web/live/group_live/show.ex:2223
-#: lib/potok_ide_web/live/group_live/show.ex:2408
+#: lib/potok_ide_web/live/group_live/show.ex:2224
+#: lib/potok_ide_web/live/group_live/show.ex:2409
 #, elixir-autogen, elixir-format
 msgid "Deleted 1 data value."
 msgid_plural "Deleted %{count} data values."
@@ -1398,7 +1398,7 @@ msgstr ""
 msgid "Enter a username to invite an existing profile, or an email to invite an account."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2491
+#: lib/potok_ide_web/live/group_live/show.ex:2492
 #, elixir-autogen, elixir-format
 msgid "Enter a valid email address."
 msgstr ""
@@ -1450,7 +1450,7 @@ msgstr ""
 msgid "Inserted"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4696
+#: lib/potok_ide_web/live/group_live/show.ex:4697
 #, elixir-autogen, elixir-format
 msgid "Invitation will be sent when they create their first profile."
 msgstr ""
@@ -1505,8 +1505,8 @@ msgstr ""
 msgid "No approved requests yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2215
-#: lib/potok_ide_web/live/group_live/show.ex:2402
+#: lib/potok_ide_web/live/group_live/show.ex:2216
+#: lib/potok_ide_web/live/group_live/show.ex:2403
 #, elixir-autogen, elixir-format
 msgid "No data values to delete."
 msgstr ""
@@ -1637,7 +1637,7 @@ msgstr ""
 msgid "User Agent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2488
+#: lib/potok_ide_web/live/group_live/show.ex:2489
 #, elixir-autogen, elixir-format
 msgid "Username or email is required."
 msgstr ""
@@ -1703,9 +1703,9 @@ msgstr ""
 msgid "No created requests match your search."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:78
-#: lib/potok_ide_web/components/layouts.ex:89
-#: lib/potok_ide_web/components/layouts.ex:90
+#: lib/potok_ide_web/components/layouts.ex:83
+#: lib/potok_ide_web/components/layouts.ex:94
+#: lib/potok_ide_web/components/layouts.ex:95
 #, elixir-autogen, elixir-format
 msgid "Open menu"
 msgstr ""
@@ -1738,13 +1738,13 @@ msgid "Add reaction"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/sheet.ex:214
-#: lib/potok_ide_web/live/group_live/show.ex:1485
-#: lib/potok_ide_web/live/group_live/show.ex:1500
+#: lib/potok_ide_web/live/group_live/show.ex:1486
+#: lib/potok_ide_web/live/group_live/show.ex:1501
 #, elixir-autogen, elixir-format
 msgid "Could not update reaction."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1468
+#: lib/potok_ide_web/live/group_live/show.ex:1469
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to react."
 msgstr ""
@@ -1922,7 +1922,7 @@ msgstr ""
 msgid "Cancel reply"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1436
+#: lib/potok_ide_web/live/group_live/show.ex:1437
 #, elixir-autogen, elixir-format
 msgid "Could not open thread."
 msgstr ""
@@ -1948,7 +1948,7 @@ msgstr ""
 msgid "Show original message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1432
+#: lib/potok_ide_web/live/group_live/show.ex:1433
 #: lib/potok_ide_web/live/group_live/show/components.ex:1133
 #: lib/potok_ide_web/live/group_live/show/components.ex:1137
 #: lib/potok_ide_web/live/group_live/show/components.ex:2172
@@ -1977,7 +1977,7 @@ msgstr ""
 msgid "Threads"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5433
+#: lib/potok_ide_web/live/group_live/show.ex:5434
 #, elixir-autogen, elixir-format
 msgid "A group must keep at least one admin."
 msgstr ""
@@ -2017,8 +2017,8 @@ msgstr ""
 msgid "Change the group's settings, description and app data."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5464
-#: lib/potok_ide_web/live/group_live/show.ex:5470
+#: lib/potok_ide_web/live/group_live/show.ex:5465
+#: lib/potok_ide_web/live/group_live/show.ex:5471
 #, elixir-autogen, elixir-format
 msgid "Could not update roles."
 msgstr ""
@@ -2068,7 +2068,7 @@ msgstr ""
 msgid "Deny"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5436
+#: lib/potok_ide_web/live/group_live/show.ex:5437
 #, elixir-autogen, elixir-format
 msgid "Direct conversations do not have roles or invitations."
 msgstr ""
@@ -2178,12 +2178,12 @@ msgstr ""
 msgid "Rename role"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2552
+#: lib/potok_ide_web/live/group_live/show.ex:2553
 #, elixir-autogen, elixir-format
 msgid "Role %{name} added."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2586
+#: lib/potok_ide_web/live/group_live/show.ex:2587
 #, elixir-autogen, elixir-format
 msgid "Role %{name} deleted."
 msgstr ""
@@ -2194,17 +2194,17 @@ msgstr ""
 msgid "Role name"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5450
+#: lib/potok_ide_web/live/group_live/show.ex:5451
 #, elixir-autogen, elixir-format
 msgid "Role not found."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2571
+#: lib/potok_ide_web/live/group_live/show.ex:2572
 #, elixir-autogen, elixir-format
 msgid "Role renamed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5405
+#: lib/potok_ide_web/live/group_live/show.ex:5406
 #, elixir-autogen, elixir-format
 msgid "Role · %{count} member"
 msgid_plural "Role · %{count} members"
@@ -2253,17 +2253,17 @@ msgstr ""
 msgid "Sub-groups without their own manifest use these roles too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5448
+#: lib/potok_ide_web/live/group_live/show.ex:5449
 #, elixir-autogen, elixir-format
 msgid "The admin and everyone roles cannot be renamed or deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5442
+#: lib/potok_ide_web/live/group_live/show.ex:5443
 #, elixir-autogen, elixir-format
 msgid "The default manifest cannot be changed."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5445
+#: lib/potok_ide_web/live/group_live/show.ex:5446
 #, elixir-autogen, elixir-format
 msgid "This group already has its own manifest."
 msgstr ""
@@ -2273,17 +2273,17 @@ msgstr ""
 msgid "This group has its own manifest"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5439
+#: lib/potok_ide_web/live/group_live/show.ex:5440
 #, elixir-autogen, elixir-format
 msgid "This group inherits its roles. Create its own manifest to change them."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2621
+#: lib/potok_ide_web/live/group_live/show.ex:2622
 #, elixir-autogen, elixir-format
 msgid "This group now has its own manifest."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2637
+#: lib/potok_ide_web/live/group_live/show.ex:2638
 #, elixir-autogen, elixir-format
 msgid "This group uses its parent's roles again."
 msgstr ""
@@ -2308,7 +2308,7 @@ msgstr ""
 msgid "Your roles in this group do not allow posting messages."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5431
+#: lib/potok_ide_web/live/group_live/show.ex:5432
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:412
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:451
 #: lib/potok_ide_web/live/group_live/show/app_api.ex:749
@@ -2336,7 +2336,7 @@ msgid_plural "%{count} files"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1205
+#: lib/potok_ide_web/live/group_live/show.ex:1206
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1431
 #, elixir-autogen, elixir-format
 msgid "Attach at most %{count} files."
@@ -2420,7 +2420,7 @@ msgstr ""
 msgid "Remove file"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:3982
+#: lib/potok_ide_web/live/group_live/show.ex:3983
 #, elixir-autogen, elixir-format
 msgid "Remove the files that cannot be attached."
 msgstr ""
@@ -2430,7 +2430,7 @@ msgstr ""
 msgid "Show files as"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4008
+#: lib/potok_ide_web/live/group_live/show.ex:4009
 #, elixir-autogen, elixir-format
 msgid "Some files could not be uploaded. Please try again."
 msgstr ""
@@ -2455,7 +2455,7 @@ msgstr ""
 msgid "Upload progress"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:3985
+#: lib/potok_ide_web/live/group_live/show.ex:3986
 #, elixir-autogen, elixir-format
 msgid "Wait until the files finish uploading."
 msgstr ""
@@ -2484,7 +2484,7 @@ msgstr[1] ""
 msgid "Show sub-groups as"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:606
+#: lib/potok_ide_web/live/group_live/show.ex:607
 #, elixir-autogen, elixir-format
 msgid "Loading…"
 msgstr ""
@@ -2494,7 +2494,7 @@ msgstr ""
 msgid "Only part of the results is shown. Narrow the search, or open a sub-group to search inside it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5867
+#: lib/potok_ide_web/live/group_live/show.ex:5868
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:670
 #, elixir-autogen, elixir-format
 msgid "Sub-groups of %{name}"
@@ -2510,8 +2510,8 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/media_viewer.ex:65
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:457
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:794
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:924
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1981
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:925
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2073
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:119
 #: lib/potok_ide_web/live/group_live/show/process_form.ex:228
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:616
@@ -2572,7 +2572,7 @@ msgstr ""
 msgid "This file cannot be previewed in the browser."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4577
+#: lib/potok_ide_web/live/group_live/show.ex:4578
 #, elixir-autogen, elixir-format
 msgid "A group can have at most %{count} alternative descriptions."
 msgstr ""
@@ -2588,7 +2588,7 @@ msgstr ""
 msgid "Alternative descriptions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4589
+#: lib/potok_ide_web/live/group_live/show.ex:4590
 #, elixir-autogen, elixir-format
 msgid "Another description already uses the name of the current default."
 msgstr ""
@@ -2602,8 +2602,8 @@ msgstr ""
 msgid "App"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4590
-#: lib/potok_ide_web/live/group_live/show.ex:4593
+#: lib/potok_ide_web/live/group_live/show.ex:4591
+#: lib/potok_ide_web/live/group_live/show.ex:4594
 #, elixir-autogen, elixir-format
 msgid "Could not save the description."
 msgstr ""
@@ -2625,12 +2625,12 @@ msgstr ""
 msgid "Delete this description? The data values of its app are deleted too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2348
+#: lib/potok_ide_web/live/group_live/show.ex:2349
 #, elixir-autogen, elixir-format
 msgid "Description deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4515
+#: lib/potok_ide_web/live/group_live/show.ex:4516
 #, elixir-autogen, elixir-format
 msgid "Description saved."
 msgstr ""
@@ -2701,7 +2701,7 @@ msgstr ""
 msgid "Remove the role limit to make it the default"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4582
+#: lib/potok_ide_web/live/group_live/show.ex:4583
 #, elixir-autogen, elixir-format
 msgid "Remove the role limit to make it the default."
 msgstr ""
@@ -2711,12 +2711,12 @@ msgstr ""
 msgid "Save description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4585
+#: lib/potok_ide_web/live/group_live/show.ex:4586
 #, elixir-autogen, elixir-format
 msgid "That description no longer exists."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2386
+#: lib/potok_ide_web/live/group_live/show.ex:2387
 #, elixir-autogen, elixir-format
 msgid "The description is now the default."
 msgstr ""
@@ -2736,7 +2736,7 @@ msgstr ""
 msgid "Delete every data value of the default description's app? The other apps keep theirs."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1515
+#: lib/potok_ide_web/live/group_live/show.ex:1516
 #: lib/potok_ide_web/live/group_live/show/notices_state.ex:201
 #, elixir-autogen, elixir-format
 msgid "Could not remove the preview."
@@ -2781,12 +2781,12 @@ msgstr ""
 msgid "Member of the parent group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5456
+#: lib/potok_ide_web/live/group_live/show.ex:5457
 #, elixir-autogen, elixir-format
 msgid "This member comes from the parent group. Remove them there."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5459
+#: lib/potok_ide_web/live/group_live/show.ex:5460
 #, elixir-autogen, elixir-format
 msgid "This role comes from the parent group. Change it there."
 msgstr ""
@@ -2807,7 +2807,7 @@ msgstr ""
 msgid "Load newer messages"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1871
+#: lib/potok_ide_web/live/group_live/show.ex:1872
 #, elixir-autogen, elixir-format
 msgid "The original message is no longer available."
 msgstr ""
@@ -2851,7 +2851,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:961
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:969
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1642
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1701
 #, elixir-autogen, elixir-format
 msgid "At"
 msgstr ""
@@ -3012,7 +3012,7 @@ msgstr ""
 msgid "Monthly"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:541
+#: lib/potok_ide_web/live/group_live/show.ex:542
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:71
 #, elixir-autogen, elixir-format
 msgid "My calendar"
@@ -3048,7 +3048,7 @@ msgstr ""
 msgid "Not going"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:365
+#: lib/potok_ide_web/live/group_live/show.ex:366
 #, elixir-autogen, elixir-format
 msgid "Open calendar tab"
 msgstr ""
@@ -3425,9 +3425,9 @@ msgstr ""
 msgid "Tag name"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:139
-#: lib/potok_ide_web/components/layouts.ex:140
-#: lib/potok_ide_web/components/layouts.ex:374
+#: lib/potok_ide_web/components/layouts.ex:144
+#: lib/potok_ide_web/components/layouts.ex:145
+#: lib/potok_ide_web/components/layouts.ex:380
 #: lib/potok_ide_web/components/tag_components.ex:91
 #: lib/potok_ide_web/components/tag_components.ex:120
 #: lib/potok_ide_web/components/tag_components.ex:121
@@ -3837,12 +3837,12 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5276
+#: lib/potok_ide_web/live/group_live/show.ex:5277
 #, elixir-autogen, elixir-format
 msgid "%{names} and %{count} more"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1281
+#: lib/potok_ide_web/live/group_live/show.ex:1282
 #, elixir-autogen, elixir-format
 msgid "Could not read %{names}."
 msgstr ""
@@ -3862,7 +3862,7 @@ msgstr ""
 msgid "Go to groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1268
+#: lib/potok_ide_web/live/group_live/show.ex:1269
 #, elixir-autogen, elixir-format
 msgid "Larger than %{size}: %{names}."
 msgstr ""
@@ -3877,7 +3877,7 @@ msgstr ""
 msgid "Nothing to share"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1273
+#: lib/potok_ide_web/live/group_live/show.ex:1274
 #, elixir-autogen, elixir-format
 msgid "Only %{count} files fit in a message: %{names} left out."
 msgstr ""
@@ -3903,17 +3903,17 @@ msgstr ""
 msgid "Share to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1278
+#: lib/potok_ide_web/live/group_live/show.ex:1279
 #, elixir-autogen, elixir-format
 msgid "You cannot attach files in this group: %{names} left out."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:635
+#: lib/potok_ide_web/components/layouts.ex:641
 #, elixir-autogen, elixir-format
 msgid "No ads, no tracking. The only cookie here is the one that keeps you logged in."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:668
+#: lib/potok_ide_web/components/layouts.ex:674
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:25
 #, elixir-autogen, elixir-format
 msgid "Privacy policy"
@@ -3924,19 +3924,19 @@ msgstr ""
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:723
+#: lib/potok_ide_web/components/layouts.ex:729
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:104
 #, elixir-autogen, elixir-format
 msgid "No account yet?"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:725
+#: lib/potok_ide_web/components/layouts.ex:731
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:106
 #, elixir-autogen, elixir-format
 msgid "Potok is invitation only for now."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:613
+#: lib/potok_ide_web/components/layouts.ex:619
 #: lib/potok_ide_web/controllers/page_html/public_group_page.html.heex:99
 #, elixir-autogen, elixir-format
 msgid "What is Potok?"
@@ -4150,7 +4150,7 @@ msgstr ""
 msgid "You are not in any group yet."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:632
+#: lib/potok_ide_web/components/layouts.ex:638
 #: lib/potok_ide_web/emails/email_components.ex:24
 #: lib/potok_ide_web/emails/email_components.ex:135
 #, elixir-autogen, elixir-format
@@ -4252,7 +4252,7 @@ msgstr ""
 msgid "Several profiles"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:524
+#: lib/potok_ide_web/components/layouts.ex:530
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:20
 #, elixir-autogen, elixir-format
 msgid "Society for society"
@@ -4492,7 +4492,7 @@ msgstr ""
 msgid "About the group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:195
+#: lib/potok_ide_web/live/group_live/show.ex:196
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:515
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:614
 #, elixir-autogen, elixir-format
@@ -4504,7 +4504,7 @@ msgstr ""
 msgid "Group sections"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5765
+#: lib/potok_ide_web/live/group_live/show.ex:5766
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:45
 #, elixir-autogen, elixir-format
 msgid "Messages"
@@ -4526,19 +4526,19 @@ msgstr ""
 msgid "Add a description"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:286
+#: lib/potok_ide_web/live/group_live/show.ex:287
 #, elixir-autogen, elixir-format
 msgid "Conversations"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:893
-#: lib/potok_ide_web/components/layouts.ex:894
+#: lib/potok_ide_web/components/layouts.ex:899
+#: lib/potok_ide_web/components/layouts.ex:900
 #, elixir-autogen, elixir-format
 msgid "Dark theme"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:884
-#: lib/potok_ide_web/components/layouts.ex:885
+#: lib/potok_ide_web/components/layouts.ex:890
+#: lib/potok_ide_web/components/layouts.ex:891
 #, elixir-autogen, elixir-format
 msgid "Light theme"
 msgstr ""
@@ -4554,8 +4554,8 @@ msgstr ""
 msgid "Shared profile"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:875
-#: lib/potok_ide_web/components/layouts.ex:876
+#: lib/potok_ide_web/components/layouts.ex:881
+#: lib/potok_ide_web/components/layouts.ex:882
 #, elixir-autogen, elixir-format
 msgid "System theme"
 msgstr ""
@@ -4590,7 +4590,7 @@ msgstr ""
 msgid "Potok can think of values as arising in groups, and of groups as arising from values."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:528
+#: lib/potok_ide_web/components/layouts.ex:534
 #: lib/potok_ide_web/controllers/page_html/home.html.heex:22
 #, elixir-autogen, elixir-format
 msgid "Conversations, events, files, roles, notifications, groups, sub-groups and apps. On your computer and on your phone."
@@ -4672,7 +4672,7 @@ msgstr ""
 msgid "It goes to the chat as a message with the file. Deleting that message removes the picture from the description."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:3869
+#: lib/potok_ide_web/live/group_live/show.ex:3870
 #, elixir-autogen, elixir-format
 msgid "Picture for the group's description"
 msgstr ""
@@ -4693,7 +4693,7 @@ msgstr ""
 msgid "Sending the picture..."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:4534
+#: lib/potok_ide_web/live/group_live/show.ex:4535
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:143
 #, elixir-autogen, elixir-format
 msgid "Still needed: %{fields}"
@@ -4704,9 +4704,9 @@ msgstr ""
 msgid "Template:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:3860
-#: lib/potok_ide_web/live/group_live/show.ex:3883
-#: lib/potok_ide_web/live/group_live/show.ex:3954
+#: lib/potok_ide_web/live/group_live/show.ex:3861
+#: lib/potok_ide_web/live/group_live/show.ex:3884
+#: lib/potok_ide_web/live/group_live/show.ex:3955
 #: lib/potok_ide_web/live/group_live/show/description_template_form.ex:256
 #, elixir-autogen, elixir-format
 msgid "The picture could not be sent."
@@ -4822,7 +4822,7 @@ msgstr ""
 msgid "Block in this group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1780
+#: lib/potok_ide_web/live/group_live/show.ex:1781
 #, elixir-autogen, elixir-format
 msgid "Block removed."
 msgstr ""
@@ -4832,17 +4832,17 @@ msgstr ""
 msgid "Blocked"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1760
+#: lib/potok_ide_web/live/group_live/show.ex:1761
 #, elixir-autogen, elixir-format
 msgid "Blocked in this group."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1768
+#: lib/potok_ide_web/live/group_live/show.ex:1769
 #, elixir-autogen, elixir-format
 msgid "Could not block."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1783
+#: lib/potok_ide_web/live/group_live/show.ex:1784
 #, elixir-autogen, elixir-format
 msgid "Could not remove the block."
 msgstr ""
@@ -4863,7 +4863,7 @@ msgstr ""
 msgid "Non-members can write"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2503
+#: lib/potok_ide_web/live/group_live/show.ex:2504
 #, elixir-autogen, elixir-format
 msgid "That profile is blocked in this group."
 msgstr ""
@@ -4878,7 +4878,7 @@ msgstr ""
 msgid "They cannot write or react here, ask to join or be invited."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5428
+#: lib/potok_ide_web/live/group_live/show.ex:5429
 #, elixir-autogen, elixir-format
 msgid "Too many messages at once. Try again in a moment."
 msgstr ""
@@ -4888,7 +4888,7 @@ msgstr ""
 msgid "Unblock"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1737
+#: lib/potok_ide_web/live/group_live/show.ex:1738
 #, elixir-autogen, elixir-format
 msgid "You are blocked in this group."
 msgstr ""
@@ -4908,7 +4908,7 @@ msgstr ""
 msgid "Replies with a quote, threads for longer conversations, reactions and @mentions of people or whole roles. Links get a preview, and you can edit a message too. You can open the chat of a public group, so that those who are not members write there too. You can start a poll right in the chat, and everyone votes from there. A line shows you where the unread messages begin, the list of groups shows each one's newest message, and a search finds messages, in threads too, even when you type without diacritics, in Latin or in Cyrillic."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1248
+#: lib/potok_ide_web/live/group_live/show.ex:1249
 #, elixir-autogen, elixir-format
 msgid "Pictures from the keyboard go out from the message field."
 msgstr ""
@@ -4918,7 +4918,7 @@ msgstr ""
 msgid "Up to 10 files per message, up to 100 MB each. Pictures, video and sound open right in the conversation, everything stays in the Files tab, and only members can download them, apart from the pictures you put in a group's description and the files of an open chat. In the Android app you send a GIF or a sticker straight from the keyboard."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:1249
+#: lib/potok_ide_web/live/group_live/show.ex:1250
 #, elixir-autogen, elixir-format
 msgid "You cannot send pictures in this group."
 msgstr ""
@@ -4980,7 +4980,7 @@ msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/create_menu.ex:262
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:830
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2040
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2111
 #, elixir-autogen, elixir-format
 msgid "Form"
 msgstr ""
@@ -5466,7 +5466,7 @@ msgstr ""
 msgid "Last message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:549
+#: lib/potok_ide_web/live/group_live/show.ex:550
 #, elixir-autogen, elixir-format
 msgid "Map of groups"
 msgstr ""
@@ -5491,7 +5491,7 @@ msgstr ""
 msgid "None of your groups has a place on the map yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:377
+#: lib/potok_ide_web/live/group_live/show.ex:378
 #, elixir-autogen, elixir-format
 msgid "Open the map of groups"
 msgstr ""
@@ -6049,7 +6049,7 @@ msgstr ""
 msgid "No messages with those words."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:525
+#: lib/potok_ide_web/live/group_live/show.ex:526
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:186
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:207
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:208
@@ -6114,7 +6114,7 @@ msgstr ""
 msgid "Follow"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:469
+#: lib/potok_ide_web/live/group_live/show.ex:470
 #, elixir-autogen, elixir-format
 msgid "Follow the group"
 msgstr ""
@@ -6166,10 +6166,10 @@ msgstr ""
 msgid "No notices yet. Follow a group and its notices come here."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:114
-#: lib/potok_ide_web/components/layouts.ex:115
-#: lib/potok_ide_web/components/layouts.ex:347
-#: lib/potok_ide_web/live/group_live/show.ex:503
+#: lib/potok_ide_web/components/layouts.ex:119
+#: lib/potok_ide_web/components/layouts.ex:120
+#: lib/potok_ide_web/components/layouts.ex:353
+#: lib/potok_ide_web/live/group_live/show.ex:504
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:59
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:153
 #: lib/potok_ide_web/live/group_live/show/notices_tab.ex:34
@@ -6193,7 +6193,7 @@ msgstr ""
 msgid "Push is off for every notice."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:490
+#: lib/potok_ide_web/live/group_live/show.ex:491
 #: lib/potok_ide_web/live/notice_live/index.ex:153
 #, elixir-autogen, elixir-format
 msgid "Push notifications"
@@ -6243,7 +6243,7 @@ msgid_plural "Send to %{count} followers"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:514
+#: lib/potok_ide_web/live/group_live/show.ex:515
 #: lib/potok_ide_web/live/group_live/show/notices_tab.ex:59
 #: lib/potok_ide_web/live/notice_live/index.ex:166
 #, elixir-autogen, elixir-format
@@ -6307,8 +6307,8 @@ msgstr ""
 msgid "You follow no group yet. Open a group and tap its bell."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:480
-#: lib/potok_ide_web/live/group_live/show.ex:484
+#: lib/potok_ide_web/live/group_live/show.ex:481
+#: lib/potok_ide_web/live/group_live/show.ex:485
 #, elixir-autogen, elixir-format
 msgid "You follow the group"
 msgstr ""
@@ -6351,8 +6351,8 @@ msgstr ""
 msgid "Contents"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:394
-#: lib/potok_ide_web/components/layouts.ex:654
+#: lib/potok_ide_web/components/layouts.ex:400
+#: lib/potok_ide_web/components/layouts.ex:660
 #: lib/potok_ide_web/controllers/page_controller.ex:119
 #: lib/potok_ide_web/controllers/page_html/help.html.heex:11
 #, elixir-autogen, elixir-format
@@ -6461,14 +6461,14 @@ msgstr ""
 msgid "This is a public group on Potok."
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:402
-#: lib/potok_ide_web/components/layouts.ex:661
+#: lib/potok_ide_web/components/layouts.ex:408
+#: lib/potok_ide_web/components/layouts.ex:667
 #, elixir-autogen, elixir-format
 msgid "Costs"
 msgstr ""
 
-#: lib/potok_ide_web/components/layouts.ex:282
-#: lib/potok_ide_web/components/layouts.ex:283
+#: lib/potok_ide_web/components/layouts.ex:288
+#: lib/potok_ide_web/components/layouts.ex:289
 #, elixir-autogen, elixir-format
 msgid "Hide menu"
 msgstr ""
@@ -6490,12 +6490,12 @@ msgid "Its owner no longer edits the app. Whoever saves its rules next takes it 
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/components.ex:822
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1458
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1459
 #, elixir-autogen, elixir-format
 msgid "Process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:571
+#: lib/potok_ide_web/live/group_live/show.ex:572
 #: lib/potok_ide_web/live/group_live/show/members_tab.ex:280
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:57
 #, elixir-autogen, elixir-format
@@ -6525,7 +6525,7 @@ msgstr ""
 msgid "started by %{username}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:5453
+#: lib/potok_ide_web/live/group_live/show.ex:5454
 #, elixir-autogen, elixir-format
 msgid "An app's process leaves its app's group only when its rule is removed."
 msgstr ""
@@ -6702,7 +6702,7 @@ msgstr ""
 msgid "They act for the group's apps and are not counted among the members. An app's rules start and stop them, or its editors on the Processes tab."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:457
+#: lib/potok_ide_web/live/group_live/show.ex:458
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:82
 #: lib/potok_ide_web/live/request_live/index.ex:183
 #, elixir-autogen, elixir-format
@@ -6745,82 +6745,82 @@ msgstr ""
 msgid "someone"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2117
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2188
 #, elixir-autogen, elixir-format
 msgid "%{count} day"
 msgid_plural "%{count} days"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2116
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2187
 #, elixir-autogen, elixir-format
 msgid "%{count} hour"
 msgid_plural "%{count} hours"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2115
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2186
 #, elixir-autogen, elixir-format
 msgid "%{count} minute"
 msgid_plural "%{count} minutes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2118
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2189
 #, elixir-autogen, elixir-format
 msgid "%{count} week"
 msgid_plural "%{count} weeks"
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2152
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2223
 #, elixir-autogen, elixir-format
 msgid "%{field} is empty"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2224
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2295
 #, elixir-autogen, elixir-format
 msgid "A condition needs a way for “otherwise”."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2225
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2296
 #, elixir-autogen, elixir-format
 msgid "A condition needs at least one condition."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1394
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1457
 #, elixir-autogen, elixir-format
 msgid "A decision is still waiting."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2227
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2298
 #, elixir-autogen, elixir-format
 msgid "A drawing holds at most 100 steps."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2072
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2164
 #, elixir-autogen, elixir-format
 msgid "A new end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1375
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1438
 #, elixir-autogen, elixir-format
 msgid "A new value came in."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2528
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2602
 #, elixir-autogen, elixir-format
 msgid "A step cannot lead to itself."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1992
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2453
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2456
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2063
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2527
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2530
 #, elixir-autogen, elixir-format
 msgid "A value comes in"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1199
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1200
 #, elixir-autogen, elixir-format
 msgid "Add a condition"
 msgstr ""
@@ -6830,32 +6830,32 @@ msgstr ""
 msgid "Add a step"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1906
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1971
 #, elixir-autogen, elixir-format
 msgid "Add a step here"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1050
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1051
 #, elixir-autogen, elixir-format
 msgid "Add an outcome"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2375
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2446
 #, elixir-autogen, elixir-format
 msgid "An outcome is empty or too long."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2223
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2294
 #, elixir-autogen, elixir-format
 msgid "An outcome or the deadline has no way on."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1378
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1441
 #, elixir-autogen, elixir-format
 msgid "Approve"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1964
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2056
 #, elixir-autogen, elixir-format
 msgid "Arrow"
 msgstr ""
@@ -6871,33 +6871,33 @@ msgid "Collection"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:838
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1998
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2069
 #, elixir-autogen, elixir-format
 msgid "Condition"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1174
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1175
 #, elixir-autogen, elixir-format
 msgid "Conditions, in order"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:741
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:778
 #, elixir-autogen, elixir-format
 msgid "Could not delete the process."
 msgstr "Could not delete message."
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1054
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1055
 #, elixir-autogen, elixir-format
 msgid "Deadline, with a reminder"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:827
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2027
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2098
 #, elixir-autogen, elixir-format
 msgid "Decision"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1378
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1441
 #, elixir-autogen, elixir-format
 msgid "Decline"
 msgstr ""
@@ -6912,12 +6912,12 @@ msgstr ""
 msgid "Delete this process with all its runs? What it wrote stays."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:917
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:918
 #, elixir-autogen, elixir-format
 msgid "Delete this step"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1907
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1972
 #, elixir-autogen, elixir-format
 msgid "Drag to another step"
 msgstr ""
@@ -6932,22 +6932,22 @@ msgstr ""
 msgid "Draw one: what happens when a new value comes in, step by step."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1995
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2066
 #, elixir-autogen, elixir-format
 msgid "End"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1915
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2007
 #, elixir-autogen, elixir-format
 msgid "Every new value of the collection starts here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2019
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2111
 #, elixir-autogen, elixir-format
 msgid "Field"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2220
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2291
 #, elixir-autogen, elixir-format
 msgid "From this step there is no way to an end."
 msgstr ""
@@ -6957,7 +6957,7 @@ msgstr ""
 msgid "Goes one way or another by what was sent."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1521
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1549
 #, elixir-autogen, elixir-format
 msgid "Here the run is done."
 msgstr ""
@@ -6967,12 +6967,12 @@ msgstr ""
 msgid "How to draw"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:962
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:963
 #, elixir-autogen, elixir-format
 msgid "In the app's group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2020
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2112
 #, elixir-autogen, elixir-format
 msgid "Is"
 msgstr ""
@@ -6987,7 +6987,7 @@ msgstr ""
 msgid "Lay out again"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2030
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2122
 #, elixir-autogen, elixir-format
 msgid "Leads to"
 msgstr ""
@@ -7007,12 +7007,12 @@ msgstr ""
 msgid "Load theirs"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2012
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2083
 #, elixir-autogen, elixir-format
 msgid "Message in %{group}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2001
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2072
 #, elixir-autogen, elixir-format
 msgid "Message in the group"
 msgstr ""
@@ -7022,12 +7022,12 @@ msgstr ""
 msgid "Name of the process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:971
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:972
 #, elixir-autogen, elixir-format
 msgid "Name of the sub-group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:940
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:941
 #, elixir-autogen, elixir-format
 msgid "Name on the drawing"
 msgstr ""
@@ -7037,12 +7037,12 @@ msgstr ""
 msgid "New process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2015
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2086
 #, elixir-autogen, elixir-format
 msgid "New sub-group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1376
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1439
 #, elixir-autogen, elixir-format
 msgid "New value"
 msgstr ""
@@ -7052,22 +7052,22 @@ msgstr ""
 msgid "No collection yet"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2529
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2603
 #, elixir-autogen, elixir-format
 msgid "Nothing leads back to the start."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2530
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2604
 #, elixir-autogen, elixir-format
 msgid "Nothing leads on from an end."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2219
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2290
 #, elixir-autogen, elixir-format
 msgid "Nothing leads to this step from the start."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1355
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1418
 #, elixir-autogen, elixir-format
 msgid "One step went."
 msgid_plural "%{count} steps went."
@@ -7079,8 +7079,8 @@ msgstr[1] ""
 msgid "Only the app's editors change this drawing."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:114
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2541
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:115
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2615
 #, elixir-autogen, elixir-format
 msgid "Only the app's editors draw processes."
 msgstr ""
@@ -7090,18 +7090,18 @@ msgstr ""
 msgid "Opens a sub-group for the value, to talk it over."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1993
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1379
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2085
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1442
 #, elixir-autogen, elixir-format
 msgid "Outcome"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1016
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1017
 #, elixir-autogen, elixir-format
 msgid "Outcomes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2540
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2614
 #, elixir-autogen, elixir-format
 msgid "Pick a collection of the app."
 msgstr ""
@@ -7111,22 +7111,22 @@ msgstr ""
 msgid "Push"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2019
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2090
 #, elixir-autogen, elixir-format
 msgid "Push to %{role}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1930
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2022
 #, elixir-autogen, elixir-format
 msgid "Put in:"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1035
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1036
 #, elixir-autogen, elixir-format
 msgid "Remove the outcome"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1974
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2066
 #, elixir-autogen, elixir-format
 msgid "Remove this branch"
 msgstr ""
@@ -7136,12 +7136,12 @@ msgstr ""
 msgid "Save a drawing, then switch it on."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1482
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1546
 #, elixir-autogen, elixir-format
 msgid "Save the drawing first."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1910
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1975
 #, elixir-autogen, elixir-format
 msgid "Show it all"
 msgstr ""
@@ -7156,7 +7156,7 @@ msgstr ""
 msgid "Someone else saved this process meanwhile."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2384
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2455
 #, elixir-autogen, elixir-format
 msgid "Something here is missing."
 msgstr ""
@@ -7191,21 +7191,21 @@ msgstr ""
 msgid "Tap a step or an arrow to see what it does."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1004
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1005
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:338
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:652
 #, elixir-autogen, elixir-format
 msgid "Text"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2542
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2616
 #: lib/potok_ide_web/live/group_live/show/process_form.ex:174
 #: lib/potok_ide_web/live/group_live/show/processes_state.ex:489
 #, elixir-autogen, elixir-format
 msgid "That did not work."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:218
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:221
 #, elixir-autogen, elixir-format
 msgid "That process is not here."
 msgstr ""
@@ -7215,7 +7215,7 @@ msgstr ""
 msgid "The app draws this process and changes it in its own settings."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2378
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2449
 #, elixir-autogen, elixir-format
 msgid "The condition needs a field."
 msgstr ""
@@ -7225,122 +7225,122 @@ msgstr ""
 msgid "The drawing"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1466
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1530
 #, elixir-autogen, elixir-format
 msgid "The drawing is not finished yet."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2221
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2423
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2292
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2494
 #, elixir-autogen, elixir-format
 msgid "The group has no such role."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2524
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2598
 #, elixir-autogen, elixir-format
 msgid "The last branch stays."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2523
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2597
 #, elixir-autogen, elixir-format
 msgid "The last end stays."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2354
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2425
 #, elixir-autogen, elixir-format
 msgid "The name is empty or too long."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2357
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2428
 #, elixir-autogen, elixir-format
 msgid "The name on the drawing is too long."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:735
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:772
 #, elixir-autogen, elixir-format
 msgid "The process is deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:728
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:765
 #: lib/potok_ide_web/live/group_live/show/process_form.ex:172
 #: lib/potok_ide_web/live/group_live/show/processes_state.ex:486
 #, elixir-autogen, elixir-format
 msgid "The process is off."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:725
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:762
 #, elixir-autogen, elixir-format
 msgid "The process is on."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1446
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1510
 #, elixir-autogen, elixir-format
 msgid "The process is saved."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1430
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1494
 #, elixir-autogen, elixir-format
 msgid "The process is saved. Switch it on when it is ready."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2532
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2606
 #, elixir-autogen, elixir-format
 msgid "The process needs a name of up to 60 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2081
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2173
 #, elixir-autogen, elixir-format
 msgid "The process's owner"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2522
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2596
 #, elixir-autogen, elixir-format
 msgid "The start stays."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2226
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2297
 #, elixir-autogen, elixir-format
 msgid "The sub-group this message goes to is gone."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2351
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2422
 #, elixir-autogen, elixir-format
 msgid "The text is empty or too long."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2381
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2452
 #, elixir-autogen, elixir-format
 msgid "The time is from a minute to a year."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2336
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2407
 #, elixir-autogen, elixir-format
 msgid "The ways on from this step are not right."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2527
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2601
 #, elixir-autogen, elixir-format
 msgid "There are too many already."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2526
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2600
 #, elixir-autogen, elixir-format
 msgid "This way on is needed; send it elsewhere instead."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:996
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:997
 #, elixir-autogen, elixir-format
 msgid "To the people of"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2222
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2531
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2293
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2605
 #, elixir-autogen, elixir-format
 msgid "Two outcomes have the same name."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1349
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2025
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1350
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2117
 #, elixir-autogen, elixir-format
 msgid "Value"
 msgstr ""
@@ -7351,12 +7351,12 @@ msgid "View"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:836
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2043
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2114
 #, elixir-autogen, elixir-format
 msgid "Wait"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1167
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1168
 #, elixir-autogen, elixir-format
 msgid "Wait for"
 msgstr ""
@@ -7376,22 +7376,22 @@ msgstr ""
 msgid "What was sent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:960
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:961
 #, elixir-autogen, elixir-format
 msgid "Where"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1012
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1013
 #, elixir-autogen, elixir-format
 msgid "Who decides"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:976
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:977
 #, elixir-autogen, elixir-format
 msgid "Who runs it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2081
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2173
 #, elixir-autogen, elixir-format
 msgid "Whoever set it going"
 msgstr ""
@@ -7401,66 +7401,67 @@ msgstr ""
 msgid "Writes in the group's chat, or in a sub-group the process made."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1908
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1973
 #, elixir-autogen, elixir-format
 msgid "Zoom in"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1909
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1974
 #, elixir-autogen, elixir-format
 msgid "Zoom out"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2089
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2181
 #, elixir-autogen, elixir-format
 msgid "days"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2141
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2212
 #, elixir-autogen, elixir-format
 msgid "deadline passed"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1122
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2100
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1123
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1568
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2192
 #, elixir-autogen, elixir-format
 msgid "empty"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2096
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2188
 #, elixir-autogen, elixir-format
 msgid "equal to"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2088
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2180
 #, elixir-autogen, elixir-format
 msgid "hours"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2098
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2190
 #, elixir-autogen, elixir-format
 msgid "less than"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2087
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2179
 #, elixir-autogen, elixir-format
 msgid "minutes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2099
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2191
 #, elixir-autogen, elixir-format
 msgid "more than"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1060
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1141
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1315
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1507
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1061
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1142
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1316
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1515
 #, elixir-autogen, elixir-format
 msgid "none"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2097
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2189
 #, elixir-autogen, elixir-format
 msgid "not equal to"
 msgstr ""
@@ -7470,12 +7471,12 @@ msgstr ""
 msgid "on"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2142
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2213
 #, elixir-autogen, elixir-format
 msgid "otherwise"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2090
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2182
 #, elixir-autogen, elixir-format
 msgid "weeks"
 msgstr ""
@@ -7485,83 +7486,83 @@ msgstr ""
 msgid "Click + on an arrow to add a step. Drag the steps where you like them, and drag from the dot under a step to another step to draw an arrow. Click a step or an arrow to change it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1571
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1630
 #, elixir-autogen, elixir-format
 msgid "A message a person writes in the group's chat starts it when it holds one of these words or mentions the role. Replies in threads do not count."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2470
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2544
 #, elixir-autogen, elixir-format
 msgid "A message for %{role}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2464
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2538
 #, elixir-autogen, elixir-format
 msgid "A message with %{words} or for %{role}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1908
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2000
 #, elixir-autogen, elixir-format
 msgid "A message with one of the words starts the process here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2467
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2541
 #, elixir-autogen, elixir-format
 msgid "A message with: %{words}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2448
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2477
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2522
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2551
 #, elixir-autogen, elixir-format
 msgid "A new sub-group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1910
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2002
 #, elixir-autogen, elixir-format
 msgid "A new sub-group starts the process here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2475
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2549
 #, elixir-autogen, elixir-format
 msgid "A new sub-group with a place"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1589
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1648
 #, elixir-autogen, elixir-format
 msgid "A sub-group someone makes here starts it: by hand, from a preset, a place added on the map, or an app. Records, threads and what a process makes do not."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2407
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2478
 #, elixir-autogen, elixir-format
 msgid "At most 10 words."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1601
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1660
 #, elixir-autogen, elixir-format
 msgid "Every day"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2496
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2570
 #, elixir-autogen, elixir-format
 msgid "Every day at %{time}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1603
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1662
 #, elixir-autogen, elixir-format
 msgid "Every month"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2509
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2583
 #, elixir-autogen, elixir-format
 msgid "Every month on day %{day} at %{time}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1602
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1661
 #, elixir-autogen, elixir-format
 msgid "Every week"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2499
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2573
 #, elixir-autogen, elixir-format
 msgid "Every week on %{days} at %{time}"
 msgstr ""
@@ -7571,7 +7572,7 @@ msgstr ""
 msgid "Give it a title of up to 120 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1599
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1658
 #, elixir-autogen, elixir-format
 msgid "How often"
 msgstr ""
@@ -7581,27 +7582,27 @@ msgstr ""
 msgid "In the group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1568
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1627
 #, elixir-autogen, elixir-format
 msgid "No role"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1607
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1666
 #, elixir-autogen, elixir-format
 msgid "On"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1632
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1691
 #, elixir-autogen, elixir-format
 msgid "On day"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2506
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2580
 #, elixir-autogen, elixir-format
 msgid "On the last day of the month at %{time}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1586
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1645
 #, elixir-autogen, elixir-format
 msgid "Only sub-groups with a place on the map"
 msgstr ""
@@ -7611,12 +7612,12 @@ msgstr ""
 msgid "Open the message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1567
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1626
 #, elixir-autogen, elixir-format
 msgid "Or a role the message mentions"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2421
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2492
 #, elixir-autogen, elixir-format
 msgid "Pick at least one day."
 msgstr ""
@@ -7632,7 +7633,7 @@ msgstr ""
 msgid "Start the process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2481
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2555
 #, elixir-autogen, elixir-format
 msgid "Started by: %{roles}"
 msgstr ""
@@ -7642,7 +7643,7 @@ msgstr ""
 msgid "The process is started."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1911
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2003
 #, elixir-autogen, elixir-format
 msgid "The process starts here at the set time."
 msgstr ""
@@ -7652,28 +7653,28 @@ msgstr ""
 msgid "The text is at most 2000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2422
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2493
 #, elixir-autogen, elixir-format
 msgid "The time is written as 20:00."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1673
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1732
 #, elixir-autogen, elixir-format
 msgid "They get a Start button on the Processes tab, with a title and a text the steps can put in."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1645
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1704
 #, elixir-autogen, elixir-format
 msgid "Times are in %{zone}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2405
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2476
 #, elixir-autogen, elixir-format
 msgid "Type a word, or pick a role a message mentions."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:466
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1547
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1605
 #, elixir-autogen, elixir-format
 msgid "What starts it"
 msgstr ""
@@ -7683,29 +7684,29 @@ msgstr ""
 msgid "What starts the process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1460
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2434
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2538
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1524
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2508
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2612
 #, elixir-autogen, elixir-format
 msgid "What starts the process is not set right."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1649
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1708
 #, elixir-autogen, elixir-format
 msgid "Who may start it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1912
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2004
 #, elixir-autogen, elixir-format
 msgid "Whoever starts it by hand starts here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2410
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2481
 #, elixir-autogen, elixir-format
 msgid "Words go one by one, 2 to 40 letters or digits each."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1558
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1617
 #, elixir-autogen, elixir-format
 msgid "Words in the message"
 msgstr ""
@@ -7716,82 +7717,82 @@ msgstr ""
 msgid "You may not start this process."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2516
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2590
 #, elixir-autogen, elixir-format
 msgid "a sub-group is made"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2514
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2588
 #, elixir-autogen, elixir-format
 msgid "a value comes to an app"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1559
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1618
 #, elixir-autogen, elixir-format
 msgid "leak, broken, power"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2518
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2592
 #, elixir-autogen, elixir-format
 msgid "someone starts it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2515
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2589
 #, elixir-autogen, elixir-format
 msgid "someone writes a message"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1634
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1693
 #, elixir-autogen, elixir-format
 msgid "the last"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2517
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2591
 #, elixir-autogen, elixir-format
 msgid "the set time comes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2447
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2521
 #, elixir-autogen, elixir-format
 msgid "A message"
 msgstr "Edit message"
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2449
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2523
 #, elixir-autogen, elixir-format
 msgid "On a schedule"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2450
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2524
 #, elixir-autogen, elixir-format
 msgid "Started by hand"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1860
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1952
 #, elixir-autogen, elixir-format
 msgid "%{name} (off)"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2535
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2609
 #, elixir-autogen, elixir-format
 msgid "%{process} calls this process. Change that first."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1913
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2005
 #, elixir-autogen, elixir-format
 msgid "A call from another process starts here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2372
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2443
 #, elixir-autogen, elixir-format
 msgid "A field it hands over is too long."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2415
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2486
 #, elixir-autogen, elixir-format, fuzzy
 msgid "At most 10 fields."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2089
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2160
 #, elixir-autogen, elixir-format
 msgid "Call %{process}"
 msgstr ""
@@ -7806,48 +7807,48 @@ msgstr ""
 msgid "Called by"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2451
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2487
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2525
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2561
 #, elixir-autogen, elixir-format
 msgid "Called by another process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2484
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2558
 #, elixir-autogen, elixir-format
 msgid "Called with: %{fields}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1501
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1509
 #, elixir-autogen, elixir-format
 msgid "Deadline, then give up on it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2419
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2490
 #, elixir-autogen, elixir-format
 msgid "Fields go one by one: letters, digits, - and _, up to 40 each."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1704
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1763
 #, elixir-autogen, elixir-format
 msgid "Fields it takes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1450
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1451
 #, elixir-autogen, elixir-format
 msgid "No process of the group takes calls yet. Draw one that starts when another process calls it, then pick it here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1459
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1460
 #, elixir-autogen, elixir-format
 msgid "Pick a process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2360
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2431
 #, elixir-autogen, elixir-format
 msgid "Pick the process to call."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2088
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2159
 #, elixir-autogen, elixir-format
 msgid "Start %{process}"
 msgstr ""
@@ -7857,48 +7858,48 @@ msgstr ""
 msgid "Starts another process of the group, and waits for how it ends."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2416
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2487
 #, elixir-autogen, elixir-format
 msgid "The names from and outcome are taken."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2236
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2307
 #, elixir-autogen, elixir-format
 msgid "The process called does not take this field."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1514
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1541
 #, elixir-autogen, elixir-format
 msgid "The steps after it read how it ended as %{field}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1483
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1491
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Wait for it to end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1392
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1486
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1393
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1494
 #, elixir-autogen, elixir-format
 msgid "What it gets"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2084
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2155
 #, elixir-autogen, elixir-format, fuzzy
 msgid "a process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2519
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2593
 #, elixir-autogen, elixir-format
 msgid "another process calls it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1705
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1764
 #, elixir-autogen, elixir-format
 msgid "fault, floor"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2093
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2164
 #, elixir-autogen, elixir-format
 msgid "goes on at once"
 msgstr ""
@@ -7928,27 +7929,27 @@ msgstr ""
 msgid "the process it calls is off"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1748
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1807
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Another process of the group starts it with the step Call a process, which fills in these fields. When it ends, the caller learns which end it reached."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2366
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2437
 #, elixir-autogen, elixir-format
 msgid "A field is named with up to 40 letters, digits, - or _."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2076
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2147
 #, elixir-autogen, elixir-format
 msgid "Add to %{field}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2238
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2309
 #, elixir-autogen, elixir-format
 msgid "Adding takes a number, or a field."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1343
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1344
 #, elixir-autogen, elixir-format
 msgid "Adds to it"
 msgstr ""
@@ -7968,12 +7969,12 @@ msgstr ""
 msgid "Delete this field? The processes read it as empty."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1354
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1355
 #, elixir-autogen, elixir-format
 msgid "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1331
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1332
 #, elixir-autogen, elixir-format
 msgid "Field of the group"
 msgstr ""
@@ -7994,18 +7995,18 @@ msgstr ""
 msgid "Keeps a value, or adds to a count, that every process of the group reads."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1349
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1350
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:339
 #, elixir-autogen, elixir-format
 msgid "Number"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2080
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2151
 #, elixir-autogen, elixir-format
 msgid "Set %{field}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1343
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1344
 #, elixir-autogen, elixir-format
 msgid "Sets it to"
 msgstr ""
@@ -8015,13 +8016,13 @@ msgstr ""
 msgid "The field is deleted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2369
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2440
 #, elixir-autogen, elixir-format, fuzzy
 msgid "The value is at most 1000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1342
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1381
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1343
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1382
 #, elixir-autogen, elixir-format, fuzzy
 msgid "What it does"
 msgstr ""
@@ -8031,8 +8032,8 @@ msgstr ""
 msgid "What the processes keep for each other. Each reads them as {{group.name}}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:695
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1381
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:732
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1444
 #, elixir-autogen, elixir-format, fuzzy
 msgid "field"
 msgstr ""
@@ -8047,38 +8048,38 @@ msgstr ""
 msgid "the group has 50 fields already"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2413
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2484
 #, elixir-autogen, elixir-format
 msgid "A signal is named in one word, 2 to 40 letters or digits."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1275
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1276
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Add a field"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1135
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1309
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1136
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1310
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Deadline, then go on without it"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1693
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1752
 #, elixir-autogen, elixir-format
 msgid "Each time a process of the group sends this signal, it starts, with the fields the signal carries."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1279
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1280
 #, elixir-autogen, elixir-format
 msgid "It wakes the runs of the group's processes that wait for this signal right now, and starts the processes that start on it. It is not kept: a run that comes to wait later does not get it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1240
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1241
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Name of the field"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2452
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2526
 #, elixir-autogen, elixir-format
 msgid "On a signal"
 msgstr ""
@@ -8088,17 +8089,17 @@ msgstr ""
 msgid "On a signal from"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2490
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2564
 #, elixir-autogen, elixir-format
 msgid "On the signal %{name}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1306
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1307
 #, elixir-autogen, elixir-format
 msgid "Only from a process on the same value or sub-group"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1252
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1253
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Remove the field"
 msgstr ""
@@ -8108,34 +8109,34 @@ msgstr ""
 msgid "Send a signal"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1206
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1287
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1684
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1207
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1288
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1743
 #, elixir-autogen, elixir-format
 msgid "Signal"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2046
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2117
 #, elixir-autogen, elixir-format
 msgid "Signal %{name}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2363
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2434
 #, elixir-autogen, elixir-format
 msgid "Signals and their fields are named in one word: letters, digits, - or _."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1914
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2006
 #, elixir-autogen, elixir-format
 msgid "The signal starts the process here."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1322
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1323
 #, elixir-autogen, elixir-format
 msgid "The steps after it read who sent the signal as %{field}, and the fields it carries the same way."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2058
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2129
 #, elixir-autogen, elixir-format, fuzzy
 msgid "Wait for %{name}"
 msgstr ""
@@ -8155,32 +8156,32 @@ msgstr ""
 msgid "Wakes the processes of the group that wait for it, and starts those that start on it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1216
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1217
 #, elixir-autogen, elixir-format, fuzzy
 msgid "What it carries"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1260
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1261
 #, elixir-autogen, elixir-format, fuzzy
 msgid "What it holds"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2520
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2594
 #, elixir-autogen, elixir-format
 msgid "a signal is sent"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1365
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1428
 #, elixir-autogen, elixir-format, fuzzy
 msgid "ready"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2052
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2123
 #, elixir-autogen, elixir-format
 msgid "same subject"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1686
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1745
 #, elixir-autogen, elixir-format
 msgid "saturday"
 msgstr ""
@@ -8224,7 +8225,7 @@ msgstr ""
 msgid "Shortcut"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2132
+#: lib/potok_ide_web/live/group_live/show.ex:2133
 #, elixir-autogen, elixir-format
 msgid "The shortcut is gone; the group stays where it is."
 msgstr ""
@@ -8239,7 +8240,7 @@ msgstr ""
 msgid "This group already has that shortcut."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2139
+#: lib/potok_ide_web/live/group_live/show.ex:2140
 #, elixir-autogen, elixir-format
 msgid "This shortcut can't be removed."
 msgstr ""
@@ -8343,7 +8344,7 @@ msgid "Only the app's editors define entities."
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show/process_editor.ex:724
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1072
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1073
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:272
 #, elixir-autogen, elixir-format
 msgid "Pick an entity"
@@ -8463,42 +8464,42 @@ msgstr ""
 msgid "yes or no"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2004
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2096
 #, elixir-autogen, elixir-format
 msgid "Goes this way when"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2330
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2401
 #, elixir-autogen, elixir-format
 msgid "Here goes %{expected}, and this is %{got}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2335
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2406
 #, elixir-autogen, elixir-format
 msgid "That name is taken by the process itself."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2326
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2397
 #, elixir-autogen, elixir-format
 msgid "The function %{name} takes something else."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2317
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2388
 #, elixir-autogen, elixir-format
 msgid "The process has nothing named %{name}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2320
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2391
 #, elixir-autogen, elixir-format
 msgid "There is no %{name} in that."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2323
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2394
 #, elixir-autogen, elixir-format
 msgid "There is no function %{name}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2314
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2385
 #, elixir-autogen, elixir-format
 msgid "This cannot be read from its character %{at} on."
 msgstr ""
@@ -8508,27 +8509,27 @@ msgstr ""
 msgid "This drawing now reads what started it as %{example}, and its conditions are expressions. Look it over and save it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2394
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2465
 #, elixir-autogen, elixir-format
 msgid "a choice"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2392
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2463
 #, elixir-autogen, elixir-format
 msgid "a date"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2393
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2464
 #, elixir-autogen, elixir-format
 msgid "a date and time"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2396
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2467
 #, elixir-autogen, elixir-format
 msgid "a list"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2389
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2460
 #, elixir-autogen, elixir-format
 msgid "a number"
 msgstr ""
@@ -8538,22 +8539,22 @@ msgstr ""
 msgid "a number grew too large"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2399
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2470
 #, elixir-autogen, elixir-format
 msgid "a set of fields"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2390
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2461
 #, elixir-autogen, elixir-format
 msgid "a text"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2391
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2462
 #, elixir-autogen, elixir-format
 msgid "a yes or no"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2395
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2466
 #, elixir-autogen, elixir-format
 msgid "an entity"
 msgstr ""
@@ -8583,32 +8584,32 @@ msgstr ""
 msgid "it took for a list what is none"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2401
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2472
 #, elixir-autogen, elixir-format
 msgid "nothing"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2402
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2473
 #, elixir-autogen, elixir-format
 msgid "something else"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2011
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:2103
 #, elixir-autogen, elixir-format
 msgid "An expression that is true or false: compare with %{compare}, join with %{join}, and write a text between quotes."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2286
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2357
 #, elixir-autogen, elixir-format
 msgid "%{name} is no variable, so no step can set it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2294
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2365
 #, elixir-autogen, elixir-format
 msgid "A choice lists what it may be, each once."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2308
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2379
 #, elixir-autogen, elixir-format
 msgid "A drawing keeps at most 30 variables."
 msgstr ""
@@ -8618,27 +8619,27 @@ msgstr ""
 msgid "A list"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2266
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2337
 #, elixir-autogen, elixir-format
 msgid "A step or another variable has that name already."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2283
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2354
 #, elixir-autogen, elixir-format
 msgid "A step sets a variable, or an attribute of one."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1400
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1401
 #, elixir-autogen, elixir-format
 msgid "A text, which may hold names and expressions between %{open} and %{close}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2291
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2362
 #, elixir-autogen, elixir-format
 msgid "A variable is named in one word: letters, digits and _, starting with a letter."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2303
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2374
 #, elixir-autogen, elixir-format
 msgid "A variable is not set right."
 msgstr ""
@@ -8648,7 +8649,7 @@ msgstr ""
 msgid "Add a variable"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1406
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1407
 #, elixir-autogen, elixir-format
 msgid "An expression, such as %{example}. Write %{empty} to leave it without a value."
 msgstr ""
@@ -8674,17 +8675,17 @@ msgstr ""
 msgid "None yet. An entity says what a variable holds: a name, and attributes with their types."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1374
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1375
 #, elixir-autogen, elixir-format
 msgid "Pick a variable"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2297
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2368
 #, elixir-autogen, elixir-format
 msgid "Pick the entity the variable holds."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2342
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2413
 #, elixir-autogen, elixir-format
 msgid "Pick what the step sets: a variable, or an attribute of one."
 msgstr ""
@@ -8694,7 +8695,7 @@ msgstr ""
 msgid "Remove the variable"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2067
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2138
 #, elixir-autogen, elixir-format
 msgid "Set %{name}"
 msgstr ""
@@ -8709,12 +8710,12 @@ msgstr ""
 msgid "Sets a variable of the process, or an attribute of one, to what an expression gives."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2269
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2340
 #, elixir-autogen, elixir-format
 msgid "The group no longer has that entity, or one it holds."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1365
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1366
 #, elixir-autogen, elixir-format
 msgid "The process has no variable yet. Close this step and add one under Variables, then pick it here."
 msgstr ""
@@ -8729,7 +8730,7 @@ msgstr ""
 msgid "What a run keeps for itself: a step sets them, and every step after reads them."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1373
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1374
 #, elixir-autogen, elixir-format
 msgid "What it sets"
 msgstr ""
@@ -8749,7 +8750,7 @@ msgstr ""
 msgid "What its texts and conditions may name, and what each holds."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2300
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2371
 #, elixir-autogen, elixir-format
 msgid "What the variable starts with is too long."
 msgstr ""
@@ -8769,7 +8770,7 @@ msgstr ""
 msgid "a text got what is none"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2062
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2133
 #, elixir-autogen, elixir-format
 msgid "a variable"
 msgstr ""
@@ -8809,7 +8810,7 @@ msgstr ""
 msgid "starts with"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:876
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:913
 #, elixir-autogen, elixir-format
 msgid "variable"
 msgstr ""
@@ -8825,68 +8826,68 @@ msgstr ""
 msgid "%{name}: %{problem}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2275
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2427
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2346
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2498
 #, elixir-autogen, elixir-format
 msgid "A form fills in plain attributes only: pick an entity that holds no other entity and no list."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1849
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1941
 #, elixir-autogen, elixir-format
 msgid "A title and a text"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:476
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:486
 #, elixir-autogen, elixir-format
 msgid "An attribute is named with letters, digits and _, starting with a letter."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2260
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2331
 #, elixir-autogen, elixir-format
 msgid "An attribute that must be filled in is left empty."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1744
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1803
 #, elixir-autogen, elixir-format
 msgid "Another process of the group starts it with the step Call a process, which fills in the attributes of the entity, each as its type. When it ends, the caller learns which end it reached."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1851
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1943
 #, elixir-autogen, elixir-format
 msgid "As it comes"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:500
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:510
 #, elixir-autogen, elixir-format
 msgid "Could not make the entity."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1755
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1814
 #, elixir-autogen, elixir-format
 msgid "Each attribute reads the field of the same name in the value, as its type. What else the value holds is read as it comes."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1778
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1837
 #, elixir-autogen, elixir-format
 msgid "Entity it carries"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1846
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1938
 #, elixir-autogen, elixir-format
 msgid "How a value reads"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1808
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1867
 #, elixir-autogen, elixir-format
 msgid "It takes plain texts. Define an entity under Data, and it can take that instead, each attribute as its type."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1720
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1779
 #, elixir-autogen, elixir-format
 msgid "Make an entity of these fields"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1780
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1839
 #, elixir-autogen, elixir-format
 msgid "No entity, plain fields"
 msgstr ""
@@ -8896,27 +8897,27 @@ msgstr ""
 msgid "Pick one"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1852
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1944
 #, elixir-autogen, elixir-format
 msgid "Plain fields"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2432
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2503
 #, elixir-autogen, elixir-format
 msgid "The group no longer has the entity this process takes."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1669
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1728
 #, elixir-autogen, elixir-format
 msgid "They get a Start button on the Processes tab, with a form that asks for the attributes of the entity."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2263
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2334
 #, elixir-autogen, elixir-format
 msgid "Those who wait for this signal expect it with another entity."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1847
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1939
 #, elixir-autogen, elixir-format
 msgid "What it takes"
 msgstr ""
@@ -8926,17 +8927,17 @@ msgstr ""
 msgid "What it was saved with has changed: an entity, a process it calls or a signal. It runs on as it was saved. Open it, look it over and save it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1844
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1936
 #, elixir-autogen, elixir-format
 msgid "What its form asks for"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1845
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1937
 #, elixir-autogen, elixir-format
 msgid "What the signal carries"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1850
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1942
 #, elixir-autogen, elixir-format
 msgid "Whatever was put in it"
 msgstr ""
@@ -8981,27 +8982,27 @@ msgstr ""
 msgid "What this drawing was saved with has changed: an entity, a process it calls or a signal. Look it over and save it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2525
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2599
 #, elixir-autogen, elixir-format
 msgid "A loop keeps at least one step of its own."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2245
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2316
 #, elixir-autogen, elixir-format
 msgid "A loop needs a step of its own."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2243
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2314
 #, elixir-autogen, elixir-format
 msgid "A loop needs one way into its own steps and one way on."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1384
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1385
 #, elixir-autogen, elixir-format
 msgid "Adds an item to its end"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2255
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2326
 #, elixir-autogen, elixir-format
 msgid "An item is named in one word: letters, digits and _, starting with a letter."
 msgstr ""
@@ -9011,7 +9012,7 @@ msgstr ""
 msgid "For each"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2072
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2143
 #, elixir-autogen, elixir-format
 msgid "For each %{item}"
 msgstr ""
@@ -9021,67 +9022,67 @@ msgstr ""
 msgid "Goes through a list an item at a time, with steps of its own for each."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1437
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1438
 #, elixir-autogen, elixir-format
 msgid "Its own steps run once for each item of the list, and read the item on hand as %{item} and its place as %{index} of %{count}. After the last item it goes on. A list holds 200 items at most."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1417
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1418
 #, elixir-autogen, elixir-format
 msgid "List it goes through"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1431
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1432
 #, elixir-autogen, elixir-format
 msgid "Name of an item"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2251
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2322
 #, elixir-autogen, elixir-format
 msgid "Only the loop itself leads into its own steps."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2240
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2311
 #, elixir-autogen, elixir-format
 msgid "Say which list the loop goes through."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1383
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1384
 #, elixir-autogen, elixir-format
 msgid "Sets the whole list"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2248
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2319
 #, elixir-autogen, elixir-format
 msgid "The steps of a loop lead back to the loop, not to an end."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1418
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1419
 #, elixir-autogen, elixir-format
 msgid "a list, such as a variable that keeps one"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2123
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2194
 #, elixir-autogen, elixir-format
 msgid "after the last"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2143
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2214
 #, elixir-autogen, elixir-format
 msgid "for each"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1388
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:1451
 #, elixir-autogen, elixir-format
 msgid "item"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2066
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2137
 #, elixir-autogen, elixir-format
 msgid "Add to list %{name}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1468
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1475
 #, elixir-autogen, elixir-format
 msgid "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns only which end it reached."
 msgstr ""
@@ -9091,7 +9092,7 @@ msgstr ""
 msgid "The processes of the groups above and below may call it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1735
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1794
 #, elixir-autogen, elixir-format
 msgid "The processes of the groups above and below this one may call it too, and their editors see its name and what it takes. Left off, only the processes of this group call it."
 msgstr ""
@@ -9106,12 +9107,12 @@ msgstr ""
 msgid "public"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1733
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1792
 #, elixir-autogen, elixir-format
 msgid "Public process"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2231
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2302
 #, elixir-autogen, elixir-format
 msgid "The process this step calls is gone, or no longer public. Pick one that starts when another calls it."
 msgstr ""
@@ -9121,37 +9122,37 @@ msgstr ""
 msgid "A group's description doesn't have to be just text. It can also be a small app, say a form, a poll or a task list. A form, or another app, can also run a process: when a request comes in, it posts it in the chat, opens a sub-group for it and waits for whoever decides, with a reminder when they are late. You can also draw such a process yourself, right in Potok, even in a group without an app: it can start on a message with a word you pick, on a new sub-group, at a set time, or when someone starts it. One process can also call another and wait to see how it ends, send a signal others wait for, or keep a count the others read. You can describe the data it works with yourself, say a fault with its floor, keep what it needs in variables, and let it go through a list one item at a time. It can also ask you something on the way: a form opens, and what you fill in goes on with it. Or pick a template, say news or an event, and fill in the fields. You can open the description of a public group, app and all, to people without an account too."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1080
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1081
 #, elixir-autogen, elixir-format
 msgid "A form asks for an entity of plain attributes. Define one under Data first."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1085
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1086
 #, elixir-autogen, elixir-format
 msgid "It asks for %{entity}."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1161
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1162
 #, elixir-autogen, elixir-format
 msgid "It opens by itself for whoever started the run, when they have just done what led to it. Otherwise it waits on the Processes tab, under Waiting for you."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1157
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1158
 #, elixir-autogen, elixir-format
 msgid "It waits for the people of the role on the Processes tab, under Waiting for you."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2280
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2351
 #, elixir-autogen, elixir-format
 msgid "Nobody starts a process on a schedule, so its form asks the people of a role."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2271
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2342
 #, elixir-autogen, elixir-format
 msgid "Pick the entity the form asks for."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1148
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1149
 #, elixir-autogen, elixir-format
 msgid "The steps after it read what was filled in an attribute at a time, as %{field}, and who filled it in as %{author}."
 msgstr ""
@@ -9161,27 +9162,27 @@ msgstr ""
 msgid "Waits for someone to fill in an entity, an attribute at a time."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1071
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1072
 #, elixir-autogen, elixir-format
 msgid "What it asks for"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1090
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1091
 #, elixir-autogen, elixir-format
 msgid "Who fills it in"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1092
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1093
 #, elixir-autogen, elixir-format
 msgid "Whoever started the run"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1842
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1934
 #, elixir-autogen, elixir-format
 msgid "attribute"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2033
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2104
 #, elixir-autogen, elixir-format
 msgid "whoever started it"
 msgstr ""
@@ -9238,41 +9239,41 @@ msgstr ""
 msgid "form filled in"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:449
 #: lib/potok_ide_web/live/group_live/show.ex:450
+#: lib/potok_ide_web/live/group_live/show.ex:451
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:819
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:820
 #, elixir-autogen, elixir-format
 msgid "Waiting for you: %{count}"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1102
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1103
 #, elixir-autogen, elixir-format
 msgid "Tell us what broke, and we will send someone."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1101
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1102
 #, elixir-autogen, elixir-format
 msgid "What it says first"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2345
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2416
 #, elixir-autogen, elixir-format
 msgid "What the form says first is at most 1000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2348
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2419
 #, elixir-autogen, elixir-format
 msgid "What the form starts with is at most 1000 characters."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1129
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1130
 #, elixir-autogen, elixir-format
 msgid "Whoever fills it in sees this already written, and may change it. Leave an attribute empty to have it asked."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1107
-#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1121
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1108
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1122
 #, elixir-autogen, elixir-format
 msgid "Already filled in"
 msgstr ""
@@ -9354,17 +9355,17 @@ msgstr ""
 msgid "Muted until you turn them on"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2170
+#: lib/potok_ide_web/live/group_live/show.ex:2171
 #, elixir-autogen, elixir-format
 msgid "Only the group's members can mute it."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2161
+#: lib/potok_ide_web/live/group_live/show.ex:2162
 #, elixir-autogen, elixir-format
 msgid "The group is muted."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:2162
+#: lib/potok_ide_web/live/group_live/show.ex:2163
 #, elixir-autogen, elixir-format
 msgid "The group's notifications are on again."
 msgstr ""
@@ -9384,8 +9385,8 @@ msgstr ""
 msgid "Hide your groups"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show.ex:181
 #: lib/potok_ide_web/live/group_live/show.ex:182
+#: lib/potok_ide_web/live/group_live/show.ex:183
 #, elixir-autogen, elixir-format
 msgid "Show your groups"
 msgstr ""
@@ -9394,4 +9395,49 @@ msgstr ""
 #: lib/potok_ide_web/live/group_live/show/group_sidebar.ex:108
 #, elixir-autogen, elixir-format
 msgid "Your groups"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1470
+#, elixir-autogen, elixir-format
+msgid "A public process of %{group}. It runs there with what this step hands it and nothing else, and this process learns which end it reached and what that end hands back."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1575
+#, elixir-autogen, elixir-format
+msgid "A text is written as a text, with names in double braces; anything else is an expression of its type."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1894
+#, elixir-autogen, elixir-format
+msgid "Each end fills it in, and the process that called it reads it, in its own group or in another."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1527
+#, elixir-autogen, elixir-format
+msgid "It hands back %{entity}: %{attributes}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1889
+#, elixir-autogen, elixir-format
+msgid "Only the end it reached"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor_state.ex:2506
+#, elixir-autogen, elixir-format
+msgid "The group no longer has the entity this process hands back."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1534
+#, elixir-autogen, elixir-format
+msgid "The steps after it read how it ended as %{field}, and what it hands back as %{example}."
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1887
+#, elixir-autogen, elixir-format
+msgid "What it hands back"
+msgstr ""
+
+#: lib/potok_ide_web/live/group_live/show/process_editor.ex:1552
+#, elixir-autogen, elixir-format
+msgid "What it hands back to the process that called it"
 msgstr ""

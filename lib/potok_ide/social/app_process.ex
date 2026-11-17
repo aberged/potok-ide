@@ -45,6 +45,10 @@ defmodule PotokIde.Social.AppProcess do
     # The entity a drawn process takes when it starts, where its trigger lets
     # it take one (`Processes.Triggers.typed?/1`); nil for one that takes none.
     belongs_to :entry_entity, PotokIde.Processes.GroupEntity
+    # The entity a drawn process that others call hands back to its caller,
+    # each of its ends filling it in; nil for one that hands back only the
+    # end it reached.
+    belongs_to :return_entity, PotokIde.Processes.GroupEntity
     # A drawn process that others call: whether the processes of the groups
     # above and below its group may call it too (`Processes.Reach`).
     field :is_public, :boolean, default: false

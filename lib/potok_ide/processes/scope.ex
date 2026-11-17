@@ -8,7 +8,8 @@ defmodule PotokIde.Processes.Scope do
     the graph keeps as `entry`;
   - the id of a decision is what it ended with (`odluka.outcome`, `.by`,
     `.comment`), of a call that waits how the called process ended
-    (`poziv.outcome`), and of a wait for a signal what the signal carried
+    (`poziv.outcome`) and, for one that hands an entity back, its attributes
+    (`poziv.iznos`), and of a wait for a signal what the signal carried
     (`prijem.from`, and its fields, or the attributes of the entity the
     wait names), and of a form what was filled in (`prijava.sprat`, the
     attributes of the entity it asks for, and `prijava.author`);
@@ -66,9 +67,18 @@ defmodule PotokIde.Processes.Scope do
 
   defp result(%{"type" => "callActivity", "wait" => false}, _entry, _entities), do: []
 
-  # A call brings back how it ended, and may bring more.
-  defp result(%{"type" => "callActivity", "id" => id}, _entry, _entities),
-    do: [{id, {:record, %{"outcome" => :text}, true}}]
+  # A call brings back how it ended, with the attributes of the entity its
+  # process hands back, or more of whatever it had.
+  defp result(%{"type" => "callActivity", "id" => id} = call, _entry, entities) do
+    case call["returns"] && Types.attributes(entities, call["returns"]) do
+      attributes when is_list(attributes) ->
+        fields = Map.new(attributes, &{&1["name"], Types.of(&1)})
+        [{id, {:record, Map.put(fields, "outcome", :text), false}}]
+
+      _hands_back_nothing ->
+        [{id, {:record, %{"outcome" => :text}, true}}]
+    end
+  end
 
   # A wait brings what the signal carried: the attributes of the entity it
   # names, or whatever came where it names none.

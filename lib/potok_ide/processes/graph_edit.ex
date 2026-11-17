@@ -600,6 +600,7 @@ defmodule PotokIde.Processes.GraphEdit do
   defp editable_keys(%{"type" => "timer"}), do: ~w(label duration)
   defp editable_keys(%{"type" => "callActivity"}), do: ~w(label process wait fields)
   defp editable_keys(%{"type" => "loop"}), do: ~w(label list item)
+  defp editable_keys(%{"type" => "endEvent"}), do: ~w(label values)
   defp editable_keys(_node), do: ~w(label)
 
   defp put_label(node, label) when is_binary(label) do
