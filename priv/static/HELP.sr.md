@@ -146,7 +146,7 @@ Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo koris
 
 ## Početna i pronalaženje grupa {:#pocetna}
 
-Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Katanac znači da je grupa privatna, a globus da je javna.
+Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.
 
 Iznad spiska su filteri: javne grupe u kojima nisi član, niti, grupe u kojima si član, koje si napravio ili koje pratiš, vrsta grupe i pretraga po nazivu. Grupe koje pratiš ostaju na spisku i kad sakriješ javne grupe. Pretraga nalazi grupu i kad kucaš bez kvačica, latinicom ili ćirilicom. Grupe se mogu prikazati kao spisak ili kao fascikle.
 
@@ -162,7 +162,9 @@ Na vrhu grupe su njen naziv, putanja do nje i kartice: Poruke, Fajlovi, Kalendar
 
 Meni grupe ima utišavanje, prikačivanje u kolonu tvojih grupa, opis grupe, deljenje linka javne grupe, tagove, obaveštenja, uloge, pravljenje podgrupe, pozivanje i uređivanje grupe. Šta od toga vidiš, zavisi od tvojih dozvola.
 
-Na širokom ekranu, levo od grupe stoji kolona tvojih grupa, kao stablo foldera: grupe u kojima si član, javne grupe koje pratiš i grupe na putu do njih. Putanja do grupe u kojoj si je otvorena, a strelica pored foldera ga otvara i zatvara; pregledač pamti koje si otvorio. Zatvoren folder pokazuje broj nepročitanih poruka u svemu ispod sebe, pa uvek znaš gde da tražiš. Polje na vrhu traži tvoje grupe po imenu i pokazuje put do svake koju nađe. Grupe do kojih često ideš prikačiš na vrh kolone iz menija grupe, **Prikači u Tvoje grupe**, najviše 20, a direktni razgovori stoje u svojoj listi na dnu. Dodirom prelaziš u drugu grupu bez povratka na početnu. Strelice na vrhu kolone je sklanjaju, a dugme sa linijama u zaglavlju grupe je vraća.
+Dugme sa linijama, levo u zaglavlju grupe, otvara tvoje grupe kao stablo foldera: grupe u kojima si član, javne grupe koje pratiš i grupe na putu do njih. Na telefonu i tabletu se otvaraju kao panel preko grupe, a na širokom ekranu stoje u koloni levo od nje. Putanja do grupe u kojoj si je otvorena, a strelica pored foldera ga otvara i zatvara; pregledač pamti koje si otvorio. Zatvoren folder pokazuje broj nepročitanih poruka u svemu ispod sebe, pa uvek znaš gde da tražiš. Polje na vrhu traži tvoje grupe po imenu i pokazuje put do svake koju nađe. Grupe do kojih često ideš prikačiš na vrh iz menija grupe, **Prikači u Tvoje grupe**, najviše 20, a direktni razgovori stoje u svojoj listi na dnu. Dodirom prelaziš u drugu grupu bez povratka na početnu. Na širokom ekranu strelice na vrhu kolone je sklanjaju, a isto dugme sa linijama je vraća.
+
+![Tvoje grupe na telefonu: prikačene grupe, stablo foldera i pretraga](tvoje-grupe)
 
 Na kartici Podgrupe, strelica ulevo, gore levo, vodi jedan nivo iznad: otvara podgrupe grupe u kojoj ova stoji, u istom prikazu, kao spisak ili kao fascikle.
 

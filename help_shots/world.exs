@@ -49,6 +49,12 @@ defmodule HelpShots.World do
     # Ana keeps the assembly's chat on her home page too, as a shortcut.
     {:ok, _shortcut} = Social.create_group_shortcut(p.("ana"), root, mz.zbor.id)
 
+    # And pins the groups she goes to most, for the strip on top of it and
+    # her column of groups.
+    for group <- [building.root, mz.zbor, news] do
+      :ok = Social.pin_group(p.("ana"), group.id)
+    end
+
     # Ana reads everything up to yesterday evening, so today's messages are new.
     for {group, until} <- [
           {mz.zbor, :yesterday},

@@ -679,5 +679,15 @@
       { "show": "#profile-edit-sharing" },
       { "pause": 500 }
     ]
+  },
+  {
+    "name": "tvoje-grupe",
+    "as": "ana",
+    "url": "/groups/{groups.mz_zbor}",
+    "steps": [
+      { "click": "#group-sidebar-sheet-show" },
+      { "wait": "#group-sidebar-sheet #group-sidebar-tree" },
+      { "pause": 500 }
+    ]
   }
 ]

@@ -140,7 +140,7 @@ You share a shared profile with another profile: in the Sharing part you type it
 
 ## Home and finding groups {:#pocetna}
 
-The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. A lock means the group is private, and a globe that it is public.
+The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.
 
 Above the list are the filters: public groups you are not a member of, threads, groups you are a member of, created or follow, the kind of group and a search by name. The groups you follow stay on the list even when you hide public groups. The search finds a group even when you type without diacritics, in Latin or in Cyrillic. Groups can be shown as a list or as folders.
 
@@ -156,7 +156,9 @@ At the top of a group are its name, the path to it and the tabs: Messages, Files
 
 The group's menu has muting, pinning to the column of your groups, the group's description, sharing a public group's link, tags, notices, roles, creating a sub-group, inviting and editing the group. Which of these you see depends on your permissions.
 
-On a wide screen, a column of your groups stands left of the group, as a tree of folders: the groups you are a member of, the public groups you follow and the groups on the way to them. The way to the group you are in is open, and the arrow beside a folder opens and closes it; the browser remembers which ones you opened. A closed folder shows the number of unread messages in everything below it, so you always know where to look. The field at the top searches your groups by name and shows the way to each one it finds. The groups you often go to you pin on top of the column from the group's menu, **Pin to your groups**, up to 20, and direct conversations stand in a list of their own at the bottom. A tap takes you to another group without going back to the home page. The arrows at the top of the column hide it, and the button with lines in the group's header brings it back.
+The button with lines, on the left of the group's header, opens your groups as a tree of folders: the groups you are a member of, the public groups you follow and the groups on the way to them. On a phone or a tablet they open as a panel over the group, and on a wide screen they stand in a column left of it. The way to the group you are in is open, and the arrow beside a folder opens and closes it; the browser remembers which ones you opened. A closed folder shows the number of unread messages in everything below it, so you always know where to look. The field at the top searches your groups by name and shows the way to each one it finds. The groups you often go to you pin on top from the group's menu, **Pin to your groups**, up to 20, and direct conversations stand in a list of their own at the bottom. A tap takes you to another group without going back to the home page. On a wide screen the arrows at the top of the column hide it, and the same button with lines brings it back.
+
+![Your groups on a phone: pinned groups, the tree of folders and the search](tvoje-grupe)
 
 On the Sub-groups tab, the left arrow at the top left goes one level up: it opens the sub-groups of the group this one sits in, in the same view, as a list or as folders.
 
