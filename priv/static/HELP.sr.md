@@ -338,7 +338,7 @@ Grupu možeš i da utišaš: u meniju grupe dodirni **Utišaj** i izaberi na kol
 
 ![Utišaj: na sat vremena, 8 sati, nedelju dana ili dok ne uključiš](grupa-utisaj)
 
-Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregledač ili telefon. Stižu za nove poruke, pominjanja, odgovore i reakcije, pozive i odobrene zahteve, događaje i podsetnike, glasanja i odgovore na forme. Tu je i poseban prekidač za obaveštenja grupa koje pratiš.
+Push obaveštenja uključuješ u Podešavanjima naloga, posebno za svaki pregledač ili telefon. Stižu za nove poruke, pominjanja, odgovore i reakcije, pozive i odobrene zahteve, događaje i podsetnike, glasanja i odgovore na forme. Nove poruke jedne grupe ne stižu jedna za drugom: posle obaveštenja, sledeće iz te grupe stiže tek kad pročitaš poruke ili prođe pet minuta. Pominjanje i odgovor na tvoju poruku stižu uvek. Tu je i poseban prekidač za obaveštenja grupa koje pratiš.
 
 ![Podešavanja: push obaveštenja](podesavanja-push)
 

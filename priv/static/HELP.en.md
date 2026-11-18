@@ -332,7 +332,7 @@ You can also mute a group: in the group's menu tap **Mute** and pick for how lon
 
 ![Mute: for an hour, 8 hours, a week or until you turn it on](grupa-utisaj)
 
-You turn on push notifications in your account settings, separately for each browser or phone. They come for new messages, mentions, replies and reactions, invitations and approved requests, events and reminders, polls and form responses. There is also a separate switch for the notices of the groups you follow.
+You turn on push notifications in your account settings, separately for each browser or phone. They come for new messages, mentions, replies and reactions, invitations and approved requests, events and reminders, polls and form responses. New messages of one group do not come one after another: after a notification, the next one from that group comes only once you have read the messages or five minutes have passed. A mention and a reply to your message always come. There is also a separate switch for the notices of the groups you follow.
 
 ![Settings: push notifications](podesavanja-push)
 
