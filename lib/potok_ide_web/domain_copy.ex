@@ -196,6 +196,10 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "is_root"), do: dgettext("domain_map", "root")
   defp own_field("Group", "is_root_public"), do: dgettext("domain_map", "public from the root")
   defp own_field("Group", "inherits_members"), do: dgettext("domain_map", "inherits members")
+
+  defp own_field("Group", "inherit_role_keys"),
+    do: dgettext("domain_map", "roles it inherits by")
+
   defp own_field("Group", "last_value_at"), do: dgettext("domain_map", "newest value at")
   defp own_field("Group", "published_at"), do: dgettext("domain_map", "published at")
   defp own_field("Group", "preset"), do: dgettext("domain_map", "ready setup")
@@ -948,6 +952,13 @@ defmodule PotokIdeWeb.DomainCopy do
     )
   end
 
+  def check_text("groups_inherit_role_keys_check") do
+    dgettext(
+      "domain_map",
+      "Only a group that inherits members, and is not a thread, picks roles to inherit them by."
+    )
+  end
+
   def check_text("group_shortcuts_not_self_check") do
     dgettext("domain_map", "A shortcut never opens the group it stands in.")
   end
@@ -1544,7 +1555,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out. The exception is an app withdrawing a group: the inherited members then leave and the direct ones stay."
+            "A group can inherit members: it then holds all the members of its parent and their roles. Those rows in <GroupMembership>memberships</GroupMembership> and <GroupMemberRole>member roles</GroupMemberRole> are marked as inherited and leave with the membership in the parent. Members added in the group itself stay. When a group stops inheriting, the inherited rows become its own and nobody falls out. The exception is an app withdrawing a group: the inherited members then leave and the direct ones stay. It can also take in only the parent's members who hold one of the <GroupRole>roles</GroupRole> it picks: they come with all their roles from there and leave when they lose the last of the picked ones, while a member added in the group itself loses only what came from the parent. When the pick narrows, those who no longer fit leave, except whoever narrowed it. A role deleted in the parent leaves the pick, and a pick left empty stops the inheriting instead of taking everyone in."
           )
       },
       %{

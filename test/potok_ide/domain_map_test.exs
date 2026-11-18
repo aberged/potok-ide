@@ -65,7 +65,7 @@ defmodule PotokIde.DomainMapTest do
 
   test "soft links name real columns on both sides" do
     soft = Enum.filter(DomainMap.graph().edges, &(&1.kind == :soft))
-    assert length(soft) == 8
+    assert length(soft) == 9
 
     for edge <- soft do
       assert hd(edge.columns) in field_names(edge.from), "#{edge.from}.#{hd(edge.columns)}"

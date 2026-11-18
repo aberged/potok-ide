@@ -79,6 +79,7 @@ defmodule PotokIde.DomainMap do
   @soft_links [
     {"GroupMemberRole", "role_key", "GroupRole", "key"},
     {"GroupAltDescription", "visible_role_keys", "GroupRole", "key"},
+    {"Group", "inherit_role_keys", "GroupRole", "key"},
     {"GroupValueRead", "last_read_value_id", "Value", "id"},
     {"Value", "mentioned_profile_ids", "Profile", "id"},
     {"Poll", "voter_role_keys", "GroupRole", "key"},

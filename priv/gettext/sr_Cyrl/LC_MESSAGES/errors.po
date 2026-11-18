@@ -185,3 +185,6 @@ msgstr "Ентитет не може да садржи сам себе, ни п�
 
 msgid "Entities nest at most 4 deep."
 msgstr "Ентитети се угнежђују највише 4 нивоа дубоко."
+
+msgid "is not a role of the parent group"
+msgstr "није улога родитељске групе"

@@ -40,6 +40,10 @@ defmodule PotokIde.Social.Group do
     # Threads always do, lazily: they take in a member of the parent as they
     # take part. `Social` keeps it off for the root's children.
     field :inherits_members, :boolean, default: false
+    # With `inherits_members`, only the parent's members who hold one of these
+    # roles there come in; empty takes every member. Never "everyone", which
+    # every member holds, and always empty for a thread.
+    field :inherit_role_keys, {:array, :string}, default: []
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
     # How many people belong to it, kept by Postgres from the memberships (a
@@ -141,11 +145,13 @@ defmodule PotokIde.Social.Group do
       :is_root_public,
       :uses_api,
       :inherits_members,
+      :inherit_role_keys,
       :creator_id,
       :parent_id,
       :parent_value_id
       | @location_fields
     ])
+    |> update_change(:inherit_role_keys, &normalize_role_keys/1)
     |> validate_location()
     |> validate_required([
       :name,
@@ -162,6 +168,7 @@ defmodule PotokIde.Social.Group do
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
     |> maybe_force_inherits_members_for_thread()
+    |> clear_inherit_role_keys()
     |> add_check_constraints()
     |> check_constraint(:external_key, name: :groups_external_key_check)
     |> unique_constraint([:parent_id, :external_key],
@@ -188,10 +195,12 @@ defmodule PotokIde.Social.Group do
       :is_root_public,
       :uses_api,
       :inherits_members,
+      :inherit_role_keys,
       :area,
       :route
       | @location_fields
     ])
+    |> update_change(:inherit_role_keys, &normalize_role_keys/1)
     |> validate_location()
     |> validate_area()
     |> validate_route()
@@ -212,6 +221,7 @@ defmodule PotokIde.Social.Group do
     |> maybe_force_public_from_root_public()
     |> maybe_force_html_from_uses_api()
     |> maybe_force_inherits_members_for_thread()
+    |> clear_inherit_role_keys()
     |> add_check_constraints()
     |> foreign_key_constraint(:home_alt_description_id)
   end
@@ -386,6 +396,25 @@ defmodule PotokIde.Social.Group do
     end
   end
 
+  # Roles to inherit by mean something only to a group that inherits, and a
+  # thread takes in whoever takes part, so both others keep none.
+  defp clear_inherit_role_keys(changeset) do
+    if get_field(changeset, :inherits_members) and is_nil(get_field(changeset, :parent_value_id)),
+      do: changeset,
+      else: put_change(changeset, :inherit_role_keys, [])
+  end
+
+  # Checkbox groups send a hidden "" so that clearing every box is a change.
+  # Every member holds "everyone", so picking it takes them all, as no pick
+  # does. Sorted, so the same pick in another order is no change.
+  defp normalize_role_keys(keys) when is_list(keys) do
+    keys = keys |> Enum.filter(&is_binary/1) |> Enum.reject(&(&1 == "")) |> Enum.uniq()
+
+    if PotokIde.Social.GroupRole.everyone_key() in keys, do: [], else: Enum.sort(keys)
+  end
+
+  defp normalize_role_keys(_keys), do: []
+
   defp add_check_constraints(changeset) do
     changeset
     |> check_constraint(:description_format, name: :groups_description_format_check)
@@ -399,6 +428,7 @@ defmodule PotokIde.Social.Group do
     |> check_constraint(:creator_id, name: :groups_root_creator_check)
     |> check_constraint(:inherits_members, name: :groups_inherits_members_check)
     |> check_constraint(:inherits_members, name: :groups_thread_inherits_members_check)
+    |> check_constraint(:inherit_role_keys, name: :groups_inherit_role_keys_check)
   end
 
   defp validate_creation_constraints(changeset) do

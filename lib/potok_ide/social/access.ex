@@ -136,6 +136,21 @@ defmodule PotokIde.Social.Access do
   def own_manifest?(%Group{}, _manifest), do: false
 
   @doc """
+  The roles of the parent group by which a group that inherits members can
+  take them in (`Group.inherit_role_keys`), in display order: all but
+  "everyone", which every member holds.
+  """
+  def inheritable_roles(%Group{id: parent_id}), do: inheritable_roles(parent_id)
+  def inheritable_roles(nil), do: []
+
+  def inheritable_roles(parent_id) when is_integer(parent_id) do
+    case effective_manifest(parent_id) do
+      %GroupManifest{roles: roles} -> Enum.reject(roles, &(&1.key == GroupRole.everyone_key()))
+      nil -> []
+    end
+  end
+
+  @doc """
   The profile's access to the group. Pass `manifest:` when it is already
   loaded (e.g. when computing access for several profiles of one group).
   """
@@ -547,11 +562,17 @@ defmodule PotokIde.Social.Access do
   @doc """
   What members of an inheriting group hold through its parent, as
   `%{profile_id => [role_key]}` for those of `profile_ids` who are members of
-  the parent. The group itself can neither remove them nor take those roles.
-  Empty for a group that does not inherit.
+  the parent and, when the group inherits by roles, hold one of them there.
+  The group itself can neither remove them nor take those roles. Empty for a
+  group that does not inherit.
   """
-  def inherited_by_profile(%Group{inherits_members: true, parent_id: parent_id}, profile_ids)
+  def inherited_by_profile(
+        %Group{inherits_members: true, parent_id: parent_id} = group,
+        profile_ids
+      )
       when is_integer(parent_id) and is_list(profile_ids) do
+    keys = group.inherit_role_keys || []
+
     from(gm in GroupMembership,
       left_join: r in GroupMemberRole,
       on: r.group_id == gm.group_id and r.profile_id == gm.profile_id,
@@ -560,7 +581,8 @@ defmodule PotokIde.Social.Access do
     )
     |> Repo.all()
     |> Enum.group_by(fn {profile_id, _key} -> profile_id end, fn {_id, key} -> key end)
-    |> Map.new(fn {profile_id, keys} -> {profile_id, Enum.reject(keys, &is_nil/1)} end)
+    |> Map.new(fn {profile_id, held} -> {profile_id, Enum.reject(held, &is_nil/1)} end)
+    |> Map.filter(fn {_profile_id, held} -> keys == [] or Enum.any?(held, &(&1 in keys)) end)
   end
 
   def inherited_by_profile(%Group{}, profile_ids) when is_list(profile_ids), do: %{}

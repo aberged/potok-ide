@@ -850,6 +850,7 @@ defmodule PotokIde.Social do
       |> Ecto.Changeset.put_change(:preset, preset)
       |> Ecto.Changeset.put_change(:external_key, key)
       |> validate_inheritance_parent(parent.id)
+      |> validate_inherit_role_keys(parent.id)
 
     Multi.new()
     |> Multi.insert(:group, changeset)
@@ -944,6 +945,7 @@ defmodule PotokIde.Social do
         |> Group.update_changeset(Map.new(attrs))
         |> validate_home_alt_description(group)
         |> validate_inheritance_parent(group.parent_id)
+        |> validate_inherit_role_keys(group.parent_id)
         |> mark_published(group)
         |> GroupAreas.put_pin()
         |> GroupRoutes.put_pin()
@@ -951,7 +953,7 @@ defmodule PotokIde.Social do
       Multi.new()
       |> Multi.update(:group, changeset)
       |> Multi.run(:inheritance, fn repo, %{group: updated_group} ->
-        {:ok, switch_inheritance(repo, group, updated_group)}
+        {:ok, switch_inheritance(repo, editor, group, updated_group)}
       end)
       |> Repo.transaction()
       |> case do
@@ -1028,9 +1030,11 @@ defmodule PotokIde.Social do
   end
 
   # Starting to inherit brings in the parent's members; stopping keeps them
-  # all, as direct members.
+  # all, as direct members. Other roles to inherit by send away whoever no
+  # longer holds one of them, but not the editor who changed them.
   defp switch_inheritance(
          repo,
+         _editor,
          %Group{inherits_members: false},
          %Group{inherits_members: true} = group
        ),
@@ -1038,6 +1042,7 @@ defmodule PotokIde.Social do
 
   defp switch_inheritance(
          repo,
+         _editor,
          %Group{inherits_members: true},
          %Group{inherits_members: false} = group
        ) do
@@ -1045,7 +1050,16 @@ defmodule PotokIde.Social do
     []
   end
 
-  defp switch_inheritance(_repo, _group, _updated_group), do: []
+  defp switch_inheritance(
+         repo,
+         %Profile{} = editor,
+         %Group{inherits_members: true, inherit_role_keys: old_keys},
+         %Group{inherits_members: true, inherit_role_keys: keys} = group
+       )
+       when old_keys != keys,
+       do: MemberInheritance.refilter(repo, group.id, editor.id)
+
+  defp switch_inheritance(_repo, _editor, _group, _updated_group), do: []
 
   @doc """
   Whether the group can be set to inherit members: not the root, a direct
@@ -1060,6 +1074,18 @@ defmodule PotokIde.Social do
       if inherits? and root_group_id?(parent_id),
         do: [inherits_members: "is not available for groups in the root group"],
         else: []
+    end)
+  end
+
+  # A group inherits by roles of its parent's manifest, never by "everyone"
+  # (`Group` turns that into no roles). Only a change is checked.
+  defp validate_inherit_role_keys(changeset, parent_id) do
+    Ecto.Changeset.validate_change(changeset, :inherit_role_keys, fn _field, keys ->
+      known = parent_id |> Access.inheritable_roles() |> Enum.map(& &1.key)
+
+      if keys -- known == [],
+        do: [],
+        else: [inherit_role_keys: "is not a role of the parent group"]
     end)
   end
 

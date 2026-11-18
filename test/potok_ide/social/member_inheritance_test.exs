@@ -207,6 +207,187 @@ defmodule PotokIde.Social.MemberInheritanceTest do
     end
   end
 
+  describe "inheriting by roles" do
+    setup %{owner: owner, member: member, parent: parent} do
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, parent)
+      council = role!(owner, parent, "council")
+      helpers = role!(owner, parent, "helpers")
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, council.key)
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, helpers.key)
+      other = profile!("inh-other")
+      add_member!(owner, parent, other)
+
+      %{council: council, helpers: helpers, other: other}
+    end
+
+    test "only the holders of a picked role come in, with all their parent roles", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council,
+      helpers: helpers,
+      other: other
+    } do
+      child = by_roles!(owner, parent, [council.key])
+
+      assert child.inherit_role_keys == [council.key]
+      assert member_ids(child) == Enum.sort([owner.id, member.id])
+      assert role_keys(child, member) == Enum.sort([council.key, helpers.key])
+      assert inherited_membership?(child, member)
+      refute Social.member_of_group?(other, child)
+    end
+
+    test "taking the role in the parent brings a member in and sends them away, down a chain",
+         %{owner: owner, parent: parent, council: council, other: other} do
+      child = by_roles!(owner, parent, [council.key])
+      grandchild = child!(owner, child, "inh-grandchild", %{"inherits_members" => "true"})
+      refute Social.member_of_group?(other, grandchild)
+
+      {:ok, _} = Social.assign_group_member_role(owner, parent, other.id, council.key)
+      assert inherited_membership?(child, other)
+      assert Social.member_of_group?(other, grandchild)
+
+      :ok = Social.unassign_group_member_role(owner, parent, other.id, council.key)
+      refute Social.member_of_group?(other, child)
+      refute Social.member_of_group?(other, grandchild)
+    end
+
+    test "a direct member who holds none of them keeps the membership, not the parent's roles",
+         %{owner: owner, parent: parent, council: council, helpers: helpers, other: other} do
+      child = by_roles!(owner, parent, [council.key])
+      add_member!(owner, child, other)
+      {:ok, _} = Social.assign_group_member_role(owner, parent, other.id, helpers.key)
+
+      assert role_keys(child, other) == []
+      assert Access.inherited_by_profile(child, [other.id]) == %{}
+
+      {:ok, _} = Social.assign_group_member_role(owner, parent, other.id, council.key)
+      assert role_keys(child, other) == Enum.sort([council.key, helpers.key])
+      assert Map.has_key?(Access.inherited_by_profile(child, [other.id]), other.id)
+
+      :ok = Social.unassign_group_member_role(owner, parent, other.id, council.key)
+      assert role_keys(child, other) == []
+      refute inherited_membership?(child, other)
+      assert {:ok, _} = Social.remove_group_member(owner, child, other.id)
+    end
+
+    test "narrowing sends away whoever no longer fits; direct members and the editor stay", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council,
+      other: other
+    } do
+      editor = profile!("inh-editor")
+      add_member!(owner, parent, editor)
+      {:ok, _} = Social.assign_group_member_role(owner, parent, editor.id, "admin")
+      guest = profile!("inh-direct")
+
+      child = child!(owner, parent, "inh-child", %{"inherits_members" => "true"})
+      add_member!(owner, child, guest)
+      {:ok, _value} = Social.create_value(owner, child, %{"content" => "read me"})
+      Social.mark_group_values_read(other, child)
+      assert inherited_membership?(child, editor)
+
+      other_id = other.id
+      child_id = child.id
+      Social.subscribe_profile(other)
+
+      {:ok, child} =
+        Social.update_group(editor, child, %{"inherit_role_keys" => ["", council.key]})
+
+      assert child.inherit_role_keys == [council.key]
+
+      assert member_ids(child) ==
+               Enum.sort([owner.id, member.id, editor.id, guest.id])
+
+      assert_received {:group_membership_changed, ^other_id, ^child_id, :removed}
+
+      refute Repo.exists?(
+               from r in GroupValueRead,
+                 where: r.group_id == ^child.id and r.profile_id == ^other.id
+             )
+
+      refute inherited_membership?(child, editor)
+      assert Access.for_profile(editor, child).admin?
+      assert Access.inherited_by_profile(child, [editor.id]) == %{}
+
+      {:ok, child} = Social.update_group(editor, child, %{"inherit_role_keys" => [""]})
+      assert child.inherit_role_keys == []
+      assert inherited_membership?(child, other)
+    end
+
+    test "only roles of the parent are taken, and everyone means every member", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council,
+      other: other
+    } do
+      child = by_roles!(owner, parent, [council.key])
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Social.update_group(owner, child, %{"inherit_role_keys" => ["nope"]})
+
+      assert changeset.errors[:inherit_role_keys]
+
+      assert {:error, %Ecto.Changeset{} = changeset} =
+               Social.create_group(
+                 owner,
+                 parent,
+                 group_attrs("inh-bad", %{
+                   "inherits_members" => "true",
+                   "inherit_role_keys" => ["everyone-else"]
+                 })
+               )
+
+      assert changeset.errors[:inherit_role_keys]
+
+      everyone = by_roles!(owner, parent, ["everyone", council.key])
+      assert everyone.inherit_role_keys == []
+      assert member_ids(everyone) == Enum.sort([owner.id, member.id, other.id])
+
+      admins = by_roles!(owner, parent, ["admin"])
+      assert member_ids(admins) == [owner.id]
+    end
+
+    test "are dropped when inheriting stops, on withdrawing, without inheriting and in threads",
+         %{owner: owner, parent: parent, council: council} do
+      child = by_roles!(owner, parent, [council.key])
+
+      {:ok, stopped} = Social.update_group(owner, child, %{"inherits_members" => "false"})
+      assert stopped.inherit_role_keys == []
+
+      {:ok, again} =
+        Social.update_group(owner, stopped, %{
+          "inherits_members" => "true",
+          "inherit_role_keys" => [council.key]
+        })
+
+      assert again.inherit_role_keys == [council.key]
+      {:ok, withdrawn} = Social.withdraw_group(owner, again)
+      assert withdrawn.inherit_role_keys == []
+
+      plain = child!(owner, parent, "inh-plain", %{"inherit_role_keys" => [council.key]})
+      assert plain.inherit_role_keys == []
+
+      {:ok, value} = Social.create_value(owner, parent, %{"content" => "thread me"})
+
+      {:ok, thread} =
+        Social.create_group(
+          owner,
+          parent,
+          group_attrs("t", %{
+            "parent_value_id" => to_string(value.id),
+            "inherit_role_keys" => [council.key]
+          })
+        )
+
+      assert thread.inherits_members
+      assert thread.inherit_role_keys == []
+    end
+  end
+
   describe "withdrawing a group" do
     setup %{owner: owner, parent: parent} do
       %{child: child!(owner, parent, "inh-post", %{"inherits_members" => "true"})}
@@ -446,6 +627,13 @@ defmodule PotokIde.Social.MemberInheritanceTest do
   defp child!(owner, parent, name, attrs \\ %{}) do
     {:ok, group} = Social.create_group(owner, parent, group_attrs(name, attrs))
     group
+  end
+
+  defp by_roles!(owner, parent, keys) do
+    child!(owner, parent, "inh-by-roles-#{System.unique_integer([:positive])}", %{
+      "inherits_members" => "true",
+      "inherit_role_keys" => keys
+    })
   end
 
   defp add_member!(owner, group, profile) do
