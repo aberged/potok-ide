@@ -100,6 +100,56 @@ defmodule PotokIde.Social.AccessCacheTest do
     assert Access.for_profile(ctx.member, other) == second[other.id]
   end
 
+  test "who holds a permission agrees with each member's access, in one query", ctx do
+    {_account, third} = account_with_profile!("ac-third")
+    {_account, fourth} = account_with_profile!("ac-fourth")
+
+    for profile <- [third, fourth] do
+      {:ok, invitation} = Social.invite_profile_to_group(ctx.owner, ctx.group, profile)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, profile)
+    end
+
+    {:ok, _role} =
+      Social.set_group_role_permission(
+        ctx.owner,
+        ctx.group,
+        ctx.role,
+        :manage_join_requests,
+        :allow
+      )
+
+    {:ok, blocker} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "bez"})
+
+    for permission <- [:manage_join_requests, :post_values] do
+      {:ok, _role} =
+        Social.set_group_role_permission(ctx.owner, ctx.group, blocker.key, permission, :deny)
+    end
+
+    {:ok, _} = Social.assign_group_member_role(ctx.owner, ctx.group, ctx.member.id, ctx.role)
+    {:ok, _} = Social.assign_group_member_role(ctx.owner, ctx.group, third.id, ctx.role)
+    {:ok, _} = Social.assign_group_member_role(ctx.owner, ctx.group, third.id, blocker.key)
+    {:ok, _} = Social.assign_group_member_role(ctx.owner, ctx.group, ctx.owner.id, blocker.key)
+
+    group = Social.get_group!(ctx.group.id)
+
+    for permission <- [:manage_join_requests, :post_values, :edit_group] do
+      expected =
+        for {profile_id, access} <- Access.for_members(group),
+            Access.can?(access, permission),
+            do: profile_id
+
+      {ids, count} = queries(fn -> Access.profile_ids_with_permission(group, permission) end)
+      assert ids == Enum.sort(expected), "#{permission}"
+      assert count == 1
+    end
+
+    assert Access.profile_ids_with_permission(group, :manage_join_requests) ==
+             Enum.sort([ctx.owner.id, ctx.member.id])
+
+    assert fourth.id in Access.profile_ids_with_permission(group, :post_values)
+    refute third.id in Access.profile_ids_with_permission(group, :post_values)
+  end
+
   test "a transaction reads the database", ctx do
     _kept = Access.for_profile(ctx.member, ctx.group)
 

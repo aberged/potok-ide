@@ -2233,9 +2233,10 @@ defmodule PotokIde.Social do
   end
 
   defp approvable_group_ids(groups, %Profile{} = approver) do
-    groups
-    |> Enum.filter(&Access.can?(approver, &1, :manage_join_requests))
-    |> MapSet.new(& &1.id)
+    approver
+    |> Access.for_profile_in_groups(groups)
+    |> Enum.filter(fn {_group_id, access} -> Access.can?(access, :manage_join_requests) end)
+    |> MapSet.new(fn {group_id, _access} -> group_id end)
   end
 
   def list_pending_group_join_request_counts(groups) when is_list(groups) do
@@ -4859,7 +4860,10 @@ defmodule PotokIde.Social do
     )
     |> filter_share_targets(profile, normalize_group_search_term(opts[:search]))
     |> Repo.all()
-    |> Enum.filter(&Access.can?(profile, &1, :post_values))
+    |> then(fn groups ->
+      access = Access.for_profile_in_groups(profile, groups)
+      Enum.filter(groups, &Access.can?(access[&1.id], :post_values))
+    end)
     |> maybe_preload_group_members()
   end
 

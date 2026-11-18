@@ -5391,14 +5391,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     )
   end
 
-  # Only groups with pending requests need a permission check.
+  # Only groups with pending requests need a permission check, all in one.
   defp manageable_pending_join_request_counts(current_profile, groups) do
-    groups_by_id = Map.new(groups, &{&1.id, &1})
+    counts = Social.list_pending_group_join_request_counts(groups)
+    asked = Enum.filter(groups, &Map.has_key?(counts, &1.id))
+    access = Access.for_profile_in_groups(current_profile, asked)
 
-    groups
-    |> Social.list_pending_group_join_request_counts()
-    |> Map.filter(fn {group_id, _count} ->
-      Access.can?(current_profile, Map.fetch!(groups_by_id, group_id), :manage_join_requests)
+    Map.filter(counts, fn {group_id, _count} ->
+      Access.can?(access[group_id], :manage_join_requests)
     end)
   end
 

@@ -439,12 +439,63 @@ defmodule PotokIde.Social.Access do
     end)
   end
 
-  def profile_ids_with_permission(%Group{} = group, permission) when is_atom(permission) do
-    group
-    |> for_members()
-    |> Enum.filter(fn {_profile_id, access} -> can?(access, permission) end)
-    |> Enum.map(fn {profile_id, _access} -> profile_id end)
-    |> Enum.sort()
+  @doc """
+  The people of the group who hold `permission`, by the rules of
+  `for_profile/3`, in one query: the manifest says which roles allow it and
+  which deny it, so only the members holding those are read, never every
+  member with every role (unless "everyone" allows it).
+  """
+  def profile_ids_with_permission(%Group{id: group_id} = group, permission)
+      when is_atom(permission) do
+    roles =
+      case effective_manifest(group),
+        do: (
+          nil -> []
+          manifest -> manifest.roles
+        )
+
+    admin_key = GroupRole.admin_key()
+    everyone_key = GroupRole.everyone_key()
+    custom = Enum.reject(roles, &(&1.key in [admin_key, everyone_key]))
+
+    everyone? =
+      Enum.any?(roles, &(&1.key == everyone_key and permission in &1.allowed))
+
+    allowing = for role <- custom, permission in role.allowed, do: role.key
+    denying = for role <- custom, permission in role.denied, do: role.key
+
+    sql = """
+    SELECT gm.profile_id
+    FROM group_memberships gm
+    JOIN profiles p ON p.id = gm.profile_id AND p.kind = 'person'
+    WHERE gm.group_id = $1
+      AND (
+        EXISTS (
+          SELECT 1 FROM group_member_roles r
+          WHERE r.group_id = gm.group_id AND r.profile_id = gm.profile_id AND r.role_key = $2
+        )
+        OR (
+          ($3 OR EXISTS (
+            SELECT 1 FROM group_member_roles r
+            WHERE r.group_id = gm.group_id AND r.profile_id = gm.profile_id
+              AND r.role_key = ANY($4::text[])
+          ))
+          AND NOT EXISTS (
+            SELECT 1 FROM group_member_roles r
+            WHERE r.group_id = gm.group_id AND r.profile_id = gm.profile_id
+              AND r.role_key = ANY($5::text[])
+          )
+        )
+      )
+    ORDER BY gm.profile_id
+    """
+
+    %{rows: rows} =
+      Repo.query!(sql, [group_id, admin_key, everyone?, allowing, denying],
+        cache_statement: "access_profile_ids_with_permission"
+      )
+
+    Enum.map(rows, fn [profile_id] -> profile_id end)
   end
 
   @doc """
