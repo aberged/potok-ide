@@ -2168,7 +2168,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           @mine? && "flex-row-reverse"
         ]}
       >
-        <%!-- An event rather than a link: opening the thread also joins members who came later. --%>
+        <%!-- An event rather than a link, as the thread may not exist yet; its page takes the viewer in. --%>
         <button
           :if={@thread}
           id={"value-thread-link-#{@value.id}"}

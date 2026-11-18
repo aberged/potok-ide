@@ -173,7 +173,7 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 ![A chat: a reply with a quote, a thread, reactions and a private tag](poruke)
 
 - **Reply**: a message with a quote of what you answer. Tapping the quote jumps to the original message.
-- **Thread**: a longer conversation about one message, so that it doesn't bury the main chat. Under the message it says how many unread messages the thread has.
+- **Thread**: a longer conversation about one message, so that it doesn't bury the main chat. Under the message it says how many unread messages the thread has, if you take part in it: you opened it, wrote in it, wrote the message it started from, or someone mentioned you in it. Only those who take part get its notifications.
 - **Reactions**: one emoji on a message. Tapping a reaction adds or removes your own.
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
 - **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited.

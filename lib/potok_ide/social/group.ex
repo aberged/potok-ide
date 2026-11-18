@@ -37,7 +37,8 @@ defmodule PotokIde.Social.Group do
     # `Social.create_group_from_preset/4`, never cast.
     field :preset, Ecto.Enum, values: @presets
     # Holds every member of the parent (see `Social.MemberInheritance`).
-    # Threads always do; `Social` keeps it off for the root's children.
+    # Threads always do, lazily: they take in a member of the parent as they
+    # take part. `Social` keeps it off for the root's children.
     field :inherits_members, :boolean, default: false
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
@@ -375,7 +376,8 @@ defmodule PotokIde.Social.Group do
     end
   end
 
-  # A thread holds the members of the group its value was posted in.
+  # A thread inherits from the group its value was posted in, taking its
+  # members in as they take part (`Social.join_thread/2`).
   defp maybe_force_inherits_members_for_thread(changeset) do
     if get_field(changeset, :parent_value_id) do
       put_change(changeset, :inherits_members, true)

@@ -6169,9 +6169,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket.assigns.unread_overview || Social.unread_overview(socket.assigns.current_profile)
   end
 
-  # Every count holds the threads, hidden or not, so a value in one can be
-  # followed from the header's badge down to it: the rows lead to the group,
-  # and there the threads switch and the chat's thread links show it.
+  # Every count holds the threads the viewer takes part in, hidden or not, so
+  # a value in one can be followed from the header's badge down to it: the
+  # rows lead to the group, and there the threads switch and the chat's
+  # thread links show it.
   defp assign_group_unread_counts(%{assigns: %{group: group}} = socket, overview) do
     tree_ids =
       case Map.get(socket.assigns, :sub_group_tree) do

@@ -179,7 +179,7 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 ![Razgovor: odgovor sa citatom, nit, reakcije i privatni tag](poruke)
 
 - **Odgovor**: poruka sa citatom onoga na šta odgovaraš. Dodirom na citat skačeš na originalnu poruku.
-- **Nit**: duži razgovor o jednoj poruci, da ne zatrpava glavni razgovor. Ispod poruke stoji koliko ima nepročitanih poruka u niti.
+- **Nit**: duži razgovor o jednoj poruci, da ne zatrpava glavni razgovor. Ispod poruke stoji koliko ima nepročitanih poruka u niti, ako u njoj učestvuješ: ako si je otvorio, pisao u njoj, napisao poruku od koje je nastala ili te neko u njoj pomenuo. Samo njima nit šalje i obaveštenja.
 - **Reakcije**: jedan emoji na poruku. Dodirom na reakciju dodaješ ili skidaš svoju.
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
 - **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena.

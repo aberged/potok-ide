@@ -936,7 +936,10 @@ defmodule PotokIdeWeb.DomainCopy do
   end
 
   def check_text("groups_thread_inherits_members_check") do
-    dgettext("domain_map", "A thread always inherits members.")
+    dgettext(
+      "domain_map",
+      "A thread always inherits from its group, taking its members in as they take part."
+    )
   end
 
   def check_text("group_shortcuts_not_self_check") do
@@ -1463,7 +1466,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
+            "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread. A thread inherits from its group only those who take part in it: whoever opened it, the author of its value, and a member of the group who opens it, writes in it or is mentioned in it. They hold the roles they hold in the group and leave with it. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
           )
       },
       %{
@@ -1511,7 +1514,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
+            "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the group's threads, and someone reading an open chat from outside does not find announcements of events that are not public."
           )
       },
       %{

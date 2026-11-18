@@ -8314,10 +8314,10 @@ defmodule PotokIde.Social do
     end)
   end
 
-  # The groups `MemberInheritance.sync/3` changed: their pages read their
-  # members again, and the profiles who came or went recount their unread
-  # values. One join can change every thread of a group, so the numbers are
-  # left to the pages that show them.
+  # The groups `MemberInheritance.sync/3` or `join/3` changed: their pages
+  # read their members again, and the profiles who came or went recount
+  # their unread values. One change can reach a whole chain of inheriting
+  # groups, so the numbers are left to the pages that show them.
   defp broadcast_inheritance_changes(changes) do
     Enum.each(changes, fn %{group_id: group_id, added: added, removed: removed} ->
       broadcast_group_members_changed(group_id, [:members], numbers: false)

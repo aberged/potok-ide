@@ -327,6 +327,8 @@ defmodule HelpShots.World do
     )
 
     post(p.("jelena"), thread, "Pitaću u opštini koja su pravila.", ago(1, 19, 22))
+    # A thread takes in those who take part: Stefan opened it before writing.
+    :ok = Social.join_thread(p.("stefan"), thread)
     post(p.("stefan"), thread, "Ja mogu da izmerim dužinu ulice ovog vikenda.", ago(0, 8, 40))
 
     post(p.("nikola"), zbor, "@ana možeš li da staviš glasanje o tome pre zbora?", ago(0, 9, 3))

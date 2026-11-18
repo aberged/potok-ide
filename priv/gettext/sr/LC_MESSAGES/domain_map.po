@@ -34,11 +34,6 @@ msgstr "<Account>Nalog</Account> je identitet: imejl i lozinka. Sve u grupama ra
 msgid "<Tagging>Tagging</Tagging> joins a <Tag>tag</Tag> with exactly one group, profile, event, value or file, and the database checks that. A tag without an owner is public. A tag with an owner is seen only by that profile."
 msgstr "<Tagging>Tagovanje</Tagging> spaja <Tag>tag</Tag> sa tačno jednom grupom, profilom, događajem, vrednošću ili fajlom, i to proverava baza. Tag bez vlasnika je javan. Tag sa vlasnikom vidi samo taj profil."
 
-#: lib/potok_ide_web/domain_copy.ex:1464
-#, elixir-autogen, elixir-format
-msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread, and a thread always inherits members. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
-msgstr "<Group>Grupa</Group> otvorena iz <Value>vrednosti</Value> je nit. Jedna vrednost ima najviše jednu nit, a nit uvek nasleđuje članove. Koren je jedan, bez roditelja i bez autora. Sve ostale grupe imaju oboje, pa i direktni razgovori, koji stoje odmah ispod korena."
-
 #: lib/potok_ide_web/domain_copy.ex:1692
 #, elixir-autogen, elixir-format
 msgid "A <GroupInvitation>group invitation</GroupInvitation> goes from profile to profile. If the invited account has no profile yet, an <GroupAccountInvitation>account invitation</GroupAccountInvitation> is kept, which becomes an ordinary invitation as soon as the account gets its first profile. A <GroupJoinRequest>join request</GroupJoinRequest> goes the other way. When accepted it is deleted, and an <GroupJoinRequestApproval>approved request</GroupJoinRequestApproval> stays with the name of whoever admitted the member."
@@ -138,11 +133,6 @@ msgstr "Tag bez vlasnika je javan i deo jednog rečnika za celu aplikaciju. Tag 
 #, elixir-autogen, elixir-format
 msgid "A technical table with no links to the rest of the domain: the `OAuth` refresh token the app uses to send email through `Gmail`."
 msgstr "Tehnička tabela bez veza sa ostatkom domena: `OAuth refresh token` kojim aplikacija šalje imejl preko `Gmail`-a."
-
-#: lib/potok_ide_web/domain_copy.ex:939
-#, elixir-autogen, elixir-format
-msgid "A thread always inherits members."
-msgstr "Nit uvek nasleđuje članove."
 
 #: lib/potok_ide_web/domain_copy.ex:1462
 #, elixir-autogen, elixir-format
@@ -2908,7 +2898,17 @@ msgstr "reakcije po emodžiju, sa brojem i prvim imenima"
 msgid "member count in a list of sub-groups"
 msgstr "broj članova u spisku podgrupa"
 
+#: lib/potok_ide_web/domain_copy.ex:1464
+#, elixir-autogen, elixir-format
+msgid "A <Group>group</Group> opened from a <Value>value</Value> is a thread. One value has at most one thread. A thread inherits from its group only those who take part in it: whoever opened it, the author of its value, and a member of the group who opens it, writes in it or is mentioned in it. They hold the roles they hold in the group and leave with it. There is one root, with no parent and no creator. All other groups have both, even direct conversations, which sit right under the root."
+msgstr "<Group>Grupa</Group> otvorena iz <Value>vrednosti</Value> je nit. Jedna vrednost ima najviše jednu nit. Nit od svoje grupe nasleđuje samo one koji u njoj učestvuju: onoga ko ju je otvorio, autora njene vrednosti i člana grupe koji je otvori, piše u njoj ili je u njoj pomenut. Oni u njoj imaju uloge koje imaju u grupi i izlaze iz nje kad izađu iz grupe. Koren je jedan, bez roditelja i bez autora. Sve ostale grupe imaju oboje, pa i direktni razgovori, koji stoje odmah ispod korena."
+
 #: lib/potok_ide_web/domain_copy.ex:1512
 #, elixir-autogen, elixir-format
-msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
-msgstr "<GroupValueRead>Marker čitanja</GroupValueRead> čuva, za jedan profil u jednoj grupi, poslednju <Value>vrednost</Value> koju je pročitao, a sve novije je nepročitano. Imaju ga samo članovi, a dobija ga i razgovor otvoren dok je još prazan. Ko uđe, pozivnicom, zahtevom ili preko roditelja, dobija ga na najnovijoj vrednosti, pa je istorija tu da se čita, ali se ne broji. Otvaranje razgovora pomera marker na najnoviju vrednost, a linija koja pokazuje gde počinju nepročitane vrednosti stoji tamo gde je marker bio pre toga. Grupa broji najviše 100 nepročitanih vrednosti, prikazano kao 99+, a svaki zbir iznad nje sabira ono što su njene grupe izbrojale. Najnovija vrednost grupe vidi se u listama samo njenim članovima, jer samo njihove stranice čuju za nove vrednosti. Pretraga razgovora nalazi ono što razgovor pokazuje: pretraga člana uzima i niti u kojima je, a ko čita otvoren razgovor spolja ne nalazi najave događaja koji nisu javni."
+msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the group's threads, and someone reading an open chat from outside does not find announcements of events that are not public."
+msgstr "<GroupValueRead>Marker čitanja</GroupValueRead> čuva, za jedan profil u jednoj grupi, poslednju <Value>vrednost</Value> koju je pročitao, a sve novije je nepročitano. Imaju ga samo članovi, a dobija ga i razgovor otvoren dok je još prazan. Ko uđe, pozivnicom, zahtevom ili preko roditelja, dobija ga na najnovijoj vrednosti, pa je istorija tu da se čita, ali se ne broji. Otvaranje razgovora pomera marker na najnoviju vrednost, a linija koja pokazuje gde počinju nepročitane vrednosti stoji tamo gde je marker bio pre toga. Grupa broji najviše 100 nepročitanih vrednosti, prikazano kao 99+, a svaki zbir iznad nje sabira ono što su njene grupe izbrojale. Najnovija vrednost grupe vidi se u listama samo njenim članovima, jer samo njihove stranice čuju za nove vrednosti. Pretraga razgovora nalazi ono što razgovor pokazuje: pretraga člana uzima i niti grupe, a ko čita otvoren razgovor spolja ne nalazi najave događaja koji nisu javni."
+
+#: lib/potok_ide_web/domain_copy.ex:939
+#, elixir-autogen, elixir-format
+msgid "A thread always inherits from its group, taking its members in as they take part."
+msgstr "Nit uvek nasleđuje od svoje grupe, a njene članove prima kako učestvuju."
