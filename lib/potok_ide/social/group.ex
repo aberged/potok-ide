@@ -41,6 +41,9 @@ defmodule PotokIde.Social.Group do
     field :inherits_members, :boolean, default: false
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
+    # How many people belong to it, kept by Postgres from the memberships (a
+    # trigger, see the migration add_member_count_to_groups); 0 for the root.
+    field :member_count, :integer, default: 0, writable: :never
     # When a closed group (see `closed?/1`) last opened up, which is its place
     # in a feed; nil keeps the place from `inserted_at`. Kept by Social, never cast.
     field :published_at, :utc_datetime
@@ -87,8 +90,9 @@ defmodule PotokIde.Social.Group do
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []
     # Shown in the sub-groups list, which loads them with the page
-    # (`Social.list_child_groups_for_profile/3`); nil when not loaded.
-    field :member_count, :integer, virtual: true
+    # (`Social.list_child_groups_for_profile/3`); nil when not loaded, and for
+    # a direct conversation, whose row shows no numbers.
+    field :listed_member_count, :integer, virtual: true
     field :sub_group_count, :integer, virtual: true
     field :viewer_is_member, :boolean, virtual: true
     # The newest chat value as a `PotokIde.Social.ValuePreview`, in the rows of

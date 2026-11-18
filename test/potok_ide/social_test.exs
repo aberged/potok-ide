@@ -1677,7 +1677,7 @@ defmodule PotokIde.SocialTest do
       details = fn opts ->
         parent
         |> Social.list_child_groups_for_profile(viewer, opts)
-        |> Map.new(&{&1.id, {&1.member_count, &1.sub_group_count, &1.viewer_is_member}})
+        |> Map.new(&{&1.id, {&1.listed_member_count, &1.sub_group_count, &1.viewer_is_member}})
       end
 
       assert details.([]) == %{joined.id => {3, 3, true}, open.id => {1, 0, false}}
@@ -1686,7 +1686,7 @@ defmodule PotokIde.SocialTest do
       # Direct conversations load none.
       {:ok, _direct} = Social.get_or_create_direct_group(viewer, owner)
 
-      assert [%Group{member_count: nil, sub_group_count: nil, viewer_is_member: nil}] =
+      assert [%Group{listed_member_count: nil, sub_group_count: nil, viewer_is_member: nil}] =
                Social.list_child_groups_for_profile(Social.get_root_group!(), viewer,
                  is_direct: true
                )

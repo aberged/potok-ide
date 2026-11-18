@@ -530,7 +530,7 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
   # Direct conversations load no counts, so they show the time alone.
   defp child_details?(group),
     do:
-      group.last_value_at != nil or group.member_count != nil or group.tags != [] or
+      group.last_value_at != nil or group.listed_member_count != nil or group.tags != [] or
         group.last_value != nil or group.shortcut_id != nil
 
   attr :group, :map, required: true
@@ -604,14 +604,14 @@ defmodule PotokIdeWeb.GroupLive.Show.SubGroupsTab do
         {Format.recent(@group.last_value_at, @time_zone, DateTime.utc_now())}
       </time>
       <span
-        :if={@group.member_count}
+        :if={@group.listed_member_count}
         id={"child-group-members-#{@group.id}"}
         class="inline-flex shrink-0 items-center gap-0.5 tabular-nums"
       >
         <.icon name="hero-users" class="size-3 opacity-70" />
-        <span aria-hidden="true">{@group.member_count}</span>
+        <span aria-hidden="true">{@group.listed_member_count}</span>
         <span class="sr-only">
-          {ngettext("1 member", "%{count} members", @group.member_count)}
+          {ngettext("1 member", "%{count} members", @group.listed_member_count)}
         </span>
       </span>
       <span

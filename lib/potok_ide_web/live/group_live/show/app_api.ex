@@ -2037,6 +2037,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       description: if(can_edit?, do: child.description || ""),
       description_format: to_string(child.description_format),
       can_edit: can_edit?,
+      # Read again: a group just made or changed comes back from its write.
       member_count: Social.count_group_members(child),
       updated_at: child.updated_at,
       key: child.external_key,

@@ -4962,7 +4962,7 @@ defmodule PotokIde.Social do
     """
     LEFT JOIN LATERAL (
       SELECT
-        (SELECT COUNT(*) FROM group_memberships gm WHERE gm.group_id = g.id) AS member_count,
+        g.member_count AS member_count,
         (
           SELECT COUNT(*) FROM groups k
           WHERE k.parent_id = g.id
@@ -4995,7 +4995,7 @@ defmodule PotokIde.Social do
 
     {%{
        group
-       | member_count: member_count,
+       | listed_member_count: member_count,
          sub_group_count: sub_group_count,
          viewer_is_member: member?,
          shortcut_id: shortcut_id
@@ -5288,9 +5288,12 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
-  def count_group_members(%Group{} = group) do
-    import Ecto.Query, only: [from: 2]
-
+  @doc """
+  How many people belong to the group: the column Postgres keeps
+  (`Group.member_count`), read again, as a struct in hand may be older. The
+  root keeps 0 there, so its people are counted.
+  """
+  def count_group_members(%Group{is_root: true} = group) do
     from(gm in GroupMembership,
       join: p in Profile,
       on: p.id == gm.profile_id,
@@ -5298,6 +5301,12 @@ defmodule PotokIde.Social do
       select: count(gm.profile_id)
     )
     |> Repo.one()
+  end
+
+  def count_group_members(%Group{id: group_id}) do
+    from(g in Group, where: g.id == ^group_id, select: g.member_count)
+    |> Repo.one()
+    |> Kernel.||(0)
   end
 
   def list_first3_group_members(%Group{} = group) do
