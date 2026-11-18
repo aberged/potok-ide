@@ -1352,7 +1352,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
+              "For a viewer who may edit its group, an app can make <Group>groups</Group> right under it, change them and take them back, and put them on a map with a pin. A new one opens its chat if the app's group has. It can inherit the members of the app's group, all of them or only those with the roles the app picks. It can also make up to a hundred at once, all or none, each with a key of its own, so that the same list brought in again makes no duplicates: that is how the rows of an open dataset become groups on a map. That is how one app writes what another shows, and a feed gets its editors' desk."
             )
         },
         %{

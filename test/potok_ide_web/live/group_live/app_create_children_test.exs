@@ -164,6 +164,7 @@ defmodule PotokIdeWeb.GroupLive.AppCreateChildrenTest do
           %{"name" => ""},
           %{"name" => String.duplicate("x", 121)},
           %{"pin" => "rocket"},
+          %{"inherits_members" => true, "inherit_role_keys" => ["nope"]},
           %{"picture" => "data:image/png;base64,iVBORw0KGgo="},
           %{"key" => ""},
           %{"key" => String.duplicate("k", 65)},

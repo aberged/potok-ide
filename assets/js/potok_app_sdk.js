@@ -294,8 +294,9 @@ const listParams = (options = {}) => ({
 
 // What an app may set on a group below it. A field left out stays as it is;
 // `lat` and `lng` both null take its place on a map away, `pin` null shows its
-// kind's.
-const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, picture, lat, lng, pin} = {}) =>
+// kind's. `inheritRoleKeys` (keys from `listRoles`) narrows inheriting to the
+// members who hold one of those roles here; empty takes them all.
+const childParams = ({name, description, descriptionFormat, isPublic, inheritsMembers, inheritRoleKeys, picture, lat, lng, pin} = {}) =>
   Object.fromEntries(
     Object.entries({
       name,
@@ -303,6 +304,7 @@ const childParams = ({name, description, descriptionFormat, isPublic, inheritsMe
       description_format: descriptionFormat,
       is_public: isPublic,
       inherits_members: inheritsMembers,
+      inherit_role_keys: inheritRoleKeys,
       picture,
       lat,
       lng,

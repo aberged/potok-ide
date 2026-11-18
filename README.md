@@ -787,6 +787,7 @@ An app can also keep the groups right under its own. These calls act in the view
   * `name` (required, at most 120 characters)
   * `description`, `descriptionFormat`: `"markdown"` (default) or `"html"`
   * `isPublic`, `inheritsMembers`: both off by default, which leaves a closed group that only the viewer sees
+  * `inheritRoleKeys`: with `inheritsMembers`, only the app group's members who hold one of these roles there come in (keys from `listRoles`), with all their roles, and they leave on losing the last of them. Empty or `"everyone"` takes every member; a key the group has not is `invalid_group`. Narrowing it in `updateChild` sends away whoever no longer fits, except the viewer
   * `picture`: an image URL or a `data:` URL, at most 1,000,000 characters. It is served at `picture_url`, which needs no session, also for a private group
   * `lat`, `lng`: its place on a map, both or neither, rounded to 6 decimals; `pin`: a key of `pins.icons` or `"picture"`, `null` for its kind's. A group with a place is one of the map's places (`listPlaces`)
 * `createChildren(children, {onExisting: "skip"})` makes up to 100 groups at once, all or none, for one write of the rate limit, and resolves to `{ok: true, groups: [{id, key, created}]}` in the order sent. Each child takes the `attrs` of `createChild` without `picture`, and a `key` of the app's own: 1 to 64 characters without control characters, unique under this group and set once (`Group.external_key`). A child whose key is there already is not made again (`created: false`, with that group's `id`), so a call that timed out can be sent again as it was. A child it cannot take fails the call with `invalid_group` and its `index`, and nothing is saved; more than 100 is `too_large`, a key taken by another call in between is `conflict`. It needs what `createChild` needs, and a profile makes at most 2000 such calls an hour. Open pages hear of the whole call once. Groups with a key are records: their own map shows them, the root's map and the place picker of events do not, and the viewer's unread counts do not follow them.
@@ -862,12 +863,12 @@ Reply shapes:
 
 // child (getChild, createChild, updateChild, withdrawChild): a sub-group, and
 // key (from createChildren, else null), lat, lng and pin (null without them)
-{description, description_format, can_edit, member_count, updated_at, key, lat, lng, pin}
+{description, description_format, can_edit, inherit_role_keys, member_count, updated_at, key, lat, lng, pin}
 
 // own group (getGroup); parent is null for a viewer who cannot see that group.
 // can_create_children adds create_subgroups to can_manage_children.
 // everyone_creates_subgroups: any member can add a group here by hand, past the app.
-{id, name, is_public, inherits_members, parent: {id, name, is_public, uses_api},
+{id, name, is_public, inherits_members, inherit_role_keys, parent: {id, name, is_public, uses_api},
  can_manage_children, can_create_children, everyone_creates_subgroups}
 
 // profile; roles are the names of the roles the profile holds in the group

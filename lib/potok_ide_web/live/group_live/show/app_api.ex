@@ -145,7 +145,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   # `uses_api`: an app that made another app would run its code for every
   # viewer of that group. Never `external_key` here: only `create_children`
   # gives one, once.
-  @child_fields ~w(name description description_format is_public inherits_members)
+  @child_fields ~w(name description description_format is_public inherits_members inherit_role_keys)
 
   def new_bucket do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
@@ -1950,6 +1950,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       name: group.name,
       is_public: group.is_public,
       inherits_members: group.inherits_members,
+      inherit_role_keys: group.inherit_role_keys,
       parent: parent_payload(group, profile),
       can_manage_children: manages_children?(access),
       can_create_children: manages_children?(access) and Access.can?(access, :create_subgroups),
@@ -2037,6 +2038,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
       description: if(can_edit?, do: child.description || ""),
       description_format: to_string(child.description_format),
       can_edit: can_edit?,
+      inherit_role_keys: child.inherit_role_keys,
       # Read again: a group just made or changed comes back from its write.
       member_count: Social.count_group_members(child),
       updated_at: child.updated_at,

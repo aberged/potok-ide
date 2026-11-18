@@ -128,6 +128,7 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       assert group.name == ".feed"
       assert group.is_public
       assert group.inherits_members
+      assert group.inherit_role_keys == []
       assert group.can_manage_children
       assert group.can_create_children
 
@@ -422,6 +423,24 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       assert Social.member_of_group?(ctx.member, Repo.get!(Group, created.id))
     end
 
+    test "an inheriting group can take in only the holders of some roles", ctx do
+      role = editor!(ctx, [])
+      add_member!(ctx.owner, ctx.parent, ctx.visitor)
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "create_child", %{
+        "name" => "council",
+        "inherits_members" => true,
+        "inherit_role_keys" => [role.key]
+      })
+
+      assert_reply(view, %{ok: true, group: %{member_count: 2} = created})
+      assert created.inherit_role_keys == [role.key]
+      group = Repo.get!(Group, created.id)
+      assert Social.member_of_group?(ctx.member, group)
+      refute Social.member_of_group?(ctx.visitor, group)
+    end
+
     test "keeps a picture", ctx do
       view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
 
@@ -533,6 +552,26 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       call(view, "update_child", %{"id" => ctx.story.id, "inherits_members" => true})
 
       assert_reply(view, %{ok: true, group: %{inherits_members: true, member_count: 2}})
+    end
+
+    test "inheriting narrows to roles of the app's group, and widens again", ctx do
+      role = editor!(ctx, [])
+      add_member!(ctx.owner, ctx.parent, ctx.visitor)
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+
+      call(view, "update_child", %{"id" => ctx.story.id, "inherits_members" => true})
+      assert_reply(view, %{ok: true, group: %{inherit_role_keys: [], member_count: 3}})
+
+      call(view, "update_child", %{"id" => ctx.story.id, "inherit_role_keys" => [role.key]})
+      assert_reply(view, %{ok: true, group: %{inherit_role_keys: [key], member_count: 2}})
+      assert key == role.key
+      refute Social.member_of_group?(ctx.visitor, Repo.get!(Group, ctx.story.id))
+
+      call(view, "update_child", %{"id" => ctx.story.id, "inherit_role_keys" => ["nope"]})
+      assert_reply(view, %{ok: false, error: "invalid_group"})
+
+      call(view, "update_child", %{"id" => ctx.story.id, "inherit_role_keys" => nil})
+      assert_reply(view, %{ok: true, group: %{inherit_role_keys: [], member_count: 3}})
     end
 
     test "an admin of the app's group edits what inherits that role", ctx do
