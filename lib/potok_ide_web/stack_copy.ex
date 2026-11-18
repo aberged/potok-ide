@@ -157,7 +157,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin or that a route passes through by an index instead of reading every border, measures a route's length along the Earth's surface, and simplifies a border or a route for each zoom of a map, so a phone gets only the points it can show."
+              "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin or that a route passes through by an index instead of reading every border, measures a route's length along the Earth's surface, and simplifies a border or a route for each zoom of a map, so a phone gets only the points it can show. Next to it runs pg_trgm, which finds a name by any part of it through an index, from the third letter on."
             )
         },
         %{

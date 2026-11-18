@@ -694,11 +694,6 @@ msgstr "Показују на другу табелу, али их база не
 msgid "This table points at nothing."
 msgstr "Табела не показује ни на шта."
 
-#: lib/potok_ide_web/domain_copy.ex:633
-#, elixir-autogen, elixir-format
-msgid "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for."
-msgstr "Токени сесија и линкова из имејлова, као што су пријава, позивница и промена имејла. Сваки токен каже чему служи."
-
 #: lib/potok_ide_web/domain_copy.ex:1143
 #, elixir-autogen, elixir-format
 msgid "Unique"
@@ -2552,11 +2547,6 @@ msgstr "ко је покренуо корак"
 msgid "A value sets an app's process going"
 msgstr "Вредност покреће процес апликације"
 
-#: lib/potok_ide_web/domain_copy.ex:1633
-#, elixir-autogen, elixir-format
-msgid "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. Nobody learns from a process who wrote an anonymous value."
-msgstr "Кад <Value>вредност</Value> стигне у колекцију чији процес има граф, у истој трансакцији настаје <ValueProcess>инстанца процеса</ValueProcess>, са копијом графа, па каснија измена правила не мења њу. Сваки елемент се извршава у својој трансакцији, заједно са померањем инстанце на следећи, па оно што напише настаје једном. Инстанца чека на задатку док неко са улогом задатка не изабере исход или не истекне рок, а на тајмеру док не дође време; Сцхедулер на сваком серверу покреће оне којима је време дошло. Акција која не успе оставља инстанцу палу тамо где је стала, да је уредник поново покрене, а уклањање правила отказује инстанце које раде или чекају. Нико из процеса не сазнаје ко је написао анонимну вредност."
-
 #: lib/potok_ide_web/domain_copy.ex:1304
 #, elixir-autogen, elixir-format
 msgid "Runs a process"
@@ -2932,3 +2922,13 @@ msgstr "<GroupMembership>Чланство</GroupMembership> памти и пос
 #, elixir-autogen, elixir-format
 msgid "A group pushes once until it is read"
 msgstr "Група шаље један пуш док се не прочита"
+
+#: lib/potok_ide_web/domain_copy.ex:633
+#, elixir-autogen, elixir-format
+msgid "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for, and once no check accepts it any more, it is deleted."
+msgstr "Токени сесија и линкова из имејлова, као што су пријава, позивница и промена имејла. Сваки токен каже чему служи, а кад га ниједна провера више не прихвата, брише се."
+
+#: lib/potok_ide_web/domain_copy.ex:1633
+#, elixir-autogen, elixir-format
+msgid "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. A month after an instance ends, done or cancelled, it keeps its status and log but not the copy of the graph, its variables or what it started from; a failed one keeps everything, for a retry. Nobody learns from a process who wrote an anonymous value."
+msgstr "Кад <Value>вредност</Value> стигне у колекцију чији процес има граф, у истој трансакцији настаје <ValueProcess>инстанца процеса</ValueProcess>, са копијом графа, па каснија измена правила не мења њу. Сваки елемент се извршава у својој трансакцији, заједно са померањем инстанце на следећи, па оно што напише настаје једном. Инстанца чека на задатку док неко са улогом задатка не изабере исход или не истекне рок, а на тајмеру док не дође време; Сцхедулер на сваком серверу покреће оне којима је време дошло. Акција која не успе оставља инстанцу палу тамо где је стала, да је уредник поново покрене, а уклањање правила отказује инстанце које раде или чекају. Месец дана после краја, завршена или отказана инстанца задржава статус и дневник, али не и копију графа, променљиве и оно са чим је кренула; неуспела задржава све, за поновни покушај. Нико из процеса не сазнаје ко је написао анонимну вредност."

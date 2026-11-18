@@ -215,7 +215,7 @@ U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje 
 
 ### Prečice {:#precice}
 
-Na dnu istog izbora je **Prečica**. Ona ne pravi novu grupu, nego ovde stavlja grupu koja stoji negde drugde, recimo zbor građana iz mesne zajednice na početnu stranu. Bez pretrage nudi grupe u kojima si član, a pretraga po nazivu nalazi svaku grupu koju vidiš. Dodir na grupu postavlja prečicu.
+Na dnu istog izbora je **Prečica**. Ona ne pravi novu grupu, nego ovde stavlja grupu koja stoji negde drugde, recimo zbor građana iz mesne zajednice na početnu stranu. Bez pretrage nudi grupe u kojima si član, a pretraga po nazivu, od trećeg slova, nalazi svaku grupu koju vidiš. Dodir na grupu postavlja prečicu.
 
 Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju poruku i nepročitane poruke. Brojači iznad nje ih ne broje dvaput. Prečicu vide svi koji vide i grupu u kojoj stoji i originalnu grupu, pa privatna grupa ostaje skrivena od onih koji u njoj nisu. Ukloniti je mogu onaj ko ju je postavio i admin grupe u kojoj stoji, iz menija reda, a originalna grupa ostaje kakva je.
 
@@ -229,7 +229,7 @@ Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opi
 
 Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odobravaju zahtevi za pristup, dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka.
 
-Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok.
+Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena.
 
 ![Članovi i zahtevi za pristup](clanovi) ![Pozivanje u grupu](pozovi)
 
@@ -304,7 +304,7 @@ U tajnom glasanju niko, ni administrator ni aplikacija, ne vidi ko je za šta gl
 
 ## Mapa i mesta {:#mapa}
 
-Mapa grupa na početnoj strani pokazuje svaku grupu sa mestom koju smeš da vidiš. Bliske grupe se skupljaju u krug sa brojem. Sužavaš je istim filterima kao spisak, i još vremenom i pinom, a slojevi uključuju i isključuju mesta, područja i rute. Dodir na pin otvara karticu grupe.
+Mapa grupa na početnoj strani pokazuje svaku grupu sa mestom koju smeš da vidiš. Bliske grupe se skupljaju u krug sa brojem. Sužavaš je istim filterima kao spisak, i još vremenom i pinom, a slojevi uključuju i isključuju mesta, područja i rute. Pretraga po nazivu na mapi kreće od trećeg slova. Dodir na pin otvara karticu grupe.
 
 ![Mapa grupa, sa područjem mesne zajednice](mapa-grupa) ![Kartica grupe na mapi](mapa-kartica)
 
@@ -322,7 +322,7 @@ Za pin biraš jednu od 33 ikone ili sliku grupe, a u uglu pina stoji vrsta grupe
 
 Kartica Fajlovi skuplja sve fajlove iz poruka grupe, kao spisak ili po fasciklama podgrupa, a sa svakog fajla se ide na poruku u kojoj je poslat. Fajl tražiš po imenu, a dugme **Vrsta** ostavlja samo slike, video, zvuk, dokumente, tabele, arhive ili ostale fajlove. Izbor između **Lista** i **Folderi** Potok pamti na tom uređaju. Fajlove preuzimaju samo članovi, osim slika u opisu grupe i fajlova iz otvorenog razgovora.
 
-Tag stavljaš na grupe, profile, događaje, poruke i fajlove, dugmetom #. Javni tag vide svi koji vide i stvar na kojoj je, a privatni, sa katancem, samo ti. Jedna stvar nosi do 10 javnih i 10 privatnih tagova. Na stranici Tagovi biraš jedan ili više tagova i vidiš sve što ih nosi.
+Tag stavljaš na grupe, profile, događaje, poruke i fajlove, dugmetom #. Javni tag vide svi koji vide i stvar na kojoj je, a privatni, sa katancem, samo ti. Jedna stvar nosi do 10 javnih i 10 privatnih tagova. Na stranici Tagovi biraš jedan ili više tagova i vidiš sve što ih nosi. Dok kucaš ime taga, predlozi se sužavaju od trećeg slova.
 
 ![Fajlovi grupe](fajlovi) ![Tagovi: privatni i javni](tagovi)
 

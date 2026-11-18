@@ -391,11 +391,6 @@ msgstr ""
 msgid "PostGIS knows places on the Earth"
 msgstr ""
 
-#: lib/potok_ide_web/stack_copy.ex:158
-#, elixir-autogen, elixir-format
-msgid "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin or that a route passes through by an index instead of reading every border, measures a route's length along the Earth's surface, and simplifies a border or a route for each zoom of a map, so a phone gets only the points it can show."
-msgstr ""
-
 #: lib/potok_ide_web/stack_copy.ex:36
 #, elixir-autogen, elixir-format
 msgid "Everything here runs at Fly.io: the app, the database and the files. See this month so far and every month before, estimated and billed."
@@ -429,4 +424,9 @@ msgstr ""
 #: lib/potok_ide_web/stack_copy.ex:112
 #, elixir-autogen, elixir-format
 msgid "The server measures itself"
+msgstr ""
+
+#: lib/potok_ide_web/stack_copy.ex:158
+#, elixir-autogen, elixir-format
+msgid "PostgreSQL runs PostGIS, its extension for places on the Earth. It checks that the border of an area does not cross itself, finds the areas that hold a group's pin or that a route passes through by an index instead of reading every border, measures a route's length along the Earth's surface, and simplifies a border or a route for each zoom of a map, so a phone gets only the points it can show. Next to it runs pg_trgm, which finds a name by any part of it through an index, from the third letter on."
 msgstr ""

@@ -632,7 +632,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp entity_description("AccountToken", _edges) do
     dgettext(
       "domain_map",
-      "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for."
+      "Tokens of sessions and of links in emails, such as log-in, invitation and email change. Each token says what it is for, and once no check accepts it any more, it is deleted."
     )
   end
 
@@ -1632,7 +1632,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. Nobody learns from a process who wrote an anonymous value."
+            "When a <Value>value</Value> comes to a collection whose process has a graph, a <ValueProcess>process instance</ValueProcess> starts in the same transaction, with a copy of the graph, so changing the rule later leaves it as it was. Each element runs in a transaction of its own together with the instance's move to the next, so what it writes happens once. The instance waits on a task until someone holding the task's role picks an outcome or the deadline passes, and on a timer until it is due; a scheduler on every server takes forward those whose time has come. An action that fails leaves the instance failed where it stopped, for an editor to take up again, and removing the rule cancels the instances that run or wait. A month after an instance ends, done or cancelled, it keeps its status and log but not the copy of the graph, its variables or what it started from; a failed one keeps everything, for a retry. Nobody learns from a process who wrote an anonymous value."
           )
       },
       %{

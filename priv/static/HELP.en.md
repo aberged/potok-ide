@@ -209,7 +209,7 @@ In the second step you enter the name and choose whether the group is public and
 
 ### Shortcuts {:#precice}
 
-At the bottom of the same choice is **Shortcut**. It makes no new group: it puts here a group that stands somewhere else, say a local community's citizens' assembly, on the home page. Without a search it offers the groups you are in, and a search by name finds every group you see. A tap on a group places the shortcut.
+At the bottom of the same choice is **Shortcut**. It makes no new group: it puts here a group that stands somewhere else, say a local community's citizens' assembly, on the home page. Without a search it offers the groups you are in, and a search by name, from the third letter on, finds every group you see. A tap on a group places the shortcut.
 
 A shortcut has an arrow and the word Shortcut, and it shows the group itself: its newest message and its unread messages. The counters above it do not count them twice. Everyone who sees both the group it stands in and the original group sees the shortcut, so a private group stays hidden from those who are not in it. Whoever placed it and an admin of the group it stands in can remove it, from the row's menu, and the original group stays as it is.
 
@@ -223,7 +223,7 @@ Edit group has everything else: name and picture, access and membership (public 
 
 The Members tab shows all members, their roles and who is online. From there, access requests are approved, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation.
 
-You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok.
+You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok. Profiles are suggested from the third letter of the name on.
 
 ![Members and access requests](clanovi) ![Inviting into a group](pozovi)
 
@@ -298,7 +298,7 @@ In a secret poll nobody, not an admin and not an app, sees who voted for what. T
 
 ## Map and places {:#mapa}
 
-The map of groups on the home page shows every group with a place that you may see. Groups close together gather into a circle with a number. You narrow it with the same filters as the list, plus time and pin, and its layers turn places, areas and routes on and off. Tapping a pin opens the group's card.
+The map of groups on the home page shows every group with a place that you may see. Groups close together gather into a circle with a number. You narrow it with the same filters as the list, plus time and pin, and its layers turn places, areas and routes on and off. On the map, the search by name starts at the third letter. Tapping a pin opens the group's card.
 
 ![The map of groups, with the local community's area](mapa-grupa) ![A group's card on the map](mapa-kartica)
 
@@ -316,7 +316,7 @@ For the pin you choose one of 33 icons or the group's picture, and the pin's cor
 
 The Files tab gathers all files from the group's messages, as a list or in folders of sub-groups, and from each file you can go to the message it came with. You find a file by its name, and the **Kind** button keeps only pictures, videos, sound, documents, spreadsheets, archives or other files. Potok remembers on that device whether you chose **List** or **Folders**. Only members download files, apart from pictures in a group's description and files from an open chat.
 
-You put a tag on groups, profiles, events, messages and files, with the # button. A public tag is seen by everyone who sees the thing it is on, and a private one, with a lock, only by you. One thing carries up to 10 public and 10 private tags. On the Tags page you choose one or more tags and see everything that carries them.
+You put a tag on groups, profiles, events, messages and files, with the # button. A public tag is seen by everyone who sees the thing it is on, and a private one, with a lock, only by you. One thing carries up to 10 public and 10 private tags. On the Tags page you choose one or more tags and see everything that carries them. While you type a tag's name, the suggestions narrow from the third letter on.
 
 ![A group's files](fajlovi) ![Tags: private and public](tagovi)
 
