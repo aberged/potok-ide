@@ -3,7 +3,11 @@
 name: potok_load
 
 x-app-env: &app-env
-  DATABASE_URL: ecto://postgres:postgres@db/${DB_NAME:-potok_load_1k}
+  # DB_HOST=pgbouncer sends the app through PgBouncer in transaction mode
+  # (profile `pooler`), as on Fly Managed Postgres; migrations always go to
+  # the database directly (rel/overlays/bin/migrate).
+  DATABASE_URL: ecto://postgres:postgres@${DB_HOST:-db}/${DB_NAME:-potok_load_1k}
+  DIRECT_DATABASE_URL: ecto://postgres:postgres@db/${DB_NAME:-potok_load_1k}
   # Local-only value; production uses its own secret.
   SECRET_KEY_BASE: k9kt77mW0zmtN3no1Qhi2JfDkkEhrGjT9eJiy7/LRkbtSXUdcj61lbCyEu2B1EVv
   PHX_HOST: localhost
@@ -104,6 +108,31 @@ services:
         aliases: [appcluster]
     ports:
       - "127.0.0.1:4021:8080"
+
+  # A third node, for checking the cluster rather than for load (README.md).
+  app3:
+    <<: *app
+    profiles: ["cluster3"]
+    command: ["/app/bin/server"]
+    environment:
+      <<: *app-env
+      RELEASE_NODE: potok_ide@172.30.0.13
+    networks:
+      default:
+        ipv4_address: 172.30.0.13
+        aliases: [appcluster]
+    ports:
+      - "127.0.0.1:4022:8080"
+
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    profiles: ["pooler"]
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./pgbouncer/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./pgbouncer/userlist.txt:/etc/pgbouncer/userlist.txt:ro
 
   loadgen:
     image: hexpm/elixir:1.18.2-erlang-27.3.4-debian-trixie-20260223-slim

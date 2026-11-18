@@ -6,7 +6,8 @@ Production is never touched.
 
 | File | What it does |
 |---|---|
-| `docker-compose.yml` | `db` (Postgres 16 with PostGIS + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `loadgen` |
+| `docker-compose.yml` | `db` (Postgres 16 with PostGIS + `pg_stat_statements`), `app` (the release; limits from `APP_CPUS`/`APP_MEM`), `app2` (a second node, `--profile cluster` only), `app3` (a third node, profile `cluster3`, see below), `pgbouncer` (profile `pooler`), `loadgen` |
+| `pgbouncer/` | PgBouncer in transaction mode without named prepared statements, as on Fly Managed Postgres once switched |
 | `seed.exs` | Bulk-inserts N users, groups (one with everyone, Zipf-sized others, nesting), direct groups, threads, messages and read markers, and app groups under root shaped like production's (the preset apps from `priv/apps`, a feed with stories, ten small apps, data values); writes `results/users_<N>.csv` with signed remember-me cookies and `results/users_<N>.json` with the app group ids |
 | `sampler.exs` | Injected into the running app over `rpc`; writes `server.jsonl` every 5 s (BEAM memory, run queue, scheduler use, busiest mailboxes, LiveViews per view, Repo queue/query time, per-table DB time, LiveView mount/event times, traffic with the other node) |
 | `loadgen.exs` | One Erlang process per virtual user: page load with cookie, avatars, websocket, `phx_join`, heartbeats, live navigation, posts, reactions; writes `loadgen.jsonl` every 10 s and `summary.json` |
@@ -103,6 +104,29 @@ The run behaves as follows:
 - Loadgen stops early when more than half of the VUs have failed for 60 s.
 - `loadgen.vu_crash` means a harness bug, not a server error.
 - The app is recreated before every run, so memory starts fresh.
+
+## Checking a cluster behind PgBouncer
+
+Not a load test: three nodes behind PgBouncer in transaction mode, as production can run once
+the pooler is switched (2026-11-18, all of it passed). `run.sh` does not start `app3` or
+`pgbouncer`; run them by hand, light enough for a laptop:
+
+```sh
+export DB_HOST=pgbouncer DB_NAME=potok_cluster_check APP_MEM=700M APP_MEMSWAP=700M   COMPOSE_PROFILES=cluster,cluster3,pooler MSYS_NO_PATHCONV=1   # the last one for Git Bash
+docker compose build app
+docker compose up -d --wait db
+docker compose exec -T db psql -U postgres -c "CREATE DATABASE potok_cluster_check"
+docker compose up -d pgbouncer app      # app migrates past the pooler, then serves through it
+docker compose up -d app2 app3
+docker compose exec -T app /app/bin/potok_ide rpc 'IO.inspect(Node.list())'
+```
+
+Worth checking: `Node.list()` on every node, `Oban.Notifier.status(Oban)` is `:clustered`, a
+shared limit (`RateLimit.hit(:magic_link_email, ...)`) hit on one node refuses on another, the
+hourly sweep's counter in `rate_limit_counters` has one row with one attempt per node, a job
+inserted on one node completes, `Access.forget/1` bumps the epoch on the others, pages answer
+with `-H "Host: localhost"` (any other host is redirected to HTTPS), and a restarted node comes
+back. Afterwards `docker compose rm -sf app app2 app3 pgbouncer` and drop the database.
 
 ## Comparing two builds
 
