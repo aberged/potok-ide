@@ -194,6 +194,41 @@ defmodule PotokIde.Processes do
     end)
   end
 
+  @slim_after_days 30
+  @slim_batch 500
+  @slim_batches 20
+
+  @doc """
+  Runs that ended (done or cancelled) more than #{@slim_after_days} days ago keep
+  their status, log and groups but drop the copy of the graph, the variables,
+  the results and the data they started from, which nothing reads once a run
+  has ended: apps and the Processes tab see an ended run by its status and
+  log (`present/3`), and the tasks and requests read only waiting runs. A
+  failed run keeps everything, as it may be retried. At most
+  #{@slim_batch * @slim_batches} runs a call, in batches; returns how many.
+  """
+  def slim_ended(now \\ DateTime.utc_now(:second)) do
+    cutoff = DateTime.add(now, -@slim_after_days, :day)
+
+    Enum.reduce_while(1..@slim_batches, 0, fn _batch, total ->
+      ids =
+        from(i in ValueProcess,
+          where: i.status in [:done, :cancelled] and i.updated_at < ^cutoff,
+          where: fragment("? <> '{}'::jsonb", i.graph),
+          select: i.id,
+          limit: @slim_batch
+        )
+
+      {slimmed, _} =
+        from(i in ValueProcess, where: i.id in subquery(ids))
+        |> Repo.update_all(set: [graph: %{}, vars: %{}, results: %{}, data: %{}])
+
+      if slimmed < @slim_batch,
+        do: {:halt, total + slimmed},
+        else: {:cont, total + slimmed}
+    end)
+  end
+
   @doc "The failed instances of a process, the latest first, at most `limit`."
   def failed(app_process_id, limit \\ 20) do
     from(i in ValueProcess,

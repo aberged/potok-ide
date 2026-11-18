@@ -625,6 +625,35 @@ defmodule PotokIde.Accounts do
     :ok
   end
 
+  @doc """
+  Deletes the tokens no check accepts any more: sessions older than
+  #{AccountToken.session_validity_in_days()} days (a session is reissued every week and the
+  old token stays until then), sign-in links and links to confirm a new
+  address older than the longest they last. Returns how many went.
+  """
+  def delete_expired_tokens do
+    session_days = AccountToken.session_validity_in_days()
+
+    link_days =
+      max(
+        AccountToken.invitation_validity_in_days(),
+        AccountToken.change_email_validity_in_days()
+      )
+
+    {deleted, _} =
+      from(t in AccountToken,
+        # Every expired token is at least this old: the index on inserted_at.
+        where: t.inserted_at < ago(^min(session_days, link_days), "day"),
+        where:
+          (t.context == "session" and t.inserted_at < ago(^session_days, "day")) or
+            ((t.context == "login" or like(t.context, "change:%")) and
+               t.inserted_at < ago(^link_days, "day"))
+      )
+      |> Repo.delete_all()
+
+    deleted
+  end
+
   defp build_magic_link_app_url(%URI{} = uri) do
     build_magic_link_app_url(URI.to_string(uri))
   end

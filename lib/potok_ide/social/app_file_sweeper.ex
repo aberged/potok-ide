@@ -9,8 +9,11 @@ defmodule PotokIde.Social.AppFileSweeper do
   The same pass deletes the profiles of processes whose app is gone and that
   left nothing they wrote (`PotokIde.Social.AppProcesses.sweep/0`), and
   fails the runs that wait for a run deleted with its process or its group
-  (`PotokIde.Processes.Engine.fail_orphaned_calls/1`), and deletes the shared
-  counters of limits whose window has ended (`PotokIde.RateLimit.prune/0`).
+  (`PotokIde.Processes.Engine.fail_orphaned_calls/1`), slims runs that ended
+  a month ago (`PotokIde.Processes.slim_ended/1`), and deletes sign-in tokens
+  no check accepts any more (`PotokIde.Accounts.delete_expired_tokens/0`) and
+  the shared counters of limits whose window has ended
+  (`PotokIde.RateLimit.prune/0`).
 
   A failed pass is logged and the next one runs as usual, as in
   `PotokIde.Polls.Scheduler`.
@@ -53,6 +56,8 @@ defmodule PotokIde.Social.AppFileSweeper do
       AppFiles.sweep()
       AppProcesses.sweep()
       PotokIde.Processes.Engine.fail_orphaned_calls()
+      PotokIde.Processes.slim_ended()
+      PotokIde.Accounts.delete_expired_tokens()
       RateLimit.prune()
       :done
     else

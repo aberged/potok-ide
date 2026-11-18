@@ -2046,9 +2046,10 @@ defmodule PotokIde.Social do
         join: gm in GroupMembership,
         on: gm.group_id == r.group_id and gm.profile_id == ^approver.id,
         order_by: [desc: r.inserted_at, desc: r.id],
-        preload: [:requester, group: :members]
+        preload: [:requester, :group]
       )
       |> Repo.all()
+      |> with_direct_members()
 
     approvable_ids =
       requests
@@ -2274,10 +2275,11 @@ defmodule PotokIde.Social do
       where: ^approved_request_name_search_dynamic(search),
       order_by: [desc: a.approved_at, desc: a.id],
       offset: ^offset,
-      preload: [:requester, group: :members]
+      preload: [:requester, :group]
     )
     |> maybe_limit(limit)
     |> Repo.all()
+    |> with_direct_members()
   end
 
   def count_approved_group_join_requests_for_approver(%Profile{} = approver, opts \\ []) do
@@ -7058,10 +7060,11 @@ defmodule PotokIde.Social do
         desc: i.id
       ],
       offset: ^offset,
-      preload: [:inviter, group: :members]
+      preload: [:inviter, :group]
     )
     |> maybe_limit(limit)
     |> Repo.all()
+    |> with_direct_members()
   end
 
   def list_group_invitations_for_inviter(%Profile{} = inviter, opts \\ []) do
@@ -7082,10 +7085,11 @@ defmodule PotokIde.Social do
         desc: i.id
       ],
       offset: ^offset,
-      preload: [:invitee, group: :members]
+      preload: [:invitee, :group]
     )
     |> maybe_limit(limit)
     |> Repo.all()
+    |> with_direct_members()
   end
 
   def count_group_invitations_for_invitee(%Profile{} = invitee) do
@@ -7167,9 +7171,10 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.id == ^invitation_id and i.invitee_id == ^invitee.id and is_nil(i.accepted_at),
-      preload: [:inviter, group: :members]
+      preload: [:inviter, :group]
     )
     |> Repo.one()
+    |> with_direct_members()
   end
 
   def get_group_invitation_for_invitee(%Profile{} = invitee, invitation_id) do
@@ -7177,9 +7182,28 @@ defmodule PotokIde.Social do
 
     from(i in GroupInvitation,
       where: i.id == ^invitation_id and i.invitee_id == ^invitee.id,
-      preload: [:inviter, group: :members]
+      preload: [:inviter, :group]
     )
     |> Repo.one()
+    |> with_direct_members()
+  end
+
+  # Invitation and request rows show their group by `group_identity`, which
+  # names a direct conversation after the other side: only those groups get
+  # their members. Preloading members for every group loaded each big
+  # group's whole member list.
+  defp with_direct_members(nil), do: nil
+  defp with_direct_members(%{group: _} = row), do: hd(with_direct_members([row]))
+
+  defp with_direct_members(rows) when is_list(rows) do
+    loaded =
+      for(%{group: %Group{is_direct: true} = group} <- rows, uniq: true, do: group)
+      |> Repo.preload(:members)
+      |> Map.new(&{&1.id, &1})
+
+    Enum.map(rows, fn %{group: %Group{id: id} = group} = row ->
+      %{row | group: Map.get(loaded, id, group)}
+    end)
   end
 
   defp invitation_name_search_dynamic(""), do: true

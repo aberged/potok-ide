@@ -29,6 +29,7 @@ defmodule PotokIde.Accounts.AccountToken do
   def magic_link_validity_in_minutes, do: @magic_link_validity_in_minutes
   def invitation_validity_in_days, do: @invitation_validity_in_days
   def change_email_validity_in_days, do: @change_email_validity_in_days
+  def session_validity_in_days, do: @session_validity_in_days
 
   @doc """
   Generates a token that will be stored in a signed place,
