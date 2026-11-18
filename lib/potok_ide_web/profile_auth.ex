@@ -145,17 +145,19 @@ defmodule PotokIdeWeb.ProfileAuth do
 
           # What waits for the profile in some group's processes changed: the
           # hand counts again, and a view that shows it itself hears of it too.
+          # A run asks up to 500 people at once, so the hand counts a moment
+          # later, spread, once per burst.
           {:profile_waiting_updated, profile_id},
           %{assigns: %{current_profile: current_profile}} = socket
           when not is_nil(current_profile) and current_profile.id == profile_id ->
-            count = pending_group_join_requests_count(current_profile)
-
-            socket =
-              socket
-              |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
-              |> push_pending_group_join_requests_count_updated(count)
-
+            socket = schedule_waiting_recount(socket)
             if shows_waiting_itself?(socket), do: {:cont, socket}, else: {:halt, socket}
+
+          :recount_waiting, socket ->
+            {:halt,
+             socket
+             |> put_private(:waiting_recount_scheduled, false)
+             |> recount_waiting()}
 
           {:profile_waiting_updated, _profile_id}, socket ->
             {:halt, socket}
@@ -599,6 +601,36 @@ defmodule PotokIdeWeb.ProfileAuth do
     |> Phoenix.Component.assign(:root_group_unread_count, counts.root_unread)
     |> put_private(:root_unread_as_of, counts.root_unread_as_of)
     |> push_root_group_unread_count_updated(counts.root_unread)
+  end
+
+  defp schedule_waiting_recount(socket) do
+    case unread_recount_delay_ms() do
+      0 ->
+        recount_waiting(socket)
+
+      delay ->
+        if socket.private[:waiting_recount_scheduled] do
+          socket
+        else
+          Process.send_after(
+            self(),
+            :recount_waiting,
+            delay + :rand.uniform(@unread_recount_spread_ms)
+          )
+
+          put_private(socket, :waiting_recount_scheduled, true)
+        end
+    end
+  end
+
+  defp recount_waiting(%{assigns: %{current_profile: nil}} = socket), do: socket
+
+  defp recount_waiting(socket) do
+    count = pending_group_join_requests_count(socket.assigns.current_profile)
+
+    socket
+    |> Phoenix.Component.assign(:pending_group_join_requests_count, count)
+    |> push_pending_group_join_requests_count_updated(count)
   end
 
   defp recount_root_group_unread(socket) do

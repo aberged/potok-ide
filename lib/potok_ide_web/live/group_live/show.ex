@@ -2989,7 +2989,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     # theirs, and their instances move.
     socket =
       if event in [:config, :process, :drawn_process],
-        do: assign_group_processes(socket),
+        do: schedule_refresh(socket, :group_processes),
         else: socket
 
     # A run that came to ask the viewer a form opens it for them.
@@ -3085,13 +3085,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:group_sidebar_load, params}, socket),
     do: {:noreply, GroupSidebar.load(socket, current_unread_overview(socket), params)}
 
-  # An app on the page hears of it too, and reads what waits again.
-  def handle_info({:profile_waiting_updated, _profile_id}, socket) do
-    {:noreply,
-     socket
-     |> refresh_group_waiting_counts()
-     |> AppHost.push("app_waiting_changed", %{})}
-  end
+  # An app on the page hears of it too, and reads what waits again. A run
+  # that moves asks up to 500 people at once, so their pages count a moment
+  # later, spread.
+  def handle_info({:profile_waiting_updated, _profile_id}, socket),
+    do: {:noreply, schedule_refresh(socket, :waiting)}
 
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
@@ -3311,8 +3309,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp refresh_spread_ms(:children), do: :rand.uniform(@children_refresh_spread_ms)
   defp refresh_spread_ms(:group), do: :rand.uniform(@group_refresh_spread_ms)
 
-  defp refresh_spread_ms(kind) when kind in [:members, :member_summary],
-    do: :rand.uniform(@members_refresh_spread_ms)
+  defp refresh_spread_ms(kind)
+       when kind in [:members, :member_summary, :waiting, :group_processes, :polls_section],
+       do: :rand.uniform(@members_refresh_spread_ms)
 
   defp refresh_spread_ms(_kind), do: 0
 
@@ -3345,6 +3344,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket =
       if MapSet.member?(pending, :members) and not MapSet.member?(pending, :group),
         do: reload_member_lists_or_retry(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :waiting) and not MapSet.member?(pending, :group),
+        do: refresh_waiting_or_retry(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :group_processes) and not MapSet.member?(pending, :group),
+        do: assign_group_processes(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :polls_section) and not MapSet.member?(pending, :group),
+        do:
+          assign(
+            socket,
+            :polls_section?,
+            polls_section?(socket.assigns.group, socket.assigns.access)
+          ),
         else: socket
 
     socket =
@@ -3420,6 +3439,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     reload_children(socket)
   rescue
     DBConnection.ConnectionError -> schedule_refresh(socket, :children)
+  end
+
+  defp refresh_waiting_or_retry(socket) do
+    socket
+    |> refresh_group_waiting_counts()
+    |> AppHost.push("app_waiting_changed", %{})
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :waiting)
   end
 
   defp reload_member_summary_or_retry(socket) do
@@ -6488,9 +6515,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp polls_section?(group, %Access{member?: true}), do: Polls.any?(group)
   defp polls_section?(group, _access), do: Polls.public_polls?(group)
 
-  defp refresh_polls_section(socket, {kind, _poll_id}) when kind in [:changed, :deleted] do
-    assign(socket, :polls_section?, polls_section?(socket.assigns.group, socket.assigns.access))
-  end
+  # A changed poll leaves a section that is there as it is; a new or deleted
+  # one may make or take it, asked a moment later.
+  defp refresh_polls_section(%{assigns: %{polls_section?: true}} = socket, {:changed, _poll_id}),
+    do: socket
+
+  defp refresh_polls_section(socket, {kind, _poll_id}) when kind in [:changed, :deleted],
+    do: schedule_refresh(socket, :polls_section)
 
   defp refresh_polls_section(socket, _message), do: socket
 
