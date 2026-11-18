@@ -3,7 +3,8 @@ defmodule PotokIde.Social.UnreadRemovalTest do
   What a group's members hear about unread values when a value or a member
   goes: a deleted value names itself and its author, so each page takes it
   out of its counts without a query (`Social.remove_unread_value/3`); a
-  removed member tells only that member.
+  removed member tells only that member. Who joins starts with the history
+  read.
   """
 
   use PotokIde.DataCase, async: true
@@ -60,6 +61,36 @@ defmodule PotokIde.Social.UnreadRemovalTest do
     recount = Social.unread_overview(ctx.reader)
     assert Map.take(overview, [:total, :groups]) == Map.take(recount, [:total, :groups])
     assert recount.read_marks[ctx.group.id] < kept.id
+  end
+
+  test "who joins by invitation or by request starts with the history read", ctx do
+    _before = post!(ctx.owner, ctx.group, "before anyone new")
+    {_account, invited} = account_with_profile!("ur-invited")
+    {_account, asking} = account_with_profile!("ur-asking")
+
+    {:ok, invitation} = Social.invite_profile_to_group(ctx.owner, ctx.group, invited)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, invited)
+
+    {:ok, public} = Social.update_group(ctx.owner, ctx.group, %{"is_public" => true})
+    {:ok, request} = Social.request_group_access(asking, public)
+    {:ok, _asking} = Social.accept_group_join_request(ctx.owner, public, request.id)
+
+    for profile <- [invited, asking] do
+      assert Social.unread_overview(profile).total == 0
+    end
+
+    _after = post!(ctx.owner, ctx.group, "after they came")
+
+    for profile <- [invited, asking] do
+      assert Social.unread_overview(profile).groups[ctx.group.id].own == 1
+    end
+  end
+
+  test "the other member of a new direct chat sees its first value unread", ctx do
+    {:ok, chat} = Social.get_or_create_direct_group(ctx.owner, ctx.reader)
+    _first = post!(ctx.owner, chat, "hi")
+
+    assert Social.unread_overview(ctx.reader).groups[chat.id].own == 1
   end
 
   test "a value read already, or in a group with nothing counted, changes nothing", ctx do

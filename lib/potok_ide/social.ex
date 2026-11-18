@@ -1771,6 +1771,9 @@ defmodule PotokIde.Social do
           where: r.group_id == ^invitation.group_id and r.requester_id == ^invitation.invitee_id
         )
       )
+      |> Multi.run(:read_marker, fn repo, %{invitation: inv} ->
+        read_history_on_join(repo, inv.invitee_id, inv.group_id)
+      end)
       |> Multi.run(:inheritance, fn repo, %{invitation: inv} ->
         {:ok, MemberInheritance.sync(repo, inv.group_id, [inv.invitee_id])}
       end)
@@ -2335,6 +2338,9 @@ defmodule PotokIde.Social do
         })
       end)
       |> Multi.delete(:request, request)
+      |> Multi.run(:read_marker, fn repo, _changes ->
+        read_history_on_join(repo, request.requester_id, group.id)
+      end)
       |> Multi.delete_all(
         :invitations,
         from(i in GroupInvitation,
@@ -7922,6 +7928,18 @@ defmodule PotokIde.Social do
       select: max(v.id)
     )
     |> Repo.one()
+  end
+
+  # Who joins starts with the chat's history read, as a member taken in by
+  # inheritance does (`MemberInheritance`): it is there to read, but it is
+  # not news, and it is not counted on every page until it is opened.
+  defp read_history_on_join(repo, profile_id, group_id) do
+    from(v in Value, where: v.group_id == ^group_id and v.is_data == false, select: max(v.id))
+    |> repo.one()
+    |> case do
+      nil -> {:ok, :empty}
+      latest_value_id -> upsert_group_value_read(repo, profile_id, group_id, latest_value_id)
+    end
   end
 
   defp upsert_group_value_read(repo, profile_id, group_id, last_read_value_id) do
