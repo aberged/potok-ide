@@ -3501,7 +3501,28 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       }
     end
 
-    test "the way down to a hidden thread shows what is unread in it", %{
+    test "opening a thread takes a member of the group in, with it read", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      member: member,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "inside"})
+      refute group.is_public
+      refute Social.member_of_group?(profile, thread)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{thread.id}/values")
+
+      assert Social.member_of_group?(profile, thread)
+      assert has_element?(lv, "#group-value-form")
+      assert render(lv) =~ "inside"
+      refute Map.has_key?(Social.unread_overview(profile).groups, thread.id)
+    end
+
+    test "a thread the viewer takes no part in counts nowhere", %{
       conn: conn,
       account: account,
       member: member,
@@ -3509,6 +3530,27 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       value: value
     } do
       {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+      {:ok, _value} = Social.create_value(member, thread, %{"content" => "in the thread"})
+      conn = log_in_account(conn, account)
+
+      {:ok, root_lv, _html} = live(conn, ~p"/groups/#{Social.get_root_group!().id}")
+      refute has_element?(root_lv, "#nav-root-group-unread-badge:not([hidden])")
+      refute has_element?(root_lv, "#group-unread-badge-#{group.id}")
+
+      {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+      refute thread_unread_shown?(lv, thread, 1)
+    end
+
+    test "the way down to a hidden thread shows what is unread in it", %{
+      conn: conn,
+      account: account,
+      profile: profile,
+      member: member,
+      group: group,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+      :ok = Social.join_thread(profile, thread)
       {:ok, _value} = Social.create_value(member, thread, %{"content" => "in the thread"})
       conn = log_in_account(conn, account)
 
@@ -3551,6 +3593,7 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       value: value
     } do
       {:ok, thread} = Social.get_or_create_value_thread(member, group, value, %{"name" => "t"})
+      :ok = Social.join_thread(profile, thread)
 
       assert has_element?(
                lv,

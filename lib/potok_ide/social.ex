@@ -3152,8 +3152,9 @@ defmodule PotokIde.Social do
     Repo.one(from(g in Group, where: g.parent_value_id == ^value_id))
   end
 
-  # The thread inherits the members of `group`, so the profile opening it
-  # later is already one of them.
+  # The thread inherits from `group`, lazily: it starts with whoever opens
+  # it and the author of `value`, and takes in the group's other members as
+  # they take part (`join_thread/2`).
   defp create_value_thread(%Profile{} = profile, %Group{} = group, %Value{} = value, attrs) do
     group_attrs = %{
       "name" => Map.get(Map.new(attrs), "name"),
@@ -3171,6 +3172,9 @@ defmodule PotokIde.Social do
 
     case insert_group_with_creator(profile, group, group_attrs) do
       {:ok, thread} ->
+        if value.creator_id != profile.id,
+          do: join_thread(%Profile{id: value.creator_id}, thread)
+
         broadcast_values_updated([value.id])
         {:ok, thread}
 
@@ -3184,6 +3188,31 @@ defmodule PotokIde.Social do
       {:error, reason} ->
         {:error, reason}
     end
+  end
+
+  @doc """
+  Takes the profile into thread `thread` when it is a member of the thread's
+  group and not of the thread yet: a thread counts and pushes only for those
+  who take part (opened it, wrote in it, wrote the value it was opened on,
+  or were mentioned in it). They come in as inherited members, with the
+  roles they hold in the group and the thread read up to now
+  (`MemberInheritance.join/3`). Anything else is left alone. Returns `:ok`.
+  """
+  def join_thread(%Profile{} = profile, %Group{parent_value_id: value_id} = thread)
+      when not is_nil(value_id) do
+    if member_of_group?(profile, thread),
+      do: :ok,
+      else: join_thread_profiles(thread, [profile.id])
+  end
+
+  def join_thread(_profile, _group), do: :ok
+
+  defp join_thread_profiles(%Group{id: thread_id}, profile_ids) do
+    {:ok, changes} =
+      Repo.transaction(fn -> MemberInheritance.join(Repo, thread_id, profile_ids) end)
+
+    broadcast_inheritance_changes(changes)
+    :ok
   end
 
   @doc """
@@ -5455,7 +5484,8 @@ defmodule PotokIde.Social do
 
   Options:
   * `:threads_for`, a profile that is a member: also the threads right below
-    the group that it is in, whose values have the thread as `group_id`;
+    the group, whose values have the thread as `group_id` (a member may open
+    any of them);
   * `:outsider`, someone reading an open chat from outside: leaves out the
     announcements of events that are not public, as the chat hides them;
   * `:before_id`, to page on from the oldest value found; `:limit`.
@@ -5494,10 +5524,12 @@ defmodule PotokIde.Social do
 
   defp value_search_thread_ids(_group, nil), do: []
 
+  # Every thread right below the group, for a member of the group: they may
+  # open any of them, and opening one takes them in (`join_thread/2`).
   defp value_search_thread_ids(%Group{id: group_id}, %Profile{id: profile_id}) do
     from(g in Group,
       join: m in GroupMembership,
-      on: m.group_id == g.id and m.profile_id == ^profile_id,
+      on: m.group_id == g.parent_id and m.profile_id == ^profile_id,
       where: g.parent_id == ^group_id and not is_nil(g.parent_value_id),
       select: g.id
     )

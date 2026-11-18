@@ -283,6 +283,7 @@ defmodule PotokIde.Social.MemberInheritanceTest do
     test "threads of the group follow it", %{owner: owner, member: member, child: child} do
       {:ok, value} = Social.create_value(owner, child, %{"content" => "thread me"})
       {:ok, thread} = Social.get_or_create_value_thread(owner, child, value, %{"name" => "t"})
+      :ok = Social.join_thread(member, thread)
       assert Social.member_of_group?(member, thread)
 
       {:ok, _} = Social.withdraw_group(owner, child)
@@ -328,22 +329,73 @@ defmodule PotokIde.Social.MemberInheritanceTest do
       %{value: value}
     end
 
-    test "hold later members of their group; the opener stays after leaving it", %{
+    test "start with the opener and the value's author, and take in members as they take part", %{
       owner: owner,
       member: member,
       parent: parent,
       value: value
     } do
+      bystander = profile!("inh-bystander")
+      add_member!(owner, parent, bystander)
+
       {:ok, thread} = Social.get_or_create_value_thread(member, parent, value, %{"name" => "t"})
       assert thread.inherits_members
+      assert Social.member_of_group?(member, thread)
+      assert Social.member_of_group?(owner, thread)
+      refute Social.member_of_group?(bystander, thread)
 
       latecomer = profile!("inh-late")
       add_member!(owner, parent, latecomer)
+      refute Social.member_of_group?(latecomer, thread)
+
+      :ok = Social.join_thread(latecomer, thread)
       assert Social.member_of_group?(latecomer, thread)
+      assert Access.for_profile(owner, thread).admin?
+    end
+
+    test "take in only members of their group", %{owner: owner, parent: parent, value: value} do
+      {:ok, thread} = Social.get_or_create_value_thread(owner, parent, value, %{"name" => "t"})
+      outsider = profile!("inh-outsider")
+
+      :ok = Social.join_thread(outsider, thread)
+      refute Social.member_of_group?(outsider, thread)
+    end
+
+    test "a participant leaves with the group; the opener stays after leaving it", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      value: value
+    } do
+      taking_part = profile!("inh-part")
+      add_member!(owner, parent, taking_part)
+      {:ok, thread} = Social.get_or_create_value_thread(member, parent, value, %{"name" => "t"})
+      :ok = Social.join_thread(taking_part, thread)
+
+      {:ok, _} = Social.remove_group_member(owner, parent, taking_part.id)
+      refute Social.member_of_group?(taking_part, thread)
 
       {:ok, _} = Social.remove_group_member(owner, parent, member.id)
       assert Social.member_of_group?(member, thread)
       assert Access.for_profile(member, thread).admin?
+    end
+
+    test "a thread inside a thread takes a member into both", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      value: value
+    } do
+      {:ok, thread} = Social.get_or_create_value_thread(owner, parent, value, %{"name" => "t"})
+      {:ok, inner_value} = Social.create_value(owner, thread, %{"content" => "deeper"})
+
+      {:ok, inner} =
+        Social.get_or_create_value_thread(owner, thread, inner_value, %{"name" => "t2"})
+
+      refute Social.member_of_group?(member, thread)
+      :ok = Social.join_thread(member, inner)
+      assert Social.member_of_group?(member, thread)
+      assert Social.member_of_group?(member, inner)
     end
 
     test "made from the sub-group form, inherit too and cannot stop", %{
@@ -360,6 +412,8 @@ defmodule PotokIde.Social.MemberInheritanceTest do
         )
 
       assert thread.inherits_members
+      refute Social.member_of_group?(member, thread)
+      :ok = Social.join_thread(member, thread)
       assert Social.member_of_group?(member, thread)
 
       {:ok, thread} = Social.update_group(owner, thread, %{"inherits_members" => "false"})

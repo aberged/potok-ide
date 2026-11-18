@@ -10,6 +10,11 @@ defmodule PotokIde.Social.MemberInheritance do
     is a member only where `AppProcesses` put it.
   - A chain of inheriting groups is followed down from the parent, so a
     group below inherits what the one above holds, direct or inherited.
+  - A thread inherits lazily: nobody is added to it up front, and a member of
+    its group comes in only when they take part (`join/3`: opening it,
+    writing in it, the value it was opened on, a mention). Once in, they hold
+    the roles they hold in the group and leave with that membership, like
+    any inherited member.
 
   Writes only: callers run `sync/3` in the transaction that changed a
   membership or a role, then broadcast what it reports (see `PotokIde.Social`).
@@ -29,7 +34,25 @@ defmodule PotokIde.Social.MemberInheritance do
 
     repo
     |> inheriting_chain(group_id)
-    |> Enum.map(fn [id, parent_id] -> sync_group(repo, id, parent_id, profile_ids, now) end)
+    |> Enum.map(fn [id, parent_id, thread?] ->
+      sync_group(repo, id, parent_id, profile_ids, now, not thread?)
+    end)
+    |> Enum.reject(&(&1.added == [] and &1.removed == [] and not &1.roles_changed?))
+  end
+
+  @doc """
+  Takes `profile_ids` into thread `thread_id` as inherited members, with the
+  roles they hold in its group and a read marker at its newest value, and
+  into the threads above it first when it was opened inside another thread.
+  Only members of the group come in. Returns the groups that changed, like
+  `sync/3`.
+  """
+  def join(repo, thread_id, profile_ids) when is_integer(thread_id) and is_list(profile_ids) do
+    now = NaiveDateTime.utc_now(:second)
+
+    repo
+    |> thread_chain(thread_id)
+    |> Enum.map(fn [id, parent_id] -> sync_group(repo, id, parent_id, profile_ids, now, true) end)
     |> Enum.reject(&(&1.added == [] and &1.removed == [] and not &1.roles_changed?))
   end
 
@@ -80,32 +103,64 @@ defmodule PotokIde.Social.MemberInheritance do
   end
 
   # The group itself when it inherits, then its inheriting descendants
-  # reached through inheriting groups only, as `[id, parent_id]` by depth.
+  # reached through inheriting groups only, as `[id, parent_id, thread?]` by
+  # depth.
   defp inheriting_chain(repo, group_id) do
     sql = """
     WITH RECURSIVE chain AS (
-      SELECT g.id, g.parent_id, g.inherits_members, 0 AS depth
+      SELECT g.id, g.parent_id, g.inherits_members, g.parent_value_id IS NOT NULL AS thread, 0 AS depth
       FROM groups g
       WHERE g.id = $1
       UNION ALL
-      SELECT child.id, child.parent_id, child.inherits_members, chain.depth + 1
+      SELECT child.id, child.parent_id, child.inherits_members,
+             child.parent_value_id IS NOT NULL, chain.depth + 1
       FROM groups child
       JOIN chain ON child.parent_id = chain.id
       WHERE child.inherits_members
     )
-    SELECT id, parent_id
+    SELECT id, parent_id, thread
     FROM chain
     WHERE inherits_members
     ORDER BY depth, id
     """
 
-    %{rows: rows} = repo.query!(sql, [group_id], cache_statement: "inheritance_chain")
+    %{rows: rows} = repo.query!(sql, [group_id], cache_statement: "inheritance_chain_v2")
     rows
   end
 
-  defp sync_group(repo, group_id, parent_id, profile_ids, now) do
+  # Thread `thread_id` and the threads above it up to the first group that
+  # is not one, as `[id, parent_id]` from the top down.
+  defp thread_chain(repo, thread_id) do
+    sql = """
+    WITH RECURSIVE up AS (
+      SELECT g.id, g.parent_id, 0 AS depth
+      FROM groups g
+      WHERE g.id = $1 AND g.parent_value_id IS NOT NULL
+      UNION ALL
+      SELECT parent.id, parent.parent_id, up.depth + 1
+      FROM groups parent
+      JOIN up ON parent.id = up.parent_id
+      WHERE parent.parent_value_id IS NOT NULL
+    )
+    SELECT id, parent_id
+    FROM up
+    ORDER BY depth DESC
+    """
+
+    %{rows: rows} = repo.query!(sql, [thread_id], cache_statement: "inheritance_thread_chain")
+    rows
+  end
+
+  # `add?` false for a thread outside `join/3`: those who leave the group go
+  # and roles follow it, but nobody comes in.
+  defp sync_group(repo, group_id, parent_id, profile_ids, now, add?) do
     removed = profile_ids(repo, remove_members_sql(), [group_id, parent_id, profile_ids])
-    added = profile_ids(repo, add_members_sql(), [group_id, parent_id, profile_ids, now])
+
+    added =
+      if add?,
+        do: profile_ids(repo, add_members_sql(), [group_id, parent_id, profile_ids, now]),
+        else: []
+
     roles_removed = profile_ids(repo, remove_roles_sql(), [group_id, parent_id, profile_ids])
     roles_added = profile_ids(repo, add_roles_sql(), [group_id, parent_id, profile_ids, now])
 

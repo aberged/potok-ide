@@ -247,7 +247,7 @@ defmodule PotokIde.Social.AccessTest do
       assert Access.role_keys_by_profile(child, [member.id]) == %{}
     end
 
-    test "a thread inherits the members' roles and its opener becomes an admin" do
+    test "a thread gives those who take part their roles, and its opener becomes an admin" do
       owner = profile!("thr-owner")
       member = profile!("thr-member")
       late = profile!("thr-late")
@@ -269,7 +269,16 @@ defmodule PotokIde.Social.AccessTest do
       {:ok, _} = Social.assign_group_member_role(owner, group, late.id, helpers.key)
       {:ok, joined} = Social.get_or_create_value_thread(late, group, value, %{"name" => "t"})
       assert joined.id == thread.id
+      refute Access.for_profile(late, thread).member?
+
+      # Taking part (here, opening it) brings the roles held in the group.
+      :ok = Social.join_thread(late, thread)
       assert Access.for_profile(late, thread).role_keys == ["everyone", helpers.key]
+
+      # And a role given in the group later reaches them in the thread.
+      cleaners = role!(owner, group, "cleaners")
+      {:ok, _} = Social.assign_group_member_role(owner, group, late.id, cleaners.key)
+      assert cleaners.key in Access.for_profile(late, thread).role_keys
     end
 
     test "a role can let members approve access requests" do

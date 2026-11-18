@@ -941,6 +941,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(id)
 
+    # Opening a thread takes a member of its group in (`Social.join_thread/2`),
+    # before its access is read: in a private group a thread is closed to
+    # those who are not in it.
+    :ok = if current_profile, do: Social.join_thread(current_profile, group), else: :ok
+
     access = Social.get_group_access(current_profile, group)
     is_member = access.member?
     active_tab = normalize_active_tab(Map.get(params, "tab"), group, access)

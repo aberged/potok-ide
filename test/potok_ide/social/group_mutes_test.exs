@@ -80,6 +80,7 @@ defmodule PotokIde.Social.GroupMutesTest do
       {:ok, thread} =
         Social.get_or_create_value_thread(ctx.author, ctx.group, value, %{"name" => "nit"})
 
+      for profile <- [ctx.ana, ctx.bob], do: :ok = Social.join_thread(profile, thread)
       {:ok, until} = Social.set_group_mute(ctx.ana, ctx.group, "hour")
 
       assert Enum.sort(Social.muted_group_ids(ctx.ana)) == Enum.sort([ctx.group.id, thread.id])
@@ -171,11 +172,27 @@ defmodule PotokIde.Social.GroupMutesTest do
       {:ok, thread} =
         Social.get_or_create_value_thread(ctx.author, ctx.group, value, %{"name" => "nit"})
 
+      for profile <- [ctx.ana, ctx.bob], do: :ok = Social.join_thread(profile, thread)
       _ = pushed()
       {:ok, _until} = Social.set_group_mute(ctx.ana, ctx.group, "hour")
 
       {:ok, _} = Social.create_value(ctx.author, thread, %{"content" => "in the thread"})
 
+      assert pushed() == [ctx.bob_device]
+    end
+
+    test "a value in a thread pushes only those who take part in it", ctx do
+      {:ok, value} = Social.create_value(ctx.author, ctx.group, %{"content" => "start"})
+
+      {:ok, thread} =
+        Social.get_or_create_value_thread(ctx.author, ctx.group, value, %{"name" => "nit"})
+
+      _ = pushed()
+      {:ok, _} = Social.create_value(ctx.author, thread, %{"content" => "nobody else here"})
+      assert pushed() == []
+
+      :ok = Social.join_thread(ctx.bob, thread)
+      {:ok, _} = Social.create_value(ctx.author, thread, %{"content" => "now bob is"})
       assert pushed() == [ctx.bob_device]
     end
   end

@@ -83,7 +83,7 @@ defmodule PotokIdeWeb.GroupLive.ValueSearchTest do
       assert search!(ctx.group, term) == {["100% sigurno"], false}
     end
 
-    test "searches the threads a member is in only when asked", ctx do
+    test "searches the threads of the group for a member only when asked", ctx do
       origin = post!(ctx.owner, ctx.group, "start")
       thread = thread!(ctx.owner, ctx.group, origin, "nit")
       post!(ctx.owner, thread, "proslava u niti")

@@ -1671,7 +1671,7 @@ defmodule PotokIde.SocialTest do
       EventsFixtures.group_with_members!(owner, [], %{parent: joined})
       {:ok, value} = Social.create_value(owner, joined, %{"content" => "thread start"})
 
-      {:ok, _thread} =
+      {:ok, thread} =
         Social.get_or_create_value_thread(owner, joined, value, %{"name" => "talk"})
 
       details = fn opts ->
@@ -1680,6 +1680,9 @@ defmodule PotokIde.SocialTest do
         |> Map.new(&{&1.id, {&1.listed_member_count, &1.sub_group_count, &1.viewer_is_member}})
       end
 
+      # A thread counts for those who take part in it.
+      assert details.([]) == %{joined.id => {3, 2, true}, open.id => {1, 0, false}}
+      :ok = Social.join_thread(viewer, thread)
       assert details.([]) == %{joined.id => {3, 3, true}, open.id => {1, 0, false}}
       assert %{joined.id => {3, 2, true}} == Map.take(details.(is_thread: false), [joined.id])
 
@@ -2328,8 +2331,10 @@ defmodule PotokIde.SocialTest do
       assert %{own: 0, subtree: 1} = Social.unread_overview(owner_profile).groups[child_group.id]
     end
 
-    test "threads count in the groups above them, and thread_unread_counts/2 names them" do
-      [owner_profile, writer_profile] = unread_profiles(["nothread-owner", "nothread-writer"])
+    test "threads count for those who take part, in the groups above them, and thread_unread_counts/2 names them" do
+      [owner_profile, writer_profile, bystander] =
+        unread_profiles(["nothread-owner", "nothread-writer", "nothread-by"])
+
       parent = unread_group!(owner_profile, Social.get_root_group!(), "nothread-parent")
       child = unread_group!(owner_profile, parent, "nothread-child")
 
@@ -2337,10 +2342,14 @@ defmodule PotokIde.SocialTest do
         unread_member!(owner_profile, group, writer_profile)
       end
 
+      unread_member!(owner_profile, parent, bystander)
+
       {:ok, start} = Social.create_value(writer_profile, parent, %{"content" => "start"})
 
       {:ok, thread} =
         Social.get_or_create_value_thread(writer_profile, parent, start, %{"name" => "talk"})
+
+      :ok = Social.join_thread(owner_profile, thread)
 
       {:ok, _value} = Social.create_value(writer_profile, thread, %{"content" => "in thread"})
       {:ok, _value} = Social.create_value(writer_profile, thread, %{"content" => "again"})
@@ -2353,6 +2362,11 @@ defmodule PotokIde.SocialTest do
 
       assert Social.thread_unread_counts(overview, [parent.id]) == %{thread.id => 2}
       assert Social.thread_unread_counts(overview, [child.id]) == %{}
+
+      # A member of the group who never took part counts only the group.
+      bystander_overview = Social.unread_overview(bystander)
+      refute Map.has_key?(bystander_overview.groups, thread.id)
+      assert %{own: 1, subtree: 1} = bystander_overview.groups[parent.id]
     end
 
     test "a group below one the profile cannot see counts at the root, not further up" do
@@ -3807,12 +3821,13 @@ defmodule PotokIde.SocialTest do
       %{owner: owner, member: member, outsider: outsider, group: group, value: value}
     end
 
-    test "creates a chat sub-group of the value's group with all of its members", %{
-      owner: owner,
-      member: member,
-      group: group,
-      value: value
-    } do
+    test "creates a chat sub-group of the value's group with its opener and the value's author",
+         %{
+           owner: owner,
+           member: member,
+           group: group,
+           value: value
+         } do
       assert {:ok, thread} =
                Social.get_or_create_value_thread(member, group, value, %{"name" => "Thread name"})
 
@@ -3828,23 +3843,25 @@ defmodule PotokIde.SocialTest do
       assert member_ids == Enum.sort([owner.id, member.id])
     end
 
-    test "returns the same thread on later calls, which already holds members who joined since",
-         %{
-           owner: owner,
-           group: group,
-           value: value
-         } do
+    test "returns the same thread on later calls, to a member who joined since", %{
+      owner: owner,
+      group: group,
+      value: value
+    } do
       {:ok, thread} = Social.get_or_create_value_thread(owner, group, value, %{"name" => "t"})
 
       latecomer = reply_profile!("thread-late")
       add_member!(owner, group, latecomer)
-      assert Social.member_of_group?(latecomer, thread)
+      refute Social.member_of_group?(latecomer, thread)
 
       assert {:ok, same_thread} =
                Social.get_or_create_value_thread(latecomer, group, value, %{"name" => "other"})
 
       assert same_thread.id == thread.id
       assert same_thread.name == "t"
+
+      # Opening its page takes them in.
+      :ok = Social.join_thread(latecomer, same_thread)
       assert Social.member_of_group?(latecomer, thread)
     end
 
