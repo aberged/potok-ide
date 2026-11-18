@@ -2593,7 +2593,7 @@ defmodule PotokIde.SocialTest do
       refute_received {:group_unread_counts_updated, _profile_id, _group_id}
     end
 
-    test "a deleted value makes the group's members count again" do
+    test "a deleted value tells the group's members which one went" do
       [owner_profile, writer_profile] = unread_profiles(["del-owner", "del-writer"])
       group = unread_group!(owner_profile, Social.get_root_group!(), "del-group")
       {:ok, invitation} = Social.invite_profile_to_group(owner_profile, group, writer_profile)
@@ -2603,8 +2603,8 @@ defmodule PotokIde.SocialTest do
       Social.subscribe_group_unread(group.id)
       {:ok, _deleted} = Social.delete_value(writer_profile, value)
 
-      group_id = group.id
-      assert_receive {:group_members_unread_changed, ^group_id}
+      {group_id, value_id, writer_id} = {group.id, value.id, writer_profile.id}
+      assert_receive {:group_value_removed, ^group_id, ^value_id, ^writer_id}
     end
 
     test "member_group_ids/1 and nav_counts/2 give the profile's groups without the root" do

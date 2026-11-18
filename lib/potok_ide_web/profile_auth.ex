@@ -196,6 +196,23 @@ defmodule PotokIdeWeb.ProfileAuth do
               do: {:cont, socket},
               else: {:halt, schedule_unread_recount(socket)}
 
+          # A deleted value: a view that counts unread values takes it out
+          # itself; the badge counts again only where it may have held it.
+          {:group_value_removed, group_id, _value_id, creator_id}, socket ->
+            cond do
+              counts_unread_itself?(socket) ->
+                {:cont, socket}
+
+              match?(%{id: ^creator_id}, socket.assigns[:current_profile]) or
+                not MapSet.member?(unread_groups(socket), group_id) or
+                MapSet.member?(muted_groups(socket), group_id) or
+                  (socket.assigns[:root_group_unread_count] || 0) == 0 ->
+                {:halt, socket}
+
+              true ->
+                {:halt, schedule_unread_recount(socket)}
+            end
+
           {:group_unread_counts_updated, _profile_id, _group_id} = message, socket ->
             cond do
               counts_unread_itself?(socket) ->

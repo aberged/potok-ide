@@ -169,7 +169,7 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
         "home_page" => :chat
       })
 
-    member_conn = member_conn("qc-member", group, profile)
+    {member_conn, _member} = member_conn("qc-member", group, profile)
     requester = other_profile("qc-requester")
     {:ok, lv, _html} = live(member_conn, ~p"/groups/#{group.id}/values")
 
@@ -205,7 +205,7 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
     group: group,
     profile: profile
   } do
-    member_conn = member_conn("qc-member", group, profile)
+    {member_conn, _member} = member_conn("qc-member", group, profile)
     joiner = other_profile("qc-joiner")
     {:ok, invitation} = Social.invite_profile_to_group(profile, group, joiner)
     {:ok, lv, _html} = live(member_conn, ~p"/groups/#{group.id}/values")
@@ -222,6 +222,30 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
     assert count == 0
     assert lv |> element("#group-members-stack") |> render() =~ "qc-joiner"
+  end
+
+  test "a deleted value lowers a member's count without a query", %{
+    group: group,
+    profile: profile
+  } do
+    {member_conn, member} = member_conn("qc-member", group, profile)
+    :ok = Social.mark_group_values_read(member, group)
+    {:ok, gone} = Social.create_value(profile, group, %{"content" => "gone soon"})
+    {:ok, _kept} = Social.create_value(profile, group, %{"content" => "kept"})
+    {:ok, lv, _html} = live(member_conn, ~p"/groups/#{Social.get_root_group!().id}")
+    assert has_element?(lv, "#group-unread-badge-#{group.id}", "2")
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _deleted} = Social.delete_value(profile, gone)
+          render(lv)
+        end,
+        lv.pid
+      )
+
+    assert count == 0
+    assert has_element?(lv, "#group-unread-badge-#{group.id}", "1")
   end
 
   # A value written past `Social` sends no message, so it shows only if the
@@ -297,7 +321,7 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
 
     {:ok, invitation} = Social.invite_profile_to_group(inviter, group, member)
     {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
-    log_in_account(build_conn(), Accounts.get_account!(account.id))
+    {log_in_account(build_conn(), Accounts.get_account!(account.id)), member}
   end
 
   defp other_profile(username) do

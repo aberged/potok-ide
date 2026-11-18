@@ -3082,6 +3082,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   def handle_info({:group_members_unread_changed, _group_id}, socket),
     do: {:noreply, schedule_refresh(socket, :unread)}
 
+  # A deleted value leaves the counts that held it, with no query
+  # (`Social.remove_unread_value/3`); one still waiting to be added is dropped.
+  def handle_info({:group_value_removed, group_id, value_id, creator_id}, socket),
+    do: {:noreply, uncount_removed_value(socket, group_id, value_id, creator_id)}
+
   # The profile's own value (`ProfileAuth` passes it on for the lists) only
   # changes the group's row; anyone else's is also one more unread.
   def handle_info(
@@ -3528,6 +3533,53 @@ defmodule PotokIdeWeb.GroupLive.Show do
         |> assign(:root_group_unread_count, overview.total)
         |> assign_group_unread_counts(overview)
         |> maybe_push_root_group_unread_count()
+    end
+  end
+
+  defp uncount_removed_value(socket, group_id, value_id, creator_id) do
+    overview = socket.assigns.unread_overview
+    pending = Map.get(socket.assigns, :pending_unread_values, [])
+
+    cond do
+      match?(%{id: ^creator_id}, socket.assigns.current_profile) ->
+        socket
+
+      Enum.any?(pending, &(&1.value_id == value_id)) ->
+        assign(socket, :pending_unread_values, Enum.reject(pending, &(&1.value_id == value_id)))
+
+      is_nil(overview) ->
+        socket
+
+      true ->
+        case Social.remove_unread_value(overview, group_id, value_id) do
+          :unchanged ->
+            socket
+
+          {:ok, overview} ->
+            previous_counts = socket.assigns.group_unread_counts
+
+            socket
+            |> assign(:unread_overview, overview)
+            |> assign(:root_group_unread_count, overview.total)
+            |> assign_group_unread_counts(overview)
+            |> restream_recounted_children(previous_counts)
+            |> maybe_push_root_group_unread_count()
+        end
+    end
+  end
+
+  # The loaded sub-groups whose count changed, in place: a lower count moves
+  # nothing that the next full count would not put right.
+  defp restream_recounted_children(socket, previous_counts) do
+    %{group: group, active_tab: active_tab, loaded_children: children} = socket.assigns
+    counts = socket.assigns.group_unread_counts
+
+    if needs_children?(group, active_tab) and socket.assigns.sub_groups_view != "tree" do
+      children
+      |> Enum.filter(&(Map.get(previous_counts, &1.id, 0) != Map.get(counts, &1.id, 0)))
+      |> Enum.reduce(socket, &stream_insert(&2, :children, &1))
+    else
+      socket
     end
   end
 

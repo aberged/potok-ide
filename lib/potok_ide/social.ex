@@ -1883,7 +1883,6 @@ defmodule PotokIde.Social do
         |> case do
           {:ok, %{inheritance: changes}} ->
             broadcast_group_members_changed(group, [:members], profile_id: member.id)
-            broadcast_group_unread_counts_updated(group)
             broadcast_group_membership_changed(member.id, group.id, :removed)
             broadcast_inheritance_changes(changes)
             {:ok, member}
@@ -2894,7 +2893,7 @@ defmodule PotokIde.Social do
        }} ->
         Storage.delete_later(storage_keys)
         broadcast_value_deleted(deleted_value)
-        broadcast_group_unread_counts_updated(deleted_value.group_id)
+        broadcast_group_value_removed(deleted_value)
         maybe_broadcast_last_value_removed(deleted_value, last_value_at)
         broadcast_values_updated(reply_ids)
         if poll, do: Polls.broadcast_deleted(poll)
@@ -6453,7 +6452,7 @@ defmodule PotokIde.Social do
   def unread_overview(nil), do: %{total: 0, as_of: CountMark.from_ids([]), groups: %{}}
 
   def unread_overview(%Profile{id: profile_id}) do
-    {own, muted, as_of} = own_unread_counts(profile_id)
+    {own, muted, as_of, read_marks} = own_unread_counts(profile_id)
 
     groups =
       case Map.keys(own) ++ Map.keys(muted) do
@@ -6475,6 +6474,7 @@ defmodule PotokIde.Social do
     %{
       total: own |> Map.values() |> Enum.sum(),
       as_of: as_of,
+      read_marks: read_marks,
       groups:
         Map.new(shown, fn group_id ->
           {group_id,
@@ -6488,17 +6488,19 @@ defmodule PotokIde.Social do
   end
 
   # Unread chat values per group the profile is a member of (the root's own
-  # values never count), leaving out groups with none, and the newest value ids
-  # the same statement saw (`CountMark`): one statement, so one snapshot for
-  # both. (Folding
-  # `group_chain/2` into it saves a round trip but measured slower.)
+  # values never count), leaving out groups with none, the newest value ids
+  # the same statement saw (`CountMark`) and where the profile's reading
+  # stands in each of those groups (`remove_unread_value/3`): one statement,
+  # so one snapshot for all. (Folding `group_chain/2` into it saves a round
+  # trip but measured slower.)
   defp own_unread_counts(profile_id) do
     # Whether a group is silenced is asked once per group, past the count.
     sql = """
-    SELECT hw.ids, c.group_id, c.unread, #{GroupMutes.muted_sql("c")}
+    SELECT hw.ids, c.group_id, c.unread, #{GroupMutes.muted_sql("c")}, c.read_mark
     FROM (SELECT #{CountMark.ids_sql("values")} AS ids) hw
     LEFT JOIN LATERAL (
-      SELECT gm.group_id, gm.profile_id, gm.muted_until, COUNT(v.id)::bigint AS unread
+      SELECT gm.group_id, gm.profile_id, gm.muted_until, COUNT(v.id)::bigint AS unread,
+             COALESCE(gvr.last_read_value_id, 0) AS read_mark
       FROM group_memberships gm
       LEFT JOIN group_value_reads gvr
         ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
@@ -6508,20 +6510,25 @@ defmodule PotokIde.Social do
        AND v.id > COALESCE(gvr.last_read_value_id, 0)
       WHERE gm.profile_id = $1
         AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
-      GROUP BY gm.group_id, gm.profile_id, gm.muted_until
+      GROUP BY gm.group_id, gm.profile_id, gm.muted_until, gvr.last_read_value_id
     ) c ON TRUE
     """
 
     %{rows: [[ids | _] | _] = rows} =
-      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v3")
+      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v4")
 
-    {own, muted} =
-      for [_ids, group_id, count, muted?] <- rows, group_id != nil, reduce: {%{}, %{}} do
-        {own, muted} when muted? == true -> {own, Map.put(muted, group_id, count)}
-        {own, muted} -> {Map.put(own, group_id, count), muted}
+    {own, muted, read_marks} =
+      for [_ids, group_id, count, muted?, read_mark] <- rows,
+          group_id != nil,
+          reduce: {%{}, %{}, %{}} do
+        {own, muted, marks} when muted? == true ->
+          {own, Map.put(muted, group_id, count), Map.put(marks, group_id, read_mark)}
+
+        {own, muted, marks} ->
+          {Map.put(own, group_id, count), muted, Map.put(marks, group_id, read_mark)}
       end
 
-    {own, muted, CountMark.from_ids(ids)}
+    {own, muted, CountMark.from_ids(ids), read_marks}
   end
 
   # `group_ids` and all their ancestors with what the overview needs about
@@ -6651,6 +6658,45 @@ defmodule PotokIde.Social do
 
       true ->
         count_unread_value(overview, unread, member_ids)
+    end
+  end
+
+  @doc """
+  Takes a deleted value (`{:group_value_removed, ...}`) out of an overview
+  that counted it, with no query: it counted when it is newer than where the
+  profile's reading stood when counting (`read_marks`). A value of the
+  profile's own, one in a group with nothing counted, or one read already
+  leaves the overview as it was (`:unchanged`). A read since the count comes
+  with a recount, which brings the marks up to date.
+  """
+  def remove_unread_value(%{groups: groups} = overview, group_id, value_id)
+      when is_integer(group_id) and is_integer(value_id) do
+    read_mark = overview |> Map.get(:read_marks, %{}) |> Map.get(group_id)
+
+    case groups do
+      %{^group_id => entry} when is_integer(read_mark) and value_id > read_mark ->
+        cond do
+          entry.muted > 0 ->
+            {:ok,
+             %{overview | groups: Map.put(groups, group_id, %{entry | muted: entry.muted - 1})}}
+
+          entry.own > 0 ->
+            groups =
+              group_id
+              |> self_and_ancestor_ids(groups)
+              |> Enum.reduce(groups, fn id, groups ->
+                Map.update!(groups, id, &%{&1 | subtree: max(&1.subtree - 1, 0)})
+              end)
+              |> Map.update!(group_id, &%{&1 | own: &1.own - 1})
+
+            {:ok, %{overview | total: max(overview.total - 1, 0), groups: groups}}
+
+          true ->
+            :unchanged
+        end
+
+      _not_counted ->
+        :unchanged
     end
   end
 
@@ -7955,15 +8001,16 @@ defmodule PotokIde.Social do
     )
   end
 
-  defp broadcast_group_unread_counts_updated(%Group{id: group_id}) do
-    broadcast_group_unread_counts_updated(group_id)
-  end
+  # A chat value went: its members' pages take it out of their counts if
+  # they counted it (`remove_unread_value/3`), with no query. Its author never
+  # counted it. Data values never count.
+  defp broadcast_group_value_removed(%Value{is_data: true}), do: :ok
 
-  defp broadcast_group_unread_counts_updated(group_id) when is_integer(group_id) do
+  defp broadcast_group_value_removed(%Value{id: id, group_id: group_id, creator_id: creator_id}) do
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
       group_unread_topic(group_id),
-      {:group_members_unread_changed, group_id}
+      {:group_value_removed, group_id, id, creator_id}
     )
   end
 

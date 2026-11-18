@@ -468,6 +468,21 @@ defmodule PotokIdeWeb.InvitationLive.Index do
   def handle_info({:group_members_unread_changed, _group_id}, socket),
     do: {:noreply, recount_unread(socket)}
 
+  # A deleted value leaves the counts that held it, with no query.
+  def handle_info({:group_value_removed, group_id, value_id, creator_id}, socket) do
+    with %{} = overview <- socket.assigns.unread_overview,
+         false <- match?(%{id: ^creator_id}, socket.assigns.current_profile),
+         {:ok, overview} <- Social.remove_unread_value(overview, group_id, value_id) do
+      {:noreply,
+       socket
+       |> put_unread_overview(overview)
+       |> maybe_push_root_group_unread_count()
+       |> assign_group_unread_counts()}
+    else
+      _unchanged -> {:noreply, socket}
+    end
+  end
+
   # A value someone else posted is added to the counts without a query.
   def handle_info({:group_value_unread, unread}, socket) do
     member_ids = ProfileAuth.unread_groups(socket)
