@@ -46,7 +46,7 @@ defmodule PotokIde.Social.GroupPlaces do
     query =
       profile
       |> placed()
-      |> NameSearch.where_matches(NameSearch.term(to_string(term)))
+      |> NameSearch.where_matches(NameSearch.wide_term(to_string(term)))
       |> limit(^limit)
 
     case near do

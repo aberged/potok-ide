@@ -249,7 +249,14 @@ defmodule PotokIde.TagsTest do
                "Webdesign"
              ]
 
-      assert Enum.map(Tags.suggest_tags(member, "%"), & &1.name) == []
+      assert Enum.map(Tags.suggest_tags(member, "de%"), & &1.name) == []
+
+      # Below three characters the suggestions and the directory are those
+      # with no search.
+      assert Tags.suggest_tags(member, "de") == Tags.suggest_tags(member, "")
+      assert Enum.map(Tags.suggest_tags(member, "zz"), & &1.name) == ["design ideas", "Webdesign"]
+      assert Enum.map(Tags.list_directory(member, "de").mine, & &1.name) == ["design ideas"]
+      assert Enum.map(Tags.list_directory(member, "zz").public, & &1.name) == ["Webdesign"]
 
       directory = Tags.list_directory(member)
       assert Enum.map(directory.mine, & &1.name) == ["design ideas"]

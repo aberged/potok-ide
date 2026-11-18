@@ -14,6 +14,11 @@ defmodule PotokIde.Social.NameSearch do
 
   @max_length 120
 
+  # A trigram index (`groups.name_folded`, `profiles.username`, tag names)
+  # narrows a search only from three characters on: a shorter term would
+  # read the whole table.
+  @wide_min 3
+
   @doc """
   The term a search takes: trimmed, at most #{@max_length} characters, with
   LIKE's own characters escaped; nil when there is nothing to look for.
@@ -21,11 +26,28 @@ defmodule PotokIde.Social.NameSearch do
   def term(text) when is_binary(text) do
     case text |> String.trim() |> String.slice(0, @max_length) do
       "" -> nil
-      term -> String.replace(term, ["\\", "%", "_"], &("\\" <> &1))
+      term -> escape(term)
     end
   end
 
   def term(_other), do: nil
+
+  @doc """
+  `term/1` for a search across a whole table, which an index serves (the
+  root's map, shortcuts, places, the area menu, people to invite, tags): nil
+  below #{@wide_min} characters, so the list waits or shows what it shows
+  without a term.
+  """
+  def wide_term(text) do
+    if wide?(text), do: term(text), else: nil
+  end
+
+  @doc "Whether `text` is long enough for a search across a whole table."
+  def wide?(text) when is_binary(text), do: String.length(String.trim(text)) >= @wide_min
+  def wide?(_other), do: false
+
+  @doc "`text` with LIKE's own characters escaped, so they mean themselves."
+  def escape(text) when is_binary(text), do: String.replace(text, ["\\", "%", "_"], &("\\" <> &1))
 
   @doc """
   SQL that keeps the rows of `table` whose name holds the term in the

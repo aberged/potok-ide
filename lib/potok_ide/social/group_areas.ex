@@ -538,7 +538,7 @@ defmodule PotokIde.Social.GroupAreas do
   """
   def search(%Profile{} = profile, term, limit) when is_integer(limit) do
     visible(profile)
-    |> NameSearch.where_matches(NameSearch.term(to_string(term)))
+    |> NameSearch.where_matches(NameSearch.wide_term(to_string(term)))
     |> order_by([g], asc: fragment("lower(?)", g.name), asc: g.id)
     |> limit(^limit)
     |> select([g], struct(g, ^@fields))

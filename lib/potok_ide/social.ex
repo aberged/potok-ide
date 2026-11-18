@@ -1597,7 +1597,7 @@ defmodule PotokIde.Social do
   stands in when the profile sees that one and it is not the root.
   """
   def search_shortcut_targets(%Profile{} = profile, %Group{} = parent, search, limit \\ 20) do
-    term = NameSearch.term(search)
+    term = NameSearch.wide_term(search)
 
     from(g in Visibility.plain_groups(profile),
       left_join: m in GroupMembership,
@@ -3862,9 +3862,9 @@ defmodule PotokIde.Social do
         opts \\ []
       )
       when is_binary(search_term) do
-    normalized_search_term = String.trim(search_term)
+    normalized_search_term = NameSearch.wide_term(search_term)
 
-    if normalized_search_term == "" do
+    if is_nil(normalized_search_term) do
       []
     else
       limit = Keyword.get(opts, :limit, 6)
@@ -4511,7 +4511,13 @@ defmodule PotokIde.Social do
     shapes? = scope != :extent and Map.get(filters, :shapes?) == true and is_integer(zoom)
     routes? = scope != :extent and Map.get(filters, :routes?) == true and is_integer(zoom)
     places? = scope == :extent or Map.get(filters, :places?) != false
-    search = normalize_group_search_term(Map.get(filters, :search))
+    parent_id = Map.get(filters, :parent_id)
+
+    search =
+      if parent_id,
+        do: normalize_group_search_term(Map.get(filters, :search)),
+        else: NameSearch.wide_term(Map.get(filters, :search))
+
     kind = normalize_preset_filter(Map.get(filters, :preset))
     relation = normalize_relation_filter(Map.get(filters, :relation))
     from = map_moment(Map.get(filters, :from))
@@ -4519,7 +4525,6 @@ defmodule PotokIde.Social do
     areas = map_area_filter(Map.get(filters, :areas))
     {pins, kind_pin?} = map_pin_filter(Map.get(filters, :pins))
     time = map_time(filters)
-    parent_id = Map.get(filters, :parent_id)
 
     moment =
       case time do
@@ -6297,12 +6302,23 @@ defmodule PotokIde.Social do
     {put_creator_usernames(page), length(rows) > limit}
   end
 
-  @doc "How many values `list_group_data_value_rows/2` would page through with these filters."
+  @data_count_timeout_ms 3_000
+
+  @doc """
+  How many values `list_group_data_value_rows/2` would page through with these
+  filters. A total over a big collection with a search reads every row, so it
+  gives up after #{@data_count_timeout_ms} ms and returns nil, as when no total
+  is asked for, rather than hold the page and a connection.
+  """
   def count_group_data_value_rows(%Group{} = group, opts \\ []) do
-    group
-    |> data_value_rows_query(opts)
-    |> select([v], count(v.id))
-    |> Repo.one()
+    query = group |> data_value_rows_query(opts) |> select([v], count(v.id))
+
+    case Repo.with_statement_timeout(@data_count_timeout_ms, fn -> Repo.one(query) end,
+           jit: false
+         ) do
+      {:ok, count} -> count
+      {:error, :timeout} -> nil
+    end
   end
 
   @doc """
@@ -7171,7 +7187,7 @@ defmodule PotokIde.Social do
   defp invitation_name_search_dynamic(search_term) do
     dynamic(
       [_i, g, inviter],
-      ilike(g.name, ^"%#{search_term}%") or ilike(inviter.username, ^"%#{search_term}%")
+      ^group_name_matches(search_term) or ilike(inviter.username, ^like_pattern(search_term))
     )
   end
 
@@ -7180,7 +7196,7 @@ defmodule PotokIde.Social do
   defp sent_invitation_name_search_dynamic(search_term) do
     dynamic(
       [_i, g, invitee],
-      ilike(g.name, ^"%#{search_term}%") or ilike(invitee.username, ^"%#{search_term}%")
+      ^group_name_matches(search_term) or ilike(invitee.username, ^like_pattern(search_term))
     )
   end
 
@@ -7543,7 +7559,10 @@ defmodule PotokIde.Social do
       {jsonb_field, jsonb_value} ->
         from(v in query,
           where:
-            ilike(fragment("COALESCE(? ->> ?, '')", v.data, ^jsonb_field), ^"%#{jsonb_value}%")
+            ilike(
+              fragment("COALESCE(? ->> ?, '')", v.data, ^jsonb_field),
+              ^like_pattern(jsonb_value)
+            )
         )
     end
   end
@@ -7676,13 +7695,13 @@ defmodule PotokIde.Social do
   defp request_history_search_dynamic("", _kind), do: true
 
   defp request_history_search_dynamic(search_term, :pending) do
-    dynamic([_r, g], ilike(g.name, ^"%#{search_term}%"))
+    group_name_matches(search_term)
   end
 
   defp request_history_search_dynamic(search_term, :approved) do
     dynamic(
       [_a, g, approver],
-      ilike(g.name, ^"%#{search_term}%") or ilike(approver.username, ^"%#{search_term}%")
+      ^group_name_matches(search_term) or ilike(approver.username, ^like_pattern(search_term))
     )
   end
 
@@ -7744,9 +7763,18 @@ defmodule PotokIde.Social do
   defp approved_request_name_search_dynamic(search_term) do
     dynamic(
       [_a, g, requester],
-      ilike(g.name, ^"%#{search_term}%") or ilike(requester.username, ^"%#{search_term}%")
+      ^group_name_matches(search_term) or ilike(requester.username, ^like_pattern(search_term))
     )
   end
+
+  # The group (the second binding) whose name holds `search_term`, folded on
+  # both sides as in every name search (`NameSearch`).
+  defp group_name_matches(search_term) do
+    term = NameSearch.term(search_term)
+    dynamic([_x, g], fragment("? LIKE '%' || potok_fold(?) || '%'", g.name_folded, ^term))
+  end
+
+  defp like_pattern(search_term), do: "%" <> NameSearch.escape(search_term) <> "%"
 
   defp normalize_request_search_query(query) when is_binary(query) do
     query

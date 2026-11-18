@@ -24,7 +24,17 @@ defmodule PotokIde.Tags do
   alias PotokIde.Events.Event
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group, GroupMembership, Profile, Value, ValueAttachment}
+
+  alias PotokIde.Social.{
+    Access,
+    Group,
+    GroupMembership,
+    NameSearch,
+    Profile,
+    Value,
+    ValueAttachment
+  }
+
   alias PotokIde.Tags.{Tag, Tagging}
 
   @kinds [:group, :profile, :event, :value, :attachment]
@@ -301,6 +311,12 @@ defmodule PotokIde.Tags do
   def suggest_tags(%Profile{} = viewer, query, limit \\ 8) do
     query = query |> to_string() |> Tag.normalize_name() |> String.downcase()
 
+    # Below three characters the suggestions with no search, which a page
+    # shows before anything is typed.
+    suggest(viewer, if(NameSearch.wide?(query), do: query, else: ""), limit)
+  end
+
+  defp suggest(viewer, query, limit) do
     from(tag in Tag, as: :tag)
     |> where_usable(viewer)
     |> where([tag], like(fragment("lower(?)", tag.name), ^"%#{escape_like(query)}%"))
@@ -318,6 +334,8 @@ defmodule PotokIde.Tags do
   on some item, each by name and narrowed by `search`.
   """
   def list_directory(%Profile{id: viewer_id}, search \\ nil) do
+    # Below three characters the whole directory, as with no search.
+    search = if NameSearch.wide?(to_string(search)), do: search, else: ""
     pattern = "%#{search |> to_string() |> String.trim() |> String.downcase() |> escape_like()}%"
 
     base =

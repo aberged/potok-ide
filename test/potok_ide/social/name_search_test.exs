@@ -80,4 +80,48 @@ defmodule PotokIde.Social.NameSearchTest do
     children = Social.list_child_groups_for_profile(root, owner, search: "cacak")
     assert Enum.map(children, & &1.id) == [groups["Čačak"].id]
   end
+
+  test "a search across a whole table waits for three characters" do
+    assert NameSearch.wide_term("ča") == nil
+    assert NameSearch.wide_term("  ab  ") == nil
+    assert NameSearch.wide_term("čač") == "čač"
+    assert NameSearch.wide_term("10%") == "10\\%"
+    refute NameSearch.wide?(nil)
+    assert NameSearch.wide?("Ниш")
+  end
+
+  test "people to invite: none below three characters, % as itself", %{owner: owner} do
+    {_account, _ana} = account_with_profile!("wide-ana")
+    {_account, _percent} = account_with_profile!("wide-100pct")
+    group = group_with_members!(owner, [], %{"name" => "wide-group"})
+
+    assert Social.list_invitable_profiles_for_group(owner, group, "wi") == []
+
+    assert owner
+           |> Social.list_invitable_profiles_for_group(group, "wide-a")
+           |> Enum.map(& &1.username) == ["wide-ana"]
+
+    assert Social.list_invitable_profiles_for_group(owner, group, "wide%") == []
+  end
+
+  test "invitations are searched by the group's folded name, % as itself", %{
+    owner: owner,
+    groups: groups
+  } do
+    {_account, invitee} = account_with_profile!("nsearch-invitee")
+
+    for name <- ["Čačak", "100% domaće", "Novi Sad"],
+        do: {:ok, _} = Social.invite_profile_to_group(owner, groups[name], invitee)
+
+    names = fn search ->
+      invitee
+      |> Social.list_pending_invitations(search: search)
+      |> Enum.map(& &1.group.name)
+      |> Enum.sort()
+    end
+
+    assert names.("cacak") == ["Čačak"]
+    assert names.("%") == ["100% domaće"]
+    assert names.("") == Enum.sort(["Čačak", "100% domaće", "Novi Sad"])
+  end
 end
