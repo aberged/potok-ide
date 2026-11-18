@@ -2187,11 +2187,6 @@ msgstr "poslednja vrednost, za člana"
 msgid "text as a search reads it, in Latin and without diacritics"
 msgstr "tekst kako ga pretraga čita, latinicom i bez kvačica"
 
-#: lib/potok_ide_web/domain_copy.ex:1512
-#, elixir-autogen, elixir-format
-msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
-msgstr "<GroupValueRead>Marker čitanja</GroupValueRead> čuva, za jedan profil u jednoj grupi, poslednju <Value>vrednost</Value> koju je pročitao, a sve novije je nepročitano. Imaju ga samo članovi, a dobija ga i razgovor otvoren dok je još prazan. Otvaranje razgovora pomera marker na najnoviju vrednost, a linija koja pokazuje gde počinju nepročitane vrednosti stoji tamo gde je marker bio pre toga. Najnovija vrednost grupe vidi se u listama samo njenim članovima, jer samo njihove stranice čuju za nove vrednosti. Pretraga razgovora nalazi ono što razgovor pokazuje: pretraga člana uzima i niti u kojima je, a ko čita otvoren razgovor spolja ne nalazi najave događaja koji nisu javni."
-
 #: lib/potok_ide_web/domain_copy.ex:1510
 #, elixir-autogen, elixir-format
 msgid "Unread is measured from one marker"
@@ -2912,3 +2907,8 @@ msgstr "reakcije po emodžiju, sa brojem i prvim imenima"
 #, elixir-autogen, elixir-format
 msgid "member count in a list of sub-groups"
 msgstr "broj članova u spisku podgrupa"
+
+#: lib/potok_ide_web/domain_copy.ex:1512
+#, elixir-autogen, elixir-format
+msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
+msgstr "<GroupValueRead>Marker čitanja</GroupValueRead> čuva, za jedan profil u jednoj grupi, poslednju <Value>vrednost</Value> koju je pročitao, a sve novije je nepročitano. Imaju ga samo članovi, a dobija ga i razgovor otvoren dok je još prazan. Ko uđe, pozivnicom, zahtevom ili preko roditelja, dobija ga na najnovijoj vrednosti, pa je istorija tu da se čita, ali se ne broji. Otvaranje razgovora pomera marker na najnoviju vrednost, a linija koja pokazuje gde počinju nepročitane vrednosti stoji tamo gde je marker bio pre toga. Grupa broji najviše 100 nepročitanih vrednosti, prikazano kao 99+, a svaki zbir iznad nje sabira ono što su njene grupe izbrojale. Najnovija vrednost grupe vidi se u listama samo njenim članovima, jer samo njihove stranice čuju za nove vrednosti. Pretraga razgovora nalazi ono što razgovor pokazuje: pretraga člana uzima i niti u kojima je, a ko čita otvoren razgovor spolja ne nalazi najave događaja koji nisu javni."

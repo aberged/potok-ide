@@ -2187,11 +2187,6 @@ msgstr "последња вредност, за члана"
 msgid "text as a search reads it, in Latin and without diacritics"
 msgstr "текст како га претрага чита, латиницом и без квачица"
 
-#: lib/potok_ide_web/domain_copy.ex:1512
-#, elixir-autogen, elixir-format
-msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
-msgstr "<GroupValueRead>Маркер читања</GroupValueRead> чува, за један профил у једној групи, последњу <Value>вредност</Value> коју је прочитао, а све новије је непрочитано. Имају га само чланови, а добија га и разговор отворен док је још празан. Отварање разговора помера маркер на најновију вредност, а линија која показује где почињу непрочитане вредности стоји тамо где је маркер био пре тога. Најновија вредност групе види се у листама само њеним члановима, јер само њихове странице чују за нове вредности. Претрага разговора налази оно што разговор показује: претрага члана узима и нити у којима је, а ко чита отворен разговор споља не налази најаве догађаја који нису јавни."
-
 #: lib/potok_ide_web/domain_copy.ex:1510
 #, elixir-autogen, elixir-format
 msgid "Unread is measured from one marker"
@@ -2912,3 +2907,8 @@ msgstr "реакције по емоџију, са бројем и првим и
 #, elixir-autogen, elixir-format
 msgid "member count in a list of sub-groups"
 msgstr "број чланова у списку подгрупа"
+
+#: lib/potok_ide_web/domain_copy.ex:1512
+#, elixir-autogen, elixir-format
+msgid "A <GroupValueRead>read marker</GroupValueRead> holds, for one profile in one group, the last <Value>value</Value> it has read, and everything newer is unread. Only members have one, and a chat opened while still empty gets one too. Whoever joins, by an invitation, a request or through the parent, gets it at the newest value, so the history is there to read but not counted. Opening the chat moves the marker to the newest value, and the line that shows where the unread values begin stands where the marker was before. A group counts at most 100 unread values, shown as 99+, and every sum above it adds what its groups counted. A group's newest value shows in the lists only to its members, as only their pages hear of new values. A search of the chat finds what the chat shows: a member's also takes the threads it is in, and someone reading an open chat from outside does not find announcements of events that are not public."
+msgstr "<GroupValueRead>Маркер читања</GroupValueRead> чува, за један профил у једној групи, последњу <Value>вредност</Value> коју је прочитао, а све новије је непрочитано. Имају га само чланови, а добија га и разговор отворен док је још празан. Ко уђе, позивницом, захтевом или преко родитеља, добија га на најновијој вредности, па је историја ту да се чита, али се не броји. Отварање разговора помера маркер на најновију вредност, а линија која показује где почињу непрочитане вредности стоји тамо где је маркер био пре тога. Група броји највише 100 непрочитаних вредности, приказано као 99+, а сваки збир изнад ње сабира оно што су њене групе избројале. Најновија вредност групе види се у листама само њеним члановима, јер само њихове странице чују за нове вредности. Претрага разговора налази оно што разговор показује: претрага члана узима и нити у којима је, а ко чита отворен разговор споља не налази најаве догађаја који нису јавни."

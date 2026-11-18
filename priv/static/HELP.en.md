@@ -140,7 +140,7 @@ You share a shared profile with another profile: in the Sharing part you type it
 
 ## Home and finding groups {:#pocetna}
 
-The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.
+The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. Past 99 unread it says 99+. When you join a group you can read its earlier messages, but they do not count as unread: the ones that come after do. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.
 
 Above the list are the filters: public groups you are not a member of, threads, groups you are a member of, created or follow, the kind of group and a search by name. The groups you follow stay on the list even when you hide public groups. The search finds a group even when you type without diacritics, in Latin or in Cyrillic. Groups can be shown as a list or as folders.
 
@@ -187,7 +187,7 @@ The + button next to the field adds files or starts a poll. One message carries 
 
 If you start writing and leave the group, the text waits for you when you come back. This browser keeps the draft, for each profile and group, and the list of groups shows "Draft:" and your text in place of the latest message. When you send the message the draft goes, and when you log out they all go.
 
-When you come back to a chat, a line shows where the unread messages begin. The magnifier in the header searches the group's messages, in threads too, and even when you type without diacritics, in Latin or in Cyrillic.
+When you come back to a chat, a line shows where the unread messages begin, and with more than 99 it says 99+ new messages. The magnifier in the header searches the group's messages, in threads too, and even when you type without diacritics, in Latin or in Cyrillic.
 
 ![Files and a poll under the + button](prilozi) ![Searching messages](pretraga-poruka) ![A line shows where the unread messages begin](neprocitano)
 

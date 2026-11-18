@@ -146,7 +146,7 @@ Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo koris
 
 ## Početna i pronalaženje grupa {:#pocetna}
 
-Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.
+Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Preko 99 nepročitanih piše 99+. Kad uđeš u grupu, njene ranije poruke možeš da čitaš, ali se ne broje kao nepročitane: broje se one koje stignu posle. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.
 
 Iznad spiska su filteri: javne grupe u kojima nisi član, niti, grupe u kojima si član, koje si napravio ili koje pratiš, vrsta grupe i pretraga po nazivu. Grupe koje pratiš ostaju na spisku i kad sakriješ javne grupe. Pretraga nalazi grupu i kad kucaš bez kvačica, latinicom ili ćirilicom. Grupe se mogu prikazati kao spisak ili kao fascikle.
 
@@ -193,7 +193,7 @@ Dugme + pored polja dodaje fajlove ili pokreće glasanje. Jedna poruka nosi do 1
 
 Ako počneš da pišeš pa odeš iz grupe, tekst te čeka kad se vratiš. Nacrt čuva ovaj pregledač, za svaki profil i grupu, a u spisku grupa umesto poslednje poruke piše „Nacrt:“ i tvoj tekst. Kad pošalješ poruku, nacrt nestaje, a kad se odjaviš, nestaju svi.
 
-Kad se vratiš u razgovor, linija pokazuje odakle počinju nepročitane poruke. Lupa u zaglavlju pretražuje poruke grupe, i u nitima, i kad kucaš bez kvačica, latinicom ili ćirilicom.
+Kad se vratiš u razgovor, linija pokazuje odakle počinju nepročitane poruke, a kad ih je više od 99, piše 99+ novih poruka. Lupa u zaglavlju pretražuje poruke grupe, i u nitima, i kad kucaš bez kvačica, latinicom ili ćirilicom.
 
 ![Fajlovi i glasanje ispod dugmeta +](prilozi) ![Pretraga poruka](pretraga-poruka) ![Linija pokazuje gde počinju nepročitane poruke](neprocitano)
 
