@@ -6,6 +6,10 @@ config :pbkdf2_elixir, :rounds, 1
 # Deliver push notifications inline so tests can assert on the requests.
 config :potok_ide, async_notifications: false
 
+# Jobs run where they are inserted, so a test sees a push right after the
+# call that sent it.
+config :potok_ide, Oban, testing: :inline
+
 # Apply group refresh broadcasts inline so LiveView tests stay synchronous.
 config :potok_ide, live_refresh_debounce_ms: 0
 

@@ -1,35 +1,41 @@
 defmodule PotokIde.PushNotifications.Dispatch do
   @moduledoc """
-  Sends notifications to many accounts: off the caller, with the
-  subscriptions of every account loaded in one query and several accounts
-  served at a time, so a notification for a big group does not trickle out
-  one account after another.
+  Sends notifications to many accounts. Who gets one, and in which words, is
+  worked out off the caller (`run/1`); the sending itself goes into jobs of
+  up to 500 accounts each (`PotokIde.PushNotifications.DeliverWorker`, Oban
+  queue `push`), which outlive a deploy and are tried again when nothing
+  went out.
   """
 
   import Ecto.Query, only: [from: 2]
 
-  require Logger
-
-  alias PotokIde.Accounts
   alias PotokIde.Accounts.PushSubscription
+  alias PotokIde.PushNotifications.DeliverWorker
   alias PotokIde.Repo
 
-  @account_concurrency 8
+  @batch 500
 
   @doc """
   Runs `fun` off the caller (usually a LiveView process), so the UI responds
-  while the push services are called. Notifications wait in one line, two
-  sent at a time (`PotokIde.JobQueue`). Tests run it inline so they can
+  while recipients are worked out. At most a few run at once
+  (`PotokIde.PushNotifications.Fanout`); past that the caller runs it, which
+  slows a burst instead of piling it up. Tests run it inline so they can
   assert on the requests deterministically.
   """
   def run(fun) when is_function(fun, 0) do
     if Application.get_env(:potok_ide, :async_notifications, true) do
-      PotokIde.JobQueue.run(PotokIde.PushNotifications.Queue, fun)
-      :ok
+      case Task.Supervisor.start_child(PotokIde.PushNotifications.Fanout, fun) do
+        {:ok, _pid} -> :ok
+        {:error, _full} -> run_here(fun)
+      end
     else
-      fun.()
-      :ok
+      run_here(fun)
     end
+  end
+
+  defp run_here(fun) do
+    fun.()
+    :ok
   end
 
   @doc """
@@ -47,71 +53,56 @@ defmodule PotokIde.PushNotifications.Dispatch do
   end
 
   @doc """
-  Delivers to every account of `subscriptions_by_account`, several accounts
-  at a time. `payload_fun` gets an account's subscriptions and returns
-  `{payload_for, context}` (see `deliver/5`), or nil to skip the account.
+  Sends to every account of `subscriptions_by_account`. `payload_fun` gets an
+  account's subscriptions and returns `{payload, context}` (`payload` from
+  `PotokIde.PushNotifications.localized/1`), or nil to skip the account.
+  Accounts with the same payload go out in the same jobs.
   """
   def deliver_each(subscriptions_by_account, context_id, payload_fun)
       when is_function(payload_fun, 1) do
     subscriptions_by_account
-    |> Task.async_stream(
-      fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
-        case payload_fun.(subscriptions) do
-          {payload_for, context} ->
-            deliver(subscriptions, account_id, payload_for, context, context_id)
-
-          nil ->
-            :ok
-        end
-      end,
-      max_concurrency: @account_concurrency,
-      ordered: false,
-      timeout: :infinity
-    )
-    |> Stream.run()
+    |> Enum.flat_map(fn [%PushSubscription{account_id: account_id} | _] = subscriptions ->
+      case payload_fun.(subscriptions) do
+        {payload, context} -> [{{payload, context}, account_id}]
+        nil -> []
+      end
+    end)
+    |> Enum.group_by(&elem(&1, 0), &elem(&1, 1))
+    |> Enum.each(fn {{payload, context}, account_ids} ->
+      enqueue(account_ids, payload, context, context_id)
+    end)
   end
 
   @doc "`deliver_each/3` with the same payload for every account."
-  def deliver_localized(subscriptions_by_account, context, context_id, payload_for)
-      when is_function(payload_for, 1) do
-    deliver_each(subscriptions_by_account, context_id, fn _subscriptions ->
-      {payload_for, context}
-    end)
+  def deliver_localized(subscriptions_by_account, context, context_id, payload) do
+    deliver_each(subscriptions_by_account, context_id, fn _subscriptions -> {payload, context} end)
   end
+
+  @doc "Sends `payload` to one account's subscriptions."
+  def deliver([], _account_id, _payload, _context, _context_id), do: :ok
+
+  def deliver(_subscriptions, account_id, payload, context, context_id),
+    do: enqueue([account_id], payload, context, context_id)
 
   @doc """
-  Delivers to an account's subscriptions, every device in the language it
-  saved its subscription with: `payload_for` gets that locale (nil for
-  devices that saved none) and returns the payload, see
-  `PotokIde.PushNotifications.localized/1`. Failures are logged (expired
-  subscriptions are removed by `Accounts`).
+  Puts the sending of `payload` to `account_ids` into jobs of up to
+  #{@batch} accounts, in one insert.
   """
-  def deliver(subscriptions, account_id, payload_for, context, context_id)
-      when is_function(payload_for, 1) do
-    subscriptions
-    |> Enum.group_by(& &1.locale)
-    |> Enum.each(fn {locale, same_locale} ->
-      deliver_payload(same_locale, account_id, payload_for.(locale), context, context_id)
+  def enqueue(account_ids, payload, context, context_id) do
+    account_ids
+    |> Enum.uniq()
+    |> Enum.chunk_every(@batch)
+    |> Enum.map(fn batch ->
+      DeliverWorker.new(%{
+        account_ids: batch,
+        payload: payload,
+        context: context,
+        context_id: context_id
+      })
     end)
-  end
-
-  defp deliver_payload(subscriptions, account_id, payload, context, context_id) do
-    case Accounts.deliver_push_notification_to_subscriptions(subscriptions, payload) do
-      # Every device answers on its own; an expired one is already removed.
-      {:ok, results} ->
-        for {:error, reason} <- results, reason != :expired do
-          Logger.warning(
-            "Push delivery failed for account #{account_id} (#{context}#{format_context_id(context_id)}): #{inspect(reason)}"
-          )
-        end
-
-        :ok
-
-      {:error, :no_push_subscriptions} ->
-        :ok
+    |> case do
+      [] -> :ok
+      jobs -> Oban.insert_all(jobs) && :ok
     end
   end
-
-  defp format_context_id(nil), do: ""
-  defp format_context_id(context_id), do: " #{context_id}"
 end

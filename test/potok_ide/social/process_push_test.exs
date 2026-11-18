@@ -100,19 +100,31 @@ defmodule PotokIde.Social.ProcessPushTest do
   test "goes out under the process's name, as do the pushes of its values", ctx do
     process = %{ctx.row.profile | app_process: ctx.row}
 
-    push = Notifications.process_push(process, ctx.group, "Rok ističe", "tag").(nil)
+    push =
+      PotokIde.PushNotifications.payload_for(
+        Notifications.process_push(process, ctx.group, "Rok ističe", "tag"),
+        nil
+      )
+
     assert push.title =~ "Prijem"
     assert push.body == "Rok ističe"
     assert push.url == "/groups/#{ctx.group.id}"
 
     # A process drawn in Potok leads to the group's processes, where its tasks are.
     drawn = Notifications.process_push(process, ctx.group, "Rok", "tag", "/groups/1/processes")
-    assert drawn.(nil).url == "/groups/1/processes"
+    assert PotokIde.PushNotifications.payload_for(drawn, nil).url == "/groups/1/processes"
 
     {:ok, value, _announce} =
       ProcessActions.post_value(ctx.step, ctx.group, %{"content" => "Primljeno."})
 
-    assert Notifications.value_created(process, ctx.group, value).(nil).title =~ "Prijem"
-    refute Notifications.value_created(process, ctx.group, value).(nil).title =~ "proces."
+    assert PotokIde.PushNotifications.payload_for(
+             Notifications.value_created(process, ctx.group, value),
+             nil
+           ).title =~ "Prijem"
+
+    refute PotokIde.PushNotifications.payload_for(
+             Notifications.value_created(process, ctx.group, value),
+             nil
+           ).title =~ "proces."
   end
 end

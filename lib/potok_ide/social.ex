@@ -2737,7 +2737,7 @@ defmodule PotokIde.Social do
         payload_for,
         push_context
       )
-      when is_function(link, 2) and is_function(payload_for, 1) do
+      when is_function(link, 2) and is_map(payload_for) do
     if Access.can?(creator, group, :post_values) do
       changeset =
         %Value{link_preview_dismissed: true}

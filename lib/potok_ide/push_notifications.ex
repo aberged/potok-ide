@@ -16,9 +16,9 @@ defmodule PotokIde.PushNotifications do
   end
 
   @doc """
-  `fun` evaluated in every supported locale, as a function from a device's
-  locale (`PushSubscription.locale`) to the payload; devices without one get
-  the default language.
+  `fun` evaluated in every supported locale: the payload per language, as
+  plain data that a job can carry (`PotokIde.PushNotifications.DeliverWorker`).
+  Read a device's with `payload_for/2`.
   """
   def localized(fun) when is_function(fun, 0) do
     payloads =
@@ -26,10 +26,24 @@ defmodule PotokIde.PushNotifications do
         {locale, Gettext.with_locale(PotokIdeWeb.Gettext, locale, fun)}
       end)
 
-    default = Map.fetch!(payloads, PotokIdeWeb.Locale.default_locale())
-
-    fn locale -> Map.get(payloads, locale, default) end
+    %{"default" => PotokIdeWeb.Locale.default_locale(), "payloads" => payloads}
   end
+
+  @doc """
+  The payload of `localized/1` for a device's locale
+  (`PushSubscription.locale`); one without a locale, or with one Potok does
+  not speak, gets the default language. Keys come back as atoms, also after
+  a job's JSON.
+  """
+  def payload_for(%{"default" => default, "payloads" => payloads}, locale) do
+    payloads
+    |> Map.get(locale || default, Map.fetch!(payloads, default))
+    |> Map.new(fn {key, value} -> {atomize(key), value} end)
+  end
+
+  # Keys of payloads written by Potok's own notification modules.
+  defp atomize(key) when is_atom(key), do: key
+  defp atomize(key) when is_binary(key), do: String.to_existing_atom(key)
 
   def send_notification(%PushSubscription{} = subscription, payload) when is_map(payload) do
     case PushSubscription.delivery_type(subscription) do

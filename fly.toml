@@ -6,6 +6,9 @@
 app = 'potok-ide'
 primary_region = 'fra'
 kill_signal = 'SIGTERM'
+# Room for a push job that is sending to finish (Oban waits 15 s); one cut
+# off is taken up again by Oban's Lifeline.
+kill_timeout = 20
 
 # Swap on the machine's disk: past its memory the app slows down instead of
 # being killed, which would drop every user at once.

@@ -6,6 +6,9 @@ defmodule PotokIde.Accounts do
   use Gettext, backend: PotokIdeWeb.Gettext
 
   import Ecto.Query, warn: false
+
+  # Devices one delivery job sends to at a time.
+  @push_concurrency 16
   alias PotokIde.Repo
 
   alias PotokIde.Accounts.{Account, AccountNotifier, AccountToken, PushSubscription}
@@ -225,15 +228,69 @@ defmodule PotokIde.Accounts do
 
   def deliver_push_notification_to_subscriptions(subscriptions, payload)
       when is_list(subscriptions) and is_map(payload) do
+    {:ok,
+     subscriptions
+     |> Enum.map(&{&1, payload})
+     |> send_push_batch()
+     |> Enum.map(fn {_subscription, result} -> result end)}
+  end
+
+  @doc """
+  Sends each `{subscription, payload}`, several at a time, and returns each
+  with its result. Successes are written in one statement; an expired
+  subscription is deleted and another failure written on its row.
+  """
+  def send_push_batch(pairs) when is_list(pairs) do
     results =
-      subscriptions
-      |> Task.async_stream(&deliver_push_notification_to_subscription(&1, payload),
+      pairs
+      |> Task.async_stream(
+        fn {subscription, payload} ->
+          {subscription, send_push(subscription, payload)}
+        end,
+        max_concurrency: @push_concurrency,
         ordered: false,
         timeout: :infinity
       )
       |> Enum.map(fn {:ok, result} -> result end)
 
-    {:ok, results}
+    case for {%PushSubscription{id: id}, {:ok, _}} <- results, do: id do
+      [] ->
+        :ok
+
+      delivered ->
+        from(subscription in PushSubscription, where: subscription.id in ^delivered)
+        |> Repo.update_all(
+          set: [
+            last_success_at: DateTime.utc_now(:second),
+            last_failure_at: nil,
+            failure_reason: nil
+          ]
+        )
+    end
+
+    results
+  end
+
+  # A success is written by the caller, together with the others.
+  defp send_push(%PushSubscription{} = subscription, payload) do
+    case PushNotifications.send_notification(subscription, payload) do
+      {:ok, _response} ->
+        {:ok, PushSubscription.identifier(subscription)}
+
+      {:error, :expired} ->
+        _ = Repo.delete(subscription)
+        {:error, :expired}
+
+      {:error, reason} ->
+        subscription
+        |> Ecto.Changeset.change(
+          last_failure_at: DateTime.utc_now(:second),
+          failure_reason: format_push_failure_reason(reason)
+        )
+        |> Repo.update()
+
+        {:error, reason}
+    end
   end
 
   @doc """
@@ -263,7 +320,7 @@ defmodule PotokIde.Accounts do
 
     case subscription do
       %PushSubscription{} = push_subscription ->
-        payload_for =
+        payload =
           PushNotifications.localized(fn ->
             %{
               title: dgettext("notifications", "Potok notifications are active"),
@@ -277,7 +334,7 @@ defmodule PotokIde.Accounts do
 
         deliver_push_notification_to_subscription(
           push_subscription,
-          payload_for.(push_subscription.locale)
+          PushNotifications.payload_for(payload, push_subscription.locale)
         )
 
       nil ->

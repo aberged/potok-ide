@@ -77,6 +77,14 @@ config :potok_ide, PotokIdeWeb.Endpoint,
   # 2026-11-09; CPU about the same).
   live_view: [signing_salt: "0toMDt7c", hibernate_after: 2_000]
 
+# Background jobs in Postgres (Oban): push deliveries, which outlive a deploy
+# and are tried again when nothing went out. Done jobs go after a day; jobs a
+# killed machine left running are taken up again (Lifeline).
+config :potok_ide, Oban,
+  repo: PotokIde.Repo,
+  queues: [push: 10],
+  plugins: [{Oban.Plugins.Pruner, max_age: 86_400}, Oban.Plugins.Lifeline]
+
 # Configure the mailer
 #
 # By default it uses the "Local" adapter which stores the emails

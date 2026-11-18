@@ -34,13 +34,16 @@ defmodule PotokIdeWeb.Telemetry do
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  # One query a round, so less often than the rest.
+  # Queries every round, so less often than the rest.
   defp process_lag_poller do
     if Keyword.get(Application.get_env(:potok_ide, __MODULE__, []), :process_lag, true) do
       [
         Supervisor.child_spec(
           {:telemetry_poller,
-           measurements: [{PotokIde.Metrics, :dispatch_process_lag, []}],
+           measurements: [
+             {PotokIde.Metrics, :dispatch_process_lag, []},
+             {PotokIde.Metrics, :dispatch_job_queues, []}
+           ],
            period: 30_000,
            name: :potok_ide_slow_poller},
           id: :potok_ide_slow_poller
@@ -119,7 +122,6 @@ defmodule PotokIdeWeb.Telemetry do
       last_value("potok_ide.mailbox.length", tags: [:name]),
       last_value("potok_ide.job_queue.running", tags: [:queue]),
       last_value("potok_ide.job_queue.queued", tags: [:queue]),
-      counter("potok_ide.job_queue.dropped.count", tags: [:queue]),
       last_value("potok_ide.processes.due_lag.seconds"),
       last_value("potok_ide.cache.entries", tags: [:table]),
       last_value("potok_ide.cache.memory", tags: [:table], unit: :byte),
@@ -141,7 +143,6 @@ defmodule PotokIdeWeb.Telemetry do
     [
       {PotokIde.Metrics, :dispatch_online, []},
       {PotokIde.Metrics, :dispatch_mailboxes, []},
-      {PotokIde.Metrics, :dispatch_job_queues, []},
       {PotokIde.Metrics, :dispatch_caches, []}
     ]
   end

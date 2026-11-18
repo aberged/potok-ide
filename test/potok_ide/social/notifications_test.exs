@@ -16,22 +16,40 @@ defmodule PotokIde.Social.NotificationsTest do
     test "are written in the language of each device" do
       payload_for = Notifications.value_created(@ana, @group, @value)
 
-      assert payload_for.("en").title == "ana sent a new message"
-      assert payload_for.("en").body == "New message in Hall: Bring chairs"
-      assert payload_for.("sr").title == "ana: nova poruka"
-      assert payload_for.("sr_Cyrl").body == "Нова порука у групи Hall: Bring chairs"
-      assert payload_for.(nil) == payload_for.("sr")
-      assert payload_for.("de") == payload_for.("sr")
-      assert payload_for.("pl") == payload_for.("sr")
-      assert payload_for.("en").url == "/groups/2/values"
+      assert PotokIde.PushNotifications.payload_for(payload_for, "en").title ==
+               "ana sent a new message"
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "en").body ==
+               "New message in Hall: Bring chairs"
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title == "ana: nova poruka"
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "sr_Cyrl").body ==
+               "Нова порука у групи Hall: Bring chairs"
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, nil) ==
+               PotokIde.PushNotifications.payload_for(payload_for, "sr")
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "de") ==
+               PotokIde.PushNotifications.payload_for(payload_for, "sr")
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "pl") ==
+               PotokIde.PushNotifications.payload_for(payload_for, "sr")
+
+      assert PotokIde.PushNotifications.payload_for(payload_for, "en").url == "/groups/2/values"
     end
 
     test "of a mention differ from the generic one only in the title" do
       generic = Notifications.value_created(@ana, @group, @value)
       mention = Notifications.value_mention(@ana, @group, @value)
 
-      assert mention.("sr").title == "ana te pominje u grupi Hall"
-      assert %{mention.("sr") | title: nil} == %{generic.("sr") | title: nil}
+      assert PotokIde.PushNotifications.payload_for(mention, "sr").title ==
+               "ana te pominje u grupi Hall"
+
+      assert %{PotokIde.PushNotifications.payload_for(mention, "sr") | title: nil} == %{
+               PotokIde.PushNotifications.payload_for(generic, "sr")
+               | title: nil
+             }
     end
 
     test "of reactions, invitations and shared profiles are translated" do
@@ -44,13 +62,20 @@ defmodule PotokIde.Social.NotificationsTest do
             Notifications.shared_profile_invitation(@ana, bojan),
             Notifications.shared_profile_invitation_accepted(bojan, @ana)
           ] do
-        assert payload_for.("en").title =~ "ana"
-        assert payload_for.("sr").title =~ "ana"
-        refute payload_for.("sr").title == payload_for.("en").title
-        refute payload_for.("sr_Cyrl").title == payload_for.("en").title
+        assert PotokIde.PushNotifications.payload_for(payload_for, "en").title =~ "ana"
+        assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title =~ "ana"
+
+        refute PotokIde.PushNotifications.payload_for(payload_for, "sr").title ==
+                 PotokIde.PushNotifications.payload_for(payload_for, "en").title
+
+        refute PotokIde.PushNotifications.payload_for(payload_for, "sr_Cyrl").title ==
+                 PotokIde.PushNotifications.payload_for(payload_for, "en").title
       end
 
-      assert Notifications.value_reaction(@ana, @group, @value, "👍").("en").title ==
+      assert PotokIde.PushNotifications.payload_for(
+               Notifications.value_reaction(@ana, @group, @value, "👍"),
+               "en"
+             ).title ==
                "ana reacted 👍 to your message"
     end
   end

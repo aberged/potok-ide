@@ -625,14 +625,14 @@ defmodule PotokIde.NoticesTest do
                tag: tag,
                url: url,
                badge: badge
-             } = payload_for.("en")
+             } = PotokIde.PushNotifications.payload_for(payload_for, "en")
 
       assert title == "Notice from #{ctx.public.name}"
       assert tag == "group-#{ctx.public.id}-notice-#{notice.id}"
       assert url == "/groups/#{ctx.public.id}/notices?notice=#{notice.id}"
       assert badge == PotokIdeWeb.Avatars.group_badge_url(ctx.public)
       assert badge =~ ~r"\A/avatar/group/#{ctx.public.id}\?format=png&s="
-      assert payload_for.("sr").title =~ ctx.public.name
+      assert PotokIde.PushNotifications.payload_for(payload_for, "sr").title =~ ctx.public.name
     end
   end
 end

@@ -58,10 +58,16 @@ defmodule PotokIdeWeb.StackCopyTest do
            |> Enum.any?(&(File.read!(&1) =~ "CREATE EXTENSION IF NOT EXISTS postgis"))
   end
 
-  test "there is no broker or job queue next to BEAM" do
+  test "the one lasting queue is Oban's, in the same database, with no broker next to BEAM" do
     deps = Enum.map(Mix.Project.config()[:deps], &elem(&1, 0))
 
     assert :dns_cluster in deps
-    assert Enum.filter([:redix, :oban, :exq, :broadway], &(&1 in deps)) == []
+    assert :oban in deps
+    assert Enum.filter([:redix, :exq, :broadway], &(&1 in deps)) == []
+
+    oban = Application.fetch_env!(:potok_ide, Oban)
+    assert oban[:repo] == PotokIde.Repo
+    assert oban[:queues] == [push: 10]
+    assert PotokIde.PushNotifications.DeliverWorker.new(%{}).changes.max_attempts == 3
   end
 end

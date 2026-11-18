@@ -57,17 +57,28 @@ defmodule PotokIde.Metrics do
     end)
   end
 
-  @doc "Jobs running and waiting in the push queue."
+  @doc """
+  Push jobs running on this node and waiting in the whole queue (Oban queue
+  `push`, waiting ones counted in Postgres). Returns what it sent.
+  """
   def dispatch_job_queues do
     measure(fn ->
-      queue = PotokIde.PushNotifications.Queue
-      %{running: running, queued: queued} = GenServer.call(queue, :stats, 1_000)
+      running =
+        case Oban.check_queue(queue: :push) do
+          %{running: running} -> length(running)
+          _other -> 0
+        end
 
-      :telemetry.execute(
-        [:potok_ide, :job_queue],
-        %{running: running, queued: queued},
-        %{queue: inspect(queue)}
-      )
+      queued =
+        from(j in Oban.Job,
+          where: j.queue == "push" and j.state in ["available", "scheduled", "retryable"],
+          select: count(j.id)
+        )
+        |> Repo.one()
+
+      measurements = %{running: running, queued: queued}
+      :telemetry.execute([:potok_ide, :job_queue], measurements, %{queue: "push"})
+      measurements
     end)
   end
 

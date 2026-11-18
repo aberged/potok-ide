@@ -26,12 +26,10 @@ defmodule PotokIde.Application do
         # A link preview reads up to 1 MB of a page; past three at once a value
         # or a notice goes without its card rather than wait.
         {Task.Supervisor, name: PotokIde.LinkPreviews.Fetchers, max_children: 3},
-        {PotokIde.JobQueue,
-         name: PotokIde.PushNotifications.Queue,
-         task_supervisor: PotokIde.TaskSupervisor,
-         max_running: 2,
-         max_queued: 2_000},
+        # Working out who gets a push, off the caller; the sending is in Oban.
+        {Task.Supervisor, name: PotokIde.PushNotifications.Fanout, max_children: 8},
         PotokIde.Repo,
+        {Oban, Application.fetch_env!(:potok_ide, Oban)},
         # The simplified borders maps asked for, kept once made.
         PotokIde.Social.AreaShapes,
         {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},

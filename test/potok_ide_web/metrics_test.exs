@@ -2,7 +2,7 @@ defmodule PotokIdeWeb.MetricsTest do
   @moduledoc """
   The metrics the app keeps of itself (`PotokIdeWeb.Telemetry`,
   `PotokIde.Metrics`): served in Prometheus' text format, the lateness of the
-  drawn processes, and a dropped push job counted.
+  drawn processes, and the push jobs waiting.
   """
 
   use PotokIde.DataCase, async: true
@@ -82,34 +82,12 @@ defmodule PotokIdeWeb.MetricsTest do
     end
   end
 
-  test "a full job queue counts a dropped job" do
-    ref = make_ref()
-    test_pid = self()
-    handler = "dropped-#{inspect(ref)}"
+  test "push jobs waiting in the queue are counted" do
+    # Written past Oban, which runs inserted jobs at once in tests.
+    %{"account_ids" => [], "payload" => %{}}
+    |> Oban.Job.new(queue: "push", worker: "PotokIde.PushNotifications.DeliverWorker")
+    |> Repo.insert!()
 
-    :telemetry.attach(
-      handler,
-      [:potok_ide, :job_queue, :dropped],
-      fn _event, measurements, metadata, _config ->
-        send(test_pid, {ref, measurements, metadata})
-      end,
-      nil
-    )
-
-    on_exit(fn -> :telemetry.detach(handler) end)
-
-    {:ok, sup} = start_supervised({Task.Supervisor, name: :"metrics_test_sup_#{unique()}"})
-    name = :"metrics_test_queue_#{unique()}"
-
-    start_supervised!(
-      {PotokIde.JobQueue, name: name, task_supervisor: sup, max_running: 1, max_queued: 0}
-    )
-
-    gate = make_ref()
-    PotokIde.JobQueue.run(name, fn -> receive do: (^gate -> :ok) end)
-    PotokIde.JobQueue.run(name, fn -> :ok end)
-
-    assert_receive {^ref, %{count: 1}, %{queue: queue}}, 2_000
-    assert queue == inspect(name)
+    assert %{queued: 1} = PotokIde.Metrics.dispatch_job_queues()
   end
 end

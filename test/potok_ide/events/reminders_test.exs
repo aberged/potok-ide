@@ -194,15 +194,19 @@ defmodule PotokIde.Events.RemindersTest do
     occurrence = Recurrence.build(event, ctx.date)
     payload_for = Notifications.reminder(ctx.group, occurrence, 60)
 
-    assert payload_for.("en").title == "Training"
-    assert payload_for.("en").body =~ "In 1 hour"
-    assert payload_for.("en").body =~ "18:00"
-    assert payload_for.("en").body =~ "Hall 2"
-    refute payload_for.("sr").body =~ "In 1 hour"
-    assert payload_for.(nil) == payload_for.("sr")
-    assert payload_for.("de") == payload_for.("sr")
+    assert PotokIde.PushNotifications.payload_for(payload_for, "en").title == "Training"
+    assert PotokIde.PushNotifications.payload_for(payload_for, "en").body =~ "In 1 hour"
+    assert PotokIde.PushNotifications.payload_for(payload_for, "en").body =~ "18:00"
+    assert PotokIde.PushNotifications.payload_for(payload_for, "en").body =~ "Hall 2"
+    refute PotokIde.PushNotifications.payload_for(payload_for, "sr").body =~ "In 1 hour"
 
-    assert payload_for.("en").url ==
+    assert PotokIde.PushNotifications.payload_for(payload_for, nil) ==
+             PotokIde.PushNotifications.payload_for(payload_for, "sr")
+
+    assert PotokIde.PushNotifications.payload_for(payload_for, "de") ==
+             PotokIde.PushNotifications.payload_for(payload_for, "sr")
+
+    assert PotokIde.PushNotifications.payload_for(payload_for, "en").url ==
              "/groups/#{ctx.group.id}/calendar?event=#{event.id}&on=#{ctx.date}"
   end
 
