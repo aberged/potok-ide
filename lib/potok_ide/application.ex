@@ -33,7 +33,11 @@ defmodule PotokIde.Application do
         # The simplified borders maps asked for, kept once made.
         PotokIde.Social.AreaShapes,
         {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
-        {Phoenix.PubSub, name: PotokIde.PubSub},
+        # Four partitions, so broadcasts from other nodes and subscriptions
+        # are not all handled by one process. Changing the number on a running
+        # cluster takes two deploys (`:broadcast_pool_size`, see Phoenix.PubSub).
+        {Phoenix.PubSub, name: PotokIde.PubSub, pool_size: 4},
+        PotokIde.Presence.Online,
         PotokIde.Presence,
         PotokIde.Events.ReminderScheduler,
         PotokIde.Polls.Scheduler,

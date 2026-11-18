@@ -7,6 +7,9 @@
 # General application configuration
 import Config
 
+# Presence tracker shards (PotokIde.Presence): the same on every node.
+config :potok_ide, PotokIde.Presence, pool_size: 4
+
 config :potok_ide, :scopes,
   account: [
     default: true,
