@@ -31,9 +31,19 @@ defmodule PotokIde.Cache do
   """
   def fetch(key, ttl, fun) when is_function(fun, 0) do
     case get(key) do
-      {:ok, value} -> value
-      :error -> fetch_missing(key, ttl, fun)
+      {:ok, value} ->
+        counted(:hit)
+        value
+
+      :error ->
+        counted(:miss)
+        fetch_missing(key, ttl, fun)
     end
+  end
+
+  # Hits and misses of `fetch/3`, for the metrics (`PotokIdeWeb.Telemetry`).
+  defp counted(result) do
+    :telemetry.execute([:potok_ide, :cache, :fetch], %{count: 1}, %{result: result})
   end
 
   defp fetch_missing(key, ttl, fun) do
@@ -45,9 +55,12 @@ defmodule PotokIde.Cache do
           GenServer.cast(__MODULE__, {:done, key, self()})
         end
 
-      # Another caller finished (or failed): look again.
+      # Another caller finished (or failed): look again, counted once already.
       :ready ->
-        fetch(key, ttl, fun)
+        case get(key) do
+          {:ok, value} -> value
+          :error -> fetch_missing(key, ttl, fun)
+        end
     end
   end
 

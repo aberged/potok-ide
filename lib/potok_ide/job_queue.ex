@@ -54,6 +54,11 @@ defmodule PotokIde.JobQueue do
 
       true ->
         Logger.warning("#{inspect(state.name)} has #{state.queued} jobs waiting; dropped one")
+
+        :telemetry.execute([:potok_ide, :job_queue, :dropped], %{count: 1}, %{
+          queue: inspect(state.name)
+        })
+
         {:noreply, state}
     end
   end

@@ -107,6 +107,14 @@ defmodule PotokIdeWeb.StackCopy do
               "stack",
               "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown and the access token for notifications. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
             )
+        },
+        %{
+          title: dgettext("stack", "The server measures itself"),
+          text:
+            dgettext(
+              "stack",
+              "Every server keeps numbers about itself: how long a query waits for the database, how long pages take to open, how many people are online, how full the line of notifications is and how late the steps of apps' processes run. Peep keeps them in memory without slowing anything down and gives them out in the Prometheus format on a port of their own, which only Fly.io reads and draws as graphs."
+            )
         }
       ]
     }

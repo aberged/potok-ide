@@ -65,6 +65,7 @@ defmodule PotokIde.MixProject do
       {:req, "~> 0.7"},
       {:telemetry_metrics, "~> 1.0"},
       {:telemetry_poller, "~> 1.0"},
+      {:peep, "~> 6.0"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.2"},
       {:earmark, "~> 1.4"},

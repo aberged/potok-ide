@@ -11,41 +11,65 @@ defmodule PotokIde.Application do
   def start(_type, _args) do
     maybe_warn_missing_imagemagick()
 
-    children = [
-      PotokIdeWeb.Telemetry,
-      PotokIde.Cache,
-      {Task.Supervisor, name: PotokIde.TaskSupervisor},
-      # ImageMagick runs outside the BEAM, so its memory is not the app's to
-      # manage: link cards and PNG avatars are drawn one at a time.
-      {Task.Supervisor, name: PotokIde.Renderers, max_children: 1},
-      # A link preview reads up to 1 MB of a page; past three at once a value
-      # or a notice goes without its card rather than wait.
-      {Task.Supervisor, name: PotokIde.LinkPreviews.Fetchers, max_children: 3},
-      {PotokIde.JobQueue,
-       name: PotokIde.PushNotifications.Queue,
-       task_supervisor: PotokIde.TaskSupervisor,
-       max_running: 2,
-       max_queued: 2_000},
-      PotokIde.Repo,
-      # The simplified borders maps asked for, kept once made.
-      PotokIde.Social.AreaShapes,
-      {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
-      {Phoenix.PubSub, name: PotokIde.PubSub},
-      PotokIde.Presence,
-      PotokIde.Events.ReminderScheduler,
-      PotokIde.Polls.Scheduler,
-      PotokIde.Processes.Scheduler,
-      PotokIde.Social.AppFileSweeper,
-      PotokIde.HostingCosts.Sampler,
-      # Start to serve requests, typically the last entry
-      PotokIdeWeb.Endpoint,
-      PotokIde.AccountBootstrap
-    ]
+    children =
+      [
+        PotokIdeWeb.Telemetry,
+        PotokIde.Cache,
+        {Task.Supervisor, name: PotokIde.TaskSupervisor},
+        # ImageMagick runs outside the BEAM, so its memory is not the app's to
+        # manage: link cards and PNG avatars are drawn one at a time.
+        {Task.Supervisor, name: PotokIde.Renderers, max_children: 1},
+        # A link preview reads up to 1 MB of a page; past three at once a value
+        # or a notice goes without its card rather than wait.
+        {Task.Supervisor, name: PotokIde.LinkPreviews.Fetchers, max_children: 3},
+        {PotokIde.JobQueue,
+         name: PotokIde.PushNotifications.Queue,
+         task_supervisor: PotokIde.TaskSupervisor,
+         max_running: 2,
+         max_queued: 2_000},
+        PotokIde.Repo,
+        # The simplified borders maps asked for, kept once made.
+        PotokIde.Social.AreaShapes,
+        {DNSCluster, query: Application.get_env(:potok_ide, :dns_cluster_query) || :ignore},
+        {Phoenix.PubSub, name: PotokIde.PubSub},
+        PotokIde.Presence,
+        PotokIde.Events.ReminderScheduler,
+        PotokIde.Polls.Scheduler,
+        PotokIde.Processes.Scheduler,
+        PotokIde.Social.AppFileSweeper,
+        PotokIde.HostingCosts.Sampler,
+        # Start to serve requests, typically the last entry
+        PotokIdeWeb.Endpoint,
+        PotokIde.AccountBootstrap
+      ] ++ metrics_server()
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
     opts = [strategy: :one_for_one, name: PotokIde.Supervisor]
     Supervisor.start_link(children, opts)
+  end
+
+  # The metrics (PotokIdeWeb.Telemetry) on a port of their own, apart from
+  # the endpoint: no route of the app leads there, and on Fly only the private
+  # network reaches it, which is IPv6 (`::` takes IPv4 too on Linux).
+  defp metrics_server do
+    case Application.get_env(:potok_ide, :metrics_port) do
+      port when is_integer(port) ->
+        [
+          Supervisor.child_spec(
+            {Bandit,
+             plug: {Peep.Plug, peep_worker: PotokIde.Metrics.peep(), on_unmatched_path: :halt},
+             scheme: :http,
+             ip: {0, 0, 0, 0, 0, 0, 0, 0},
+             port: port,
+             startup_log: false},
+            id: :metrics_server
+          )
+        ]
+
+      _none ->
+        []
+    end
   end
 
   defp maybe_warn_missing_imagemagick do

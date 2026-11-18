@@ -227,6 +227,11 @@ if config_env() != :test do
   end
 end
 
+# In development the metrics port opens only when asked for.
+if config_env() == :dev and System.get_env("METRICS_PORT") do
+  config :potok_ide, :metrics_port, String.to_integer(System.get_env("METRICS_PORT"))
+end
+
 if config_env() == :prod do
   present? = fn
     value when is_binary(value) -> String.trim(value) != ""
@@ -267,6 +272,11 @@ if config_env() == :prod do
   config :potok_ide, :canonical_host, host
 
   config :potok_ide, :dns_cluster_query, System.get_env("DNS_CLUSTER_QUERY")
+
+  # Metrics in Prometheus' text format on a port of their own, which Fly reads
+  # over its private network (`[metrics]` in fly.toml) and no outside address
+  # leads to (PotokIde.Application).
+  config :potok_ide, :metrics_port, String.to_integer(System.get_env("METRICS_PORT") || "9091")
 
   # Fly's proxy names the client in `Fly-Client-IP`; elsewhere a client could
   # send that header itself, so it is only read on Fly.

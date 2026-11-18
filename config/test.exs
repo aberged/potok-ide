@@ -64,6 +64,10 @@ config :potok_ide, PotokIde.Events.ReminderScheduler, enabled: false
 config :potok_ide, PotokIde.Polls.Scheduler, enabled: false
 config :potok_ide, PotokIde.Processes.Scheduler, enabled: false
 
+# The lateness of processes is a query, which a poller would run against the
+# sandbox while the suite starts; tests call `PotokIde.Metrics` themselves.
+config :potok_ide, PotokIdeWeb.Telemetry, process_lag: false
+
 # Apps' unclaimed files are swept by hand in tests, and scores computed
 # again inline, so tests can assert on them.
 config :potok_ide, PotokIde.Social.AppFileSweeper, enabled: false
