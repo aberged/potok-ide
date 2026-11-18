@@ -1211,8 +1211,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
 
   # Markdown parsing + sanitizing is pure in (content, format, uses_api,
   # mentions) and runs on every render of every streamed value, so the result
-  # is memoized. The renderer modules' md5s are part of the key, so a code
-  # reload (dev) never serves HTML that the old code rendered.
+  # is memoized, in a cache that keeps what is still shown and lets the rest
+  # go (`PotokIde.Cache.Bounded`). The renderer modules' md5s are part of the
+  # key, so a code reload (dev) never serves HTML that the old code rendered.
   @formatted_content_cache_ttl :timer.hours(1)
 
   defp cached_formatted_content(content, content_format, uses_api, mentions) do
@@ -1227,14 +1228,19 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
          :erlang.term_to_binary({renderer, content, content_format, uses_api, mentions})
        )}
 
-    PotokIde.Cache.fetch(key, @formatted_content_cache_ttl, fn ->
-      render_formatted_content(%{
-        content: content,
-        content_format: content_format,
-        uses_api: uses_api,
-        mentions: mentions || %{}
-      })
-    end)
+    PotokIde.Cache.Bounded.fetch(
+      PotokIde.Cache.Bounded.rendered_html(),
+      key,
+      @formatted_content_cache_ttl,
+      fn ->
+        render_formatted_content(%{
+          content: content,
+          content_format: content_format,
+          uses_api: uses_api,
+          mentions: mentions || %{}
+        })
+      end
+    )
   end
 
   @doc """

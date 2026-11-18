@@ -44,6 +44,33 @@ defmodule PotokIde.CacheTest do
     assert Cache.get(key) == {:ok, :from_waiter}
   end
 
+  test "a value whose lifetime comes with it is computed once for callers who miss together" do
+    key = {:cache_test, System.unique_integer()}
+    test_pid = self()
+
+    compute = fn ->
+      send(test_pid, {:computing, self()})
+      receive do: (:go -> {:ok, :token, 60_000})
+    end
+
+    callers = for _caller <- 1..3, do: Task.async(fn -> Cache.fetch_with_ttl(key, compute) end)
+
+    assert_receive {:computing, computing_pid}
+    await_waiters(key, 2)
+    send(computing_pid, :go)
+
+    assert Enum.map(callers, &Task.await/1) == List.duplicate({:ok, :token}, 3)
+    refute_received {:computing, _other_pid}
+  end
+
+  test "a failed computation is returned and kept by nobody" do
+    key = {:cache_test, System.unique_integer()}
+
+    assert Cache.fetch_with_ttl(key, fn -> {:error, :down} end) == {:error, :down}
+    assert Cache.get(key) == :error
+    assert Cache.fetch_with_ttl(key, fn -> {:ok, :up, 1_000} end) == {:ok, :up}
+  end
+
   # The callers send their claims concurrently; each `:sys.get_state/1` round
   # trip lets more of them reach the cache process.
   defp await_waiters(key, count, attempts \\ 500) do

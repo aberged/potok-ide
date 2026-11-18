@@ -110,15 +110,18 @@ defmodule PotokIde.PushNotifications.FCM do
   defp fetch_access_token(credentials) do
     cache_key = {:fcm_access_token, credentials.client_email, credentials.token_url}
 
-    case PotokIde.Cache.get(cache_key) do
-      {:ok, access_token} ->
-        {:ok, access_token}
-
-      :error ->
-        with {:ok, access_token, expires_in} <- request_access_token(credentials) do
-          maybe_cache_access_token(cache_key, access_token, expires_in)
-          {:ok, access_token}
+    # Senders that find it expired together ask Google once.
+    PotokIde.Cache.fetch_with_ttl(cache_key, fn ->
+      with {:ok, access_token, expires_in} <- request_access_token(credentials) do
+        case access_token_ttl_ms(expires_in) do
+          nil -> {:uncached, access_token}
+          ttl_ms -> {:ok, access_token, ttl_ms}
         end
+      end
+    end)
+    |> case do
+      {:uncached, access_token} -> {:ok, access_token}
+      result -> result
     end
   end
 
@@ -145,13 +148,11 @@ defmodule PotokIde.PushNotifications.FCM do
   end
 
   # Only responses that state a lifetime are cached.
-  defp maybe_cache_access_token(cache_key, access_token, expires_in)
-       when is_integer(expires_in) and expires_in > @access_token_expiry_margin_seconds do
-    ttl_ms = (expires_in - @access_token_expiry_margin_seconds) * 1000
-    PotokIde.Cache.put(cache_key, access_token, ttl_ms)
-  end
+  defp access_token_ttl_ms(expires_in)
+       when is_integer(expires_in) and expires_in > @access_token_expiry_margin_seconds,
+       do: (expires_in - @access_token_expiry_margin_seconds) * 1000
 
-  defp maybe_cache_access_token(_cache_key, _access_token, _expires_in), do: :ok
+  defp access_token_ttl_ms(_expires_in), do: nil
 
   defp jwt_assertion(credentials, issued_at) do
     header = %{"alg" => "RS256", "typ" => "JWT"}

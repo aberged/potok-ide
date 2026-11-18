@@ -74,11 +74,17 @@ defmodule PotokIde.Metrics do
   @doc "Entries and bytes of the app's ETS caches."
   def dispatch_caches do
     measure(fn ->
-      for table <- [PotokIde.Cache] do
+      :telemetry.execute(
+        [:potok_ide, :cache],
+        %{entries: ets_size(PotokIde.Cache), memory: ets_memory(PotokIde.Cache)},
+        %{table: inspect(PotokIde.Cache)}
+      )
+
+      for cache <- [PotokIde.Cache.Bounded.rendered_html()] do
         :telemetry.execute(
           [:potok_ide, :cache],
-          %{entries: ets_size(table), memory: ets_memory(table)},
-          %{table: inspect(table)}
+          PotokIde.Cache.Bounded.info(cache),
+          %{table: inspect(cache)}
         )
       end
     end)

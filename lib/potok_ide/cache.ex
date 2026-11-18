@@ -13,6 +13,9 @@ defmodule PotokIde.Cache do
 
   @table __MODULE__
   @sweep_interval_ms :timer.minutes(5)
+  # Past this many entries a new key is not kept (counters still count): what
+  # grows with use belongs in `PotokIde.Cache.Bounded`.
+  @max_entries 50_000
   # How long a caller waits for another one computing the same key before it
   # computes the value itself.
   @claim_timeout_ms :timer.seconds(30)
@@ -98,10 +101,52 @@ defmodule PotokIde.Cache do
         ms when is_integer(ms) -> System.monotonic_time(:millisecond) + ms
       end
 
-    :ets.insert(@table, {key, value, expires_at})
+    if :ets.info(@table, :size) < @max_entries or :ets.member(@table, key) do
+      :ets.insert(@table, {key, value, expires_at})
+    end
+
     value
   rescue
     ArgumentError -> value
+  end
+
+  @doc """
+  Like `fetch/3`, for a value whose lifetime comes with it: `fun` returns
+  `{:ok, value, ttl}` for a value to keep, which is returned as
+  `{:ok, value}`, or anything else, which is returned as it is and kept by
+  nobody. Callers who miss together wait for one of them, as in `fetch/3`.
+  """
+  def fetch_with_ttl(key, fun) when is_function(fun, 0) do
+    case get(key) do
+      {:ok, value} ->
+        counted(:hit)
+        {:ok, value}
+
+      :error ->
+        counted(:miss)
+        fetch_missing_with_ttl(key, fun)
+    end
+  end
+
+  defp fetch_missing_with_ttl(key, fun) do
+    case claim(key) do
+      :compute ->
+        try do
+          case fun.() do
+            {:ok, value, ttl} -> {:ok, put(key, value, ttl)}
+            other -> other
+          end
+        after
+          GenServer.cast(__MODULE__, {:done, key, self()})
+        end
+
+      # The one computing finished: kept, or failed and the next one tries.
+      :ready ->
+        case get(key) do
+          {:ok, value} -> {:ok, value}
+          :error -> fetch_missing_with_ttl(key, fun)
+        end
+    end
   end
 
   @doc """

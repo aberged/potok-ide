@@ -105,7 +105,7 @@ defmodule PotokIdeWeb.StackCopy do
           text:
             dgettext(
               "stack",
-              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes: rendered Markdown and the access token for notifications. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
+              "ETS is an in-memory table that every process can read. Potok keeps in it what is expensive to compute and rarely changes, such as the access token for notifications. Rendered messages go into two tables that take turns: when one fills up, the other is emptied and takes its place, and a message read since moves over, so the cache keeps what is shown and never grows past its size. The pictures it draws, link cards and avatars, go to files on disk instead, so they take no memory. ETS also counts log-in attempts and the emails someone asks Potok to send, so nobody can repeat them without end."
             )
         },
         %{
