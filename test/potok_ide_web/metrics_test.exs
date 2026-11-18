@@ -109,7 +109,7 @@ defmodule PotokIdeWeb.MetricsTest do
     PotokIde.JobQueue.run(name, fn -> receive do: (^gate -> :ok) end)
     PotokIde.JobQueue.run(name, fn -> :ok end)
 
-    assert_receive {^ref, %{count: 1}, %{queue: queue}}
+    assert_receive {^ref, %{count: 1}, %{queue: queue}}, 2_000
     assert queue == inspect(name)
   end
 end

@@ -125,6 +125,7 @@ defmodule PotokIdeWeb.Layouts do
               <.count_badge
                 id="nav-notices-count-badge"
                 count={@unread_notices_count}
+                max={999}
                 hidden={@unread_notices_count <= 0}
                 class="absolute -right-1 -top-1"
               />

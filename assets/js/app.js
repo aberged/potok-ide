@@ -2097,7 +2097,8 @@ window.addEventListener("phx:root_group_unread_count_updated", ({detail}) => {
   const count = Number(detail.count || 0)
 
   rootGroupBadge.hidden = count <= 0
-  rootGroupBadge.textContent = count > 999 ? "999+" : String(count)
+  // No group counts past 100 unread messages (`Social.unread_cap/0`).
+  rootGroupBadge.textContent = count > 99 ? "99+" : String(count)
 })
 
 // Unread notices of the groups the profile follows, kept apart from messages.

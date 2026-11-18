@@ -569,6 +569,11 @@ defmodule PotokIdeWeb.CoreComponents do
   attr :id, :string, default: nil
   attr :count, :integer, required: true
   attr :tone, :atom, default: :unread, values: [:unread, :attention, :muted]
+
+  attr :max, :integer,
+    default: nil,
+    doc: "past this it shows `max+`: 99 for what is unread, as no group counts past 100, else 999"
+
   attr :class, :any, default: nil
   attr :rest, :global, include: ~w(hidden)
 
@@ -583,10 +588,17 @@ defmodule PotokIdeWeb.CoreComponents do
       ]}
       {@rest}
     >
-      {if(@count > 999, do: "999+", else: @count)}
+      {badge_label(@count, @max || badge_max(@tone))}
     </span>
     """
   end
+
+  @doc "A count as a badge shows it: past `max`, `max+`."
+  def badge_label(count, max) when count > max, do: "#{max}+"
+  def badge_label(count, _max), do: count
+
+  defp badge_max(tone) when tone in [:unread, :muted], do: 99
+  defp badge_max(_tone), do: 999
 
   # A silenced group's count stays grey: it is out of every sum.
   defp badge_tone_class(:attention), do: "bg-amber-500 text-amber-950"

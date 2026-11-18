@@ -2124,14 +2124,11 @@ defmodule PotokIde.Social do
       if unread? do
         """
         (
-          SELECT COUNT(v.id)
+          SELECT COALESCE(SUM(u.unread), 0)::bigint
           FROM group_memberships gm
           LEFT JOIN group_value_reads gvr
             ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
-          JOIN values v
-            ON v.group_id = gm.group_id
-           AND v.is_data = FALSE
-           AND v.id > COALESCE(gvr.last_read_value_id, 0)
+          #{capped_unread_sql("gm", "gvr")}
           WHERE gm.profile_id = $1
             AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
             AND NOT #{GroupMutes.muted_sql()}
@@ -2173,7 +2170,7 @@ defmodule PotokIde.Social do
       (SELECT COUNT(*) FROM (#{PotokIde.Processes.waiting_sql("$1")}) w)
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v7_#{unread?}") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_nav_counts_v8_#{unread?}") do
       {:ok,
        %{
          rows: [
@@ -2522,6 +2519,8 @@ defmodule PotokIde.Social do
   end
 
   defp attachments_in_order, do: from(a in ValueAttachment, order_by: [asc: a.id])
+
+  @unread_cap 100
 
   # What someone outside the group may do in an open chat, which is not much to
   # hold back a person and enough to hold back a loop. See also `Value`.
@@ -5327,6 +5326,30 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  @doc """
+  How many unread values a group counts at most: a group with more shows
+  "99+", and nothing counts past it, so a member who never opens a busy group
+  costs every count no more than this many rows.
+  """
+  def unread_cap, do: @unread_cap
+
+  # `u.unread`: the unread chat values of membership `gm` with marker `gvr`,
+  # up to `unread_cap/0`, read along the index of a group's chat by id.
+  defp capped_unread_sql(gm, gvr) do
+    """
+    CROSS JOIN LATERAL (
+      SELECT COUNT(*)::bigint AS unread
+      FROM (
+        SELECT 1 FROM values v
+        WHERE v.group_id = #{gm}.group_id
+          AND v.is_data = FALSE
+          AND v.id > COALESCE(#{gvr}.last_read_value_id, 0)
+        LIMIT #{@unread_cap}
+      ) capped
+    ) u
+    """
+  end
+
   # The profile whose reactions a page of values marks as its own.
   defp viewer_id(opts) do
     case Keyword.get(opts, :viewer) do
@@ -6436,25 +6459,29 @@ defmodule PotokIde.Social do
   # The marker's row joined with the chat values after it: none at all
   # without a marker, which `COUNT(r.profile_id)` tells from a marker with
   # nothing after it, as an aggregate always gives one row.
+  # The marker's row with where its unread values begin and end, and how many
+  # there are up to `unread_cap/0`; no row without a marker.
   defp read_position(%Profile{id: profile_id}, %Group{id: group_id}) do
+    unread =
+      "v.group_id = r.group_id AND v.is_data = FALSE AND v.id > COALESCE(r.last_read_value_id, 0)"
+
     sql = """
-    SELECT COUNT(r.profile_id), MIN(v.id), MAX(v.id), COUNT(v.id)
+    SELECT
+      (SELECT MIN(v.id) FROM values v WHERE #{unread}),
+      (SELECT MAX(v.id) FROM values v WHERE #{unread}),
+      (SELECT COUNT(*) FROM (SELECT 1 FROM values v WHERE #{unread} LIMIT #{@unread_cap}) x)
     FROM group_value_reads r
-    LEFT JOIN values v
-      ON v.group_id = r.group_id
-     AND v.is_data = FALSE
-     AND v.id > COALESCE(r.last_read_value_id, 0)
     WHERE r.profile_id = $1 AND r.group_id = $2
     """
 
-    case Repo.query!(sql, [profile_id, group_id], cache_statement: "social_read_position") do
-      %{rows: [[0, _first, _last, _count]]} ->
+    case Repo.query!(sql, [profile_id, group_id], cache_statement: "social_read_position_v2") do
+      %{rows: []} ->
         :no_marker
 
-      %{rows: [[_marker, nil, _last, _count]]} ->
+      %{rows: [[nil, _last, _count]]} ->
         :read
 
-      %{rows: [[_marker, first, last, count]]} ->
+      %{rows: [[first, last, count]]} ->
         {:unread, %{value_id: first, count: count}, last}
     end
   end
@@ -6492,14 +6519,11 @@ defmodule PotokIde.Social do
     sql = """
     SELECT
       (
-        SELECT COUNT(v.id)::bigint
+        SELECT COALESCE(SUM(u.unread), 0)::bigint
         FROM group_memberships gm
         LEFT JOIN group_value_reads gvr
           ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
-        JOIN values v
-          ON v.group_id = gm.group_id
-         AND v.is_data = FALSE
-         AND v.id > COALESCE(gvr.last_read_value_id, 0)
+        #{capped_unread_sql("gm", "gvr")}
         WHERE gm.profile_id = $1
           AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
           AND NOT #{GroupMutes.muted_sql()}
@@ -6507,7 +6531,7 @@ defmodule PotokIde.Social do
       #{CountMark.ids_sql("values")}
     """
 
-    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count_v3") do
+    case Repo.query(sql, [profile_id], cache_statement: "social_root_unread_count_v4") do
       {:ok, %{rows: [[count, ids]]}} -> %{count: count, as_of: CountMark.from_ids(ids)}
       {:error, _reason} -> %{count: 0, as_of: nil}
     end
@@ -6593,23 +6617,20 @@ defmodule PotokIde.Social do
     SELECT hw.ids, c.group_id, c.unread, #{GroupMutes.muted_sql("c")}, c.read_mark
     FROM (SELECT #{CountMark.ids_sql("values")} AS ids) hw
     LEFT JOIN LATERAL (
-      SELECT gm.group_id, gm.profile_id, gm.muted_until, COUNT(v.id)::bigint AS unread,
+      SELECT gm.group_id, gm.profile_id, gm.muted_until, u.unread,
              COALESCE(gvr.last_read_value_id, 0) AS read_mark
       FROM group_memberships gm
       LEFT JOIN group_value_reads gvr
         ON gvr.profile_id = gm.profile_id AND gvr.group_id = gm.group_id
-      JOIN values v
-        ON v.group_id = gm.group_id
-       AND v.is_data = FALSE
-       AND v.id > COALESCE(gvr.last_read_value_id, 0)
+      #{capped_unread_sql("gm", "gvr")}
       WHERE gm.profile_id = $1
         AND gm.group_id IS DISTINCT FROM (SELECT r.id FROM groups r WHERE r.is_root)
-      GROUP BY gm.group_id, gm.profile_id, gm.muted_until, gvr.last_read_value_id
+        AND u.unread > 0
     ) c ON TRUE
     """
 
     %{rows: [[ids | _] | _] = rows} =
-      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v4")
+      Repo.query!(sql, [profile_id], cache_statement: "social_own_unread_counts_v5")
 
     {own, muted, read_marks} =
       for [_ids, group_id, count, muted?, read_mark] <- rows,
@@ -6770,6 +6791,10 @@ defmodule PotokIde.Social do
     case groups do
       %{^group_id => entry} when is_integer(read_mark) and value_id > read_mark ->
         cond do
+          # At the cap the group may hold more than it counts.
+          entry.own >= @unread_cap or entry.muted >= @unread_cap ->
+            :unchanged
+
           entry.muted > 0 ->
             {:ok,
              %{overview | groups: Map.put(groups, group_id, %{entry | muted: entry.muted - 1})}}
@@ -6793,6 +6818,16 @@ defmodule PotokIde.Social do
         :unchanged
     end
   end
+
+  # A group at the cap counts no more, as a count would not.
+  defp count_muted_value(
+         %{groups: groups} = overview,
+         %{group_id: group_id},
+         _member_ids
+       )
+       when is_map_key(groups, group_id) and
+              :erlang.map_get(:muted, :erlang.map_get(group_id, groups)) >= @unread_cap,
+       do: {:ok, overview}
 
   defp count_muted_value(overview, %{group_id: group_id} = unread, member_ids) do
     case shown_chain(unread, member_ids) do
@@ -6820,6 +6855,15 @@ defmodule PotokIde.Social do
     end)
     |> hang_from_root()
   end
+
+  defp count_unread_value(
+         %{groups: groups} = overview,
+         %{group_id: group_id},
+         _member_ids
+       )
+       when is_map_key(groups, group_id) and
+              :erlang.map_get(:own, :erlang.map_get(group_id, groups)) >= @unread_cap,
+       do: {:ok, overview}
 
   defp count_unread_value(overview, %{group_id: group_id} = unread, member_ids) do
     shown = shown_chain(unread, member_ids)

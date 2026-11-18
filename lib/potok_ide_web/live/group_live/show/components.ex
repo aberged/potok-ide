@@ -1283,7 +1283,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     thread_unread_counts
     |> Enum.map_join(fn {thread_id, count} ->
       badge = "#value-thread-unread-#{thread_id}"
-      label = if count > 999, do: "999+", else: count
+      label = PotokIdeWeb.CoreComponents.badge_label(count, 99)
       ~s(#{badge}{display:inline-flex}#{badge}::after{content:"#{label}"})
     end)
     |> Phoenix.HTML.raw()
@@ -1767,7 +1767,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       >
         <span class="h-px flex-1 bg-primary/35" aria-hidden="true"></span>
         <span class="shrink-0">
-          {ngettext("1 new message", "%{count} new messages", @unread_divider)}
+          {if @unread_divider >= PotokIde.Social.unread_cap(),
+            do: gettext("99+ new messages"),
+            else: ngettext("1 new message", "%{count} new messages", @unread_divider)}
         </span>
         <span class="h-px flex-1 bg-primary/35" aria-hidden="true"></span>
       </div>
