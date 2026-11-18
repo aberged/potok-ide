@@ -22,6 +22,7 @@ defmodule PotokIde.Accounts.AccountNotifier do
     else
       error ->
         Logger.error("Email delivery failed for #{inspect(subject)}: #{inspect(error)}")
+        Mailer.delivery_failed()
         error
     end
   end

@@ -3,26 +3,58 @@ defmodule PotokIde.GmailToken do
 
   require Logger
 
-  alias PotokIde.GmailRefreshToken
+  alias PotokIde.{Cache, GmailRefreshToken}
 
   @token_url "https://oauth2.googleapis.com/token"
 
-  def delivery_config(config) when is_list(config) do
-    with {:ok, access_token} <- access_token(config) do
+  @cache_key {__MODULE__, :access_token}
+  # A kept token is let go this long before Google says it expires.
+  @expiry_margin_s 60
+
+  @doc """
+  The access token for sending, as Swoosh's Gmail adapter takes it. With
+  `cache: true` (the mailer) a refreshed token is kept until a minute before
+  it expires, so a run of emails asks Google, and writes the refresh token,
+  once instead of for every email.
+  """
+  def delivery_config(config, opts \\ []) when is_list(config) do
+    with {:ok, access_token} <- access_token(config, Keyword.get(opts, :cache, false)) do
       {:ok, [access_token: access_token]}
     end
   end
 
-  defp access_token(config) do
+  @doc "Lets go of the kept token, so the next email asks for a new one."
+  def forget, do: Cache.delete(@cache_key)
+
+  defp access_token(config, cache?) do
     cond do
       refresh_access_token_available?(config) ->
-        refresh_access_token(config)
+        refresh(config, cache?)
 
       present_binary?(config[:access_token]) ->
         {:ok, config[:access_token]}
 
       true ->
-        refresh_access_token(config)
+        refresh(config, cache?)
+    end
+  end
+
+  defp refresh(config, true = _cache?) do
+    Cache.fetch_with_ttl(@cache_key, fn ->
+      case refresh_access_token(config) do
+        {:ok, access_token, expires_in} ->
+          {:ok, access_token, max(expires_in - @expiry_margin_s, 0) * 1000}
+
+        error ->
+          error
+      end
+    end)
+  end
+
+  defp refresh(config, false = _cache?) do
+    case refresh_access_token(config) do
+      {:ok, access_token, _expires_in} -> {:ok, access_token}
+      error -> error
     end
   end
 
@@ -38,9 +70,9 @@ defmodule PotokIde.GmailToken do
          {source, refresh_token} | remaining
        ]) do
     with {:ok, response} <- request_access_token(config, client_id, client_secret, refresh_token),
-         {:ok, access_token} <- parse_access_token(response) do
+         {:ok, access_token, expires_in} <- parse_access_token(response) do
       maybe_store_effective_refresh_token(response, refresh_token)
-      {:ok, access_token}
+      {:ok, access_token, expires_in}
     else
       error ->
         maybe_retry_refresh_access_token(
@@ -74,7 +106,10 @@ defmodule PotokIde.GmailToken do
   defp parse_access_token(%{status: 200, body: %{"access_token" => access_token} = body})
        when is_binary(access_token) and access_token != "" do
     maybe_store_refresh_token(body)
-    {:ok, access_token}
+
+    # Seconds the token lasts; one that does not say is not kept.
+    expires_in = if is_integer(body["expires_in"]), do: body["expires_in"], else: 0
+    {:ok, access_token, expires_in}
   end
 
   defp parse_access_token(%{status: status, body: body}) do

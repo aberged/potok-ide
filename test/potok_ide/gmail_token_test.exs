@@ -163,6 +163,31 @@ defmodule PotokIde.GmailTokenTest do
     assert %GmailRefreshToken{refresh_token: "stored-refresh"} = GmailRefreshToken.get()
   end
 
+  test "the mailer's token is asked for once, until it is let go" do
+    GmailToken.forget()
+    on_exit(&GmailToken.forget/0)
+    assert {:ok, %GmailRefreshToken{}} = GmailRefreshToken.upsert("stored-refresh")
+    requests = start_supervised!({Agent, fn -> 0 end})
+
+    Req.Test.stub(__MODULE__, fn conn ->
+      n = Agent.get_and_update(requests, &{&1 + 1, &1 + 1})
+      Req.Test.json(conn, %{"access_token" => "token-#{n}", "expires_in" => 3600})
+    end)
+
+    config = [
+      client_id: "test-client",
+      client_secret: "test-secret",
+      req_options: [plug: {Req.Test, __MODULE__}]
+    ]
+
+    assert {:ok, [access_token: "token-1"]} = GmailToken.delivery_config(config, cache: true)
+    assert {:ok, [access_token: "token-1"]} = GmailToken.delivery_config(config, cache: true)
+    assert Agent.get(requests, & &1) == 1
+
+    GmailToken.forget()
+    assert {:ok, [access_token: "token-2"]} = GmailToken.delivery_config(config, cache: true)
+  end
+
   test "returns a clear error when refresh token configuration is incomplete" do
     assert {:error, {:missing_config, "GMAIL_CLIENT_ID"}} =
              GmailToken.delivery_config(client_secret: "secret")

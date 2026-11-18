@@ -14,8 +14,17 @@ defmodule PotokIde.Mailer do
 
   def delivery_config do
     case Keyword.fetch!(config(), :adapter) do
-      Swoosh.Adapters.Gmail -> GmailToken.delivery_config(config())
+      Swoosh.Adapters.Gmail -> GmailToken.delivery_config(config(), cache: true)
       _ -> {:ok, []}
     end
+  end
+
+  @doc """
+  After a failed send: the kept Gmail token may be the reason (revoked
+  early), so the next email asks for a new one.
+  """
+  def delivery_failed do
+    GmailToken.forget()
+    :ok
   end
 end
