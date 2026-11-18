@@ -2,9 +2,11 @@ defmodule PotokIde.EventsTest do
   # Push requests are captured through the global push configuration.
   use PotokIde.DataCase, async: false
 
+  import Ecto.Query, only: [from: 2]
   import PotokIde.EventsFixtures
 
   alias PotokIde.Events
+  alias PotokIde.Repo
   alias PotokIde.Events.{Event, Recurrence}
   alias PotokIde.Social
   alias PotokIde.Social.{GroupAreas, GroupRoutes}
@@ -705,6 +707,42 @@ defmodule PotokIde.EventsTest do
              {Date.add(start, 1), "Training"},
              {Date.add(start, 2), "Training"}
            ]
+  end
+
+  test "list_occurrences/3 skips what ended before the window, not a series without an end",
+       ctx do
+    start = Date.add(today(), 1)
+    past = create_event!(ctx.owner, ctx.group, event_attrs(start, %{"title" => "Past"}))
+
+    series =
+      create_event!(
+        ctx.owner,
+        ctx.group,
+        event_attrs(start, %{"title" => "Daily", "recurrence" => "daily"})
+      )
+
+    # Both began long ago.
+    for {event, days} <- [{past, 60}, {series, 365}] do
+      from(e in Event, where: e.id == ^event.id)
+      |> Repo.update_all(
+        set: [
+          starts_at: DateTime.add(event.starts_at, -days, :day),
+          ends_at: DateTime.add(event.ends_at, -days, :day)
+        ]
+      )
+    end
+
+    {from, to} = window(start)
+
+    assert Events.list_occurrences([ctx.group.id], from, to) |> Enum.map(& &1.event.title) ==
+             ["Daily"]
+
+    # The window's lower bound is in SQL: the past event is not even read.
+    assert [[false, true]] =
+             Repo.query!(
+               "SELECT bool_or(id = $1 AND live_until >= $3), bool_or(id = $2 AND live_until = 'infinity') FROM group_events",
+               [past.id, series.id, DateTime.to_date(from)]
+             ).rows
   end
 
   # The whole local `date` in the test zone.

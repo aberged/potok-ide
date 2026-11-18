@@ -194,6 +194,9 @@ defmodule PotokIde.Events do
       where: ^shown,
       where: is_nil(e.cancelled_at),
       where: e.starts_at < ^to,
+      # The past in SQL, through the indexes on `live_until` (migration
+      # `AddLiveUntilToGroupEvents`); the exact condition follows.
+      where: fragment("live_until >= ?", ^DateTime.to_date(from)),
       where:
         e.ends_at >= ^from or
           (e.recurrence != :none and
