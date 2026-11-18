@@ -5,7 +5,7 @@ defmodule PotokIde.Social.MemberInheritanceTest do
   import PotokIde.AccountsFixtures
 
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, GroupMembership, GroupValueRead}
+  alias PotokIde.Social.{Access, Group, GroupMembership, GroupValueRead}
 
   setup do
     owner = profile!("inh-owner")
@@ -385,6 +385,66 @@ defmodule PotokIde.Social.MemberInheritanceTest do
 
       assert thread.inherits_members
       assert thread.inherit_role_keys == []
+    end
+
+    test "deleting a picked role sends away who held only that one and leaves the pick", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council,
+      helpers: helpers,
+      other: other
+    } do
+      {:ok, _} = Social.assign_group_member_role(owner, parent, other.id, council.key)
+      child = by_roles!(owner, parent, [council.key, helpers.key])
+      assert Social.member_of_group?(other, child)
+
+      {:ok, _role} = Social.delete_group_role(owner, parent, council.key)
+
+      child = Repo.get!(Group, child.id)
+      assert child.inherits_members
+      assert child.inherit_role_keys == [helpers.key]
+      refute Social.member_of_group?(other, child)
+      assert inherited_membership?(child, member)
+    end
+
+    test "a pick left with no role stops inheriting, and nobody falls out", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council,
+      helpers: helpers
+    } do
+      child = by_roles!(owner, parent, [council.key])
+      child_id = child.id
+      Social.subscribe_group(child)
+
+      {:ok, _role} = Social.delete_group_role(owner, parent, council.key)
+
+      child = Repo.get!(Group, child.id)
+      refute child.inherits_members
+      assert child.inherit_role_keys == []
+      assert Social.member_of_group?(member, child)
+      refute inherited_membership?(child, member)
+      assert role_keys(child, member) == [helpers.key]
+      assert_received {:group_updated, ^child_id}
+    end
+
+    test "reverting the parent's manifest forgets its roles the same way", %{
+      owner: owner,
+      member: member,
+      parent: parent,
+      council: council
+    } do
+      child = by_roles!(owner, parent, [council.key])
+
+      {:ok, _manifest} = Social.revert_to_inherited_group_manifest(owner, parent)
+
+      child = Repo.get!(Group, child.id)
+      refute child.inherits_members
+      assert child.inherit_role_keys == []
+      assert Social.member_of_group?(member, child)
+      assert role_keys(child, member) == []
     end
   end
 

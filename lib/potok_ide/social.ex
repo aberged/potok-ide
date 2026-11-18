@@ -3601,10 +3601,14 @@ defmodule PotokIde.Social do
         :assignments,
         from(r in GroupMemberRole, where: r.group_id in ^group_ids and r.role_key == ^role.key)
       )
+      |> Multi.run(:inheritance, fn repo, _changes ->
+        {:ok, MemberInheritance.forget_roles(repo, group_ids, [role.key])}
+      end)
       |> Repo.transaction()
       |> case do
-        {:ok, %{role: role}} ->
+        {:ok, %{role: role, inheritance: inheritance}} ->
           broadcast_group_roles_updated(group_ids)
+          broadcast_forgotten_roles(inheritance)
           {:ok, role}
 
         {:error, _step, reason, _changes} ->
@@ -3674,16 +3678,38 @@ defmodule PotokIde.Social do
           where: r.group_id in ^group_ids and r.role_key not in ^kept_keys
         )
         |> Repo.delete_all()
+
+        gone_keys = Enum.map(manifest.roles, & &1.key) -- kept_keys
+        MemberInheritance.forget_roles(Repo, group_ids, gone_keys)
       end)
       |> case do
-        {:ok, _deleted} ->
+        {:ok, inheritance} ->
           broadcast_group_roles_updated(group_ids)
+          broadcast_forgotten_roles(inheritance)
           {:ok, Access.effective_manifest(group)}
 
         {:error, reason} ->
           {:error, reason}
       end
     end
+  end
+
+  # The sub-groups whose roles to inherit by lost a role
+  # (`MemberInheritance.forget_roles/3`): their pages and their parents' lists
+  # read them again, and the members who came or went are told.
+  defp broadcast_forgotten_roles({changes, group_ids}) do
+    broadcast_inheritance_changes(changes)
+
+    if group_ids != [] do
+      from(g in Group, where: g.id in ^group_ids)
+      |> Repo.all()
+      |> Enum.each(fn group ->
+        broadcast_group_updated(group)
+        broadcast_child_group_changed(group.parent_id, group, :updated)
+      end)
+    end
+
+    :ok
   end
 
   defp editable_manifest(%Profile{} = actor, %Group{} = group) do

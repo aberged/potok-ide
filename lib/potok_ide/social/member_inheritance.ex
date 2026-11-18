@@ -124,6 +124,63 @@ defmodule PotokIde.Social.MemberInheritance do
     ]
   end
 
+  @doc """
+  Takes `keys`, roles gone from the groups `parent_ids`, out of the roles
+  their sub-groups inherit by; their holders lost them earlier in the same
+  transaction. A sub-group that keeps other roles sends away whoever held
+  none of those. One left with none stops inheriting, as when it is switched
+  off (`release/2`): nobody falls out and nobody else comes in, but the
+  roles that are gone leave. The groups below follow.
+
+  Returns `{changes, group_ids}`: the groups that changed, like `sync/3`,
+  and the sub-groups whose roles to inherit by changed.
+  """
+  def forget_roles(repo, parent_ids, keys) when is_list(parent_ids) and is_list(keys) do
+    if parent_ids == [] or keys == [] do
+      {[], []}
+    else
+      %{rows: rows} =
+        repo.query!(
+          """
+          UPDATE groups g
+          SET inherit_role_keys = ARRAY(
+                SELECT k FROM unnest(g.inherit_role_keys) AS k
+                WHERE NOT k = ANY($2::text[])
+                ORDER BY k
+              ),
+              inherits_members = EXISTS (
+                SELECT 1 FROM unnest(g.inherit_role_keys) AS k WHERE NOT k = ANY($2::text[])
+              ),
+              updated_at = $3
+          WHERE g.parent_id = ANY($1::bigint[])
+            AND g.inherits_members
+            AND g.inherit_role_keys && $2::text[]
+          RETURNING g.id, g.inherits_members
+          """,
+          [parent_ids, keys, NaiveDateTime.utc_now(:second)]
+        )
+
+      changes =
+        rows
+        |> Enum.sort()
+        |> Enum.flat_map(fn
+          [id, true] ->
+            sync(repo, id)
+
+          [id, false] ->
+            repo.query!(
+              "DELETE FROM group_member_roles WHERE group_id = $1 AND inherited AND role_key = ANY($2::text[])",
+              [id, keys]
+            )
+
+            :ok = release(repo, id)
+            [%{group_id: id, added: [], removed: [], roles_changed?: true} | sync(repo, id)]
+        end)
+
+      {changes, rows |> Enum.map(&hd/1) |> Enum.sort()}
+    end
+  end
+
   # `profile_id`'s membership and roles in the group turn direct, so nothing
   # the parent does takes them away.
   defp make_direct(repo, group_id, profile_id) do
