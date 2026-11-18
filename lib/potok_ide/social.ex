@@ -7801,6 +7801,7 @@ defmodule PotokIde.Social do
       group
       |> value_push_account_ids(
         creator,
+        value,
         member?,
         mentioned_account_ids,
         replied_account_ids,
@@ -7843,14 +7844,78 @@ defmodule PotokIde.Social do
 
   defp replied_profile_ids_to_push(_value, _group, _creator, _member?), do: []
 
-  defp value_push_account_ids(group, creator, true = _member?, _mentioned, replied, own) do
+  defp value_push_account_ids(group, creator, value, true = _member?, _mentioned, replied, own) do
+    members = coalesced_value_account_ids(group, creator, value, own)
+
     if MapSet.size(replied) == 0,
-      do: group_value_account_ids(group, creator, own),
-      else: union(group_value_account_ids(group, creator, own), ^accounts_query(replied))
+      do: members,
+      else: union(members, ^accounts_query(replied))
   end
 
-  defp value_push_account_ids(_group, _creator, false = _member?, mentioned, replied, _own) do
+  defp value_push_account_ids(
+         _group,
+         _creator,
+         _value,
+         false = _member?,
+         mentioned,
+         replied,
+         _own
+       ) do
     accounts_query(MapSet.union(mentioned, replied))
+  end
+
+  # One push per group until it is read: a member who got a push for this
+  # group's value hears of the next one only once they have read up to it, or
+  # after `@push_quiet_seconds`. Picking them and marking them is one
+  # statement, so two values posted at once still make one push. Those the
+  # value speaks to (`own`: mentioned, the author it answers) always get it,
+  # muted or not, and it leaves their mark alone.
+  @push_quiet_seconds 300
+
+  defp coalesced_value_account_ids(
+         %Group{id: group_id},
+         %Profile{id: creator_id},
+         %Value{id: value_id},
+         own
+       ) do
+    now = NaiveDateTime.utc_now(:second)
+
+    %Postgrex.Result{rows: rows} =
+      Repo.query!(
+        """
+        UPDATE group_memberships AS gm
+        SET last_push_value_id = $3, last_pushed_at = $5
+        WHERE gm.group_id = $1
+          AND gm.profile_id <> $2
+          AND gm.profile_id <> ALL($4)
+          AND NOT #{GroupMutes.muted_sql("gm")}
+          AND (
+            gm.last_push_value_id IS NULL
+            OR gm.last_pushed_at <= $6
+            OR COALESCE((
+              SELECT r.last_read_value_id
+              FROM group_value_reads r
+              WHERE r.profile_id = gm.profile_id AND r.group_id = gm.group_id
+            ), 0) >= gm.last_push_value_id
+          )
+        RETURNING gm.profile_id
+        """,
+        [group_id, creator_id, value_id, own, now, NaiveDateTime.add(now, -@push_quiet_seconds)]
+      )
+
+    pushed = Enum.map(rows, &hd/1)
+
+    own_members =
+      from(gm in GroupMembership,
+        where: gm.group_id == ^group_id and gm.profile_id != ^creator_id,
+        where: gm.profile_id in ^own,
+        select: gm.profile_id
+      )
+
+    from(ap in AccountProfile,
+      where: ap.profile_id in ^pushed or ap.profile_id in subquery(own_members),
+      select: ap.account_id
+    )
   end
 
   # The members a value speaks to, whom a muted group still reaches: those

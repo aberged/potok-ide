@@ -12,6 +12,11 @@ defmodule PotokIde.Social.GroupMembership do
     # Until when the member silenced the group (`Social.GroupMutes`); never
     # cast, set by `GroupMutes.set/3`.
     field :muted_until, :utc_datetime
+    # The last value the member got a push for, and when; the next one of
+    # this group waits until they read up to it or five minutes pass. Never
+    # cast, set by `Social` when a value is posted.
+    field :last_push_value_id, :integer
+    field :last_pushed_at, :utc_datetime
 
     timestamps(type: :utc_datetime)
   end

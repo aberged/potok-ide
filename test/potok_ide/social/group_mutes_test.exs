@@ -154,8 +154,9 @@ defmodule PotokIde.Social.GroupMutesTest do
       _ = pushed()
       {:ok, _until} = Social.set_group_mute(ctx.ana, ctx.group, "hour")
 
+      # Bob has "mine" unread, so the group does not push him again.
       {:ok, _} = Social.create_value(ctx.author, ctx.group, %{"content" => "hi @mute-ana"})
-      assert Enum.sort(pushed()) == Enum.sort([ctx.ana_device, ctx.bob_device])
+      assert pushed() == [ctx.ana_device]
 
       {:ok, _} =
         Social.create_value(ctx.author, ctx.group, %{
@@ -163,7 +164,7 @@ defmodule PotokIde.Social.GroupMutesTest do
           "parent_id" => ana_value.id
         })
 
-      assert Enum.sort(pushed()) == Enum.sort([ctx.ana_device, ctx.bob_device])
+      assert pushed() == [ctx.ana_device]
     end
 
     test "a value in a thread of a silenced conversation passes them by", ctx do

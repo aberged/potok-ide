@@ -76,12 +76,12 @@ msgstr ""
 msgid "Open Potok to review this shared profile invitation."
 msgstr ""
 
-#: lib/potok_ide/accounts.ex:269
+#: lib/potok_ide/accounts.ex:326
 #, elixir-autogen, elixir-format
 msgid "Potok notifications are active"
 msgstr ""
 
-#: lib/potok_ide/accounts.ex:270
+#: lib/potok_ide/accounts.ex:327
 #, elixir-autogen, elixir-format
 msgid "Push notifications are enabled for your account."
 msgstr ""

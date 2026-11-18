@@ -381,6 +381,12 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("GroupMembership", "muted_until"),
     do: dgettext("domain_map", "until when the member silenced it")
 
+  defp own_field("GroupMembership", "last_push_value_id"),
+    do: dgettext("domain_map", "the last of its values the member got a push for")
+
+  defp own_field("GroupMembership", "last_pushed_at"),
+    do: dgettext("domain_map", "when it last pushed the member")
+
   defp own_field("ValueReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupReaction", "emoji"), do: dgettext("domain_map", "emoji")
   defp own_field("GroupBlock", "blocked_by_id"), do: dgettext("domain_map", "who blocked")
