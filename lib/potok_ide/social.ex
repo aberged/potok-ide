@@ -2641,6 +2641,14 @@ defmodule PotokIde.Social do
           |> put_mentions(creator, group)
 
         Multi.new()
+        |> Multi.run(:mentioned, fn repo, _changes ->
+          {:ok,
+           join_mentioned(
+             repo,
+             group,
+             Ecto.Changeset.get_field(changeset, :mentioned_profile_ids)
+           )}
+        end)
         |> Multi.insert(:value, changeset)
         |> Multi.run(:attachments, fn repo, %{value: value} ->
           insert_value_attachments(repo, value, attachments)
@@ -2658,11 +2666,12 @@ defmodule PotokIde.Social do
         end)
         |> Repo.transaction()
         |> case do
-          {:ok, %{value: value, processes: started}} ->
+          {:ok, %{value: value, processes: started, mentioned: mentioned}} ->
             value = value |> Repo.preload(value_display_preloads()) |> put_display_extras()
 
             {:ok, value,
              fn ->
+               broadcast_inheritance_changes(mentioned)
                broadcast_value_created(group, value)
                broadcast_group_value_unread(creator, group, value)
                notify_group_members_of_new_value(creator, group, value, access)
@@ -2675,6 +2684,14 @@ defmodule PotokIde.Social do
         end
     end
   end
+
+  # Those a message in a thread mentions come in before it is written, so it
+  # counts as unread for them and pushes them (`join_thread/2`).
+  defp join_mentioned(repo, %Group{parent_value_id: value_id, id: thread_id}, [_ | _] = ids)
+       when not is_nil(value_id),
+       do: MemberInheritance.join(repo, thread_id, ids)
+
+  defp join_mentioned(_repo, _group, _profile_ids), do: []
 
   defp limit_outsider(changeset, %Access{member?: true}), do: changeset
   defp limit_outsider(changeset, %Access{}), do: Value.outsider_changeset(changeset)
@@ -2891,6 +2908,10 @@ defmodule PotokIde.Social do
     |> Repo.update()
     |> case do
       {:ok, updated_value} ->
+        # Someone an edit mentions in a thread comes in, as with a new one.
+        if group.parent_value_id && updated_value.mentioned_profile_ids != [],
+          do: join_thread_profiles(group, updated_value.mentioned_profile_ids)
+
         # Read again rather than preloaded: `value` may predate its link
         # preview, which is written outside of edits.
         updated_value =
@@ -3779,6 +3800,8 @@ defmodule PotokIde.Social do
   end
 
   defp mention_role_candidates(%Access{} = access, %Group{} = group, query) do
+    group = Mentions.reach(group)
+
     if Access.can?(access, :mention_roles) do
       counts = Access.role_member_counts(group)
 
@@ -3798,7 +3821,9 @@ defmodule PotokIde.Social do
     end
   end
 
+  # In a thread, the members of its group: a mention takes them in.
   defp mention_profile_candidates(%Profile{} = profile, %Group{} = group, query, limit) do
+    group = Mentions.reach(group)
     pattern = String.replace(query, ~r/[\\%_]/, "\\\\\\0") <> "%"
 
     from(p in Profile,

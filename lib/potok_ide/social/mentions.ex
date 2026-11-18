@@ -6,6 +6,10 @@ defmodule PotokIde.Social.Mentions do
   author may mention roles) or a member's username, matched case-insensitively.
   A role wins when a role and a username share a name. Text inside code spans
   and code blocks is never a mention.
+
+  In a thread a mention reaches the members of its group (`reach/1`): a
+  thread holds only those who take part, and a mention takes the mentioned in
+  (`Social`).
   """
 
   import Ecto.Query, warn: false
@@ -49,6 +53,16 @@ defmodule PotokIde.Social.Mentions do
   end
 
   @doc """
+  The group whose members and roles a mention in `group` reaches: a thread's
+  group for a thread, else the group itself.
+  """
+  def reach(%Group{parent_value_id: value_id, parent_id: parent_id})
+      when not is_nil(value_id) and not is_nil(parent_id),
+      do: %Group{id: parent_id}
+
+  def reach(%Group{} = group), do: group
+
+  @doc """
   Resolves the mentions of `content` written by `author` in `group`.
 
   Returns `{mentions, profile_ids}`: the handles that resolved, as
@@ -73,12 +87,14 @@ defmodule PotokIde.Social.Mentions do
         %{}
       end
 
+    reached = reach(group)
+
     member_ids_by_name =
       from(p in Profile,
         join: gm in GroupMembership,
         on: gm.profile_id == p.id,
         where:
-          gm.group_id == ^group.id and p.kind == :person and
+          gm.group_id == ^reached.id and p.kind == :person and
             fragment("lower(?)", p.username) in ^handles,
         select: {fragment("lower(?)", p.username), p.id}
       )
@@ -98,7 +114,7 @@ defmodule PotokIde.Social.Mentions do
 
     role_profile_ids =
       Enum.flat_map(role_names, fn name ->
-        Access.profile_ids_with_role(group, Map.fetch!(roles_by_name, name).key)
+        Access.profile_ids_with_role(reached, Map.fetch!(roles_by_name, name).key)
       end)
 
     profile_ids =
