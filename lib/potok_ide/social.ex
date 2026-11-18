@@ -2959,10 +2959,14 @@ defmodule PotokIde.Social do
     )
     |> Multi.delete(:value, value)
     |> Multi.run(:group_last_value_at, fn repo, _changes ->
+      # The newest by id, which grows with the time of writing: the chat's
+      # index on (group_id, id) answers it from its end.
       latest =
         from(v in Value,
           where: v.group_id == ^value.group_id and v.is_data == false,
-          select: max(v.inserted_at)
+          order_by: [desc: v.id],
+          limit: 1,
+          select: v.inserted_at
         )
         |> repo.one()
 
@@ -5430,7 +5434,7 @@ defmodule PotokIde.Social do
 
     from(v in Value,
       where: v.group_id == ^group.id and v.is_data == false,
-      order_by: [asc: v.inserted_at, asc: v.id],
+      order_by: [asc: v.id],
       preload: ^value_display_preloads()
     )
     |> maybe_paginate(opts)
@@ -6395,8 +6399,9 @@ defmodule PotokIde.Social do
       is_binary(opts[:collection]) ->
         from(v in query, order_by: [{^scan, v.id}])
 
+      # By id, which grows with the time of writing, as the cursors page.
       true ->
-        from(v in query, order_by: [{^scan, v.inserted_at}, {^scan, v.id}])
+        from(v in query, order_by: [{^scan, v.id}])
     end
   end
 
@@ -6437,7 +6442,7 @@ defmodule PotokIde.Social do
 
     from(v in Value,
       where: v.group_id == ^group.id and v.is_data == true,
-      order_by: [desc: v.inserted_at, desc: v.id],
+      order_by: [desc: v.id],
       limit: 1,
       select: v.id
     )
@@ -6449,7 +6454,7 @@ defmodule PotokIde.Social do
 
     from(v in Value,
       where: v.group_id == ^group.id and v.is_data == true,
-      order_by: [desc: v.inserted_at, desc: v.id],
+      order_by: [desc: v.id],
       limit: 1
     )
     |> Repo.one()
@@ -7594,7 +7599,7 @@ defmodule PotokIde.Social do
   defp maybe_order_data_value_field(query, order_field, order_dir) do
     case normalize_data_value_jsonb_field(order_field) do
       nil ->
-        from(v in query, order_by: [asc: v.inserted_at, asc: v.id])
+        from(v in query, order_by: [asc: v.id])
 
       "number" = jsonb_field ->
         case normalize_data_value_order_dir(order_dir) do
@@ -7610,7 +7615,6 @@ defmodule PotokIde.Social do
                     ^jsonb_field
                   ),
                 desc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
-                desc: v.inserted_at,
                 desc: v.id
               ]
             )
@@ -7627,7 +7631,6 @@ defmodule PotokIde.Social do
                     ^jsonb_field
                   ),
                 asc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
-                asc: v.inserted_at,
                 asc: v.id
               ]
             )
@@ -7639,7 +7642,6 @@ defmodule PotokIde.Social do
             from(v in query,
               order_by: [
                 desc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
-                desc: v.inserted_at,
                 desc: v.id
               ]
             )
@@ -7648,7 +7650,6 @@ defmodule PotokIde.Social do
             from(v in query,
               order_by: [
                 asc: fragment("LOWER(COALESCE(? ->> ?, ''))", v.data, ^jsonb_field),
-                asc: v.inserted_at,
                 asc: v.id
               ]
             )
