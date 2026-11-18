@@ -23,7 +23,7 @@ Najkraći put je preset: **Kreiraj podgrupu** pa **Forma**. Grupa počinje zatvo
 
 Preset uzima kopiju iz `priv/apps/forme.html`, koju `mix potok.sync_apps` osvežava iz build-a projekta. Svaka forma čuva kopiju sa kojom je napravljena, pa nova verzija stiže samo u forme napravljene posle nje.
 
-Ručno: u `potok-forme` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)** i u opis nalepi `dist/potok-build.html`.
+Ručno: u `potok-forme` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)**, pa na kartici **Opis** klikni **Otpremi ZIP** i izaberi `dist/potok-build.html` (ili ZIP sa njim).
 
 ## Ko šta sme
 

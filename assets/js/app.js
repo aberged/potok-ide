@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
+import { DescriptionArchive } from "./description_archive"
 import { ComposerDraft, DraftMark, clearAllDrafts } from "./drafts"
 import { KeyboardMedia } from "./keyboard_media"
 import { LocationPicker } from "./location_picker"
@@ -1892,6 +1893,7 @@ const liveSocket = new LiveSocket("/live", Socket, {
     SharePreview,
     ComposerDraft,
     DraftMark,
+    DescriptionArchive,
     ...colocatedHooks,
   },
   uploaders: Uploaders,

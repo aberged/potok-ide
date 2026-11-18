@@ -44,11 +44,11 @@ Preset uzima kopije iz `priv/apps`, koje `mix potok.sync_apps` osvežava iz buil
 Ručno, na primer u postojećoj grupi:
 
 1. U oba projekta pokreni `npm run build`. Svaki pravi jedan fajl, `dist/potok-build.html`.
-2. Napravi roditeljsku grupu, ili otvori postojeću. U **Uredi grupu** uključi **Opis je aplikacija (API)** i u opis nalepi build Feed-a.
+2. Napravi roditeljsku grupu, ili otvori postojeću. U **Uredi grupu** uključi **Opis je aplikacija (API)**, pa na kartici **Opis** klikni **Otpremi ZIP** i izaberi build Feed-a.
 3. U toj grupi napravi podgrupu tačnog imena `.feed`:
    - uključi **Nasleđuje članove**;
    - uključi **Javna grupa** ako je roditeljska grupa javna;
-   - uključi **Opis je aplikacija (API)** i u opis nalepi build FeedCreator-a.
+   - uključi **Opis je aplikacija (API)** i otpremi build FeedCreator-a (**Otpremi ZIP**).
 4. U `.feed` otvori **Uloge**, klikni **Napravi sopstveni manifest** i za ulogu **Svi** isključi **Kreiranje podgrupa**. Bez toga svaki član može ručno da napravi javnu grupu u `.feed`, i ona odmah ulazi u feed.
 5. Ako objavljuju i drugi, a ne samo admini, u istom manifestu napravi ulogu, na primer `urednik`, i daj joj **Kreiranje podgrupa** i **Uređivanje grupe**.
 

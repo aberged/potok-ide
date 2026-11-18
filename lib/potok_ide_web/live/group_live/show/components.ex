@@ -1546,12 +1546,18 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: nil,
     doc: "the upload of a template's picture, when its author may add a file"
 
+  attr :archive_name, :string,
+    default: nil,
+    doc: "name of the ZIP an app's description downloads as, without `.zip`"
+
   @doc """
   Writes a description (the default one or an alternative): editor,
-  side-by-side or preview layout with a live preview, which runs apps with
-  their API refused, and the format choice. The layout is remembered for
-  the browser session. With `templates` the editor can be a template's form
-  instead (`DescriptionTemplateForm`); an app has none.
+  side-by-side or preview layout with a live preview, and the format choice.
+  The layout is remembered for the browser session. With `templates` the
+  editor can be a template's form instead (`DescriptionTemplateForm`).
+
+  An app has no template, editor or preview: it goes in and out as a file
+  (`app_archive/1`), and its format is HTML, which the changesets force too.
   """
   def description_workspace(assigns) do
     app? = assigns.uses_api in [true, "true"]
@@ -1582,7 +1588,14 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         {gettext("Templates are for written descriptions. This description is an app.")}
       </p>
 
-      <div class="group-description-workspace mt-4">
+      <.app_archive
+        :if={@app?}
+        id_prefix={@id_prefix}
+        field={@description_field}
+        archive_name={@archive_name}
+      />
+
+      <div :if={!@app?} class="group-description-workspace mt-4">
         <div
           id={"#{@id_prefix}-layout-selector"}
           phx-hook=".PersistDescriptionLayout"
@@ -1697,15 +1710,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               {gettext("Start typing to preview the description.")}
             </div>
 
-            <.app_frame
-              :if={!blank_text?(@description_field.value) and @app?}
-              id={"#{@id_prefix}-app-frame-preview"}
-              html={@description_field.value}
-              api={false}
-              class="min-h-96"
-            />
             <.formatted_content
-              :if={!blank_text?(@description_field.value) and !@app?}
+              :if={!blank_text?(@description_field.value)}
               content={@description_field.value || ""}
               content_format={normalize_description_format(@format_field.value)}
               class="min-h-48"
@@ -1714,23 +1720,171 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </div>
       </div>
 
+      <%!-- An app is HTML: the params still say Markdown on the change that
+           turns the switch on, so the app decides what is checked, and the
+           next change sends HTML. --%>
       <div :if={!@post} class="mt-3 flex items-start gap-4 h-3/4 overflow-auto">
-        <fieldset class="fieldset">
+        <fieldset id={"#{@id_prefix}-format"} class="fieldset">
           <div class="flex flex-wrap gap-3">
-            <label :for={{label, value} <- @format_options} class="inline-flex items-center gap-2">
+            <label
+              :for={{label, value} <- @format_options}
+              class={[
+                "inline-flex items-center gap-2",
+                (@app? and value != :html) && "cursor-not-allowed opacity-50"
+              ]}
+            >
               <input
                 type="radio"
+                id={"#{@id_prefix}-format-#{value}"}
                 name={@format_field.name}
                 value={Atom.to_string(value)}
-                checked={description_format_checked?(@format_field.value, value)}
+                checked={
+                  if(@app?,
+                    do: value == :html,
+                    else: description_format_checked?(@format_field.value, value)
+                  )
+                }
+                disabled={@app? and value != :html}
                 class="radio radio-sm"
               /> <span>{label}</span>
             </label>
           </div>
+          <p :if={@app?} id={"#{@id_prefix}-format-app"} class="text-xs text-base-content/65">
+            {gettext("An app is always HTML.")}
+          </p>
         </fieldset>
       </div>
     </div>
     """
+  end
+
+  attr :id_prefix, :string, required: true
+  attr :field, Phoenix.HTML.FormField, required: true, doc: "the description's field"
+  attr :archive_name, :string, default: nil
+
+  # An app's description goes in and out as a file, read and written in the
+  # browser (`DescriptionArchive`, assets/js/description_archive.js): a ZIP
+  # with one HTML file, or the HTML file itself, and back as a ZIP holding
+  # `index.html`. No file reaches the server: the HTML goes into the hidden
+  # field, which the form sends as it sends typed text. The buttons and the
+  # hook's line about the file stay the hook's; the size is the server's.
+  defp app_archive(assigns) do
+    html = if is_binary(assigns.field.value), do: assigns.field.value, else: ""
+
+    assigns =
+      assigns
+      |> assign(:html, html)
+      |> assign(:size, byte_size(html))
+      |> assign(:file_name, archive_file_name(assigns.archive_name))
+
+    ~H"""
+    <div
+      id={"#{@id_prefix}-app"}
+      class="mt-4 rounded-2xl border border-base-300/80 bg-base-100/80 p-4 shadow-sm"
+    >
+      <input type="hidden" id={"#{@id_prefix}-app-html"} name={@field.name} value={@html} />
+
+      <div class="flex items-start gap-3">
+        <span class="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <.icon name="hero-archive-box" class="size-5" />
+        </span>
+        <div class="min-w-0">
+          <p id={"#{@id_prefix}-app-size"} class="font-medium text-base-content">
+            {if @size == 0,
+              do: gettext("No app yet"),
+              else: gettext("App, %{size}", size: format_bytes(@size))}
+          </p>
+          <p class="mt-0.5 text-xs text-base-content/65">
+            {gettext(
+              "Upload a ZIP with one HTML file, or the HTML file itself. Download gives the app back as a ZIP with index.html. The file stays on your device: only the app's HTML goes into the description."
+            )}
+          </p>
+        </div>
+      </div>
+
+      <div
+        id={"#{@id_prefix}-app-archive"}
+        phx-hook="DescriptionArchive"
+        phx-update="ignore"
+        data-input={"#{@id_prefix}-app-html"}
+        data-file-name={@file_name}
+        data-msg-loaded={
+          gettext("%{file} is in the description, %{size}. Save the changes to keep it.",
+            file: "{file}",
+            size: "{size}"
+          )
+        }
+        data-msg-skipped={
+          gettext("The other files in the archive are not used yet (%{count}).", count: "{count}")
+        }
+        data-msg-not-zip={gettext("This is not a ZIP archive or an HTML file, or it is damaged.")}
+        data-msg-no-html={gettext("There is no HTML file in the archive.")}
+        data-msg-many-html={
+          gettext("The archive holds more than one HTML file. Leave only one in it.")
+        }
+        data-msg-unsupported={
+          gettext("The archive is locked with a password or packed in a way the browser cannot open.")
+        }
+        data-msg-not-utf8={gettext("The HTML file is not in UTF-8. Save it as UTF-8 and try again.")}
+        data-msg-too-big={gettext("The HTML file is too big for a description.")}
+        data-msg-browser={gettext("This browser cannot open ZIP archives. Try a newer one.")}
+        data-msg-empty={gettext("There is no app to download yet.")}
+        data-msg-native={gettext("Download the ZIP in a browser: the phone app cannot save it.")}
+        data-msg-failed={gettext("The file could not be read.")}
+      >
+        <input
+          type="file"
+          accept=".zip,.html,.htm,application/zip,text/html"
+          tabindex="-1"
+          aria-hidden="true"
+          class="sr-only"
+          data-archive-file
+        />
+        <div class="mt-4 flex flex-wrap gap-2">
+          <.button
+            id={"#{@id_prefix}-app-upload"}
+            type="button"
+            variant="primary"
+            size="sm"
+            data-archive-upload
+          >
+            <.icon name="hero-arrow-up-tray" class="size-4" />
+            {gettext("Upload ZIP")}
+          </.button>
+          <.button
+            id={"#{@id_prefix}-app-download"}
+            type="button"
+            size="sm"
+            data-archive-download
+          >
+            <.icon name="hero-arrow-down-tray" class="size-4" />
+            {gettext("Download ZIP")}
+          </.button>
+        </div>
+        <p
+          id={"#{@id_prefix}-app-message"}
+          class="mt-3 text-sm text-base-content/80 data-error:text-error"
+          aria-live="polite"
+          hidden
+          data-archive-message
+        >
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  # A name every file system takes: Windows refuses these characters.
+  defp archive_file_name(name) do
+    name = if is_binary(name), do: name, else: ""
+
+    case name
+         |> String.replace(~r/[\\\/:*?"<>|\x00-\x1F]+/u, " ")
+         |> String.replace(~r/\s+/u, " ")
+         |> String.trim() do
+      "" -> gettext("app")
+      clean -> String.slice(clean, 0, 120)
+    end
   end
 
   defp description_format_checked?(current_value, option_value)

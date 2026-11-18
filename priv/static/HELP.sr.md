@@ -357,7 +357,7 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.
 
-Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
+Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Aplikaciju tada ne pišeš u polje, nego je otpremaš kao ZIP sa jednim HTML fajlom, ili kao sam HTML fajl, a postojeću preuzimaš kao ZIP. Fajl ne ide na server, u opis ide samo njen HTML. Isto važi i za alternativne opise. Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
 
 ![Šabloni za opis grupe](opis-sablon)
 

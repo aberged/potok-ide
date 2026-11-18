@@ -317,7 +317,21 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               )}
             </p>
 
+            <%!-- An app goes in and out as a file, two buttons that need no
+                 folding away. --%>
+            <Components.description_workspace
+              :if={app_form?(@edit_group_form)}
+              id_prefix="group-description"
+              description_field={@edit_group_form[:description]}
+              format_field={@edit_group_form[:description_format]}
+              uses_api={@edit_group_form[:uses_api].value}
+              format_options={@format_options}
+              templates
+              archive_name={@group.name}
+            />
+
             <details
+              :if={!app_form?(@edit_group_form)}
               id="group-edit-description-editor"
               open={@description_details_open}
               class="w-full rounded-2xl border border-base-300/80 bg-base-100/70 px-4 py-3 shadow-sm"
@@ -902,6 +916,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         templates
         template_list_open={@template_list_open}
         picture_upload={@picture_upload}
+        archive_name={alt_archive_name(@group, @form)}
       />
 
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
@@ -1130,6 +1145,18 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   defp new_alt_description?(%{id: nil}), do: true
   defp new_alt_description?(_editing), do: false
+
+  # Whether the form's description is an app, as the checkbox says right now.
+  defp app_form?(form), do: form[:uses_api].value in [true, "true"]
+
+  # An alternative app downloads as "Group – Name", or as the group while the
+  # name is still empty.
+  defp alt_archive_name(group, form) do
+    case form[:name].value do
+      name when is_binary(name) and name != "" -> "#{group.name} – #{name}"
+      _none -> group.name
+    end
+  end
 
   defp kind_label(%{uses_api: true}), do: gettext("App")
   defp kind_label(%{description_format: :html}), do: gettext("HTML")

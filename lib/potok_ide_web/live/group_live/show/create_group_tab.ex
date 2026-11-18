@@ -143,6 +143,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
               format_field={@new_group_form[:description_format]}
               uses_api={@new_group_form[:uses_api].value}
               format_options={@format_options}
+              archive_name={@new_group_form[:name].value}
             />
           </Components.settings_card>
 

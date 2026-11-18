@@ -20,7 +20,7 @@ Zato mapa vidi tačno ono što gledalac vidi: zatvorena grupa u kojoj nije član
 
 Najkraći put je preset: **Kreiraj podgrupu** pa **Mapa**. Koren ga ne nudi, jer ima svoju mapu. Grupa počinje zatvorena, sa aplikacijom u opisu. Preset uzima kopiju iz `priv/apps/mapa.html`, koju `mix potok.sync_apps` osvežava iz build-a projekta. Svaka mapa čuva kopiju sa kojom je napravljena.
 
-Ručno: u `potok-mapa` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)** i u opis nalepi `dist/potok-build.html`.
+Ručno: u `potok-mapa` pokreni `npm run build`, u **Uredi grupu** uključi **Opis je aplikacija (API)**, pa na kartici **Opis** klikni **Otpremi ZIP** i izaberi `dist/potok-build.html` (ili ZIP sa njim).
 
 Mesto dobija grupa na dva načina:
 

@@ -351,7 +351,7 @@ Some kinds of groups get a ready-made app:
 
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.
 
-Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
+Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). You then don't type the app into a field: you upload it as a ZIP with one HTML file, or as the HTML file itself, and download the current one as a ZIP. The file doesn't go to the server, only its HTML goes into the description. The same goes for alternative descriptions. Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
 
 ![Templates for a group's description](opis-sablon)
 
