@@ -48,6 +48,11 @@ defmodule PotokIde.Social.Value do
     # value, by `managed.process.triggered_by`; nil when a timer did, and for
     # the values of people (`Social.get_value_for_display/1` and the pages).
     field :process_trigger, :any, virtual: true
+    # Its reactions as their pills show them (`Social.value_reaction_summaries/2`):
+    # one entry per emoji, with the count and the first names, never every
+    # reaction with its profile, which a popular value would carry to every
+    # viewer. `mine?` is the viewer's, or false when no viewer was given.
+    field :reaction_summary, {:array, :any}, virtual: true, default: []
 
     belongs_to :creator, PotokIde.Social.Profile
     belongs_to :group, PotokIde.Social.Group

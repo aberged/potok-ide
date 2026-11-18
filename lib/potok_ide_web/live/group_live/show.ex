@@ -1558,8 +1558,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
                  value,
                  emoji
                ) do
-            {:ok, updated_value} ->
-              {:noreply, apply_value_updated(socket, updated_value)}
+            # The broadcast comes back to this page too, with whose it was.
+            {:ok, _updated_value} ->
+              {:noreply, socket}
 
             {:error, _reason} ->
               {:noreply, put_flash(socket, :error, gettext("Could not update reaction."))}
@@ -2875,6 +2876,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_reactions_updated, _group_id}, socket), do: {:noreply, socket}
 
+  # The pills come with the message; only whether they are the viewer's own
+  # stays the page's (`Components.keep_own_reactions/3`).
+  def handle_info(
+        {:group_reactions_updated, group_id, %{reactions: reactions, change: change}},
+        socket
+      )
+      when socket.assigns.group.id == group_id do
+    {:noreply,
+     assign(
+       socket,
+       :group_reactions,
+       Components.keep_own_reactions(
+         Map.get(socket.assigns, :group_reactions, []),
+         reactions,
+         change,
+         socket.assigns.current_profile
+       )
+     )}
+  end
+
+  def handle_info({:group_reactions_updated, _group_id, _update}, socket), do: {:noreply, socket}
+
   # A manifest or role assignment changed: permissions are recomputed with the
   # group reload, which also re-renders streamed values and members.
   def handle_info(
@@ -2983,6 +3006,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_info({:value_updated, _group_id, _value}, socket), do: {:noreply, socket}
+
+  def handle_info({:value_reacted, group_id, %Value{} = value, change}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply, apply_value_reacted(socket, value, change)}
+  end
+
+  def handle_info({:value_reacted, _group_id, _value, _change}, socket), do: {:noreply, socket}
 
   def handle_info({:value_deleted, group_id, value_id}, socket)
       when socket.assigns.group.id == group_id do
@@ -3932,16 +3962,88 @@ defmodule PotokIdeWeb.GroupLive.Show do
         _ -> socket
       end
 
-    # Broadcasts carry the value without tags or a poll's view, which depend on
-    # the viewer.
+    # Broadcasts carry the value without what depends on the viewer: its tags
+    # and own reactions come from what the page knows, a poll's view is read.
     if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
       {socket, value} = PollsState.with_views(socket, value)
 
-      stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
+      stream_insert(socket, :values, with_known_facts(socket, value))
     else
       socket
     end
   end
+
+  # A reaction to a value (`Social.toggle_value_reaction/4`): the reactor's
+  # pages note their own, then every page shows the new pills.
+  defp apply_value_reacted(socket, %Value{id: value_id} = value, %{actor_id: actor_id} = change) do
+    socket =
+      if match?(%{id: ^actor_id}, socket.assigns.current_profile) do
+        pair = {value_id, change.emoji}
+        mine = my_reactions(socket)
+
+        put_private(
+          socket,
+          :my_reactions,
+          if(change.added?, do: MapSet.put(mine, pair), else: MapSet.delete(mine, pair))
+        )
+      else
+        socket
+      end
+
+    apply_value_updated(socket, value)
+  end
+
+  # What a value's row shows of its viewer: the tags it sees and which
+  # reactions are its own. They come with the values a page loads and are
+  # kept for those still loaded, so a value a broadcast brings again (an edit,
+  # a reaction, a link preview) shows them with no query.
+  defp with_viewer_facts(socket, values, how) when how in [:reset, :add] do
+    values = Tags.put_tags(values, socket.assigns.current_profile, :value)
+    ids = MapSet.new(values, & &1.id)
+
+    {mine, tags} =
+      case how do
+        :reset ->
+          {MapSet.new(), %{}}
+
+        :add ->
+          kept = MapSet.union(socket.assigns.loaded_value_ids, ids)
+
+          {MapSet.filter(my_reactions(socket), fn {id, _emoji} ->
+             MapSet.member?(kept, id) and not MapSet.member?(ids, id)
+           end), Map.filter(value_tags(socket), fn {id, _tags} -> MapSet.member?(kept, id) end)}
+      end
+
+    mine =
+      for %Value{id: id, reaction_summary: summary} <- values,
+          %{mine?: true, emoji: emoji} <- summary,
+          into: mine,
+          do: {id, emoji}
+
+    tags =
+      for %Value{id: id, tags: [_ | _] = value_tags} <- values, into: tags, do: {id, value_tags}
+
+    socket =
+      socket
+      |> put_private(:my_reactions, mine)
+      |> put_private(:value_tags, tags)
+
+    {socket, values}
+  end
+
+  defp with_known_facts(socket, %Value{id: id} = value) do
+    mine = my_reactions(socket)
+
+    %{
+      value
+      | tags: Map.get(value_tags(socket), id, []),
+        reaction_summary:
+          Enum.map(value.reaction_summary, &%{&1 | mine?: MapSet.member?(mine, {id, &1.emoji})})
+    }
+  end
+
+  defp my_reactions(socket), do: socket.private[:my_reactions] || MapSet.new()
+  defp value_tags(socket), do: socket.private[:value_tags] || %{}
 
   # Reads the item again with the tags this profile sees, when it is on the page.
   defp apply_tags_changed(socket, :value, value_id),
@@ -4437,8 +4539,19 @@ defmodule PotokIdeWeb.GroupLive.Show do
     with true <- MapSet.member?(socket.assigns.loaded_value_ids, value_id),
          %Value{} = value <- Social.get_value_for_display(value_id) do
       {socket, value} = PollsState.with_views(socket, value)
+      %Value{tags: tags} = Tags.put_tags(value, socket.assigns.current_profile, :value)
 
-      stream_insert(socket, :values, Tags.put_tags(value, socket.assigns.current_profile, :value))
+      socket =
+        put_private(
+          socket,
+          :value_tags,
+          if(tags == [],
+            do: Map.delete(value_tags(socket), value_id),
+            else: Map.put(value_tags(socket), value_id, tags)
+          )
+        )
+
+      stream_insert(socket, :values, with_known_facts(socket, value))
     else
       _ -> socket
     end
@@ -5293,10 +5406,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {older_values, has_more?} =
         Social.list_group_values_page(socket.assigns.group,
           before_id: socket.assigns.oldest_value_id,
-          limit: @values_page_size
+          limit: @values_page_size,
+          viewer: socket.assigns.current_profile
         )
 
-      older_values = Tags.put_tags(older_values, socket.assigns.current_profile, :value)
+      {socket, older_values} = with_viewer_facts(socket, older_values, :add)
       {socket, older_values} = PollsState.with_views(socket, older_values)
 
       socket
@@ -5317,10 +5431,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
       {newer_values, has_newer?} =
         Social.list_group_values_page(socket.assigns.group,
           after_id: socket.assigns.newest_value_id,
-          limit: @values_page_size
+          limit: @values_page_size,
+          viewer: socket.assigns.current_profile
         )
 
-      newer_values = Tags.put_tags(newer_values, socket.assigns.current_profile, :value)
+      {socket, newer_values} = with_viewer_facts(socket, newer_values, :add)
       {socket, newer_values} = PollsState.with_views(socket, newer_values)
 
       socket
@@ -5622,7 +5737,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
           {values, has_newer?} =
             Social.list_group_values_page(group,
               after_id: socket.assigns.oldest_value_id - 1,
-              limit: limit
+              limit: limit,
+              viewer: socket.assigns.current_profile
             )
 
           put_values(socket, values, socket.assigns.values_has_more?, has_newer?)
@@ -5636,14 +5752,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp load_latest_values(socket, group, limit \\ @values_page_size) do
-    {values, has_more?} = Social.list_group_values_page(group, limit: limit)
+    {values, has_more?} =
+      Social.list_group_values_page(group, limit: limit, viewer: socket.assigns.current_profile)
+
     put_values(socket, values, has_more?, false)
   end
 
   defp load_values_around(socket, value_id) do
     case Social.list_group_values_around(socket.assigns.group, value_id,
            older: @values_window_older,
-           newer: @values_window_newer
+           newer: @values_window_newer,
+           viewer: socket.assigns.current_profile
          ) do
       {values, has_more?, has_newer?} -> {:ok, put_values(socket, values, has_more?, has_newer?)}
       nil -> :error
@@ -5652,7 +5771,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # Replaces the feed with `values`, a contiguous run oldest first.
   defp put_values(socket, values, has_more?, has_newer?) do
-    values = Tags.put_tags(values, socket.assigns.current_profile, :value)
+    {socket, values} = with_viewer_facts(socket, values, :reset)
     {socket, values} = PollsState.with_views(socket, values)
 
     socket

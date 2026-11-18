@@ -153,10 +153,10 @@ defmodule PotokIdeWeb.GroupLive.OpenChatTest do
 
       render_hook(view, "toggle_reaction", %{"id" => value.id, "emoji" => "👍"})
 
-      assert [%{profile_id: profile_id}] =
-               Social.get_value_for_display(value.id).reactions
+      assert [%{emoji: _emoji, count: 1, names: [name]}] =
+               Social.get_value_for_display(value.id).reaction_summary
 
-      assert profile_id == ctx.visitor.id
+      assert name == ctx.visitor.username
     end
 
     test "threads and tags stay with the members", ctx do

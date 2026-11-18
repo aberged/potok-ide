@@ -462,6 +462,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Value", "process_trigger"),
     do: dgettext("domain_map", "who set the process going")
 
+  defp own_field("Value", "reaction_summary"),
+    do: dgettext("domain_map", "reactions by emoji, with how many and the first names")
+
   defp own_field("PollOption", "text"), do: dgettext("domain_map", "text")
   defp own_field("PollOption", "votes_count"), do: dgettext("domain_map", "votes")
 

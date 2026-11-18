@@ -2407,11 +2407,69 @@ defmodule PotokIde.Social do
 
   def get_value!(id), do: Repo.get!(Value, id)
 
-  @doc "Loads a single value with the associations the values tab renders, or nil."
+  @doc """
+  Loads a single value with the associations the values tab renders, or nil.
+  Its reactions say nothing of a viewer (`mine?` is false): pages put that
+  back themselves.
+  """
   def get_value_for_display(id) when is_integer(id) do
     from(v in Value, where: v.id == ^id, preload: ^value_display_preloads())
     |> Repo.one()
-    |> put_process_triggers()
+    |> put_display_extras()
+  end
+
+  # What a value shows beyond its preloads: who set off its process and its
+  # reactions, with `viewer_id`'s marked when one is given.
+  defp put_display_extras(values, viewer_id \\ nil)
+  defp put_display_extras(nil, _viewer_id), do: nil
+
+  defp put_display_extras(%Value{} = value, viewer_id),
+    do: hd(put_display_extras([value], viewer_id))
+
+  defp put_display_extras(values, viewer_id) when is_list(values) do
+    values = put_process_triggers(values)
+
+    summaries =
+      values
+      |> Enum.reject(& &1.is_data)
+      |> Enum.map(& &1.id)
+      |> value_reaction_summaries(viewer_id)
+
+    Enum.map(values, &%{&1 | reaction_summary: Map.get(summaries, &1.id, [])})
+  end
+
+  @doc """
+  The reactions of each of `value_ids` as `%{value_id => [reaction]}`, as
+  `group_reaction_summaries/2` gives them for groups: one entry per emoji in
+  the order it was first used, with `:emoji`, `:key`, `:count`, `:names` (the
+  first 20) and `:mine?` (`viewer_id`'s, false for nil). One query, none for
+  no ids.
+  """
+  def value_reaction_summaries([], _viewer_id), do: %{}
+
+  def value_reaction_summaries(value_ids, viewer_id) when is_list(value_ids) do
+    from(r in ValueReaction,
+      join: p in assoc(r, :profile),
+      where: r.value_id in ^value_ids,
+      group_by: [r.value_id, r.emoji],
+      order_by: [asc: min(r.id)],
+      select:
+        {r.value_id,
+         %{
+           emoji: r.emoji,
+           count: count(r.id),
+           mine?:
+             fragment("COALESCE(bool_or(? = ?), false)", r.profile_id, type(^viewer_id, :id)),
+           names: fragment("(array_agg(? ORDER BY ?))[1:20]", p.username, r.id)
+         }}
+    )
+    |> Repo.all()
+    |> Enum.group_by(
+      fn {value_id, _reaction} -> value_id end,
+      fn {_value_id, reaction} ->
+        Map.put(reaction, :key, Base.encode16(reaction.emoji, case: :lower))
+      end
+    )
   end
 
   # Who set off the step of an app's process that posted each value, for the
@@ -2447,16 +2505,13 @@ defmodule PotokIde.Social do
   # and `Polls.put_views/5` reads what each viewer sees. An author that is an
   # app's process comes with it, for its name (`Profile.display_name/1`).
   defp value_display_preloads do
-    reactions = from(r in ValueReaction, order_by: [asc: r.id])
-
     [
       :thread,
       :event,
       :poll,
       creator: :app_process,
       attachments: attachments_in_order(),
-      parent: [:event, creator: :app_process, attachments: attachments_in_order()],
-      reactions: {reactions, :profile}
+      parent: [:event, creator: :app_process, attachments: attachments_in_order()]
     ]
   end
 
@@ -2596,7 +2651,7 @@ defmodule PotokIde.Social do
         |> Repo.transaction()
         |> case do
           {:ok, %{value: value, processes: started}} ->
-            value = value |> Repo.preload(value_display_preloads()) |> put_process_triggers()
+            value = value |> Repo.preload(value_display_preloads()) |> put_display_extras()
 
             {:ok, value,
              fn ->
@@ -2834,7 +2889,7 @@ defmodule PotokIde.Social do
           get_value_for_display(updated_value.id) ||
             updated_value
             |> Repo.preload(value_display_preloads(), force: true)
-            |> put_process_triggers()
+            |> put_display_extras()
 
         broadcast_value_updated(updated_value)
         broadcast_values_updated(reply_ids(updated_value))
@@ -3052,7 +3107,7 @@ defmodule PotokIde.Social do
   defp broadcast_values_updated(value_ids) do
     from(v in Value, where: v.id in ^value_ids, preload: ^value_display_preloads())
     |> Repo.all()
-    |> put_process_triggers()
+    |> put_display_extras()
     |> Enum.each(&broadcast_value_updated/1)
   end
 
@@ -3193,7 +3248,12 @@ defmodule PotokIde.Social do
             {:error, :value_not_found}
 
           {_result, %Value{} = updated_value} ->
-            broadcast_value_updated(updated_value)
+            broadcast_value_reacted(updated_value, %{
+              actor_id: profile.id,
+              emoji: emoji,
+              added?: result != :ok
+            })
+
             # As with a reaction to a group, someone outside it pushes nobody.
             if access.member?,
               do: notify_value_creator_of_reaction(result, profile, group, updated_value)
@@ -3244,8 +3304,15 @@ defmodule PotokIde.Social do
             error
 
           _changed ->
-            broadcast_group_reactions_updated(group)
-            {:ok, Map.get(group_reaction_summaries([group.id], profile), group.id, [])}
+            summaries = Map.get(group_reaction_summaries([group.id], profile), group.id, [])
+
+            broadcast_group_reactions_updated(group, summaries, %{
+              actor_id: profile.id,
+              emoji: emoji,
+              added?: result != :ok
+            })
+
+            {:ok, summaries}
         end
     end
   end
@@ -5245,6 +5312,14 @@ defmodule PotokIde.Social do
     |> Repo.all()
   end
 
+  # The profile whose reactions a page of values marks as its own.
+  defp viewer_id(opts) do
+    case Keyword.get(opts, :viewer) do
+      %Profile{id: id} -> id
+      _none -> nil
+    end
+  end
+
   def list_group_values(%Group{} = group, opts \\ []) do
     import Ecto.Query, only: [from: 2]
 
@@ -5255,7 +5330,7 @@ defmodule PotokIde.Social do
     )
     |> maybe_paginate(opts)
     |> Repo.all()
-    |> put_process_triggers()
+    |> put_display_extras(viewer_id(opts))
   end
 
   @doc """
@@ -5280,7 +5355,7 @@ defmodule PotokIde.Social do
           from(v in query, where: v.id > ^after_id, order_by: [asc: v.id])
           |> Repo.all()
 
-        {rows |> Enum.take(limit) |> put_process_triggers(), length(rows) > limit}
+        {rows |> Enum.take(limit) |> put_display_extras(viewer_id(opts)), length(rows) > limit}
 
       nil ->
         rows =
@@ -5288,7 +5363,7 @@ defmodule PotokIde.Social do
           |> maybe_before_id(opts[:before_id])
           |> Repo.all()
 
-        {rows |> Enum.take(limit) |> Enum.reverse() |> put_process_triggers(),
+        {rows |> Enum.take(limit) |> Enum.reverse() |> put_display_extras(viewer_id(opts)),
          length(rows) > limit}
     end
   end
@@ -5310,9 +5385,13 @@ defmodule PotokIde.Social do
     newer = Keyword.get(opts, :newer, 20)
 
     # `after_id` is exclusive, so starting one id lower takes the value first.
-    case list_group_values_page(group, after_id: value_id - 1, limit: newer + 1) do
+    viewer = Keyword.get(opts, :viewer)
+
+    case list_group_values_page(group, after_id: value_id - 1, limit: newer + 1, viewer: viewer) do
       {[%Value{id: ^value_id} | _] = from_value, newer?} ->
-        {before, older?} = list_group_values_page(group, before_id: value_id, limit: older)
+        {before, older?} =
+          list_group_values_page(group, before_id: value_id, limit: older, viewer: viewer)
+
         {before ++ from_value, older?, newer?}
 
       _ ->
@@ -8224,11 +8303,27 @@ defmodule PotokIde.Social do
     )
   end
 
-  defp broadcast_group_reactions_updated(%Group{id: group_id}) do
+  # A reaction to the group: its pages take the pills from the message, the
+  # same for everyone but `mine?`, which each page keeps (`change` says whose
+  # reaction it was).
+  defp broadcast_group_reactions_updated(%Group{id: group_id}, summaries, change) do
+    reactions = Enum.map(summaries, &Map.put(&1, :mine?, false))
+
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
       group_topic(group_id),
-      {:group_reactions_updated, group_id}
+      {:group_reactions_updated, group_id, %{reactions: reactions, change: change}}
+    )
+  end
+
+  # A reaction to a value: its pages show the new pills. `change` says whose
+  # reaction it was, so the reactor's pages know their own (`mine?` in the
+  # value says nothing of a viewer).
+  defp broadcast_value_reacted(%Value{group_id: group_id} = value, change) do
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:value_reacted, group_id, value, change}
     )
   end
 

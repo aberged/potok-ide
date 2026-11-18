@@ -234,6 +234,24 @@ defmodule PotokIdeWeb.GroupLive.Sheet do
       when group_id == socket.assigns.group.id,
       do: {:noreply, load_reactions(socket)}
 
+  def handle_info(
+        {:group_reactions_updated, group_id, %{reactions: reactions, change: change}},
+        socket
+      )
+      when group_id == socket.assigns.group.id do
+    {:noreply,
+     assign(
+       socket,
+       :group_reactions,
+       PotokIdeWeb.GroupLive.Show.Components.keep_own_reactions(
+         socket.assigns.group_reactions,
+         reactions,
+         change,
+         socket.assigns.current_profile
+       )
+     )}
+  end
+
   def handle_info({event, group_id}, socket)
       when event in [
              :group_updated,

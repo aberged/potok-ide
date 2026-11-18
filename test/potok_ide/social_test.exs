@@ -3443,15 +3443,16 @@ defmodule PotokIde.SocialTest do
       group: group,
       value: value
     } do
-      assert value.reactions == []
+      assert value.reaction_summary == []
 
       assert {:ok, reacted} = Social.toggle_value_reaction(owner, group, value, "👍")
-      assert [%{emoji: "👍", profile_id: profile_id, profile: profile}] = reacted.reactions
-      assert profile_id == owner.id
-      assert profile.username == "react-owner"
+      assert [%{emoji: "👍", count: 1, names: ["react-owner"]}] = reacted.reaction_summary
+
+      assert [%{reaction_summary: [%{mine?: true}]}] =
+               Social.list_group_values(group, viewer: owner)
 
       assert {:ok, unreacted} = Social.toggle_value_reaction(owner, group, value, "👍")
-      assert unreacted.reactions == []
+      assert unreacted.reaction_summary == []
     end
 
     test "lets one profile hold several different emoji on a value", %{
@@ -3463,9 +3464,9 @@ defmodule PotokIde.SocialTest do
       {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "👍🏽")
       {:ok, reacted} = Social.toggle_value_reaction(owner, group, value, "👨‍👩‍👧")
 
-      assert Enum.map(reacted.reactions, & &1.emoji) == ["👍", "👍🏽", "👨‍👩‍👧"]
+      assert Enum.map(reacted.reaction_summary, & &1.emoji) == ["👍", "👍🏽", "👨‍👩‍👧"]
 
-      assert [%{reactions: reactions}] = Social.list_group_values(group)
+      assert [%{reaction_summary: reactions}] = Social.list_group_values(group)
       assert length(reactions) == 3
     end
 
@@ -3482,20 +3483,24 @@ defmodule PotokIde.SocialTest do
         assert {:ok, _value} = Social.toggle_value_reaction(owner, group, value, e)
       end
 
-      assert [%{reactions: reactions}] = Social.list_group_values(group)
+      assert [%{reaction_summary: reactions}] = Social.list_group_values(group)
       assert Enum.map(reactions, & &1.emoji) == emoji
     end
 
-    test "broadcasts the reloaded value to the group", %{
+    test "broadcasts the reloaded value to the group, with whose reaction it was", %{
       owner: owner,
       group: group,
       value: value
     } do
       Social.subscribe_group(group)
+      owner_id = owner.id
 
       {:ok, _value} = Social.toggle_value_reaction(owner, group, value, "🎉")
 
-      assert_receive {:value_updated, group_id, %{id: value_id, reactions: [%{emoji: "🎉"}]}}
+      assert_receive {:value_reacted, group_id,
+                      %{id: value_id, reaction_summary: [%{emoji: "🎉", count: 1, mine?: false}]},
+                      %{actor_id: ^owner_id, emoji: "🎉", added?: true}}
+
       assert group_id == group.id
       assert value_id == value.id
     end
@@ -3544,7 +3549,7 @@ defmodule PotokIde.SocialTest do
       assert {:error, :not_a_member_of_group} =
                Social.toggle_value_reaction(outsider, group, value, "👍")
 
-      assert [%{reactions: []}] = Social.list_group_values(group)
+      assert [%{reaction_summary: []}] = Social.list_group_values(group)
     end
 
     test "rejects anything that is not a single emoji", %{

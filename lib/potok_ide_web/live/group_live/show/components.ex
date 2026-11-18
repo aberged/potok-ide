@@ -1713,7 +1713,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       |> assign(:avatar_url, profile_picture_url(assigns.value.creator))
       |> assign(:process?, Profile.process?(assigns.value.creator))
       |> assign(:process_app_path, process_app_path(assigns.value))
-      |> assign(:reactions, reaction_summary(assigns.value.reactions, assigns.current_profile))
+      |> assign(:reactions, assigns.value.reaction_summary)
       |> assign(:reply_parent, reply_parent(assigns.value))
       |> assign(:thread, value_thread(assigns.value))
       |> assign(:has_text?, String.trim(assigns.value.content || "") != "")
@@ -2607,27 +2607,27 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp value_thread(%Value{thread: %Group{} = thread}), do: thread
   defp value_thread(_value), do: nil
 
-  # One pill per emoji, in the order the emoji was first used on the value.
-  defp reaction_summary(reactions, current_profile) when is_list(reactions) do
-    by_emoji = Enum.group_by(reactions, & &1.emoji)
-    current_profile_id = current_profile && current_profile.id
+  @doc """
+  The pills of a reaction broadcast (`reactions`, whose `mine?` says nothing
+  of a viewer) with the viewer's own marked: as they were on the page, but
+  for the emoji whose `change` was the viewer's.
+  """
+  def keep_own_reactions(previous, reactions, %{actor_id: actor_id} = change, viewer) do
+    own = for %{mine?: true, emoji: emoji} <- previous, into: MapSet.new(), do: emoji
 
-    reactions
-    |> Enum.uniq_by(& &1.emoji)
-    |> Enum.map(fn %{emoji: emoji} ->
-      emoji_reactions = Map.fetch!(by_emoji, emoji)
+    own =
+      case viewer do
+        %{id: ^actor_id} ->
+          if change.added?,
+            do: MapSet.put(own, change.emoji),
+            else: MapSet.delete(own, change.emoji)
 
-      %{
-        emoji: emoji,
-        key: Base.encode16(emoji, case: :lower),
-        count: length(emoji_reactions),
-        mine?: Enum.any?(emoji_reactions, &(&1.profile_id == current_profile_id)),
-        names: for(%{profile: %{username: username}} <- emoji_reactions, do: username)
-      }
-    end)
+        _other ->
+          own
+      end
+
+    Enum.map(reactions, &%{&1 | mine?: MapSet.member?(own, &1.emoji)})
   end
-
-  defp reaction_summary(_reactions, _current_profile), do: []
 
   # Labels for emoji-picker-element; the shape follows its `i18n/en.js`.
   defp emoji_picker_i18n do

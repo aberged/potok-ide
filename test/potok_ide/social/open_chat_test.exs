@@ -363,10 +363,10 @@ defmodule PotokIde.Social.OpenChatTest do
       capture_push_requests!()
       push_device!(ctx.member_account)
 
-      assert {:ok, %Value{reactions: [reaction]}} =
+      assert {:ok, %Value{reaction_summary: [reaction]}} =
                Social.toggle_value_reaction(ctx.visitor, ctx.group, ctx.value, "👍")
 
-      assert reaction.profile_id == ctx.visitor.id
+      assert reaction.names == [ctx.visitor.username]
       assert pushed_endpoints() == []
     end
 

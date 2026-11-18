@@ -136,8 +136,14 @@ defmodule PotokIde.Social.GroupReactionTest do
       Social.subscribe_group(ctx.group)
       {:ok, _reactions} = Social.toggle_group_reaction(ctx.visitor, ctx.group, "👍")
 
-      group_id = ctx.group.id
-      assert_receive {:group_reactions_updated, ^group_id}
+      # The pills come with the message, the same for every viewer.
+      {group_id, visitor_id} = {ctx.group.id, ctx.visitor.id}
+
+      assert_receive {:group_reactions_updated, ^group_id,
+                      %{
+                        reactions: [%{emoji: "👍", count: 1, mine?: false}],
+                        change: %{actor_id: ^visitor_id, emoji: "👍", added?: true}
+                      }}
     end
 
     test "goes with the group and with the profile", ctx do

@@ -248,6 +248,67 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
     assert has_element?(lv, "#group-unread-badge-#{group.id}", "1")
   end
 
+  test "a reaction costs a member's open chat no query, and stays the reactor's own", %{
+    conn: conn,
+    group: group,
+    profile: profile
+  } do
+    {member_conn, member} = member_conn("qc-member", group, profile)
+    [value] = Social.list_group_values(group)
+    {:ok, member_lv, _html} = live(member_conn, ~p"/groups/#{group.id}/values")
+    {:ok, owner_lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+    pill = "#value-reaction-#{value.id}-#{Base.encode16("👍", case: :lower)}"
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _value} = Social.toggle_value_reaction(profile, group, value, "👍")
+          render(member_lv)
+        end,
+        member_lv.pid
+      )
+
+    assert count == 0
+    assert has_element?(member_lv, ~s(#{pill}[aria-pressed="false"]), "1")
+    assert has_element?(owner_lv, ~s(#{pill}[aria-pressed="true"]), "1")
+
+    # The member's own reaction, and an edit after it, keep whose is whose.
+    {:ok, _value} = Social.toggle_value_reaction(member, group, value, "👍")
+    assert has_element?(member_lv, ~s(#{pill}[aria-pressed="true"]), "2")
+    {:ok, _edited} = Social.update_value(profile, value, %{"content" => "hello again"})
+    assert has_element?(member_lv, ~s(#{pill}[aria-pressed="true"]), "2")
+    assert has_element?(owner_lv, ~s(#{pill}[aria-pressed="true"]), "2")
+  end
+
+  test "a reaction to the group costs a viewer no query", %{profile: profile} do
+    {:ok, group} =
+      Social.create_group(profile, Social.get_root_group!(), %{
+        "name" => "qc-text-group",
+        "description" => "The text",
+        "description_format" => :markdown,
+        "is_public" => true
+      })
+
+    {member_conn, member} = member_conn("qc-member", group, profile)
+    {:ok, lv, _html} = live(member_conn, ~p"/groups/#{group.id}/group_home")
+    pill = "#group-reaction-#{Base.encode16("👍", case: :lower)}"
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _reactions} = Social.toggle_group_reaction(profile, group, "👍")
+          render(lv)
+        end,
+        lv.pid
+      )
+
+    assert count == 0
+    assert has_element?(lv, ~s(#{pill}[aria-pressed="false"]), "1")
+
+    {:ok, _reactions} = Social.toggle_group_reaction(member, group, "👍")
+    assert has_element?(lv, ~s(#{pill}[aria-pressed="true"]), "2")
+  end
+
   # A value written past `Social` sends no message, so it shows only if the
   # page reads its values again.
   test "renaming the group keeps the values on screen", %{
