@@ -150,7 +150,7 @@ defmodule PotokIde.Social.MemberInheritanceTest do
 
       add_member!(owner, parent, profile!("inh-newcomer"))
 
-      assert_receive {:group_updated, ^child_id}
+      assert_receive {:group_members_changed, ^child_id, %{changed: [:members]}}
     end
   end
 

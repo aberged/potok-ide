@@ -302,6 +302,10 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   def handle_info({:pending_group_join_requests_count_updated, _profile_id, _count}, socket),
     do: {:noreply, socket}
 
+  # A message no clause above knows (one that ProfileAuth passes on, or one a
+  # newer server sends during a deploy) is left alone, not a crash.
+  def handle_info(_message, socket), do: {:noreply, socket}
+
   defp current?(profile, %{id: id}), do: profile.id == id
   defp current?(_profile, nil), do: false
 

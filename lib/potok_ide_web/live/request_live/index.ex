@@ -637,6 +637,10 @@ defmodule PotokIdeWeb.RequestLive.Index do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  # A message no clause above knows (one that ProfileAuth passes on, or one a
+  # newer server sends during a deploy) is left alone, not a crash.
+  def handle_info(_message, socket), do: {:noreply, socket}
+
   defp assign_requests(socket, nil) do
     socket
     |> assign(:requests, [])

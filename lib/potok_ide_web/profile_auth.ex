@@ -174,11 +174,19 @@ defmodule PotokIdeWeb.ProfileAuth do
               {:halt, socket}
             end
 
-          # Halted here, as no view knows it: a page follows its profile's groups.
+          # A page follows its profile's groups. The group page also hears of
+          # it, as joining or leaving its own group changes what it shows.
           {:group_membership_changed, _profile_id, group_id, change} = message, socket ->
-            if current_profile_message?(message, socket),
-              do: {:halt, change_unread_group(socket, group_id, change)},
-              else: {:halt, socket}
+            cond do
+              not current_profile_message?(message, socket) ->
+                {:halt, socket}
+
+              socket.view == PotokIdeWeb.GroupLive.Show ->
+                {:cont, change_unread_group(socket, group_id, change)}
+
+              true ->
+                {:halt, change_unread_group(socket, group_id, change)}
+            end
 
           # Reads, memberships and deleted values: the badge is recounted once
           # per burst. Only views that show unread counts themselves

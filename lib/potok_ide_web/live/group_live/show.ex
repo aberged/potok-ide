@@ -128,6 +128,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # A sub-group that changed reloads the list on every page showing it: on
   # the root that can be every user's, so they spread over a second too.
   @children_refresh_spread_ms 1_000
+  # A change to the group itself (its settings, roles) reads the whole page
+  # again, on every page open on it: they spread over two seconds. Lists of
+  # members and requests, read only where they are on screen, over one.
+  @group_refresh_spread_ms 2_000
+  @members_refresh_spread_ms 1_000
 
   @impl true
   def render(assigns) do
@@ -2823,6 +2828,28 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
 
+  # Who belongs to the group, asks to join or is blocked changed: the header
+  # takes the numbers from the message, and only a list on screen is read
+  # again (`Social.broadcast_group_members_changed/3`).
+  def handle_info({:group_members_changed, group_id, change}, socket)
+      when socket.assigns.group.id == group_id and not is_nil(socket.assigns.current_profile) do
+    {:noreply, apply_members_changed(socket, change)}
+  end
+
+  def handle_info({:group_members_changed, _group_id, _change}, socket), do: {:noreply, socket}
+
+  # The viewer itself joined or left this group (`ProfileAuth` passes it on):
+  # what it may see and do changed, so the page reads itself again.
+  def handle_info(
+        {:group_membership_changed, profile_id, group_id, _change},
+        %{assigns: %{current_profile: %{id: profile_id}, group: %{id: group_id}}} = socket
+      ) do
+    {:noreply, schedule_refresh(socket, :group)}
+  end
+
+  def handle_info({:group_membership_changed, _profile_id, _group_id, _change}, socket),
+    do: {:noreply, socket}
+
   # A sub-group of this group was created, changed or deleted
   # (`Social.broadcast_child_group_changed/3`): only a list that shows it, or
   # could now, is read again.
@@ -3115,6 +3142,10 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_info({:account_profiles_updated, _account_id}, socket), do: {:noreply, socket}
 
+  # A message no clause above knows (one that ProfileAuth passes on, or one a
+  # newer server sends during a deploy) is left alone, not a crash.
+  def handle_info(_message, socket), do: {:noreply, socket}
+
   # Leaving the page (navigation or a closed tab) writes the read marker the
   # page still holds.
   @impl true
@@ -3243,6 +3274,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp refresh_spread_ms(:unread), do: :rand.uniform(@unread_refresh_spread_ms)
   defp refresh_spread_ms(:unread_values), do: :rand.uniform(@unread_values_spread_ms)
   defp refresh_spread_ms(:children), do: :rand.uniform(@children_refresh_spread_ms)
+  defp refresh_spread_ms(:group), do: :rand.uniform(@group_refresh_spread_ms)
+
+  defp refresh_spread_ms(kind) when kind in [:members, :member_summary],
+    do: :rand.uniform(@members_refresh_spread_ms)
+
   defp refresh_spread_ms(_kind), do: 0
 
   # `:unread_values` are values posted since the last count, added without a
@@ -3264,6 +3300,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
     socket =
       if MapSet.member?(pending, :children) and not MapSet.member?(pending, :group),
         do: reload_children_or_retry(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :member_summary) and not MapSet.member?(pending, :group),
+        do: reload_member_summary_or_retry(socket),
+        else: socket
+
+    socket =
+      if MapSet.member?(pending, :members) and not MapSet.member?(pending, :group),
+        do: reload_member_lists_or_retry(socket),
         else: socket
 
     socket =
@@ -3341,6 +3387,69 @@ defmodule PotokIdeWeb.GroupLive.Show do
     DBConnection.ConnectionError -> schedule_refresh(socket, :children)
   end
 
+  defp reload_member_summary_or_retry(socket) do
+    load_member_summary(socket, socket.assigns.group)
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :member_summary)
+  end
+
+  # The members tab's lists: members, join requests and blocks.
+  defp reload_member_lists_or_retry(socket) do
+    %{group: group, active_tab: active_tab} = socket.assigns
+
+    socket
+    |> load_join_request_data(group, active_tab)
+    |> maybe_load_members(group, active_tab)
+  rescue
+    DBConnection.ConnectionError -> schedule_refresh(socket, :members)
+  end
+
+  # What `Social.broadcast_group_members_changed/3` sent. The numbers, when
+  # they came, are the header's; the profile the change is about reads its
+  # page again, as what it may do changed; the members tab reads its lists.
+  defp apply_members_changed(socket, %{changed: changed} = change) do
+    %{group: group, access: access, active_tab: active_tab} = socket.assigns
+
+    socket =
+      case change do
+        %{member_count: count, first3: first3} when not is_nil(group.parent_id) ->
+          assign(socket, members_count: count, first3_members: first3)
+
+        %{member_count: _count} ->
+          socket
+
+        _without_numbers ->
+          schedule_refresh(socket, :member_summary)
+      end
+
+    socket =
+      case change do
+        %{join_request_count: count} ->
+          if Access.can?(access, :manage_join_requests),
+            do: assign(socket, :pending_join_requests_count, count),
+            else: socket
+
+        _without_numbers ->
+          if :requests in changed and Access.can?(access, :manage_join_requests),
+            do:
+              assign(
+                socket,
+                :pending_join_requests_count,
+                Social.count_pending_group_join_requests(group)
+              ),
+            else: socket
+      end
+
+    socket =
+      if change[:profile_id] == socket.assigns.current_profile.id,
+        do: schedule_refresh(socket, :group),
+        else: socket
+
+    if needs_members?(group, active_tab),
+      do: schedule_refresh(socket, :members),
+      else: socket
+  end
+
   defp reload_current_group(socket) do
     current_profile = socket.assigns.current_profile
     group = Social.get_group!(socket.assigns.group.id)
@@ -3348,10 +3457,17 @@ defmodule PotokIdeWeb.GroupLive.Show do
     previous_newest_value_id = socket.assigns.newest_value_id
 
     if can_view_group?(group, access.member?) do
+      # Streamed values keep what they were rendered with, so they are sent
+      # again only when the access or the group's fields they show changed.
+      keep_values? =
+        value_facts(socket.assigns.group, socket.assigns.access) == value_facts(group, access)
+
       socket
       |> assign_access(access)
       |> NoticesState.reload(group, access)
+      |> put_private(:keep_values?, keep_values?)
       |> load_group_data(group)
+      |> put_private(:keep_values?, false)
       |> maybe_scroll_values_to_latest(previous_newest_value_id)
     else
       socket
@@ -5409,7 +5525,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
   # first of them, where the divider stands; fewer are among the newest. A
   # feed showing earlier values reloads the same span, and one at the newest
   # reloads as many of the newest as it had.
+  # What a streamed value's row reads of the page besides the value itself.
+  defp value_facts(group, access),
+    do:
+      {access,
+       Map.take(group, [:id, :is_public, :uses_api, :is_direct, :is_root, :has_public_chat])}
+
+  # A reload of the group that changed nothing the rows show keeps the values
+  # on screen (`reload_current_group/1`); new ones come as `:value_created`.
   defp maybe_load_values(socket, group, active_tab) do
+    if socket.private[:keep_values?] == true and MapSet.size(socket.assigns.loaded_value_ids) > 0 do
+      socket
+    else
+      load_values(socket, group, active_tab)
+    end
+  end
+
+  defp load_values(socket, group, active_tab) do
     if needs_values?(group, active_tab) do
       %{focus_value_id: focus_value_id, loaded_value_ids: loaded} = socket.assigns
       limit = max(MapSet.size(loaded), @values_page_size)

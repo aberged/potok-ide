@@ -1697,7 +1697,7 @@ defmodule PotokIde.Social do
             broadcast_profile_group_join_requests_updated(invitee)
             broadcast_profile_invitations_updated(inviter)
             broadcast_group_join_request_updates_for_group(group)
-            broadcast_group_updated(group)
+            broadcast_group_members_changed(group, [:requests], profile_id: invitee.id)
             notify_profile_invitee_of_group_invitation(inviter, group, invitee)
             {:ok, invitation}
 
@@ -1781,7 +1781,11 @@ defmodule PotokIde.Social do
           broadcast_profile_group_join_requests_updated(invitee)
           broadcast_profile_invitations_updated(invitation.inviter)
           broadcast_group_join_request_updates_for_group(invitation.group)
-          broadcast_group_updated(inv.group_id)
+
+          broadcast_group_members_changed(invitation.group, [:members, :requests],
+            profile_id: invitee.id
+          )
+
           broadcast_group_membership_changed(invitee.id, inv.group_id, :added)
           broadcast_inheritance_changes(changes)
           notify_profile_inviter_of_group_invitation_acceptance(invitation, invitee)
@@ -1878,7 +1882,7 @@ defmodule PotokIde.Social do
         |> Repo.transaction()
         |> case do
           {:ok, %{inheritance: changes}} ->
-            broadcast_group_updated(group)
+            broadcast_group_members_changed(group, [:members], profile_id: member.id)
             broadcast_group_unread_counts_updated(group)
             broadcast_group_membership_changed(member.id, group.id, :removed)
             broadcast_inheritance_changes(changes)
@@ -1949,7 +1953,7 @@ defmodule PotokIde.Social do
     |> Repo.transaction()
     |> case do
       {:ok, %{block: block}} ->
-        broadcast_group_updated(group)
+        broadcast_group_members_changed(group, [:requests, :blocks], profile_id: profile.id)
         broadcast_profile_invitations_updated(profile)
         broadcast_profile_group_join_requests_updated(profile)
         broadcast_group_join_request_updates_for_group(group)
@@ -1967,7 +1971,7 @@ defmodule PotokIde.Social do
       from(b in GroupBlock, where: b.group_id == ^group.id and b.profile_id == ^profile_id)
       |> Repo.delete_all()
 
-      broadcast_group_updated(group)
+      broadcast_group_members_changed(group, [:blocks], profile_id: profile_id)
       :ok
     else
       {:error, :not_permitted}
@@ -2004,7 +2008,7 @@ defmodule PotokIde.Social do
         |> Repo.insert()
         |> case do
           {:ok, request} ->
-            broadcast_group_updated(group)
+            broadcast_group_members_changed(group, [:requests], profile_id: requester.id)
             broadcast_profile_group_join_requests_updated(requester)
             broadcast_group_join_request_updates_for_group(group)
             {:ok, request}
@@ -2355,7 +2359,7 @@ defmodule PotokIde.Social do
       |> case do
         {:ok, %{inheritance: changes}} ->
           requester = Repo.get!(Profile, request.requester_id)
-          broadcast_group_updated(group)
+          broadcast_group_members_changed(group, [:members, :requests], profile_id: requester.id)
           broadcast_profile_invitations_updated(requester)
           broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
@@ -2384,7 +2388,7 @@ defmodule PotokIde.Social do
         {:ok, _request} ->
           requester = Repo.get!(Profile, request.requester_id)
 
-          broadcast_group_updated(group)
+          broadcast_group_members_changed(group, [:requests], profile_id: requester.id)
           broadcast_profile_group_join_requests_updated(requester)
           broadcast_group_join_request_updates_for_group(group)
           {:ok, request}
@@ -8047,11 +8051,13 @@ defmodule PotokIde.Social do
     end)
   end
 
-  # The groups `MemberInheritance.sync/3` changed: their pages reload, and
-  # the profiles who came or went recount their unread values.
+  # The groups `MemberInheritance.sync/3` changed: their pages read their
+  # members again, and the profiles who came or went recount their unread
+  # values. One join can change every thread of a group, so the numbers are
+  # left to the pages that show them.
   defp broadcast_inheritance_changes(changes) do
     Enum.each(changes, fn %{group_id: group_id, added: added, removed: removed} ->
-      broadcast_group_updated(group_id)
+      broadcast_group_members_changed(group_id, [:members], numbers: false)
       Enum.each(added, &broadcast_group_membership_changed(&1, group_id, :added))
       Enum.each(removed, &broadcast_group_membership_changed(&1, group_id, :removed))
     end)
@@ -8081,6 +8087,52 @@ defmodule PotokIde.Social do
          inherits?: child.inherits_members,
          creator_id: child.creator_id
        }}
+    )
+  end
+
+  @doc """
+  The message a group's pages get when who belongs to it, asks to join or is
+  blocked changed, instead of `{:group_updated, id}`, which made every open
+  page read itself again at once:
+  `{:group_members_changed, group_id, %{changed: [:members | :requests | :blocks], ...}}`.
+
+  The numbers are read here once (`member_count`, `first3`,
+  `join_request_count`), so a page needs no query for its header; a page that
+  lists what changed reads that list again (`GroupLive.Show`). Options:
+
+    * `:profile_id` - the profile the change is about (who asked, joined, left
+      or was blocked): its own page reads itself again, as what it may do
+      changed.
+    * `numbers: false` - for the many groups one inheritance change can
+      touch: each page that shows the numbers reads them itself.
+  """
+  def broadcast_group_members_changed(group, changed, opts \\ [])
+
+  def broadcast_group_members_changed(group_id, changed, opts) when is_integer(group_id),
+    do: broadcast_group_members_changed(%Group{id: group_id}, changed, opts)
+
+  def broadcast_group_members_changed(%Group{id: group_id} = group, changed, opts)
+      when is_list(changed) do
+    numbers =
+      if Keyword.get(opts, :numbers, true) do
+        %{
+          member_count: count_group_members(group),
+          first3: list_first3_group_members(group),
+          join_request_count: count_pending_group_join_requests(group)
+        }
+      else
+        %{}
+      end
+
+    change =
+      numbers
+      |> Map.put(:changed, changed)
+      |> Map.put(:profile_id, Keyword.get(opts, :profile_id))
+
+    Phoenix.PubSub.broadcast(
+      PotokIde.PubSub,
+      group_topic(group_id),
+      {:group_members_changed, group_id, change}
     )
   end
 

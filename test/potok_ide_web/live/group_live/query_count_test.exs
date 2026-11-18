@@ -157,6 +157,106 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
     assert lv |> element("#group-poll-tally-style") |> render() =~ "poll-count-#{option.id}"
   end
 
+  # A member who manages nothing: a manager's own counts (requests to
+  # approve, invitations sent) are read on their pages, as they should be.
+  test "a join request costs a member's open chat no query", %{profile: profile} do
+    {:ok, group} =
+      Social.create_group(profile, Social.get_root_group!(), %{
+        "name" => "qc-public-group",
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => true,
+        "home_page" => :chat
+      })
+
+    member_conn = member_conn("qc-member", group, profile)
+    requester = other_profile("qc-requester")
+    {:ok, lv, _html} = live(member_conn, ~p"/groups/#{group.id}/values")
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _request} = Social.request_group_access(requester, group)
+          render(lv)
+        end,
+        lv.pid
+      )
+
+    assert count == 0
+  end
+
+  test "a join request reaches a manager's badge", %{conn: conn, profile: profile} do
+    {:ok, group} =
+      Social.create_group(profile, Social.get_root_group!(), %{
+        "name" => "qc-public-group",
+        "description" => "",
+        "description_format" => :markdown,
+        "is_public" => true,
+        "home_page" => :chat
+      })
+
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+    {:ok, _request} = Social.request_group_access(other_profile("qc-requester"), group)
+
+    assert has_element?(lv, "#group-pending-join-requests-badge-#{group.id}", "1")
+  end
+
+  test "a new member shows in a member's header without a query", %{
+    group: group,
+    profile: profile
+  } do
+    member_conn = member_conn("qc-member", group, profile)
+    joiner = other_profile("qc-joiner")
+    {:ok, invitation} = Social.invite_profile_to_group(profile, group, joiner)
+    {:ok, lv, _html} = live(member_conn, ~p"/groups/#{group.id}/values")
+    refute lv |> element("#group-members-stack") |> render() =~ "qc-joiner"
+
+    {_html, count} =
+      count_queries(
+        fn ->
+          {:ok, _accepted} = Social.accept_group_invitation(invitation, joiner)
+          render(lv)
+        end,
+        lv.pid
+      )
+
+    assert count == 0
+    assert lv |> element("#group-members-stack") |> render() =~ "qc-joiner"
+  end
+
+  # A value written past `Social` sends no message, so it shows only if the
+  # page reads its values again.
+  test "renaming the group keeps the values on screen", %{
+    conn: conn,
+    group: group,
+    profile: profile
+  } do
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+
+    PotokIde.Repo.insert!(%PotokIde.Social.Value{
+      group_id: group.id,
+      creator_id: profile.id,
+      content: "qc-silent-value",
+      content_format: :markdown
+    })
+
+    {:ok, _group} = Social.update_group(profile, group, %{"name" => "qc-renamed"})
+
+    html = render(lv)
+    assert html =~ "qc-renamed"
+    assert html =~ "hello"
+    refute html =~ "qc-silent-value"
+  end
+
+  test "a message the page does not know leaves it as it was", %{conn: conn, group: group} do
+    {:ok, lv, _html} = live(conn, ~p"/groups/#{group.id}/values")
+
+    send(lv.pid, {:profile_updated, 0})
+    send(lv.pid, {:something_a_newer_server_sends, group.id})
+
+    assert render(lv) =~ "hello"
+  end
+
   test "a value reads no more rows in a bigger group", %{group: group, profile: profile} do
     {:ok, _value} = Social.create_value(profile, group, %{"content" => "warm up"})
 
@@ -181,6 +281,36 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
       read_rows(fn -> Social.create_value(profile, group, %{"content" => "more members"}) end)
 
     assert many == few
+  end
+
+  defp member_conn(username, group, inviter) do
+    account = account_fixture()
+
+    {:ok, member} =
+      Social.create_profile_for_account(account, %{
+        username: username,
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    {:ok, invitation} = Social.invite_profile_to_group(inviter, group, member)
+    {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
+    log_in_account(build_conn(), Accounts.get_account!(account.id))
+  end
+
+  defp other_profile(username) do
+    {:ok, other} =
+      Social.create_profile_for_account(account_fixture(), %{
+        username: username,
+        profile_picture_url: nil,
+        description: "",
+        description_format: :markdown,
+        sharing: :unique
+      })
+
+    other
   end
 
   # `live/2` renders the first HTML again before it connects; the connected
