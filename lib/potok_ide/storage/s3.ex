@@ -92,6 +92,44 @@ defmodule PotokIde.Storage.S3 do
      )}
   end
 
+  @doc """
+  An object Potok keeps for itself, not an uploaded file (keys outside
+  `PotokIde.Storage`'s format, such as the shared map tiles): `{:ok, body,
+  meta}` with its `x-amz-meta-*` headers by name, `{:error, :not_found}`, or
+  another error.
+  """
+  def get_object(key) do
+    case request(:get, key, decode_body: false, retry: false, receive_timeout: 5_000) do
+      {:ok, %Req.Response{status: 200, body: body} = response} ->
+        meta =
+          for {"x-amz-meta-" <> name, [value | _]} <- response.headers,
+              into: %{},
+              do: {name, value}
+
+        {:ok, body, meta}
+
+      {:ok, %Req.Response{status: 404}} ->
+        {:error, :not_found}
+
+      {:ok, %Req.Response{status: status}} ->
+        {:error, {:http_status, status}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  @doc "Writes an object Potok keeps for itself, with `meta` as `x-amz-meta-*` headers."
+  def put_object(key, body, content_type, meta \\ %{}) do
+    headers = [{"content-type", content_type} | for({k, v} <- meta, do: {"x-amz-meta-#{k}", v})]
+
+    case request(:put, key, body: body, headers: headers, retry: false) do
+      {:ok, %Req.Response{status: status}} when status in 200..299 -> :ok
+      {:ok, %Req.Response{status: status}} -> {:error, {:http_status, status}}
+      {:error, reason} -> {:error, reason}
+    end
+  end
+
   # Public for the signature test against AWS's published example.
   @doc false
   def presign(method, key, opts) do

@@ -6,9 +6,10 @@ defmodule PotokIde.MapTiles do
   Maps in apps and in a group's settings take their tiles from Potok, not from
   OpenStreetMap: the frame of an app sends no `Referer`, which OSM asks of web
   maps, OSM never sees who is looking, and the source can change here without
-  touching any app. Each tile is kept on disk for a week
-  (`PotokIde.RenderCache`), as OSM's tile policy asks, and fetched once
-  however many ask for it at the same moment.
+  touching any app. Each tile is kept for a week, as OSM's tile policy asks:
+  on the machine's disk (`PotokIde.RenderCache`) and in the files' bucket,
+  which all machines share. It is fetched once however many ask for it at
+  the same moment.
 
   OSM asks for a User-Agent that names the service and a way to reach it (the
   site's address here; `:user_agent` in the config can add a contact), and for
@@ -60,7 +61,7 @@ defmodule PotokIde.MapTiles do
   not give it now.
   """
   def fetch(z, x, y) do
-    case RenderCache.fetch({:map_tile, z, x, y}, @max_age, fn -> download(z, x, y) end,
+    case RenderCache.fetch({:map_tile, z, x, y}, @max_age, fn -> shared_or_download(z, x, y) end,
            dir: cache_dir(),
            memory_ttl: @failure_ttl
          ) do
@@ -68,6 +69,58 @@ defmodule PotokIde.MapTiles do
       _failed -> :error
     end
   end
+
+  # A machine's disk keeps a tile only until its next deploy, and each
+  # machine has its own. With the files' bucket (Tigris), a tile another
+  # machine fetched this week comes from there; one fetched from the source
+  # is written there for the others, so the source sees one request per
+  # tile a week however many machines run.
+  defp shared_or_download(z, x, y) do
+    key = "tiles/#{z}/#{x}/#{y}.png"
+
+    case shared_get(key) do
+      {:ok, png} ->
+        {:ok, png}
+
+      :miss ->
+        with {:ok, png} <- download(z, x, y) do
+          shared_put(key, png)
+          {:ok, png}
+        end
+    end
+  end
+
+  defp shared_get(key) do
+    with true <- shared?(),
+         {:ok, png, %{"fetched-at" => at}} <- PotokIde.Storage.S3.get_object(key),
+         {at, ""} <- Integer.parse(at),
+         true <- System.system_time(:millisecond) - at < @max_age do
+      {:ok, png}
+    else
+      {:error, reason} when reason != :not_found ->
+        Logger.warning("Shared map tile #{key} could not be read: #{inspect(reason)}")
+        :miss
+
+      _missing_or_old ->
+        :miss
+    end
+  end
+
+  defp shared_put(key, png) do
+    if shared?() do
+      meta = %{"fetched-at" => Integer.to_string(System.system_time(:millisecond))}
+
+      case PotokIde.Storage.S3.put_object(key, png, "image/png", meta) do
+        :ok ->
+          :ok
+
+        {:error, reason} ->
+          Logger.warning("Shared map tile #{key} not written: #{inspect(reason)}")
+      end
+    end
+  end
+
+  defp shared?, do: PotokIde.Storage.adapter() == PotokIde.Storage.S3
 
   defp download(z, x, y) do
     with :ok <- upstream_turn() do
