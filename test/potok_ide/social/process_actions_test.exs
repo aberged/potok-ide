@@ -251,6 +251,42 @@ defmodule PotokIde.Social.ProcessActionsTest do
       refute Social.member_of_group?(ctx.owner, sub)
     end
 
+    test "a sub-group inherits the group's members, by the roles the group still has", ctx do
+      {_account, other} = account_with_profile!("pa#{unique()}")
+      add_member!(ctx.owner, ctx.group, other)
+      {:ok, council} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "savet"})
+
+      {:ok, _role} =
+        Social.assign_group_member_role(ctx.owner, ctx.group, ctx.member.id, council.key)
+
+      make = fn attrs ->
+        {:ok, sub, _announce} =
+          ProcessActions.create_subgroup(step(ctx), ctx.group, attrs, ["owner"])
+
+        sub
+      end
+
+      all = make.(%{"name" => "svi", "inherits_members" => true})
+      assert Social.member_of_group?(other, all)
+
+      by_role =
+        make.(%{
+          "name" => "savet",
+          "inherits_members" => true,
+          "inherit_role_keys" => [council.key, "gone"]
+        })
+
+      assert by_role.inherit_role_keys == [council.key]
+      assert Social.member_of_group?(ctx.member, by_role)
+      refute Social.member_of_group?(other, by_role)
+
+      none =
+        make.(%{"name" => "niko", "inherits_members" => true, "inherit_role_keys" => ["gone"]})
+
+      refute none.inherits_members
+      refute Social.member_of_group?(other, none)
+    end
+
     test "needs the permission to make sub-groups", ctx do
       {:ok, _role} =
         Social.set_group_role_permission(

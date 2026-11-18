@@ -990,6 +990,52 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   {label}
                 </label>
               </fieldset>
+              <div id="process-subgroup-inheritance">
+                <input type="hidden" name="element[inherits]" value="false" />
+                <label class="flex items-center gap-2 py-0.5 text-sm">
+                  <input
+                    type="checkbox"
+                    id="process-subgroup-inherits"
+                    name="element[inherits]"
+                    value="true"
+                    checked={@node["inherits"] == true}
+                    class="checkbox checkbox-sm"
+                  />
+                  {gettext("Inherit members")}
+                </label>
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "Every member of this group is also a member of the sub-group, with the same roles."
+                  )}
+                </p>
+              </div>
+              <fieldset
+                :if={@node["inherits"] == true}
+                id="process-subgroup-inherit-roles"
+                class="fieldset"
+              >
+                <legend class="label mb-1">{gettext("Only members with one of these roles")}</legend>
+                <input type="hidden" name="element[inherit_roles][]" value="" />
+                <label
+                  :for={{label, key} <- inherit_role_options(@role_options)}
+                  id={"process-subgroup-inherit-role-#{key}"}
+                  class="flex items-center gap-2 py-0.5 text-sm"
+                >
+                  <input
+                    type="checkbox"
+                    name="element[inherit_roles][]"
+                    value={key}
+                    checked={key in (@node["inherit_roles"] || [])}
+                    class="checkbox checkbox-sm"
+                  />
+                  {label}
+                </label>
+                <p class="text-xs text-base-content/60">
+                  {gettext(
+                    "With none picked, every member comes in. Whoever comes in brings all their roles, and leaves on losing the last of the picked ones."
+                  )}
+                </p>
+              </fieldset>
             <% "push" -> %>
               <.input
                 field={@form[:role]}
@@ -2167,8 +2213,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
 
   defp admin_options(role_options) do
     [{gettext("The process's owner"), "owner"}, {gettext("Whoever set it going"), "triggered_by"}] ++
-      Enum.reject(role_options, fn {_label, key} -> key == "everyone" end)
+      inherit_role_options(role_options)
   end
+
+  # Every member holds "everyone", so neither naming the admins nor
+  # narrowing who is inherited offers it.
+  defp inherit_role_options(role_options),
+    do: Enum.reject(role_options, fn {_label, key} -> key == "everyone" end)
 
   defp unit_options do
     [

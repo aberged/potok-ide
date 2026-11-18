@@ -200,6 +200,45 @@ defmodule PotokIde.Processes.EngineTest do
     end
   end
 
+  describe "a sub-group step" do
+    test "inherits the group's members when it says so, all of them or by roles", ctx do
+      subgroup = fn id, extra ->
+        Map.merge(
+          %{
+            "id" => id,
+            "type" => "serviceTask",
+            "action" => "subgroup",
+            "name" => id,
+            "admins" => ["owner"]
+          },
+          extra
+        )
+      end
+
+      save!(
+        ctx,
+        chain([
+          subgroup.("plain", %{}),
+          subgroup.("all", %{"inherits" => true}),
+          subgroup.("council", %{"inherits" => true, "inherit_roles" => [ctx.savet]})
+        ])
+      )
+
+      instance = send!(ctx, %{"naslov" => "Kanalizacija"})
+      assert %ValueProcess{status: :done, groups: groups} = Engine.run(instance.id)
+      sub = &Repo.get!(Group, groups[&1])
+
+      refute Social.member_of_group?(ctx.member, sub.("plain"))
+      assert Social.member_of_group?(ctx.member, sub.("all"))
+
+      council = sub.("council")
+      assert council.inherits_members
+      assert council.inherit_role_keys == [ctx.savet]
+      assert Social.member_of_group?(ctx.owner, council)
+      refute Social.member_of_group?(ctx.member, council)
+    end
+  end
+
   describe "the example" do
     test "runs from the request to the council's decision, each step once", ctx do
       save!(ctx, molbe(ctx.savet))

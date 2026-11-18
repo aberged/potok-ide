@@ -30,7 +30,7 @@ defmodule PotokIde.Social.ProcessActions do
   alias PotokIde.Social.{Access, AppProcess, AppProcesses, Group, ProcessStep, Profile}
 
   @value_attrs ~w(content content_format parent_id)
-  @group_attrs ~w(name description description_format home_page is_public inherits_members has_public_chat)
+  @group_attrs ~w(name description description_format home_page is_public inherits_members inherit_role_keys has_public_chat)
   @default_admins ["owner", "triggered_by"]
   @max_push_text 240
 
@@ -58,7 +58,9 @@ defmodule PotokIde.Social.ProcessActions do
   group is a record, which leaves the unread counts and the map, and its keys
   are the apps' own. `admins` names its admins: `"owner"`, `"triggered_by"`
   and the keys of roles in `parent`, whose people become admins. Naming
-  nobody who can be an admin gives `{:error, :no_admin}`.
+  nobody who can be an admin gives `{:error, :no_admin}`. Roles to inherit
+  members by that `parent` no longer has are left out, and when none is left
+  of those asked, or under the root, the group does not inherit.
 
   The engine keeps the new group's id with the instance (`ProcessStep.groups`).
   """
@@ -69,11 +71,25 @@ defmodule PotokIde.Social.ProcessActions do
       Social.insert_process_group(
         row.profile,
         parent,
-        attrs |> stringify() |> Map.take(@group_attrs),
+        attrs |> stringify() |> Map.take(@group_attrs) |> inheritable(parent),
         admin_ids
       )
     end
   end
+
+  # A drawing keeps the roles it was saved with, and a role can go since: the
+  # sub-group never takes in more than was asked.
+  defp inheritable(%{"inherits_members" => true} = attrs, %Group{} = parent) do
+    asked = Map.get(attrs, "inherit_role_keys") || []
+    known = parent |> Access.inheritable_roles() |> MapSet.new(& &1.key)
+    keys = Enum.filter(asked, &MapSet.member?(known, &1))
+
+    if parent.is_root or (asked != [] and keys == []),
+      do: Map.merge(attrs, %{"inherits_members" => false, "inherit_role_keys" => []}),
+      else: Map.put(attrs, "inherit_role_keys", keys)
+  end
+
+  defp inheritable(attrs, _parent), do: attrs
 
   @doc """
   Pushes `text` to the members of `group` who hold `role_key` (`"everyone"`

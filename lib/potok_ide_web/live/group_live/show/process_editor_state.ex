@@ -1069,6 +1069,8 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       params
       |> Map.take(~w(label text in name role field op value target list item))
       |> maybe_put("admins", admins(params))
+      |> maybe_put("inherits", inherits(params))
+      |> maybe_put("inherit_roles", admins(%{"admins" => params["inherit_roles"]}))
       |> maybe_put("duration", duration(params["duration_amount"], params["duration_unit"]))
       |> Map.merge(call_attrs(node, params, socket.assigns.process_editor.callable))
       |> Map.merge(signal_attrs(node, params, socket.assigns.process_editor))
@@ -1312,6 +1314,9 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     do: admins |> Enum.reject(&(&1 == "")) |> Enum.uniq()
 
   defp admins(_attrs), do: nil
+
+  defp inherits(%{"inherits" => value}) when is_binary(value), do: value == "true"
+  defp inherits(_params), do: nil
 
   defp maybe_put(map, _key, nil), do: map
   defp maybe_put(map, key, value), do: Map.put(map, key, value)

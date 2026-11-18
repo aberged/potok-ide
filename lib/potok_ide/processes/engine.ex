@@ -723,8 +723,10 @@ defmodule PotokIde.Processes.Engine do
     name = task["name"] |> render(data) |> String.slice(0, @max_group_name)
     name = if name == "", do: step.process.name, else: name
 
+    attrs = Map.merge(%{"name" => name}, inherit_attrs(task))
+
     with {:ok, sub, announce} <-
-           ProcessActions.create_subgroup(step, group, %{"name" => name}, task["admins"]) do
+           ProcessActions.create_subgroup(step, group, attrs, task["admins"]) do
       {:ok, %{groups: Map.put(instance.groups, task["id"], sub.id)}, announce}
     end
   end
@@ -797,6 +799,13 @@ defmodule PotokIde.Processes.Engine do
       {:error, _reason} = error -> error
     end
   end
+
+  # A sub-group step that inherits the group's members, with the roles whose
+  # holders come in (`ProcessActions.create_subgroup/4` drops the gone ones).
+  defp inherit_attrs(%{"inherits" => true} = task),
+    do: %{"inherits_members" => true, "inherit_role_keys" => task["inherit_roles"] || []}
+
+  defp inherit_attrs(_task), do: %{}
 
   # What the value of a step that sets is taken as: what the target holds,
   # or an item of the list for a step that adds to one.

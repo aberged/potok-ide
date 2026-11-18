@@ -95,6 +95,45 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     assert has_element?(lv, "#process-editor-state", "on")
   end
 
+  test "a sub-group step can inherit the group's members, by its roles but everyone", ctx do
+    {:ok, council} = Social.create_group_role(ctx.owner, ctx.group, %{"name" => "savet"})
+
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    insert(lv, "f1", "subgroup")
+    assert has_element?(lv, "#process-subgroup-inherits")
+    refute has_element?(lv, "#process-subgroup-inherit-roles")
+
+    lv
+    |> form("#process-element-form", %{"element" => %{"inherits" => "true"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-subgroup-inherit-role-#{council.key}")
+    assert has_element?(lv, "#process-subgroup-inherit-role-admin")
+    refute has_element?(lv, "#process-subgroup-inherit-role-everyone")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{"inherits" => "true", "inherit_roles" => [council.key]}
+    })
+    |> render_change()
+
+    lv
+    |> form("#process-editor-meta", %{"meta" => %{"name" => "Savet"}})
+    |> render_change()
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [row] = drawn(ctx.group)
+
+    assert Enum.any?(
+             row.graph["nodes"],
+             &(&1["action"] == "subgroup" and &1["inherits"] == true and
+                 &1["inherit_roles"] == [council.key])
+           )
+  end
+
   test "a new process starts on what its editor picks, set on its start step", ctx do
     {:ok, lv, _html} =
       live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")

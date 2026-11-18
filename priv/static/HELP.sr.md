@@ -367,7 +367,7 @@ Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, i u grupi bez apl
 
 1. U meniju grupe otvori **Procesi**, dodirni **Nacrtaj proces** i upiši ime procesa.
 2. Pod **Kad** izaberi šta ga pokreće, a na početnom koraku crteža ga podesi.
-3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, formu, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi.
+3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, formu, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi. Podgrupa koju proces napravi može da nasleđuje članove grupe, sve ili samo one sa ulogama koje izabereš.
 4. Dodirni **Sačuvaj**, pa **Uključi**.
 
 Proces može da pokrene:

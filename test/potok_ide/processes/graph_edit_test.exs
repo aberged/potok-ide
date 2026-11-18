@@ -271,6 +271,27 @@ defmodule PotokIde.Processes.GraphEditTest do
     assert %{"in" => "app"} = Graph.node(valid!(graph), "message_1")
   end
 
+  test "a sub-group names roles to inherit by only while it inherits" do
+    graph = insert!(GraphEdit.new(), "f1", "subgroup")
+
+    {:ok, graph} =
+      GraphEdit.update_node(graph, "subgroup_1", %{"inherits" => true, "inherit_roles" => []})
+
+    node = Graph.node(valid!(graph), "subgroup_1")
+    assert node["inherits"] == true
+    refute Map.has_key?(node, "inherit_roles")
+
+    {:ok, graph} = GraphEdit.update_node(graph, "subgroup_1", %{"inherit_roles" => ["savet"]})
+
+    assert %{"inherits" => true, "inherit_roles" => ["savet"]} =
+             Graph.node(valid!(graph), "subgroup_1")
+
+    {:ok, graph} = GraphEdit.update_node(graph, "subgroup_1", %{"inherits" => false})
+    node = Graph.node(valid!(graph), "subgroup_1")
+    refute Map.has_key?(node, "inherits")
+    refute Map.has_key?(node, "inherit_roles")
+  end
+
   test "a step takes only what its kind has, and a blank label is none" do
     graph = insert!(GraphEdit.new(), "f1", "message")
 

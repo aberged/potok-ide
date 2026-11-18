@@ -361,7 +361,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a form, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a form, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads. A sub-group the process makes can inherit the group's members, all of them or only those with the roles you choose.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:

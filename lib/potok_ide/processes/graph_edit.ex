@@ -564,6 +564,7 @@ defmodule PotokIde.Processes.GraphEdit do
             {"role", nil}, node -> Map.delete(node, "role")
             {key, value}, node -> Map.put(node, key, value)
           end)
+          |> tidy_inherit()
 
         graph = put_node(graph, changed)
 
@@ -577,10 +578,22 @@ defmodule PotokIde.Processes.GraphEdit do
     end
   end
 
+  # A sub-group step names the roles it inherits members by only while it
+  # inherits them, and no roles is said by leaving them out.
+  defp tidy_inherit(%{"action" => "subgroup"} = node) do
+    cond do
+      node["inherits"] != true -> Map.drop(node, ["inherits", "inherit_roles"])
+      node["inherit_roles"] in [nil, []] -> Map.delete(node, "inherit_roles")
+      true -> node
+    end
+  end
+
+  defp tidy_inherit(node), do: node
+
   defp editable_keys(%{"type" => "serviceTask", "action" => "message"}), do: ~w(label text in)
 
   defp editable_keys(%{"type" => "serviceTask", "action" => "subgroup"}),
-    do: ~w(label name admins)
+    do: ~w(label name admins inherits inherit_roles)
 
   defp editable_keys(%{"type" => "serviceTask", "action" => "push"}), do: ~w(label role text)
 

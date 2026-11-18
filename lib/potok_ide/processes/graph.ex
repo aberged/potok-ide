@@ -7,8 +7,10 @@ defmodule PotokIde.Processes.Graph do
 
   - `startEvent`: the instance starts when a value comes to the collection.
   - `serviceTask` with an `action`: `message` (`text`, `in`: `"app"` or a
-    `subgroup` element), `subgroup` (`name`, `admins`) or `push` (`role`,
-    `text`), done by `PotokIde.Social.ProcessActions`.
+    `subgroup` element), `subgroup` (`name`, `admins`, and `inherits` true
+    for a sub-group that inherits the group's members, with `inherit_roles`
+    when only their holders come in) or `push` (`role`, `text`), done by
+    `PotokIde.Social.ProcessActions`.
   - `userTask`: waits for someone holding `role` to pick one of `outcomes`,
     until an optional `deadline`.
   - `timer`: waits a `duration`.
@@ -456,10 +458,14 @@ defmodule PotokIde.Processes.Graph do
       {%{"action" => "push", "role" => role}, i} ->
         [{"nodes.#{i}.role", role}]
 
-      {%{"action" => "subgroup", "admins" => admins}, i} ->
-        for {admin, j} <- Enum.with_index(admins),
-            admin not in @default_admins,
-            do: {"nodes.#{i}.admins.#{j}", admin}
+      {%{"action" => "subgroup", "admins" => admins} = node, i} ->
+        for(
+          {admin, j} <- Enum.with_index(admins),
+          admin not in @default_admins,
+          do: {"nodes.#{i}.admins.#{j}", admin}
+        ) ++
+          for {role, j} <- Enum.with_index(Map.get(node, "inherit_roles", [])),
+              do: {"nodes.#{i}.inherit_roles.#{j}", role}
 
       _other ->
         []
@@ -931,8 +937,12 @@ defmodule PotokIde.Processes.Graph do
 
   defp action("subgroup", node, path, base) do
     with {:ok, name} <- text(node["name"], @max_name, path <> ".name"),
-         {:ok, admins} <- admins(Map.get(node, "admins", @default_admins), path <> ".admins") do
-      {:ok, Map.merge(base, %{"action" => "subgroup", "name" => name, "admins" => admins})}
+         {:ok, admins} <- admins(Map.get(node, "admins", @default_admins), path <> ".admins"),
+         {:ok, inherit} <- inherit(node, path) do
+      {:ok,
+       base
+       |> Map.merge(%{"action" => "subgroup", "name" => name, "admins" => admins})
+       |> Map.merge(inherit)}
     end
   end
 
@@ -970,6 +980,29 @@ defmodule PotokIde.Processes.Graph do
   end
 
   defp admins(_admins, path), do: {:error, {path, :invalid}}
+
+  # Whether a sub-group a process makes inherits the group's members, and the
+  # roles whose holders come in. Written only when it does, so a graph saved
+  # before stays as it was; "everyone" takes every member, as no role does.
+  defp inherit(%{"inherits" => true} = node, path) do
+    case Map.get(node, "inherit_roles", []) do
+      roles when is_list(roles) and length(roles) <= @max_admins ->
+        with {:ok, roles} <- each(roles, path <> ".inherit_roles", &key/2) do
+          roles = Enum.uniq(roles)
+
+          if roles == [] or "everyone" in roles,
+            do: {:ok, %{"inherits" => true}},
+            else: {:ok, %{"inherits" => true, "inherit_roles" => roles}}
+        end
+
+      _other ->
+        {:error, {path <> ".inherit_roles", :invalid}}
+    end
+  end
+
+  defp inherit(%{"inherits" => inherits}, _path) when inherits in [false, nil], do: {:ok, %{}}
+  defp inherit(%{"inherits" => _other}, path), do: {:error, {path <> ".inherits", :invalid}}
+  defp inherit(_node, _path), do: {:ok, %{}}
 
   defp outcomes(outcomes, path) when is_list(outcomes) and length(outcomes) in 1..@max_outcomes do
     with {:ok, outcomes} <- each(outcomes, path, &text(&1, @max_outcome, &2)) do

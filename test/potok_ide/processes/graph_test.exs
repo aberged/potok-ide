@@ -452,6 +452,46 @@ defmodule PotokIde.Processes.GraphTest do
     assert Graph.unknown_role(graph, MapSet.new(["admin"])) == {"nodes.2.admins.1", :unknown_role}
   end
 
+  test "a sub-group inherits the group's members only when it says so, by its roles" do
+    inherits = fn change -> molbe() |> update_node("predmet", change) |> Graph.normalize() end
+    predmet = fn {:ok, %{"nodes" => nodes}} -> Enum.find(nodes, &(&1["id"] == "predmet")) end
+
+    refute Map.has_key?(predmet.(Graph.normalize(molbe())), "inherits")
+    refute Map.has_key?(predmet.(inherits.(&Map.put(&1, "inherits", false))), "inherits")
+
+    plain = predmet.(inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => []})))
+    assert plain["inherits"] == true
+    refute Map.has_key?(plain, "inherit_roles")
+
+    everyone =
+      inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => ["savet", "everyone"]}))
+
+    refute Map.has_key?(predmet.(everyone), "inherit_roles")
+
+    {:ok, graph} =
+      inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => ["savet", "savet"]}))
+
+    assert predmet.({:ok, graph})["inherit_roles"] == ["savet"]
+    assert {"nodes.2.inherit_roles.0", "savet"} in Graph.role_refs(graph)
+
+    assert Graph.unknown_role(graph, MapSet.new(["savet"])) == nil
+
+    {:ok, other} =
+      inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => ["odbor"]}))
+
+    assert Graph.unknown_role(other, MapSet.new(["savet"])) ==
+             {"nodes.2.inherit_roles.0", :unknown_role}
+
+    assert {:error, {"nodes.2.inherits", :invalid}} =
+             inherits.(&Map.put(&1, "inherits", "da"))
+
+    assert {:error, {"nodes.2.inherit_roles", :invalid}} =
+             inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => "savet"}))
+
+    assert {:error, {"nodes.2.inherit_roles.0", :invalid}} =
+             inherits.(&Map.merge(&1, %{"inherits" => true, "inherit_roles" => [7]}))
+  end
+
   test "reads durations in seconds" do
     assert Graph.seconds("PT30M") == 1_800
     assert Graph.seconds("PT1H") == 3_600
