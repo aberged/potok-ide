@@ -221,7 +221,7 @@ msgstr "Одлука"
 msgid "Delete"
 msgstr "Обриши"
 
-#: lib/potok_ide_web/live/group_live/show/components.ex:1956
+#: lib/potok_ide_web/live/group_live/show/components.ex:2025
 #, elixir-autogen, elixir-format
 msgid "Delete this message? The poll goes with it, with all its votes."
 msgstr "Обрисати ову поруку? Брише се и гласање, са свим гласовима."
@@ -368,7 +368,7 @@ msgstr "Више од половине оних који имају право �
 msgid "My groups"
 msgstr "Моје групе"
 
-#: lib/potok_ide_web/live/group_live/show.ex:592
+#: lib/potok_ide_web/live/group_live/show.ex:599
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:31
 #, elixir-autogen, elixir-format
 msgid "My polls"
@@ -509,8 +509,8 @@ msgstr "Прво изабери одговор."
 msgid "Poll"
 msgstr "Гласање"
 
-#: lib/potok_ide_web/live/group_live/show.ex:593
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:250
+#: lib/potok_ide_web/live/group_live/show.ex:600
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:258
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
 #, elixir-autogen, elixir-format
@@ -896,12 +896,12 @@ msgstr "Глас није забележен. Покушај поново."
 msgid "of %{count} who may vote"
 msgstr "од %{count} са правом гласа"
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:253
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:261
 #, elixir-autogen, elixir-format
 msgid "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
 msgstr "Отвара се на апликацији Гласања, табли свих гласања групе, где чланови гласају и покрећу нова."
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:251
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:259
 #, elixir-autogen, elixir-format
 msgid "Votes and decisions, in one place."
 msgstr "Гласања и одлуке, на једном месту."

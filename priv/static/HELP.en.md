@@ -58,6 +58,8 @@ In a group, people write messages, send files, plan events and start polls, and 
 
 You get into a group by invitation, or by a request that someone approves. A sub-group can inherit members: whoever is a member of the group above is a member of it too, with the same roles. So the assembly and the neighbourhood map have all the local community's members at once, and whoever is no longer a member of the community is no longer theirs.
 
+You can narrow inheriting down to roles: then only the members who hold one of the chosen roles in the group above come into the sub-group, with all their roles, and whoever loses the last of them leaves. That way the local community's council gets a group of its own without you inviting anyone separately.
+
 ### Roles and permissions {:#uloge-i-dozvole}
 
 What each person may do in a group is set by roles. Every group has the role Admin, which may do everything, and the role Everyone, which every member has. You can add roles of your own too, say council or moderators. For each of the 20 permissions, a role says "Allow", "Deny" or "Not set", and a denial is stronger than an allowance.
@@ -203,7 +205,7 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 - **Map**: sub-groups as pins on a map. It is not offered on the home page, only inside a group.
 - **Page**: a text people see first, made from a template.
 
-In the second step you enter the name and choose whether the group is public and whether it inherits members. "Set everything up yourself" opens the full form.
+In the second step you enter the name and choose whether the group is public and whether it inherits members: all of them, or only those with the roles you choose. "Set everything up yourself" opens the full form.
 
 ![What kind of group do you need?](kreiraj-podgrupu) ![Name, public or not, and inheriting members](kreiraj-korak)
 
@@ -215,7 +217,7 @@ A shortcut has an arrow and the word Shortcut, and it shows the group itself: it
 
 ![A shortcut on the home page leads to the assembly inside the local community](precica) ![Shortcut: the groups you are in, and a search by name](precica-izbor)
 
-Edit group has everything else: name and picture, access and membership (public group, description open to guests, chat open to non-members, inheritance), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+Edit group has everything else: name and picture, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
 
 ![Edit group: access and membership, with how the link looks outside Potok](uredi-grupu)
 

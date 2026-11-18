@@ -10,7 +10,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     DescriptionTemplateForm,
     EventCard,
     MediaViewer,
-    PollCard
+    PollCard,
+    RolesTab
   }
 
   alias PotokIdeWeb.PostTemplates.Post
@@ -211,6 +212,74 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       <.icon name={@icon} class="size-4" />
       <span class={@label_class}>{@label}</span>
     </button>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :form, Phoenix.HTML.Form, required: true, doc: "a group form with `inherits_members`"
+
+  attr :roles, :list,
+    required: true,
+    doc: "the parent's roles but everyone (`Access.inheritable_roles/1`)"
+
+  attr :note, :string, default: nil, doc: "what saving does to those already in"
+
+  @doc """
+  The roles of the parent group a sub-group takes its members in by, below
+  the "Inherit members" switch and only while it is on. No role picked takes
+  every member (`Group.inherit_role_keys`).
+  """
+  def inherit_roles_picker(assigns) do
+    assigns =
+      assigns
+      |> assign(:field, assigns.form[:inherit_role_keys])
+      |> assign(
+        :on,
+        Phoenix.HTML.Form.normalize_value("checkbox", assigns.form[:inherits_members].value)
+      )
+
+    ~H"""
+    <fieldset
+      :if={@on and @roles != []}
+      id={@id}
+      class="mt-1 mb-2 rounded-box border border-base-300 bg-base-200/40 px-3 pt-2 pb-2.5"
+    >
+      <legend class="px-1 text-xs font-semibold text-base-content/80">
+        {gettext("Only members with one of these roles")}
+      </legend>
+      <input type="hidden" name={@field.name <> "[]"} value="" />
+      <div class="flex flex-wrap gap-1.5">
+        <label
+          :for={role <- @roles}
+          id={"#{@id}-#{role.key}"}
+          class="inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border border-base-300 bg-base-100 px-3 text-xs font-semibold transition duration-150 ease-out hover:border-primary/50 hover:text-primary active:scale-95 has-checked:border-primary has-checked:bg-primary has-checked:text-primary-content has-focus-visible:ring-2 has-focus-visible:ring-primary/40"
+        >
+          <input
+            type="checkbox"
+            name={@field.name <> "[]"}
+            value={role.key}
+            checked={role.key in List.wrap(@field.value)}
+            class="sr-only"
+          />
+          <.icon name={RolesTab.role_icon(role)} class="size-3.5" />
+          {RolesTab.role_label(role)}
+        </label>
+      </div>
+      <p class="mt-2 text-xs text-base-content/65">
+        {gettext(
+          "With none picked, every member comes in. Whoever comes in brings all their roles, and leaves on losing the last of the picked ones."
+        )}
+      </p>
+      <p :if={@note} class="mt-1 text-xs text-base-content/65">{@note}</p>
+      <p
+        :for={error <- @field.errors}
+        class="mt-1 flex items-center gap-1.5 text-sm text-error"
+        role="alert"
+      >
+        <.icon name="hero-exclamation-circle" class="size-4 shrink-0" />
+        {translate_error(error)}
+      </p>
+    </fieldset>
     """
   end
 

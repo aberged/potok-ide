@@ -74,6 +74,7 @@ Roles and permissions:
 Member inheritance:
 
 * A sub-group can be set to inherit members (`inherits_members`) when it is created or edited. It then holds every member of its parent with the roles they hold there, and follows the parent as members join or leave and as their roles change, down a whole chain of inheriting groups.
+* It can inherit by roles instead (`inherit_role_keys`, picked under the switch from the parent's roles but `everyone`): then only the parent's members who hold one of them come in, still with all their parent roles, and they leave on losing the last of them. A direct member who holds none keeps the membership but gets no parent roles. Narrowing the pick sends away whoever no longer fits, except the editor, whose rows turn direct. Deleting a picked role in the parent (or reverting its manifest) takes it out of the pick; a pick left empty stops inheriting, as if switched off, rather than take every member in.
 * Inherited memberships and roles are marked `inherited` and cannot be removed in the sub-group. Members and roles added in the sub-group itself stay when the parent ones go. Turning inheritance off keeps everyone as a direct member.
 * Members who arrive through inheritance start with the sub-group's history read.
 * Threads always inherit. Groups directly in the root group and direct groups never inherit, as they would hold every profile.

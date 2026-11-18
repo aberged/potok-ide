@@ -9,6 +9,10 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
   attr :value_parent_options, :list, required: true
   attr :group, :map, required: true
 
+  attr :inherit_roles, :list,
+    default: [],
+    doc: "this group's roles a sub-group can inherit members by (`Access.inheritable_roles/1`)"
+
   attr :section, :string,
     default: "basics",
     doc: "the card on screen, picked in the section bar (see `sections/0`)"
@@ -89,6 +93,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateGroupTab do
                   "Every member of this group is also a member of the sub-group, with the same roles."
                 )}
               </p>
+              <Components.inherit_roles_picker
+                id="group-create-inherit-roles"
+                form={@new_group_form}
+                roles={@inherit_roles}
+              />
             </div>
           </Components.settings_card>
 

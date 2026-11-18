@@ -27,7 +27,7 @@ defmodule PotokIde.Social.GroupPresets do
   # Feed finds its stories by this exact name: see `docs/feed-i-feedcreator.md`.
   @feed_group ".feed"
 
-  @chosen_by_viewer ~w(name is_public inherits_members)
+  @chosen_by_viewer ~w(name is_public inherits_members inherit_role_keys)
 
   def keys, do: @keys
 
@@ -73,7 +73,8 @@ defmodule PotokIde.Social.GroupPresets do
   def defaults(preset, %Group{} = parent) when preset in @keys do
     %{
       "is_public" => preset == "feed" and (parent.is_root or parent.is_public),
-      "inherits_members" => not parent.is_root
+      "inherits_members" => not parent.is_root,
+      "inherit_role_keys" => []
     }
   end
 

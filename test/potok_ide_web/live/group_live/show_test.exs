@@ -4200,6 +4200,100 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       refute has_element?(lv, "#member-#{direct.id}-inherited")
       assert has_element?(lv, "#group-remove-member-#{direct.id}")
     end
+
+    test "the create form inherits members by the group's roles", %{
+      conn: conn,
+      account: account,
+      owner: owner,
+      parent: parent,
+      member: member
+    } do
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, parent)
+      {:ok, council} = Social.create_group_role(owner, parent, %{"name" => "savet"})
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, council.key)
+      other = add_group_member!(owner, parent, "inh-ui-other")
+
+      {:ok, lv, _html} =
+        conn |> log_in_account(account) |> live(~p"/groups/#{parent.id}/create_group")
+
+      lv
+      |> form("#group-create-form", %{"group" => %{"inherits_members" => "true"}})
+      |> render_change()
+
+      assert has_element?(lv, "#group-create-inherit-roles-#{council.key}")
+      assert has_element?(lv, "#group-create-inherit-roles-admin")
+      refute has_element?(lv, "#group-create-inherit-roles-everyone")
+
+      lv
+      |> form("#group-create-form", %{
+        "group" => %{
+          "name" => "inh-ui-council",
+          "description" => "",
+          "inherits_members" => "true",
+          "inherit_role_keys" => [council.key]
+        }
+      })
+      |> render_submit()
+
+      child =
+        parent
+        |> Social.list_child_groups_for_profile(owner, limit: 20)
+        |> Enum.find(&(&1.name == "inh-ui-council"))
+
+      assert child.inherit_role_keys == [council.key]
+      assert Social.member_of_group?(member, child)
+      refute Social.member_of_group?(other, child)
+    end
+
+    test "the edit form offers the parent's roles while inheriting, and narrowing sends away who does not fit",
+         %{conn: conn, account: account, owner: owner, parent: parent, member: member} do
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, parent)
+      {:ok, council} = Social.create_group_role(owner, parent, %{"name" => "savet"})
+      {:ok, _} = Social.assign_group_member_role(owner, parent, member.id, council.key)
+      other = add_group_member!(owner, parent, "inh-ui-other")
+
+      child = create_sub_group!(owner, parent, "inh-ui-narrow", %{"inherits_members" => "true"})
+      {:ok, _manifest} = Social.create_own_group_manifest(owner, child)
+      {:ok, local} = Social.create_group_role(owner, child, %{"name" => "lokalni"})
+      assert Social.member_of_group?(other, child)
+
+      {:ok, lv, _html} =
+        conn |> log_in_account(account) |> live(~p"/groups/#{child.id}/edit_group")
+
+      assert has_element?(lv, "#group-edit-inherit-roles-#{council.key}")
+      refute has_element?(lv, "#group-edit-inherit-roles-#{local.key}")
+      refute has_element?(lv, "#group-edit-inherit-roles-everyone")
+
+      lv
+      |> form("#group-edit-form", %{"group" => %{"inherits_members" => "false"}})
+      |> render_change()
+
+      refute has_element?(lv, "#group-edit-inherit-roles")
+
+      lv
+      |> form("#group-edit-form", %{"group" => %{"inherits_members" => "true"}})
+      |> render_change()
+
+      lv
+      |> form("#group-edit-form", %{
+        "group" => %{"inherits_members" => "true", "inherit_role_keys" => [council.key]}
+      })
+      |> render_submit()
+
+      assert Social.member_of_group?(member, child)
+      refute Social.member_of_group?(other, child)
+
+      # A parent member added here directly, without the role, is no inherited member.
+      {:ok, invitation} = Social.invite_profile_to_group(owner, child, other)
+      {:ok, _accepted} = Social.accept_group_invitation(invitation, other)
+
+      {:ok, members_lv, _html} =
+        conn |> log_in_account(account) |> live(~p"/groups/#{child.id}/members")
+
+      assert has_element?(members_lv, "#member-#{member.id}-inherited")
+      refute has_element?(members_lv, "#member-#{other.id}-inherited")
+      assert has_element?(members_lv, "#group-remove-member-#{other.id}")
+    end
   end
 
   defp create_sub_group!(profile, parent, name, attrs \\ %{}) do

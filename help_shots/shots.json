@@ -160,6 +160,7 @@
       { "click": "#group-sub-groups-create-fab" },
       { "click": "#group-create-preset-chat" },
       { "type": ["#group-create-menu input[type=text]", "Radna grupa za rasvetu"] },
+      { "click": "#group-create-preset-inherit-roles label:has-text('savet')" },
       { "pause": 400 }
     ]
   },

@@ -95,6 +95,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     default: false,
     doc: "whether the group can inherit members (see `Social.inherits_members_option?/1`)"
 
+  attr :inherit_roles, :list,
+    default: [],
+    doc: "the parent's roles members can be inherited by (`Access.inheritable_roles/1`)"
+
   attr :alt_descriptions, :list, default: [], doc: "every alternative description of the group"
 
   attr :alt_description_form, :any,
@@ -251,6 +255,17 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                     )
                 )}
               </p>
+              <Components.inherit_roles_picker
+                :if={is_nil(@group.parent_value_id)}
+                id="group-edit-inherit-roles"
+                form={@edit_group_form}
+                roles={@inherit_roles}
+                note={
+                  gettext(
+                    "Whoever no longer fits leaves when you save. Members added here stay, and so do you."
+                  )
+                }
+              />
             </div>
           </Components.settings_card>
 

@@ -105,7 +105,7 @@ defmodule PotokIdeWeb.PageControllerTest do
 
       assert map_size(data["entities"]) == 42
       assert data["counts"]["keys"] == Enum.count(data["edges"], &(&1["kind"] == "key"))
-      assert data["counts"]["soft"] == 8
+      assert data["counts"]["soft"] == 9
 
       assert %{"name" => "Value", "domain" => "content", "table" => "values"} =
                data["entities"]["Value"]

@@ -64,6 +64,8 @@ U grupi se pišu poruke, šalju fajlovi, zakazuju događaji i pokreću glasanja,
 
 U grupu se ulazi na poziv ili zahtevom koji neko odobri. Podgrupa može da nasleđuje članove: ko je član grupe iznad, član je i nje, sa istim ulogama. Tako zbor i mapa kraja odmah imaju sve članove mesne zajednice, a ko više nije član mesne zajednice, nije ni njihov.
 
+Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koji u grupi iznad imaju neku od izabranih uloga, sa svim svojim ulogama, a ko izgubi poslednju od njih, odlazi. Tako savet mesne zajednice dobija svoju grupu, a da nikoga ne pozivaš posebno.
+
 ### Uloge i dozvole {:#uloge-i-dozvole}
 
 Šta ko sme da radi u grupi određuju uloge. Svaka grupa ima ulogu Administrator, koja sme sve, i ulogu Svi, koju ima svaki član. Možeš dodati i svoje uloge, recimo savet ili moderatori. Za svaku od 20 dozvola uloga kaže „Dozvoli“, „Zabrani“ ili „Nije podešeno“, a zabrana je jača od dozvole.
@@ -209,7 +211,7 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 - **Mapa**: podgrupe kao pinovi na mapi. Ne nudi se na početnoj strani, nego unutar grupe.
 - **Stranica**: tekst koji se prvi vidi, napravljen iz šablona.
 
-U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove. „Podesi sve ručno“ otvara pun obrazac.
+U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove: sve ili samo one sa ulogama koje izabereš. „Podesi sve ručno“ otvara pun obrazac.
 
 ![Kakva grupa ti treba?](kreiraj-podgrupu) ![Naziv, javnost i nasleđivanje članova](kreiraj-korak)
 
@@ -221,7 +223,7 @@ Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju 
 
 ![Prečica na početnoj strani vodi do zbora u mesnoj zajednici](precica) ![Prečica: grupe u kojima si član, i pretraga po nazivu](precica-izbor)
 
-Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
 
 ![Uredi grupu: pristup i članstvo, sa izgledom linka van Potoka](uredi-grupu)
 

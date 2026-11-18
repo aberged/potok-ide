@@ -17,6 +17,7 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
 
   alias PotokIde.Social
   alias PotokIde.Social.{Access, Group, GroupPresets, Profile}
+  alias PotokIdeWeb.GroupLive.Show.Components
 
   @preset_keys GroupPresets.keys()
 
@@ -31,7 +32,14 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
          {group_id, ""} <- Integer.parse(to_string(id)),
          %Group{} = parent <- Social.get_visible_group(profile, group_id),
          true <- Access.can?(Social.get_group_access(profile, parent), :create_subgroups) do
-      menu = %{parent: parent, preset: nil, form: nil, error: nil, shortcut: nil}
+      menu = %{
+        parent: parent,
+        roles: Access.inheritable_roles(parent),
+        preset: nil,
+        form: nil,
+        error: nil,
+        shortcut: nil
+      }
 
       {:noreply, assign(socket, :group_create_menu, menu)}
     else
@@ -491,6 +499,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
               "Every member of this group is also a member of the sub-group, with the same roles."
             )}
           </p>
+          <Components.inherit_roles_picker
+            id="group-create-preset-inherit-roles"
+            form={@menu.form}
+            roles={@menu.roles}
+          />
         </div>
 
         <p

@@ -107,7 +107,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
   @group_form_section_fields [
     {"basics", [:name, :group_picture_url]},
     {"access",
-     [:is_public, :is_root_public, :description_for_guests, :has_public_chat, :inherits_members]},
+     [
+       :is_public,
+       :is_root_public,
+       :description_for_guests,
+       :has_public_chat,
+       :inherits_members,
+       :inherit_role_keys
+     ]},
     {"home", [:home_page, :home_alt_description_id]},
     {"description", [:description_name, :description, :description_format, :uses_api]},
     {"location", [:latitude, :longitude, :pin_icon, :area, :route]}
@@ -864,6 +871,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 home_page_options={@home_page_options}
                 value_parent_options={@value_parent_options}
                 group={@group}
+                inherit_roles={own_inheritable_roles(@access)}
               />
               <EditGroupTab.panel
                 :if={Access.can?(@access, :edit_group) and @active_tab == "edit_group"}
@@ -875,6 +883,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 dirty={edit_group_dirty?(@edit_group_form)}
                 section={@edit_group_section}
                 inherits_members_option={@inherits_members_option?}
+                inherit_roles={@inherit_role_options}
                 can_delete_group={@access.admin?}
                 description_details_open={@description_details_open}
                 format_options={@format_options}
@@ -1062,10 +1071,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:link_card, link_card(group, active_tab))
          |> assign(:edit_group_section, opening_edit_section(params))
          |> assign(:create_group_section, "basics")
-         |> assign(
-           :inherits_members_option?,
-           active_tab == "edit_group" and Social.inherits_members_option?(group)
-         )
+         |> assign_inherits_members_option(active_tab == "edit_group")
          |> assign(:description_details_open, true)
          |> assign(:invite_form, empty_invite_form())
          |> assign(:invite_form_version, 0)
@@ -4819,7 +4825,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
       |> reset_location_draft(false)
       |> assign(:link_card, link_card(group, "edit_group"))
-      |> assign(:inherits_members_option?, Social.inherits_members_option?(group))
+      |> assign_inherits_members_option(true)
     end
   end
 
@@ -4829,6 +4835,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:edit_group_form, nil)
     |> assign(:link_card, nil)
   end
+
+  # Whether the edit tab offers "Inherit members", and the parent's roles it
+  # can inherit them by.
+  defp assign_inherits_members_option(socket, editing?) do
+    group = socket.assigns.group
+    option? = editing? and Social.inherits_members_option?(group)
+
+    socket
+    |> assign(:inherits_members_option?, option?)
+    |> assign(
+      :inherit_role_options,
+      if(option?, do: Access.inheritable_roles(group.parent_id), else: [])
+    )
+  end
+
+  # This group's roles but everyone, which a sub-group inherits members by.
+  defp own_inheritable_roles(%{manifest: %{roles: roles}}),
+    do: Enum.reject(roles, &(&1.key == GroupRole.everyone_key()))
+
+  defp own_inheritable_roles(_access), do: []
 
   # A link can open the edit tab on one of its cards.
   defp opening_edit_section(%{"section" => section}) when section in @edit_group_sections,

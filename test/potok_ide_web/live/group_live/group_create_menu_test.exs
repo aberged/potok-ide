@@ -239,6 +239,48 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       assert group.is_public
       refute group.inherits_members
     end
+
+    test "inheriting members can be narrowed to the group's roles", ctx do
+      {:ok, _manifest} = Social.create_own_group_manifest(ctx.owner, ctx.parent)
+      {:ok, council} = Social.create_group_role(ctx.owner, ctx.parent, %{"name" => "savet"})
+      add_member!(ctx.owner, ctx.parent, ctx.member)
+
+      {:ok, _} =
+        Social.assign_group_member_role(ctx.owner, ctx.parent, ctx.member.id, council.key)
+
+      {_account, other} = account_with_profile!("create-other")
+      add_member!(ctx.owner, ctx.parent, other)
+
+      lv = ctx |> sub_groups() |> open_menu() |> pick("chat")
+
+      assert has_element?(lv, "#group-create-preset-inherit-roles-#{council.key}")
+      assert has_element?(lv, "#group-create-preset-inherit-roles-admin")
+      refute has_element?(lv, "#group-create-preset-inherit-roles-everyone")
+
+      lv
+      |> form("#group-create-preset-form", group_preset: %{inherits_members: false})
+      |> render_change()
+
+      refute has_element?(lv, "#group-create-preset-inherit-roles")
+
+      lv
+      |> form("#group-create-preset-form", group_preset: %{inherits_members: true})
+      |> render_change()
+
+      lv
+      |> form("#group-create-preset-form",
+        group_preset: %{name: "Savet", inherit_role_keys: [council.key]}
+      )
+      |> render_submit()
+
+      assert_redirect(lv)
+
+      group = Repo.get_by!(Group, name: "Savet")
+
+      assert group.inherit_role_keys == [council.key]
+      assert Social.member_of_group?(ctx.member, group)
+      refute Social.member_of_group?(other, group)
+    end
   end
 
   describe "where it leads" do
