@@ -38,7 +38,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   a group from a preset, asked of whoever may make a sub-group by hand, as the
   page's own menu asks. `show_group` opens a sub-group's description on the
   page, over the app (`GroupSheet`), where its own apps run with that group's
-  rights: an app never runs another app's code.
+  rights: an app never runs another app's code. `open_map` takes the viewer to
+  the root's map at a point the app keeps, such as a farm, with the group's
+  picture on the pin (`RootMapState`, `?point=`); the group's own place stays
+  as it is.
 
   Reads are free, but counts and sums (`summarize_values`, `aggregate_values`)
   scan every value the app keeps and hold the page for up to five seconds, so
@@ -107,7 +110,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   @max_subgroup_limit 50
 
   @signed_in_methods ~w(
-    list_subgroups open_group get_group list_children get_child
+    list_subgroups open_group open_map get_group list_children get_child
     create_child create_children update_child withdraw_child preview_description
     toggle_group_reaction share_group list_polls get_poll open_poll open_poll_form
     save_config update_value delete_value delete_values grade_value list_roles
@@ -807,6 +810,23 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     end
   end
 
+  # The root's map at a point the app names, such as a farm or where goods are
+  # handed out, with this group's picture on the pin and `label` on its card
+  # (`RootMapState`, `?point=`). The group's own place stays as it is; the map
+  # cleans the label again, as anyone may type the link.
+  defp run("open_map", params, socket) do
+    with {:ok, lat} <- coordinate(params["lat"], 90),
+         {:ok, lng} <- coordinate(params["lng"], 180) do
+      query =
+        [point: "#{Float.round(lat, 6)},#{Float.round(lng, 6)}", group: socket.assigns.group.id] ++
+          map_label(params["label"])
+
+      {%{ok: true}, navigate(socket, ~p"/groups/#{Social.root_group_id()}/map?#{query}")}
+    else
+      _invalid -> {error("invalid_place", nil), socket}
+    end
+  end
+
   defp run("toggle_group_reaction", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
 
@@ -1446,6 +1466,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     do: {:ok, value / 1}
 
   defp coordinate(_value, _bound), do: :error
+
+  defp map_label(label) when is_binary(label) do
+    case label |> String.trim() |> String.slice(0, 80) do
+      "" -> []
+      text -> [label: text]
+    end
+  end
+
+  defp map_label(_label), do: []
 
   defp place_pin(nil), do: {:ok, nil}
 

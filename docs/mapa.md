@@ -70,8 +70,9 @@ Mapa korena se otvara i na jednom mestu, od bilo kada i kakvi god da su filteri:
 |---|---|
 | `?place=ID` | mesto grupe: istaknut pin sa prstenom koji pulsira, a područje ili rutu i uokvirene; vodi ga traka iznad opisa grupe-tačke („Prikaži na mapi“) |
 | `?event=ID` | mesto događaja iz kalendara, uz karticu događaja dole (naslov, vreme, mesto, **Otvori događaj**, × je sklanja, dodir na pin je vraća); otkazan događaj ne pokazuje ništa |
+| `?point=LAT,LNG&group=ID&label=TEKST` | tačka koju aplikacija čuva u svojim podacima (`openMap`), npr. proizvođač ili mesto podele: pin sa slikom grupe, kakav god da je njen pin, i kartica sa imenom grupe, oznakom (jedan red, do 80 znakova) i **Otvori grupu**; × je sklanja, dodir na pin je vraća. Mesto grupe ostaje kakvo jeste i ne uokviruje se. Grupa koju gledalac ne vidi ostavlja običan pin i samo oznaku |
 
-Oba parametra čita samo tab mape (`RootMapState`), jer kalendar ima svoj `event`. Grupa ili događaj koje gledalac ne vidi ne menjaju ništa.
+Sva tri čita samo tab mape (`RootMapState`), jer kalendar ima svoj `event`; `event` je jači od `place`, a `place` od `point`. Grupa ili događaj koje gledalac ne vidi ne menjaju ništa.
 
 Mesto događaja su reči („Mesto“), a na mapi može biti **grupa sa mestom** (`group_events.place_group_id`) ili **svoje mesto**: tačka, područje ili ruta (`latitude`/`longitude`, `area`, `route`), nikad oboje. U formi događaja dugme **Izaberi lokaciju** otvara meni grupa sa mestom koje autor vidi, od najbližih (`GroupPlaces.search/4`), a **Izaberi na mapi** otvara malu mapu sa istim izborom **Tačka / Područje / Ruta** kao na kartici Lokacija grupe (isti `LocationPicker`, uz događaje forme `calendar_place_area` i `calendar_place_route`, i zajedničke delove u `LocationEditor`). Područje drži pin u sebi, a ruta na početku; na mapi korena područje događaja je uokvireno, a ruta istaknuta, i pregledač ih traži jednom (`root_map_focus_shape`). Događaj na mestu grupe stoji gde i grupa i prati je kad se pomeri; ko grupu ne vidi, vidi samo reči (`Events.place/2`), a brisanje grupe ostavlja reči. Detalj događaja ima link **Prikaži na mapi**, a `.ics` dobija liniju `GEO`.
 

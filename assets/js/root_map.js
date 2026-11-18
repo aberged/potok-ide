@@ -46,6 +46,11 @@
 // the event's route, brings back the event's card (`root_map_focus_show`); on
 // a group's pin it opens the group.
 //
+// A point an app sends the viewer to (`?point=`, `open_map`) comes as a focus
+// marked `point`: a pin with the app's group's picture, or a plain pin when
+// the viewer does not see the group, and the app's `label`. A tap brings its
+// card back, as an event's does.
+//
 // The layers (places, areas, routes) are switched on the page and remembered
 // here.
 //
@@ -675,7 +680,8 @@ export const RootMap = {
   drawFocus(focus) {
     this.syncFocusShape(focus?.shape || null)
 
-    const key = focus ? `${placeKey("f", focus)}:${focus.event ? "event" : "group"}` : null
+    const look = focus?.event ? "event" : focus?.point ? "point" : "group"
+    const key = focus ? `${placeKey("f", focus)}:${focus.label || ""}:${look}` : null
     if (key === this.focusKey) return
 
     this.focusKey = key
@@ -683,6 +689,8 @@ export const RootMap = {
     if (!focus) return
 
     const L = this.L
+    const title =
+      focus.label && focus.label !== focus.name ? `${focus.name} · ${focus.label}` : focus.name
 
     L.marker([focus.lat, focus.lng], {
       icon: L.divIcon({
@@ -693,12 +701,12 @@ export const RootMap = {
         iconSize: PIN_SIZE,
         iconAnchor: PIN_ANCHOR,
       }),
-      title: focus.name,
-      alt: focus.name,
+      title,
+      alt: title,
       zIndexOffset: 2000,
     })
       .on("click", () => {
-        if (focus.event) {
+        if (focus.event || focus.point) {
           this.pushEvent("root_map_focus_show", {})
         } else {
           this.select(focus.id, true)

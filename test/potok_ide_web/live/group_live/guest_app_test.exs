@@ -135,6 +135,7 @@ defmodule PotokIdeWeb.GroupLive.GuestAppTest do
           {"open_poll", %{"id" => 1}},
           {"file_url", %{"id" => 1}},
           {"create_place", %{"lat" => 44.8, "lng" => 20.4}},
+          {"open_map", %{"lat" => 44.8, "lng" => 20.4}},
           {"update_description", %{"description" => "<p>moje</p>"}}
         ] do
       assert %{ok: false, error: "forbidden"} = call(view, method, params), method

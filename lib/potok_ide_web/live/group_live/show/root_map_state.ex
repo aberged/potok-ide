@@ -33,6 +33,12 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   filters: its pin stands out, and an area or a route is outlined. Only the
   map tab reads them, as the calendar has an `event` of its own.
 
+  `?point=LAT,LNG&group=ID&label=TEXT` opens the map on a point an app names
+  (`open_map` in `AppApi`), such as a farm or where goods are handed out: a pin
+  with the group's picture, whatever its own pin, and a card with its name and
+  the label. The group's own place stays as it is and is not outlined. A group
+  the viewer cannot see leaves a plain pin and the label only.
+
   Three layers, places, areas and routes, are switched on the map, and the
   browser remembers them.
   """
@@ -47,6 +53,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   alias PotokIde.RateLimit
   alias PotokIde.Social
   alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPlaces, GroupPresets, GroupRoutes}
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.{AppApi, GroupSheet}
 
   @periods ~w(24h 7d 30d 12m any)
@@ -80,10 +87,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
       root_map_area_param: nil,
       root_map_route_param: nil,
       root_map_route: nil,
-      # `?place=` and `?event=`: the place in focus (`focus/2`) and whether
-      # the event's card shows.
+      # `?place=`, `?event=` and `?point=`: the place in focus (`focus/2`,
+      # `point_focus/2`) and whether its card shows.
       root_map_place_param: nil,
       root_map_event_param: nil,
+      root_map_point_param: nil,
       root_map_focus: nil,
       root_map_focus_card?: false,
       root_map_area_query: "",
@@ -166,8 +174,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   fitted to it once the browser asks for its view. `?route=ID` opens it on
   that route: from any time, fitted to the route, which is drawn whatever
   the filters. `?place=ID` and `?event=ID` put a group's or an event's place
-  in focus, from any time and fitted to it. An area, a route, a group or an
-  event the viewer cannot see is left out.
+  in focus, from any time and fitted to it, and `?point=` an app's point. An
+  area, a route, a group or an event the viewer cannot see is left out.
   """
   def assign_params(socket, params) do
     socket
@@ -225,26 +233,36 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  # The place of `?event=` or else of `?place=`, read on the map tab only:
-  # the calendar's `?event=` must not leave the map a focus to fly to later.
+  # The place of `?event=`, else of `?place=`, else the point of `?point=`,
+  # read on the map tab only: the calendar's `?event=` must not leave the map
+  # a focus to fly to later.
   defp assign_focus_params(socket, params) do
-    {place, event} = {params["place"], params["event"]}
+    {place, event, point} = {params["place"], params["event"], point_param(params)}
 
     cond do
       socket.assigns[:active_tab] != "map" or not root?(socket) ->
         socket
 
-      {place, event} ==
-          {socket.assigns.root_map_place_param, socket.assigns.root_map_event_param} ->
+      {place, event, point} ==
+          {socket.assigns.root_map_place_param, socket.assigns.root_map_event_param,
+           socket.assigns.root_map_point_param} ->
         socket
 
       true ->
-        socket = assign(socket, root_map_place_param: place, root_map_event_param: event)
+        socket =
+          assign(socket,
+            root_map_place_param: place,
+            root_map_event_param: event,
+            root_map_point_param: point
+          )
 
-        case focus(socket.assigns.current_profile,
-               event_id: parse_id(event),
-               group_id: parse_id(place)
-             ) do
+        focus =
+          focus(socket.assigns.current_profile,
+            event_id: parse_id(event),
+            group_id: parse_id(place)
+          ) || point_focus(socket, point)
+
+        case focus do
           nil ->
             assign(socket, root_map_focus: nil, root_map_focus_card?: false)
 
@@ -254,7 +272,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
             socket
             |> assign(
               root_map_focus: focus,
-              root_map_focus_card?: focus.event != nil,
+              root_map_focus_card?: focus_card?(focus),
               root_map_filters: filters,
               root_map_extent: nil,
               root_map_fit: focus.bounds
@@ -272,7 +290,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
          {:ok, %Event{} = event} <- Events.get_event(profile, id),
          false <- Event.cancelled?(event),
          %{} = place <- Events.place(profile, event) do
-      Map.merge(place, %{event: event, occurrence: Events.upcoming_occurrence(event)})
+      Map.merge(place, %{event: event, occurrence: Events.upcoming_occurrence(event), point: nil})
     else
       _no_event ->
         with id when is_integer(id) <- group_id,
@@ -281,6 +299,7 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
             group: group,
             event: nil,
             occurrence: nil,
+            point: nil,
             lat: group.latitude,
             lng: group.longitude,
             shape: GroupPlaces.shape(group),
@@ -299,12 +318,78 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  @doc "Whether the link's area, route, group or event changed while the map stays open."
+  # A card shows for an event, and for a point with a group or a label.
+  defp focus_card?(%{event: %Event{}}), do: true
+  defp focus_card?(%{point: %{group: group, label: label}}), do: group != nil or label != nil
+  defp focus_card?(_focus), do: false
+
+  defp point_param(params), do: {params["point"], params["group"], params["label"]}
+
+  # An app's point (`?point=LAT,LNG`). The group the app is in, when the
+  # viewer sees it, goes with it under `point`, never as the focus's `group`,
+  # so its own place and shape stay out of it.
+  defp point_focus(socket, {point, group_id, label}) do
+    with {lat, lng} <- parse_point(point) do
+      group =
+        case parse_id(group_id) do
+          nil ->
+            nil
+
+          id ->
+            Social.get_visible_group_below(
+              socket.assigns.group,
+              socket.assigns.current_profile,
+              id
+            )
+        end
+
+      %{
+        group: nil,
+        event: nil,
+        occurrence: nil,
+        point: %{group: group, label: point_label(label)},
+        lat: lat,
+        lng: lng,
+        shape: :point,
+        bounds: [[lat, lng], [lat, lng]]
+      }
+    end
+  end
+
+  # "LAT,LNG" in degrees, rounded to six decimals (about 10 cm).
+  defp parse_point(param) when is_binary(param) do
+    with [lat, lng] <- String.split(param, ","),
+         {lat, ""} <- Float.parse(String.trim(lat)),
+         {lng, ""} <- Float.parse(String.trim(lng)),
+         true <- abs(lat) <= 90 and abs(lng) <= 180 do
+      {Float.round(lat, 6), Float.round(lng, 6)}
+    else
+      _invalid -> nil
+    end
+  end
+
+  defp parse_point(_param), do: nil
+
+  # Words an app sent: one line of at most 80 characters.
+  defp point_label(label) when is_binary(label) do
+    case label
+         |> String.replace(~r/[[:cntrl:]]+/u, " ")
+         |> String.trim()
+         |> String.slice(0, 80) do
+      "" -> nil
+      text -> String.trim_trailing(text)
+    end
+  end
+
+  defp point_label(_label), do: nil
+
+  @doc "Whether the link's area, route, group, event or point changed while the map stays open."
   def params_changed?(socket, params) do
     params["area"] != socket.assigns.root_map_area_param or
       params["route"] != socket.assigns.root_map_route_param or
       params["place"] != socket.assigns.root_map_place_param or
-      params["event"] != socket.assigns.root_map_event_param
+      params["event"] != socket.assigns.root_map_event_param or
+      point_param(params) != socket.assigns.root_map_point_param
   end
 
   def handle_params(socket, params) do
@@ -457,9 +542,26 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
   defp focus_shape(_focus, _shape), do: nil
 
   # The pin in focus, as the browser draws it whatever the filters: the
-  # group's, or the calendar's own pin at an event's point. `event` says a tap
-  # brings the event's card back rather than opening the group.
+  # group's, the calendar's own pin at an event's point, or an app's point
+  # with its group's picture. `event` and `point` say a tap brings the card
+  # back rather than opening the group.
   defp focus_payload(nil), do: nil
+
+  defp focus_payload(%{point: %{group: group, label: label}, lat: lat, lng: lng}) do
+    %{
+      id: group && group.id,
+      name: if(group, do: group.name, else: label || ""),
+      label: label,
+      lat: lat,
+      lng: lng,
+      kind: if(group, do: GroupPins.kind(group), else: "none"),
+      pin: if(group, do: GroupPins.picture()),
+      picture_url: group && Avatars.group_avatar_url(group),
+      is_public: true,
+      event: false,
+      point: true
+    }
+  end
 
   defp focus_payload(%{group: %Group{} = group, event: event}),
     do: group |> AppApi.place_payload() |> Map.put(:event, event != nil)
@@ -822,14 +924,16 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapState do
     end
   end
 
-  # The event's card steps aside; a tap on its pin brings it back, in place
-  # of the other cards at the map's bottom.
+  # The card of the event or the point steps aside; a tap on its pin brings
+  # it back, in place of the other cards at the map's bottom.
   def handle_event("root_map_focus_close", _params, socket),
     do: {:noreply, assign(socket, :root_map_focus_card?, false)}
 
   def handle_event("root_map_focus_show", _params, socket) do
-    case socket.assigns.root_map_focus do
-      %{event: %Event{}} ->
+    focus = socket.assigns.root_map_focus
+
+    case focus && focus_card?(focus) do
+      true ->
         socket =
           if socket.assigns.root_map_here,
             do: push_event(socket, "root_map_select_area", %{id: nil}),

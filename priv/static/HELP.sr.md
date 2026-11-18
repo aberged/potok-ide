@@ -316,7 +316,7 @@ Mesto grupi daješ u Uredi grupu, pod Lokacija:
 - **Područje**: granica koju crtaš temenima, kao mesna zajednica, ili koju doneseš iz GeoJSON fajla. Mapa onda pokazuje šta je u području. Kad se u području vide i granice manjih područja, kao mesnih zajednica u opštini, njegova granica dobija širok providan pojas, da se vidi i tamo gde se poklapa sa njihovim.
 - **Ruta**: šetnja, trka ili biciklistička staza, nacrtana ili donesena iz GPX, KML ili GeoJSON fajla. Mapa pokazuje i kroz koja područja prolazi.
 
-Za pin biraš jednu od 33 ikone ili sliku grupe, a u uglu pina stoji vrsta grupe. Grupa sa mapom (Mapa) pokazuje svoje podgrupe kao pinove, a „Dodaj mesto“ pravi novu.
+Za pin biraš jednu od 33 ikone ili sliku grupe, a u uglu pina stoji vrsta grupe. Grupa sa mapom (Mapa) pokazuje svoje podgrupe kao pinove, a „Dodaj mesto“ pravi novu. Aplikacija u opisu može da te odvede na Mapu grupa i do tačke koju sama čuva, recimo do proizvođača ili mesta podele: pin tada nosi sliku grupe, a kartica ime grupe i reči aplikacije. Mesto same grupe se time ne menja.
 
 ![Lokacija: područje mesne zajednice](lokacija-podrucje)
 

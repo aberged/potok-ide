@@ -822,6 +822,7 @@ const APP_FRAME_METHODS = new Set([
   "current_profile",
   "list_subgroups",
   "open_group",
+  "open_map",
   "get_group",
   "list_children",
   "get_child",

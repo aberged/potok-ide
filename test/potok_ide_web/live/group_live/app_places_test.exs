@@ -2,8 +2,9 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
   @moduledoc """
   What a map app gets from the App API: how to draw its pins
   (`map_config`), the placed sub-groups the viewer sees (`list_places`), a
-  new place where the viewer taps (`create_place`), and a sub-group's
-  description over the app (`show_group`).
+  new place where the viewer taps (`create_place`), a sub-group's
+  description over the app (`show_group`), and the root's map at a point the
+  app keeps (`open_map`).
   """
   use PotokIdeWeb.ConnCase, async: true
 
@@ -368,6 +369,46 @@ defmodule PotokIdeWeb.GroupLive.AppPlacesTest do
       end
 
       refute has_element?(view, "#group-sheet")
+    end
+  end
+
+  describe "open_map" do
+    test "takes the viewer to the root's map at the point, with the group and the words", ctx do
+      root = Social.get_root_group!()
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+
+      call(view, "open_map", %{"lat" => 45.1234567, "lng" => 19.9, "label" => "  Kod česme  "})
+
+      assert_redirect(
+        view,
+        ~p"/groups/#{root.id}/map?#{[point: "45.123457,19.9", group: ctx.map.id, label: "Kod česme"]}"
+      )
+
+      # The group's own place stays as it was.
+      assert Social.get_group!(ctx.map.id).latitude == nil
+    end
+
+    test "goes without words when there are none", ctx do
+      root = Social.get_root_group!()
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+
+      call(view, "open_map", %{"lat" => 44, "lng" => 20.5, "label" => " "})
+
+      assert_redirect(view, ~p"/groups/#{root.id}/map?#{[point: "44.0,20.5", group: ctx.map.id]}")
+    end
+
+    test "refuses a point out of range or not in numbers", ctx do
+      view = open_map(build_conn(), ctx.member_account, ctx.map)
+
+      for params <- [
+            %{"lat" => 91, "lng" => 0},
+            %{"lat" => 45, "lng" => -181},
+            %{"lat" => "45.1", "lng" => 19.9},
+            %{"lng" => 19.9}
+          ] do
+        call(view, "open_map", params)
+        assert_reply(view, %{ok: false, error: "invalid_place"})
+      end
     end
   end
 end

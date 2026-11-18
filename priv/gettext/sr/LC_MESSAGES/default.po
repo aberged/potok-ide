@@ -1014,8 +1014,8 @@ msgstr "Nije moguće poslati zahtev za pristup."
 msgid "Could not update access request."
 msgstr "Nije moguće ažurirati zahtev za pristup."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:437
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1804
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:440
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1833
 #, elixir-autogen, elixir-format
 msgid "Could not update group description."
 msgstr "Nije moguće ažurirati opis grupe."
@@ -1244,12 +1244,12 @@ msgstr "Već imate pozivnicu za ovu grupu na čekanju."
 msgid "You are already a group member."
 msgstr "Već ste član grupe."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:287
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:337
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:358
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:388
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:681
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1303
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:290
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:340
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:361
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:391
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:684
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1323
 #, elixir-autogen, elixir-format
 msgid "You must be a group member to access group data values."
 msgstr "Morate biti član grupe da biste pristupili vrednostima podataka grupe."
@@ -1570,7 +1570,7 @@ msgid "Requests created by me"
 msgstr "Moji zahtevi"
 
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:62
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:131
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:132
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:276
 #, elixir-autogen, elixir-format
 msgid "Search by name"
@@ -1717,10 +1717,10 @@ msgstr "Osveži"
 msgid "Show password"
 msgstr "Prikaži lozinku"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1315
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1415
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1664
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1897
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1335
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1435
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1693
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1926
 #, elixir-autogen, elixir-format
 msgid "Too many changes in a short time. Try again shortly."
 msgstr "Previše izmena za kratko vreme. Pokušajte ponovo uskoro."
@@ -2306,17 +2306,17 @@ msgid "Your roles in this group do not allow posting messages."
 msgstr "Vaše uloge u ovoj grupi ne dozvoljavaju pisanje poruka."
 
 #: lib/potok_ide_web/live/group_live/show.ex:6037
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:416
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:455
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:821
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:994
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1084
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1176
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1300
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1391
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1404
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1516
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1796
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:419
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:458
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:841
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1014
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1104
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1196
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1320
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1411
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1424
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1545
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1825
 #, elixir-autogen, elixir-format
 msgid "Your roles in this group do not allow that."
 msgstr "Vaše uloge u ovoj grupi to ne dozvoljavaju."
@@ -2409,6 +2409,7 @@ msgstr "Prikazani su samo najnoviji fajlovi. Otvori podgrupu da vidiš sve njene
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:256
 #: lib/potok_ide_web/live/group_live/show/group_sheet.ex:106
 #: lib/potok_ide_web/live/group_live/show/group_sheet.ex:111
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:875
 #, elixir-autogen, elixir-format
 msgid "Open group"
 msgstr "Otvori grupu"
@@ -2517,10 +2518,11 @@ msgstr "Podgrupe grupe %{name}"
 #: lib/potok_ide_web/live/group_live/show/process_entities.ex:119
 #: lib/potok_ide_web/live/group_live/show/process_form.ex:257
 #: lib/potok_ide_web/live/group_live/show/processes_tab.ex:615
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:219
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:291
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:774
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:851
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:220
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:292
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:780
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:862
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:925
 #: lib/potok_ide_web/live/group_live/show/value_search.ex:228
 #: lib/potok_ide_web/live/group_live/show/values_tab.ex:1122
 #, elixir-autogen, elixir-format
@@ -4122,31 +4124,31 @@ msgstr "stranici za prijavu"
 msgid "Use this profile"
 msgstr "Koristi ovaj profil"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:61
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:62
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:228
 #, elixir-autogen, elixir-format
 msgid "Hide public groups you are not in and do not follow"
 msgstr "Sakrij javne grupe u kojima nisi član i koje ne pratiš"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:74
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:75
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:244
 #, elixir-autogen, elixir-format
 msgid "Public groups"
 msgstr "Javne grupe"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:232
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:233
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:383
 #, elixir-autogen, elixir-format
 msgid "Public groups you are not in and do not follow are hidden."
 msgstr "Javne grupe u kojima nisi član i koje ne pratiš su sakrivene."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:261
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:262
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:391
 #, elixir-autogen, elixir-format
 msgid "Show public groups"
 msgstr "Prikaži javne grupe"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:62
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:63
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:229
 #, elixir-autogen, elixir-format
 msgid "Show public groups you are not in and do not follow"
@@ -4523,8 +4525,8 @@ msgstr "Poruke"
 msgid "Copy"
 msgstr "Kopiraj"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:377
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1361
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:380
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1381
 #, elixir-autogen, elixir-format
 msgid "Could not save the data value."
 msgstr "Nije moguće sačuvati vrednost podataka."
@@ -4609,13 +4611,13 @@ msgstr "Razgovori, događaji, fajlovi, uloge, notifikacije, grupe, podgrupe i ap
 msgid "Apps"
 msgstr "Aplikacije"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:991
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1436
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1546
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1587
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1617
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1652
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1792
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1011
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1456
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1575
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1616
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1646
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1681
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1821
 #, elixir-autogen, elixir-format
 msgid "Could not save the group."
 msgstr "Nije moguće sačuvati grupu."
@@ -4931,7 +4933,7 @@ msgstr "Do 10 fajlova po poruci, do 100 MB svaki. Slike, video i zvuk otvaraju s
 msgid "You cannot send pictures in this group."
 msgstr "U ovoj grupi ne možeš da šalješ slike."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1333
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1353
 #, elixir-autogen, elixir-format
 msgid "A file is missing or does not fit."
 msgstr "Fajl nedostaje ili ne odgovara."
@@ -4951,32 +4953,32 @@ msgstr "Fajlovi poslati kroz %{name}. Otvaraju ih samo članovi ove grupe."
 msgid "Private files"
 msgstr "Privatni fajlovi"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1318
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1338
 #, elixir-autogen, elixir-format
 msgid "That is too much to save."
 msgstr "To je previše za čuvanje."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1339
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1359
 #, elixir-autogen, elixir-format
 msgid "The group for private files is no longer closed."
 msgstr "Grupa za privatne fajlove više nije zatvorena."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1336
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1356
 #, elixir-autogen, elixir-format
 msgid "The group that keeps the files is gone."
 msgstr "Grupe koja čuva fajlove više nema."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1312
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1332
 #, elixir-autogen, elixir-format
 msgid "The scores are out, so the answer can no longer change."
 msgstr "Ocene su objavljene, pa odgovor više ne može da se menja."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1306
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1326
 #, elixir-autogen, elixir-format
 msgid "This no longer takes answers."
 msgstr "Odgovori se više ne primaju."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1309
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1329
 #, elixir-autogen, elixir-format
 msgid "You have already answered."
 msgstr "Tvoj odgovor je već poslat."
@@ -5018,14 +5020,14 @@ msgstr "Forma je spremna. Napiši pitanja, pa je objavi."
 msgid "Too many requests in a short time. Try again in %{minutes} min."
 msgstr "Previše zahteva u kratkom roku. Pokušaj ponovo za %{minutes} min."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1358
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1378
 #, elixir-autogen, elixir-format
 msgid "Counting took too long. Try narrowing it down."
 msgstr "Brojanje je trajalo predugo. Pokušaj da suziš izbor."
 
 #: lib/potok_ide_web/live/group_live/guest_app.ex:180
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1774
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1910
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1803
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1939
 #, elixir-autogen, elixir-format
 msgid "Too many requests in a short time. Try again shortly."
 msgstr "Previše zahteva u kratkom roku. Pokušaj ponovo uskoro."
@@ -5037,7 +5039,7 @@ msgid "All kinds"
 msgstr "Sve vrste"
 
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:47
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:89
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:90
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:260
 #, elixir-autogen, elixir-format
 msgid "Kind"
@@ -5061,14 +5063,14 @@ msgid "Show one kind of sub-groups"
 msgstr "Prikaži samo jednu vrstu podgrupa"
 
 #: lib/potok_ide_web/live/group_live/show/choice_menus.ex:16
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:81
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:82
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:252
 #, elixir-autogen, elixir-format
 msgid "All groups"
 msgstr "Sve grupe"
 
 #: lib/potok_ide_web/live/group_live/show/files_tab.ex:202
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:249
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:250
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:375
 #, elixir-autogen, elixir-format
 msgid "Clear filters"
@@ -5089,8 +5091,8 @@ msgstr "Autor"
 msgid "Member"
 msgstr "Član"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:83
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:484
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:84
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:490
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:254
 #: lib/potok_ide_web/live/group_live/show/sub_groups_tab.ex:511
 #, elixir-autogen, elixir-format
@@ -5153,7 +5155,7 @@ msgid "Food and drink"
 msgstr "Hrana i piće"
 
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:1096
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:935
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1009
 #, elixir-autogen, elixir-format
 msgid "Group picture"
 msgstr "Slika grupe"
@@ -5372,7 +5374,7 @@ msgstr "Njene podgrupe kao pinovi na mapi."
 msgid "The map is ready. Add its first place, or give a sub-group a place in its settings."
 msgstr "Mapa je spremna. Dodaj prvo mesto ili podgrupi postavi mesto u njenim podešavanjima."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:164
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:165
 #, elixir-autogen, elixir-format
 msgid "%{count} group in this part of the map"
 msgid_plural "%{count} groups in this part of the map"
@@ -5380,100 +5382,100 @@ msgstr[0] "%{count} grupa u ovom delu mape"
 msgstr[1] "%{count} grupe u ovom delu mape"
 msgstr[2] "%{count} grupa u ovom delu mape"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:713
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:719
 #, elixir-autogen, elixir-format
 msgid "%{from} – %{to}"
 msgstr "%{from} – %{to}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:690
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:696
 #, elixir-autogen, elixir-format
 msgid "12 months"
 msgstr "12 meseci"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:672
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:678
 #, elixir-autogen, elixir-format
 msgid "24 hours"
 msgstr "24 sata"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:684
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:690
 #, elixir-autogen, elixir-format
 msgid "30 days"
 msgstr "30 dana"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:678
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:684
 #, elixir-autogen, elixir-format
 msgid "7 days"
 msgstr "7 dana"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:238
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:239
 #, elixir-autogen, elixir-format
 msgid "A group gets its place in its settings, on the Location card."
 msgstr "Grupa dobija mesto u svojim podešavanjima, na kartici Lokacija."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:706
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:712
 #, elixir-autogen, elixir-format
 msgid "Active · %{frame}"
 msgstr "Aktivne · %{frame}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:107
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:692
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:697
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:108
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:698
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:703
 #, elixir-autogen, elixir-format
 msgid "Any time"
 msgstr "Bilo kada"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:597
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:603
 #, elixir-autogen, elixir-format
 msgid "Created"
 msgstr "Nastanak"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:641
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:647
 #, elixir-autogen, elixir-format
 msgid "From"
 msgstr "Od"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:634
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:640
 #, elixir-autogen, elixir-format
 msgid "From date to date"
 msgstr "Od datuma do datuma"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:149
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:150
 #, elixir-autogen, elixir-format
 msgid "Groups here: %{count}. Tap to see them."
 msgstr "Grupa ovde: %{count}. Dodirni da ih vidiš."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:284
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:285
 #, elixir-autogen, elixir-format
 msgid "Groups in this place"
 msgstr "Grupe na ovom mestu"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:91
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:492
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:92
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:498
 #, elixir-autogen, elixir-format
 msgid "Kind of groups"
 msgstr "Vrsta grupa"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:689
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:695
 #, elixir-autogen, elixir-format
 msgid "Last 12 months"
 msgstr "Poslednjih 12 meseci"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:671
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:677
 #, elixir-autogen, elixir-format
 msgid "Last 24 hours"
 msgstr "Poslednja 24 sata"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:683
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:689
 #, elixir-autogen, elixir-format
 msgid "Last 30 days"
 msgstr "Poslednjih 30 dana"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:677
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:683
 #, elixir-autogen, elixir-format
 msgid "Last 7 days"
 msgstr "Poslednjih 7 dana"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:598
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:604
 #, elixir-autogen, elixir-format
 msgid "Last message"
 msgstr "Poslednja poruka"
@@ -5483,22 +5485,22 @@ msgstr "Poslednja poruka"
 msgid "Map of groups"
 msgstr "Mapa grupa"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:330
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:331
 #, elixir-autogen, elixir-format
 msgid "More groups stand here. Search by name to find one."
 msgstr "Ovde ima još grupa. Potraži po imenu onu koja ti treba."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:230
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:231
 #, elixir-autogen, elixir-format
 msgid "No group with a place fits these filters."
 msgstr "Nijedna grupa sa mestom ne odgovara ovim filterima."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:162
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:163
 #, elixir-autogen, elixir-format
 msgid "No groups in this part of the map"
 msgstr "U ovom delu mape nema grupa"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:234
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:235
 #, elixir-autogen, elixir-format
 msgid "None of your groups has a place on the map yet."
 msgstr "Nijedna tvoja grupa još nema mesto na mapi."
@@ -5508,63 +5510,63 @@ msgstr "Nijedna tvoja grupa još nema mesto na mapi."
 msgid "Open the map of groups"
 msgstr "Otvori mapu grupa"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:657
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:663
 #, elixir-autogen, elixir-format
 msgid "Show"
 msgstr "Prikaži"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:90
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:91
 #, elixir-autogen, elixir-format
 msgid "Show one kind of groups"
 msgstr "Prikaži samo jednu vrstu grupa"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:108
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:109
 #, elixir-autogen, elixir-format
 msgid "Show the groups of a time frame"
 msgstr "Prikaži grupe iz jednog perioda"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:82
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:83
 #, elixir-autogen, elixir-format
 msgid "Show the groups you are in, created or follow"
 msgstr "Prikaži grupe u kojima si član, čiji si autor ili koje pratiš"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:150
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:151
 #, elixir-autogen, elixir-format
 msgid "The map could not load."
 msgstr "Mapa se nije učitala."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:273
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:274
 #, elixir-autogen, elixir-format
 msgid "The map took too long to load. Narrow the filters or zoom in."
 msgstr "Mapa se predugo učitavala. Suzi filtere ili približi mapu."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:109
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:585
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:110
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:591
 #, elixir-autogen, elixir-format
 msgid "Time frame"
 msgstr "Period"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:647
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:653
 #, elixir-autogen, elixir-format
 msgid "To"
 msgstr "Do"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:591
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:597
 #, elixir-autogen, elixir-format
 msgid "What the time frame counts"
 msgstr "Po čemu se računa period"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:716
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:722
 #, elixir-autogen, elixir-format
 msgid "from %{date}"
 msgstr "od %{date}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:718
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:724
 #, elixir-autogen, elixir-format
 msgid "until %{date}"
 msgstr "do %{date}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:184
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:185
 #, elixir-autogen, elixir-format
 msgctxt "map"
 msgid "Show all"
@@ -5602,13 +5604,13 @@ msgstr "Gde Potok izvire"
 msgid "A border from a file (points: %{points}, parts: %{parts}). Bring another file or draw it again to change it."
 msgstr "Granica iz fajla (tačaka: %{points}, delova: %{parts}). Da je promeniš, uvezi drugi fajl ili je nacrtaj iznova."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:116
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:437
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:117
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:443
 #, elixir-autogen, elixir-format
 msgid "All areas"
 msgstr "Sva područja"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:888
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:962
 #, elixir-autogen, elixir-format
 msgid "Also here"
 msgstr "Takođe ovde"
@@ -5625,8 +5627,8 @@ msgstr "Područje, kao kod mesne zajednice, pokriva sve unutar svoje granice: do
 
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:631
 #: lib/potok_ide_web/live/group_live/show/location_editor.ex:95
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:117
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:842
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:118
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:916
 #: lib/potok_ide_web/pin_icons.ex:293
 #, elixir-autogen, elixir-format
 msgid "Area"
@@ -5637,14 +5639,14 @@ msgstr "Područje"
 msgid "Area %{number}"
 msgstr "Područje %{number}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:119
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:399
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:917
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:120
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:405
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:991
 #, elixir-autogen, elixir-format
 msgid "Areas"
 msgstr "Područja"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:918
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:992
 #, elixir-autogen, elixir-format
 msgid "Borders of the areas wide enough, under the pins"
 msgstr "Granice dovoljno širokih područja, ispod pinova"
@@ -5655,7 +5657,7 @@ msgstr "Granice dovoljno širokih područja, ispod pinova"
 msgid "Draw again"
 msgstr "Nacrtaj iznova"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:413
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:419
 #, elixir-autogen, elixir-format
 msgid "Find an area"
 msgstr "Nađi područje"
@@ -5665,7 +5667,7 @@ msgstr "Nađi područje"
 msgid "GeoJSON file"
 msgstr "GeoJSON fajl"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:912
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:986
 #, elixir-autogen, elixir-format
 msgid "Groups as pins, by the filters"
 msgstr "Grupe kao pinovi, po filterima"
@@ -5675,7 +5677,7 @@ msgstr "Grupe kao pinovi, po filterima"
 msgid "Groups in this area on the map"
 msgstr "Grupe u ovom području na mapi"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:942
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1016
 #, elixir-autogen, elixir-format
 msgid "In %{count} area"
 msgid_plural "In %{count} areas"
@@ -5683,7 +5685,7 @@ msgstr[0] "Područja: %{count}"
 msgstr[1] "Područja: %{count}"
 msgstr[2] "Područja: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:939
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1013
 #, elixir-autogen, elixir-format
 msgid "In %{name}"
 msgstr "U: %{name}"
@@ -5694,40 +5696,40 @@ msgstr "U: %{name}"
 msgid "Lies in"
 msgstr "Nalazi se u"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:192
 #: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:193
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:348
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:352
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:194
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:354
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:358
 #, elixir-autogen, elixir-format
 msgid "Map layers"
 msgstr "Slojevi mape"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:472
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:478
 #, elixir-autogen, elixir-format
 msgid "No area by that name."
 msgstr "Nema područja tog imena."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:228
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:229
 #, elixir-autogen, elixir-format
 msgid "No group with a place inside the chosen areas fits these filters."
 msgstr "Nijedna grupa sa mestom u izabranim područjima ne odgovara ovim filterima."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:471
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:477
 #, elixir-autogen, elixir-format
 msgid "No group you see has an area yet."
 msgstr "Nijedna grupa koju vidiš još nema područje."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:876
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:950
 #, elixir-autogen, elixir-format
 msgid "Only inside"
 msgstr "Samo unutra"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:864
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:938
 #, elixir-autogen, elixir-format
 msgid "Open"
 msgstr "Otvori"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:911
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:985
 #, elixir-autogen, elixir-format
 msgid "Places"
 msgstr "Mesta"
@@ -5742,12 +5744,12 @@ msgstr "Tačka"
 msgid "Remove corner"
 msgstr "Ukloni teme"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:876
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:950
 #, elixir-autogen, elixir-format
 msgid "Show all groups"
 msgstr "Prikaži sve grupe"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:118
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:119
 #, elixir-autogen, elixir-format
 msgid "Show the groups inside areas"
 msgstr "Prikaži grupe unutar područja"
@@ -5793,7 +5795,7 @@ msgstr "Koordinate u fajlu nisu geografska dužina i širina (WGS 84, EPSG:4326)
 msgid "Undo"
 msgstr "Poništi"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:884
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:958
 #, elixir-autogen, elixir-format
 msgid "Zoom to the area"
 msgstr "Uvećaj na područje"
@@ -5808,7 +5810,7 @@ msgstr "Mesna zajednica"
 msgid "Municipality"
 msgstr "Opština"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:932
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1006
 #, elixir-autogen, elixir-format
 msgid "%{count} pin"
 msgid_plural "%{count} pins"
@@ -5816,39 +5818,39 @@ msgstr[0] "Pinovi: %{count}"
 msgstr[1] "Pinovi: %{count}"
 msgstr[2] "Pinovi: %{count}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:95
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:519
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:96
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:525
 #, elixir-autogen, elixir-format
 msgid "All pins"
 msgstr "Svi pinovi"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:96
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:97
 #, elixir-autogen, elixir-format
 msgid "Pin"
 msgstr "Pin"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:98
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:499
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:99
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:505
 #, elixir-autogen, elixir-format
 msgid "Pins on the map"
 msgstr "Pin na mapi"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:97
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:98
 #, elixir-autogen, elixir-format
 msgid "Show the groups with the pins you pick"
 msgstr "Prikaži grupe sa pinovima koje izabereš"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:523
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:529
 #, elixir-autogen, elixir-format
 msgid "Kind and picture"
 msgstr "Vrsta i slika"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:934
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:1008
 #, elixir-autogen, elixir-format
 msgid "Pin of its kind"
 msgstr "Pin vrste grupe"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:171
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:172
 #, elixir-autogen, elixir-format
 msgid "only a part, zoom in"
 msgstr "samo deo, približi mapu"
@@ -5888,7 +5890,7 @@ msgstr "GPX, KML ili GeoJSON fajl"
 msgid "Length: %{length}."
 msgstr "Dužina: %{length}."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:924
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:998
 #, elixir-autogen, elixir-format
 msgid "Lines of the routes long enough, over the areas"
 msgstr "Linije dovoljno dugih ruta, iznad područja"
@@ -5933,7 +5935,7 @@ msgstr "Ruta na mapi"
 msgid "Route · %{length}"
 msgstr "Ruta · %{length}"
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:923
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:997
 #, elixir-autogen, elixir-format
 msgid "Routes"
 msgstr "Rute"
@@ -6004,7 +6006,7 @@ msgstr "Nema grupe sa tim imenom."
 msgid "No group you see has a place yet."
 msgstr "Nijedna grupa koju vidiš još nema mesto na mapi."
 
-#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:787
+#: lib/potok_ide_web/live/group_live/show/root_map_tab.ex:793
 #, elixir-autogen, elixir-format
 msgid "Open the event"
 msgstr "Otvori događaj"
@@ -6340,17 +6342,17 @@ msgstr[0] "stiglo do %{count} pratioca"
 msgstr[1] "stiglo do %{count} pratioca"
 msgstr[2] "stiglo do %{count} pratilaca"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1612
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1641
 #, elixir-autogen, elixir-format
 msgid "From 1 to %{count} groups at a time."
 msgstr "Od 1 do %{count} grupa odjednom."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1080
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1100
 #, elixir-autogen, elixir-format
 msgid "Some of these groups were saved in between. Send them again."
 msgstr "Neke od ovih grupa su u međuvremenu sačuvane. Pošalji ih ponovo."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1779
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1808
 #, elixir-autogen, elixir-format
 msgid "The map took too long. Zoom in and try again."
 msgstr "Mapa se predugo učitava. Približi je i pokušaj ponovo."
@@ -9482,17 +9484,17 @@ msgstr "Ukloni"
 msgid "holds too many items"
 msgstr "ima previše stavki"
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:619
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:622
 #, elixir-autogen, elixir-format
 msgid "Only the group's members are asked by its processes."
 msgstr "Procesi grupe pitaju samo njene članove."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:646
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:649
 #, elixir-autogen, elixir-format
 msgid "Only the group's members start its processes."
 msgstr "Procese grupe pokreću samo njeni članovi."
 
-#: lib/potok_ide_web/live/group_live/show/app_api.ex:1844
+#: lib/potok_ide_web/live/group_live/show/app_api.ex:1873
 #, elixir-autogen, elixir-format
 msgid "Open the group's page to do that."
 msgstr "Za to otvori stranicu grupe."

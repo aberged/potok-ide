@@ -4,14 +4,15 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   with a place the viewer sees, and of the areas and routes it sees. The map is the
   browser's (`root_map.js`, ignored by patches); what stands over it, the
   count, the layers, the empty state, the list of a crowded spot, the card
-  of the areas where the viewer tapped and the card of an event whose place
-  is in focus, is rendered here.
+  of the areas where the viewer tapped, the card of an event whose place is
+  in focus and the card of an app's point (`?point=`), is rendered here.
   """
   use PotokIdeWeb, :html
 
   alias PotokIde.Events.{Format, Recurrence}
   alias PotokIde.MapTiles
   alias PotokIde.Social.GroupPins
+  alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.GroupLive.Show.{ChoiceMenus, RootMapState}
   alias PotokIdeWeb.PinIcons
 
@@ -29,8 +30,8 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
   attr :area_options, :list, default: [], doc: "the areas the filter's menu offers"
   attr :area_query, :string, default: "", doc: "what the filter's menu searches"
   attr :area_chosen, :list, default: [], doc: "the areas of the filter"
-  attr :focus, :map, default: nil, doc: "the place of `?place=` or `?event=` in focus"
-  attr :focus_card, :boolean, default: false, doc: "the focused event's card shows"
+  attr :focus, :map, default: nil, doc: "the place of `?place=`, `?event=` or `?point=` in focus"
+  attr :focus_card, :boolean, default: false, doc: "the focused event's or point's card shows"
   attr :time_zone, :string, default: "Etc/UTC", doc: "the viewer's, for the event's time"
 
   def panel(assigns) do
@@ -337,6 +338,11 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           :if={@focus && @focus.event && @focus_card && !@spot && !@here && !@error}
           focus={@focus}
           time_zone={@time_zone}
+        />
+
+        <.point_card
+          :if={@focus && @focus.point && @focus_card && !@spot && !@here && !@error}
+          point={@focus.point}
         />
       </div>
 
@@ -802,6 +808,74 @@ defmodule PotokIdeWeb.GroupLive.Show.RootMapTab do
           <span class="truncate">{@focus.group.name}</span>
         </button>
       </div>
+    </section>
+    """
+  end
+
+  attr :point, :map, required: true, doc: "an app's point in focus: its group and label"
+
+  # The card of a point an app sent the viewer to (`open_map`): the group's
+  # picture and name, the app's words for the place, and the way to the group.
+  # Without a group the viewer sees, the words alone.
+  defp point_card(assigns) do
+    ~H"""
+    <section
+      id="root-map-focus"
+      aria-labelledby="root-map-focus-title"
+      class="absolute inset-x-2 bottom-2 z-[1100] flex max-h-[55%] flex-col overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/95 shadow-2xl backdrop-blur sm:left-auto sm:w-80"
+    >
+      <header class="flex items-start gap-3 px-4 pt-3">
+        <img
+          :if={@point.group}
+          id="root-map-focus-picture"
+          src={Avatars.group_avatar_url(@point.group)}
+          alt=""
+          class="mt-0.5 size-9 shrink-0 rounded-2xl border border-base-300 bg-base-100 object-cover"
+        />
+        <span
+          :if={!@point.group}
+          class="mt-0.5 inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary"
+        >
+          <.icon name="hero-map-pin" class="size-5" />
+        </span>
+        <div class="min-w-0 flex-1">
+          <h3
+            id="root-map-focus-title"
+            class="text-sm font-semibold leading-snug wrap-break-word"
+          >
+            {if @point.group, do: @point.group.name, else: @point.label}
+          </h3>
+          <p
+            :if={@point.group && @point.label}
+            id="root-map-focus-label"
+            class="mt-0.5 flex items-start gap-1 text-xs text-base-content/65"
+          >
+            <.icon name="hero-map-pin-micro" class="mt-px size-3.5 shrink-0" />
+            <span class="min-w-0 wrap-break-word">{@point.label}</span>
+          </p>
+        </div>
+        <.icon_button
+          id="root-map-focus-close"
+          type="button"
+          phx-click="root_map_focus_close"
+          icon="hero-x-mark"
+          label={gettext("Close")}
+        />
+      </header>
+      <div :if={@point.group} class="flex flex-wrap items-center gap-2 px-4 pt-2.5 pb-3">
+        <.button
+          id="root-map-focus-open"
+          type="button"
+          phx-click="root_map_open"
+          phx-value-id={@point.group.id}
+          variant="soft"
+          size="sm"
+        >
+          <.icon name="hero-arrow-top-right-on-square" class="size-4" />
+          {gettext("Open group")}
+        </.button>
+      </div>
+      <div :if={!@point.group} class="pb-3"></div>
     </section>
     """
   end

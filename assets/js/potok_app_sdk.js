@@ -524,6 +524,17 @@ const potok = {
     return call("open_group", {id, tab: options.tab ?? null})
   },
 
+  // Takes the viewer, on the same page, to the root's map at `lat`, `lng`
+  // (degrees): a pin with this group's picture, and a card with its name and
+  // `label` (at most 80 characters). For a place the app keeps, such as a farm
+  // or where goods are handed out; the group's own place stays as it is.
+  // `{ok: false, error: "invalid_place"}` for a point out of range. The frame
+  // goes away with the page, so a pending `localStorage` save goes first.
+  openMap: ({lat, lng, label} = {}) => {
+    if (storageSaveTimer) saveLocalStorage()
+    return call("open_map", {lat, lng, label: typeof label === "string" ? label : null})
+  },
+
   // Adds the viewer's reaction to a group below this one, or takes it back, as a
   // click on a reaction does. Works for any viewer with `can_react` on that
   // group and counts as a write. Resolves to `{ok: true, reactions}`.

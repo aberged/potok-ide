@@ -3,7 +3,8 @@ defmodule PotokIdeWeb.GroupLive.RootMapFocusTest do
   Links that open the root's map on one place (`RootMapState`): `?place=` for
   a group with a place, `?event=` for a calendar event's place with the
   event's card, both in focus whatever the filters and only when the viewer
-  may see them.
+  may see them, and `?point=` for a point an app names (`open_map`), with its
+  group's picture when the viewer sees the group.
   """
   use PotokIdeWeb.ConnCase, async: true
 
@@ -282,5 +283,95 @@ defmodule PotokIdeWeb.GroupLive.RootMapFocusTest do
     reply = view(lv, 7)
     refute Map.has_key?(reply, :fit)
     assert reply.focus == nil
+  end
+
+  defp point_path(ctx, query), do: ~p"/groups/#{ctx.root.id}/map?#{query}"
+
+  describe "an app's point (?point=)" do
+    test "puts a pin with the group's picture at the point, and a card", ctx do
+      path = point_path(ctx, point: "45.1,19.9", group: ctx.calendar.id, label: "Mesto podele")
+      lv = live_map(ctx.viewer_account, path)
+
+      reply = view(lv, 7)
+      assert reply.fit == [[45.1, 19.9], [45.1, 19.9]]
+
+      assert %{
+               id: id,
+               pin: "picture",
+               point: true,
+               event: false,
+               label: "Mesto podele",
+               lat: 45.1,
+               lng: 19.9,
+               picture_url: url
+             } = reply.focus
+
+      assert id == ctx.calendar.id
+      assert url =~ "/avatar/group/#{ctx.calendar.id}?"
+      assert url =~ "s="
+      assert has_element?(lv, "#root-map-time-option-any[aria-checked='true']")
+      assert has_element?(lv, "#root-map-focus-picture")
+      assert has_element?(lv, "#root-map-focus-title", "Savet")
+      assert has_element?(lv, "#root-map-focus-label", "Mesto podele")
+
+      # The card steps aside, and a tap on the pin brings it back.
+      lv |> element("#root-map-focus-close") |> render_click()
+      refute has_element?(lv, "#root-map-focus")
+      render_hook(lv, "root_map_focus_show", %{})
+      assert has_element?(lv, "#root-map-focus")
+
+      lv |> element("#root-map-focus-open") |> render_click()
+      assert Enum.any?(live_children(lv), &String.starts_with?(&1.id, "group-sheet-lv-"))
+
+      # The group's own place is not the point: it has none, and keeps none.
+      assert Social.get_group!(ctx.calendar.id).latitude == nil
+    end
+
+    test "a group the viewer cannot see leaves a plain pin and the words", ctx do
+      path = point_path(ctx, point: "45.1,19.9", group: ctx.closed.id, label: "Kod česme")
+      lv = live_map(ctx.viewer_account, path)
+
+      assert %{id: nil, pin: nil, kind: "none", picture_url: nil, name: "Kod česme"} =
+               view(lv, 7).focus
+
+      assert has_element?(lv, "#root-map-focus-title", "Kod česme")
+      refute has_element?(lv, "#root-map-focus-picture")
+      refute has_element?(lv, "#root-map-focus-open")
+      refute render(lv) =~ "Zatvorena"
+    end
+
+    test "a point with neither a group nor words has a pin and no card", ctx do
+      lv = live_map(ctx.viewer_account, point_path(ctx, point: "45.1,19.9"))
+
+      assert %{point: true, name: "", label: nil} = view(lv, 7).focus
+      refute has_element?(lv, "#root-map-focus")
+    end
+
+    test "a point out of range or not two numbers is left out", ctx do
+      for point <- ["91,0", "0,181", "45.1", "a,b", "45.1,19.9,3", "1e400,0", ""] do
+        lv = live_map(ctx.viewer_account, point_path(ctx, point: point, label: "X"))
+        reply = view(lv, 7)
+        refute Map.has_key?(reply, :fit), point
+        assert reply.focus == nil, point
+        refute has_element?(lv, "#root-map-focus"), point
+      end
+    end
+
+    test "the words are one line of at most 80 characters", ctx do
+      label = "Prvi red\n\t" <> String.duplicate("a", 100)
+      lv = live_map(ctx.viewer_account, point_path(ctx, point: "45.1,19.9", label: label))
+
+      assert view(lv, 7).focus.label ==
+               String.slice("Prvi red " <> String.duplicate("a", 100), 0, 80)
+    end
+
+    test "a group's place wins over a point", ctx do
+      path = point_path(ctx, place: ctx.bakery.id, point: "45.1,19.9", group: ctx.calendar.id)
+      lv = live_map(ctx.viewer_account, path)
+
+      reply = view(lv, 7)
+      assert reply.focus.id == ctx.bakery.id
+      refute Map.has_key?(reply.focus, :point)
+    end
   end
 end
