@@ -253,6 +253,15 @@ if config_env() == :prod do
     pool_size: String.to_integer(System.get_env("POOL_SIZE") || "10"),
     # For machines with several cores, consider starting multiple pools of `pool_size`
     # pool_count: 4,
+    # Fly Managed Postgres has PgBouncer in front of the database. In its
+    # transaction mode, which lets many machines share the database's few
+    # connections, the next statement may run on another server connection,
+    # so none is prepared under a name; connections are renewed every 9-10
+    # minutes, staggered, before the pooler drops them (docs.fly.io/mpg).
+    # Both work in session mode too. Migrations go past the pooler
+    # (`rel/overlays/bin/migrate`).
+    prepare: :unnamed,
+    max_lifetime: 540_000..600_000,
     socket_options: maybe_ipv6
 
   # The secret key base is used to sign/encrypt cookies and other secrets.

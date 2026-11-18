@@ -79,9 +79,12 @@ config :potok_ide, PotokIdeWeb.Endpoint,
 
 # Background jobs in Postgres (Oban): push deliveries, which outlive a deploy
 # and are tried again when nothing went out. Done jobs go after a day; jobs a
-# killed machine left running are taken up again (Lifeline).
+# killed machine left running are taken up again (Lifeline). Oban tells the
+# nodes of new jobs over distributed Erlang (PG), not Postgres LISTEN/NOTIFY,
+# which PgBouncer's transaction mode does not carry.
 config :potok_ide, Oban,
   repo: PotokIde.Repo,
+  notifier: Oban.Notifiers.PG,
   queues: [push: 10],
   plugins: [{Oban.Plugins.Pruner, max_age: 86_400}, Oban.Plugins.Lifeline]
 

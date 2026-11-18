@@ -1,5 +1,16 @@
 #!/bin/sh
 set -eu
 
+# Migrations hold locks across statements, which PgBouncer's transaction mode
+# cannot keep, so they go to the database directly: DIRECT_DATABASE_URL when
+# it is set, else Fly Managed Postgres's pooled address (pgbouncer.<cluster>)
+# turned into its direct one (direct.<cluster>), else DATABASE_URL as it is.
+if [ -n "${DIRECT_DATABASE_URL:-}" ]; then
+  DATABASE_URL="$DIRECT_DATABASE_URL"
+elif [ -n "${DATABASE_URL:-}" ]; then
+  DATABASE_URL=$(printf '%s' "$DATABASE_URL" | sed 's/@pgbouncer\./@direct./')
+fi
+export DATABASE_URL
+
 cd -P -- "$(dirname -- "$0")"
 exec ./potok_ide eval PotokIde.Release.migrate
