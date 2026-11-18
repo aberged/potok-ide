@@ -19,6 +19,7 @@ defmodule PotokIde.Social.Access do
   import Ecto.Query, warn: false
 
   alias PotokIde.Cache
+  alias PotokIde.Cache.Bounded
   alias PotokIde.Repo
 
   alias PotokIde.Social.{
@@ -34,6 +35,13 @@ defmodule PotokIde.Social.Access do
 
   # Manifests change rarely and every page mount needs one; see `forget_manifests/1`.
   @manifest_ttl :timer.minutes(1)
+
+  # Who holds which roles: asked on every page, every event and every check,
+  # and changed rarely. Kept per profile and group (`membership_facts/2`) and
+  # forgotten a group at a time (`forget/1`); the time bounds what a change
+  # made where nobody forgot it leaves behind.
+  @facts PotokIde.Social.Access.Facts
+  @facts_ttl :timer.seconds(30)
 
   defstruct member?: false,
             admin?: false,
@@ -137,9 +145,44 @@ defmodule PotokIde.Social.Access do
     %__MODULE__{manifest: Keyword.get_lazy(opts, :manifest, fn -> effective_manifest(group) end)}
   end
 
-  def for_profile(%Profile{id: profile_id}, %Group{id: group_id} = group, opts) do
+  def for_profile(%Profile{id: profile_id}, %Group{} = group, opts) do
     manifest = Keyword.get_lazy(opts, :manifest, fn -> effective_manifest(group) end)
+    from_facts(manifest, membership_facts(profile_id, group))
+  end
 
+  defp from_facts(manifest, {:member, keys}), do: build(manifest, keys)
+
+  defp from_facts(manifest, {:outsider, blocked?}),
+    do: %__MODULE__{manifest: manifest, blocked?: blocked?}
+
+  # `{:member, role_keys}` or `{:outsider, blocked?}`: what the profile's
+  # access is made of besides the manifest. A transaction reads its own
+  # writes, so it never takes them from the cache.
+  defp membership_facts(profile_id, %Group{id: group_id} = group) do
+    if Repo.in_transaction?() do
+      load_membership_facts(profile_id, group)
+    else
+      key = facts_key(profile_id, group)
+      epoch = epoch(group_id)
+
+      case Bounded.get(@facts, key) do
+        {:ok, {^epoch, facts}} ->
+          facts
+
+        _missing_or_old ->
+          facts = load_membership_facts(profile_id, group)
+          Bounded.put(@facts, key, {epoch, facts}, @facts_ttl)
+          facts
+      end
+    end
+  end
+
+  # Whether the group is public decides whether a block counts, so it is
+  # part of the key: a group that opens or closes asks again.
+  defp facts_key(profile_id, %Group{id: group_id, is_public: public?}),
+    do: {profile_id, group_id, public?}
+
+  defp load_membership_facts(profile_id, %Group{id: group_id} = group) do
     # [] = not a member, [nil] = a member with no assigned roles.
     assigned =
       from(gm in GroupMembership,
@@ -152,14 +195,30 @@ defmodule PotokIde.Social.Access do
 
     case assigned do
       # A block only says something where a non-member can do anything at all.
-      [] ->
-        %__MODULE__{
-          manifest: manifest,
-          blocked?: group.is_public and blocked_in_group?(profile_id, group_id)
-        }
+      [] -> {:outsider, group.is_public and blocked_in_group?(profile_id, group_id)}
+      keys -> {:member, Enum.reject(keys, &is_nil/1)}
+    end
+  end
 
-      keys ->
-        build(manifest, Enum.reject(keys, &is_nil/1))
+  @doc """
+  Forgets what the cache holds of who has which roles in `group_ids`, on this
+  node and the others: called after any change to memberships, roles or
+  blocks, before the pages hear of it. A load that raced with the change
+  read the old epoch, so what it kept is never taken.
+  """
+  def forget(group_ids) when is_list(group_ids) do
+    bump_epochs(group_ids)
+    :erpc.multicast(Node.list(), __MODULE__, :bump_epochs, [group_ids])
+    :ok
+  end
+
+  @doc false
+  def bump_epochs(group_ids), do: Enum.each(group_ids, &Cache.bump({:access_epoch, &1}))
+
+  defp epoch(group_id) do
+    case Cache.get({:access_epoch, group_id}) do
+      {:ok, epoch} -> epoch
+      :error -> 0
     end
   end
 
@@ -215,6 +274,38 @@ defmodule PotokIde.Social.Access do
   end
 
   def for_profile_in_groups(%Profile{id: profile_id}, groups) do
+    in_transaction? = Repo.in_transaction?()
+
+    {cached, missing} =
+      Enum.reduce(groups, {%{}, []}, fn %Group{id: id} = group, {cached, missing} ->
+        epoch = epoch(id)
+
+        case !in_transaction? && Bounded.get(@facts, facts_key(profile_id, group)) do
+          {:ok, {^epoch, facts}} -> {Map.put(cached, id, facts), missing}
+          _missing_or_old -> {cached, [{group, epoch} | missing]}
+        end
+      end)
+
+    loaded = load_membership_facts_in_groups(profile_id, Enum.map(missing, &elem(&1, 0)))
+
+    unless in_transaction? do
+      for {group, epoch} <- missing do
+        Bounded.put(@facts, facts_key(profile_id, group), {epoch, loaded[group.id]}, @facts_ttl)
+      end
+    end
+
+    facts = Map.merge(cached, loaded)
+
+    Map.new(groups, fn %Group{id: id} = group ->
+      {id, from_facts(effective_manifest(group), facts[id])}
+    end)
+  end
+
+  # `load_membership_facts/2` for several groups, in one query for the
+  # memberships and one for the blocks.
+  defp load_membership_facts_in_groups(_profile_id, []), do: %{}
+
+  defp load_membership_facts_in_groups(profile_id, groups) do
     assigned =
       from(gm in GroupMembership,
         left_join: r in GroupMemberRole,
@@ -230,16 +321,14 @@ defmodule PotokIde.Social.Access do
       |> Enum.filter(&(&1.is_public and not is_map_key(assigned, &1.id)))
       |> blocked_group_ids(profile_id)
 
-    Map.new(groups, fn %Group{id: id} = group ->
-      manifest = effective_manifest(group)
-
-      access =
+    Map.new(groups, fn %Group{id: id} ->
+      facts =
         case assigned do
-          %{^id => keys} -> build(manifest, Enum.reject(keys, &is_nil/1))
-          %{} -> %__MODULE__{manifest: manifest, blocked?: MapSet.member?(blocked_ids, id)}
+          %{^id => keys} -> {:member, Enum.reject(keys, &is_nil/1)}
+          %{} -> {:outsider, MapSet.member?(blocked_ids, id)}
         end
 
-      {id, access}
+      {id, facts}
     end)
   end
 

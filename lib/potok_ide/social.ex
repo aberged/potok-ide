@@ -1955,6 +1955,7 @@ defmodule PotokIde.Social do
     |> Repo.transaction()
     |> case do
       {:ok, %{block: block}} ->
+        Access.forget([group.id])
         broadcast_group_members_changed(group, [:requests, :blocks], profile_id: profile.id)
         broadcast_profile_invitations_updated(profile)
         broadcast_profile_group_join_requests_updated(profile)
@@ -1973,6 +1974,7 @@ defmodule PotokIde.Social do
       from(b in GroupBlock, where: b.group_id == ^group.id and b.profile_id == ^profile_id)
       |> Repo.delete_all()
 
+      Access.forget([group.id])
       broadcast_group_members_changed(group, [:blocks], profile_id: profile_id)
       :ok
     else
@@ -8169,6 +8171,8 @@ defmodule PotokIde.Social do
   # before they subscribed.
   defp broadcast_group_membership_changed(profile_id, group_id, change)
        when is_integer(profile_id) and is_integer(group_id) and change in [:added, :removed] do
+    Access.forget([group_id])
+
     Phoenix.PubSub.broadcast(
       PotokIde.PubSub,
       profile_topic(profile_id),
@@ -8238,6 +8242,7 @@ defmodule PotokIde.Social do
   # the pages reload them on this message.
   defp broadcast_group_roles_updated(group_ids) when is_list(group_ids) do
     Access.forget_manifests(group_ids)
+    Access.forget(group_ids)
 
     Enum.each(group_ids, fn group_id ->
       Phoenix.PubSub.broadcast(

@@ -17,6 +17,8 @@ defmodule PotokIde.Application do
         PotokIde.Cache,
         # The rendered HTML of the messages shown: at most 2 × 5,000 of them.
         {PotokIde.Cache.Bounded, name: PotokIde.Cache.RenderedHtml, max_entries: 5_000},
+        # Who holds which roles in which group (PotokIde.Social.Access).
+        {PotokIde.Cache.Bounded, name: PotokIde.Social.Access.Facts, max_entries: 20_000},
         {Task.Supervisor, name: PotokIde.TaskSupervisor},
         # ImageMagick runs outside the BEAM, so its memory is not the app's to
         # manage: link cards and PNG avatars are drawn one at a time.

@@ -80,7 +80,7 @@ defmodule PotokIde.Metrics do
         %{table: inspect(PotokIde.Cache)}
       )
 
-      for cache <- [PotokIde.Cache.Bounded.rendered_html()] do
+      for cache <- [PotokIde.Cache.Bounded.rendered_html(), PotokIde.Social.Access.Facts] do
         :telemetry.execute(
           [:potok_ide, :cache],
           PotokIde.Cache.Bounded.info(cache),

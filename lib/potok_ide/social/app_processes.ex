@@ -136,6 +136,10 @@ defmodule PotokIde.Social.AppProcesses do
     Repo.delete_all(
       from(r in GroupValueRead, where: r.group_id == ^group_id and r.profile_id == ^profile_id)
     )
+
+    # Inside the app's transaction, so a read before it commits may still keep
+    # the old access, for as long as `Access` keeps it.
+    Access.forget([group_id])
   end
 
   @doc false
@@ -146,6 +150,7 @@ defmodule PotokIde.Social.AppProcesses do
     |> GroupMembership.changeset(%{group_id: group_id, profile_id: profile_id})
     |> Repo.insert!(on_conflict: :nothing, conflict_target: [:group_id, :profile_id])
 
+    Access.forget([group_id])
     :ok
   end
 

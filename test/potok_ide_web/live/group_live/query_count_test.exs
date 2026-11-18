@@ -362,6 +362,9 @@ defmodule PotokIdeWeb.GroupLive.QueryCountTest do
       {:ok, _accepted} = Social.accept_group_invitation(invitation, member)
     end
 
+    # New members change who holds what, which `Access` reads again once.
+    {:ok, _value} = Social.create_value(profile, group, %{"content" => "warm up again"})
+
     {_value, many} =
       read_rows(fn -> Social.create_value(profile, group, %{"content" => "more members"}) end)
 

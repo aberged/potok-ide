@@ -161,6 +161,17 @@ defmodule PotokIde.Cache do
     ArgumentError -> 0
   end
 
+  @doc """
+  Adds one to a counter that never expires and returns it, starting from 0:
+  an epoch that tells entries kept elsewhere that they are old
+  (`PotokIde.Social.Access`). Kept past the cap on new keys.
+  """
+  def bump(key) do
+    :ets.update_counter(@table, key, {2, 1}, {key, 0, :infinity})
+  rescue
+    ArgumentError -> 0
+  end
+
   def delete(key) do
     :ets.delete(@table, key)
     :ok
