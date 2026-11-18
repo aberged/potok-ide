@@ -6,14 +6,22 @@ defmodule PotokIde.RateLimit do
   again and again: an app's counts and sums in its viewer's name, and
   searches of a group's messages.
 
-  The counters live in `PotokIde.Cache`'s ETS table, so each machine counts for
-  itself: with N machines a limit lets through up to N times as much.
-  Production runs one machine.
+  A limit that keeps something outside the machine safe (an inbox, a group's
+  followers, OpenStreetMap, what an app writes, a process's steps) is counted
+  in Postgres (`rate_limit_counters`), for all machines together, in windows
+  by the wall clock. One that guards the machine's own processor (reads,
+  searches, map views, tiles one client asks for) counts in
+  `PotokIde.Cache`'s ETS table, each machine for itself.
+
+  `once?/1` is a shared limit of one: the first machine in a window does a
+  periodic job, the others leave it.
   """
+
+  import Ecto.Query, only: [from: 2]
 
   require Logger
 
-  alias PotokIde.Cache
+  alias PotokIde.{Cache, Repo}
 
   # name => {attempts a window allows, window in milliseconds}
   @limits %{
@@ -62,8 +70,29 @@ defmodule PotokIde.RateLimit do
     # requests fits, a graph that runs away waits for the next minute.
     process_step: {60, :timer.minutes(1)},
     # Runs one person starts of one process by hand (`Social.DrawnProcesses`).
-    process_manual_start: {10, :timer.hours(1)}
+    process_manual_start: {10, :timer.hours(1)},
+    # Periodic jobs one machine of all does in a window (`once?/1`).
+    app_file_sweep: {1, :timer.hours(1)},
+    hosting_costs_sample: {1, :timer.minutes(15)}
   }
+
+  # Counted in Postgres, for all machines together.
+  @shared [
+    :password_ip,
+    :password_email,
+    :magic_link_email,
+    :magic_link_ip,
+    :invitation_email,
+    :email_change,
+    :group_notice,
+    :process_step,
+    :process_manual_start,
+    :app_create_place,
+    :app_create_children,
+    :tile_upstream,
+    :app_file_sweep,
+    :hosting_costs_sample
+  ]
 
   @type name ::
           :password_ip
@@ -84,6 +113,8 @@ defmodule PotokIde.RateLimit do
           | :tile_upstream
           | :process_step
           | :process_manual_start
+          | :app_file_sweep
+          | :hosting_costs_sample
 
   @type result :: :ok | {:error, :rate_limited, pos_integer()}
 
@@ -98,11 +129,29 @@ defmodule PotokIde.RateLimit do
   @spec hit(name(), term()) :: result()
   def hit(name, id) do
     {max, window_ms} = limit(name)
-    {key, retry_after} = window(name, id, window_ms)
 
-    if Cache.increment(key, retry_after) <= max,
-      do: :ok,
-      else: limited(name, retry_after)
+    {count, retry_after} =
+      if shared?(name) do
+        {key, slot, retry_after} = shared_window(name, id, window_ms)
+
+        %Postgrex.Result{rows: [[count]]} =
+          Repo.query!(
+            """
+            INSERT INTO rate_limit_counters AS c (key, slot, count, expires_at)
+            VALUES ($1, $2, 1, now() + make_interval(secs => $3::float8 / 1000))
+            ON CONFLICT (key, slot) DO UPDATE SET count = c.count + 1
+            RETURNING c.count
+            """,
+            [key, slot, retry_after]
+          )
+
+        {count, retry_after}
+      else
+        {key, retry_after} = window(name, id, window_ms)
+        {Cache.increment(key, retry_after), retry_after}
+      end
+
+    if count <= max, do: :ok, else: limited(name, retry_after)
   end
 
   @doc """
@@ -112,13 +161,52 @@ defmodule PotokIde.RateLimit do
   @spec check(name(), term()) :: result()
   def check(name, id) do
     {max, window_ms} = limit(name)
-    {key, retry_after} = window(name, id, window_ms)
 
-    case Cache.get(key) do
-      {:ok, count} when count >= max -> limited(name, retry_after)
-      _ -> :ok
-    end
+    {count, retry_after} =
+      if shared?(name) do
+        {key, slot, retry_after} = shared_window(name, id, window_ms)
+
+        count =
+          Repo.one(
+            from(c in "rate_limit_counters",
+              where: c.key == ^key and c.slot == ^slot,
+              select: c.count
+            )
+          )
+
+        {count, retry_after}
+      else
+        {key, retry_after} = window(name, id, window_ms)
+
+        case Cache.get(key) do
+          {:ok, count} -> {count, retry_after}
+          :error -> {nil, retry_after}
+        end
+      end
+
+    if is_integer(count) and count >= max, do: limited(name, retry_after), else: :ok
   end
+
+  @doc """
+  Whether this machine is the first of all in the window of `name` (one of
+  the periodic jobs in `@limits`): it does the job, the others leave it.
+  """
+  @spec once?(name()) :: boolean()
+  def once?(name) do
+    {1, _window_ms} = limit(name)
+    hit(name, :cluster) == :ok
+  end
+
+  @doc "Deletes the shared counters of windows that have ended."
+  def prune do
+    {deleted, _} =
+      Repo.delete_all(from(c in "rate_limit_counters", where: c.expires_at < fragment("now()")))
+
+    deleted
+  end
+
+  @doc "Whether `name` is counted in Postgres, for all machines together."
+  def shared?(name), do: name in @shared
 
   @doc """
   The key of a client's IP. An IPv6 client is counted by its /64 network,
@@ -136,6 +224,15 @@ defmodule PotokIde.RateLimit do
     do: email |> String.trim() |> String.downcase() |> String.slice(0, 320)
 
   def email_key(_email), do: ""
+
+  # A shared window: by the wall clock, which all machines agree on, and a
+  # hash in place of what is counted, so the table keeps no address or IP.
+  defp shared_window(name, id, window_ms) do
+    now = System.system_time(:millisecond)
+    slot = Integer.floor_div(now, window_ms)
+    key = :crypto.hash(:sha256, :erlang.term_to_binary({name, id}, [:deterministic]))
+    {key, slot, (slot + 1) * window_ms - now}
+  end
 
   # A window has a key of its own, so a counter never outlives its window.
   defp window(name, id, window_ms) do

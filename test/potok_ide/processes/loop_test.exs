@@ -694,7 +694,7 @@ defmodule PotokIde.Processes.LoopTest do
 
       # All but five of its share of the minute are taken already.
       {share, minute} = PotokIde.RateLimit.limit(:process_step)
-      turn = fn -> Integer.floor_div(System.monotonic_time(:millisecond), minute) end
+      turn = fn -> Integer.floor_div(System.system_time(:millisecond), minute) end
       began = turn.()
       for _ <- 1..(share - 5), do: PotokIde.RateLimit.hit(:process_step, row.id)
 

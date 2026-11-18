@@ -2,8 +2,10 @@ defmodule PotokIde.HostingCosts.Sampler do
   @moduledoc """
   Writes the estimate of what Potok costs on Fly (`PotokIde.HostingCosts.sample/1`)
   every `interval_ms`, and once at start, so the hour of a deploy is not lost.
-  It runs only where Potok can read Fly (`FLY_COSTS_TOKEN`), on every node:
-  the rows of an hour are replaced, never added twice.
+  It runs only where Potok can read Fly (`FLY_COSTS_TOKEN`), on every node,
+  and the first of them in a quarter of an hour asks Fly
+  (`PotokIde.RateLimit.once?/1`); the rows of an hour are replaced, never
+  added twice.
 
   A failed pass is logged and the next one runs as usual.
   """
@@ -12,7 +14,7 @@ defmodule PotokIde.HostingCosts.Sampler do
 
   require Logger
 
-  alias PotokIde.HostingCosts
+  alias PotokIde.{HostingCosts, RateLimit}
 
   def start_link(opts) do
     config = Application.get_env(:potok_ide, __MODULE__, [])
@@ -33,7 +35,7 @@ defmodule PotokIde.HostingCosts.Sampler do
 
   @impl true
   def handle_continue(:tick, interval_ms) do
-    tick()
+    pass()
     Process.send_after(self(), :tick, interval_ms)
     {:noreply, interval_ms}
   end
@@ -41,8 +43,15 @@ defmodule PotokIde.HostingCosts.Sampler do
   @impl true
   def handle_info(:tick, interval_ms), do: handle_continue(:tick, interval_ms)
 
-  defp tick do
-    HostingCosts.sample()
+  @doc false
+  # `:done`, or `:skipped` when another machine asked Fly this quarter.
+  def pass do
+    if RateLimit.once?(:hosting_costs_sample) do
+      HostingCosts.sample()
+      :done
+    else
+      :skipped
+    end
   rescue
     error ->
       Logger.error("Hosting costs failed: " <> Exception.format(:error, error, __STACKTRACE__))

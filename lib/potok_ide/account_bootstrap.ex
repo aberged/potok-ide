@@ -32,19 +32,35 @@ defmodule PotokIde.AccountBootstrap do
     {:stop, :normal, state}
   end
 
-  defp ensure_account(email, password) do
+  # Machines start together: one that loses the race to create the account
+  # finds it made by another and takes it from there.
+  defp ensure_account(email, password, tries \\ 2) do
     case Accounts.ensure_account_with_password(email, password) do
       {:ok, account} ->
         Logger.info("Ensured bootstrap account for #{account.email}")
 
+      {:error, %Ecto.Changeset{} = changeset} when tries > 1 ->
+        if taken_email?(changeset),
+          do: ensure_account(email, password, tries - 1),
+          else: log_failure(email, changeset)
+
       {:error, %Ecto.Changeset{} = changeset} ->
-        Logger.error(
-          "Failed to ensure bootstrap account for #{email}: #{inspect(changeset.errors)}"
-        )
+        log_failure(email, changeset)
 
       {:error, reason} ->
         Logger.error("Failed to ensure bootstrap account for #{email}: #{inspect(reason)}")
     end
+  end
+
+  defp taken_email?(%Ecto.Changeset{errors: errors}) do
+    case Keyword.get(errors, :email) do
+      {_message, opts} -> opts[:constraint] == :unique or opts[:validation] == :unsafe_unique
+      nil -> false
+    end
+  end
+
+  defp log_failure(email, changeset) do
+    Logger.error("Failed to ensure bootstrap account for #{email}: #{inspect(changeset.errors)}")
   end
 
   defp configured_account_credentials do

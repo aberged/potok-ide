@@ -87,7 +87,7 @@ defmodule PotokIde.HostingCosts do
         count + written
       end)
 
-    Cache.delete(@cache_key)
+    forget_overview()
     count
   end
 
@@ -656,7 +656,7 @@ defmodule PotokIde.HostingCosts do
           {false, _invoice} -> Repo.insert_or_update(changeset)
         end
 
-      Cache.delete(@cache_key)
+      forget_overview()
       result
     end
   end
@@ -693,6 +693,13 @@ defmodule PotokIde.HostingCosts do
   defp hours_between(first, last) do
     count = div(DateTime.diff(last, first), 3600)
     for step <- 0..count//1, do: add_hours(first, step)
+  end
+
+  # The kept overview goes on every machine, so none shows the old numbers
+  # until its TTL ends.
+  defp forget_overview do
+    Cache.delete(@cache_key)
+    :erpc.multicast(Node.list(), Cache, :delete, [@cache_key])
   end
 
   defp config, do: Application.get_env(:potok_ide, __MODULE__, [])
