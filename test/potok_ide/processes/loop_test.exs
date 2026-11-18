@@ -702,10 +702,13 @@ defmodule PotokIde.Processes.LoopTest do
       held = finish(instance.id)
 
       # Five messages go out; the rest wait where they stand, for the next
-      # minute. A minute that turned while the test ran says nothing.
+      # minute, and the passes leave them out until then. A minute that
+      # turned while the test ran says nothing.
       if turn.() == began do
         assert %ValueProcess{status: :running, element: "poruka"} = held
         assert chat(ctx.group) == ["1", "2", "3", "4", "5"]
+        assert DateTime.after?(held.wake_at, DateTime.utc_now())
+        assert Engine.run_due() == 0
       end
     end
 

@@ -62,4 +62,33 @@ defmodule PotokIde.Processes.SchedulerTest do
     assert %ValueProcess{status: :done} = Repo.get_by!(ValueProcess, value_id: value.id)
     assert ["Primljeno."] = group |> Social.list_group_values() |> Enum.map(& &1.content)
   end
+
+  test "nudges that wait together make one pass" do
+    scheduler = start_supervised!(Scheduler)
+    test = self()
+
+    :ok = :sys.suspend(scheduler)
+    for _ <- 1..5, do: Scheduler.nudge()
+
+    # Tells the test of every nudge the scheduler takes up as a message of
+    # its own, that is of every pass a nudge starts.
+    :ok =
+      :sys.install(
+        scheduler,
+        {fn
+           count, {:in, :nudge}, _name ->
+             send(test, :pass)
+             count + 1
+
+           count, _event, _name ->
+             count
+         end, 0}
+      )
+
+    :ok = :sys.resume(scheduler)
+    _ = :sys.get_state(scheduler)
+
+    assert_received :pass
+    refute_received :pass
+  end
 end

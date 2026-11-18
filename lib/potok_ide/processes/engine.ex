@@ -20,8 +20,8 @@ defmodule PotokIde.Processes.Engine do
     and asks the scheduler for a pass, so one long run gives way to the
     others. The steps that write outside the run (a message, a sub-group, a
     push, a field of the group, a signal, a call) are at most what
-    `RateLimit` lets one process take in a minute, the rest waiting for the
-    next pass. A step that raises leaves the instance failed (`crash`)
+    `RateLimit` lets one process take in a minute, the rest waiting, out of
+    the passes, until the minute turns. A step that raises leaves the instance failed (`crash`)
     rather than tried again on every pass.
 
   Who set off the step on hand (`triggered_by`) is the value's author at the
@@ -119,6 +119,9 @@ defmodule PotokIde.Processes.Engine do
   @max_pass 100
   @max_steps 5_000
   @max_log 200
+  # Instances a pass takes forward at the same time (`run_due/1`); each holds
+  # a database connection while it steps.
+  @due_at_once 4
   @max_comment 1_000
   @max_group_name 120
   @max_push_text 240
@@ -344,7 +347,8 @@ defmodule PotokIde.Processes.Engine do
 
   @doc """
   Takes the instances that are due forward, the longest due first, at most
-  `limit` of them. Returns how many it took up.
+  `limit` of them, #{@due_at_once} at a time, so one app's slow step does
+  not hold the others back. Returns how many it took up.
   """
   def run_due(limit \\ 200) do
     from(i in ValueProcess,
@@ -354,7 +358,21 @@ defmodule PotokIde.Processes.Engine do
       select: i.id
     )
     |> Repo.all()
-    |> Enum.count(&run/1)
+    |> then(
+      &Task.Supervisor.async_stream_nolink(PotokIde.TaskSupervisor, &1, fn id -> run(id) end,
+        max_concurrency: @due_at_once,
+        ordered: false,
+        timeout: :infinity
+      )
+    )
+    |> Enum.count(fn
+      {:ok, instance} ->
+        instance != nil
+
+      {:exit, reason} ->
+        Logger.error("Process run exited: #{inspect(reason)}")
+        false
+    end)
   end
 
   @doc """
@@ -478,8 +496,8 @@ defmodule PotokIde.Processes.Engine do
           instance.steps >= @max_steps ->
             Repo.rollback({:failed, instance.element, :too_many_steps})
 
-          held_back?(instance) ->
-            :skip
+          retry_after_ms = held_back(instance) ->
+            hold(instance, retry_after_ms)
 
           true ->
             execute(instance)
@@ -500,11 +518,24 @@ defmodule PotokIde.Processes.Engine do
   defp lock(id), do: from(i in ValueProcess, where: i.id == ^id, lock: "FOR UPDATE") |> Repo.one()
 
   # Over its share of steps that write outside the run, the process waits
-  # for the next pass. What a run does to itself (a condition, a variable
-  # set, a turn of a loop) is not counted.
-  defp held_back?(%ValueProcess{app_process_id: id} = instance) do
-    writes?(Graph.node(instance.graph, instance.element)) and
-      match?({:error, :rate_limited, _}, RateLimit.hit(:process_step, id))
+  # until its share comes back: how long that is, in ms, or nil to go on.
+  # What a run does to itself (a condition, a variable set, a turn of a
+  # loop) is not counted.
+  defp held_back(%ValueProcess{app_process_id: id} = instance) do
+    with true <- writes?(Graph.node(instance.graph, instance.element)),
+         {:error, :rate_limited, retry_after_ms} <- RateLimit.hit(:process_step, id) do
+      retry_after_ms
+    else
+      _go_on -> nil
+    end
+  end
+
+  # A held instance stays where it stands and is due again once its share
+  # comes back, so until then the passes leave it out.
+  defp hold(%ValueProcess{id: id}, retry_after_ms) do
+    wake_at = DateTime.add(now(), ceil(retry_after_ms / 1000), :second)
+    from(i in ValueProcess, where: i.id == ^id) |> Repo.update_all(set: [wake_at: wake_at])
+    :skip
   end
 
   defp writes?(%{"type" => "serviceTask", "action" => action}), do: action != "assign"

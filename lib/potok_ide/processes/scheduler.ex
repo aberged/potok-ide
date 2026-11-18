@@ -55,9 +55,20 @@ defmodule PotokIde.Processes.Scheduler do
   def handle_info(:tick, interval_ms), do: handle_continue(:tick, interval_ms)
 
   # A nudge runs a pass between the regular ones, which keep their time.
+  # The nudges already waiting go in the same pass: a burst of commits makes
+  # one pass, not one each.
   def handle_info(:nudge, interval_ms) do
+    drain_nudges()
     tick()
     {:noreply, interval_ms}
+  end
+
+  defp drain_nudges do
+    receive do
+      :nudge -> drain_nudges()
+    after
+      0 -> :ok
+    end
   end
 
   defp start_scheduled do
