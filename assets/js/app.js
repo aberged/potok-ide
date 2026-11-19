@@ -871,7 +871,19 @@ const APP_FRAME_METHODS = new Set([
   "open_process_form",
   "list_startable",
   "open_process_start",
+  "list_personal",
+  "get_personal",
+  "set_personal",
+  "delete_personal",
 ])
+
+// The app's personal memory (`PotokIde.Social.AppProfileStore`). A guest has
+// no profile, so a guest's frame keeps it in this browser, in one key of the
+// page's storage per app (`data-personal-key`), under the server's limits.
+const APP_FRAME_GUEST_LOCAL = new Set(["list_personal", "get_personal", "set_personal", "delete_personal"])
+const PERSONAL_MAX_KEYS = 100
+const PERSONAL_MAX_BYTES = 16384
+const PERSONAL_KEY = /^[A-Za-z0-9_.:-]{1,64}$/
 
 // Calls that carry a file of the frame's, sent through the page's upload.
 const APP_FRAME_UPLOADS = new Set(["upload_file", "upload_image"])
@@ -903,6 +915,35 @@ const linkGroup = id => {
   }
 }
 
+// A link to a page of a site in an app's frame: `?page=<path>`. The SDK checks
+// it against the site's own address (`site_path.js`); here it only has to be
+// a path.
+const SITE_PAGE_PARAM = "page"
+
+const linkedPage = () => {
+  const page = new URLSearchParams(window.location.search).get(SITE_PAGE_PARAM)
+  return page && page.length <= 1024 && page.startsWith("/") && !page.startsWith("//") ? page : null
+}
+
+// The address follows the reader of the site, as `linkGroup` follows an app.
+const linkPage = page => {
+  const url = new URL(window.location.href)
+
+  if (typeof page === "string" && page.startsWith("/") && !page.startsWith("//") && page.length <= 1024) {
+    url.searchParams.set(SITE_PAGE_PARAM, page)
+  } else {
+    url.searchParams.delete(SITE_PAGE_PARAM)
+  }
+
+  if (url.href === window.location.href) return
+
+  try {
+    window.history.replaceState(window.history.state, "", url)
+  } catch (_error) {
+    // Safari refuses too many in a row; the next page puts it right.
+  }
+}
+
 // The app's `localStorage` lives in one key of the page's storage per app
 // (`data-storage-key`), capped so an app cannot fill the page's quota.
 const APP_FRAME_STORAGE_MAX_CHARS = 256 * 1024
@@ -928,6 +969,11 @@ const GroupAppFrame = {
 
       if (message.event === "storage") {
         this.writeStorage(message.items)
+        return
+      }
+
+      if (message.event === "site_page") {
+        if (this.host() === "page") linkPage(message.page)
         return
       }
 
@@ -1010,7 +1056,54 @@ const GroupAppFrame = {
   },
 
   postReady() {
-    this.post({potok: 1, event: "ready", theme: this.theme(), storage: this.readStorage()})
+    this.post({
+      potok: 1,
+      event: "ready",
+      theme: this.theme(),
+      storage: this.readStorage(),
+      page: this.host() === "page" ? linkedPage() : null,
+    })
+  },
+
+  // A guest's personal memory, in this browser: `{key: value}`.
+  readPersonal() {
+    try {
+      const items = JSON.parse(localStorage.getItem(this.el.dataset.personalKey) || "{}")
+      return items && typeof items === "object" && !Array.isArray(items) ? items : {}
+    } catch (_error) {
+      return {}
+    }
+  },
+
+  personalCall(method, params) {
+    const items = this.readPersonal()
+    const key = params?.key
+
+    if (method === "list_personal") {
+      const list = Object.keys(items).sort().map(name => ({key: name, value: items[name]}))
+      return {ok: true, items: list}
+    }
+
+    if (typeof key !== "string" || !PERSONAL_KEY.test(key)) return {ok: false, error: "invalid_key"}
+    if (method === "get_personal") return {ok: true, value: items[key] ?? null}
+
+    if (method === "delete_personal") {
+      delete items[key]
+    } else {
+      const json = JSON.stringify(params?.value ?? null)
+      if (new TextEncoder().encode(json).length > PERSONAL_MAX_BYTES) return {ok: false, error: "too_big"}
+      if (!(key in items) && Object.keys(items).length >= PERSONAL_MAX_KEYS) {
+        return {ok: false, error: "too_many_keys"}
+      }
+      items[key] = JSON.parse(json)
+    }
+
+    try {
+      localStorage.setItem(this.el.dataset.personalKey, JSON.stringify(items))
+      return {ok: true}
+    } catch (_error) {
+      return {ok: false, error: "unavailable"}
+    }
   },
 
   theme() {
@@ -1065,6 +1158,11 @@ const GroupAppFrame = {
 
     if (method === "pick_emoji") {
       this.post({potok: 1, id, ...(await this.pickEmoji())})
+      return
+    }
+
+    if (APP_FRAME_GUEST_LOCAL.has(method) && this.el.dataset.personalKey) {
+      this.post({potok: 1, id, ...this.personalCall(method, params)})
       return
     }
 

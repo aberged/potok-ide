@@ -10,9 +10,12 @@ defmodule PotokIdeWeb.StripMetadataJsTest do
 
   @root Path.expand("../..", __DIR__)
 
-  test "the script's tests pass in Node" do
+  # Every script test of `test/js`, this one's and the others' (`site_path.js`).
+  test "the scripts' tests pass in Node" do
+    files = "test/js/*.test.mjs" |> Path.wildcard() |> Enum.sort()
+
     {output, status} =
-      System.cmd("node", ["--test", "test/js/strip_metadata.test.mjs"],
+      System.cmd("node", ["--test" | files],
         cd: @root,
         stderr_to_stdout: true,
         env: [{"NODE_NO_WARNINGS", "1"}]

@@ -31,7 +31,17 @@ defmodule PotokIdeWeb.HelpGuides do
 
   alias PotokIde.Processes.{Engine, Types}
   alias PotokIde.RateLimit
-  alias PotokIde.Social.{Access, AppData, Group, GroupManifest, GroupRole, Profile}
+
+  alias PotokIde.Social.{
+    Access,
+    AppData,
+    AppProfileStore,
+    Group,
+    GroupManifest,
+    GroupRole,
+    Profile
+  }
+
   alias PotokIdeWeb.GroupLive.Show.{AppApi, ProcessEditor, RolesTab}
 
   @slugs ~w(procesi-i-aplikacije arhitektura-aplikacije prava-pristupa)
@@ -195,6 +205,8 @@ defmodule PotokIdeWeb.HelpGuides do
       children: AppApi.max_children_per_call(),
       heavy_reads: heavy_reads,
       storage_kb: @storage_kb,
+      personal_keys: AppProfileStore.max_keys(),
+      personal_kb: div(AppProfileStore.max_value_bytes(), 1024),
       manifest_minutes: div(Access.manifest_ttl(), :timer.minutes(1)),
       facts_seconds: div(Access.facts_ttl(), :timer.seconds(1)),
       permissions: length(GroupRole.permissions())
@@ -288,6 +300,12 @@ defmodule PotokIdeWeb.HelpGuides do
       {"linkGroup", "link_group"},
       {"getLinkedGroup", "linked_group"}
     ],
+    personal: [
+      {"listPersonal", "list_personal"},
+      {"getPersonal", "get_personal"},
+      {"setPersonal", "set_personal"},
+      {"deletePersonal", "delete_personal"}
+    ],
     files: [
       {"uploadFile", "upload_file"},
       {"uploadImage", "upload_image"},
@@ -307,10 +325,11 @@ defmodule PotokIdeWeb.HelpGuides do
   @doc """
   The app API by families: `%{id, title, methods}`, each method with its
   `name`, the `call` it makes, and whether the example `uses?` it and a
-  `guest?` of a public group may make it.
+  `guest?` of a public group may make it (the personal memory a guest's frame
+  keeps in the browser).
   """
   def api do
-    guest = AppApi.guest_methods()
+    guest = AppApi.guest_methods() ++ AppApi.local_guest_methods()
 
     for {id, methods} <- @api do
       %{
@@ -331,6 +350,7 @@ defmodule PotokIdeWeb.HelpGuides do
   defp family_title(:processes), do: dgettext("help_guides", "Processes")
   defp family_title(:polls), do: dgettext("help_guides", "Polls")
   defp family_title(:sharing), do: dgettext("help_guides", "Reactions, sharing, link")
+  defp family_title(:personal), do: dgettext("help_guides", "Personal memory")
   defp family_title(:files), do: dgettext("help_guides", "Files, description, sign-in")
 
   @doc "The limits the server keeps on an app: `%{id, mark, text}`, the mark being the number."
@@ -373,6 +393,15 @@ defmodule PotokIdeWeb.HelpGuides do
           dgettext(
             "help_guides",
             "An app's `localStorage`, a copy in Potok's page, apart for every app."
+          )
+      },
+      %{
+        id: "personal",
+        mark: "#{facts.personal_keys} · #{facts.personal_kb} KB",
+        text:
+          dgettext(
+            "help_guides",
+            "Keys an app keeps in its personal memory for one person, and the most one holds. Only that person reads them; a guest's stay in the browser."
           )
       },
       %{

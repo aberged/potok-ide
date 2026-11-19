@@ -208,6 +208,9 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
             html={@source.description}
             app_id={AppApi.app_id(@active_alt_description)}
             storage_key={storage_key(@group, @active_alt_description)}
+            personal_key={
+              if(is_nil(@current_profile), do: personal_key(@group, @active_alt_description))
+            }
             viewer_key={"#{@current_profile && @current_profile.id}:#{@is_member}:#{@viewer_roles}"}
             host={@host}
           />
@@ -285,6 +288,10 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupDescriptionTab do
 
   defp storage_key(group, nil), do: "potok-app:#{group.id}"
   defp storage_key(group, %{id: id}), do: "potok-app:#{group.id}:alt-#{id}"
+
+  # A guest's personal memory of the app (`AppProfileStore` for those with a profile).
+  defp personal_key(group, nil), do: "potok-personal:#{group.id}"
+  defp personal_key(group, %{id: id}), do: "potok-personal:#{group.id}:alt-#{id}"
 
   defp switcher_chip_class(active?) do
     [

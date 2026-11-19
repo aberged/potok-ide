@@ -24,12 +24,13 @@ Sajt koji ne šalje ništa Potok ne dira: prikazuje se kao i do sada, u temi ure
 U **Uredi grupu** uključi **Opis je aplikacija (API)**, pa u opis stavi okvir sa adresom sajta:
 
 ```html
-<iframe src="https://adresa-sajta/" title="Naziv sajta" style="width: 100%; height: 100vh; border: none;" loading="lazy"></iframe>
+<iframe src="https://adresa-sajta/" title="Naziv sajta" data-potok-api="" style="width: 100%; height: 100vh; border: none;" loading="lazy"></iframe>
 ```
 
 - Sajt mora da dozvoli prikaz u okviru: bez zaglavlja `X-Frame-Options` i bez `frame-ancestors`.
 - Gost vidi sajt kad je opis otvoren gostima (**Pristup**, „Opis vidljiv i bez prijave“).
 - Pozive sajt dobija tek kad ih opis nabroji na okviru: `data-potok-api="current_profile list_values"`. Bez tog atributa dobija temu i jezik, i ništa više.
+- Okvir sa atributom `data-potok-api`, makar i praznim, Potok pamti: stranicu na kojoj je čitalac stao otvara i kad se okvir napravi iznova, a link sa `?page=` otvara poglavlje (vidi [Stranica i poglavlje](#stranica-i-poglavlje)).
 
 ## Poruke
 
@@ -41,6 +42,7 @@ Sajt se javlja pri učitavanju svake svoje stranice, a SDK mu odgovara istim por
 | SDK → sajt | `{potok: 1, event: "ready", theme, lang, methods, app}` | odgovor na `hello` |
 | SDK → sajt | `{potok: 1, event: "theme", theme}` | kad se tema Potoka promeni |
 | SDK → sajt | `{potok: 1, event: "reconnected"}` | posle prekida i obnove veze |
+| sajt → SDK | `{potok: 1, event: "page", page}` | posle `hello` i kad god čitalac pređe na drugu stranicu ili deo stranice |
 | sajt → SDK | `{potok: 1, id, method, params}` | poziv |
 | SDK → sajt | `{potok: 1, id, ok, …}` | odgovor na poziv |
 
@@ -59,11 +61,17 @@ Sajt se javlja pri učitavanju svake svoje stranice, a SDK mu odgovara istim por
 | `get_group` | – | `{ok: true, group}` |
 | `list_values` | kao `listValues`, sa imenima sa donjom crtom (`limit`, `order_dir`, `after_id`…) | `{ok: true, values, has_more, total}` |
 | `insert_value` | `{data: "<JSON kao tekst>", content_format: "markdown"}` | `{ok: true, value}` |
+| `list_personal` | – | `{ok: true, items: [{key, value, updated_at}]}` |
+| `get_personal` | `{key}` | `{ok: true, value}` (`null` kad ključa nema) |
+| `set_personal` | `{key, value}` | `{ok: true}` |
+| `delete_personal` | `{key}` | `{ok: true}` |
 
 - `id` je broj koji sajt sam dodeljuje; odgovor ga vraća. Zakasneli odgovor stiže stranici koja je tada u okviru, pa brojevi ne treba da kreću od 1 na svakoj stranici.
 - Poziv koji nije na listi dobija `{ok: false, error: "not_listed"}` i ne stiže do stranice. Poziv na koji stranica ne odgovori za 10 sekundi dobija `{ok: false, error: "timeout"}`.
 - Sve ostale greške su iste kao za aplikaciju (`forbidden`, `not_a_member`, `rate_limited`…): server proverava svaki poziv, ko god da ga šalje.
 - `upload_file` i `upload_image` nose fajl kao `file` uz `params`, a napredak stiže kao `{potok: 1, event: "upload_progress", id, progress}`.
+
+`*_personal` su lična memorija: ono što sajt čuva samo za tog čitaoca, isto na svakom uređaju, recimo beleške ili urađene zadatke. Ne vidi je niko drugi, ni urednici grupe, a čitalac je vidi i briše u podešavanjima naloga. Ključ ima od 1 do 64 slova, cifara i znakova `_ . : -`, vrednost je bilo šta što JSON drži, do 16 KB, a jedan sajt čuva najviše 100 ključeva po osobi. Gost bez naloga dobija iste pozive, ali mu se memorija čuva samo u pregledaču.
 
 Ono što stranica šalje sama stiže sajtu samo ako sme da pročita isto to:
 
@@ -75,6 +83,14 @@ Ono što stranica šalje sama stiže sajtu samo ako sme da pročita isto to:
 | `waiting_changed` | `list_waiting` |
 | `group_sheet_closed` | `show_group` |
 
+## Stranica i poglavlje
+
+Sajt javlja na kojoj je stranici čitalac: `{potok: 1, event: "page", page}`, gde je `page` `location.pathname + location.search + location.hash`. Potok to pamti za taj okvir, u kopiji `localStorage`-a koju stranica čuva za aplikaciju, i kad napravi okvir iznova (druga kartica grupe, promena jezika, obnova veze), otvara ga tamo. Dok ne zna kuda, okvir čeka bez adrese, najviše tri sekunde, da prva stranica sajta ne bi bljesnula.
+
+- Pamti se samo putanja na istom sajtu: drugi host, `//host`, šema, obrnuta kosa crta ili više od 1024 znaka se odbacuju.
+- Link na poglavlje: `?page=/poglavlja/03.html#clan-12` na adresi grupe otvara prvi takav okvir tamo, pre zapamćene stranice. Adresa grupe zatim prati čitaoca, bez novih koraka u istoriji, pa adresa koju neko kopira ili podeli otvara isto mesto.
+- Sajt koji menja deo adrese bez učitavanja (`history.replaceState`, kao mapa ustava) javlja to sam: `SAJT_POTOK.stranica()`.
+
 ## Adapter
 
 Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao `assets/potok.js`, prvu skriptu svake stranice.
@@ -84,6 +100,7 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 - Na `<html>` stavlja klase `potok` i `potok-pismo`. Po njima sajt sakriva svoje dugme za temu, odnosno za pismo: u Potoku se bira u Potoku.
 - Ono što Potok odredi ne upisuje u `localStorage`.
 - Link ka drugom hostu i ka PDF-u otvara u novoj kartici.
+- Posle `hello` javlja stranicu (`page`), i ponovo na `hashchange` i `popstate`; `stranica()` je javlja na zahtev sajta.
 - Dodatne funkcije kreću iz `SAJT_POTOK.spremno.then(…)` i zovu `SAJT_POTOK.poziv("ime", parametri)`. Van Potoka se `spremno` nikad ne ispuni, pa sajt bez njih mora da radi.
 
 ```js
@@ -111,7 +128,8 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
     metode: [],         /* pozivi koje je opis grupe dozvolio ovom sajtu (data-potok-api) */
     spremno: new Promise(function (ispuni) { javiSpremno = ispuni; }),   /* van Potoka se nikad ne ispuni */
     poziv: poziv,
-    na: na
+    na: na,
+    stranica: stranica
   };
   window[IME] = P;
   if (!roditelj) return;
@@ -181,6 +199,16 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 
   roditelj.postMessage({ potok: 1, event: "hello" }, "*");
 
+  /* ---------- stranica ---------- */
+  /* Potok pamti gde je čitalac stao, a adresa grupe ga prati, pa link vodi na isto mesto. */
+  function stranica() {
+    if (!roditelj) return;
+    roditelj.postMessage({ potok: 1, event: "page", page: location.pathname + location.search + location.hash }, "*");
+  }
+  stranica();
+  window.addEventListener("hashchange", stranica);
+  window.addEventListener("popstate", stranica);
+
   /* ---------- linkovi ---------- */
   /* Strana stranica ne sme da se učita u ovaj okvir, jer bi dobila iste pozive kao sajt, a PDF se u
      njemu ne prikazuje. Takvi linkovi zato idu u novu karticu. */
@@ -227,8 +255,8 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 
 ## Šta je drugačije nego kod aplikacije
 
-- **Ništa se ne pamti.** Sajt u okviru nema `localStorage`. Aplikaciji ga SDK zamenjuje kopijom koju čuva stranica; sajtu ne.
-- **Sajt se vraća na prvu stranicu** kad Potok napravi okvir iznova: kad gledalac ode na drugu karticu grupe i vrati se, promeni jezik, ili se promeni opis ili njegov pristup.
+- **Sajt nema `localStorage`.** Aplikaciji ga SDK zamenjuje kopijom koju čuva stranica; sajtu ne. Ono što treba da traje sajt čuva u ličnoj memoriji (`set_personal`), a tema i jezik idu kroz `window.name`.
+- **Stranica se pamti** kad okvir ima `data-potok-api` i sajt javlja `page`: kad Potok napravi okvir iznova, sajt se otvara tamo gde je čitalac stao, a ne na prvoj stranici. Bez toga se vraća na prvu.
 - **Posle prekida i obnove veze okvir ostaje.** Aplikacija se tada učitava iznova. Opis koji drži takav sajt i nema svojih skripti ne: sajt dobija `reconnected` i ostaje na stranici na kojoj je čitalac. Sajt koji prikazuje podatke iz Potoka tada ih čita ponovo.
 - **PDF se u zatvorenom okviru često ne prikazuje**, pa takav link ide u novu karticu.
 
@@ -243,4 +271,4 @@ Ceo adapter, bez zavisnosti. Sajtovi napravljeni po `PDF-U-SAJT.md` nose ga kao 
 ## Provera
 
 - Bez Potoka: `alati/potok-proba.html` u sajtovima napravljenim po `PDF-U-SAJT.md` igra ulogu SDK-a. Sa diska radi sa otvorenim okvirom; verno, sa zatvorenim, uz `python -m http.server` u korenu sajta.
-- U Potoku: grupa čiji je opis okvir sa adresom sajta. Promena teme stiže odmah, a promena jezika gradi okvir iznova. Posle prekida veze sajt ostaje na otvorenoj stranici. Poziv sa liste vraća odgovor, a poziv van nje `not_listed`.
+- U Potoku: grupa čiji je opis okvir sa adresom sajta. Promena teme stiže odmah, a promena jezika gradi okvir iznova, na istoj stranici sajta. Posle prekida veze sajt ostaje na otvorenoj stranici. Kartica grupe pa povratak vraća istu stranicu, adresa grupe nosi `?page=`, a ta adresa u novoj kartici otvara isto poglavlje. Poziv sa liste vraća odgovor, a poziv van nje `not_listed`.

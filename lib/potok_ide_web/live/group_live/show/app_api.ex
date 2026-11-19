@@ -71,6 +71,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     AppData,
     AppFiles,
     AppProcesses,
+    AppProfileStore,
     DrawnProcesses,
     Group,
     GroupAreas,
@@ -118,6 +119,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     map_config list_places list_places_at create_place show_group place_shapes
     list_processes complete_task retry_process cancel_process
     list_waiting open_process_form list_startable open_process_start
+    list_personal get_personal set_personal delete_personal
   )
 
   # What a guest may call of those: reads, with a guest's sight (`Social`
@@ -128,6 +130,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   )
 
   @refused_to_guests @signed_in_methods -- @guest_methods
+
+  # What a guest's frame answers itself, in the browser (`GroupAppFrame`): the
+  # app's personal memory, which a guest without a profile keeps there.
+  @local_guest_methods ~w(list_personal get_personal set_personal delete_personal)
 
   # Every pin a map gets in one call; a bigger map reads by view, gathered on
   # the server (`list_places` with `bbox`). Tests set a smaller one.
@@ -165,6 +171,9 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
 
   @doc "The methods a guest may call of those that otherwise take a signed-in profile."
   def guest_methods, do: @guest_methods
+
+  @doc "The methods a guest's frame answers in the browser instead (`APP_FRAME_GUEST_LOCAL`)."
+  def local_guest_methods, do: @local_guest_methods
 
   defp poll_status("closed"), do: :closed
   defp poll_status("waiting"), do: :waiting
@@ -468,6 +477,48 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp run(method, _params, %{assigns: %{current_profile: nil}} = socket)
        when method in @refused_to_guests do
     {error("forbidden", gettext("Your roles in this group do not allow that.")), socket}
+  end
+
+  # The app's personal memory, for the viewer alone (`AppProfileStore`).
+  defp run("list_personal", _params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+    items = AppProfileStore.list(profile, group, alt)
+    {%{ok: true, items: Enum.map(items, &Map.take(&1, [:key, :value, :updated_at]))}, socket}
+  end
+
+  defp run("get_personal", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    case AppProfileStore.get(profile, group, alt, params["key"]) do
+      {:ok, value} -> {%{ok: true, value: value}, socket}
+      {:error, reason} -> {personal_error(reason), socket}
+    end
+  end
+
+  defp run("set_personal", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppProfileStore.put(profile, group, alt, params["key"], params["value"]) do
+        {:ok, :ok} -> {%{ok: true}, socket}
+        {:error, reason} -> {personal_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
+  end
+
+  defp run("delete_personal", params, socket) do
+    %{current_profile: profile, group: group, active_alt_description: alt} = socket.assigns
+
+    with {:ok, socket} <- take_write_token(socket) do
+      case AppProfileStore.delete(profile, group, alt, params["key"]) do
+        :ok -> {%{ok: true}, socket}
+        {:error, reason} -> {personal_error(reason), socket}
+      end
+    else
+      {:error, reply} -> {reply, socket}
+    end
   end
 
   defp run("save_config", params, socket) do
@@ -1961,6 +2012,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     do: redirect(socket, to: path)
 
   defp navigate(socket, path), do: push_navigate(socket, to: path)
+
+  defp personal_error(reason)
+       when reason in [:invalid_key, :invalid_value, :too_big, :too_many_keys],
+       do: error(Atom.to_string(reason), nil)
+
+  defp personal_error(_reason), do: error("invalid_params", nil)
 
   defp error(code, nil), do: %{ok: false, error: code}
   defp error(code, message), do: %{ok: false, error: code, message: message}

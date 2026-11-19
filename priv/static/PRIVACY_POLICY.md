@@ -46,6 +46,7 @@ When someone invites an email address that has no account yet, Potok opens an un
 - Polls and votes: in a secret poll we keep only that a profile voted, not what for; the list of voters can be downloaded by whoever the poll's rules let see the details
 - Data a group's apps write, such as form responses. When a response is "anonymous", others do not see who sent it, but the server still knows.
 - The course of a group's processes: who started them, what they wrote and what they wait for. The data of processes that ended more than 30 days ago is deleted, and a record of how they ended stays.
+- The personal memory of apps: what an app or a site in a group's description keeps for you alone, such as how far you read. Not even the group's editors see it, and you see and delete it in the account settings.
 
 ### Files
 
@@ -55,7 +56,7 @@ Before it is sent, a JPEG, PNG or WebP photo loses EXIF, XMP and similar data, w
 
 ### What stays only on your device
 
-Unfinished messages, your choice of theme and language, the map view, and the copy of data that apps in groups keep in the browser are stored only in your browser or app. Who is online right now is kept only in the server's memory, while the page is open.
+Unfinished messages, your choice of theme and language, the map view, the copy of data that apps in groups keep in the browser, the page where the reading of a site in a group's description stopped, and the personal memory of apps for visitors without an account are stored only in your browser or app. Who is online right now is kept only in the server's memory, while the page is open.
 
 ### Technical information
 
@@ -131,7 +132,7 @@ Potok uses only cookies that keep you logged in: the session cookie and, if you 
 
 You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
-- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags and invitations, and the groups where you are the only member.
+- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags, invitations and the personal memory of apps, and the groups where you are the only member.
 - **Stays:** the messages, files, polls, events and notices you posted in groups, under the name "Deleted user", without your username, picture or description. A profile you share with other accounts stays theirs.
 
 A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.

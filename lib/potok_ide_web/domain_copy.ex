@@ -368,6 +368,13 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("GroupEntity", "lock_version"), do: dgettext("domain_map", "revision")
 
+  defp own_field("AppProfileEntry", "alt_description_id"),
+    do: dgettext("domain_map", "app description")
+
+  defp own_field("AppProfileEntry", "profile_id"), do: dgettext("domain_map", "whose it is")
+  defp own_field("AppProfileEntry", "key"), do: dgettext("domain_map", "name the app gives it")
+  defp own_field("AppProfileEntry", "value"), do: dgettext("domain_map", "what the app keeps")
+
   defp own_field("ValueProcess", "depth"),
     do: dgettext("domain_map", "how many processes deep")
 
@@ -607,6 +614,7 @@ defmodule PotokIdeWeb.DomainCopy do
   def entity_name("ValueProcess"), do: dgettext("domain_map", "Process instance")
   def entity_name("GroupField"), do: dgettext("domain_map", "Group field")
   def entity_name("GroupEntity"), do: dgettext("domain_map", "Entity definition")
+  def entity_name("AppProfileEntry"), do: dgettext("domain_map", "Personal app memory")
   def entity_name("Event"), do: dgettext("domain_map", "Event")
   def entity_name("Response"), do: dgettext("domain_map", "Event response")
   def entity_name("MemberSetting"), do: dgettext("domain_map", "Personal reminders")
@@ -789,6 +797,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext(
       "domain_map",
       "What the data of the processes drawn in a group looks like, as its editors define it: a name and up to 30 attributes, each with the type of what it holds. An attribute holds a text, a number, a yes or no, a date, a date and time, one of the choices it lists, or another entity of the group, and may be a list of them. Entities nest at most four deep and never in a circle. A group has at most 50, each name once in any letter case, and one that another holds, or that a process drawn in the group keeps a variable of, cannot be deleted. Deleting the group takes them along."
+    )
+  end
+
+  defp entity_description("AppProfileEntry", _edges) do
+    dgettext(
+      "domain_map",
+      "What one app, or a site in its frame, keeps for one profile alone, such as how far its reader got: a key and a value. Nobody else reads it, not even the app's editors, and the person sees and deletes it in the settings. An app keeps up to 100 keys per profile, each value up to 16 KB. Deleting the app, its group or the account takes them along."
     )
   end
 
@@ -1067,6 +1082,14 @@ defmodule PotokIdeWeb.DomainCopy do
       "domain_map",
       "A process starts on a value, a message, a sub-group, a schedule, by hand, when another process calls it or on a signal."
     )
+  end
+
+  def check_text("app_profile_entries_key_check") do
+    dgettext("domain_map", "The key has 1 to 64 letters, digits and the characters _ . : -.")
+  end
+
+  def check_text("app_profile_entries_value_check") do
+    dgettext("domain_map", "The value has at most 16 KB.")
   end
 
   def check_text("group_fields_name_check") do
@@ -1397,7 +1420,16 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "A description can show a site from another address, in a frame inside its own. Potok tells that site the viewer's theme and language, so the site can follow them, and passes on only the calls the description lists for it. That is how a handbook published elsewhere reads as a part of the group."
+              "A description can show a site from another address, in a frame inside its own. Potok tells that site the viewer's theme and language, so the site can follow them, and passes on only the calls the description lists for it. It remembers the page the reader got to, and a link to the group can open a chapter of the site. That is how a handbook published elsewhere reads as a part of the group."
+            )
+        },
+        %{
+          icon: "hero-bookmark",
+          title: dgettext("domain_map", "Remembers for each person"),
+          text:
+            dgettext(
+              "domain_map",
+              "An app, or a site in its frame, keeps a <AppProfileEntry>personal memory</AppProfileEntry> for each viewer: how far they read, what they marked. It is the same on every device and only that person reads it, not even the app's editors; a guest's stays in the browser."
             )
         },
         %{
@@ -1439,6 +1471,10 @@ defmodule PotokIdeWeb.DomainCopy do
           "A site inside an app gets the theme, the language and the calls its description lists, and no more. Potok cannot tell which page stands in that frame, so the list holds for whatever opens there."
         ),
         dgettext("domain_map", "The server checks every call again, whatever the app asks for."),
+        dgettext(
+          "domain_map",
+          "What an app keeps for one person, nobody else reads, not even its editors."
+        ),
         dgettext(
           "domain_map",
           "Members read and save values, and so do signed-in non-members where an app's rules open that to them in a public group. Rules can narrow it further, and the number of saves is limited."

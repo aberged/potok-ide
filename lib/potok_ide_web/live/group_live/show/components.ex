@@ -1431,6 +1431,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: nil,
     doc: "describes the viewer's access (profile, membership); a new value restarts the app"
 
+  attr :personal_key, :string,
+    default: nil,
+    doc: "for a guest: page `localStorage` key of the app's personal memory, kept in the browser"
+
   attr :app_id, :string,
     default: "",
     doc: "which of the group's apps this is (`AppApi.app_id/1`); sent with every API call"
@@ -1464,6 +1468,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
       data-api={to_string(@api)}
       data-app-id={@app_id}
       data-storage-key={@storage_key}
+      data-personal-key={@personal_key}
       data-host={@host}
       data-upload={AppHost.upload_name(@host)}
       data-picker={AppHost.picker_id(@host)}

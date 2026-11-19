@@ -7,6 +7,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
 
   alias PotokIde.Accounts
   alias PotokIde.Notices
+  alias PotokIde.Social.AppProfileStore
   alias PotokIde.PushNotifications
   alias PotokIde.RateLimit
   alias PotokIdeWeb.NoticeComponents
@@ -367,6 +368,76 @@ defmodule PotokIdeWeb.AccountLive.Settings do
           </div>
         </section>
 
+        <%!-- What apps keep for this profile alone (`AppProfileStore`). --%>
+        <section id="settings-app-memory" class={settings_card_class()}>
+          <.card_title
+            icon="hero-archive-box"
+            title={gettext("What apps remember for you")}
+            subtitle={
+              gettext(
+                "Apps and sites in groups keep this for the profile %{profile} alone, such as how far you read. Their editors do not see it.",
+                profile: @current_profile.username
+              )
+            }
+            class="mb-4"
+          />
+          <p
+            :if={@app_memory == []}
+            id="settings-app-memory-empty"
+            class="rounded-2xl border border-dashed border-base-300 bg-base-200/40 px-4 py-4 text-sm text-base-content/65"
+          >
+            {gettext("No app remembers anything for this profile.")}
+          </p>
+          <ul :if={@app_memory != []} id="settings-app-memory-list" class="space-y-2">
+            <li
+              :for={row <- @app_memory}
+              id={"settings-app-memory-#{row.group_id}-#{row.alt_description_id || 0}"}
+              class="flex items-center gap-3 rounded-2xl border border-base-300/80 bg-base-100 px-4 py-3"
+            >
+              <div class="min-w-0 flex-1">
+                <.link
+                  navigate={~p"/groups/#{row.group_id}"}
+                  class="block truncate text-sm font-semibold hover:underline"
+                >
+                  {row.group_name}
+                </.link>
+                <p class="truncate text-xs text-base-content/65">
+                  {Enum.join(
+                    [
+                      row.alt_name || gettext("Group description"),
+                      ngettext("%{count} key", "%{count} keys", row.keys),
+                      memory_size(row.bytes)
+                    ],
+                    " · "
+                  )}
+                </p>
+              </div>
+              <.button
+                type="button"
+                phx-click="clear_app_memory"
+                phx-value-group={row.group_id}
+                phx-value-alt={row.alt_description_id || ""}
+                aria-label={gettext("Delete what %{app} remembers", app: row.group_name)}
+              >
+                <.icon name="hero-trash" class="size-4" />
+              </.button>
+            </li>
+          </ul>
+          <div :if={@app_memory != []} class="mt-3 flex flex-wrap items-center justify-between gap-2">
+            <p class="text-xs text-base-content/65">
+              {gettext("Every account that uses this profile sees this too.")}
+            </p>
+            <.button
+              id="settings-app-memory-clear-all"
+              type="button"
+              phx-click="clear_all_app_memory"
+              data-confirm={gettext("Delete what every app remembers for this profile?")}
+            >
+              {gettext("Delete all")}
+            </.button>
+          </div>
+        </section>
+
         <section id="settings-account" class={settings_card_class()}>
           <.card_title
             icon="hero-user-circle"
@@ -476,6 +547,7 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       |> assign(:delete_form, to_form(%{"email" => ""}, as: "account"))
       |> assign(:trigger_delete, false)
       |> assign(:sudo?, Accounts.sudo_mode?(account))
+      |> assign(:app_memory, AppProfileStore.summary(socket.assigns.current_profile))
 
     {:ok, socket}
   end
@@ -536,6 +608,27 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       changeset ->
         {:noreply, assign(socket, password_form: to_form(changeset, action: :insert))}
     end
+  end
+
+  def handle_event("clear_app_memory", %{"group" => group, "alt" => alt}, socket) do
+    profile = socket.assigns.current_profile
+
+    with {group_id, ""} <- Integer.parse(group) do
+      alt_id =
+        case Integer.parse(alt) do
+          {id, ""} -> id
+          _ -> nil
+        end
+
+      :ok = AppProfileStore.clear_app(profile, group_id, alt_id)
+    end
+
+    {:noreply, assign(socket, :app_memory, AppProfileStore.summary(profile))}
+  end
+
+  def handle_event("clear_all_app_memory", _params, socket) do
+    :ok = AppProfileStore.clear_all(socket.assigns.current_profile)
+    {:noreply, assign(socket, :app_memory, [])}
   end
 
   # What deleting would do is read only when asked, as it looks at every group.
@@ -684,6 +777,12 @@ defmodule PotokIdeWeb.AccountLive.Settings do
   end
 
   defp list_push_subscriptions(account), do: Accounts.list_push_subscriptions(account)
+
+  defp memory_size(bytes) when is_integer(bytes) and bytes >= 1024,
+    do: "#{Float.round(bytes / 1024, 1)} KB"
+
+  defp memory_size(bytes) when is_integer(bytes), do: "#{bytes} B"
+  defp memory_size(_bytes), do: "0 B"
 
   # The messages of the `PushNotifications` hook in app.js.
   defp push_i18n do

@@ -87,6 +87,18 @@ defmodule PotokIdeWeb.GroupLive.GuestAppTest do
     assert id == ctx.app.id
   end
 
+  test "a guest's frame keeps the personal memory in the browser, and the server refuses it",
+       ctx do
+    view = guest(~p"/groups/#{ctx.app.id}")
+
+    assert has_element?(
+             view,
+             ~s(#group-app-frame[data-personal-key="potok-personal:#{ctx.app.id}"])
+           )
+
+    assert %{ok: false, error: "forbidden"} = call(view, "set_personal", %{key: "page", value: 1})
+  end
+
   test "tells the app where it stands and that nobody is signed in", ctx do
     view = guest(~p"/groups/#{ctx.app.id}")
 

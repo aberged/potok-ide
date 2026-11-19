@@ -88,10 +88,20 @@ defmodule PotokIdeWeb.HelpGuidesTest do
       end
     end
 
-    test "marks for a guest what the server lets a guest call" do
+    test "marks for a guest what the server lets a guest call, and what a guest's frame keeps" do
       shown = for %{guest?: true, call: call} <- page_methods(), do: call
 
-      assert Enum.sort(shown) == Enum.sort(AppApi.guest_methods())
+      assert Enum.sort(shown) ==
+               Enum.sort(AppApi.guest_methods() ++ AppApi.local_guest_methods())
+    end
+
+    test "gives the limits of the personal memory as the frame of a guest keeps them" do
+      app = File.read!("assets/js/app.js")
+      [_, keys] = Regex.run(~r/const PERSONAL_MAX_KEYS = (\d+)\n/, app)
+      [_, bytes] = Regex.run(~r/const PERSONAL_MAX_BYTES = (\d+)\n/, app)
+
+      assert String.to_integer(keys) == PotokIde.Social.AppProfileStore.max_keys()
+      assert String.to_integer(bytes) == PotokIde.Social.AppProfileStore.max_value_bytes()
     end
 
     test "gives the limit of an app's localStorage as the page keeps it" do
@@ -111,7 +121,7 @@ defmodule PotokIdeWeb.HelpGuidesTest do
       assert count(document, "#hg-api [data-method]") == length(page_methods())
 
       assert count(document, "#hg-api [data-method] .hg-chip-guest") ==
-               length(AppApi.guest_methods())
+               length(AppApi.guest_methods() ++ AppApi.local_guest_methods())
 
       assert count(document, "#hg-limits li") == length(HelpGuides.limits())
       assert text(document, "#hg-limit-sizes b") == "#{facts.value_kb} KB · #{facts.config_kb} KB"

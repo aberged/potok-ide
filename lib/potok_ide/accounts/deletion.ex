@@ -21,8 +21,9 @@ defmodule PotokIde.Accounts.Deletion do
       receipts, pinned groups, reactions, answers to events and their
       settings, the tags it owns and those put on it, invitations it sent or
       got, join requests, account invitations it sent (they hold the
-      addresses of people who never signed up), blocks of it, and the hidden
-      values that ask an app for pushes;
+      addresses of people who never signed up), blocks of it, the hidden
+      values that ask an app for pushes, and the personal memory of apps
+      (`PotokIde.Social.AppProfileStore`);
     * emptied: who added a tag, who blocked someone, who invited an account;
     * kept: values (an app's and "anonymous" ones too), files, polls and
       ballots (the ballot loses only its account, so no count changes),
@@ -315,7 +316,8 @@ defmodule PotokIde.Accounts.Deletion do
           {"group_join_requests", :requester_id},
           {"group_join_request_approvals", :requester_id},
           {"group_account_invitations", :inviter_id},
-          {"group_blocks", :profile_id}
+          {"group_blocks", :profile_id},
+          {"app_profile_entries", :profile_id}
         ] do
       from(r in table, where: field(r, ^column) in type(^ids, {:array, :integer}))
       |> Repo.delete_all()

@@ -80,6 +80,24 @@ defmodule PotokIdeWeb.PublicPreviewTest do
       assert preview["site_name"] == "Potok"
     end
 
+    test "the card leads to the description and the page of a site the link named", %{
+      conn: conn,
+      owner: owner
+    } do
+      group = public_group!(owner)
+
+      document =
+        conn |> get(~p"/groups/#{group.id}?page=/poglavlja/03.html&d=5&x=1") |> document()
+
+      assert og(document, "url") ==
+               url(~p"/groups/#{group.id}?#{[d: "5", page: "/poglavlja/03.html"]}")
+
+      assert get_session(
+               get(build_conn(), ~p"/groups/#{group.id}?page=/poglavlja/03.html"),
+               :account_return_to
+             ) == "/groups/#{group.id}?page=/poglavlja/03.html"
+    end
+
     test "a guest comes back to the link after logging in", %{conn: conn, owner: owner} do
       group = public_group!(owner)
       conn = get(conn, ~p"/groups/#{group.id}/values")

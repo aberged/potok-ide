@@ -60,6 +60,23 @@ defmodule PotokIdeWeb.AppFrameMethodsTest do
     assert MapSet.subset?(files, waiting)
   end
 
+  test "a guest's frame answers in the browser exactly what the server leaves to it" do
+    [_, block] =
+      Regex.run(
+        ~r/const APP_FRAME_GUEST_LOCAL = new Set\(\[(.*?)\]\)/s,
+        File.read!("assets/js/app.js")
+      )
+
+    local =
+      ~r/"([a-z_]+)"/
+      |> Regex.scan(block, capture: :all_but_first)
+      |> List.flatten()
+      |> MapSet.new()
+
+    assert local == MapSet.new(PotokIdeWeb.GroupLive.Show.AppApi.local_guest_methods())
+    assert MapSet.subset?(local, frame_methods())
+  end
+
   test "what the page pushes goes on to a site in the app's frame only by methods of the page" do
     readers = sdk_list(~r/const SITE_EVENT_READERS = \{(.*?)\n\}/s)
 

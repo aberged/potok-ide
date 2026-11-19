@@ -12,6 +12,8 @@
 // A site the description holds in a frame of its own talks to the SDK the
 // same way, one level in (see "A site in a frame of the app's own" below).
 
+import { homePath, sitePath } from "./site_path"
+
 const CALL_TIMEOUT_MS = 10_000
 const LEGACY_PAGE_SIZE = 200
 const LEGACY_MAX_ROWS = 5_000
@@ -204,6 +206,148 @@ const postToSites = (message, readers = null) => {
   })
 }
 
+// A site's page. A frame that the description marks with `data-potok-api`
+// (even an empty one) and that has a web address is a site whose page Potok
+// remembers: the site reports where its reader is ("page"), the SDK keeps it
+// in the app's own `localStorage` copy, under PAGE_KEY and the frame's
+// address, and the next time Potok builds the frame (another tab, another
+// language, a reconnect) it opens there. A link may name a page too
+// (`?page=`, in "ready"), which wins for the first such frame, and the page's
+// address follows that frame's reader ("site_page"), so a shared address opens
+// the same chapter. A page is only ever a path of the frame's own site
+// (`sitePath`).
+//
+// Until the page's "ready" says where to go, such a frame waits with no
+// address, or its first page would flash first; after HOLD_MS it loads its
+// own, and a "ready" that comes later still takes a reader who has not moved
+// to the remembered page. The page's LiveView may take a few seconds to
+// connect. A frame is never sent somewhere while it is on its way elsewhere:
+// Chrome can leave a frame of another site blank when its address changes
+// mid-load, so the waiting frame is a fresh copy with no address, and a frame
+// that must go somewhere else is replaced by a copy that goes there.
+const PAGE_KEY = "__potok_page__:"
+const HOLD_MS = 3000
+// frame -> {home, placed, path}: its address in the description, whether it
+// has been sent somewhere, and the path it was sent to or last reported.
+const sitePages = new WeakMap()
+let readyPage = null
+let pageReady = false
+
+const isPageSite = frame =>
+  frame instanceof HTMLIFrameElement &&
+  frame.hasAttribute("data-potok-api") &&
+  /^https?:\/\//i.test(frame.getAttribute("src") || "")
+
+const pageSites = () =>
+  Array.from(document.querySelectorAll("iframe")).filter(frame => sitePages.has(frame))
+
+const placeSite = (frame, {again = false} = {}) => {
+  const state = sitePages.get(frame)
+  if (!state || (state.placed && !again)) return
+
+  const linked = pageSites()[0] === frame ? sitePath(readyPage, state.home) : null
+  const kept = sitePath(local.items.get(PAGE_KEY + state.home), state.home)
+  const path = linked ?? kept ?? homePath(state.home)
+  const target = new URL(path, state.home).href
+
+  // A late "ready" does not move a reader who has gone on by now.
+  if (again && state.placed && state.path !== homePath(state.home)) return
+
+  state.placed = true
+
+  // The frame may have loaded before it could be held, and its site already
+  // said it stands there: another `src` would load it again and lose a click.
+  if (state.path === path) return
+
+  state.path = path
+  sendSite(frame, state, target)
+}
+
+// The frame's first address, or a copy of the frame with that address.
+const sendSite = (frame, state, target) => {
+  const current = frame.getAttribute("src")
+  if (current === target) return
+
+  if (current === null) {
+    frame.setAttribute("src", target)
+    return
+  }
+
+  const copy = frame.cloneNode(false)
+  copy.setAttribute("src", target)
+  sitePages.set(copy, state)
+  frame.replaceWith(copy)
+}
+
+const holdSite = frame => {
+  if (sitePages.has(frame) || !isPageSite(frame)) return
+
+  const state = {home: frame.getAttribute("src"), placed: false, path: null}
+
+  if (pageReady) {
+    sitePages.set(frame, state)
+    placeSite(frame)
+    return
+  }
+
+  // A copy with no address waits; the frame itself, already on its way to
+  // its first page, goes with all it started.
+  const waiting = frame.cloneNode(false)
+  waiting.removeAttribute("src")
+  sitePages.set(waiting, state)
+  frame.replaceWith(waiting)
+}
+
+const holdSites = root => {
+  if (root instanceof HTMLIFrameElement) holdSite(root)
+  root.querySelectorAll?.("iframe").forEach(holdSite)
+}
+
+new MutationObserver(records => {
+  records.forEach(record => record.addedNodes.forEach(holdSites))
+}).observe(document.documentElement, {childList: true, subtree: true})
+
+document.addEventListener("DOMContentLoaded", () => holdSites(document))
+
+setTimeout(() => {
+  if (!pageReady) pageSites().forEach(frame => placeSite(frame))
+}, HOLD_MS)
+
+const placeSites = page => {
+  readyPage = typeof page === "string" ? page : null
+  const late = !pageReady
+  pageReady = true
+  pageSites().forEach(frame => placeSite(frame, {again: late}))
+}
+
+// The site says where its reader is.
+const sitePageMoved = (frame, page) => {
+  const state = sitePages.get(frame)
+  if (!state) return
+
+  const path = sitePath(page, state.home)
+  if (!path) return
+
+  state.placed = true
+  state.path = path
+
+  // Before "ready" the remembered page is not known yet: the page the frame
+  // opened on while it waited must not take its place.
+  if (!pageReady) return
+
+  // Saved at once, not after the usual pause: the reader may leave the page
+  // right after a link took them on.
+  local.storage.setItem(PAGE_KEY + state.home, path)
+  saveLocalStorage()
+
+  if (pageSites()[0] === frame) {
+    const atHome = path === homePath(state.home)
+    void parentReady.then(() =>
+      window.parent.postMessage({potok: 1, event: "site_page", page: atHome ? null : path}, "*")
+    )
+  }
+}
+
 const handleSiteMessage = event => {
   const message = event.data
 
@@ -212,6 +356,11 @@ const handleSiteMessage = event => {
   // Only a frame right in this document is a site: one further in is not.
   const frame = siteFrameOf(event.source)
   if (!frame) return
+
+  if (message.event === "page") {
+    if (siteFrames.has(frame)) sitePageMoved(frame, message.page)
+    return
+  }
 
   if (message.event === "hello") {
     siteFrames.add(frame)
@@ -263,6 +412,7 @@ window.addEventListener("message", event => {
   if (message.event === "ready") {
     seedLocalStorage(message.storage)
     applyTheme(message.theme)
+    placeSites(message.page)
     markParentReady()
     postToSites({potok: 1, event: "theme", theme: message.theme ?? null})
     return
@@ -495,6 +645,17 @@ const potok = {
   // For the app's editors: one value of a collection, or all of one.
   deleteValue: id => call("delete_value", {id}),
   deleteValues: collection => call("delete_values", {collection}),
+
+  // The app's personal memory: what it keeps for the viewer alone, the same
+  // on every device, such as how far they read. Nobody else reads it, not even
+  // the app's editors, and the viewer can delete it in the settings. A key has
+  // 1 to 64 letters, digits and `_ . : -`; a value is anything JSON holds, up
+  // to 16 KB, and an app keeps up to 100 keys per person. A guest's stay in
+  // the browser.
+  listPersonal: () => call("list_personal"),
+  getPersonal: key => call("get_personal", {key}),
+  setPersonal: (key, value) => call("set_personal", {key, value}),
+  deletePersonal: key => call("delete_personal", {key}),
 
   // Counts over the answers under `under` (a path in each value), for `keys`
   // only: one bucket per choice, per element of a list, per row of a map.

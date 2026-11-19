@@ -163,22 +163,24 @@ defmodule PotokIdeWeb.PublicPreview do
   # A calendar link names its event whatever group it goes through: the root's
   # calendar shows the events of every group.
   defp preview([group_id, "calendar"], %{"event" => event_id}),
-    do: event_preview(event_id) || group_preview(group_id)
+    do: event_preview(event_id) || group_preview(group_id, %{})
 
   # A link into an app stands for the group it opens on (`shareGroup`), and so
   # does the address the app writes on the page (`linkGroup`), which has no tab
   # where the group opens on the app.
   defp preview([group_id, "group_home"], %{"at" => item_id} = query),
-    do: linked_preview(group_id, item_id, query, :tab) || group_preview(group_id)
+    do: linked_preview(group_id, item_id, query, :tab) || group_preview(group_id, query)
 
   defp preview([group_id], %{"at" => item_id} = query),
-    do: linked_preview(group_id, item_id, query, :home) || group_preview(group_id)
+    do: linked_preview(group_id, item_id, query, :home) || group_preview(group_id, query)
 
-  defp preview([group_id], _query), do: group_preview(group_id)
-  defp preview([group_id, _tab], _query), do: group_preview(group_id)
+  defp preview([group_id], query), do: group_preview(group_id, query)
+  defp preview([group_id, _tab], query), do: group_preview(group_id, query)
   defp preview(_path, _query), do: nil
 
-  defp group_preview(id) do
+  # The address keeps the description (`d`) and the page of a site in its app
+  # (`page`) the link named, so a card leads where the link did.
+  defp group_preview(id, query) do
     with id when is_integer(id) <- parse_id(id),
          %Group{} = group <- Social.get_public_group(id) do
       {:public_group,
@@ -186,7 +188,7 @@ defmodule PotokIdeWeb.PublicPreview do
        page_title: group.name,
        page_description: group_description(group),
        page_image: group_image(group),
-       page_url: url(~p"/groups/#{group.id}")}
+       page_url: url(~p"/groups/#{group.id}?#{Map.take(query, ["d", "page"])}")}
     else
       _ -> nil
     end
@@ -207,7 +209,7 @@ defmodule PotokIdeWeb.PublicPreview do
        page_description: group_description(item),
        page_image: linked_image(item, app),
        page_site_name: site_name(app),
-       page_url: url(~p"/groups/#{app.id}/group_home?#{Map.take(query, ["d", "at"])}")}
+       page_url: url(~p"/groups/#{app.id}/group_home?#{Map.take(query, ["d", "at", "page"])}")}
     else
       _ -> nil
     end
