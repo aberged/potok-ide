@@ -1,10 +1,10 @@
 # Politika privatnosti za Potok
 
-Datum stupanja na snagu: 23. april 2026.
+Datum stupanja na snagu: 19. novembar 2026.
 
-Ova Politika privatnosti opisuje kako Potok prikuplja, koristi, čuva i deli informacije kada koristite Potok aplikaciju za Android, Potok veb-sajt i povezane usluge.
+Ova Politika privatnosti opisuje kako Potok prikuplja, koristi, čuva i deli informacije kada koristite Potok aplikaciju za Android i iOS, veb-sajt https://potok.rs i povezane usluge.
 
-Potok je aplikacija za saradnju, izgrađena oko naloga, profila, grupa, pozivnica, objavljenog sadržaja i opcionih push obaveštenja.
+Potok je aplikacija za saradnju: nalozi i profili, grupe i podgrupe, razgovori, fajlovi, događaji, glasanja, mape, obaveštenja, aplikacije i procesi koje grupe same prave.
 
 ## 1. Ko smo mi
 
@@ -12,133 +12,171 @@ Potok pruža `ABERGED`.
 
 Ako imate pitanja o ovoj Politici privatnosti ili zahteve u vezi sa privatnošću, pišite nam na `ABER.GED@GMAIL.COM`.
 
-## 2. Informacije koje prikupljamo
+## 2. Ukratko
 
-Prikupljamo informacije koje nam sami dajete, informacije koje nastaju kroz korišćenje usluge i ograničene tehničke informacije potrebne za rad aplikacije.
+- Ne prikazujemo reklame, ne pratimo vas po drugim sajtovima i ne koristimo alate za analitiku.
+- Ne prodajemo vaše lične podatke.
+- Firebase koristimo samo za isporuku push obaveštenja.
+- Fotografije u formatu JPEG, PNG i WebP pre slanja gube podatke o tome gde su i čime snimljene.
+- Nalog možete sami da obrišete, u podešavanjima ili na https://potok.rs/brisanje-naloga.
 
-### Informacije koje nam dajete
+## 3. Informacije koje čuvamo
 
-U zavisnosti od toga kako koristite Potok, možete nam dati:
+### Nalog
 
-- Imejl adresu kojom se registrujete, prijavljujete ili primate imejlove sa magičnim linkom za prijavu
-- Lozinku, ako izaberete prijavu lozinkom
-- Informacije o profilu, kao što su korisničko ime, opis, URL slike profila i podešavanja deljenja
-- Informacije o grupi, kao što su naziv grupe, opis, URL slike grupe, podešavanja vidljivosti i izbor početne stranice
-- Sadržaj koji kreirate u aplikaciji, uključujući objave, odgovore i povezani sadržaj unutar grupa
-- Aktivnosti vezane za pozivnice, članstvo i zahteve za pridruživanje, nastale korišćenjem grupa i profila
-- Podešavanja obaveštenja koja uključite u podešavanjima naloga
+- Imejl adresu kojom se prijavljujete i na koju stižu linkovi za prijavu
+- Heš lozinke, ako izaberete prijavu lozinkom (samu lozinku ne čuvamo)
+- Tokene sesija i linkova za prijavu, promenu adrese i brisanje naloga
+- Ko vas je pozvao u Potok
 
-### Informacije koje se prikupljaju automatski
+Kada neko pozove imejl adresu koja još nema nalog, Potok za nju otvara nepotvrđen nalog i šalje joj pozivnicu. Takav nalog se sam briše posle 90 dana ako ga niko ne preuzme i ako u međuvremenu ne stigne nova pozivnica.
 
-Kada koristite Potok, možemo obrađivati ograničene tehničke informacije, kao što su:
+### Profili
+
+- Korisničko ime, opis i sliku profila (slika se čuva u bazi, ili kao adresa slike sa drugog sajta)
+- Da li je profil deljen sa drugim nalozima, i pozivnice za deljenje
+
+### Grupe i sadržaj
+
+- Grupe koje pravite, njihove nazive, opise, slike i podešavanja, članstva, uloge, pozivnice i zahteve za pridruživanje
+- Mesta grupa i događaja: tačku, područje ili rutu koju ucrtate na mapi ili donesete iz fajla
+- Poruke, odgovore, niti i razgovore u četiri oka, kao i podatke za pretragu poruka
+- Reakcije, prikačene grupe, tagove (javne i privatne, i one koje stavite na profile), praćenja, obaveštenja i to ko ih je pročitao, dokle ste pročitali razgovor i blokade
+- Događaje i odgovore na njih
+- Glasanja i glasove: kod tajnog glasanja čuvamo samo to da je profil glasao, a ne i za šta; spisak glasača može da preuzme ko po pravilima glasanja vidi pojedinosti
+- Podatke koje aplikacije grupe upisuju, kao odgovore na forme. Kada je odgovor „anoniman“, drugi ne vide ko ga je poslao, ali server to i dalje zna.
+- Tok procesa grupe: ko ih je pokrenuo, šta su upisali i šta čekaju. Podaci procesa koji su završeni pre više od 30 dana se brišu, a ostaje zapis o tome kako su se završili.
+
+### Fajlovi
+
+Fajlove koje pošaljete čuvamo kod pružaoca usluge skladištenja `Tigris`. Pregledač ih šalje i preuzima direktno sa skladišta, pa skladište vidi vašu IP adresu. Poruka nosi do 10 fajlova od po 100 MB.
+
+Pre slanja, fotografija u formatu JPEG, PNG ili WebP gubi EXIF, XMP i slične podatke, među kojima je često i GPS lokacija gde je snimljena; ostaje samo podatak o tome kako je slika okrenuta. Slika se pri tome ne menja. Fajlovi u drugim formatima, kao HEIC, AVIF, GIF i video, šalju se kakvi jesu, sa podacima koje je uređaj u njih upisao.
+
+### Šta ostaje samo na vašem uređaju
+
+Nedovršene poruke, izbor teme i jezika, prikaz mape i kopija podataka koje aplikacije u grupama drže u pregledaču čuvaju se samo u vašem pregledaču ili aplikaciji. Ko je trenutno na mreži, Potok drži samo u memoriji servera, dok je stranica otvorena.
+
+### Tehničke informacije
 
 - Sesija naloga i stanje prijave
-- Vremena kreiranja naloga, prijave, potvrde i povezanih aktivnosti na nalogu
-- Podaci o push pretplati, koji mogu obuhvatati token uređaja, push adresu za isporuku, kriptografske ključeve, korisnički agent, platformu, vreme isteka, vremena uspešne ili neuspešne isporuke i razloge neuspeha
-- Osnovni serverski zapisi i podaci o bezbednosnim događajima, potrebni da zaštitimo uslugu, otkrijemo kvarove i održimo dostupnost
+- Podaci o push pretplati: token uređaja ili adresa za isporuku u pregledaču, kriptografski ključevi, korisnički agent, platforma, jezik, vreme uspešne ili neuspešne isporuke i razlog neuspeha
+- Osnovni serverski zapisi, potrebni da otkrijemo kvarove i zaštitimo uslugu. Lozinke i odgovori na glasanja se ne upisuju u zapise.
+- Za ograničenje broja pokušaja prijave i slanja imejlova čuvamo SHA-256 heš IP adrese i imejl adrese, ne same adrese, i brišemo ga kad prođe vreme ograničenja. Broj zahteva za pločice mape po IP adresi drži se u memoriji servera najviše minut.
 
-### Informacije od usluga trećih strana
-
-Ako uključite push obaveštenja na Androidu, Potok koristi Firebase Cloud Messaging za isporuku obaveštenja. U tom slučaju se tokeni obaveštenja uređaja i povezani metapodaci o isporuci obrađuju radi slanja obaveštenja na vaš uređaj.
-
-Ako koristite push obaveštenja u pregledaču, Potok čuva podatke o veb push pretplati potrebne za slanje obaveštenja vašem pregledaču.
-
-## 3. Kako koristimo informacije
+## 4. Kako koristimo informacije
 
 Informacije koristimo da:
 
-- Kreiramo i održavamo vaš nalog
-- Potvrdimo vaš identitet, između ostalog slanjem imejlova sa magičnim linkom kada ih zatražite
-- Omogućimo vam da kreirate i uređujete profile, grupe, članstva, pozivnice, zahteve i objavljeni sadržaj
-- Isporučujemo opciona push obaveštenja koja izaberete da uključite
-- Zaštitimo uslugu, otkrivamo zloupotrebe, rešavamo probleme i održavamo pouzdanost
-- Unapređujemo funkcionalnost proizvoda i korisničko iskustvo
-- Poštujemo zakonske obaveze i sprovodimo naše uslove i politike
+- Kreiramo i održavamo vaš nalog i potvrdimo da ste to vi, između ostalog linkovima koje šaljemo imejlom
+- Omogućimo vam da kreirate i uređujete profile, grupe, članstva, poruke i sve drugo što Potok nudi
+- Isporučimo push obaveštenja koja ste uključili
+- Zaštitimo uslugu, sprečimo zloupotrebe i otklonimo greške
+- Poštujemo zakonske obaveze
 
-## 4. Pravni osnovi obrade
+## 5. Pravni osnov obrade
 
-U zavisnosti od vaše lokacije, lične podatke možemo obrađivati na osnovu:
+Lične podatke obrađujemo na osnovu:
 
-- Izvršenja ugovora, kada pružamo uslugu Potok koju tražite
-- Vašeg pristanka, na primer kada uključite opciona push obaveštenja
-- Legitimnih interesa, kao što su bezbednost usluge, sprečavanje prevara, otklanjanje grešaka i održavanje proizvoda
-- Poštovanja zakonskih obaveza
+- Izvršenja ugovora, kada pružamo uslugu koju koristite
+- Vašeg pristanka, kada uključite push obaveštenja
+- Legitimnog interesa, za bezbednost usluge, sprečavanje zloupotreba i otklanjanje grešaka
+- Zakonskih obaveza
 
-## 5. Kako delimo informacije
+## 6. Ko još vidi informacije
 
-Ne prodajemo vaše lične podatke.
+### Drugi korisnici
 
-Informacije možemo deliti samo u sledećim okolnostima:
+Ono što objavite u grupi vide oni kojima to uloge u grupi dozvoljavaju. Vaš profil, članstva i objave vide se u grupama i funkcijama za saradnju koje koristite. Javne grupe vidi svako ko je prijavljen.
 
-- Sa pružaocima usluga koji pomažu u radu Potoka, kao što su isporuka imejlova, hosting, infrastruktura baze podataka i pružaoci push obaveštenja
-- Sa uslugom Firebase Cloud Messaging kada su uključena push obaveštenja na Androidu
-- Sa drugim korisnicima Potoka u okviru uobičajenog rada aplikacije, na primer kada su vaš profil, članstvo u grupi, pozivnice ili objavljeni sadržaj vidljivi unutar grupa ili drugih funkcija za saradnju koje koristite
-- Sa svakim ko ima link, uključujući ljude bez naloga i usluge koje prikazuju preglede deljenih linkova: naziv, slika i kratak deo opisa javne grupe, kao i naslov, vreme, mesto i kratak deo opisa javnog događaja. Kada javna grupa to uključi, i ceo njen opis, alternativni opisi označeni za to i ono što aplikacije u njima pokazuju posetiocima bez naloga: javne grupe ispod nje, javna glasanja i rezimei koje pravila prikazuju svima
+### Svako ko ima link
+
+Ljudi bez naloga i usluge koje prikazuju preglede deljenih linkova vide naziv, sliku i kratak deo opisa javne grupe, kao i naslov, vreme, mesto i kratak deo opisa javnog događaja. Kada javna grupa to uključi, i ceo njen opis, alternativne opise označene za to i ono što aplikacije u njima pokazuju posetiocima bez naloga: javne grupe ispod nje, javna glasanja i rezimee koje pravila prikazuju svima.
+
+### Pružaoci usluga
+
+- **Fly.io** pokreće Potok i njegovu bazu podataka, u Frankfurtu.
+- **Tigris** čuva fajlove i pločice mape.
+- **Google** isporučuje imejlove (Gmail) i push obaveštenja (Firebase Cloud Messaging). Obaveštenje na telefonu nosi ime pošiljaoca, naziv grupe i do 120 znakova poruke. Na iPhone-u ga Firebase predaje Apple-ovoj usluzi APNs.
+- **Proizvođač vašeg pregledača** isporučuje push obaveštenja u pregledaču; njihov sadržaj je šifrovan.
+- **OpenStreetMap** daje pločice mape, ali ih Potok preuzima preko svog servera, pa OpenStreetMap ne vidi vas.
+
+### Sajtovi koji nisu Potok
+
+- Kada pošaljete link u poruci ili obaveštenju, server Potoka otvori tu stranicu (kao `PotokBot`) da napravi pregled linka i pamti ga 6 sati. Sliku iz pregleda pregledač onih koji gledaju razgovor učitava direktno sa tog sajta.
+- Slike sa drugih sajtova u opisima grupa i slike profila zadate adresom učitavaju se direktno sa tih sajtova.
+- Aplikacije i sajtove u opisima grupa prave urednici grupa. Oni mogu da učitavaju sadržaj sa drugih sajtova, a sajt u opisu grupe može da poziva samo one funkcije koje mu opis dozvoli, sa vašim pravima u grupi.
+
+### Ostali slučajevi
+
 - Ako to zahteva zakon, pravni postupak ili važeći zahtev državnog organa
 - Radi zaštite prava, bezbednosti i integriteta Potoka, naših korisnika ili javnosti
-- U vezi sa spajanjem, preuzimanjem, finansiranjem ili prodajom imovine, u skladu sa važećim propisima
+- U vezi sa spajanjem, preuzimanjem ili prodajom, u skladu sa važećim propisima
 
-## 6. Čuvanje podataka
+## 7. Kolačići i lokalno skladište
 
-Informacije čuvamo onoliko dugo koliko je potrebno da pružamo uslugu, održavamo bezbednost, poštujemo zakonske obaveze, rešavamo sporove i sprovodimo naše ugovore.
+Potok koristi samo kolačiće koji vas drže prijavljenim: kolačić sesije i, ako ga izaberete, kolačić „zapamti me“ koji traje 14 dana. Ne koristimo kolačiće za reklame ni za praćenje.
 
-Na primer:
+## 8. Koliko dugo čuvamo
 
-- Informacije o nalogu čuvaju se dok je vaš nalog aktivan i koliko je potrebno zbog bezbednosti i usklađenosti sa zakonom
-- Sadržaj korisnika, zapisi o grupama i povezani podaci o saradnji čuvaju se dok su povezani nalozi, profili ili grupe u upotrebi, osim ako se ne obrišu u skladu sa funkcijama proizvoda ili zakonskim zahtevima
-- Zapisi o push pretplatama mogu se čuvati dok ne isteknu, ne budu uklonjeni, ne postanu nevažeći ili više ne budu potrebni za isporuku obaveštenja i rešavanje problema
+- Nalog, profile i sadržaj čuvamo dok koristite Potok, dok ih ne obrišete ili dok se ne obrišu po pravilima funkcija (na primer, kada se obriše grupa).
+- Link za prijavu važi 15 minuta, pozivnica i link za promenu adrese 7 dana, link za brisanje naloga sat vremena, a sesija 14 dana. Istekle tokene brišemo jednom na sat.
+- Push obaveštenja koja čekaju na isporuku brišemo dan posle slanja.
+- Pregled linka pamtimo 6 sati.
+- Podatke procesa brišemo 30 dana posle njihovog završetka.
+- Nepotvrđen nalog otvoren pozivnicom brišemo posle 90 dana.
+- Rezervne kopije baze podataka pravi pružalac hostinga i čuva ih ograničeno vreme.
 
-## 7. Push obaveštenja
+## 9. Brisanje naloga
 
-Push obaveštenja su opciona.
+Nalog brišete u podešavanjima naloga, u delu Nalog, ili na https://potok.rs/brisanje-naloga, gde unesete adresu i dobijete link koji važi sat vremena. Pre brisanja vidite šta nestaje, a šta ostaje.
 
-Ako ih uključite, Potok može da čuva i obrađuje token obaveštenja ili podatke o veb push pretplati potrebne za isporuku obaveštenja na vaš uređaj ili u pregledač. Sadržaj obaveštenja može obuhvatati poruke o nalogu, grupama, pozivnicama ili aktivnostima, nastale vašim korišćenjem usluge.
+- **Nestaju:** nalog, njegove prijave i uređaji, vaša članstva i uloge, praćenja, reakcije, tagovi i pozivnice, kao i grupe u kojima ste jedini član.
+- **Ostaju:** poruke, fajlovi, glasanja, događaji i obaveštenja koje ste objavili u grupama, pod imenom „Obrisan korisnik“, bez vašeg korisničkog imena, slike i opisa. Profil koji delite sa drugim nalozima ostaje njima.
 
-Obaveštenja možete isključiti u podešavanjima uređaja, pregledača ili Potok naloga, u zavisnosti od platforme.
+Grupa nikad ne ostaje bez administratora: ako ste jedini administrator grupe u kojoj ima i drugih ljudi, pre brisanja nekog drugog postavite za administratora. Posle brisanja na vašu adresu stiže još jedan, poslednji imejl.
 
-## 8. Bezbednost
+## 10. Bezbednost
 
-Koristimo razumne tehničke i organizacione mere namenjene zaštiti ličnih podataka. Te mere uključuju heširanje lozinki, autentifikovane sesije i kontrolu pristupa primerenu usluzi.
+Koristimo razumne tehničke i organizacione mere zaštite: heširane lozinke, šifrovanu vezu, sesije koje ističu, prava pristupa po grupama i ulogama i aplikacije koje rade odvojeno od stranice Potoka.
 
 Nijedan način prenosa preko interneta ili elektronskog čuvanja nije potpuno bezbedan i ne možemo garantovati apsolutnu bezbednost.
 
-## 9. Međunarodni prenos
+## 11. Prenos van zemlje
 
-Potok može koristiti infrastrukturu ili pružaoce usluga koji se nalaze u drugim državama. Kada to činimo, preduzimamo korake namenjene zaštiti ličnih podataka u skladu sa važećim propisima.
+Potok radi na serverima u Evropskoj uniji (Frankfurt). Neki pružaoci usluga, kao Google, obrađuju podatke i u drugim državama, uključujući Sjedinjene Američke Države. Kada to činimo, preduzimamo korake namenjene zaštiti ličnih podataka u skladu sa važećim propisima.
 
-## 10. Deca
+## 12. Deca
 
 Potok nije namenjen deci mlađoj od 13 godina i svesno ne prikupljamo lične podatke dece mlađe od 13 godina. Ako verujete da je dete dalo lične podatke Potoku, javite nam se kako bismo to proverili i preduzeli odgovarajuće mere.
 
 Ako lokalni zakon propisuje višu starosnu granicu za digitalni pristanak, važi ta viša granica.
 
-## 11. Vaša prava i izbori
+## 13. Vaša prava
 
-U zavisnosti od vaše lokacije, možete imati pravo da:
+U zavisnosti od zakona koji se na vas primenjuje, možete imati pravo da:
 
-- Pristupite ličnim podacima koje imamo o vama
-- Zatražite ispravku netačnih informacija
-- Zatražite brisanje ličnih podataka, uz pravne i operativne izuzetke
+- Pristupite ličnim podacima koje imamo o vama i dobijete njihovu kopiju
+- Zatražite ispravku netačnih podataka
+- Obrišete nalog, sami ili uz našu pomoć
 - Uložite prigovor na određenu obradu ili je ograničite
 - Povučete pristanak kada se obrada zasniva na pristanku
-- Zatražite kopiju svojih informacija kada važi pravo na prenosivost
+- Podnesete pritužbu Povereniku za informacije od javnog značaja i zaštitu podataka o ličnosti ili nadzornom organu u svojoj zemlji
 
-Da biste ostvarili ova prava, pišite nam na `ABER.GED@GMAIL.COM`.
+Za kopiju podataka i sve ostale zahteve pišite nam na `ABER.GED@GMAIL.COM`.
 
-## 12. Usluge trećih strana
+## 14. Usluge trećih strana
 
-Potok se može oslanjati na usluge trećih strana, kao što su pružaoci hostinga, pružaoci imejl usluga i Firebase Cloud Messaging. Njihovu obradu informacija uređuju njihovi uslovi i politike privatnosti.
+Google Play, App Store, Android, iOS, Firebase i proizvođač vašeg uređaja ili pregledača mogu obrađivati informacije u skladu sa svojim politikama privatnosti kada instalirate ili koristite aplikaciju.
 
-Google Play, Android, Firebase i proizvođač vašeg uređaja ili pregledača takođe mogu obrađivati informacije u skladu sa svojim politikama privatnosti kada instalirate ili koristite aplikaciju.
-
-## 13. Izmene ove Politike privatnosti
+## 15. Izmene ove Politike privatnosti
 
 Ovu Politiku privatnosti možemo povremeno ažurirati. Ako napravimo značajne izmene, ažuriraćemo datum stupanja na snagu i, kada je to primereno, dodatno vas obavestiti.
 
-## 14. Kontakt
+## 16. Kontakt
 
 Programer: `ABERGED`
 
 Imejl: `ABER.GED@GMAIL.COM`
 
-Veb-sajt: `https://potok-ide.fly.dev`
+Veb-sajt: https://potok.rs

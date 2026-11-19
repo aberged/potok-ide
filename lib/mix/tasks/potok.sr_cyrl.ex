@@ -44,11 +44,11 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   @kept ~r/
     %?\{[^}]*\} | <span\ lang=en>[^<]*<\/span> | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* |
     \b[\w-]+(?:\.[\w-]+)*\.(?:com|org|rs)\b | @?\b(?:admin|everyone)\b |
-    \b(?:Amnesty\ International|Amnesty|APNs|App\ API|API|Apple|Auth|AVIF|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
+    \b(?:Amnesty\ International|Amnesty|APNs|App\ API|App\ Store|API|Apple|Auth|AVIF|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
     Endpoint|English|EPSG|ETS|EXIF|ExUnit|FCM|FeedCreator|Fly\.io|Fly|GPX|KML|KMZ|LineString|MultiLineString|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
     Google\ Forms|Google\ Play|Google\ Sheets|Google|GPS|HEIC|Heinrich-Böll-Stiftung|Heroicons|Hook|hook|HTML|HTTPS|
     index\.html|iOS|iPhone|IPv4|IPv6|JavaScript|JPEG|LiveView|localhost|Managed\ Postgres|Markdown|MultiPolygon|NoviSpy|Oban|OpenStreetMap|Outlook|P256DH|Peep|pg_trgm|Phoenix|PNG|
-    Polygon|PostGIS|PostgreSQL|Postgres|Presence|Prometheus|PubSub|QGIS|QR|SDK|service\ worker|Sheets|SQL|Tailwind|Tigris|URL|USD|
+    Polygon|PostGIS|PostgreSQL|Postgres|Presence|Prometheus|PubSub|QGIS|QR|SDK|service\ worker|SHA-256|Sheets|SQL|Tailwind|Tigris|URL|USD|
     User\ Agent|UTF-8|WebP|WebSocket|WGS|XMP|ZIP)\b
   /ux
 

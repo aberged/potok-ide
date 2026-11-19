@@ -4475,11 +4475,6 @@ msgstr ""
 msgid "This browser does not support Web Push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/privacy.html.heex:35
-#, elixir-autogen, elixir-format
-msgid "This page is the public privacy policy for the Potok Android app and related web service."
-msgstr ""
-
 #: lib/potok_ide_web/live/account_live/settings.ex:697
 #, elixir-autogen, elixir-format
 msgid "Unable to enable push notifications."
@@ -9969,4 +9964,9 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html.ex:296
 #, elixir-autogen, elixir-format
 msgid "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like."
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/privacy.html.heex:35
+#, elixir-autogen, elixir-format
+msgid "What Potok keeps about you and who sees it, for the Potok apps for Android and iOS and the website."
 msgstr ""

@@ -535,6 +535,24 @@ defmodule PotokIdeWeb.PageControllerTest do
     assert heading.("sr_Cyrl") == "Политика приватности за Поток"
   end
 
+  test "GET /privacy-policy links the deletion of an account and leads back home", %{conn: conn} do
+    for locale <- ~w(en sr sr_Cyrl) do
+      html = conn |> get(~p"/privacy-policy?#{[locale: locale]}") |> html_response(200)
+      document = LazyHTML.from_document(html)
+
+      assert LazyHTML.query(
+               document,
+               ".privacy-policy a[href='https://potok.rs/brisanje-naloga']"
+             )
+             |> Enum.count() >= 1,
+             "#{locale} does not link the deletion of an account"
+
+      assert LazyHTML.query(document, "#privacy-back[href='/']") |> Enum.count() == 1
+      refute html =~ "potok-ide.fly.dev"
+      refute html =~ "placeholder"
+    end
+  end
+
   test "GET / shows guests the landing page in the selected locale", %{conn: conn} do
     conn = get(conn, ~p"/?locale=sr_Cyrl")
 

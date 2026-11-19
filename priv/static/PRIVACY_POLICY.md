@@ -1,15 +1,10 @@
 # Privacy Policy for Potok
 
-Effective date: April 23, 2026
+Effective date: November 19, 2026
 
-This Privacy Policy describes how Potok collects, uses, stores, and shares information when you use the Potok Android application, the Potok website, and related services.
+This Privacy Policy explains how Potok collects, uses, stores and shares information when you use the Potok app for Android and iOS, the website https://potok.rs and related services.
 
-Potok is a collaboration application built around accounts, profiles, groups, invitations, posted content, and optional push notifications.
-
-Before publishing this policy, replace these placeholders:
-
-- Developer name: `ABERGED`
-- Contact email: `ABER.GED@GMAIL.COM`
+Potok is a collaboration app: accounts and profiles, groups and sub-groups, chats, files, events, polls, maps, notices, and the apps and processes groups make themselves.
 
 ## 1. Who we are
 
@@ -17,133 +12,171 @@ Potok is provided by `ABERGED`.
 
 If you have questions about this Privacy Policy or privacy requests, contact us at `ABER.GED@GMAIL.COM`.
 
-## 2. Information we collect
+## 2. In short
 
-We collect information you provide directly, information created through your use of the service, and limited technical information needed to operate the app.
+- We show no ads, do not track you across other sites and use no analytics tools.
+- We do not sell your personal information.
+- We use Firebase only to deliver push notifications.
+- JPEG, PNG and WebP photos lose what they say about where and with what they were taken before they are sent.
+- You can delete your account yourself, in the settings or at https://potok.rs/brisanje-naloga.
 
-### Information you provide
+## 3. Information we keep
 
-Depending on how you use Potok, you may provide:
+### Account
 
-- Email address used to register, sign in, or receive magic-link login emails
-- Password, if you choose password-based login
-- Profile information such as username, description, profile image URL, and sharing settings
-- Group information such as group name, description, group image URL, visibility settings, and home-page preferences
-- Content you create in the app, including posts, replies, and related content inside groups
-- Invitation, membership, and join-request activity generated through your use of groups and profiles
-- Notification preferences you enable from account settings
+- The email address you log in with and that sign-in links go to
+- A hash of your password, if you choose to log in with one (we never store the password itself)
+- Tokens of sessions and of links to log in, change your address and delete your account
+- Who invited you to Potok
 
-### Information collected automatically
+When someone invites an email address that has no account yet, Potok opens an unconfirmed account for it and sends it an invitation. Such an account deletes itself after 90 days if nobody takes it up and no new invitation comes meanwhile.
 
-When you use Potok, we may process limited technical information such as:
+### Profiles
 
-- Account session and authentication state
-- Timestamps for account creation, sign-in, confirmation, and related account activity
-- Push subscription data, which may include device token, push endpoint, cryptographic keys, user agent, platform, expiration time, delivery success or failure times, and failure reasons
-- Basic server logs and security-related event data needed to protect the service, diagnose failures, and maintain availability
+- Username, description and profile picture (stored in the database, or as the address of a picture on another site)
+- Whether a profile is shared with other accounts, and invitations to share it
 
-### Information from third-party services
+### Groups and content
 
-If you enable push notifications on Android, Potok uses Firebase Cloud Messaging to deliver notifications. In that case, device notification tokens and related delivery metadata are processed to send notifications to your device.
+- Groups you create, their names, descriptions, pictures and settings, memberships, roles, invitations and join requests
+- Places of groups and events: a point, an area or a route you draw on the map or bring from a file
+- Messages, replies, threads and one-to-one conversations, and the data used to search messages
+- Reactions, pinned groups, tags (public and private, and those you put on profiles), follows, notices and who read them, how far you read a chat, and blocks
+- Events and answers to them
+- Polls and votes: in a secret poll we keep only that a profile voted, not what for; the list of voters can be downloaded by whoever the poll's rules let see the details
+- Data a group's apps write, such as form responses. When a response is "anonymous", others do not see who sent it, but the server still knows.
+- The course of a group's processes: who started them, what they wrote and what they wait for. The data of processes that ended more than 30 days ago is deleted, and a record of how they ended stays.
 
-If you use browser push notifications, Potok stores web push subscription details required to send notifications to your browser.
+### Files
 
-## 3. How we use information
+Files you send are kept by the storage provider `Tigris`. Your browser uploads them to and downloads them from the storage directly, so the storage sees your IP address. A message carries up to 10 files of 100 MB each.
+
+Before it is sent, a JPEG, PNG or WebP photo loses EXIF, XMP and similar data, which often include the GPS location where it was taken; only how the picture is turned stays. The picture itself does not change. Files in other formats, such as HEIC, AVIF, GIF and video, are sent as they are, with the data the device wrote into them.
+
+### What stays only on your device
+
+Unfinished messages, your choice of theme and language, the map view, and the copy of data that apps in groups keep in the browser are stored only in your browser or app. Who is online right now is kept only in the server's memory, while the page is open.
+
+### Technical information
+
+- Account session and sign-in state
+- Push subscription data: the device token or the browser's delivery address, cryptographic keys, user agent, platform, language, times of successful or failed delivery and the reason for a failure
+- Basic server logs, needed to find faults and protect the service. Passwords and poll answers are never written to the logs.
+- To limit attempts to log in and to send emails, we keep a SHA-256 hash of the IP address and the email address, not the addresses themselves, and delete it when the limit's time is over. The number of map tile requests per IP address is kept in the server's memory for at most a minute.
+
+## 4. How we use information
 
 We use information to:
 
-- Create and maintain your account
-- Authenticate you, including by sending magic-link login emails when requested
-- Let you create and manage profiles, groups, memberships, invitations, requests, and posted content
-- Deliver optional push notifications you choose to enable
-- Secure the service, detect abuse, troubleshoot problems, and maintain reliability
-- Improve product functionality and user experience
-- Comply with legal obligations and enforce our terms and policies
+- Create and maintain your account and confirm it is you, among other ways by links we send by email
+- Let you create and edit profiles, groups, memberships, messages and everything else Potok offers
+- Deliver the push notifications you turned on
+- Protect the service, prevent abuse and fix errors
+- Comply with legal obligations
 
-## 4. Legal bases for processing
+## 5. Legal bases for processing
 
-Depending on your location, we may process personal information on the basis of:
+We process personal data on the basis of:
 
-- Performance of a contract, when we provide the Potok service you request
-- Your consent, for example when you enable optional push notifications
-- Legitimate interests, such as service security, fraud prevention, debugging, and product maintenance
-- Compliance with legal obligations
+- Performance of a contract, when we provide the service you use
+- Your consent, when you turn on push notifications
+- Legitimate interests, for the security of the service, preventing abuse and fixing errors
+- Legal obligations
 
-## 5. How we share information
+## 6. Who else sees information
 
-We do not sell your personal information.
+### Other users
 
-We may share information only in the following circumstances:
+What you post in a group is seen by those the group's roles allow. Your profile, memberships and posts are seen in the groups and collaboration features you use. Public groups are seen by everyone who is logged in.
 
-- With service providers that help operate Potok, such as email delivery, hosting, database infrastructure, and push notification providers
-- With Firebase Cloud Messaging when Android push notifications are enabled
-- With other Potok users as part of the normal functioning of the app, for example when your profile, group membership, invitations, or posted content are visible within groups or other collaboration features you use
-- With anyone who has the link, including people without an account and the services that show previews of shared links: the name, image, and a short part of the description of a public group, and the title, time, place, and a short part of the description of a public event. When a public group turns it on, also its whole description, the alternative descriptions marked for it, and what the apps in them show visitors without an account: the public groups below it, public polls, and the summaries their rules show everyone
-- If required by law, legal process, or a valid governmental request
-- To protect the rights, safety, security, and integrity of Potok, our users, or the public
-- In connection with a merger, acquisition, financing, or sale of assets, subject to applicable law
+### Anyone with a link
 
-## 6. Data retention
+People without an account and services that show previews of shared links see the name, picture and a short part of the description of a public group, and the title, time, place and a short part of the description of a public event. When a public group turns it on, also its whole description, the alternative descriptions marked for it, and what the apps in them show visitors without an account: the public groups below it, public polls and the summaries their rules show to everyone.
 
-We retain information for as long as needed to provide the service, maintain security, comply with legal obligations, resolve disputes, and enforce our agreements.
+### Service providers
 
-Examples include:
+- **Fly.io** runs Potok and its database, in Frankfurt.
+- **Tigris** stores files and map tiles.
+- **Google** delivers emails (Gmail) and push notifications (Firebase Cloud Messaging). A notification on a phone carries the sender's name, the group's name and up to 120 characters of the message. On an iPhone, Firebase hands it to Apple's APNs service.
+- **Your browser's maker** delivers push notifications in the browser; their content is encrypted.
+- **OpenStreetMap** provides map tiles, but Potok fetches them through its own server, so OpenStreetMap does not see you.
 
-- Account information is retained while your account remains active and as needed for security and legal compliance
-- User-generated content, group records, and related collaboration data are retained while associated accounts, profiles, or groups remain in use, unless deleted according to product functionality or legal requirements
-- Push subscription records may be retained until they expire, are removed, become invalid, or are no longer needed for notification delivery and troubleshooting
+### Sites other than Potok
 
-## 7. Push notifications
+- When you send a link in a message or a notice, Potok's server opens that page (as `PotokBot`) to make a preview of the link and keeps it for 6 hours. The picture in the preview is loaded by the browsers of those who view the chat directly from that site.
+- Pictures from other sites in group descriptions and profile pictures given by an address are loaded directly from those sites.
+- Apps and sites in group descriptions are made by the groups' editors. They may load content from other sites, and a site in a group's description may call only the functions the description allows it, with your rights in the group.
 
-Push notifications are optional.
+### Other cases
 
-If you enable them, Potok may store and process the notification token or web push subscription details needed to deliver notifications to your device or browser. Notification content may include account, group, invitation, or activity-related messages generated by your use of the service.
+- When required by law, legal process or a valid request from a public authority
+- To protect the rights, safety and integrity of Potok, our users or the public
+- In connection with a merger, acquisition or sale, as permitted by applicable law
 
-You can disable notifications in your device settings, browser settings, or Potok account settings, depending on the platform.
+## 7. Cookies and local storage
 
-## 8. Security
+Potok uses only cookies that keep you logged in: the session cookie and, if you choose it, a "remember me" cookie that lasts 14 days. We use no cookies for ads or tracking.
 
-We use reasonable technical and organizational measures designed to protect personal information. These measures include password hashing, authenticated sessions, and access controls appropriate to the service.
+## 8. How long we keep information
 
-No method of transmission over the Internet or method of electronic storage is completely secure, and we cannot guarantee absolute security.
+- We keep your account, profiles and content while you use Potok, until you delete them or they are deleted by the rules of a feature (for example, when a group is deleted).
+- A sign-in link works for 15 minutes, an invitation and a link to change your address for 7 days, a link to delete your account for an hour, and a session for 14 days. We delete expired tokens every hour.
+- Push notifications waiting for delivery are deleted a day after they are sent.
+- A link preview is kept for 6 hours.
+- The data of processes is deleted 30 days after they end.
+- An unconfirmed account opened by an invitation is deleted after 90 days.
+- Backups of the database are made by the hosting provider and kept for a limited time.
 
-## 9. International transfers
+## 9. Deleting your account
 
-Potok may use infrastructure or service providers located in countries other than your own. When we do so, we take steps intended to protect personal information in accordance with applicable law.
+You delete your account in the account settings, in the Account part, or at https://potok.rs/brisanje-naloga, where you enter your address and get a link that works for an hour. Before deleting you see what goes and what stays.
 
-## 10. Children
+- **Gone:** the account, its sign-ins and devices, your memberships and roles, follows, reactions, tags and invitations, and the groups where you are the only member.
+- **Stays:** the messages, files, polls, events and notices you posted in groups, under the name "Deleted user", without your username, picture or description. A profile you share with other accounts stays theirs.
+
+A group never loses its admin: if you are the only admin of a group that has other people in it, make someone else an admin before deleting. After the deletion, one last email comes to your address.
+
+## 10. Security
+
+We use reasonable technical and organizational measures: hashed passwords, an encrypted connection, sessions that expire, access rights by group and role, and apps that run apart from Potok's page.
+
+No method of transmission over the internet or electronic storage is completely secure, and we cannot guarantee absolute security.
+
+## 11. International transfers
+
+Potok runs on servers in the European Union (Frankfurt). Some service providers, such as Google, process data in other countries too, including the United States. When we do so, we take steps designed to protect personal information as required by applicable law.
+
+## 12. Children
 
 Potok is not directed to children under 13, and we do not knowingly collect personal information from children under 13. If you believe a child has provided personal information to Potok, contact us so we can review and take appropriate action.
 
-If local law sets a higher age threshold for digital consent, that higher threshold applies.
+If local law requires a higher minimum age for digital consent, that higher age applies.
 
-## 11. Your rights and choices
+## 13. Your rights
 
-Depending on your location, you may have rights to:
+Depending on the law that applies to you, you may have the right to:
 
-- Access the personal information we hold about you
+- Access the personal information we hold about you and get a copy of it
 - Request correction of inaccurate information
-- Request deletion of personal information, subject to legal and operational exceptions
+- Delete your account, yourself or with our help
 - Object to or restrict certain processing
 - Withdraw consent where processing is based on consent
-- Request a copy of your information where portability rights apply
+- File a complaint with the Commissioner for Information of Public Importance and Personal Data Protection of Serbia, or with the supervisory authority of your country
 
-To exercise these rights, contact us at `ABER.GED@GMAIL.COM`.
+For a copy of your data and any other request, contact us at `ABER.GED@GMAIL.COM`.
 
-## 12. Third-party services
+## 14. Third-party services
 
-Potok may rely on third-party services such as hosting providers, email providers, and Firebase Cloud Messaging. Their processing of information is governed by their own terms and privacy policies.
+Google Play, the App Store, Android, iOS, Firebase and the maker of your device or browser may process information under their own privacy policies when you install or use the app.
 
-Google Play, Android, Firebase, and your device manufacturer or browser provider may also process information according to their own privacy policies when you install or use the app.
-
-## 13. Changes to this Privacy Policy
+## 15. Changes to this Privacy Policy
 
 We may update this Privacy Policy from time to time. If we make material changes, we will update the effective date and, where appropriate, provide additional notice.
 
-## 14. Contact
+## 16. Contact
 
 Developer: `ABERGED`
 
 Email: `ABER.GED@GMAIL.COM`
 
-Website: `https://potok-ide.fly.dev`
+Website: https://potok.rs

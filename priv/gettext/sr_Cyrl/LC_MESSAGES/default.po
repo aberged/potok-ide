@@ -4474,11 +4474,6 @@ msgstr "Сачувана пуш претплата је истекла и укл
 msgid "This browser does not support Web Push notifications."
 msgstr "Овај прегледач не подржава пуш обавештења."
 
-#: lib/potok_ide_web/controllers/page_html/privacy.html.heex:35
-#, elixir-autogen, elixir-format
-msgid "This page is the public privacy policy for the Potok Android app and related web service."
-msgstr "Ово је јавна политика приватности за Поток апликацију за Андроид и повезану веб услугу."
-
 #: lib/potok_ide_web/live/account_live/settings.ex:697
 #, elixir-autogen, elixir-format
 msgid "Unable to enable push notifications."
@@ -9984,3 +9979,8 @@ msgstr "Приватност"
 #, elixir-autogen, elixir-format
 msgid "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like."
 msgstr "Без реклама и праћења, фотографије губе локацију пре слања, а налог бришеш кад хоћеш."
+
+#: lib/potok_ide_web/controllers/page_html/privacy.html.heex:35
+#, elixir-autogen, elixir-format
+msgid "What Potok keeps about you and who sees it, for the Potok apps for Android and iOS and the website."
+msgstr "Шта Поток чува о вама и ко то види, за Поток апликације за Андроид и iOS и за веб-сајт."
