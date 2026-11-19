@@ -6,7 +6,7 @@ defmodule PotokIde.Social.LinkPreviewsTest do
   alias PotokIde.EventsFixtures
   alias PotokIde.LinkPreviews
   alias PotokIde.Social
-  alias PotokIde.Social.Value
+  alias PotokIde.Social.{AppData, Value}
 
   # Answers every page with a title naming its path, and tells the test.
   setup do
@@ -237,6 +237,150 @@ defmodule PotokIde.Social.LinkPreviewsTest do
 
         assert Repo.get!(Value, value.id).link_preview["description"] == "Grupa na Potoku."
       end)
+    end
+  end
+
+  describe "a link to a form" do
+    setup do
+      owner = profile!("lp-form-owner")
+      %{owner: owner, group: group!(owner, "lp-form-chat")}
+    end
+
+    defp form_url(form, path \\ ""), do: PotokIdeWeb.Endpoint.url() <> "/groups/#{form.id}#{path}"
+
+    defp form!(owner, name, public? \\ false) do
+      {:ok, %{group: form}} =
+        Social.create_group_from_preset(owner, Social.get_root_group!(), "questionnaire", %{
+          "name" => name,
+          "is_public" => public?,
+          "inherits_members" => false
+        })
+
+      form
+    end
+
+    defp form_config!(owner, form, form_data, rules \\ %{"responses" => %{}}) do
+      {:ok, _config} =
+        AppData.save_config(owner, form, nil, %{"form" => form_data, "rules" => rules}, 0)
+
+      :ok
+    end
+
+    defp preview_of(%Value{id: id}), do: Repo.get!(Value, id).link_preview
+
+    test "to a closed form shows its own title and subtitle, for its members alone", ctx do
+      form = form!(ctx.owner, "Prijave")
+
+      form_config!(ctx.owner, form, %{
+        "title" => "**Prijava** za *izlet*",
+        "description" => "Popuni do petka.\n- ime\n- broj mesta"
+      })
+
+      url = form_url(form, "/group_home")
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => "vidi #{url}"})
+
+      form_id = form.id
+
+      assert %{
+               "url" => ^url,
+               "kind" => "questionnaire",
+               "group_id" => ^form_id,
+               "title" => "Prijava za izlet",
+               "description" => "Popuni do petka. ime broj mesta",
+               "image_url" => image_url,
+               "open" => false
+             } = preview = preview_of(value)
+
+      assert image_url =~ "/avatar/group/#{form.id}?"
+      assert image_url =~ "s="
+      refute Map.has_key?(preview, "guest")
+      refute_received {:fetched, _path}
+
+      assert LinkPreviews.visible(preview, true) == preview
+      assert LinkPreviews.visible(preview, false) == nil
+      assert LinkPreviews.members_only_group_id(preview) == form.id
+    end
+
+    test "to a public form anyone fills in shows its card to everybody", ctx do
+      form = form!(ctx.owner, "Anketa", true)
+
+      form_config!(ctx.owner, form, %{"title" => "Anketa o parku"}, %{
+        "responses" => %{"public" => true}
+      })
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => form_url(form)})
+
+      assert %{"title" => "Anketa o parku", "description" => nil, "open" => true} =
+               preview = preview_of(value)
+
+      assert LinkPreviews.members_only_group_id(preview) == nil
+      assert LinkPreviews.visible(preview, false) == preview
+    end
+
+    test "to a public form for members leaves the others the card a guest gets", ctx do
+      form = form!(ctx.owner, "Članarina", true)
+      form_config!(ctx.owner, form, %{"title" => "Članarina za 2027."})
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => form_url(form)})
+
+      assert %{"title" => "Članarina za 2027.", "open" => false, "guest" => guest} =
+               preview = preview_of(value)
+
+      assert %{"title" => "Članarina", "site_name" => "Potok"} = guest
+      refute Map.has_key?(guest, "group_id")
+      assert LinkPreviews.visible(preview, false) == guest
+    end
+
+    test "to a form nobody opened yet is named by its group", ctx do
+      form = form!(ctx.owner, "Nova   forma")
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => form_url(form)})
+
+      assert %{"title" => "Nova forma", "description" => nil, "open" => false} = preview_of(value)
+    end
+
+    test "into an app, or to a group that is no form, is not a form's", ctx do
+      form = form!(ctx.owner, "Prijave")
+      form_config!(ctx.owner, form, %{"title" => "Prijava"})
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => form_url(form, "?at=1")})
+
+      assert preview_of(value) == nil
+
+      {:ok, %{group: chat}} =
+        Social.create_group_from_preset(ctx.owner, Social.get_root_group!(), "chat", %{
+          "name" => "Dogovor"
+        })
+
+      assert {:ok, value} =
+               Social.create_value(ctx.owner, ctx.group, %{"content" => form_url(chat)})
+
+      assert preview_of(value) == nil
+    end
+
+    # A notice reaches followers no page asks about, so it takes only a card
+    # any reader may see, and a closed form's link leaves its turn to the next.
+    test "outside a chat gets only a card anyone may see", ctx do
+      closed = form!(ctx.owner, "Prijave")
+      open = form!(ctx.owner, "Anketa", true)
+      form_config!(ctx.owner, open, %{"title" => "Anketa"}, %{"responses" => %{"public" => true}})
+
+      assert LinkPreviews.fetch(form_url(closed)) == :error
+
+      assert {:ok, %{"group_id" => _id}} =
+               LinkPreviews.fetch(form_url(closed), closed_forms: true)
+
+      assert {:ok, %{"open" => true}} = LinkPreviews.fetch(form_url(open))
+
+      content = "#{form_url(closed)} https://example.com/next"
+      assert LinkPreviews.first_url(content) == "https://example.com/next"
+      assert LinkPreviews.first_url(content, closed_forms: true) == form_url(closed)
     end
   end
 

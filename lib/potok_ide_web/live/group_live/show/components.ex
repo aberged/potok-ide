@@ -2471,8 +2471,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp edited?(_value), do: false
 
   # A preview fetched by `Social` once the value was posted (`PotokIde.LinkPreviews`).
-  defp value_link_preview(%Value{link_preview: %{"url" => url} = preview}) when is_binary(url),
-    do: preview
+  # A form's card for its members only shows where the page found the viewer
+  # is one (`Value.link_preview_visible`); the others see the guest's card.
+  defp value_link_preview(%Value{link_preview: preview, link_preview_visible: member?}),
+    do: LinkPreviews.visible(preview, member?)
 
   defp value_link_preview(_value), do: nil
 
@@ -2522,11 +2524,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   `.LinkPreviewImage` hides one that fails to load, fits a banner to the
   image's own proportions and turns a small or squarish image (a logo) into
   a thumbnail beside the text; re-renders keep what it set.
+
+  A form's card (`PotokIdeWeb.FormLinks`) is a row instead: the group's
+  picture, the kind's mark and name, then the form's title and subtitle.
   """
   def link_preview_card(assigns) do
+    assigns = assign(assigns, :kind_mark, link_kind_mark(assigns.preview))
+
     ~H"""
     <div
       id={"#{@id_prefix}-#{@item_id}"}
+      data-kind={@preview["kind"]}
       class={["group/preview relative w-80 max-w-full sm:w-96", @class]}
     >
       <a
@@ -2544,8 +2552,43 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           )
         ]}
       >
+        <div
+          :if={@kind_mark}
+          class={["flex items-center gap-3 px-3 py-2.5", @can_dismiss && "pr-10"]}
+        >
+          <img
+            :if={@preview["image_url"]}
+            id={"#{@id_prefix}-image-#{@item_id}"}
+            src={@preview["image_url"]}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            class={[
+              "size-12 shrink-0 rounded-full border object-cover shadow-sm",
+              if(@mine, do: "border-primary-content/25", else: "border-base-300")
+            ]}
+          />
+          <div class="min-w-0">
+            <p class="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide opacity-90">
+              <.icon name={@kind_mark.icon} class="size-3.5 shrink-0" />
+              <span class="truncate">{@kind_mark.title}</span>
+            </p>
+            <p
+              :if={@preview["title"]}
+              class="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug"
+            >
+              {@preview["title"]}
+            </p>
+            <p
+              :if={@preview["description"]}
+              class="mt-0.5 line-clamp-2 text-sm leading-snug opacity-90"
+            >
+              {@preview["description"]}
+            </p>
+          </div>
+        </div>
         <img
-          :if={@preview["image_url"]}
+          :if={!@kind_mark && @preview["image_url"]}
           id={"#{@id_prefix}-image-#{@item_id}"}
           phx-hook=".LinkPreviewImage"
           phx-mounted={JS.ignore_attributes(["hidden", "data-shape", "style"])}
@@ -2556,7 +2599,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           referrerpolicy="no-referrer"
           class="block aspect-[1.91/1] w-full bg-base-300/40 object-cover data-[shape=thumb]:float-left data-[shape=thumb]:m-2.5 data-[shape=thumb]:size-16 data-[shape=thumb]:rounded-xl sm:data-[shape=thumb]:size-20"
         />
-        <div class={["px-3 py-2.5", @can_dismiss && "pr-10"]}>
+        <div :if={!@kind_mark} class={["px-3 py-2.5", @can_dismiss && "pr-10"]}>
           <p
             :if={@preview["site_name"]}
             class="truncate text-[11px] font-semibold uppercase tracking-wide opacity-90"
@@ -2618,6 +2661,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     </script>
     """
   end
+
+  # The kind of a group a card names (`PotokIdeWeb.FormLinks`): only a form's
+  # for now, and never read from anything a link could set.
+  defp link_kind_mark(%{"kind" => "questionnaire"}), do: CreateMenu.mark(:questionnaire)
+  defp link_kind_mark(_preview), do: nil
 
   attr :id, :string, required: true
   attr :file, ValueAttachment, required: true

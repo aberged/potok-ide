@@ -690,5 +690,14 @@
       { "wait": "#group-sidebar-sheet #group-sidebar-tree" },
       { "pause": 500 }
     ]
+  },
+  {
+    "name": "zadruga-forma-link",
+    "as": "ana",
+    "url": "/groups/{groups.coop_chat}",
+    "steps": [
+      { "wait": "[id^='value-link-preview-'][data-kind='questionnaire'] img" },
+      { "pause": 1200 }
+    ]
   }
 ]

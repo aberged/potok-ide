@@ -105,6 +105,17 @@ defmodule PotokIde.Social.AppData do
   @doc "The rule of `collection` in the app's config."
   def rule(config, collection), do: ValueRules.rule(rules(config), collection)
 
+  @doc """
+  Whether anyone, not only the group's members, reads the config: some
+  collection of it takes non-members (`ValueRules.public?/2`), as a public
+  form must show itself to whoever fills it in.
+  """
+  def public_config?(config, %Group{} = group) do
+    Enum.any?(rules(config), fn {collection, _rule} ->
+      ValueRules.public?(rule(config, collection), group)
+    end)
+  end
+
   @doc "The config as the holder of `access` may see it: its secret part goes only to editors."
   def config_payload(nil, _access), do: nil
 

@@ -25,6 +25,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     ValueRules
   }
 
+  alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Polls
   alias PotokIde.RateLimit
@@ -3945,6 +3946,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   defp apply_value_created(socket, %Value{} = value) do
     {socket, value} = PollsState.with_views(socket, value)
+    {socket, [value]} = with_link_access(socket, [value])
 
     socket
     |> insert_created_value(value)
@@ -4004,6 +4006,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     # and own reactions come from what the page knows, a poll's view is read.
     if MapSet.member?(socket.assigns.loaded_value_ids, value.id) do
       {socket, value} = PollsState.with_views(socket, value)
+      {socket, [value]} = with_link_access(socket, [value])
 
       stream_insert(socket, :values, with_known_facts(socket, value))
     else
@@ -4065,8 +4068,41 @@ defmodule PotokIdeWeb.GroupLive.Show do
       socket
       |> put_private(:my_reactions, mine)
       |> put_private(:value_tags, tags)
+      |> then(&if(how == :reset, do: put_private(&1, :link_groups, %{}), else: &1))
 
-    {socket, values}
+    with_link_access(socket, values)
+  end
+
+  # Which form cards on these values the viewer sees: one only a form's
+  # members see (`PotokIdeWeb.FormLinks`) shows to its members. What the page
+  # learnt is kept until the feed loads again, so a value a broadcast brings
+  # again (an edit, a reaction) asks nothing.
+  defp with_link_access(socket, values) do
+    known = socket.private[:link_groups] || %{}
+
+    asked =
+      values
+      |> Enum.map(&LinkPreviews.members_only_group_id(&1.link_preview))
+      |> Enum.reject(&(is_nil(&1) or Map.has_key?(known, &1)))
+      |> Enum.uniq()
+
+    known =
+      if asked == [] do
+        known
+      else
+        members = Social.member_group_ids_among(socket.assigns.current_profile, asked)
+        Enum.reduce(asked, known, &Map.put(&2, &1, MapSet.member?(members, &1)))
+      end
+
+    values =
+      Enum.map(values, fn value ->
+        case LinkPreviews.members_only_group_id(value.link_preview) do
+          nil -> value
+          group_id -> %{value | link_preview_visible: Map.get(known, group_id, false)}
+        end
+      end)
+
+    {put_private(socket, :link_groups, known), values}
   end
 
   defp with_known_facts(socket, %Value{id: id} = value) do
@@ -4588,6 +4624,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
             else: Map.put(value_tags(socket), value_id, tags)
           )
         )
+
+      {socket, [value]} = with_link_access(socket, [value])
 
       stream_insert(socket, :values, with_known_facts(socket, value))
     else

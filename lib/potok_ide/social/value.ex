@@ -35,10 +35,15 @@ defmodule PotokIde.Social.Value do
     field :mentions, :map, default: %{}
     field :mentioned_profile_ids, {:array, :id}, default: []
     # Set by `Social` after the first link's page is fetched, never cast:
-    # `%{"url", "title", "description", "site_name", "image_url"}`. The
-    # author can dismiss it, and then it is never fetched again.
+    # `%{"url", "title", "description", "site_name", "image_url"}`, or a
+    # form's card (`PotokIdeWeb.FormLinks`). The author can dismiss it, and
+    # then it is never fetched again.
     field :link_preview, :map
     field :link_preview_dismissed, :boolean, default: false
+    # Whether the viewing profile may see a form's card that only the form's
+    # members see (`LinkPreviews.visible/2`), as the page found out; false
+    # until it did.
+    field :link_preview_visible, :boolean, virtual: true, default: false
     # The tags the viewing profile sees (`PotokIde.Tags.put_tags/3`): the
     # public ones and its own private ones.
     field :tags, {:array, :any}, virtual: true, default: []

@@ -288,9 +288,11 @@ defmodule PotokIde.Social.AreaImport do
       nil ->
         choices = %{"name" => name, "is_public" => true, "inherits_members" => false}
 
-        # Thousands of places at once start no process.
+        # Thousands of places at once start no process. They keep their
+        # initials, as the places imported before kinds had pictures do.
         case Social.create_group_from_preset(profile, parent, @preset, choices, %{},
-               processes: false
+               processes: false,
+               picture: false
              ) do
           {:ok, %{group: group}} -> {:ok, group, false, true}
           {:error, reason} -> {:error, reason}

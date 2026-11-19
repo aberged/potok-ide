@@ -87,7 +87,7 @@ defmodule PotokIdeWeb.PageControllerTest do
       end
 
       assert Enum.count(LazyHTML.query(document, "#domain-chips [data-domain]")) == 10
-      assert Enum.count(LazyHTML.query(document, "#domain-mechanisms article")) == 35
+      assert Enum.count(LazyHTML.query(document, "#domain-mechanisms article")) == 36
       assert Enum.count(LazyHTML.query(document, "#domain-apps-capabilities article")) == 18
       assert Enum.count(LazyHTML.query(document, "#domain-apps-limits li")) == 12
       assert Enum.count(LazyHTML.query(document, "#domain-caption [data-caption]")) == 3

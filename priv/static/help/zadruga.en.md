@@ -67,6 +67,10 @@ Whoever may edit the group sees the responses, and on the Settings tab, under **
 
 In Zadruga Livada, tap **+**, choose **Chat**, type "Dogovor" (arrangements) and tap **Create**. This is where picking up and swaps are arranged.
 
+When you put the link to the Porudžbine form in the chat, the members see a card with the form's title and subtitle.
+
+![A link to the form in the chat: the form's title and subtitle](zadruga-forma-link)
+
 ## 8. A pick-up every Saturday {:#preuzimanje}
 
 1. In Zadruga Livada, open the **Calendar** tab and tap **+ Event**.

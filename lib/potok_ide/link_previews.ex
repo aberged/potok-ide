@@ -10,12 +10,16 @@ defmodule PotokIde.LinkPreviews do
   fetched again for a while.
 
   A link to Potok itself gets the card a guest would get, read from the
-  database, so a private group stays as unnamed as it does outside Potok.
+  database, so a private group stays as unnamed as it does outside Potok. A
+  link to a form gets the form's own card (`PotokIdeWeb.FormLinks`): one any
+  reader may see, or, where the caller asks for it with `closed_forms: true`
+  (a chat, whose page knows its viewer), one only the form's members see
+  (`visible/2`).
   """
 
   alias PotokIde.LinkPreviews.HTTP
   alias PotokIde.UTF8
-  alias PotokIdeWeb.PublicPreview
+  alias PotokIdeWeb.{FormLinks, PublicPreview}
 
   @cache_ttl :timer.hours(6)
   @max_title_length 200
@@ -50,18 +54,20 @@ defmodule PotokIde.LinkPreviews do
   The first http(s) link of a value's content, or nil. Links in code blocks
   and inline code do not count, trailing punctuation (and a closing bracket
   without its opening one) is not part of the link, and a link to Potok itself
-  only counts where guests get a card.
+  only counts where it gets a card (`fetch/2`, with the same `opts`).
   """
-  def first_url(content) when is_binary(content) do
+  def first_url(content, opts \\ [])
+
+  def first_url(content, opts) when is_binary(content) do
     content
     |> String.replace(~r/```.*?(?:```|\z)/su, " ")
     |> String.replace(~r/`[^`\n]*`/u, " ")
     |> then(&Regex.scan(@url_pattern, &1))
     |> Enum.flat_map(fn [candidate] -> List.wrap(clean_url(candidate)) end)
-    |> Enum.find(&(not own_url?(&1) or match?({:ok, _}, PublicPreview.link_preview(&1))))
+    |> Enum.find(&(not own_url?(&1) or match?({:ok, _}, own_preview(&1, opts))))
   end
 
-  def first_url(_content), do: nil
+  def first_url(_content, _opts), do: nil
 
   @doc "True for a link to Potok itself."
   def own_url?(url) when is_binary(url) do
@@ -112,14 +118,60 @@ defmodule PotokIde.LinkPreviews do
   @doc """
   `{:ok, preview}` for a page with a title or a description, `:error`
   otherwise. Never raises: previews are best effort.
+
+  With `closed_forms: true`, a link to a form may get a card only the form's
+  members see (`visible/2`); without it, only one any reader may see.
   """
-  def fetch(url) when is_binary(url) do
+  def fetch(url, opts \\ []) when is_binary(url) do
     cond do
-      own_url?(url) -> PublicPreview.link_preview(url)
+      own_url?(url) -> own_preview(url, opts)
       config(:cache_ttl, @cache_ttl) == 0 -> fetch_uncached(url)
       true -> fetch_cached(url)
     end
   end
+
+  # A form's card, or the card a guest gets. A card for the form's members
+  # carries the guest's, which the others see in its place.
+  defp own_preview(url, opts) do
+    case FormLinks.card(url) do
+      {:ok, %{"open" => true} = card} ->
+        {:ok, card}
+
+      {:ok, card} ->
+        if Keyword.get(opts, :closed_forms, false),
+          do: {:ok, put_guest_card(card, url)},
+          else: PublicPreview.link_preview(url)
+
+      :error ->
+        PublicPreview.link_preview(url)
+    end
+  end
+
+  defp put_guest_card(card, url) do
+    case PublicPreview.link_preview(url) do
+      {:ok, guest} -> Map.put(card, "guest", guest)
+      :error -> card
+    end
+  end
+
+  @doc """
+  What `viewer_member?` lets a viewer see of a kept preview: all of it, but
+  for a form's card only its members see, which shows to members and leaves
+  the others the card a guest gets, if there is one. nil for nothing.
+  """
+  def visible(%{"url" => url} = preview, viewer_member?) when is_binary(url) do
+    if is_nil(members_only_group_id(preview)) or viewer_member? == true,
+      do: preview,
+      else: visible(preview["guest"], false)
+  end
+
+  def visible(_preview, _viewer_member?), do: nil
+
+  @doc "The form whose members alone see the card `preview`, or nil for a card anyone sees."
+  def members_only_group_id(%{"group_id" => group_id} = preview) when is_integer(group_id),
+    do: if(preview["open"] == true, do: nil, else: group_id)
+
+  def members_only_group_id(_preview), do: nil
 
   defp fetch_cached(url) do
     PotokIde.Cache.fetch({:link_preview, url}, config(:cache_ttl, @cache_ttl), fn ->

@@ -1,7 +1,8 @@
 defmodule PotokIde.Social.GroupPresets do
   @moduledoc """
   Ready setups for a new group. A preset fills in what any group can have, so
-  all of it can be changed later on the group's settings and roles. The group
+  all of it can be changed later on the group's settings and roles, its
+  picture too: the group starts with its kind's icon (`picture/1`). The group
   keeps only the preset's name (`Group.preset`), for the mark on its avatar,
   which shows while the group still fits it (`shown/1`).
   `Social.create_group/3` stays the way to set everything by hand.
@@ -78,11 +79,32 @@ defmodule PotokIde.Social.GroupPresets do
     }
   end
 
-  @doc "The attributes of a group from `preset`, with what the viewer picked in `choices`."
-  def attrs(preset, choices) when preset in @keys do
-    preset
-    |> preset_attrs()
-    |> Map.merge(Map.take(choices, @chosen_by_viewer))
+  @doc """
+  The attributes of a group from `preset`, with what the viewer picked in
+  `choices`. The group starts with its kind's picture (`picture/1`) unless
+  `picture: false`.
+  """
+  def attrs(preset, choices, opts \\ []) when preset in @keys do
+    attrs = Map.merge(preset_attrs(preset), Map.take(choices, @chosen_by_viewer))
+
+    if Keyword.get(opts, :picture, true),
+      do: Map.put(attrs, "group_picture_url", picture(preset)),
+      else: attrs
+  end
+
+  @doc """
+  The picture a group made from `preset` starts with, as a data URL: the
+  preset's icon in the menu, white on Potok's blue (`priv/kinds/build.sh`).
+  It is the group's own picture from then on, changed like any other, and a
+  PNG, as push notifications cannot show SVG.
+  """
+  def picture(preset) when preset in @keys do
+    png =
+      :potok_ide
+      |> Application.app_dir(Path.join("priv/kinds", preset <> ".png"))
+      |> File.read!()
+
+    "data:image/png;base64," <> Base.encode64(png)
   end
 
   @doc "The attributes of the `.feed` under the Feed group `group`."

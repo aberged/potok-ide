@@ -206,12 +206,12 @@ msgstr "Нова вредност апликације"
 msgid "A person and a role"
 msgstr "Особа и улога"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:937
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:945
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, and which see the results and the details."
 msgstr "Гласање каже које улоге гласају, а које виде резултате и појединости."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:951
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr "Процес пита улогу формом или одлуком, и шаље јој пуш, ако сме да помиње улоге."
@@ -294,7 +294,7 @@ msgstr "Све су то методе објекта `window.potok`. Свака 
 msgid "Alternative description"
 msgstr "Алтернативни опис"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:925
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:933
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr "Алтернативни опис може да виде само неке улоге, уз оне који смеју да уређују групу."
@@ -744,7 +744,7 @@ msgstr "Чланови и улоге"
 msgid "Membership"
 msgstr "Чланство"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:949
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:957
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr "Помињање улоге у поруци јавља свима који је држе, уз дозволу Помињање улога."
@@ -948,7 +948,7 @@ msgstr "Улога"
 msgid "Role assignment"
 msgstr "Додела улоге"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:919
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:927
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr "Улоге раде и ван ових %{n} дозвола"
@@ -1117,7 +1117,7 @@ msgstr "Корен и Месна заједница имају своје ман
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr "Правила су преписана са <a1>мапе домена</a1> и из кода."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:931
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:939
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr "Правила колекција апликације кажу које улоге пишу, а које читају све."
@@ -2414,7 +2414,7 @@ msgstr "исти опис? токен за упис (%{burst} / %{window} с)"
 msgid "the write and its processes, together"
 msgstr "упис и процеси колекције, заједно"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:917
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr "<b>Обрисан налог</b> оставља свој профил као „Обрисан корисник“, без чланства у иједној групи и без улога. Група никад не остаје без последњег Админа, па особа прво неког другог постави за Админа сваке групе коју држи сама."
@@ -2443,3 +2443,8 @@ msgstr "Мајстор је јаван, па га зову процеси гру
 #, elixir-autogen, elixir-format
 msgid "a group field stays here; a signal, if asked"
 msgstr "поље групе остаје овде; сигнал, ако се тражи"
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#, elixir-autogen, elixir-format
+msgid "<b>A link to a form</b> in a message shows the form's title and subtitle only to those who may open it: its members, and everyone when a public group's form takes non-members. The others see the card a guest would get, or only the link."
+msgstr "<b>Линк ка форми</b> у поруци показује наслов и поднаслов форме само онима који смеју да је отворе: њеним члановима, и свима кад форма јавне групе прима и оне који нису чланови. Остали виде картицу коју би добио гост, или само линк."

@@ -99,6 +99,7 @@ defmodule HelpShots.World do
             news: news,
             coop: coop.root,
             coop_orders: coop.orders,
+            coop_chat: coop.chat,
             building: building.root,
             building_council: building.council,
             direct: direct
@@ -505,6 +506,15 @@ defmodule HelpShots.World do
       dragan,
       coop,
       "Ove subote ima i domaćeg sira. Porudžbine do četvrtka u 20 časova."
+    )
+
+    # A link to the form, which shows its card to the form's members: the
+    # co-op's, whom it inherits.
+    post(
+      dragan,
+      chat,
+      "Porudžbine za ovu subotu su otvorene: [popuni formu](#{PotokIdeWeb.Endpoint.url()}/groups/#{orders.id})",
+      ago(0, 7, 30)
     )
 
     post(p.("ivana"), chat, "Može li neko da preuzme i za mene? Radim u subotu.", ago(0, 7, 50))

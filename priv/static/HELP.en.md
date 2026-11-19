@@ -187,7 +187,7 @@ You write a message in the field at the bottom and send it with the arrow. On a 
 - **Reactions**: one emoji on a message. Tapping a reaction adds or removes your own.
 - **Mentions**: type @ and the name of a member or a role, and @everyone mentions everyone. The message stands out for whoever is mentioned, and they get a notification.
 - **Editing and deleting**: you can edit and delete your own messages, and whoever has the permission deletes other people's too. An edited message says "edited" beside its time, and pressing and holding it shows when it was edited.
-- **Links** get a preview, and long messages fold until you open them.
+- **Links** get a preview, and long messages fold until you open them. A link to a form shows the form's title and subtitle to whoever may open it.
 
 On a phone, press and hold a message: a sheet opens with quick reactions and every action. On a computer, the same actions appear when you move the mouse over a message.
 
@@ -214,7 +214,7 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 - **Ordering**: neighbours order together from a producer, in rounds, and one of them picks it all up and hands it out.
 - **Page**: a text people see first, made from a template.
 
-In the second step you enter the name and choose whether the group is public and whether it inherits members: all of them, or only those with the roles you choose. "Set everything up yourself" opens the full form.
+In the second step you enter the name and choose whether the group is public and whether it inherits members: all of them, or only those with the roles you choose. "Set everything up yourself" opens the full form. A new group starts out with its kind's picture, which you change in Edit group.
 
 ![What kind of group do you need?](kreiraj-podgrupu) ![Name, public or not, and inheriting members](kreiraj-korak)
 

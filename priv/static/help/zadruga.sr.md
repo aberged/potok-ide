@@ -68,6 +68,10 @@ Odgovore vidi ko sme da uređuje grupu, a na kartici Podešavanja, pod **Ko vidi
 
 U Zadruzi Livada dodirni **+**, izaberi **Chat**, upiši „Dogovor“ i dodirni **Kreiraj**. Tu se dogovaraju preuzimanje i zamene.
 
+Kad u razgovor staviš link ka formi Porudžbine, članovi vide karticu sa naslovom i podnaslovom forme.
+
+![Link ka formi u razgovoru: naslov i podnaslov forme](zadruga-forma-link)
+
 ## 8. Preuzimanje svake subote {:#preuzimanje}
 
 1. U Zadruzi Livada otvori karticu **Kalendar** i dodirni **+ Događaj**.

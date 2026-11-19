@@ -206,12 +206,12 @@ msgstr ""
 msgid "A person and a role"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:937
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:945
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, and which see the results and the details."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:951
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr ""
@@ -294,7 +294,7 @@ msgstr ""
 msgid "Alternative description"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:925
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:933
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr ""
@@ -744,7 +744,7 @@ msgstr ""
 msgid "Membership"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:949
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:957
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr ""
@@ -948,7 +948,7 @@ msgstr ""
 msgid "Role assignment"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:919
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:927
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr ""
@@ -1117,7 +1117,7 @@ msgstr ""
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:931
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:939
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr ""
@@ -2414,7 +2414,7 @@ msgstr ""
 msgid "the write and its processes, together"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:917
 #, elixir-autogen, elixir-format
 msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr ""
@@ -2442,4 +2442,9 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/help_processes_apps.html.heex:891
 #, elixir-autogen, elixir-format
 msgid "a group field stays here; a signal, if asked"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#, elixir-autogen, elixir-format
+msgid "<b>A link to a form</b> in a message shows the form's title and subtitle only to those who may open it: its members, and everyone when a public group's form takes non-members. The others see the card a guest would get, or only the link."
 msgstr ""

@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.NoticeComponents do
 
   use PotokIdeWeb, :html
 
+  alias PotokIde.LinkPreviews
   alias PotokIdeWeb.GroupLive.Show.Components
 
   attr :id, :string, required: true
@@ -66,22 +67,23 @@ defmodule PotokIdeWeb.NoticeComponents do
   The card of a notice's first link, once it was fetched (`PotokIde.Notices`),
   as a chat message shows one. Its × sends `notice_dismiss_preview`.
   """
+  # Followers are not asked whether they are a form's members, so a notice
+  # shows only cards any reader may see (`LinkPreviews.visible/2`).
   def notice_link_preview(assigns) do
+    assigns = assign(assigns, :preview, LinkPreviews.visible(assigns.notice.link_preview, false))
+
     ~H"""
     <Components.link_preview_card
-      :if={link_preview?(@notice)}
+      :if={@preview}
       item_id={@notice.id}
       id_prefix="notice-link-preview"
-      preview={@notice.link_preview}
+      preview={@preview}
       can_dismiss={@can_dismiss}
       dismiss_event="notice_dismiss_preview"
       class={@class}
     />
     """
   end
-
-  defp link_preview?(%{link_preview: %{"url" => url}}) when is_binary(url), do: true
-  defp link_preview?(_notice), do: false
 
   attr :id, :string, required: true
 

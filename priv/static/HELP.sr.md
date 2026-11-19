@@ -193,7 +193,7 @@ Poruku pišeš u polje na dnu i šalješ strelicom. Na telefonu, dok kucaš, gor
 - **Reakcije**: jedan emoji na poruku. Dodirom na reakciju dodaješ ili skidaš svoju.
 - **Pominjanje**: napiši @ i ime člana ili uloge, a @everyone pominje sve. Pomenutom se poruka istakne i stiže mu obaveštenje.
 - **Izmena i brisanje**: svoje poruke možeš da izmeniš i obrišeš, a ko ima dozvolu, briše i tuđe. Izmenjena poruka pored vremena kaže „izmenjeno“, a dugi pritisak pokazuje i kad je izmenjena.
-- **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš.
+- **Linkovi** dobijaju pregled, a dugačke poruke se skupljaju dok ih ne otvoriš. Link ka formi pokazuje naslov i podnaslov forme onima koji smeju da je otvore.
 
 Na telefonu dugo pritisni poruku: otvara se list sa brzim reakcijama i svim radnjama. Na računaru se iste radnje pojavljuju kad pređeš mišem preko poruke.
 
@@ -220,7 +220,7 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 - **Naručivanje**: komšije zajedno naručuju od proizvođača, u turama, a jedan od njih sve preuzme i podeli.
 - **Stranica**: tekst koji se prvi vidi, napravljen iz šablona.
 
-U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove: sve ili samo one sa ulogama koje izabereš. „Podesi sve ručno“ otvara pun obrazac.
+U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove: sve ili samo one sa ulogama koje izabereš. „Podesi sve ručno“ otvara pun obrazac. Nova grupa dobija sliku svoje vrste, koju menjaš u Uredi grupu.
 
 ![Kakva grupa ti treba?](kreiraj-podgrupu) ![Naziv, javnost i nasleđivanje članova](kreiraj-korak)
 

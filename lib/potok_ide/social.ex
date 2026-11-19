@@ -504,6 +504,30 @@ defmodule PotokIde.Social do
     if group && Group.guest_preview?(group), do: group
   end
 
+  @doc """
+  The group a link in a value names, whoever may see it, for a card that the
+  page then shows only to those who may (`PotokIdeWeb.FormLinks`): never the
+  root, a direct chat or a thread.
+  """
+  def get_linked_group(id) when is_integer(id) do
+    case Repo.get(Group, id) do
+      %Group{is_root: false, is_direct: false, parent_value_id: nil} = group -> group
+      _other -> nil
+    end
+  end
+
+  @doc "Which of `group_ids` `profile` is a member of, inherited or not, as a MapSet."
+  def member_group_ids_among(%Profile{id: profile_id}, group_ids) when is_list(group_ids) do
+    from(gm in GroupMembership,
+      where: gm.profile_id == ^profile_id and gm.group_id in ^group_ids,
+      select: gm.group_id
+    )
+    |> Repo.all()
+    |> MapSet.new()
+  end
+
+  def member_group_ids_among(_profile, _group_ids), do: MapSet.new()
+
   def create_group(%Profile{} = creator, %Group{} = parent, attrs) do
     with {:ok, attrs} <- checked_group_attrs(creator, parent, Map.new(attrs)),
          {:ok, group} <- insert_group_with_creator(creator, parent, attrs) do
@@ -531,6 +555,9 @@ defmodule PotokIde.Social do
   `place` puts the group on a map at once (`"latitude"`, `"longitude"` and
   `"pin_icon"`), as a map app does when someone adds a place there.
 
+  The group starts with its kind's picture (`GroupPresets.picture/1`), unless
+  `opts` has `picture: false`.
+
   A preset `parent` does not offer (`GroupPresets.allowed?/2`) gives
   `{:error, :preset_not_allowed}`.
   """
@@ -550,7 +577,7 @@ defmodule PotokIde.Social do
   defp insert_from_preset(creator, parent, preset, choices, place, opts) do
     attrs =
       preset
-      |> GroupPresets.attrs(choices)
+      |> GroupPresets.attrs(choices, picture: Keyword.get(opts, :picture, true))
       |> Map.merge(Map.take(place, ["latitude", "longitude", "pin_icon"]))
 
     Repo.transaction(fn ->
@@ -3109,25 +3136,32 @@ defmodule PotokIde.Social do
     end
   end
 
+  # A chat's page knows its viewer, so a value's link to a form may get a card
+  # only the form's members see (`LinkPreviews.visible/2`).
+  @value_links [closed_forms: true]
+
   # An edit that changes the first link drops the old link's preview; the
   # new one is fetched once the edit is saved. Forced, since `value` may have
   # been read before its preview was written.
   defp reset_link_preview(%Ecto.Changeset{} = changeset, %Value{} = value) do
-    new_url = changeset |> Ecto.Changeset.get_field(:content) |> LinkPreviews.first_url()
+    new_url =
+      changeset |> Ecto.Changeset.get_field(:content) |> LinkPreviews.first_url(@value_links)
 
-    if new_url == LinkPreviews.first_url(value.content),
+    if new_url == LinkPreviews.first_url(value.content, @value_links),
       do: changeset,
       else: Ecto.Changeset.force_change(changeset, :link_preview, nil)
   end
 
   # The preview of a value's first link comes later: the page is fetched off
-  # the caller, then every viewer is sent the value again with its card.
+  # the caller, then every viewer is sent the value again with its card. A
+  # link to a form may get a card only the form's members see: the chat's
+  # page shows it to them alone (`LinkPreviews.visible/2`).
   defp schedule_link_preview(%Value{is_data: true}), do: :ok
   defp schedule_link_preview(%Value{link_preview_dismissed: true}), do: :ok
   defp schedule_link_preview(%Value{link_preview: %{}}), do: :ok
 
   defp schedule_link_preview(%Value{id: value_id, content: content}) do
-    case LinkPreviews.first_url(content) do
+    case LinkPreviews.first_url(content, @value_links) do
       nil -> :ok
       url -> LinkPreviews.run(fn -> fetch_value_link_preview(value_id, url) end)
     end
@@ -3137,10 +3171,10 @@ defmodule PotokIde.Social do
   # fetched for must not have been edited or the preview dismissed meanwhile.
   # `updated_at` stays, since a preview is not an edit.
   defp fetch_value_link_preview(value_id, url) do
-    with {:ok, preview} <- LinkPreviews.fetch(url),
+    with {:ok, preview} <- LinkPreviews.fetch(url, @value_links),
          %Value{is_data: false, link_preview_dismissed: false} = value <-
            Repo.get(Value, value_id),
-         ^url <- LinkPreviews.first_url(value.content),
+         ^url <- LinkPreviews.first_url(value.content, @value_links),
          {1, _} <-
            from(v in Value,
              where:

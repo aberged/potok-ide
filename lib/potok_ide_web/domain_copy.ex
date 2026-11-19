@@ -294,6 +294,9 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "link preview dismissed")
   end
 
+  defp own_field("Value", "link_preview_visible"),
+    do: dgettext("domain_map", "whether the viewer sees the card of a form for its members")
+
   defp own_field("Value", "alt_description_id"), do: dgettext("domain_map", "app description")
   defp own_field("Value", "collection"), do: dgettext("domain_map", "collection of app data")
   defp own_field("Value", "anonymous"), do: dgettext("domain_map", "anonymous when written")
@@ -1663,7 +1666,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own."
+            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own."
           )
       },
       %{
@@ -1712,6 +1715,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "An app's settings are one <Value>value</Value> of its own: the app's data, a secret part only its editors read, and the rules of its other collections, which Potok holds to on every call. A rule names the <GroupRole>roles</GroupRole> that write and those that read everything; everyone else reads only what they wrote, and those who may edit the group always read all. A collection without a rule is closed the same way. One answer per person counts one account once, as a poll does. An answer written while its collection was anonymous never shows its author to anyone but the author, though its time shows, and whoever rewrites the app's code could still get around it. Files sent with answers are values with a <ValueAttachment>file</ValueAttachment> in two sub-groups of the app's group: a closed one, whose members alone open them, and one that inherits the members. Whoever sent a file can always open it."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A link to a form shows its card to whoever may open it"),
+        text:
+          dgettext(
+            "domain_map",
+            "A link to a form in a <Value>value</Value> gets a card with the form's own title and subtitle, read from its settings when the value is posted. The page asks for each reader whether they may open the form: its members may, and everyone may when the form takes non-members in a public <Group>group</Group>. The others see the card a guest would get, when the group is public, and otherwise only the link. A <GroupNotice>notice</GroupNotice> reaches followers nobody asks about, so it carries only a card anyone may see."
           )
       },
       %{

@@ -134,6 +134,51 @@ defmodule PotokIde.Social.GroupPresetsTest do
     end
   end
 
+  describe "the picture a group starts with" do
+    defp picture_of(%Group{id: id}),
+      do: Repo.one(from(g in Group, where: g.id == ^id, select: g.group_picture_url))
+
+    test "is its kind's icon, a PNG of its own for each kind", ctx do
+      pictures =
+        for key <- GroupPresets.keys() do
+          assert {:ok, %{group: group}} = create(ctx, key, %{"name" => "Slika #{key}"})
+          assert "data:image/png;base64," <> base64 = picture = picture_of(group)
+          assert <<0x89, "PNG", _rest::binary>> = Base.decode64!(base64)
+          assert picture == GroupPresets.picture(key)
+          picture
+        end
+
+      assert length(Enum.uniq(pictures)) == length(GroupPresets.keys())
+    end
+
+    test "is none for what comes with a feed, for a group made by hand, or when asked", ctx do
+      assert {:ok, %{feed: feed}} = create(ctx, "feed", %{"name" => "Vesti sa slikom"})
+      assert picture_of(feed) == nil
+
+      {:ok, by_hand} = Social.create_group(ctx.owner, ctx.parent, %{"name" => "Rukom"})
+      assert picture_of(by_hand) == nil
+
+      assert {:ok, %{group: imported}} =
+               Social.create_group_from_preset(
+                 ctx.owner,
+                 ctx.parent,
+                 "page",
+                 %{"name" => "Uvezena"},
+                 %{},
+                 picture: false
+               )
+
+      assert picture_of(imported) == nil
+    end
+
+    test "is the group's own: the viewer cannot send one in its place", ctx do
+      assert {:ok, %{group: group}} =
+               create(ctx, "chat", %{"group_picture_url" => "https://example.com/x.png"})
+
+      assert picture_of(group) == GroupPresets.picture("chat")
+    end
+  end
+
   describe "the preset a group keeps" do
     test "is the one it was made from, and what comes with a feed keeps none", ctx do
       for key <- GroupPresets.keys() do

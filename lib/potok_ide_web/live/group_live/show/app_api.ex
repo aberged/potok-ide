@@ -275,10 +275,7 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     config = AppData.get_config(group, alt)
     rules = AppData.rules(config)
 
-    public? =
-      Enum.any?(rules, fn {c, _rule} -> ValueRules.public?(AppData.rule(config, c), group) end)
-
-    if access.member? or public? do
+    if access.member? or AppData.public_config?(config, group) do
       now = DateTime.utc_now(:second)
       account = scope && scope.account
 
