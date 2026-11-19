@@ -5,7 +5,16 @@ defmodule PotokIde.Social.AltDescriptionsTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group, GroupAltDescription, Value}
+
+  alias PotokIde.Social.{
+    Access,
+    AppProcess,
+    AppProcesses,
+    AppProfileStore,
+    Group,
+    GroupAltDescription,
+    Value
+  }
 
   describe "create_alt_description/3" do
     test "adds descriptions in order and notifies the group" do
@@ -206,6 +215,28 @@ defmodule PotokIde.Social.AltDescriptionsTest do
       assert_receive {:alt_descriptions_updated, ^group_id}
     end
 
+    test "promoting takes each app's processes, personal memory and files along", ctx do
+      default_process = app_process!(ctx.owner, ctx.group, nil, "orders")
+      poll_process = app_process!(ctx.owner, ctx.group, ctx.poll.id, "orders")
+      {:ok, _} = AppProfileStore.put(ctx.owner, ctx.group, nil, "seen", 1)
+      {:ok, _} = AppProfileStore.put(ctx.owner, ctx.group, ctx.poll, "seen", 2)
+      files = group!(ctx.owner, "alt-data-files")
+      default_file = file_value!(ctx.owner, files, ctx.group, nil)
+      poll_file = file_value!(ctx.owner, files, ctx.group, ctx.poll.id)
+
+      assert {:ok, _group, _demoted} =
+               Social.promote_alt_description(ctx.owner, ctx.group, ctx.poll, "Description")
+
+      assert Repo.get!(AppProcess, poll_process.id).alt_description_id == nil
+      assert Repo.get!(AppProcess, default_process.id).alt_description_id == ctx.poll.id
+      assert AppProfileStore.get(ctx.owner, ctx.group, nil, "seen") == {:ok, 2}
+      assert AppProfileStore.get(ctx.owner, ctx.group, ctx.poll, "seen") == {:ok, 1}
+      assert Repo.get!(Value, poll_file.id).data["alt"] == nil
+      assert Repo.get!(Value, default_file.id).data["alt"] == ctx.poll.id
+      assert Repo.get!(Value, poll_file.id).data["slot"] == "photo"
+      assert names(ctx.group) == ["Description", "Board"]
+    end
+
     test "promoting refuses a description limited to roles", ctx do
       {:ok, poll} =
         Social.update_alt_description(ctx.owner, ctx.group, ctx.poll, %{
@@ -214,6 +245,21 @@ defmodule PotokIde.Social.AltDescriptionsTest do
 
       assert {:error, :alt_description_restricted} =
                Social.promote_alt_description(ctx.owner, ctx.group, poll, "Description")
+    end
+
+    test "promoting opens a description limited to roles when asked", ctx do
+      {:ok, poll} =
+        Social.update_alt_description(ctx.owner, ctx.group, ctx.poll, %{
+          "visible_role_keys" => ["admin"]
+        })
+
+      assert {:ok, group, demoted} =
+               Social.promote_alt_description(ctx.owner, ctx.group, poll, "Description",
+                 open: true
+               )
+
+      assert group.description_name == "Poll"
+      assert demoted.visible_role_keys == []
     end
 
     test "promoting reports a name the old default cannot take", ctx do
@@ -306,6 +352,32 @@ defmodule PotokIde.Social.AltDescriptionsTest do
 
   defp data_value!(profile, group, alt, n) do
     Social.create_data_value(profile, group, %{"content" => "data:", "data" => %{"n" => n}}, alt)
+  end
+
+  defp app_process!(owner, group, alt_id, collection) do
+    profile = AppProcesses.create_process_profile!()
+
+    Repo.insert!(%AppProcess{
+      profile_id: profile.id,
+      group_id: group.id,
+      alt_description_id: alt_id,
+      collection: collection,
+      name: "Process",
+      owner_profile_id: owner.id
+    })
+  end
+
+  # A file sent with the app's values, as `AppFiles.store/3` keeps it.
+  defp file_value!(profile, file_group, app_group, alt_id) do
+    Repo.insert!(%Value{
+      group_id: file_group.id,
+      creator_id: profile.id,
+      is_data: true,
+      collection: "files",
+      content: "data:",
+      content_format: :markdown,
+      data: %{"app" => app_group.id, "alt" => alt_id, "slot" => "photo", "response" => nil}
+    })
   end
 
   defp profile!(username) do

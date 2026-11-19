@@ -645,14 +645,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   type="button"
                   phx-click="promote_alt_description"
                   phx-value-id={alt.id}
-                  disabled={alt.visible_role_keys != []}
                   icon="hero-star"
-                  label={
-                    if(alt.visible_role_keys == [],
-                      do: gettext("Make default"),
-                      else: gettext("Remove the role limit to make it the default")
-                    )
-                  }
+                  label={gettext("Make default")}
                   data-confirm={promote_confirm(@group, alt)}
                 />
                 <.icon_button
@@ -1170,14 +1164,17 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # The default reaches guests when the group opened it to them, so making
   # another one the default shows that one to them, whatever its own mark said.
   defp promote_confirm(%Group{} = group, alt) do
-    confirm =
+    [
       gettext(
         "Make this the default description? The current default takes its place in the list."
-      )
-
-    if Group.guest_description?(group) and not alt.for_guests,
-      do: confirm <> " " <> gettext("Guests will read it too, as the default is open to them."),
-      else: confirm
+      ),
+      alt.visible_role_keys != [] &&
+        gettext("Only some roles see it now; as the default, everyone who sees the group will."),
+      (Group.guest_description?(group) and not alt.for_guests) &&
+        gettext("Guests will read it too, as the default is open to them.")
+    ]
+    |> Enum.filter(&is_binary/1)
+    |> Enum.join(" ")
   end
 
   # Roles deleted since are held by nobody and are not shown.

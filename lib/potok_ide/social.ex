@@ -27,7 +27,9 @@ defmodule PotokIde.Social do
   alias PotokIde.Social.{
     Access,
     AccountProfile,
+    AppData,
     AppProcesses,
+    AppScope,
     Group,
     GroupAccountInvitation,
     GroupAltDescription,
@@ -1400,8 +1402,9 @@ defmodule PotokIde.Social do
   @doc """
   Makes an alternative description the group's default by swapping their
   contents: the old default takes the alternative's place in the list, and
-  each app's data values follow it. One limited to some roles is refused,
-  since the default is visible to everyone who sees the group.
+  each app takes what it keeps along (`AppScope.swap/4`). One limited to some
+  roles is refused, since the default is visible to everyone who sees the
+  group, unless `open: true` says the editor agreed to show it to everyone.
 
   Guests keep what they saw of the old default: it goes to the list marked
   for them when the group had opened its description to them. The one that
@@ -1414,9 +1417,12 @@ defmodule PotokIde.Social do
         %Profile{} = editor,
         %Group{} = group,
         %GroupAltDescription{} = alt_description,
-        default_name
+        default_name,
+        opts \\ []
       )
       when is_binary(default_name) do
+    open? = Keyword.get(opts, :open, false)
+
     with :ok <- ensure_permission(editor, group, :edit_group),
          :ok <- ensure_own_alt_description(group, alt_description) do
       Multi.new()
@@ -1432,6 +1438,7 @@ defmodule PotokIde.Social do
              ) do
           nil -> {:error, :not_found}
           %GroupAltDescription{visible_role_keys: []} = locked -> {:ok, locked}
+          %GroupAltDescription{} = locked when open? -> {:ok, locked}
           %GroupAltDescription{} -> {:error, :alt_description_restricted}
         end
       end)
@@ -1442,6 +1449,7 @@ defmodule PotokIde.Social do
           description: old.description || "",
           description_format: old.description_format,
           uses_api: old.uses_api,
+          visible_role_keys: [],
           for_guests: old.description_for_guests
         )
         |> Ecto.Changeset.unique_constraint(:name,
@@ -1459,27 +1467,12 @@ defmodule PotokIde.Social do
             if(old.home_alt_description_id == alt.id, do: nil, else: old.home_alt_description_id)
         )
       end)
-      |> Multi.update_all(
-        :data_values,
-        fn %{alt_description: alt} ->
-          from(v in Value,
-            where:
-              v.group_id == ^group.id and v.is_data == true and
-                (is_nil(v.alt_description_id) or v.alt_description_id == ^alt.id),
-            update: [
-              set: [
-                alt_description_id:
-                  fragment(
-                    "CASE WHEN ? IS NULL THEN ?::bigint ELSE NULL END",
-                    v.alt_description_id,
-                    ^alt.id
-                  )
-              ]
-            ]
-          )
-        end,
-        []
-      )
+      |> Multi.run(:app_data, fn repo, %{alt_description: alt} ->
+        # Always the default's lock first, so two swaps never wait on each other.
+        AppData.lock_app(group, nil)
+        AppData.lock_app(group, alt.id)
+        {:ok, AppScope.swap(repo, group.id, nil, alt.id)}
+      end)
       |> Repo.transaction()
       |> case do
         {:ok, %{updated_group: updated_group, updated_alt_description: updated}} ->

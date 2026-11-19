@@ -2534,7 +2534,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
              socket.assigns.current_profile,
              socket.assigns.group,
              alt_description,
-             gettext("Description")
+             gettext("Description"),
+             # The confirm said so when only some roles saw it.
+             open: true
            ) do
         {:ok, group, _demoted} ->
           socket
