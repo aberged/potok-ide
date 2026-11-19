@@ -32,9 +32,10 @@ defmodule PotokIde.Social.Group do
     field :is_root, :boolean, default: false
     field :is_root_public, :boolean, default: false
     field :uses_api, :boolean, default: false
-    # The ready setup the group was made from, for the mark on its avatar
-    # (`GroupPresets.shown/1`); nil for any other. Set once by
-    # `Social.create_group_from_preset/4`, never cast.
+    # The ready setup the group was made from, or given since, for the mark on
+    # its avatar (`GroupPresets.shown/1`); nil for any other. Set only by
+    # `Social.create_group_from_preset/4` and `Social.change_group_preset/4`,
+    # never cast.
     field :preset, Ecto.Enum, values: @presets
     # Holds every member of the parent (see `Social.MemberInheritance`).
     # Threads always do, lazily: they take in a member of the parent as they

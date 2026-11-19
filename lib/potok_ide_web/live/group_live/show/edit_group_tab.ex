@@ -2,10 +2,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   use PotokIdeWeb, :html
 
   alias PotokIde.MapTiles
-  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupRole, GroupRoutes}
+  alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRole, GroupRoutes}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Distance
-  alias PotokIdeWeb.GroupLive.Show.{Components, LocationEditor}
+  alias PotokIdeWeb.GroupLive.Show.{Components, KindMenu, LocationEditor}
   alias PotokIdeWeb.PinIcons
 
   attr :card, :map, required: true
@@ -61,6 +61,36 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           "An app says what it is with a <meta name=\"description\" content=\"...\"> tag in its HTML."
         )}
       </p>
+    </div>
+    """
+  end
+
+  attr :look, :map, required: true
+
+  # The kind the group shows on its avatar. Changing it does more than a field
+  # of the form, so it opens a dialog of its own (`KindMenu`).
+  defp kind_row(assigns) do
+    ~H"""
+    <div
+      id="group-edit-kind"
+      class="mt-4 flex items-center gap-3 rounded-2xl border border-base-300/70 bg-base-200/30 px-3 py-2.5"
+    >
+      <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+        <.icon name={@look.icon} class="size-5" />
+      </span>
+      <div class="min-w-0 flex-1">
+        <p class="text-xs text-base-content/65">{gettext("Kind")}</p>
+        <p id="group-edit-kind-name" class="truncate text-sm font-semibold">{@look.title}</p>
+      </div>
+      <.button
+        id="group-kind-change"
+        type="button"
+        phx-click="group_kind_open"
+        variant="soft"
+        size="sm"
+      >
+        {gettext("Change")}
+      </.button>
     </div>
     """
   end
@@ -134,11 +164,14 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # `novalidate`, as a required field in a hidden card would silently stop the
   # browser from submitting; the server opens the card with the error instead.
   def panel(assigns) do
+    group = assigns.group
+
     assigns =
-      assign(
-        assigns,
-        :open_chat_option,
-        open_chat_option?(assigns.group, assigns.edit_group_form)
+      assigns
+      |> assign(:open_chat_option, open_chat_option?(group, assigns.edit_group_form))
+      |> assign(
+        :kind_look,
+        if(GroupPresets.kind_possible?(group), do: KindMenu.look(KindMenu.current(group)))
       )
 
     ~H"""
@@ -173,10 +206,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             active={@section == "basics"}
             icon="hero-identification"
             title={gettext("Basics")}
-            subtitle={gettext("The name and picture members see.")}
+            subtitle={gettext("The name, picture and kind members see.")}
           >
             <.input field={@edit_group_form[:name]} label={gettext("Name")} required />
             <Components.group_picture_form_field field={@edit_group_form[:group_picture_url]} />
+            <.kind_row :if={@kind_look} look={@kind_look} />
           </Components.settings_card>
 
           <Components.settings_card

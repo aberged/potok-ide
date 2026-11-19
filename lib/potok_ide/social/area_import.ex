@@ -411,17 +411,17 @@ defmodule PotokIde.Social.AreaImport do
 
   @doc """
   Takes away what an import by `profile` made: the groups it made under the
-  root that start from the import's preset, and the groups it made under
-  those, each through `Social.delete_group/2`. A group that has got groups
-  of others' below it stays. `{:ok, deleted, kept}`.
+  root, and the groups it made under those, each through
+  `Social.delete_group/2`. A group that has got groups of others' below it
+  stays. `{:ok, deleted, kept}`. The profile is the import's own, so its
+  groups are known by it, not by their kind, which an editor may change.
   """
   def remove(%Profile{} = profile) do
     root = Social.get_root_group!()
-    preset = String.to_existing_atom(@preset)
 
     parents =
       from(g in Group,
-        where: g.parent_id == ^root.id and g.creator_id == ^profile.id and g.preset == ^preset,
+        where: g.parent_id == ^root.id and g.creator_id == ^profile.id and g.is_direct == false,
         order_by: g.id
       )
       |> Repo.all()

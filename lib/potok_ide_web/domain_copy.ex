@@ -1662,11 +1662,11 @@ defmodule PotokIdeWeb.DomainCopy do
           )
       },
       %{
-        title: dgettext("domain_map", "A preset only fills in a new group"),
+        title: dgettext("domain_map", "A preset starts a group, and its kind can change"),
         text:
           dgettext(
             "domain_map",
-            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own."
+            "A new <Group>group</Group> can start from a preset: chat, folder, feed, polls, form, map, ordering or page. A preset sets what any group can have, so all of it can be changed later. The group also starts with its kind's icon as its picture, its own from then on. The group keeps only the preset's name: its avatar shows that kind while the group still fits it, and the list of sub-groups can be narrowed to one kind. A feed is two groups, one with the Feed app and one below it with FeedCreator, and each keeps its own copy of its app, so a new version reaches only the feeds made after it. A group for polls, a form, a map and a group for ordering keep a copy of their app the same way, and a form gets its two groups for files only once it needs them. The root offers no map, as it has one of its own. Whoever edits a group can give it another kind later: the new kind brings its description, the page the group opens on, and its picture while the group still has the old kind's or none. An app that would be overwritten, or a text an app takes the place of, goes to an <GroupAltDescription>alternative description</GroupAltDescription> that only those who edit the group see, with everything its app kept, so the new app starts empty and the old one can come back as the default. A feed that becomes something else keeps the sub-group with its posts, and takes it back when it becomes a feed again. Only the root, direct conversations, threads and the groups an app keeps for itself have no kind to change."
           )
       },
       %{
@@ -1706,7 +1706,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to and which of the app's collections holds it. A composite key holds them in the same group, and deleting an alternative description deletes its data too."
+            "The default description and every <GroupAltDescription>alternative description</GroupAltDescription> can be an app. Its data are <Value>values</Value> marked as data, and each of them knows which app it belongs to and which of the app's collections holds it. A composite key holds them in the same group, and deleting an alternative description deletes its data too. When an alternative description becomes the default, each app takes along what it keeps: its data, its processes, its personal memory and the files sent with its values."
           )
       },
       %{

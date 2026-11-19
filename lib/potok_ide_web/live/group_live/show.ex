@@ -79,7 +79,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
     AppValues,
     Components,
     CreateMenu,
-    GroupSheet
+    GroupSheet,
+    KindMenu
   }
 
   @children_page_size 20
@@ -925,6 +926,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
       <MediaViewer.viewer />
       <TagComponents.tag_editor editor={@tag_editor} />
       <CreateMenu.menu menu={@group_create_menu} />
+      <KindMenu.dialog menu={@group_kind_menu} />
       <PollForm.dialog state={@poll_form} />
       <ProcessForm.dialog state={@process_form} />
       <ProcessesTab.start_dialog start={@processes_start} />
@@ -1085,6 +1087,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:can_react_to_group, false)
          |> TagEditor.init()
          |> CreateMenu.init()
+         |> assign(:group_kind_menu, nil)
          |> CalendarState.init(params)
          |> RootMapState.init()
          |> PollForm.init()
@@ -2073,6 +2076,74 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   def handle_event("set_create_group_section", _params, socket), do: {:noreply, socket}
 
+  # "Change kind" on the Basics card (`KindMenu`). The dialog shows what the
+  # change does as `Social.change_group_preset/4` will do it, and saving sets
+  # the edit form anew, as a form built before would write the old
+  # description back.
+  def handle_event("group_kind_open", _params, socket) do
+    with_edit_group(socket, fn socket ->
+      group = socket.assigns.group
+      facts = Social.group_kind_facts(socket.assigns.current_profile, group)
+
+      menu =
+        KindMenu.open(group, facts.parent,
+          dirty: edit_group_dirty?(socket.assigns.edit_group_form),
+          not_here: not GroupPresets.kind_here?(group, facts)
+        )
+
+      assign(socket, :group_kind_menu, menu)
+    end)
+  end
+
+  def handle_event("group_kind_close", _params, socket),
+    do: {:noreply, assign(socket, :group_kind_menu, nil)}
+
+  def handle_event("group_kind_back", _params, socket) do
+    case socket.assigns.group_kind_menu do
+      %{} = menu ->
+        {:noreply, assign(socket, :group_kind_menu, %{menu | picked: nil, plan: nil, error: nil})}
+
+      nil ->
+        {:noreply, socket}
+    end
+  end
+
+  def handle_event("group_kind_pick", %{"kind" => kind}, socket) do
+    with_edit_group(socket, fn socket ->
+      with %{tiles: tiles} = menu <- socket.assigns.group_kind_menu,
+           true <- Enum.any?(tiles, &(&1.key == kind)) do
+        group = socket.assigns.group
+
+        {plan, error} =
+          case Social.preview_group_preset_change(
+                 socket.assigns.current_profile,
+                 group,
+                 kind_key(kind),
+                 KindMenu.park_name(group)
+               ) do
+            {:ok, plan} -> {plan, nil}
+            {:error, reason} -> {nil, KindMenu.error_message(reason)}
+          end
+
+        assign(socket, :group_kind_menu, %{menu | picked: kind, plan: plan, error: error})
+      else
+        _not_a_tile -> socket
+      end
+    end)
+  end
+
+  def handle_event("group_kind_apply", _params, socket) do
+    with_edit_group(socket, fn socket ->
+      case socket.assigns.group_kind_menu do
+        %{picked: kind, plan: %{}} = menu when is_binary(kind) ->
+          apply_group_kind(socket, menu, kind)
+
+        _nothing_picked ->
+          socket
+      end
+    end)
+  end
+
   def handle_event("discard_edit_group", _params, socket) do
     with_edit_group(socket, fn socket ->
       socket
@@ -2358,8 +2429,21 @@ defmodule PotokIdeWeb.GroupLive.Show do
         {:noreply, socket |> rebuild_edit_group_form() |> assign(:edit_group_section, "location")}
 
       true ->
-        attrs = put_shape_draft(attrs, socket.assigns.edit_group_shape)
-        save_edit_group(socket, current_profile, group, attrs)
+        base = edit_group_data(socket)
+        attrs = edited_attrs(base, put_shape_draft(attrs, socket.assigns.edit_group_shape))
+
+        if description_moved?(base, attrs, group) do
+          {:noreply,
+           put_flash(
+             socket,
+             :error,
+             gettext(
+               "The description changed in the meantime, perhaps with the kind of the group. Discard your changes and make them again."
+             )
+           )}
+        else
+          save_edit_group(socket, current_profile, group, attrs)
+        end
     end
   end
 
@@ -5020,6 +5104,78 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:editing_alt_description, nil)
     |> assign(:alt_description_form, nil)
     |> assign(:template_list, nil)
+  end
+
+  defp kind_key("none"), do: nil
+  defp kind_key(kind), do: kind
+
+  defp apply_group_kind(socket, menu, kind) do
+    group = socket.assigns.group
+
+    case Social.change_group_preset(
+           socket.assigns.current_profile,
+           group,
+           kind_key(kind),
+           KindMenu.park_name(group)
+         ) do
+      {:ok, %{group: updated, parked: parked}} ->
+        socket
+        |> assign(:group_kind_menu, nil)
+        |> assign(:group, updated)
+        |> assign(:edit_group_form, edit_group_form(updated, "edit_group"))
+        |> reset_location_draft(false)
+        |> assign(:link_card, link_card(updated, "edit_group"))
+        |> reload_alt_descriptions()
+        |> assign(
+          :edit_group_section,
+          if(kind == "page", do: "description", else: socket.assigns.edit_group_section)
+        )
+        |> put_flash(:info, kind_changed_message(parked))
+        |> refresh_group_data()
+
+      {:error, reason} ->
+        assign(socket, :group_kind_menu, %{menu | error: KindMenu.error_message(reason)})
+    end
+  end
+
+  defp kind_changed_message(nil), do: gettext("The kind is changed.")
+
+  defp kind_changed_message(%GroupAltDescription{name: name}),
+    do:
+      gettext(
+        "The kind is changed. The previous description is among the alternative descriptions, as “%{name}”.",
+        name: name
+      )
+
+  # Only what the editor changed in the form goes out, measured against the
+  # group the form was built from, so a field another editor (or a change of
+  # kind, or an app) saved since stays theirs. A field that fails validation
+  # goes too, to show what is wrong.
+  defp edited_attrs(base, attrs) do
+    changeset = Group.update_changeset(base, attrs)
+
+    fields =
+      MapSet.new(
+        Map.keys(changeset.changes) ++ Keyword.keys(changeset.errors),
+        &Atom.to_string/1
+      )
+
+    Map.filter(attrs, fn {key, _value} -> MapSet.member?(fields, to_string(key)) end)
+  end
+
+  @description_fields ~w(description description_format description_name uses_api)
+
+  # The description the editor changed is not the one the group holds any
+  # more: saving would write an old text over a new app, or the other way.
+  defp description_moved?(base, attrs, %Group{id: id}) do
+    edits? = Enum.any?(Map.keys(attrs), &(to_string(&1) in @description_fields))
+
+    edits? and
+      case Social.get_group!(id) do
+        %Group{} = fresh ->
+          {fresh.description, fresh.uses_api, fresh.preset} !=
+            {base.description, base.uses_api, base.preset}
+      end
   end
 
   defp save_edit_group(socket, current_profile, group, attrs) do

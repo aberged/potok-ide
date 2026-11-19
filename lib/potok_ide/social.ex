@@ -1014,6 +1014,207 @@ defmodule PotokIde.Social do
     end
   end
 
+  @doc """
+  What `GroupPresets.change_plan/4` needs to know of `group` for `editor`.
+  Reads its parent, its alternative descriptions and a sub-group or two.
+  """
+  def group_kind_facts(%Profile{} = editor, %Group{} = group) do
+    parent = group.parent_id && Repo.get(Group, group.parent_id)
+    feed_name = GroupPresets.feed_group_name()
+
+    %{
+      parent: parent,
+      alt_names:
+        Repo.all(
+          from(d in GroupAltDescription,
+            where: d.group_id == ^group.id,
+            select: fragment("lower(?)", d.name)
+          )
+        ),
+      max_alts: max_alt_descriptions(),
+      feed_child?: feed_child_id(group) != nil,
+      file_group?: parent != nil and app_file_group?(parent, group.id),
+      feed_part?: parent != nil and parent.uses_api and group.name == feed_name,
+      can_create_subgroups?:
+        member_of_group?(editor, group) and Access.can?(editor, group, :create_subgroups),
+      picture: load_picture(group).group_picture_url
+    }
+  end
+
+  @doc """
+  What giving `group` the kind `key` would do, as `change_group_preset/4`
+  would do it now: `{:ok, plan}` or `{:error, reason}` (`GroupPresets.change_plan/4`).
+  """
+  def preview_group_preset_change(%Profile{} = editor, %Group{} = group, key, park_name) do
+    with :ok <- ensure_permission(editor, group, :edit_group) do
+      GroupPresets.change_plan(group, key, group_kind_facts(editor, group), park_name)
+    end
+  end
+
+  @doc """
+  Gives `group` the kind `key` (a preset, or nil for none), as
+  `GroupPresets.change_plan/4` says: what stood in its description goes to
+  an alternative description for its editors, with everything its app kept
+  (`AppScope.move/4`), and the kind's description, home page and picture
+  come in. A feed gets its `.feed`.
+
+  Returns `{:ok, %{group: group, plan: plan, parked: alt | nil, feed: group | nil}}`.
+  """
+  def change_group_preset(%Profile{} = editor, %Group{} = group, key, park_name)
+      when is_binary(park_name) do
+    with :ok <- ensure_permission(editor, group, :edit_group) do
+      Repo.transaction(fn ->
+        locked =
+          from(g in Group, where: g.id == ^group.id, lock: "FOR UPDATE")
+          |> Repo.one!()
+          |> load_picture()
+
+        AppData.lock_app(locked, nil)
+
+        plan =
+          case GroupPresets.change_plan(
+                 locked,
+                 key,
+                 group_kind_facts(editor, locked),
+                 park_name
+               ) do
+            {:ok, plan} -> plan
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        parked = park_default_description(editor, locked, plan.park)
+
+        updated =
+          case locked |> Ecto.Changeset.change(kind_changes(locked, plan)) |> Repo.update() do
+            {:ok, updated} -> updated
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        {feed, created} =
+          case plan.feed do
+            :create ->
+              case insert_preset_feed(editor, updated, "feed") do
+                {:ok, feed, created} -> {feed, created}
+                {:error, reason} -> Repo.rollback(reason)
+              end
+
+            _keep_or_reuse ->
+              {nil, []}
+          end
+
+        {updated, plan, parked, feed, created}
+      end)
+      |> case do
+        {:ok, {updated, plan, parked, feed, created}} ->
+          broadcast_group_updated(updated)
+
+          if updated.parent_id,
+            do: broadcast_child_group_changed(updated.parent_id, updated, :updated)
+
+          broadcast_shortcut_parents(shortcut_parent_ids(updated.id), updated, :updated)
+          if parked, do: broadcast_alt_descriptions_updated(updated)
+
+          Enum.each(created, fn {parent, group, changes} ->
+            broadcast_group_created(editor, parent, group, changes)
+          end)
+
+          {:ok, %{group: updated, plan: plan, parked: parked, feed: feed}}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  # The old default, text or app, as an alternative only its editors see, with
+  # everything filed under the default description.
+  defp park_default_description(_editor, _group, nil), do: nil
+
+  defp park_default_description(%Profile{} = editor, %Group{} = group, %{name: name}) do
+    position =
+      Repo.one(
+        from(d in GroupAltDescription, where: d.group_id == ^group.id, select: max(d.position))
+      )
+
+    %GroupAltDescription{
+      group_id: group.id,
+      creator_id: editor.id,
+      position: (position || -1) + 1
+    }
+    |> GroupAltDescription.changeset(%{
+      "name" => name,
+      "description" => group.description || "",
+      "description_format" => group.description_format || :markdown,
+      "uses_api" => group.uses_api,
+      "visible_role_keys" => [GroupRole.admin_key()],
+      "for_guests" => false
+    })
+    |> Repo.insert()
+    |> case do
+      {:ok, alt} ->
+        :ok = AppScope.move(Repo, group.id, nil, alt.id)
+        alt
+
+      {:error, reason} ->
+        Repo.rollback(reason)
+    end
+  end
+
+  defp kind_changes(%Group{} = group, plan) do
+    home_page = if plan.home_page, do: [home_page: plan.home_page], else: []
+
+    picture =
+      if plan.picture == :replace,
+        do: [group_picture_url: GroupPresets.picture(plan.key)],
+        else: []
+
+    [preset: plan.preset] ++ home_page ++ description_changes(group, plan) ++ picture
+  end
+
+  defp description_changes(_group, %{description: :app, key: key}) do
+    attrs = GroupPresets.kind_attrs(key)
+
+    [
+      description: attrs["description"],
+      description_format: :html,
+      uses_api: true,
+      description_name: nil,
+      home_alt_description_id: nil
+    ]
+  end
+
+  defp description_changes(_group, %{description: :clear}),
+    do: [description: "", description_format: :markdown, uses_api: false, description_name: nil]
+
+  defp description_changes(_group, %{description: :keep}), do: []
+
+  # The `.feed` Feed reads is the oldest one, whoever sees it.
+  defp feed_child_id(%Group{id: id}) do
+    from(g in Group,
+      where:
+        g.parent_id == ^id and g.name == ^GroupPresets.feed_group_name() and
+          is_nil(g.parent_value_id) and g.is_direct == false,
+      order_by: [asc: g.id],
+      limit: 1,
+      select: g.id
+    )
+    |> Repo.one()
+  end
+
+  # An app of `parent` keeps its files in group `id` (`AppFiles`): its config
+  # names it, under any of its descriptions.
+  defp app_file_group?(%Group{id: parent_id}, id) do
+    key = Integer.to_string(id)
+
+    from(v in Value,
+      where:
+        v.group_id == ^parent_id and v.is_data == true and v.collection == "config" and
+          (fragment("? -> 'files' ->> 'public' = ?", v.data, ^key) or
+             fragment("? -> 'files' ->> 'private' = ?", v.data, ^key))
+    )
+    |> Repo.exists?()
+  end
+
   # A closed group that opens up reaches its readers now, however long it waited.
   defp mark_published(changeset, %Group{} = group) do
     opens? =

@@ -232,7 +232,9 @@ Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju 
 
 ![Prečica na početnoj strani vodi do zbora u mesnoj zajednici](precica) ![Prečica: grupe u kojima si član, i pretraga po nazivu](precica-izbor)
 
-Uredi grupu ima sve ostalo: naziv i sliku, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+Uredi grupu ima sve ostalo: naziv, sliku i vrstu, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+
+Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta donosi svoj opis, stranicu na kojoj se grupa otvara i svoju sliku, ako grupa još ima sliku stare vrste. Ako bi time bila pregažena aplikacija, ili bi aplikacija zauzela mesto teksta, Potok te prvo upozori: stari opis, sa svim podacima svoje aplikacije, prelazi među alternativne opise, koje vide samo oni koji uređuju grupu, i odatle ga vraćaš sa „Postavi kao podrazumevani“. Feed koji postane nešto drugo zadržava podgrupu sa objavama.
 
 ![Uredi grupu: pristup i članstvo, sa izgledom linka van Potoka](uredi-grupu)
 

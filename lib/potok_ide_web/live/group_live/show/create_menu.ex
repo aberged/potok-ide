@@ -315,8 +315,11 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
 
   defp preset(key), do: Enum.find(presets(), &(&1.key == key))
 
-  # What the menu offers under `parent`: the root has a map of its own.
-  defp presets_for(parent) do
+  @doc """
+  What the menu offers under `parent`, in its order: the root has a map of
+  its own. Each is `%{key, icon, mark, title, hint, summary}`.
+  """
+  def presets_for(parent) do
     keys = GroupPresets.keys_for(parent)
 
     Enum.filter(presets(), &(&1.key in keys))
@@ -648,15 +651,18 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   end
 
   attr :icon, :string, required: true
+  attr :id, :string, default: "group-create-menu", doc: "the dialog's id, for its title and close"
+  attr :close, :string, default: "group_create_menu_close", doc: "the event that closes it"
   slot :inner_block, required: true
   slot :subtitle
 
-  defp menu_header(assigns) do
+  @doc "The head of a dialog of this kind: icon, title, an optional line, and a close button."
+  def menu_header(assigns) do
     ~H"""
     <header class="flex items-start gap-3 border-b border-base-300/60 px-5 pt-5 pb-4">
       <.preset_icon name={@icon} />
       <div class="min-w-0 flex-1">
-        <h2 id="group-create-menu-title" class="text-base font-semibold leading-tight">
+        <h2 id={"#{@id}-title"} class="text-base font-semibold leading-tight">
           {render_slot(@inner_block)}
         </h2>
         <p :if={@subtitle != []} class="mt-0.5 truncate text-sm text-base-content/65">
@@ -664,9 +670,9 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         </p>
       </div>
       <.icon_button
-        id="group-create-menu-close"
+        id={"#{@id}-close"}
         type="button"
-        phx-click="group_create_menu_close"
+        phx-click={@close}
         icon="hero-x-mark"
         label={gettext("Close")}
         class="-mr-1"
@@ -678,7 +684,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
   attr :class, :string, default: nil
   slot :inner_block, required: true
 
-  defp menu_footer(assigns) do
+  @doc "The foot of a dialog of this kind, above the home bar on a phone."
+  def menu_footer(assigns) do
     ~H"""
     <footer class={[
       "flex items-center gap-2 border-t border-base-300/60 bg-base-200/40 px-5 pt-3 pb-[calc(0.75rem+var(--app-safe-area-bottom))] sm:pb-3",
@@ -691,7 +698,8 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
 
   attr :name, :string, required: true
 
-  defp preset_icon(assigns) do
+  @doc "A preset's icon in its tinted square."
+  def preset_icon(assigns) do
     ~H"""
     <span class="inline-flex size-9 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
       <.icon name={@name} class="size-5" />

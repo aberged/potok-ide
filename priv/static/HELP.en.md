@@ -226,7 +226,9 @@ A shortcut has an arrow and the word Shortcut, and it shows the group itself: it
 
 ![A shortcut on the home page leads to the assembly inside the local community](precica) ![Shortcut: the groups you are in, and a search by name](precica-izbor)
 
-Edit group has everything else: name and picture, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+Edit group has everything else: name, picture and kind, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+
+You change the group's kind in Edit group → Basics, with Change. The new kind brings its description, the page the group opens on, and its picture if the group still has the old kind's. If that would overwrite an app, or an app would take the place of a text, Potok warns you first: the old description, with all the data of its app, goes among the alternative descriptions, which only those who edit the group see, and you bring it back from there with "Make default". A feed that becomes something else keeps the sub-group with its posts.
 
 ![Edit group: access and membership, with how the link looks outside Potok](uredi-grupu)
 

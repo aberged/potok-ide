@@ -12,7 +12,9 @@ defmodule PotokIde.Social.GroupPresets do
   its description, as with a pasted app, so a new build reaches only the groups
   made after it.
 
-  `Social.create_group_from_preset/4` puts a preset to work.
+  `Social.create_group_from_preset/4` puts a preset to work, and
+  `Social.change_group_preset/4` gives a group that stands another kind
+  (`change_plan/4` says what that does).
   """
 
   alias PotokIde.Social.Group
@@ -31,6 +33,9 @@ defmodule PotokIde.Social.GroupPresets do
   @chosen_by_viewer ~w(name is_public inherits_members inherit_role_keys)
 
   def keys, do: @keys
+
+  @doc "The exact name of the sub-group that holds a feed's posts."
+  def feed_group_name, do: @feed_group
 
   @doc """
   The presets a new group under `parent` can start from. The root has its own
@@ -85,7 +90,7 @@ defmodule PotokIde.Social.GroupPresets do
   `picture: false`.
   """
   def attrs(preset, choices, opts \\ []) when preset in @keys do
-    attrs = Map.merge(preset_attrs(preset), Map.take(choices, @chosen_by_viewer))
+    attrs = Map.merge(kind_attrs(preset), Map.take(choices, @chosen_by_viewer))
 
     if Keyword.get(opts, :picture, true),
       do: Map.put(attrs, "group_picture_url", picture(preset)),
@@ -120,14 +125,152 @@ defmodule PotokIde.Social.GroupPresets do
     }
   end
 
+  @doc """
+  What makes a group of kind `preset` what it is: its description (an app's
+  file for the presets with an app) and the page it opens on.
+  """
+  def kind_attrs(preset) when preset in @keys, do: kind_attrs_of(preset)
+
+  @doc """
+  What giving `group` the kind `key` (a preset, or nil for none) would do,
+  from `facts` the caller read (`Social.group_kind_facts/2`):
+
+  - `:parent`, the group it stands in;
+  - `:alt_names`, the lowercase names of its alternative descriptions, and
+    `:max_alts`, how many it may have;
+  - `:feed_child?`, whether it holds a `.feed`;
+  - `:file_group?`, whether an app of its parent keeps files in it;
+  - `:feed_part?`, whether it is the `.feed` of a feed;
+  - `:can_create_subgroups?`, whether the editor may make a sub-group in it;
+  - `:picture`, its picture as stored.
+
+  A new kind brings its description and the page the group opens on, and its
+  picture when the group still has the old kind's or none. What stood in the
+  description goes to an alternative description seen only by those who edit
+  the group (`park`), with everything its app keeps: always an app, as the
+  next one would read what it kept, and a text only when an app replaces it.
+  "No kind" (nil) only drops the name of the kind. A feed gets its `.feed`,
+  the one it holds if any; a feed that becomes something else keeps it.
+
+  `park_name` names that alternative when the description had no name of its
+  own. The page and `Social.change_group_preset/4` both read this, so what
+  the editor is told is what happens.
+  """
+  def change_plan(%Group{} = group, key, facts, park_name)
+      when (is_nil(key) or key in @keys) and is_binary(park_name) do
+    cond do
+      not kind_here?(group, facts) ->
+        {:error, :kind_not_here}
+
+      key && not allowed?(key, facts.parent) ->
+        {:error, :kind_not_allowed}
+
+      same_kind?(group, key && preset(key)) ->
+        {:error, :same_kind}
+
+      true ->
+        plan = build_plan(group, key, facts, park_name)
+
+        cond do
+          plan.park && length(facts.alt_names) >= facts.max_alts ->
+            {:error, :too_many_alt_descriptions}
+
+          plan.feed == :create and not facts.can_create_subgroups? ->
+            {:error, :feed_not_permitted}
+
+          true ->
+            {:ok, plan}
+        end
+    end
+  end
+
+  @doc """
+  Whether `group` has a kind of its own to change: not the root, a direct
+  conversation or a thread, and not a part of an app (the files an app keeps,
+  the `.feed` of a feed).
+  """
+  def kind_here?(%Group{} = group, facts) do
+    not (group.is_root or group.is_direct or not is_nil(group.parent_value_id) or
+           is_nil(facts.parent) or facts.file_group? or facts.feed_part?)
+  end
+
+  @doc "Whether `group` could have a kind at all, by what it is (`kind_here?/2` asks more)."
+  def kind_possible?(%Group{} = group),
+    do: not (group.is_root or group.is_direct or not is_nil(group.parent_value_id))
+
+  defp build_plan(group, key, facts, park_name) do
+    park = park(group, key)
+
+    %{
+      key: key,
+      preset: key && preset(key),
+      park:
+        park &&
+          %{kind: park, name: unique_name(group.description_name || park_name, facts.alt_names)},
+      description: description_change(key, park),
+      home_page: key && kind_attrs(key)["home_page"],
+      feed: if(key == "feed", do: if(facts.feed_child?, do: :reuse, else: :create)),
+      leaves_feed: key != "feed" and group.preset == :feed and facts.feed_child?,
+      picture: if(key && picture_follows?(group, facts.picture), do: :replace, else: :keep)
+    }
+  end
+
+  # The kind the group shows already. A group that lost its app (or got one)
+  # since is not that kind any more, so picking it again sets it up again.
+  defp same_kind?(%Group{preset: preset}, nil), do: is_nil(preset)
+  defp same_kind?(group, target), do: shown(group) == target
+
+  defp park(_group, nil), do: nil
+
+  defp park(%Group{} = group, key) do
+    written? = String.trim(group.description || "") != ""
+
+    cond do
+      group.uses_api and written? -> :app
+      key in app_keys() and written? -> :text
+      true -> nil
+    end
+  end
+
+  defp description_change(nil, _park), do: :keep
+
+  defp description_change(key, park) do
+    cond do
+      key in app_keys() -> :app
+      park == :app -> :clear
+      true -> :keep
+    end
+  end
+
+  # The picture is the old kind's while it is that very file; a picture of the
+  # group's own, or an older build of the kind's, stays.
+  defp picture_follows?(_group, picture) when picture in [nil, ""], do: true
+
+  defp picture_follows?(%Group{preset: preset}, picture) when preset in @key_atoms,
+    do: picture == picture(Atom.to_string(preset))
+
+  defp picture_follows?(_group, _picture), do: false
+
+  # Names are unique in a group whatever their case, and at most 60 long.
+  defp unique_name(base, taken) do
+    base = base |> String.trim() |> String.slice(0, 56)
+
+    Stream.iterate(1, &(&1 + 1))
+    |> Stream.map(fn
+      1 -> base
+      n -> "#{base} #{n}"
+    end)
+    |> Enum.find(&(String.downcase(&1) not in taken))
+  end
+
   @doc "What `everyone` loses in `.feed`: a group made there by hand would go straight into the feed."
   def taken_from_everyone_in_feed, do: [:create_subgroups]
 
-  defp preset_attrs("chat"), do: plain(:chat)
-  defp preset_attrs("folder"), do: plain(:subgroups)
-  defp preset_attrs("page"), do: plain(:description)
+  defp kind_attrs_of("chat"), do: plain(:chat)
+  defp kind_attrs_of("folder"), do: plain(:subgroups)
+  defp kind_attrs_of("page"), do: plain(:description)
 
-  defp preset_attrs("feed") do
+  defp kind_attrs_of("feed") do
     %{
       "description" => app("feed.html"),
       "description_format" => :html,
@@ -136,7 +279,7 @@ defmodule PotokIde.Social.GroupPresets do
     }
   end
 
-  defp preset_attrs("polls") do
+  defp kind_attrs_of("polls") do
     %{
       "description" => app("glasanje.html"),
       "description_format" => :html,
@@ -148,7 +291,7 @@ defmodule PotokIde.Social.GroupPresets do
   # The Form app keeps its questions and answers in the group's app data, under
   # rules its editors set there (`PotokIde.Social.AppData`). Its file groups come
   # when it first needs them, not with every form.
-  defp preset_attrs("questionnaire") do
+  defp kind_attrs_of("questionnaire") do
     %{
       "description" => app("forme.html"),
       "description_format" => :html,
@@ -160,7 +303,7 @@ defmodule PotokIde.Social.GroupPresets do
   # The Map app shows the sub-groups that have a place (`Group.latitude`) as
   # pins, and opens each one's description over itself. It keeps its starting
   # view in its config; the places are the groups themselves.
-  defp preset_attrs("map") do
+  defp kind_attrs_of("map") do
     %{
       "description" => app("mapa.html"),
       "description_format" => :html,
@@ -171,7 +314,7 @@ defmodule PotokIde.Social.GroupPresets do
 
   # The Ordering app keeps its settings, rounds, orders and drivers in the
   # group's app data, under rules it saves on its editors' first visit.
-  defp preset_attrs("orders") do
+  defp kind_attrs_of("orders") do
     %{
       "description" => app("narucivanje.html"),
       "description_format" => :html,
