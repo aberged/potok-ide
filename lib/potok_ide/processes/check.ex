@@ -63,7 +63,7 @@ defmodule PotokIde.Processes.Check do
   (`PotokIde.Processes.Legacy`), and comes back as it is.
   """
 
-  alias PotokIde.Processes.{Expr, Scope, Triggers, Types}
+  alias PotokIde.Processes.{Expr, GroupFields, Scope, Triggers, Types}
 
   def run(%{"v" => 2, "flows" => flows} = graph, env) when is_map(env) do
     variables = graph["variables"] || []
@@ -75,7 +75,8 @@ defmodule PotokIde.Processes.Check do
            graph
            |> Map.put("entry", Types.json(entry))
            |> Map.put("types", types)
-           |> put_returns(env[:return_entity]),
+           |> put_returns(env[:return_entity])
+           |> put_fields(env[:fields]),
          {:ok, %{"nodes" => nodes} = graph} <- items(graph) do
       scope = Scope.scope(graph)
 
@@ -84,6 +85,7 @@ defmodule PotokIde.Processes.Check do
         trigger: env[:trigger],
         callable: Map.get(env, :callable, %{}),
         receivers: receivers(graph, env),
+        fields: env[:fields],
         returns: (graph["returns"] && Types.attributes(types, graph["returns"])) || []
       }
 
@@ -416,7 +418,65 @@ defmodule PotokIde.Processes.Check do
     end
   end
 
+  # A field of the group a step keeps: one the group declares, added to only
+  # when it holds a number, and a value written out of its type.
+  defp step(%{"action" => "set", "field" => field} = step, path, %{fields: fields} = context)
+       when is_map(fields) do
+    with :ok <- texts(own_texts(step), path, context.scope) do
+      case Map.fetch(fields, field) do
+        :error ->
+          {:error, {path <> ".field", {:unknown_field, field}}}
+
+        {:ok, definition} ->
+          cond do
+            step["op"] == "add" and definition["type"] != "number" ->
+              {:error, {path <> ".op", :not_a_number_field}}
+
+            literal?(step["value"]) and
+                GroupFields.typed_text(definition, step["value"]) == :error ->
+              {:error, {path <> ".value", :invalid_field_value}}
+
+            true ->
+              :ok
+          end
+      end
+    end
+  end
+
   defp step(step, path, %{scope: scope}), do: texts(own_texts(step), path, scope)
+
+  defp literal?(value), do: is_binary(value) and not String.contains?(value, "{{")
+
+  # The fields of the group a graph sets or reads, as the group declares them
+  # (`GroupFields.definitions/1`): what the graph keeps as `fields`, so its
+  # names are known with no look elsewhere. One it names that the group does
+  # not declare stays out, and reading it is an unknown name.
+  defp put_fields(graph, nil), do: graph
+
+  defp put_fields(graph, fields) when is_map(fields),
+    do: Map.put(graph, "fields", Map.take(fields, used_fields(graph)))
+
+  @doc "The names of the group's fields a graph sets or names in its texts."
+  def used_fields(%{"nodes" => nodes} = graph) do
+    set = for %{"action" => "set", "field" => field} <- nodes, is_binary(field), do: field
+
+    read =
+      [nodes, graph["flows"] || [], graph["variables"] || []]
+      |> strings()
+      |> Enum.flat_map(fn text ->
+        Regex.scan(~r/\bgroup\.([\p{L}_][\p{L}\p{Nd}_]*)|\bgroup\["([^"\\]+)"\]/u, text,
+          capture: :all_but_first
+        )
+      end)
+      |> Enum.flat_map(fn names -> Enum.reject(names, &(&1 == "")) end)
+
+    Enum.uniq(set ++ read)
+  end
+
+  defp strings(text) when is_binary(text), do: [text]
+  defp strings(list) when is_list(list), do: Enum.flat_map(list, &strings/1)
+  defp strings(map) when is_map(map), do: map |> Map.values() |> strings()
+  defp strings(_other), do: []
 
   # What the value of a step that sets must give: what the target holds,
   # or an item of it for a step that adds to a list.

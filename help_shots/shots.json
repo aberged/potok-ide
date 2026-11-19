@@ -578,7 +578,7 @@
     "name": "zgrada-polja",
     "as": "ivana",
     "url": "/groups/{groups.building}/processes",
-    "steps": [{ "wait": "#group-fields" }, { "show": "#process-app-group" }, { "pause": 600 }]
+    "steps": [{ "wait": "#group-fields" }, { "show": "#group-fields" }, { "pause": 600 }]
   },
   {
     "name": "zgrada-pokreni",

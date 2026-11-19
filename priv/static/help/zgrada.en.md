@@ -130,7 +130,7 @@ To know how many faults there were, let the fault report count them, in a field 
 3. If you like, add " It was fault number " to the message "It is fixed, thanks for the report." and tap `group.kvarova` under the field.
 4. Tap **Save**.
 
-Every report adds one, and how many there were you see at the bottom of the Processes tab, under **Fields of the group**. A process on a schedule can read the same field, say for a monthly report in the building's chat.
+Every report adds one, and how many there were you see at the bottom of the Processes tab, under **Fields of the group**, where the field "kvarova" stands as a **Number**: the drawing brought it along, as its step adds to it. A process on a schedule can read the same field, say for a monthly report in the building's chat.
 
 ![The group's fields on the Processes tab](zgrada-polja)
 

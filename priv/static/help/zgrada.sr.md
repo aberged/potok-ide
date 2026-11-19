@@ -131,7 +131,7 @@ Da znaš koliko je kvarova bilo, neka ih prijava kvara broji, u polju grupe koje
 3. Ako želiš, poruci „Popravljeno je, hvala na prijavi.“ dodaj „ Bio je to kvar broj “ i dodirni `group.kvarova` ispod polja.
 4. Dodirni **Sačuvaj**.
 
-Svaka prijava doda jedan, a koliko ih je bilo vidiš na dnu kartice Procesi, pod **Polja grupe**. Isto polje može da pročita i proces po rasporedu, recimo za mesečni izveštaj u razgovoru zgrade.
+Svaka prijava doda jedan, a koliko ih je bilo vidiš na dnu kartice Procesi, pod **Polja grupe**, gde polje „kvarova“ stoji kao **Broj**: dodao ga je crtež, jer mu korak dodaje. Isto polje može da pročita i proces po rasporedu, recimo za mesečni izveštaj u razgovoru zgrade.
 
 ![Polja grupe na kartici Procesi](zgrada-polja)
 

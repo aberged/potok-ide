@@ -100,6 +100,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           fields: DrawnProcesses.fields_for(group, trigger, alt_id, collection),
           callable: DrawnProcesses.callable(group),
           group_fields: GroupFields.names(group),
+          group_field_types: GroupFields.definitions(group),
           signals: DrawnProcesses.signals(group),
           related_hearers: DrawnProcesses.related_hearers(group),
           entities: GroupEntities.list(group),
@@ -164,6 +165,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
             ),
           callable: DrawnProcesses.callable(group),
           group_fields: if(manage?, do: GroupFields.names(group), else: []),
+          group_field_types: if(manage?, do: GroupFields.definitions(group), else: %{}),
           signals: if(manage?, do: DrawnProcesses.signals(group), else: %{}),
           related_hearers: if(manage?, do: DrawnProcesses.related_hearers(group), else: %{}),
           entities: if(manage?, do: GroupEntities.list(group), else: []),
@@ -209,6 +211,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           fields: [],
           callable: [],
           group_fields: [],
+          group_field_types: %{},
           signals: %{},
           entities: [],
           entry_entity: nil,
@@ -1645,11 +1648,32 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
       return_entity: if(editor.trigger == "process", do: editor[:return_entity]),
       entities: GroupEntities.definitions(editor[:entities] || []),
       callable: Map.new(editor.callable, &{&1.id, Map.take(&1, [:attributes, :types, :returns])}),
-      signals: editor[:signal_entities] || %{}
+      signals: editor[:signal_entities] || %{},
+      fields: field_types(graph, editor)
     })
   end
 
   defp said(graph, _looking), do: {:ok, graph}
+
+  # The group's fields as a save would know them: those declared, and those
+  # the drawing sets that a save declares (`GroupFields.declare_missing/2`).
+  defp field_types(graph, editor) do
+    declared = editor[:group_field_types] || %{}
+
+    for %{"action" => "set", "field" => field} = node <- graph["nodes"] || [],
+        is_binary(field) and GroupFields.name?(field) and not Map.has_key?(declared, field),
+        reduce: declared do
+      acc ->
+        type = if node["op"] == "add", do: "number", else: "text"
+
+        Map.update(
+          acc,
+          field,
+          %{"type" => type},
+          &if(type == "number", do: %{"type" => type}, else: &1)
+        )
+    end
+  end
 
   # The trigger's settings as a save would keep them, as far as they are set.
   defp trigger_config(editor) do
@@ -1726,7 +1750,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     %{
       entry: entry,
       results: results,
-      group: for(name <- group_field_names(editor), do: {Scope.path("group", name), :any}),
+      group:
+        for(
+          name <- group_field_names(editor),
+          do: {Scope.path("group", name), field_type(editor, name)}
+        ),
       variables: editor.graph["variables"] || []
     }
   end
@@ -1865,6 +1893,14 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
       _unknown ->
         []
+    end
+  end
+
+  # A field's type as the group declares it, or any for one not declared yet.
+  defp field_type(editor, name) do
+    case Map.get(editor[:group_field_types] || %{}, name) do
+      nil -> :any
+      definition -> PotokIde.Processes.Types.of(definition)
     end
   end
 
@@ -2349,6 +2385,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
 
   defp reason_text(:signal_entity, _path),
     do: gettext("Those who wait for this signal expect it with another entity.")
+
+  defp reason_text({:unknown_field, name}, _path),
+    do: gettext("The group has no field %{name}, and no room for another.", name: name)
+
+  defp reason_text(:not_a_number_field, _path),
+    do: gettext("Only a field that holds a number is added to.")
+
+  defp reason_text(:invalid_field_value, _path),
+    do: gettext("The value is not of the field's type.")
+
+  defp reason_text(:related_same_subject, _path),
+    do: gettext("A wait that hears the groups around takes no same subject.")
 
   defp reason_text(:taken, _path),
     do: gettext("A step or another variable has that name already.")

@@ -1424,9 +1424,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                 phx-debounce="300"
               />
               <.fields editor={@editor} target="value" />
+              <p
+                :if={group_field_type(@editor, @node["field"])}
+                id="process-group-field-type"
+                class="text-xs text-base-content/70"
+              >
+                {gettext("Type of the field: %{type}",
+                  type: group_field_type(@editor, @node["field"])
+                )}
+              </p>
               <p class="text-xs text-base-content/60">
                 {gettext(
-                  "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab.",
+                  "Every process of the group reads it as %{field}, and the app's editors see it on the Processes tab. A field the group does not have yet comes with this drawing: a number when the step adds to it, a text otherwise.",
                   field: "{{#{PotokIde.Processes.Scope.path("group", @node["field"] || "")}}}"
                 )}
               </p>
@@ -2053,6 +2062,20 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   end
 
   # The same for an attribute of the entity a signal carries.
+  # The type of a field the group declares, as the entity editor names it.
+  defp group_field_type(editor, name) when is_binary(name) do
+    case Map.get(editor[:group_field_types] || %{}, name) do
+      %{"type" => type} ->
+        PotokIdeWeb.GroupLive.Show.ProcessEntities.type_options([])
+        |> Enum.find_value(type, fn {label, value} -> if value == type, do: label end)
+
+      nil ->
+        nil
+    end
+  end
+
+  defp group_field_type(_editor, _name), do: nil
+
   # How many processes of the groups above and below hear the signal.
   defp related_hearers(editor, name) when is_binary(name),
     do: Map.get(editor[:related_hearers] || %{}, name, 0)

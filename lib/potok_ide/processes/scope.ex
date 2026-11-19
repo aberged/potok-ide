@@ -16,7 +16,9 @@ defmodule PotokIde.Processes.Scope do
   - the id of a loop is where it stands (`petlja.index`, from 1, and
     `petlja.count`), and the name of its item is the item on hand
     (`stavka`, `stavka.naziv`), of the type the loop keeps as `of`;
-  - `group` holds the fields of the group (`group.kvarova`);
+  - `group` holds the fields of the group (`group.kvarova`), each of the
+    type the graph keeps for it as `fields`; a graph saved before fields had
+    types knows none of them and reads any;
   - each variable of the graph is its own name (`ukupno`, `prijava.sprat`).
 
   A graph is self-contained: with the `entry` and `types` it was saved with
@@ -45,8 +47,14 @@ defmodule PotokIde.Processes.Scope do
     |> Enum.flat_map(&result(&1, entry, entities))
     |> Kernel.++(variables)
     |> Map.new()
-    |> Map.put("group", {:record, %{}, true})
+    |> Map.put("group", group_fields(graph))
   end
+
+  defp group_fields(%{"fields" => fields}) when is_map(fields),
+    do:
+      {:record, Map.new(fields, fn {name, definition} -> {name, Types.of(definition)} end), false}
+
+  defp group_fields(_graph), do: {:record, %{}, true}
 
   @doc """
   What `Expr.check/2` checks an expression of the graph against, with the

@@ -358,8 +358,61 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
       {:ok, _field} ->
         {:noreply, socket |> put_flash(:info, gettext("The field is deleted.")) |> load()}
 
+      {:error, {:in_use, names}} ->
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("Processes use this field: %{names}.", names: Enum.join(names, ", "))
+         )}
+
       _refused ->
         {:noreply, put_flash(socket, :error, gettext("Could not delete the field."))}
+    end
+  end
+
+  def handle_event("processes_declare_field", %{"field" => attrs}, socket) when is_map(attrs) do
+    %{group: group, access: access} = socket.assigns
+
+    case GroupFields.declare(group, access, attrs) do
+      {:ok, _field} ->
+        {:noreply, socket |> put_flash(:info, gettext("The field is added.")) |> load()}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, field_error(reason))}
+    end
+  end
+
+  def handle_event("processes_retype_field", %{"field_id" => id} = params, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    result =
+      case Integer.parse(to_string(id)) do
+        {id, ""} -> GroupFields.retype(group, access, id, %{"type" => params["type"]})
+        _invalid -> {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _field} ->
+        {:noreply, socket |> put_flash(:info, gettext("The field's type is changed.")) |> load()}
+
+      {:error, reason} ->
+        {:noreply, socket |> put_flash(:error, field_error(reason)) |> load()}
+    end
+  end
+
+  def handle_event("processes_clear_field", %{"id" => id}, socket) do
+    %{group: group, access: access} = socket.assigns
+
+    result =
+      case Integer.parse(to_string(id)) do
+        {id, ""} -> GroupFields.clear(group, access, id)
+        _invalid -> {:error, :not_found}
+      end
+
+    case result do
+      {:ok, _field} -> {:noreply, load(socket)}
+      _refused -> {:noreply, put_flash(socket, :error, gettext("Could not empty the field."))}
     end
   end
 
@@ -534,6 +587,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesState do
   defp start_error(:not_permitted), do: gettext("You may not start this process.")
   defp start_error({:rate_limited, ms}), do: PotokIdeWeb.RateLimited.message(ms)
   defp start_error(_reason), do: gettext("That did not work.")
+
+  defp field_error(:invalid_name),
+    do: gettext("A field's name is one word of letters, digits and _, up to 40.")
+
+  defp field_error(:taken), do: gettext("The group already has a field of that name.")
+  defp field_error(:invalid_options), do: gettext("A choice needs from 1 to 30 options.")
+  defp field_error(:too_many_fields), do: gettext("A group has at most 50 fields.")
+
+  defp field_error(:value_does_not_fit),
+    do: gettext("What the field holds is not of that type. Empty it first.")
+
+  defp field_error(_reason), do: gettext("Could not change the field.")
 
   defp instance_call(socket, id, fun) do
     case Integer.parse(to_string(id)) do

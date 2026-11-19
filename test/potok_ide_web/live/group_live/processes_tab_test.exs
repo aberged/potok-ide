@@ -236,7 +236,31 @@ defmodule PotokIdeWeb.GroupLive.ProcessesTabTest do
     assert has_element?(lv, "#group-field-#{field.id}", "3")
 
     lv |> element("#group-field-#{field.id}-delete") |> render_click()
-    refute has_element?(lv, "#group-fields")
+    refute has_element?(lv, "#group-field-#{field.id}")
+  end
+
+  test "the app's editors declare a field with its type, retype and empty it", ctx do
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+
+    lv
+    |> form("#group-field-form", %{"field" => %{"name" => "kvarova", "type" => "number"}})
+    |> render_submit()
+
+    field = Repo.get_by!(PotokIde.Processes.GroupField, group_id: ctx.group.id, name: "kvarova")
+    assert field.type == "number"
+    assert has_element?(lv, "#group-field-#{field.id}-retype option[selected][value=number]")
+
+    field |> Ecto.Changeset.change(value: "3") |> Repo.update!()
+
+    lv
+    |> form("#group-field-#{field.id}-retype", %{"type" => "text"})
+    |> render_change()
+
+    assert Repo.reload!(field).type == "text"
+
+    {:ok, lv, _html} = live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes")
+    lv |> element("#group-field-#{field.id}-clear") |> render_click()
+    assert Repo.reload!(field).value == ""
   end
 
   describe "entities" do

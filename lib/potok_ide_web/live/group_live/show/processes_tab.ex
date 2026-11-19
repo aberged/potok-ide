@@ -135,13 +135,16 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
           </ul>
         </section>
 
-        <section :if={@fields != []} id="group-fields" class="mb-6">
+        <section :if={@fields != [] or @manage?} id="group-fields" class="mb-6">
           <h2 class="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold uppercase tracking-wide text-base-content/55">
             <.icon name="hero-pencil-square" class="size-3.5" />
             {gettext("Fields of the group")}
           </h2>
           <p class="mb-2 px-1 text-xs text-base-content/60">
-            {gettext("What the processes keep for each other. Each reads them as {{group.name}}.")}
+            {gettext(
+              "What the processes keep for each other, each of its type. They read them as %{example}.",
+              example: "group.kvarova"
+            )}
           </p>
           <ul class="divide-y divide-base-300/60 overflow-hidden rounded-3xl border border-base-300/70 bg-base-100/80 shadow-sm">
             <li
@@ -154,6 +157,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
                   <code class="shrink-0 rounded-full bg-lime-500/10 px-2 py-0.5 font-mono text-[11px] text-lime-700 dark:text-lime-300">
                     {field.name}
                   </code>
+                  <span
+                    :if={!@manage?}
+                    id={"group-field-#{field.id}-type"}
+                    class="shrink-0 text-xs text-base-content/60"
+                  >
+                    {field_type_label(field.type)}
+                  </span>
                   <span class="truncate font-semibold">{field.value}</span>
                 </p>
                 <p class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-base-content/55">
@@ -165,6 +175,36 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
                   />
                 </p>
               </div>
+              <form
+                :if={@manage?}
+                id={"group-field-#{field.id}-retype"}
+                phx-change="processes_retype_field"
+                class="shrink-0"
+              >
+                <input type="hidden" name="field_id" value={field.id} />
+                <select
+                  name="type"
+                  aria-label={gettext("Type of the field")}
+                  class="select select-xs w-28"
+                >
+                  <option
+                    :for={type <- PotokIde.Processes.GroupFields.types()}
+                    value={type}
+                    selected={type == field.type}
+                  >
+                    {field_type_label(type)}
+                  </option>
+                </select>
+              </form>
+              <.icon_button
+                :if={@manage? and field.value != ""}
+                id={"group-field-#{field.id}-clear"}
+                type="button"
+                phx-click="processes_clear_field"
+                phx-value-id={field.id}
+                icon="hero-backspace"
+                label={gettext("Empty the field")}
+              />
               <.icon_button
                 id={"group-field-#{field.id}-delete"}
                 type="button"
@@ -176,6 +216,52 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
               />
             </li>
           </ul>
+          <.form
+            :if={@manage?}
+            for={%{}}
+            as={:field}
+            id="group-field-form"
+            phx-submit="processes_declare_field"
+            class="mt-2 flex flex-wrap items-end gap-2 px-1"
+          >
+            <div class="min-w-32 flex-1">
+              <.input
+                type="text"
+                id="group-field-name"
+                name="field[name]"
+                value=""
+                label={gettext("New field")}
+                placeholder={gettext("kvarova")}
+                maxlength="40"
+              />
+            </div>
+            <div>
+              <.input
+                type="select"
+                id="group-field-type"
+                name="field[type]"
+                value="text"
+                label={gettext("Type")}
+                options={
+                  Enum.map(PotokIde.Processes.GroupFields.types(), &{field_type_label(&1), &1})
+                }
+              />
+            </div>
+            <div class="min-w-32 flex-1">
+              <.input
+                type="text"
+                id="group-field-options"
+                name="field[options]"
+                value=""
+                label={gettext("Choices, for a choice")}
+                placeholder={gettext("open, closed")}
+              />
+            </div>
+            <.button id="group-field-declare" type="submit" class="mb-2">
+              <.icon name="hero-plus" class="size-4" />
+              {gettext("Add")}
+            </.button>
+          </.form>
         </section>
 
         <ProcessEntities.section :if={@can_draw?} entities={@entities} />
@@ -751,5 +837,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessesTab do
   @doc "The permissions a process lacks, in words."
   def missing_permissions(missing) do
     Enum.map_join(missing, ", ", &RolesTab.permission_label(String.to_existing_atom(&1)))
+  end
+
+  # A field's type as the entity editor names it.
+  defp field_type_label(type) do
+    PotokIdeWeb.GroupLive.Show.ProcessEntities.type_options([])
+    |> Enum.find_value(type, fn {label, value} -> if value == type, do: label end)
   end
 end

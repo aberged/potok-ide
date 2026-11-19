@@ -606,7 +606,13 @@ defmodule PotokIde.Processes.ExpressionsTest do
     end
 
     test "counts with the fields of the group, as numbers", ctx do
-      Repo.insert!(%GroupField{group_id: ctx.group.id, name: "kvarova", value: "9"})
+      Repo.insert!(%GroupField{
+        group_id: ctx.group.id,
+        name: "kvarova",
+        type: "number",
+        value: "9"
+      })
+
       Repo.insert!(%GroupField{group_id: ctx.group.id, name: "broj-zgrade", value: "4"})
 
       row =
@@ -632,8 +638,17 @@ defmodule PotokIde.Processes.ExpressionsTest do
 
       assert error == %{"element" => "poruka", "reason" => "division_by_zero"}
 
+      field =
+        Repo.insert!(%GroupField{
+          group_id: ctx.group.id,
+          name: "kvarova",
+          type: "number",
+          value: ""
+        })
+
       row = draw!(ctx, chain([message("poruka", "{{group.kvarova + 1}}")]))
-      Repo.insert!(%GroupField{group_id: ctx.group.id, name: "kvarova", value: "mnogo"})
+      # What no step of a process could write there.
+      field |> Ecto.Changeset.change(value: "mnogo") |> Repo.update!()
 
       assert %ValueProcess{status: :failed, error: %{"reason" => "not_a_number"}} =
                start!(ctx, row, "lift")

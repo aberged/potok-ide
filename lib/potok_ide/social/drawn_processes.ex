@@ -47,6 +47,7 @@ defmodule PotokIde.Social.DrawnProcesses do
     Engine,
     Graph,
     GroupEntities,
+    GroupFields,
     Reach,
     Scheduler,
     Triggers,
@@ -193,6 +194,7 @@ defmodule PotokIde.Social.DrawnProcesses do
          {:ok, config} <- trigger_config(trigger, attrs["trigger_config"]),
          {:ok, entity} <- entry_entity(group, trigger, attrs["entry_entity_id"]),
          {:ok, returns} <- return_entity(group, trigger, attrs["return_entity_id"]),
+         :ok <- GroupFields.declare_missing(group, graph),
          {:ok, graph} <- checked(graph, trigger, config, group, {entity, returns}, nil),
          :ok <- related_here(group, config, graph),
          :ok <- on_collection(group, trigger, alt_id, collection) do
@@ -373,7 +375,8 @@ defmodule PotokIde.Social.DrawnProcesses do
       return_entity: returns,
       entities: GroupEntities.definitions(group),
       callable: contracts(graph, group),
-      signals: signal_entities(group, except)
+      signals: signal_entities(group, except),
+      fields: GroupFields.definitions(group)
     }
 
     case Check.run(graph, env) do
@@ -517,6 +520,8 @@ defmodule PotokIde.Social.DrawnProcesses do
           else
             row.return_entity_id
           end
+
+        :ok = GroupFields.declare_missing(group, graph)
 
         graph =
           case checked(graph, row.trigger, config, group, {entity, returns}, row.id) do
