@@ -45,6 +45,7 @@ import {
   openPendingNativeShare,
 } from "./share_inbox"
 import { Uploaders } from "./uploaders"
+import { installUploadStripping, stripForUpload } from "./upload_stripping"
 import { ValueSheet } from "./value_sheet"
 
 const HeaderDrawer = {
@@ -1115,7 +1116,10 @@ const GroupAppFrame = {
       return
     }
 
-    const named = file instanceof File ? file : new File([file], "file", {type: file.type})
+    // Stripped before its size is announced, which the upload must match.
+    const named = await stripForUpload(
+      file instanceof File ? file : new File([file], "file", {type: file.type})
+    )
     let prepared
 
     try {
@@ -2132,6 +2136,7 @@ window.addEventListener("DOMContentLoaded", () => {
 })
 
 // connect if there are any LiveViews on the page
+installUploadStripping()
 liveSocket.connect()
 
 // expose liveSocket on window for web console debug logs and latency simulation:

@@ -292,7 +292,10 @@ defmodule PotokIdeWeb.PageHTML do
         id: "privacy",
         icon: "hero-shield-check",
         title: gettext("Privacy"),
-        text: gettext("No ads or tracking, and you delete your account whenever you like.")
+        text:
+          gettext(
+            "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like."
+          )
       }
     ]
   end

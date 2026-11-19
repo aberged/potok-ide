@@ -377,7 +377,7 @@ msgstr ""
 msgid "B starts on the word “fault”"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:461
+#: lib/potok_ide_web/controllers/page_html.ex:464
 #, elixir-autogen, elixir-format
 msgid "Back to the help"
 msgstr ""
@@ -518,7 +518,7 @@ msgstr ""
 msgid "From code to the frame"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:488
+#: lib/potok_ide_web/controllers/page_html.ex:491
 #, elixir-autogen, elixir-format
 msgid "From the same series"
 msgstr ""
@@ -587,7 +587,7 @@ msgstr ""
 msgid "House council"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:466
+#: lib/potok_ide_web/controllers/page_html.ex:469
 #, elixir-autogen, elixir-format
 msgid "How Potok works inside"
 msgstr ""
@@ -911,7 +911,7 @@ msgstr ""
 msgid "Reacts to the group"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:500
+#: lib/potok_ide_web/controllers/page_html.ex:503
 #, elixir-autogen, elixir-format
 msgid "Read"
 msgstr ""
@@ -1242,7 +1242,7 @@ msgstr ""
 msgid "Where each one stops"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:475
+#: lib/potok_ide_web/controllers/page_html.ex:478
 #, elixir-autogen, elixir-format
 msgid "Where this is in the code:"
 msgstr ""

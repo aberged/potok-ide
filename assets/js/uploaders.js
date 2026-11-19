@@ -3,7 +3,9 @@
 // the file straight to the bucket, so large files never pass through the app.
 //
 // The URL is signed with `content-type` and `content-length`: the type must be
-// sent exactly as signed, and the browser sets the length from the file.
+// sent exactly as signed, and the browser sets the length from the file. A
+// photo's metadata is cut before the entry is made (upload_stripping.js), so
+// the length signed is already the stripped one.
 
 const S3 = (entries, onViewError) => {
   entries.forEach(entry => {

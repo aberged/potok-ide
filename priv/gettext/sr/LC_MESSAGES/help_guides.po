@@ -377,7 +377,7 @@ msgstr "Najviše %{run} koraka zaredom bez čekanja, %{steps} za ceo život i %{
 msgid "B starts on the word “fault”"
 msgstr "B se pali na reč „kvar“"
 
-#: lib/potok_ide_web/controllers/page_html.ex:461
+#: lib/potok_ide_web/controllers/page_html.ex:464
 #, elixir-autogen, elixir-format
 msgid "Back to the help"
 msgstr "Nazad na pomoć"
@@ -518,7 +518,7 @@ msgstr "Iz procesa niko ne saznaje ko je napisao anonimnu vrednost."
 msgid "From code to the frame"
 msgstr "Od koda do okvira"
 
-#: lib/potok_ide_web/controllers/page_html.ex:488
+#: lib/potok_ide_web/controllers/page_html.ex:491
 #, elixir-autogen, elixir-format
 msgid "From the same series"
 msgstr "Iz iste serije"
@@ -587,7 +587,7 @@ msgstr "Ima?"
 msgid "House council"
 msgstr "Kućni savet"
 
-#: lib/potok_ide_web/controllers/page_html.ex:466
+#: lib/potok_ide_web/controllers/page_html.ex:469
 #, elixir-autogen, elixir-format
 msgid "How Potok works inside"
 msgstr "Kako Potok radi iznutra"
@@ -911,7 +911,7 @@ msgstr "Reakcije, deljenje, link"
 msgid "Reacts to the group"
 msgstr "Reaguje na grupu"
 
-#: lib/potok_ide_web/controllers/page_html.ex:500
+#: lib/potok_ide_web/controllers/page_html.ex:503
 #, elixir-autogen, elixir-format
 msgid "Read"
 msgstr "Pročitaj"
@@ -1242,7 +1242,7 @@ msgstr "Gde Mleko drži podatke"
 msgid "Where each one stops"
 msgstr "Gde koji staje"
 
-#: lib/potok_ide_web/controllers/page_html.ex:475
+#: lib/potok_ide_web/controllers/page_html.ex:478
 #, elixir-autogen, elixir-format
 msgid "Where this is in the code:"
 msgstr "Izvori u kodu:"

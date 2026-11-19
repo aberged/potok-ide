@@ -330,7 +330,7 @@ Za pin biraš jednu od 33 ikone ili sliku grupe, a u uglu pina stoji vrsta grupe
 
 ## Fajlovi i tagovi {:#fajlovi-i-tagovi}
 
-Kartica Fajlovi skuplja sve fajlove iz poruka grupe, kao spisak ili po fasciklama podgrupa, a sa svakog fajla se ide na poruku u kojoj je poslat. Fajl tražiš po imenu, a dugme **Vrsta** ostavlja samo slike, video, zvuk, dokumente, tabele, arhive ili ostale fajlove. Izbor između **Lista** i **Folderi** Potok pamti na tom uređaju. Fajlove preuzimaju samo članovi, osim slika u opisu grupe i fajlova iz otvorenog razgovora.
+Kartica Fajlovi skuplja sve fajlove iz poruka grupe, kao spisak ili po fasciklama podgrupa, a sa svakog fajla se ide na poruku u kojoj je poslat. Fajl tražiš po imenu, a dugme **Vrsta** ostavlja samo slike, video, zvuk, dokumente, tabele, arhive ili ostale fajlove. Izbor između **Lista** i **Folderi** Potok pamti na tom uređaju. Fajlove preuzimaju samo članovi, osim slika u opisu grupe i fajlova iz otvorenog razgovora. Fotografija u formatu JPEG, PNG ili WebP pre slanja gubi podatke o tome gde je i čime snimljena, a slika ostaje ista; HEIC i video idu kakvi jesu.
 
 Tag stavljaš na grupe, profile, događaje, poruke i fajlove, dugmetom #. Javni tag vide svi koji vide i stvar na kojoj je, a privatni, sa katancem, samo ti. Jedna stvar nosi do 10 javnih i 10 privatnih tagova. Na stranici Tagovi biraš jedan ili više tagova i vidiš sve što ih nosi. Dok kucaš ime taga, predlozi se sužavaju od trećeg slova.
 

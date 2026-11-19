@@ -16,7 +16,7 @@ msgstr ""
 msgid "(none)"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:637
+#: lib/potok_ide_web/live/account_live/settings.ex:636
 #, elixir-autogen, elixir-format
 msgid "A link to confirm your email change has been sent to the new address."
 msgstr ""
@@ -160,12 +160,12 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:458
+#: lib/potok_ide_web/live/account_live/settings.ex:456
 #, elixir-autogen, elixir-format
 msgid "Email change link is invalid or it has expired."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:455
+#: lib/potok_ide_web/live/account_live/settings.ex:453
 #, elixir-autogen, elixir-format
 msgid "Email changed successfully."
 msgstr ""
@@ -628,7 +628,7 @@ msgid "the mailbox page"
 msgstr ""
 
 #: lib/potok_ide_web/components/layouts/root.html.heex:186
-#: lib/potok_ide_web/live/account_live/settings.ex:431
+#: lib/potok_ide_web/live/account_live/settings.ex:429
 #: lib/potok_ide_web/live/group_live/show/calendar_tab.ex:1327
 #: lib/potok_ide_web/live/group_live/show/create_group_tab.ex:171
 #: lib/potok_ide_web/live/group_live/show/edit_group_tab.ex:942
@@ -1496,7 +1496,7 @@ msgstr ""
 msgid "Load more created requests"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:681
+#: lib/potok_ide_web/live/account_live/settings.ex:680
 #, elixir-autogen, elixir-format
 msgid "Never"
 msgstr ""
@@ -1517,13 +1517,13 @@ msgstr ""
 msgid "No data values to delete."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:669
+#: lib/potok_ide_web/live/account_live/settings.ex:668
 #, elixir-autogen, elixir-format
 msgid "No identifier"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:624
-#: lib/potok_ide_web/live/account_live/settings.ex:648
+#: lib/potok_ide_web/live/account_live/settings.ex:623
+#: lib/potok_ide_web/live/account_live/settings.ex:647
 #, elixir-autogen, elixir-format
 msgid "We couldn't send the confirmation email right now. Please try again later."
 msgstr ""
@@ -1543,8 +1543,8 @@ msgstr ""
 msgid "No sub-groups match your search."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:674
-#: lib/potok_ide_web/live/account_live/settings.ex:679
+#: lib/potok_ide_web/live/account_live/settings.ex:673
+#: lib/potok_ide_web/live/account_live/settings.ex:678
 #: lib/potok_ide_web/live/group_live/show/roles_tab.ex:332
 #, elixir-autogen, elixir-format
 msgid "Not set"
@@ -1609,7 +1609,7 @@ msgstr ""
 msgid "Stored Push Subscriptions"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:663
+#: lib/potok_ide_web/live/account_live/settings.ex:662
 #, elixir-autogen, elixir-format
 msgid "Unknown"
 msgstr ""
@@ -3936,7 +3936,7 @@ msgstr ""
 msgid "Privacy policy"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:111
+#: lib/potok_ide_web/emails/account_emails.ex:112
 #, elixir-autogen, elixir-format
 msgid "Potok is where groups talk, exchange values, decide and remember what they decided."
 msgstr ""
@@ -3959,57 +3959,57 @@ msgstr ""
 msgid "What is Potok?"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:89
+#: lib/potok_ide_web/emails/account_emails.ex:90
 #, elixir-autogen, elixir-format
 msgid "@%{username} invites you to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:81
+#: lib/potok_ide_web/emails/account_emails.ex:82
 #, elixir-autogen, elixir-format
 msgid "@%{username} invites you to “%{group}” on Potok"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:196
+#: lib/potok_ide_web/emails/account_emails.ex:197
 #, elixir-autogen, elixir-format
 msgid "A request came in to move your Potok account from %{old_email} to this address, %{new_email}."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:125
+#: lib/potok_ide_web/emails/account_emails.ex:126
 #, elixir-autogen, elixir-format
 msgid "Accept the invitation"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:192
+#: lib/potok_ide_web/emails/account_emails.ex:193
 #, elixir-autogen, elixir-format
 msgid "Address change"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:115
+#: lib/potok_ide_web/emails/account_emails.ex:116
 #, elixir-autogen, elixir-format
 msgid "An account for %{email} is already set up. You don't need a password: the button takes you straight in."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:205
+#: lib/potok_ide_web/emails/account_emails.ex:206
 #, elixir-autogen, elixir-format
 msgid "Confirm address"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:193
+#: lib/potok_ide_web/emails/account_emails.ex:194
 #, elixir-autogen, elixir-format
 msgid "Confirm your new address"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:219
+#: lib/potok_ide_web/emails/account_emails.ex:220
 #, elixir-autogen, elixir-format
 msgid "Confirm your new email address for Potok"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:26
+#: lib/potok_ide_web/emails/account_emails.ex:27
 #, elixir-autogen, elixir-format
 msgid "Here's your sign-in link"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:97
+#: lib/potok_ide_web/emails/account_emails.ex:98
 #, elixir-autogen, elixir-format
 msgid "If it expires, enter %{email} on %{link} and a new one will arrive."
 msgstr ""
@@ -4019,27 +4019,27 @@ msgstr ""
 msgid "If the button doesn't work, copy this address into your browser:"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:36
+#: lib/potok_ide_web/emails/account_emails.ex:37
 #, elixir-autogen, elixir-format
 msgid "If this wasn't you, just ignore this email: no one gets into your account without this link."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:213
+#: lib/potok_ide_web/emails/account_emails.ex:214
 #, elixir-autogen, elixir-format
 msgid "If you don't know about this change, ignore this email: the account stays on the old address."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:107
+#: lib/potok_ide_web/emails/account_emails.ex:108
 #, elixir-autogen, elixir-format
 msgid "Invitation"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:137
+#: lib/potok_ide_web/emails/account_emails.ex:138
 #, elixir-autogen, elixir-format
 msgid "Not expecting this invitation? Just ignore this email: nothing happens until someone clicks the link."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:121
+#: lib/potok_ide_web/emails/account_emails.ex:122
 #, elixir-autogen, elixir-format
 msgid "Once you create your profile, the invitation to “%{group}” will be waiting among your invitations."
 msgstr ""
@@ -4050,12 +4050,12 @@ msgstr ""
 msgid "Open this link in the app"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:93
+#: lib/potok_ide_web/emails/account_emails.ex:94
 #, elixir-autogen, elixir-format
 msgid "Potok is waiting for you"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:27
+#: lib/potok_ide_web/emails/account_emails.ex:28
 #, elixir-autogen, elixir-format
 msgid "Press the button and you're in, no password needed."
 msgstr ""
@@ -4065,37 +4065,37 @@ msgstr ""
 msgid "Sent to %{email}."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:28
+#: lib/potok_ide_web/emails/account_emails.ex:29
 #, elixir-autogen, elixir-format
 msgid "Sign in to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:25
+#: lib/potok_ide_web/emails/account_emails.ex:26
 #, elixir-autogen, elixir-format
 msgid "Sign-in"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:202
+#: lib/potok_ide_web/emails/account_emails.ex:203
 #, elixir-autogen, elixir-format
 msgid "The link opens your account settings; if needed, Potok will ask you to sign in first."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:127
-#: lib/potok_ide_web/emails/account_emails.ex:207
+#: lib/potok_ide_web/emails/account_emails.ex:128
+#: lib/potok_ide_web/emails/account_emails.ex:208
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} day, and only once."
 msgid_plural "The link works for %{count} days, and only once."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:30
+#: lib/potok_ide_web/emails/account_emails.ex:31
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} minute, and only once."
 msgid_plural "The link works for %{count} minutes, and only once."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:194
+#: lib/potok_ide_web/emails/account_emails.ex:195
 #, elixir-autogen, elixir-format
 msgid "Until you confirm, your account keeps the old address."
 msgstr ""
@@ -4106,22 +4106,22 @@ msgstr ""
 msgid "Using the Potok Android app?"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:42
+#: lib/potok_ide_web/emails/account_emails.ex:43
 #, elixir-autogen, elixir-format
 msgid "Your Potok sign-in link"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:109
+#: lib/potok_ide_web/emails/account_emails.ex:110
 #, elixir-autogen, elixir-format
 msgid "Your account is ready, and you don't need a password."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:93
+#: lib/potok_ide_web/emails/account_emails.ex:94
 #, elixir-autogen, elixir-format
 msgid "Your invitation to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:135
+#: lib/potok_ide_web/emails/account_emails.ex:136
 #, elixir-autogen, elixir-format
 msgid "the sign-in page"
 msgstr ""
@@ -4313,39 +4313,39 @@ msgstr ""
 msgid "Serbian in both scripts, and English."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:342
-#: lib/potok_ide_web/controllers/page_html.ex:437
+#: lib/potok_ide_web/controllers/page_html.ex:345
+#: lib/potok_ide_web/controllers/page_html.ex:440
 #: lib/potok_ide_web/controllers/page_html/privacy.html.heex:30
 #, elixir-autogen, elixir-format
 msgid "Back to Potok"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:692
+#: lib/potok_ide_web/live/account_live/settings.ex:691
 #, elixir-autogen, elixir-format
 msgid "Browser permission for notifications is blocked."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:694
+#: lib/potok_ide_web/live/account_live/settings.ex:693
 #, elixir-autogen, elixir-format
 msgid "Device notification permission is blocked."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:697
+#: lib/potok_ide_web/live/account_live/settings.ex:696
 #, elixir-autogen, elixir-format
 msgid "Enable notifications before sending a test push."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:701
+#: lib/potok_ide_web/live/account_live/settings.ex:700
 #, elixir-autogen, elixir-format
 msgid "FCM is unavailable on this device right now. Ensure Google Play services are installed and updated, verify network access to Google services, then try again."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:704
+#: lib/potok_ide_web/live/account_live/settings.ex:703
 #, elixir-autogen, elixir-format
 msgid "Finishing iPhone notification registration..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:710
+#: lib/potok_ide_web/live/account_live/settings.ex:709
 #, elixir-autogen, elixir-format
 msgid "Google Play services are missing or outdated on this device, so push registration cannot complete."
 msgstr ""
@@ -4365,7 +4365,7 @@ msgstr ""
 msgid "Missing push subscription payload."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:706
+#: lib/potok_ide_web/live/account_live/settings.ex:705
 #, elixir-autogen, elixir-format
 msgid "Native push notifications are unavailable in this app session."
 msgstr ""
@@ -4375,37 +4375,37 @@ msgstr ""
 msgid "No saved push subscription was found for this account."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:708
+#: lib/potok_ide_web/live/account_live/settings.ex:707
 #, elixir-autogen, elixir-format
 msgid "Notification permission was not granted."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:718
+#: lib/potok_ide_web/live/account_live/settings.ex:717
 #, elixir-autogen, elixir-format
 msgid "Push notification request failed."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:723
+#: lib/potok_ide_web/live/account_live/settings.ex:722
 #, elixir-autogen, elixir-format
 msgid "Push notifications are active on this device but Potok could not save the token."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:695
+#: lib/potok_ide_web/live/account_live/settings.ex:694
 #, elixir-autogen, elixir-format
 msgid "Push notifications are disabled for this browser."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:696
+#: lib/potok_ide_web/live/account_live/settings.ex:695
 #, elixir-autogen, elixir-format
 msgid "Push notifications are disabled for this device."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:699
+#: lib/potok_ide_web/live/account_live/settings.ex:698
 #, elixir-autogen, elixir-format
 msgid "Push notifications are enabled."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:707
+#: lib/potok_ide_web/live/account_live/settings.ex:706
 #, elixir-autogen, elixir-format
 msgid "Push notifications are not configured on this server yet."
 msgstr ""
@@ -4415,52 +4415,52 @@ msgstr ""
 msgid "Push notifications are not configured on this server."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:693
+#: lib/potok_ide_web/live/account_live/settings.ex:692
 #, elixir-autogen, elixir-format
 msgid "Push notifications are unavailable in this browser session."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:721
+#: lib/potok_ide_web/live/account_live/settings.ex:720
 #, elixir-autogen, elixir-format
 msgid "Push notifications require HTTPS or localhost."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:713
+#: lib/potok_ide_web/live/account_live/settings.ex:712
 #, elixir-autogen, elixir-format
 msgid "Refreshing device notification token..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:717
+#: lib/potok_ide_web/live/account_live/settings.ex:716
 #, elixir-autogen, elixir-format
 msgid "Removing device notification token..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:716
+#: lib/potok_ide_web/live/account_live/settings.ex:715
 #, elixir-autogen, elixir-format
 msgid "Removing push subscription..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:719
+#: lib/potok_ide_web/live/account_live/settings.ex:718
 #, elixir-autogen, elixir-format
 msgid "Requesting device notification permission..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:720
+#: lib/potok_ide_web/live/account_live/settings.ex:719
 #, elixir-autogen, elixir-format
 msgid "Requesting notification permission..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:726
+#: lib/potok_ide_web/live/account_live/settings.ex:725
 #, elixir-autogen, elixir-format
 msgid "Sending test notification..."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:729
+#: lib/potok_ide_web/live/account_live/settings.ex:728
 #, elixir-autogen, elixir-format
 msgid "Test notification sent. Background the app if Android suppresses foreground banners."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:733
+#: lib/potok_ide_web/live/account_live/settings.ex:732
 #, elixir-autogen, elixir-format
 msgid "Test notification sent. Minimize the app if the browser suppresses foreground notifications."
 msgstr ""
@@ -4470,7 +4470,7 @@ msgstr ""
 msgid "The saved push subscription expired and has been removed."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:736
+#: lib/potok_ide_web/live/account_live/settings.ex:735
 #, elixir-autogen, elixir-format
 msgid "This browser does not support Web Push notifications."
 msgstr ""
@@ -4480,22 +4480,22 @@ msgstr ""
 msgid "This page is the public privacy policy for the Potok Android app and related web service."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:698
+#: lib/potok_ide_web/live/account_live/settings.ex:697
 #, elixir-autogen, elixir-format
 msgid "Unable to enable push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:714
+#: lib/potok_ide_web/live/account_live/settings.ex:713
 #, elixir-autogen, elixir-format
 msgid "Unable to register this device for push notifications."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:715
+#: lib/potok_ide_web/live/account_live/settings.ex:714
 #, elixir-autogen, elixir-format
 msgid "Unable to remove the push subscription."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:727
+#: lib/potok_ide_web/live/account_live/settings.ex:726
 #, elixir-autogen, elixir-format
 msgid "Unable to send the test notification."
 msgstr ""
@@ -6361,14 +6361,14 @@ msgstr ""
 msgid "Warning"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:380
-#: lib/potok_ide_web/controllers/page_html.ex:507
+#: lib/potok_ide_web/controllers/page_html.ex:383
+#: lib/potok_ide_web/controllers/page_html.ex:510
 #, elixir-autogen, elixir-format
 msgid "Back to the top"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:349
-#: lib/potok_ide_web/controllers/page_html.ex:367
+#: lib/potok_ide_web/controllers/page_html.ex:352
+#: lib/potok_ide_web/controllers/page_html.ex:370
 #, elixir-autogen, elixir-format
 msgid "Contents"
 msgstr ""
@@ -6386,7 +6386,7 @@ msgstr ""
 msgid "How to use all this, step by step and with pictures"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:360
+#: lib/potok_ide_web/controllers/page_html.ex:363
 #, elixir-autogen, elixir-format
 msgid "The pictures show Potok in Serbian."
 msgstr ""
@@ -9740,24 +9740,24 @@ msgstr ""
 msgid "app"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/account_deletion_html.ex:77
+#: lib/potok_ide_web/controllers/account_deletion_html.ex:81
 #, elixir-autogen, elixir-format
 msgid "A group never loses its last admin, so the account can't be deleted until then."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:609
+#: lib/potok_ide_web/live/account_live/settings.ex:607
 #, elixir-autogen, elixir-format
 msgid "A link that deletes the account is on its way to %{email}. It works for an hour."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:243
-#: lib/potok_ide_web/emails/account_emails.ex:296
+#: lib/potok_ide_web/emails/account_emails.ex:244
+#: lib/potok_ide_web/emails/account_emails.ex:295
 #, elixir-autogen, elixir-format
 msgid "Account deletion"
 msgstr ""
 
 #: lib/potok_ide_web/live/account_live/settings.ex:393
-#: lib/potok_ide_web/live/account_live/settings.ex:439
+#: lib/potok_ide_web/live/account_live/settings.ex:437
 #, elixir-autogen, elixir-format
 msgid "Delete account"
 msgstr ""
@@ -9777,7 +9777,7 @@ msgstr ""
 msgid "Delete the account?"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:244
+#: lib/potok_ide_web/emails/account_emails.ex:245
 #, elixir-autogen, elixir-format
 msgid "Delete your Potok account?"
 msgstr ""
@@ -9787,12 +9787,12 @@ msgstr ""
 msgid "Deleted user"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:265
+#: lib/potok_ide_web/emails/account_emails.ex:264
 #, elixir-autogen, elixir-format
 msgid "Deleting your Potok account"
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:436
+#: lib/potok_ide_web/live/account_live/settings.ex:434
 #, elixir-autogen, elixir-format
 msgid "Deleting..."
 msgstr ""
@@ -9802,7 +9802,7 @@ msgstr ""
 msgid "First hand over the groups where you are the only admin, then delete the account."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/account_deletion_html.ex:67
+#: lib/potok_ide_web/controllers/account_deletion_html.ex:71
 #, elixir-autogen, elixir-format
 msgid "First make someone else an admin of these groups:"
 msgstr ""
@@ -9812,12 +9812,12 @@ msgstr ""
 msgid "Gone: the account, its sign-ins and devices, your memberships, follows, reactions, tags and invitations."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/account_deletion_html.ex:55
+#: lib/potok_ide_web/controllers/account_deletion_html.ex:58
 #, elixir-autogen, elixir-format
 msgid "Groups that go with the account, as you are their only member"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:305
+#: lib/potok_ide_web/emails/account_emails.ex:303
 #, elixir-autogen, elixir-format
 msgid "If someone invites this address again, a new account starts from nothing."
 msgstr ""
@@ -9827,7 +9827,7 @@ msgstr ""
 msgid "If this address has an account, a link to delete it is on its way. It works for an hour."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:259
+#: lib/potok_ide_web/emails/account_emails.ex:260
 #, elixir-autogen, elixir-format
 msgid "If you didn't ask for this, ignore this email: the account stays as it is."
 msgstr ""
@@ -9847,7 +9847,7 @@ msgstr ""
 msgid "Log in again, or ask for the link by email."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:245
+#: lib/potok_ide_web/emails/account_emails.ex:246
 #, elixir-autogen, elixir-format
 msgid "Nothing is deleted until you confirm."
 msgstr ""
@@ -9857,23 +9857,23 @@ msgstr ""
 msgid "Profiles that become \"Deleted user\""
 msgstr ""
 
-#: lib/potok_ide_web/controllers/account_deletion_html.ex:48
+#: lib/potok_ide_web/controllers/account_deletion_html.ex:49
 #, elixir-autogen, elixir-format
 msgid "Profiles that stay for the other accounts that use them"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:251
+#: lib/potok_ide_web/emails/account_emails.ex:252
 #, elixir-autogen, elixir-format
 msgid "See and confirm"
 msgstr ""
 
 #: lib/potok_ide_web/controllers/account_deletion_html/new.html.heex:28
-#: lib/potok_ide_web/live/account_live/settings.ex:439
+#: lib/potok_ide_web/live/account_live/settings.ex:437
 #, elixir-autogen, elixir-format
 msgid "Send the link"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:247
+#: lib/potok_ide_web/emails/account_emails.ex:248
 #, elixir-autogen, elixir-format
 msgid "Someone asked to delete the Potok account of %{email}. The link shows what goes and what stays, and the account is deleted only when you confirm there."
 msgstr ""
@@ -9893,7 +9893,7 @@ msgstr ""
 msgid "The account is deleted at once."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:300
+#: lib/potok_ide_web/emails/account_emails.ex:299
 #, elixir-autogen, elixir-format
 msgid "The account of %{email} is deleted, with its sign-ins and devices. What you wrote in groups stays there under \"Deleted user\", with no name, picture or description of yours."
 msgstr ""
@@ -9903,19 +9903,19 @@ msgstr ""
 msgid "The address you typed is not the one of this account."
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:253
+#: lib/potok_ide_web/emails/account_emails.ex:254
 #, elixir-autogen, elixir-format
 msgid "The link works for %{count} minute."
 msgid_plural "The link works for %{count} minutes."
 msgstr[0] ""
 msgstr[1] ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:298
+#: lib/potok_ide_web/emails/account_emails.ex:297
 #, elixir-autogen, elixir-format
 msgid "This address no longer has an account."
 msgstr ""
 
-#: lib/potok_ide_web/live/account_live/settings.ex:570
+#: lib/potok_ide_web/live/account_live/settings.ex:568
 #, elixir-autogen, elixir-format
 msgid "This is not the address of the account."
 msgstr ""
@@ -9955,18 +9955,18 @@ msgstr ""
 msgid "What Potok keeps, in the privacy policy"
 msgstr ""
 
-#: lib/potok_ide_web/emails/account_emails.ex:297
-#: lib/potok_ide_web/emails/account_emails.ex:311
+#: lib/potok_ide_web/emails/account_emails.ex:296
+#: lib/potok_ide_web/emails/account_emails.ex:307
 #, elixir-autogen, elixir-format
 msgid "Your Potok account is deleted"
-msgstr ""
-
-#: lib/potok_ide_web/controllers/page_html.ex:295
-#, elixir-autogen, elixir-format
-msgid "No ads or tracking, and you delete your account whenever you like."
 msgstr ""
 
 #: lib/potok_ide_web/controllers/page_html.ex:294
 #, elixir-autogen, elixir-format
 msgid "Privacy"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html.ex:296
+#, elixir-autogen, elixir-format
+msgid "No ads or tracking, photos lose their location before they are sent, and you delete your account whenever you like."
 msgstr ""
