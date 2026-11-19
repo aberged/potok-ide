@@ -7,6 +7,8 @@ defmodule PotokIdeWeb.RichContentScrubber do
   tags, and lets `style` through `HtmlSanitizeEx.Scrubber.CSS`, which drops
   `position`, `z-index`, `transform` and `url()`. `class` and `id` are never
   kept, so content cannot borrow the app's classes or clash with its DOM ids.
+  The one attribute of Potok's own it keeps is `data-potok-gallery` on a
+  `div`, with one of a few looks (`PotokIdeWeb.Galleries`).
 
   The `Meta` macros need literal tag lists. `use HtmlSanitizeEx` removes
   CDATA sections and strips every tag and attribute not allowed here.
@@ -77,6 +79,14 @@ defmodule PotokIdeWeb.RichContentScrubber do
 
   Meta.allow_tag_with_uri_attributes("img", ["src"], @valid_schemes)
   Meta.allow_tag_with_these_attributes("img", ["width", "height", "title", "alt"])
+
+  # A gallery and its look; `PotokIdeWeb.Galleries.looks/0` holds the same.
+  Meta.allow_tag_with_this_attribute_values("div", "data-potok-gallery", [
+    "slides",
+    "cards",
+    "cinema",
+    "polaroid"
+  ])
 
   Meta.allow_tag_with_these_attributes("abbr", ["title"])
   Meta.allow_tag_with_these_attributes("details", ["open"])

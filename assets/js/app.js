@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
+import { installGalleries } from "./gallery"
 import { installHelpAccess } from "./help_access"
 import { DescriptionArchive } from "./description_archive"
 import { ComposerDraft, DraftMark, clearAllDrafts } from "./drafts"
@@ -2011,6 +2012,7 @@ window.addEventListener("phx:page-loading-stop", _info => topbar.hide())
 installPageLoader()
 
 installPasswordToggleButtons()
+installGalleries()
 
 // Drafts stay in this browser, which may be a shared one: logging out drops them.
 document.addEventListener("click", event => {

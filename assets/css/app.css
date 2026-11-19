@@ -667,6 +667,260 @@
   margin-bottom: 0.4em;
 }
 
+/* Galleries (`PotokIdeWeb.Galleries`): pictures in a strip that snaps one at
+   a time, moved by a swipe, a trackpad, the arrow keys once the strip has the
+   focus, or two buttons. The stored HTML holds only the pictures and
+   `data-potok-gallery`; the server adds the strip's mark, the counters and the
+   buttons. Apps' frames load this file too, so Feed shows the same looks.
+   Without these rules the pictures stand one under another. */
+.rich-content [data-potok-gallery] {
+  --gallery-radius: 0.875rem;
+  --gallery-button-top: 50%;
+  container-type: inline-size;
+  position: relative;
+}
+
+.rich-content [data-gallery-strip] {
+  border-radius: var(--gallery-radius);
+  display: flex;
+  gap: 0.75rem;
+  outline: none;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  position: relative;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.rich-content [data-gallery-strip]::-webkit-scrollbar {
+  display: none;
+}
+
+.rich-content [data-gallery-strip]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+.rich-content [data-gallery-strip] > * {
+  flex: 0 0 100%;
+  margin: 0;
+  min-width: 0;
+  position: relative;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+}
+
+.rich-content [data-gallery-strip] img {
+  background: color-mix(in oklab, currentColor 8%, transparent);
+  border-radius: var(--gallery-radius);
+  display: block;
+  max-width: none;
+  object-fit: cover;
+  width: 100%;
+}
+
+.rich-content [data-gallery-count] {
+  background: rgb(0 0 0 / 0.55);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 1.4;
+  padding: 0.15rem 0.55rem;
+  pointer-events: none;
+  position: absolute;
+  right: 0.6rem;
+  top: 0.6rem;
+  z-index: 1;
+}
+
+/* The buttons show only for a mouse, and only where `gallery.js` (or Feed's
+   copy of it) marks the page as able to move the strip. */
+.rich-content [data-gallery-step] {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-potok-galleries] .rich-content [data-gallery-step] {
+    background: rgb(255 255 255 / 0.92);
+    border: 0;
+    border-radius: 999px;
+    box-shadow: 0 2px 10px rgb(0 0 0 / 0.25);
+    color: #18181b;
+    cursor: pointer;
+    display: grid;
+    height: 2.5rem;
+    opacity: 0;
+    place-items: center;
+    position: absolute;
+    top: var(--gallery-button-top);
+    transform: translateY(-50%);
+    transition:
+      opacity 150ms ease,
+      transform 150ms ease;
+    width: 2.5rem;
+    z-index: 2;
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step]::before {
+    border: solid currentColor;
+    border-width: 0 2px 2px 0;
+    content: "";
+    height: 0.6rem;
+    width: 0.6rem;
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step="-1"] {
+    left: 0.6rem;
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step="-1"]::before {
+    margin-left: 0.2rem;
+    transform: rotate(135deg);
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step="1"] {
+    right: 0.6rem;
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step="1"]::before {
+    margin-right: 0.2rem;
+    transform: rotate(-45deg);
+  }
+
+  [data-potok-galleries] .rich-content [data-potok-gallery]:hover [data-gallery-step],
+  [data-potok-galleries] .rich-content [data-gallery-step]:focus-visible {
+    opacity: 1;
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step]:hover {
+    transform: translateY(-50%) scale(1.06);
+  }
+
+  [data-potok-galleries] .rich-content [data-gallery-step]:active {
+    transform: translateY(-50%) scale(0.96);
+  }
+}
+
+/* Slajdovi: one picture across the whole width, the caption under it. */
+.rich-content [data-potok-gallery="slides"] {
+  --gallery-button-top: 37.5cqw;
+}
+
+.rich-content [data-potok-gallery="slides"] img {
+  aspect-ratio: 4 / 3;
+}
+
+.rich-content [data-potok-gallery="slides"] figcaption {
+  margin-top: 0.5em;
+}
+
+/* Kartice: the next card peeks in, the caption lies over the picture. */
+.rich-content [data-potok-gallery="cards"] [data-gallery-strip] > * {
+  flex-basis: 84%;
+}
+
+.rich-content [data-potok-gallery="cards"] img {
+  aspect-ratio: 4 / 5;
+  border-radius: 1rem;
+  max-height: 32rem;
+}
+
+.rich-content [data-potok-gallery="cards"] figcaption {
+  background: linear-gradient(to top, rgb(0 0 0 / 0.75), rgb(0 0 0 / 0));
+  border-radius: 0 0 1rem 1rem;
+  bottom: 0;
+  color: #fff;
+  font-size: 0.9em;
+  left: 0;
+  margin: 0;
+  padding: 2.75rem 0.9rem 0.8rem;
+  position: absolute;
+  right: 0;
+}
+
+/* Bioskop: a dark stage in either theme, every picture whole. */
+.rich-content [data-potok-gallery="cinema"] {
+  --gallery-picture-height: clamp(14rem, 60vh, 30rem);
+  --gallery-button-top: calc(0.75rem + var(--gallery-picture-height) / 2);
+  background: #0c0c0e;
+  border-radius: 1rem;
+  color: #f4f4f5;
+  padding: 0.75rem 0.75rem 0.9rem;
+}
+
+.rich-content [data-potok-gallery="cinema"] [data-gallery-strip] {
+  border-radius: 0.5rem;
+}
+
+.rich-content [data-potok-gallery="cinema"] img {
+  background: transparent;
+  border-radius: 0.5rem;
+  height: var(--gallery-picture-height);
+  object-fit: contain;
+}
+
+.rich-content [data-potok-gallery="cinema"] figcaption {
+  color: rgb(244 244 245 / 0.8);
+  margin-top: 0.6em;
+  text-align: center;
+}
+
+.rich-content [data-potok-gallery="cinema"] [data-gallery-count] {
+  background: rgb(255 255 255 / 0.16);
+}
+
+/* Polaroid: photo paper with room for the caption below, slightly askew. */
+.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] {
+  gap: 1.25rem;
+  padding: 1rem 0.5rem 1.5rem;
+}
+
+.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > * {
+  background: #fbfaf7;
+  border-radius: 0.2rem;
+  box-shadow:
+    0 1px 2px rgb(0 0 0 / 0.12),
+    0 8px 24px rgb(0 0 0 / 0.14);
+  color: #2b2a28;
+  flex-basis: 78%;
+  padding: 0.7rem 0.7rem 0;
+  transform: rotate(-1.4deg);
+}
+
+.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > :nth-child(2n) {
+  transform: rotate(1.2deg);
+}
+
+.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > :nth-child(3n) {
+  transform: rotate(-0.5deg);
+}
+
+.rich-content [data-potok-gallery="polaroid"] img {
+  aspect-ratio: 1;
+  border-radius: 0.1rem;
+}
+
+.rich-content [data-potok-gallery="polaroid"] figcaption {
+  color: #3b3a37;
+  font-family: var(--font-brand);
+  font-size: 0.95em;
+  margin: 0;
+  min-height: 3.25rem;
+  padding: 0.7rem 0.3rem 1rem;
+  text-align: center;
+}
+
+.rich-content [data-potok-gallery="polaroid"] [data-gallery-count] {
+  right: 1.2rem;
+  top: 1.2rem;
+}
+
+.rich-content [data-potok-gallery="polaroid"] {
+  --gallery-button-top: calc(1rem + 39cqw);
+}
+
 /* Emoji picker for message reactions (`ReactionPicker` hook). Document styles
    beat the picker's `:host` rules, so mapping its palette onto the daisyUI
    tokens makes it follow every theme without JS. */

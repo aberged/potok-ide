@@ -2,6 +2,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
   alias PotokIdeWeb.Avatars
+  alias PotokIdeWeb.Galleries
   alias PotokIdeWeb.Locale
 
   alias PotokIdeWeb.GroupLive.Show.{
@@ -1257,10 +1258,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     <div class={[@class, "rich-content"]}>
       {@content
       |> cached_formatted_content(@content_format, @uses_api, @mentions)
+      |> decorate_galleries(@uses_api)
       |> sign_group_pictures(@group_id)}
     </div>
     """
   end
+
+  # After the cache, as the buttons speak the viewer's language; only HTML
+  # that holds a gallery is parsed again (`PotokIdeWeb.Galleries`).
+  defp decorate_galleries(html, true), do: html
+  defp decorate_galleries(html, _uses_api), do: Galleries.decorate(html)
 
   # A description shows its own group's picture by a signed address
   # (`Avatars.sign_group_pictures/2`).
@@ -1319,6 +1326,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     if is_binary(description) and String.trim(description) != "" do
       description
       |> cached_formatted_content(format, false, %{})
+      |> Galleries.decorate()
       |> Phoenix.HTML.safe_to_string()
       |> Avatars.sign_group_pictures(id)
     end

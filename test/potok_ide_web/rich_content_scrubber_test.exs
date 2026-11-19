@@ -28,4 +28,14 @@ defmodule PotokIdeWeb.RichContentScrubberTest do
     assert scrub(~S|<p onclick="alert(1)" style="color:red;position:fixed">p</p>|) ==
              ~S|<p style="color: red;">p</p>|
   end
+
+  test "keeps a gallery's look and no other data attribute" do
+    for look <- PotokIdeWeb.Galleries.looks() do
+      assert scrub(~s|<div data-potok-gallery="#{look}"><div>x</div></div>|) ==
+               ~s|<div data-potok-gallery="#{look}"><div>x</div></div>|
+    end
+
+    assert scrub(~S|<div data-potok-gallery="fixed inset-0">x</div>|) == "<div>x</div>"
+    assert scrub(~S|<p data-potok-gallery="slides" data-x="1">x</p>|) == "<p>x</p>"
+  end
 end
