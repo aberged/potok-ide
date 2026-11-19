@@ -76,6 +76,34 @@ const cases: Case[] = [
   { template: 'notice', fields: { level: 'urgent', title: 'Naslov', body: 'Tekst\n\nDrugi' } },
   { template: 'notice', fields: { level: 'nepoznat', title: 'Naslov' } },
   { template: 'question', fields: { question: 'Zašto?', about: 'Dodatak' } },
+  ...['slides', 'cards', 'cinema', 'polaroid'].map((look) => ({
+    template: 'gallery',
+    fields: {
+      title: 'Galerija "pod navodnicima"',
+      about: 'Opis\n\nDrugi pasus',
+      look,
+      pictures: ['https://a.rs/1.jpg', WAITING_IMAGE],
+      captions: ['Prva **jaka** & <tag>', ''],
+    },
+  })),
+  {
+    template: 'gallery',
+    fields: {
+      title: 'Loše i prazno',
+      look: 'nepoznat',
+      pictures: ['javascript:alert(1)', ' ', ' HTTPS://Example.com/a.png?x=1&y=2 ', '/avatar/group/12?p=170', 'data:image/png;base64,AAAA'],
+      captions: ['loša', 'prazna', ' Treća ', 'Četvrta'],
+    },
+  },
+  {
+    template: 'gallery',
+    fields: {
+      title: 'Previše',
+      pictures: Array.from({ length: 23 }, (_, index) => `https://a.rs/${index}.jpg`),
+      captions: ['samo prva'],
+    },
+  },
+  { template: 'gallery', fields: { title: 'Bez slika', about: 'Samo opis', pictures: [''] } },
 ];
 
 const posts = cases.map(({ template, fields }) => {

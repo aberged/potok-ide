@@ -13,7 +13,7 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
 
   alias PotokIde.Repo
   alias PotokIde.Social
-  alias PotokIde.Social.{Access, Group}
+  alias PotokIde.Social.{Access, AppData, AppFiles, Group}
 
   @picture "data:image/png;base64,iVBORw0KGgo="
 
@@ -324,6 +324,26 @@ defmodule PotokIdeWeb.GroupLive.AppChildrenTest do
       call(view, "list_children")
 
       assert names(view) == ~w(shown)
+    end
+
+    test "leaves out the groups the app keeps its files in, here and for the parent", ctx do
+      {:ok, _config} = AppData.save_config(ctx.owner, ctx.feed, nil, %{"rules" => %{}}, 0)
+      {:ok, %{"public" => _files}} = AppFiles.ensure_groups(ctx.owner, ctx.feed, nil)
+      child!(ctx.owner, ctx.feed, "story", %{"is_public" => true, "inherits_members" => true})
+
+      view = open_app(ctx.conn, ctx.owner_account, ctx.feed)
+      call(view, "list_children")
+      assert names(view) == ~w(story)
+
+      {:ok, _parent} =
+        Social.update_group(ctx.owner, ctx.parent, %{
+          "description" => "<p>app</p>",
+          "uses_api" => "true"
+        })
+
+      view = open_app(ctx.conn, ctx.owner_account, ctx.parent)
+      call(view, "list_subgroups", %{"name" => ".feed"})
+      assert names(view) == ~w(story)
     end
   end
 

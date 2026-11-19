@@ -8,6 +8,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
 
   use PotokIdeWeb, :html
 
+  alias PotokIde.Storage
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.PostTemplates.Markup
 
@@ -133,6 +134,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
         id={"#{@id_prefix}-template-field-#{field.key}"}
         field={field}
         value={@post.fields[field.key]}
+        captions={field[:captions] && @post.fields[field.captions]}
         picture_upload={@picture_upload}
       />
       <p
@@ -149,6 +151,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
   attr :id, :string, required: true
   attr :field, :map, required: true
   attr :value, :any, default: nil
+  attr :captions, :any, default: nil, doc: "the captions that go with a field of pictures"
   attr :picture_upload, :any, default: nil
 
   defp template_field(%{field: %{kind: :items}} = assigns) do
@@ -197,6 +200,154 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
       >
         <.icon name="hero-plus" class="size-4" /> {gettext("Add an item")}
       </.button>
+    </fieldset>
+    """
+  end
+
+  # A gallery's look: four tiles, each a sketch of the look.
+  defp template_field(%{field: %{kind: :choice}} = assigns) do
+    value = text_value(assigns)
+    values = Enum.map(assigns.field.options, &elem(&1, 1))
+    assigns = assign(assigns, :current, if(value in values, do: value, else: hd(values)))
+
+    ~H"""
+    <fieldset id={@id} class="fieldset mb-2">
+      <legend class="label mb-1">{@field.label}</legend>
+      <%!-- As many in a row as the column holds: the form can stand beside its preview. --%>
+      <div class="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2">
+        <label
+          :for={{label, value} <- @field.options}
+          id={"#{@id}-#{value}"}
+          class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-base-300 px-2 py-3 text-sm transition duration-150 ease-out hover:bg-base-200 active:scale-[.98] has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:text-primary has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40"
+        >
+          <input
+            type="radio"
+            name={field_name(@field)}
+            value={value}
+            checked={value == @current}
+            class="sr-only"
+          />
+          <.look_sketch look={value} />
+          <span class="font-medium">{label}</span>
+        </label>
+      </div>
+    </fieldset>
+    """
+  end
+
+  # The pictures of a gallery: an address and a caption each, from a link or
+  # from the device, several at once.
+  defp template_field(%{field: %{kind: :pictures}} = assigns) do
+    pictures = strings(assigns.value)
+    pictures = if pictures == [], do: [""], else: pictures
+    captions = strings(assigns.captions)
+    captions = Enum.take(captions ++ List.duplicate("", length(pictures)), length(pictures))
+    sending? = assigns.picture_upload != nil and assigns.picture_upload.entries != []
+
+    assigns =
+      assigns
+      |> assign(:rows, pictures |> Enum.zip(captions) |> Enum.with_index())
+      |> assign(:room, length(pictures) < PostTemplates.max_pictures())
+      |> assign(:failed, picture_failed?(assigns.picture_upload))
+      |> assign(:sending, sending? and not picture_failed?(assigns.picture_upload))
+
+    ~H"""
+    <fieldset id={@id} class="fieldset mb-2" data-picture-name={field_name(@field) <> "[]"}>
+      <legend class="label mb-1">{@field.label}</legend>
+      <div
+        :for={{{address, caption}, index} <- @rows}
+        id={"#{@id}-#{index}"}
+        class="mb-2 flex items-start gap-3 rounded-2xl border border-base-300/70 p-2"
+      >
+        <span class="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-base-200">
+          <img
+            :if={Markup.safe_image(address) != ""}
+            src={Markup.safe_image(address)}
+            alt=""
+            class="size-full object-cover"
+          />
+          <.icon
+            :if={Markup.safe_image(address) == ""}
+            name="hero-photo"
+            class="size-6 text-base-content/30"
+          />
+        </span>
+        <div class="min-w-0 flex-1">
+          <%!-- Without `phx-debounce`, as with a single picture: a sent
+               picture's address is written here from the outside. --%>
+          <.input
+            id={"#{@id}-#{index}-address"}
+            type="text"
+            inputmode="url"
+            name={field_name(@field) <> "[]"}
+            value={address}
+            placeholder="https://"
+            aria-label={gettext("Address of picture %{number}", number: index + 1)}
+            data-picture-address
+          />
+          <.input
+            id={"#{@id}-#{index}-caption"}
+            type="text"
+            name={"description_template[fields][#{@field.captions}][]"}
+            value={caption}
+            placeholder={gettext("Caption")}
+            aria-label={gettext("Caption of picture %{number}", number: index + 1)}
+            phx-debounce="500"
+          />
+        </div>
+        <.button
+          :if={length(@rows) > 1}
+          id={"#{@id}-#{index}-remove"}
+          type="button"
+          variant="ghost"
+          size="sm"
+          name="description_template[remove_item]"
+          value={"#{@field.key}:#{index}"}
+          aria-label={gettext("Remove picture %{number}", number: index + 1)}
+          phx-click={JS.dispatch("change")}
+        >
+          <.icon name="hero-x-mark" class="size-4" />
+        </.button>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <.button
+          :if={@room}
+          id={"#{@id}-add"}
+          type="button"
+          size="sm"
+          name="description_template[add_item]"
+          value={@field.key}
+          phx-click={JS.dispatch("change")}
+        >
+          <.icon name="hero-plus" class="size-4" /> {gettext("Add a picture")}
+        </.button>
+        <.button
+          :if={@picture_upload && @room}
+          id={"#{@id}-device"}
+          type="button"
+          size="sm"
+          phx-click={
+            JS.dispatch("potok:pick-picture",
+              to: "#description-picture",
+              detail: %{target: @id, multiple: true}
+            )
+          }
+        >
+          <.icon name="hero-photo" class="size-4" /> {gettext("From the device")}
+        </.button>
+        <span :if={@sending} id={"#{@id}-sending"} class="text-sm text-base-content/70">
+          {gettext("Sending the pictures...")}
+        </span>
+        <span :if={@failed} id={"#{@id}-failed"} class="text-sm text-error">
+          {gettext("The picture could not be sent.")}
+        </span>
+      </div>
+      <p :if={@picture_upload} class="mt-1 text-xs text-base-content/65">
+        {gettext(
+          "Pictures picked together go to the chat as one message with the files, up to %{count} at a time. Deleting that message removes them from the description.",
+          count: Storage.max_files()
+        )}
+      </p>
     </fieldset>
     """
   end
@@ -304,6 +455,58 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
     <p :if={@field.hint} class="-mt-1 mb-2 text-xs text-base-content/65">{@field.hint}</p>
     """
   end
+
+  attr :look, :string, required: true
+
+  # A small drawing of each look, in the tile that picks it.
+  defp look_sketch(%{look: "cards"} = assigns) do
+    ~H"""
+    <span class="flex h-10 w-16 items-center gap-1 overflow-hidden" aria-hidden="true">
+      <span class="h-10 w-12 shrink-0 rounded-md bg-current opacity-60"></span>
+      <span class="h-10 w-12 shrink-0 rounded-md bg-current opacity-25"></span>
+    </span>
+    """
+  end
+
+  defp look_sketch(%{look: "cinema"} = assigns) do
+    ~H"""
+    <span
+      class="flex h-10 w-16 items-center justify-center rounded-md bg-neutral-900"
+      aria-hidden="true"
+    >
+      <span class="h-6 w-9 rounded-sm bg-neutral-300"></span>
+    </span>
+    """
+  end
+
+  defp look_sketch(%{look: "polaroid"} = assigns) do
+    ~H"""
+    <span class="flex h-10 w-16 items-center justify-center gap-1" aria-hidden="true">
+      <span class="h-9 w-7 -rotate-6 rounded-[2px] bg-white p-[3px] pb-2 shadow ring-1 ring-black/10">
+        <span class="block size-full bg-current opacity-50"></span>
+      </span>
+      <span class="h-9 w-7 rotate-3 rounded-[2px] bg-white p-[3px] pb-2 shadow ring-1 ring-black/10">
+        <span class="block size-full bg-current opacity-30"></span>
+      </span>
+    </span>
+    """
+  end
+
+  defp look_sketch(assigns) do
+    ~H"""
+    <span class="flex h-10 w-16 flex-col items-center gap-1" aria-hidden="true">
+      <span class="h-7 w-16 rounded-md bg-current opacity-60"></span>
+      <span class="flex gap-0.5">
+        <span class="size-1 rounded-full bg-current"></span>
+        <span class="size-1 rounded-full bg-current opacity-40"></span>
+        <span class="size-1 rounded-full bg-current opacity-40"></span>
+      </span>
+    </span>
+    """
+  end
+
+  defp strings(values) when is_list(values), do: Enum.filter(values, &is_binary/1)
+  defp strings(_other), do: []
 
   # An address stays plain text: `example.com` is fine here, and the browser
   # would stop the form over it.

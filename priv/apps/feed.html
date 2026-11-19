@@ -65,7 +65,13 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 * SPDX-License-Identifier: BSD-3-Clause
 */
 var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHTML:e=>e}):void 0,i=`$lit$`,a=`lit$${Math.random().toFixed(9).slice(2)}$`,o=`?`+a,s=`<${o}>`,c=document,l=()=>c.createComment(``),u=e=>e===null||typeof e!=`object`&&typeof e!=`function`,d=Array.isArray,f=e=>d(e)||typeof e?.[Symbol.iterator]==`function`,p=`[ 	
-\f\r]`,m=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,h=/-->/g,g=/>/g,_=RegExp(`>|${p}(?:([^\\s"'>=/]+)(${p}*=${p}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,`g`),v=/'/g,y=/"/g,b=/^(?:script|style|textarea|title)$/i,x=(e=>(t,...n)=>({_$litType$:e,strings:t,values:n}))(1),S=Symbol.for(`lit-noChange`),C=Symbol.for(`lit-nothing`),w=new WeakMap,T=c.createTreeWalker(c,129);function E(e,t){if(!d(e)||!e.hasOwnProperty(`raw`))throw Error(`invalid template strings array`);return r===void 0?t:r.createHTML(t)}var ee=(e,t)=>{let n=e.length-1,r=[],o,c=t===2?`<svg>`:t===3?`<math>`:``,l=m;for(let t=0;t<n;t++){let n=e[t],u,d,f=-1,p=0;for(;p<n.length&&(l.lastIndex=p,d=l.exec(n),d!==null);)p=l.lastIndex,l===m?d[1]===`!--`?l=h:d[1]===void 0?d[2]===void 0?d[3]!==void 0&&(l=_):(b.test(d[2])&&(o=RegExp(`</`+d[2],`g`)),l=_):l=g:l===_?d[0]===`>`?(l=o??m,f=-1):d[1]===void 0?f=-2:(f=l.lastIndex-d[2].length,u=d[1],l=d[3]===void 0?_:d[3]===`"`?y:v):l===y||l===v?l=_:l===h||l===g?l=m:(l=_,o=void 0);let x=l===_&&e[t+1].startsWith(`/>`)?` `:``;c+=l===m?n+s:f>=0?(r.push(u),n.slice(0,f)+i+n.slice(f)+a+x):n+a+(f===-2?t:x)}return[E(e,c+(e[n]||`<?>`)+(t===2?`</svg>`:t===3?`</math>`:``)),r]},D=class e{constructor({strings:t,_$litType$:r},s){let c;this.parts=[];let u=0,d=0,f=t.length-1,p=this.parts,[m,h]=ee(t,r);if(this.el=e.createElement(m,s),T.currentNode=this.el.content,r===2||r===3){let e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;(c=T.nextNode())!==null&&p.length<f;){if(c.nodeType===1){if(c.hasAttributes())for(let e of c.getAttributeNames())if(e.endsWith(i)){let t=h[d++],n=c.getAttribute(e).split(a),r=/([.?@])?(.*)/.exec(t);p.push({type:1,index:u,name:r[2],strings:n,ctor:r[1]===`.`?ne:r[1]===`?`?re:r[1]===`@`?ie:A}),c.removeAttribute(e)}else e.startsWith(a)&&(p.push({type:6,index:u}),c.removeAttribute(e));if(b.test(c.tagName)){let e=c.textContent.split(a),t=e.length-1;if(t>0){c.textContent=n?n.emptyScript:``;for(let n=0;n<t;n++)c.append(e[n],l()),T.nextNode(),p.push({type:2,index:++u});c.append(e[t],l())}}}else if(c.nodeType===8)if(c.data===o)p.push({type:2,index:u});else{let e=-1;for(;(e=c.data.indexOf(a,e+1))!==-1;)p.push({type:7,index:u}),e+=a.length-1}u++}}static createElement(e,t){let n=c.createElement(`template`);return n.innerHTML=e,n}};function O(e,t,n=e,r){if(t===S)return t;let i=r===void 0?n._$Cl:n._$Co?.[r],a=u(t)?void 0:t._$litDirective$;return i?.constructor!==a&&(i?._$AO?.(!1),a===void 0?i=void 0:(i=new a(e),i._$AT(e,n,r)),r===void 0?n._$Cl=i:(n._$Co??=[])[r]=i),i!==void 0&&(t=O(e,i._$AS(e,t.values),i,r)),t}var te=class{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){let{el:{content:t},parts:n}=this._$AD,r=(e?.creationScope??c).importNode(t,!0);T.currentNode=r;let i=T.nextNode(),a=0,o=0,s=n[0];for(;s!==void 0;){if(a===s.index){let t;s.type===2?t=new k(i,i.nextSibling,this,e):s.type===1?t=new s.ctor(i,s.name,s.strings,this,e):s.type===6&&(t=new ae(i,this,e)),this._$AV.push(t),s=n[++o]}a!==s?.index&&(i=T.nextNode(),a++)}return T.currentNode=c,r}p(e){let t=0;for(let n of this._$AV)n!==void 0&&(n.strings===void 0?n._$AI(e[t]):(n._$AI(e,n,t),t+=n.strings.length-2)),t++}},k=class e{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,n,r){this.type=2,this._$AH=C,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=n,this.options=r,this._$Cv=r?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode,t=this._$AM;return t!==void 0&&e?.nodeType===11&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=O(this,e,t),u(e)?e===C||e==null||e===``?(this._$AH!==C&&this._$AR(),this._$AH=C):e!==this._$AH&&e!==S&&this._(e):e._$litType$===void 0?e.nodeType===void 0?f(e)?this.k(e):this._(e):this.T(e):this.$(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==C&&u(this._$AH)?this._$AA.nextSibling.data=e:this.T(c.createTextNode(e)),this._$AH=e}$(e){let{values:t,_$litType$:n}=e,r=typeof n==`number`?this._$AC(e):(n.el===void 0&&(n.el=D.createElement(E(n.h,n.h[0]),this.options)),n);if(this._$AH?._$AD===r)this._$AH.p(t);else{let e=new te(r,this),n=e.u(this.options);e.p(t),this.T(n),this._$AH=e}}_$AC(e){let t=w.get(e.strings);return t===void 0&&w.set(e.strings,t=new D(e)),t}k(t){d(this._$AH)||(this._$AH=[],this._$AR());let n=this._$AH,r,i=0;for(let a of t)i===n.length?n.push(r=new e(this.O(l()),this.O(l()),this,this.options)):r=n[i],r._$AI(a),i++;i<n.length&&(this._$AR(r&&r._$AB.nextSibling,i),n.length=i)}_$AR(e=this._$AA.nextSibling,n){for(this._$AP?.(!1,!0,n);e!==this._$AB;){let n=t(e).nextSibling;t(e).remove(),e=n}}setConnected(e){this._$AM===void 0&&(this._$Cv=e,this._$AP?.(e))}},A=class{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,n,r,i){this.type=1,this._$AH=C,this._$AN=void 0,this.element=e,this.name=t,this._$AM=r,this.options=i,n.length>2||n[0]!==``||n[1]!==``?(this._$AH=Array(n.length-1).fill(new String),this.strings=n):this._$AH=C}_$AI(e,t=this,n,r){let i=this.strings,a=!1;if(i===void 0)e=O(this,e,t,0),a=!u(e)||e!==this._$AH&&e!==S,a&&(this._$AH=e);else{let r=e,o,s;for(e=i[0],o=0;o<i.length-1;o++)s=O(this,r[n+o],t,o),s===S&&(s=this._$AH[o]),a||=!u(s)||s!==this._$AH[o],s===C?e=C:e!==C&&(e+=(s??``)+i[o+1]),this._$AH[o]=s}a&&!r&&this.j(e)}j(e){e===C?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??``)}},ne=class extends A{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===C?void 0:e}},re=class extends A{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==C)}},ie=class extends A{constructor(e,t,n,r,i){super(e,t,n,r,i),this.type=5}_$AI(e,t=this){if((e=O(this,e,t,0)??C)===S)return;let n=this._$AH,r=e===C&&n!==C||e.capture!==n.capture||e.once!==n.once||e.passive!==n.passive,i=e!==C&&(n===C||r);r&&this.element.removeEventListener(this.name,this,n),i&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){typeof this._$AH==`function`?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}},ae=class{constructor(e,t,n){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=n}get _$AU(){return this._$AM._$AU}_$AI(e){O(this,e)}},oe=e.litHtmlPolyfillSupport;oe?.(D,k),(e.litHtmlVersions??=[]).push(`3.3.3`);var se=(e,t,n)=>{let r=n?.renderBefore??t,i=r._$litPart$;if(i===void 0){let e=n?.renderBefore??null;r._$litPart$=i=new k(t.insertBefore(l(),e),e,void 0,n??{})}return i._$AI(e),i},j={ATTRIBUTE:1,CHILD:2,PROPERTY:3,BOOLEAN_ATTRIBUTE:4,EVENT:5,ELEMENT:6},ce=e=>(...t)=>({_$litDirective$:e,values:t}),le=class{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,n){this._$Ct=e,this._$AM=t,this._$Ci=n}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}},M=class extends le{constructor(e){if(super(e),this.it=C,e.type!==j.CHILD)throw Error(this.constructor.directiveName+`() can only be used in child bindings`)}render(e){if(e===C||e==null)return this._t=void 0,this.it=e;if(e===S)return e;if(typeof e!=`string`)throw Error(this.constructor.directiveName+`() called with a non-string value`);if(e===this.it)return this._t;this.it=e;let t=[e];return t.raw=t,this._t={_$litType$:this.constructor.resultType,strings:t,values:[]}}};M.directiveName=`unsafeHTML`,M.resultType=1;var ue=ce(M),N=`.feed`,de=4e3,P=`feed:return`,F=`feed:return-filter`,I=new Intl.DateTimeFormat(`sr-Latn`,{day:`numeric`,month:`short`,year:`numeric`});function fe(e){return e?.error===`not_found`?`no_feed`:e?.error===`preview`?`preview`:`failed`}var pe=e=>I.format(new Date(e.published_at??e.inserted_at)),L=(e,t=0)=>{let[n,r,i]=e.split(`-`).map(Number);return new Date(n,r-1,i+t)},R=e=>[e.getFullYear(),String(e.getMonth()+1).padStart(2,`0`),String(e.getDate()).padStart(2,`0`)].join(`-`);function z(e,t){return!e&&!t?null:e&&t&&e>t?{from:t,to:e}:{from:e||null,to:t||null}}function B(e,t=new Date){return{from:R(new Date(t.getFullYear(),t.getMonth(),t.getDate()-e+1)),to:R(t)}}var V=(e=new Date)=>R(e);function me(e){return{from:e?.from?L(e.from).toISOString():void 0,to:e?.to?L(e.to,1).toISOString():void 0}}function H({from:e,to:t}){let n=e=>I.format(L(e));return e&&t?e===t?n(e):`${n(e)} – ${n(t)}`:e?`od ${n(e)}`:`do ${n(t)}`}function he(e){try{let{from:t,to:n}=JSON.parse(e.getItem(`feed:return-filter`)??`{}`);return z(t??null,n??null)}catch{return null}}function ge(e,t,n){let r={stories:[],hasMore:!1,hasNewer:!1,index:0,loading:!1,started:!1,failure:null,startId:null,notice:null,trayFor:null,filter:null,filterOpen:!1,guest:!1},i=e=>{r={...r,...e},n(r)},a,o=e=>{i({notice:e}),clearTimeout(a),a=setTimeout(()=>i({notice:null}),de)},s=0,c=async t=>{let n=s,a=r.stories.at(-1),o=await e.listSubgroups(N,{limit:20,beforeId:a?.id,aroundId:t,...me(r.filter)}).catch(()=>null);return n===s?o?.ok?(i({stories:[...r.stories,...o.groups],hasMore:o.has_more,hasNewer:r.hasNewer||o.has_newer}),!0):(i({failure:fe(o)}),!1):!1},l=e=>r.stories.some(t=>t.id===e),u=()=>{t.removeItem(P),t.removeItem(F)},d=async()=>{let n=Number(t.getItem(`feed:return`))||null;i({loading:!0,failure:null,filter:he(t)??r.filter});let[a,o]=await Promise.all([e.getLinkedGroup().catch(()=>null),e.getCurrentProfile().catch(()=>void 0)]);i({guest:o===null});let s=n??(a?.ok?a.group_id:null);await c(s??void 0)&&u(),i({loading:!1,started:!0,startId:s!==null&&l(s)?s:null})},f=async()=>{if(r.loading||!r.hasMore||r.failure)return;let e=s;i({loading:!0}),await c(),e===s&&i({loading:!1})},p=async e=>{s+=1;let t=s;i({filter:e,filterOpen:!1,stories:[],hasMore:!1,hasNewer:!1,index:0,failure:null,loading:!0,started:!1,startId:null,trayFor:null}),await c(),t===s&&i({loading:!1,started:!0})},m=null,h=new Set,g=async(t,n)=>{if(h.has(t))return;h.add(t),i({trayFor:null});let a=await e.toggleGroupReaction(t,n).catch(()=>null);if(h.delete(t),a?.ok){let{reactions:e}=a;i({stories:r.stories.map(n=>n.id===t?{...n,reactions:e}:n)})}else o(`react`)};return{get state(){return r},start:d,reached(t){let n=r.stories[t];t!==r.index&&i({index:t}),r.trayFor!==null&&n?.id!==r.trayFor&&i({trayFor:null}),n&&n.id!==m&&(m=n.id,e.linkGroup(n.id).catch(()=>null)),t>=r.stories.length-1-5&&f()},retry(){return r.stories.length===0?d():(i({failure:null}),f())},async open(n,a=`chat`){i({notice:null}),t.setItem(P,String(n)),r.filter&&t.setItem(F,JSON.stringify(r.filter)),(await e.openGroup(n,{tab:a}).catch(()=>null))?.ok||(u(),o(`open`))},async login(n){i({notice:null,trayFor:null}),t.setItem(P,String(n)),r.filter&&t.setItem(F,JSON.stringify(r.filter)),(await e.openLogin().catch(()=>null))?.ok||(u(),o(`login`))},applyFilter:p,openFilter(){i({filterOpen:!0,trayFor:null})},closeFilter(){i({filterOpen:!1})},toggleTray(e){i({trayFor:r.trayFor===e?null:e})},closeTray(){r.trayFor!==null&&i({trayFor:null})},react:g,async pickReaction(t){i({trayFor:null});let n=await e.pickEmoji().catch(()=>null);n?.ok?await g(t,n.emoji):n?.error!==`cancelled`&&o(`react`)},async share(t){(await e.shareGroup(t,{inApp:!0}).catch(()=>null))?.ok||o(`share`)}}}var _e=[`👍`,`❤️`,`😂`,`😮`,`😢`,`🙏`],ve=[[`Danas`,1],[`7 dana`,7],[`30 dana`,30]],U={open:`Ova vest trenutno ne može da se otvori.`,react:`Reakcija trenutno ne može da se sačuva.`,share:`Ova vest trenutno ne može da se podeli.`,login:`Prijava trenutno ne može da se otvori.`},ye=x`
+\f\r]`,m=/<(?:(!--|\/[^a-zA-Z])|(\/?[a-zA-Z][^>\s]*)|(\/?$))/g,h=/-->/g,g=/>/g,_=RegExp(`>|${p}(?:([^\\s"'>=/]+)(${p}*=${p}*(?:[^ \t\n\f\r"'\`<>=]|("|')|))|$)`,`g`),v=/'/g,y=/"/g,b=/^(?:script|style|textarea|title)$/i,x=(e=>(t,...n)=>({_$litType$:e,strings:t,values:n}))(1),S=Symbol.for(`lit-noChange`),C=Symbol.for(`lit-nothing`),w=new WeakMap,T=c.createTreeWalker(c,129);function E(e,t){if(!d(e)||!e.hasOwnProperty(`raw`))throw Error(`invalid template strings array`);return r===void 0?t:r.createHTML(t)}var ee=(e,t)=>{let n=e.length-1,r=[],o,c=t===2?`<svg>`:t===3?`<math>`:``,l=m;for(let t=0;t<n;t++){let n=e[t],u,d,f=-1,p=0;for(;p<n.length&&(l.lastIndex=p,d=l.exec(n),d!==null);)p=l.lastIndex,l===m?d[1]===`!--`?l=h:d[1]===void 0?d[2]===void 0?d[3]!==void 0&&(l=_):(b.test(d[2])&&(o=RegExp(`</`+d[2],`g`)),l=_):l=g:l===_?d[0]===`>`?(l=o??m,f=-1):d[1]===void 0?f=-2:(f=l.lastIndex-d[2].length,u=d[1],l=d[3]===void 0?_:d[3]===`"`?y:v):l===y||l===v?l=_:l===h||l===g?l=m:(l=_,o=void 0);let x=l===_&&e[t+1].startsWith(`/>`)?` `:``;c+=l===m?n+s:f>=0?(r.push(u),n.slice(0,f)+i+n.slice(f)+a+x):n+a+(f===-2?t:x)}return[E(e,c+(e[n]||`<?>`)+(t===2?`</svg>`:t===3?`</math>`:``)),r]},D=class e{constructor({strings:t,_$litType$:r},s){let c;this.parts=[];let u=0,d=0,f=t.length-1,p=this.parts,[m,h]=ee(t,r);if(this.el=e.createElement(m,s),T.currentNode=this.el.content,r===2||r===3){let e=this.el.content.firstChild;e.replaceWith(...e.childNodes)}for(;(c=T.nextNode())!==null&&p.length<f;){if(c.nodeType===1){if(c.hasAttributes())for(let e of c.getAttributeNames())if(e.endsWith(i)){let t=h[d++],n=c.getAttribute(e).split(a),r=/([.?@])?(.*)/.exec(t);p.push({type:1,index:u,name:r[2],strings:n,ctor:r[1]===`.`?ne:r[1]===`?`?re:r[1]===`@`?ie:A}),c.removeAttribute(e)}else e.startsWith(a)&&(p.push({type:6,index:u}),c.removeAttribute(e));if(b.test(c.tagName)){let e=c.textContent.split(a),t=e.length-1;if(t>0){c.textContent=n?n.emptyScript:``;for(let n=0;n<t;n++)c.append(e[n],l()),T.nextNode(),p.push({type:2,index:++u});c.append(e[t],l())}}}else if(c.nodeType===8)if(c.data===o)p.push({type:2,index:u});else{let e=-1;for(;(e=c.data.indexOf(a,e+1))!==-1;)p.push({type:7,index:u}),e+=a.length-1}u++}}static createElement(e,t){let n=c.createElement(`template`);return n.innerHTML=e,n}};function O(e,t,n=e,r){if(t===S)return t;let i=r===void 0?n._$Cl:n._$Co?.[r],a=u(t)?void 0:t._$litDirective$;return i?.constructor!==a&&(i?._$AO?.(!1),a===void 0?i=void 0:(i=new a(e),i._$AT(e,n,r)),r===void 0?n._$Cl=i:(n._$Co??=[])[r]=i),i!==void 0&&(t=O(e,i._$AS(e,t.values),i,r)),t}var te=class{constructor(e,t){this._$AV=[],this._$AN=void 0,this._$AD=e,this._$AM=t}get parentNode(){return this._$AM.parentNode}get _$AU(){return this._$AM._$AU}u(e){let{el:{content:t},parts:n}=this._$AD,r=(e?.creationScope??c).importNode(t,!0);T.currentNode=r;let i=T.nextNode(),a=0,o=0,s=n[0];for(;s!==void 0;){if(a===s.index){let t;s.type===2?t=new k(i,i.nextSibling,this,e):s.type===1?t=new s.ctor(i,s.name,s.strings,this,e):s.type===6&&(t=new ae(i,this,e)),this._$AV.push(t),s=n[++o]}a!==s?.index&&(i=T.nextNode(),a++)}return T.currentNode=c,r}p(e){let t=0;for(let n of this._$AV)n!==void 0&&(n.strings===void 0?n._$AI(e[t]):(n._$AI(e,n,t),t+=n.strings.length-2)),t++}},k=class e{get _$AU(){return this._$AM?._$AU??this._$Cv}constructor(e,t,n,r){this.type=2,this._$AH=C,this._$AN=void 0,this._$AA=e,this._$AB=t,this._$AM=n,this.options=r,this._$Cv=r?.isConnected??!0}get parentNode(){let e=this._$AA.parentNode,t=this._$AM;return t!==void 0&&e?.nodeType===11&&(e=t.parentNode),e}get startNode(){return this._$AA}get endNode(){return this._$AB}_$AI(e,t=this){e=O(this,e,t),u(e)?e===C||e==null||e===``?(this._$AH!==C&&this._$AR(),this._$AH=C):e!==this._$AH&&e!==S&&this._(e):e._$litType$===void 0?e.nodeType===void 0?f(e)?this.k(e):this._(e):this.T(e):this.$(e)}O(e){return this._$AA.parentNode.insertBefore(e,this._$AB)}T(e){this._$AH!==e&&(this._$AR(),this._$AH=this.O(e))}_(e){this._$AH!==C&&u(this._$AH)?this._$AA.nextSibling.data=e:this.T(c.createTextNode(e)),this._$AH=e}$(e){let{values:t,_$litType$:n}=e,r=typeof n==`number`?this._$AC(e):(n.el===void 0&&(n.el=D.createElement(E(n.h,n.h[0]),this.options)),n);if(this._$AH?._$AD===r)this._$AH.p(t);else{let e=new te(r,this),n=e.u(this.options);e.p(t),this.T(n),this._$AH=e}}_$AC(e){let t=w.get(e.strings);return t===void 0&&w.set(e.strings,t=new D(e)),t}k(t){d(this._$AH)||(this._$AH=[],this._$AR());let n=this._$AH,r,i=0;for(let a of t)i===n.length?n.push(r=new e(this.O(l()),this.O(l()),this,this.options)):r=n[i],r._$AI(a),i++;i<n.length&&(this._$AR(r&&r._$AB.nextSibling,i),n.length=i)}_$AR(e=this._$AA.nextSibling,n){for(this._$AP?.(!1,!0,n);e!==this._$AB;){let n=t(e).nextSibling;t(e).remove(),e=n}}setConnected(e){this._$AM===void 0&&(this._$Cv=e,this._$AP?.(e))}},A=class{get tagName(){return this.element.tagName}get _$AU(){return this._$AM._$AU}constructor(e,t,n,r,i){this.type=1,this._$AH=C,this._$AN=void 0,this.element=e,this.name=t,this._$AM=r,this.options=i,n.length>2||n[0]!==``||n[1]!==``?(this._$AH=Array(n.length-1).fill(new String),this.strings=n):this._$AH=C}_$AI(e,t=this,n,r){let i=this.strings,a=!1;if(i===void 0)e=O(this,e,t,0),a=!u(e)||e!==this._$AH&&e!==S,a&&(this._$AH=e);else{let r=e,o,s;for(e=i[0],o=0;o<i.length-1;o++)s=O(this,r[n+o],t,o),s===S&&(s=this._$AH[o]),a||=!u(s)||s!==this._$AH[o],s===C?e=C:e!==C&&(e+=(s??``)+i[o+1]),this._$AH[o]=s}a&&!r&&this.j(e)}j(e){e===C?this.element.removeAttribute(this.name):this.element.setAttribute(this.name,e??``)}},ne=class extends A{constructor(){super(...arguments),this.type=3}j(e){this.element[this.name]=e===C?void 0:e}},re=class extends A{constructor(){super(...arguments),this.type=4}j(e){this.element.toggleAttribute(this.name,!!e&&e!==C)}},ie=class extends A{constructor(e,t,n,r,i){super(e,t,n,r,i),this.type=5}_$AI(e,t=this){if((e=O(this,e,t,0)??C)===S)return;let n=this._$AH,r=e===C&&n!==C||e.capture!==n.capture||e.once!==n.once||e.passive!==n.passive,i=e!==C&&(n===C||r);r&&this.element.removeEventListener(this.name,this,n),i&&this.element.addEventListener(this.name,this,e),this._$AH=e}handleEvent(e){typeof this._$AH==`function`?this._$AH.call(this.options?.host??this.element,e):this._$AH.handleEvent(e)}},ae=class{constructor(e,t,n){this.element=e,this.type=6,this._$AN=void 0,this._$AM=t,this.options=n}get _$AU(){return this._$AM._$AU}_$AI(e){O(this,e)}},j=e.litHtmlPolyfillSupport;j?.(D,k),(e.litHtmlVersions??=[]).push(`3.3.3`);var oe=(e,t,n)=>{let r=n?.renderBefore??t,i=r._$litPart$;if(i===void 0){let e=n?.renderBefore??null;r._$litPart$=i=new k(t.insertBefore(l(),e),e,void 0,n??{})}return i._$AI(e),i};function se(e,t){let n=e.left+e.width/2,r=0,i=1/0;return t.forEach((e,t)=>{let a=Math.abs(e.left+e.width/2-n);a<i&&(r=t,i=a)}),r}var ce=(e,t,n)=>(e+t+n)%n,le=(e,t,n)=>e+(n.left-t.left)-(t.width-n.width)/2;function M(e,t){let n=Array.from(e.children);if(n.length<2)return;let r=e.getBoundingClientRect(),i=n.map(e=>e.getBoundingClientRect()),a=i[ce(se(r,i),t,n.length)],o=window.matchMedia(`(prefers-reduced-motion: reduce)`).matches;e.scrollTo({left:le(e.scrollLeft,r,a),behavior:o?`auto`:`smooth`})}var ue=e=>e?.querySelector(`[data-potok-gallery] [data-gallery-strip]`)??null;function de(e=document){e.documentElement.setAttribute(`data-potok-galleries`,``),e.addEventListener(`click`,e=>{let t=e.target?.closest?.(`[data-gallery-step]`),n=t?.closest(`[data-potok-gallery]`)?.querySelector(`[data-gallery-strip]`);!t||!n||(e.preventDefault(),M(n,Number(t.dataset.galleryStep)||1))})}
+/**
+* @license
+* Copyright 2017 Google LLC
+* SPDX-License-Identifier: BSD-3-Clause
+*/
+var fe={ATTRIBUTE:1,CHILD:2,PROPERTY:3,BOOLEAN_ATTRIBUTE:4,EVENT:5,ELEMENT:6},pe=e=>(...t)=>({_$litDirective$:e,values:t}),me=class{constructor(e){}get _$AU(){return this._$AM._$AU}_$AT(e,t,n){this._$Ct=e,this._$AM=t,this._$Ci=n}_$AS(e,t){return this.update(e,t)}update(e,t){return this.render(...t)}},N=class extends me{constructor(e){if(super(e),this.it=C,e.type!==fe.CHILD)throw Error(this.constructor.directiveName+`() can only be used in child bindings`)}render(e){if(e===C||e==null)return this._t=void 0,this.it=e;if(e===S)return e;if(typeof e!=`string`)throw Error(this.constructor.directiveName+`() called with a non-string value`);if(e===this.it)return this._t;this.it=e;let t=[e];return t.raw=t,this._t={_$litType$:this.constructor.resultType,strings:t,values:[]}}};N.directiveName=`unsafeHTML`,N.resultType=1;var he=pe(N),P=`.feed`,ge=4e3,F=`feed:return`,I=`feed:return-filter`,L=new Intl.DateTimeFormat(`sr-Latn`,{day:`numeric`,month:`short`,year:`numeric`});function _e(e){return e?.error===`not_found`?`no_feed`:e?.error===`preview`?`preview`:`failed`}var ve=e=>L.format(new Date(e.published_at??e.inserted_at)),R=(e,t=0)=>{let[n,r,i]=e.split(`-`).map(Number);return new Date(n,r-1,i+t)},z=e=>[e.getFullYear(),String(e.getMonth()+1).padStart(2,`0`),String(e.getDate()).padStart(2,`0`)].join(`-`);function B(e,t){return!e&&!t?null:e&&t&&e>t?{from:t,to:e}:{from:e||null,to:t||null}}function ye(e,t=new Date){return{from:z(new Date(t.getFullYear(),t.getMonth(),t.getDate()-e+1)),to:z(t)}}var V=(e=new Date)=>z(e);function be(e){return{from:e?.from?R(e.from).toISOString():void 0,to:e?.to?R(e.to,1).toISOString():void 0}}function H({from:e,to:t}){let n=e=>L.format(R(e));return e&&t?e===t?n(e):`${n(e)} – ${n(t)}`:e?`od ${n(e)}`:`do ${n(t)}`}function xe(e){try{let{from:t,to:n}=JSON.parse(e.getItem(`feed:return-filter`)??`{}`);return B(t??null,n??null)}catch{return null}}function Se(e,t,n){let r={stories:[],hasMore:!1,hasNewer:!1,index:0,loading:!1,started:!1,failure:null,startId:null,notice:null,trayFor:null,filter:null,filterOpen:!1,guest:!1},i=e=>{r={...r,...e},n(r)},a,o=e=>{i({notice:e}),clearTimeout(a),a=setTimeout(()=>i({notice:null}),ge)},s=0,c=async t=>{let n=s,a=r.stories.at(-1),o=await e.listSubgroups(P,{limit:20,beforeId:a?.id,aroundId:t,...be(r.filter)}).catch(()=>null);return n===s?o?.ok?(i({stories:[...r.stories,...o.groups],hasMore:o.has_more,hasNewer:r.hasNewer||o.has_newer}),!0):(i({failure:_e(o)}),!1):!1},l=e=>r.stories.some(t=>t.id===e),u=()=>{t.removeItem(F),t.removeItem(I)},d=async()=>{let n=Number(t.getItem(`feed:return`))||null;i({loading:!0,failure:null,filter:xe(t)??r.filter});let[a,o]=await Promise.all([e.getLinkedGroup().catch(()=>null),e.getCurrentProfile().catch(()=>void 0)]);i({guest:o===null});let s=n??(a?.ok?a.group_id:null);await c(s??void 0)&&u(),i({loading:!1,started:!0,startId:s!==null&&l(s)?s:null})},f=async()=>{if(r.loading||!r.hasMore||r.failure)return;let e=s;i({loading:!0}),await c(),e===s&&i({loading:!1})},p=async e=>{s+=1;let t=s;i({filter:e,filterOpen:!1,stories:[],hasMore:!1,hasNewer:!1,index:0,failure:null,loading:!0,started:!1,startId:null,trayFor:null}),await c(),t===s&&i({loading:!1,started:!0})},m=null,h=new Set,g=async(t,n)=>{if(h.has(t))return;h.add(t),i({trayFor:null});let a=await e.toggleGroupReaction(t,n).catch(()=>null);if(h.delete(t),a?.ok){let{reactions:e}=a;i({stories:r.stories.map(n=>n.id===t?{...n,reactions:e}:n)})}else o(`react`)};return{get state(){return r},start:d,reached(t){let n=r.stories[t];t!==r.index&&i({index:t}),r.trayFor!==null&&n?.id!==r.trayFor&&i({trayFor:null}),n&&n.id!==m&&(m=n.id,e.linkGroup(n.id).catch(()=>null)),t>=r.stories.length-1-5&&f()},retry(){return r.stories.length===0?d():(i({failure:null}),f())},async open(n,a=`chat`){i({notice:null}),t.setItem(F,String(n)),r.filter&&t.setItem(I,JSON.stringify(r.filter)),(await e.openGroup(n,{tab:a}).catch(()=>null))?.ok||(u(),o(`open`))},async login(n){i({notice:null,trayFor:null}),t.setItem(F,String(n)),r.filter&&t.setItem(I,JSON.stringify(r.filter)),(await e.openLogin().catch(()=>null))?.ok||(u(),o(`login`))},applyFilter:p,openFilter(){i({filterOpen:!0,trayFor:null})},closeFilter(){i({filterOpen:!1})},toggleTray(e){i({trayFor:r.trayFor===e?null:e})},closeTray(){r.trayFor!==null&&i({trayFor:null})},react:g,async pickReaction(t){i({trayFor:null});let n=await e.pickEmoji().catch(()=>null);n?.ok?await g(t,n.emoji):n?.error!==`cancelled`&&o(`react`)},async share(t){(await e.shareGroup(t,{inApp:!0}).catch(()=>null))?.ok||o(`share`)}}}var Ce=[`👍`,`❤️`,`😂`,`😮`,`😢`,`🙏`],we=[[`Danas`,1],[`7 dana`,7],[`30 dana`,30]],Te={open:`Ova vest trenutno ne može da se otvori.`,react:`Reakcija trenutno ne može da se sačuva.`,share:`Ova vest trenutno ne može da se podeli.`,login:`Prijava trenutno ne može da se otvori.`},Ee=x`
   <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path
       stroke-linecap="round"
@@ -73,7 +79,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 0 1-.923 1.785A5.969 5.969 0 0 0 6 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337Z"
     />
   </svg>
-`,be=x`
+`,De=x`
   <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path
       stroke-linecap="round"
@@ -81,7 +87,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       d="M15.182 15.182a4.5 4.5 0 0 1-6.364 0M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0ZM9.75 9.75c0 .414-.168.75-.375.75S9 10.164 9 9.75 9.168 9 9.375 9s.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Zm5.625 0c0 .414-.168.75-.375.75s-.375-.336-.375-.75.168-.75.375-.75.375.336.375.75Zm-.375 0h.008v.015h-.008V9.75Z"
     />
   </svg>
-`,xe=x`
+`,Oe=x`
   <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path
       stroke-linecap="round"
@@ -89,7 +95,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
     />
   </svg>
-`,W=x`
+`,U=x`
   <svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path
       stroke-linecap="round"
@@ -97,25 +103,25 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
     />
   </svg>
-`,G=x`
+`,W=x`
   <svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
   </svg>
-`,Se=x`
+`,ke=x`
   <svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
   </svg>
-`,K=(e,t,n)=>x`
+`,G=(e,t,n)=>x`
   <div class="feed-card items-center justify-center gap-2 px-8 text-center text-base-content">
     <p class="text-lg font-semibold">${e}</p>
     ${t?x`<p class="max-w-sm text-sm opacity-70">${t}</p>`:C}
     ${n??C}
   </div>
-`,q=e=>x`
+`,K=e=>x`
   <button id="feed-retry" class="d-btn d-btn-primary d-btn-sm mt-3" @click=${()=>void e.retry()}>
     Pokušaj ponovo
   </button>
-`,Ce=(e,t)=>{switch(t.failure){case`no_feed`:return K(`Ova grupa nema podgrupu ${N}`,`Napravi podgrupu ${N}, a svaka njena podgrupa je jedna vest.`);case`preview`:return K(`Pregled`,`Vesti se vide tek na stranici grupe.`);default:return K(`Vesti nisu učitane`,void 0,q(e))}},J=e=>!e.is_public&&!e.inherits_members,we=e=>e.comment_count>0?`Komentari: ${e.comment_count}`:`Komentari`,Te=(e,t)=>t.reactions.length===0?C:x`<div class="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]" data-reactions>
+`,Ae=(e,t)=>{switch(t.failure){case`no_feed`:return G(`Ova grupa nema podgrupu ${P}`,`Napravi podgrupu ${P}, a svaka njena podgrupa je jedna vest.`);case`preview`:return G(`Pregled`,`Vesti se vide tek na stranici grupe.`);default:return G(`Vesti nisu učitane`,void 0,K(e))}},q=e=>!e.is_public&&!e.inherits_members,je=e=>e.comment_count>0?`Komentari: ${e.comment_count}`:`Komentari`,Me=(e,t)=>t.reactions.length===0?C:x`<div class="mb-2 flex gap-1.5 overflow-x-auto [scrollbar-width:none]" data-reactions>
         ${t.reactions.map(n=>x`<button
             class="inline-flex h-8 shrink-0 items-center gap-1 rounded-full border px-2 leading-none transition duration-150 enabled:active:scale-95 disabled:cursor-default ${n.mine?`border-primary/50 bg-primary/10 text-primary`:`border-base-300 bg-base-100 text-base-content/70`}"
             aria-pressed=${n.mine}
@@ -126,10 +132,10 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
             <span class="text-base leading-none">${n.emoji}</span>
             <span class="text-xs font-semibold tabular-nums">${n.count}</span>
           </button>`)}
-      </div>`,Ee=(e,t)=>x`
+      </div>`,Ne=(e,t)=>x`
   <div class="bg-base-100 border-base-300 flex min-w-0 items-center rounded-full border text-sm shadow-md" data-filter-chip>
     <button class="flex min-w-0 items-center gap-1.5 py-1.5 pr-1 pl-3" aria-haspopup="dialog" @click=${()=>e.openFilter()}>
-      ${W}<span class="truncate">${H(t)}</span>
+      ${U}<span class="truncate">${H(t)}</span>
     </button>
     <button
       class="hover:bg-base-200 mr-1 inline-flex size-7 shrink-0 items-center justify-center rounded-full"
@@ -137,10 +143,10 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       data-filter-clear
       @click=${()=>void e.applyFilter(null)}
     >
-      ${G}
+      ${W}
     </button>
   </div>
-`,De=(e,t)=>x`
+`,Pe=(e,t)=>x`
   <button
     class="bg-base-100 border-base-300 shrink-0 rounded-full border px-3 py-1.5 text-sm shadow-md"
     data-newer
@@ -148,9 +154,9 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
   >
     Novije vesti
   </button>
-`,Oe=(e,t)=>{let n=t.hasNewer&&t.index===0;return!t.filter&&!n?C:x`<div class="fixed top-2 left-1/2 z-20 flex max-w-[calc(100%-1rem)] -translate-x-1/2 gap-2">
-    ${n?De(e,t):C} ${t.filter?Ee(e,t.filter):C}
-  </div>`},ke=(e,t)=>{t.preventDefault();let n=new FormData(t.target);e.applyFilter(z(n.get(`from`),n.get(`to`)))},Ae=(e,t)=>x`
+`,Fe=(e,t)=>{let n=t.hasNewer&&t.index===0;return!t.filter&&!n?C:x`<div class="fixed top-2 left-1/2 z-20 flex max-w-[calc(100%-1rem)] -translate-x-1/2 gap-2">
+    ${n?Pe(e,t):C} ${t.filter?Ne(e,t.filter):C}
+  </div>`},Ie=(e,t)=>{t.preventDefault();let n=new FormData(t.target);e.applyFilter(B(n.get(`from`),n.get(`to`)))},Le=(e,t)=>x`
   <div
     class="fixed inset-0 z-30 flex items-end justify-center bg-black/30 sm:items-center"
     data-filter-sheet
@@ -160,7 +166,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       class="bg-base-100 text-base-content w-full max-w-md rounded-t-2xl p-5 shadow-xl sm:rounded-2xl"
       role="dialog"
       aria-label="Filter po datumu"
-      @submit=${t=>ke(e,t)}
+      @submit=${t=>Ie(e,t)}
     >
       <div class="flex items-center justify-between">
         <h2 class="text-lg font-semibold">Vesti po datumu</h2>
@@ -171,15 +177,15 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
           data-filter-close
           @click=${()=>e.closeFilter()}
         >
-          ${G}
+          ${W}
         </button>
       </div>
       <div class="mt-3 flex gap-2">
-        ${ve.map(([t,n])=>x`<button
+        ${we.map(([t,n])=>x`<button
             type="button"
             class="d-btn d-btn-sm flex-1"
             data-filter-days=${n}
-            @click=${()=>void e.applyFilter(B(n))}
+            @click=${()=>void e.applyFilter(ye(n))}
           >
             ${t}
           </button>`)}
@@ -202,7 +208,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       </div>
     </form>
   </div>
-`,je=(e,t)=>x`
+`,Re=(e,t)=>x`
   <div
     class="bg-base-100 border-base-300 absolute right-4 bottom-full z-10 mb-2 flex items-center gap-0.5 rounded-full border p-1 shadow-lg"
     role="group"
@@ -210,7 +216,7 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
     data-react
     data-reaction-tray
   >
-    ${_e.map(n=>x`<button
+    ${Ce.map(n=>x`<button
         class="hover:bg-base-200 inline-flex size-10 items-center justify-center rounded-full text-xl leading-none transition duration-150 active:scale-90"
         data-quick-reaction=${n}
         @click=${()=>void e.react(t.id,n)}
@@ -223,14 +229,14 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
       data-more-reactions
       @click=${()=>void e.pickReaction(t.id)}
     >
-      ${Se}
+      ${ke}
     </button>
   </div>
-`,Me=(e,t)=>x`
+`,J=(e,t)=>x`
   <article class="feed-card text-base-content" data-story=${t.id}>
     <div class="feed-body">
       ${t.description_html?x`<div class="rich-content mx-auto max-w-2xl px-5 py-6 text-[1.0625rem]">
-            ${ue(t.description_html)}
+            ${he(t.description_html)}
           </div>`:x`<div class="flex min-h-full flex-col items-center justify-center gap-3 px-8 text-center">
             <h2 class="text-2xl font-semibold">${t.name}</h2>
             ${t.app_description?x`<p class="max-w-sm opacity-70">${t.app_description}</p>`:C}
@@ -246,9 +252,9 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
     </div>
     <footer class="border-base-300 border-t">
       <div class="relative mx-auto max-w-2xl px-5 py-3">
-        ${Te(e,t)}
+        ${Me(e,t)}
         <div class="flex items-center gap-1">
-          ${J(t)?x`<span class="min-w-0 flex-1"><span class="d-badge d-badge-warning d-badge-sm" data-draft>Nacrt</span></span>`:x`<span class="min-w-0 flex-1">
+          ${q(t)?x`<span class="min-w-0 flex-1"><span class="d-badge d-badge-warning d-badge-sm" data-draft>Nacrt</span></span>`:x`<span class="min-w-0 flex-1">
                 <button
                   class="d-btn d-btn-ghost d-btn-sm -ml-2 max-w-full flex-nowrap gap-1.5 px-2 font-normal"
                   aria-label="Filter po datumu"
@@ -256,32 +262,32 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
                   data-filter
                   @click=${()=>e.openFilter()}
                 >
-                  ${W}
+                  ${U}
                   <time
                     class="truncate opacity-70"
                     datetime=${t.published_at??t.inserted_at}
                     data-published
                   >
-                    ${pe(t)}
+                    ${ve(t)}
                   </time>
                 </button>
               </span>`}
-          ${t.can_react&&!J(t)?x`<button
+          ${t.can_react&&!q(t)?x`<button
                 class="d-btn d-btn-ghost d-btn-sm d-btn-square shrink-0"
                 aria-label="Dodaj reakciju"
                 aria-expanded=${e.state.trayFor===t.id}
                 data-react
                 @click=${()=>e.toggleTray(t.id)}
               >
-                ${be}
+                ${De}
               </button>`:C}
-          ${J(t)?C:x`<button
+          ${q(t)?C:x`<button
                 class="d-btn d-btn-ghost d-btn-sm d-btn-square shrink-0"
                 aria-label="Podeli"
                 data-share
                 @click=${()=>void e.share(t.id)}
               >
-                ${xe}
+                ${Oe}
               </button>`}
           ${t.uses_api?x`<button
                 class="d-btn d-btn-primary d-btn-sm ml-1 shrink-0"
@@ -292,32 +298,32 @@ var e=globalThis,t=e=>e,n=e.trustedTypes,r=n?n.createPolicy(`lit-html`,{createHT
               </button>`:C}
           <button
             class="d-btn d-btn-sm ml-1 shrink-0 ${t.uses_api?`d-btn-ghost`:`d-btn-primary`}"
-            aria-label=${we(t)}
+            aria-label=${je(t)}
             data-comments
             @click=${()=>void(e.state.guest?e.login(t.id):e.open(t.id))}
           >
-            ${ye}
+            ${Ee}
             <span class=${t.uses_api?`hidden min-[26rem]:inline`:``}>Komentari</span>
             ${t.comment_count>0?x`<span class="tabular-nums" data-comment-count>${t.comment_count}</span>`:C}
           </button>
         </div>
-        ${e.state.trayFor===t.id?je(e,t):C}
+        ${e.state.trayFor===t.id?Re(e,t):C}
       </div>
     </footer>
   </article>
-`,Ne=(e,t)=>t.started?t.stories.length===0?t.failure?Ce(e,t):t.filter?x`
-      ${K(`Nema vesti u tom periodu`,H(t.filter),x`<button class="d-btn d-btn-primary d-btn-sm mt-3" data-filter-all @click=${()=>void e.applyFilter(null)}>
+`,ze=(e,t)=>t.started?t.stories.length===0?t.failure?Ae(e,t):t.filter?x`
+      ${G(`Nema vesti u tom periodu`,H(t.filter),x`<button class="d-btn d-btn-primary d-btn-sm mt-3" data-filter-all @click=${()=>void e.applyFilter(null)}>
           Prikaži sve
         </button>`)}
-    `:K(`Još nema vesti`):x`
-    ${Oe(e,t)}
-    ${t.filterOpen?Ae(e,t.filter):C}
-    ${t.stories.map(t=>Me(e,t))}
-    ${t.failure?K(`Sledeće vesti nisu učitane`,void 0,q(e)):C}
+    `:G(`Još nema vesti`):x`
+    ${Fe(e,t)}
+    ${t.filterOpen?Le(e,t.filter):C}
+    ${t.stories.map(t=>J(e,t))}
+    ${t.failure?G(`Sledeće vesti nisu učitane`,void 0,K(e)):C}
     ${t.notice?x`<div class="d-toast d-toast-center d-toast-top" data-notice>
-          <div class="d-alert d-alert-error">${U[t.notice]}</div>
+          <div class="d-alert d-alert-error">${Te[t.notice]}</div>
         </div>`:C}
-  `:K(`Učitavam vesti…`),Y=e=>e.target.closest?.(`[data-filter-sheet]`)!=null,X=e=>Math.round(e.scrollTop/e.clientHeight);function Z(e,t){let n=e.querySelectorAll(`.feed-card`)[X(e)]?.querySelector(`.feed-body`);return n&&(t>0?n.scrollHeight-n.clientHeight-n.scrollTop:n.scrollTop)>1?n:null}var Q=(e,t)=>e.scrollBy({top:t*e.clientHeight,behavior:`smooth`});function $(e,t){let n=Z(e,t);n?n.scrollBy({top:t*n.clientHeight*.8,behavior:`smooth`}):Q(e,t)}var Pe=150;function Fe(e){let t=!1,n;e.addEventListener(`wheel`,r=>{if(r.ctrlKey||r.deltaY===0||Y(r))return;let i=r.deltaY>0?1:-1;!t&&Z(e,i)||(r.preventDefault(),clearTimeout(n),n=window.setTimeout(()=>t=!1,Pe),t||(t=!0,Q(e,i)))},{passive:!1})}function Ie(e){e.classList.add(`feed`);let t=null,n=ge(window.potok,localStorage,r=>{se(Ne(n,r),e),e.classList.toggle(`feed-with-chips`,r.filter!==null||r.hasNewer),r.startId!==null&&t!==r.startId&&(t=r.startId,e.scrollTop=r.stories.findIndex(e=>e.id===r.startId)*e.clientHeight)});e.addEventListener(`scroll`,()=>n.reached(X(e)),{passive:!0}),e.addEventListener(`click`,e=>{e.target.closest(`[data-react]`)||n.closeTray()}),Fe(e),window.addEventListener(`keydown`,t=>{Y(t)||(t.key===`ArrowDown`||t.key===`PageDown`?(t.preventDefault(),$(e,1)):(t.key===`ArrowUp`||t.key===`PageUp`)&&(t.preventDefault(),$(e,-1)))}),n.start().then(()=>n.reached(X(e)))}Ie(document.querySelector(`#feed`));
+  `:G(`Učitavam vesti…`),Y=e=>e.target.closest?.(`[data-filter-sheet]`)!=null,X=e=>Math.round(e.scrollTop/e.clientHeight);function Z(e,t){let n=e.querySelectorAll(`.feed-card`)[X(e)]?.querySelector(`.feed-body`);return n&&(t>0?n.scrollHeight-n.clientHeight-n.scrollTop:n.scrollTop)>1?n:null}var Q=(e,t)=>e.scrollBy({top:t*e.clientHeight,behavior:`smooth`});function $(e,t){let n=Z(e,t);n?n.scrollBy({top:t*n.clientHeight*.8,behavior:`smooth`}):Q(e,t)}var Be=150;function Ve(e){let t=!1,n;e.addEventListener(`wheel`,r=>{if(r.ctrlKey||r.deltaY===0||Y(r)||Math.abs(r.deltaX)>Math.abs(r.deltaY)||r.shiftKey&&r.target?.closest?.(`[data-potok-gallery]`))return;let i=r.deltaY>0?1:-1;!t&&Z(e,i)||(r.preventDefault(),clearTimeout(n),n=window.setTimeout(()=>t=!1,Be),t||(t=!0,Q(e,i)))},{passive:!1})}function He(e){e.classList.add(`feed`);let t=null,n=Se(window.potok,localStorage,r=>{oe(ze(n,r),e),e.classList.toggle(`feed-with-chips`,r.filter!==null||r.hasNewer),r.startId!==null&&t!==r.startId&&(t=r.startId,e.scrollTop=r.stories.findIndex(e=>e.id===r.startId)*e.clientHeight)});e.addEventListener(`scroll`,()=>n.reached(X(e)),{passive:!0}),e.addEventListener(`click`,e=>{e.target.closest(`[data-react]`)||n.closeTray()}),Ve(e),de(),window.addEventListener(`keydown`,t=>{if(!Y(t)){if(t.key===`ArrowDown`||t.key===`PageDown`)t.preventDefault(),$(e,1);else if(t.key===`ArrowUp`||t.key===`PageUp`)t.preventDefault(),$(e,-1);else if(t.key===`ArrowLeft`||t.key===`ArrowRight`){if(t.target?.closest?.(`[data-gallery-strip]`))return;let n=ue(e.querySelectorAll(`.feed-card`)[X(e)]);if(!n)return;t.preventDefault(),M(n,t.key===`ArrowRight`?1:-1)}}}),n.start().then(()=>n.reached(X(e)))}He(document.querySelector(`#feed`));
 
 //////////////////////
 // end of app code

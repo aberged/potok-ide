@@ -4433,9 +4433,11 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   defp allow_description_picture_upload(socket) do
+    socket = assign(socket, :description_picture_batch, [])
+
     opts = [
       accept: ~w(image/jpeg),
-      max_entries: 1,
+      max_entries: Storage.max_files(),
       max_file_size: @max_description_picture_size,
       auto_upload: true,
       progress: &description_picture_progress/3
@@ -4456,41 +4458,89 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   # Also called when an upload to the bucket fails, with the entry not done.
+  # Each picture is kept as soon as it is up; pictures picked together go out
+  # together, as one message, once none of them is still on its way.
   defp description_picture_progress(:description_picture, %{done?: true} = entry, socket) do
-    if can_post_description_picture?(socket.assigns.group, socket.assigns.access),
-      do: {:noreply, post_description_picture(socket, entry)},
-      else: {:noreply, cancel_upload(socket, :description_picture, entry.ref)}
+    if can_post_description_picture?(socket.assigns.group, socket.assigns.access) do
+      group = socket.assigns.group
+
+      # The ref keeps the order they were picked in, whichever arrives first.
+      stored =
+        case consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)}) do
+          {:ok, attachment} -> [{pick_order(entry.ref), attachment}]
+          _error -> []
+        end
+
+      socket
+      |> update(:description_picture_batch, &(&1 ++ stored))
+      |> post_description_pictures_when_all_up(entry.ref)
+      |> then(&{:noreply, &1})
+    else
+      {:noreply, cancel_upload(socket, :description_picture, entry.ref)}
+    end
   end
 
   defp description_picture_progress(:description_picture, entry, socket) do
     if upload_errors(socket.assigns.uploads.description_picture, entry) == [] do
       {:noreply, socket}
     else
-      {:noreply,
-       socket
-       |> cancel_upload(:description_picture, entry.ref)
-       |> put_flash(:error, gettext("The picture could not be sent."))}
+      socket
+      |> cancel_upload(:description_picture, entry.ref)
+      |> put_flash(:error, gettext("The picture could not be sent."))
+      |> post_description_pictures_when_all_up(entry.ref)
+      |> then(&{:noreply, &1})
     end
   end
 
-  # The file goes where every file of the group goes, as a message with it, and
-  # the field gets its address. The author's own message moves their read
-  # marker, which the broadcast of the unread count skips on their own page.
-  defp post_description_picture(socket, entry) do
+  # `ref` is the entry just handled, which the upload may still list.
+  defp post_description_pictures_when_all_up(socket, ref) do
+    waiting? =
+      Enum.any?(
+        socket.assigns.uploads.description_picture.entries,
+        &(&1.ref != ref and not &1.done? and &1.valid?)
+      )
+
+    case socket.assigns.description_picture_batch do
+      [] ->
+        socket
+
+      _batch when waiting? ->
+        socket
+
+      batch ->
+        attachments = batch |> Enum.sort_by(&elem(&1, 0)) |> Enum.map(&elem(&1, 1))
+        socket |> assign(:description_picture_batch, []) |> post_description_pictures(attachments)
+    end
+  end
+
+  defp pick_order(ref) do
+    case Integer.parse(to_string(ref)) do
+      {number, ""} -> number
+      _other -> 0
+    end
+  end
+
+  # The files go where every file of the group goes, as one message with them,
+  # and the field gets their addresses. The author's own message moves their
+  # read marker, which the broadcast of the unread count skips on their own page.
+  defp post_description_pictures(socket, attachments) do
     %{current_profile: profile, group: group} = socket.assigns
-    content = gettext("Picture for the group's description")
 
-    stored =
-      consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)})
+    content =
+      ngettext(
+        "Picture for the group's description",
+        "Pictures for the group's description",
+        length(attachments)
+      )
 
-    with {:ok, attachment} <- stored,
-         {:ok, value} <-
-           create_value_or_drop_files(profile, group, %{"content" => content}, [attachment]) do
+    with {:ok, value} <-
+           create_value_or_drop_files(profile, group, %{"content" => content}, attachments) do
+      urls =
+        value.attachments |> Enum.sort_by(& &1.id) |> Enum.map(&PostTemplates.Picture.address/1)
+
       socket
       |> schedule_refresh(:unread)
-      |> push_event("description_picture_ready", %{
-        url: PostTemplates.Picture.address(hd(value.attachments))
-      })
+      |> push_event("description_picture_ready", %{url: hd(urls), urls: urls})
     else
       _error -> put_flash(socket, :error, gettext("The picture could not be sent."))
     end

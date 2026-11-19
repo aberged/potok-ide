@@ -1378,7 +1378,7 @@ defmodule PotokIdeWeb.DomainCopy do
           text:
             dgettext(
               "domain_map",
-              "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group."
+              "It can list the <Group>groups</Group> under one of its sub-groups, all of them or those of a chosen period, show their descriptions and take the viewer to their chat or their page. A link can open it on one of those groups. That is how a group becomes a news feed, with one story in each group. The groups an app keeps its files in stay out of such lists."
             )
         },
         %{
@@ -1798,7 +1798,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description."
+            "A picture a description's template takes from the device is a <Value>value</Value> in the group's chat with its <ValueAttachment>file</ValueAttachment>, so it stays among the group's files; pictures picked together for a gallery are one value with up to ten files. More people see a description than a chat, so the picture's address is signed and needs no login. Deleting that value also removes the picture from the description. A gallery says in its HTML only which pictures and in which of four looks, the one attribute of its kind the sanitizer keeps; Potok draws the look, its buttons and its counter wherever the description shows, in an app's frame too."
           )
       },
       %{

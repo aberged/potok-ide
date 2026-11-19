@@ -249,6 +249,57 @@ defmodule PotokIdeWeb.GroupLive.DescriptionTemplatesTest do
 
       refute has_element?(lv, "#group-description-template-field-items-1")
     end
+
+    test "a gallery takes pictures row by row, each with its caption, in a look", ctx do
+      lv = open(ctx)
+      fields = %{"title" => "Dan", "pictures" => ["https://a.rs/1.jpg"], "captions" => ["Prva"]}
+
+      change(lv, "#group-edit-form", %{"pick" => "gallery"})
+
+      assert has_element?(lv, "#group-description-template-field-look-cinema input[type=radio]")
+      assert has_element?(lv, "#group-description-template-field-pictures-0-address")
+      assert has_element?(lv, "#group-description-template-field-pictures-device")
+
+      change(lv, "#group-edit-form", %{
+        "id" => "gallery",
+        "add_item" => "pictures",
+        "fields" => fields
+      })
+
+      assert has_element?(lv, "#group-description-template-field-pictures-1-caption")
+
+      change(lv, "#group-edit-form", %{
+        "id" => "gallery",
+        "remove_item" => "pictures:0",
+        "fields" => %{
+          "title" => "Dan",
+          "look" => "polaroid",
+          "pictures" => ["https://a.rs/1.jpg", "https://a.rs/2.jpg"],
+          "captions" => ["Prva", "Druga"]
+        }
+      })
+
+      refute has_element?(lv, "#group-description-template-field-pictures-1")
+
+      assert has_element?(
+               lv,
+               "#group-description-template-field-pictures-0-caption[value='Druga']"
+             )
+
+      submit(lv, "#group-edit-form", %{
+        "id" => "gallery",
+        "fields" => %{
+          "title" => "Dan",
+          "look" => "polaroid",
+          "pictures" => ["https://a.rs/2.jpg"],
+          "captions" => ["Druga"]
+        }
+      })
+
+      group = Social.get_group!(ctx.group.id)
+      assert group.description =~ ~s(data-potok-gallery="polaroid")
+      assert has_element?(lv, "#flash-group", "Group updated")
+    end
   end
 
   describe "alternative descriptions" do
@@ -449,6 +500,26 @@ defmodule PotokIdeWeb.GroupLive.DescriptionTemplatesTest do
       render_hook(lv, "description_picture_invalid", %{})
 
       assert has_element?(lv, "#flash-group", "image")
+    end
+
+    # Several picked together go out as one message once the last one is up;
+    # LiveViewTest's upload client stops when the first entry is consumed, so
+    # only a browser sees more than one (see `post_description_pictures_when_all_up`).
+    test "for a gallery comes back as a list of addresses", ctx do
+      lv = open(ctx)
+      change(lv, "#group-edit-form", %{"pick" => "gallery"})
+
+      upload =
+        file_input(lv, "#description-picture-form", :description_picture, [
+          %{name: "jedan.jpg", content: "jedan", type: "image/jpeg"}
+        ])
+
+      render_upload(upload, "jedan.jpg")
+
+      assert_push_event(lv, "description_picture_ready", %{url: url, urls: [url]})
+      assert {[value], _more?} = Social.list_group_values_page(ctx.group)
+      assert value.content == "Picture for the group's description"
+      assert response(get(build_conn(), URI.parse(url).path), 200) == "jedan"
     end
 
     test "is only offered to whoever may post a file to the chat", ctx do

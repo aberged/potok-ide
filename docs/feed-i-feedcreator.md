@@ -155,7 +155,8 @@ Sanitizer određuje kako šablon sme da izgleda:
 
 | Prolazi | Ne prolazi |
 |---|---|
-| `h1`-`h6`, `p`, `div`, `section`, `article`, `blockquote`, `figure`, `table`, `ul`, `ol`, `details` | `class`, `id`, `data-*`, `<style>`, `<script>`, `<iframe>`, `<video>` |
+| `h1`-`h6`, `p`, `div`, `section`, `article`, `blockquote`, `figure`, `table`, `ul`, `ol`, `details` | `class`, `id`, `data-*` (osim jednog, ispod), `<style>`, `<script>`, `<iframe>`, `<video>` |
+| `data-potok-gallery` na `div`, sa `slides`, `cards`, `cinema` ili `polaroid` | `data-potok-gallery` na drugom tagu ili sa drugom vrednošću |
 | `style` na tim tagovima | `style` na `img` i `a` |
 | `color`, `background-color`, `border`, `border-radius`, `padding`, `margin`, `font-size`, `font-weight`, `line-height`, `text-align`, `width`, `height` | `flex`, `grid`, `max-width`, `gap`, `box-shadow`, `opacity`, `transform`, `position`, `overflow: hidden` |
 | `#ffffff` i `rgb(1,2,3)` | `#FFFFFF`, `rgba()`, `var()`, gradijenti |
@@ -168,6 +169,23 @@ Iz toga slede tri pravila za šablone:
 - Boja linka dolazi iz teme, pa na površini u boji nema linkova.
 
 `src/sanitizer.test.ts` u projektu FeedCreator drži kopiju ovih pravila i proverava svaki šablon. Potok iste šablone proverava kroz pravi sanitizer.
+
+### Galerija
+
+Galerija je jedini šablon koji se ne crta sam: slike koje se listaju sa strane traže `scroll-snap` i dugmad, a to sanitizer ne pušta. Zato opis kaže samo koje slike i u kom izgledu, a ostalo radi Potok:
+
+```html
+<div data-potok-gallery="cards" style="margin: 14px 0 0;"><div>
+  <figure><img src="https://..." alt="Jutro"><figcaption>Jutro</figcaption></figure>
+  ...
+</div></div>
+```
+
+- Izgledi su četiri: `slides` (Slajdovi, jedna slika preko cele širine), `cards` (Kartice, susedna viri), `cinema` (Bioskop, tamna pozornica i cela slika), `polaroid` (beli ram sa potpisom). Crta ih CSS Potoka (`assets/css/app.css`), koji okvir aplikacije učitava, pa Feed izgleda isto kao strana grupe.
+- Posle sanitizera Potok galeriji dodaje traku do koje stiže tastatura, brojač „2 / 5“ na svakoj slici, slike koje se učitavaju kad se približe i dva dugmeta na jeziku gledaoca (`PotokIdeWeb.Galleries`). Ništa od toga nije u izvoru.
+- Prevlačenje radi svuda samo od sebe. Dugmad pokazuje samo stranica koja ume da pomera traku: Potok (`assets/js/gallery.js`) i Feed od verzije sa galerijom (`src/gallery.ts`, iste linije). Feed pomera galeriju objave na ekranu i strelicama levo i desno, a bočni pokret dodirne table ide galeriji, ne vestima.
+- Galeriju može da napiše i ruka, u slobodnom tekstu: `div` sa tim atributom, a u njemu `div` sa slikama (ili slike odmah u njemu).
+- Najviše 20 slika. Slika sa lošom adresom ispada zajedno sa svojim potpisom, jer se slike i potpisi prvo spoje u parove.
 
 ## Pozivi koje par koristi
 
@@ -186,10 +204,13 @@ Iz toga slede tri pravila za šablone:
 | `updateChild(id, attrs)` | FeedCreator | izmena, Objavi za nacrt |
 | `withdrawChild(id)` | FeedCreator | Povuci |
 | `previewDescription(text, options)` | FeedCreator | pregled |
+| `getConfig()`, `saveConfig()`, `ensureFileGroups()` | FeedCreator | prazna konfiguracija i podgrupa „Fajlovi“, pre prve slike sa uređaja za galeriju |
+| `uploadImage(file)` | FeedCreator | slika sa uređaja za galeriju, sa adresom koja ne traži prijavu |
 
 ## Ograničenja
 
-- **Slike.** Opis ne sme da sadrži `data:` sliku, a API nema slanje fajlova. Slika sa uređaja zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike. Na stranici Uredi grupu slika sa uređaja ide drugim putem: postaje poruka sa fajlom u chatu grupe, pa ostaje među fajlovima grupe, a opis je prikazuje preko potpisane adrese koja ne traži prijavu. Avatar se ne dira, a grupa može da ima više takvih slika. Ako se ta poruka obriše, slika nestaje i iz opisa.
+- **Slike.** Opis ne sme da sadrži `data:` sliku. Slika sa uređaja u šablonima sa jednom slikom zato postaje slika grupe, do oko 1080 piksela, pa je objava ima jednu i ista je i avatar. Ruta `/avatar/group/:id` ne traži prijavu, pa je slika privatne objave dostupna svakome ko pogodi adresu. FeedCreator je briše iz grupe kad je autor ukloni. Slika je i avatar u svakoj listi grupa, pa lista sa mnogo objava učitava i te slike. Na stranici Uredi grupu slika sa uređaja ide drugim putem: postaje poruka sa fajlom u chatu grupe, pa ostaje među fajlovima grupe, a opis je prikazuje preko potpisane adrese koja ne traži prijavu. Avatar se ne dira, a grupa može da ima više takvih slika: slike izabrane zajedno idu kao jedna poruka, do 10 odjednom. Ako se ta poruka obriše, slike nestaju i iz opisa.
+- **Slike galerije u FeedCreatoru.** Šalju se pozivom `uploadImage` čim se izaberu, pa idu u podgrupu „Fajlovi“ ispod `.feed`, koju Potok pravi pri prvoj slici (uz nju i „Privatni fajlovi“). Adresa `/pictures/...` ne traži prijavu, kao adresa slike objave. Feed i FeedCreator te podgrupe ne vide kao objave: `listSubgroups` i `listChildren` preskaču grupe koje konfiguracija aplikacije navodi kao svoje fajlove. Takve slike se nikad ne brišu same, ostaju kad se objava obriše i ulaze u 1 GB koji aplikacija ima za fajlove. Prva slika galerije sa uređaja postaje i slika objave, za liste i karticu linka.
 - **Cena nasleđivanja.** Svaki član je red u članstvu svake objave: 100 članova i 500 objava je 50.000 redova, a svaki novi član dodaje 500. Svaka poruka člana u chatu objave ide kao push svim njenim članovima, a opcije za utišavanje grupe nema. Poruka nečlana ide samo onima koje pominje i autoru poruke na koju odgovara. Za veliku publiku i živ chat bolja je javna objava bez nasleđivanja, uz manje udobnosti pri ulasku u chat.
 - **Objava ne šalje obaveštenje.** Pravljenje grupe nikog ne obaveštava. Članovi vide novu objavu kad otvore Feed.
 - **Feed se ne osvežava uživo.** Vesti, broj komentara i reakcije učitavaju se kad se aplikacija otvori i posle povratka iz chata. Na strani grupe reakcije stižu uživo.

@@ -784,7 +784,7 @@ Calls:
 
 An app can also keep the groups right under its own. These calls act in the viewer's name, so all of them need a viewer with the `edit_group` permission in the app's group, who could rewrite the app anyway; by default that is only an admin. Anyone else gets `forbidden`, and `can_manage_children` in `getGroup` says so in advance. They reach direct sub-groups only, as far as the viewer can see them, without threads and direct conversations. Any other group is `not_found`. See [docs/feed-i-feedcreator.md](docs/feed-i-feedcreator.md) for two apps built on them.
 
-* `listChildren(options)` resolves to `{ok: true, groups, has_more}`, in the order and with the options of `listSubgroups`.
+* `listChildren(options)` resolves to `{ok: true, groups, has_more}`, in the order and with the options of `listSubgroups`. Both leave out the sub-groups an app keeps its files in ("Files", "Private files"): they are named in the config of an app of the group listed, and are no posts or places of it.
 * `getChild(id)` resolves to `{ok: true, group}` with the group's source. `description` is `null` for a group the viewer cannot edit and for a group that is an app: an app never gets another app's code.
 * `createChild(attrs)` resolves to `{ok: true, group}`. It also needs `create_subgroups`. The viewer becomes the group's admin. `attrs`:
   * `name` (required, at most 120 characters)

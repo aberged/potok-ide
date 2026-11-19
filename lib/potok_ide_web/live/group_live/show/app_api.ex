@@ -2167,9 +2167,12 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   defp clamp_limit(nil), do: nil
   defp clamp_limit(limit), do: min(limit, @max_list_limit)
 
-  # `around_id` starts from a group that can lie any number of pages down.
+  # `around_id` starts from a group that can lie any number of pages down. The
+  # groups an app keeps its files in are no posts or places of it.
   defp subgroups_reply(parent, profile, params) do
     with {:ok, page} <- subgroup_page(params) do
+      page = Keyword.put(page, :except, Social.app_file_group_ids(parent))
+
       {groups, has_more?, has_newer?} =
         case non_negative_integer(params["around_id"]) do
           nil ->

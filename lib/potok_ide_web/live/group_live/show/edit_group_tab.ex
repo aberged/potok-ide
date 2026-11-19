@@ -991,7 +991,12 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   # as a phone's photo would be read by everyone who opens the description.
   defp description_picture_picker(assigns) do
     ~H"""
-    <div id="description-picture" phx-hook=".DescriptionPicture" data-max-dimension="1080">
+    <div
+      id="description-picture"
+      phx-hook=".DescriptionPicture"
+      data-max-dimension="1080"
+      data-max-files={PotokIde.Storage.max_files()}
+    >
       <input
         type="file"
         accept="image/*"
@@ -1050,36 +1055,73 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         mounted() {
           this.fileInput = this.el.querySelector("[data-description-picture-file]")
 
+          // A gallery's field takes several pictures at once, a single
+          // picture's field one.
           this.el.addEventListener("potok:pick-picture", event => {
             this.target = event.detail.target
+            this.fileInput.multiple = Boolean(event.detail.multiple)
             this.fileInput.click()
           })
 
           this.fileInput.addEventListener("change", async () => {
-            const file = this.fileInput.files?.[0]
+            const max = Number(this.el.dataset.maxFiles) || 1
+            const files = Array.from(this.fileInput.files || []).slice(0, max)
             this.fileInput.value = ""
 
-            if (!file) return
+            if (files.length === 0) return
 
             try {
-              const image = await loadImage(file)
-              const blob = await shrink(image, Number(this.el.dataset.maxDimension))
-              const name = `${file.name.replace(/\.[^.]*$/, "") || "picture"}.jpg`
+              const shrunk = await Promise.all(
+                files.map(async file => {
+                  const image = await loadImage(file)
+                  const blob = await shrink(image, Number(this.el.dataset.maxDimension))
+                  const name = `${file.name.replace(/\.[^.]*$/, "") || "picture"}.jpg`
 
-              this.upload("description_picture", [new File([blob], name, {type: "image/jpeg"})])
+                  return new File([blob], name, {type: "image/jpeg"})
+                })
+              )
+
+              this.upload("description_picture", shrunk)
             } catch (error) {
               console.error("Unable to process the picked picture", error)
               this.pushEvent("description_picture_invalid", {})
             }
           })
 
-          // The form with the field may be gone by now, and then so is the need.
-          this.handleEvent("description_picture_ready", ({url}) => {
-            const input = document.getElementById(this.target)
-            if (!input) return
+          // The form with the field may be gone by now, and then so is the
+          // need. A gallery's empty rows take the pictures first; the rest go
+          // in as more of its addresses, and the form's next render gives
+          // them rows of their own.
+          this.handleEvent("description_picture_ready", ({url, urls}) => {
+            const target = document.getElementById(this.target)
+            if (!target) return
 
-            input.value = url
-            input.dispatchEvent(new Event("input", {bubbles: true}))
+            if (target.tagName === "INPUT") {
+              target.value = url
+              target.dispatchEvent(new Event("input", {bubbles: true}))
+              return
+            }
+
+            const inputs = Array.from(target.querySelectorAll("[data-picture-address]"))
+            let changed = null
+
+            for (const address of urls || [url]) {
+              const empty = inputs.find(input => input.value.trim() === "" && !input.dataset.filled)
+
+              if (empty) {
+                empty.value = address
+                empty.dataset.filled = "true"
+                changed = empty
+              } else {
+                const extra = document.createElement("input")
+                extra.type = "hidden"
+                extra.name = target.dataset.pictureName
+                extra.value = address
+                target.appendChild(extra)
+              }
+            }
+
+            ;(changed || inputs[inputs.length - 1])?.dispatchEvent(new Event("input", {bubbles: true}))
           })
         },
       }

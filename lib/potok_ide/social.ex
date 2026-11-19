@@ -1201,19 +1201,7 @@ defmodule PotokIde.Social do
     |> Repo.one()
   end
 
-  # An app of `parent` keeps its files in group `id` (`AppFiles`): its config
-  # names it, under any of its descriptions.
-  defp app_file_group?(%Group{id: parent_id}, id) do
-    key = Integer.to_string(id)
-
-    from(v in Value,
-      where:
-        v.group_id == ^parent_id and v.is_data == true and v.collection == "config" and
-          (fragment("? -> 'files' ->> 'public' = ?", v.data, ^key) or
-             fragment("? -> 'files' ->> 'private' = ?", v.data, ^key))
-    )
-    |> Repo.exists?()
-  end
+  defp app_file_group?(%Group{} = parent, id), do: id in app_file_group_ids(parent)
 
   # A closed group that opens up reaches its readers now, however long it waited.
   defp mark_published(changeset, %Group{} = group) do
@@ -5058,6 +5046,8 @@ defmodule PotokIde.Social do
   order changes while someone reads. Options: `:limit`, `:before_id`, the id of
   the last group of the previous page, and `:from` and `:to`, the moments
   between which a group took its place: `:from` counts in, `:to` does not.
+  `:except` leaves out groups by id, such as those an app keeps its files in
+  (`app_file_group_ids/1`).
   """
   def list_visible_child_groups_newest_first(%Group{} = group, profile, opts)
       when is_viewer(profile) do
@@ -5114,6 +5104,27 @@ defmodule PotokIde.Social do
     |> where([g], g.parent_id == ^group.id)
     |> placed_from(opts[:from])
     |> placed_before(opts[:to])
+    |> except_groups(opts[:except])
+  end
+
+  defp except_groups(query, ids) when ids in [nil, []], do: query
+  defp except_groups(query, ids), do: where(query, [g], g.id not in ^ids)
+
+  @doc """
+  The sub-groups of `group` that its apps keep their files in (`AppFiles`),
+  under any of its descriptions: their configs name them.
+  """
+  def app_file_group_ids(%Group{id: id}) do
+    from(v in Value,
+      where: v.group_id == ^id and v.is_data == true and v.collection == "config",
+      select: fragment("? -> 'files'", v.data)
+    )
+    |> Repo.all()
+    |> Enum.flat_map(fn
+      %{} = files -> files |> Map.values() |> Enum.filter(&is_integer/1)
+      _none -> []
+    end)
+    |> Enum.uniq()
   end
 
   defp after_group(query, %Group{id: id} = target) do

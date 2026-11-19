@@ -21,9 +21,11 @@ defmodule PotokIdeWeb.PostTemplates do
   use Gettext, backend: PotokIdeWeb.Gettext
 
   alias PotokIde.Events.Format
+  alias PotokIdeWeb.Galleries
   alias PotokIdeWeb.PostTemplates.Markup
 
   @max_items 10
+  @max_pictures 20
 
   # Stands for a picture in a template's sample.
   @waiting_image "https://potok.invalid/picture-on-its-way"
@@ -41,6 +43,9 @@ defmodule PotokIdeWeb.PostTemplates do
   @free_text "text"
 
   def max_items, do: @max_items
+
+  @doc "How many pictures a gallery holds."
+  def max_pictures, do: @max_pictures
 
   @doc "The template that is the plain editor: it has no form and leaves no trace."
   def free_text, do: @free_text
@@ -188,6 +193,30 @@ defmodule PotokIdeWeb.PostTemplates do
         }
       },
       %{
+        id: "gallery",
+        name: dgettext("post_templates", "Gallery"),
+        purpose: dgettext("post_templates", "Pictures to swipe through, in one of four looks."),
+        fields: [
+          field("title", dgettext("post_templates", "Headline"), :text, required: true),
+          field("about", dgettext("post_templates", "Description"), :textarea),
+          field("look", dgettext("post_templates", "Look"), :choice, options: look_options()),
+          field("pictures", dgettext("post_templates", "Pictures"), :pictures,
+            required: true,
+            captions: "captions"
+          )
+        ],
+        sample: %{
+          "title" => dgettext("post_templates", "A day by the stream"),
+          "look" => "cards",
+          "pictures" => [@waiting_image, @waiting_image, @waiting_image],
+          "captions" => [
+            dgettext("post_templates", "Morning"),
+            "",
+            dgettext("post_templates", "Evening")
+          ]
+        }
+      },
+      %{
         id: @free_text,
         name: dgettext("post_templates", "Free text"),
         purpose: dgettext("post_templates", "Anything else, in Markdown or HTML."),
@@ -210,6 +239,28 @@ defmodule PotokIdeWeb.PostTemplates do
   @doc "Whether `id` is a template with a form, which free text is not."
   def form?(id) when id == @free_text, do: false
   def form?(id), do: template(id) != nil
+
+  @doc """
+  The keys a template's form keeps: its fields', and the captions that go
+  with a field of pictures.
+  """
+  def field_keys(id) do
+    Enum.flat_map(template(id).fields, fn field ->
+      [field.key | List.wrap(Map.get(field, :captions))]
+    end)
+  end
+
+  @doc "The looks of a gallery, `{label, value}`, the first one the default."
+  def look_options do
+    labels = %{
+      "slides" => dgettext("post_templates", "Slides"),
+      "cards" => dgettext("post_templates", "Cards"),
+      "cinema" => dgettext("post_templates", "Cinema"),
+      "polaroid" => dgettext("post_templates", "Polaroid")
+    }
+
+    for look <- Galleries.looks(), do: {labels[look], look}
+  end
 
   @doc "The choices of a `:level` field, as a select takes them."
   def level_options do
@@ -285,6 +336,32 @@ defmodule PotokIdeWeb.PostTemplates do
       _other ->
         []
     end
+  end
+
+  # The pictures of a gallery with their captions, paired first, so that a
+  # picture dropped for a bad address takes its own caption along.
+  defp pictures(fields) do
+    captions = list(fields["captions"])
+
+    fields["pictures"]
+    |> list()
+    |> Enum.with_index()
+    |> Enum.map(fn {address, index} ->
+      {address |> trimmed() |> Markup.safe_image(), captions |> Enum.at(index) |> trimmed()}
+    end)
+    |> Enum.reject(&match?({"", _caption}, &1))
+    |> Enum.take(@max_pictures)
+  end
+
+  defp list(values) when is_list(values), do: values
+  defp list(_other), do: []
+
+  defp trimmed(value) when is_binary(value), do: Markup.trim(value)
+  defp trimmed(_other), do: ""
+
+  defp look(fields) do
+    look = text(fields, "look")
+    if look in Galleries.looks(), do: look, else: hd(Galleries.looks())
   end
 
   defp filled(texts), do: Enum.reject(texts, &(&1 == ""))
@@ -441,6 +518,31 @@ defmodule PotokIdeWeb.PostTemplates do
     ])
   end
 
+  # The gallery's look is `data-potok-gallery`, the one attribute of its kind
+  # the sanitizer keeps; Potok's CSS and `PotokIdeWeb.Galleries` do the rest.
+  def render("gallery", fields) do
+    title = text(fields, "title")
+
+    slides =
+      fields
+      |> pictures()
+      |> Enum.map_join(fn {address, caption} ->
+        note =
+          if caption == "", do: "", else: "<figcaption>#{Markup.inline(caption)}</figcaption>"
+
+        alt = if caption == "", do: title, else: caption
+
+        ~s|<figure><img src="#{Markup.escape(address)}" alt="#{Markup.escape(alt)}">#{note}</figure>|
+      end)
+
+    html([
+      ~s|<h2 style="#{@heading} font-size: 26px; line-height: 1.2; margin: 0;">#{Markup.escape(title)}</h2>|,
+      Markup.paragraphs(text(fields, "about"), "margin: 8px 0 0;"),
+      slides != "" &&
+        ~s|<div data-potok-gallery="#{look(fields)}" style="margin: 14px 0 0;"><div>#{slides}</div></div>|
+    ])
+  end
+
   # In a div: a table cell takes no `border-radius` with `border-collapse:
   # collapse`, and the sanitizer does not know `separate`.
   defp date_badge(date) do
@@ -481,7 +583,7 @@ defmodule PotokIdeWeb.PostTemplates do
   end
 
   @doc "What the card of a shared link says about a template's description."
-  def card(id, fields) when id in ~w(photo question), do: text(fields, "about")
+  def card(id, fields) when id in ~w(photo question gallery), do: text(fields, "about")
 
   def card("article", fields), do: first_filled([text(fields, "lead"), text(fields, "body")])
 

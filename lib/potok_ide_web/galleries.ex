@@ -59,7 +59,7 @@ defmodule PotokIdeWeb.Galleries do
 
   defp walk({"div", attrs, children}) do
     case List.keyfind(attrs, @marker, 0) do
-      {_name, look} when look in @looks -> gallery(look, children)
+      {_name, look} when look in @looks -> gallery(attrs, children)
       _other -> {"div", attrs, Enum.map(children, &walk/1)}
     end
   end
@@ -69,7 +69,8 @@ defmodule PotokIdeWeb.Galleries do
 
   defp walk(other), do: other
 
-  defp gallery(look, children) do
+  # The gallery keeps what it had, its look and its margin among them.
+  defp gallery(attrs, children) do
     slides = slides(children)
     count = length(slides)
 
@@ -79,7 +80,7 @@ defmodule PotokIdeWeb.Galleries do
        |> Enum.with_index(1)
        |> Enum.map(fn {slide, n} -> slide(slide, n, count) end)}
 
-    {"div", [{@marker, look}, {"role", "region"}, {"aria-label", gettext("Gallery")}],
+    {"div", attrs ++ [{"role", "region"}, {"aria-label", gettext("Gallery")}],
      [strip | buttons(count)]}
   end
 

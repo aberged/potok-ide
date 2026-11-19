@@ -8,7 +8,8 @@ defmodule PotokIdeWeb.PostTemplates.Form do
 
     * `id` and `fields`, while a template's form is open
     * `pick`, from a card in the list of templates
-    * `add_item`, `remove_item`, `clear_image` and `restore`, from buttons
+    * `add_item` (the list's key), `remove_item` (`key:index`, or the
+      index of the list `items`), `clear_image` and `restore`, from buttons
 
   An unchanged form gives back the saved description as it is, so opening
   someone's description in another language, or a FeedCreator post, rewrites
@@ -107,7 +108,7 @@ defmodule PotokIdeWeb.PostTemplates.Form do
     end
   end
 
-  defp field_keys(id), do: Enum.map(PostTemplates.template(id).fields, & &1.key)
+  defp field_keys(id), do: PostTemplates.field_keys(id)
 
   # Only the template's own fields: on every change the browser also sends
   # `_unused_<field>` for each input the author has not touched yet.
@@ -131,10 +132,34 @@ defmodule PotokIdeWeb.PostTemplates.Form do
   # A form sends `\r\n`, while a description keeps `\n`.
   defp without_returns(text), do: String.replace(text, "\r", "")
 
+  # A row is added to a list, or taken out of it: the list of items, or the
+  # pictures of a gallery with their captions, which stay in step.
+  defp edit_items(fields, %{"add_item" => "pictures"}) do
+    count = min(length(List.wrap(fields["pictures"])) + 1, PostTemplates.max_pictures())
+
+    fields
+    |> Map.put("pictures", pad(fields["pictures"], count))
+    |> Map.put("captions", pad(fields["captions"], count))
+  end
+
   defp edit_items(fields, %{"add_item" => _add}) do
     Map.update(fields, "items", [""], fn items ->
       Enum.take(List.wrap(items) ++ [""], PostTemplates.max_items())
     end)
+  end
+
+  defp edit_items(fields, %{"remove_item" => "pictures:" <> index}) do
+    case Integer.parse(index) do
+      {index, ""} ->
+        count = length(List.wrap(fields["pictures"]))
+
+        fields
+        |> Map.put("pictures", List.delete_at(pad(fields["pictures"], count), index))
+        |> Map.put("captions", List.delete_at(pad(fields["captions"], count), index))
+
+      _invalid ->
+        fields
+    end
   end
 
   defp edit_items(fields, %{"remove_item" => index}) do
@@ -145,6 +170,12 @@ defmodule PotokIdeWeb.PostTemplates.Form do
   end
 
   defp edit_items(fields, _params), do: fields
+
+  # Exactly `count` entries: a list sent short gets empty ones, a long one is cut.
+  defp pad(values, count) do
+    values = values |> List.wrap() |> Enum.filter(&is_binary/1)
+    Enum.take(values ++ List.duplicate("", max(count - length(values), 0)), count)
+  end
 
   defp clear_image(fields, %{"clear_image" => _clear}), do: Map.delete(fields, "image")
   defp clear_image(fields, _params), do: fields

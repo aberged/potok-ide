@@ -93,6 +93,26 @@
       "hash": "3761c385"
     },
     {
+      "template": "gallery",
+      "fields": {
+        "title": "Dan na potoku",
+        "look": "cards",
+        "pictures": [
+          "https://potok.invalid/picture-on-its-way",
+          "https://potok.invalid/picture-on-its-way",
+          "https://potok.invalid/picture-on-its-way"
+        ],
+        "captions": [
+          "Jutro",
+          "",
+          "Veče"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Dan na potoku\",\"look\":\"cards\",\"pictures\":[\"https://potok.invalid/picture-on-its-way\",\"https://potok.invalid/picture-on-its-way\",\"https://potok.invalid/picture-on-its-way\"],\"captions\":[\"Jutro\",\"\",\"Veče\"]},\"hash\":\"eb601b4f\"}-->\n<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Dan na potoku</h2><div data-potok-gallery=\"cards\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Jutro\"><figcaption>Jutro</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Dan na potoku\"></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Veče\"><figcaption>Veče</figcaption></figure></div></div>",
+      "html": "<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Dan na potoku</h2><div data-potok-gallery=\"cards\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Jutro\"><figcaption>Jutro</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Dan na potoku\"></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Veče\"><figcaption>Veče</figcaption></figure></div></div>",
+      "hash": "eb601b4f"
+    },
+    {
       "template": "article",
       "fields": {
         "kicker": "D'Artanjan & <drugovi>",
@@ -486,6 +506,155 @@
       "description": "<!--potok-post {\"v\":1,\"template\":\"question\",\"fields\":{\"question\":\"Zašto?\",\"about\":\"Dodatak\"},\"hash\":\"e66ab8d7\"}-->\n<meta name=\"description\" content=\"Dodatak\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Zašto?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Dodatak</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
       "html": "<meta name=\"description\" content=\"Dodatak\"><div style=\"background-color: #134e4a; color: #ffffff; border-radius: 20px; padding: 32px 24px; text-align: center;\"><h1 style=\"border: none; padding: 0; font-size: 29px; line-height: 1.25; margin: 0;\">Zašto?</h1><p style=\"color: #ccfbf1; font-size: 17px; margin: 12px 0 0;\">Dodatak</p><p style=\"color: #99f6e4; font-size: 15px; font-weight: bold; margin: 20px 0 0;\">Odgovori u chatu</p></div>",
       "hash": "e66ab8d7"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Galerija \"pod navodnicima\"",
+        "about": "Opis\n\nDrugi pasus",
+        "look": "slides",
+        "pictures": [
+          "https://a.rs/1.jpg",
+          "https://potok.invalid/picture-on-its-way"
+        ],
+        "captions": [
+          "Prva **jaka** & <tag>",
+          ""
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Galerija \\\"pod navodnicima\\\"\",\"about\":\"Opis\\n\\nDrugi pasus\",\"look\":\"slides\",\"pictures\":[\"https://a.rs/1.jpg\",\"https://potok.invalid/picture-on-its-way\"],\"captions\":[\"Prva **jaka** & \\u003ctag\\u003e\",\"\"]},\"hash\":\"8ce00e62\"}-->\n<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "html": "<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "hash": "8ce00e62"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Galerija \"pod navodnicima\"",
+        "about": "Opis\n\nDrugi pasus",
+        "look": "cards",
+        "pictures": [
+          "https://a.rs/1.jpg",
+          "https://potok.invalid/picture-on-its-way"
+        ],
+        "captions": [
+          "Prva **jaka** & <tag>",
+          ""
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Galerija \\\"pod navodnicima\\\"\",\"about\":\"Opis\\n\\nDrugi pasus\",\"look\":\"cards\",\"pictures\":[\"https://a.rs/1.jpg\",\"https://potok.invalid/picture-on-its-way\"],\"captions\":[\"Prva **jaka** & \\u003ctag\\u003e\",\"\"]},\"hash\":\"d1931a6f\"}-->\n<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"cards\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "html": "<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"cards\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "hash": "d1931a6f"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Galerija \"pod navodnicima\"",
+        "about": "Opis\n\nDrugi pasus",
+        "look": "cinema",
+        "pictures": [
+          "https://a.rs/1.jpg",
+          "https://potok.invalid/picture-on-its-way"
+        ],
+        "captions": [
+          "Prva **jaka** & <tag>",
+          ""
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Galerija \\\"pod navodnicima\\\"\",\"about\":\"Opis\\n\\nDrugi pasus\",\"look\":\"cinema\",\"pictures\":[\"https://a.rs/1.jpg\",\"https://potok.invalid/picture-on-its-way\"],\"captions\":[\"Prva **jaka** & \\u003ctag\\u003e\",\"\"]},\"hash\":\"bbc5d0b5\"}-->\n<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"cinema\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "html": "<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"cinema\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "hash": "bbc5d0b5"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Galerija \"pod navodnicima\"",
+        "about": "Opis\n\nDrugi pasus",
+        "look": "polaroid",
+        "pictures": [
+          "https://a.rs/1.jpg",
+          "https://potok.invalid/picture-on-its-way"
+        ],
+        "captions": [
+          "Prva **jaka** & <tag>",
+          ""
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Galerija \\\"pod navodnicima\\\"\",\"about\":\"Opis\\n\\nDrugi pasus\",\"look\":\"polaroid\",\"pictures\":[\"https://a.rs/1.jpg\",\"https://potok.invalid/picture-on-its-way\"],\"captions\":[\"Prva **jaka** & \\u003ctag\\u003e\",\"\"]},\"hash\":\"e97e92d8\"}-->\n<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"polaroid\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "html": "<meta name=\"description\" content=\"Opis Drugi pasus\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Galerija &quot;pod navodnicima&quot;</h2><p style=\"margin: 8px 0 0;\">Opis</p><p style=\"margin: 8px 0 0;\">Drugi pasus</p><div data-potok-gallery=\"polaroid\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/1.jpg\" alt=\"Prva **jaka** &amp; &lt;tag&gt;\"><figcaption>Prva <strong>jaka</strong> &amp; &lt;tag&gt;</figcaption></figure><figure><img src=\"https://potok.invalid/picture-on-its-way\" alt=\"Galerija &quot;pod navodnicima&quot;\"></figure></div></div>",
+      "hash": "e97e92d8"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Loše i prazno",
+        "look": "nepoznat",
+        "pictures": [
+          "javascript:alert(1)",
+          " ",
+          " HTTPS://Example.com/a.png?x=1&y=2 ",
+          "/avatar/group/12?p=170",
+          "data:image/png;base64,AAAA"
+        ],
+        "captions": [
+          "loša",
+          "prazna",
+          " Treća ",
+          "Četvrta"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Loše i prazno\",\"look\":\"nepoznat\",\"pictures\":[\"javascript:alert(1)\",\" \",\" HTTPS://Example.com/a.png?x=1&y=2 \",\"/avatar/group/12?p=170\",\"data:image/png;base64,AAAA\"],\"captions\":[\"loša\",\"prazna\",\" Treća \",\"Četvrta\"]},\"hash\":\"fdafc55d\"}-->\n<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Loše i prazno</h2><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://Example.com/a.png?x=1&amp;y=2\" alt=\"Treća\"><figcaption>Treća</figcaption></figure><figure><img src=\"/avatar/group/12?p=170\" alt=\"Četvrta\"><figcaption>Četvrta</figcaption></figure></div></div>",
+      "html": "<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Loše i prazno</h2><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://Example.com/a.png?x=1&amp;y=2\" alt=\"Treća\"><figcaption>Treća</figcaption></figure><figure><img src=\"/avatar/group/12?p=170\" alt=\"Četvrta\"><figcaption>Četvrta</figcaption></figure></div></div>",
+      "hash": "fdafc55d"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Previše",
+        "pictures": [
+          "https://a.rs/0.jpg",
+          "https://a.rs/1.jpg",
+          "https://a.rs/2.jpg",
+          "https://a.rs/3.jpg",
+          "https://a.rs/4.jpg",
+          "https://a.rs/5.jpg",
+          "https://a.rs/6.jpg",
+          "https://a.rs/7.jpg",
+          "https://a.rs/8.jpg",
+          "https://a.rs/9.jpg",
+          "https://a.rs/10.jpg",
+          "https://a.rs/11.jpg",
+          "https://a.rs/12.jpg",
+          "https://a.rs/13.jpg",
+          "https://a.rs/14.jpg",
+          "https://a.rs/15.jpg",
+          "https://a.rs/16.jpg",
+          "https://a.rs/17.jpg",
+          "https://a.rs/18.jpg",
+          "https://a.rs/19.jpg",
+          "https://a.rs/20.jpg",
+          "https://a.rs/21.jpg",
+          "https://a.rs/22.jpg"
+        ],
+        "captions": [
+          "samo prva"
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Previše\",\"pictures\":[\"https://a.rs/0.jpg\",\"https://a.rs/1.jpg\",\"https://a.rs/2.jpg\",\"https://a.rs/3.jpg\",\"https://a.rs/4.jpg\",\"https://a.rs/5.jpg\",\"https://a.rs/6.jpg\",\"https://a.rs/7.jpg\",\"https://a.rs/8.jpg\",\"https://a.rs/9.jpg\",\"https://a.rs/10.jpg\",\"https://a.rs/11.jpg\",\"https://a.rs/12.jpg\",\"https://a.rs/13.jpg\",\"https://a.rs/14.jpg\",\"https://a.rs/15.jpg\",\"https://a.rs/16.jpg\",\"https://a.rs/17.jpg\",\"https://a.rs/18.jpg\",\"https://a.rs/19.jpg\",\"https://a.rs/20.jpg\",\"https://a.rs/21.jpg\",\"https://a.rs/22.jpg\"],\"captions\":[\"samo prva\"]},\"hash\":\"a58aed77\"}-->\n<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Previše</h2><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/0.jpg\" alt=\"samo prva\"><figcaption>samo prva</figcaption></figure><figure><img src=\"https://a.rs/1.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/2.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/3.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/4.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/5.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/6.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/7.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/8.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/9.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/10.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/11.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/12.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/13.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/14.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/15.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/16.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/17.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/18.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/19.jpg\" alt=\"Previše\"></figure></div></div>",
+      "html": "<h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Previše</h2><div data-potok-gallery=\"slides\" style=\"margin: 14px 0 0;\"><div><figure><img src=\"https://a.rs/0.jpg\" alt=\"samo prva\"><figcaption>samo prva</figcaption></figure><figure><img src=\"https://a.rs/1.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/2.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/3.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/4.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/5.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/6.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/7.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/8.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/9.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/10.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/11.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/12.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/13.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/14.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/15.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/16.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/17.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/18.jpg\" alt=\"Previše\"></figure><figure><img src=\"https://a.rs/19.jpg\" alt=\"Previše\"></figure></div></div>",
+      "hash": "a58aed77"
+    },
+    {
+      "template": "gallery",
+      "fields": {
+        "title": "Bez slika",
+        "about": "Samo opis",
+        "pictures": [
+          ""
+        ]
+      },
+      "description": "<!--potok-post {\"v\":1,\"template\":\"gallery\",\"fields\":{\"title\":\"Bez slika\",\"about\":\"Samo opis\",\"pictures\":[\"\"]},\"hash\":\"0068ba5e\"}-->\n<meta name=\"description\" content=\"Samo opis\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Bez slika</h2><p style=\"margin: 8px 0 0;\">Samo opis</p>",
+      "html": "<meta name=\"description\" content=\"Samo opis\"><h2 style=\"border: none; padding: 0; font-size: 26px; line-height: 1.2; margin: 0;\">Bez slika</h2><p style=\"margin: 8px 0 0;\">Samo opis</p>",
+      "hash": "0068ba5e"
     }
   ],
   "samples": {
@@ -532,6 +701,20 @@
     "question": {
       "question": "Šta bi promenio u našem kraju?",
       "about": "Javi nam se."
+    },
+    "gallery": {
+      "title": "Dan na potoku",
+      "look": "cards",
+      "pictures": [
+        "https://potok.invalid/picture-on-its-way",
+        "https://potok.invalid/picture-on-its-way",
+        "https://potok.invalid/picture-on-its-way"
+      ],
+      "captions": [
+        "Jutro",
+        "",
+        "Veče"
+      ]
     },
     "text": {
       "title": "Slobodan tekst",

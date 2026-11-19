@@ -671,8 +671,10 @@
    a time, moved by a swipe, a trackpad, the arrow keys once the strip has the
    focus, or two buttons. The stored HTML holds only the pictures and
    `data-potok-gallery`; the server adds the strip's mark, the counters and the
-   buttons. Apps' frames load this file too, so Feed shows the same looks.
-   Without these rules the pictures stand one under another. */
+   buttons. The strip is found by its place, the gallery's first `div`, so the
+   list of templates shows a look before the server has seen it. Apps' frames
+   load this file too, so Feed shows the same looks. Without these rules the
+   pictures stand one under another. */
 .rich-content [data-potok-gallery] {
   --gallery-radius: 0.875rem;
   --gallery-button-top: 50%;
@@ -680,7 +682,7 @@
   position: relative;
 }
 
-.rich-content [data-gallery-strip] {
+.rich-content [data-potok-gallery] > div {
   border-radius: var(--gallery-radius);
   display: flex;
   gap: 0.75rem;
@@ -692,16 +694,16 @@
   scrollbar-width: none;
 }
 
-.rich-content [data-gallery-strip]::-webkit-scrollbar {
+.rich-content [data-potok-gallery] > div::-webkit-scrollbar {
   display: none;
 }
 
-.rich-content [data-gallery-strip]:focus-visible {
+.rich-content [data-potok-gallery] > div:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 3px;
 }
 
-.rich-content [data-gallery-strip] > * {
+.rich-content [data-potok-gallery] > div > * {
   flex: 0 0 100%;
   margin: 0;
   min-width: 0;
@@ -710,7 +712,9 @@
   scroll-snap-stop: always;
 }
 
-.rich-content [data-gallery-strip] img {
+/* A look's own rule for its pictures names `> div img` too, or this one,
+   more specific, would win. */
+.rich-content [data-potok-gallery] > div img {
   background: color-mix(in oklab, currentColor 8%, transparent);
   border-radius: var(--gallery-radius);
   display: block;
@@ -808,7 +812,7 @@
   --gallery-button-top: 37.5cqw;
 }
 
-.rich-content [data-potok-gallery="slides"] img {
+.rich-content [data-potok-gallery="slides"] > div img {
   aspect-ratio: 4 / 3;
 }
 
@@ -817,11 +821,11 @@
 }
 
 /* Kartice: the next card peeks in, the caption lies over the picture. */
-.rich-content [data-potok-gallery="cards"] [data-gallery-strip] > * {
+.rich-content [data-potok-gallery="cards"] > div > * {
   flex-basis: 84%;
 }
 
-.rich-content [data-potok-gallery="cards"] img {
+.rich-content [data-potok-gallery="cards"] > div img {
   aspect-ratio: 4 / 5;
   border-radius: 1rem;
   max-height: 32rem;
@@ -850,11 +854,11 @@
   padding: 0.75rem 0.75rem 0.9rem;
 }
 
-.rich-content [data-potok-gallery="cinema"] [data-gallery-strip] {
+.rich-content [data-potok-gallery="cinema"] > div {
   border-radius: 0.5rem;
 }
 
-.rich-content [data-potok-gallery="cinema"] img {
+.rich-content [data-potok-gallery="cinema"] > div img {
   background: transparent;
   border-radius: 0.5rem;
   height: var(--gallery-picture-height);
@@ -867,17 +871,13 @@
   text-align: center;
 }
 
-.rich-content [data-potok-gallery="cinema"] [data-gallery-count] {
-  background: rgb(255 255 255 / 0.16);
-}
-
 /* Polaroid: photo paper with room for the caption below, slightly askew. */
-.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] {
+.rich-content [data-potok-gallery="polaroid"] > div {
   gap: 1.25rem;
   padding: 1rem 0.5rem 1.5rem;
 }
 
-.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > * {
+.rich-content [data-potok-gallery="polaroid"] > div > * {
   background: #fbfaf7;
   border-radius: 0.2rem;
   box-shadow:
@@ -889,15 +889,15 @@
   transform: rotate(-1.4deg);
 }
 
-.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > :nth-child(2n) {
+.rich-content [data-potok-gallery="polaroid"] > div > :nth-child(2n) {
   transform: rotate(1.2deg);
 }
 
-.rich-content [data-potok-gallery="polaroid"] [data-gallery-strip] > :nth-child(3n) {
+.rich-content [data-potok-gallery="polaroid"] > div > :nth-child(3n) {
   transform: rotate(-0.5deg);
 }
 
-.rich-content [data-potok-gallery="polaroid"] img {
+.rich-content [data-potok-gallery="polaroid"] > div img {
   aspect-ratio: 1;
   border-radius: 0.1rem;
 }
