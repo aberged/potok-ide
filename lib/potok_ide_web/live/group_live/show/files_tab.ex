@@ -133,7 +133,7 @@ defmodule PotokIdeWeb.GroupLive.Show.FilesTab do
                   class="min-w-0 flex-1 rounded-2xl px-2.5 py-2"
                 >
                   <:details>
-                    <span>{file.profile.username}</span>
+                    <span>{PotokIde.Social.Profile.display_name(file.profile)}</span>
                     <span aria-hidden="true">·</span>
                     <Components.local_time
                       id={"file-inserted-at-#{file.id}"}

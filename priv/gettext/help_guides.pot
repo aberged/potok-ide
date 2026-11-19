@@ -206,12 +206,12 @@ msgstr ""
 msgid "A person and a role"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:929
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:937
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, and which see the results and the details."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:935
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr ""
@@ -294,7 +294,7 @@ msgstr ""
 msgid "Alternative description"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:917
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:925
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr ""
@@ -377,7 +377,7 @@ msgstr ""
 msgid "B starts on the word “fault”"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:455
+#: lib/potok_ide_web/controllers/page_html.ex:461
 #, elixir-autogen, elixir-format
 msgid "Back to the help"
 msgstr ""
@@ -518,7 +518,7 @@ msgstr ""
 msgid "From code to the frame"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:482
+#: lib/potok_ide_web/controllers/page_html.ex:488
 #, elixir-autogen, elixir-format
 msgid "From the same series"
 msgstr ""
@@ -587,7 +587,7 @@ msgstr ""
 msgid "House council"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:460
+#: lib/potok_ide_web/controllers/page_html.ex:466
 #, elixir-autogen, elixir-format
 msgid "How Potok works inside"
 msgstr ""
@@ -749,7 +749,7 @@ msgstr ""
 msgid "Membership"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:941
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:949
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr ""
@@ -911,7 +911,7 @@ msgstr ""
 msgid "Reacts to the group"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:494
+#: lib/potok_ide_web/controllers/page_html.ex:500
 #, elixir-autogen, elixir-format
 msgid "Read"
 msgstr ""
@@ -953,7 +953,7 @@ msgstr ""
 msgid "Role assignment"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:911
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:919
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr ""
@@ -1127,7 +1127,7 @@ msgstr ""
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:923
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:931
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr ""
@@ -1242,7 +1242,7 @@ msgstr ""
 msgid "Where each one stops"
 msgstr ""
 
-#: lib/potok_ide_web/controllers/page_html.ex:469
+#: lib/potok_ide_web/controllers/page_html.ex:475
 #, elixir-autogen, elixir-format
 msgid "Where this is in the code:"
 msgstr ""
@@ -2427,4 +2427,9 @@ msgstr ""
 #: lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex:346
 #, elixir-autogen, elixir-format
 msgid "the write and its processes, together"
+msgstr ""
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#, elixir-autogen, elixir-format
+msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
 msgstr ""

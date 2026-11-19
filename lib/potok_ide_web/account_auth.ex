@@ -48,6 +48,16 @@ defmodule PotokIdeWeb.AccountAuth do
   It clears all session data for safety. See renew_session.
   """
   def log_out_account(conn) do
+    conn
+    |> end_session()
+    |> redirect(to: ~p"/")
+  end
+
+  @doc """
+  Ends the session as `log_out_account/1` does, without the redirect: after an
+  account is deleted, its page says goodbye in its place.
+  """
+  def end_session(conn) do
     account_token = get_session(conn, :account_token)
     account_token && Accounts.delete_account_session_token(account_token)
 
@@ -58,7 +68,6 @@ defmodule PotokIdeWeb.AccountAuth do
     conn
     |> renew_session(nil)
     |> delete_resp_cookie(@remember_me_cookie, @remember_me_options)
-    |> redirect(to: ~p"/")
   end
 
   @doc """

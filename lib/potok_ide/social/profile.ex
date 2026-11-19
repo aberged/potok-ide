@@ -1,5 +1,6 @@
 defmodule PotokIde.Social.Profile do
   use Ecto.Schema
+  use Gettext, backend: PotokIdeWeb.Gettext
 
   import Ecto.Changeset
 
@@ -12,7 +13,10 @@ defmodule PotokIde.Social.Profile do
 
   @description_formats [:markdown, :html]
   @sharing_modes [:unique, :shared]
-  @kinds [:person, :process]
+  @kinds [:person, :process, :deleted]
+  # The name a deleted person's profile takes (`PotokIde.Accounts.Deletion`),
+  # which nobody may pick.
+  @deleted_username ~r/^obrisan-\d+$/
 
   schema "profiles" do
     field :username, :string
@@ -25,7 +29,10 @@ defmodule PotokIde.Social.Profile do
     # A person's profile, or the one that signs what an app's process does
     # (`PotokIde.Social.AppProcesses`): no account holds it, nobody picks it,
     # and where people are listed, mentioned or invited it is left out.
-    # Never cast: only `AppProcesses` makes a process.
+    # Never cast: only `AppProcesses` makes a process. `:deleted` is what a
+    # person's profile becomes when its only account is deleted
+    # (`PotokIde.Accounts.Deletion`): left out the same way, it keeps what the
+    # person wrote in the groups.
     field :kind, Ecto.Enum, values: @kinds, default: :person
     # Whether the notices of the groups it follows push to its devices at all;
     # never cast, `PotokIde.Notices.set_notice_push/2` changes it.
@@ -58,6 +65,11 @@ defmodule PotokIde.Social.Profile do
     |> validate_format(:username, @username_format,
       message: "must contain only letters, numbers, _, ., and -"
     )
+    |> validate_change(:username, fn :username, username ->
+      if Regex.match?(@deleted_username, username),
+        do: [username: "is kept for deleted accounts"],
+        else: []
+    end)
     |> unsafe_validate_unique(:username, Repo)
     |> unique_constraint(:username)
     |> validate_length(:profile_picture_url, max: @max_profile_picture_url_length)
@@ -67,17 +79,28 @@ defmodule PotokIde.Social.Profile do
   def process?(%__MODULE__{kind: :process}), do: true
   def process?(_profile), do: false
 
+  @doc "Whether the profile's person deleted their account."
+  def deleted?(%__MODULE__{kind: :deleted}), do: true
+  def deleted?(_profile), do: false
+
+  @doc "The username a deleted person's profile takes: `obrisan-<id>`."
+  def deleted_username(id) when is_integer(id), do: "obrisan-#{id}"
+
   @doc """
   The name people see. A process goes by its rule's name once its
   `app_process` is loaded, and by its generated username otherwise.
   """
   def display_name(%__MODULE__{kind: :process, app_process: %AppProcess{name: name}}), do: name
+  def display_name(%__MODULE__{kind: :deleted}), do: gettext("Deleted user")
   def display_name(%{username: username}), do: username
 
   @doc """
   An author as a line names it: `@username` for a person, who can be
-  mentioned so, and `display_name/1` for a process, who cannot.
+  mentioned so, and `display_name/1` for a process or a deleted person, who
+  cannot.
   """
-  def author_label(%__MODULE__{kind: :process} = profile), do: display_name(profile)
+  def author_label(%__MODULE__{kind: kind} = profile) when kind in [:process, :deleted],
+    do: display_name(profile)
+
   def author_label(%{username: username}), do: "@" <> username
 end

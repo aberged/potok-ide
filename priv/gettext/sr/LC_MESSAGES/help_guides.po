@@ -206,12 +206,12 @@ msgstr "Nova vrednost aplikacije"
 msgid "A person and a role"
 msgstr "Osoba i uloga"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:929
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:937
 #, elixir-autogen, elixir-format
 msgid "A poll says which roles vote, and which see the results and the details."
 msgstr "Glasanje kaže koje uloge glasaju, a koje vide rezultate i pojedinosti."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:935
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:943
 #, elixir-autogen, elixir-format
 msgid "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
 msgstr "Proces pita ulogu formom ili odlukom, i šalje joj push, ako sme da pominje uloge."
@@ -294,7 +294,7 @@ msgstr "Sve su to metode objekta `window.potok`. Svaka postaje jedna poruka okvi
 msgid "Alternative description"
 msgstr "Alternativni opis"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:917
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:925
 #, elixir-autogen, elixir-format
 msgid "An alternative description can be seen by some roles only, along with those who may edit the group."
 msgstr "Alternativni opis može da vide samo neke uloge, uz one koji smeju da uređuju grupu."
@@ -377,7 +377,7 @@ msgstr "Najviše %{run} koraka zaredom bez čekanja, %{steps} za ceo život i %{
 msgid "B starts on the word “fault”"
 msgstr "B se pali na reč „kvar“"
 
-#: lib/potok_ide_web/controllers/page_html.ex:455
+#: lib/potok_ide_web/controllers/page_html.ex:461
 #, elixir-autogen, elixir-format
 msgid "Back to the help"
 msgstr "Nazad na pomoć"
@@ -518,7 +518,7 @@ msgstr "Iz procesa niko ne saznaje ko je napisao anonimnu vrednost."
 msgid "From code to the frame"
 msgstr "Od koda do okvira"
 
-#: lib/potok_ide_web/controllers/page_html.ex:482
+#: lib/potok_ide_web/controllers/page_html.ex:488
 #, elixir-autogen, elixir-format
 msgid "From the same series"
 msgstr "Iz iste serije"
@@ -587,7 +587,7 @@ msgstr "Ima?"
 msgid "House council"
 msgstr "Kućni savet"
 
-#: lib/potok_ide_web/controllers/page_html.ex:460
+#: lib/potok_ide_web/controllers/page_html.ex:466
 #, elixir-autogen, elixir-format
 msgid "How Potok works inside"
 msgstr "Kako Potok radi iznutra"
@@ -749,7 +749,7 @@ msgstr "Članovi i uloge"
 msgid "Membership"
 msgstr "Članstvo"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:941
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:949
 #, elixir-autogen, elixir-format
 msgid "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
 msgstr "Pominjanje uloge u poruci javlja svima koji je drže, uz dozvolu Pominjanje uloga."
@@ -911,7 +911,7 @@ msgstr "Reakcije, deljenje, link"
 msgid "Reacts to the group"
 msgstr "Reaguje na grupu"
 
-#: lib/potok_ide_web/controllers/page_html.ex:494
+#: lib/potok_ide_web/controllers/page_html.ex:500
 #, elixir-autogen, elixir-format
 msgid "Read"
 msgstr "Pročitaj"
@@ -953,7 +953,7 @@ msgstr "Uloga"
 msgid "Role assignment"
 msgstr "Dodela uloge"
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:911
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:919
 #, elixir-autogen, elixir-format
 msgid "Roles also work outside these %{n} permissions"
 msgstr "Uloge rade i van ovih %{n} dozvola"
@@ -1127,7 +1127,7 @@ msgstr "Koren i Mesna zajednica imaju svoje manifeste. Zgrada Cvetna 12 i Ulaz A
 msgid "The rules are copied from the <a1>domain map</a1> and from the code."
 msgstr "Pravila su prepisana sa <a1>mape domena</a1> i iz koda."
 
-#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:923
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:931
 #, elixir-autogen, elixir-format
 msgid "The rules of an app's collections say which roles write, and which read everything."
 msgstr "Pravila kolekcija aplikacije kažu koje uloge pišu, a koje čitaju sve."
@@ -1242,7 +1242,7 @@ msgstr "Gde Mleko drži podatke"
 msgid "Where each one stops"
 msgstr "Gde koji staje"
 
-#: lib/potok_ide_web/controllers/page_html.ex:469
+#: lib/potok_ide_web/controllers/page_html.ex:475
 #, elixir-autogen, elixir-format
 msgid "Where this is in the code:"
 msgstr "Izvori u kodu:"
@@ -2428,3 +2428,8 @@ msgstr "isti opis? token za upis (%{burst} / %{window} s)"
 #, elixir-autogen, elixir-format
 msgid "the write and its processes, together"
 msgstr "upis i procesi kolekcije, zajedno"
+
+#: lib/potok_ide_web/controllers/page_html/help_access.html.heex:909
+#, elixir-autogen, elixir-format
+msgid "<b>A deleted account</b> leaves its profile as \"Deleted user\", a member of no group and with no role. A group never loses its last Admin, so the person first makes someone else Admin of each group they alone hold."
+msgstr "<b>Obrisan nalog</b> ostavlja svoj profil kao „Obrisan korisnik“, bez članstva u ijednoj grupi i bez uloga. Grupa nikad ne ostaje bez poslednjeg Admina, pa osoba prvo nekog drugog postavi za Admina svake grupe koju drži sama."

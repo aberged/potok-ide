@@ -15,6 +15,9 @@ defmodule PotokIde.Accounts.AccountToken do
   @invitation_validity_in_days 7
   @change_email_validity_in_days 7
   @session_validity_in_days 14
+  # A link that deletes the account (`PotokIde.Accounts.Deletion`): sent to the
+  # address on the account, and opened soon after it was asked for.
+  @delete_validity_in_minutes 60
 
   schema "accounts_tokens" do
     field :token, :binary
@@ -30,6 +33,7 @@ defmodule PotokIde.Accounts.AccountToken do
   def invitation_validity_in_days, do: @invitation_validity_in_days
   def change_email_validity_in_days, do: @change_email_validity_in_days
   def session_validity_in_days, do: @session_validity_in_days
+  def delete_validity_in_minutes, do: @delete_validity_in_minutes
 
   @doc """
   Generates a token that will be stored in a signed place,
@@ -157,6 +161,31 @@ defmodule PotokIde.Accounts.AccountToken do
         query =
           from token in by_token_and_context_query(hashed_token, context),
             where: token.inserted_at > ago(@change_email_validity_in_days, "day")
+
+        {:ok, query}
+
+      :error ->
+        :error
+    end
+  end
+
+  @doc """
+  Checks a link that deletes an account and returns its lookup query, which
+  returns `{account, token}`. The link works for
+  #{@delete_validity_in_minutes} minutes, and only while the account keeps the
+  address it was sent to. Its context is `"delete"`.
+  """
+  def verify_delete_token_query(token) do
+    case Base.url_decode64(token, padding: false) do
+      {:ok, decoded_token} ->
+        hashed_token = :crypto.hash(@hash_algorithm, decoded_token)
+
+        query =
+          from token in by_token_and_context_query(hashed_token, "delete"),
+            join: account in assoc(token, :account),
+            where: token.inserted_at > ago(^@delete_validity_in_minutes, "minute"),
+            where: token.sent_to == account.email,
+            select: {account, token}
 
         {:ok, query}
 

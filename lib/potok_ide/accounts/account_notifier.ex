@@ -38,6 +38,20 @@ defmodule PotokIde.Accounts.AccountNotifier do
   end
 
   @doc """
+  Deliver the link that deletes the account, to its address.
+  """
+  def deliver_deletion_instructions(account, url) do
+    deliver(account.email, AccountEmails.account_deletion(%{to: account.email, url: url}))
+  end
+
+  @doc """
+  Deliver the last email of a deleted account, to the address it had.
+  """
+  def deliver_account_deleted(email) when is_binary(email) do
+    deliver(email, AccountEmails.account_deleted(%{to: email}))
+  end
+
+  @doc """
   Deliver a magic link: the sign-in link of a confirmed account, or the
   invitation of an unconfirmed one, which an invitation opened.
 

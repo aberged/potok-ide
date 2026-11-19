@@ -178,7 +178,7 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Profile", "profile_picture_url"), do: dgettext("domain_map", "profile picture")
   defp own_field("Profile", "sharing"), do: dgettext("domain_map", "sharing")
   defp own_field("Profile", "notice_push"), do: dgettext("domain_map", "push of notices")
-  defp own_field("Profile", "kind"), do: dgettext("domain_map", "person or process")
+  defp own_field("Profile", "kind"), do: dgettext("domain_map", "person, process or deleted")
 
   defp own_field("Group", "group_picture_url"), do: dgettext("domain_map", "group picture")
 
@@ -1489,6 +1489,14 @@ defmodule PotokIdeWeb.DomainCopy do
           dgettext(
             "domain_map",
             "<Account>The account</Account> is the identity: an email and a password. Everything in groups is done by a <Profile>profile</Profile>. One account can have several profiles, say a business, a private and a club one. The code does not tell them apart by purpose, only unique from shared. A shared profile is used by every account that accepts a <ProfileInvitation>profile invitation</ProfileInvitation>."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A deleted account leaves what was written"),
+        text:
+          dgettext(
+            "domain_map",
+            "Its person deletes <Account>an account</Account>, in the settings or by a link sent to its address. A <Profile>profile</Profile> only that account used stays as a deleted one, with no name, picture or description of theirs, and is left out wherever people are listed, mentioned or invited. Its <Value>values</Value>, <ValueAttachment>files</ValueAttachment>, <Poll>polls</Poll> and <Event>events</Event> stay in the groups, while its <GroupMembership>memberships</GroupMembership>, reactions, <GroupFollow>followings</GroupFollow>, <Tag>tags</Tag> and invitations go. A profile other accounts share stays theirs. A <Group>group</Group> where it is the only admin among people waits until someone else is made one, and one where it is alone goes with it. An account opened by an invitation nobody took up goes after 90 days."
           )
       },
       %{

@@ -1,7 +1,8 @@
 defmodule PotokIdeWeb.AccountEmails do
   @moduledoc """
   The emails about an account: the sign-in link, the invitation that opens a
-  new account, and the confirmation of a new address. Each returns its subject
+  new account, the confirmation of a new address, and the link that deletes the
+  account with the goodbye after it. Each returns its subject
   with an HTML and a plain-text body, in the current Gettext locale.
   """
   use Phoenix.Component
@@ -228,6 +229,94 @@ defmodule PotokIdeWeb.AccountEmails do
           assigns.not_you
         ])
     }
+  end
+
+  @doc """
+  The link that deletes the account, asked for in the settings or on the page
+  `/brisanje-naloga`.
+  """
+  def account_deletion(%{to: to, url: url}) do
+    minutes = AccountToken.delete_validity_in_minutes()
+
+    assigns = %{
+      to: to,
+      url: url,
+      eyebrow: gettext("Account deletion"),
+      title: gettext("Delete your Potok account?"),
+      preheader: gettext("Nothing is deleted until you confirm."),
+      lead:
+        gettext(
+          "Someone asked to delete the Potok account of %{email}. The link shows what goes and what stays, and the account is deleted only when you confirm there.",
+          email: to
+        ),
+      action: gettext("See and confirm"),
+      validity:
+        ngettext(
+          "The link works for %{count} minute.",
+          "The link works for %{count} minutes.",
+          minutes
+        ),
+      not_you:
+        gettext("If you didn't ask for this, ignore this email: the account stays as it is.")
+    }
+
+    %{
+      subject: gettext("Deleting your Potok account"),
+      html: to_html(account_deletion_html(assigns)),
+      text:
+        to_text([
+          assigns.title,
+          assigns.lead,
+          assigns.action <> ":\n" <> url,
+          assigns.validity,
+          assigns.not_you
+        ])
+    }
+  end
+
+  defp account_deletion_html(assigns) do
+    ~H"""
+    <.layout to={@to} title={@title} eyebrow={@eyebrow} preheader={@preheader}>
+      <.paragraph>{@lead}</.paragraph>
+      <.button href={@url}>{@action}</.button>
+      <.note>{@validity}</.note>
+      <.note>{@not_you}</.note>
+      <.fallback url={@url} />
+    </.layout>
+    """
+  end
+
+  @doc """
+  The last email of a deleted account.
+  """
+  def account_deleted(%{to: to}) do
+    assigns = %{
+      to: to,
+      eyebrow: gettext("Account deletion"),
+      title: gettext("Your Potok account is deleted"),
+      preheader: gettext("This address no longer has an account."),
+      lead:
+        gettext(
+          "The account of %{email} is deleted, with its sign-ins and devices. What you wrote in groups stays there under \"Deleted user\", with no name, picture or description of yours.",
+          email: to
+        ),
+      again: gettext("If someone invites this address again, a new account starts from nothing.")
+    }
+
+    %{
+      subject: gettext("Your Potok account is deleted"),
+      html: to_html(account_deleted_html(assigns)),
+      text: to_text([assigns.title, assigns.lead, assigns.again])
+    }
+  end
+
+  defp account_deleted_html(assigns) do
+    ~H"""
+    <.layout to={@to} title={@title} eyebrow={@eyebrow} preheader={@preheader}>
+      <.paragraph>{@lead}</.paragraph>
+      <.note>{@again}</.note>
+    </.layout>
+    """
   end
 
   defp email_change_html(assigns) do

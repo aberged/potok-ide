@@ -976,7 +976,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             "flex shrink-0 items-center justify-center rounded-full border border-base-300 bg-base-300 text-xs font-semibold uppercase text-base-content/75 shadow-sm"
           ]}>
             <.icon :if={Profile.process?(@profile)} name="hero-cog-6-tooth" class="size-5" />
-            <span :if={!Profile.process?(@profile)}>{profile_initials(@profile.username)}</span>
+            <span :if={!Profile.process?(@profile)}>{profile_initials(initials_name(@profile))}</span>
           </div>
         <% end %>
 
@@ -2010,7 +2010,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             class="object-cover"
           />
           <.icon :if={!@avatar_url and @process?} name="hero-cog-6-tooth" class="size-4 sm:size-5" />
-          <span :if={!@avatar_url and !@process?}>{profile_initials(@value.creator.username)}</span>
+          <span :if={!@avatar_url and !@process?}>
+            {profile_initials(initials_name(@value.creator))}
+          </span>
         </div>
         <span
           id={"value-creator-presence-#{@value.id}"}
@@ -2049,7 +2051,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
           id={"value-process-trigger-#{@value.id}"}
           class="min-w-0 truncate"
         >
-          {gettext("started by %{username}", username: @value.process_trigger.username)}
+          {gettext("started by %{username}",
+            username: Profile.display_name(@value.process_trigger)
+          )}
         </span>
         <span
           :if={@mentions_me?}
@@ -3020,6 +3024,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   """
   def group_identity_name(%{is_direct: true} = group, current_profile) do
     case direct_group_other_member(group, current_profile) do
+      %Profile{kind: :deleted} = profile -> Profile.display_name(profile)
       %{username: username} when is_binary(username) and username != "" -> username
       _ -> group.name
     end
@@ -3076,6 +3081,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   end
 
   defp profile_initials(_), do: "?"
+
+  # A deleted person keeps no initials of theirs (`PotokIde.Accounts.Deletion`).
+  defp initials_name(%Profile{kind: :deleted}), do: nil
+  defp initials_name(%{username: username}), do: username
 
   defp group_initials(name) when is_binary(name) do
     name

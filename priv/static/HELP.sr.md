@@ -146,6 +146,14 @@ Deljeni profil deliš sa drugim profilom: u delu Deljenje upišeš njegovo koris
 
 ![Profili: trenutni, podrazumevani i deljeni profil savet-cvetna](profili) ![Uređivanje profila: ime, slika, opis, deljenje i tagovi](profil-uredi)
 
+## Nalog i brisanje {:#nalog}
+
+Nalog je tvoja adresa i prijava, a profili su lica kojima se u grupama predstavljaš. U Podešavanjima naloga, u delu Nalog, je link na [politiku privatnosti](/privacy-policy), gde piše šta Potok čuva o tebi, i dugme **Obriši nalog**.
+
+Pre brisanja vidiš šta nestaje, a šta ostaje. Nestaju nalog, njegove prijave i uređaji, tvoja članstva, praćenja, reakcije, tagovi i pozivnice. Tvoje poruke, fajlovi, glasanja i događaji ostaju u grupama pod imenom „Obrisan korisnik“, bez tvog imena, slike i opisa. Profil koji deliš sa drugim nalozima ostaje njima. Grupe u kojima si jedini član nestaju s nalogom.
+
+Grupa nikad ne ostaje bez poslednjeg administratora: ako si jedini administrator grupe u kojoj ima i drugih, prvo nekog drugog postavi za administratora. Ako je tvoja prijava od maločas, nalog se briše odmah, kad upišeš svoju adresu. Inače ti na adresu stiže link koji važi sat vremena. Isti link možeš da zatražiš i bez prijave, na stranici [brisanje naloga](/brisanje-naloga).
+
 ## Početna i pronalaženje grupa {:#pocetna}
 
 Početna strana ima dve kartice: Razgovori, sa razgovorima u četiri oka, i Grupe. Svaka grupa pokazuje broj nepročitanih poruka, poslednju poruku, broj članova i podgrupa i svoje tagove. Preko 99 nepročitanih piše 99+. Kad uđeš u grupu, njene ranije poruke možeš da čitaš, ali se ne broje kao nepročitane: broje se one koje stignu posle. Katanac znači da je grupa privatna, a globus da je javna. Grupe koje si prikačio stoje na vrhu kartice Grupe, u traci iznad spiska, sa brojem nepročitanih poruka u svemu ispod njih, pa do njih stižeš jednim dodirom.

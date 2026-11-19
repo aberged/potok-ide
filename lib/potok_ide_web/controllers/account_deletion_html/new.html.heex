@@ -1,0 +1,42 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+  centered
+>
+  <Layouts.guest_card
+    id="account-deletion"
+    title={gettext("Delete an account")}
+    subtitle={
+      gettext(
+        "Type the address of the account. We'll send it a link that shows what goes and what stays; nothing is deleted until you confirm there."
+      )
+    }
+  >
+    <.form for={@form} id="account-deletion-form" action={~p"/brisanje-naloga"}>
+      <.input
+        field={@form[:email]}
+        id="account-deletion-email"
+        type="email"
+        label={gettext("Email")}
+        autocomplete="username"
+        spellcheck="false"
+        required
+      />
+      <.button variant="landing" class="group mt-4 w-full">
+        {gettext("Send the link")}
+        <.icon
+          name="hero-arrow-right"
+          class="size-4 transition-transform duration-200 group-hover:translate-x-0.5"
+        />
+      </.button>
+    </.form>
+
+    <p class="mt-6 text-center text-sm text-base-content/70">
+      <.link href={~p"/privacy-policy"} class="lp-link">
+        {gettext("What Potok keeps, in the privacy policy")}
+      </.link>
+    </p>
+  </Layouts.guest_card>
+</Layouts.guest>

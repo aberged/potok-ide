@@ -617,6 +617,44 @@ defmodule PotokIde.Accounts do
 
   defp invitation_details(%Account{}, _opts), do: []
 
+  ## Deleting an account
+
+  @doc "What deleting the account would do (`PotokIde.Accounts.Deletion.preview/1`)."
+  defdelegate deletion_preview(account), to: PotokIde.Accounts.Deletion, as: :preview
+
+  @doc """
+  Deletes the account (`PotokIde.Accounts.Deletion.delete/1`) and sends a last
+  email to its address. Returns `{:ok, tokens}` with the tokens whose sessions
+  the caller disconnects, or `{:error, {:blocked, groups}}`.
+  """
+  def delete_account(%Account{} = account) do
+    with {:ok, %{email: email, tokens: tokens}} <- PotokIde.Accounts.Deletion.delete(account) do
+      _ = AccountNotifier.deliver_account_deleted(email)
+      {:ok, tokens}
+    end
+  end
+
+  @doc """
+  Sends the link that deletes the account to its address. It works for
+  #{AccountToken.delete_validity_in_minutes()} minutes.
+  """
+  def deliver_account_deletion_instructions(%Account{} = account, url_fun)
+      when is_function(url_fun, 1) do
+    {encoded_token, account_token} = AccountToken.build_email_token(account, "delete")
+    Repo.insert!(account_token)
+    AccountNotifier.deliver_deletion_instructions(account, url_fun.(encoded_token))
+  end
+
+  @doc "The account a link that deletes it belongs to, or nil."
+  def get_account_by_deletion_token(token) when is_binary(token) do
+    with {:ok, query} <- AccountToken.verify_delete_token_query(token),
+         {account, _token} <- Repo.one(query) do
+      account
+    else
+      _ -> nil
+    end
+  end
+
   @doc """
   Deletes the signed token with the given context.
   """
@@ -629,7 +667,8 @@ defmodule PotokIde.Accounts do
   Deletes the tokens no check accepts any more: sessions older than
   #{AccountToken.session_validity_in_days()} days (a session is reissued every week and the
   old token stays until then), sign-in links and links to confirm a new
-  address older than the longest they last. Returns how many went.
+  address older than the longest they last, links that delete an account older
+  than an hour. Returns how many went.
   """
   def delete_expired_tokens do
     session_days = AccountToken.session_validity_in_days()
@@ -651,7 +690,15 @@ defmodule PotokIde.Accounts do
       )
       |> Repo.delete_all()
 
-    deleted
+    {deleting, _} =
+      from(t in AccountToken,
+        where:
+          t.context == "delete" and
+            t.inserted_at < ago(^AccountToken.delete_validity_in_minutes(), "minute")
+      )
+      |> Repo.delete_all()
+
+    deleted + deleting
   end
 
   defp build_magic_link_app_url(%URI{} = uri) do

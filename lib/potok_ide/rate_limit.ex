@@ -36,6 +36,10 @@ defmodule PotokIde.RateLimit do
     invitation_email: {50, :timer.hours(1)},
     # Emails to confirm a new address, per account.
     email_change: {10, :timer.hours(1)},
+    # Links that delete an account (`/brisanje-naloga`), per typed address and
+    # per IP, with an account or not.
+    account_deletion_email: {3, :timer.hours(1)},
+    account_deletion_ip: {10, :timer.hours(1)},
     # App counts and sums (`summarizeValues`, `aggregateValues`), per profile
     # on all its pages, or per page for a guest. Forma refreshes a summary at
     # most every two seconds, so four pages of it fit.
@@ -84,6 +88,8 @@ defmodule PotokIde.RateLimit do
     :magic_link_ip,
     :invitation_email,
     :email_change,
+    :account_deletion_email,
+    :account_deletion_ip,
     :group_notice,
     :process_step,
     :process_manual_start,
@@ -101,6 +107,8 @@ defmodule PotokIde.RateLimit do
           | :magic_link_ip
           | :invitation_email
           | :email_change
+          | :account_deletion_email
+          | :account_deletion_ip
           | :app_heavy_read
           | :app_create_place
           | :app_create_children

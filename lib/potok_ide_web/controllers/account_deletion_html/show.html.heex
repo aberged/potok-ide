@@ -1,0 +1,35 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+  centered
+>
+  <Layouts.guest_card
+    id="account-deletion-confirm"
+    title={gettext("Delete the account?")}
+    subtitle={@email}
+  >
+    <.deletion_preview id="account-deletion-preview" preview={@preview} />
+
+    <.form
+      :if={@preview.blocking == []}
+      for={%{}}
+      id="account-deletion-confirm-form"
+      action={~p"/brisanje-naloga/#{@token}"}
+      class="mt-6"
+    >
+      <button
+        id="account-deletion-confirm-button"
+        type="submit"
+        class="w-full rounded-full bg-error px-5 py-3 text-sm font-semibold text-error-content shadow-sm transition duration-200 hover:brightness-110 active:scale-[0.98]"
+      >
+        {gettext("Delete the account for good")}
+      </button>
+    </.form>
+
+    <p class="mt-6 text-center text-sm">
+      <.link href={~p"/"} class="lp-link">{gettext("Keep the account")}</.link>
+    </p>
+  </Layouts.guest_card>
+</Layouts.guest>

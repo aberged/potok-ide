@@ -168,7 +168,7 @@ defmodule PotokIdeWeb.GroupLive.Show.NoticesTab do
             <header class="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-base-content/60">
               <Components.local_time id={"#{dom_id}-time"} datetime={notice.inserted_at} />
               <span :if={@access.member? and notice.creator} id={"#{dom_id}-author"}>
-                {"· " <> notice.creator.username}
+                {"· " <> PotokIde.Social.Profile.display_name(notice.creator)}
               </span>
               <span :if={@can_send} id={"#{dom_id}-reached"}>
                 {"· " <>

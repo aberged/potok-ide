@@ -39,7 +39,7 @@ defmodule PotokIdeWeb.PageControllerTest do
     end
 
     assert Enum.count(LazyHTML.query(document, "#landing-features article")) == 6
-    assert Enum.count(LazyHTML.query(document, "#landing-perks li")) == 5
+    assert Enum.count(LazyHTML.query(document, "#landing-perks li")) == 6
   end
 
   # Digits only: the words around them depend on the language.
@@ -87,7 +87,7 @@ defmodule PotokIdeWeb.PageControllerTest do
       end
 
       assert Enum.count(LazyHTML.query(document, "#domain-chips [data-domain]")) == 10
-      assert Enum.count(LazyHTML.query(document, "#domain-mechanisms article")) == 34
+      assert Enum.count(LazyHTML.query(document, "#domain-mechanisms article")) == 35
       assert Enum.count(LazyHTML.query(document, "#domain-apps-capabilities article")) == 17
       assert Enum.count(LazyHTML.query(document, "#domain-apps-limits li")) == 11
       assert Enum.count(LazyHTML.query(document, "#domain-caption [data-caption]")) == 3

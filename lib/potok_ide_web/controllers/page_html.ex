@@ -287,6 +287,12 @@ defmodule PotokIdeWeb.PageHTML do
         icon: "hero-globe-alt",
         title: gettext("Latin and Cyrillic"),
         text: gettext("Serbian in both scripts, and English.")
+      },
+      %{
+        id: "privacy",
+        icon: "hero-shield-check",
+        title: gettext("Privacy"),
+        text: gettext("No ads or tracking, and you delete your account whenever you like.")
       }
     ]
   end

@@ -208,7 +208,12 @@ defmodule PotokIde.Social do
   def get_profile_avatar_source(id) do
     from(p in Profile,
       where: p.id == ^id,
-      select: %{id: p.id, name: p.username, picture_url: p.profile_picture_url}
+      # A deleted person keeps no initials of theirs: "?".
+      select: %{
+        id: p.id,
+        name: fragment("CASE WHEN ? = 'deleted' THEN '' ELSE ? END", p.kind, p.username),
+        picture_url: p.profile_picture_url
+      }
     )
     |> Repo.one()
   end
@@ -882,6 +887,12 @@ defmodule PotokIde.Social do
     {:error, :process_profile}
   end
 
+  # A deleted person is written to no more (`PotokIde.Accounts.Deletion`).
+  def get_or_create_direct_group(%Profile{kind: kind}, %Profile{kind: other_kind})
+      when :deleted in [kind, other_kind] do
+    {:error, :deleted_profile}
+  end
+
   def get_or_create_direct_group(%Profile{} = current_profile, %Profile{} = other_profile) do
     root_group = get_root_group!()
 
@@ -1483,34 +1494,44 @@ defmodule PotokIde.Social do
         {:error, :group_has_children}
 
       true ->
-        parent_id = group.parent_id
-        # Its shortcuts go with it, so the groups that hold them are read first.
-        shortcut_parent_ids = shortcut_parent_ids(group.id)
+        remove_group(group)
+    end
+  end
 
-        # The group has no sub-groups, so its own values hold all the files
-        # that go with it.
-        Multi.new()
-        |> Multi.delete_all(
-          :attachments,
-          from(a in ValueAttachment, where: a.group_id == ^group.id, select: a.storage_key)
-        )
-        |> Multi.delete(:group, group)
-        |> Repo.transaction()
-        |> case do
-          {:ok, %{group: deleted_group, attachments: {_count, storage_keys}}} ->
-            Storage.delete_later(storage_keys)
-            broadcast_group_deleted(deleted_group.id, parent_id)
+  @doc """
+  Deletes a group that has no sub-groups, with its files, without asking who
+  may: `delete_group/2` asks first, and `PotokIde.Accounts.Deletion` decides it
+  for the groups that go with a deleted account. Callers make sure it has no
+  sub-groups.
+  """
+  def remove_group(%Group{} = group) do
+    parent_id = group.parent_id
+    # Its shortcuts go with it, so the groups that hold them are read first.
+    shortcut_parent_ids = shortcut_parent_ids(group.id)
 
-            if parent_id do
-              broadcast_child_group_changed(parent_id, deleted_group, :deleted)
-            end
+    # The group has no sub-groups, so its own values hold all the files
+    # that go with it.
+    Multi.new()
+    |> Multi.delete_all(
+      :attachments,
+      from(a in ValueAttachment, where: a.group_id == ^group.id, select: a.storage_key)
+    )
+    |> Multi.delete(:group, group)
+    |> Repo.transaction()
+    |> case do
+      {:ok, %{group: deleted_group, attachments: {_count, storage_keys}}} ->
+        Storage.delete_later(storage_keys)
+        broadcast_group_deleted(deleted_group.id, parent_id)
 
-            broadcast_shortcut_parents(shortcut_parent_ids, deleted_group, :deleted)
-            {:ok, deleted_group}
-
-          {:error, _step, reason, _changes} ->
-            {:error, reason}
+        if parent_id do
+          broadcast_child_group_changed(parent_id, deleted_group, :deleted)
         end
+
+        broadcast_shortcut_parents(shortcut_parent_ids, deleted_group, :deleted)
+        {:ok, deleted_group}
+
+      {:error, _step, reason, _changes} ->
+        {:error, reason}
     end
   end
 
@@ -3955,7 +3976,7 @@ defmodule PotokIde.Social do
   end
 
   def get_profile_by_username(username) when is_binary(username) do
-    Repo.get_by(Profile, username: username)
+    Repo.one(from(p in Profile, where: p.username == ^username and p.kind != :deleted))
   end
 
   def get_account_current_profile(%Account{} = account) do

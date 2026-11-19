@@ -1,0 +1,24 @@
+<Layouts.guest
+  flash={@flash}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+  about_link={true}
+  centered
+>
+  <Layouts.guest_card
+    id="account-deleted"
+    title={gettext("The account is deleted")}
+    subtitle={
+      gettext(
+        "Its sign-ins and devices are gone. What you wrote stays in the groups under \"Deleted user\". Thank you for being here."
+      )
+    }
+  >
+    <.link
+      href={~p"/"}
+      class="block w-full rounded-full border border-base-content/15 px-5 py-3 text-center text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+    >
+      {gettext("To the home page")}
+    </.link>
+  </Layouts.guest_card>
+</Layouts.guest>

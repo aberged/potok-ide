@@ -140,6 +140,14 @@ You share a shared profile with another profile: in the Sharing part you type it
 
 ![Profiles: current, default and the shared profile savet-cvetna](profili) ![Editing a profile: name, picture, description, sharing and tags](profil-uredi)
 
+## Account and deleting it {:#nalog}
+
+Your account is your address and your sign-in, and your profiles are the faces you show in groups. In the account settings, the Account part links the [privacy policy](/privacy-policy), which says what Potok keeps about you, and has the **Delete account** button.
+
+Before deleting you see what goes and what stays. The account goes, with its sign-ins and devices, your memberships, follows, reactions, tags and invitations. Your messages, files, polls and events stay in the groups under the name "Deleted user", with no name, picture or description of yours. A profile you share with other accounts stays theirs. Groups where you are the only member go with the account.
+
+A group never loses its last admin: if you are the only admin of a group that has other people in it, first make someone else an admin. If you logged in a moment ago, the account is deleted at once, once you type your address. Otherwise a link that works for an hour comes to your address. You can also ask for the same link without logging in, on the [account deletion](/brisanje-naloga) page.
+
 ## Home and finding groups {:#pocetna}
 
 The home page has two tabs: Conversations, with your one-to-one conversations, and Groups. Each group shows its unread messages, its newest message, its numbers of members and sub-groups, and its tags. Past 99 unread it says 99+. When you join a group you can read its earlier messages, but they do not count as unread: the ones that come after do. A lock means the group is private, and a globe that it is public. The groups you pinned stand at the top of the Groups tab, in a strip above the list, with the number of unread messages in everything below them, so one tap takes you to them.

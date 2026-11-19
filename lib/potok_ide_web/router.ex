@@ -87,6 +87,14 @@ defmodule PotokIdeWeb.Router do
     # Public: what Potok costs. The operators' form shows in it for them.
     get "/troskovi", HostingCostController, :index
     get "/costs", HostingCostController, :index_redirect
+    # Public, as app stores ask: the emailed link is the proof, so a person
+    # who can't log in, or was only invited, can delete the account too.
+    get "/brisanje-naloga", AccountDeletionController, :new
+    post "/brisanje-naloga", AccountDeletionController, :create
+    get "/brisanje-naloga/gotovo", AccountDeletionController, :done
+    get "/brisanje-naloga/:token", AccountDeletionController, :show
+    post "/brisanje-naloga/:token", AccountDeletionController, :delete
+    get "/delete-account", AccountDeletionController, :new_redirect
   end
 
   # An operator copies a Fly invoice: it needs a login; anyone else gets 404.
@@ -246,6 +254,8 @@ defmodule PotokIdeWeb.Router do
     end
 
     post "/accounts/update-password", AccountSessionController, :update_password
+    # Needs the session, to know the account and whether it logged in lately.
+    post "/accounts/delete", AccountDeletionController, :delete_current
   end
 
   scope "/", PotokIdeWeb do

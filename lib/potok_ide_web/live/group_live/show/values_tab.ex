@@ -46,7 +46,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
   def panel(%{access: access, group: group, current_profile: profile} = assigns) do
     assigns =
       assigns
-      |> assign(:can_post, Access.can_post_in_chat?(profile, access, group))
+      |> assign(:direct_gone?, direct_gone?(group))
+      |> assign(
+        :can_post,
+        Access.can_post_in_chat?(profile, access, group) and not direct_gone?(group)
+      )
       |> assign(:can_react, Access.can_react_in_chat?(profile, access, group))
       |> assign(:can_delete_any, Access.can?(access, :delete_values))
       |> assign(:can_block, Access.can?(access, :remove_members) and Group.open_chat?(group))
@@ -402,10 +406,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
           class="relative z-10 flex shrink-0 items-center gap-2 border-t border-base-300/70 bg-base-100/95 px-4 py-4 text-sm text-base-content/65 backdrop-blur sm:px-6"
         >
           <.icon name="hero-no-symbol" class="size-4 shrink-0" />
-          {if(@is_member,
-            do: gettext("Your roles in this group do not allow posting messages."),
-            else: gettext("You cannot write in this group.")
-          )}
+          {cond do
+            @direct_gone? -> gettext("This person deleted their account.")
+            @is_member -> gettext("Your roles in this group do not allow posting messages.")
+            true -> gettext("You cannot write in this group.")
+          end}
         </div>
 
         <script :type={Phoenix.LiveView.ColocatedHook} name=".ValuesFeed">
@@ -1167,6 +1172,13 @@ defmodule PotokIdeWeb.GroupLive.Show.ValuesTab do
 
   defp unread_divider_count(%{value_id: id, count: count}, %Value{id: id}), do: count
   defp unread_divider_count(_divider, _value), do: nil
+
+  # A direct conversation whose other side deleted their account, when its
+  # members are loaded (`PotokIde.Accounts.Deletion`): nobody reads it any more.
+  defp direct_gone?(%{is_direct: true, members: members}) when is_list(members),
+    do: Enum.any?(members, &match?(%PotokIde.Social.Profile{kind: :deleted}, &1))
+
+  defp direct_gone?(_group), do: false
 
   defp composer_form_class do
     "flex flex-col rounded-[1.75rem] border border-base-300 bg-base-100 px-1 py-0.5 shadow-sm transition-colors duration-150 sm:p-3 [&.phx-drop-target-active]:border-primary [&.phx-drop-target-active]:bg-primary/5"

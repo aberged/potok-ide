@@ -366,6 +366,80 @@ defmodule PotokIdeWeb.AccountLive.Settings do
             <Layouts.theme_toggle />
           </div>
         </section>
+
+        <section id="settings-account" class={settings_card_class()}>
+          <.card_title
+            icon="hero-user-circle"
+            title={gettext("Account")}
+            subtitle={gettext("What Potok keeps about you, and deleting the account.")}
+            class="mb-4"
+          />
+          <div class="flex flex-wrap items-center gap-3">
+            <.link
+              id="settings-privacy-link"
+              href={~p"/privacy-policy"}
+              class="text-sm underline underline-offset-4 text-base-content/75 transition hover:text-base-content"
+            >
+              {gettext("Privacy policy")}
+            </.link>
+            <.button
+              :if={!@deletion}
+              id="delete-account-start"
+              type="button"
+              phx-click="start_delete_account"
+              class="ml-auto"
+            >
+              <.icon name="hero-trash" class="size-4" />
+              {gettext("Delete account")}
+            </.button>
+          </div>
+
+          <div :if={@deletion} id="delete-account-panel" class="mt-4 space-y-4">
+            <PotokIdeWeb.AccountDeletionHTML.deletion_preview
+              id="delete-account-preview"
+              preview={@deletion}
+            />
+
+            <.form
+              :if={@deletion.blocking == []}
+              for={@delete_form}
+              id="delete-account-form"
+              action={~p"/accounts/delete"}
+              method="post"
+              phx-submit="delete_account"
+              phx-trigger-action={@trigger_delete}
+            >
+              <.input
+                field={@delete_form[:email]}
+                id="delete-account-email"
+                type="email"
+                label={gettext("Type your address to confirm")}
+                autocomplete="off"
+                spellcheck="false"
+                required
+              />
+              <p class="text-xs text-base-content/65">
+                {if @sudo?,
+                  do: gettext("The account is deleted at once."),
+                  else:
+                    gettext("We'll email you a link that deletes it, as you logged in a while ago.")}
+              </p>
+              <div class="mt-3 flex flex-wrap justify-end gap-2">
+                <.button type="button" phx-click="cancel_delete_account">
+                  {gettext("Cancel")}
+                </.button>
+                <button
+                  id="delete-account-submit"
+                  type="submit"
+                  phx-disable-with={gettext("Deleting...")}
+                  class="rounded-full bg-error px-4 py-2 text-sm font-semibold text-error-content shadow-sm transition duration-200 hover:brightness-110 active:scale-[0.98]"
+                >
+                  {if @sudo?, do: gettext("Delete account"), else: gettext("Send the link")}
+                </button>
+              </div>
+            </.form>
+          </div>
+        </section>
       </.page_container>
     </Layouts.app>
     """
@@ -398,6 +472,10 @@ defmodule PotokIdeWeb.AccountLive.Settings do
       |> assign(:push_subscriptions, list_push_subscriptions(account))
       |> assign(:push_vapid_public_key, PushNotifications.public_key())
       |> assign(:trigger_submit, false)
+      |> assign(:deletion, nil)
+      |> assign(:delete_form, to_form(%{"email" => ""}, as: "account"))
+      |> assign(:trigger_delete, false)
+      |> assign(:sudo?, Accounts.sudo_mode?(account))
 
     {:ok, socket}
   end
@@ -460,6 +538,46 @@ defmodule PotokIdeWeb.AccountLive.Settings do
     end
   end
 
+  # What deleting would do is read only when asked, as it looks at every group.
+  def handle_event("start_delete_account", _params, socket) do
+    account = socket.assigns.current_scope.account
+
+    {:noreply,
+     socket
+     |> assign(:deletion, Accounts.deletion_preview(account))
+     |> assign(:sudo?, Accounts.sudo_mode?(account))}
+  end
+
+  def handle_event("cancel_delete_account", _params, socket) do
+    {:noreply, assign(socket, deletion: nil, trigger_delete: false)}
+  end
+
+  # In sudo mode the form posts to `AccountDeletionController.delete_current/2`,
+  # which deletes and ends the session; otherwise the link goes by email.
+  def handle_event("delete_account", %{"account" => %{"email" => email}}, socket) do
+    account = socket.assigns.current_scope.account
+    form = to_form(%{"email" => email}, as: "account")
+
+    cond do
+      String.downcase(String.trim(email)) != String.downcase(account.email) ->
+        {:noreply,
+         assign(socket,
+           delete_form:
+             to_form(%{"email" => email},
+               as: "account",
+               errors: [email: {gettext("This is not the address of the account."), []}],
+               action: :validate
+             )
+         )}
+
+      Accounts.sudo_mode?(account) ->
+        {:noreply, assign(socket, delete_form: form, trigger_delete: true)}
+
+      true ->
+        send_deletion_link(socket, account)
+    end
+  end
+
   def handle_event("toggle_notice_push", %{"push" => push}, socket) do
     {:ok, profile} = Notices.set_notice_push(socket.assigns.current_profile, push == "true")
     {:noreply, assign(socket, :current_profile, profile)}
@@ -472,6 +590,39 @@ defmodule PotokIdeWeb.AccountLive.Settings do
        :push_subscriptions,
        list_push_subscriptions(socket.assigns.current_scope.account)
      )}
+  end
+
+  defp send_deletion_link(socket, account) do
+    with :ok <- RateLimit.hit(:account_deletion_email, RateLimit.email_key(account.email)),
+         {:ok, _email} <-
+           Accounts.deliver_account_deletion_instructions(
+             account,
+             &url(~p"/brisanje-naloga/#{&1}")
+           ) do
+      {:noreply,
+       socket
+       |> assign(:deletion, nil)
+       |> put_flash(
+         :info,
+         gettext(
+           "A link that deletes the account is on its way to %{email}. It works for an hour.",
+           email: account.email
+         )
+       )}
+    else
+      {:error, :rate_limited, retry_after} ->
+        {:noreply, put_flash(socket, :error, RateLimited.message(retry_after))}
+
+      error ->
+        Logger.error("Account deletion link delivery failed: #{inspect(error)}")
+
+        {:noreply,
+         put_flash(
+           socket,
+           :error,
+           gettext("We couldn't send the confirmation email right now. Please try again later.")
+         )}
+    end
   end
 
   defp send_email_change(socket, account, changeset) do
