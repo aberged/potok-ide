@@ -28,6 +28,7 @@ import {LiveSocket} from "phoenix_live_view"
 import {hooks as colocatedHooks} from "phoenix-colocated/potok_ide"
 import topbar from "../vendor/topbar"
 import { installDomainMap } from "./domain_map"
+import { installHelpAccess } from "./help_access"
 import { DescriptionArchive } from "./description_archive"
 import { ComposerDraft, DraftMark, clearAllDrafts } from "./drafts"
 import { KeyboardMedia } from "./keyboard_media"
@@ -1945,6 +1946,7 @@ const updateDrawerActiveLinks = () => {
 }
 
 window.addEventListener("DOMContentLoaded", installDomainMap)
+window.addEventListener("DOMContentLoaded", installHelpAccess)
 window.addEventListener("DOMContentLoaded", updateDrawerActiveLinks)
 window.addEventListener("phx:page-loading-stop", updateDrawerActiveLinks)
 window.addEventListener("DOMContentLoaded", () => {

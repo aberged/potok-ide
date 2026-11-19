@@ -6,6 +6,7 @@ defmodule PotokIdeWeb.PageController do
   alias PotokIde.DomainMap
   alias PotokIdeWeb.DomainCopy
   alias PotokIdeWeb.HelpDoc
+  alias PotokIdeWeb.HelpGuides
   alias PotokIdeWeb.StackCopy
 
   plug :assign_nav_counts when action in [:privacy]
@@ -124,12 +125,22 @@ defmodule PotokIdeWeb.PageController do
   # For those who type the address in English; anchors stay in the browser.
   def help_redirect(conn, _params), do: redirect(conn, to: ~p"/pomoc")
 
-  # One of the help page's example organizations, built step by step.
+  # A page under the help: one on how Potok works inside (`HelpGuides`), or
+  # one of the help page's example organizations, built step by step.
   def help_tutorial(conn, %{"slug" => slug}) do
     locale = conn.assigns.current_locale
 
-    case HelpDoc.tutorial(slug, locale) do
-      {:ok, doc} ->
+    case {HelpGuides.guide(slug), HelpDoc.tutorial(slug, locale)} do
+      {{:ok, guide}, _no_tutorial} ->
+        conn
+        |> assign(:page_title, guide.title)
+        |> assign(:page_description, HelpGuides.plain(guide.lead))
+        |> render(
+          guide.template,
+          [guide: guide, f: HelpGuides.facts()] ++ guide_assigns(guide.template)
+        )
+
+      {:error, {:ok, doc}} ->
         conn
         |> assign(:page_title, doc.title)
         |> assign(:page_description, doc.lead)
@@ -139,10 +150,18 @@ defmodule PotokIdeWeb.PageController do
           serbian_pictures?: locale == "en"
         )
 
-      :error ->
+      {:error, :error} ->
         raise Phoenix.Router.NoRouteError, conn: conn, router: PotokIdeWeb.Router
     end
   end
+
+  # What each of those pages shows that it reads from the code.
+  defp guide_assigns(:help_processes_apps), do: [steps: HelpGuides.step_names()]
+
+  defp guide_assigns(:help_app_architecture),
+    do: [api: HelpGuides.api(), limits: HelpGuides.limits()]
+
+  defp guide_assigns(:help_access), do: [calc: HelpGuides.calc()]
 
   def help_tutorial_redirect(conn, %{"slug" => slug}),
     do: redirect(conn, to: ~p"/pomoc/#{slug}")

@@ -263,11 +263,12 @@ defmodule PotokIdeWeb.HelpDocTest do
       end
     end
 
-    test "every link from the help page to a tutorial goes to one" do
-      # A link may lead to a step of the tutorial, as `/pomoc/zadruga#proces`.
+    test "every link from the help page to a page under it goes to one" do
+      # A tutorial, maybe one of its steps, as `/pomoc/zadruga#proces`, or a
+      # page on how Potok works inside (`HelpGuides`).
       for "/pomoc/" <> target <- links(HelpDoc.get("sr").html) do
         [slug | _anchor] = String.split(target, "#", parts: 2)
-        assert slug in HelpDoc.tutorial_slugs()
+        assert slug in (HelpDoc.tutorial_slugs() ++ PotokIdeWeb.HelpGuides.slugs())
       end
     end
   end

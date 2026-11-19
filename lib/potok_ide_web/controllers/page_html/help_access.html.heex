@@ -1,0 +1,950 @@
+<%!--
+  The help's page on what a profile may do in a group and how that is worked out. It describes the code:
+  see `PotokIdeWeb.HelpGuides` before changing it, and when the code it was
+  drawn from changes (`watch` there, which `mix potok.sync_reminder` follows).
+--%>
+<.help_guide_frame
+  guide={@guide}
+  flash={@flash}
+  current_scope={@current_scope}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+>
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "What a right is made of")}</h2>
+    <figure id="hg-fig-model" class="hg-fig" style="--hg-min: 860px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1100 400"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "A profile is a member of a group and holds assignments of roles in it. A group has at most one manifest of its own, and a manifest holds roles with lists of what they allow and deny. An assignment and a role are joined only by the role's key."
+            )
+          }
+        >
+          <rect class="hg-ent" x="30" y="150" width="180" height="86" rx="10" />
+          <text class="hg-t-title" x="46" y="177">{dgettext("help_guides", "Profile")}</text>
+          <text class="hg-t-sub" x="46" y="196">
+            {dgettext("help_guides", "a face in groups")}
+          </text>
+          <text class="hg-t-sub" x="46" y="212">
+            {dgettext("help_guides", "one account has several")}
+          </text>
+
+          <rect class="hg-ent" x="280" y="36" width="220" height="96" rx="10" />
+          <text class="hg-t-title" x="296" y="62">{dgettext("help_guides", "Membership")}</text>
+          <text class="hg-t-mono" x="296" y="82">
+            {dgettext("help_guides", "group · profile")}
+          </text>
+          <text class="hg-t-sub" x="296" y="100">
+            {dgettext("help_guides", "direct or inherited")}
+          </text>
+          <text class="hg-t-sub" x="296" y="116">
+            {dgettext("help_guides", "only membership gives the role Everyone")}
+          </text>
+
+          <rect class="hg-ent-key" x="280" y="262" width="220" height="96" rx="10" />
+          <text class="hg-t-title" x="296" y="288">
+            {dgettext("help_guides", "Role assignment")}
+          </text>
+          <text class="hg-t-mono" x="296" y="308">
+            {dgettext("help_guides", "group · profile · key")}
+          </text>
+          <text class="hg-t-sub" x="296" y="326">
+            {dgettext("help_guides", "holds only in that group")}
+          </text>
+          <text class="hg-t-sub" x="296" y="342">
+            {dgettext("help_guides", "Admin is an assignment too")}
+          </text>
+
+          <rect class="hg-ent" x="580" y="36" width="230" height="96" rx="10" />
+          <text class="hg-t-title" x="596" y="62">{dgettext("help_guides", "Group")}</text>
+          <text class="hg-t-sub" x="596" y="82">
+            {dgettext("help_guides", "parent, public, inherits members")}
+          </text>
+          <text class="hg-t-sub" x="596" y="100">
+            {dgettext("help_guides", "the root has no parent")}
+          </text>
+          <text class="hg-t-sub" x="596" y="116">
+            {dgettext("help_guides", "members see it, a public one everyone")}
+          </text>
+
+          <rect class="hg-ent-key" x="580" y="262" width="230" height="96" rx="10" />
+          <text class="hg-t-title" x="596" y="288">{dgettext("help_guides", "Manifest")}</text>
+          <text class="hg-t-sub" x="596" y="308">
+            {dgettext("help_guides", "at most one per group")}
+          </text>
+          <text class="hg-t-sub" x="596" y="324">
+            {dgettext("help_guides", "the root always has one")}
+          </text>
+          <text class="hg-t-sub" x="596" y="340">
+            {dgettext("help_guides", "a group without one uses an ancestor's")}
+          </text>
+
+          <rect class="hg-ent-key" x="890" y="250" width="190" height="120" rx="10" />
+          <text class="hg-t-title" x="906" y="276">{dgettext("help_guides", "Role")}</text>
+          <text class="hg-t-mono" x="906" y="296">{dgettext("help_guides", "key · name")}</text>
+          <text class="hg-t-mono hg-f-ok" x="906" y="314">
+            {dgettext("help_guides", "allows […]")}
+          </text>
+          <text class="hg-t-mono hg-f-no" x="906" y="332">
+            {dgettext("help_guides", "denies […]")}
+          </text>
+          <text class="hg-t-sub" x="906" y="354">
+            {dgettext("help_guides", "built in: Admin, Everyone")}
+          </text>
+
+          <path class="hg-ar hg-s-fg" d="M120 150 V84 H280" marker-end="url(#hg-m-fg)" />
+          <text class="hg-t-lab" x="196" y="77" text-anchor="middle">
+            {dgettext("help_guides", "is a member")}
+          </text>
+          <path class="hg-ar hg-s-fg" d="M120 236 V310 H280" marker-end="url(#hg-m-fg)" />
+          <text class="hg-t-lab" x="196" y="303" text-anchor="middle">
+            {dgettext("help_guides", "holds a role")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="500"
+            y1="84"
+            x2="580"
+            y2="84"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="540" y="77" text-anchor="middle">
+            {dgettext("help_guides", "in a group")}
+          </text>
+          <path class="hg-ar hg-s-fg" d="M500 290 H540 V120 H580" marker-end="url(#hg-m-fg)" />
+          <text class="hg-t-lab" x="548" y="208">{dgettext("help_guides", "in a group")}</text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="695"
+            y1="132"
+            x2="695"
+            y2="262"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="703" y="200">
+            {dgettext("help_guides", "has its own (0 or 1)")}
+          </text>
+          <path
+            class="hg-ar hg-s-muted"
+            d="M810 64 C858 64 858 108 810 108"
+            marker-end="url(#hg-m-muted)"
+          />
+          <text class="hg-t-lab hg-f-muted" x="862" y="90">
+            {dgettext("help_guides", "parent")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="810"
+            y1="310"
+            x2="890"
+            y2="310"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="850" y="302" text-anchor="middle">
+            {dgettext("help_guides", "holds")}
+          </text>
+          <path
+            class="hg-ar hg-s-muted hg-dash"
+            d="M390 358 V386 H985 V370"
+            marker-end="url(#hg-m-muted)"
+          />
+          <text class="hg-t-lab hg-f-muted" x="690" y="380" text-anchor="middle">
+            {dgettext("help_guides", "the same role key, with no foreign key in the database")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        {dgettext(
+          "help_guides",
+          "A role assignment is a record of the group in which the profile is a member, and a role is a record of a manifest, which may belong to an ancestor. Only the role's key joins them, so an assignment of a role the manifest in force does not have brings nothing. The role Everyone is assigned to nobody: every member holds it by membership itself."
+        )}
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Two inheritances down the tree")}</h2>
+    <p>
+      {dgettext(
+        "help_guides",
+        "Two different things are inherited down the tree. A manifest is inherited always and by itself: a group without one uses the manifest of the nearest ancestor that has one. Members are inherited only when a group turns on “Inherit members”, and then it gets all the parent's members with the roles they hold there. Inheriting can be narrowed down to roles: then only the members who hold one of the chosen roles in the parent come in, with all their roles, and whoever loses the last of them leaves."
+      )}
+    </p>
+    <figure id="hg-fig-tree" class="hg-fig" style="--hg-min: 860px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1100 490"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "The root and the local community have manifests of their own. Zgrada Cvetna 12 and Entrance A use the local community's manifest, and Entrance A also inherits the members of Zgrada 12. Zgrada Cvetna 14 has its own copy of the manifest, and its thread uses it and takes only the participants."
+            )
+          }
+        >
+          <line class="hg-edge" x1="550" y1="60" x2="550" y2="104" />
+          <path class="hg-edge" d="M550 178 V205 H250 V232" />
+          <path class="hg-edge" d="M550 205 H850 V232" />
+
+          <rect class="hg-node-soft" x="440" y="14" width="220" height="46" rx="14" />
+          <text class="hg-t-row" x="456" y="42">{dgettext("help_guides", "Root")}</text>
+          <rect class="hg-own-m0" x="548" y="24" width="100" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-surface" x="598" y="41" text-anchor="middle">
+            {dgettext("help_guides", "M0 · own")}
+          </text>
+
+          <rect class="hg-node" x="390" y="104" width="320" height="74" rx="12" />
+          <rect class="hg-own-m1" x="402" y="116" width="120" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-surface" x="462" y="133" text-anchor="middle">
+            {dgettext("help_guides", "M1 · own")}
+          </text>
+          <text class="hg-t-row" x="536" y="134">
+            {dgettext("help_guides", "Local community")}
+          </text>
+          <text class="hg-t-sub" x="402" y="164">
+            {dgettext("help_guides", "Admin, House council, Tenant, Everyone")}
+          </text>
+
+          <rect class="hg-node" x="60" y="232" width="380" height="96" rx="12" />
+          <text class="hg-t-row" x="76" y="256">
+            {dgettext("help_guides", "Zgrada Cvetna 12")}
+          </text>
+          <rect class="hg-inh-m1" x="308" y="244" width="120" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-m1" x="368" y="261" text-anchor="middle">
+            {dgettext("help_guides", "M1 · inherited")}
+          </text>
+          <circle class="hg-av" cx="100" cy="290" r="13" />
+          <text class="hg-t-av" x="100" y="294" text-anchor="middle">
+            {dgettext("help_guides", "A")}
+          </text>
+          <circle class="hg-av" cx="190" cy="290" r="13" />
+          <text class="hg-t-av" x="190" y="294" text-anchor="middle">
+            {dgettext("help_guides", "M")}
+          </text>
+          <circle class="hg-av" cx="280" cy="290" r="13" />
+          <text class="hg-t-av" x="280" y="294" text-anchor="middle">
+            {dgettext("help_guides", "J")}
+          </text>
+          <text class="hg-t-role" x="100" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Admin")}
+          </text>
+          <text class="hg-t-role" x="190" y="318" text-anchor="middle">
+            {dgettext("help_guides", "House council")}
+          </text>
+          <text class="hg-t-role" x="280" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+
+          <rect class="hg-node" x="660" y="232" width="380" height="96" rx="12" />
+          <text class="hg-t-row" x="676" y="256">
+            {dgettext("help_guides", "Zgrada Cvetna 14")}
+          </text>
+          <rect class="hg-own-m2" x="908" y="244" width="120" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-surface" x="968" y="261" text-anchor="middle">
+            {dgettext("help_guides", "M2 · own")}
+          </text>
+          <circle class="hg-av" cx="700" cy="290" r="13" />
+          <text class="hg-t-av" x="700" y="294" text-anchor="middle">
+            {dgettext("help_guides", "P")}
+          </text>
+          <circle class="hg-av" cx="780" cy="290" r="13" />
+          <text class="hg-t-av" x="780" y="294" text-anchor="middle">
+            {dgettext("help_guides", "V")}
+          </text>
+          <circle class="hg-av" cx="860" cy="290" r="13" />
+          <text class="hg-t-av" x="860" y="294" text-anchor="middle">
+            {dgettext("help_guides", "S")}
+          </text>
+          <circle class="hg-av" cx="940" cy="290" r="13" />
+          <text class="hg-t-av" x="940" y="294" text-anchor="middle">
+            {dgettext("help_guides", "T")}
+          </text>
+          <text class="hg-t-role" x="700" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Admin")}
+          </text>
+          <text class="hg-t-role" x="780" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+          <text class="hg-t-role" x="860" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+          <text class="hg-t-role" x="940" y="318" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+
+          <rect class="hg-node" x="60" y="380" width="380" height="96" rx="12" />
+          <text class="hg-t-row" x="76" y="404">{dgettext("help_guides", "Entrance A")}</text>
+          <rect class="hg-inh-m1" x="308" y="392" width="120" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-m1" x="368" y="409" text-anchor="middle">
+            {dgettext("help_guides", "M1 · inherited")}
+          </text>
+          <circle class="hg-av-inh" cx="100" cy="438" r="13" />
+          <text class="hg-t-av" x="100" y="442" text-anchor="middle">
+            {dgettext("help_guides", "A")}
+          </text>
+          <circle class="hg-av-inh" cx="190" cy="438" r="13" />
+          <text class="hg-t-av" x="190" y="442" text-anchor="middle">
+            {dgettext("help_guides", "M")}
+          </text>
+          <circle class="hg-av-inh" cx="280" cy="438" r="13" />
+          <text class="hg-t-av" x="280" y="442" text-anchor="middle">
+            {dgettext("help_guides", "J")}
+          </text>
+          <circle class="hg-av" cx="370" cy="438" r="13" />
+          <text class="hg-t-av" x="370" y="442" text-anchor="middle">
+            {dgettext("help_guides", "D")}
+          </text>
+          <text class="hg-t-role" x="100" y="466" text-anchor="middle">
+            {dgettext("help_guides", "Admin")}
+          </text>
+          <text class="hg-t-role" x="190" y="466" text-anchor="middle">
+            {dgettext("help_guides", "House council")}
+          </text>
+          <text class="hg-t-role" x="280" y="466" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+          <text class="hg-t-role" x="370" y="466" text-anchor="middle">
+            {dgettext("help_guides", "Everyone, direct")}
+          </text>
+
+          <rect class="hg-node" x="660" y="380" width="380" height="96" rx="12" />
+          <text class="hg-t-row" x="676" y="404">
+            {dgettext("help_guides", "Thread “Fault: lift”")}
+          </text>
+          <rect class="hg-inh-m2" x="908" y="392" width="120" height="26" rx="13" />
+          <text class="hg-t-badge hg-f-m2" x="968" y="409" text-anchor="middle">
+            {dgettext("help_guides", "M2 · inherited")}
+          </text>
+          <circle class="hg-av-inh" cx="700" cy="438" r="13" />
+          <text class="hg-t-av" x="700" y="442" text-anchor="middle">
+            {dgettext("help_guides", "P")}
+          </text>
+          <circle class="hg-av-inh" cx="780" cy="438" r="13" />
+          <text class="hg-t-av" x="780" y="442" text-anchor="middle">
+            {dgettext("help_guides", "V")}
+          </text>
+          <text class="hg-t-role" x="700" y="466" text-anchor="middle">
+            {dgettext("help_guides", "Admin")}
+          </text>
+          <text class="hg-t-role" x="780" y="466" text-anchor="middle">
+            {dgettext("help_guides", "Everyone")}
+          </text>
+          <text class="hg-t-note" x="830" y="442">
+            {dgettext("help_guides", "S and T took no part")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-fg"
+            x1="250"
+            y1="328"
+            x2="250"
+            y2="380"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="258" y="358">
+            {dgettext("help_guides", "inherits members and roles")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="850"
+            y1="328"
+            x2="850"
+            y2="380"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="858" y="358">
+            {dgettext("help_guides", "a thread: only participants")}
+          </text>
+
+          <path
+            class="hg-ar hg-s-m1 hg-dash"
+            d="M368 244 C368 200 440 190 440 144"
+            marker-end="url(#hg-m-m1)"
+          />
+          <path class="hg-ar hg-s-m1 hg-dash" d="M428 405 H492 V144" marker-end="url(#hg-m-m1)" />
+          <text class="hg-t-lab hg-f-m1" x="500" y="224">
+            {dgettext("help_guides", "uses the nearest ancestor that has its own")}
+          </text>
+          <line
+            class="hg-ar hg-s-m2 hg-dash"
+            x1="968"
+            y1="392"
+            x2="968"
+            y2="272"
+            marker-end="url(#hg-m-m2)"
+          />
+          <path
+            class="hg-ar hg-s-m2 hg-dash"
+            d="M710 141 C880 141 968 190 968 242"
+            marker-end="url(#hg-m-m2)"
+          />
+          <text class="hg-t-lab hg-f-m2" x="790" y="134">
+            {dgettext("help_guides", "a copy of M1, the same keys")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        {dgettext(
+          "help_guides",
+          "A full mark means the group has a manifest of its own, an empty one that it uses another's. Entrance A skips Zgrada 12, which has none, and uses the local community's manifest. A dashed circle is an inherited member: it comes and goes with the membership in the parent and holds the same roles as there. Dragan (D) was added directly to Entrance A and stays there. A thread is an ordinary group under Zgrada 14, so it uses its manifest, but takes only those who take part in it. The groups and names are an example."
+        )}
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "How it is worked out")}</h2>
+    <figure id="hg-fig-algo" class="hg-fig" style="--hg-min: 820px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1100 690"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "The procedure: find the manifest in force; a guest has no permissions; a profile that is not a member has none but the exceptions of a public group; a member holds the role Everyone and the assigned roles the manifest has; Admin has everything; otherwise the permissions are the union of what is allowed minus the union of what is denied."
+            )
+          }
+        >
+          <rect class="hg-pill" x="390" y="16" width="240" height="40" rx="20" />
+          <text class="hg-t-row" x="510" y="41" text-anchor="middle">
+            {dgettext("help_guides", "Profile P opens group G")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="56"
+            x2="510"
+            y2="80"
+            marker-end="url(#hg-m-fg)"
+          />
+
+          <rect class="hg-step" x="330" y="80" width="360" height="62" rx="10" />
+          <text class="hg-t-row" x="346" y="104">
+            {dgettext("help_guides", "1. The manifest in force, M")}
+          </text>
+          <text class="hg-t-sub" x="346" y="124">
+            {dgettext(
+              "help_guides",
+              "group G's own manifest, or the nearest ancestor's that has one"
+            )}
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="300" y="104" text-anchor="end">
+            effective_manifest/1
+          </text>
+          <text class="hg-t-note" x="300" y="122" text-anchor="end">
+            {dgettext("help_guides", "kept %{min} min; a change clears it",
+              min: @f.manifest_minutes
+            )}
+          </text>
+          <text class="hg-t-note" x="300" y="138" text-anchor="end">
+            {dgettext("help_guides", "on all servers")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="142"
+            x2="510"
+            y2="160"
+            marker-end="url(#hg-m-fg)"
+          />
+
+          <polygon class="hg-dec" points="510,160 650,190 510,220 370,190" />
+          <text class="hg-t-row" x="510" y="194" text-anchor="middle">
+            {dgettext("help_guides", "Has a profile?")}
+          </text>
+          <line
+            class="hg-ar hg-s-no"
+            x1="650"
+            y1="190"
+            x2="760"
+            y2="190"
+            marker-end="url(#hg-m-no)"
+          />
+          <text class="hg-t-lab hg-f-no" x="705" y="183" text-anchor="middle">
+            {dgettext("help_guides", "no")}
+          </text>
+          <rect class="hg-out-no" x="760" y="164" width="320" height="52" rx="10" />
+          <text class="hg-t-row" x="776" y="186">
+            {dgettext("help_guides", "Guest: no permission")}
+          </text>
+          <text class="hg-t-sub" x="776" y="204">
+            {dgettext("help_guides", "sees only public groups and what they opened to guests")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="220"
+            x2="510"
+            y2="250"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="518" y="240">{dgettext("help_guides", "yes")}</text>
+
+          <polygon class="hg-dec" points="510,250 650,280 510,310 370,280" />
+          <text class="hg-t-row" x="510" y="284" text-anchor="middle">
+            {dgettext("help_guides", "A member of group G?")}
+          </text>
+          <line
+            class="hg-ar hg-s-muted"
+            x1="650"
+            y1="280"
+            x2="760"
+            y2="280"
+            marker-end="url(#hg-m-muted)"
+          />
+          <text class="hg-t-lab hg-f-muted" x="705" y="273" text-anchor="middle">
+            {dgettext("help_guides", "no")}
+          </text>
+          <rect class="hg-out-mid" x="760" y="236" width="320" height="174" rx="10" />
+          <text class="hg-t-row" x="776" y="258">
+            {dgettext("help_guides", "Not a member: no permission")}
+          </text>
+          <text class="hg-t-sub" x="776" y="277">
+            {dgettext("help_guides", "Exceptions in a public group:")}
+          </text>
+          <text class="hg-t-sub" x="776" y="294">
+            {dgettext("help_guides", "· reacts to the group, if Everyone may react")}
+          </text>
+          <text class="hg-t-sub" x="788" y="309">
+            {dgettext("help_guides", "and they are not blocked")}
+          </text>
+          <text class="hg-t-sub" x="776" y="326">
+            {dgettext("help_guides", "· reads an open chat")}
+          </text>
+          <text class="hg-t-sub" x="776" y="343">
+            {dgettext("help_guides", "· writes and reacts in it as far as Everyone may,")}
+          </text>
+          <text class="hg-t-sub" x="788" y="358">
+            {dgettext("help_guides", "if not blocked; no files and no threads")}
+          </text>
+          <text class="hg-t-sub" x="776" y="375">
+            {dgettext("help_guides", "· votes in a public poll, if Everyone may vote")}
+          </text>
+          <text class="hg-t-sub" x="776" y="392">
+            {dgettext("help_guides", "· writes into an app's public collection")}
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="300" y="276" text-anchor="end">
+            membership_facts/2
+          </text>
+          <text class="hg-t-note" x="300" y="294" text-anchor="end">
+            {dgettext("help_guides", "membership and roles: kept %{s} s, with an epoch",
+              s: @f.facts_seconds
+            )}
+          </text>
+          <text class="hg-t-note" x="300" y="310" text-anchor="end">
+            {dgettext("help_guides", "of the group that grows at every change")}
+          </text>
+          <text class="hg-t-note" x="300" y="326" text-anchor="end">
+            {dgettext("help_guides", "of membership, a role or a block")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="310"
+            x2="510"
+            y2="340"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="518" y="330">{dgettext("help_guides", "yes")}</text>
+
+          <rect class="hg-step" x="330" y="340" width="360" height="70" rx="10" />
+          <text class="hg-t-row" x="346" y="364">
+            {dgettext("help_guides", "2. The roles, R")}
+          </text>
+          <text class="hg-t-mono" x="346" y="384">
+            {dgettext("help_guides", "%{l}Everyone%{r} ∪ (assigned in G ∩ roles of M)",
+              l: "{",
+              r: "}"
+            )}
+          </text>
+          <text class="hg-t-sub" x="346" y="401">
+            {dgettext("help_guides", "an assignment of a role M lacks does not count")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="410"
+            x2="510"
+            y2="430"
+            marker-end="url(#hg-m-fg)"
+          />
+
+          <polygon class="hg-dec" points="510,430 650,460 510,490 370,460" />
+          <text class="hg-t-row" x="510" y="464" text-anchor="middle">
+            {dgettext("help_guides", "Admin in R?")}
+          </text>
+          <line
+            class="hg-ar hg-s-ok"
+            x1="650"
+            y1="460"
+            x2="760"
+            y2="460"
+            marker-end="url(#hg-m-ok)"
+          />
+          <text class="hg-t-lab hg-f-ok" x="705" y="453" text-anchor="middle">
+            {dgettext("help_guides", "yes")}
+          </text>
+          <rect class="hg-out-ok" x="760" y="434" width="320" height="52" rx="10" />
+          <text class="hg-t-row" x="776" y="456">
+            {dgettext("help_guides", "Every permission, all %{n}", n: @f.permissions)}
+          </text>
+          <text class="hg-t-sub" x="776" y="474">
+            {dgettext("help_guides", "Nothing can be denied to Admin")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="490"
+            x2="510"
+            y2="520"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="518" y="510">{dgettext("help_guides", "no")}</text>
+
+          <rect class="hg-step" x="330" y="520" width="360" height="78" rx="10" />
+          <text class="hg-t-row" x="346" y="544">
+            {dgettext("help_guides", "3. Permissions")}
+          </text>
+          <text class="hg-t-mono" x="346" y="564">
+            {dgettext("help_guides", "∪ allows(R) − ∪ denies(R without Everyone)")}
+          </text>
+          <text class="hg-t-sub" x="346" y="584">
+            {dgettext("help_guides", "a denial beats every allowance; Everyone only allows")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="510"
+            y1="598"
+            x2="510"
+            y2="620"
+            marker-end="url(#hg-m-fg)"
+          />
+          <path class="hg-ar hg-s-ok" d="M920 486 V646 H690" marker-end="url(#hg-m-ok)" />
+
+          <rect class="hg-pill" x="330" y="620" width="360" height="52" rx="12" />
+          <text class="hg-t-row" x="346" y="642">Access</text>
+          <text class="hg-t-mono" x="346" y="660">
+            member? · admin? · role_keys · permissions
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="300" y="642" text-anchor="end">
+            {dgettext("help_guides", "%{c1}, then %{c2}", c1: "for_profile/3", c2: "can?/2")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        <.hg_text text={
+          dgettext(
+            "help_guides",
+            "This is what `Access.for_profile/3` does for one profile in one group. When a list of people with a permission is needed, for example who a notice goes to, the same rule goes into one SQL query (`profile_ids_with_permission/2`), which counts only people and skips the profiles of processes."
+          )
+        } />
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="hg-calc" class="hg-section">
+    <h2>{dgettext("help_guides", "Work it out yourself")}</h2>
+    <p>
+      <.hg_text text={
+        dgettext(
+          "help_guides",
+          "The table is the manifest M1 of the example, which Zgrada Cvetna 12 uses from the local community. Pick a profile or set its roles yourself, then click a field in the table to change what a role does with a permission. The result is worked out by the same rules as in `Access`."
+        )
+      } />
+    </p>
+    <%!-- `assets/js/help_access.js` takes over from here: it reads `data-calc`
+          (`HelpGuides.calc/0`) and draws the rows again at every change. --%>
+    <div id="help-access-calc" class="hg-calc" data-calc={Jason.encode!(@calc)}>
+      <div class="hg-panel">
+        <div
+          id="hg-calc-presets"
+          class="hg-presets"
+          role="group"
+          aria-label={dgettext("help_guides", "Example profiles")}
+        >
+          <button
+            :for={preset <- @calc.presets}
+            type="button"
+            id={"hg-calc-preset-#{preset.key}"}
+            class="hg-preset"
+            data-preset={preset.key}
+            aria-pressed={to_string(preset.key == @calc.start)}
+          >
+            {preset.label}
+          </button>
+        </div>
+        <fieldset>
+          <legend>{dgettext("help_guides", "Profile")}</legend>
+          <.input
+            type="checkbox"
+            id="hg-calc-account"
+            name="account"
+            label={dgettext("help_guides", "has an account (is not a guest)")}
+          />
+          <.input
+            type="checkbox"
+            id="hg-calc-member"
+            name="member"
+            label={dgettext("help_guides", "a member of the group")}
+          />
+          <div class="hg-sub">
+            <.input
+              :for={role <- Enum.sort_by(@calc.roles, &(not &1.allow_only))}
+              type="checkbox"
+              id={"hg-calc-role-#{role.key}"}
+              name={"role_#{role.key}"}
+              disabled={role.allow_only}
+              label={
+                if role.allow_only,
+                  do: dgettext("help_guides", "%{role} (every member)", role: role.name),
+                  else: role.name
+              }
+            />
+          </div>
+        </fieldset>
+        <fieldset>
+          <legend>{dgettext("help_guides", "Group")}</legend>
+          <.input
+            type="checkbox"
+            id="hg-calc-public"
+            name="public"
+            label={dgettext("help_guides", "public")}
+          />
+          <div class="hg-sub">
+            <.input
+              type="checkbox"
+              id="hg-calc-openchat"
+              name="open_chat"
+              label={dgettext("help_guides", "open chat")}
+            />
+          </div>
+          <.input
+            type="checkbox"
+            id="hg-calc-blocked"
+            name="blocked"
+            label={dgettext("help_guides", "the profile is blocked in it")}
+          />
+        </fieldset>
+        <div id="hg-calc-summary" class="hg-summary" aria-live="polite"></div>
+      </div>
+      <div class="hg-calc-table">
+        <div class="hg-tablewrap">
+          <table id="hg-calc-table">
+            <thead>
+              <tr>
+                <th scope="col">{dgettext("help_guides", "Permission")}</th>
+                <th
+                  :for={role <- @calc.roles}
+                  scope="col"
+                  class="hg-role"
+                  id={"hg-calc-th-#{role.key}"}
+                >
+                  {role.name}
+                </th>
+                <th scope="col" class="hg-role">{dgettext("help_guides", "Has it?")}</th>
+                <th scope="col">{dgettext("help_guides", "Why")}</th>
+              </tr>
+            </thead>
+            <tbody id="hg-calc-body">
+              <tr :for={permission <- @calc.permissions} data-permission={permission.key}>
+                <td class="hg-perm"><b>{permission.label}</b><code>{permission.key}</code></td>
+                <td :for={role <- @calc.roles} class="hg-cellc">
+                  <%= cond do %>
+                    <% role.locked or permission.key in role.allowed -> %>
+                      <span class="hg-mini hg-allow">✓</span>
+                    <% permission.key in role.denied -> %>
+                      <span class="hg-mini hg-deny">✕</span>
+                    <% true -> %>
+                      <span class="hg-mini">·</span>
+                  <% end %>
+                </td>
+                <td class="hg-res"></td>
+                <td class="hg-why"></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="hg-calc-actions">
+          <span class="hg-legend-cells">
+            <span><i class="hg-mini hg-allow">✓</i> {dgettext("help_guides", "allows")}</span>
+            <span><i class="hg-mini hg-deny">✕</i> {dgettext("help_guides", "denies")}</span>
+            <span><i class="hg-mini">·</i> {dgettext("help_guides", "says nothing")}</span>
+          </span>
+          <span>{dgettext("help_guides", "The roles the profile holds are in blue.")}</span>
+          <button type="button" id="hg-calc-reset" class="hg-linkbtn">
+            {dgettext("help_guides", "Bring back the example's manifest")}
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Who changes what")}</h2>
+    <dl class="hg-who">
+      <div>
+        <dt>{dgettext("help_guides", "Makes a group")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "Its maker becomes its first Admin. A new group has no manifest of its own and uses an ancestor's. The exceptions are `.feed` and an app's groups for files, which are made with a manifest of their own, and a sub-group a process makes: its Admins are the people the process names."
+            )
+          } />
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Assigns and takes away roles")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "The group's Admin, only to its members, and only roles of the manifest in force. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Makes a manifest of its own")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "The group's Admin, except in a direct conversation. The group gets a copy of the manifest in force with the same role keys, so every assignment still holds."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Changes roles and permissions")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "The Admin of a group that has a manifest of its own. Admin always has everything, Everyone only allows, and the root's manifest is not changed. A change holds for every group below that uses that manifest."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Deletes a role")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "It also deletes its assignments in every group that uses that manifest. Groups with a copy of their own keep their role."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Goes back to the inherited one")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "The group deletes its own manifest. Assignments of roles the inherited manifest lacks are deleted, except Admin."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Turns on “Inherit members”")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "The group gets the parent's members with their roles, marked as inherited: all of them, or only those who hold the chosen roles. When it is turned off, the inherited ones become direct and nobody drops out."
+          )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Blocks a profile")}</dt>
+        <dd>
+          {dgettext(
+            "help_guides",
+            "Whoever may remove members blocks. A blocked profile does not write, react, vote in a public poll or ask for access, and cannot be invited. A member answers to their roles, so a block also takes them out of the group. An inherited member cannot be blocked here, as their membership comes from the parent."
+          )}
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="hg-section">
+    <div class="hg-two">
+      <div>
+        <h3>{dgettext("help_guides", "Special cases")}</h3>
+        <ul>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A thread</b> is a group under the group of its message: it uses that group's manifest, and its members are only the participants, with the roles they hold in the group. Whoever opens it is its Admin, and so can make it a manifest of its own."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A direct conversation</b> stands under the root and uses the root's manifest. Whoever opens it is recorded as Admin, but roles are not assigned in it and it gets no manifest of its own."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A process's profile</b> is a member only where the process puts it, with what Everyone may, until an Admin assigns it another role. It is not inherited and is not counted when something goes to the people with a permission."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A guest</b> has no profile, and so no permissions. They see a public group's name, picture and part of its description, and the whole description only if the group opened it to guests."
+              )
+            } />
+          </li>
+        </ul>
+      </div>
+      <div>
+        <h3>
+          {dgettext("help_guides", "Roles also work outside these %{n} permissions",
+            n: @f.permissions
+          )}
+        </h3>
+        <ul>
+          <li>
+            {dgettext(
+              "help_guides",
+              "An alternative description can be seen by some roles only, along with those who may edit the group."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "The rules of an app's collections say which roles write, and which read everything."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "A poll says which roles vote, and which see the results and the details."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "A process asks a role by a form or a decision, and sends it a push, if it may mention roles."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "Mentioning a role in a message tells everyone who holds it, with the permission Mention roles."
+            )}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+</.help_guide_frame>

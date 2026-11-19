@@ -70,7 +70,7 @@ Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koj
 
 Šta ko sme da radi u grupi određuju uloge. Svaka grupa ima ulogu Administrator, koja sme sve, i ulogu Svi, koju ima svaki član. Možeš dodati i svoje uloge, recimo savet ili moderatori. Za svaku od 20 dozvola uloga kaže „Dozvoli“, „Zabrani“ ili „Nije podešeno“, a zabrana je jača od dozvole.
 
-Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopstveni manifest, svoj spisak uloga i dozvola.
+Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopstveni manifest, svoj spisak uloga i dozvola. Kako se iz uloga i manifesta računa šta smeš, sa primerom koji sam menjaš, pokazuje strana [Prava pristupa u Potoku](/pomoc/prava-pristupa).
 
 ### Javno, privatno i otvoreno {:#vidljivost}
 
@@ -357,7 +357,7 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje ili slobodan tekst. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.
 
-Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Aplikaciju tada ne pišeš u polje, nego je otpremaš kao ZIP sa jednim HTML fajlom, ili kao sam HTML fajl, a postojeću preuzimaš kao ZIP. Fajl ne ide na server, u opis ide samo njen HTML. Isto važi i za alternativne opise. Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. U takav opis može da stane i sajt sa druge adrese, u okviru: sajt koji je za to napravljen prati temu i jezik koje biraš u Potoku. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps).
+Ko piše HTML, može od opisa da napravi svoju aplikaciju (Uredi grupu, Opis, „Opis je aplikacija (API)“). Aplikaciju tada ne pišeš u polje, nego je otpremaš kao ZIP sa jednim HTML fajlom, ili kao sam HTML fajl, a postojeću preuzimaš kao ZIP. Fajl ne ide na server, u opis ide samo njen HTML. Isto važi i za alternativne opise. Takva aplikacija može da vodi i proces: kad stigne odgovor, objavi ga u razgovoru, otvori podgrupu za njega i čeka da neko sa ulogom odluči, a podseti ga kad kasni. U takav opis može da stane i sajt sa druge adrese, u okviru: sajt koji je za to napravljen prati temu i jezik koje biraš u Potoku. Šta aplikacija sme, a šta ne, opisano je u [mapi domena](/domain#domain-apps). Kako je aplikacija građena i kuda ide svaki njen poziv, crta strana [Arhitektura Potok aplikacije](/pomoc/arhitektura-aplikacije).
 
 ![Šabloni za opis grupe](opis-sablon)
 
@@ -407,6 +407,8 @@ Proces koji drugi pozivaju je **privatan**: pozivaju ga samo procesi iste grupe.
 Korak **Polje grupe** čuva vrednost koju čita svaki proces grupe: pod **Šta radi** biraš da li polje postavlja na vrednost, recimo poslednji prijavljen kvar, ili mu dodaje broj, kao brojaču. Polje `kvarova` drugi koraci, i u drugim procesima, čitaju kao `{{group.kvarova}}`, a uslov može da grana po njemu, recimo kad pređe 10. [Zgrada](/pomoc/zgrada#brojac) broji kvarove.
 
 Korak **Pošalji signal** javlja svim procesima grupe da se nešto desilo, recimo da je subota, uz polja koja upišeš. Proces koji je baš tada na koraku **Čekaj signal** sa istim imenom ide dalje, a ko je poslao signal i šta nosi čita kao `{{prijem.from}}` i `{{prijem.mesto}}`. Signal pokreće i procese kojima je okidač taj signal. Signal se ne čuva: proces koji tek posle stigne do čekanja, čeka sledeći. Uz **Samo od procesa na istoj vrednosti ili podgrupi** čekanje prima samo signal poslat o istom predmetu, recimo uplatu za baš tu porudžbinu. [Zadruga](/pomoc/zadruga#subota) tako javlja kupcima da je dan preuzimanja.
+
+Kako procesi, aplikacije i grupa rade zajedno, i gde koji od njih staje, crta strana [Potok, procesi i aplikacije](/pomoc/procesi-i-aplikacije).
 
 ### Deljenje u Potok {:#deljenje}
 

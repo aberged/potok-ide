@@ -60,6 +60,15 @@ defmodule PotokIde.Social.AppData do
   @doc "Most values a page of `list/6` holds: a page of big values must fit in one socket frame."
   def max_page, do: @max_page
 
+  @doc "The most bytes of JSON a value in a collection holds."
+  def max_value_bytes, do: @max_value_bytes
+
+  @doc "The most bytes of JSON an app's settings hold."
+  def max_config_bytes, do: @max_config_bytes
+
+  @doc "Values a profile that is not a member writes in one group in a minute, where a rule lets it."
+  def outsider_values_per_minute, do: @outsider_values_per_minute
+
   @doc "The PubSub topic of the group's app values in collections."
   def topic(group_id) when is_integer(group_id), do: "groups:#{group_id}:app_values"
 

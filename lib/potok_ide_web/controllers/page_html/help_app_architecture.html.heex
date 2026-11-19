@@ -1,0 +1,770 @@
+<%!--
+  The help's page on how an app is built, the path of one write and the app API. It describes the code:
+  see `PotokIdeWeb.HelpGuides` before changing it, and when the code it was
+  drawn from changes (`watch` there, which `mix potok.sync_reminder` follows).
+--%>
+<.help_guide_frame
+  guide={@guide}
+  flash={@flash}
+  current_scope={@current_scope}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+>
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "From code to the frame")}</h2>
+    <figure id="hg-fig-build" class="hg-fig" style="--hg-min: 940px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1240 330"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "A project from the %{c1} template builds into one file, %{c2}, which is uploaded into a group's description marked as an app. For every viewer Potok puts a frame together: its own head with the SDK and the styles, and the uploaded HTML in the body.",
+              c1: "potok-vite",
+              c2: "potok-build.html"
+            )
+          }
+        >
+          <rect class="hg-col hg-col-app" x="16" y="24" width="230" height="280" rx="12" />
+          <text class="hg-t-title hg-f-app" x="32" y="52">potok-vite</text>
+          <text class="hg-t-sub" x="32" y="70">
+            {dgettext("help_guides", "a project template")}
+          </text>
+          <text class="hg-t-mono" x="32" y="106">index.html</text>
+          <text class="hg-t-sub" x="146" y="106">
+            {dgettext("help_guides", "HTML, %{c1} goes in", c1: "body")}
+          </text>
+          <text class="hg-t-mono" x="32" y="126">src/main.ts</text>
+          <text class="hg-t-sub" x="146" y="126">{dgettext("help_guides", "your code")}</text>
+          <text class="hg-t-mono" x="32" y="146">src/style.css</text>
+          <text class="hg-t-sub" x="146" y="146">Tailwind</text>
+          <text class="hg-t-mono" x="32" y="166">src/potok.ts</text>
+          <text class="hg-t-sub" x="146" y="166">
+            {dgettext("help_guides", "the API's types")}
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="32" y="186">src/potok-dev.ts</text>
+          <text class="hg-t-sub" x="146" y="186">
+            {dgettext("help_guides", "a %{c1}, left out", c1: "mock")}
+          </text>
+          <line class="hg-s-line" x1="32" y1="206" x2="230" y2="206" />
+          <text class="hg-t-note" x="32" y="230">
+            {dgettext("help_guides", "Mleko adds %{c1} and %{c2},", c1: "store/", c2: "model/")}
+          </text>
+          <text class="hg-t-note" x="32" y="246">
+            {dgettext("help_guides", "and tests for them (%{c1}).", c1: "vitest")}
+          </text>
+          <text class="hg-t-note" x="32" y="272">
+            {dgettext("help_guides", "In a browser it runs with the %{c1},", c1: "mock")}
+          </text>
+          <text class="hg-t-note" x="32" y="288">
+            {dgettext("help_guides", "without Potok.")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="246"
+            y1="164"
+            x2="336"
+            y2="164"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-mono hg-f-app" x="291" y="140" text-anchor="middle">npm run</text>
+          <text class="hg-t-mono hg-f-app" x="291" y="154" text-anchor="middle">build</text>
+          <text class="hg-t-sub" x="291" y="182" text-anchor="middle">tsc + vite</text>
+
+          <rect class="hg-col hg-col-app" x="336" y="24" width="270" height="280" rx="12" />
+          <text class="hg-t-mono-b hg-f-app" x="352" y="52">dist/potok-build.html</text>
+          <text class="hg-t-sub" x="352" y="70">
+            {dgettext("help_guides", "one file, everything inside")}
+          </text>
+          <rect class="hg-code" x="352" y="86" width="238" height="156" rx="8" />
+          <text class="hg-t-mono" x="366" y="108">&lt;style&gt;</text>
+          <text class="hg-t-mono hg-f-muted" x="366" y="124">
+            {dgettext("help_guides", "all the CSS")}
+          </text>
+          <text class="hg-t-mono" x="366" y="140">&lt;/style&gt;</text>
+          <text class="hg-t-mono hg-f-muted" x="366" y="160">
+            {dgettext("help_guides", "the content of %{c1} from %{c2}",
+              c1: "<body>",
+              c2: "index.html"
+            )}
+          </text>
+          <text class="hg-t-mono" x="366" y="180">&lt;script type="module"&gt;</text>
+          <text class="hg-t-mono hg-f-muted" x="378" y="196">
+            {dgettext("help_guides", "waits for the frame to be ready")}
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="378" y="212">
+            {dgettext("help_guides", "then runs your %{c1}", c1: "bundle")}
+          </text>
+          <text class="hg-t-mono" x="366" y="230">&lt;/script&gt;</text>
+          <text class="hg-t-sub" x="352" y="268">
+            {dgettext("help_guides", "%{c1} in %{c2}",
+              c1: "potokBuildPlugin",
+              c2: "vite.config.ts"
+            )}
+          </text>
+          <text class="hg-t-sub" x="352" y="286">
+            {dgettext("help_guides", "also adds the dependencies' licences")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="606"
+            y1="164"
+            x2="696"
+            y2="164"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-lab hg-f-app" x="651" y="140" text-anchor="middle">
+            {dgettext("help_guides", "you upload it in")}
+          </text>
+          <text class="hg-t-lab hg-f-app" x="651" y="154" text-anchor="middle">
+            {dgettext("help_guides", "Edit group")}
+          </text>
+          <text class="hg-t-sub" x="651" y="182" text-anchor="middle">
+            {dgettext("help_guides", "as a ZIP or HTML")}
+          </text>
+
+          <rect class="hg-col hg-col-potok" x="696" y="24" width="200" height="280" rx="12" />
+          <text class="hg-t-title hg-f-potok" x="712" y="52">
+            {dgettext("help_guides", "Group")}
+          </text>
+          <text class="hg-t-sub" x="712" y="70">
+            {dgettext("help_guides", "example: Komšijsko mleko")}
+          </text>
+          <rect class="hg-row-potok" x="712" y="86" width="168" height="66" rx="8" />
+          <text class="hg-t-row" x="724" y="107">{dgettext("help_guides", "Description")}</text>
+          <text class="hg-t-sub" x="724" y="124">
+            {dgettext("help_guides", "the HTML of the app Mleko")}
+          </text>
+          <text class="hg-t-lab hg-f-app" x="724" y="141">
+            {dgettext("help_guides", "App (API): yes")}
+          </text>
+          <rect class="hg-row-none" x="712" y="164" width="168" height="66" rx="8" />
+          <text class="hg-t-row" x="724" y="185">
+            {dgettext("help_guides", "Alternative description")}
+          </text>
+          <text class="hg-t-sub" x="724" y="202">
+            {dgettext("help_guides", "the text “How we order”")}
+          </text>
+          <text class="hg-t-lab hg-f-muted" x="724" y="219">
+            {dgettext("help_guides", "App (API): no")}
+          </text>
+          <text class="hg-t-note" x="712" y="256">
+            {dgettext("help_guides", "Every description marked")}
+          </text>
+          <text class="hg-t-note" x="712" y="272">
+            {dgettext("help_guides", "as an app is one app,")}
+          </text>
+          <text class="hg-t-note" x="712" y="288">
+            {dgettext("help_guides", "with its own data.")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="896"
+            y1="164"
+            x2="986"
+            y2="164"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="941" y="140" text-anchor="middle">
+            {dgettext("help_guides", "for every")}
+          </text>
+          <text class="hg-t-lab hg-f-potok" x="941" y="154" text-anchor="middle">
+            {dgettext("help_guides", "viewer")}
+          </text>
+          <text class="hg-t-mono hg-f-muted" x="941" y="182" text-anchor="middle">srcdoc</text>
+
+          <rect class="hg-frame" x="986" y="24" width="238" height="280" rx="12" />
+          <text class="hg-t-row hg-f-app" x="1000" y="47">iframe</text>
+          <text class="hg-t-sub" x="1000" y="63">
+            {dgettext("help_guides", "%{c1}, without %{c2}",
+              c1: "sandbox",
+              c2: "allow-same-origin"
+            )}
+          </text>
+          <rect class="hg-row-potok" x="1000" y="74" width="210" height="128" rx="8" />
+          <text class="hg-t-lab hg-f-potok" x="1010" y="91">
+            {dgettext("help_guides", "%{c1}, put together by Potok", c1: "<head>")}
+          </text>
+          <text class="hg-t-mono" x="1010" y="112">potok-app</text>
+          <text class="hg-t-sub" x="1110" y="112">
+            {dgettext("help_guides", "which description")}
+          </text>
+          <text class="hg-t-mono" x="1010" y="131">potok-viewer</text>
+          <text class="hg-t-sub" x="1110" y="131">
+            {dgettext("help_guides", "who is looking")}
+          </text>
+          <text class="hg-t-mono" x="1010" y="150">app.css</text>
+          <text class="hg-t-sub" x="1110" y="150">
+            {dgettext("help_guides", "look and theme")}
+          </text>
+          <text class="hg-t-mono" x="1010" y="171">potok_app_sdk.js</text>
+          <text class="hg-t-sub" x="1010" y="189">
+            {dgettext("help_guides", "gives %{c1}", c1: "window.potok")}
+          </text>
+          <rect class="hg-row-app" x="1000" y="212" width="210" height="80" rx="8" />
+          <text class="hg-t-lab hg-f-app" x="1010" y="229">&lt;body&gt;</text>
+          <text class="hg-t-mono" x="1010" y="250">#group-panel-description</text>
+          <text class="hg-t-row" x="1010" y="276">{dgettext("help_guides", "your HTML")}</text>
+        </svg>
+      </div>
+      <figcaption>
+        <.hg_text text={
+          dgettext(
+            "help_guides",
+            "An app is one HTML file that you upload into the description, on its own or in a ZIP. Potok adds the rest of the frame for every viewer. The frame has no `allow-same-origin`, so it does not see Potok's page, its cookies or the session, and talks to Potok only by messages. When the HTML or the viewer's access (membership, roles) changes, the frame loads again, as an app reads its data once, at the start. A site from another address fits in an app too, in a frame of its own inside this one: the SDK tells it the theme and the language and passes on only the calls the description lists on that frame (`data-potok-api`)."
+          )
+        } />
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "The path of one write")}</h2>
+    <p>
+      <.hg_text text={
+        dgettext(
+          "help_guides",
+          "A neighbor in round 812 orders 3 liters of milk and taps “Save the order”. Mleko calls `insertValue` for the collection `orders`. Here is what that call goes through and how it reaches another neighbor who has the same round open on their phone."
+        )
+      } />
+    </p>
+    <figure id="hg-fig-call" class="hg-fig" style="--hg-min: 960px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1240 600"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "The write of an order goes down through the app's code, the SDK, the hook on the page, the LiveView, the rules and the database. After the write PubSub tells every page of the group; the neighbor's page with the same app sends the change up into its frame, and a page on another description sends nothing."
+            )
+          }
+        >
+          <rect class="hg-zone-frame" x="184" y="70" width="1048" height="154" rx="12" />
+          <line class="hg-s-line hg-dash" x1="16" y1="312" x2="1232" y2="312" />
+          <rect class="hg-server" x="12" y="328" width="1220" height="244" rx="14" />
+
+          <text class="hg-t-row" x="24" y="108">{dgettext("help_guides", "The app's code")}</text>
+          <text class="hg-t-sub" x="24" y="125">
+            {dgettext("help_guides", "in the frame (%{c1})", c1: "iframe")}
+          </text>
+          <text class="hg-t-row" x="24" y="184">SDK</text>
+          <text class="hg-t-sub" x="24" y="201">potok_app_sdk.js</text>
+          <text class="hg-t-row" x="24" y="256">
+            {dgettext("help_guides", "The group's page")}
+          </text>
+          <text class="hg-t-sub" x="24" y="273">hook GroupAppFrame</text>
+          <text class="hg-t-lab hg-f-muted" x="24" y="306">
+            {dgettext("help_guides", "browser")}
+          </text>
+          <text class="hg-t-lab hg-f-muted" x="24" y="324">
+            {dgettext("help_guides", "server · %{c1}", c1: "WebSocket")}
+          </text>
+          <text class="hg-t-row" x="24" y="368">
+            {dgettext("help_guides", "The group's LiveView")}
+          </text>
+          <text class="hg-t-sub" x="24" y="385">
+            {dgettext("help_guides", "a process per viewer")}
+          </text>
+          <text class="hg-t-row" x="24" y="452">{dgettext("help_guides", "Domain")}</text>
+          <text class="hg-t-sub" x="24" y="469">
+            {dgettext("help_guides", "rules, the write, processes")}
+          </text>
+          <text class="hg-t-row" x="24" y="532">{dgettext("help_guides", "Database")}</text>
+          <text class="hg-t-sub" x="24" y="549">Postgres</text>
+
+          <rect class="hg-hd-person" x="200" y="16" width="240" height="44" rx="10" />
+          <text class="hg-t-row" x="320" y="35" text-anchor="middle">
+            {dgettext("help_guides", "A neighbor orders")}
+          </text>
+          <text class="hg-t-sub" x="320" y="51" text-anchor="middle">
+            {dgettext("help_guides", "3 l of milk in round 812")}
+          </text>
+          <rect class="hg-hd-person" x="732" y="16" width="240" height="44" rx="10" />
+          <text class="hg-t-row" x="852" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Another neighbor watches round 812")}
+          </text>
+          <text class="hg-t-sub" x="852" y="51" text-anchor="middle">
+            {dgettext("help_guides", "the same app, another phone")}
+          </text>
+          <rect class="hg-hd-person" x="1040" y="16" width="184" height="44" rx="10" />
+          <text class="hg-t-row" x="1132" y="35" text-anchor="middle">
+            {dgettext("help_guides", "On another description")}
+          </text>
+          <text class="hg-t-sub" x="1132" y="51" text-anchor="middle">
+            {dgettext("help_guides", "another app of the group")}
+          </text>
+
+          <rect class="hg-row-app" x="200" y="84" width="240" height="56" rx="8" />
+          <text class="hg-t-row" x="214" y="106">
+            {dgettext("help_guides", "“Save the order”")}
+          </text>
+          <text class="hg-t-mono hg-f-app" x="214" y="126">
+            {"insertValue(data, {collection})"}
+          </text>
+          <rect class="hg-row-app" x="200" y="164" width="240" height="48" rx="8" />
+          <text class="hg-t-mono hg-f-app" x="214" y="184">
+            {"postMessage({potok: 1, id, …})"}
+          </text>
+          <text class="hg-t-sub" x="214" y="201">
+            {dgettext("help_guides", "waits for the answer with the same %{c1}", c1: "id")}
+          </text>
+          <rect class="hg-row-potok" x="200" y="236" width="240" height="48" rx="8" />
+          <text class="hg-t-row" x="214" y="256">
+            {dgettext("help_guides", "checks the source and the method")}
+          </text>
+          <text class="hg-t-sub" x="214" y="273">
+            {dgettext("help_guides", "adds the %{c1} of the description on screen", c1: "app_id")}
+          </text>
+          <rect class="hg-row-potok" x="200" y="344" width="240" height="56" rx="8" />
+          <text class="hg-t-row" x="214" y="366">AppApi.call</text>
+          <text class="hg-t-sub" x="214" y="384">
+            {dgettext(
+              "help_guides",
+              "same description? a write token (%{burst} / %{window} s)",
+              burst: @f.write_burst,
+              window: @f.write_window_s
+            )}
+          </text>
+          <rect class="hg-row-potok" x="200" y="424" width="240" height="68" rx="8" />
+          <text class="hg-t-row" x="214" y="444">
+            {dgettext("help_guides", "%{c1}, a transaction", c1: "AppData.insert")}
+          </text>
+          <text class="hg-t-sub" x="214" y="461">
+            {dgettext("help_guides", "%{c1}, the rule of %{c2}",
+              c1: "config FOR SHARE",
+              c2: "orders"
+            )}
+          </text>
+          <text class="hg-t-sub" x="214" y="477">
+            {dgettext("help_guides", "the write and its processes, together")}
+          </text>
+          <rect class="hg-row-potok" x="200" y="516" width="240" height="44" rx="8" />
+          <text class="hg-t-row" x="214" y="534">
+            {dgettext("help_guides", "a row in the table %{c1}", c1: "values")}
+          </text>
+          <text class="hg-t-sub" x="214" y="551">
+            {dgettext("help_guides", "%{c2}, %{c3}, %{c4} up to %{kb} KB",
+              kb: @f.value_kb,
+              c2: "is_data",
+              c3: "collection",
+              c4: "data"
+            )}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="320"
+            y1="140"
+            x2="320"
+            y2="164"
+            marker-end="url(#hg-m-app)"
+          />
+          <line
+            class="hg-ar hg-s-app"
+            x1="320"
+            y1="212"
+            x2="320"
+            y2="236"
+            marker-end="url(#hg-m-app)"
+          />
+          <line
+            class="hg-ar hg-s-app"
+            x1="320"
+            y1="284"
+            x2="320"
+            y2="344"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-mono hg-f-app" x="328" y="305">pushEvent('app_api')</text>
+          <line
+            class="hg-ar hg-s-app"
+            x1="320"
+            y1="400"
+            x2="320"
+            y2="424"
+            marker-end="url(#hg-m-app)"
+          />
+          <line
+            class="hg-ar hg-s-app"
+            x1="320"
+            y1="492"
+            x2="320"
+            y2="516"
+            marker-end="url(#hg-m-app)"
+          />
+
+          <line
+            class="hg-ar hg-s-app hg-dash"
+            x1="466"
+            y1="344"
+            x2="466"
+            y2="142"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-mono hg-f-app" x="474" y="326">{"{ok: true, value}"}</text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="440"
+            y1="458"
+            x2="516"
+            y2="458"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="478" y="451" text-anchor="middle">
+            {dgettext("help_guides", "publishes")}
+          </text>
+          <rect class="hg-row-hub" x="516" y="424" width="184" height="68" rx="8" />
+          <text class="hg-t-row" x="530" y="444">PubSub</text>
+          <text class="hg-t-mono hg-f-potok" x="530" y="462">groups:&lt;id&gt;:app_values</text>
+          <text class="hg-t-sub" x="530" y="479">
+            {dgettext("help_guides", "on all servers")}
+          </text>
+          <path class="hg-ar hg-s-potok" d="M608 424 V372 H732" marker-end="url(#hg-m-potok)" />
+          <text class="hg-t-lab hg-f-potok" x="670" y="365" text-anchor="middle">
+            {dgettext("help_guides", "to every page")}
+          </text>
+          <path class="hg-ar hg-s-potok" d="M700 476 H1132 V400" marker-end="url(#hg-m-potok)" />
+
+          <rect class="hg-row-potok" x="732" y="344" width="240" height="56" rx="8" />
+          <text class="hg-t-row" x="746" y="366">AppValues.announce</text>
+          <text class="hg-t-sub" x="746" y="384">
+            {dgettext("help_guides", "this app? may they see it?")}
+          </text>
+          <rect class="hg-row-potok" x="732" y="236" width="240" height="48" rx="8" />
+          <text class="hg-t-mono hg-f-potok" x="746" y="256">handleEvent('app_value')</text>
+          <text class="hg-t-sub" x="746" y="273">
+            {dgettext("help_guides", "passes it into its frame")}
+          </text>
+          <rect class="hg-row-app" x="732" y="164" width="240" height="48" rx="8" />
+          <text class="hg-t-mono hg-f-app" x="746" y="184">event: 'app_value'</text>
+          <text class="hg-t-sub" x="746" y="201">
+            {dgettext("help_guides", "the SDK calls the collection's listeners")}
+          </text>
+          <rect class="hg-row-app" x="732" y="84" width="240" height="56" rx="8" />
+          <text class="hg-t-row" x="746" y="106">
+            {dgettext("help_guides", "Round 812 gets the order")}
+          </text>
+          <text class="hg-t-mono hg-f-app" x="746" y="126">onValues(change)</text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="852"
+            y1="344"
+            x2="852"
+            y2="284"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-mono hg-f-potok" x="860" y="305">push_event('app_value')</text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="852"
+            y1="236"
+            x2="852"
+            y2="212"
+            marker-end="url(#hg-m-potok)"
+          />
+          <line
+            class="hg-ar hg-s-potok"
+            x1="852"
+            y1="164"
+            x2="852"
+            y2="140"
+            marker-end="url(#hg-m-potok)"
+          />
+
+          <rect class="hg-row-none" x="1048" y="84" width="168" height="56" rx="8" />
+          <text class="hg-t-note" x="1060" y="108">{dgettext("help_guides", "another app")}</text>
+          <text class="hg-t-note" x="1060" y="124">
+            {dgettext("help_guides", "does not hear this write")}
+          </text>
+          <rect class="hg-row-none" x="1048" y="344" width="168" height="56" rx="8" />
+          <text class="hg-t-row hg-f-muted" x="1060" y="366">AppValues.announce</text>
+          <text class="hg-t-note" x="1060" y="384">
+            {dgettext("help_guides", "not its description: nothing")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        <.hg_text text={
+          dgettext(
+            "help_guides",
+            "The write goes down through four checks. The hook lets through only the methods on its list, `AppApi` only the app that is on screen and only while it has tokens, `AppData` only what the collection's rule allows, and the database only the whole transaction, together with the processes that start on that value. After the write PubSub tells every open page of the group, the neighbor's own too, and each decides by itself what its viewer may see, without asking the database. An anonymous value reaches other eyes without its author."
+          )
+        } />
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Where Mleko keeps its data")}</h2>
+    <p>
+      <.hg_text text={
+        dgettext(
+          "help_guides",
+          "Mleko has no database of its own. All it remembers are values of the group marked as data, each in one collection, and the settings are one value in the collection `config`."
+        )
+      } />
+    </p>
+    <figure id="hg-fig-data" class="hg-fig" style="--hg-min: 940px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1240 400"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "Mleko's settings are one value with rules for the collections %{c1}, %{c2} and %{c3}. Potok checks every write by those rules, and the links between values, such as %{c4}, exist only in the data and are kept by the app.",
+              c1: "rounds",
+              c2: "orders",
+              c3: "drivers",
+              c4: "round 812"
+            )
+          }
+        >
+          <rect class="hg-col hg-col-app" x="16" y="24" width="440" height="352" rx="12" />
+          <text class="hg-t-title hg-f-app" x="32" y="52">
+            {dgettext("help_guides", "Settings")}
+          </text>
+          <text class="hg-t-mono" x="32" y="72">
+            {dgettext("help_guides", "%{c1} · one value", c1: "collection: 'config'")}
+          </text>
+          <text class="hg-t-sub" x="32" y="90">
+            {dgettext(
+              "help_guides",
+              "editors change them; %{c1} keeps them from being overwritten",
+              c1: "revision"
+            )}
+          </text>
+          <rect class="hg-code" x="32" y="104" width="408" height="256" rx="8" />
+          <text class="hg-t-mono" x="46" y="126">{"producer: {name: 'Farma Ilić', …}"}</text>
+          <text class="hg-t-mono" x="46" y="144">products: [mleko · l, sir · kg]</text>
+          <text class="hg-t-mono" x="46" y="162">split: 'equal'</text>
+          <text class="hg-t-mono" x="46" y="180"><%= "roles: {organize: [admin]," %></text>
+          <text class="hg-t-mono" x="46" y="196"><%= "order: [everyone]}" %></text>
+          <rect class="hg-row-hub" x="40" y="208" width="392" height="98" rx="8" />
+          <text class="hg-t-mono hg-f-potok" x="52" y="227">rules:</text>
+          <text class="hg-t-sub" x="104" y="227">
+            {dgettext("help_guides", "Potok reads them at every write")}
+          </text>
+          <text class="hg-t-mono" x="60" y="246">rounds</text>
+          <text class="hg-t-mono" x="130" y="246">write [admin]</text>
+          <text class="hg-t-mono" x="248" y="246">read [everyone]</text>
+          <text class="hg-t-mono" x="368" y="246">edit_own</text>
+          <text class="hg-t-mono" x="60" y="265">orders</text>
+          <text class="hg-t-mono" x="130" y="265">write [everyone]</text>
+          <text class="hg-t-mono" x="248" y="265">read [everyone]</text>
+          <text class="hg-t-mono" x="368" y="265">edit_own</text>
+          <text class="hg-t-mono" x="60" y="284">drivers</text>
+          <text class="hg-t-mono" x="130" y="284">write [everyone]</text>
+          <text class="hg-t-mono" x="248" y="284">read [everyone]</text>
+          <text class="hg-t-mono" x="368" y="284">edit_own</text>
+          <text class="hg-t-mono" x="46" y="330">{"secret: {}"}</text>
+          <text class="hg-t-sub" x="132" y="330">
+            {dgettext("help_guides", "only editors read it")}
+          </text>
+          <text class="hg-t-sub" x="46" y="348">
+            {dgettext("help_guides", "Mleko builds the rules from the roles an editor picks.")}
+          </text>
+
+          <path class="hg-ar hg-s-potok" d="M432 257 H476 V44 H500" marker-end="url(#hg-m-potok)" />
+          <line class="hg-s-line" x1="500" y1="44" x2="1224" y2="44" />
+          <text class="hg-t-lab hg-f-potok" x="508" y="36">
+            {dgettext("help_guides", "Potok checks every write by the rule of its collection")}
+          </text>
+
+          <text class="hg-t-mono-b" x="500" y="70">rounds</text>
+          <text class="hg-t-sub" x="500" y="87">
+            {dgettext("help_guides", "rounds; the organizer opens them")}
+          </text>
+          <text class="hg-t-mono-b" x="752" y="70">orders</text>
+          <text class="hg-t-sub" x="752" y="87">
+            {dgettext("help_guides", "orders; each their own")}
+          </text>
+          <text class="hg-t-mono-b" x="1004" y="70">drivers</text>
+          <text class="hg-t-sub" x="1004" y="87">
+            {dgettext("help_guides", "who drives and who picked up what")}
+          </text>
+
+          <rect class="hg-card-app" x="500" y="100" width="220" height="108" rx="8" />
+          <text class="hg-t-row" x="514" y="120">#812</text>
+          <text class="hg-t-sub" x="706" y="120" text-anchor="end">
+            {dgettext("help_guides", "author: the organizer")}
+          </text>
+          <text class="hg-t-mono" x="514" y="140">status: 'open'</text>
+          <text class="hg-t-mono" x="514" y="157">closes_at: 14. 11. 18:00</text>
+          <text class="hg-t-mono" x="514" y="174">
+            {dgettext("help_guides", "%{c1} a copy of the prices", c1: "products:")}
+          </text>
+          <text class="hg-t-mono" x="514" y="191">split: 'equal'</text>
+
+          <rect class="hg-card-app" x="752" y="100" width="220" height="90" rx="8" />
+          <text class="hg-t-row" x="766" y="120">#815</text>
+          <text class="hg-t-sub" x="958" y="120" text-anchor="end">
+            {dgettext("help_guides", "author: the neighbor")}
+          </text>
+          <text class="hg-t-mono" x="766" y="140">round: 812</text>
+          <text class="hg-t-mono" x="766" y="157">{"lines: {mleko: 3}"}</text>
+          <text class="hg-t-mono" x="766" y="174">note: 'posle 17h'</text>
+          <rect class="hg-card-app" x="752" y="200" width="220" height="56" rx="8" />
+          <text class="hg-t-row" x="766" y="220">#817</text>
+          <text class="hg-t-sub" x="958" y="220" text-anchor="end">
+            {dgettext("help_guides", "author: another neighbor")}
+          </text>
+          <text class="hg-t-mono" x="766" y="240">{"round: 812 · lines: {sir: 0.5}"}</text>
+
+          <rect class="hg-card-app" x="1004" y="100" width="220" height="108" rx="8" />
+          <text class="hg-t-row" x="1018" y="120">#816</text>
+          <text class="hg-t-sub" x="1210" y="120" text-anchor="end">
+            {dgettext("help_guides", "author: the driver")}
+          </text>
+          <text class="hg-t-mono" x="1018" y="140">round: 812</text>
+          <text class="hg-t-mono" x="1018" y="157">cost: 1200</text>
+          <text class="hg-t-mono" x="1018" y="174"><%= "handover: {815: got," %></text>
+          <text class="hg-t-mono" x="1018" y="191"><%= "817: paid}" %></text>
+
+          <line
+            class="hg-ar hg-s-muted hg-dash"
+            x1="752"
+            y1="137"
+            x2="722"
+            y2="137"
+            marker-end="url(#hg-m-muted)"
+          />
+          <line class="hg-ar hg-s-muted hg-dash" x1="752" y1="237" x2="736" y2="237" />
+          <line class="hg-ar hg-s-muted hg-dash" x1="736" y1="237" x2="736" y2="152" />
+          <line
+            class="hg-ar hg-s-muted hg-dash"
+            x1="736"
+            y1="152"
+            x2="722"
+            y2="152"
+            marker-end="url(#hg-m-muted)"
+          />
+          <line
+            class="hg-ar hg-s-muted hg-dash"
+            x1="1004"
+            y1="171"
+            x2="974"
+            y2="171"
+            marker-end="url(#hg-m-muted)"
+          />
+          <text class="hg-t-note" x="500" y="232">
+            {dgettext("help_guides", "%{c1} is only a number in the data;", c1: "round: 812")}
+          </text>
+          <text class="hg-t-note" x="500" y="248">
+            {dgettext("help_guides", "the database does not check that link.")}
+          </text>
+
+          <rect class="hg-row-potok" x="500" y="282" width="350" height="94" rx="10" />
+          <text class="hg-t-row hg-f-potok" x="514" y="304">
+            {dgettext("help_guides", "Kept by Potok, by the rules")}
+          </text>
+          <text class="hg-t-sub" x="514" y="324">
+            {dgettext("help_guides", "who may write: the roles in %{c1}", c1: "rules")}
+          </text>
+          <text class="hg-t-sub" x="514" y="341">
+            {dgettext("help_guides", "each changes only their own value (%{c1})", c1: "edit_own")}
+          </text>
+          <text class="hg-t-sub" x="514" y="358">
+            {dgettext("help_guides", "a value up to %{kb} KB, settings up to %{ckb} KB",
+              kb: @f.value_kb,
+              ckb: @f.config_kb
+            )}
+          </text>
+          <rect class="hg-row-app" x="874" y="282" width="350" height="94" rx="10" />
+          <text class="hg-t-row hg-f-app" x="888" y="304">
+            {dgettext("help_guides", "Kept by the app itself")}
+          </text>
+          <text class="hg-t-sub" x="888" y="324">
+            {dgettext(
+              "help_guides",
+              "a round's deadline and one order per person (the earliest holds)"
+            )}
+          </text>
+          <text class="hg-t-sub" x="888" y="341">
+            {dgettext("help_guides", "cancelling is an empty order, as an author does not delete")}
+          </text>
+          <text class="hg-t-sub" x="888" y="358">
+            {dgettext(
+              "help_guides",
+              "whoever came forward first drives; only they tick what was picked up"
+            )}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        <.hg_text text={
+          dgettext(
+            "help_guides",
+            "Potok reads the rules from the settings in the same transaction as the write, so an order after the collection closes does not get through. Links between values, such as `round: 812`, exist only in the data, so what depends on them (a round's deadline, one order per person) Mleko checks itself. The driver ticks what was picked up in a value of their own, so by the `edit_own` rule only they can. The names, numbers and settings are an example."
+          )
+        } />
+      </figcaption>
+    </figure>
+  </section>
+
+  <section id="hg-api" class="hg-section">
+    <h2>{dgettext("help_guides", "What an app can ask for")}</h2>
+    <div class="hg-api-legend">
+      <span>
+        <span class="hg-chip hg-used">getConfig</span> {dgettext("help_guides", "used by Mleko")}
+      </span>
+      <span>
+        <span class="hg-chip">
+          getGroup<span class="hg-chip-guest">{dgettext("help_guides", "guest")}</span>
+        </span>
+        {dgettext("help_guides", "also works for a guest of a public group")}
+      </span>
+    </div>
+    <div class="hg-api">
+      <div :for={family <- @api} id={"hg-api-#{family.id}"} class="hg-fam">
+        <h3>{family.title}</h3>
+        <div class="hg-chips">
+          <span
+            :for={method <- family.methods}
+            class={["hg-chip", method.uses? && "hg-used"]}
+            data-method={method.name}
+          >
+            {method.name}<span :if={method.guest?} class="hg-chip-guest">{dgettext("help_guides", "guest")}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p>
+      <.hg_text text={
+        dgettext(
+          "help_guides",
+          "All of these are methods of the object `window.potok`. Each becomes one message to the page's frame, and the server checks it anew. For a guest the server lets through the marked reads, `getDescription`, and what the public rules of a collection show to everyone. The page answers `linkGroup`, `getLinkedGroup`, `openLogin` and `pickEmoji` by itself, without the server. The old API (`insertGroupValue`, `getGroupDataValues`) still works for apps written before the frame."
+        )
+      } />
+    </p>
+  </section>
+
+  <section id="hg-limits" class="hg-section">
+    <h2>{dgettext("help_guides", "Limits the server keeps")}</h2>
+    <ul class="hg-marks">
+      <li :for={limit <- @limits} id={"hg-limit-#{limit.id}"}>
+        <b>{limit.mark}</b>
+        <span><.hg_text text={limit.text} /></span>
+      </li>
+    </ul>
+  </section>
+
+  <:sources>
+    <.hg_text text={
+      dgettext(
+        "help_guides",
+        "The template is the project `potok-vite`, and the example the project `potok-mleko`."
+      )
+    } />
+  </:sources>
+</.help_guide_frame>

@@ -165,10 +165,23 @@ defmodule PotokIde.Social.Access do
     from_facts(manifest, membership_facts(profile_id, group))
   end
 
-  defp from_facts(manifest, {:member, keys}), do: build(manifest, keys)
+  @doc """
+  The access these facts add up to under `manifest`, with no database: a
+  member's from the role keys assigned to them (`{:member, keys}`), or that of
+  a profile that is not a member (`{:outsider, blocked?}`). `for_profile/3`
+  applies it to what it reads, and the calculator of the help page
+  (`PotokIdeWeb.HelpGuides.calc/0`) to its example.
+  """
+  def from_facts(manifest, {:member, keys}), do: build(manifest, keys)
 
-  defp from_facts(manifest, {:outsider, blocked?}),
+  def from_facts(manifest, {:outsider, blocked?}),
     do: %__MODULE__{manifest: manifest, blocked?: blocked?}
+
+  @doc "How long a manifest is kept before it is read again, in milliseconds."
+  def manifest_ttl, do: @manifest_ttl
+
+  @doc "How long who holds which roles is kept, in milliseconds."
+  def facts_ttl, do: @facts_ttl
 
   # `{:member, role_keys}` or `{:outsider, blocked?}`: what the profile's
   # access is made of besides the manifest. A transaction reads its own

@@ -64,7 +64,7 @@ You can narrow inheriting down to roles: then only the members who hold one of t
 
 What each person may do in a group is set by roles. Every group has the role Admin, which may do everything, and the role Everyone, which every member has. You can add roles of your own too, say council or moderators. For each of the 20 permissions, a role says "Allow", "Deny" or "Not set", and a denial is stronger than an allowance.
 
-A sub-group takes its roles from the group above. If it needs different ones, it gets a manifest of its own, its own list of roles and permissions.
+A sub-group takes its roles from the group above. If it needs different ones, it gets a manifest of its own, its own list of roles and permissions. How what you may do is worked out from roles and a manifest, with an example you change yourself, is on the page [Access rights in Potok](/pomoc/prava-pristupa).
 
 ### Public, private and open {:#vidljivost}
 
@@ -351,7 +351,7 @@ Some kinds of groups get a ready-made app:
 
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question or free text. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.
 
-Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). You then don't type the app into a field: you upload it as a ZIP with one HTML file, or as the HTML file itself, and download the current one as a ZIP. The file doesn't go to the server, only its HTML goes into the description. The same goes for alternative descriptions. Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. Such a description can also hold a site from another address, in a frame: a site made for it follows the theme and the language you pick in Potok. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps).
+Whoever writes HTML can turn a description into an app of their own (Edit group, Description, "The description is an app (API)"). You then don't type the app into a field: you upload it as a ZIP with one HTML file, or as the HTML file itself, and download the current one as a ZIP. The file doesn't go to the server, only its HTML goes into the description. The same goes for alternative descriptions. Such an app can also run a process: when an answer comes in, it posts it in the chat, opens a sub-group for it and waits for someone with the role to decide, reminding them when they are late. Such a description can also hold a site from another address, in a frame: a site made for it follows the theme and the language you pick in Potok. What an app may do, and what it may not, is described in the [domain map](/domain#domain-apps). How an app is built and where each of its calls goes is drawn on the page [The architecture of a Potok app](/pomoc/arhitektura-aplikacije).
 
 ![Templates for a group's description](opis-sablon)
 
@@ -401,6 +401,8 @@ A process that others call is **private**: only the processes of its own group c
 The step **Group field** keeps a value every process of the group reads: under **What it does** you pick whether it sets the field to a value, say the last fault reported, or adds a number to it, as a count. The other steps, in other processes too, read the field `kvarova` as `{{group.kvarova}}`, and a condition can branch on it, say when it passes 10. The [building](/pomoc/zgrada#brojac) counts its faults.
 
 The step **Send a signal** tells all the group's processes that something happened, say that it is Saturday, with fields you type. A process that is on the step **Wait for a signal** with the same name just then goes on, and reads who sent the signal and what it carries as `{{prijem.from}}` and `{{prijem.mesto}}`. A signal also starts the processes whose trigger is that signal. A signal is not kept: a process that comes to the wait only later waits for the next one. With **Only from a process on the same value or sub-group** the wait takes only a signal sent about the same subject, say a payment for that very order. The [co-op](/pomoc/zadruga#subota) tells its buyers that way that it is pick-up day.
+
+How processes, apps and a group work together, and where each of them stops, is drawn on the page [Potok, processes and apps](/pomoc/procesi-i-aplikacije).
 
 ### Sharing into Potok {:#deljenje}
 

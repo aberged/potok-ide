@@ -154,6 +154,18 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     %{tokens: @write_burst, refilled_at: System.monotonic_time(:millisecond)}
   end
 
+  @doc "Writes an open page makes in a row before it waits for tokens."
+  def write_burst, do: @write_burst
+
+  @doc "The time in which a page's write tokens fill up again, in milliseconds."
+  def write_window_ms, do: @write_window_ms
+
+  @doc "The most sub-groups one `create_children` makes."
+  def max_children_per_call, do: @max_children_per_call
+
+  @doc "The methods a guest may call of those that otherwise take a signed-in profile."
+  def guest_methods, do: @guest_methods
+
   defp poll_status("closed"), do: :closed
   defp poll_status("waiting"), do: :waiting
   defp poll_status(_open), do: :open

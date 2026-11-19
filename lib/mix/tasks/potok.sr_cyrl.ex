@@ -44,11 +44,11 @@ defmodule Mix.Tasks.Potok.SrCyrl do
   @kept ~r/
     %?\{[^}]*\} | <span\ lang=en>[^<]*<\/span> | <[^>]*> | `[^`]*` | \b(?:https?|data):\S* |
     \b[\w-]+(?:\.[\w-]+)*\.(?:com|org|rs)\b | @?\b(?:admin|everyone)\b |
-    \b(?:Amnesty\ International|Amnesty|API|Apple|Auth|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
+    \b(?:Amnesty\ International|Amnesty|App\ API|API|Apple|Auth|BEAM|Böll|CSS|CSV|daisyUI|Deutrix|Ecto|Elixir|
     Endpoint|English|EPSG|ETS|ExUnit|FCM|FeedCreator|Fly\.io|Fly|GPX|KML|KMZ|LineString|MultiLineString|Firebase\ Cloud\ Messaging|Firebase|GeoJSON|Gmail|
-    Google\ Forms|Google\ Play|Google\ Sheets|Google|Heinrich-Böll-Stiftung|Heroicons|HTML|HTTPS|
+    Google\ Forms|Google\ Play|Google\ Sheets|Google|Heinrich-Böll-Stiftung|Heroicons|Hook|hook|HTML|HTTPS|
     index\.html|iPhone|IPv4|IPv6|JavaScript|LiveView|localhost|Managed\ Postgres|Markdown|MultiPolygon|NoviSpy|Oban|Outlook|P256DH|Peep|pg_trgm|Phoenix|
-    Polygon|PostGIS|PostgreSQL|Postgres|Presence|Prometheus|PubSub|QGIS|QR|service\ worker|Sheets|Tailwind|Tigris|URL|USD|
+    Polygon|PostGIS|PostgreSQL|Postgres|Presence|Prometheus|PubSub|QGIS|QR|SDK|service\ worker|Sheets|SQL|Tailwind|Tigris|URL|USD|
     User\ Agent|UTF-8|WebSocket|WGS|ZIP)\b
   /ux
 
@@ -62,6 +62,7 @@ defmodule Mix.Tasks.Potok.SrCyrl do
 
   # Foreign words that the Latin text keeps in their own spelling.
   @words %{
+    "builda" => "билда",
     "Chat" => "Чет",
     "chat" => "чет",
     "Discord" => "Дискорд",

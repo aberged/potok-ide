@@ -9,6 +9,7 @@ defmodule PotokIdeWeb.PageHTML do
   alias PotokIdeWeb.DomainCopy
   alias PotokIdeWeb.GroupLive.Show.{Components, GroupDescriptionTab}
   alias PotokIdeWeb.GuestDescriptions
+  alias PotokIdeWeb.HelpGuides
   alias PotokIdeWeb.StackCopy
 
   embed_templates "page_html/*"
@@ -396,6 +397,147 @@ defmodule PotokIdeWeb.PageHTML do
       </li>
     </ol>
     """
+  end
+
+  # The frame of a page on how Potok works inside (`PotokIdeWeb.HelpGuides`):
+  # a way back to the help, the title and lead, the page's sections, where its
+  # facts come from in the code, and the other pages of the series.
+  attr :guide, :map, required: true, doc: "the page, from `HelpGuides.guide/1`"
+  attr :flash, :map, required: true
+  attr :current_scope, :any, required: true
+  attr :current_locale, :string, required: true
+  attr :available_locales, :list, required: true
+  slot :note, doc: "a line under the lead"
+  slot :inner_block, required: true
+  slot :sources, doc: "what stands after the list of the code's files"
+
+  defp help_guide_frame(assigns) do
+    assigns =
+      assign(assigns, :others, Enum.reject(HelpGuides.guides(), &(&1.slug == assigns.guide.slug)))
+
+    ~H"""
+    <Layouts.guest
+      flash={@flash}
+      current_locale={@current_locale}
+      available_locales={@available_locales}
+      about_link={true}
+    >
+      <:header_action :if={@current_scope && @current_scope.account}>
+        <.link
+          id={"#{@guide.id}-back-link"}
+          href={~p"/groups"}
+          class="inline-flex items-center gap-1.5 rounded-full border border-base-content/15 px-4 py-2 text-sm font-medium transition duration-200 hover:border-base-content/30 hover:bg-base-content/5 active:scale-[0.98]"
+        >
+          <.icon name="hero-arrow-left" class="size-4" /> {gettext("Back to Potok")}
+        </.link>
+      </:header_action>
+
+      <div id={@guide.id} class="dm hg mx-auto w-full max-w-6xl px-5 pb-16 sm:px-8">
+        <svg class="hg-defs" aria-hidden="true" focusable="false">
+          <defs>
+            <marker
+              :for={hue <- ~w(fg app potok proc wait muted ok no m1 m2)}
+              id={"hg-m-#{hue}"}
+              viewBox="0 0 10 10"
+              refX="10"
+              refY="5"
+              markerWidth="6"
+              markerHeight="6"
+              orient="auto-start-reverse"
+            >
+              <path class={"hg-f-#{hue}"} d="M0 0 L10 5 L0 10 z" />
+            </marker>
+          </defs>
+        </svg>
+
+        <header id={"#{@guide.id}-top"} class="hp-top">
+          <.link id={"#{@guide.id}-help-link"} href={~p"/pomoc"} class="hp-crumb">
+            <.icon name="hero-arrow-left" class="size-4" /> {dgettext(
+              "help_guides",
+              "Back to the help"
+            )}
+          </.link>
+          <p class="lp-kicker">{dgettext("help_guides", "How Potok works inside")}</p>
+          <h1>{@guide.title}</h1>
+          <p class="hp-lead"><.hg_text text={@guide.lead} /></p>
+          <p :for={note <- @note} class="hg-note">{render_slot(note)}</p>
+        </header>
+
+        {render_slot(@inner_block)}
+
+        <footer id={"#{@guide.id}-sources"} class="hg-sources">
+          <p>{dgettext("help_guides", "Where this is in the code:")}</p>
+          <ul class="hg-source-list">
+            <li :for={path <- @guide.sources}><code>{path}</code></li>
+          </ul>
+          <p :for={sources <- @sources}>{render_slot(sources)}</p>
+        </footer>
+
+        <section
+          id={"#{@guide.id}-others"}
+          class="hp-others"
+          aria-labelledby={"#{@guide.id}-others-title"}
+        >
+          <h2 id={"#{@guide.id}-others-title"} class="hp-others-title">
+            {dgettext("help_guides", "From the same series")}
+          </h2>
+          <div class="hp-others-grid">
+            <.link
+              :for={other <- @others}
+              id={"#{@guide.id}-other-#{other.slug}"}
+              href={~p"/pomoc/#{other.slug}"}
+              class="hp-other"
+            >
+              <span class="hp-other-title">{other.title}</span>
+              <span class="hp-other-lead">{HelpGuides.plain(other.lead)}</span>
+              <span class="hp-other-go">
+                {dgettext("help_guides", "Read")} <.icon name="hero-arrow-right" class="size-4" />
+              </span>
+            </.link>
+          </div>
+        </section>
+
+        <a id={"#{@guide.id}-to-top"} href={"##{@guide.id}-top"} class="hp-to-top">
+          <.icon name="hero-arrow-up" class="size-4" /> {gettext("Back to the top")}
+        </a>
+      </div>
+    </Layouts.guest>
+    """
+  end
+
+  # A text of those pages, with its code, its links (`<a1>label</a1>`, to
+  # `links["a1"]`) and its terms.
+  attr :text, :string, required: true
+  attr :links, :map, default: %{}
+
+  defp hg_text(assigns) do
+    ~H"""
+    <.hg_part :for={part <- HelpGuides.parts(@text)} part={part} links={@links} />
+    """
+  end
+
+  # On one line each: whitespace here would show between the parts of a sentence.
+  attr :part, :any, required: true
+  attr :links, :map, required: true
+
+  defp hg_part(%{part: {:text, text}} = assigns) do
+    assigns = assign(assigns, :text, text)
+    ~H"{@text}"
+  end
+
+  defp hg_part(%{part: {:code, name}} = assigns) do
+    assigns = assign(assigns, :name, name)
+    ~H"<code>{@name}</code>"
+  end
+
+  defp hg_part(%{part: {:strong, label}} = assigns) do
+    assigns = assign(assigns, :label, label)
+    ~H"<strong>{@label}</strong>"
+  end
+
+  defp hg_part(%{part: {:link, name, label}} = assigns) do
+    assigns = assign(assigns, href: Map.fetch!(assigns.links, name), label: label)
+    ~H"<a href={@href}>{@label}</a>"
   end
 
   defp logo_path("beam") do

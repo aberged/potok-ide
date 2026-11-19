@@ -66,5 +66,42 @@ defmodule Mix.Tasks.Potok.SyncReminderTest do
       assert SyncReminder.reminders(["priv/static/HELP.en.md", "priv/static/images/help/a.webp"]) ==
                []
     end
+
+    test "names a page on how Potok works inside when the code it was drawn from changed" do
+      for guide <- PotokIdeWeb.HelpGuides.guides(), path <- guide.watch do
+        # A folder stands for a file in it.
+        changed = if String.ends_with?(path, "/"), do: path <> "engine.ex", else: path
+
+        assert Enum.any?(SyncReminder.reminders([changed]), &(&1 =~ "(/pomoc/#{guide.slug})")),
+               "#{changed} does not name #{guide.slug}"
+      end
+    end
+
+    test "names only the pages drawn from that code" do
+      reminders = SyncReminder.reminders(["lib/potok_ide/social/access.ex"])
+
+      assert Enum.any?(reminders, &(&1 =~ "(/pomoc/prava-pristupa)"))
+      refute Enum.any?(reminders, &(&1 =~ "(/pomoc/arhitektura-aplikacije)"))
+      refute Enum.any?(reminders, &(&1 =~ "(/pomoc/procesi-i-aplikacije)"))
+    end
+
+    test "leaves such a page out when its template changed, but not for the shared module" do
+      sdk = "assets/js/potok_app_sdk.js"
+      template = "lib/potok_ide_web/controllers/page_html/help_app_architecture.html.heex"
+
+      touched = SyncReminder.reminders([sdk, template])
+      refute Enum.any?(touched, &(&1 =~ "(/pomoc/arhitektura-aplikacije)"))
+      assert Enum.any?(touched, &(&1 =~ "(/pomoc/procesi-i-aplikacije)"))
+
+      shared = SyncReminder.reminders([sdk, "lib/potok_ide_web/help_guides.ex"])
+      assert Enum.any?(shared, &(&1 =~ "(/pomoc/arhitektura-aplikacije)"))
+    end
+
+    test "a change to such a page alone is no change to the app" do
+      assert SyncReminder.reminders([
+               "lib/potok_ide_web/controllers/page_html/help_access.html.heex",
+               "priv/gettext/sr/LC_MESSAGES/help_guides.po"
+             ]) == []
+    end
   end
 end

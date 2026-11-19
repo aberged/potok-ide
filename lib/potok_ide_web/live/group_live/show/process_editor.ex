@@ -816,7 +816,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
     """
   end
 
-  defp insert_kinds do
+  @doc """
+  The steps a process is drawn from, as the menu under **+** offers them:
+  `{kind, icon, name, what it does, classes}`. The help's page on processes
+  names them from here (`PotokIdeWeb.HelpGuides.step_names/0`).
+  """
+  def insert_kinds do
     [
       {"message", "hero-chat-bubble-left-ellipsis", gettext("Message"),
        gettext("Writes in the group's chat, or in a sub-group the process made."),

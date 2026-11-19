@@ -136,6 +136,15 @@ defmodule PotokIde.Processes.Engine do
   @max_data 65_536
   @max_woken 100
 
+  @doc "Steps a run takes in a row before it has to wait."
+  def max_run, do: @max_run
+
+  @doc "Steps a run takes in its whole life."
+  def max_steps, do: @max_steps
+
+  @doc "Calls and signals a run may be away from the one a person or a value started."
+  def max_depth, do: @max_depth
+
   # ---------
   # Starting
   # ---------

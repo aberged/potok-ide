@@ -5,14 +5,19 @@ defmodule Mix.Tasks.Potok.SyncReminder do
 
   When the app's code changed, it names each page the change left untouched.
   The help page (`/pomoc`) is named only for a change to what users see, the
-  LiveViews and components. Whether a page needs new text takes judgment, so
-  this never fails. See "Landing page, domain map and help" in `AGENTS.md`.
+  LiveViews and components. Each of the help's pages on how Potok works inside
+  (`PotokIdeWeb.HelpGuides`) is named for a change to the code it was drawn
+  from, which that module lists as the page's `watch`. Whether a page needs
+  new text takes judgment, so this never fails. See "Landing page, domain map
+  and help" in `AGENTS.md`.
 
   It reads the changed files from git, or takes them as arguments:
 
       mix potok.sync_reminder lib/potok_ide/social.ex
   """
   use Mix.Task
+
+  alias PotokIdeWeb.HelpGuides
 
   @shortdoc "Reminds of the landing page, domain map and help after a change"
 
@@ -89,13 +94,33 @@ defmodule Mix.Tasks.Potok.SyncReminder do
   defp pages_left_behind(paths) do
     code = Enum.reject(paths, &String.starts_with?(&1, page_files()))
 
-    Enum.filter(@pages, fn page ->
+    Enum.filter(pages(), fn page ->
       Enum.any?(code, &String.starts_with?(&1, page.after)) and
         not Enum.any?(paths, &String.starts_with?(&1, page.files))
     end)
   end
 
-  defp page_files, do: Enum.flat_map(@pages, & &1.files)
+  defp page_files, do: Enum.flat_map(pages(), & &1.files)
+
+  defp pages, do: @pages ++ guide_pages()
+
+  # A page counts as touched only by its own template: `help_guides.ex` holds
+  # what all three read from the code, so a change there says nothing of the
+  # diagrams of any one of them.
+  defp guide_pages do
+    for guide <- HelpGuides.guides() do
+      template = "lib/potok_ide_web/controllers/page_html/#{guide.template}.html.heex"
+
+      %{
+        name: "Help, how Potok works inside (/pomoc/#{guide.slug})",
+        where:
+          "#{template} and help_guides.ex, in the help_guides Gettext domain " <>
+            "(sr first, then the en msgid and mix potok.sr_cyrl)",
+        files: [template],
+        after: guide.watch
+      }
+    end
+  end
 
   defp changed_files do
     args = ~w(status --porcelain -z --no-renames --untracked-files=all)

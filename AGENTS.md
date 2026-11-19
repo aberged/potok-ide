@@ -7,7 +7,7 @@ This is a web application written using the Phoenix web framework.
 
 ### Landing page, domain map and help
 
-`/` (the landing page, for guests) and `/domain` (the map of the domain) describe the app to people who have not seen it, and `/pomoc` (the help page, with a tutorial per example organization at `/pomoc/<slug>`) shows how to use it, with pictures of the app. They are part of every change that makes them wrong or incomplete.
+`/` (the landing page, for guests) and `/domain` (the map of the domain) describe the app to people who have not seen it, and `/pomoc` (the help page, with a tutorial per example organization at `/pomoc/<slug>`) shows how to use it, with pictures of the app. Three more pages under the help show how Potok works inside, with diagrams drawn from the code (`PotokIdeWeb.HelpGuides`): `/pomoc/procesi-i-aplikacije`, `/pomoc/arhitektura-aplikacije` and `/pomoc/prava-pristupa`. They are all part of every change that makes them wrong or incomplete.
 
 - **Planning:** every plan has a short "Landing / domain / help" section: what changes on which page, or "not affected" and why.
 - **Changing:** update them in the same change, in every language (`sr` is the reference, then `mix potok.sr_cyrl`). The user edits the landing copy themselves: keep their wording and write new sentences in the same voice ("ti" in Serbian).
@@ -21,8 +21,13 @@ This is a web application written using the Phoenix web framework.
 | A rule: who may do what, what deleting does, how threads, inheritance or unread counts work | `DomainCopy.mechanisms/0`. No test sees these |
 | What apps can do: the app API, `potok_app_sdk.js` | `DomainCopy.apps/0` |
 | The core words: group, value, thread | `DomainCopy.core_labels/0`, `#landing-domain` |
+| What apps and processes can do and where they stop: the app API, a step or a trigger of a process, a limit, which process may call which | `/pomoc/procesi-i-aplikacije`: the three diagrams in `page_html/help_processes_apps.html.heex`, and `HelpGuides`. A test fails until the app API and the steps agree with the code. The arrows and sentences no test sees |
+| How an app runs: its frame, `potok_app_sdk.js`, the `GroupAppFrame` hook, `AppApi`, `AppData`, `AppValues`, a collection's rules, a limit the server keeps. Also the `potok-vite` template and the example app `potok-mleko`, in their own repositories | `/pomoc/arhitektura-aplikacije`: the three diagrams in `page_html/help_app_architecture.html.heex`, and `api/0` and `limits/0` in `HelpGuides`. A test fails until the app API agrees with the SDK; the numbers are read from the code. The diagrams and the two other repositories no test sees |
+| Who may do what and how it is worked out: `Access`, roles, manifests, inheriting members, blocks, threads, direct conversations | `/pomoc/prava-pristupa`: the three diagrams, "who changes what" and the special cases in `page_html/help_access.html.heex`. The calculator there asks `Access` itself (`HelpGuides.calc/0`), so only the words around it can go wrong. No test sees them |
 | How the app is built: a dependency, a process of its own, a daisyUI part taken up or dropped | `StackCopy.tools/0` (the page `/stack`). Tests see only a few of these; the reminder does not name this page |
 | A screen users see: a feature, a button, a label, a tab or a step that moved | `priv/static/HELP.sr.md` and the step-by-step tutorials of its examples in `priv/static/help/<slug>.sr.md` (then the `.en.md` texts and `mix potok.sr_cyrl`), and their pictures again: `help_shots/make.exs --only <names>` (see `help_shots/README.md`). Tests keep the three texts and the pictures in step, not the words |
+
+The three pages on how Potok works inside keep their words in the `help_guides` Gettext domain: write the Serbian (`sr`) first, bring the English msgid in line, then `mix potok.sr_cyrl`. A name from the code stays in Latin as `` `name` `` in a sentence and as a binding in a label of a diagram. `mix potok.sync_reminder` names each of them when the code it was drawn from changes (`watch` in `HelpGuides`) and its template does not.
 
 Usually not affected: fixes that restore what the pages already say, styling, refactors, tests, operations. `docs/potok-landing.html` is the user's own page and the app does not read it: leave it.
 

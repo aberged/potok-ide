@@ -3606,6 +3606,1118 @@
   }
 }
 
+/* The help's pages on how Potok works inside (`PotokIdeWeb.HelpGuides`,
+   `page_html/help_processes_apps`, `help_app_architecture`, `help_access`):
+   diagrams drawn in the page as SVG. A hue per actor, taken from the domain
+   map's (`.dm`, on the same element): Potok blue, an app teal, a process
+   purple, waiting amber; green allows and red denies. */
+@layer components {
+  .hg {
+    --hg-surface: var(--color-base-100);
+    --hg-fg: var(--color-base-content);
+    --hg-muted: var(--dm-muted);
+    --hg-line: var(--dm-line);
+    --hg-soft: color-mix(in oklab, var(--color-base-content) 5%, var(--color-base-100));
+    --hg-potok: var(--dm-accent);
+    --hg-app: var(--dm-group);
+    --hg-proc: var(--dm-content);
+    --hg-wait: var(--dm-calendar);
+    --hg-ok: #1d7a3e;
+    --hg-no: var(--dm-danger);
+    --hg-m0: var(--dm-account);
+    --hg-m1: var(--dm-accent);
+    --hg-m2: var(--dm-content);
+    --hg-potok-soft: color-mix(in oklab, var(--hg-potok) 12%, var(--color-base-100));
+    --hg-app-soft: color-mix(in oklab, var(--hg-app) 13%, var(--color-base-100));
+    --hg-proc-soft: color-mix(in oklab, var(--hg-proc) 12%, var(--color-base-100));
+    --hg-wait-soft: color-mix(in oklab, var(--hg-wait) 16%, var(--color-base-100));
+    --hg-ok-soft: color-mix(in oklab, var(--hg-ok) 14%, var(--color-base-100));
+    --hg-no-soft: color-mix(in oklab, var(--hg-no) 13%, var(--color-base-100));
+    display: grid;
+    gap: clamp(44px, 7vw, 64px);
+  }
+
+  [data-theme="dark"] .hg {
+    --hg-ok: #6fd292;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme]) .hg {
+      --hg-ok: #6fd292;
+    }
+  }
+
+  .hg-note {
+    max-width: 44rem;
+    margin-top: 12px;
+    color: var(--hg-muted);
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  .hg a:not([class]) {
+    color: var(--hg-potok);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .hg a:not([class]):focus-visible {
+    border-radius: 3px;
+    outline: 2px solid var(--hg-potok);
+    outline-offset: 2px;
+  }
+
+  .hg-section {
+    display: grid;
+    gap: 18px;
+    min-width: 0;
+  }
+
+  .hg-section > h2 {
+    font-size: clamp(21px, 3vw, 26px);
+    font-weight: 800;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  .hg-section h3 {
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.3;
+  }
+
+  .hg-section > p {
+    max-width: 68ch;
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  /* Who is who: a card per actor, in its hue. */
+  .hg-keys {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 22px 28px;
+  }
+
+  .hg-key {
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    min-width: 0;
+    padding-top: 12px;
+    border-top: 3px solid var(--c);
+  }
+
+  .hg-key h3 {
+    color: var(--c);
+  }
+
+  .hg-key p {
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .hg-key-potok {
+    --c: var(--hg-potok);
+  }
+
+  .hg-key-app {
+    --c: var(--hg-app);
+  }
+
+  .hg-key-proc {
+    --c: var(--hg-proc);
+  }
+
+  .hg-key-wait {
+    --c: var(--hg-wait);
+  }
+
+  /* A diagram: wider than a phone, so it scrolls sideways in its frame. */
+  .hg-fig {
+    min-width: 0;
+    padding: 18px;
+    border: 1px solid var(--hg-line);
+    border-radius: 14px;
+    background: var(--hg-surface);
+  }
+
+  .hg-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .hg-scroll svg {
+    display: block;
+    width: 100%;
+    min-width: var(--hg-min, 880px);
+    max-width: var(--hg-max, none);
+    height: auto;
+    margin-inline: auto;
+    fill: var(--hg-fg);
+  }
+
+  .hg-fig figcaption {
+    max-width: 78ch;
+    margin-top: 14px;
+    color: var(--hg-muted);
+    font-size: 14.5px;
+    line-height: 1.55;
+  }
+
+  .hg-swipe {
+    display: none;
+    margin-bottom: 8px;
+    color: var(--hg-muted);
+    font-size: 13px;
+  }
+
+  @media (max-width: 960px) {
+    .hg-swipe {
+      display: block;
+    }
+  }
+
+  .hg-steps {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px 8px;
+    font-size: 15px;
+  }
+
+  .hg-step-name {
+    padding: 2px 9px;
+    border: 1px solid var(--hg-proc);
+    border-radius: 999px;
+    background: var(--hg-proc-soft);
+    font-size: 13.5px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Where each one stops: a list per actor. */
+  .hg-limits {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 22px 32px;
+  }
+
+  .hg-limits > div {
+    min-width: 0;
+  }
+
+  .hg-limits h3 {
+    margin-bottom: 8px;
+  }
+
+  .hg-limits ul,
+  .hg-two ul {
+    display: grid;
+    gap: 6px;
+    padding-left: 18px;
+    font-size: 15px;
+    line-height: 1.5;
+    list-style: disc;
+  }
+
+  .hg-l-app h3 {
+    color: var(--hg-app);
+  }
+
+  .hg-l-proc h3 {
+    color: var(--hg-proc);
+  }
+
+  .hg-l-potok h3 {
+    color: var(--hg-potok);
+  }
+
+  /* The app API: a chip per method, by families. */
+  .hg-api-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 20px;
+    color: var(--hg-muted);
+    font-size: 14px;
+  }
+
+  .hg-api-legend > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hg-api-legend .hg-chip {
+    color: var(--hg-fg);
+  }
+
+  .hg-api {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 22px 32px;
+  }
+
+  .hg-fam {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .hg-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hg-chip {
+    padding: 2px 8px;
+    border: 1px solid var(--hg-line);
+    border-radius: 6px;
+    background: var(--hg-surface);
+    font: 500 12.5px/1.5 var(--dm-mono);
+    white-space: nowrap;
+  }
+
+  .hg-chip.hg-used {
+    border-color: var(--hg-app);
+    background: var(--hg-app-soft);
+  }
+
+  .hg-chip-guest {
+    margin-left: 6px;
+    color: var(--hg-potok);
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    vertical-align: 1px;
+  }
+
+  /* Limits: the number, then what it bounds. */
+  .hg-marks {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 0 40px;
+  }
+
+  .hg-marks li {
+    display: grid;
+    grid-template-columns: 9.5em 1fr;
+    gap: 14px;
+    min-width: 0;
+    padding: 10px 0;
+    border-top: 1px solid var(--hg-line);
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .hg-marks b {
+    color: var(--hg-potok);
+    font: 700 13.5px/1.6 var(--dm-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Who changes what, and the two lists under it. */
+  .hg-who {
+    display: grid;
+    border-top: 1px solid var(--hg-line);
+  }
+
+  .hg-who > div {
+    display: grid;
+    grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--hg-line);
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .hg-who dt {
+    font-weight: 700;
+  }
+
+  .hg-who dt,
+  .hg-who dd {
+    min-width: 0;
+  }
+
+  @media (max-width: 560px) {
+    .hg-who > div {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 4px;
+    }
+  }
+
+  .hg-two {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px 40px;
+  }
+
+  .hg-two h3 {
+    margin-bottom: 10px;
+  }
+
+  .hg-two ul {
+    gap: 8px;
+  }
+
+  /* The calculator of access rights (`assets/js/help_access.js`). */
+  .hg-calc {
+    display: grid;
+    grid-template-columns: minmax(240px, 270px) minmax(0, 1fr);
+    align-items: start;
+    gap: 20px;
+  }
+
+  @media (max-width: 860px) {
+    .hg-calc {
+      grid-template-columns: minmax(0, 1fr);
+    }
+  }
+
+  .hg-panel {
+    display: grid;
+    gap: 16px;
+    min-width: 0;
+    padding: 16px;
+    border: 1px solid var(--hg-line);
+    border-radius: 14px;
+    background: var(--hg-surface);
+  }
+
+  .hg-presets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .hg-preset {
+    padding: 4px 11px;
+    border: 1px solid var(--hg-line);
+    border-radius: 999px;
+    background: var(--hg-soft);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      transform 0.1s;
+  }
+
+  .hg-preset:hover {
+    border-color: var(--hg-potok);
+  }
+
+  .hg-preset:active {
+    transform: scale(0.97);
+  }
+
+  .hg-preset[aria-pressed="true"] {
+    border-color: var(--hg-potok);
+    background: var(--hg-potok-soft);
+  }
+
+  .hg-calc :is(button, input):focus-visible {
+    outline: 2px solid var(--hg-potok);
+    outline-offset: 2px;
+  }
+
+  .hg-calc fieldset {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+  }
+
+  .hg-calc legend {
+    margin-bottom: 6px;
+    color: var(--hg-muted);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .hg-sub {
+    padding-left: 24px;
+  }
+
+  .hg-summary {
+    display: grid;
+    gap: 8px;
+    padding-top: 14px;
+    border-top: 1px solid var(--hg-line);
+    font-size: 14.5px;
+  }
+
+  .hg-summary-who {
+    font-weight: 700;
+  }
+
+  .hg-summary-roles {
+    color: var(--hg-muted);
+    font-size: 13px;
+  }
+
+  .hg-summary-count {
+    font-size: 22px;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .hg-summary ul {
+    display: grid;
+    gap: 4px;
+  }
+
+  .hg-summary li {
+    display: grid;
+    grid-template-columns: 18px 1fr;
+    gap: 6px;
+  }
+
+  .hg-summary li small {
+    display: block;
+    color: var(--hg-muted);
+    font-size: 12.5px;
+  }
+
+  .hg-yes {
+    color: var(--hg-ok);
+    font-weight: 800;
+  }
+
+  .hg-nope {
+    color: var(--hg-no);
+    font-weight: 800;
+  }
+
+  .hg-calc-table {
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .hg-tablewrap {
+    min-width: 0;
+    overflow-x: auto;
+    border: 1px solid var(--hg-line);
+    border-radius: 14px;
+    background: var(--hg-surface);
+  }
+
+  .hg-tablewrap table {
+    width: 100%;
+    min-width: 760px;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  .hg-tablewrap :is(th, td) {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--hg-line);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .hg-tablewrap tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .hg-tablewrap thead th {
+    color: var(--hg-muted);
+    font-size: 12.5px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .hg-tablewrap thead th.hg-role {
+    text-align: center;
+  }
+
+  .hg-tablewrap thead th.hg-held {
+    background: var(--hg-potok-soft);
+    color: var(--hg-potok);
+  }
+
+  .hg-tablewrap td.hg-held {
+    background: color-mix(in oklab, var(--hg-potok-soft) 55%, transparent);
+  }
+
+  /* The permission stays in sight while the table scrolls sideways on a phone. */
+  .hg-perm,
+  .hg-tablewrap thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 170px;
+    padding-left: 12px;
+    background: var(--hg-surface);
+  }
+
+  .hg-perm b {
+    display: block;
+    font-weight: 600;
+  }
+
+  .hg-perm code {
+    padding: 0;
+    background: none;
+    color: var(--hg-muted);
+    font-size: 11px;
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .hg-cellc {
+    text-align: center !important;
+  }
+
+  .hg-cell {
+    width: 34px;
+    height: 28px;
+    border: 1px solid var(--hg-line);
+    border-radius: 7px;
+    background: var(--hg-surface);
+    color: var(--hg-muted);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition:
+      transform 0.1s,
+      background-color 0.15s,
+      border-color 0.15s;
+  }
+
+  .hg-cell:hover {
+    border-color: var(--hg-potok);
+  }
+
+  .hg-cell:active {
+    transform: scale(0.94);
+  }
+
+  .hg-cell.hg-allow,
+  .hg-mini.hg-allow {
+    border-color: var(--hg-ok);
+    background: var(--hg-ok-soft);
+    color: var(--hg-ok);
+  }
+
+  .hg-cell.hg-deny,
+  .hg-mini.hg-deny {
+    border-color: var(--hg-no);
+    background: var(--hg-no-soft);
+    color: var(--hg-no);
+  }
+
+  .hg-cell.hg-locked {
+    opacity: 0.75;
+    cursor: default;
+  }
+
+  .hg-cell.hg-locked:hover {
+    border-color: var(--hg-ok);
+  }
+
+  .hg-res {
+    width: 52px;
+    font-size: 15px;
+    text-align: center !important;
+  }
+
+  .hg-why {
+    min-width: 190px;
+    color: var(--hg-muted);
+    font-size: 13px;
+  }
+
+  .hg-why.hg-deny {
+    color: var(--hg-no);
+  }
+
+  .hg-calc-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+    color: var(--hg-muted);
+    font-size: 13px;
+  }
+
+  .hg-legend-cells {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hg-legend-cells span {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
+  .hg-mini {
+    display: inline-grid;
+    width: 22px;
+    height: 18px;
+    place-items: center;
+    border: 1px solid var(--hg-line);
+    border-radius: 5px;
+    font-size: 11px;
+    font-style: normal;
+    font-weight: 700;
+  }
+
+  .hg-linkbtn {
+    color: var(--hg-potok);
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* Where a page's facts come from. */
+  .hg-sources {
+    display: grid;
+    gap: 8px;
+    color: var(--hg-muted);
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .hg-source-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .hg .hp-others {
+    margin-top: 0;
+  }
+
+  .hg .hp-to-top {
+    width: fit-content;
+    margin-top: 0;
+  }
+
+  /* The diagrams. Shapes first, then lines, then words. */
+  .hg-defs {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+  }
+
+  .hg-server {
+    fill: var(--hg-soft);
+    stroke: var(--hg-line);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 5;
+  }
+
+  .hg-zone-frame {
+    fill: none;
+    stroke: var(--hg-app);
+    stroke-width: 1.2;
+    stroke-dasharray: 6 5;
+    stroke-opacity: 0.75;
+  }
+
+  .hg-people,
+  .hg-hd-person {
+    fill: var(--hg-surface);
+    stroke: var(--hg-muted);
+    stroke-width: 1.3;
+  }
+
+  .hg-col {
+    fill: var(--hg-surface);
+    stroke-width: 1.6;
+  }
+
+  .hg-col-app {
+    stroke: var(--hg-app);
+  }
+
+  .hg-col-potok {
+    stroke: var(--hg-potok);
+  }
+
+  .hg-col-proc {
+    stroke: var(--hg-proc);
+  }
+
+  .hg-frame {
+    fill: var(--hg-surface);
+    stroke: var(--hg-app);
+    stroke-width: 1.6;
+    stroke-dasharray: 7 5;
+  }
+
+  .hg-code {
+    fill: var(--hg-soft);
+    stroke: var(--hg-line);
+    stroke-width: 1;
+  }
+
+  .hg-band {
+    fill: var(--hg-potok-soft);
+    stroke: var(--hg-potok);
+    stroke-width: 0.8;
+    stroke-opacity: 0.5;
+  }
+
+  .hg-row-app {
+    fill: var(--hg-app-soft);
+  }
+
+  .hg-row-potok {
+    fill: var(--hg-potok-soft);
+  }
+
+  .hg-row-proc {
+    fill: var(--hg-proc-soft);
+  }
+
+  .hg-row-wait,
+  .hg-act-wait {
+    fill: var(--hg-wait-soft);
+    stroke: var(--hg-wait);
+    stroke-width: 1.1;
+  }
+
+  .hg-row-none {
+    fill: none;
+    stroke: var(--hg-line);
+    stroke-width: 1.1;
+    stroke-dasharray: 4 4;
+  }
+
+  .hg-row-hub,
+  .hg-hd-potok,
+  .hg-node-root,
+  .hg-ent-key,
+  .hg-dec,
+  .hg-pill {
+    fill: var(--hg-potok-soft);
+    stroke: var(--hg-potok);
+    stroke-width: 1.4;
+  }
+
+  .hg-card-app,
+  .hg-hd-app {
+    fill: var(--hg-app-soft);
+    stroke: var(--hg-app);
+    stroke-width: 1.2;
+  }
+
+  .hg-hd-proc,
+  .hg-chip-proc,
+  .hg-chip-pub,
+  .hg-act-run {
+    fill: var(--hg-proc-soft);
+    stroke: var(--hg-proc);
+    stroke-width: 1.2;
+  }
+
+  .hg-chip-pub {
+    stroke-width: 2.4;
+  }
+
+  .hg-chip-potok {
+    fill: var(--hg-potok-soft);
+    stroke: var(--hg-potok);
+    stroke-width: 1.1;
+  }
+
+  .hg-act-call {
+    fill: var(--hg-line);
+    stroke: var(--hg-muted);
+    stroke-width: 1.2;
+  }
+
+  .hg-node,
+  .hg-ent,
+  .hg-step {
+    fill: var(--hg-surface);
+    stroke: var(--hg-line);
+    stroke-width: 1.4;
+  }
+
+  .hg-node-soft {
+    fill: var(--hg-soft);
+    stroke: var(--hg-line);
+    stroke-width: 1.4;
+  }
+
+  .hg-out-ok {
+    fill: var(--hg-ok-soft);
+    stroke: var(--hg-ok);
+    stroke-width: 1.3;
+  }
+
+  .hg-out-no {
+    fill: var(--hg-no-soft);
+    stroke: var(--hg-no);
+    stroke-width: 1.3;
+  }
+
+  .hg-out-mid {
+    fill: var(--hg-soft);
+    stroke: var(--hg-muted);
+    stroke-width: 1.3;
+  }
+
+  .hg-own-m0 {
+    fill: var(--hg-m0);
+  }
+
+  .hg-own-m1 {
+    fill: var(--hg-m1);
+  }
+
+  .hg-own-m2 {
+    fill: var(--hg-m2);
+  }
+
+  .hg-inh-m1 {
+    fill: var(--hg-surface);
+    stroke: var(--hg-m1);
+    stroke-width: 1.6;
+  }
+
+  .hg-inh-m2 {
+    fill: var(--hg-surface);
+    stroke: var(--hg-m2);
+    stroke-width: 1.6;
+  }
+
+  .hg-av {
+    fill: var(--hg-soft);
+    stroke: var(--hg-fg);
+    stroke-width: 1.4;
+  }
+
+  .hg-av-inh {
+    fill: var(--hg-surface);
+    stroke: var(--hg-fg);
+    stroke-width: 1.4;
+    stroke-dasharray: 3 3;
+  }
+
+  .hg-edge {
+    fill: none;
+    stroke: var(--hg-muted);
+    stroke-width: 1.2;
+    stroke-opacity: 0.6;
+  }
+
+  .hg-lifeline {
+    stroke: var(--hg-line);
+    stroke-width: 1.4;
+    stroke-dasharray: 3 4;
+  }
+
+  .hg-phase-rule {
+    stroke: var(--hg-line);
+    stroke-width: 1;
+  }
+
+  .hg-x-mark {
+    stroke: var(--hg-muted);
+    stroke-width: 2;
+    stroke-linecap: round;
+  }
+
+  .hg-ar {
+    fill: none;
+    stroke-width: 1.6;
+  }
+
+  .hg-dash {
+    stroke-dasharray: 5 4;
+  }
+
+  .hg-s-fg {
+    stroke: var(--hg-fg);
+  }
+
+  .hg-s-app {
+    stroke: var(--hg-app);
+  }
+
+  .hg-s-potok {
+    stroke: var(--hg-potok);
+  }
+
+  .hg-s-proc {
+    stroke: var(--hg-proc);
+  }
+
+  .hg-s-wait {
+    stroke: var(--hg-wait);
+  }
+
+  .hg-s-muted {
+    stroke: var(--hg-muted);
+  }
+
+  .hg-s-line {
+    stroke: var(--hg-line);
+    stroke-width: 1.2;
+  }
+
+  .hg-s-ok {
+    stroke: var(--hg-ok);
+  }
+
+  .hg-s-no {
+    stroke: var(--hg-no);
+  }
+
+  .hg-s-m1 {
+    stroke: var(--hg-m1);
+  }
+
+  .hg-s-m2 {
+    stroke: var(--hg-m2);
+  }
+
+  .hg-f-fg {
+    fill: var(--hg-fg);
+  }
+
+  .hg-f-app {
+    fill: var(--hg-app);
+  }
+
+  .hg-f-potok {
+    fill: var(--hg-potok);
+  }
+
+  .hg-f-proc {
+    fill: var(--hg-proc);
+  }
+
+  .hg-f-wait,
+  .hg-f-wait-ink {
+    fill: var(--hg-wait);
+  }
+
+  .hg-f-muted {
+    fill: var(--hg-muted);
+  }
+
+  .hg-f-ok {
+    fill: var(--hg-ok);
+  }
+
+  .hg-f-no {
+    fill: var(--hg-no);
+  }
+
+  .hg-f-m0 {
+    fill: var(--hg-m0);
+  }
+
+  .hg-f-m1 {
+    fill: var(--hg-m1);
+  }
+
+  .hg-f-m2 {
+    fill: var(--hg-m2);
+  }
+
+  .hg-f-surface {
+    fill: var(--hg-surface);
+  }
+
+  .hg-t-title {
+    font: 700 16px var(--font-brand);
+  }
+
+  .hg-t-row {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .hg-t-sub {
+    fill: var(--hg-muted);
+    font-size: 11px;
+  }
+
+  .hg-t-mono {
+    font: 500 10.5px var(--dm-mono);
+  }
+
+  .hg-t-mono-b {
+    font: 700 12px var(--dm-mono);
+  }
+
+  .hg-t-lab {
+    font-size: 10.5px;
+    font-weight: 600;
+  }
+
+  .hg-t-chip {
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+
+  .hg-t-note {
+    fill: var(--hg-muted);
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  .hg-t-band {
+    fill: var(--hg-potok);
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+  }
+
+  .hg-t-phase {
+    font: 700 12px var(--font-brand);
+  }
+
+  .hg-t-badge {
+    font-size: 10.5px;
+    font-weight: 700;
+  }
+
+  .hg-t-av {
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .hg-t-role {
+    fill: var(--hg-muted);
+    font-size: 9.5px;
+    font-weight: 600;
+  }
+
+  .hg-halo {
+    paint-order: stroke;
+    stroke: var(--hg-surface);
+    stroke-width: 5px;
+    stroke-linejoin: round;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hg :is(.hg-preset, .hg-cell) {
+    transition: none;
+  }
+}
+
 /* Maps (`location_picker.js`): Leaflet's container in the theme's colours,
    and the light OpenStreetMap tiles turned dark in the dark theme. */
 .potok-map.leaflet-container {

@@ -1,0 +1,1103 @@
+<%!--
+  The help's page on who talks to whom between an app, a group and the processes. It describes the code:
+  see `PotokIdeWeb.HelpGuides` before changing it, and when the code it was
+  drawn from changes (`watch` there, which `mix potok.sync_reminder` follows).
+--%>
+<.help_guide_frame
+  guide={@guide}
+  flash={@flash}
+  current_scope={@current_scope}
+  current_locale={@current_locale}
+  available_locales={@available_locales}
+>
+  <section class="hg-section" aria-label={dgettext("help_guides", "Who is who")}>
+    <div class="hg-keys">
+      <div class="hg-key hg-key-potok">
+        <h3>{dgettext("help_guides", "Potok")}</h3>
+        <p>
+          {dgettext(
+            "help_guides",
+            "Groups in a tree, members and roles, values. A message in a chat is a value, an app's piece of data is a value, and a thread is a group again. Permissions come from the manifest of the group or of its nearest ancestor."
+          )}
+        </p>
+      </div>
+      <div class="hg-key hg-key-app">
+        <h3>{dgettext("help_guides", "App")}</h3>
+        <p>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "HTML in a group's description, the default or an alternative one. It runs at the viewer's, in a frame that does not see Potok's page, and talks to Potok only through the App API. It is made, say, from the `potok-vite` template."
+            )
+          } />
+        </p>
+      </div>
+      <div class="hg-key hg-key-proc">
+        <h3>{dgettext("help_guides", "Process")}</h3>
+        <p>
+          {dgettext(
+            "help_guides",
+            "A drawing with a trigger, steps and ends. The group's editors draw it on the Processes tab, and an app can carry one of its own, in the rule of a collection. It runs on the server, under a profile of its own that belongs to no account."
+          )}
+        </p>
+      </div>
+      <div class="hg-key hg-key-wait">
+        <h3>{dgettext("help_guides", "Waiting for a person")}</h3>
+        <p>
+          {dgettext(
+            "help_guides",
+            "An instance of a process stands at a form or a decision until someone answers. That is where the number on the hand in the bar (Requests), the “Waiting for you” button in the group's header and the yellow mark on the rows of groups come from."
+          )}
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Who talks to whom")}</h2>
+    <figure id="hg-fig-flow" class="hg-fig" style="--hg-min: 900px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1200 690"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "Three columns: the app in the browser, the group in Potok and the processes on the server. Every link of the app and of the processes with the group goes through the check of permissions, and the app and a process never see each other directly."
+            )
+          }
+        >
+          <rect class="hg-server" x="384" y="96" width="804" height="580" rx="16" />
+          <text class="hg-t-lab hg-f-muted" x="400" y="667">
+            {dgettext("help_guides", "Potok's server")}
+          </text>
+          <text class="hg-t-lab hg-f-muted" x="24" y="667">
+            {dgettext("help_guides", "the viewer's browser")}
+          </text>
+
+          <rect class="hg-people" x="24" y="20" width="1152" height="44" rx="10" />
+          <text class="hg-t-row" x="44" y="47">{dgettext("help_guides", "People")}</text>
+          <text class="hg-t-sub" x="92" y="47">
+            {dgettext(
+              "help_guides",
+              "members of the group; a guest only reads, where the group is public"
+            )}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="164"
+            y1="64"
+            x2="164"
+            y2="118"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="172" y="95">{dgettext("help_guides", "uses the app")}</text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="584"
+            y1="64"
+            x2="584"
+            y2="118"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="592" y="95">
+            {dgettext("help_guides", "writes, votes, makes sub-groups")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="890"
+            y1="64"
+            x2="890"
+            y2="118"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="898" y="95">
+            {dgettext("help_guides", "Start, form, outcome")}
+          </text>
+          <line
+            class="hg-ar hg-s-wait"
+            x1="1152"
+            y1="120"
+            x2="1152"
+            y2="66"
+            marker-end="url(#hg-m-wait)"
+          />
+          <text class="hg-t-lab hg-f-wait-ink" x="1144" y="95" text-anchor="end">
+            {dgettext("help_guides", "push, “Waiting for you”")}
+          </text>
+
+          <rect class="hg-col hg-col-app" x="24" y="120" width="280" height="520" rx="12" />
+          <rect class="hg-col hg-col-potok" x="424" y="120" width="320" height="520" rx="12" />
+          <rect class="hg-col hg-col-proc" x="864" y="120" width="312" height="520" rx="12" />
+
+          <text class="hg-t-title hg-f-app" x="44" y="152">{dgettext("help_guides", "App")}</text>
+          <text class="hg-t-sub" x="44" y="170">
+            {dgettext("help_guides", "HTML in a group's description, in its own frame")}
+          </text>
+          <text class="hg-t-title hg-f-potok" x="584" y="152" text-anchor="middle">
+            {dgettext("help_guides", "The group in Potok")}
+          </text>
+          <text class="hg-t-sub" x="584" y="170" text-anchor="middle">
+            {dgettext("help_guides", "permissions from the group's manifest")}
+          </text>
+          <text class="hg-t-title hg-f-proc" x="884" y="152">
+            {dgettext("help_guides", "Processes")}
+          </text>
+          <text class="hg-t-sub" x="884" y="170">
+            {dgettext("help_guides", "on the server, under their own profile")}
+          </text>
+
+          <rect class="hg-band" x="436" y="184" width="18" height="400" rx="4" />
+          <rect class="hg-band" x="714" y="184" width="18" height="400" rx="4" />
+          <text
+            class="hg-t-band"
+            transform="translate(448.5 384) rotate(-90)"
+            text-anchor="middle"
+          >
+            {dgettext("help_guides", "PERMISSION CHECK")}
+          </text>
+          <text
+            class="hg-t-band"
+            transform="translate(726.5 384) rotate(-90)"
+            text-anchor="middle"
+          >
+            {dgettext("help_guides", "PERMISSION CHECK")}
+          </text>
+
+          <rect class="hg-row-potok" x="464" y="190" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="213">{dgettext("help_guides", "App data")}</text>
+          <text class="hg-t-sub" x="478" y="230">
+            {dgettext("help_guides", "values by collections, under rules")}
+          </text>
+
+          <rect class="hg-row-potok" x="464" y="256" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="279">{dgettext("help_guides", "Chat")}</text>
+          <text class="hg-t-sub" x="478" y="296">
+            {dgettext("help_guides", "messages are values, threads are groups")}
+          </text>
+
+          <rect class="hg-row-potok" x="464" y="322" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="345">{dgettext("help_guides", "Sub-groups")}</text>
+          <text class="hg-t-sub" x="478" y="362">
+            {dgettext("help_guides", "the tree below; apps' records")}
+          </text>
+
+          <rect class="hg-row-potok" x="464" y="388" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="411">
+            {dgettext("help_guides", "Members and roles")}
+          </text>
+          <text class="hg-t-sub" x="478" y="428">
+            {dgettext("help_guides", "who may do what; notices and push")}
+          </text>
+
+          <rect class="hg-row-potok" x="464" y="454" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="477">
+            {dgettext("help_guides", "Entities and group fields")}
+          </text>
+          <text class="hg-t-sub" x="478" y="494">
+            {dgettext("help_guides", "types for processes; shared counters")}
+          </text>
+
+          <rect class="hg-row-wait" x="464" y="520" width="240" height="52" rx="8" />
+          <text class="hg-t-row" x="478" y="543">
+            {dgettext("help_guides", "What waits for whom")}
+          </text>
+          <text class="hg-t-sub" x="478" y="560">
+            {dgettext("help_guides", "the “Waiting for you” count, the Processes tab")}
+          </text>
+
+          <rect class="hg-row-app" x="40" y="190" width="248" height="52" rx="8" />
+          <text class="hg-t-row" x="54" y="213">
+            {dgettext("help_guides", "Its own collections")}
+          </text>
+          <text class="hg-t-mono hg-f-app" x="54" y="230">insertValue · listValues</text>
+
+          <rect class="hg-row-none" x="40" y="256" width="248" height="52" rx="8" />
+          <text class="hg-t-note" x="54" y="286">
+            {dgettext("help_guides", "does not read the chat")}
+          </text>
+
+          <rect class="hg-row-app" x="40" y="322" width="248" height="52" rx="8" />
+          <text class="hg-t-row" x="54" y="345">
+            {dgettext("help_guides", "Groups below it")}
+          </text>
+          <text class="hg-t-mono hg-f-app" x="54" y="362">listSubgroups · createChildren</text>
+
+          <rect class="hg-row-app" x="40" y="388" width="248" height="52" rx="8" />
+          <text class="hg-t-row" x="54" y="411">{dgettext("help_guides", "Who is looking")}</text>
+          <text class="hg-t-mono hg-f-app" x="54" y="428">getCurrentProfile · listRoles</text>
+
+          <rect class="hg-row-none" x="40" y="454" width="248" height="52" rx="8" />
+          <text class="hg-t-note" x="54" y="484">
+            {dgettext("help_guides", "does not touch group fields")}
+          </text>
+
+          <rect class="hg-row-wait" x="40" y="520" width="248" height="52" rx="8" />
+          <text class="hg-t-row" x="54" y="543">
+            {dgettext("help_guides", "What waits for the viewer")}
+          </text>
+          <text class="hg-t-mono hg-f-app" x="54" y="560">listWaiting · completeTask</text>
+
+          <rect class="hg-row-proc" x="880" y="190" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="213">
+            {dgettext("help_guides", "A new app value")}
+          </text>
+          <text class="hg-t-sub" x="894" y="230">
+            {dgettext("help_guides", "trigger, for a drawing or an app's rule")}
+          </text>
+
+          <rect class="hg-row-proc" x="880" y="256" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="279">
+            {dgettext("help_guides", "A message in the chat")}
+          </text>
+          <text class="hg-t-sub" x="894" y="296">
+            {dgettext("help_guides", "trigger: a word or a role · step: writes")}
+          </text>
+
+          <rect class="hg-row-proc" x="880" y="322" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="345">{dgettext("help_guides", "Sub-group")}</text>
+          <text class="hg-t-sub" x="894" y="362">
+            {dgettext("help_guides", "trigger: a new sub-group · step: makes one")}
+          </text>
+
+          <rect class="hg-row-proc" x="880" y="388" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="411">
+            {dgettext("help_guides", "A person and a role")}
+          </text>
+          <text class="hg-t-sub" x="894" y="428">
+            {dgettext("help_guides", "step: form, decision, push to a role")}
+          </text>
+
+          <rect class="hg-row-proc" x="880" y="454" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="477">
+            {dgettext("help_guides", "An entity and a group field")}
+          </text>
+          <text class="hg-t-sub" x="894" y="494">
+            {dgettext("help_guides", "an entity types the input · step: changes a field")}
+          </text>
+
+          <rect class="hg-row-wait" x="880" y="520" width="280" height="52" rx="8" />
+          <text class="hg-t-row" x="894" y="543">
+            {dgettext("help_guides", "An instance waits for a person")}
+          </text>
+          <text class="hg-t-sub" x="894" y="560">
+            {dgettext("help_guides", "at a form or a decision, until the deadline")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="288"
+            y1="209"
+            x2="464"
+            y2="209"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-lab hg-f-app" x="362" y="202" text-anchor="middle">
+            {dgettext("help_guides", "writes into its own")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="464"
+            y1="223"
+            x2="288"
+            y2="223"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="362" y="237" text-anchor="middle">
+            {dgettext("help_guides", "live")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="288"
+            y1="341"
+            x2="464"
+            y2="341"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-lab hg-f-app" x="362" y="334" text-anchor="middle">
+            {dgettext("help_guides", "makes, if it may")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="464"
+            y1="355"
+            x2="288"
+            y2="355"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="362" y="369" text-anchor="middle">
+            {dgettext("help_guides", "reads")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="464"
+            y1="414"
+            x2="288"
+            y2="414"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="362" y="407" text-anchor="middle">
+            {dgettext("help_guides", "profile, roles")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-app"
+            x1="288"
+            y1="539"
+            x2="464"
+            y2="539"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-lab hg-f-app" x="362" y="532" text-anchor="middle">
+            {dgettext("help_guides", "asks, picks an outcome")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="464"
+            y1="553"
+            x2="288"
+            y2="553"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-mono hg-f-potok" x="362" y="567" text-anchor="middle">onWaiting</text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="704"
+            y1="216"
+            x2="880"
+            y2="216"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="806" y="209" text-anchor="middle">
+            {dgettext("help_guides", "starts")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="704"
+            y1="275"
+            x2="880"
+            y2="275"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="806" y="268" text-anchor="middle">
+            {dgettext("help_guides", "starts")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="880"
+            y1="289"
+            x2="704"
+            y2="289"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="806" y="303" text-anchor="middle">
+            {dgettext("help_guides", "writes")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="704"
+            y1="341"
+            x2="880"
+            y2="341"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="806" y="334" text-anchor="middle">
+            {dgettext("help_guides", "starts")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="880"
+            y1="355"
+            x2="704"
+            y2="355"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="806" y="369" text-anchor="middle">
+            {dgettext("help_guides", "makes")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="880"
+            y1="414"
+            x2="704"
+            y2="414"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="806" y="407" text-anchor="middle">
+            {dgettext("help_guides", "asks, sends a push")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-potok"
+            x1="704"
+            y1="473"
+            x2="880"
+            y2="473"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="806" y="466" text-anchor="middle">
+            {dgettext("help_guides", "types, values")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="880"
+            y1="487"
+            x2="704"
+            y2="487"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="806" y="501" text-anchor="middle">
+            {dgettext("help_guides", "changes a field")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="880"
+            y1="539"
+            x2="704"
+            y2="539"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="806" y="532" text-anchor="middle">
+            {dgettext("help_guides", "waits for someone")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="704"
+            y1="553"
+            x2="880"
+            y2="553"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="806" y="567" text-anchor="middle">
+            {dgettext("help_guides", "answer")}
+          </text>
+
+          <text class="hg-t-note" x="44" y="606">
+            {dgettext("help_guides", "It does not see Potok's page,")}
+          </text>
+          <text class="hg-t-note" x="44" y="622">
+            {dgettext("help_guides", "its cookies or the drawings of processes.")}
+          </text>
+          <text class="hg-t-note" x="584" y="606" text-anchor="middle">
+            {dgettext("help_guides", "The server checks again")}
+          </text>
+          <text class="hg-t-note" x="584" y="622" text-anchor="middle">
+            {dgettext("help_guides", "every call and every step.")}
+          </text>
+          <text class="hg-t-note" x="884" y="606">
+            {dgettext("help_guides", "Other triggers: a schedule, Start,")}
+          </text>
+          <text class="hg-t-note" x="884" y="622">
+            {dgettext("help_guides", "a call from another process, a signal.")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        {dgettext(
+          "help_guides",
+          "Every arrow that enters the group goes through the check of permissions, on the app's side and on the processes' side. An app writes only into its own collections and does not read the chat. A process writes as a member, under its own profile, and people answer it in Potok's dialogs and on the Processes tab. The yellow row is one flow through all three columns: an instance waits for a person, Potok counts that, and the app can show it and let the viewer pick an outcome, with no sight of the drawing."
+        )}
+      </figcaption>
+    </figure>
+    <p id="hg-steps" class="hg-steps">
+      <span>
+        {dgettext(
+          "help_guides",
+          "The picture shows the steps that touch the group. All the steps a process is drawn from:"
+        )}
+      </span>
+      <span :for={name <- @steps} class="hg-step-name">{name}</span>
+    </p>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "One fault, from a tap to a message")}</h2>
+    <p>
+      <.hg_text
+        text={
+          dgettext(
+            "help_guides",
+            "The example is Zgrada Cvetna 12 from the help, with the processes “Reporting a fault” and “Repairer” (<a1>steps 9 and 10</a1>). One thing is added here: the report is started, and its first outcome picked, by an app in the building's description. In the help that is done on the Processes tab, and the process is the same either way."
+          )
+        }
+        links={%{"a1" => "/pomoc/zgrada#kvar"}}
+      />
+    </p>
+    <figure id="hg-fig-seq" class="hg-fig" style="--hg-min: 880px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 1100 820"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "A sequence: a resident starts a fault report from the app, the manager picks an outcome in the app, the report calls the process Repairer, which hands back the entity Termin, and a message arrives in the fault's sub-group."
+            )
+          }
+        >
+          <rect class="hg-server" x="522" y="6" width="572" height="806" rx="14" />
+          <text class="hg-t-lab hg-f-muted" x="1082" y="805" text-anchor="end">
+            {dgettext("help_guides", "Potok's server")}
+          </text>
+
+          <rect class="hg-hd hg-hd-person" x="10" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row" x="80" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Resident")}
+          </text>
+          <text class="hg-t-sub" x="80" y="51" text-anchor="middle">
+            {dgettext("help_guides", "a member of the building")}
+          </text>
+          <rect class="hg-hd hg-hd-person" x="170" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row" x="240" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Manager")}
+          </text>
+          <text class="hg-t-sub" x="240" y="51" text-anchor="middle">
+            {dgettext("help_guides", "the role that decides")}
+          </text>
+          <rect class="hg-hd hg-hd-app" x="340" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row hg-f-app" x="410" y="35" text-anchor="middle">
+            {dgettext("help_guides", "App")}
+          </text>
+          <text class="hg-t-sub" x="410" y="51" text-anchor="middle">
+            {dgettext("help_guides", "in the building's description")}
+          </text>
+          <rect class="hg-hd hg-hd-potok" x="540" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row hg-f-potok" x="610" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Potok")}
+          </text>
+          <text class="hg-t-sub" x="610" y="51" text-anchor="middle">
+            {dgettext("help_guides", "Zgrada Cvetna 12")}
+          </text>
+          <rect class="hg-hd hg-hd-proc" x="730" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row hg-f-proc" x="800" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Reporting a fault")}
+          </text>
+          <text class="hg-t-sub" x="800" y="51" text-anchor="middle">
+            {dgettext("help_guides", "a drawn process")}
+          </text>
+          <rect class="hg-hd hg-hd-proc" x="915" y="16" width="140" height="44" rx="10" />
+          <text class="hg-t-row hg-f-proc" x="985" y="35" text-anchor="middle">
+            {dgettext("help_guides", "Repairer")}
+          </text>
+          <text class="hg-t-sub" x="985" y="51" text-anchor="middle">
+            {dgettext("help_guides", "another process calls it")}
+          </text>
+
+          <line class="hg-lifeline" x1="80" y1="60" x2="80" y2="792" />
+          <line class="hg-lifeline" x1="240" y1="60" x2="240" y2="792" />
+          <line class="hg-lifeline" x1="410" y1="60" x2="410" y2="792" />
+          <line class="hg-lifeline" x1="610" y1="60" x2="610" y2="792" />
+          <line class="hg-lifeline" x1="800" y1="60" x2="800" y2="792" />
+          <line class="hg-lifeline" x1="985" y1="60" x2="985" y2="792" />
+
+          <line class="hg-phase-rule" x1="4" y1="70" x2="1096" y2="70" />
+          <line class="hg-phase-rule" x1="4" y1="300" x2="1096" y2="300" />
+          <line class="hg-phase-rule" x1="4" y1="496" x2="1096" y2="496" />
+          <line class="hg-phase-rule" x1="4" y1="692" x2="1096" y2="692" />
+          <text class="hg-t-phase hg-halo" x="14" y="88">
+            {dgettext("help_guides", "1 · A resident starts a report from the app")}
+          </text>
+          <text class="hg-t-phase hg-halo" x="14" y="318">
+            {dgettext("help_guides", "2 · The manager picks an outcome in the app")}
+          </text>
+          <text class="hg-t-phase hg-halo" x="14" y="514">
+            {dgettext("help_guides", "3 · The report calls the Repairer and waits")}
+          </text>
+          <text class="hg-t-phase hg-halo" x="14" y="710">
+            {dgettext("help_guides", "4 · Everyone in the sub-group finds out")}
+          </text>
+
+          <rect class="hg-act-run" x="795" y="250" width="10" height="94" />
+          <rect class="hg-act-wait" x="795" y="344" width="10" height="136" />
+          <rect class="hg-act-run" x="795" y="480" width="10" height="60" />
+          <rect class="hg-act-call" x="795" y="540" width="10" height="136" />
+          <rect class="hg-act-run" x="795" y="676" width="10" height="60" />
+          <rect class="hg-act-run" x="980" y="540" width="10" height="34" />
+          <rect class="hg-act-wait" x="980" y="574" width="10" height="68" />
+          <rect class="hg-act-run" x="980" y="642" width="10" height="34" />
+
+          <line
+            class="hg-ar hg-s-fg"
+            x1="80"
+            y1="114"
+            x2="410"
+            y2="114"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="325" y="108" text-anchor="middle">
+            {dgettext("help_guides", "taps “Report a fault”")}
+          </text>
+          <line
+            class="hg-ar hg-s-app"
+            x1="410"
+            y1="148"
+            x2="610"
+            y2="148"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-mono hg-f-app" x="510" y="142" text-anchor="middle">
+            openProcessStart
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="182"
+            x2="80"
+            y2="182"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="325" y="176" text-anchor="middle">
+            {dgettext("help_guides", "Potok's Start dialog")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="80"
+            y1="216"
+            x2="610"
+            y2="216"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="325" y="210" text-anchor="middle">
+            {dgettext("help_guides", "the fault's title and description")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="250"
+            x2="795"
+            y2="250"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="702" y="244" text-anchor="middle">
+            {dgettext("help_guides", "checks who may, starts")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="795"
+            y1="284"
+            x2="610"
+            y2="284"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="702" y="278" text-anchor="middle">
+            {dgettext("help_guides", "sub-group “Fault: lift”")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="795"
+            y1="344"
+            x2="610"
+            y2="344"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="702" y="338" text-anchor="middle">
+            {dgettext("help_guides", "a decision waits for the manager")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="378"
+            x2="410"
+            y2="378"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-mono hg-f-potok" x="510" y="372" text-anchor="middle">onWaiting</text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="240"
+            y1="412"
+            x2="410"
+            y2="412"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="325" y="406" text-anchor="middle">
+            {dgettext("help_guides", "“Calling a repairer”")}
+          </text>
+          <line
+            class="hg-ar hg-s-app"
+            x1="410"
+            y1="446"
+            x2="610"
+            y2="446"
+            marker-end="url(#hg-m-app)"
+          />
+          <text class="hg-t-mono hg-f-app" x="510" y="440" text-anchor="middle">
+            completeTask
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="480"
+            x2="795"
+            y2="480"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="702" y="474" text-anchor="middle">
+            {dgettext("help_guides", "the decision's outcome")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="805"
+            y1="540"
+            x2="980"
+            y2="540"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="892" y="534" text-anchor="middle">
+            {dgettext("help_guides", "call: fault, deadline 7 days")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="980"
+            y1="574"
+            x2="610"
+            y2="574"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="892" y="568" text-anchor="middle">
+            {dgettext("help_guides", "a decision on the Processes tab")}
+          </text>
+          <line
+            class="hg-ar hg-s-fg"
+            x1="240"
+            y1="608"
+            x2="610"
+            y2="608"
+            marker-end="url(#hg-m-fg)"
+          />
+          <text class="hg-t-lab" x="510" y="602" text-anchor="middle">
+            {dgettext("help_guides", "“Agreed” and a comment")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="642"
+            x2="980"
+            y2="642"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="892" y="636" text-anchor="middle">
+            {dgettext("help_guides", "outcome and comment")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="980"
+            y1="676"
+            x2="805"
+            y2="676"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="892" y="670" text-anchor="middle">
+            {dgettext("help_guides", "end “Agreed”, Termin")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="795"
+            y1="736"
+            x2="610"
+            y2="736"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="702" y="730" text-anchor="middle">
+            {dgettext("help_guides", "“The repairer is coming.” + the note")}
+          </text>
+          <line
+            class="hg-ar hg-s-potok"
+            x1="610"
+            y1="770"
+            x2="80"
+            y2="770"
+            marker-end="url(#hg-m-potok)"
+          />
+          <text class="hg-t-lab hg-f-potok" x="325" y="764" text-anchor="middle">
+            {dgettext("help_guides", "live and push")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        {dgettext(
+          "help_guides",
+          "The app's work is teal, Potok's blue, a process's purple, and people are in the color of the text. The yellow part of a bar means the instance waits for a person, the gray one that it waits for the process it called. The app sees the drawing at no step, and the Repairer hands back to the report only the entity Termin, whose note the manager writes with the decision."
+        )}
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Processes among themselves")}</h2>
+    <p>
+      {dgettext(
+        "help_guides",
+        "A process talks to another process only by a step drawn for it, a call or a signal. What a process writes, a message or a sub-group, starts no process, so two processes cannot spin in a circle by accident."
+      )}
+    </p>
+    <figure id="hg-fig-calls" class="hg-fig" style="--hg-min: 640px; --hg-max: 900px">
+      <div class="hg-swipe">{dgettext("help_guides", "The picture scrolls left and right.")}</div>
+      <div class="hg-scroll">
+        <svg
+          viewBox="0 0 880 470"
+          role="img"
+          aria-label={
+            dgettext(
+              "help_guides",
+              "A tree of groups: the public process Repairer in Zgrada Cvetna 12 is called by processes of the group above and of the group below, but not of the neighboring building. A message a process writes does not start another process."
+            )
+          }
+        >
+          <line class="hg-edge" x1="450" y1="50" x2="450" y2="86" />
+          <path class="hg-edge" d="M450 158 V184 H250 V222" />
+          <path class="hg-edge" d="M450 184 H680 V222" />
+          <line class="hg-edge" x1="170" y1="318" x2="170" y2="370" />
+
+          <rect class="hg-node-root" x="380" y="14" width="140" height="36" rx="18" />
+          <text class="hg-t-row hg-f-potok" x="450" y="37" text-anchor="middle">
+            {dgettext("help_guides", "Root")}
+          </text>
+
+          <rect class="hg-node" x="300" y="86" width="300" height="72" rx="12" />
+          <text class="hg-t-row" x="316" y="108">
+            {dgettext("help_guides", "Local community")}
+          </text>
+          <rect class="hg-chip-proc" x="316" y="120" width="170" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="401" y="137" text-anchor="middle">
+            {dgettext("help_guides", "Yearly check")}
+          </text>
+
+          <rect class="hg-node" x="60" y="222" width="380" height="96" rx="12" />
+          <text class="hg-t-row" x="76" y="244">
+            {dgettext("help_guides", "Zgrada Cvetna 12")}
+          </text>
+          <rect class="hg-chip-proc" x="76" y="258" width="136" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="144" y="275" text-anchor="middle">
+            {dgettext("help_guides", "Reporting a fault")}
+          </text>
+          <rect class="hg-chip-pub" x="272" y="258" width="152" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="348" y="275" text-anchor="middle">
+            {dgettext("help_guides", "Repairer · public")}
+          </text>
+          <text class="hg-t-sub" x="76" y="306">
+            {dgettext("help_guides", "a signal and a group field stay here")}
+          </text>
+
+          <rect class="hg-node" x="520" y="222" width="320" height="72" rx="12" />
+          <text class="hg-t-row" x="536" y="244">
+            {dgettext("help_guides", "Zgrada Cvetna 14")}
+          </text>
+          <rect class="hg-chip-proc" x="536" y="256" width="136" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="604" y="273" text-anchor="middle">
+            {dgettext("help_guides", "Reporting a fault")}
+          </text>
+
+          <rect class="hg-node" x="140" y="370" width="260" height="68" rx="12" />
+          <text class="hg-t-row" x="156" y="392">{dgettext("help_guides", "Entrance A")}</text>
+          <rect class="hg-chip-proc" x="156" y="404" width="110" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="211" y="421" text-anchor="middle">
+            {dgettext("help_guides", "Lift")}
+          </text>
+
+          <line
+            class="hg-ar hg-s-proc"
+            x1="212"
+            y1="271"
+            x2="272"
+            y2="271"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="241" y="265" text-anchor="middle">
+            {dgettext("help_guides", "calls")}
+          </text>
+          <path
+            class="hg-ar hg-s-proc"
+            d="M401 146 C401 196 348 206 348 258"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="408" y="208">
+            {dgettext("help_guides", "calls from above: may")}
+          </text>
+          <path
+            class="hg-ar hg-s-proc"
+            d="M211 404 C211 352 348 338 348 284"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="300" y="356">
+            {dgettext("help_guides", "calls from below: may")}
+          </text>
+          <line
+            class="hg-ar hg-s-muted hg-dash"
+            x1="536"
+            y1="270"
+            x2="424"
+            y2="270"
+            marker-end="url(#hg-m-muted)"
+          />
+          <line class="hg-x-mark" x1="475" y1="264" x2="487" y2="276" />
+          <line class="hg-x-mark" x1="475" y1="276" x2="487" y2="264" />
+          <text class="hg-t-lab hg-f-muted" x="481" y="308" text-anchor="middle">
+            {dgettext("help_guides", "from the side: no")}
+          </text>
+
+          <rect class="hg-node" x="520" y="330" width="320" height="126" rx="12" />
+          <text class="hg-t-row" x="536" y="352">
+            {dgettext("help_guides", "What a process writes starts no process")}
+          </text>
+          <rect class="hg-chip-proc" x="536" y="366" width="110" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="591" y="383" text-anchor="middle">
+            {dgettext("help_guides", "Process A")}
+          </text>
+          <line
+            class="hg-ar hg-s-proc"
+            x1="646"
+            y1="379"
+            x2="694"
+            y2="379"
+            marker-end="url(#hg-m-proc)"
+          />
+          <text class="hg-t-lab hg-f-proc" x="670" y="373" text-anchor="middle">
+            {dgettext("help_guides", "writes")}
+          </text>
+          <rect class="hg-chip-potok" x="694" y="366" width="130" height="26" rx="8" />
+          <text class="hg-t-chip hg-f-potok" x="759" y="383" text-anchor="middle">
+            {dgettext("help_guides", "message “fault…”")}
+          </text>
+          <line
+            class="hg-ar hg-s-muted hg-dash"
+            x1="759"
+            y1="392"
+            x2="759"
+            y2="424"
+            marker-end="url(#hg-m-muted)"
+          />
+          <line class="hg-x-mark" x1="753" y1="402" x2="765" y2="414" />
+          <line class="hg-x-mark" x1="753" y1="414" x2="765" y2="402" />
+          <text class="hg-t-lab hg-f-muted" x="772" y="412">
+            {dgettext("help_guides", "does not start")}
+          </text>
+          <rect class="hg-chip-proc" x="694" y="424" width="130" height="26" rx="13" />
+          <text class="hg-t-chip hg-f-proc" x="759" y="441" text-anchor="middle">
+            {dgettext("help_guides", "Process B")}
+          </text>
+          <text class="hg-t-sub" x="536" y="441">
+            {dgettext("help_guides", "B starts on the word “fault”")}
+          </text>
+        </svg>
+      </div>
+      <figcaption>
+        {dgettext(
+          "help_guides",
+          "The Repairer is public, so processes of the groups above Zgrada Cvetna 12 and of the groups below it call it. The neighboring branch, Zgrada Cvetna 14, cannot. A private process is called only by its own group. A signal and a group field do not leave the group, and a call made from a call goes at most %{depth} deep. To a caller from another group the Repairer hands only the Termin and the name of the end it reached. The groups around Zgrada Cvetna 12 and the processes A and B are made up for this picture.",
+          depth: @f.max_depth
+        )}
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="hg-section">
+    <h2>{dgettext("help_guides", "Where each one stops")}</h2>
+    <div class="hg-limits">
+      <div class="hg-l-app">
+        <h3>{dgettext("help_guides", "App")}</h3>
+        <ul>
+          <li>
+            {dgettext(
+              "help_guides",
+              "It writes only into its own collections. It reads other apps' values only outside collections, and another app's collection never."
+            )}
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "It makes and changes groups only for a viewer who may edit, and only right below its own. The exception is a place on the map (`createPlace`): for that the permission to make sub-groups is enough."
+              )
+            } />
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "It does not see the drawings of processes, does not vote and does not change a poll."
+            )}
+          </li>
+          <li>{dgettext("help_guides", "For a guest it only reads.")}</li>
+        </ul>
+      </div>
+      <div class="hg-l-proc">
+        <h3>{dgettext("help_guides", "Process")}</h3>
+        <ul>
+          <li>
+            {dgettext(
+              "help_guides",
+              "It writes in its own group and in the sub-groups it made itself, as far as the permissions there let it."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "It sends a push to a role only with the right to mention roles."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "At most %{run} steps in a row without waiting, %{steps} in its whole life and %{writes} writes a minute.",
+              run: @f.max_run,
+              steps: @f.max_steps,
+              writes: @f.process_writes
+            )}
+          </li>
+          <li>
+            {dgettext("help_guides", "A loop goes through at most %{items} items.",
+              items: @f.max_items
+            )}
+          </li>
+        </ul>
+      </div>
+      <div class="hg-l-potok">
+        <h3>{dgettext("help_guides", "Potok")}</h3>
+        <ul>
+          <li>
+            {dgettext("help_guides", "It checks every call again, whatever the app asked for.")}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "An instance carries a copy of the drawing, so a change holds only for new instances."
+            )}
+          </li>
+          <li>
+            {dgettext(
+              "help_guides",
+              "Every step goes in its own transaction, so what it writes happens once."
+            )}
+          </li>
+          <li>
+            {dgettext("help_guides", "From a process nobody learns who wrote an anonymous value.")}
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <:sources>
+    <.hg_text
+      text={
+        dgettext(
+          "help_guides",
+          "The rules are copied from the <a1>domain map</a1> and from the code."
+        )
+      }
+      links={%{"a1" => ~p"/domain"}}
+    />
+  </:sources>
+</.help_guide_frame>
