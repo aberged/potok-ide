@@ -331,6 +331,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("AppProcess", "next_run_at"), do: dgettext("domain_map", "next scheduled start")
   defp own_field("AppProcess", "entry_entity_id"), do: dgettext("domain_map", "entity it takes")
 
+  defp own_field("AppProcess", "hears_related"),
+    do: dgettext("domain_map", "hears groups above and below")
+
   defp own_field("AppProcess", "return_entity_id"),
     do: dgettext("domain_map", "entity it hands back")
 
@@ -358,6 +361,10 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("ValueProcess", "error"), do: dgettext("domain_map", "why it stopped")
   defp own_field("ValueProcess", "log"), do: dgettext("domain_map", "decisions of people")
   defp own_field("ValueProcess", "awaiting_id"), do: dgettext("domain_map", "run it waits for")
+
+  defp own_field("ValueProcess", "related_signal"),
+    do: dgettext("domain_map", "signal from groups around")
+
   defp own_field("GroupField", "value"), do: dgettext("domain_map", "text it keeps")
 
   defp own_field("GroupField", "app_process_id"),
@@ -1073,6 +1080,13 @@ defmodule PotokIdeWeb.DomainCopy do
     dgettext("domain_map", "Only a process that starts on a new value hangs on a collection.")
   end
 
+  def check_text("app_processes_hears_related_check") do
+    dgettext(
+      "domain_map",
+      "Only a process drawn in Potok that starts on a signal hears the groups above and below."
+    )
+  end
+
   def check_text("app_processes_public_check") do
     dgettext("domain_map", "Only a process drawn in Potok that another calls can be public.")
   end
@@ -1752,7 +1766,7 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> that starts when another calls it, of the same group or a public one of a group above or below, and hands over what it takes; the <ValueProcess>run</ValueProcess> it starts is one level deeper, and in its own group it shares the caller's subject. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads; adding to one takes its lock, so two runs never lose each other's count. A signal wakes the runs of the group's drawn processes that wait for it just then, at most 100, and starts the processes that start on it; nothing keeps it for a run that comes to wait later, and a wait may take only a signal sent on its own subject. Runs go at most three processes deep, and a process another one of its group calls cannot be deleted."
+            "What a process writes starts no other process: its messages and the sub-groups it makes set nothing going, so two processes never keep each other running by chance. A drawn process talks to another only by a step drawn for it. A call starts a drawn <AppProcess>process</AppProcess> that starts when another calls it, of the same group or a public one of a group above or below, and hands over what it takes; the <ValueProcess>run</ValueProcess> it starts is one level deeper, and in its own group it shares the caller's subject. A caller that waits goes on when that run ends, knowing which end it reached, or gives up at its deadline and cancels it. Cancelling a run cancels the run it waits for, and a run whose called run is cancelled stops, for an editor to take up again, which calls anew. A step can also keep a <GroupField>field of the group</GroupField>, which every drawn process of the group reads; adding to one takes its lock, so two runs never lose each other's count. A signal wakes the runs of the group's drawn processes that wait for it just then, at most 100, and starts the processes that start on it; nothing keeps it for a run that comes to wait later, and a wait may take only a signal sent on its own subject. A wait or a start that hears the groups above and below also takes their signals, as the entity it expects, and a run started so gets nothing of the sender's subject or people; a group beside never hears them. Runs go at most three processes deep, and a process another one of its group calls cannot be deleted."
           )
       },
       %{

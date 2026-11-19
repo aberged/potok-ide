@@ -386,7 +386,7 @@ Proces može da pokrene:
 - **zadato vreme**: svakog dana, svake nedelje u izabrane dane ili svakog meseca, u satu koji izabereš;
 - **neko ručno**: oni kojima to dozvoliš dobijaju na kartici Procesi dugme **Pokreni**, uz naslov i tekst, ili uz formu sa atributima entiteta koji izabereš;
 - **drugi proces** grupe, korakom **Pozovi proces**: na početnom koraku kažeš šta mu pozivalac predaje, obična polja pod **Polja koja prima** ili entitet grupe pod **Šta prima**;
-- **signal** koji pošalje neki proces grupe, sa poljima ili entitetom koji signal nosi.
+- **signal** koji pošalje neki proces grupe, sa poljima ili entitetom koji signal nosi. Uz **Čuje i grupe iznad i ispod** pokreće ga i signal grupe iznad ili ispod.
 
 Tekst koraka može da ubaci ono što proces ima, u duplim vitičastim zagradama: `{{start.title}}` je naslov ručnog pokretanja, gde je `start` početni korak. Imena se nude ispod polja za tekst. Na širokom ekranu korake prevlačiš gde ti odgovaraju, a strelicu crtaš od tačke ispod koraka do drugog koraka. Crtež koji instanca ne bi mogla da završi ne može da se sačuva, a traka iznad crteža kaže šta fali. Aplikacija nacrtan proces ne vidi i ne menja, a njen sopstveni proces, ako ga ima, radi pored njega. Vidi samo šta od nacrtanih procesa čeka njenog gledaoca, a formu i **Pokreni** otvara u Potokovom dijalogu. Izmena važi za pokretanja posle nje. Kako to izgleda, pokazuju tutorijali za [zadrugu](/pomoc/zadruga#proces) i [zgradu](/pomoc/zgrada#kvar).
 
@@ -415,6 +415,8 @@ Proces koji drugi pozivaju je **privatan**: pozivaju ga samo procesi iste grupe.
 Korak **Polje grupe** čuva vrednost koju čita svaki proces grupe: pod **Šta radi** biraš da li polje postavlja na vrednost, recimo poslednji prijavljen kvar, ili mu dodaje broj, kao brojaču. Polje `kvarova` drugi koraci, i u drugim procesima, čitaju kao `{{group.kvarova}}`, a uslov može da grana po njemu, recimo kad pređe 10. [Zgrada](/pomoc/zgrada#brojac) broji kvarove.
 
 Korak **Pošalji signal** javlja svim procesima grupe da se nešto desilo, recimo da je subota, uz polja koja upišeš. Proces koji je baš tada na koraku **Čekaj signal** sa istim imenom ide dalje, a ko je poslao signal i šta nosi čita kao `{{prijem.from}}` i `{{prijem.mesto}}`. Signal pokreće i procese kojima je okidač taj signal. Signal se ne čuva: proces koji tek posle stigne do čekanja, čeka sledeći. Uz **Samo od procesa na istoj vrednosti ili podgrupi** čekanje prima samo signal poslat o istom predmetu, recimo uplatu za baš tu porudžbinu. [Zadruga](/pomoc/zadruga#subota) tako javlja kupcima da je dan preuzimanja.
+
+Signal ostaje u grupi, osim tamo gde ga prijemnik traži: čekanje ili okidač sa **Čuje i grupe iznad i ispod** prima i signale grupa iznad i ispod svoje, ali ne i susednih grana. Ono što signal nosi prima kao entitet koji sam očekuje, po imenima i tipovima atributa, a signal koji mu ne odgovara ne stiže. Proces koji tako krene nema predmet ni pokretača iz druge grupe, samo ono što signal nosi. Korak **Pošalji signal** pokazuje koliko ga procesa u grupama iznad i ispod čuje.
 
 Kako procesi, aplikacije i grupa rade zajedno, i gde koji od njih staje, crta strana [Potok, procesi i aplikacije](/pomoc/procesi-i-aplikacije).
 

@@ -101,6 +101,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           callable: DrawnProcesses.callable(group),
           group_fields: GroupFields.names(group),
           signals: DrawnProcesses.signals(group),
+          related_hearers: DrawnProcesses.related_hearers(group),
           entities: GroupEntities.list(group),
           entry_entity: nil,
           return_entity: nil,
@@ -164,6 +165,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           callable: DrawnProcesses.callable(group),
           group_fields: if(manage?, do: GroupFields.names(group), else: []),
           signals: if(manage?, do: DrawnProcesses.signals(group), else: %{}),
+          related_hearers: if(manage?, do: DrawnProcesses.related_hearers(group), else: %{}),
           entities: if(manage?, do: GroupEntities.list(group), else: []),
           entry_entity: row.entry_entity_id,
           return_entity: row.return_entity_id,
@@ -857,7 +859,11 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
     do: %{"roles" => List.wrap(params["roles"]) |> Enum.reject(&(&1 == ""))}
 
   defp trigger_params("process", params, _config), do: %{"fields" => params["fields"] || ""}
-  defp trigger_params("signal", params, _config), do: %{"name" => params["name"] || ""}
+
+  defp trigger_params("signal", params, _config) do
+    %{"name" => params["name"] || ""}
+    |> then(&if(params["related"] == "true", do: Map.put(&1, "related", true), else: &1))
+  end
 
   defp trigger_params(_trigger, _params, config), do: config
 
@@ -1221,12 +1227,18 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
   defp signal_attrs(%{"type" => "receiveTask"} = node, params, editor) do
     signal = signal_text(params["signal"])
 
+    related = if is_binary(params["related"]), do: params["related"] == "true"
+
+    # Groups around share no subject, so hearing them leaves the same subject out.
+    same_subject =
+      if related,
+        do: false,
+        else: if(is_binary(params["same_subject"]), do: params["same_subject"] == "true")
+
     %{"entity" => signal_entity(node, params, signal, node["signal"], editor)}
     |> maybe_put("signal", signal)
-    |> maybe_put(
-      "same_subject",
-      if(is_binary(params["same_subject"]), do: params["same_subject"] == "true")
-    )
+    |> maybe_put("same_subject", same_subject)
+    |> maybe_put("related", related)
   end
 
   defp signal_attrs(_node, _params, _editor), do: %{}
@@ -2259,6 +2271,7 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditorState do
           "signal" => node["signal"],
           "entity" => node["entity"] && to_string(node["entity"]),
           "same_subject" => to_string(node["same_subject"] == true),
+          "related" => to_string(node["related"] == true),
           # Who fills in a form, as its select names them.
           "who" => if(node["by"] == "role", do: "role:#{node["role"]}", else: "starter")
         })

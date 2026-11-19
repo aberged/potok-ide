@@ -380,7 +380,7 @@ A process can start on:
 - **a set time**: every day, every week on the days you pick or every month, at the hour you pick;
 - **someone by hand**: those you allow get a **Start** button on the Processes tab, with a title and a text, or with a form of the attributes of an entity you pick;
 - **another process** of the group, with the step **Call a process**: on the start step you say what the caller hands over, plain fields under **Fields it takes** or an entity of the group under **What it takes**;
-- **a signal** a process of the group sends, with the fields or the entity the signal carries.
+- **a signal** a process of the group sends, with the fields or the entity the signal carries. With **Also hears the groups above and below**, a signal of a group above or below starts it too.
 
 A step's text can put in what the process has, in double curly braces: `{{start.title}}` is the title of a run started by hand, where `start` is the start step. The names are offered under the text field. On a wide screen you drag the steps where you like them, and draw an arrow from the dot under a step to another step. A drawing that a run could not finish cannot be saved, and the bar above the drawing says what is missing. The app neither sees nor changes a drawn process, and its own process, if it has one, runs beside it. It sees only what of the drawn processes waits for its viewer, and opens a form and **Start** in Potok's own dialog. A change applies to the runs after it. The tutorials for the [co-op](/pomoc/zadruga#proces) and the [building](/pomoc/zgrada#kvar) show how this looks.
 
@@ -409,6 +409,8 @@ A process that others call is **private**: only the processes of its own group c
 The step **Group field** keeps a value every process of the group reads: under **What it does** you pick whether it sets the field to a value, say the last fault reported, or adds a number to it, as a count. The other steps, in other processes too, read the field `kvarova` as `{{group.kvarova}}`, and a condition can branch on it, say when it passes 10. The [building](/pomoc/zgrada#brojac) counts its faults.
 
 The step **Send a signal** tells all the group's processes that something happened, say that it is Saturday, with fields you type. A process that is on the step **Wait for a signal** with the same name just then goes on, and reads who sent the signal and what it carries as `{{prijem.from}}` and `{{prijem.mesto}}`. A signal also starts the processes whose trigger is that signal. A signal is not kept: a process that comes to the wait only later waits for the next one. With **Only from a process on the same value or sub-group** the wait takes only a signal sent about the same subject, say a payment for that very order. The [co-op](/pomoc/zadruga#subota) tells its buyers that way that it is pick-up day.
+
+A signal stays in its group, except where the receiver asks for it: a wait or a trigger with **Also hears the groups above and below** takes the signals of the groups above and below its own too, but not of the branches beside. It takes what the signal carries as the entity it expects itself, by the names and types of the attributes, and a signal that does not fit does not reach it. A process started so has no subject or starter from the other group, only what the signal carries. The step **Send a signal** shows how many processes in the groups above and below hear it.
 
 How processes, apps and a group work together, and where each of them stops, is drawn on the page [Potok, processes and apps](/pomoc/procesi-i-aplikacije).
 

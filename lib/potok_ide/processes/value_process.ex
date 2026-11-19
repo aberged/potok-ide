@@ -64,6 +64,9 @@ defmodule PotokIde.Processes.ValueProcess do
     # Whom the wait it stands on asks, if it asks anyone.
     field :asks_role, :string
     belongs_to :asks_profile, PotokIde.Social.Profile
+    # The signal it waits for at a step that hears the groups above and
+    # below too, while it waits there (`Processes.Engine`), for finding it.
+    field :related_signal, :string
 
     timestamps(type: :utc_datetime)
   end

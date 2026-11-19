@@ -362,6 +362,49 @@ defmodule PotokIdeWeb.GroupLive.ProcessEditorTest do
     assert has_element?(lv, "#process-outline-start", "On the signal subota")
   end
 
+  test "a wait and a start on a signal may hear the groups above and below", ctx do
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "manual"}}) |> render_change()
+    insert(lv, "f1", "receive")
+
+    lv
+    |> form("#process-element-form", %{
+      "element" => %{"signal" => "berba", "same_subject" => "true"}
+    })
+    |> render_change()
+
+    # Hearing the groups around leaves the same subject out.
+    lv
+    |> form("#process-element-form", %{"element" => %{"related" => "true"}})
+    |> render_change()
+
+    assert has_element?(lv, "#process-receive-related[checked]")
+    assert has_element?(lv, "#process-receive-same-subject[disabled]")
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert [%AppProcess{graph: graph}] = drawn(ctx.group)
+
+    assert %{"related" => true, "same_subject" => false} =
+             Enum.find(graph["nodes"], &(&1["type"] == "receiveTask"))
+
+    {:ok, lv, _html} =
+      live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")
+
+    lv |> form("#process-editor-meta", %{"meta" => %{"trigger" => "signal"}}) |> render_change()
+    render_hook(canvas(lv), "process_editor_select", %{"node" => "start"})
+
+    lv
+    |> form("#process-trigger-form", %{"trigger" => %{"name" => "berba", "related" => "true"}})
+    |> render_change()
+
+    lv |> element("#process-editor-save") |> render_click()
+
+    assert %AppProcess{hears_related: true, trigger_config: %{"related" => true}} =
+             Enum.find(drawn(ctx.group), &(&1.trigger == "signal"))
+  end
+
   test "an unfinished drawing says what is wrong and is not saved", ctx do
     {:ok, lv, _html} =
       live_as(ctx.owner_account, ~p"/groups/#{ctx.group.id}/processes?process=new")

@@ -194,6 +194,7 @@ defmodule PotokIde.Social.DrawnProcesses do
          {:ok, entity} <- entry_entity(group, trigger, attrs["entry_entity_id"]),
          {:ok, returns} <- return_entity(group, trigger, attrs["return_entity_id"]),
          {:ok, graph} <- checked(graph, trigger, config, group, {entity, returns}, nil),
+         :ok <- related_here(group, config, graph),
          :ok <- on_collection(group, trigger, alt_id, collection) do
       layout = layout(attrs["layout"], graph)
 
@@ -223,13 +224,77 @@ defmodule PotokIde.Social.DrawnProcesses do
           trigger_config: config,
           entry_entity_id: entity,
           return_entity_id: returns,
-          is_public: trigger == "process" and attrs["is_public"] == true
+          is_public: trigger == "process" and attrs["is_public"] == true,
+          hears_related: hears_related?(trigger, config)
         }
         |> Repo.insert!()
       end)
       |> announced(group)
     end
   end
+
+  @doc """
+  How many active processes of the groups above and below hear each signal
+  from them, `%{name => count}`: those that start on it (`hears_related`) and
+  those that wait for it at a step that does (`related`). For the editor of a
+  process that sends one; empty when the look takes too long.
+  """
+  def related_hearers(%Group{id: group_id}) do
+    hearers =
+      from(p in AppProcess,
+        where: p.drawn and p.active and p.group_id != ^group_id,
+        where:
+          p.hears_related or
+            fragment(
+              "jsonb_path_exists(?, '$.nodes[*] \\? (@.type == \"receiveTask\" && @.related == true)')",
+              p.graph
+            ),
+        select: {p.group_id, p.trigger, p.trigger_config, p.graph}
+      )
+      |> Repo.all()
+
+    case Reach.related_among(group_id, Enum.map(hearers, &elem(&1, 0))) do
+      {:ok, related} ->
+        hearers
+        |> Enum.filter(&(elem(&1, 0) in related))
+        |> Enum.flat_map(fn {_group, trigger, config, graph} ->
+          waits =
+            for %{"type" => "receiveTask", "related" => true, "signal" => name} <-
+                  graph["nodes"] || [],
+                do: name
+
+          starts =
+            if trigger == "signal" and config["related"] == true, do: [config["name"]], else: []
+
+          Enum.uniq(waits ++ starts)
+        end)
+        |> Enum.frequencies()
+
+      {:error, :timeout} ->
+        %{}
+    end
+  end
+
+  # Whether a process on a signal hears the groups above and below too.
+  defp hears_related?("signal", %{"related" => true}), do: true
+  defp hears_related?(_trigger, _config), do: false
+
+  # The root stands above every group, so a process of its own that heard
+  # them would hear all of Potok: neither its trigger nor a wait of it may.
+  defp related_here(%Group{is_root: true}, config, graph) do
+    cond do
+      config["related"] == true ->
+        {:error, {:invalid_trigger, "related", :root}}
+
+      i = Enum.find_index(graph["nodes"] || [], &(&1["related"] == true)) ->
+        {:error, {:invalid_graph, "nodes.#{i}.related", :root}}
+
+      true ->
+        :ok
+    end
+  end
+
+  defp related_here(_group, _config, _graph), do: :ok
 
   defp on_collection(group, "value", alt_id, collection) do
     cond do
@@ -459,6 +524,8 @@ defmodule PotokIde.Social.DrawnProcesses do
             {:error, reason} -> Repo.rollback(reason)
           end
 
+        with {:error, reason} <- related_here(group, config, graph), do: Repo.rollback(reason)
+
         public? =
           if Map.has_key?(attrs, "is_public"),
             do: row.trigger == "process" and attrs["is_public"] == true,
@@ -473,6 +540,7 @@ defmodule PotokIde.Social.DrawnProcesses do
           entry_entity_id: entity,
           return_entity_id: returns,
           is_public: public?,
+          hears_related: hears_related?(row.trigger, config),
           next_run_at: next_run(%{row | trigger_config: config}),
           owner_profile_id: owner(row, editor, group)
         )

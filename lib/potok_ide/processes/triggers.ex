@@ -20,7 +20,8 @@ defmodule PotokIde.Processes.Triggers do
   - `"process"`: another process drawn in the group calls it
     (`callActivity`), handing over the `fields` it names.
   - `"signal"`: a process drawn in the group sends the signal `name`, and
-    what it carries becomes the run's fields.
+    what it carries becomes the run's fields. With `related` it hears the
+    groups above and below too (`AppProcess.hears_related`).
 
   A process that starts on a value, by hand, on a call or on a signal may
   take an entity of its group (`typed?/1`, `AppProcess.entry_entity`): how
@@ -101,8 +102,12 @@ defmodule PotokIde.Processes.Triggers do
     end
   end
 
+  # `related`: it hears the signal from the groups above and below too.
   def normalize("signal", config) when is_map(config) do
+    related? = config["related"] == true
+
     case PotokIde.Processes.Graph.signal_name(config["name"]) do
+      {:ok, name} when related? -> {:ok, %{"name" => name, "related" => true}}
       {:ok, name} -> {:ok, %{"name" => name}}
       :error -> {:error, {"name", :invalid}}
     end

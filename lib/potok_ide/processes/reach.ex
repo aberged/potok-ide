@@ -54,6 +54,71 @@ defmodule PotokIde.Processes.Reach do
   def related?(_a, _b), do: false
 
   @doc """
+  Those of `group_ids` that stand above or below `group_id` in the tree,
+  walking up from each of them and from the group, never down. The look of
+  a signal (`Processes.Engine`): `{:ok, ids}`, or `{:error, :timeout}` when
+  it takes too long.
+  """
+  def related_among(group_id, group_ids) when is_integer(group_id) and is_list(group_ids) do
+    candidates = group_ids |> Enum.reject(&(&1 == group_id)) |> Enum.uniq()
+
+    if candidates == [] do
+      {:ok, []}
+    else
+      sql = """
+      WITH RECURSIVE above AS (
+        SELECT g.parent_id AS id FROM groups g WHERE g.id = $1
+        UNION ALL
+        SELECT g.parent_id FROM above JOIN groups g ON g.id = above.id
+      ),
+      up AS (
+        SELECT g.id AS origin, g.parent_id AS id FROM groups g WHERE g.id = ANY($2::bigint[])
+        UNION ALL
+        SELECT up.origin, g.parent_id FROM up JOIN groups g ON g.id = up.id WHERE up.id <> $1
+      )
+      SELECT DISTINCT origin FROM up WHERE id = $1
+      UNION
+      SELECT id FROM above WHERE id = ANY($2::bigint[])
+      """
+
+      case limited(fn -> Repo.query!(sql, [group_id, candidates]) end) do
+        {:ok, %{rows: rows}} -> {:ok, Enum.map(rows, fn [id] -> id end)}
+        {:error, :timeout} -> {:error, :timeout}
+      end
+    end
+  end
+
+  # Within @timeout_ms. A step of a process asks inside its own transaction,
+  # where a setting would last to its end and a cancelled query would spoil
+  # it, so there the look runs under a savepoint that it always rolls back
+  # to: the settings go with it, and so does a cancel.
+  defp limited(fun) do
+    if Repo.in_transaction?() do
+      Repo.query!("SAVEPOINT reach_look")
+
+      try do
+        Repo.query!(
+          "SELECT set_config('statement_timeout', $1, true), set_config('jit', 'off', true)",
+          [Integer.to_string(@timeout_ms)]
+        )
+
+        {:ok, fun.()}
+      rescue
+        error in Postgrex.Error ->
+          case error do
+            %{postgres: %{code: :query_canceled}} -> {:error, :timeout}
+            _other -> reraise error, __STACKTRACE__
+          end
+      after
+        Repo.query!("ROLLBACK TO SAVEPOINT reach_look")
+        Repo.query!("RELEASE SAVEPOINT reach_look")
+      end
+    else
+      Repo.with_statement_timeout(@timeout_ms, fun, jit: false)
+    end
+  end
+
+  @doc """
   The ids of the public processes of the groups above and below the group,
   at most #{@max_public}: those a process drawn in it may call beside its
   group's own. None when the look takes too long, as the editor that asks

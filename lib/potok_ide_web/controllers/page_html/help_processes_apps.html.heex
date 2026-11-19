@@ -888,7 +888,7 @@
             {dgettext("help_guides", "Repairer · public")}
           </text>
           <text class="hg-t-sub" x="76" y="306">
-            {dgettext("help_guides", "a signal and a group field stay here")}
+            {dgettext("help_guides", "a group field stays here; a signal, if asked")}
           </text>
 
           <rect class="hg-node" x="520" y="222" width="320" height="72" rx="12" />
@@ -996,7 +996,7 @@
       <figcaption>
         {dgettext(
           "help_guides",
-          "The Repairer is public, so processes of the groups above Zgrada Cvetna 12 and of the groups below it call it. The neighboring branch, Zgrada Cvetna 14, cannot. A private process is called only by its own group. A signal and a group field do not leave the group, and a call made from a call goes at most %{depth} deep. To a caller from another group the Repairer hands only the Termin and the name of the end it reached. The groups around Zgrada Cvetna 12 and the processes A and B are made up for this picture.",
+          "The Repairer is public, so processes of the groups above Zgrada Cvetna 12 and of the groups below it call it. The neighboring branch, Zgrada Cvetna 14, cannot. A private process is called only by its own group. A group field does not leave the group. A signal reaches the groups above and below only where a wait or a start says it hears them, never the neighboring branch, and a call made from a call goes at most %{depth} deep. To a caller from another group the Repairer hands only the Termin and the name of the end it reached. The groups around Zgrada Cvetna 12 and the processes A and B are made up for this picture.",
           depth: @f.max_depth
         )}
       </figcaption>

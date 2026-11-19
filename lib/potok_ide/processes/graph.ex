@@ -37,6 +37,8 @@ defmodule PotokIde.Processes.Graph do
   - `receiveTask`: waits for the `signal`, from a run on the same subject
     only when `same_subject`, until an optional `deadline`. What came is
     `{{element.from}}` and the fields it carried, as `{{element.field}}`.
+    With `related` it hears the groups above and below too, which never
+    goes with `same_subject`.
 
   Any element may carry a `label`, the name it shows on a drawing and where
   an instance waits or stopped; its `id` stands in for it otherwise.
@@ -671,16 +673,23 @@ defmodule PotokIde.Processes.Graph do
     end
   end
 
+  # `related`: it hears the signal from the groups above and below too,
+  # where no subject is the same, so not together with `same_subject`.
   defp typed("receiveTask", node, path, base, true) do
     same_subject = Map.get(node, "same_subject", false)
+    related = Map.get(node, "related", false)
 
     with {:ok, signal} <- signal(node["signal"], path <> ".signal"),
          true <- is_boolean(same_subject) || {:error, {path <> ".same_subject", :invalid}},
+         true <- is_boolean(related) || {:error, {path <> ".related", :invalid}},
+         true <-
+           not (related and same_subject) || {:error, {path <> ".related", :related_same_subject}},
          {:ok, deadline} <- optional_duration(node["deadline"], path <> ".deadline"),
          {:ok, entity} <- entity(node["entity"], path <> ".entity") do
       {:ok,
        base
        |> Map.merge(%{"signal" => signal, "same_subject" => same_subject})
+       |> then(&if(related, do: Map.put(&1, "related", true), else: &1))
        |> put_some("deadline", deadline)
        |> put_some("entity", entity)}
     end

@@ -52,6 +52,10 @@ defmodule PotokIde.Social.AppProcess do
     # A drawn process that others call: whether the processes of the groups
     # above and below its group may call it too (`Processes.Reach`).
     field :is_public, :boolean, default: false
+    # A drawn process that starts on a signal: whether it hears the signal
+    # from the groups above and below its group too, as its trigger says
+    # (`trigger_config["related"]`). Never cast: the save keeps it in step.
+    field :hears_related, :boolean, default: false
 
     timestamps(type: :utc_datetime)
   end

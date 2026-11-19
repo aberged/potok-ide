@@ -52,7 +52,11 @@ defmodule PotokIde.Processes.Engine do
   due at once, at most 100, the oldest first, skipping one another node
   holds; and the active processes that start on it start, one level deeper
   and on the sender's subject, while there is depth left. A signal is not
-  kept for a run that comes to wait later.
+  kept for a run that comes to wait later. A wait or a start that hears the
+  groups above and below (`related`) takes their signals too, found by name
+  and kept to the groups `Reach` finds walking up: each as the entity it
+  expects, by shape, and a start there is on no subject and by nobody, at
+  most 20 for one signal.
 
   A run reads its texts and conditions in the language of the graph it
   started with: today's (`"v" => 2`, `Expr` over the names of `Scope`) for
@@ -135,6 +139,8 @@ defmodule PotokIde.Processes.Engine do
   # What a run keeps in its variables and its results together, in bytes.
   @max_data 65_536
   @max_woken 100
+  # Processes of the groups above and below that one signal starts.
+  @max_related_started 20
 
   @doc "Steps a run takes in a row before it has to wait."
   def max_run, do: @max_run
@@ -480,6 +486,13 @@ defmodule PotokIde.Processes.Engine do
 
   defp asked(_element, _instance), do: %{asks_role: nil, asks_profile_id: nil}
 
+  # The signal a wait hears from the groups above and below too, kept on the
+  # run while it waits there, so a signal of another group finds it.
+  defp related_signal(%{"type" => "receiveTask", "related" => true, "signal" => signal}),
+    do: signal
+
+  defp related_signal(_element), do: nil
+
   defp told({:ok, instance}), do: {:ok, tell(instance)}
   defp told(error), do: error
 
@@ -562,7 +575,12 @@ defmodule PotokIde.Processes.Engine do
         {:turn, move(instance, to, changes), []}
 
       {:wait, changes, announcements} ->
-        changes = changes |> Map.put(:status, :waiting) |> Map.merge(asked(node, instance))
+        changes =
+          changes
+          |> Map.put(:status, :waiting)
+          |> Map.merge(asked(node, instance))
+          |> Map.put(:related_signal, related_signal(node))
+
         {:stop, update!(instance, changes), announcements}
 
       :done ->
@@ -749,7 +767,8 @@ defmodule PotokIde.Processes.Engine do
   end
 
   # A signal: the runs waiting for it in the group wake, and the processes
-  # that start on it start.
+  # that start on it start; so do those of the groups above and below that
+  # hear such groups (`related/5`).
   defp service("signal", task, step, group, instance, data) do
     name = task["name"]
 
@@ -758,6 +777,9 @@ defmodule PotokIde.Processes.Engine do
       carried = Map.merge(fields, %{"from" => step.process.name, "signal" => name})
       woken = wake_receivers(group, instance, name, carried)
       started = start_on_signal(group, instance, name, carried)
+      {woken_there, started_there} = related(group, instance, name, carried, woken)
+      woken = woken ++ woken_there
+      started = started ++ started_there
 
       {:ok, %{},
        fn ->
@@ -1032,6 +1054,132 @@ defmodule PotokIde.Processes.Engine do
 
   defp start_on_signal(_group, _sender, _name, _carried), do: []
 
+  # The groups above and below that hear the signal: the runs waiting for it
+  # at a step that hears them (`related_signal`) and the processes that start
+  # on it and hear them (`hears_related`), found by its name and kept to the
+  # groups `Reach` finds above or below, walking up. Each takes the signal as
+  # the entity it expects, by the shape of its attributes, and one it does
+  # not fit is left out. Waking shares the @max_woken of the signal with its
+  # own group, which goes first; a run started there gets what the signal
+  # carries and nothing of the sender's subject or people, as a call across
+  # groups does.
+  defp related(%Group{} = group, %ValueProcess{} = sender, name, carried, woken_here) do
+    waiting = related_waiting(group, sender, name)
+    starting = if sender.depth < @max_depth, do: related_starting(group, name), else: []
+    groups = Enum.map(waiting, & &1.group_id) ++ Enum.map(starting, & &1.group_id)
+
+    case Reach.related_among(group.id, groups) do
+      {:ok, related} ->
+        woken =
+          waiting
+          |> Enum.filter(&(&1.group_id in related))
+          |> wake_related(name, carried, @max_woken - length(woken_here))
+
+        started =
+          starting
+          |> Enum.filter(&(&1.group_id in related))
+          |> start_related(sender, carried)
+
+        {woken, started}
+
+      {:error, :timeout} ->
+        Logger.warning(
+          "Signal #{inspect(name)} of group #{group.id}: the groups above and below took too long"
+        )
+
+        {[], []}
+    end
+  end
+
+  defp related_waiting(%Group{id: group_id}, %ValueProcess{id: sender_id}, name) do
+    from(i in ValueProcess,
+      join: p in AppProcess,
+      on: p.id == i.app_process_id,
+      where:
+        i.related_signal == ^name and i.status == :waiting and i.id != ^sender_id and
+          p.group_id != ^group_id and p.drawn and p.active,
+      order_by: [asc: i.id],
+      limit: ^(@max_woken * 2),
+      lock: "FOR UPDATE OF v0 SKIP LOCKED",
+      select: %{
+        id: i.id,
+        graph: i.graph,
+        element: i.element,
+        results: i.results,
+        group_id: p.group_id
+      }
+    )
+    |> Repo.all()
+  end
+
+  defp related_starting(%Group{id: group_id}, name) do
+    from(p in AppProcess,
+      where:
+        p.hears_related and p.drawn and p.active and p.trigger == "signal" and
+          fragment("? ->> 'name'", p.trigger_config) == ^name and p.group_id != ^group_id,
+      order_by: [asc: p.id],
+      limit: ^(@max_related_started * 5),
+      lock: "FOR SHARE"
+    )
+    |> Repo.all()
+  end
+
+  defp wake_related(rows, name, carried, room_left) do
+    now = now()
+
+    rows
+    |> Enum.reduce_while([], fn row, woken ->
+      node = Graph.node(row.graph, row.element)
+      results = row.results || %{}
+
+      with true <- length(woken) < room_left || :full,
+           %{"type" => "receiveTask", "related" => true, "signal" => ^name} <- node,
+           false <- Map.has_key?(results, row.element),
+           {:ok, payload} <- fitted(carried, node["entity"], row.graph["types"]) do
+        from(i in ValueProcess, where: i.id == ^row.id)
+        |> Repo.update_all(
+          set: [results: Map.put(results, row.element, payload), wake_at: now, updated_at: now]
+        )
+
+        {:cont, [row.id | woken]}
+      else
+        :full -> {:halt, woken}
+        _left_out -> {:cont, woken}
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  defp start_related(processes, %ValueProcess{depth: depth}, carried) do
+    processes
+    |> Enum.reduce_while([], fn process, started ->
+      with true <- length(started) < @max_related_started || :full,
+           :ok <- room(process),
+           {:ok, data} <-
+             fitted(carried, process.entry_entity_id, (process.graph || %{})["types"]) do
+        {:cont, [start_drawn_on(process, depth: depth + 1, data: data) | started]}
+      else
+        :full -> {:halt, started}
+        _left_out -> {:cont, started}
+      end
+    end)
+    |> Enum.reverse()
+  end
+
+  # What a signal carries, as the entity a receiver of another group expects:
+  # its attributes by name and type, with who sent it and which signal it was.
+  # A receiver that expects no entity takes it as it is.
+  defp fitted(carried, nil, _types), do: {:ok, carried}
+
+  defp fitted(carried, entity_id, types) when is_integer(entity_id) and is_map(types) do
+    case Types.cast(carried, {:entity, entity_id}, types, required: true) do
+      {:ok, value} -> {:ok, Map.merge(Types.dump(value), Map.take(carried, ["from", "signal"]))}
+      {:error, _reason} -> :error
+    end
+  end
+
+  defp fitted(_carried, _entity_id, _types), do: :error
+
   # The process a call starts, read `FOR SHARE`, so one being switched off
   # waits for this step and then cancels what it started.
   defp callee(id, group_id) when is_integer(id) do
@@ -1227,7 +1375,13 @@ defmodule PotokIde.Processes.Engine do
     update!(
       instance,
       Map.merge(
-        %{element: to, status: :running, wake_at: now(), steps: instance.steps + 1},
+        %{
+          element: to,
+          status: :running,
+          wake_at: now(),
+          steps: instance.steps + 1,
+          related_signal: nil
+        },
         changes
       )
     )

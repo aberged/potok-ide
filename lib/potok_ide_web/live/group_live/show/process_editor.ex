@@ -1330,6 +1330,17 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   "It wakes the runs of the group's processes that wait for this signal right now, and starts the processes that start on it. It is not kept: a run that comes to wait later does not get it."
                 )}
               </p>
+              <p
+                :if={related_hearers(@editor, @node["name"]) > 0}
+                id="process-signal-related-hearers"
+                class="text-xs text-base-content/60"
+              >
+                {ngettext(
+                  "It also reaches %{count} process in the groups above and below that hears them.",
+                  "It also reaches %{count} processes in the groups above and below that hear them.",
+                  related_hearers(@editor, @node["name"])
+                )}
+              </p>
             <% "receive" -> %>
               <.input
                 field={@form[:signal]}
@@ -1351,9 +1362,22 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
                   name="element[same_subject]"
                   value="true"
                   checked={@node["same_subject"] == true}
+                  disabled={@node["related"] == true}
                   class="checkbox checkbox-sm"
                 />
                 {gettext("Only from a process on the same value or sub-group")}
+              </label>
+              <input type="hidden" name="element[related]" value="false" />
+              <label class="flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  id="process-receive-related"
+                  name="element[related]"
+                  value="true"
+                  checked={@node["related"] == true}
+                  class="checkbox checkbox-sm"
+                />
+                {gettext("Also hears the groups above and below")}
               </label>
               <div>
                 <p class="label mb-1">{gettext("Deadline, then go on without it")}</p>
@@ -1797,9 +1821,22 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
             <datalist id="process-trigger-signal-list">
               <option :for={name <- Map.keys(@editor.signals)} value={name} />
             </datalist>
+            <input type="hidden" name="trigger[related]" value="false" />
+            <label class="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                id="process-trigger-related"
+                name="trigger[related]"
+                value="true"
+                checked={@config["related"] == true}
+                disabled={!@editor.editable?}
+                class="checkbox checkbox-sm"
+              />
+              {gettext("Also hears the groups above and below")}
+            </label>
             <p class="text-xs text-base-content/60">
               {gettext(
-                "Each time a process of the group sends this signal, it starts, with the fields the signal carries."
+                "Each time a process of the group sends this signal, it starts, with the fields the signal carries. Hearing the groups above and below, it starts on theirs too, on no subject and by nobody, with what the signal carries."
               )}
             </p>
           <% "process" -> %>
@@ -2016,6 +2053,12 @@ defmodule PotokIdeWeb.GroupLive.Show.ProcessEditor do
   end
 
   # The same for an attribute of the entity a signal carries.
+  # How many processes of the groups above and below hear the signal.
+  defp related_hearers(editor, name) when is_binary(name),
+    do: Map.get(editor[:related_hearers] || %{}, name, 0)
+
+  defp related_hearers(_editor, _name), do: 0
+
   defp signal_field_label(entity, name, entities) do
     case entity && Enum.find(entity.attributes, &(&1.name == name)) do
       nil ->
