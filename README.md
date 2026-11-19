@@ -884,13 +884,34 @@ Error codes (`error`):
 * For collections: `closed`, `already_answered`, `released`, `too_large`, `invalid_files`, `files_missing`, `files_exposed` (with a `message`), and `conflict` (with `current`), `invalid_rules` (with `reason`), `invalid_collection`, `no_config`, `not_scored`, `invalid_summary`.
 * For processes: `invalid_process` (with `collection`, `path` and `reason`), `not_waiting`, `invalid_outcome`, `process_inactive`, `not_failed`, `not_running`.
 * From the hook: `preview` (the edit form's preview frame refuses API calls), `unknown_method`, `disconnected`, `cancelled` (the viewer closed the picker of `pickEmoji`), `forbidden` (the page has no picker).
+* From the SDK, to a site in the app's frame: `not_listed` (the method is not in the frame's `data-potok-api`), `timeout` (the page did not answer within 10 seconds).
 
 The frame environment:
 
 * `localStorage` in the frame is an in-memory `Storage`. The page keeps a copy per app (`potok-app:<group id>` for the default description, `potok-app:<group id>:alt-<id>` for an alternative one, at most 256 KB) and restores it, so it survives reloads. `sessionStorage` is in memory only. The copy belongs to the place, not the app: after "Make default" swaps two apps, each finds the other's saved copy.
 * The frame follows the page's daisyUI theme (`data-theme`).
-* After a LiveSocket reconnect the frame reloads, because values pushed while offline never arrive.
+* After a LiveSocket reconnect the frame reloads, because values pushed while offline never arrive. A description that only holds a site is the exception (below).
 * The app also restarts when the description or the viewer's access (profile, membership, roles) changes.
+
+### A site in the app's frame
+
+A description that is an app can hold a site from another address, in a frame of its own:
+
+```html
+<iframe src="https://example.pages.dev/" title="..." data-potok-api="current_profile list_values"
+        style="width: 100%; height: 100vh; border: none;" loading="lazy"></iframe>
+```
+
+The site's parent is the app's frame, not the page, and it inherits the sandbox: it has an opaque origin, no `localStorage` and no way to the page. The SDK answers it the way the page answers the SDK, so a site that knows these messages works like an app, one level in. A site that sends nothing is left as it was. How to write a site for this, with a whole adapter to copy, is in [docs/sajt-u-potoku.md](docs/sajt-u-potoku.md).
+
+* The site posts `{potok: 1, event: "hello"}` to `window.parent` on every page it loads, and the SDK answers `{potok: 1, event: "ready", theme, lang, methods, app}`: `theme` is `"light"`, `"dark"` or `null` (the device's), `lang` is the frame's (`sr`, `sr-Cyrl`, `en`), `methods` is the frame's list and `app` the app's id.
+* `{potok: 1, event: "theme", theme}` follows every change of the page's theme. The language changes only with a full page load, which builds the frame again.
+* A call is `{potok: 1, id, method, params}`, with a number of the site's own as `id`; the reply comes back as `{potok: 1, id, ok, ...}`. `method` and `params` are what the SDK itself sends the page (`current_profile`, `list_values` and the other names its functions pass on, with the params they build). Only the methods in the frame's `data-potok-api`, separated by spaces or commas, go on. Any other is answered with `not_listed` and never reaches the page, and a call the page leaves unanswered for 10 seconds with `timeout`. Without the attribute a site gets the theme and the language, and nothing else.
+* `upload_file` and `upload_image` take the file as `file` next to `params`, and their progress comes as `{potok: 1, event: "upload_progress", id, progress}`.
+* What the page pushes goes on to a site only where it may read the same: `new_value` and `app_value` with `list_values`, `poll_changed` with `list_polls` or `get_poll`, `children_changed` with `list_children`, `list_subgroups` or `list_places`, `waiting_changed` with `list_waiting`, and `group_sheet_closed` with `show_group`. The messages are the page's own, unchanged.
+* After a LiveSocket reconnect, a description that holds such a site and no script of its own is not reloaded: the site gets `{potok: 1, event: "reconnected"}` and stays on the page its reader is on.
+
+What this cannot check: the sandbox leaves the site no origin, so the SDK cannot tell which document stands in that frame. Whatever opens there gets the same answers and the same calls, in the viewer's name. The list is therefore the editor's to keep short, and the site's part is to keep other hosts' pages out of its frame (the adapter opens their links in a new tab). The site's code is also not kept with the group, as an uploaded app's is: the frame runs whatever that address serves at the time.
 
 ### Legacy API
 
@@ -929,7 +950,7 @@ High-level layout:
 |  |- vendor/              # Bundled frontend vendor files
 |  |- android/, ios/       # Capacitor native projects
 |- config/                 # Environment-specific configuration
-|- docs/                   # iOS secrets and checklist, the Feed apps as an App API example
+|- docs/                   # iOS secrets and checklist, the Feed apps as an App API example, a site in an app's frame
 |- lib/
 |  |- potok_ide/           # Domain contexts, schemas, repo, mailer, release helpers
 |  |  |- accounts/         # Account schema and auth-related domain code

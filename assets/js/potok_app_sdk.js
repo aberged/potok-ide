@@ -8,6 +8,9 @@
 //
 // `window.__potokLegacy` keeps the pre-sandbox API working:
 // `document.getElementById("group-panel-description").potok.insertGroupValue(...)`.
+//
+// A site the description holds in a frame of its own talks to the SDK the
+// same way, one level in (see "A site in a frame of the app's own" below).
 
 const CALL_TIMEOUT_MS = 10_000
 const LEGACY_PAGE_SIZE = 200
@@ -129,9 +132,15 @@ const subgroupPage = options => ({
   around_id: options.aroundId ?? null,
 })
 
-// `waits`: the answer depends on the viewer, who can take as long as they like,
-// or on a file on its way. `file` goes along with the call (`uploadFile`).
-const call = (method, params = {}, {waits = false, file = null, onProgress = null} = {}) =>
+// Calls whose answer depends on the viewer, who can take as long as they
+// like, or on a file on its way: they wait without a timeout.
+const WAITING_METHODS = new Set(["pick_emoji", "upload_file", "upload_image"])
+
+// Calls that carry a file (`uploadFile`).
+const FILE_METHODS = new Set(["upload_file", "upload_image"])
+
+// `file` goes along with the call.
+const call = (method, params = {}, {waits = WAITING_METHODS.has(method), file = null, onProgress = null} = {}) =>
   new Promise((resolve, reject) => {
     const id = nextCallId++
 
@@ -149,28 +158,140 @@ const call = (method, params = {}, {waits = false, file = null, onProgress = nul
     void parentReady.then(() => window.parent.postMessage(message, "*"))
   })
 
+// A site in a frame of the app's own: `<iframe src="https://...">` in the
+// description. Its parent is this frame, not the page, and it inherits the
+// sandbox, so it has no origin to check and no way to the page of its own.
+// The SDK answers it as the page answers the SDK: its "hello" gets "ready"
+// with the theme and the language, every theme change follows, and its calls
+// go on to the page, though only the methods the description lists on the
+// frame (`data-potok-api="current_profile list_values"`). Whatever document
+// stands in that frame gets the same, so a site keeps other hosts' pages out
+// of it, and the list is as short as the site's work allows.
+const siteFrames = new Set()
+
+const siteFrameOf = source =>
+  Array.from(document.querySelectorAll("iframe")).find(frame => frame.contentWindow === source) ?? null
+
+const siteMethods = frame => (frame.dataset.potokApi ?? "").split(/[\s,]+/).filter(Boolean)
+
+// "*" is required: the site's origin is opaque, as the app's own is to the page.
+const postToSite = (frame, message) => frame.contentWindow?.postMessage(message, "*")
+
+// The frames that said "hello" and still stand in the description.
+const liveSiteFrames = () => {
+  siteFrames.forEach(frame => {
+    if (!frame.isConnected) siteFrames.delete(frame)
+  })
+
+  return Array.from(siteFrames)
+}
+
+// What the page pushes goes on to the sites that may make a call that reads
+// the same thing; `readers` null sends to all of them.
+const SITE_EVENT_READERS = {
+  new_value: ["list_values"],
+  app_value: ["list_values"],
+  poll_changed: ["list_polls", "get_poll"],
+  children_changed: ["list_children", "list_subgroups", "list_places"],
+  waiting_changed: ["list_waiting"],
+  group_sheet_closed: ["show_group"],
+}
+
+const postToSites = (message, readers = null) => {
+  liveSiteFrames().forEach(frame => {
+    const methods = readers && siteMethods(frame)
+    if (!readers || readers.some(method => methods.includes(method))) postToSite(frame, message)
+  })
+}
+
+const handleSiteMessage = event => {
+  const message = event.data
+
+  if (!message || message.potok !== 1 || !event.source) return
+
+  // Only a frame right in this document is a site: one further in is not.
+  const frame = siteFrameOf(event.source)
+  if (!frame) return
+
+  if (message.event === "hello") {
+    siteFrames.add(frame)
+
+    void parentReady.then(() =>
+      postToSite(frame, {
+        potok: 1,
+        event: "ready",
+        theme: document.documentElement.getAttribute("data-theme"),
+        lang: document.documentElement.lang,
+        methods: siteMethods(frame),
+        app: ownAppId,
+      })
+    )
+    return
+  }
+
+  if (typeof message.id !== "number" || typeof message.method !== "string") return
+
+  const reply = result => postToSite(frame, {potok: 1, id: message.id, ...result})
+
+  if (!siteMethods(frame).includes(message.method)) {
+    reply({ok: false, error: "not_listed"})
+    return
+  }
+
+  const carriesFile = FILE_METHODS.has(message.method)
+  const params = message.params
+  const isObject = params !== null && typeof params === "object" && !Array.isArray(params)
+
+  call(message.method, isObject ? params : {}, {
+    file: carriesFile ? (message.file ?? null) : null,
+    onProgress: carriesFile
+      ? progress => postToSite(frame, {potok: 1, event: "upload_progress", id: message.id, progress})
+      : null,
+  }).then(reply, () => reply({ok: false, error: "timeout"}))
+}
+
 window.addEventListener("message", event => {
   const message = event.data
 
-  if (event.source !== window.parent || !message || message.potok !== 1) return
+  if (event.source !== window.parent) {
+    handleSiteMessage(event)
+    return
+  }
+
+  if (!message || message.potok !== 1) return
 
   if (message.event === "ready") {
     seedLocalStorage(message.storage)
     applyTheme(message.theme)
     markParentReady()
+    postToSites({potok: 1, event: "theme", theme: message.theme ?? null})
     return
   }
 
   if (message.event === "theme") {
     applyTheme(message.theme)
+    postToSites({potok: 1, event: "theme", theme: message.theme ?? null})
     return
   }
 
   // Values pushed while the page was offline never arrive, and apps load
   // their data once, so the app starts again (the old hook re-ran its scripts).
+  // A description that only holds a site has nothing of its own to start
+  // again: the site hears of it and stays on the page its reader is on.
   if (message.event === "reconnected") {
-    window.location.reload()
+    if (liveSiteFrames().length > 0 && !document.querySelector("#group-panel-description script")) {
+      postToSites({potok: 1, event: "reconnected"})
+    } else {
+      window.location.reload()
+    }
     return
+  }
+
+  // Values in a collection come as `app_value`, to those the rules allow.
+  const siteReaders = SITE_EVENT_READERS[message.event]
+
+  if (Array.isArray(siteReaders) && !(message.event === "new_value" && message.value?.collection != null)) {
+    postToSites(message, siteReaders)
   }
 
   if (message.event === "children_changed") {
@@ -425,13 +546,13 @@ const potok = {
     call(
       "upload_file",
       {collection: options.collection ?? null, slot: options.slot ?? null},
-      {waits: true, file, onProgress: options.onProgress}
+      {file, onProgress: options.onProgress}
     ),
 
   // A picture of the app itself, for its editors. Resolves with `file.url`,
   // an address anyone who sees the app can open.
   uploadImage: (file, options = {}) =>
-    call("upload_image", {}, {waits: true, file, onProgress: options.onProgress}),
+    call("upload_image", {}, {file, onProgress: options.onProgress}),
 
   // Calls `listener` with each change in the app's collections the viewer may
   // see: `{event, collection, value?, id?, revision?}`, where `event` is
@@ -542,7 +663,7 @@ const potok = {
 
   // Lets the viewer choose any emoji in Potok's own picker. Resolves to
   // `{ok: true, emoji}`, or `{ok: false, error: "cancelled"}` when they close it.
-  pickEmoji: () => call("pick_emoji", {}, {waits: true}),
+  pickEmoji: () => call("pick_emoji"),
 
   // Opens the page's way of sharing with the link of a group `openGroup` can
   // reach. A frame has neither Web Share nor the clipboard. With `{inApp: true}`

@@ -37,4 +37,33 @@ defmodule PotokIdeWeb.AppFrameMethodsTest do
     for method <- ~w(list_processes complete_task retry_process cancel_process),
         do: assert(method in frame_methods(), method)
   end
+
+  # The SDK names methods in three lists of its own, none of which goes through
+  # `call("...")`: a name that is not a method of the page's would do nothing,
+  # with no error anywhere.
+  defp sdk_list(pattern) do
+    [_, block] = Regex.run(pattern, File.read!("assets/js/potok_app_sdk.js"))
+
+    ~r/"([a-z_]+)"/
+    |> Regex.scan(block, capture: :all_but_first)
+    |> List.flatten()
+    |> MapSet.new()
+  end
+
+  test "the calls that wait and those that carry a file are methods of the page" do
+    waiting = sdk_list(~r/const WAITING_METHODS = new Set\(\[(.*?)\]\)/s)
+    files = sdk_list(~r/const FILE_METHODS = new Set\(\[(.*?)\]\)/s)
+
+    assert MapSet.size(waiting) > 0
+    assert MapSet.subset?(waiting, frame_methods())
+    assert MapSet.size(files) > 0
+    assert MapSet.subset?(files, waiting)
+  end
+
+  test "what the page pushes goes on to a site in the app's frame only by methods of the page" do
+    readers = sdk_list(~r/const SITE_EVENT_READERS = \{(.*?)\n\}/s)
+
+    assert "list_values" in readers
+    assert MapSet.subset?(readers, frame_methods())
+  end
 end

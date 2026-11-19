@@ -1392,6 +1392,15 @@ defmodule PotokIdeWeb.DomainCopy do
             )
         },
         %{
+          icon: "hero-window",
+          title: dgettext("domain_map", "Shows a site"),
+          text:
+            dgettext(
+              "domain_map",
+              "A description can show a site from another address, in a frame inside its own. Potok tells that site the viewer's theme and language, so the site can follow them, and passes on only the calls the description lists for it. That is how a handbook published elsewhere reads as a part of the group."
+            )
+        },
+        %{
           icon: "hero-chart-bar",
           title: dgettext("domain_map", "Shows the group's polls"),
           text:
@@ -1424,6 +1433,10 @@ defmodule PotokIdeWeb.DomainCopy do
         dgettext(
           "domain_map",
           "An app runs apart from Potok's page, so it gets only what Potok hands it."
+        ),
+        dgettext(
+          "domain_map",
+          "A site inside an app gets the theme, the language and the calls its description lists, and no more. Potok cannot tell which page stands in that frame, so the list holds for whatever opens there."
         ),
         dgettext("domain_map", "The server checks every call again, whatever the app asks for."),
         dgettext(
