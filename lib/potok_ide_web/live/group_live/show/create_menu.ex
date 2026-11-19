@@ -211,6 +211,12 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         "The map is ready. Add its first place, or give a sub-group a place in its settings."
       )
 
+  defp created_message("orders"),
+    do:
+      gettext(
+        "Ordering is ready. Fill in the producer and the products, then open the first round."
+      )
+
   defp created_message(_preset), do: gettext("Group created.")
 
   # Where the work goes on. An empty feed has nowhere to write from.
@@ -283,6 +289,17 @@ defmodule PotokIdeWeb.GroupLive.Show.CreateMenu do
         summary:
           gettext(
             "It opens on the Map app: its sub-groups that have a place show as pins, a tap opens one, and members add new places on the map."
+          )
+      },
+      %{
+        key: "orders",
+        icon: "hero-shopping-bag",
+        mark: "hero-shopping-bag-micro",
+        title: gettext("Ordering"),
+        hint: gettext("Order together from a producer."),
+        summary:
+          gettext(
+            "It opens on the Ordering app: you fill in the producer and the products, open a round, members order, and one of them picks it all up and hands it out."
           )
       },
       %{

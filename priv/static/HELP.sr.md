@@ -217,6 +217,7 @@ Podgrupu praviš dugmetom + na kartici Podgrupe ili iz menija grupe. Prvo biraš
 - **Glasanja**: sva glasanja grupe na jednom mestu.
 - **Forma**: pitanja, odgovori i njihov rezime.
 - **Mapa**: podgrupe kao pinovi na mapi. Ne nudi se na početnoj strani, nego unutar grupe.
+- **Naručivanje**: komšije zajedno naručuju od proizvođača, u turama, a jedan od njih sve preuzme i podeli.
 - **Stranica**: tekst koji se prvi vidi, napravljen iz šablona.
 
 U drugom koraku upišeš naziv i biraš da li je grupa javna i da li nasleđuje članove: sve ili samo one sa ulogama koje izabereš. „Podesi sve ručno“ otvara pun obrazac.

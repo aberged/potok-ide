@@ -6,8 +6,8 @@ defmodule PotokIde.Social.GroupPresets do
   which shows while the group still fits it (`shown/1`).
   `Social.create_group/3` stays the way to set everything by hand.
 
-  The apps of a feed, of a group for polls, of a form and of a map are files in
-  `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
+  The apps of a feed, of a group for polls, of a form, of a map and of ordering
+  are files in `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
   its description, as with a pasted app, so a new build reaches only the groups
   made after it.
 
@@ -17,10 +17,10 @@ defmodule PotokIde.Social.GroupPresets do
   alias PotokIde.Social.Group
 
   # The form's key is not "form", whose element id the menu's own form has.
-  @keys ~w(chat folder feed polls questionnaire map page)
+  @keys ~w(chat folder feed polls questionnaire map orders page)
 
   # The presets whose group opens on an app.
-  @apps ~w(feed polls questionnaire map)a
+  @apps ~w(feed polls questionnaire map orders)a
 
   @key_atoms Enum.map(@keys, &String.to_atom/1)
 
@@ -141,6 +141,17 @@ defmodule PotokIde.Social.GroupPresets do
   defp preset_attrs("map") do
     %{
       "description" => app("mapa.html"),
+      "description_format" => :html,
+      "uses_api" => true,
+      "home_page" => :description
+    }
+  end
+
+  # The Ordering app keeps its settings, rounds, orders and drivers in the
+  # group's app data, under rules it saves on its editors' first visit.
+  defp preset_attrs("orders") do
+    %{
+      "description" => app("narucivanje.html"),
       "description_format" => :html,
       "uses_api" => true,
       "home_page" => :description

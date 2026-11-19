@@ -211,6 +211,7 @@ You create a sub-group with the + button on the Sub-groups tab or from the group
 - **Polls**: all of the group's polls in one place.
 - **Form**: questions, answers and a summary of them.
 - **Map**: sub-groups as pins on a map. It is not offered on the home page, only inside a group.
+- **Ordering**: neighbours order together from a producer, in rounds, and one of them picks it all up and hands it out.
 - **Page**: a text people see first, made from a template.
 
 In the second step you enter the name and choose whether the group is public and whether it inherits members: all of them, or only those with the roles you choose. "Set everything up yourself" opens the full form.

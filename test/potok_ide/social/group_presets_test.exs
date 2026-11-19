@@ -13,6 +13,7 @@ defmodule PotokIde.Social.GroupPresetsTest do
   @polls_build "priv/apps/glasanje.html"
   @forms_build "priv/apps/forme.html"
   @map_build "priv/apps/mapa.html"
+  @orders_build "priv/apps/narucivanje.html"
 
   setup do
     {_account, owner} = account_with_profile!("preset-owner")
@@ -101,6 +102,20 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group.is_public
       assert GroupPresets.shown(group) == :map
       assert Access.can?(ctx.member, group, :create_subgroups)
+    end
+
+    test "ordering opens on its app, closed, for the members of the parent", ctx do
+      assert {:ok, %{group: group, feed: nil}} = create(ctx, "orders")
+
+      assert group.uses_api
+      assert group.preset == :orders
+      assert group.home_page == :description
+      assert group.description_format == :html
+      assert group.description == File.read!(@orders_build)
+      assert group.inherits_members
+      refute group.is_public
+      assert GroupPresets.shown(group) == :orders
+      assert Social.list_child_groups(group) == []
     end
 
     test "takes from the viewer only what is theirs to pick", ctx do
@@ -287,6 +302,15 @@ defmodule PotokIde.Social.GroupPresetsTest do
       refute group_named?("Mapa")
 
       assert {:ok, %{group: %Group{preset: :map}}} = create(ctx, "map", %{"name" => "Mapa"})
+    end
+
+    test "ordering in the root too, where it inherits no one", ctx do
+      assert "orders" in GroupPresets.keys_for(ctx.root)
+
+      assert {:ok, %{group: %Group{preset: :orders} = group}} =
+               create(ctx, "orders", %{"name" => "Zajednička nabavka"}, ctx.root)
+
+      refute group.inherits_members
     end
 
     # A group sends notices to its followers instead (`PotokIde.Notices`).

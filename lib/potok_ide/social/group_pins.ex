@@ -65,6 +65,7 @@ defmodule PotokIde.Social.GroupPins do
     {"questionnaire", "clipboard-document-list"},
     {"page", "document-text"},
     {"map", "map"},
+    {"orders", "shopping-bag"},
     {"app", "puzzle-piece"},
     {"none", "map-pin"}
   ]

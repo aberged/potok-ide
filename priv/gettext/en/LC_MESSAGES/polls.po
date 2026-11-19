@@ -510,7 +510,7 @@ msgid "Poll"
 msgstr ""
 
 #: lib/potok_ide_web/live/group_live/show.ex:600
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:258
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:264
 #: lib/potok_ide_web/live/group_live/show/group_menu.ex:57
 #: lib/potok_ide_web/live/group_live/show/polls_tab.ex:32
 #, elixir-autogen, elixir-format
@@ -896,12 +896,12 @@ msgstr ""
 msgid "of %{count} who may vote"
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:261
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:267
 #, elixir-autogen, elixir-format
 msgid "It opens on the Polls app, a board of the group's polls, where members vote and start new ones."
 msgstr ""
 
-#: lib/potok_ide_web/live/group_live/show/create_menu.ex:259
+#: lib/potok_ide_web/live/group_live/show/create_menu.ex:265
 #, elixir-autogen, elixir-format
 msgid "Votes and decisions, in one place."
 msgstr ""

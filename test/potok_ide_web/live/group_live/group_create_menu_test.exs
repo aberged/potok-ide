@@ -67,7 +67,7 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
 
       assert has_element?(lv, "dialog#group-create-menu")
 
-      for preset <- ~w(chat folder feed polls questionnaire map page) do
+      for preset <- ~w(chat folder feed polls questionnaire map orders page) do
         assert has_element?(lv, "#group-create-preset-#{preset}")
       end
 
@@ -85,6 +85,7 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       render_click(lv, "group_create_menu_open", %{"id" => ctx.root.id})
 
       assert has_element?(lv, "#group-create-preset-chat")
+      assert has_element?(lv, "#group-create-preset-orders")
       refute has_element?(lv, "#group-create-preset-map")
 
       render_click(lv, "group_create_menu_pick", %{"preset" => "map"})
@@ -335,6 +336,19 @@ defmodule PotokIdeWeb.GroupLive.GroupCreateMenuTest do
       assert path == ~p"/groups/#{group.id}"
       assert flash["info"]
       assert group.preset == :map
+      assert group.uses_api
+    end
+
+    test "ordering leads to its app, which asks for the producer first", ctx do
+      lv = ctx |> sub_groups() |> open_menu() |> pick("orders")
+
+      assert has_element?(lv, "#group-create-summary")
+
+      {path, flash, group} = create(lv, "Mleko od Petrovića")
+
+      assert path == ~p"/groups/#{group.id}"
+      assert flash["info"]
+      assert group.preset == :orders
       assert group.uses_api
     end
 
