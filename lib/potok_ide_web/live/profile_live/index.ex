@@ -31,18 +31,26 @@ defmodule PotokIdeWeb.ProfileLive.Index do
           </:subtitle>
         </.page_header>
 
-        <div :if={@current_profile} class="alert">
-          <ProfileComponents.profile_identity
+        <%!-- The profile in use and the one a new session starts with. --%>
+        <div
+          :if={@current_profile || @default_profile}
+          id="profiles-summary"
+          class="mb-3 grid gap-2 sm:grid-cols-2"
+        >
+          <.profile_summary
+            :if={@current_profile}
+            id="profiles-current"
             profile={@current_profile}
             title={gettext("Current profile:")}
-          /> <.icon name="hero-check-badge" class="size-4 ml-auto" />
-        </div>
-
-        <div :if={@default_profile} class="alert">
-          <ProfileComponents.profile_identity
+            icon="hero-check-badge"
+          />
+          <.profile_summary
+            :if={@default_profile}
+            id="profiles-default"
             profile={@default_profile}
             title={gettext("Default profile:")}
-          /> <.icon name="hero-globe-alt" class="size-4 ml-auto" />
+            icon="hero-globe-alt"
+          />
         </div>
 
         <div :if={@profile_invitations != []} id="shared-profile-invitations" class="space-y-3">
@@ -111,27 +119,22 @@ defmodule PotokIdeWeb.ProfileLive.Index do
               />
             </button>
             <Layouts.drop_down_menu id={"profile-menu-#{profile.id}"}>
-              <div class="flex min-w-48 flex-col gap-2">
-                <button
+              <div class="flex min-w-48 flex-col gap-0.5">
+                <.menu_item
                   id={"set-default-profile-#{profile.id}"}
-                  type="button"
+                  icon="hero-globe-alt"
+                  label={gettext("Make default")}
                   data-dropdown-close
                   phx-click="set_default"
                   phx-value-id={profile.id}
                   disabled={current?(profile, @default_profile)}
-                  class={profile_menu_item_class()}
-                >
-                  <.icon name="hero-globe-alt" class="size-4 shrink-0" />
-                  <span class="truncate">{gettext("Make default")}</span>
-                </button>
-                <.link
+                />
+                <.menu_item
                   id={"edit-profile-#{profile.id}"}
+                  icon="hero-pencil"
+                  label={gettext("Edit")}
                   navigate={~p"/profiles/#{profile.id}/edit"}
-                  class={profile_menu_item_class()}
-                >
-                  <.icon name="hero-pencil" class="size-4 shrink-0" />
-                  <span class="truncate">{gettext("Edit")}</span>
-                </.link>
+                />
               </div>
             </Layouts.drop_down_menu>
           </li>
@@ -309,8 +312,30 @@ defmodule PotokIdeWeb.ProfileLive.Index do
   defp current?(profile, %{id: id}), do: profile.id == id
   defp current?(_profile, nil), do: false
 
-  defp profile_menu_item_class do
-    "flex w-full items-center gap-2 rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content disabled:cursor-default disabled:opacity-50"
+  attr :id, :string, required: true
+  attr :profile, :map, required: true
+  attr :title, :string, required: true
+  attr :icon, :string, required: true
+
+  # What the profile is to the account, over the profile itself. The label has
+  # a line of its own, so a long one does not push the name.
+  defp profile_summary(assigns) do
+    ~H"""
+    <div
+      id={@id}
+      class="min-w-0 rounded-2xl border border-base-300/70 bg-base-100/80 p-3 shadow-sm"
+    >
+      <div class="mb-2 flex items-center justify-between gap-2">
+        <p class="min-w-0 truncate text-xs font-semibold uppercase tracking-[0.14em] text-base-content/60">
+          {@title}
+        </p>
+        <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <.icon name={@icon} class="size-4" />
+        </span>
+      </div>
+      <ProfileComponents.profile_identity profile={@profile} />
+    </div>
+    """
   end
 
   defp profile_picture_url(profile), do: PotokIdeWeb.Avatars.profile_avatar_url(profile)

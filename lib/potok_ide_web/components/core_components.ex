@@ -286,6 +286,90 @@ defmodule PotokIdeWeb.CoreComponents do
       "bg-primary text-primary-content shadow-sm shadow-primary/30 not-disabled:hover:-translate-y-px not-disabled:hover:shadow-md"
 
   @doc """
+  Renders a row of a menu, such as `Layouts.drop_down_menu/1`: the icon on a
+  tile, the label, and what the inner block adds at the row's end. A link
+  when it navigates, a button otherwise. `active` marks the place the viewer
+  is at, in the mark's blue with a check, as the choice menus mark a pick.
+
+  ## Examples
+
+      <.menu_item icon="hero-pencil" label={gettext("Edit")} navigate={~p"/profiles/1/edit"} />
+      <.menu_item icon="hero-bookmark" label={gettext("Pin")} phx-click="pin" data-dropdown-close />
+  """
+  attr :icon, :string, required: true
+  attr :label, :string, required: true
+  attr :active, :boolean, default: false
+  attr :class, :any, default: nil, doc: "layout classes, added after the look's"
+  attr :rest, :global, include: ~w(href navigate patch method download name value disabled form)
+  slot :note, doc: "a second line under the label"
+  slot :inner_block, doc: "extras at the row's end, like a count"
+
+  def menu_item(%{rest: rest} = assigns) do
+    assigns = assign(assigns, :class, [menu_item_class(assigns.active), assigns.class])
+
+    if rest[:href] || rest[:navigate] || rest[:patch] do
+      ~H"""
+      <.link class={@class} aria-current={@active && "true"} {@rest}>
+        <.menu_item_icon name={@icon} active={@active} />
+        <span class="min-w-0 flex-1">
+          <span class="block truncate">{@label}</span>
+          <span :if={@note != []} class={menu_item_note_class()}>{render_slot(@note)}</span>
+        </span>
+        {render_slot(@inner_block)}
+        <.icon :if={@active} name="hero-check" class="size-4 shrink-0" />
+      </.link>
+      """
+    else
+      ~H"""
+      <button type="button" class={@class} aria-current={@active && "true"} {@rest}>
+        <.menu_item_icon name={@icon} active={@active} />
+        <span class="min-w-0 flex-1">
+          <span class="block truncate">{@label}</span>
+          <span :if={@note != []} class={menu_item_note_class()}>{render_slot(@note)}</span>
+        </span>
+        {render_slot(@inner_block)}
+        <.icon :if={@active} name="hero-check" class="size-4 shrink-0" />
+      </button>
+      """
+    end
+  end
+
+  @doc """
+  The classes of `menu_item/1`, for a row that cannot be one, like the
+  `<summary>` that opens more rows under it.
+  """
+  def menu_item_class(active? \\ false) do
+    [
+      "group/item flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition-colors duration-150 focus-visible:bg-base-200 focus-visible:outline-none not-disabled:hover:bg-base-200 disabled:cursor-default disabled:opacity-50 phx-click-loading:opacity-70",
+      if(active?,
+        do: "font-semibold text-primary",
+        else: "font-medium text-base-content/80 not-disabled:hover:text-base-content"
+      )
+    ]
+  end
+
+  defp menu_item_note_class, do: "block text-xs font-normal leading-4 text-base-content/60"
+
+  @doc "The icon of a `menu_item/1` on its tile, for a row that cannot be one."
+  attr :name, :string, required: true
+  attr :active, :boolean, default: false
+
+  def menu_item_icon(assigns) do
+    ~H"""
+    <span class={[
+      "inline-flex size-7 shrink-0 items-center justify-center rounded-lg transition-colors",
+      if(@active,
+        do: "bg-primary/15 text-primary",
+        else:
+          "bg-base-200 text-base-content/65 group-hover/item:bg-base-300 group-focus-visible/item:bg-base-300 group-disabled/item:bg-base-200"
+      )
+    ]}>
+      <.icon name={@name} class="size-4" />
+    </span>
+    """
+  end
+
+  @doc """
   Renders an input with label and error messages.
 
   A `Phoenix.HTML.FormField` may be passed as argument,

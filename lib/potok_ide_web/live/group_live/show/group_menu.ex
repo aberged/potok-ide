@@ -106,7 +106,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     assigns = assign(assigns, :row?, is_nil(assigns.active_tab))
 
     ~H"""
-    <div class="flex min-w-56 flex-col gap-2 z-100">
+    <div class="flex min-w-56 flex-col gap-0.5">
       {render_slot(@inner_block)}
       <.mute_item :if={@mute} group={@group} mute={@mute} id_prefix={@id_prefix} row?={@row?} />
       <.pin_item :if={@pin} group={@group} pin={@pin} id_prefix={@id_prefix} row?={@row?} />
@@ -119,37 +119,29 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         label={gettext("About the group")}
         icon="hero-information-circle"
       />
-      <button
+      <.menu_item
         :if={Group.guest_preview?(@group)}
         id={"#{@id_prefix}-share-button"}
-        type="button"
+        icon="hero-share"
+        label={gettext("Share")}
         data-dropdown-close
         data-share-link={url(~p"/groups/#{@group.id}")}
         phx-click={@row? && "group_row_menu_close"}
-        class={item_class()}
-      >
-        <.icon name="hero-share" class="size-4" />
-        <span class="ml-2 truncate">{gettext("Share")}</span>
-      </button>
-      <button
+      />
+      <.menu_item
         :if={!@group.is_root}
         id={"#{@id_prefix}-tags-button"}
-        type="button"
+        icon="hero-hashtag"
+        label={gettext("Tags of this group")}
         data-dropdown-close
         phx-click={open_dialog("tag_editor_open", %{kind: "group", id: @group.id}, @row?)}
-        class={item_class()}
-      >
-        <.icon name="hero-hashtag" class="size-4" />
-        <span class="ml-2 truncate">{gettext("Tags of this group")}</span>
-      </button>
-      <.link
+      />
+      <.menu_item
         id={"#{@id_prefix}-tags-browse"}
+        icon="hero-squares-2x2"
+        label={gettext("Browse by tags")}
         navigate={TagComponents.tags_path([], if(@group.is_root, do: nil, else: @group.id))}
-        class={item_class()}
-      >
-        <.icon name="hero-squares-2x2" class="size-4" />
-        <span class="ml-2 truncate">{gettext("Browse by tags")}</span>
-      </.link>
+      />
       <.tab_item
         :if={Notices.followable?(@group)}
         id={"#{@id_prefix}-tab-notices"}
@@ -168,17 +160,14 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         label={gettext("Roles")}
         icon="hero-shield-check"
       />
-      <button
+      <.menu_item
         :if={Access.can?(@access, :create_subgroups)}
         id={"#{@id_prefix}-tab-create-sub-group"}
-        type="button"
+        icon="hero-folder-plus"
+        label={gettext("Create sub-group")}
         data-dropdown-close
         phx-click={open_dialog("group_create_menu_open", %{id: @group.id}, @row?)}
-        class={item_class()}
-      >
-        <.icon name="hero-folder-plus" class="size-4" />
-        <span class="ml-2 truncate">{gettext("Create sub-group")}</span>
-      </button>
+      />
       <.tab_item
         :if={
           @group.parent_id != nil && !@group.is_direct &&
@@ -224,22 +213,23 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
   defp mute_item(%{mute: %{until: nil}} = assigns) do
     ~H"""
     <details id={"#{@id_prefix}-mute"} class="group/mute">
-      <summary class={[item_class(), "cursor-pointer list-none [&::-webkit-details-marker]:hidden"]}>
-        <.icon name="hero-speaker-x-mark" class="size-4" />
-        <span class="ml-2 truncate">{gettext("Mute")}</span>
+      <summary class={[menu_item_class(), "list-none [&::-webkit-details-marker]:hidden"]}>
+        <.menu_item_icon name="hero-speaker-x-mark" />
+        <span class="min-w-0 flex-1 truncate">{gettext("Mute")}</span>
         <.icon
           name="hero-chevron-down"
-          class="ml-auto size-4 transition-transform duration-150 group-open/mute:rotate-180"
+          class="size-4 shrink-0 opacity-60 transition-transform duration-150 group-open/mute:rotate-180"
         />
       </summary>
-      <div class="mt-1 flex flex-col gap-1 pl-6">
+      <%!-- The lengths stand under the label, past the tile and its gap. --%>
+      <div class="flex flex-col gap-0.5 pb-1 pl-9.5">
         <button
           :for={{duration, label} <- mute_choices()}
           id={"#{@id_prefix}-mute-#{duration}"}
           type="button"
           data-dropdown-close
           phx-click={mute_click(@group, duration, @row?)}
-          class={[item_class(), "py-1.5"]}
+          class={[menu_item_class(), "py-1.5"]}
         >
           {label}
         </button>
@@ -250,24 +240,22 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   defp mute_item(assigns) do
     ~H"""
-    <button
+    <.menu_item
       id={"#{@id_prefix}-unmute"}
-      type="button"
+      icon="hero-speaker-wave"
+      label={gettext("Turn notifications on")}
       data-dropdown-close
       phx-click={mute_click(@group, "off", @row?)}
-      class={[item_class(), "flex-wrap"]}
     >
-      <.icon name="hero-speaker-wave" class="size-4" />
-      <span class="ml-2 truncate">{gettext("Turn notifications on")}</span>
-      <span class="basis-full pl-6 text-xs font-normal text-base-content/60">
+      <:note>
         <%= if PotokIde.Social.GroupMutes.forever?(@mute.until) do %>
           {gettext("Muted until you turn them on")}
         <% else %>
           {gettext("Muted until")}
           <Components.local_time id={"#{@id_prefix}-muted-until"} datetime={@mute.until} />
         <% end %>
-      </span>
-    </button>
+      </:note>
+    </.menu_item>
     """
   end
 
@@ -289,24 +277,18 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
 
   defp pin_item(assigns) do
     ~H"""
-    <button
+    <.menu_item
       id={"#{@id_prefix}-#{if(@pin.pinned?, do: "unpin", else: "pin")}"}
-      type="button"
-      data-dropdown-close
-      phx-click={pin_click(@group, !@pin.pinned?, @row?)}
-      class={item_class()}
-    >
-      <.icon
-        name={if(@pin.pinned?, do: "hero-bookmark-slash", else: "hero-bookmark")}
-        class="size-4"
-      />
-      <span class="ml-2 truncate">
-        {if(@pin.pinned?,
+      icon={if(@pin.pinned?, do: "hero-bookmark-slash", else: "hero-bookmark")}
+      label={
+        if(@pin.pinned?,
           do: gettext("Unpin from your groups"),
           else: gettext("Pin to your groups")
-        )}
-      </span>
-    </button>
+        )
+      }
+      data-dropdown-close
+      phx-click={pin_click(@group, !@pin.pinned?, @row?)}
+    />
     """
   end
 
@@ -339,10 +321,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
   # The open group switches tabs in place. Another group is a page of its own.
   defp tab_item(%{active_tab: nil} = assigns) do
     ~H"""
-    <.link id={@id} navigate={~p"/groups/#{@group.id}/#{@tab}"} class={item_class()}>
-      <.icon name={@icon} class="size-4" />
-      <span class="ml-2 truncate">{@label}</span>
-    </.link>
+    <.menu_item id={@id} icon={@icon} label={@label} navigate={~p"/groups/#{@group.id}/#{@tab}"} />
     """
   end
 
@@ -365,8 +344,11 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
     JS.push(js, event, value: value)
   end
 
-  defp item_class do
-    "flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
+  # Between the parts of a menu, as in the choice menus.
+  defp divider(assigns) do
+    ~H"""
+    <div class="mx-2 my-1 border-t border-base-300/70" aria-hidden="true"></div>
+    """
   end
 
   attr :group_id, :integer, required: true
@@ -444,7 +426,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
         id={"#{@prefix}-menu-card"}
         tabindex="-1"
         autofocus
-        class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
+        class="absolute right-2 top-2 max-h-[calc(100dvh-1rem)] w-[min(18rem,calc(100vw-1.25rem))] overflow-y-auto rounded-2xl border border-base-300/70 bg-base-100/95 p-1.5 shadow-2xl shadow-primary/10 outline-none backdrop-blur"
       >
         <.items
           group={@menu.group}
@@ -453,23 +435,15 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
           mute={@menu[:mute]}
           pin={@menu[:pin]}
         >
-          <button
+          <.menu_item
             :if={@shortcut && @shortcut.removable?}
             id={"#{@prefix}-menu-remove-shortcut"}
-            type="button"
+            icon="hero-link-slash"
+            label={gettext("Remove shortcut")}
             phx-click="group_shortcut_remove"
             phx-value-id={@shortcut.shortcut.id}
-            class={item_class()}
-          >
-            <.icon name="hero-link-slash" class="size-4" />
-            <span class="ml-2 truncate">{gettext("Remove shortcut")}</span>
-          </button>
-          <div
-            :if={@shortcut && @shortcut.removable?}
-            class="border-t border-base-300/70"
-            aria-hidden="true"
-          >
-          </div>
+          />
+          <.divider :if={@shortcut && @shortcut.removable?} />
           <.tab_item
             :for={section <- @menu.sections}
             id={"#{@prefix}-tab-#{section.key}"}
@@ -478,8 +452,7 @@ defmodule PotokIdeWeb.GroupLive.Show.GroupMenu do
             label={section.label}
             icon={section.icon}
           />
-          <div :if={@menu.sections != []} class="border-t border-base-300/70" aria-hidden="true">
-          </div>
+          <.divider :if={@menu.sections != []} />
         </.items>
       </div>
     </dialog>

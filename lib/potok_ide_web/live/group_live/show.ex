@@ -517,23 +517,26 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 }
                 label={gettext("You follow the group")}
               >
-                <div class="flex min-w-56 flex-col gap-2">
-                  <p class="px-1 text-sm font-semibold text-base-content">
-                    {gettext("You follow the group")}
-                  </p>
-                  <NoticeComponents.push_switch
-                    id="group-follow-push"
-                    checked={@notice_state.push?}
-                    disabled={!@current_profile.notice_push}
-                    label={gettext("Push notifications")}
-                    class="px-1"
-                    phx-click="notice_follow_push"
-                    phx-value-push={to_string(!@notice_state.push?)}
-                  />
-                  <NoticeComponents.push_off_note
-                    :if={!@current_profile.notice_push}
-                    id="group-follow-push-off"
-                  />
+                <div class="flex min-w-56 flex-col gap-0.5">
+                  <%!-- What is not a row keeps the rows' left edge. --%>
+                  <div class="flex flex-col gap-1 px-2.5 pt-1.5 pb-1">
+                    <p class="text-sm font-semibold text-base-content">
+                      {gettext("You follow the group")}
+                    </p>
+                    <NoticeComponents.push_switch
+                      id="group-follow-push"
+                      checked={@notice_state.push?}
+                      disabled={!@current_profile.notice_push}
+                      label={gettext("Push notifications")}
+                      phx-click="notice_follow_push"
+                      phx-value-push={to_string(!@notice_state.push?)}
+                    />
+                    <NoticeComponents.push_off_note
+                      :if={!@current_profile.notice_push}
+                      id="group-follow-push-off"
+                    />
+                  </div>
+                  <div class="mx-2 my-1 border-t border-base-300/70" aria-hidden="true"></div>
                   <Components.group_tab_button
                     id="group-follow-notices"
                     tab="notices"
@@ -541,16 +544,13 @@ defmodule PotokIdeWeb.GroupLive.Show do
                     label={gettext("Notices")}
                     icon="hero-bell-alert"
                   />
-                  <button
+                  <.menu_item
                     id="group-unfollow"
-                    type="button"
+                    icon="hero-bell-slash"
+                    label={gettext("Stop following")}
                     data-dropdown-close
                     phx-click="notice_unfollow"
-                    class="flex w-full flex-row items-center rounded-md bg-base-200 px-4 py-2 text-left text-sm font-medium text-base-content/70 transition-colors hover:bg-base-300 hover:text-base-content"
-                  >
-                    <.icon name="hero-bell-slash" class="size-4" />
-                    <span class="ml-2 truncate">{gettext("Stop following")}</span>
-                  </button>
+                  />
                 </div>
               </Layouts.drop_down_menu>
 

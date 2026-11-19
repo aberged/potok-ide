@@ -133,6 +133,7 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
 
       assert html =~ "alpha-prof"
       refute html =~ "Profile selected."
+      assert has_element?(lv, "#profiles-summary #profiles-current", "alpha-prof")
 
       result =
         lv
@@ -140,10 +141,8 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Profile selected."
-      assert result =~ "beta-prof"
-
-      refute result =~
-               "Current profile:</div>\n        <div class=\"truncate font-semibold text-base-content\">alpha-prof"
+      assert has_element?(lv, "#profiles-current", "beta-prof")
+      refute has_element?(lv, "#profiles-current", "alpha-prof")
     end
 
     test "sets a default profile from the profiles page", %{conn: conn} do
@@ -185,11 +184,9 @@ defmodule PotokIdeWeb.ProfileLive.IndexTest do
         |> render_click()
 
       assert result =~ "Default profile updated."
-      assert result =~ "default-b"
       assert result =~ "Default profile:"
-
-      refute result =~
-               "Default profile:</div>\n          <div class=\"truncate font-semibold text-base-content\">default-a"
+      assert has_element?(lv, "#profiles-summary #profiles-default", "default-b")
+      refute has_element?(lv, "#profiles-default", "default-a")
 
       updated_account = Accounts.get_account!(account.id)
       assert updated_account.default_profile_id == second_profile.id

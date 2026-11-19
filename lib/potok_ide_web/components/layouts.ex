@@ -953,24 +953,32 @@ defmodule PotokIdeWeb.Layouts do
     ~H"""
     <div
       id={"#{@id}-container"}
-      class="dropdown dropdown-end w-auto flex-none"
+      class="group/dropdown dropdown dropdown-end w-auto flex-none"
       phx-hook="DropdownMenu"
     >
+      <%!-- The button keeps its frame dark while its menu is open. --%>
       <button
         id={@id}
         type="button"
         tabindex="0"
         aria-label={@label || gettext("Actions")}
-        class={icon_button_class("secondary", "md")}
+        class={[
+          icon_button_class("secondary", "md"),
+          "group-focus-within/dropdown:border-base-content/30 group-focus-within/dropdown:text-base-content"
+        ]}
       >
         <span class="sr-only">{@label || gettext("Actions")}</span>
         <.icon name={@icon} class="size-5" />
       </button>
+      <%!-- The card of the choice menus, whose rows are `menu_item/1`. Its
+           background is solid: a group's header blurs what is behind it, so a
+           blur of the card's own would stop at the header's edge and the page
+           would show through the rows. --%>
       <div
         tabindex="0"
         data-dropdown-content
         class={[
-          "dropdown-content z-40 mt-3 w-[min(18rem,calc(100vw-1.25rem))] rounded-md border border-base-300/70 bg-base-100/95 p-3 shadow-2xl shadow-primary/10 backdrop-blur",
+          "dropdown-content z-40 mt-2 w-[min(18rem,calc(100vw-1.25rem))] rounded-2xl border border-base-300/70 bg-base-100 p-1.5 shadow-2xl shadow-primary/10",
           @menu_class
         ]}
       >

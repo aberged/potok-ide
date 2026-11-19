@@ -1290,6 +1290,33 @@ defmodule PotokIdeWeb.GroupLive.ShowTest do
       assert has_element?(lv, "#group-panel-invite-profile")
     end
 
+    test "the menu marks the tab on screen and no other", %{conn: conn} do
+      account = account_fixture()
+
+      {:ok, profile} =
+        Social.create_profile_for_account(account, %{
+          username: "menu-owner",
+          description: "",
+          description_format: :markdown,
+          sharing: :unique
+        })
+
+      group = create_child_group!(profile, "menu-group")
+      account = Accounts.get_account!(account.id)
+
+      {:ok, lv, _html} = conn |> log_in_account(account) |> live(~p"/groups/#{group.id}/values")
+
+      # A tab of the bar is on screen: the menu has nothing to mark.
+      refute has_element?(lv, "#group-actions-menu-container [aria-current]")
+
+      lv |> element("#group-tab-roles") |> render_click()
+      assert_patch(lv, ~p"/groups/#{group.id}/roles")
+
+      assert has_element?(lv, ~s(#group-tab-roles[aria-current="true"]))
+      refute has_element?(lv, "#group-tab-group-home[aria-current]")
+      refute has_element?(lv, "#group-tab-edit-group[aria-current]")
+    end
+
     test "the root keeps its shortcuts instead of the sections", %{conn: conn} do
       account = account_fixture()
 

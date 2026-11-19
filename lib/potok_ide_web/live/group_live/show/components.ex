@@ -148,38 +148,33 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   attr :tab, :string, required: true
   attr :active_tab, :string, required: true
   attr :label, :string, required: true
-  attr :icon, :string, default: nil
-  attr :icon_class, :string, default: "size-4"
+  attr :icon, :string, required: true
   attr :badge, :integer, default: 0, doc: "how much waits for the viewer there"
   attr :badge_id, :string, default: nil
 
+  @doc """
+  A tab of the open group as a row of a menu, which closes on the pick. The
+  tab on screen is the active row.
+  """
   def group_tab_button(assigns) do
     ~H"""
-    <button
+    <.menu_item
       id={@id}
-      type="button"
+      icon={@icon}
+      label={@label}
+      active={@active_tab == @tab}
       data-dropdown-close
       phx-click="switch_tab"
       phx-value-tab={@tab}
-      class={[
-        if(@icon != nil and (@label == nil or @label == ""), do: "", else: "w-full"),
-        "flex flex-row items-center rounded-md px-4 py-2 text-left text-sm font-medium transition-colors",
-        if(@active_tab == @tab,
-          do: "bg-base-content text-base-100 shadow-sm",
-          else: "bg-base-200 text-base-content/70 hover:bg-base-300 hover:text-base-content"
-        )
-      ]}
     >
-      <.icon :if={@icon} name={@icon} class={@icon_class} />
-      <span :if={@label != nil and @label != ""} class="ml-2 truncate">{@label}</span>
       <.count_badge
         :if={@badge > 0}
         id={@badge_id}
         count={@badge}
         tone={:attention}
-        class="ml-auto shrink-0"
+        class="shrink-0"
       />
-    </button>
+    </.menu_item>
     """
   end
 
