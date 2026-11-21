@@ -362,6 +362,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
               format_options={@format_options}
               templates
               archive_name={@group.name}
+              refresh=""
             />
 
             <details
@@ -945,6 +946,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         template_list_open={@template_list_open}
         picture_upload={@picture_upload}
         archive_name={alt_archive_name(@group, @form)}
+        refresh={@editing && @editing.id && to_string(@editing.id)}
       />
 
       <div class="mt-4 flex flex-wrap items-center justify-between gap-3">

@@ -106,7 +106,7 @@ Sub-groups:
 
 * The sub-groups tab has a list and a folder view (`?view=tree`). The folder view shows the whole tree below the group, up to 10 levels and 500 groups.
 * Each row of the sub-groups tab has a menu with the sections and the options of that group (`GroupMenu`). It is worked out when opened, from the viewer's access to that group.
-* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, feed, polls, form, map, ordering and page. The root offers no map, as it has a map of its own (`GroupPresets.keys_for/1`; `Social.create_group_from_preset/5` refuses it too). The full form stays a link away. The feed, polls, form, map and ordering presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator`, `potok-glasanje`, `potok-forme`, `potok-mapa` and `potok-mleko`.
+* "Create sub-group" opens a menu of presets (`CreateMenu`, `GroupPresets`): chat, folder, feed, polls, form, map, ordering and page. The root offers no map, as it has a map of its own (`GroupPresets.keys_for/1`; `Social.create_group_from_preset/5` refuses it too). The full form stays a link away. The feed, polls, form, map and ordering presets read their apps from `priv/apps`, which `mix potok.sync_apps` copies from the builds of `potok-feed`, `potok-feed-creator`, `potok-glasanje`, `potok-forme`, `potok-mapa` and `potok-mleko`. A group keeps the copy it was made with; when Potok has a newer build, Edit group, Description, offers "Refresh to the newest" (`Social.refresh_app/3`), which replaces only the code (a Feed takes its `.feed`'s FeedCreator along) and leaves the app's data where they are. Potok knows a copy by the `<meta name="potok-app" content="potok-feed">` tag its builds carry, or an older build by its fingerprint in `priv/apps/builds.json` (`mix potok.app_builds`, which `sync_apps` runs); an app it does not know is never replaced.
 * Thread groups are marked, and a threads toggle hides or shows them.
 
 Map:
@@ -738,7 +738,7 @@ A public group can open its description to guests (Edit group, Access, `Group.gu
 * It sees the public groups only, and the `description_html` of a group only when that group opens its description to guests too; `creator_id` is `null`.
 * Everything else answers `forbidden` or `not_a_member`, as it would for a signed-in viewer who may not.
 * The calls from one address count against a limit of 600 a minute. The page listens to nothing live: it asks again, at most once a minute, whether guests may still see the description, and answers `unavailable` once they may not.
-* Groups keep the copy of a preset app they were made with, so an app that knows guests reaches only groups made after it. An older copy gets the same answers and shows them as it can.
+* Groups keep the copy of a preset app they were made with, so an app that knows guests reaches only groups made after it, or those an editor refreshed. An older copy gets the same answers and shows them as it can.
 
 #### Collections and rules
 

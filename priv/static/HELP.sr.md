@@ -364,6 +364,8 @@ Neke vrste grupa dobijaju gotovu aplikaciju:
 - **Glasanja** pokazuju sva glasanja grupe na jednom mestu.
 - **Mapa** pokazuje podgrupe kao pinove, područja i rute.
 
+Grupa zadržava verziju aplikacije sa kojom je napravljena. Kad Potok dobije noviju, u Uredi grupu, Opis, piše „Potok ima noviju verziju aplikacije“, a dugme „Osveži na najnoviju“ menja samo njen kod: odgovori, porudžbine i ostali podaci ostaju. Feed tada osveži i FeedCreator u `.feed`. Aplikaciju koju Potok ne prepozna kao svoju ne dira.
+
 ![Feed: vest iz kraja](feed) ![Forma za porudžbine, kako je vidi član](forma)
 
 Opis bilo koje grupe možeš da napišeš iz šablona: vest, slika, citat, događaj, lista, link, obaveštenje, pitanje, galerija ili slobodan tekst. Galerija je niz slika koje se listaju prevlačenjem levo i desno, a na računaru i strelicama, u jednom od četiri izgleda: slajdovi, kartice, bioskop ili polaroid. Svaka slika ima svoj potpis, a slike sa uređaja koje izabereš zajedno idu u chat kao jedna poruka. Grupa može imati i do 20 alternativnih opisa, a svaki od njih sme da vidi samo određene uloge, ili i posetioci bez naloga, kad grupa za njih otvori opis.

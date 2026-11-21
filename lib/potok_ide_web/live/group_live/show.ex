@@ -2144,6 +2144,23 @@ defmodule PotokIdeWeb.GroupLive.Show do
     end)
   end
 
+  # "Refresh to the newest" in an app's box (`Components.app_archive`): the
+  # default description ("") or an alternative. A form with unsaved changes
+  # comes first, as it would write the old app back.
+  def handle_event("refresh_app", params, socket) do
+    with_edit_group(socket, fn socket ->
+      case params["alt"] do
+        id when id in [nil, ""] ->
+          if edit_group_dirty?(socket.assigns.edit_group_form),
+            do: put_flash(socket, :error, unsaved_first_message()),
+            else: refresh_app(socket, nil)
+
+        id ->
+          with_refreshable_alt(socket, id)
+      end
+    end)
+  end
+
   def handle_event("discard_edit_group", _params, socket) do
     with_edit_group(socket, fn socket ->
       socket
@@ -5155,6 +5172,69 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:alt_description_form, nil)
     |> assign(:template_list, nil)
   end
+
+  defp with_refreshable_alt(socket, id) do
+    case Enum.find(socket.assigns.alt_descriptions, &(to_string(&1.id) == to_string(id))) do
+      nil ->
+        socket
+        |> reload_alt_descriptions()
+        |> put_flash(:error, alt_description_error_message(:not_found))
+
+      alt ->
+        if alt_form_dirty?(socket.assigns.alt_description_form),
+          do: put_flash(socket, :error, unsaved_first_message()),
+          else: refresh_app(socket, alt)
+    end
+  end
+
+  defp alt_form_dirty?(%Phoenix.HTML.Form{source: %Ecto.Changeset{changes: changes}}),
+    do: changes != %{}
+
+  defp alt_form_dirty?(_form), do: false
+
+  defp unsaved_first_message,
+    do: gettext("Save or discard your changes first: refreshing the app sets the form anew.")
+
+  defp refresh_app(socket, alt) do
+    case Social.refresh_app(socket.assigns.current_profile, socket.assigns.group, alt) do
+      {:ok, %{group: group, alt: refreshed_alt, app: app, along: along}} ->
+        socket =
+          socket
+          |> assign(:group, group)
+          |> assign(:edit_group_form, edit_group_form(group, "edit_group"))
+          |> reset_location_draft(false)
+          |> reload_alt_descriptions()
+          |> put_flash(:info, app_refreshed_message(app, along))
+          |> refresh_group_data()
+
+        if refreshed_alt,
+          do: open_alt_description_form(socket, refreshed_alt),
+          else: socket
+
+      {:error, :not_permitted} ->
+        put_flash(socket, :error, access_error_message(:not_permitted))
+
+      {:error, reason} ->
+        put_flash(socket, :error, app_refresh_error(reason))
+    end
+  end
+
+  defp app_refreshed_message(app, []),
+    do: gettext("The %{name} app is the newest version now.", name: Components.app_name(app))
+
+  defp app_refreshed_message(app, _along) do
+    gettext("The %{name} app is the newest version now, and so is FeedCreator in %{feed}.",
+      name: Components.app_name(app),
+      feed: ".feed"
+    )
+  end
+
+  defp app_refresh_error(:up_to_date), do: gettext("The app is the newest version already.")
+
+  defp app_refresh_error(:not_ours),
+    do: gettext("This app is not one of Potok's, so Potok does not change it.")
+
+  defp app_refresh_error(_reason), do: gettext("Could not refresh the app.")
 
   defp kind_key("none"), do: nil
   defp kind_key(kind), do: kind

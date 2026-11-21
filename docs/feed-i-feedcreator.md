@@ -39,7 +39,7 @@ Aplikacije ne razgovaraju jedna sa drugom i ne znaju jedna za drugu. Ceo ugovor 
 
 Najkraći put je preset: **Kreiraj podgrupu** pa **Feed**. On napravi obe grupe sa aplikacijama i sve što je navedeno niže, a tebe odvede u FeedCreator.
 
-Preset uzima kopije iz `priv/apps`, koje `mix potok.sync_apps` osvežava iz build-ova oba projekta. Svaka grupa čuva kopiju sa kojom je napravljena, kao i kod lepljenja, pa nova verzija stiže samo u feed-ove napravljene posle nje.
+Preset uzima kopije iz `priv/apps`, koje `mix potok.sync_apps` osvežava iz build-ova oba projekta. Svaka grupa čuva kopiju sa kojom je napravljena, kao i kod lepljenja. Nova verzija stiže u stariji feed kad urednik u **Uredi grupu**, **Opis**, klikne **Osveži na najnoviju**: kod se menja, podaci ostaju, a osveži se i FeedCreator u `.feed` (`Social.refresh_app/3`). Potok prepoznaje kopiju po tagu `<meta name="potok-app" content="potok-feed">` u build-u, a starije build-ove, bez taga, po otisku iz `priv/apps/builds.json` (`mix potok.app_builds`, koji `mix potok.sync_apps` pokreće sam). Aplikaciju koju ne prepozna ne dira.
 
 Ručno, na primer u postojećoj grupi:
 

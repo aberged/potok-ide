@@ -9,8 +9,8 @@ defmodule PotokIde.Social.GroupPresets do
 
   The apps of a feed, of a group for polls, of a form, of a map and of ordering
   are files in `priv/apps`, copied by `mix potok.sync_apps`. Each group keeps its own copy in
-  its description, as with a pasted app, so a new build reaches only the groups
-  made after it.
+  its description, as with a pasted app; a new build reaches an older group
+  when an editor refreshes it (`Social.refresh_app/3`, `AppBuilds`).
 
   `Social.create_group_from_preset/4` puts a preset to work, and
   `Social.change_group_preset/4` gives a group that stands another kind

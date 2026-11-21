@@ -27,6 +27,7 @@ defmodule PotokIde.Social do
   alias PotokIde.Social.{
     Access,
     AccountProfile,
+    AppBuilds,
     AppData,
     AppProcesses,
     AppScope,
@@ -1187,6 +1188,112 @@ defmodule PotokIde.Social do
     do: [description: "", description_format: :markdown, uses_api: false, description_name: nil]
 
   defp description_changes(_group, %{description: :keep}), do: []
+
+  @doc """
+  Brings the app of `group`'s description (`alt`, nil for the default) to the
+  newest build Potok has of it (`AppBuilds`). Only a copy Potok knows for one
+  of its own apps is replaced, and only while the description is an app. Its
+  data stay where they are, as the newer build is the same app.
+
+  A Feed brings along the FeedCreator of its `.feed`, when that one is
+  outdated too and the editor may edit it there.
+
+  Returns `{:ok, %{group: group, alt: alt | nil, app: app, along: [group]}}`,
+  or `{:error, :not_ours | :up_to_date | :not_permitted | :not_found}`.
+  """
+  def refresh_app(%Profile{} = editor, %Group{} = group, alt \\ nil) do
+    with :ok <- ensure_permission(editor, group, :edit_group),
+         :ok <- ensure_own_alt_description(group, alt) do
+      Repo.transaction(fn ->
+        locked = repo_lock_group!(group)
+
+        {updated_group, updated_alt, app} =
+          case refresh_description(locked, alt) do
+            {:ok, result} -> result
+            {:error, reason} -> Repo.rollback(reason)
+          end
+
+        along =
+          if is_nil(alt) and app == "potok-feed",
+            do: refresh_feed_creator(editor, locked),
+            else: []
+
+        {updated_group, updated_alt, app, along}
+      end)
+      |> case do
+        {:ok, {updated_group, updated_alt, app, along}} ->
+          if updated_alt,
+            do: broadcast_alt_descriptions_updated(updated_group),
+            else: broadcast_group_updated(updated_group)
+
+          Enum.each(along, &broadcast_group_updated/1)
+          {:ok, %{group: updated_group, alt: updated_alt, app: app, along: along}}
+
+        {:error, reason} ->
+          {:error, reason}
+      end
+    end
+  end
+
+  defp repo_lock_group!(%Group{id: id}),
+    do: Repo.one!(from(g in Group, where: g.id == ^id, lock: "FOR UPDATE"))
+
+  defp refresh_description(%Group{} = group, nil) do
+    with {:ok, app} <- outdated_app(group.uses_api, group.description),
+         {:ok, updated} <-
+           group
+           |> Ecto.Changeset.change(
+             description: AppBuilds.current_html(app),
+             description_format: :html
+           )
+           |> Repo.update() do
+      {:ok, {updated, nil, app}}
+    end
+  end
+
+  defp refresh_description(%Group{} = group, %GroupAltDescription{id: alt_id}) do
+    alt =
+      Repo.one(
+        from(d in GroupAltDescription,
+          where: d.id == ^alt_id and d.group_id == ^group.id,
+          lock: "FOR UPDATE"
+        )
+      )
+
+    with %GroupAltDescription{} <- alt || {:error, :not_found},
+         {:ok, app} <- outdated_app(alt.uses_api, alt.description),
+         {:ok, updated} <-
+           alt
+           |> Ecto.Changeset.change(
+             description: AppBuilds.current_html(app),
+             description_format: :html
+           )
+           |> Repo.update() do
+      {:ok, {group, updated, app}}
+    end
+  end
+
+  # A description that is no app, or an app of someone's own, is left alone.
+  defp outdated_app(true, description) when is_binary(description) do
+    case AppBuilds.status(description) do
+      {:outdated, app} -> {:ok, app}
+      {:current, _app} -> {:error, :up_to_date}
+      nil -> {:error, :not_ours}
+    end
+  end
+
+  defp outdated_app(_uses_api, _description), do: {:error, :not_ours}
+
+  defp refresh_feed_creator(%Profile{} = editor, %Group{} = feed) do
+    with id when is_integer(id) <- feed_child_id(feed),
+         %Group{} = desk <- Repo.get(Group, id),
+         true <- Access.can?(editor, desk, :edit_group),
+         {:ok, {updated, nil, "potok-feed-creator"}} <- refresh_description(desk, nil) do
+      [updated]
+    else
+      _not_along -> []
+    end
+  end
 
   # The `.feed` Feed reads is the oldest one, whoever sees it.
   defp feed_child_id(%Group{id: id}) do

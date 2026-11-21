@@ -358,6 +358,8 @@ Some kinds of groups get a ready-made app:
 - **Polls** shows all of the group's polls in one place.
 - **Map** shows the sub-groups as pins, areas and routes.
 
+A group keeps the version of its app it was made with. When Potok has a newer one, Edit group, Description, says "Potok has a newer version of the app", and "Refresh to the newest" replaces only its code: answers, orders and the rest of its data stay. A Feed then refreshes the FeedCreator in `.feed` too. An app Potok does not know for one of its own is left alone.
+
 ![Feed: news from the neighbourhood](feed) ![The order form, as a member sees it](forma)
 
 You can write any group's description from a template: news, photo, quote, event, list, link, notice, question, gallery or free text. A gallery is a row of pictures you swipe through left and right, or move with arrows on a computer, in one of four looks: slides, cards, cinema or polaroid. Each picture has its own caption, and pictures from the device that you pick together go to the chat as one message. A group can also have up to 20 alternative descriptions, each of which only certain roles may see, or visitors without an account too, once the group opens its description to them.

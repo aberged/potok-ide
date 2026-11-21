@@ -1,6 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.Components do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Social.AppBuilds
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Galleries
   alias PotokIdeWeb.Locale
@@ -1554,6 +1555,10 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: nil,
     doc: "the upload of a template's picture, when its author may add a file"
 
+  attr :refresh, :string,
+    default: nil,
+    doc: "the description's id for a refresh of its app (\"\" for the default), nil for none"
+
   attr :archive_name, :string,
     default: nil,
     doc: "name of the ZIP an app's description downloads as, without `.zip`"
@@ -1601,6 +1606,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         id_prefix={@id_prefix}
         field={@description_field}
         archive_name={@archive_name}
+        refresh={@refresh}
       />
 
       <div :if={!@app?} class="group-description-workspace mt-4">
@@ -1766,9 +1772,29 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     """
   end
 
+  @doc "The name of one of Potok's apps (`AppBuilds`), as the Create sub-group menu says it."
+  def app_name("potok-feed-creator"), do: "FeedCreator"
+
+  def app_name(app) do
+    preset = AppBuilds.preset(app)
+    Enum.find_value(CreateMenu.kinds(), app, &(&1.key == preset && &1.title))
+  end
+
+  defp refresh_confirm(app) do
+    confirm =
+      gettext(
+        "Replace the app's code with the newest version? Its data stay. If someone changed its code by hand, download it first."
+      )
+
+    if app == "potok-feed",
+      do: confirm <> " " <> gettext("FeedCreator in %{name} is refreshed too.", name: ".feed"),
+      else: confirm
+  end
+
   attr :id_prefix, :string, required: true
   attr :field, Phoenix.HTML.FormField, required: true, doc: "the description's field"
   attr :archive_name, :string, default: nil
+  attr :refresh, :string, default: nil
 
   # An app's description goes in and out as a file, read and written in the
   # browser (`DescriptionArchive`, assets/js/description_archive.js): a ZIP
@@ -1778,12 +1804,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   # hook's line about the file stay the hook's; the size is the server's.
   defp app_archive(assigns) do
     html = if is_binary(assigns.field.value), do: assigns.field.value, else: ""
+    # Which of Potok's apps it is, only where a saved description can be refreshed.
+    status = if assigns.refresh && html != "", do: AppBuilds.status(html)
 
     assigns =
       assigns
       |> assign(:html, html)
       |> assign(:size, byte_size(html))
       |> assign(:file_name, archive_file_name(assigns.archive_name))
+      |> assign(:app, with({_state, app} <- status, do: app))
+      |> assign(:outdated, match?({:outdated, _app}, status))
 
     ~H"""
     <div
@@ -1798,9 +1828,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         </span>
         <div class="min-w-0">
           <p id={"#{@id_prefix}-app-size"} class="font-medium text-base-content">
-            {if @size == 0,
-              do: gettext("No app yet"),
-              else: gettext("App, %{size}", size: format_bytes(@size))}
+            <%= cond do %>
+              <% @size == 0 -> %>
+                {gettext("No app yet")}
+              <% @app -> %>
+                {gettext("The %{name} app, %{size}",
+                  name: app_name(@app),
+                  size: format_bytes(@size)
+                )}
+              <% true -> %>
+                {gettext("App, %{size}", size: format_bytes(@size))}
+            <% end %>
           </p>
           <p class="mt-0.5 text-xs text-base-content/65">
             {gettext(
@@ -1808,6 +1846,29 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
             )}
           </p>
         </div>
+      </div>
+
+      <div
+        :if={@outdated}
+        id={"#{@id_prefix}-app-outdated"}
+        class="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm"
+      >
+        <p class="min-w-0 flex-1 text-base-content/80">
+          {gettext("Potok has a newer version of %{name}. The app's data stay.",
+            name: app_name(@app)
+          )}
+        </p>
+        <.button
+          id={"#{@id_prefix}-app-refresh"}
+          type="button"
+          size="sm"
+          variant="primary"
+          phx-click="refresh_app"
+          phx-value-alt={@refresh}
+          data-confirm={refresh_confirm(@app)}
+        >
+          <.icon name="hero-arrow-path" class="size-4" /> {gettext("Refresh to the newest")}
+        </.button>
       </div>
 
       <div
