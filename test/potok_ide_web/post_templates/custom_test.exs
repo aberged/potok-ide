@@ -121,4 +121,46 @@ defmodule PotokIdeWeb.PostTemplates.CustomTest do
     assert Custom.template_id("custom:x") == nil
     assert Custom.template_id("article") == nil
   end
+
+  test "makes a plain layout of any fields, which reads and renders" do
+    fields = [
+      field("naslov", "text", %{"required" => true}),
+      field("mesto", "text"),
+      field("tekst", "textarea"),
+      field("link", "url"),
+      field("dan", "date"),
+      field("sat", "time"),
+      field("ishod", "choice", %{"options" => ["pobeda", "poraz"]}),
+      field("strelci", "items"),
+      field("slika", "image"),
+      field("galerija", "pictures"),
+      field("snimak", "video")
+    ]
+
+    html = Custom.starter_html(fields)
+    assert {:ok, _tree} = GroupTemplate.Syntax.parse(html, fields)
+
+    t = template(html, fields)
+
+    rendered =
+      Custom.render(t, %{
+        "naslov" => "Derbi",
+        "tekst" => "Prvi.
+
+Drugi.",
+        "strelci" => ["Pera", "Mika"],
+        "galerija" => ["https://potok.rs/a.jpg"],
+        "galerija_captions" => ["Gol"],
+        "snimak" => "https://potok.rs/gol.mp4"
+      })
+
+    assert rendered =~ "<h2>Derbi</h2>"
+    assert rendered =~ "<p>Prvi.</p>"
+    assert rendered =~ "<li>Pera</li>"
+    assert rendered =~ "<figcaption>Gol</figcaption>"
+    assert rendered =~ ~s(<video src="https://potok.rs/gol.mp4" controls preload="metadata">)
+    refute rendered =~ "Mesto"
+    refute rendered =~ "<img src=\"\""
+    assert Custom.dropped(t) == []
+  end
 end

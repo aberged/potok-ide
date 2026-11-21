@@ -9,6 +9,8 @@ defmodule PotokIde.Social.GroupTemplates do
   topic.
   """
 
+  use Gettext, backend: PotokIdeWeb.Gettext
+
   import Ecto.Query, warn: false
 
   alias PotokIde.Repo
@@ -101,7 +103,10 @@ defmodule PotokIde.Social.GroupTemplates do
       template
       |> GroupTemplate.changeset(attrs)
       |> Ecto.Changeset.put_change(:rev, template.rev + 1)
-      |> Repo.update()
+      |> Repo.update(
+        stale_error_field: :name,
+        stale_error_message: dgettext("errors", "This template was deleted meanwhile.")
+      )
       |> announce(group)
     end
   end

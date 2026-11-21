@@ -412,7 +412,7 @@ msgstr ""
 msgid "Slides"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates/custom.ex:329
+#: lib/potok_ide_web/post_templates/custom.ex:385
 #, elixir-autogen, elixir-format
 msgid "%{month} %{day}, %{year}"
 msgstr ""

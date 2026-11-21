@@ -280,3 +280,8 @@ msgstr ""
 #, elixir-autogen, elixir-format
 msgid "puts a filter on a section: %{tag}"
 msgstr ""
+
+#: lib/potok_ide/social/group_templates.ex:108
+#, elixir-autogen, elixir-format
+msgid "This template was deleted meanwhile."
+msgstr ""

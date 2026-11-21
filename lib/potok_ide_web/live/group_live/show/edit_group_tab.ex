@@ -5,7 +5,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   alias PotokIde.Social.{Group, GroupAreas, GroupPins, GroupPresets, GroupRole, GroupRoutes}
   alias PotokIdeWeb.Avatars
   alias PotokIdeWeb.Distance
-  alias PotokIdeWeb.GroupLive.Show.{Components, KindMenu, LocationEditor}
+  alias PotokIdeWeb.GroupLive.Show.{Components, KindMenu, LocationEditor, TemplatesCard}
   alias PotokIdeWeb.PinIcons
 
   attr :card, :map, required: true
@@ -148,6 +148,13 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :template_catalog, :list,
     default: [],
     doc: "templates of the group's own and of the groups above (`Custom.form_template/2`)"
+
+  attr :own_templates, :list, default: [], doc: "the group's own templates, for the Šabloni card"
+  attr :inherited_templates, :list, default: [], doc: "templates from the groups above"
+  attr :template_form, :any, default: nil, doc: "the open form of a template"
+  attr :template_editing, :any, default: nil
+  attr :template_rows, :list, default: []
+  attr :template_preview, :any, default: nil
 
   attr :picture_upload, :any,
     default: nil,
@@ -738,6 +745,17 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           />
         </section>
 
+        <TemplatesCard.card
+          :if={templates_card?(@group)}
+          section={@section}
+          own={@own_templates}
+          inherited={@inherited_templates}
+          form={@template_form}
+          editing={@template_editing}
+          rows={@template_rows}
+          preview={@template_preview}
+        />
+
         <section
           id="group-edit-danger"
           role="tabpanel"
@@ -1179,11 +1197,16 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
       {"home", "group-edit-home", gettext("Opens first"), false},
       {"description", "group-edit-description", gettext("Description"), false},
       {"alt_descriptions", "group-alt-descriptions", gettext("Alternative descriptions"), false},
+      templates_card?(group) &&
+        {"templates", "group-edit-templates", gettext("Templates"), false},
       !group.is_root && {"location", "group-edit-location", pgettext("map", "Location"), false},
       {"danger", "group-edit-danger", gettext("Danger zone"), true}
     ]
     |> Enum.filter(& &1)
   end
+
+  # A direct conversation and a thread hold no templates (`GroupTemplates`).
+  defp templates_card?(group), do: not group.is_direct and is_nil(group.parent_value_id)
 
   # The pins a group can show, under the headings of `GroupPins`: its kind's,
   # its picture, then the icons, which keep the kind's mark as on the map.

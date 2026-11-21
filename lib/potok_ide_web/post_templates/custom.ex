@@ -144,7 +144,7 @@ defmodule PotokIdeWeb.PostTemplates.Custom do
   list of `{:tag | :attribute | :style, what}`, empty when nothing goes.
   """
   def dropped(%GroupTemplate{} = template) do
-    html = render(template, sample(template))
+    html = render(template, template |> sample() |> with_sample_videos(template))
     shown = sanitize(html)
 
     tags = parts(html, :tag) -- parts(shown, :tag)
@@ -236,6 +236,62 @@ defmodule PotokIdeWeb.PostTemplates.Custom do
   end
 
   defp sample_picture, do: PotokIdeWeb.Endpoint.url() <> "/images/template-sample.svg"
+
+  # A thumbnail shows no video (there is no sample file to play), but what the
+  # sanitizer does to a video tag is still worth telling.
+  defp with_sample_videos(values, %GroupTemplate{fields: fields}) do
+    for %{"kind" => "video", "key" => key} <- fields,
+        reduce: values,
+        do: (acc -> Map.put(acc, key, "https://potok.rs/primer.mp4"))
+  end
+
+  @doc """
+  A plain layout of `fields` (stored shape) for an author to start from: the
+  first required text as a heading, longer texts as paragraphs, and every
+  optional field only when it is filled.
+  """
+  def starter_html(fields) when is_list(fields) do
+    heading = Enum.find(fields, &(&1["kind"] == "text" and &1["required"]))
+
+    fields
+    |> Enum.map(&starter_field(&1, &1 == heading))
+    |> Enum.join("\n")
+  end
+
+  defp starter_field(%{"key" => key}, true), do: "<h2>{{#{key}}}</h2>"
+
+  defp starter_field(%{"key" => key, "kind" => kind, "label" => label} = field, false) do
+    body =
+      case kind do
+        "text" -> "<p><strong>#{escape(label)}:</strong> {{#{key}}}</p>"
+        "textarea" -> "{{#{key}|paragraphs}}"
+        "url" -> ~s(<p><a href="{{#{key}|url}}">#{escape(label)}</a></p>)
+        "date" -> "<p><strong>#{escape(label)}:</strong> {{#{key}|date}}</p>"
+        "time" -> "<p><strong>#{escape(label)}:</strong> {{#{key}}}</p>"
+        "choice" -> "<p><strong>#{escape(label)}:</strong> {{#{key}}}</p>"
+        "items" -> "<ul>\n{{##{key}}}  <li>{{.}}</li>\n{{/#{key}}}</ul>"
+        "image" -> ~s(<img src="{{#{key}|image}}" alt="">)
+        "video" -> ~s(<video src="{{#{key}|video}}" controls preload="metadata"></video>)
+        "pictures" -> pictures_html(key)
+      end
+
+    cond do
+      kind in ["items", "pictures"] -> body
+      kind == "textarea" -> body
+      field["required"] -> body
+      true -> "{{##{key}}}#{body}{{/#{key}}}"
+    end
+  end
+
+  defp pictures_html(key) do
+    """
+    {{##{key}}}<figure>
+      <img src="{{picture|image}}" alt="{{caption}}">
+      {{#caption}}<figcaption>{{caption}}</figcaption>{{/caption}}
+    </figure>
+    {{/#{key}}}\
+    """
+  end
 
   # What each field holds, in the shape its tags read.
   defp field_values(%GroupTemplate{fields: fields}, values) do

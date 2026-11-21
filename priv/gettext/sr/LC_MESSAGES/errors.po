@@ -275,3 +275,8 @@ msgstr "ostavlja {{#%{name}}} bez njegovog {{/%{name}}}"
 #, elixir-autogen, elixir-format
 msgid "puts a filter on a section: %{tag}"
 msgstr "stavlja filter na deo: %{tag}"
+
+#: lib/potok_ide/social/group_templates.ex:108
+#, elixir-autogen, elixir-format
+msgid "This template was deleted meanwhile."
+msgstr "Ovaj šablon je u međuvremenu obrisan."
