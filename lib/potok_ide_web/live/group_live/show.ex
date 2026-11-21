@@ -16,6 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     GroupAreas,
     GroupInvitation,
     GroupPresets,
+    GroupTemplates,
     GroupRole,
     GroupRoutes,
     PinnedGroups,
@@ -897,6 +898,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 roles={if(@access.manifest, do: @access.manifest.roles, else: [])}
                 max_alt_descriptions={Social.max_alt_descriptions()}
                 template_list={@template_list}
+                template_catalog={@template_catalog}
                 picture_upload={
                   if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
                 }
@@ -1051,6 +1053,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:presence_profile_id, nil)
          |> assign(:description_param, Map.get(params, "d"))
          |> assign(:alt_descriptions, [])
+         |> assign(:template_catalog, [])
          |> assign(:visible_alt_descriptions, [])
          |> assign(:active_alt_description, nil)
          |> assign(:alt_description_form, nil)
@@ -2070,7 +2073,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     if Access.can?(socket.assigns.access, :edit_group) do
       group = edit_group_data(socket)
       template = params["description_template"]
-      {attrs, _missing} = PostTemplates.Form.prepare(attrs, template, group.description)
+
+      {attrs, _missing} =
+        PostTemplates.Form.prepare(
+          attrs,
+          template,
+          group.description,
+          socket.assigns.template_catalog
+        )
 
       changeset =
         group
@@ -2455,7 +2465,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
       PostTemplates.Form.prepare(
         attrs,
         params["description_template"],
-        edit_group_data(socket).description
+        edit_group_data(socket).description,
+        socket.assigns.template_catalog
       )
 
     cond do
@@ -2582,7 +2593,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
     case socket.assigns.editing_alt_description do
       %GroupAltDescription{} = editing ->
         template = params["description_template"]
-        {attrs, _missing} = PostTemplates.Form.prepare(attrs, template, editing.description)
+
+        {attrs, _missing} =
+          PostTemplates.Form.prepare(
+            attrs,
+            template,
+            editing.description,
+            socket.assigns.template_catalog
+          )
 
         changeset =
           editing
@@ -2603,7 +2621,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
     editing = socket.assigns.editing_alt_description
     saved = editing && editing.description
 
-    case PostTemplates.Form.prepare(attrs, params["description_template"], saved) do
+    catalog = socket.assigns.template_catalog
+
+    case PostTemplates.Form.prepare(attrs, params["description_template"], saved, catalog) do
       {attrs, missing} when missing == [] or is_nil(editing) ->
         save_alt_description(socket, editing, attrs)
 
@@ -2966,6 +2986,16 @@ defmodule PotokIdeWeb.GroupLive.Show do
   end
 
   def handle_info({:group_updated, _group_id}, socket), do: {:noreply, socket}
+
+  # The group's own templates changed (`GroupTemplates`); those of the groups
+  # above are read again when the edit tab opens.
+  def handle_info({:group_templates_updated, group_id}, socket)
+      when socket.assigns.group.id == group_id do
+    {:noreply,
+     maybe_load_template_catalog(socket, socket.assigns.group, socket.assigns.active_tab)}
+  end
+
+  def handle_info({:group_templates_updated, _group_id}, socket), do: {:noreply, socket}
 
   # Who belongs to the group, asks to join or is blocked changed: the header
   # takes the numbers from the message, and only a list on screen is read
@@ -3384,6 +3414,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> maybe_load_roles(group, active_tab)
     |> maybe_load_thread_origin(group, active_tab)
     |> maybe_load_alt_descriptions(group, active_tab)
+    |> maybe_load_template_catalog(group, active_tab)
     |> assign_group_tags(group)
     |> assign_group_reactions()
     |> assign(:root_group_unread_count, overview.total)
@@ -5179,6 +5210,30 @@ defmodule PotokIdeWeb.GroupLive.Show do
     |> assign(:alt_descriptions, alt_descriptions)
     |> put_active_alt_description()
   end
+
+  # The templates of the group's own and of the groups above it, as the
+  # description's form takes them: only the edit tab writes descriptions.
+  defp maybe_load_template_catalog(
+         %{assigns: %{current_profile: %Profile{} = profile}} = socket,
+         group,
+         "edit_group"
+       ) do
+    catalog =
+      for entry <- GroupTemplates.catalog(group, profile) do
+        PostTemplates.Custom.form_template(entry.template, template_owner(entry))
+      end
+
+    assign(socket, :template_catalog, catalog)
+  end
+
+  defp maybe_load_template_catalog(socket, _group, _active_tab),
+    do: assign(socket, :template_catalog, [])
+
+  # A template of the group's own needs no label; one from above names its
+  # group, unless the viewer cannot see that group.
+  defp template_owner(%{own?: true}), do: nil
+  defp template_owner(%{owner: name}) when is_binary(name), do: name
+  defp template_owner(_entry), do: gettext("From a group above")
 
   defp reload_alt_descriptions(socket) do
     socket

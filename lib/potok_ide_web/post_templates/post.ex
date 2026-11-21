@@ -13,13 +13,15 @@ defmodule PotokIdeWeb.PostTemplates.Post do
   what the card of a shared link says.
 
   FeedCreator writes and reads the same thing (`post.ts`), so a change here
-  needs one there.
+  needs one there. A group's own template (`custom:<id>`, `PostTemplates.Custom`)
+  also puts its version, `rev`, after the template's id; only the server
+  renders those, FeedCreator through `renderTemplate`.
   """
 
   import Bitwise
 
   alias PotokIdeWeb.PostTemplates
-  alias PotokIdeWeb.PostTemplates.Markup
+  alias PotokIdeWeb.PostTemplates.{Custom, Markup}
 
   @marker_start "<!--potok-post "
 
@@ -37,12 +39,21 @@ defmodule PotokIdeWeb.PostTemplates.Post do
     |> String.pad_leading(8, "0")
   end
 
-  @doc "The description of a template with its fields."
-  def encode(id, fields) do
-    html = html(id, fields)
+  @doc """
+  The description of a template with its fields; `catalog` holds the group's
+  own templates (`PostTemplates.template/2`).
+  """
+  def encode(id, fields, catalog \\ []) do
+    html = html(id, fields, catalog)
+
+    rev =
+      case PostTemplates.template(id, catalog) do
+        %{custom: %{rev: rev}} -> [rev: rev]
+        _built_in -> []
+      end
 
     marker =
-      [v: 1, template: id, fields: fields, hash: hash(html)]
+      ([v: 1, template: id] ++ rev ++ [fields: fields, hash: hash(html)])
       |> Jason.OrderedObject.new()
       |> Jason.encode!()
       |> comment_safe()
@@ -51,8 +62,10 @@ defmodule PotokIdeWeb.PostTemplates.Post do
   end
 
   @doc "The same description without the comment, which no form can come back from."
-  def html(id, fields),
-    do: card_tag(PostTemplates.card(id, fields)) <> PostTemplates.render(id, fields)
+  def html(id, fields, catalog \\ []) do
+    {html, card} = PostTemplates.html_and_card(id, fields, catalog)
+    card_tag(card) <> html
+  end
 
   # JSON that no comment can end inside of. Those characters stand only in its strings.
   defp comment_safe(json) do
@@ -92,9 +105,11 @@ defmodule PotokIdeWeb.PostTemplates.Post do
 
   def decode(_description), do: :free
 
+  # A group's own template is known by its id alone: it may be gone, or
+  # belong to a group above, which the caller's catalog says.
   defp parse(json) do
     with {:ok, %{"template" => id, "fields" => %{} = fields} = marker} <- Jason.decode(json),
-         true <- PostTemplates.form?(id) do
+         true <- PostTemplates.form?(id) or Custom.template_id(id) != nil do
       {:ok, %{template: id, fields: fields}, marker["hash"]}
     else
       _invalid -> :error

@@ -145,6 +145,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
   attr :video_upload, :any, default: nil, doc: "the upload of a template's video"
 
+  attr :template_catalog, :list,
+    default: [],
+    doc: "templates of the group's own and of the groups above (`Custom.form_template/2`)"
+
   attr :picture_upload, :any,
     default: nil,
     doc: "the upload of a template's picture, when the viewer may post one to the chat"
@@ -390,6 +394,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 templates
                 template_list_open={@template_list == "group-description"}
                 picture_upload={@picture_upload}
+                video_upload={@video_upload}
+                catalog={@template_catalog}
               />
             </details>
           </Components.settings_card>
@@ -710,6 +716,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                 format_options={@format_options}
                 template_list_open={@template_list == "alt-description"}
                 picture_upload={@picture_upload}
+                video_upload={@video_upload}
+                catalog={@template_catalog}
                 class="basis-full"
               />
             </li>
@@ -724,6 +732,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             format_options={@format_options}
             template_list_open={@template_list == "alt-description"}
             picture_upload={@picture_upload}
+            video_upload={@video_upload}
+            catalog={@template_catalog}
             class="mt-4"
           />
         </section>
@@ -860,6 +870,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   attr :format_options, :list, required: true
   attr :template_list_open, :boolean, default: false
   attr :picture_upload, :any, default: nil
+  attr :video_upload, :any, default: nil
+  attr :catalog, :list, default: []
   attr :class, :any, default: nil
 
   defp alt_description_form(assigns) do
@@ -951,6 +963,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
         templates
         template_list_open={@template_list_open}
         picture_upload={@picture_upload}
+        video_upload={@video_upload}
+        catalog={@catalog}
         archive_name={alt_archive_name(@group, @form)}
         refresh={@editing && @editing.id && to_string(@editing.id)}
       />

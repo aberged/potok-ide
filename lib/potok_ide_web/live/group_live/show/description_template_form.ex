@@ -9,6 +9,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
   use PotokIdeWeb, :html
 
   alias PotokIde.Storage
+  alias PotokIdeWeb.Galleries
   alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.PostTemplates.Markup
 
@@ -20,16 +21,19 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
     default: false,
     doc: "whether picking a template replaces text someone wrote"
 
+  attr :catalog, :list, default: [], doc: "the group's own templates (`Custom.form_template/2`)"
+
   # The list is only rendered while open. Its pictures are the size of a
   # description, and a closed one would be sent again with every keystroke.
+  # A group's own templates follow the built-in ones, with the group they come from.
   def chooser(assigns) do
-    assigns = assign(assigns, :current, current_template(assigns.decoded))
+    assigns = assign(assigns, :current, current_template(assigns.decoded, assigns.catalog))
 
     ~H"""
     <div class="mt-4 flex flex-wrap items-center justify-between gap-2">
       <p id={"#{@id_prefix}-template-current"} class="text-sm">
         <span class="text-base-content/65">{gettext("Template:")}</span>
-        <span class="font-medium">{PostTemplates.template(@current).name}</span>
+        <span class="font-medium">{PostTemplates.template(@current, @catalog).name}</span>
       </p>
       <.button
         id={"#{@id_prefix}-template-change"}
@@ -48,12 +52,13 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
       :if={match?({:changed, _post}, @decoded)}
       id_prefix={@id_prefix}
       decoded={@decoded}
+      catalog={@catalog}
     />
 
     <div :if={@open} id={"#{@id_prefix}-templates"} class="post-template-grid mt-3">
       <button
-        :for={template <- PostTemplates.templates()}
-        id={"#{@id_prefix}-template-#{template.id}"}
+        :for={template <- PostTemplates.templates() ++ @catalog}
+        id={"#{@id_prefix}-template-#{String.replace(template.id, ":", "-")}"}
         type="button"
         name="description_template[pick]"
         value={template.id}
@@ -67,25 +72,35 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
       >
         <span class="post-template-thumb" aria-hidden="true">
           <span class="post-template-page rich-content">
-            {Phoenix.HTML.raw(PostTemplates.thumbnail(template.id))}
+            {Phoenix.HTML.raw(PostTemplates.thumbnail(template.id, @catalog))}
           </span>
         </span>
         <span class="px-3 pt-2 font-medium">{template.name}</span>
         <span class="px-3 pb-3 text-sm opacity-70">{template.purpose}</span>
+        <span
+          :if={template[:owner]}
+          class="mx-3 mb-3 self-start rounded-full bg-primary/10 px-2 py-0.5 text-xs text-primary"
+        >
+          {template.owner}
+        </span>
       </button>
     </div>
     """
   end
 
-  defp current_template({:post, %{template: id}}), do: id
-  defp current_template(_decoded), do: PostTemplates.free_text()
+  defp current_template({:post, %{template: id}}, catalog) do
+    if PostTemplates.form?(id, catalog), do: id, else: PostTemplates.free_text()
+  end
+
+  defp current_template(_decoded, _catalog), do: PostTemplates.free_text()
 
   attr :id_prefix, :string, required: true
   attr :decoded, :any, required: true
+  attr :catalog, :list, default: []
 
   defp changed_notice(assigns) do
     {:changed, %{template: id}} = assigns.decoded
-    assigns = assign(assigns, :template, PostTemplates.template(id))
+    assigns = assign(assigns, :template, PostTemplates.template(id, assigns.catalog))
 
     ~H"""
     <div
@@ -99,6 +114,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
         )}
       </p>
       <.button
+        :if={@template}
         id={"#{@id_prefix}-template-restore"}
         type="button"
         size="sm"
@@ -108,7 +124,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
         data-confirm={gettext("Going back to the template drops the change made by hand. Continue?")}
         phx-click={JS.dispatch("change")}
       >
-        {gettext("Back to the template %{name}", name: @template.name)}
+        {gettext("Back to the template %{name}", name: @template && @template.name)}
       </.button>
     </div>
     """
@@ -117,14 +133,19 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
   attr :id_prefix, :string, required: true
   attr :post, :map, required: true, doc: "the template and fields of the description"
   attr :picture_upload, :any, default: nil
+  attr :video_upload, :any, default: nil
+  attr :catalog, :list, default: []
 
   def fields(assigns) do
-    template = PostTemplates.template(assigns.post.template)
+    template = PostTemplates.template(assigns.post.template, assigns.catalog)
 
     assigns =
       assigns
       |> assign(:template, template)
-      |> assign(:missing, PostTemplates.missing_fields(template.id, assigns.post.fields))
+      |> assign(
+        :missing,
+        PostTemplates.missing_fields(template.id, assigns.post.fields, assigns.catalog)
+      )
 
     ~H"""
     <div id={"#{@id_prefix}-template-fields"}>
@@ -136,6 +157,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
         value={@post.fields[field.key]}
         captions={field[:captions] && @post.fields[field.captions]}
         picture_upload={@picture_upload}
+        video_upload={@video_upload}
       />
       <p
         :if={@missing != []}
@@ -153,6 +175,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
   attr :value, :any, default: nil
   attr :captions, :any, default: nil, doc: "the captions that go with a field of pictures"
   attr :picture_upload, :any, default: nil
+  attr :video_upload, :any, default: nil
 
   defp template_field(%{field: %{kind: :items}} = assigns) do
     items = if is_list(assigns.value) and assigns.value != [], do: assigns.value, else: [""]
@@ -181,7 +204,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
           variant="ghost"
           size="sm"
           name="description_template[remove_item]"
-          value={index}
+          value={"#{@field.key}:#{index}"}
           aria-label={gettext("Remove item %{number}", number: index + 1)}
           phx-click={JS.dispatch("change")}
         >
@@ -189,19 +212,41 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
         </.button>
       </div>
       <.button
-        :if={length(@items) < PostTemplates.max_items()}
+        :if={length(@items) < (@field[:max] || PostTemplates.max_items())}
         id={"#{@id}-add"}
         type="button"
         size="sm"
         class="justify-self-start"
         name="description_template[add_item]"
-        value="1"
+        value={@field.key}
         phx-click={JS.dispatch("change")}
       >
         <.icon name="hero-plus" class="size-4" /> {gettext("Add an item")}
       </.button>
     </fieldset>
     """
+  end
+
+  # A choice of a group's own template: its options in a select.
+  defp template_field(%{field: %{kind: :choice, options: options}} = assigns)
+       when is_list(options) and options != [] and not is_map_key(assigns, :look_tiles) do
+    if Enum.all?(options, fn {_label, value} -> value in Galleries.looks() end) do
+      template_field(Map.put(assigns, :look_tiles, true))
+    else
+      assigns = assign(assigns, :text, text_value(assigns))
+
+      ~H"""
+      <.input
+        id={@id}
+        type="select"
+        name={field_name(@field)}
+        label={@field.label}
+        value={@text}
+        options={@field.options}
+      />
+      <p :if={@field.hint} class="-mt-1 mb-2 text-xs text-base-content/65">{@field.hint}</p>
+      """
+    end
   end
 
   # A gallery's look: four tiles, each a sketch of the look.
@@ -352,6 +397,77 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
     """
   end
 
+  # A video: an address, or one from the device, which goes to the chat as a
+  # message with the file, as a picture does.
+  defp template_field(%{field: %{kind: :video}} = assigns) do
+    address = assigns |> text_value() |> Markup.safe_video()
+    sending? = assigns.video_upload != nil and assigns.video_upload.entries != []
+
+    assigns =
+      assigns
+      |> assign(:address, address)
+      |> assign(:sending, sending? and not picture_failed?(assigns.video_upload))
+      |> assign(:failed, picture_failed?(assigns.video_upload))
+
+    ~H"""
+    <div id={"#{@id}-box"} class="mb-2">
+      <.input
+        id={@id}
+        type="text"
+        inputmode="url"
+        name={field_name(@field)}
+        label={@field.label}
+        value={text_value(assigns)}
+        placeholder="https://"
+      />
+      <div class="flex flex-wrap items-center gap-2">
+        <.button
+          :if={@video_upload}
+          id={"#{@id}-device"}
+          type="button"
+          size="sm"
+          phx-click={
+            JS.dispatch("potok:pick-picture",
+              to: "#description-picture",
+              detail: %{target: @id, video: true}
+            )
+          }
+        >
+          <.icon name="hero-film" class="size-4" /> {gettext("From the device")}
+        </.button>
+        <.button
+          :if={@address != ""}
+          id={"#{@id}-clear"}
+          type="button"
+          variant="ghost"
+          size="sm"
+          name="description_template[clear_image]"
+          value={@field.key}
+          phx-click={JS.dispatch("change")}
+        >
+          <.icon name="hero-x-mark" class="size-4" /> {gettext("Remove the video")}
+        </.button>
+        <span :if={@sending} id={"#{@id}-sending"} class="text-sm text-base-content/70">
+          {gettext("Sending the video...")}
+        </span>
+        <span :if={@failed} id={"#{@id}-failed"} class="text-sm text-error">
+          {gettext("The video could not be sent.")}
+        </span>
+      </div>
+      <p :if={@field.hint} class="mt-1 text-xs text-base-content/65">{@field.hint}</p>
+      <video
+        :if={@address != ""}
+        src={@address}
+        controls
+        preload="metadata"
+        playsinline
+        class="mt-2 max-h-48 rounded-xl bg-black"
+      >
+      </video>
+    </div>
+    """
+  end
+
   defp template_field(%{field: %{kind: :image}} = assigns) do
     address = assigns |> text_value() |> Markup.safe_image()
     sending? = assigns.picture_upload != nil and assigns.picture_upload.entries != []
@@ -395,7 +511,7 @@ defmodule PotokIdeWeb.GroupLive.Show.DescriptionTemplateForm do
           variant="ghost"
           size="sm"
           name="description_template[clear_image]"
-          value="1"
+          value={@field.key}
           phx-click={JS.dispatch("change")}
         >
           <.icon name="hero-x-mark" class="size-4" /> {gettext("Remove the picture")}

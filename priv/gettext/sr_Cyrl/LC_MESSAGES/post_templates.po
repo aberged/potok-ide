@@ -11,7 +11,7 @@ msgstr ""
 "Language: sr_Cyrl\n"
 "Plural-Forms: nplurals=3; plural=(n%10==1 && n%100 != 11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10||n%100>=20) ? 1 : 2);\n"
 
-#: lib/potok_ide_web/post_templates.ex:571
+#: lib/potok_ide_web/post_templates.ex:604
 #, elixir-autogen, elixir-format
 msgid "%{weekday}, %{month} %{day}, %{year}"
 msgstr "%{weekday}, %{day}. %{month} %{year}."
@@ -150,7 +150,7 @@ msgstr "Наслов, увод, слика и текст."
 msgid "Importance"
 msgstr "Важност"
 
-#: lib/potok_ide_web/post_templates.ex:272
+#: lib/potok_ide_web/post_templates.ex:280
 #, elixir-autogen, elixir-format
 msgid "Important"
 msgstr "Важно"
@@ -196,7 +196,7 @@ msgstr "Линк за више"
 msgid "List"
 msgstr "Листа"
 
-#: lib/potok_ide_web/post_templates.ex:455
+#: lib/potok_ide_web/post_templates.ex:488
 #, elixir-autogen, elixir-format
 msgid "More about the event"
 msgstr "Више о догађају"
@@ -222,7 +222,7 @@ msgid "No water on Tuesday"
 msgstr "Нема воде у уторак"
 
 #: lib/potok_ide_web/post_templates.ex:169
-#: lib/potok_ide_web/post_templates.ex:290
+#: lib/potok_ide_web/post_templates.ex:298
 #, elixir-autogen, elixir-format
 msgid "Notice"
 msgstr "Обавештење"
@@ -271,12 +271,12 @@ msgstr "Питање"
 msgid "Quote"
 msgstr "Цитат"
 
-#: lib/potok_ide_web/post_templates.ex:490
+#: lib/potok_ide_web/post_templates.ex:523
 #, elixir-autogen, elixir-format
 msgid "Read more"
 msgstr "Прочитај више"
 
-#: lib/potok_ide_web/post_templates.ex:516
+#: lib/potok_ide_web/post_templates.ex:549
 #, elixir-autogen, elixir-format
 msgid "Reply in the chat"
 msgstr "Одговори у чету"
@@ -317,7 +317,7 @@ msgstr "Три ствари за викенд"
 msgid "Time"
 msgstr "Време"
 
-#: lib/potok_ide_web/post_templates.ex:281
+#: lib/potok_ide_web/post_templates.ex:289
 #, elixir-autogen, elixir-format
 msgid "Urgent"
 msgstr "Хитно"
@@ -352,7 +352,7 @@ msgstr "Вреди прочитати"
 msgid "Write as you like."
 msgstr "Пишеш како желиш."
 
-#: lib/potok_ide_web/post_templates.ex:579
+#: lib/potok_ide_web/post_templates.ex:612
 #, elixir-autogen, elixir-format
 msgid "at %{time}"
 msgstr "у %{time}"
@@ -362,12 +362,12 @@ msgstr "у %{time}"
 msgid "A day by the stream"
 msgstr "Дан на потоку"
 
-#: lib/potok_ide_web/post_templates.ex:257
+#: lib/potok_ide_web/post_templates.ex:265
 #, elixir-autogen, elixir-format
 msgid "Cards"
 msgstr "Картице"
 
-#: lib/potok_ide_web/post_templates.ex:258
+#: lib/potok_ide_web/post_templates.ex:266
 #, elixir-autogen, elixir-format
 msgid "Cinema"
 msgstr "Биоскоп"
@@ -402,22 +402,22 @@ msgstr "Слике"
 msgid "Pictures to swipe through, in one of four looks."
 msgstr "Слике које се листају превлачењем, у једном од четири изгледа."
 
-#: lib/potok_ide_web/post_templates.ex:259
+#: lib/potok_ide_web/post_templates.ex:267
 #, elixir-autogen, elixir-format
 msgid "Polaroid"
 msgstr "Полароид"
 
-#: lib/potok_ide_web/post_templates.ex:256
+#: lib/potok_ide_web/post_templates.ex:264
 #, elixir-autogen, elixir-format
 msgid "Slides"
 msgstr "Слајдови"
 
-#: lib/potok_ide_web/post_templates/custom.ex:325
+#: lib/potok_ide_web/post_templates/custom.ex:329
 #, elixir-autogen, elixir-format
 msgid "%{month} %{day}, %{year}"
 msgstr "%{day}. %{month} %{year}."
 
-#: lib/potok_ide_web/post_templates/custom.ex:203
+#: lib/potok_ide_web/post_templates/custom.ex:207
 #, elixir-autogen, elixir-format
 msgid "A few words about it."
 msgstr "Неколико речи о томе."

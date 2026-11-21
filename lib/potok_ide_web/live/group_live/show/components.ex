@@ -16,6 +16,7 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     RolesTab
   }
 
+  alias PotokIdeWeb.PostTemplates
   alias PotokIdeWeb.PostTemplates.Post
   alias PotokIdeWeb.TagComponents
 
@@ -1529,6 +1530,16 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   defp escape_attr(value),
     do: value |> Phoenix.HTML.html_escape() |> Phoenix.HTML.safe_to_string()
 
+  # A post of a group's own template this group cannot use (deleted, or of a
+  # group elsewhere) opens as text.
+  defp known({kind, %{template: id}} = decoded, catalog) when kind in [:post, :changed] do
+    if PostTemplates.custom?(id) and not PostTemplates.form?(id, catalog),
+      do: :orphan,
+      else: decoded
+  end
+
+  defp known(decoded, _catalog), do: decoded
+
   @doc "Name of the group's default description next to its alternative ones."
   def default_description_label(%Group{description_name: name})
       when is_binary(name) and name != "",
@@ -1555,6 +1566,9 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
     default: nil,
     doc: "the upload of a template's picture, when its author may add a file"
 
+  attr :catalog, :list, default: [], doc: "the group's own templates (`Custom.form_template/2`)"
+  attr :video_upload, :any, default: nil, doc: "the upload of a template's video"
+
   attr :refresh, :string,
     default: nil,
     doc: "the description's id for a refresh of its app (\"\" for the default), nil for none"
@@ -1575,7 +1589,11 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
   def description_workspace(assigns) do
     app? = assigns.uses_api in [true, "true"]
     templates? = assigns.templates and not app?
-    decoded = if templates?, do: Post.decode(assigns.description_field.value), else: :free
+
+    decoded =
+      if templates?,
+        do: assigns.description_field.value |> Post.decode() |> known(assigns.catalog),
+        else: :free
 
     assigns =
       assigns
@@ -1592,7 +1610,17 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
         decoded={@decoded}
         open={@template_list_open}
         replaces_text={!@post and !blank_text?(@description_field.value)}
+        catalog={@catalog}
       />
+      <p
+        :if={@templates? and @decoded == :orphan}
+        id={"#{@id_prefix}-template-gone"}
+        class="mt-3 rounded-2xl border border-base-300 bg-base-200/50 px-4 py-3 text-sm"
+      >
+        {gettext(
+          "The template this description was made with is gone, or this group cannot use it. The description stays as it is and opens as text."
+        )}
+      </p>
       <p
         :if={@templates and @app?}
         id={"#{@id_prefix}-template-app"}
@@ -1702,6 +1730,8 @@ defmodule PotokIdeWeb.GroupLive.Show.Components do
               id_prefix={@id_prefix}
               post={@post}
               picture_upload={@picture_upload}
+              video_upload={@video_upload}
+              catalog={@catalog}
             />
             <.input
               :if={!@post}

@@ -11,7 +11,7 @@
 msgid ""
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:571
+#: lib/potok_ide_web/post_templates.ex:604
 #, elixir-autogen, elixir-format
 msgid "%{weekday}, %{month} %{day}, %{year}"
 msgstr ""
@@ -150,7 +150,7 @@ msgstr ""
 msgid "Importance"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:272
+#: lib/potok_ide_web/post_templates.ex:280
 #, elixir-autogen, elixir-format
 msgid "Important"
 msgstr ""
@@ -196,7 +196,7 @@ msgstr ""
 msgid "List"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:455
+#: lib/potok_ide_web/post_templates.ex:488
 #, elixir-autogen, elixir-format
 msgid "More about the event"
 msgstr ""
@@ -222,7 +222,7 @@ msgid "No water on Tuesday"
 msgstr ""
 
 #: lib/potok_ide_web/post_templates.ex:169
-#: lib/potok_ide_web/post_templates.ex:290
+#: lib/potok_ide_web/post_templates.ex:298
 #, elixir-autogen, elixir-format
 msgid "Notice"
 msgstr ""
@@ -271,12 +271,12 @@ msgstr ""
 msgid "Quote"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:490
+#: lib/potok_ide_web/post_templates.ex:523
 #, elixir-autogen, elixir-format
 msgid "Read more"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:516
+#: lib/potok_ide_web/post_templates.ex:549
 #, elixir-autogen, elixir-format
 msgid "Reply in the chat"
 msgstr ""
@@ -317,7 +317,7 @@ msgstr ""
 msgid "Time"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:281
+#: lib/potok_ide_web/post_templates.ex:289
 #, elixir-autogen, elixir-format
 msgid "Urgent"
 msgstr ""
@@ -352,7 +352,7 @@ msgstr ""
 msgid "Write as you like."
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:579
+#: lib/potok_ide_web/post_templates.ex:612
 #, elixir-autogen, elixir-format
 msgid "at %{time}"
 msgstr ""
@@ -362,12 +362,12 @@ msgstr ""
 msgid "A day by the stream"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:257
+#: lib/potok_ide_web/post_templates.ex:265
 #, elixir-autogen, elixir-format
 msgid "Cards"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:258
+#: lib/potok_ide_web/post_templates.ex:266
 #, elixir-autogen, elixir-format
 msgid "Cinema"
 msgstr ""
@@ -402,22 +402,22 @@ msgstr ""
 msgid "Pictures to swipe through, in one of four looks."
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:259
+#: lib/potok_ide_web/post_templates.ex:267
 #, elixir-autogen, elixir-format
 msgid "Polaroid"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates.ex:256
+#: lib/potok_ide_web/post_templates.ex:264
 #, elixir-autogen, elixir-format
 msgid "Slides"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates/custom.ex:325
+#: lib/potok_ide_web/post_templates/custom.ex:329
 #, elixir-autogen, elixir-format
 msgid "%{month} %{day}, %{year}"
 msgstr ""
 
-#: lib/potok_ide_web/post_templates/custom.ex:203
+#: lib/potok_ide_web/post_templates/custom.ex:207
 #, elixir-autogen, elixir-format
 msgid "A few words about it."
 msgstr ""

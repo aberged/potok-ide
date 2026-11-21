@@ -22,7 +22,7 @@ defmodule PotokIdeWeb.PostTemplates do
 
   alias PotokIde.Events.Format
   alias PotokIdeWeb.Galleries
-  alias PotokIdeWeb.PostTemplates.Markup
+  alias PotokIdeWeb.PostTemplates.{Custom, Markup}
 
   @max_items 10
   @max_pictures 20
@@ -233,19 +233,27 @@ defmodule PotokIdeWeb.PostTemplates do
     )
   end
 
-  @doc "The template with that id, or nil."
-  def template(id), do: Enum.find(templates(), &(&1.id == id))
+  @doc """
+  The template with that id, or nil: a built-in one, or one of `catalog`, the
+  group's own templates as the form takes them (`Custom.form_template/2`).
+  """
+  def template(id, catalog \\ []),
+    do: Enum.find(templates(), &(&1.id == id)) || Enum.find(catalog, &(&1.id == id))
 
   @doc "Whether `id` is a template with a form, which free text is not."
-  def form?(id) when id == @free_text, do: false
-  def form?(id), do: template(id) != nil
+  def form?(id, catalog \\ [])
+  def form?(id, _catalog) when id == @free_text, do: false
+  def form?(id, catalog), do: template(id, catalog) != nil
+
+  @doc "Whether `id` is a group's own template (`custom:<id>`)."
+  def custom?(id), do: Custom.template_id(id) != nil
 
   @doc """
   The keys a template's form keeps: its fields', and the captions that go
   with a field of pictures.
   """
-  def field_keys(id) do
-    Enum.flat_map(template(id).fields, fn field ->
+  def field_keys(id, catalog \\ []) do
+    Enum.flat_map(template(id, catalog).fields, fn field ->
       [field.key | List.wrap(Map.get(field, :captions))]
     end)
   end
@@ -295,10 +303,16 @@ defmodule PotokIdeWeb.PostTemplates do
   end
 
   @doc "The labels of required fields left empty."
-  def missing_fields(id, fields) do
-    for %{required: true, key: key, label: label} <- template(id).fields,
-        empty?(fields[key]),
-        do: label
+  def missing_fields(id, fields, catalog \\ []) do
+    case template(id, catalog) do
+      %{custom: custom} ->
+        Custom.missing_fields(custom, fields)
+
+      template ->
+        for %{required: true, key: key, label: label} <- template.fields,
+            empty?(fields[key]),
+            do: label
+    end
   end
 
   defp empty?(value) when is_binary(value), do: Markup.trim(value) == ""
@@ -310,13 +324,32 @@ defmodule PotokIdeWeb.PostTemplates do
   made from this module's own words, which is why it may skip the sanitizer
   and show a picture that would not pass it.
   """
-  def thumbnail(@free_text),
+  def thumbnail(id, catalog \\ [])
+
+  def thumbnail(@free_text, _catalog),
     do: "<p>#{Markup.escape(template(@free_text).sample["source"])}</p>"
 
-  def thumbnail(id) do
-    id
-    |> render(template(id).sample)
-    |> String.replace(@waiting_image, @sample_image)
+  def thumbnail(id, catalog) do
+    case template(id, catalog) do
+      %{custom: custom} ->
+        Custom.thumbnail(custom)
+
+      template ->
+        id
+        |> render(template.sample)
+        |> String.replace(@waiting_image, @sample_image)
+    end
+  end
+
+  @doc """
+  The HTML of any template of `catalog` or built in, and the text of its
+  card: what `Post` writes below its marker.
+  """
+  def html_and_card(id, fields, catalog \\ []) do
+    case template(id, catalog) do
+      %{custom: custom} -> {Custom.render(custom, fields), Custom.card(custom, fields)}
+      _built_in -> {render(id, fields), card(id, fields)}
+    end
   end
 
   # A field holds text or a list only when a form wrote it: a description's

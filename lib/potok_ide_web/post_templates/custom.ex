@@ -23,6 +23,9 @@ defmodule PotokIdeWeb.PostTemplates.Custom do
   @max_items 30
   @max_pictures 20
 
+  @doc "How many rows a list field of a group's own template holds."
+  def max_items, do: @max_items
+
   @kinds %{
     "text" => :text,
     "textarea" => :textarea,
@@ -76,7 +79,8 @@ defmodule PotokIdeWeb.PostTemplates.Custom do
       hint: blank_to_nil(field["hint"]),
       placeholder: nil,
       options: for(option <- field["options"] || [], do: {option, option}),
-      captions: if(kind == :pictures, do: GroupTemplate.captions_key(field["key"]))
+      captions: if(kind == :pictures, do: GroupTemplate.captions_key(field["key"])),
+      max: if(kind == :items, do: @max_items)
     }
   end
 
