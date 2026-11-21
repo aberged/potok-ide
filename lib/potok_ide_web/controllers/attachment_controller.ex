@@ -23,12 +23,12 @@ defmodule PotokIdeWeb.AttachmentController do
     end
   end
 
-  # A picture used in a description. Holding its signed address is the whole
-  # check, and it only ever opens a picture.
+  # A picture or a video used in a description. Holding its signed address is
+  # the whole check, and it only ever opens one of those.
   def picture(conn, %{"token" => token}) do
     with {:ok, id} <- Picture.verify(token),
          %ValueAttachment{} = attachment <- Social.get_attachment(id),
-         true <- ValueAttachment.image?(attachment) do
+         true <- ValueAttachment.media_kind(attachment) in [:image, :video] do
       serve(conn, attachment, :inline)
     else
       _ -> send_resp(conn, 404, "")

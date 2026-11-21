@@ -822,10 +822,10 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
     with {:ok, file} <- upload_params(params),
          {:ok, socket} <- take_write_token(socket) do
       prepared =
-        if params["image"] == true do
-          AppFiles.prepare_image(profile, group, alt, file)
-        else
-          prepare_value_upload(profile, group, alt, params, file)
+        cond do
+          params["image"] == true -> AppFiles.prepare_image(profile, group, alt, file)
+          params["media"] == true -> AppFiles.prepare_media(profile, group, alt, file)
+          true -> prepare_value_upload(profile, group, alt, params, file)
         end
 
       case prepared do

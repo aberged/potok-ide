@@ -53,6 +53,15 @@ defmodule PotokIdeWeb.PostTemplates.Markup do
     end
   end
 
+  @doc "A video's address: on the web only."
+  def safe_video(value) do
+    address = trim(value)
+
+    if String.match?(address, ~r/\Ahttps?:\/\/\S+\z/iu),
+      do: with_lowercase_scheme(address),
+      else: ""
+  end
+
   @doc "A picture's address: on the web, or the picture of a group here."
   def safe_image(value) do
     address = trim(value)

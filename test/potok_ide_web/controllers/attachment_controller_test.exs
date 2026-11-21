@@ -194,9 +194,17 @@ defmodule PotokIdeWeb.AttachmentControllerTest do
       assert conn |> get(~p"/pictures/#{image.id}") |> response(404)
     end
 
-    test "is no way to any other file", %{conn: conn, document: document, video: video} do
+    test "is no way to any other file", %{conn: conn, document: document} do
       assert conn |> get(path(document)) |> response(404)
-      assert conn |> get(path(video)) |> response(404)
+    end
+
+    test "opens a video too, in parts as a player asks", %{conn: conn, video: video} do
+      conn = get(conn, path(video))
+      assert conn.status == 200
+      assert get_resp_header(conn, "accept-ranges") == ["bytes"]
+
+      ranged = build_conn() |> put_req_header("range", "bytes=0-1") |> get(path(video))
+      assert ranged.status == 206
     end
 
     test "is gone with its message", %{conn: conn, image: image} do

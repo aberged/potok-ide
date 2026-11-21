@@ -249,4 +249,34 @@ defmodule PotokIde.Social.AppFilesTest do
     assert AppFiles.sweep(DateTime.add(DateTime.utc_now(), 2, :day)) == 0
     assert Repo.get(ValueAttachment, attachment.id)
   end
+
+  test "a video of the app goes the same way, as big as any file", ctx do
+    video = %{name: "v.mp4", size: 50_000_000, type: "video/mp4"}
+
+    assert {:ok, upload} = AppFiles.prepare_media(ctx.owner, ctx.group, nil, video)
+    assert upload.file_group_id == ctx.files["public"]
+    assert upload.max_bytes == PotokIde.Storage.max_file_size()
+
+    assert {:error, :invalid_files} =
+             AppFiles.prepare_media(ctx.owner, ctx.group, nil, %{
+               video
+               | size: PotokIde.Storage.max_file_size() + 1
+             })
+
+    assert {:error, :invalid_files} =
+             AppFiles.prepare_media(ctx.owner, ctx.group, nil, %{
+               name: "p.png",
+               size: 11 * 1024 * 1024,
+               type: "image/png"
+             })
+
+    assert {:error, :invalid_files} =
+             AppFiles.prepare_media(ctx.owner, ctx.group, nil, %{
+               name: "d.pdf",
+               size: 900,
+               type: "application/pdf"
+             })
+
+    assert {:error, :not_permitted} = AppFiles.prepare_media(ctx.member, ctx.group, nil, video)
+  end
 end

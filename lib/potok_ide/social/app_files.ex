@@ -38,6 +38,7 @@ defmodule PotokIde.Social.AppFiles do
   @files "files"
   @image_slot "_image"
   @image_types ~w(image/png image/jpeg image/gif image/webp image/avif)
+  @video_types ~w(video/mp4 video/webm video/quicktime)
   @max_image_bytes 10 * 1024 * 1024
   @max_app_bytes 1024 * 1024 * 1024
   @outsider_uploads_per_hour 20
@@ -209,6 +210,49 @@ defmodule PotokIde.Social.AppFiles do
              size: file.size,
              type: file.type,
              max_bytes: @max_image_bytes
+           }}
+        end
+    end
+  end
+
+  @doc """
+  As `prepare_image/4`, for a picture or a video of the app itself: a picture
+  up to #{div(@max_image_bytes, 1024 * 1024)} MB, a video as big as any file
+  may be (`Storage.max_file_size/0`). Kept like a picture, with the same
+  signed address.
+  """
+  def prepare_media(%Profile{} = profile, %Group{} = group, alt, file) do
+    if file.type in @video_types,
+      do: prepare_kept(profile, group, alt, file, Storage.max_file_size()),
+      else: prepare_image(profile, group, alt, file)
+  end
+
+  defp prepare_kept(profile, group, alt, file, max_bytes) do
+    config = AppData.get_config(group, alt)
+    group = Repo.get!(Group, group.id)
+    access = Access.for_profile(profile, group)
+
+    cond do
+      not ValueRules.manage?(access) ->
+        {:error, :not_permitted}
+
+      file.size > max_bytes or file.size <= 0 ->
+        {:error, :invalid_files}
+
+      true ->
+        with :ok <- room_for(group, alt, file.size),
+             {:ok, file_group} <- file_group(groups(config), group, "public") do
+          {:ok,
+           %{
+             app_group_id: group.id,
+             alt_id: AppData.alt_id(alt),
+             file_group_id: file_group.id,
+             collection: nil,
+             slot: @image_slot,
+             name: file.name,
+             size: file.size,
+             type: file.type,
+             max_bytes: max_bytes
            }}
         end
     end

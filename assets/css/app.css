@@ -652,6 +652,15 @@
   vertical-align: middle;
 }
 
+.rich-content :where(video) {
+  background: #000;
+  border-radius: 0.75rem;
+  display: block;
+  height: auto;
+  max-width: 100%;
+  width: 100%;
+}
+
 .rich-content :where(figcaption) {
   color: color-mix(in oklab, currentColor 70%, transparent);
   font-size: 0.875em;

@@ -900,6 +900,9 @@ defmodule PotokIdeWeb.GroupLive.Show do
                 picture_upload={
                   if(can_post_description_picture?(@group, @access), do: @uploads.description_picture)
                 }
+                video_upload={
+                  if(can_post_description_picture?(@group, @access), do: @uploads.description_video)
+                }
                 everyone_can_post={Access.everyone_can?(@access, :post_values)}
               />
               <InviteProfileTab.panel
@@ -1001,6 +1004,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
          |> assign(:file_tree_truncated?, false)
          |> allow_attachments_upload()
          |> allow_description_picture_upload()
+         |> allow_description_video_upload()
          |> allow_keyboard_media_upload()
          |> AppHost.allow("page")
          |> assign(:template_list, nil)
@@ -1288,6 +1292,25 @@ defmodule PotokIdeWeb.GroupLive.Show do
 
   # A picture for a template's field starts uploading as soon as it is picked.
   def handle_event("validate_description_picture", _params, socket), do: {:noreply, socket}
+
+  def handle_event("validate_description_video", _params, socket) do
+    rejected = Enum.reject(socket.assigns.uploads.description_video.entries, & &1.valid?)
+
+    if rejected == [] do
+      {:noreply, socket}
+    else
+      socket = Enum.reduce(rejected, socket, &cancel_upload(&2, :description_video, &1.ref))
+
+      {:noreply,
+       put_flash(
+         socket,
+         :error,
+         gettext("Choose an MP4, WebM or MOV video of up to %{size}.",
+           size: format_megabytes(Storage.max_file_size())
+         )
+       )}
+    end
+  end
 
   # A file the app's frame sends goes up on its own (`AppHost`).
   def handle_event("validate_app_file", _params, socket),
@@ -4536,6 +4559,64 @@ defmodule PotokIdeWeb.GroupLive.Show do
       _other -> 0
     end
   end
+
+  # A video for a template's field: as it is, no bigger than any file, one at
+  # a time, and like a picture a message in the chat with a signed address.
+  defp allow_description_video_upload(socket) do
+    opts = [
+      accept: ~w(video/mp4 video/webm video/quicktime),
+      max_entries: 1,
+      max_file_size: Storage.max_file_size(),
+      auto_upload: true,
+      progress: &description_video_progress/3
+    ]
+
+    opts =
+      if Storage.direct_upload?(),
+        do: Keyword.put(opts, :external, &presign_description_picture/2),
+        else: opts
+
+    allow_upload(socket, :description_video, opts)
+  end
+
+  defp description_video_progress(:description_video, %{done?: true} = entry, socket) do
+    %{current_profile: profile, group: group, access: access} = socket.assigns
+
+    if can_post_description_picture?(group, access) do
+      stored =
+        consume_uploaded_entry(socket, entry, &{:ok, store_attachment(group, &1, entry)})
+
+      content = gettext("Video for the group's description")
+
+      with {:ok, attachment} <- stored,
+           {:ok, value} <-
+             create_value_or_drop_files(profile, group, %{"content" => content}, [attachment]) do
+        url = PostTemplates.Picture.address(hd(value.attachments))
+
+        {:noreply,
+         socket
+         |> schedule_refresh(:unread)
+         |> push_event("description_picture_ready", %{url: url, urls: [url]})}
+      else
+        _error -> {:noreply, put_flash(socket, :error, gettext("The video could not be sent."))}
+      end
+    else
+      {:noreply, cancel_upload(socket, :description_video, entry.ref)}
+    end
+  end
+
+  defp description_video_progress(:description_video, entry, socket) do
+    if upload_errors(socket.assigns.uploads.description_video, entry) == [] do
+      {:noreply, socket}
+    else
+      {:noreply,
+       socket
+       |> cancel_upload(:description_video, entry.ref)
+       |> put_flash(:error, gettext("The video could not be sent."))}
+    end
+  end
+
+  defp format_megabytes(bytes), do: "#{div(bytes, 1_000_000)} MB"
 
   # The files go where every file of the group goes, as one message with them,
   # and the field gets their addresses. The author's own message moves their

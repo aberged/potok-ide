@@ -143,6 +143,8 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     default: nil,
     doc: "the description workspace whose list of templates is open"
 
+  attr :video_upload, :any, default: nil, doc: "the upload of a template's video"
+
   attr :picture_upload, :any,
     default: nil,
     doc: "the upload of a template's picture, when the viewer may post one to the chat"
@@ -841,7 +843,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
           </div>
         </div>
 
-        <.description_picture_picker :if={@picture_upload} upload={@picture_upload} />
+        <.description_picture_picker
+          :if={@picture_upload}
+          upload={@picture_upload}
+          video_upload={@video_upload}
+        />
       </Components.tab_body>
     </div>
     """
@@ -985,6 +991,7 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
   end
 
   attr :upload, :any, required: true
+  attr :video_upload, :any, default: nil
 
   # A picture from the device for a template, wherever the form with it stands:
   # the buttons in the forms send `potok:pick-picture` here with the input that
@@ -1009,6 +1016,14 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
       />
       <form id="description-picture-form" phx-change="validate_description_picture" class="hidden">
         <.live_file_input upload={@upload} tabindex="-1" />
+      </form>
+      <form
+        :if={@video_upload}
+        id="description-video-form"
+        phx-change="validate_description_video"
+        class="hidden"
+      >
+        <.live_file_input upload={@video_upload} tabindex="-1" />
       </form>
     </div>
     <script :type={Phoenix.LiveView.ColocatedHook} name=".DescriptionPicture">
@@ -1059,9 +1074,12 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
 
           // A gallery's field takes several pictures at once, a single
           // picture's field one.
+          // A video goes as it is, one at a time.
           this.el.addEventListener("potok:pick-picture", event => {
             this.target = event.detail.target
-            this.fileInput.multiple = Boolean(event.detail.multiple)
+            this.video = Boolean(event.detail.video)
+            this.fileInput.accept = this.video ? "video/mp4,video/webm,video/quicktime" : "image/*"
+            this.fileInput.multiple = !this.video && Boolean(event.detail.multiple)
             this.fileInput.click()
           })
 
@@ -1071,6 +1089,11 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
             this.fileInput.value = ""
 
             if (files.length === 0) return
+
+            if (this.video) {
+              this.upload("description_video", files.slice(0, 1))
+              return
+            }
 
             try {
               const shrunk = await Promise.all(

@@ -522,6 +522,23 @@ defmodule PotokIdeWeb.GroupLive.DescriptionTemplatesTest do
       assert response(get(build_conn(), URI.parse(url).path), 200) == "jedan"
     end
 
+    test "a video goes the same way, as it is, with an address that plays it", ctx do
+      lv = ctx |> open() |> pick_article()
+
+      upload =
+        file_input(lv, "#description-video-form", :description_video, [
+          %{name: "potok.mp4", content: "mp4-bytes", type: "video/mp4"}
+        ])
+
+      render_upload(upload, "potok.mp4")
+
+      assert_push_event(lv, "description_picture_ready", %{url: url, urls: [url]})
+      assert {[value], _more?} = Social.list_group_values_page(ctx.group)
+      assert value.content == "Video for the group's description"
+      assert [%{content_type: "video/mp4"}] = value.attachments
+      assert response(get(build_conn(), URI.parse(url).path), 200) == "mp4-bytes"
+    end
+
     test "is only offered to whoever may post a file to the chat", ctx do
       {member_account, member} = account_with_profile!("tpl-member")
       {:ok, invitation} = Social.invite_profile_to_group(ctx.owner, ctx.group, member)

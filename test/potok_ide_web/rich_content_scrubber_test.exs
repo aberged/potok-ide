@@ -29,6 +29,25 @@ defmodule PotokIdeWeb.RichContentScrubberTest do
              ~S|<p style="color: red;">p</p>|
   end
 
+  test "keeps a video that plays in place, from the web, and nothing that starts it alone" do
+    html =
+      scrub(
+        ~S|<video src="https://a.test/b.mp4" poster="javascript:x" controls autoplay preload="auto" onplay="x()" playsinline width="320">t</video>|
+      )
+
+    assert html =~ ~S|src="https://a.test/b.mp4"|
+    assert html =~ "controls"
+    assert html =~ "playsinline"
+    assert html =~ ~S|width="320"|
+    refute html =~ "autoplay"
+    refute html =~ "onplay"
+    refute html =~ "javascript"
+    refute html =~ "preload"
+
+    assert scrub(~S|<video src="data:video/mp4;base64,AAAA" preload="metadata"></video>|) ==
+             ~S|<video preload="metadata"></video>|
+  end
+
   test "keeps a gallery's look and no other data attribute" do
     for look <- PotokIdeWeb.Galleries.looks() do
       assert scrub(~s|<div data-potok-gallery="#{look}"><div>x</div></div>|) ==

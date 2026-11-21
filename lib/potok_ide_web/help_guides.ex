@@ -309,6 +309,7 @@ defmodule PotokIdeWeb.HelpGuides do
     files: [
       {"uploadFile", "upload_file"},
       {"uploadImage", "upload_image"},
+      {"uploadMedia", "upload_media"},
       {"ensureFileGroups", "ensure_file_groups"},
       {"fileUrl", "file_url"},
       {"getDescription", "get_description"},

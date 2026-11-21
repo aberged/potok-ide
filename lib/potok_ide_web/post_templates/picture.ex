@@ -1,11 +1,12 @@
 defmodule PotokIdeWeb.PostTemplates.Picture do
   @moduledoc """
-  The address of a chat file used as a picture in a description.
+  The address of a chat file used as a picture or a video in a description.
 
   `/files/:id` asks for a session and membership, and a description is seen by
   more people than that: non-members of a public group, and everyone reading
   it inside an app's sandboxed frame, which sends no session. So the address is
-  signed instead, and whoever got it from a description sees that one picture.
+  signed instead, and whoever got it from a description sees that one picture
+  or video (the path stays `/pictures/`).
   It keeps working until the message with the file is deleted.
 
   The signature comes from `secret_key_base`, so changing that key breaks every

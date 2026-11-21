@@ -80,6 +80,19 @@ defmodule PotokIdeWeb.RichContentScrubber do
   Meta.allow_tag_with_uri_attributes("img", ["src"], @valid_schemes)
   Meta.allow_tag_with_these_attributes("img", ["width", "height", "title", "alt"])
 
+  # A video plays in place, with its controls, never by itself: no autoplay,
+  # and its file only from the web.
+  Meta.allow_tag_with_uri_attributes("video", ["src", "poster"], ["http", "https"])
+  Meta.allow_tag_with_this_attribute_values("video", "preload", ["none", "metadata"])
+
+  Meta.allow_tag_with_these_attributes("video", [
+    "controls",
+    "playsinline",
+    "width",
+    "height",
+    "title"
+  ])
+
   # A gallery and its look; `PotokIdeWeb.Galleries.looks/0` holds the same.
   Meta.allow_tag_with_this_attribute_values("div", "data-potok-gallery", [
     "slides",

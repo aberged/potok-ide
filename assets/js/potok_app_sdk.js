@@ -136,10 +136,10 @@ const subgroupPage = options => ({
 
 // Calls whose answer depends on the viewer, who can take as long as they
 // like, or on a file on its way: they wait without a timeout.
-const WAITING_METHODS = new Set(["pick_emoji", "upload_file", "upload_image"])
+const WAITING_METHODS = new Set(["pick_emoji", "upload_file", "upload_image", "upload_media"])
 
 // Calls that carry a file (`uploadFile`).
-const FILE_METHODS = new Set(["upload_file", "upload_image"])
+const FILE_METHODS = new Set(["upload_file", "upload_image", "upload_media"])
 
 // `file` goes along with the call.
 const call = (method, params = {}, {waits = WAITING_METHODS.has(method), file = null, onProgress = null} = {}) =>
@@ -714,6 +714,11 @@ const potok = {
   // an address anyone who sees the app can open.
   uploadImage: (file, options = {}) =>
     call("upload_image", {}, {file, onProgress: options.onProgress}),
+
+  // A picture or a video of the app itself, for its editors: a video may be as
+  // big as any file. Resolves with `file.url`, as `uploadImage` does.
+  uploadMedia: (file, options = {}) =>
+    call("upload_media", {}, {file, onProgress: options.onProgress}),
 
   // Calls `listener` with each change in the app's collections the viewer may
   // see: `{event, collection, value?, id?, revision?}`, where `event` is

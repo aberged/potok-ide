@@ -858,6 +858,7 @@ const APP_FRAME_METHODS = new Set([
   "file_url",
   "upload_file",
   "upload_image",
+  "upload_media",
   "map_config",
   "list_places",
   "list_places_at",
@@ -887,7 +888,7 @@ const PERSONAL_MAX_BYTES = 16384
 const PERSONAL_KEY = /^[A-Za-z0-9_.:-]{1,64}$/
 
 // Calls that carry a file of the frame's, sent through the page's upload.
-const APP_FRAME_UPLOADS = new Set(["upload_file", "upload_image"])
+const APP_FRAME_UPLOADS = new Set(["upload_file", "upload_image", "upload_media"])
 
 // A link into an app: `?at=<group id>` on the group's page. It stays in the
 // browser, as the page has nothing to do with it and an app moves on it often.
@@ -1227,6 +1228,7 @@ const GroupAppFrame = {
         params: {
           ...(params || {}),
           image: method === "upload_image",
+          media: method === "upload_media",
           name: named.name || "file",
           size: named.size,
           type: named.type || "",
