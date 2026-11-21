@@ -66,6 +66,8 @@ What each person may do in a group is set by roles. Every group has the role Adm
 
 A sub-group takes its roles from the group above. If it needs different ones, it gets a manifest of its own, its own list of roles and permissions. How what you may do is worked out from roles and a manifest, with an example you change yourself, is on the page [Access rights in Potok](/pomoc/prava-pristupa).
 
+Roles are given by an admin, and also by [a decision of a poll](#odluka-o-ulogama): the poll says to whom it gives or from whom it takes which role, and that happens as soon as it ends. A group can also [elect its admins](#izbor-administratora): Admin is then given and taken only by decisions of polls, not by founding the group.
+
 ### Public, private and open {:#vidljivost}
 
 A private group is seen only by its members. A public group is seen by everyone who is logged in, who can request access, and its name, picture and a short part of its description can be seen outside Potok too, by anyone who has the link.
@@ -226,7 +228,7 @@ A shortcut has an arrow and the word Shortcut, and it shows the group itself: it
 
 ![A shortcut on the home page leads to the assembly inside the local community](precica) ![Shortcut: the groups you are in, and a search by name](precica-izbor)
 
-Edit group has everything else: name, picture and kind, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by), what opens first, the description, alternative descriptions, [templates](#svoji-sabloni), the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
+Edit group has everything else: name, picture and kind, access and membership (public group, description open to guests, chat open to non-members, inheritance and the roles it goes by, [electing admins](#izbor-administratora)), what opens first, the description, alternative descriptions, [templates](#svoji-sabloni), the location and the danger zone for deleting. For a public group, you also see there how a link to it looks when it is shared outside Potok.
 
 You change the group's kind in Edit group → Basics, with Change. The new kind brings its description, the page the group opens on, and its picture if the group still has the old kind's. If that would overwrite an app, or an app would take the place of a text, Potok warns you first: the old description, with all the data of its app, goes among the alternative descriptions, which only those who edit the group see, and you bring it back from there with "Make default". A feed that becomes something else keeps the sub-group with its posts.
 
@@ -234,7 +236,7 @@ You change the group's kind in Edit group → Basics, with Change. The new kind 
 
 ## Members and roles {:#clanovi}
 
-The Members tab shows all members, their roles and who is online. From there, access requests are approved, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation.
+The Members tab shows all members, their roles and who is online. From there, access requests are approved, roles given, and members removed and blocked. Inherited members are marked, and tapping a member opens a one-to-one conversation. A role given by a decision of a poll is marked **elected**, which leads to that poll.
 
 You can invite a profile by username, or someone by email: if they have no account yet, they get an invitation to Potok. Profiles are suggested from the third letter of the name on.
 
@@ -309,6 +311,29 @@ In a secret poll nobody, not an admin and not an app, sees who voted for what. T
 
 ![A poll's details: turnout and who voted for what](glasanje-detalji)
 
+### A decision that changes roles {:#odluka-o-ulogama}
+
+A poll can also decide who holds which role. In the form, under **What the decision changes**, you pick whether the decision gives a member a role, takes it from them, elects someone to a role or ends the election of admins. Then you say which role and which member, or the candidates. The decision sets its own answers: "For" and "Against", and "Abstain" if you like, and in an election one for each candidate.
+
+Voters see on the poll's card, before they vote, what will happen, say "If it passes: @marko gets the role Admin". When the poll ends at its deadline, what the decision says is done at once, and the card says what came of it: done, did not pass, the member is no longer in the group, or the group would be left without an admin. Whoever gets or loses the role is also notified.
+
+Such a poll keeps the same rules for everyone:
+
+- the whole group votes, and a majority decides with a quorum, so the deadline and the quorum must be set;
+- once the first vote is in nothing changes, not even the deadline, except the reminder;
+- it ends at its deadline, not earlier, and is not opened again;
+- once it has a vote it cannot be deleted, nor can the message that carries it, as it is the record of what the group decided.
+
+In a group run by its founders such a poll is called by an admin: that is how an admin hands the decision to the group. In an election members can also stand for themselves, with **Stand in the election** on the poll's card, and with **The one elected takes the place of those who hold it now** the one elected replaces the present holders. A role inherited from the group above is not taken from below, and a group never loses its last admin.
+
+### A group that elects its admins {:#izbor-administratora}
+
+In Edit group → Access an admin switches on **Let the group elect its admins**. From then on Admin is given and taken only by decisions of polls: not even an admin can give or take it by hand, or remove another admin from the group. The present admins stay for the time being, until the first election, and are marked **for now** on the Members tab.
+
+An election is called by anyone who may start polls, with **Call an election** on the Members tab: the question, the candidates and the rule are filled in, and members can stand. The one elected takes the place of the present admins at the same moment, so the group is never without an admin. An admin inherited from the group above stays.
+
+Electing admins is switched off only by a decision of a poll: in Edit group → Access the button **Propose ending it** calls such a poll. Otherwise an elected admin could switch it off and stay for good.
+
 ## Map and places {:#mapa}
 
 The map of groups on the home page shows every group with a place that you may see. Groups close together gather into a circle with a number. You narrow it with the same filters as the list, plus time and pin, and its layers turn places, areas and routes on and off. On the map, the search by name starts at the third letter. Tapping a pin opens the group's card.
@@ -382,7 +407,7 @@ You can also draw a process without writing code, right in Potok, even in a grou
 
 1. In the group's menu open **Processes**, tap **Draw a process** and type the process's name.
 2. Under **When** pick what starts it, and set it on the drawing's start step.
-3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a form, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads. A sub-group the process makes can inherit the group's members, all of them or only those with the roles you choose.
+3. Tap **+** on an arrow and pick a step: a message, a sub-group, a decision, a form, a poll, a push, a wait, a condition, a group field, setting a value, a call to another process, a signal or a wait for a signal. Tap a step or an arrow to change it: the text, the role that decides, the outcomes, the deadline, where the arrow leads. A sub-group the process makes can inherit the group's members, all of them or only those with the roles you choose.
 4. Tap **Save**, then **Switch on**.
 
 A process can start on:
@@ -416,6 +441,8 @@ The steps after a decision read its outcome as `{{odluka.outcome}}`, and who dec
 The step **Form** asks a person, in the middle of a process, for what the process lacks. Under **What it asks for** you pick an entity, and under **Who fills it in** whoever started the process, or the people of a role. The form has a field for each attribute, a group of its own for an entity it holds and a row for each item of a list. Under **What it says first** you write the text above its fields, and under **Already filled in** what a field already holds, say `{{start.text}}`, the text of the message that started the process. Whoever fills it in sees that already written and may change it, and the form asks for a field you leave empty. For whoever started the process the form opens by itself, on whichever tab of the group they are, when it was they who just did what led to it: wrote the message, tapped **Start** or sent the form before it. If they close it with **Later**, or the form comes after a wait or someone else's decision, it waits for them on the Processes tab, under **Waiting for you**. A form of a role opens by itself for nobody: it waits for the people of that role in the same place, and one of them fills it in. The steps after a form read what was filled in an attribute at a time, as `{{form_1.sprat}}`, and who filled it in as `{{form_1.author}}`, where `form_1` is the step's name on the drawing; the whole answer also fits a variable that holds the same entity. With a deadline, the process goes on without an answer once it passes, by the arrow **deadline passed**. Nobody starts a process on a schedule, so its form asks a role. The [building](/pomoc/zgrada#forma) shows how a message with the word "kvar" opens a form.
 
 ![The form a process opens for whoever wrote the message](zgrada-forma)
+
+The step **Poll** puts a question to the group's vote, in the process's name, and waits for the poll to end at its deadline. Under **The voting lasts** you set the deadline, and under **What the decision changes** whether it only asks, with answers you write one a line, or gives a member a role or takes it, as [a decision that changes roles](#odluka-o-ulogama). The member is whoever started the run, or the username a text gives, say `{{form_1.author}}`. Right after the step stands the condition `poll_1.passed`, which asks whether it passed, and the steps after it also read `{{poll_1.outcome}}`, `{{poll_1.winner}}`, `{{poll_1.voters}}` and `{{poll_1.applied}}`, where `poll_1` is the step's name on the drawing. The decision gives the role, not the process, which still may only what everyone may: in a group run by its founders only an admin saves and switches on such a poll, and it runs while the process's owner is an admin; in a group that elects its admins the process itself may.
 
 A process that others call is **private**: only the processes of its own group call it. If you tick **Public process** on its start step and save the drawing, the processes of the groups above and below yours may call it too, but not those beside it. Their editors see it in the step **Call a process** with the name of its group, and what it takes under **Data of the process**. Such a run works in the group of the called process and gets only what the call hands it: it knows neither the message or sub-group the caller worked on nor who started it, and the caller learns which end it reached and, when the process hands an entity back, what that end hands back. If you delete a public process or make it private again, the calls from other groups fail, and their editors see on the Processes tab that the drawing should be looked over.
 

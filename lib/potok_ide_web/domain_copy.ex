@@ -1676,7 +1676,23 @@ defmodule PotokIdeWeb.DomainCopy do
         text:
           dgettext(
             "domain_map",
-            "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline. One account gives one vote, whichever of its profiles it uses, and a profile several accounts share votes on its own. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
+            "A <Poll>poll</Poll> names the <GroupRole>roles</GroupRole> that vote, that see the results and that see the details, and the organizer and those who manage polls always see them. Once a <PollBallot>ballot</PollBallot> is in, what voters saw no longer changes, except the deadline, and in a decision that changes roles not even that. One account gives one vote, whichever of its profiles it uses, and a profile several accounts share votes on its own. A secret poll keeps no answers on its ballots, only the count of each <PollOption>answer</PollOption> grows, so neither the group's admins nor an app can see who voted for what. No counts show before its end, and a finished one is not opened again. A public poll also takes the votes of signed-in non-members of a public group. Deleting the <Value>value</Value> that carries a poll deletes the poll."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A decision of a poll can give and take roles"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Poll>poll</Poll> may say what its decision changes: it gives a member a <GroupRole>role</GroupRole>, takes it, elects one of its candidates to it, or ends the election of admins. Voters read it before they vote. Such a poll is put to the whole group, takes one answer, is decided by a majority with a quorum and ends at its deadline, not before; it is not opened again, and once it has a vote neither it nor its <Value>value</Value> is deleted. As it closes the decision is carried out in the same step, and the poll keeps what came of it. A <GroupMemberRole>member role</GroupMemberRole> it gave keeps the poll. A role held through the parent is not taken, and a group never loses its last admin this way either. In a group run by its founders only an admin puts such a decision to a vote; in a group that elects its admins anyone who may start a poll does. A drawn process puts one to the vote with the step that raises a poll: the decision carries the role over, as the process holds no more than `everyone`, and where the founders run the group its owner must be an admin."
+          )
+      },
+      %{
+        title: dgettext("domain_map", "A group may elect its admins"),
+        text:
+          dgettext(
+            "domain_map",
+            "A <Group>group</Group> that elects its admins gives and takes `admin` only by decisions of <Poll>polls</Poll>: nobody assigns it by hand, and an admin leaves the group only by a decision. An admin switches it on, and the admins it has stay for the time being, until the first election, which takes their place in the same step. Only a decision switches it off, or an elected admin could stay for good. An admin inherited from the parent stays an admin. The root, direct conversations and threads do not elect their admins."
           )
       },
       %{

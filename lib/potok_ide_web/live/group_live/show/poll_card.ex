@@ -405,7 +405,11 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
       <.icon name="hero-scale" class="mt-0.5 size-4 shrink-0" />
       <div class="min-w-0">
         <p class="font-semibold">{effect_text(@view.effect)}</p>
-        <p :if={@view.effect.status} id={"#{@id}-effect-status"} class={["text-xs", muted(@mine)]}>
+        <p
+          :if={@view.effect.status || @view.closed_at}
+          id={"#{@id}-effect-status"}
+          class={["text-xs", muted(@mine)]}
+        >
           {effect_status(@view.effect)}
         </p>
         <p :if={@view.open? and !@view.effect.status} class={["text-xs", muted(@mine)]}>
@@ -449,6 +453,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
   end
 
   defp effect_status(%{status: :applied}), do: dgettext("polls", "Done.")
+  defp effect_status(%{status: nil}), do: dgettext("polls", "Not done.")
   defp effect_status(%{status: :rejected}), do: dgettext("polls", "Not done: it did not pass.")
 
   defp effect_status(%{status: :not_a_member}),

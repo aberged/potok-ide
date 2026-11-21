@@ -151,7 +151,8 @@ defmodule PotokIdeWeb.HelpDocTest do
         doc = HelpDoc.get(locale)
 
         assert doc.ids == Enum.uniq(doc.ids), "a section id repeats in #{locale}"
-        assert doc.anchors -- doc.ids == [], "a link of #{locale} goes nowhere"
+        # A section may be linked from more than one place.
+        assert Enum.uniq(doc.anchors) -- doc.ids == [], "a link of #{locale} goes nowhere"
       end
     end
 

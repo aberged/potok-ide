@@ -4928,8 +4928,8 @@ msgstr "У овој групи не можеш да пишеш."
 
 #: lib/potok_ide_web/controllers/page_html.ex:239
 #, elixir-autogen, elixir-format
-msgid "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
-msgstr "Администратор, Сви и улоге које сам направиш, са 20 дозвола: од писања и слања фајлова до прављења догађаја и уређивања групе. Подгрупа преузима улоге родитеља или има своје."
+msgid "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own. A poll's decision can also give or take a role, a process can put that to the vote, and a group can elect its administrators instead of keeping its founders."
+msgstr "Администратор, Сви и улоге које сам направиш, са 20 дозвола: од писања и слања фајлова до прављења догађаја и уређивања групе. Подгрупа преузима улоге родитеља или има своје. Улогу може да додели или одузме и одлука гласања, процес може то да стави на гласање, а група може да бира администраторе уместо да их задрже оснивачи."
 
 #: lib/potok_ide_web/controllers/page_html.ex:212
 #, elixir-autogen, elixir-format

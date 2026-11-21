@@ -72,6 +72,8 @@ Nasleđivanje možeš da suziš na uloge: tada podgrupi dolaze samo članovi koj
 
 Podgrupa preuzima uloge od grupe iznad. Ako joj trebaju drugačije, dobija sopstveni manifest, svoj spisak uloga i dozvola. Kako se iz uloga i manifesta računa šta smeš, sa primerom koji sam menjaš, pokazuje strana [Prava pristupa u Potoku](/pomoc/prava-pristupa).
 
+Uloge dodeljuje administrator, a može i [odluka glasanja](#odluka-o-ulogama): glasanje kaže kome daje ili oduzima koju ulogu, i to se desi čim se završi. Grupa može i da [bira administratore](#izbor-administratora): tada ulogu Administrator daju i oduzimaju samo odluke glasanja, a ne osnivanje grupe.
+
 ### Javno, privatno i otvoreno {:#vidljivost}
 
 Privatnu grupu vide samo njeni članovi. Javnu grupu vidi svako ko je prijavljen i može da zatraži pristup, a njen naziv, slika i kratak deo opisa vide se i van Potoka, svakome ko ima link.
@@ -232,7 +234,7 @@ Prečica ima strelicu i natpis Prečica, a pokazuje samu grupu: njenu poslednju 
 
 ![Prečica na početnoj strani vodi do zbora u mesnoj zajednici](precica) ![Prečica: grupe u kojima si član, i pretraga po nazivu](precica-izbor)
 
-Uredi grupu ima sve ostalo: naziv, sliku i vrstu, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje), šta se otvara prvo, opis, alternativne opise, [šablone](#svoji-sabloni), lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
+Uredi grupu ima sve ostalo: naziv, sliku i vrstu, pristup i članstvo (javna grupa, opis vidljiv i bez prijave, razgovor otvoren nečlanovima, nasleđivanje i uloge po kojima se nasleđuje, [izbor administratora](#izbor-administratora)), šta se otvara prvo, opis, alternativne opise, [šablone](#svoji-sabloni), lokaciju i opasnu zonu za brisanje. Za javnu grupu tu vidiš i kako link ka njoj izgleda kad se podeli van Potoka.
 
 Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta donosi svoj opis, stranicu na kojoj se grupa otvara i svoju sliku, ako grupa još ima sliku stare vrste. Ako bi time bila pregažena aplikacija, ili bi aplikacija zauzela mesto teksta, Potok te prvo upozori: stari opis, sa svim podacima svoje aplikacije, prelazi među alternativne opise, koje vide samo oni koji uređuju grupu, i odatle ga vraćaš sa „Postavi kao podrazumevani“. Feed koji postane nešto drugo zadržava podgrupu sa objavama.
 
@@ -240,7 +242,7 @@ Vrstu grupe menjaš u Uredi grupu → Osnovno, dugmetom Promeni. Nova vrsta dono
 
 ## Članovi i uloge {:#clanovi}
 
-Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odobravaju zahtevi za pristup, dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka.
+Kartica Članovi pokazuje sve članove, njihove uloge i ko je na mreži. Odatle se odobravaju zahtevi za pristup, dodeljuju uloge, uklanjaju i blokiraju članovi. Nasleđeni članovi su označeni, a dodirom na člana otvaraš razgovor u četiri oka. Uloga koju je dala odluka glasanja ima oznaku **izabran**, koja vodi na to glasanje.
 
 Pozvati možeš profil po korisničkom imenu ili nekoga po imejlu: ako još nema nalog, dobija pozivnicu za Potok. Profili se predlažu od trećeg slova imena.
 
@@ -315,6 +317,29 @@ U tajnom glasanju niko, ni administrator ni aplikacija, ne vidi ko je za šta gl
 
 ![Detalji glasanja: odziv i ko je za šta glasao](glasanje-detalji)
 
+### Odluka koja menja uloge {:#odluka-o-ulogama}
+
+Glasanje može i da odluči ko ima koju ulogu. U formi, pod **Šta odluka menja**, biraš da li odluka članu dodeljuje ulogu, oduzima mu je, bira nekog za ulogu ili gasi izbor administratora. Zatim kažeš koju ulogu i kog člana, ili kandidate. Odgovore odluka postavlja sama: „Za“ i „Protiv“, po želji i „Uzdržan“, a na izborima po jedan za svakog kandidata.
+
+Glasači na kartici glasanja, pre nego što glasaju, vide šta će se desiti, recimo „Ako prođe: @marko dobija ulogu Administrator“. Kad se glasanje završi na roku, ono što odluka kaže se odmah sprovede, a na kartici piše šta je od toga bilo: sprovedeno, nije prošlo, član više nije u grupi ili bi grupa ostala bez administratora. Ko dobije ili izgubi ulogu, dobija i obaveštenje.
+
+Takvo glasanje drži ista pravila za sve:
+
+- glasa cela grupa, a odlučuje većina uz kvorum, pa se rok i kvorum moraju zadati;
+- kad stigne prvi glas, ništa se više ne menja, ni rok, osim podsetnika;
+- završava se na roku, a ne ranije, i ne otvara se ponovo;
+- čim ima glas, ne može da se obriše, ni ono ni poruka koja ga nosi, jer je zapis onoga što je grupa odlučila.
+
+U grupi koju vode njeni osnivači takvo glasanje raspisuje administrator: tako odluku prepušta grupi. Na izborima članovi mogu i sami da se kandiduju, dugmetom **Kandiduj se** na kartici glasanja, a uz **Izabrani zauzima mesto onih koji ulogu sada imaju** izabrani zamenjuje dosadašnje nosioce. Uloga nasleđena iz grupe iznad se ne oduzima odozdo, a grupa nikad ne ostaje bez poslednjeg administratora.
+
+### Grupa koja bira administratore {:#izbor-administratora}
+
+U Uredi grupu → Pristup administrator uključuje **Neka grupa bira administratore**. Od tada ulogu Administrator daju i oduzimaju samo odluke glasanja: ni administrator ne može da je dodeli ili oduzme rukom, niti da izbaci drugog administratora iz grupe. Dosadašnji administratori ostaju privremeno, do prvih izbora, i na kartici Članovi imaju oznaku **privremeno**.
+
+Izbore raspisuje svako ko sme da pokreće glasanja, dugmetom **Raspiši izbore** na kartici Članovi: pitanje, kandidati i pravilo su već upisani, a članovi mogu da se kandiduju. Izabrani zauzima mesto dosadašnjih administratora u istom trenutku, pa grupa nijednog trenutka nije bez administratora. Administrator nasleđen iz grupe iznad ostaje.
+
+Izbor administratora se gasi samo odlukom glasanja: u Uredi grupu → Pristup dugme **Predloži gašenje** raspisuje takvo glasanje. Inače bi izabrani administrator mogao da ga ugasi i ostane zauvek.
+
 ## Mapa i mesta {:#mapa}
 
 Mapa grupa na početnoj strani pokazuje svaku grupu sa mestom koju smeš da vidiš. Bliske grupe se skupljaju u krug sa brojem. Sužavaš je istim filterima kao spisak, i još vremenom i pinom, a slojevi uključuju i isključuju mesta, područja i rute. Pretraga po nazivu na mapi kreće od trećeg slova. Dodir na pin otvara karticu grupe.
@@ -388,7 +413,7 @@ Proces možeš da nacrtaš i bez pisanja koda, pravo u Potoku, i u grupi bez apl
 
 1. U meniju grupe otvori **Procesi**, dodirni **Nacrtaj proces** i upiši ime procesa.
 2. Pod **Kad** izaberi šta ga pokreće, a na početnom koraku crteža ga podesi.
-3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, formu, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi. Podgrupa koju proces napravi može da nasleđuje članove grupe, sve ili samo one sa ulogama koje izabereš.
+3. Dodirni **+** na strelici i izaberi korak: poruku, podgrupu, odluku, formu, glasanje, push, čekanje, uslov, polje grupe, postavljanje vrednosti, poziv drugog procesa, signal ili čekanje signala. Dodirom na korak ili strelicu menjaš ih: tekst, ulogu koja odlučuje, ishode, rok, kuda strelica vodi. Podgrupa koju proces napravi može da nasleđuje članove grupe, sve ili samo one sa ulogama koje izabereš.
 4. Dodirni **Sačuvaj**, pa **Uključi**.
 
 Proces može da pokrene:
@@ -422,6 +447,8 @@ Ishod odluke koraci posle nje čitaju kao `{{odluka.outcome}}`, a ko je odlučio
 Korak **Forma** usred procesa pita čoveka ono što procesu fali. Pod **Šta traži** izabereš entitet, a pod **Ko popunjava** onoga ko je proces pokrenuo ili ljude neke uloge. Forma ima polje za svaki atribut, svoju celinu za entitet koji on drži i red za svaku stavku liste. Pod **Šta prvo kaže** upišeš tekst koji stoji iznad polja, a pod **Šta je već upisano** ono čime neko polje počinje, recimo `{{start.text}}`, tekst poruke koja je proces pokrenula. Ko popunjava to vidi već upisano i može da promeni, a polje koje ostaviš prazno forma pita. Onome ko je proces pokrenuo forma se otvara sama, na kojoj god kartici grupe da je, kad je baš on upravo uradio ono što je do nje dovelo: napisao poruku, dodirnuo **Pokreni** ili poslao prethodnu formu. Ako je zatvori sa **Kasnije**, ili forma stigne posle čekanja ili tuđe odluke, čeka ga na kartici Procesi, pod **Čeka tebe**. Forma za ulogu se nikome ne otvara sama: čeka ljude te uloge na istom mestu, i popunjava je jedan od njih. Koraci posle forme čitaju ono što je popunjeno, atribut po atribut, kao `{{form_1.sprat}}`, a ko je popunio kao `{{form_1.author}}`, gde je `form_1` ime koraka sa crteža; ceo odgovor staje i u varijablu koja drži isti entitet. Uz rok, proces posle njega ide dalje bez odgovora, strelicom **rok je prošao**. Proces po rasporedu niko ne pokreće, pa njegova forma pita ulogu. Kako poruka sa rečju „kvar“ otvara formu, pokazuje [zgrada](/pomoc/zgrada#forma).
 
 ![Forma koju proces otvara onome ko je napisao poruku](zgrada-forma)
+
+Korak **Glasanje** stavlja pitanje na glasanje u grupi, u ime procesa, i čeka da se glasanje završi na roku. Pod **Glasanje traje** zadaješ rok, a pod **Šta odluka menja** da li samo pita, sa odgovorima koje upišeš jedan u redu, ili članu dodeljuje ili oduzima ulogu, kao [odluka koja menja uloge](#odluka-o-ulogama). Član je onaj ko je proces pokrenuo, ili korisničko ime koje daje tekst, recimo `{{form_1.author}}`. Posle koraka odmah stoji uslov `poll_1.passed`, koji pita da li je prošlo, a koraci posle njega čitaju i `{{poll_1.outcome}}`, `{{poll_1.winner}}`, `{{poll_1.voters}}` i `{{poll_1.applied}}`, gde je `poll_1` ime koraka sa crteža. Ulogu dodeljuje odluka, a ne proces, koji i dalje sme samo ono što smeju svi: u grupi koju vode osnivači takvo glasanje sačuva i uključi samo administrator, a pokreće se dok je vlasnik procesa administrator; u grupi koja bira administratore sme sam proces.
 
 Proces koji drugi pozivaju je **privatan**: pozivaju ga samo procesi iste grupe. Ako na njegovom početnom koraku uključiš **Javan proces** i sačuvaš crtež, mogu da ga pozovu i procesi grupa iznad i ispod tvoje, ali ne i onih pored. Njihovi urednici ga u koraku **Pozovi proces** vide uz ime grupe, a pod **Podaci procesa** i šta prima. Takvo pokretanje radi u grupi pozvanog procesa i dobija samo ono što mu poziv preda: ne zna na kojoj je poruci ili podgrupi pozivalac radio ni ko ga je pokrenuo, a pozivalac saznaje do kog kraja je stiglo i, ako proces vraća entitet, ono što mu taj kraj vrati. Ako javan proces obrišeš ili ga vratiš na privatan, pozivi iz drugih grupa padaju, a njihovi urednici na kartici Procesi vide da crtež treba pregledati.
 

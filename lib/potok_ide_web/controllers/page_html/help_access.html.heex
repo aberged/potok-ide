@@ -806,8 +806,19 @@
         <dd>
           {dgettext(
             "help_guides",
-            "The group's Admin, only to its members, and only roles of the manifest in force. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent."
+            "The group's Admin, only to its members, and only roles of the manifest in force, or a decision of a poll that says so. Everyone is not assigned. The last Admin cannot be taken away, and a role inherited from the parent is taken away in the parent. Where the group elects its admins, Admin is given and taken only by a decision."
           )}
+        </dd>
+      </div>
+      <div>
+        <dt>{dgettext("help_guides", "Lets the group elect its admins")}</dt>
+        <dd>
+          <.hg_text text={
+            dgettext(
+              "help_guides",
+              "The group's Admin turns it on (`elects_admins`). From then on Admin comes and goes only by a decision of a poll, an admin leaves the group only so, and the admins it had stay for the time being, until the first election. Only a decision turns it off."
+            )
+          } />
         </dd>
       </div>
       <div>
@@ -902,6 +913,14 @@
               dgettext(
                 "help_guides",
                 "<b>A process's profile</b> is a member only where the process puts it, with what Everyone may, until an Admin assigns it another role. It is not inherited and is not counted when something goes to the people with a permission."
+              )
+            } />
+          </li>
+          <li>
+            <.hg_text text={
+              dgettext(
+                "help_guides",
+                "<b>A decision of a poll</b> that gives or takes a role is put to the whole group, with a quorum and a deadline, and is carried out as the poll ends. The role it gave keeps the poll (`poll_id`). In a group run by its founders only an Admin raises one; a process raises one through its owner, an Admin, and holds no more than Everyone all the same."
               )
             } />
           </li>

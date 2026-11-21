@@ -237,7 +237,7 @@ defmodule PotokIdeWeb.PageHTML do
         title: gettext("Roles and permissions"),
         text:
           gettext(
-            "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own."
+            "Administrator, All members and roles you make yourself, with 20 permissions: from writing and sending files to creating events and editing the group. A sub-group takes over its parent's roles or has its own. A poll's decision can also give or take a role, a process can put that to the vote, and a group can elect its administrators instead of keeping its founders."
           )
       },
       %{

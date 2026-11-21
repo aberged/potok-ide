@@ -28,6 +28,8 @@ defmodule PotokIde.Polls.Effects do
 
   import Ecto.Query
 
+  require Logger
+
   alias PotokIde.Polls.{Notifications, Poll, PollOption}
   alias PotokIde.Repo
   alias PotokIde.Social
@@ -221,10 +223,31 @@ defmodule PotokIde.Polls.Effects do
   def apply_locked(%Poll{effect: nil}, _group, _outcome, _winner), do: {nil, []}
 
   def apply_locked(%Poll{} = poll, %Group{} = group, :passed, %PollOption{} = winner) do
-    if carried?(poll, winner), do: carry_out(poll, group, winner), else: {:rejected, []}
+    if carried?(poll, winner),
+      do: guarded(poll, fn -> carry_out(poll, group, winner) end),
+      else: {:rejected, []}
   end
 
   def apply_locked(%Poll{}, _group, _outcome, _winner), do: {:rejected, []}
+
+  # Polls past their deadline close together in one transaction
+  # (`PotokIde.Polls.Deadlines`), so a decision that fails in the database
+  # goes back to a savepoint of its own: the poll still closes, saying
+  # nothing came of it, and the others close with it.
+  defp guarded(%Poll{id: id}, fun) do
+    Repo.query!("SAVEPOINT poll_effect")
+
+    try do
+      result = fun.()
+      Repo.query!("RELEASE SAVEPOINT poll_effect")
+      result
+    rescue
+      exception ->
+        Repo.query!("ROLLBACK TO SAVEPOINT poll_effect")
+        Logger.error("Decision of poll #{id} failed: " <> Exception.message(exception))
+        {nil, []}
+    end
+  end
 
   defp carried?(%Poll{effect: :elect}, %PollOption{profile_id: id}), do: is_integer(id)
   defp carried?(%Poll{}, %PollOption{approves: approves}), do: approves
