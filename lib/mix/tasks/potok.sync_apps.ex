@@ -9,8 +9,10 @@ defmodule Mix.Tasks.Potok.SyncApps do
 
       mix potok.sync_apps
 
-  A copy changes only the groups made after it: each group keeps the apps it
-  was made with.
+  A copy reaches the groups made after it. Each group keeps the app it was made
+  with until an editor refreshes it (`Social.refresh_app/3`), which works for
+  the builds `priv/apps/builds.json` knows: this task writes it anew
+  (`mix potok.app_builds`), so commit it with the builds.
   """
   use Mix.Task
 
@@ -36,5 +38,7 @@ defmodule Mix.Tasks.Potok.SyncApps do
       File.cp!(source, target)
       Mix.shell().info("#{target}: #{File.stat!(target).size} bytes")
     end)
+
+    Mix.Task.run("potok.app_builds")
   end
 end
