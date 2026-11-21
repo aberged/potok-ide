@@ -39,6 +39,8 @@ defmodule PotokIde.Polls.View do
     :quorum_percent,
     :majority,
     :form_key,
+    # What the decision changes (`PotokIde.Polls.Effects`), or nil.
+    :effect,
     options: [],
     removable_option_ids: [],
     my_option_ids: [],

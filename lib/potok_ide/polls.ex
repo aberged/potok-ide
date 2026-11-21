@@ -22,7 +22,7 @@ defmodule PotokIde.Polls do
   alias Phoenix.PubSub
   alias PotokIde.Accounts.Account
   alias PotokIde.PlainText
-  alias PotokIde.Polls.{Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
+  alias PotokIde.Polls.{Effects, Notifications, Outcome, Poll, PollBallot, PollOption, Rules}
   alias PotokIde.Repo
   alias PotokIde.Social
   alias PotokIde.Social.{Access, AccountProfile, Group, Identity, Profile, Value}
@@ -66,7 +66,7 @@ defmodule PotokIde.Polls do
 
   @doc "The poll with its answers and group, or nil."
   def get_poll(id) when is_integer(id) do
-    Repo.one(from(p in Poll, where: p.id == ^id, preload: [:options, :group]))
+    Repo.one(from(p in Poll, where: p.id == ^id, preload: [:options, :group, :effect_profile]))
   end
 
   @doc "Whether the group has a poll at all, for the section in its bar."
@@ -110,7 +110,7 @@ defmodule PotokIde.Polls do
       |> without_my_ballot(status, profile)
       |> order_by([p], desc: p.id)
       |> limit(^(limit + 1))
-      |> preload([p, g], [:options, group: g])
+      |> preload([p, g], [:options, :effect_profile, group: g])
       |> Repo.all()
 
     {polls, rest} = Enum.split(polls, limit)
@@ -257,7 +257,11 @@ defmodule PotokIde.Polls do
         values
 
       poll_ids ->
-        polls = Repo.all(from(p in Poll, where: p.id in ^poll_ids, preload: :options))
+        polls =
+          Repo.all(
+            from(p in Poll, where: p.id in ^poll_ids, preload: [:options, :effect_profile])
+          )
+
         views = views(polls, profile, account, %{group.id => {group, access}})
 
         Enum.map(values, fn
@@ -284,9 +288,31 @@ defmodule PotokIde.Polls do
   end
 
   @doc """
+  The form's changeset, with what a decision changes as it would be saved for
+  `access`: its fixed answers, and what it names that is wrong as errors.
+  """
+  def change_poll(%Poll{} = poll, attrs, time_zone, %Access{} = access, %Group{} = group) do
+    if poll.voters_count > 0 do
+      change_poll(poll, attrs, time_zone)
+    else
+      attrs = Effects.keep_current(attrs, poll)
+
+      case effect_changeset(poll, attrs, time_zone, access, group, nil) do
+        {:ok, changeset} -> changeset
+        {:error, %Ecto.Changeset{} = changeset} -> changeset
+        {:error, _not_permitted} -> change_poll(poll, attrs, time_zone)
+      end
+    end
+  end
+
+  @doc """
   Starts a poll in `group`; the deadline is read in `time_zone`. With
   `announce: true` (the default) it is posted in the group's chat when the
   creator may post there, and members get a push.
+
+  A decision that changes roles (`Effects.normalize/4`) needs one of
+  `proposers` (accesses, by default the creator's) to be allowed it;
+  `process_instance_id` names the run of a process that waits for the poll.
   """
   def create_poll(%Profile{} = creator, %Group{} = group, attrs, time_zone, opts \\ []) do
     access = Access.for_profile(creator, group)
@@ -294,24 +320,64 @@ defmodule PotokIde.Polls do
     if Rules.can_create?(access, group) do
       attrs = only_if_published(attrs, access, group)
 
-      %Poll{group_id: group.id, creator_id: creator.id}
-      |> Poll.changeset(attrs, time_zone)
-      |> Repo.insert()
-      |> case do
-        {:ok, poll} ->
-          poll =
-            if Keyword.get(opts, :announce, true) and Access.can?(access, :post_values),
-              do: announce(creator, group, poll),
-              else: poll
+      poll = %Poll{
+        group_id: group.id,
+        creator_id: creator.id,
+        process_instance_id: Keyword.get(opts, :process_instance_id)
+      }
 
-          broadcast(poll, {:changed, poll.id})
-          {:ok, %{poll | group: group}}
-
-        error ->
-          error
+      with {:ok, changeset} <-
+             effect_changeset(poll, attrs, time_zone, access, group, opts[:proposers]) do
+        insert_poll(changeset, creator, group, access, opts)
       end
     else
       {:error, :not_permitted}
+    end
+  end
+
+  # The poll's changeset with what its decision changes, checked by
+  # `Effects`, and the answers that go with it.
+  defp effect_changeset(%Poll{} = poll, attrs, time_zone, access, group, proposers) do
+    case Effects.normalize(attrs, access, group, proposers) do
+      {:ok, chosen, answers} ->
+        {:ok,
+         poll
+         |> change_poll(Effects.with_answers(attrs, answers), time_zone)
+         |> Poll.put_effect(chosen, Effects.marks(answers))}
+
+      # The decision as far as it goes, so that the form keeps asking for it.
+      {:error, {field, message}} ->
+        kind = Effects.kind(attrs)
+
+        changeset =
+          poll
+          |> change_poll(
+            Effects.with_answers(attrs, Effects.fixed_answers(kind, attrs)),
+            time_zone
+          )
+          |> Ecto.Changeset.put_change(:effect, kind)
+          |> Ecto.Changeset.add_error(field, message)
+
+        {:error, %{changeset | action: :validate}}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  defp insert_poll(changeset, creator, group, access, opts) do
+    case Repo.insert(changeset) do
+      {:ok, poll} ->
+        poll =
+          if Keyword.get(opts, :announce, true) and Access.can?(access, :post_values),
+            do: announce(creator, group, poll),
+            else: poll
+
+        broadcast(poll, {:changed, poll.id})
+        {:ok, %{poll | group: group}}
+
+      error ->
+        error
     end
   end
 
@@ -364,11 +430,30 @@ defmodule PotokIde.Polls do
         not Poll.open?(locked, DateTime.utc_now(:second)) ->
           {:error, :closed}
 
-        true ->
+        locked.voters_count > 0 ->
           locked
           |> Repo.preload(:options)
-          |> change_poll(only_if_published(attrs, access, group), time_zone)
+          |> change_poll(attrs, time_zone)
           |> Repo.update()
+
+        # What a decision changes is set by those who may put it to a vote.
+        locked.effect && not Effects.may_propose?(access, group, locked.effect) ->
+          {:error, :not_permitted}
+
+        true ->
+          attrs = attrs |> only_if_published(access, group) |> Effects.keep_current(locked)
+
+          with {:ok, changeset} <-
+                 effect_changeset(
+                   Repo.preload(locked, :options),
+                   attrs,
+                   time_zone,
+                   access,
+                   group,
+                   nil
+                 ) do
+            Repo.update(changeset)
+          end
       end
     end)
     |> case do
@@ -558,26 +643,47 @@ defmodule PotokIde.Polls do
       locked = Repo.preload(locked, :options)
       vote_block = Rules.vote_block(locked, group, access, profile, DateTime.utc_now(:second))
       view = Rules.view(locked, group, access, profile, nil, nil, DateTime.utc_now(:second))
-      changeset = PollOption.text_changeset(%PollOption{}, attrs)
-      text = changeset |> Ecto.Changeset.get_field(:text) |> PollOption.normalize()
 
-      cond do
-        not is_nil(vote_block) or not view.can_add_option? ->
-          {:error, :not_permitted}
-
-        Enum.any?(locked.options, &(PollOption.normalize(&1.text) == text)) ->
-          {:error, :duplicate}
-
-        true ->
-          changeset
-          |> Ecto.Changeset.put_change(:poll_id, locked.id)
-          |> Ecto.Changeset.put_change(:creator_id, profile.id)
-          |> Ecto.Changeset.put_change(:position, next_position(locked))
-          |> Repo.insert()
-          |> with_poll(locked)
+      if not is_nil(vote_block) or not view.can_add_option? do
+        {:error, :not_permitted}
+      else
+        insert_option(locked, profile, attrs)
       end
     end)
     |> refreshed()
+  end
+
+  # In an election a member stands for themselves, under their own name.
+  defp insert_option(%Poll{effect: :elect} = poll, profile, _attrs) do
+    with {:ok, candidate} <- Effects.candidate(poll, profile) do
+      %PollOption{}
+      |> PollOption.text_changeset(%{text: candidate.text})
+      |> Ecto.Changeset.put_change(:profile_id, candidate.profile_id)
+      |> put_option_place(poll, profile)
+      |> Repo.insert()
+      |> with_poll(poll)
+    end
+  end
+
+  defp insert_option(%Poll{} = poll, profile, attrs) do
+    changeset = PollOption.text_changeset(%PollOption{}, attrs)
+    text = changeset |> Ecto.Changeset.get_field(:text) |> PollOption.normalize()
+
+    if Enum.any?(poll.options, &(PollOption.normalize(&1.text) == text)) do
+      {:error, :duplicate}
+    else
+      changeset
+      |> put_option_place(poll, profile)
+      |> Repo.insert()
+      |> with_poll(poll)
+    end
+  end
+
+  defp put_option_place(changeset, poll, profile) do
+    changeset
+    |> Ecto.Changeset.put_change(:poll_id, poll.id)
+    |> Ecto.Changeset.put_change(:creator_id, profile.id)
+    |> Ecto.Changeset.put_change(:position, next_position(poll))
   end
 
   defp next_position(%Poll{options: options}) do
@@ -595,6 +701,8 @@ defmodule PotokIde.Polls do
 
       cond do
         not Rules.manage?(locked, access, actor) or locked.secret -> {:error, :not_permitted}
+        # A decision's answers are fixed, and its candidates stand for themselves.
+        locked.effect -> {:error, :not_permitted}
         is_nil(option) -> {:error, :not_found}
         option.votes_count > 0 -> {:error, :has_votes}
         length(locked.options) <= Poll.min_options() -> {:error, :too_few_options}
@@ -614,7 +722,10 @@ defmodule PotokIde.Polls do
 
   defp refreshed(error), do: error
 
-  @doc "Ends the voting now, and works out the decision."
+  @doc """
+  Ends the voting now, and works out the decision. A decision that changes
+  roles ends at its deadline and not before, as voters counted on it.
+  """
   def close_poll(%Profile{} = actor, %Poll{} = poll) do
     now = DateTime.utc_now(:second)
 
@@ -622,11 +733,13 @@ defmodule PotokIde.Polls do
       cond do
         not Rules.manage?(locked, access, actor) -> {:error, :not_permitted}
         locked.closed_at -> {:error, :closed}
+        locked.effect && Poll.open?(locked, now) -> {:error, :effect_poll}
         true -> {:ok, close_locked(locked, group, now)}
       end
     end)
     |> case do
-      {:ok, closed} ->
+      {:ok, {closed, announcements}} ->
+        Enum.each(announcements, & &1.())
         Notifications.deliver_closed(closed, actor)
         refresh(closed)
         {:ok, closed}
@@ -638,28 +751,37 @@ defmodule PotokIde.Polls do
 
   @doc """
   Writes the end of a poll whose row the caller has locked. The right to vote is
-  counted here, so that a later change of members leaves the decision as it was.
+  counted here, so that a later change of members leaves the decision as it was,
+  and what the decision changes is carried out (`Effects.apply_locked/4`).
+  Returns `{poll, announcements}`: run them once the transaction commits.
   """
   def close_locked(%Poll{} = poll, %Group{} = group, %DateTime{} = closed_at) do
     options = Repo.all(from(o in PollOption, where: o.poll_id == ^poll.id))
     eligible = eligible_count(poll, group)
     {outcome, winner_id} = Outcome.decide(poll, options, poll.voters_count, eligible || 0)
+    winner = Enum.find(options, &(&1.id == winner_id))
+    {effect_status, announcements} = Effects.apply_locked(poll, group, outcome, winner)
 
-    poll
-    |> Ecto.Changeset.change(
-      closed_at: closed_at,
-      remind_at: nil,
-      eligible_count: eligible,
-      outcome: outcome,
-      winner_option_id: winner_id
-    )
-    |> Repo.update!()
+    closed =
+      poll
+      |> Ecto.Changeset.change(
+        closed_at: closed_at,
+        remind_at: nil,
+        eligible_count: eligible,
+        outcome: outcome,
+        winner_option_id: winner_id,
+        effect_status: effect_status
+      )
+      |> Repo.update!()
+
+    {closed, announcements}
   end
 
   @doc """
   Takes votes again and forgets the decision. A deadline that has passed goes
   with it. A secret poll stays closed: the difference between two closings,
-  next to the list of new voters, would give away what they chose.
+  next to the list of new voters, would give away what they chose. So does a
+  decision that changes roles: what it decided is done.
   """
   def reopen_poll(%Profile{} = actor, %Poll{} = poll) do
     now = DateTime.utc_now(:second)
@@ -668,6 +790,7 @@ defmodule PotokIde.Polls do
       cond do
         not Rules.manage?(locked, access, actor) -> {:error, :not_permitted}
         locked.secret -> {:error, :secret}
+        locked.effect -> {:error, :effect_poll}
         Poll.open?(locked, now) -> {:ok, locked}
         true -> {:ok, reopen_locked(locked, now)}
       end
@@ -723,24 +846,44 @@ defmodule PotokIde.Polls do
   defp nudged_lately?(%Poll{last_nudged_at: at}, now),
     do: DateTime.diff(now, at) < @nudge_interval_seconds
 
-  @doc "Deletes the poll with all its votes, and the message that carries it."
+  @doc """
+  Deletes the poll with all its votes, and the message that carries it. A
+  decision that changes roles stays once it has a vote: it is the record of
+  what the group decided (`decision?/1`).
+  """
   def delete_poll(%Profile{} = actor, %Poll{} = poll) do
     group = Repo.get!(Group, poll.group_id)
 
-    if Rules.manage?(poll, Access.for_profile(actor, group), actor) do
-      case poll.value_id && Repo.get(Value, poll.value_id) do
-        %Value{} = value ->
-          # Takes the poll with it, and tells open pages.
-          Social.remove_value(value)
-          {:ok, poll}
+    cond do
+      decision?(Repo.reload(poll) || poll) ->
+        {:error, :decision}
 
-        _no_value ->
-          Repo.delete!(poll)
-          broadcast_deleted(poll)
-          {:ok, poll}
-      end
-    else
-      {:error, :not_permitted}
+      Rules.manage?(poll, Access.for_profile(actor, group), actor) ->
+        delete_poll_and_value(poll)
+
+      true ->
+        {:error, :not_permitted}
+    end
+  end
+
+  @doc """
+  Whether the poll is a decision that changes roles and has a vote, or ended:
+  neither it nor its message can be deleted then.
+  """
+  def decision?(%Poll{effect: nil}), do: false
+  def decision?(%Poll{} = poll), do: poll.voters_count > 0 or not is_nil(poll.closed_at)
+
+  defp delete_poll_and_value(%Poll{} = poll) do
+    case poll.value_id && Repo.get(Value, poll.value_id) do
+      %Value{} = value ->
+        # Takes the poll with it, and tells open pages.
+        Social.remove_value(value)
+        {:ok, poll}
+
+      _no_value ->
+        Repo.delete!(poll)
+        broadcast_deleted(poll)
+        {:ok, poll}
     end
   end
 

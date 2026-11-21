@@ -18,6 +18,12 @@ defmodule PotokIde.Polls.Poll do
 
   A public poll also takes the votes of signed-in non-members of a public group.
   They are not anyone's to count, so it has no quorum or decision.
+
+  A decision may change roles (`effect`, see `PotokIde.Polls.Effects`), which
+  voters read on the card before they vote. Such a poll is put to the whole
+  group, takes one answer, is decided by a majority with a quorum and ends at
+  its deadline. Once a ballot is in, nothing of it changes but the reminder.
+  The database holds that too.
   """
 
   use Ecto.Schema
@@ -33,6 +39,8 @@ defmodule PotokIde.Polls.Poll do
   @majorities [:none, :plurality, :simple, :two_thirds, :absolute]
   @outcomes [:passed, :failed, :no_quorum, :tie]
   @reminder_choices [60, 1440]
+  @effects [:grant, :revoke, :elect, :end_elections]
+  @effect_statuses [:applied, :rejected, :not_a_member, :role_gone, :inherited_role, :last_admin]
 
   @max_question 300
   @max_description 2000
@@ -101,6 +109,19 @@ defmodule PotokIde.Polls.Poll do
     # counts of the answers do not add up to the voters.
     field :voters_count, :integer, default: 0
 
+    # What the decision changes, put by `put_effect/3` once
+    # `PotokIde.Polls.Effects` checked it, never cast; nil for a plain poll.
+    field :effect, Ecto.Enum, values: @effects
+    field :effect_role_key, :string
+    # Whom `grant` and `revoke` name.
+    belongs_to :effect_profile, PotokIde.Social.Profile
+    # An election takes the role from its other holders.
+    field :effect_replace, :boolean, default: false
+    # What came of it, written as it closes.
+    field :effect_status, Ecto.Enum, values: @effect_statuses
+    # The run of a drawn process that raised the poll and waits for it.
+    belongs_to :process_instance, PotokIde.Processes.ValueProcess
+
     # The form edits the deadline as local time in the viewer's zone.
     field :closes_local, :naive_datetime, virtual: true
 
@@ -126,6 +147,8 @@ defmodule PotokIde.Polls.Poll do
   def min_options, do: @min_options
   def max_options, do: @max_options
   def max_options_with_members, do: @max_options_with_members
+  def effects, do: @effects
+  def effect_statuses, do: @effect_statuses
 
   @doc "Whether votes are taken at `now`. A vote checks this itself, so a deadline holds to the second."
   def open?(%__MODULE__{closed_at: closed_at}, _now) when not is_nil(closed_at), do: false
@@ -174,13 +197,103 @@ defmodule PotokIde.Polls.Poll do
     |> check_constraint(:quorum_percent, name: :polls_quorum_percent_check)
   end
 
-  @doc "All that changes once a ballot is in: the deadline and the reminder."
+  @doc """
+  All that changes once a ballot is in: the deadline and the reminder, and
+  for a decision that changes roles the reminder alone, as voters counted on
+  its deadline too.
+  """
   def schedule_changeset(%__MODULE__{} = poll, attrs, time_zone) do
+    fields = if poll.effect, do: [:reminder_minutes], else: [:closes_local, :reminder_minutes]
+
     poll
     |> with_form_fields(time_zone)
-    |> cast(attrs, [:closes_local, :reminder_minutes])
+    |> cast(attrs, fields)
     |> validate_inclusion(:reminder_minutes, @reminder_choices)
     |> put_deadline(time_zone)
+  end
+
+  @doc "Whether the decision changes roles."
+  def effect?(%__MODULE__{effect: effect}), do: not is_nil(effect)
+
+  @doc """
+  Puts what the decision changes, which `PotokIde.Polls.Effects` checked:
+  `%{effect:, role_key:, profile_id:, replace:}`, or nil for none. `marks`
+  holds, for each answer by its position, the member it stands for
+  (`profile_id`) or whether it carries the decision out (`approves`). The
+  poll then keeps what such a decision promises.
+  """
+  def put_effect(changeset, nil, _marks) do
+    changeset
+    |> put_change(:effect, nil)
+    |> put_change(:effect_role_key, nil)
+    |> put_change(:effect_profile_id, nil)
+    |> put_change(:effect_replace, false)
+    |> mark_options([])
+  end
+
+  def put_effect(changeset, %{effect: effect} = chosen, marks) when effect in @effects do
+    changeset
+    |> put_change(:effect, effect)
+    |> put_change(:effect_role_key, Map.get(chosen, :role_key))
+    |> put_change(:effect_profile_id, Map.get(chosen, :profile_id))
+    |> put_change(:effect_replace, effect == :elect and Map.get(chosen, :replace) == true)
+    |> mark_options(marks)
+    |> keep_effect()
+  end
+
+  # The answers marked by position, which their form fixes.
+  defp mark_options(changeset, marks) do
+    case get_change(changeset, :options) do
+      nil ->
+        changeset
+
+      options ->
+        marked =
+          Enum.map(options, fn option ->
+            mark = Enum.at(marks, get_field(option, :position)) || %{}
+
+            option
+            |> put_change(:profile_id, Map.get(mark, :profile_id))
+            |> put_change(:approves, Map.get(mark, :approves, false))
+          end)
+
+        put_change(changeset, :options, marked)
+    end
+  end
+
+  # One answer, put to the whole group, decided by a majority with a quorum,
+  # at a deadline. Members may stand in an election, each for themselves.
+  defp keep_effect(changeset) do
+    effect = get_field(changeset, :effect)
+
+    changeset
+    |> put_change(:kind, :single)
+    |> put_change(:max_choices, nil)
+    |> put_change(:is_public, false)
+    |> put_change(:voter_role_keys, ["everyone"])
+    |> then(fn changeset ->
+      if effect == :elect and not get_field(changeset, :secret),
+        do: changeset,
+        else: put_change(changeset, :allow_member_options, false)
+    end)
+    |> validate_effect_majority(effect)
+    |> validate_effect_required(:quorum_percent, "set a quorum")
+    |> validate_effect_required(:closes_at, "set a deadline", :closes_local)
+    |> check_constraint(:effect, name: :polls_effect_check)
+  end
+
+  defp validate_effect_majority(changeset, effect) do
+    case get_field(changeset, :majority) do
+      :none -> add_error(changeset, :majority, "pick how it is decided")
+      :plurality when effect != :elect -> add_error(changeset, :majority, "needs a majority")
+      _majority -> changeset
+    end
+  end
+
+  defp validate_effect_required(changeset, field, message, error_field \\ nil) do
+    if is_nil(get_field(changeset, field)),
+      do: add_error(changeset, error_field || field, message),
+      else: changeset
   end
 
   @doc "Fills `closes_local` from `closes_at`, for the form."

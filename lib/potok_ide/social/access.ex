@@ -573,6 +573,23 @@ defmodule PotokIde.Social.Access do
   end
 
   @doc """
+  The roles of `profile_ids` that a decision of a poll gave them in the group
+  (`PotokIde.Polls.Effects`), as `%{profile_id => %{role_key => poll_id}}`.
+  """
+  def decided_by_profile(%Group{id: group_id}, profile_ids) when is_list(profile_ids) do
+    from(r in GroupMemberRole,
+      where:
+        r.group_id == ^group_id and r.profile_id in ^profile_ids and not is_nil(r.poll_id) and
+          not r.inherited,
+      select: {r.profile_id, r.role_key, r.poll_id}
+    )
+    |> Repo.all()
+    |> Enum.reduce(%{}, fn {profile_id, key, poll_id}, acc ->
+      Map.update(acc, profile_id, %{key => poll_id}, &Map.put(&1, key, poll_id))
+    end)
+  end
+
+  @doc """
   What members of an inheriting group hold through its parent, as
   `%{profile_id => [role_key]}` for those of `profile_ids` who are members of
   the parent and, when the group inherits by roles, hold one of them there.

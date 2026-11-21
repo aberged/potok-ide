@@ -1,6 +1,7 @@
 defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
   use PotokIdeWeb, :html
 
+  alias PotokIde.Polls.Effects
   alias PotokIde.Social.{Access, GroupRole}
   alias PotokIdeWeb.GroupLive.Show.{Components, ProcessesTab, RolesTab}
   alias PotokIdeWeb.TagComponents
@@ -29,6 +30,17 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       |> assign(:assignable_roles, Enum.reject(roles, &(&1.key == GroupRole.everyone_key())))
       |> assign(:manage_roles?, assigns.access.admin? and not assigns.group.is_direct)
       |> assign(:can_remove?, Access.can?(assigns.access, :remove_members))
+      |> assign(:elects?, assigns.group.elects_admins)
+      # Admin comes only by a decision where the group elects its admins.
+      |> assign(
+        :locked_keys,
+        if(assigns.group.elects_admins, do: [GroupRole.admin_key()], else: [])
+      )
+      |> assign(
+        :call_election?,
+        assigns.group.elects_admins and
+          Effects.may_propose?(assigns.access, assigns.group, :elect)
+      )
 
     ~H"""
     <div id="group-panel-members" class="card flex min-h-0 flex-1 flex-col px-2">
@@ -41,8 +53,21 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         >
           {gettext("Members")}
           <:subtitle>{gettext("Who is in the group, with their roles.")}</:subtitle>
-          <:actions :if={Access.can?(@access, :invite_members)}>
+          <:actions :if={Access.can?(@access, :invite_members) or @call_election?}>
             <.button
+              :if={@call_election?}
+              id="group-members-call-election"
+              type="button"
+              phx-click="poll_form_open"
+              phx-value-preset="election"
+              variant="soft"
+              size="sm"
+            >
+              <.icon name="hero-scale" class="size-4" />
+              {gettext("Call an election")}
+            </.button>
+            <.button
+              :if={Access.can?(@access, :invite_members)}
               id="group-members-invite"
               type="button"
               phx-click="switch_tab"
@@ -128,6 +153,19 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
           </ul>
         </div>
 
+        <p
+          :if={@elects?}
+          id="group-members-elected"
+          class="mb-4 flex items-start gap-2 rounded-2xl border border-primary/25 bg-primary/5 px-4 py-3 text-sm"
+        >
+          <.icon name="hero-scale" class="mt-0.5 size-4 shrink-0 text-primary" />
+          <span>
+            {gettext(
+              "This group elects its admins. Admin comes and goes only by a decision of a poll, and the admins it had before the first election stay for the time being."
+            )}
+          </span>
+        </p>
+
         <div
           :if={@blocks != []}
           id="group-blocks-panel"
@@ -185,7 +223,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                  profile: member,
                  role_keys: role_keys,
                  inherited?: inherited?,
-                 inherited_role_keys: inherited_role_keys
+                 inherited_role_keys: inherited_role_keys,
+                 decided: decided
                }} <- @members
             }
             id={dom_id}
@@ -213,7 +252,10 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 <.role_badges
                   :if={!@group.is_direct}
                   id={"member-#{member.id}"}
+                  group_id={@group.id}
                   roles={member_roles(@assignable_roles, role_keys)}
+                  decided={decided}
+                  interim_keys={interim_keys(@elects?, role_keys, inherited_role_keys, decided)}
                 />
                 <TagComponents.tag_chips id={"member-#{member.id}-tag-list"} tags={member.tags} />
               </div>
@@ -235,7 +277,8 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               <.icon_button
                 :if={
                   @can_remove? && member.id != @current_profile.id && !@group.is_direct &&
-                    !inherited? && (@access.admin? or GroupRole.admin_key() not in role_keys)
+                    !inherited? && (@access.admin? or GroupRole.admin_key() not in role_keys) &&
+                    !(@elects? and GroupRole.admin_key() in role_keys)
                 }
                 id={"group-remove-member-#{member.id}"}
                 type="button"
@@ -257,6 +300,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
               roles={@assignable_roles}
               role_keys={role_keys}
               inherited_role_keys={inherited_role_keys}
+              locked_keys={@locked_keys}
             />
           </li>
         </ul>
@@ -359,6 +403,7 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
                 profile_id={entry.id}
                 roles={@assignable_roles}
                 role_keys={entry.role_keys}
+                locked_keys={@locked_keys}
               />
             </li>
           </ul>
@@ -370,6 +415,9 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
 
   attr :id, :string, required: true, doc: "the prefix of the ids, such as `member-12`"
   attr :roles, :list, required: true, doc: "the assigned roles to show"
+  attr :group_id, :integer, default: nil
+  attr :decided, :map, default: %{}, doc: "`%{role_key => poll_id}`: roles a decision gave"
+  attr :interim_keys, :list, default: [], doc: "roles held until the first election"
 
   defp role_badges(assigns) do
     ~H"""
@@ -387,18 +435,50 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
       >
         <.icon name={RolesTab.role_icon(role)} class="size-3" />
         {RolesTab.role_label(role)}
+        <.link
+          :if={@decided[role.key] && @group_id}
+          id={"#{@id}-role-decided-#{role.key}"}
+          patch={~p"/groups/#{@group_id}/polls?#{[poll: @decided[role.key]]}"}
+          title={gettext("Given by a decision of a poll")}
+          class="-mr-1 inline-flex items-center gap-0.5 rounded-full bg-base-100/70 px-1.5 font-semibold underline-offset-2 hover:underline"
+        >
+          <.icon name="hero-scale" class="size-3" />
+          {gettext("elected")}
+        </.link>
+        <span
+          :if={role.key in @interim_keys}
+          id={"#{@id}-role-interim-#{role.key}"}
+          title={gettext("Until the group's first election")}
+          class="-mr-1 rounded-full bg-base-100/70 px-1.5"
+        >
+          {gettext("for now")}
+        </span>
       </span>
     </div>
     """
   end
+
+  # Admin held of one's own, by no decision, in a group that elects its admins.
+  defp interim_keys(true, role_keys, inherited_role_keys, decided) do
+    key = GroupRole.admin_key()
+
+    if key in role_keys and key not in inherited_role_keys and not Map.has_key?(decided, key),
+      do: [key],
+      else: []
+  end
+
+  defp interim_keys(false, _role_keys, _inherited_role_keys, _decided), do: []
 
   attr :id, :string, required: true, doc: "the prefix of the ids, such as `member-12`"
   attr :profile_id, :integer, required: true
   attr :roles, :list, required: true, doc: "the roles that may be assigned"
   attr :role_keys, :list, required: true
   attr :inherited_role_keys, :list, default: []
+  attr :locked_keys, :list, default: [], doc: "roles only a decision changes"
 
   defp role_editor(assigns) do
+    assigns = assign(assigns, :fixed_keys, assigns.inherited_role_keys ++ assigns.locked_keys)
+
     ~H"""
     <div
       id={"#{@id}-role-editor"}
@@ -412,15 +492,15 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
         phx-value-profile-id={@profile_id}
         phx-value-key={role.key}
         aria-pressed={to_string(role.key in @role_keys)}
-        disabled={role.key in @inherited_role_keys}
-        title={if(role.key in @inherited_role_keys, do: gettext("Inherited from the parent group"))}
+        disabled={role.key in @fixed_keys}
+        title={role_toggle_title(role.key, @inherited_role_keys, @locked_keys)}
         class={[
           "inline-flex h-7 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold shadow-xs transition duration-150 ease-out",
-          role_toggle_class(role.key, @role_keys, @inherited_role_keys)
+          role_toggle_class(role.key, @role_keys, @fixed_keys)
         ]}
       >
         <.icon
-          name={role_toggle_icon(role.key, @role_keys, @inherited_role_keys)}
+          name={role_toggle_icon(role.key, @role_keys, @fixed_keys)}
           class="size-3.5"
         />
         {RolesTab.role_label(role)}
@@ -451,7 +531,16 @@ defmodule PotokIdeWeb.GroupLive.Show.MembersTab do
     Enum.join(app ++ collection ++ [owner], " · ")
   end
 
-  # A role held through the parent is locked: it is changed there.
+  defp role_toggle_title(key, inherited_role_keys, locked_keys) do
+    cond do
+      key in inherited_role_keys -> gettext("Inherited from the parent group")
+      key in locked_keys -> gettext("Elected: only a decision of a poll changes it")
+      true -> nil
+    end
+  end
+
+  # A role held through the parent is locked: it is changed there. So is
+  # Admin where the group elects it.
   defp role_toggle_class(key, role_keys, inherited_role_keys) do
     cond do
       key in inherited_role_keys ->

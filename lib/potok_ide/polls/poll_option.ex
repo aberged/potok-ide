@@ -22,6 +22,11 @@ defmodule PotokIde.Polls.PollOption do
     belongs_to :poll, PotokIde.Polls.Poll
     # Who added it, when the poll lets members add answers.
     belongs_to :creator, PotokIde.Social.Profile
+    # In an election, the member the answer stands for; put by
+    # `PotokIde.Polls.Poll.put_effect/3`, never cast.
+    belongs_to :profile, PotokIde.Social.Profile
+    # The answer that carries out a decision to grant, revoke or end, never cast.
+    field :approves, :boolean, default: false
   end
 
   def max_text, do: @max_text

@@ -333,13 +333,14 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsTab do
           size="sm"
         >
           <.icon name="hero-pencil-square" class="size-4" />
-          {if(@view.voters_count > 0,
-            do: dgettext("polls", "Change deadline"),
-            else: dgettext("polls", "Edit")
-          )}
+          {cond do
+            @view.voters_count > 0 and @view.effect -> dgettext("polls", "Change reminder")
+            @view.voters_count > 0 -> dgettext("polls", "Change deadline")
+            true -> dgettext("polls", "Edit")
+          end}
         </.button>
         <.button
-          :if={@view.open?}
+          :if={@view.open? and is_nil(@view.effect)}
           id="poll-close"
           type="button"
           phx-click="poll_close"
@@ -351,7 +352,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsTab do
           {dgettext("polls", "End the poll")}
         </.button>
         <.button
-          :if={!@view.open? and !@view.secret?}
+          :if={!@view.open? and !@view.secret? and is_nil(@view.effect)}
           id="poll-reopen"
           type="button"
           phx-click="poll_reopen"
@@ -362,6 +363,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsTab do
           {dgettext("polls", "Open again")}
         </.button>
         <.button
+          :if={!decision?(@view)}
           id="poll-delete"
           type="button"
           phx-click="poll_delete"
@@ -377,6 +379,10 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsTab do
     </div>
     """
   end
+
+  # A decision that changes roles stays once it has a vote: see `Polls.decision?/1`.
+  defp decision?(%View{effect: nil}), do: false
+  defp decision?(%View{} = view), do: (view.voters_count || 0) > 0 or not view.open?
 
   attr :view, View, required: true
   attr :stats, :map, required: true

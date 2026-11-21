@@ -350,9 +350,9 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
     end
   end
 
-  def handle_event("poll_add_option", %{"poll" => poll_id, "text" => text}, socket) do
+  def handle_event("poll_add_option", %{"poll" => poll_id} = params, socket) do
     with_poll(socket, poll_id, fn poll, profile ->
-      case Polls.add_option(profile, poll, %{"text" => text}) do
+      case Polls.add_option(profile, poll, %{"text" => Map.get(params, "text", "")}) do
         {:ok, _poll} -> socket
         {:error, reason} -> put_flash(socket, :error, option_error(reason))
       end
@@ -482,12 +482,24 @@ defmodule PotokIdeWeb.GroupLive.Show.PollsState do
   defp vote_error(_not_allowed), do: dgettext("polls", "You may not vote here.")
 
   defp option_error(:duplicate), do: dgettext("polls", "That answer is already there.")
+  defp option_error(:candidate), do: dgettext("polls", "You already stand in this election.")
   defp option_error(:has_votes), do: dgettext("polls", "That answer has votes.")
   defp option_error(:too_few_options), do: dgettext("polls", "A poll needs at least two answers.")
   defp option_error(_reason), do: dgettext("polls", "You may not do that.")
 
   defp action_error(:closed), do: dgettext("polls", "This poll has ended.")
   defp action_error(:secret), do: dgettext("polls", "A secret poll cannot be opened again.")
+
+  defp action_error(:effect_poll) do
+    dgettext(
+      "polls",
+      "A decision that changes roles ends at its deadline and is not opened again."
+    )
+  end
+
+  defp action_error(:decision) do
+    dgettext("polls", "A decision that changes roles stays once it has a vote.")
+  end
 
   defp action_error(:too_soon),
     do: dgettext("polls", "A reminder went out less than an hour ago.")

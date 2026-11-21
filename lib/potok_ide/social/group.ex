@@ -45,6 +45,11 @@ defmodule PotokIde.Social.Group do
     # roles there come in; empty takes every member. Never "everyone", which
     # every member holds, and always empty for a thread.
     field :inherit_role_keys, {:array, :string}, default: []
+    # Admins come and go only by decisions of polls (`PotokIde.Polls.Effects`):
+    # the admins it had when it was switched on stay until the first election.
+    # Set by `Social.set_elects_admins/3` and cleared only by a decision,
+    # never cast.
+    field :elects_admins, :boolean, default: false
     # When the newest chat value was posted; kept by Social, never cast.
     field :last_value_at, :utc_datetime
     # How many people belong to it, kept by Postgres from the memberships (a

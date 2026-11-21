@@ -164,6 +164,10 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
     default: "basics",
     doc: "the card on screen, picked in the section bar (see `sections/0`)"
 
+  attr :elections, :map,
+    default: nil,
+    doc: "whether the group elects its admins and what the viewer may do about it, or nil"
+
   attr :everyone_can_post, :boolean,
     default: true,
     doc: "whether the \"everyone\" role may post, which an open chat also needs"
@@ -313,6 +317,62 @@ defmodule PotokIdeWeb.GroupLive.Show.EditGroupTab do
                   )
                 }
               />
+            </div>
+
+            <div
+              :if={@elections}
+              id="group-edit-elections"
+              class="mt-3 rounded-2xl border border-base-300/70 px-3 py-3"
+            >
+              <p class="flex items-center gap-1.5 text-sm font-semibold">
+                <.icon name="hero-scale" class="size-4 text-primary" />
+                {gettext("Admins by election")}
+                <span
+                  :if={@elections.on?}
+                  id="group-edit-elections-on-badge"
+                  class="rounded-full bg-primary/10 px-2 text-[11px] text-primary"
+                >
+                  {gettext("on")}
+                </span>
+              </p>
+              <p class="mt-1 text-xs text-base-content/65">
+                {if(@elections.on?,
+                  do:
+                    gettext(
+                      "Admin comes and goes only by a decision of a poll, and an admin leaves the group only so. It is switched off by a decision too."
+                    ),
+                  else:
+                    gettext(
+                      "Admin then comes and goes only by a decision of a poll. You and the other admins stay for the time being, until the first election. It is switched off only by a decision."
+                    )
+                )}
+              </p>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <.button
+                  :if={@elections.can_switch_on?}
+                  id="group-edit-elections-on"
+                  type="button"
+                  phx-click="set_elects_admins"
+                  data-confirm={
+                    gettext(
+                      "From now on only a decision of a poll gives and takes Admin, and only a decision switches this off. Go on?"
+                    )
+                  }
+                  size="sm"
+                >
+                  {gettext("Let the group elect its admins")}
+                </.button>
+                <.button
+                  :if={@elections.can_propose_end?}
+                  id="group-edit-elections-end"
+                  type="button"
+                  phx-click="poll_form_open"
+                  phx-value-preset="end_elections"
+                  size="sm"
+                >
+                  {gettext("Propose ending it")}
+                </.button>
+              </div>
             </div>
           </Components.settings_card>
 

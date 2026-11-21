@@ -17,7 +17,7 @@ defmodule PotokIde.Polls.Notifications do
   alias PotokIde.Polls.{Poll, PollBallot}
   alias PotokIde.PushNotifications.Dispatch
   alias PotokIde.Repo
-  alias PotokIde.Social.{AccountProfile, Group, GroupMutes, Profile}
+  alias PotokIde.Social.{AccountProfile, Group, GroupMutes, GroupRole, Profile}
 
   def created(%Profile{} = creator, %Group{} = group, %Poll{} = poll) do
     localized(fn ->
@@ -56,6 +56,44 @@ defmodule PotokIde.Polls.Notifications do
         url: url(poll),
         badge: group_badge(group)
       }
+    end)
+  end
+
+  def role_changed(%Group{} = group, %Poll{} = poll, change, %GroupRole{} = role) do
+    localized(fn ->
+      name = role_name(role)
+
+      title =
+        case change do
+          :granted -> dgettext("polls", "You now hold the role %{role}", role: name)
+          :revoked -> dgettext("polls", "You no longer hold the role %{role}", role: name)
+        end
+
+      %{
+        title: title,
+        body: dgettext("polls", "By the decision: %{question}", question: poll.question),
+        tag: "#{tag(poll)}-role",
+        url: url(poll),
+        badge: group_badge(group)
+      }
+    end)
+  end
+
+  defp role_name(%GroupRole{} = role) do
+    if role.key == GroupRole.admin_key(), do: dgettext("polls", "Admin"), else: role.name
+  end
+
+  @doc """
+  Tells the people of `profile_ids` that a decision gave them a role or took
+  it (`change`, `:granted` or `:revoked`). Personal, so a silenced group lets
+  it through.
+  """
+  def deliver_role_change(%Poll{} = poll, %Group{} = group, profile_ids, change, role)
+      when is_list(profile_ids) do
+    Dispatch.run(fn ->
+      from(ap in AccountProfile, where: ap.profile_id in ^profile_ids, select: ap.account_id)
+      |> Dispatch.subscriptions_by_account()
+      |> Dispatch.deliver_localized("poll role", poll.id, role_changed(group, poll, change, role))
     end)
   end
 

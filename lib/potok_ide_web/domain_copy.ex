@@ -200,6 +200,9 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Group", "inherit_role_keys"),
     do: dgettext("domain_map", "roles it inherits by")
 
+  defp own_field("Group", "elects_admins"),
+    do: dgettext("domain_map", "admins come by election")
+
   defp own_field("Group", "last_value_at"), do: dgettext("domain_map", "newest value at")
   defp own_field("Group", "published_at"), do: dgettext("domain_map", "published at")
   defp own_field("Group", "preset"), do: dgettext("domain_map", "ready setup")
@@ -263,6 +266,9 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("GroupMemberRole", "profile_id"), do: dgettext("domain_map", "member")
   defp own_field("GroupMemberRole", "role_key"), do: dgettext("domain_map", "role")
+
+  defp own_field("GroupMemberRole", "poll_id"),
+    do: dgettext("domain_map", "decision that gave it")
 
   defp own_field("GroupRole", "key"), do: dgettext("domain_map", "role key")
   defp own_field("GroupRole", "allowed"), do: dgettext("domain_map", "allowed permissions")
@@ -508,6 +514,17 @@ defmodule PotokIdeWeb.DomainCopy do
   defp own_field("Poll", "winner_option_id"), do: dgettext("domain_map", "winning answer")
   defp own_field("Poll", "value_id"), do: dgettext("domain_map", "carrying value")
   defp own_field("Poll", "closes_local"), do: dgettext("domain_map", "deadline in local time")
+  defp own_field("Poll", "effect"), do: dgettext("domain_map", "what the decision changes")
+  defp own_field("Poll", "effect_role_key"), do: dgettext("domain_map", "role it names")
+  defp own_field("Poll", "effect_profile_id"), do: dgettext("domain_map", "member it names")
+
+  defp own_field("Poll", "effect_replace"),
+    do: dgettext("domain_map", "the elected one takes the others' place")
+
+  defp own_field("Poll", "effect_status"), do: dgettext("domain_map", "what came of it")
+
+  defp own_field("Poll", "process_instance_id"),
+    do: dgettext("domain_map", "process run waiting for it")
 
   defp own_field("Value", "poll_view"),
     do: dgettext("domain_map", "what the viewer sees of its poll")
@@ -520,6 +537,10 @@ defmodule PotokIdeWeb.DomainCopy do
 
   defp own_field("PollOption", "text"), do: dgettext("domain_map", "text")
   defp own_field("PollOption", "votes_count"), do: dgettext("domain_map", "votes")
+  defp own_field("PollOption", "profile_id"), do: dgettext("domain_map", "candidate")
+
+  defp own_field("PollOption", "approves"),
+    do: dgettext("domain_map", "carries the decision out")
 
   defp own_field("PollBallot", "option_ids"), do: dgettext("domain_map", "chosen answers")
   defp own_field("PollBallot", "changed_at"), do: dgettext("domain_map", "vote changed at")
@@ -1091,6 +1112,38 @@ defmodule PotokIdeWeb.DomainCopy do
 
   def check_text("poll_options_votes_count_check") do
     dgettext("domain_map", "The number of votes is never negative.")
+  end
+
+  def check_text("polls_effect_kind_check") do
+    dgettext(
+      "domain_map",
+      "A decision gives a role, takes it, elects someone to it or ends the election of admins."
+    )
+  end
+
+  def check_text("polls_effect_status_check") do
+    dgettext(
+      "domain_map",
+      "Only a decision that changes roles says what came of it: done, not passed, the member left, the role is gone, the role is held through the parent, or the group would lose its last admin."
+    )
+  end
+
+  def check_text("polls_effect_check") do
+    dgettext(
+      "domain_map",
+      "A decision that changes roles takes one answer, is put to the whole group, is not public, and ends at a deadline, with a quorum and a majority; only an election may be won by the most votes."
+    )
+  end
+
+  def check_text("poll_options_effect_check") do
+    dgettext("domain_map", "An answer either stands for a candidate or carries a decision out.")
+  end
+
+  def check_text("groups_elects_admins_check") do
+    dgettext(
+      "domain_map",
+      "The root, direct conversations and threads do not elect their admins."
+    )
   end
 
   def check_text("group_notices_body_check") do

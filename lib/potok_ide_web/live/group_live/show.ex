@@ -28,6 +28,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
   alias PotokIde.LinkPreviews
   alias PotokIde.Notices
   alias PotokIde.Polls
+  alias PotokIde.Polls.Effects
   alias PotokIde.RateLimit
   alias PotokIde.Storage
   alias PotokIde.Tags
@@ -912,6 +913,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
                   if(can_post_description_picture?(@group, @access), do: @uploads.description_video)
                 }
                 everyone_can_post={Access.everyone_can?(@access, :post_values)}
+                elections={elections_option(@group, @access)}
               />
               <InviteProfileTab.panel
                 :if={Access.can?(@access, :invite_members) and @active_tab == "invite_profile"}
@@ -1589,6 +1591,14 @@ defmodule PotokIdeWeb.GroupLive.Show do
             {:noreply,
              put_flash(socket, :error, gettext("You can only delete your own messages."))}
 
+          {:error, :decision} ->
+            {:noreply,
+             put_flash(
+               socket,
+               :error,
+               gettext("A decision that changes roles stays once it has a vote.")
+             )}
+
           {:error, _reason} ->
             {:noreply, put_flash(socket, :error, gettext("Could not delete message."))}
         end
@@ -1935,6 +1945,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
           when reason in [
                  :not_permitted,
                  :last_admin,
+                 :elected_admin,
                  :direct_group,
                  :inherited_member,
                  :process_profile
@@ -2971,6 +2982,20 @@ defmodule PotokIdeWeb.GroupLive.Show do
     else
       {:error, reason} -> {:noreply, put_flash(socket, :error, access_error_message(reason))}
       _ -> {:noreply, put_flash(socket, :error, gettext("Profile not found."))}
+    end
+  end
+
+  # Admins come by election from now on: only an admin may say so.
+  def handle_event("set_elects_admins", _params, socket) do
+    case Social.set_elects_admins(socket.assigns.current_profile, socket.assigns.group, true) do
+      {:ok, group} ->
+        {:noreply,
+         socket
+         |> assign(:group, group)
+         |> put_flash(:info, gettext("The group now elects its admins."))}
+
+      {:error, reason} ->
+        {:noreply, put_flash(socket, :error, access_error_message(reason))}
     end
   end
 
@@ -6385,6 +6410,7 @@ defmodule PotokIdeWeb.GroupLive.Show do
     profile_ids = Enum.map(profiles, & &1.id)
     keys_by_profile = Access.role_keys_by_profile(group, profile_ids)
     inherited = Access.inherited_by_profile(group, profile_ids)
+    decided = Access.decided_by_profile(group, profile_ids)
 
     profiles
     |> Tags.put_tags(viewer, :profile)
@@ -6394,7 +6420,8 @@ defmodule PotokIdeWeb.GroupLive.Show do
         profile: profile,
         role_keys: Map.get(keys_by_profile, profile.id, []),
         inherited?: Map.has_key?(inherited, profile.id),
-        inherited_role_keys: Map.get(inherited, profile.id, [])
+        inherited_role_keys: Map.get(inherited, profile.id, []),
+        decided: Map.get(decided, profile.id, %{})
       }
     end)
   end
@@ -6480,12 +6507,34 @@ defmodule PotokIdeWeb.GroupLive.Show do
   defp parse_permission_state("neutral"), do: :neutral
   defp parse_permission_state(_state), do: nil
 
+  # Whether the group elects its admins and what the viewer may do about it,
+  # for the edit tab; nil where a group cannot.
+  defp elections_option(group, access) do
+    if Effects.group_allowed?(group) do
+      %{
+        on?: group.elects_admins,
+        can_switch_on?: access.admin? and not group.elects_admins,
+        can_propose_end?:
+          group.elects_admins and Effects.may_propose?(access, group, :end_elections)
+      }
+    end
+  end
+
   defp too_many_values_message, do: gettext("Too many messages at once. Try again in a moment.")
 
   defp access_error_message(:not_permitted),
     do: gettext("Your roles in this group do not allow that.")
 
+  defp access_error_message(:elected_mode),
+    do: gettext("Electing admins ends only by a decision of a poll.")
+
   defp access_error_message(:last_admin), do: gettext("A group must keep at least one admin.")
+
+  defp access_error_message(:elected_role),
+    do: gettext("This group elects its admins: Admin comes and goes by a decision of a poll.")
+
+  defp access_error_message(:elected_admin),
+    do: gettext("This group elects its admins: an admin leaves only by a decision of a poll.")
 
   defp access_error_message(:direct_group),
     do: gettext("Direct conversations do not have roles or invitations.")

@@ -14,6 +14,9 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
   any reason, say a reaction, and that would clear a choice not yet sent. The
   id holds `form_key`, so the form changes when its answers or the viewer's ballot
   do.
+
+  A decision that changes roles says so above the answers, before anyone
+  votes, and once it ends what came of it.
   """
 
   use PotokIdeWeb, :html
@@ -43,6 +46,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
         <Components.formatted_content content={@view.description} content_format={:markdown} />
       </div>
 
+      <.effect :if={@view.effect} id={@id} view={@view} mine={@mine} />
       <.outcome :if={@view.outcome} view={@view} mine={@mine} />
 
       <div class="mt-3">
@@ -64,7 +68,13 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
         <% end %>
       </div>
 
-      <.add_option :if={@view.can_add_option?} id={@id} view={@view} mine={@mine} />
+      <.add_option
+        :if={@view.can_add_option? and !election?(@view)}
+        id={@id}
+        view={@view}
+        mine={@mine}
+      />
+      <.stand :if={@view.can_add_option? and election?(@view)} id={@id} view={@view} mine={@mine} />
       <.notes id={@id} view={@view} mine={@mine} details_path={@details_path} />
     </section>
     """
@@ -377,6 +387,116 @@ defmodule PotokIdeWeb.GroupLive.Show.PollCard do
   defp outcome_text(%View{outcome: :failed}), do: dgettext("polls", "Not decided")
   defp outcome_text(%View{outcome: :no_quorum}), do: dgettext("polls", "No quorum")
   defp outcome_text(%View{outcome: :tie}), do: dgettext("polls", "Tied")
+
+  attr :id, :string, required: true
+  attr :view, View, required: true
+  attr :mine, :boolean, required: true
+
+  # What the decision changes, said before anyone votes, and what came of it.
+  defp effect(assigns) do
+    ~H"""
+    <div
+      id={"#{@id}-effect"}
+      class={[
+        "mt-2 flex items-start gap-2 rounded-xl border px-3 py-2 text-sm",
+        if(@mine, do: "border-primary-content/30", else: "border-primary/30 bg-primary/5")
+      ]}
+    >
+      <.icon name="hero-scale" class="mt-0.5 size-4 shrink-0" />
+      <div class="min-w-0">
+        <p class="font-semibold">{effect_text(@view.effect)}</p>
+        <p :if={@view.effect.status} id={"#{@id}-effect-status"} class={["text-xs", muted(@mine)]}>
+          {effect_status(@view.effect)}
+        </p>
+        <p :if={@view.open? and !@view.effect.status} class={["text-xs", muted(@mine)]}>
+          {dgettext("polls", "Done as soon as the voting ends at its deadline.")}
+        </p>
+      </div>
+    </div>
+    """
+  end
+
+  defp effect_text(%{kind: :grant} = effect) do
+    dgettext("polls", "If it passes: %{name} gets the role %{role}.",
+      name: person(effect),
+      role: role_name(effect)
+    )
+  end
+
+  defp effect_text(%{kind: :revoke} = effect) do
+    dgettext("polls", "If it passes: %{name} loses the role %{role}.",
+      name: person(effect),
+      role: role_name(effect)
+    )
+  end
+
+  defp effect_text(%{kind: :elect, replace?: true} = effect) do
+    dgettext(
+      "polls",
+      "An election for the role %{role}: the one elected takes the place of those who hold it now.",
+      role: role_name(effect)
+    )
+  end
+
+  defp effect_text(%{kind: :elect} = effect) do
+    dgettext("polls", "An election for the role %{role}: the one elected gets it.",
+      role: role_name(effect)
+    )
+  end
+
+  defp effect_text(%{kind: :end_elections}) do
+    dgettext("polls", "If it passes: the group no longer elects its admins.")
+  end
+
+  defp effect_status(%{status: :applied}), do: dgettext("polls", "Done.")
+  defp effect_status(%{status: :rejected}), do: dgettext("polls", "Not done: it did not pass.")
+
+  defp effect_status(%{status: :not_a_member}),
+    do: dgettext("polls", "Not done: the member is no longer in the group.")
+
+  defp effect_status(%{status: :role_gone}),
+    do: dgettext("polls", "Not done: the role no longer exists.")
+
+  defp effect_status(%{status: :inherited_role}),
+    do: dgettext("polls", "Not done: the role is held through the parent group.")
+
+  defp effect_status(%{status: :last_admin}),
+    do: dgettext("polls", "Not done: the group would be left without an admin.")
+
+  defp person(%{profile: %{username: username}}), do: "@" <> username
+  defp person(_effect), do: dgettext("polls", "a former member")
+
+  defp role_name(%{role: nil}), do: dgettext("polls", "(deleted role)")
+  defp role_name(%{role: role}), do: RolesTab.role_label(role)
+
+  defp election?(%View{effect: %{kind: :elect}}), do: true
+  defp election?(%View{}), do: false
+
+  attr :id, :string, required: true
+  attr :view, View, required: true
+  attr :mine, :boolean, required: true
+
+  # In an election a member stands for themselves, under their own name.
+  defp stand(assigns) do
+    ~H"""
+    <form id={"#{@id}-stand"} phx-submit="poll_add_option" class="mt-2">
+      <input type="hidden" name="poll" value={@view.poll_id} />
+      <button
+        type="submit"
+        class={[
+          "inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border px-3 text-sm font-semibold transition duration-150 active:scale-95",
+          if(@mine,
+            do: "border-primary-content/40 hover:bg-primary-content/15",
+            else: "border-base-300 bg-base-100 hover:border-primary/50 hover:text-primary"
+          )
+        ]}
+      >
+        <.icon name="hero-hand-raised" class="size-4" />
+        {dgettext("polls", "Stand in the election")}
+      </button>
+    </form>
+    """
+  end
 
   attr :id, :string, required: true
   attr :view, View, required: true

@@ -10,6 +10,11 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
 
   Once a poll has votes only its schedule can change (`PotokIde.Polls.Poll`), so
   the form holds no more than that.
+
+  Whoever may put a decision that changes roles to a vote
+  (`PotokIde.Polls.Effects`) also picks what it changes. Its answers, who
+  votes and how it is decided then follow from that, so the form leaves them
+  out and asks for the member, the candidates, the majority and the quorum.
   """
 
   use PotokIdeWeb, :html
@@ -17,7 +22,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
   import Phoenix.LiveView, only: [put_flash: 3]
 
   alias PotokIde.Polls
-  alias PotokIde.Polls.{Poll, Rules}
+  alias PotokIde.Polls.{Effects, Poll, Rules}
   alias PotokIde.Social.{Access, Group}
   alias PotokIdeWeb.GroupLive.Show.RolesTab
 
@@ -26,8 +31,11 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
 
   def init(socket), do: assign(socket, :poll_form, nil)
 
-  @doc "Opens the form on a new poll of the page's group, when the viewer may start one."
-  def open_new(socket) do
+  @doc """
+  Opens the form on a new poll of the page's group, when the viewer may start
+  one, with `params` filled in.
+  """
+  def open_new(socket, params \\ Polls.blank_attrs()) do
     %{access: access, group: group} = socket.assigns
 
     if Rules.can_create?(access, group) do
@@ -35,7 +43,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
         put_changeset(
           %{
             poll: %Poll{},
-            params: Polls.blank_attrs(),
+            params: params,
             announce?: Access.can?(access, :post_values),
             error: nil,
             action: nil
@@ -49,6 +57,12 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
     end
   end
 
+  # An election of admins, or the end of electing them, ready to fill in.
+  def handle_event("poll_form_open", %{"preset" => preset}, socket)
+      when preset in ["election", "end_elections"] do
+    {:noreply, open_new(socket, preset_params(preset, socket.assigns.calendar_time_zone))}
+  end
+
   def handle_event("poll_form_open", %{"id" => id}, socket) do
     with {poll_id, ""} <- Integer.parse(to_string(id)),
          %Poll{} = poll <- Polls.get_poll(poll_id),
@@ -56,7 +70,13 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
          true <- Rules.manage?(poll, socket.assigns.access, socket.assigns.current_profile) do
       form_state =
         put_changeset(
-          %{poll: poll, params: %{}, announce?: false, error: nil, action: nil},
+          %{
+            poll: poll,
+            params: Effects.keep_current(%{}, poll),
+            announce?: false,
+            error: nil,
+            action: nil
+          },
           socket
         )
 
@@ -74,12 +94,50 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
     do: {:noreply, socket}
 
   def handle_event("poll_form_validate", %{"poll" => attrs} = params, socket) do
+    old = socket.assigns.poll_form
+    attrs = with_effect_defaults(attrs, old.params, socket.assigns.calendar_time_zone)
+
     state =
-      socket.assigns.poll_form
+      old
       |> Map.merge(%{params: attrs, action: :validate, error: nil})
-      |> Map.put(:announce?, announce?(params, socket.assigns.poll_form))
+      |> Map.put(:announce?, announce?(params, old))
 
     {:noreply, assign(socket, :poll_form, put_changeset(state, socket))}
+  end
+
+  # The member a decision names, or a candidate of an election, picked from
+  # the suggestions.
+  def handle_event("poll_form_pick", %{"id" => id}, socket) do
+    state = socket.assigns.poll_form
+
+    params =
+      case state.params["effect"] do
+        "elect" ->
+          Map.update(state.params, "candidate_ids", [id], &Enum.uniq(List.wrap(&1) ++ [id]))
+
+        _grant_or_revoke ->
+          Map.put(state.params, "effect_profile_id", id)
+      end
+
+    state = %{state | params: Map.delete(params, "effect_query")}
+    {:noreply, assign(socket, :poll_form, put_changeset(state, socket))}
+  end
+
+  def handle_event("poll_form_unpick", %{"id" => id}, socket) do
+    state = socket.assigns.poll_form
+
+    params =
+      state.params
+      |> Map.update("candidate_ids", [], fn ids ->
+        Enum.reject(List.wrap(ids), &(to_string(&1) == id))
+      end)
+      |> then(fn params ->
+        if to_string(params["effect_profile_id"]) == id,
+          do: Map.put(params, "effect_profile_id", ""),
+          else: params
+      end)
+
+    {:noreply, assign(socket, :poll_form, put_changeset(%{state | params: params}, socket))}
   end
 
   def handle_event("poll_form_deadline", %{"hours" => hours}, socket)
@@ -136,6 +194,29 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
 
   def handle_event(_event, _params, socket), do: {:noreply, socket}
 
+  defp preset_params("election", time_zone) do
+    %{
+      "question" => dgettext("polls", "Who will be our admin?"),
+      "effect" => "elect",
+      "effect_role_key" => "admin",
+      "effect_replace" => "true",
+      "allow_member_options" => "true",
+      "majority" => "plurality",
+      "quorum_percent" => "50",
+      "closes_local" => deadline_in("168", time_zone)
+    }
+  end
+
+  defp preset_params("end_elections", time_zone) do
+    %{
+      "question" => dgettext("polls", "Shall the group stop electing its admins?"),
+      "effect" => "end_elections",
+      "majority" => "simple",
+      "quorum_percent" => "50",
+      "closes_local" => deadline_in("168", time_zone)
+    }
+  end
+
   defp announce?(params, state),
     do: Map.get(params, "announce", to_string(state.announce?)) == "true"
 
@@ -147,19 +228,77 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
   defp error_message(_reason), do: dgettext("polls", "Could not save the poll.")
 
   defp put_changeset(state, socket) do
+    %{access: access, group: group, calendar_time_zone: time_zone} = socket.assigns
+
     changeset =
       state.poll
-      |> Polls.change_poll(state.params, socket.assigns.calendar_time_zone)
+      |> Polls.change_poll(state.params, time_zone, access, group)
       |> Map.put(:action, state[:action])
 
     state
     |> Map.put(:form, to_form(changeset, as: :poll))
     |> Map.put(:values, values(changeset))
-    |> Map.put(:can_publish?, Rules.can_publish?(socket.assigns.access, socket.assigns.group))
+    |> Map.put(:effect, effect_values(changeset, state.params, group))
+    |> Map.put(:effects, Effects.available(access, group))
+    |> Map.put(:can_publish?, Rules.can_publish?(access, group))
     |> Map.put(:can_announce?, can_announce?(socket))
-    |> Map.put(:roles, roles(socket.assigns.access))
-    |> Map.put(:time_zone, socket.assigns.calendar_time_zone)
-    |> Map.put(:group, socket.assigns.group)
+    |> Map.put(:roles, roles(access))
+    |> Map.put(:effect_roles, Effects.roles(access))
+    |> Map.put(:time_zone, time_zone)
+    |> Map.put(:group, group)
+  end
+
+  # What the decision names, as the form shows it: the member, the
+  # candidates in their order, the suggestions for what is typed, and the
+  # answers it fixes.
+  defp effect_values(changeset, params, group) do
+    effect = Ecto.Changeset.get_field(changeset, :effect)
+    candidate_ids = params |> Map.get("candidate_ids") |> List.wrap() |> Enum.map(&to_id/1)
+    profile_id = to_id(Map.get(params, "effect_profile_id"))
+
+    %{
+      kind: effect,
+      profile: profile_id && List.first(Effects.members([profile_id], group)),
+      candidates: Effects.members(Enum.reject(candidate_ids, &is_nil/1), group),
+      suggestions: Effects.suggestions(group, Map.get(params, "effect_query") || ""),
+      answers:
+        if(effect,
+          do: changeset |> Ecto.Changeset.get_field(:options) |> Enum.map(& &1.text),
+          else: []
+        ),
+      abstain?: Map.get(params, "abstain") in [true, "true"],
+      replace?: Map.get(params, "effect_replace") in [true, "true"]
+    }
+  end
+
+  defp to_id(id) when is_integer(id), do: id
+
+  defp to_id(id) when is_binary(id) do
+    case Integer.parse(id) do
+      {id, ""} -> id
+      _not_an_id -> nil
+    end
+  end
+
+  defp to_id(_id), do: nil
+
+  # A decision once picked starts with a majority, a quorum and a deadline,
+  # which it cannot do without.
+  defp with_effect_defaults(attrs, old_params, time_zone) do
+    effect = Map.get(attrs, "effect", "")
+
+    if effect not in ["", nil] and effect != Map.get(old_params, "effect", "") do
+      attrs
+      |> Map.put("majority", if(effect == "elect", do: "plurality", else: "simple"))
+      |> put_blank("quorum_percent", "50")
+      |> put_blank("closes_local", deadline_in("72", time_zone))
+    else
+      attrs
+    end
+  end
+
+  defp put_blank(attrs, key, value) do
+    if Map.get(attrs, key) in [nil, ""], do: Map.put(attrs, key, value), else: attrs
   end
 
   defp can_announce?(socket), do: Access.can?(socket.assigns.access, :post_values)
@@ -264,14 +403,27 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
               phx-submit="poll_form_save"
               novalidate
             >
-              <.question_fields :if={!@state.values.schedule_only?} form={@state.form} />
+              <.question_fields :if={!@state.values.schedule_only?} state={@state} />
               <p :if={@state.values.schedule_only?} id="poll-form-frozen" class="mb-3 text-sm">
-                {dgettext(
-                  "polls",
-                  "Votes are in, so only the deadline can change. Voters saw the rest."
+                {if(@state.effect.kind,
+                  do:
+                    dgettext(
+                      "polls",
+                      "Votes are in, so only the reminder can change. Voters counted on the rest, the deadline too."
+                    ),
+                  else:
+                    dgettext(
+                      "polls",
+                      "Votes are in, so only the deadline can change. Voters saw the rest."
+                    )
                 )}
               </p>
-              <.deadline_fields form={@state.form} time_zone={@state.time_zone} />
+              <.deadline_fields
+                form={@state.form}
+                time_zone={@state.time_zone}
+                fixed?={@state.values.schedule_only? and not is_nil(@state.effect.kind)}
+                required?={not is_nil(@state.effect.kind)}
+              />
               <.more_settings :if={!@state.values.schedule_only?} state={@state} />
 
               <label
@@ -343,9 +495,11 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
     """
   end
 
-  attr :form, :any, required: true
+  attr :state, :map, required: true
 
   defp question_fields(assigns) do
+    assigns = assign(assigns, :form, assigns.state.form)
+
     ~H"""
     <.input
       field={@form[:question]}
@@ -364,7 +518,9 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
       phx-debounce="200"
     />
 
-    <fieldset id="poll-form-options" class="fieldset mt-1">
+    <.effect_fields :if={@state.effects != []} state={@state} />
+
+    <fieldset :if={is_nil(@state.effect.kind)} id="poll-form-options" class="fieldset mt-1">
       <legend class="fieldset-legend">{dgettext("polls", "Answers")}</legend>
       <.inputs_for :let={option} field={@form[:options]}>
         <input type="hidden" name="poll[options_sort][]" value={option.index} />
@@ -433,6 +589,8 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
 
   attr :form, :any, required: true
   attr :time_zone, :string, required: true
+  attr :fixed?, :boolean, default: false, doc: "a decision with votes keeps its deadline"
+  attr :required?, :boolean, default: false, doc: "a decision cannot do without one"
 
   defp deadline_fields(assigns) do
     assigns = assign(assigns, :deadlines, @deadlines)
@@ -440,7 +598,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
     ~H"""
     <fieldset id="poll-form-deadline" class="fieldset mt-3">
       <legend class="fieldset-legend">{dgettext("polls", "Deadline")}</legend>
-      <div class="mb-1 flex flex-wrap items-center gap-2">
+      <div :if={!@fixed?} class="mb-1 flex flex-wrap items-center gap-2">
         <button
           :for={hours <- @deadlines}
           id={"poll-form-deadline-#{hours}"}
@@ -452,6 +610,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
           {deadline_label(hours)}
         </button>
         <button
+          :if={!@required?}
           id="poll-form-deadline-none"
           type="button"
           phx-click="poll_form_deadline"
@@ -462,6 +621,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
         </button>
       </div>
       <.input
+        :if={!@fixed?}
         field={@form[:closes_local]}
         type="datetime-local"
         aria-label={dgettext("polls", "Deadline")}
@@ -514,6 +674,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
 
       <div class="pb-3">
         <.input
+          :if={is_nil(@state.effect.kind)}
           field={@form[:kind]}
           type="select"
           label={dgettext("polls", "How many answers can one vote hold")}
@@ -550,13 +711,13 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
           label={dgettext("polls", "Voters can change their vote")}
         />
         <.input
-          :if={!@values.secret? and !@values.public?}
+          :if={!@values.secret? and !@values.public? and is_nil(@state.effect.kind)}
           field={@form[:allow_member_options]}
           type="checkbox"
           label={dgettext("polls", "Members can add answers")}
         />
 
-        <div :if={@state.can_publish?} id="poll-form-public">
+        <div :if={@state.can_publish? and is_nil(@state.effect.kind)} id="poll-form-public">
           <.input
             field={@form[:is_public]}
             type="checkbox"
@@ -571,7 +732,7 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
         </div>
 
         <.role_picker
-          :if={!@values.public?}
+          :if={!@values.public? and is_nil(@state.effect.kind)}
           id="poll-form-voters"
           field={@form[:voter_role_keys]}
           roles={@state.roles}
@@ -614,7 +775,10 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
           ]}
         />
 
-        <div :if={@values.kind == :single and !@values.public?} id="poll-form-decision">
+        <div
+          :if={@values.kind == :single and !@values.public? and is_nil(@state.effect.kind)}
+          id="poll-form-decision"
+        >
           <.input
             field={@form[:majority]}
             type="select"
@@ -639,6 +803,206 @@ defmodule PotokIdeWeb.GroupLive.Show.PollForm do
       </div>
     </details>
     """
+  end
+
+  attr :state, :map, required: true
+
+  defp effect_fields(assigns) do
+    assigns =
+      assigns
+      |> assign(:form, assigns.state.form)
+      |> assign(:effect, assigns.state.effect)
+
+    ~H"""
+    <fieldset
+      id="poll-form-effect"
+      class="fieldset mt-2 rounded-2xl border border-base-300/70 px-3 pb-3"
+    >
+      <legend class="fieldset-legend px-1">
+        <.icon name="hero-scale" class="size-4 text-primary" />
+        {dgettext("polls", "What the decision changes")}
+      </legend>
+      <.input
+        id="poll-form-effect-kind"
+        field={@form[:effect]}
+        type="select"
+        options={effect_options(@state.effects)}
+        aria-label={dgettext("polls", "What the decision changes")}
+      />
+
+      <div :if={@effect.kind} id="poll-form-effect-details">
+        <.input
+          :if={@effect.kind != :end_elections}
+          id="poll-form-effect-role"
+          field={@form[:effect_role_key]}
+          type="select"
+          label={dgettext("polls", "Role")}
+          prompt={dgettext("polls", "Pick a role")}
+          options={Enum.map(@state.effect_roles, &{RolesTab.role_label(&1), &1.key})}
+        />
+
+        <div :if={@effect.kind in [:grant, :revoke]} id="poll-form-effect-member" class="mt-1">
+          <p class="fieldset-legend">{dgettext("polls", "Member")}</p>
+          <input
+            type="hidden"
+            name="poll[effect_profile_id]"
+            value={@effect.profile && @effect.profile.id}
+          />
+          <.picked
+            :if={@effect.profile}
+            id={"poll-form-effect-picked-#{@effect.profile.id}"}
+            person={@effect.profile}
+          />
+          <.member_search
+            :if={!@effect.profile}
+            query={@state.params["effect_query"]}
+            suggestions={@effect.suggestions}
+          />
+          <.field_errors field={@form[:effect_profile_id]} />
+        </div>
+
+        <div :if={@effect.kind == :elect} id="poll-form-effect-candidates" class="mt-1">
+          <p class="fieldset-legend">{dgettext("polls", "Candidates")}</p>
+          <input type="hidden" name="poll[candidate_ids][]" value="" />
+          <div :if={@effect.candidates != []} class="mb-1 flex flex-wrap gap-1.5">
+            <%= for person <- @effect.candidates do %>
+              <input type="hidden" name="poll[candidate_ids][]" value={person.id} />
+              <.picked id={"poll-form-effect-picked-#{person.id}"} person={person} />
+            <% end %>
+          </div>
+          <.member_search
+            query={@state.params["effect_query"]}
+            suggestions={Enum.reject(@effect.suggestions, &(&1 in @effect.candidates))}
+          />
+          <.field_errors field={@form[:candidate_ids]} />
+          <.input
+            :if={!Phoenix.HTML.Form.normalize_value("checkbox", @form[:secret].value)}
+            field={@form[:allow_member_options]}
+            type="checkbox"
+            label={dgettext("polls", "Members can stand for themselves")}
+          />
+          <.input
+            id="poll-form-effect-replace"
+            name="poll[effect_replace]"
+            value={@effect.replace?}
+            type="checkbox"
+            label={dgettext("polls", "The one elected takes the place of those who hold it now")}
+          />
+        </div>
+
+        <div :if={@effect.kind != :elect} id="poll-form-effect-answers" class="mt-1">
+          <p class="fieldset-legend">{dgettext("polls", "Answers")}</p>
+          <p class="text-sm">{Enum.join(@effect.answers, " · ")}</p>
+          <.input
+            id="poll-form-effect-abstain"
+            name="poll[abstain]"
+            value={@effect.abstain?}
+            type="checkbox"
+            label={dgettext("polls", "Also an answer to abstain")}
+          />
+        </div>
+
+        <.input
+          id="poll-form-effect-majority"
+          field={@form[:majority]}
+          type="select"
+          label={dgettext("polls", "Decision")}
+          options={effect_majorities(@effect.kind)}
+        />
+        <.input
+          id="poll-form-effect-quorum"
+          field={@form[:quorum_percent]}
+          type="number"
+          min="1"
+          max="100"
+          label={dgettext("polls", "Quorum: percent of those who may vote")}
+        />
+        <p id="poll-form-effect-promise" class="mt-1 text-xs text-base-content/65">
+          {dgettext(
+            "polls",
+            "The whole group votes. Once the first vote is in nothing changes, and the voting ends at its deadline, not before. What the decision says is then done at once."
+          )}
+        </p>
+      </div>
+    </fieldset>
+    """
+  end
+
+  attr :id, :string, required: true
+  attr :person, :map, required: true
+
+  defp picked(assigns) do
+    ~H"""
+    <span
+      id={@id}
+      class="inline-flex h-8 items-center gap-1.5 rounded-full border border-primary/30 bg-primary/5 pr-1 pl-3 text-sm"
+    >
+      @{@person.username}
+      <button
+        type="button"
+        phx-click="poll_form_unpick"
+        phx-value-id={@person.id}
+        aria-label={dgettext("polls", "Remove %{name}", name: @person.username)}
+        class={icon_button_class("ghost", "xs")}
+      >
+        <.icon name="hero-x-mark" class="size-3.5" />
+      </button>
+    </span>
+    """
+  end
+
+  attr :query, :string, default: nil
+  attr :suggestions, :list, required: true
+
+  defp member_search(assigns) do
+    ~H"""
+    <.input
+      id="poll-form-effect-query"
+      name="poll[effect_query]"
+      value={@query}
+      type="search"
+      autocomplete="off"
+      phx-debounce="200"
+      placeholder={dgettext("polls", "Search members by name")}
+      aria-label={dgettext("polls", "Search members by name")}
+    />
+    <div
+      :if={@suggestions != []}
+      id="poll-form-effect-suggestions"
+      class="-mt-1 mb-1 flex flex-wrap gap-1.5"
+    >
+      <button
+        :for={person <- @suggestions}
+        id={"poll-form-effect-suggest-#{person.id}"}
+        type="button"
+        phx-click="poll_form_pick"
+        phx-value-id={person.id}
+        class={chip_class()}
+      >
+        <.icon name="hero-plus" class="size-3.5" /> @{person.username}
+      </button>
+    </div>
+    """
+  end
+
+  defp effect_options(effects) do
+    [{dgettext("polls", "Nothing, it only asks"), ""}] ++
+      Enum.map(effects, &{effect_label(&1), Atom.to_string(&1)})
+  end
+
+  defp effect_label(:grant), do: dgettext("polls", "Gives a member a role")
+  defp effect_label(:revoke), do: dgettext("polls", "Takes a role from a member")
+  defp effect_label(:elect), do: dgettext("polls", "Elects someone to a role")
+  defp effect_label(:end_elections), do: dgettext("polls", "Ends the election of admins")
+
+  defp effect_majorities(kind) do
+    [
+      kind == :elect && {dgettext("polls", "The most votes"), :plurality},
+      {dgettext("polls", "More than half of the votes"), :simple},
+      {dgettext("polls", "Two thirds of the votes"), :two_thirds},
+      {dgettext("polls", "More than half of those who may vote"), :absolute}
+    ]
+    |> Enum.filter(& &1)
   end
 
   defp details_hint(%{secret?: true}) do

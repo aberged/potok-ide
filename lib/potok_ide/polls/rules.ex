@@ -151,7 +151,7 @@ defmodule PotokIde.Polls.Rules do
       results?: results?,
       details?: details?(poll, access, profile, now),
       manage?: manage?(poll, access, profile),
-      can_add_option?: can_add_option?(poll, group, access, vote_block),
+      can_add_option?: can_add_option?(poll, group, access, vote_block, profile),
       voters_count: poll.voters_count,
       outcome: if(results?, do: poll.outcome),
       winner_option_id: if(results?, do: poll.winner_option_id),
@@ -162,6 +162,7 @@ defmodule PotokIde.Polls.Rules do
       options: Enum.map(poll.options, &option(&1, results?, my_option_ids)),
       removable_option_ids: removable_option_ids(poll, access, profile),
       my_option_ids: my_option_ids,
+      effect: effect(poll, access),
       voter_roles: roles_on_list(poll.voter_role_keys, access),
       detail_roles: roles_on_list(poll.details_role_keys, access)
     }
@@ -182,17 +183,45 @@ defmodule PotokIde.Polls.Rules do
         voters_count: nil,
         voter_roles: [],
         detail_roles: [],
+        effect: nil,
         form_key: 0
     }
   end
 
   defp limit_to_scope(%View{} = view), do: view
 
-  defp can_add_option?(%Poll{} = poll, group, %Access{} = access, vote_block) do
+  defp can_add_option?(%Poll{} = poll, group, %Access{} = access, vote_block, profile) do
     poll.allow_member_options and access.member? and is_nil(vote_block) and
       not poll.secret and not public?(poll, group) and
-      length(poll.options) < Poll.max_options_with_members()
+      length(poll.options) < Poll.max_options_with_members() and
+      not candidate?(poll, profile)
   end
+
+  # In an election a member stands once, for themselves.
+  defp candidate?(%Poll{effect: :elect, options: options}, %Profile{id: id}),
+    do: Enum.any?(options, &(&1.profile_id == id))
+
+  defp candidate?(_poll, _profile), do: false
+
+  # What the decision changes, with its role as the viewer's manifest has it
+  # (nil once deleted) and the member it names, when loaded.
+  defp effect(%Poll{effect: nil}, _access), do: nil
+
+  defp effect(%Poll{} = poll, %Access{manifest: manifest}) do
+    %{
+      kind: poll.effect,
+      role_key: poll.effect_role_key,
+      role: manifest && Enum.find(manifest.roles, &(&1.key == poll.effect_role_key)),
+      profile: effect_profile(poll),
+      replace?: poll.effect_replace,
+      status: poll.effect_status
+    }
+  end
+
+  defp effect_profile(%Poll{effect_profile: %Profile{} = profile}),
+    do: %{id: profile.id, username: profile.username}
+
+  defp effect_profile(%Poll{}), do: nil
 
   # Counts reach the page through its tally styles, so that a vote re-renders no
   # message: here an answer only says it has some to show.
@@ -200,6 +229,7 @@ defmodule PotokIde.Polls.Rules do
     %{
       id: option.id,
       text: option.text,
+      profile_id: option.profile_id,
       votes_count: if(results?, do: option.votes_count),
       mine?: option.id in my_option_ids
     }
@@ -208,6 +238,9 @@ defmodule PotokIde.Polls.Rules do
   # A poll keeps at least two answers, and those with votes stay. A secret poll
   # offers nothing: which answers have no votes is a count.
   defp removable_option_ids(%Poll{secret: true}, _access, _profile), do: []
+
+  defp removable_option_ids(%Poll{effect: effect}, _access, _profile) when not is_nil(effect),
+    do: []
 
   defp removable_option_ids(%Poll{} = poll, %Access{} = access, profile) do
     if manage?(poll, access, profile) and length(poll.options) > Poll.min_options() do

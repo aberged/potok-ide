@@ -23,9 +23,12 @@ defmodule PotokIde.Polls.Deadlines do
     send_due_reminders(now)
   end
 
-  @doc "Closes the polls past their deadline, and returns them."
+  @doc """
+  Closes the polls past their deadline, carrying out what their decisions
+  change, and returns them.
+  """
   def close_due(%DateTime{} = now) do
-    {:ok, closed} =
+    {:ok, results} =
       Repo.transaction(fn ->
         from(p in Poll,
           where: is_nil(p.closed_at) and not is_nil(p.closes_at) and p.closes_at <= ^now,
@@ -36,6 +39,9 @@ defmodule PotokIde.Polls.Deadlines do
         |> Repo.all()
         |> Enum.map(&Polls.close_locked(&1, Repo.get!(Group, &1.group_id), &1.closes_at))
       end)
+
+    closed = Enum.map(results, &elem(&1, 0))
+    Enum.each(results, fn {_poll, announcements} -> Enum.each(announcements, & &1.()) end)
 
     Enum.each(closed, fn poll ->
       Notifications.deliver_closed(poll, nil)

@@ -1016,6 +1016,54 @@ defmodule PotokIde.Social do
   end
 
   @doc """
+  Whether admins of `group` come and go only by decisions of polls, read from
+  the database, as a page may hold the group from before a switch.
+  """
+  def elects_admins?(%Group{id: group_id}) do
+    Repo.exists?(from(g in Group, where: g.id == ^group_id and g.elects_admins))
+  end
+
+  @doc """
+  Lets `group` elect its admins from now on: only an admin may, and the
+  admins it has stay, for the time being, until the first election. Switching
+  it off takes a decision (`end_elections/2`), or the elected admins could
+  keep their places by switching it off.
+  """
+  def set_elects_admins(%Profile{} = actor, %Group{} = group, true) do
+    cond do
+      group.is_root or group.is_direct or not is_nil(group.parent_value_id) ->
+        {:error, :not_allowed}
+
+      not Access.admin?(actor, group) ->
+        {:error, :not_permitted}
+
+      true ->
+        {_count, _rows} =
+          Repo.update_all(from(g in Group, where: g.id == ^group.id),
+            set: [elects_admins: true, updated_at: DateTime.utc_now(:second)]
+          )
+
+        broadcast_group_updated(group)
+        {:ok, %{group | elects_admins: true}}
+    end
+  end
+
+  def set_elects_admins(%Profile{}, %Group{}, false), do: {:error, :elected_mode}
+
+  @doc """
+  Gives `group` back to the founders' rule, in the caller's transaction, as a
+  decision of a poll does it (`PotokIde.Polls.Effects`). The admins it has
+  stay. Returns `{:ok, announce}`.
+  """
+  def end_elections(repo, %Group{id: group_id}) do
+    repo.update_all(from(g in Group, where: g.id == ^group_id),
+      set: [elects_admins: false, updated_at: DateTime.utc_now(:second)]
+    )
+
+    {:ok, fn -> broadcast_group_updated(group_id) end}
+  end
+
+  @doc """
   What `GroupPresets.change_plan/4` needs to know of `group` for `editor`.
   Reads its parent, its alternative descriptions and a sub-group or two.
   """
@@ -2224,6 +2272,10 @@ defmodule PotokIde.Social do
       member_access.admin? and not actor_access.admin? ->
         {:error, :not_permitted}
 
+      # An elected admin goes only by a decision.
+      member_access.admin? and elects_admins?(group) ->
+        {:error, :elected_admin}
+
       member_access.admin? and Access.count_admins(group) <= 1 ->
         {:error, :last_admin}
 
@@ -3297,12 +3349,28 @@ defmodule PotokIde.Social do
   end
 
   def delete_value(%Profile{} = profile, %Value{} = value) do
-    if value.creator_id != profile.id and
-         not Access.can?(profile, Repo.get!(Group, value.group_id), :delete_values) do
-      {:error, :not_value_creator}
-    else
-      remove_value(value)
+    cond do
+      value.creator_id != profile.id and
+          not Access.can?(profile, Repo.get!(Group, value.group_id), :delete_values) ->
+        {:error, :not_value_creator}
+
+      # A decision that changes roles is the record of what the group decided.
+      carries_decision?(value) ->
+        {:error, :decision}
+
+      true ->
+        remove_value(value)
     end
+  end
+
+  defp carries_decision?(%Value{id: value_id}) do
+    Repo.exists?(
+      from(p in Poll,
+        where:
+          p.value_id == ^value_id and not is_nil(p.effect) and
+            (p.voters_count > 0 or not is_nil(p.closed_at))
+      )
+    )
   end
 
   @doc """
@@ -4089,28 +4157,20 @@ defmodule PotokIde.Social do
 
   @doc """
   Gives a member of the group one of the effective manifest's roles. Only
-  the group's admins assign roles; "everyone" is implicit.
+  the group's admins assign roles; "everyone" is implicit. In a group that
+  elects its admins (`Group.elects_admins`), Admin comes only by a decision
+  (`PotokIde.Polls.Effects`).
   """
   def assign_group_member_role(%Profile{} = actor, %Group{} = group, profile_id, role_key)
       when is_integer(profile_id) and is_binary(role_key) do
     with {:ok, _access} <- ensure_role_assignable(actor, group, profile_id, role_key) do
-      Multi.new()
-      |> Multi.insert(
-        :member_role,
-        %GroupMemberRole{group_id: group.id, profile_id: profile_id, role_key: role_key},
-        on_conflict: :nothing
-      )
-      |> Multi.run(:inheritance, fn repo, _changes ->
-        {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
-      end)
-      |> Repo.transaction()
+      Repo.transaction(fn -> put_member_role(Repo, group, profile_id, role_key) end)
       |> case do
-        {:ok, %{member_role: member_role, inheritance: changes}} ->
-          broadcast_group_roles_updated([group.id])
-          broadcast_inheritance_changes(changes)
+        {:ok, {:ok, member_role, announce}} ->
+          announce.()
           {:ok, member_role}
 
-        {:error, _step, reason, _changes} ->
+        {:error, reason} ->
           {:error, reason}
       end
     end
@@ -4134,29 +4194,81 @@ defmodule PotokIde.Social do
           {:error, :last_admin}
 
         true ->
-          Multi.new()
-          |> Multi.delete_all(
-            :member_role,
-            from(r in GroupMemberRole,
-              where:
-                r.group_id == ^group.id and r.profile_id == ^profile_id and
-                  r.role_key == ^role_key
-            )
-          )
-          |> Multi.run(:inheritance, fn repo, _changes ->
-            {:ok, MemberInheritance.sync(repo, group.id, [profile_id])}
-          end)
-          |> Repo.transaction()
+          Repo.transaction(fn -> drop_member_roles(Repo, group, [profile_id], role_key) end)
           |> case do
-            {:ok, %{inheritance: changes}} ->
-              broadcast_group_roles_updated([group.id])
-              broadcast_inheritance_changes(changes)
+            {:ok, {:ok, announce}} ->
+              announce.()
               :ok
 
-            {:error, _step, reason, _changes} ->
+            {:error, reason} ->
               {:error, reason}
           end
       end
+    end
+  end
+
+  @doc """
+  Gives `profile_id` the role `role_key` in `group`, in the caller's
+  transaction, with no check: for `assign_group_member_role/4`, which checked
+  the actor, and for a decision of a poll (`PotokIde.Polls.Effects`), whose
+  id `poll_id` the role then keeps. A role the member holds of their own
+  keeps being theirs, by the decision when one gave it; one held through the
+  parent stays as it is. Inheriting groups below follow.
+
+  Returns `{:ok, member_role, announce}`: nobody hears of it until the
+  caller commits and calls `announce`.
+  """
+  def put_member_role(repo, %Group{} = group, profile_id, role_key, poll_id \\ nil)
+      when is_integer(profile_id) and is_binary(role_key) do
+    member_role = %GroupMemberRole{
+      group_id: group.id,
+      profile_id: profile_id,
+      role_key: role_key,
+      poll_id: poll_id
+    }
+
+    on_conflict =
+      if poll_id,
+        do:
+          from(r in GroupMemberRole,
+            where: not r.inherited,
+            update: [set: [poll_id: ^poll_id]]
+          ),
+        else: :nothing
+
+    repo.insert!(member_role,
+      on_conflict: on_conflict,
+      conflict_target: [:group_id, :profile_id, :role_key]
+    )
+
+    changes = MemberInheritance.sync(repo, group.id, [profile_id])
+    {:ok, member_role, roles_announcement(group, changes)}
+  end
+
+  @doc """
+  Takes `role_key` from those of `profile_ids` who hold it of their own in
+  `group`, in the caller's transaction, with no check (see
+  `put_member_role/5`). Roles held through the parent stay. Returns
+  `{:ok, announce}`.
+  """
+  def drop_member_roles(repo, %Group{} = group, profile_ids, role_key)
+      when is_list(profile_ids) and is_binary(role_key) do
+    repo.delete_all(
+      from(r in GroupMemberRole,
+        where:
+          r.group_id == ^group.id and r.profile_id in ^profile_ids and r.role_key == ^role_key and
+            not r.inherited
+      )
+    )
+
+    changes = MemberInheritance.sync(repo, group.id, profile_ids)
+    {:ok, roles_announcement(group, changes)}
+  end
+
+  defp roles_announcement(%Group{id: group_id}, changes) do
+    fn ->
+      broadcast_group_roles_updated([group_id])
+      broadcast_inheritance_changes(changes)
     end
   end
 
@@ -4173,6 +4285,10 @@ defmodule PotokIde.Social do
 
       role_key == GroupRole.everyone_key() or role_key not in role_keys ->
         {:error, :role_not_found}
+
+      # Elected admins come and go by decisions alone.
+      role_key == GroupRole.admin_key() and elects_admins?(group) ->
+        {:error, :elected_role}
 
       not member_of_group?(%Profile{id: profile_id}, group) ->
         {:error, :not_a_group_member}
