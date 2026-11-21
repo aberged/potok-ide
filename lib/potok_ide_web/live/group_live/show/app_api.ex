@@ -867,15 +867,15 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   # An app sends its viewer no further than its parent and the two levels below
-  # it, and only to what that viewer can see; its own group too, for its
-  # settings or its templates.
+  # it, and only to what that viewer can see; to its own group only for its
+  # settings or its templates, as its chat and description are where it runs.
   defp run("open_group", params, socket) do
     %{group: group, current_profile: profile} = socket.assigns
+    tab = params["tab"]
 
     with id when is_integer(id) <- non_negative_integer(params["id"]),
-         %Group{} = target <-
-           if(id == group.id, do: group, else: reachable_group(group, profile, id)) do
-      {%{ok: true}, navigate(socket, group_tab_path(target, params["tab"]))}
+         %Group{} = target <- open_group_target(group, profile, id, tab) do
+      {%{ok: true}, navigate(socket, group_tab_path(target, tab))}
     else
       _not_found -> {error("not_found", nil), socket}
     end
@@ -2145,6 +2145,13 @@ defmodule PotokIdeWeb.GroupLive.Show.AppApi do
   end
 
   # A group that is an app runs on its description tab.
+  defp open_group_target(%Group{id: id} = group, _profile, id, tab)
+       when tab in ["settings", "templates"],
+       do: group
+
+  defp open_group_target(%Group{id: id}, _profile, id, _tab), do: nil
+  defp open_group_target(group, profile, id, _tab), do: reachable_group(group, profile, id)
+
   defp group_tab_path(group, "description"), do: ~p"/groups/#{group.id}/group_home"
   defp group_tab_path(group, "settings"), do: ~p"/groups/#{group.id}/edit_group"
 
